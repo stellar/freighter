@@ -5,7 +5,7 @@ import {
   CurrencyAmount,
   TradeType,
   Networks,
-  Protocols,
+  Protocol,
 } from "soroswap-router-sdk";
 import BigNumber from "bignumber.js";
 
@@ -96,7 +96,7 @@ export const soroswapGetBestPath = async ({
   const router = new Router({
     getPairsFns: [
       {
-        protocol: Protocols.SOROSWAP,
+        protocol: Protocol.SOROSWAP,
         fn: async () => {
           const res = await fetch(
             // this endpoint is used to get the pairs for Testnet which `Router` will used to determine conversion rate
@@ -110,9 +110,24 @@ export const soroswapGetBestPath = async ({
           return data;
         },
       },
+      {
+        protocol: Protocol.PHOENIX,
+        fn: async () => {
+          const res = await fetch(
+            // this endpoint is used to get the pairs for Testnet which `Router` will used to determine conversion rate
+            new URL(
+              "https://info.soroswap.finance/api/pairs/phoenix?network=TESTNET",
+            ),
+          );
+
+          const data = await res.json();
+
+          return data;
+        },
+      },
     ],
     pairsCacheInSeconds: 60,
-    protocols: [Protocols.SOROSWAP],
+    protocols: [Protocol.SOROSWAP, Protocol.PHOENIX],
     network,
     maxHops: 5,
   });

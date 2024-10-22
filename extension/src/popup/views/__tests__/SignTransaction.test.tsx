@@ -17,6 +17,7 @@ import * as ApiInternal from "@shared/api/internal";
 
 import { SignTransaction } from "../SignTransaction";
 import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
+import { Balances } from "@shared/api/types";
 
 jest.mock("stellar-identicon-js");
 jest.setTimeout(20000);
@@ -95,6 +96,8 @@ describe("SignTransactions", () => {
     "AAAAAgAAAACvFaM0g3O8YSM1/Z5zr/lN215/ohYXdEVGMM/n+JocRQAAAGQADeezAAAAFwAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAA+mIabuovOCMELeEBiAhJ/OIjCVFTNN7AmAIYkUnUfUmAAAAAQAAAAAAAAABAAAAAFW9Tn8QXyYVXxVsKu1puglTKyjykec9fod6sd/hBXUTAAAAAAAAAABJUE+AAAAAAAAAAAA=";
   const MEMO_TXN_RETURN =
     "AAAAAgAAAACvFaM0g3O8YSM1/Z5zr/lN215/ohYXdEVGMM/n+JocRQAAAGQADeezAAAAFwAAAAEAAAAAAAAAAAAAAAAAAAAAAAAABOmIabuovOCMELeEBiAhJ/OIjCVFTNN7AmAIYkUnUfUmAAAAAQAAAAAAAAABAAAAAFW9Tn8QXyYVXxVsKu1puglTKyjykec9fod6sd/hBXUTAAAAAAAAAABJUE+AAAAAAAAAAAA=";
+  const OP_SOURCE_UNFUNDED =
+    "AAAAAgAAAABou5983/G8OINKO6IsleNqE1hDPTsk2zo4fCVVbrQijwAAAAAAAAAAAAAAAAAAAAEAAAAAZu7vZQAAAABm7vG9AAAAAAAAAAEAAAABAAAAAGKCByA2uogbMQkINY5i9z3Bde53tuyoUGtHLfUDS2ZeAAAACgAAABFzdGcudm9sYWcuaW8gYXV0aAAAAAAAAAEAAABAMTUzNjM0Yjc5NDk1MzJiMzY3MjY5OTk0Yzc5MjQwNGI2ZjViMTQzNGVlZDNlNjNhNTYzZDg2YjRhMzc3ZTI2OAAAAAAAAAABbrQijwAAAEDO2lAZ9aXC8ZR76DAJBve1RKmAfVoP3ulL0T3ezzC7M7mpxwZVSFmN9PEL2s596Q1DDbyGAi2WryvYMcA0AvsM";
 
   beforeEach(() => {
     const mockCanvas = document.createElement("canvas");
@@ -524,5 +527,51 @@ describe("SignTransactions", () => {
     expect(screen.getByTestId("MemoBlock")).toHaveTextContent(
       "e98869bba8bce08c10b78406202127f3888c25454cd37b02600862452751f526 (MEMO_RETURN)",
     );
+  });
+
+  it("shows unfunded warning when signer has no XLM", async () => {
+    const mockBalancesEmpty = {
+      ...mockBalances,
+      balances: {
+        "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ":
+          mockBalances.balances?.[
+            "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ"
+          ],
+      } as any as Balances,
+    };
+    jest
+      .spyOn(ApiInternal, "getAccountIndexerBalances")
+      .mockImplementation(() => Promise.resolve(mockBalancesEmpty));
+
+    const transaction = TransactionBuilder.fromXDR(
+      OP_SOURCE_UNFUNDED,
+      Networks.TESTNET,
+    ) as Transaction<Memo<MemoType>, Operation[]>;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      ...getMemoMockTransactionInfo(OP_SOURCE_UNFUNDED, op),
+    }));
+
+    render(
+      <Wrapper
+        state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
+          settings: {
+            isExperimentalModeEnabled: true,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Future Network ; October 2022",
+            },
+          },
+        }}
+      >
+        <SignTransaction />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("InsufficientBalanceWarning"));
   });
 });
