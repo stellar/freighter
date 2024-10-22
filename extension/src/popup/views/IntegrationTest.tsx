@@ -296,7 +296,7 @@ export const IntegrationTest = () => {
       res = await saveSettings({
         isDataSharingAllowed: true,
         isMemoValidationEnabled: true,
-        isNonSSLEnabled: true,
+        isHideDustEnabled: true,
       });
       runAsserts("saveSettings", () => {
         assertEq(res.networkDetails, FUTURENET_NETWORK_DETAILS);

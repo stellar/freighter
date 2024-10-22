@@ -91,6 +91,7 @@ export interface Response {
   recommendedFee: string;
   isNonSSLEnabled: boolean;
   isBlockaidAnnounced: boolean;
+  isHideDustEnabled: boolean;
 }
 
 export interface MemoRequiredAccount {
@@ -142,7 +143,7 @@ export interface Preferences {
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   networksList: NetworkDetails[];
-  isNonSSLEnabled: boolean;
+  isHideDustEnabled: boolean;
   isBlockaidAnnounced: boolean;
   error: string;
 }
