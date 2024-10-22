@@ -11,7 +11,7 @@ When interacting with a Soroban smart contract from a wallet, you will need to b
 
 For example, consider the common use-case of sending a token payment. You would likely need to take in some values that a user configures in form fields and convert those into SC values to generate an XDR to simulate.
 
-Another common use-case is signing arbitrary XDR's sent from a dapp. In this scenario, you'll want to be dig into the invocations being called by a Soroban XDR and show them to the user in a way that they can understand what they're signing.
+Another common use-case is signing arbitrary XDR's sent from a dapp. In this scenario, you'll want to dig into the invocations being called by a Soroban XDR and show them to the user in a way that they can understand what they're signing.
 
 We'll go through each of these scenarios below.
 
