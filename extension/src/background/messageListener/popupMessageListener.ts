@@ -52,6 +52,7 @@ import {
   IS_HASH_SIGNING_ENABLED_ID,
   IS_NON_SSL_ENABLED_ID,
   IS_BLOCKAID_ANNOUNCED_ID,
+  IS_HIDE_DUST_ENABLED_ID,
 } from "constants/localStorageTypes";
 import {
   FUTURENET_NETWORK_DETAILS,
@@ -79,6 +80,7 @@ import {
   getAssetsLists,
   getIsNonSSLEnabled,
   getIsBlockaidAnnounced,
+  getIsHideDustEnabled,
   HW_PREFIX,
   getBipPath,
   subscribeTokenBalance,
@@ -1207,12 +1209,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const saveSettings = async () => {
-    const { isDataSharingAllowed, isMemoValidationEnabled, isNonSSLEnabled } =
+    const { isDataSharingAllowed, isMemoValidationEnabled, isHideDustEnabled } =
       request;
 
     await localStore.setItem(DATA_SHARING_ID, isDataSharingAllowed);
     await localStore.setItem(IS_VALIDATING_MEMO_ID, isMemoValidationEnabled);
-    await localStore.setItem(IS_NON_SSL_ENABLED_ID, isNonSSLEnabled);
+    await localStore.setItem(IS_HIDE_DUST_ENABLED_ID, isHideDustEnabled);
 
     const networkDetails = await getNetworkDetails();
     const isRpcHealthy = await getIsRpcHealthy(networkDetails);
@@ -1227,6 +1229,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       isRpcHealthy,
       isSorobanPublicEnabled: featureFlags.useSorobanPublic,
       isNonSSLEnabled: await getIsNonSSLEnabled(),
+      isHideDustEnabled: await getIsHideDustEnabled(),
     };
   };
 
@@ -1282,6 +1285,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const assetsLists = await getAssetsLists();
     const isNonSSLEnabled = await getIsNonSSLEnabled();
     const isBlockaidAnnounced = await getIsBlockaidAnnounced();
+    const isHideDustEnabled = await getIsHideDustEnabled();
 
     return {
       allowList: await getAllowList(),
@@ -1297,6 +1301,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       assetsLists,
       isNonSSLEnabled,
       isBlockaidAnnounced,
+      isHideDustEnabled,
     };
   };
 
