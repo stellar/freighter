@@ -123,6 +123,7 @@ test("Send SAC to C address", async ({ page, extensionId }) => {
   await loginToTestAccount({ page, extensionId });
 
   // add USDC asset
+  await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Manage Assets").click({ force: true });
   await page.getByPlaceholder("Enter password").fill(PASSWORD);
   await page.getByText("Log In").click({ force: true });
@@ -203,7 +204,7 @@ test("Send SAC to C address", async ({ page, extensionId }) => {
   await page.getByTestId("BottomNav-link-account").click({ force: true });
 
   // remove USDC
-
+  await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Manage Assets").click({ force: true });
   await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
   await page.getByText("Remove asset").click({ force: true });
@@ -218,6 +219,7 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   await loginToTestAccount({ page, extensionId });
 
   // add E2E token
+  await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Manage Assets").click({ force: true });
   await page.getByPlaceholder("Enter password").fill(PASSWORD);
   await page.getByText("Log In").click({ force: true });

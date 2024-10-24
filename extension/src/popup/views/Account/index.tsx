@@ -205,7 +205,10 @@ export const Account = () => {
                       onClick={() => navigateTo(ROUTES.sendPayment)}
                     />
                   </div>
-                  <div className="AccountView__send-receive-button">
+                  <div
+                    className="AccountView__send-receive-button"
+                    data-testid="account-options-dropdown"
+                  >
                     <AccountOptionsDropdown isFunded={!!isFunded} />
                   </div>
                 </div>
