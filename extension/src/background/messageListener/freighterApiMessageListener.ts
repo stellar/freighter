@@ -377,6 +377,7 @@ export const freighterApiMessageListener = (
         entry: entryXdr,
         accountToSign: accountToSign || address,
         tab,
+        domain,
         url: tabUrl,
         networkPassphrase,
       };

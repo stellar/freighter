@@ -21,6 +21,8 @@
       font-size: 0.875rem;
       margin: 0.5rem 0;
       padding: 1rem;
+      text-overflow: ellipsis;
+      overflow: hidden;
     }
   }
 }
