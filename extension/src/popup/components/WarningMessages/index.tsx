@@ -894,7 +894,7 @@ export const InvokerAuthWarning = () => {
   return (
     <WarningMessage
       header="Your account is signing this authorization. Proceed with caution."
-      variant={WarningMessageVariant.default}
+      variant={WarningMessageVariant.warning}
     >
       <div className="InvokerAuthWarning">
         <p>
