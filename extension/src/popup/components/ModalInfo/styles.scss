@@ -8,7 +8,7 @@
   &--subject {
     font-size: 0.75rem;
     color: #a0a0a0;
-    background-color: #1c1c1c;
+    background-color: var(--sds-clr-gray-04);
     border-radius: 6px;
     line-height: 1rem;
     margin-bottom: 1.5rem;
@@ -22,9 +22,9 @@
     font-size: 0.75rem;
     gap: 0.5rem;
     padding: 0 0.5rem;
-    background-color: var(--sds-clr-gray-02);
+    background-color: var(--sds-clr-gray-04);
     color: var(--sds-clr-gray-12);
-    border: 1px solid var(--sds-clr-gray-03);
+    border: 1px solid var(--sds-clr-gray-06);
     border-radius: 6px;
     margin-bottom: 0.5rem;
     line-height: 1.25rem;

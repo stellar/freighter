@@ -119,7 +119,7 @@ export const SignAuthEntry = () => {
         <HardwareSign walletType={hardwareWalletType} />
       )}
       <React.Fragment>
-        <View.AppHeader pageTitle={t("Confirm Data")} />
+        <View.AppHeader pageTitle={t("Confirm Entry")} />
         <View.Content>
           {isExperimentalModeEnabled ? (
             <WarningMessage
@@ -136,7 +136,7 @@ export const SignAuthEntry = () => {
           {!params.isDomainListedAllowed ? <FirstTimeWarningMessage /> : null}
           <div className="SignAuthEntry__info">
             <Card variant="secondary">
-              <PunycodedDomain domain={params.url} isRow />
+              <PunycodedDomain domain={params.domain} isRow />
               <div className="SignAuthEntry__subject">
                 {t("is requesting approval to sign an authorization entry")}
               </div>
