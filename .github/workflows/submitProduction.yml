@@ -83,15 +83,15 @@ jobs:
           asset_path: ./extension/build/build.zip
           asset_name: build-${{ github.event.inputs.version }}.zip
           asset_content_type: application/zip
-      # - name: Submit extension to Firefox
-      #   uses: kewisch/action-web-ext@fe10addf5d5e5ba6b78ffde720dd488a27d10e8c #v1
-      #   with:
-      #     cmd: sign
-      #     source: ./extension/build/build.zip
-      #     channel: listed
-      #     apiKey: ${{ secrets.AMO_SIGN_KEY }}
-      #     apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
-      #     timeout: 900000
+      - name: Submit extension to Firefox
+        uses: kewisch/action-web-ext@fe10addf5d5e5ba6b78ffde720dd488a27d10e8c #v1
+        with:
+          cmd: sign
+          source: ./extension/build/build.zip
+          channel: listed
+          apiKey: ${{ secrets.AMO_SIGN_KEY }}
+          apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
+          timeout: 900000
       - name: Remove scripts tag
         uses: restackio/update-json-file-action@1e34d747ca044df80b37bc4ef5a9aa41be9dac8f #v2.1
         with:
