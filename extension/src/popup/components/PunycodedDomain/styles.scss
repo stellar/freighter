@@ -17,6 +17,8 @@
 
   &__domain {
     color: var(--sds-clr-gray-12);
+    text-overflow: ellipsis;
+    overflow: hidden;
   }
 
   div {

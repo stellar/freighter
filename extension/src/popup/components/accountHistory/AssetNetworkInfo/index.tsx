@@ -4,8 +4,6 @@ import { useSelector } from "react-redux";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
-import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import { CopyValue } from "popup/components/CopyValue";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { displaySorobanId, isSorobanIssuer } from "popup/helpers/account";
@@ -28,9 +26,7 @@ export const AssetNetworkInfo = ({
   contractId,
 }: AssetNetworkInfoProps) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { blockedDomains } = useSelector(transactionSubmissionSelector);
   const [networkIconUrl, setNetworkIconUrl] = useState("");
-  const isBlockedDomain = blockedDomains.domains[assetDomain];
 
   useEffect(() => {
     const fetchIconUrl = async () => {
@@ -55,9 +51,6 @@ export const AssetNetworkInfo = ({
   }, [assetCode, assetIssuer, networkDetails]);
 
   const decideNetworkIcon = () => {
-    if (isBlockedDomain) {
-      return <ScamAssetIcon isScamAsset={true} />;
-    }
     if (networkIconUrl || assetType === "native") {
       return <img src={networkIconUrl || StellarLogo} alt="Network icon" />;
     }

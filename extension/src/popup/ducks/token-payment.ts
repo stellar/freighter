@@ -1,7 +1,7 @@
 import { Address, SorobanRpc, XdrLargeInt } from "stellar-sdk";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { ActionStatus, ErrorMessage } from "@shared/api/types";
-import { INDEXER_URL } from "@shared/constants/mercury";
+import { simulateTokenTransfer } from "@shared/api/internal";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SorobanRpcNotSupportedError } from "@shared/constants/errors";
 import { transfer } from "@shared/helpers/soroban/token";
@@ -62,52 +62,41 @@ export const simulateTokenPayment = createAsyncThunk<
           new XdrLargeInt("i128", params.amount).toI128(), // amount
         ];
         const transaction = transfer(address, transferParams, memo, builder);
-        const simulationResponse = await server.simulateTransaction(
+        const simulationTransaction = await server.simulateTransaction(
           transaction,
         );
 
         const preparedTransaction = SorobanRpc.assembleTransaction(
           transaction,
-          simulationResponse,
+          simulationTransaction,
         )
           .build()
           .toXDR();
 
         return {
-          simulationResponse,
+          simulationTransaction,
           preparedTransaction,
         };
       }
-      const options = {
-        method: "POST",
-        headers: {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          address,
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          pub_key: publicKey,
-          memo,
-          params,
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          network_url: networkDetails.sorobanRpcUrl,
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          network_passphrase: networkDetails.networkPassphrase,
-        }),
-      };
-      const res = await fetch(
-        `${INDEXER_URL}/simulate-token-transfer`,
-        options,
-      );
-      const response = await res.json();
+      const { ok, response } = await simulateTokenTransfer({
+        address,
+        publicKey,
+        memo,
+        params,
+        networkDetails,
+        transactionFee,
+      });
 
-      if (!res.ok) {
+      if (!ok) {
         return thunkApi.rejectWithValue({
           errorMessage: response.message,
         });
       }
-      return response;
+
+      return {
+        preparedTransaction: response.preparedTransaction,
+        simulationTransaction: response.simulationResponse,
+      };
     } catch (e) {
       const message = e instanceof Error ? e.message : JSON.stringify(e);
       return thunkApi.rejectWithValue({

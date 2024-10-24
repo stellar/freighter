@@ -32,13 +32,11 @@ export const AuthEntry = ({
         <div className="AuthEntryHeader">{t("Authorization Entry")}</div>
         <div className="AuthEntryAttributes">
           <pre>
-            <div>
-              {JSON.stringify(
-                rootJson,
-                (_, val) => (typeof val === "bigint" ? val.toString() : val),
-                2,
-              )}
-            </div>
+            {JSON.stringify(
+              rootJson,
+              (_, val) => (typeof val === "bigint" ? val.toString() : val),
+              2,
+            )}
           </pre>
         </div>
       </div>

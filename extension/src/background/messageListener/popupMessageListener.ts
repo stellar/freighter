@@ -26,8 +26,7 @@ import { calculateSenderMinBalance } from "@shared/helpers/migration";
 import {
   Account,
   Response as Request,
-  BlockedDomains,
-  BlockedAccount,
+  MemoRequiredAccount,
   MigratableAccount,
 } from "@shared/api/types";
 import { MessageResponder } from "background/types";
@@ -41,20 +40,18 @@ import {
   CACHED_ASSET_DOMAINS_ID,
   DATA_SHARING_ID,
   IS_VALIDATING_MEMO_ID,
-  IS_VALIDATING_SAFETY_ID,
-  IS_VALIDATING_SAFE_ASSETS_ID,
   IS_EXPERIMENTAL_MODE_ID,
   KEY_DERIVATION_NUMBER_ID,
   KEY_ID,
   KEY_ID_LIST,
   RECENT_ADDRESSES,
-  CACHED_BLOCKED_DOMAINS_ID,
-  CACHED_BLOCKED_ACCOUNTS_ID,
+  CACHED_MEMO_REQUIRED_ACCOUNTS_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
   TOKEN_ID_LIST,
   IS_HASH_SIGNING_ENABLED_ID,
   IS_NON_SSL_ENABLED_ID,
+  IS_BLOCKAID_ANNOUNCED_ID,
 } from "constants/localStorageTypes";
 import {
   FUTURENET_NETWORK_DETAILS,
@@ -71,8 +68,6 @@ import {
   getAllowList,
   getKeyIdList,
   getIsMemoValidationEnabled,
-  getIsSafetyValidationEnabled,
-  getIsValidatingSafeAssetsEnabled,
   getIsExperimentalModeEnabled,
   getIsHashSigningEnabled,
   getIsHardwareWalletActive,
@@ -83,6 +78,7 @@ import {
   getNetworksList,
   getAssetsLists,
   getIsNonSSLEnabled,
+  getIsBlockaidAnnounced,
   HW_PREFIX,
   getBipPath,
   subscribeTokenBalance,
@@ -117,10 +113,7 @@ import {
   passwordSelector,
   setMigratedMnemonicPhrase,
 } from "background/ducks/session";
-import {
-  STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
-  STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
-} from "background/constants/apiUrls";
+import { STELLAR_EXPERT_MEMO_REQUIRED_ACCOUNTS_URL } from "background/constants/apiUrls";
 import {
   AssetsListKey,
   DEFAULT_ASSETS_LISTS,
@@ -1214,24 +1207,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const saveSettings = async () => {
-    const {
-      isDataSharingAllowed,
-      isMemoValidationEnabled,
-      isSafetyValidationEnabled,
-      isValidatingSafeAssetsEnabled,
-      isNonSSLEnabled,
-    } = request;
+    const { isDataSharingAllowed, isMemoValidationEnabled, isNonSSLEnabled } =
+      request;
 
     await localStore.setItem(DATA_SHARING_ID, isDataSharingAllowed);
     await localStore.setItem(IS_VALIDATING_MEMO_ID, isMemoValidationEnabled);
-    await localStore.setItem(
-      IS_VALIDATING_SAFETY_ID,
-      isSafetyValidationEnabled,
-    );
-    await localStore.setItem(
-      IS_VALIDATING_SAFE_ASSETS_ID,
-      isValidatingSafeAssetsEnabled,
-    );
     await localStore.setItem(IS_NON_SSL_ENABLED_ID, isNonSSLEnabled);
 
     const networkDetails = await getNetworkDetails();
@@ -1242,8 +1222,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       allowList: await getAllowList(),
       isDataSharingAllowed,
       isMemoValidationEnabled: await getIsMemoValidationEnabled(),
-      isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
-      isValidatingSafeAssetsEnabled: await getIsValidatingSafeAssetsEnabled(),
       networkDetails,
       networksList: await getNetworksList(),
       isRpcHealthy,
@@ -1303,13 +1281,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const isHashSigningEnabled = await getIsHashSigningEnabled();
     const assetsLists = await getAssetsLists();
     const isNonSSLEnabled = await getIsNonSSLEnabled();
+    const isBlockaidAnnounced = await getIsBlockaidAnnounced();
 
     return {
       allowList: await getAllowList(),
       isDataSharingAllowed,
       isMemoValidationEnabled: await getIsMemoValidationEnabled(),
-      isSafetyValidationEnabled: await getIsSafetyValidationEnabled(),
-      isValidatingSafeAssetsEnabled: await getIsValidatingSafeAssetsEnabled(),
       isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
       isHashSigningEnabled,
       networkDetails: await getNetworkDetails(),
@@ -1319,6 +1296,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       userNotification,
       assetsLists,
       isNonSSLEnabled,
+      isBlockaidAnnounced,
     };
   };
 
@@ -1373,35 +1351,15 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     await localStore.setItem(CACHED_ASSET_DOMAINS_ID, assetDomainCache);
   };
 
-  const getBlockedDomains = async () => {
+  const getMemoRequiredAccounts = async () => {
     try {
       const resp = await cachedFetch(
-        STELLAR_EXPERT_BLOCKED_DOMAINS_URL,
-        CACHED_BLOCKED_DOMAINS_ID,
+        STELLAR_EXPERT_MEMO_REQUIRED_ACCOUNTS_URL,
+        CACHED_MEMO_REQUIRED_ACCOUNTS_ID,
       );
-      const blockedDomains = (resp?._embedded?.records || []).reduce(
-        (bd: BlockedDomains, obj: { domain: string }) => {
-          const map = bd;
-          map[obj.domain] = true;
-          return map;
-        },
-        {},
-      );
-      return { blockedDomains };
-    } catch (e) {
-      console.error(e);
-      return new Error("Error getting blocked domains");
-    }
-  };
-
-  const getBlockedAccounts = async () => {
-    try {
-      const resp = await cachedFetch(
-        STELLAR_EXPERT_BLOCKED_ACCOUNTS_URL,
-        CACHED_BLOCKED_ACCOUNTS_ID,
-      );
-      const blockedAccounts: BlockedAccount[] = resp?._embedded?.records || [];
-      return { blockedAccounts };
+      const memoRequiredAccounts: MemoRequiredAccount[] =
+        resp?._embedded?.records || [];
+      return { memoRequiredAccounts };
     } catch (e) {
       console.error(e);
       return new Error("Error getting blocked accounts");
@@ -1774,6 +1732,14 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { assetsLists: await getAssetsLists() };
   };
 
+  const saveIsBlockaidAnnounced = async () => {
+    const { isBlockaidAnnounced } = request;
+
+    await localStore.setItem(IS_BLOCKAID_ANNOUNCED_ID, isBlockaidAnnounced);
+
+    return { isBlockaidAnnounced: await getIsBlockaidAnnounced() };
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -1815,17 +1781,17 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.CACHE_ASSET_ICON]: cacheAssetIcon,
     [SERVICE_TYPES.GET_CACHED_ASSET_DOMAIN]: getCachedAssetDomain,
     [SERVICE_TYPES.CACHE_ASSET_DOMAIN]: cacheAssetDomain,
-    [SERVICE_TYPES.GET_BLOCKED_DOMAINS]: getBlockedDomains,
     [SERVICE_TYPES.RESET_EXP_DATA]: resetExperimentalData,
     [SERVICE_TYPES.ADD_TOKEN_ID]: addTokenId,
     [SERVICE_TYPES.GET_TOKEN_IDS]: getTokenIds,
     [SERVICE_TYPES.REMOVE_TOKEN_ID]: removeTokenId,
-    [SERVICE_TYPES.GET_BLOCKED_ACCOUNTS]: getBlockedAccounts,
+    [SERVICE_TYPES.GET_MEMO_REQUIRED_ACCOUNTS]: getMemoRequiredAccounts,
     [SERVICE_TYPES.GET_MIGRATABLE_ACCOUNTS]: getMigratableAccounts,
     [SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE]: getMigratedMnemonicPhrase,
     [SERVICE_TYPES.MIGRATE_ACCOUNTS]: migrateAccounts,
     [SERVICE_TYPES.ADD_ASSETS_LIST]: addAssetsList,
     [SERVICE_TYPES.MODIFY_ASSETS_LIST]: modifyAssetsList,
+    [SERVICE_TYPES.SAVE_IS_BLOCKAID_ANNOUNCED]: saveIsBlockaidAnnounced,
   };
 
   return messageResponder[request.type]();

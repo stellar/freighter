@@ -38,10 +38,12 @@
     button {
       width: 2.5rem;
       height: 2.5rem;
+      border-color: var(--sds-clr-gray-11);
 
       svg {
         width: 1rem;
         height: 1rem;
+        stroke: var(--sds-clr-gray-11);
       }
     }
   }
@@ -73,6 +75,7 @@
   &__assets-button {
     display: flex;
     justify-content: center;
+    margin-top: 1.5rem;
   }
 
   &__fetch-fail {
