@@ -247,7 +247,7 @@ const RouteListener = () => {
         fullscreenTimer = setTimeout(() => {
           dispatch(signOut());
           navigateTo(ROUTES.account, "?timeout=true");
-        }, 1000 * 10);
+        }, 1000 * 60 * 20);
       }
     }
   }, [dispatch, location, settingsState]);
