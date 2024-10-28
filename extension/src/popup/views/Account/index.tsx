@@ -266,7 +266,7 @@ export const Account = () => {
                     variant="primary"
                   >
                     {t(
-                      "Please note you will need to reload this tab to load any account changes that happen outside this session",
+                      "Note that you will need to reload this tab to load any account changes that happen outside this session. For your own safety, please close this window when you are done.",
                     )}
                   </Notification>
                 </div>

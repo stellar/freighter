@@ -12,7 +12,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { POPUP_WIDTH } from "constants/dimensions";
 import { newTabHref } from "helpers/urls";
-import { navigateTo, openTab } from "popup/helpers/navigate";
+import { openTab } from "popup/helpers/navigate";
 
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -22,7 +22,6 @@ import {
   loadAccount,
   publicKeySelector,
   authErrorSelector,
-  signOut,
 } from "popup/ducks/accountServices";
 import {
   loadSettings,
@@ -80,7 +79,6 @@ import { ReviewAuth } from "./views/ReviewAuth";
 import { View } from "./basics/layout/View";
 import { BottomNav } from "./components/BottomNav";
 import { useIsSwap } from "./helpers/useIsSwap";
-import { isFullscreenMode } from "./helpers/isFullscreenMode";
 
 export const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
@@ -225,9 +223,6 @@ const HomeRoute = () => {
   }
 };
 
-const isFullscreenModeEnabled = isFullscreenMode();
-let fullscreenTimer = setTimeout(() => null, 0);
-
 // Broadcast to Redux when the route changes. We don't store location state, but
 // we do use the actions for metrics.
 const RouteListener = () => {
@@ -238,17 +233,6 @@ const RouteListener = () => {
   useEffect(() => {
     if (settingsState === SettingsState.SUCCESS) {
       dispatch(navigate(location));
-
-      if (
-        isFullscreenModeEnabled &&
-        location.pathname !== ROUTES.unlockAccount
-      ) {
-        clearTimeout(fullscreenTimer);
-        fullscreenTimer = setTimeout(() => {
-          dispatch(signOut());
-          navigateTo(ROUTES.account, "?timeout=true");
-        }, 1000 * 60 * 20);
-      }
     }
   }, [dispatch, location, settingsState]);
 

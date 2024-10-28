@@ -3,13 +3,7 @@ import get from "lodash/get";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useHistory } from "react-router-dom";
 import { Field, Form, Formik, FieldProps } from "formik";
-import {
-  Button,
-  Heading,
-  Input,
-  Link,
-  Notification,
-} from "@stellar/design-system";
+import { Button, Heading, Input, Link } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
@@ -58,16 +52,6 @@ export const UnlockAccount = () => {
           <Heading as="h1" size="lg">
             {t("A Stellar wallet for every website")}
           </Heading>
-          {queryParams.includes("timeout=true") && (
-            <Notification
-              title={t(
-                "For your safety, your account was logged out due to inactivity",
-              )}
-              variant="primary"
-            >
-              {t("Please log back in to continue")}
-            </Notification>
-          )}
           <Formik onSubmit={handleSubmit} initialValues={initialValues}>
             {({ dirty, isSubmitting, isValid, errors, touched }) => (
               <Form>
