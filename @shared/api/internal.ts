@@ -79,12 +79,17 @@ export const GetTxStatus: {
 
 export const createAccount = async (
   password: string,
-): Promise<{ publicKey: string; allAccounts: Array<Account> }> => {
+): Promise<{
+  publicKey: string;
+  allAccounts: Array<Account>;
+  hasPrivateKey: boolean;
+}> => {
   let publicKey = "";
   let allAccounts = [] as Array<Account>;
+  let hasPrivateKey = false;
 
   try {
-    ({ allAccounts, publicKey } = await sendMessageToBackground({
+    ({ allAccounts, publicKey, hasPrivateKey } = await sendMessageToBackground({
       password,
       type: SERVICE_TYPES.CREATE_ACCOUNT,
     }));
@@ -92,7 +97,7 @@ export const createAccount = async (
     console.error(e);
   }
 
-  return { allAccounts, publicKey };
+  return { allAccounts, publicKey, hasPrivateKey };
 };
 
 export const fundAccount = async (publicKey: string): Promise<void> => {

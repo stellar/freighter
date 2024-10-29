@@ -120,6 +120,7 @@ describe("Account Creator View", () => {
         Promise.resolve({
           publicKey: "",
           allAccounts: [],
+          hasPrivateKey: false,
         }),
       );
     render(
