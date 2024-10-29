@@ -44,6 +44,7 @@ import {
 } from "popup/helpers/account";
 import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
+import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
@@ -83,6 +84,7 @@ export const Account = () => {
   const [selectedAsset, setSelectedAsset] = useState("");
   const [isLoading, setLoading] = useState(true);
   const isSoroswapEnabled = useIsSoroswapEnabled();
+  const isFullscreenModeEnabled = isFullscreenMode();
 
   const { balances, isFunded, error } = accountBalances;
 
@@ -254,6 +256,18 @@ export const Account = () => {
                     variant="primary"
                   >
                     {userNotification.message}
+                  </Notification>
+                </div>
+              )}
+              {isFullscreenModeEnabled && (
+                <div className="AccountView__fullscreen">
+                  <Notification
+                    title={t("You are in fullscreen mode")}
+                    variant="primary"
+                  >
+                    {t(
+                      "Note that you will need to reload this tab to load any account changes that happen outside this session. For your own safety, please close this window when you are done.",
+                    )}
                   </Notification>
                 </div>
               )}
