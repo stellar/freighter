@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  Button,
   CopyText,
   Icon,
   NavButton,
@@ -34,8 +33,6 @@ import {
   transactionSubmissionSelector,
   resetSubmission,
   resetAccountBalanceStatus,
-  saveAssetSelectType,
-  AssetSelectType,
   getAccountBalances,
   getSoroswapTokens,
 } from "popup/ducks/transactionSubmission";
@@ -47,9 +44,11 @@ import {
 } from "popup/helpers/account";
 import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
+import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
+import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsDropdown";
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
@@ -85,6 +84,7 @@ export const Account = () => {
   const [selectedAsset, setSelectedAsset] = useState("");
   const [isLoading, setLoading] = useState(true);
   const isSoroswapEnabled = useIsSoroswapEnabled();
+  const isFullscreenModeEnabled = isFullscreenMode();
 
   const { balances, isFunded, error } = accountBalances;
 
@@ -180,25 +180,7 @@ export const Account = () => {
             setLoading={setLoading}
           />
           {/* <BlockaidAnnouncement /> */}
-          <View.Content
-            hasNoTopPadding
-            contentFooter={
-              isFunded ? (
-                <div className="AccountView__assets-button">
-                  <Button
-                    size="md"
-                    variant="secondary"
-                    onClick={() => {
-                      dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
-                      navigateTo(ROUTES.manageAssets);
-                    }}
-                  >
-                    {t("Manage Assets")}
-                  </Button>
-                </div>
-              ) : null
-            }
-          >
+          <View.Content hasNoTopPadding>
             <div className="AccountView" data-testid="account-view">
               <div className="AccountView__account-actions">
                 <div className="AccountView__name-key-display">
@@ -219,20 +201,17 @@ export const Account = () => {
                   <div className="AccountView__send-receive-button">
                     <NavButton
                       showBorder
-                      title={t("View public key")}
-                      id="nav-btn-qr"
-                      icon={<Icon.QrCode01 />}
-                      onClick={() => navigateTo(ROUTES.viewPublicKey)}
-                    />
-                  </div>
-                  <div className="AccountView__send-receive-button">
-                    <NavButton
-                      showBorder
                       title={t("Send Payment")}
                       id="nav-btn-send"
                       icon={<Icon.Send01 />}
                       onClick={() => navigateTo(ROUTES.sendPayment)}
                     />
+                  </div>
+                  <div
+                    className="AccountView__send-receive-button"
+                    data-testid="account-options-dropdown"
+                  >
+                    <AccountOptionsDropdown isFunded={!!isFunded} />
                   </div>
                 </div>
               </div>
@@ -277,6 +256,18 @@ export const Account = () => {
                     variant="primary"
                   >
                     {userNotification.message}
+                  </Notification>
+                </div>
+              )}
+              {isFullscreenModeEnabled && (
+                <div className="AccountView__fullscreen">
+                  <Notification
+                    title={t("You are in fullscreen mode")}
+                    variant="primary"
+                  >
+                    {t(
+                      "Note that you will need to reload this tab to load any account changes that happen outside this session. For your own safety, please close this window when you are done.",
+                    )}
                   </Notification>
                 </div>
               )}
