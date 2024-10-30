@@ -3,7 +3,7 @@ import { expect } from "../test-fixtures";
 
 export const PASSWORD = "My-password123";
 
-export const loginAndFund = async ({ page, extensionId }) => {
+export const login = async ({ page, extensionId }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
   await page.getByText("Import Wallet").click();
 
@@ -31,7 +31,10 @@ export const loginAndFund = async ({ page, extensionId }) => {
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 10000,
   });
+};
 
+export const loginAndFund = async ({ page, extensionId }) => {
+  await login({ page, extensionId });
   await expect(page.getByTestId("not-funded")).toBeVisible({
     timeout: 10000,
   });

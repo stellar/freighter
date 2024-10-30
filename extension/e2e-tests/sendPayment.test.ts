@@ -1,6 +1,42 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
-import { loginAndFund, loginToTestAccount, PASSWORD } from "./helpers/login";
+import {
+  login,
+  loginAndFund,
+  loginToTestAccount,
+  PASSWORD,
+} from "./helpers/login";
 import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
+
+test("Swap doesn't throw error when account is unfunded", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await login({ page, extensionId });
+
+  await page.getByTestId("BottomNav-link-swap").click();
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
+    "Swap XLM",
+  );
+});
+test("Send doesn't throw error when account is unfunded", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await login({ page, extensionId });
+  await page.getByTitle("Send Payment").click({ force: true });
+
+  await expect(page.getByText("Send To")).toBeVisible();
+  await page
+    .getByTestId("send-to-input")
+    .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
+  await page.getByText("Continue").click({ force: true });
+
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
+    "Send XLM",
+  );
+});
 
 test("Send XLM payment to G address", async ({ page, extensionId }) => {
   test.slow();
