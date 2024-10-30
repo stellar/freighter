@@ -320,7 +320,7 @@ export const TransactionDetails = ({
     );
 
   const isSourceAssetSuspicious = isAssetSuspicious(
-    accountBalances.balances?.[asset].blockaidData,
+    accountBalances.balances?.[asset]?.blockaidData,
   );
 
   const isSubmitDisabled = isMemoRequired;
@@ -709,7 +709,7 @@ export const TransactionDetails = ({
                   isMemoRequired={isMemoRequired}
                   blockaidData={
                     (isSourceAssetSuspicious
-                      ? accountBalances.balances?.[asset].blockaidData
+                      ? accountBalances.balances?.[asset]?.blockaidData
                       : accountBalances.balances?.[destinationAsset]
                           ?.blockaidData) || defaultBlockaidScanAssetResult
                   }
