@@ -553,6 +553,7 @@ export const SendAmount = ({
                           e.target.selectionStart || 1,
                         );
                       formik.setFieldValue("amount", newAmount);
+                      // dispatch(saveAmount(cleanAmount(formik.values.amount)));
                       runAfterUpdate(() => {
                         input.selectionStart = newCursor;
                         input.selectionEnd = newCursor;
