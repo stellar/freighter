@@ -218,7 +218,7 @@ export const SendAmount = ({
     }
     // check for scam asset
     const isSourceAssetScam = isAssetSuspicious(
-      accountBalances.balances?.[asset].blockaidData,
+      accountBalances.balances?.[asset]?.blockaidData,
     );
     if (isSourceAssetScam) {
       setShowBlockedDomainWarning(true);
@@ -228,7 +228,7 @@ export const SendAmount = ({
         domain: assetDomains[values.asset],
         image: assetIcons[values.asset],
         blockaidData:
-          accountBalances.balances?.[asset].blockaidData ||
+          accountBalances.balances?.[asset]?.blockaidData ||
           defaultBlockaidScanAssetResult,
       });
     } else if (isDestAssetScam) {
@@ -239,7 +239,7 @@ export const SendAmount = ({
         domain: assetDomains[values.destinationAsset],
         image: assetIcons[values.destinationAsset],
         blockaidData:
-          accountBalances.balances?.[destinationAsset].blockaidData ||
+          accountBalances.balances?.[destinationAsset]?.blockaidData ||
           defaultBlockaidScanAssetResult,
       });
     } else {
@@ -588,7 +588,7 @@ export const SendAmount = ({
                         assetCode={parsedSourceAsset.code}
                         issuerKey={parsedSourceAsset.issuer}
                         isSuspicious={isAssetSuspicious(
-                          accountBalances.balances?.[asset].blockaidData,
+                          accountBalances.balances?.[asset]?.blockaidData,
                         )}
                       />
                     )}
@@ -601,7 +601,7 @@ export const SendAmount = ({
                           balance={formik.values.amount}
                           icon=""
                           isSuspicious={isAssetSuspicious(
-                            accountBalances.balances?.[asset].blockaidData,
+                            accountBalances.balances?.[asset]?.blockaidData,
                           )}
                         />
                         <PathPayAssetSelect
