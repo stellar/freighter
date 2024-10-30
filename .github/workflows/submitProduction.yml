@@ -91,7 +91,7 @@ jobs:
           channel: listed
           apiKey: ${{ secrets.AMO_SIGN_KEY }}
           apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
-          timeout: 900000
+          timeout: 0 # this timeout waits for the .xpi to be approved/downloaded, but since we're submitting a zip, this will always fail
       - name: Remove scripts tag
         uses: restackio/update-json-file-action@1e34d747ca044df80b37bc4ef5a9aa41be9dac8f #v2.1
         with:
