@@ -55,7 +55,7 @@ const settingsInitialState: Settings = {
   } as NetworkDetails,
   networksList: DEFAULT_NETWORKS,
   isMemoValidationEnabled: true,
-  isNonSSLEnabled: false,
+  isHideDustEnabled: true,
   isBlockaidAnnounced: false,
   error: "",
 };
@@ -114,13 +114,13 @@ export const saveSettings = createAsyncThunk<
   {
     isDataSharingAllowed: boolean;
     isMemoValidationEnabled: boolean;
-    isNonSSLEnabled: boolean;
+    isHideDustEnabled: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
   "settings/saveSettings",
   async (
-    { isDataSharingAllowed, isMemoValidationEnabled, isNonSSLEnabled },
+    { isDataSharingAllowed, isMemoValidationEnabled, isHideDustEnabled },
     thunkApi,
   ) => {
     let res = {
@@ -129,14 +129,14 @@ export const saveSettings = createAsyncThunk<
       isRpcHealthy: false,
       userNotification: { enabled: false, message: "" },
       settingsState: SettingsState.IDLE,
-      isNonSSLEnabled: false,
+      isHideDustEnabled: true,
     };
 
     try {
       res = await saveSettingsService({
         isDataSharingAllowed,
         isMemoValidationEnabled,
-        isNonSSLEnabled,
+        isHideDustEnabled,
       });
     } catch (e) {
       console.error(e);
@@ -332,6 +332,7 @@ const settingsSlice = createSlice({
         networksList,
         isRpcHealthy,
         isSorobanPublicEnabled,
+        isHideDustEnabled,
       } = action?.payload || {
         ...initialState,
       };
@@ -344,6 +345,7 @@ const settingsSlice = createSlice({
         networksList,
         isRpcHealthy,
         isSorobanPublicEnabled,
+        isHideDustEnabled,
       };
     });
     builder.addCase(saveExperimentalFeatures.pending, (state) => ({
@@ -395,6 +397,7 @@ const settingsSlice = createSlice({
           assetsLists,
           isNonSSLEnabled,
           isBlockaidAnnounced,
+          isHideDustEnabled,
         } = action?.payload || {
           ...initialState,
         };
@@ -414,6 +417,7 @@ const settingsSlice = createSlice({
           assetsLists,
           isNonSSLEnabled,
           isBlockaidAnnounced,
+          isHideDustEnabled,
           settingsState: SettingsState.SUCCESS,
         };
       },

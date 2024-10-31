@@ -81,7 +81,7 @@ export const AssetDetail = ({
     transactionSubmissionSelector,
   );
   const isSuspicious = isAssetSuspicious(
-    balances.balances?.[selectedAsset].blockaidData,
+    balances.balances?.[selectedAsset]?.blockaidData,
   );
 
   const balance = getRawBalance(accountBalances, selectedAsset)!;
@@ -235,7 +235,7 @@ export const AssetDetail = ({
             {isSuspicious && (
               <BlockaidAssetWarning
                 blockaidData={
-                  balances.balances?.[selectedAsset].blockaidData ||
+                  balances.balances?.[selectedAsset]?.blockaidData ||
                   defaultBlockaidScanAssetResult
                 }
               />

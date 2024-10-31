@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { StellarToml } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { ActionStatus, BlockAidScanAssetResult } from "@shared/api/types";
-import { Icon } from "@stellar/design-system";
 
 import { AppDispatch } from "popup/App";
 
@@ -165,77 +164,68 @@ export const ManageAssetRows = ({
       )}
       <div className="ManageAssetRows__scrollbar">
         {header}
-        {assetRows.length ? (
-          <div className="ManageAssetRows__content">
-            {assetRows.map(
-              ({
-                code = "",
-                domain,
-                image = "",
-                issuer = "",
-                name = "",
-                contract = "",
-                isSuspicious,
-              }) => {
-                if (!accountBalances.balances) {
-                  return null;
-                }
-                const isContract = isContractId(contract);
-                const canonicalAsset = getCanonicalFromAsset(code, issuer);
-                const isTrustlineActive = Object.keys(
-                  accountBalances.balances,
-                ).some((balance) => balance === canonicalAsset);
-                const isActionPending =
-                  submitStatus === ActionStatus.PENDING ||
-                  accountBalanceStatus === ActionStatus.PENDING;
-                return (
-                  <div
-                    className="ManageAssetRows__row"
-                    key={canonicalAsset}
-                    data-testid="ManageAssetRow"
-                  >
-                    <ManageAssetRow
-                      code={code}
-                      issuer={issuer}
-                      image={image}
-                      domain={domain}
-                      name={name}
-                      isSuspicious={isSuspicious}
-                    />
-                    <ManageAssetRowButton
-                      code={code}
-                      contract={contract}
-                      issuer={issuer}
-                      image={image}
-                      domain={domain}
-                      isTrustlineActive={isTrustlineActive}
-                      isActionPending={isActionPending}
-                      isContract={isContract}
-                      isVerifiedToken={!!isVerifiedToken}
-                      isVerificationInfoShowing={!!isVerificationInfoShowing}
-                      setNewAssetFlags={setNewAssetFlags}
-                      setSuspiciousAssetData={setSuspiciousAssetData}
-                      setHandleAddToken={setHandleAddToken}
-                      setShowBlockedDomainWarning={setShowBlockedDomainWarning}
-                      assetSubmitting={assetSubmitting}
-                      setAssetSubmitting={setAssetSubmitting}
-                      setShowNewAssetWarning={setShowNewAssetWarning}
-                      setShowUnverifiedWarning={setShowUnverifiedWarning}
-                      recommendedFee={recommendedFee}
-                    />
-                  </div>
-                );
-              },
-            )}
-          </div>
-        ) : (
-          <div className="ManageAssetRows__empty">
-            <div className="EmptyMessage">
-              <Icon.Coins01 />
-              <p>You have no assets</p>
-            </div>
-          </div>
-        )}
+        <div className="ManageAssetRows__content">
+          {assetRows.map(
+            ({
+              code = "",
+              domain,
+              image = "",
+              issuer = "",
+              name = "",
+              contract = "",
+              isSuspicious,
+            }) => {
+              if (!accountBalances.balances) {
+                return null;
+              }
+              const isContract = isContractId(contract);
+              const canonicalAsset = getCanonicalFromAsset(code, issuer);
+              const isTrustlineActive = Object.keys(
+                accountBalances.balances,
+              ).some((balance) => balance === canonicalAsset);
+              const isActionPending =
+                submitStatus === ActionStatus.PENDING ||
+                accountBalanceStatus === ActionStatus.PENDING;
+              return (
+                <div
+                  className="ManageAssetRows__row"
+                  key={canonicalAsset}
+                  data-testid="ManageAssetRow"
+                >
+                  <ManageAssetRow
+                    code={code}
+                    issuer={issuer}
+                    image={image}
+                    domain={domain}
+                    name={name}
+                    isSuspicious={isSuspicious}
+                  />
+                  <ManageAssetRowButton
+                    code={code}
+                    contract={contract}
+                    issuer={issuer}
+                    image={image}
+                    domain={domain}
+                    isTrustlineActive={isTrustlineActive}
+                    isActionPending={isActionPending}
+                    isContract={isContract}
+                    isVerifiedToken={!!isVerifiedToken}
+                    isVerificationInfoShowing={!!isVerificationInfoShowing}
+                    setNewAssetFlags={setNewAssetFlags}
+                    setSuspiciousAssetData={setSuspiciousAssetData}
+                    setHandleAddToken={setHandleAddToken}
+                    setShowBlockedDomainWarning={setShowBlockedDomainWarning}
+                    assetSubmitting={assetSubmitting}
+                    setAssetSubmitting={setAssetSubmitting}
+                    setShowNewAssetWarning={setShowNewAssetWarning}
+                    setShowUnverifiedWarning={setShowUnverifiedWarning}
+                    recommendedFee={recommendedFee}
+                  />
+                </div>
+              );
+            },
+          )}
+        </div>
         {children}
       </div>
       <LoadingBackground

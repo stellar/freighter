@@ -177,3 +177,78 @@ export const mockAccounts = [
     publicKey: "L1",
   },
 ];
+
+export const mockAccountHistory = [
+  {
+    amount: "1.0000000",
+    asset_type: "native",
+    created_at: "2024-10-14T20:35:26Z",
+    from: "G2",
+    id: "5",
+    paging_token: "1916427292381185",
+    source_account: "G2",
+    to: "G1",
+    transaction_attr: {
+      operation_count: 1,
+    },
+    transaction_hash:
+      "0df82e64fe4aedaad771f4b64ceb4ebe33e9baff22c82090a29f671f4bbc1fba",
+    transaction_successful: true,
+    type: "payment",
+    type_i: 1,
+  },
+  {
+    amount: "0.1000000",
+    asset_type: "native",
+    created_at: "2024-10-14T20:35:26Z",
+    from: "G2",
+    id: "4",
+    paging_token: "1916427292381185",
+    source_account: "G2",
+    to: "G1",
+    transaction_attr: {
+      operation_count: 1,
+    },
+    transaction_hash:
+      "0df82e64fe4aedaad771f4b64ceb4ebe33e9baff22c82090a29f671f4bbc1fba",
+    transaction_successful: true,
+    type: "payment",
+    type_i: 1,
+  },
+  {
+    amount: "0.010000",
+    asset_type: "native",
+    created_at: "2024-10-14T20:35:26Z",
+    from: "G2",
+    id: "3",
+    paging_token: "1916427292381185",
+    source_account: "G2",
+    to: "G1",
+    transaction_attr: {
+      operation_count: 1,
+    },
+    transaction_hash:
+      "0df82e64fe4aedaad771f4b64ceb4ebe33e9baff22c82090a29f671f4bbc1fba",
+    transaction_successful: true,
+    type: "payment",
+    type_i: 1,
+  },
+  {
+    amount: "0.100000",
+    asset: "G3:USDC",
+    created_at: "2024-10-14T20:35:26Z",
+    from: "G1",
+    id: "2",
+    paging_token: "1916427292381185",
+    source_account: "G1",
+    to: "G2",
+    transaction_attr: {
+      operation_count: 1,
+    },
+    transaction_hash:
+      "0df82e64fe4aedaad771f4b64ceb4ebe33e9baff22c82090a29f671f4bbc1fba",
+    transaction_successful: true,
+    type: "payment",
+    type_i: 1,
+  },
+];

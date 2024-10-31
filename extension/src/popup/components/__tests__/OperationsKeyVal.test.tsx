@@ -31,7 +31,7 @@ describe("Operations KeyVal", () => {
     });
 
     it("renders create contract v1", async () => {
-      const assetCode = "KHL";
+      const assetCode = "KHL1";
       const assetType = new xdr.AlphaNum4({
         assetCode: Buffer.from(assetCode),
         issuer: Keypair.fromPublicKey(TEST_PUBLIC_KEY).xdrAccountId(),
@@ -69,7 +69,7 @@ describe("Operations KeyVal", () => {
       const issuerValue = issuerLabel.parentNode?.querySelector(
         "[data-testid='OperationKeyVal__value']",
       );
-      expect(issuerValue).toHaveTextContent(TEST_PUBLIC_KEY);
+      expect(issuerValue).toHaveTextContent("GBTY…JZOFCopied");
 
       const execType = screen.getByText("Executable Type");
       const execTypeValue = execType.parentNode?.querySelector(
@@ -141,7 +141,7 @@ describe("Operations KeyVal", () => {
       const issuerValue = issuerLabel.parentNode?.querySelector(
         "[data-testid='OperationKeyVal__value']",
       );
-      expect(issuerValue).toHaveTextContent(TEST_PUBLIC_KEY);
+      expect(issuerValue).toHaveTextContent("GBTY…JZOFCopied");
 
       const execType = screen.getByText("Executable Type");
       const execTypeValue = execType.parentNode?.querySelector(

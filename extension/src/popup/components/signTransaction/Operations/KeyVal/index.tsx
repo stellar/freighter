@@ -595,9 +595,18 @@ export const KeyValueInvokeHostFn = ({
                 />
                 <KeyValueList
                   operationKey={t("Issuer")}
-                  operationValue={StrKey.encodeEd25519PublicKey(
-                    (preimageValue as xdr.AlphaNum12).issuer().ed25519(),
-                  )}
+                  operationValue={
+                    <CopyValue
+                      value={StrKey.encodeEd25519PublicKey(
+                        (preimageValue as xdr.AlphaNum12).issuer().ed25519(),
+                      )}
+                      displayValue={truncateString(
+                        StrKey.encodeEd25519PublicKey(
+                          (preimageValue as xdr.AlphaNum12).issuer().ed25519(),
+                        ),
+                      )}
+                    />
+                  }
                 />
               </>
             ) : null}

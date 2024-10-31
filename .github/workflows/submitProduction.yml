@@ -48,9 +48,6 @@ jobs:
       - run: yarn setup && yarn build:freighter-api && yarn build:extension:production --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{ secrets.SENTRY_KEY }}"
       - name: Install zip
         uses: montudor/action-zip@0852c26906e00f8a315c704958823928d8018b28 #v1.0.0
-      - name: Zip extension build
-        run: zip -qq -r ./build.zip *
-        working-directory: ./extension/build
       - name: Commit files
         run: |
           git config --local user.email "action@github.com"
@@ -73,21 +70,17 @@ jobs:
           body: ${{ github.event.inputs.version }}
           draft: false
           prerelease: false
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: Build for Firefox
+        id: web-ext-build
+        uses: kewisch/action-web-ext@fe10addf5d5e5ba6b78ffde720dd488a27d10e8c #v1
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./extension/build/build.zip
-          asset_name: build-${{ github.event.inputs.version }}.zip
-          asset_content_type: application/zip
+          cmd: build
+          source: ./extension/build
       - name: Submit extension to Firefox
         uses: kewisch/action-web-ext@fe10addf5d5e5ba6b78ffde720dd488a27d10e8c #v1
         with:
           cmd: sign
-          source: ./extension/build/build.zip
+          source: ${{ steps.web-ext-build.outputs.target }}
           channel: listed
           apiKey: ${{ secrets.AMO_SIGN_KEY }}
           apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
@@ -116,6 +109,16 @@ jobs:
       #     client-id: ${{ secrets.EDGE_CLIENT_ID }}
       #     client-secret: ${{ secrets.EDGE_CLIENT_SECRET }}
       #     access-token-url: ${{ secrets.EDGE_ACCESS_TOKEN_URL }}
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./extension/build/build_chrome.zip
+          asset_name: build-${{ github.event.inputs.version }}.zip
+          asset_content_type: application/zip
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@4e5fb42d249be6a45a298f3c9543b111b02f7907 #v2.3.0
         env:

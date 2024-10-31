@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  Button,
   CopyText,
   Icon,
   NavButton,
@@ -33,6 +34,8 @@ import {
   transactionSubmissionSelector,
   resetSubmission,
   resetAccountBalanceStatus,
+  saveAssetSelectType,
+  AssetSelectType,
   getAccountBalances,
   getSoroswapTokens,
 } from "popup/ducks/transactionSubmission";
@@ -180,7 +183,25 @@ export const Account = () => {
             setLoading={setLoading}
           />
           {/* <BlockaidAnnouncement /> */}
-          <View.Content hasNoTopPadding>
+          <View.Content
+            hasNoTopPadding
+            contentFooter={
+              isFunded ? (
+                <div className="AccountView__assets-button">
+                  <Button
+                    size="md"
+                    variant="secondary"
+                    onClick={() => {
+                      dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
+                      navigateTo(ROUTES.manageAssets);
+                    }}
+                  >
+                    {t("Manage Assets")}
+                  </Button>
+                </div>
+              ) : null
+            }
+          >
             <div className="AccountView" data-testid="account-view">
               <div className="AccountView__account-actions">
                 <div className="AccountView__name-key-display">

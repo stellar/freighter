@@ -22,7 +22,12 @@ const userGuidePaths = [
   "makePayment",
   "signXdr",
 ];
-const techGuidePaths = ["usingFreighterWebApp", "usingFreighterBrowser"];
+const techGuidePaths = [
+  "usingFreighterWebApp",
+  "usingFreighterBrowser",
+  "developingForSoroban",
+  "thirdPartyIntegration",
+];
 
 const constructPaths = (paths, basePath) =>
   paths.map((path) => `${basePath}/${path}`);
