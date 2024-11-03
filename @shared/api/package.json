@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@blockaid/client": "^0.28.0",
+    "@blockaid/client": "^0.28.1",
     "@stellar/js-xdr": "^3.1.1",
     "bignumber.js": "^9.1.1",
     "prettier": "^2.0.5",
