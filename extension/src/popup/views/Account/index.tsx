@@ -52,7 +52,7 @@ import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsD
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
-// import { BlockaidAnnouncement } from "popup/components/account/BlockaidAnnouncement";
+import { BlockaidAnnouncement } from "popup/components/account/BlockaidAnnouncement";
 
 import "popup/metrics/authServices";
 
@@ -179,7 +179,7 @@ export const Account = () => {
             publicKey={publicKey}
             setLoading={setLoading}
           />
-          {/* <BlockaidAnnouncement /> */}
+          <BlockaidAnnouncement />
           <View.Content hasNoTopPadding>
             <div className="AccountView" data-testid="account-view">
               <div className="AccountView__account-actions">
