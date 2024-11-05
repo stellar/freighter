@@ -203,7 +203,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       size="md"
       type="button"
       isFullWidth
-      variant="secondary"
+      variant="tertiary"
       onClick={() => {
         setIsNetworkInUse(false);
         setIsNetworkUrlValid(false);

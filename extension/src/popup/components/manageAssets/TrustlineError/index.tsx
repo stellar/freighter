@@ -207,7 +207,7 @@ export const TrustlineError = ({
               <Button
                 size="md"
                 isFullWidth
-                variant="primary"
+                variant="tertiary"
                 onClick={() => {
                   setIsModalShowing(false);
                   if (handleClose) {
