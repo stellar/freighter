@@ -532,7 +532,7 @@ export const TransactionDetails = ({
       <Button
         size="md"
         isFullWidth
-        variant="secondary"
+        variant="tertiary"
         onClick={() =>
           openTab(
             `${getStellarExpertUrl(networkDetails)}/tx/${transactionHash}`,

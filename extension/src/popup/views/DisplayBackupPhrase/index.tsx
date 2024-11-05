@@ -77,7 +77,7 @@ export const DisplayBackupPhrase = () => {
             <Button
               size="md"
               isFullWidth
-              variant="primary"
+              variant="tertiary"
               onClick={() => navigateTo(ROUTES.account)}
             >
               {t("Done")}

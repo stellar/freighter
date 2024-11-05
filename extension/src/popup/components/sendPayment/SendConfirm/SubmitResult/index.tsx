@@ -242,7 +242,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       <View.Footer isInline>
         <Button
           size="md"
-          variant="secondary"
+          variant="tertiary"
           onClick={() => viewDetails()}
           data-testid="SubmitResultDetailsButton"
         >
@@ -250,7 +250,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
         </Button>
         <Button
           size="md"
-          variant="primary"
+          variant="secondary"
           onClick={() => {
             navigateTo(ROUTES.account);
           }}
