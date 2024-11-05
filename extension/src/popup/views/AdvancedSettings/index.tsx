@@ -178,7 +178,7 @@ export const AdvancedSettings = () => {
             </Button>
             <Button
               size="md"
-              variant="secondary"
+              variant="tertiary"
               isFullWidth
               onClick={() => history.goBack()}
             >

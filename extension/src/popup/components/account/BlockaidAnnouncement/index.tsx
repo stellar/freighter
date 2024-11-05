@@ -79,7 +79,7 @@ export const BlockaidAnnouncement = () => {
             <Button
               data-testid="BlockaidAnnouncement__accept"
               size="md"
-              variant="primary"
+              variant="tertiary"
               isFullWidth
               type="button"
               onClick={handleCloseModal}

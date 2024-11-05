@@ -85,7 +85,7 @@ const InvalidAuthEntry = ({
         <View.Footer>
           <Button
             isFullWidth
-            variant="secondary"
+            variant="tertiary"
             size="md"
             onClick={rejectAndClose}
           >

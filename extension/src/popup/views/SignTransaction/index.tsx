@@ -410,7 +410,7 @@ export const SignTransaction = () => {
                   <Button
                     isFullWidth
                     size="md"
-                    variant="secondary"
+                    variant="tertiary"
                     onClick={() => rejectAndClose()}
                   >
                     {t("Reject")}
@@ -421,7 +421,7 @@ export const SignTransaction = () => {
                   <Button
                     isFullWidth
                     size="md"
-                    variant="secondary"
+                    variant="tertiary"
                     onClick={() => rejectAndClose()}
                   >
                     {t("Cancel")}
@@ -429,7 +429,7 @@ export const SignTransaction = () => {
                   {needsReviewAuth ? (
                     <Button
                       disabled={isSubmitDisabled}
-                      variant="tertiary"
+                      variant="secondary"
                       isFullWidth
                       size="md"
                       isLoading={isConfirming}
@@ -452,7 +452,7 @@ export const SignTransaction = () => {
                   ) : (
                     <Button
                       disabled={isSubmitDisabled}
-                      variant="tertiary"
+                      variant="secondary"
                       isFullWidth
                       size="md"
                       isLoading={isConfirming}
