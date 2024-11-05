@@ -10,7 +10,7 @@ import {
   ASSETS_LISTS_ID,
   IS_HASH_SIGNING_ENABLED_ID,
   IS_NON_SSL_ENABLED_ID,
-  // IS_BLOCKAID_ANNOUNCED_ID,
+  IS_BLOCKAID_ANNOUNCED_ID,
   IS_HIDE_DUST_ENABLED_ID,
 } from "constants/localStorageTypes";
 import {
@@ -276,6 +276,17 @@ export const addHideDustIsEnabled = async () => {
     await localStore.setItem(IS_HIDE_DUST_ENABLED_ID, true);
 
     await migrateDataStorageVersion("4.4.0");
+  }
+};
+
+export const addBlockaidAnnouncedIsEnabled = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.5.0")) {
+    await localStore.setItem(IS_BLOCKAID_ANNOUNCED_ID, false);
+
+    await migrateDataStorageVersion("4.5.0");
   }
 };
 
