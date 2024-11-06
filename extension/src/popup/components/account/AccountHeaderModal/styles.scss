@@ -1,12 +1,18 @@
+@use "../../../styles/utils.scss" as *;
+
 .AccountHeaderModal {
   width: calc(100% - 2rem);
-  margin: 0.5rem 1rem;
+  // 848px = 796 + 16 * 2 (padding) + 20 (scrollbar)
+  max-width: pxToRem(848px);
+  margin-top: 0.5rem;
   border-radius: 0.5rem;
   background: var(--sds-clr-gray-01);
   overflow: hidden;
   position: absolute;
   top: 0;
-  left: 0;
+  // center on larger displays
+  left: 50%;
+  transform: translate(-50%, 0);
   z-index: calc(var(--z-index-tooltip) + 1);
   transition: max-height var(--dropdown-animation);
 
