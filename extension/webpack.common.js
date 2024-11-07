@@ -110,7 +110,12 @@ const commonConfig = (
               sourceMap: true,
             },
           },
-          { loader: "sass-loader" },
+          {
+            loader: "sass-loader",
+            options: {
+              api: "modern-compiler",
+            },
+          },
         ],
       },
       {

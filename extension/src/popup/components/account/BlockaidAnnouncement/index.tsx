@@ -36,9 +36,6 @@ export const BlockaidAnnouncement = () => {
         <div className="BlockaidAnnouncement__modal">
           <div className="BlockaidAnnouncement__modal__title">
             <div>{t("Freighter is adding a new layer of protection")}</div>
-            <div className="BlockaidAnnouncement__modal__close">
-              <Icon.XClose onClick={handleCloseModal} />
-            </div>
           </div>
           <div className="BlockaidAnnouncement__modal__image">
             <img src={BlockaidLogo} alt="Blockaid Logo" />
@@ -68,10 +65,10 @@ export const BlockaidAnnouncement = () => {
             <Button
               size="md"
               isFullWidth
-              variant="secondary"
+              variant="tertiary"
               type="button"
               onClick={handleLearnMore}
-              icon={<Icon.Link01 />}
+              icon={<Icon.LinkExternal02 />}
               iconPosition="right"
             >
               {t("Learn more")}
@@ -79,7 +76,7 @@ export const BlockaidAnnouncement = () => {
             <Button
               data-testid="BlockaidAnnouncement__accept"
               size="md"
-              variant="primary"
+              variant="secondary"
               isFullWidth
               type="button"
               onClick={handleCloseModal}

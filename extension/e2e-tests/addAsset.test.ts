@@ -8,8 +8,6 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
 
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Manage Assets").click({ force: true });
-  await page.getByPlaceholder("Enter password").fill(PASSWORD);
-  await page.getByText("Log In").click({ force: true });
   await expect(page.getByText("Your assets")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
@@ -49,8 +47,6 @@ test("Adding Soroban verified token", async ({ page, extensionId }) => {
 
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Manage Assets").click({ force: true });
-  await page.getByPlaceholder("Enter password").fill(PASSWORD);
-  await page.getByText("Log In").click({ force: true });
 
   await expect(page.getByText("Your assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });

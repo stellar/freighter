@@ -76,14 +76,6 @@ test("Send XLM payment to G address", async ({ page, extensionId }) => {
   );
   await page.getByText("Review Send").click({ force: true });
 
-  await expect(page.getByText("Verification")).toBeVisible();
-  await page.getByPlaceholder("Enter password").fill(PASSWORD);
-  await expectPageToHaveScreenshot({
-    page,
-    screenshot: "send-payment-password.png",
-  });
-  await page.getByText("Submit").click({ force: true });
-
   await expect(page.getByText("Confirm Send")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
@@ -128,10 +120,6 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   );
   await page.getByText("Review Send").click();
 
-  await expect(page.getByText("Verification")).toBeVisible();
-  await page.getByPlaceholder("Enter password").fill(PASSWORD);
-  await page.getByText("Submit").click();
-
   await expect(page.getByText("Confirm Send")).toBeVisible({
     timeout: 200000,
   });
@@ -161,8 +149,6 @@ test("Send SAC to C address", async ({ page, extensionId }) => {
   // add USDC asset
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Manage Assets").click({ force: true });
-  await page.getByPlaceholder("Enter password").fill(PASSWORD);
-  await page.getByText("Log In").click({ force: true });
 
   await page.getByText("Add an asset").click({ force: true });
   await page
@@ -257,8 +243,6 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   // add E2E token
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Manage Assets").click({ force: true });
-  await page.getByPlaceholder("Enter password").fill(PASSWORD);
-  await page.getByText("Log In").click({ force: true });
   await expect(page.getByText("Your assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });
   await page.getByText("Add manually").click({ force: true });

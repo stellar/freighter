@@ -142,7 +142,7 @@ export const WarningMessage = ({
         <div className="WarningMessage__children-wrapper">{children}</div>
         <Button
           size="md"
-          variant="secondary"
+          variant="tertiary"
           isFullWidth
           type="button"
           onClick={() =>
@@ -1337,7 +1337,7 @@ export const BlockaidWarningModal = ({
             <Button
               data-testid="BlockaidWarningModal__button"
               size="md"
-              variant="secondary"
+              variant="tertiary"
               isFullWidth
               type="button"
               onClick={() =>
