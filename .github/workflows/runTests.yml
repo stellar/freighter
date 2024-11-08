@@ -19,3 +19,4 @@ jobs:
       - run: yarn build:freighter-api
       - run: yarn build:extension
       - run: yarn test:ci
+      - run: yarn test:e2e
