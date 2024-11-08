@@ -70,12 +70,21 @@ an individual workspace.
 
 ### Useful URLs:
 
+[Configure the backend](https://github.com/stellar/freighter/blob/master/extension/README.md#configure-the-backend)
+
+[Build the extension and install it on your machine](https://github.com/stellar/freighter/blob/master/extension/README.md#build-the-extension-and-install-it-on-your-machine)
+
 [The popup webapp](http://localhost:9000/#/)
 
-[The `getPublicKey` playground](http://localhost:3000/docs/playground/getPublicKey)
+[The `setAllowed` playground](http://localhost:3000/docs/playground/setAllowed)
+
+[The `requestAccess` playground](http://localhost:3000/docs/playground/requestAccess)
+
+[The `getAddress` playground](http://localhost:3000/docs/playground/getAddress)
+
 [The `signTransaction` playground](http://localhost:3000/docs/playground/signTransaction)
 
-It's important to note that these two won't interact with the _dev server_ popup
+It's important to note that these last functions won't interact with the _dev server_ popup
 UI on `localhost:9000` — you'll need to re-install the unpacked extension each
 time you make a change.
 
