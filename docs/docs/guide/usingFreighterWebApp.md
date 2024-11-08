@@ -295,7 +295,7 @@ const response = await server.submitTransaction(transactionToSubmit);
 
 #### `WatchWalletChanges -> new WatchWalletChanges(timeout?: number)`
 
-The class `WatchWalletChanges` provides methods to watch changes from Freighter. To use this class, first instantiate with with an optional `timeout` param to determine how often you want to check for changes in the wallet. The default is `3000` ms.
+The class `WatchWalletChanges` provides methods to watch changes from Freighter. To use this class, first instantiate with an optional `timeout` param to determine how often you want to check for changes in the wallet. The default is `3000` ms.
 
 ##### `WatchWalletChanges.watch(callback: ({ address: string; network: string; networkPassphrase; string }) => void)`
 

@@ -149,7 +149,7 @@ of these are located in the `src/` folder:
    uninstall/reload). It is run in a headless browser, so it has access to all
    Web APIs. It also has accessible dev tools, which can be reached by going to
    `chrome://extensions/` or `about:debugging#/runtime/this-firefox` and
-   clicking `Inspect`
+   clicking `service worker`
 
 3. The `content script` that allows external sites to send and receive messages
    to `background`. Using an event listener, it waits for an application to

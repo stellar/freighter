@@ -36,7 +36,7 @@ import {
 /* For this example, we are assuming the token adheres to the interface documented in SEP-0041 */
 const generateTransferXdr =
   (contractId, serverUrl, publicKey, destination, amount, fee, networkPassphrase, memo) => {
-    // the contract id of the the token
+    // the contract id of the token
     const contract = new Contract(contractId);
 
     const server = new SorobanRpc.Server(serverUrl);
