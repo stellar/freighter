@@ -20,7 +20,7 @@ You will need
 
 ## Build the extension
 
-To simply build a production version of the extension, install the prerequisites then navigate to this root folder in your command line and run these 2 steps:
+To simply build a production version of the extension, install the prerequisites then navigate to this root folder (`/freighter`) in your command line and run these 2 steps:
 
 ```
 yarn install

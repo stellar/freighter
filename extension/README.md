@@ -45,7 +45,7 @@ To install on Chrome:
 
 4. Click `Load Unpacked` and it will open your file system.
 
-5. Navigate to this folder and click the `build` folder. Hit `Select`. You
+5. Navigate to this folder (`/extension`) and click the `build` folder. Hit `Select`. You
    should now see an icon for Freighter in Chrome.
 
 To install on Firefox:
@@ -54,7 +54,7 @@ To install on Firefox:
 
 2. Click `Load Temporary Add-On`
 
-3. Navigate to this folder and open the `build` folder and find `manifest.json`.
+3. Navigate to this folder (`/extension`) and open the `build` folder and find `manifest.json`.
    Hit `Select`. You should now see an icon for Freighter in Firefox
 
 ### Build the extension using production settings
