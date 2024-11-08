@@ -48,7 +48,7 @@ This will start up multiple watching builds in parallel:
 - The docs, serving on `localhost:3000`
 - A dev server with the webapp running in the extension, serving on
   `localhost:9000`
-- The actual built extension, able to be installed in Chrome, in `build/`
+- The actual built extension, able to be installed in Chrome or Firefox, in `build/`
 
 Each of these will build in response to editing their source.
 
