@@ -165,7 +165,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
         title={t("Your assets")}
         customBackIcon={!isManagingAssets ? <Icon.XClose /> : undefined}
       />
-      <View.Content>
+      <View.Content hasNoTopPadding>
         {isLoading ? (
           <div className="ChooseAsset__loader">
             <Loader size="2rem" />
