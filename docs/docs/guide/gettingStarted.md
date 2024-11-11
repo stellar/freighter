@@ -26,7 +26,7 @@ or
 
 #### For browser-based applications
 
-- Install the packaged library via script tag using cdnjs, swapping in the desired version number for `{version}`:
+- Install the packaged library via script tag using cdnjs, swapping in the [desired version number](https://www.npmjs.com/package/@stellar/freighter-api?activeTab=versions) for `{version}`:
 
 _NOTE:_ You must use version `1.1.2` or above
 
