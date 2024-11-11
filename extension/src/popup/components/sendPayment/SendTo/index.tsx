@@ -232,7 +232,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
         title="Send To"
         customBackAction={() => navigateTo(previous)}
       />
-      <View.Content>
+      <View.Content hasNoTopPadding>
         <FormRows>
           <Input
             fieldSize="md"

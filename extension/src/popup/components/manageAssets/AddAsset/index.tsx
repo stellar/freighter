@@ -267,7 +267,7 @@ export const AddAsset = () => {
         >
           <View>
             <SubviewHeader title={t("Add by address")} />
-            <View.Content>
+            <View.Content hasNoTopPadding>
               <FormRows>
                 <div>
                   <Field name="asset">

@@ -384,6 +384,7 @@ const AuthDetail = ({
       } catch (error) {
         console.error(error);
         setCheckingTransfers(false);
+        setLoading(false);
       }
     }
     if (isInvokeContract) {
@@ -438,7 +439,6 @@ const AuthDetail = ({
     _getTokenDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transfersDepKey]);
-
   return (
     <div className="AuthDetail" data-testid="AuthDetail">
       {isLoading || isCheckingTransfers ? (
