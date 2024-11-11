@@ -7,12 +7,14 @@ interface LoadingBackgroundProps {
   isActive: boolean;
   isOpaque?: boolean;
   isClear?: boolean;
+  isFullScreen?: boolean;
 }
 
 export const LoadingBackground = ({
   isActive,
   isOpaque,
   isClear,
+  isFullScreen,
   onClick,
 }: LoadingBackgroundProps) => (
   <div
@@ -21,6 +23,6 @@ export const LoadingBackground = ({
       isActive ? "LoadingBackground--active" : ""
     } ${isOpaque ? "LoadingBackground--isOpaque" : ""} ${
       isClear ? "LoadingBackground--isClear" : ""
-    }`}
+    } ${isFullScreen ? "LoadingBackground--isFullScreen" : ""}`}
   />
 );

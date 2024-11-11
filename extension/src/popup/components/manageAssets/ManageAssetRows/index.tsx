@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { StellarToml } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
+import { createPortal } from "react-dom";
 import { ActionStatus, BlockAidScanAssetResult } from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
@@ -228,11 +229,17 @@ export const ManageAssetRows = ({
         </div>
         {children}
       </div>
-      <LoadingBackground
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
-        onClick={() => {}}
-        isActive={showNewAssetWarning || showBlockedDomainWarning}
-      />
+      {showNewAssetWarning || showBlockedDomainWarning
+        ? createPortal(
+            <LoadingBackground
+              // eslint-disable-next-line @typescript-eslint/no-empty-function
+              onClick={() => {}}
+              isActive
+              isFullScreen
+            />,
+            document.querySelector("#modal-root")!,
+          )
+        : null}
     </>
   );
 };
