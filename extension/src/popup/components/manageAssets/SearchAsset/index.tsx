@@ -223,6 +223,7 @@ export const SearchAsset = () => {
     <View>
       <SubviewHeader title={t("Choose Asset")} />
       <View.Content
+        hasNoTopPadding
         contentFooter={
           <div>
             <Link to={ROUTES.addAsset}>

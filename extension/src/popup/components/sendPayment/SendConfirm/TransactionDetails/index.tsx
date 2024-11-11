@@ -586,7 +586,7 @@ export const TransactionDetails = ({
               ) : null
             }
           />
-          <View.Content>
+          <View.Content hasNoTopPadding>
             {!(isPathPayment || isSwap) && (
               <div className="TransactionDetails__cards">
                 <Card>

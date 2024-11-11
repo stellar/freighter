@@ -69,7 +69,7 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
       >
         {({ setFieldValue, values, isValid, errors }) => (
           <Form className="View__contentAndFooterWrapper">
-            <View.Content>
+            <View.Content hasNoTopPadding>
               <FormRows>
                 <Field name="transactionFee">
                   {({ field }: FieldProps) => (

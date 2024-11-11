@@ -66,7 +66,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
       >
         {({ setFieldValue, values, errors }) => (
           <Form className="View__contentAndFooterWrapper">
-            <View.Content>
+            <View.Content hasNoTopPadding>
               <div className="Slippage__cards">
                 <label className="Slippage--radio-label">
                   <Field

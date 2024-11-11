@@ -271,7 +271,7 @@ export const Settings = ({
         >
           {({ submitForm }) => (
             <Form className="View__contentAndFooterWrapper">
-              <View.Content>
+              <View.Content hasNoTopPadding>
                 <FormRows>
                   <div className="SendSettings__row">
                     <div className="SendSettings__row__left">
