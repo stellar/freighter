@@ -123,7 +123,7 @@ jobs:
         uses: rtCamp/action-slack-notify@4e5fb42d249be6a45a298f3c9543b111b02f7907 #v2.3.0
         env:
           MSG_MINIMAL: true
-          SLACK_CHANNEL: proj-freighter
+          SLACK_CHANNEL: release
           SLACK_COLOR: "#391EDA"
           SLACK_ICON: https://github.com/stellar/freighter/blob/master/docs/static/images/logo.png?size=48
           SLACK_MESSAGE: "https://github.com/stellar/freighter/releases/tag/${{ github.event.inputs.version }}"
