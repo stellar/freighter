@@ -2,7 +2,7 @@
 
 .View {
   --View-header-height: #{pxToRem(60px)};
-  --View-inset-padding-top: 0;
+  --View-inset-padding-top: #{pxToRem(24px)};
   --View-footer-height: #{pxToRem(80px)};
   --View-footer-padding-bottom: 1.5rem;
   --View-footer-gap: 1rem;
