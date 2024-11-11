@@ -61,7 +61,7 @@ export const SendSettingsTxTimeout = ({ previous }: { previous: ROUTES }) => {
       >
         {({ values, isValid, errors }) => (
           <Form className="View__contentAndFooterWrapper">
-            <View.Content>
+            <View.Content hasNoTopPadding>
               <FormRows>
                 <Field name="transactionTimeout">
                   {({ field }: FieldProps) => (

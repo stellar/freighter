@@ -1,3 +1,5 @@
+@use "../../../../styles/utils.scss" as *;
+
 .TransactionDetails {
   display: flex;
   flex-direction: column;
@@ -145,6 +147,7 @@
   border: 1px solid var(--sds-clr-gray-01);
   position: relative;
   margin: -1.5rem 0 1.5rem 0;
+  padding-top: #{pxToRem(24px)};
 
   &__row:first-child {
     border-bottom: 1px solid var(--sds-clr-gray-01);
