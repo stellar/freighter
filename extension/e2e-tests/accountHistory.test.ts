@@ -1,9 +1,9 @@
 import { test, expectPageToHaveScreenshot } from "./test-fixtures";
-import { login } from "./helpers/login";
+import { loginAndFund } from "./helpers/login";
 
 test("View Account History", async ({ page, extensionId }) => {
   test.slow();
-  await login({ page, extensionId });
+  await loginAndFund({ page, extensionId });
 
   await page.getByTestId("BottomNav-link-account-history").click();
   await expectPageToHaveScreenshot({
