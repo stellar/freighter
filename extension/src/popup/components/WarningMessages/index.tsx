@@ -1079,18 +1079,6 @@ export const BlockAidMaliciousLabel = () => {
   );
 };
 
-export const BlockAidBenignLabel = () => {
-  const { t } = useTranslation();
-  return (
-    <div className="ScanLabel ScanBenign" data-testid="blockaid-benign-label">
-      <div className="Icon">
-        <Icon.InfoOctagon className="WarningMessage__icon" />
-      </div>
-      <p className="Message">{t("This site has been scanned and verified")}</p>
-    </div>
-  );
-};
-
 export const BlockAidMissLabel = () => {
   const { t } = useTranslation();
   return (

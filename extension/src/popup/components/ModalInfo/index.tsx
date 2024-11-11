@@ -75,7 +75,7 @@ export const ModalInfo = ({
 
   return (
     <div className={cardClasses}>
-      <Card variant="secondary">
+      <Card>
         <div className="ModalInfo__icon">
           <AssetIcon
             assetIcons={assetIcons}
