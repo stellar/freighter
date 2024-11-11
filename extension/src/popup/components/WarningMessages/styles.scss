@@ -223,8 +223,10 @@
   bottom: 0;
   left: 0;
   display: flex;
+  padding: 0.5rem;
 
   .View__inset {
+    border-radius: 0.5rem;
     padding-bottom: 1rem;
     background: var(--sds-clr-gray-01);
   }
