@@ -243,29 +243,22 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
   hasScrollShadow,
   hasNoTopPadding,
   ...props
-}: ViewInsetProps) => {
-  const customStyle = {
-    // eslint-disable-next-line
-    ...(hasNoTopPadding ? { "--View-inset-padding-top": "0" } : {}),
-  } as React.CSSProperties;
-
-  return (
-    <div
-      className={`View__inset ${addStyleClasses([
-        isWide ? "View__inset--wide" : "",
-        isInline ? "View__inset--inline" : "",
-        alignment === "center" ? "View__inset--align-center" : "",
-        hasVerticalBorder ? "View__inset--vertical-border" : "",
-        hasTopBorder ? "View__inset--top-border" : "",
-        hasScrollShadow ? "View__inset--scroll-shadows" : "",
-      ])}${additionalClassName ? ` ${additionalClassName}` : ""}`}
-      style={customStyle}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-};
+}: ViewInsetProps) => (
+  <div
+    className={`View__inset ${addStyleClasses([
+      isWide ? "View__inset--wide" : "",
+      isInline ? "View__inset--inline" : "",
+      alignment === "center" ? "View__inset--align-center" : "",
+      hasVerticalBorder ? "View__inset--vertical-border" : "",
+      hasTopBorder ? "View__inset--top-border" : "",
+      hasScrollShadow ? "View__inset--scroll-shadows" : "",
+      hasNoTopPadding ? "View__inset--no-top-padding" : "",
+    ])}${additionalClassName ? ` ${additionalClassName}` : ""}`}
+    {...props}
+  >
+    {children}
+  </div>
+);
 
 // View
 interface ViewComponent {
