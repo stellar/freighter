@@ -35,6 +35,10 @@
     align-items: center;
     justify-content: space-between;
 
+    &:last-child {
+      padding-bottom: 4rem;
+    }
+
     &__info {
       color: var(--sds-clr-gray-12);
       flex-grow: 1;
