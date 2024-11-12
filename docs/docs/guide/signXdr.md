@@ -15,6 +15,6 @@ You can serialize an assembled transaction to a base64 encoded xdr string using 
 
 During the transaction/operation review, you can review signing details at different fidelities.
 
-- Summary: The first tab is the summary tab which lays out high level trasnsction/operation details.
+- Summary: The first tab is the summary tab which lays out high level transaction/operation details.
 - Operation Details: The second tab exposes information about the operations in the transaction and optionally walks through the invocation chain and highlights authorizations.
 - Raw XDR: The last tab lets you copy the raw XDR to be used outside of Freighter.

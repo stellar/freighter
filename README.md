@@ -20,9 +20,10 @@ You will need
 
 ## Build the extension
 
-To simply build a production version of the extension, install the prerequisites then navigate to this root folder in your command line and run these 2 steps:
+To simply build a production version of the extension, install the prerequisites then navigate to this root folder (`/freighter`) in your command line and run these 2 steps:
 
 ```
+yarn install
 yarn setup
 ```
 
@@ -47,7 +48,7 @@ This will start up multiple watching builds in parallel:
 - The docs, serving on `localhost:3000`
 - A dev server with the webapp running in the extension, serving on
   `localhost:9000`
-- The actual built extension, able to be installed in Chrome, in `build/`
+- The actual built extension, able to be installed in Chrome or Firefox, in `build/`
 
 Each of these will build in response to editing their source.
 
@@ -81,12 +82,21 @@ That should launch your project in xcode. You should run the project, with a tar
 
 ### Useful URLs:
 
+[Configure the backend](https://github.com/stellar/freighter/blob/master/extension/README.md#configure-the-backend)
+
+[Build the extension and install it on your machine](https://github.com/stellar/freighter/blob/master/extension/README.md#build-the-extension-and-install-it-on-your-machine)
+
 [The popup webapp](http://localhost:9000/#/)
 
-[The `getPublicKey` playground](http://localhost:3000/docs/playground/getPublicKey)
+[The `setAllowed` playground](http://localhost:3000/docs/playground/setAllowed)
+
+[The `requestAccess` playground](http://localhost:3000/docs/playground/requestAccess)
+
+[The `getAddress` playground](http://localhost:3000/docs/playground/getAddress)
+
 [The `signTransaction` playground](http://localhost:3000/docs/playground/signTransaction)
 
-It's important to note that these two won't interact with the _dev server_ popup
+It's important to note that these last functions won't interact with the _dev server_ popup
 UI on `localhost:9000` — you'll need to re-install the unpacked extension each
 time you make a change.
 

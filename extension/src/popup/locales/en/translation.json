@@ -14,6 +14,7 @@
   "Add": "Add",
   "Add address": "Add address",
   "Add an asset": "Add an asset",
+  "Add anyway": "Add anyway",
   "Add asset": "Add asset",
   "Add Asset trustline": "Add Asset trustline",
   "Add Asset Trustline": "Add Asset Trustline",
@@ -200,6 +201,10 @@
   "Got it": "Got it",
   "Hash": "Hash",
   "Help": "Help",
+  "Hide payments smaller than 0": {
+    "1 XLM": "Hide payments smaller than 0.1 XLM"
+  },
+  "Hide small payments": "Hide small payments",
   "High Threshold": "High Threshold",
   "History": "History",
   "Home": "Home",

@@ -11,13 +11,11 @@ We now have an extension installed on our machine and a library to interact with
 
 First import the library in the `<head>` tag of your page.
 
-- Install the packaged library via script tag using cdnjs, swapping in the desired version number for `{version}`
-
-_NOTE:_ You must use version `1.1.2` or above
-
-For example, include the `script` in your `head` tag using the following code:
+Install the packaged library via `script` tag using cdnjs. For example, use the following code to install the [latest freighter api version](https://www.npmjs.com/package/@stellar/freighter-api?activeTab=versions):
 
 <VersionedUrl />
+
+_NOTE:_ You can swap in another desired version number but you must use at least version `1.1.2` or above.
 
 This will expose a global variable called `window.freighterApi` that will contain our library.
 
