@@ -45,8 +45,8 @@ To install on Chrome:
 
 4. Click `Load Unpacked` and it will open your file system.
 
-5. Navigate to this folder and click the `build` folder. Hit `Select`. You
-   should now see an icon for Freighter in Chrome.
+5. Navigate to this folder (`/extension`) and click the `build` folder. Hit
+   `Select`. You should now see an icon for Freighter in Chrome.
 
 To install on Firefox:
 
@@ -54,8 +54,9 @@ To install on Firefox:
 
 2. Click `Load Temporary Add-On`
 
-3. Navigate to this folder and open the `build` folder and find `manifest.json`.
-   Hit `Select`. You should now see an icon for Freighter in Firefox
+3. Navigate to this folder (`/extension`) and open the `build` folder and find
+   `manifest.json`. Hit `Select`. You should now see an icon for Freighter in
+   Firefox
 
 ### Build the extension using production settings
 
@@ -148,7 +149,7 @@ of these are located in the `src/` folder:
    uninstall/reload). It is run in a headless browser, so it has access to all
    Web APIs. It also has accessible dev tools, which can be reached by going to
    `chrome://extensions/` or `about:debugging#/runtime/this-firefox` and
-   clicking `Inspect`
+   clicking `service worker`
 
 3. The `content script` that allows external sites to send and receive messages
    to `background`. Using an event listener, it waits for an application to
