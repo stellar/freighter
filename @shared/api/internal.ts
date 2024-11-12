@@ -111,9 +111,7 @@ export const fundAccount = async (publicKey: string): Promise<void> => {
   }
 };
 
-export const addAccount = async (
-  password: string,
-): Promise<{
+export const addAccount = async (): Promise<{
   publicKey: string;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
@@ -126,7 +124,6 @@ export const addAccount = async (
   try {
     ({ allAccounts, error, publicKey, hasPrivateKey } =
       await sendMessageToBackground({
-        password,
         type: SERVICE_TYPES.ADD_ACCOUNT,
       }));
   } catch (e) {

@@ -120,7 +120,7 @@ export const IntegrationTest = () => {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       runAsserts("fundAccount", () => {});
 
-      res = await addAccount(testPassword);
+      res = await addAccount();
       runAsserts("addAccount", () => {
         assertArray(res.allAccounts);
         assertString(res.publicKey);

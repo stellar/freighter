@@ -456,12 +456,13 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const addAccount = async () => {
-    const { password } = request;
     const mnemonicPhrase = mnemonicPhraseSelector(sessionStore.getState());
 
     if (!mnemonicPhrase) {
       return { error: "Mnemonic phrase not found" };
     }
+
+    const password = passwordSelector(sessionStore.getState()) || "";
 
     const keyID = (await getIsHardwareWalletActive())
       ? await _getNonHwKeyID()

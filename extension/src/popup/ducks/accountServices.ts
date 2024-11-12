@@ -75,9 +75,9 @@ export const fundAccount = createAsyncThunk(
 
 export const addAccount = createAsyncThunk<
   { publicKey: string; allAccounts: Account[]; hasPrivateKey: boolean },
-  string,
+  undefined,
   { rejectValue: ErrorMessage }
->("auth/addAccount", async (password, thunkApi) => {
+>("auth/addAccount", async (_, thunkApi) => {
   let res = {
     publicKey: "",
     allAccounts: [] as Account[],
@@ -85,7 +85,7 @@ export const addAccount = createAsyncThunk<
   };
 
   try {
-    res = await addAccountService(password);
+    res = await addAccountService();
   } catch (e) {
     const message = e instanceof Error ? e.message : JSON.stringify(e);
     console.error("Failed when creating an account: ", message);

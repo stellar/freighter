@@ -76,7 +76,6 @@ describe.skip("regular account flow", () => {
     it("works", async () => {
       const r = {};
       r.type = SERVICE_TYPES.ADD_ACCOUNT;
-      r.password = "test";
 
       await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();
@@ -264,7 +263,6 @@ describe.skip("adding hardware wallets", () => {
     it("works", async () => {
       const r = {};
       r.type = SERVICE_TYPES.ADD_ACCOUNT;
-      r.password = "test";
 
       await popupMessageListener(r, store);
       expect(console.error).not.toHaveBeenCalled();

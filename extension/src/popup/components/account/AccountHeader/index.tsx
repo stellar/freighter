@@ -145,7 +145,7 @@ export const AccountHeader = ({
                   />
                 </div>
                 <span className="AccountHeader__account-list-item__link-copy">
-                  Connect a hardware wallet
+                  {t("Connect a hardware wallet")}
                 </span>
               </Link>
             </li>
