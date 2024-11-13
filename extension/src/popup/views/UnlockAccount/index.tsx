@@ -80,7 +80,7 @@ export const UnlockAccount = () => {
                     <Button
                       size="md"
                       isFullWidth
-                      variant="tertiary"
+                      variant="secondary"
                       type="submit"
                       isLoading={isSubmitting}
                       disabled={!(dirty && isValid)}

@@ -101,7 +101,7 @@ export const GrantAccess = () => {
                 <Button
                   size="md"
                   isFullWidth
-                  variant="secondary"
+                  variant="tertiary"
                   onClick={rejectAndClose}
                 >
                   {t("Cancel")}
@@ -109,7 +109,7 @@ export const GrantAccess = () => {
                 <Button
                   size="md"
                   isFullWidth
-                  variant="tertiary"
+                  variant="secondary"
                   isLoading={isGranting}
                   onClick={() => grantAndClose()}
                 >

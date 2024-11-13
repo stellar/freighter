@@ -134,7 +134,7 @@ export const HardwareSign = ({
       <div className="HardwareSign__wrapper" ref={hardwareConnectRef}>
         <SubviewHeader
           customBackAction={closeOverlay}
-          customBackIcon={<Icon.Close />}
+          customBackIcon={<Icon.XClose />}
           title={`Connect ${walletType}`}
         />
         <div className="HardwareSign__content">

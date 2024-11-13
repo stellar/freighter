@@ -17,7 +17,7 @@
     cursor: pointer;
 
     &__info {
-      color: var(--color-gray-90);
+      color: var(--sds-clr-gray-12);
       flex-grow: 1;
       line-height: 1.5rem;
       &__header {
@@ -37,8 +37,8 @@
   }
 
   &__domain {
-    color: var(--color-gray-60);
-    font-size: var(--font-size-secondary);
+    color: var(--sds-clr-gray-09);
+    font-size: var(--sds-fs-secondary);
     line-height: 1.375rem;
   }
 }

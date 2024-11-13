@@ -305,7 +305,7 @@ export const SignTransaction = () => {
           <div className="SignTransaction__account-not-found">
             <Notification
               variant="warning"
-              icon={<Icon.Warning />}
+              icon={<Icon.InfoOctagon />}
               title={t("Account not available")}
             >
               {t("The application is requesting a specific account")} (
@@ -349,7 +349,7 @@ export const SignTransaction = () => {
             <PunycodedDomain domain={domain} />
             <div className="SignTransaction--connection-request">
               <div className="SignTransaction--connection-request-pill">
-                <Icon.Link />
+                <Icon.ArrowsRight />
                 <p>Transaction Request</p>
               </div>
             </div>
@@ -410,7 +410,7 @@ export const SignTransaction = () => {
                   <Button
                     isFullWidth
                     size="md"
-                    variant="secondary"
+                    variant="tertiary"
                     onClick={() => rejectAndClose()}
                   >
                     {t("Reject")}
@@ -421,7 +421,7 @@ export const SignTransaction = () => {
                   <Button
                     isFullWidth
                     size="md"
-                    variant="secondary"
+                    variant="tertiary"
                     onClick={() => rejectAndClose()}
                   >
                     {t("Cancel")}
@@ -429,7 +429,7 @@ export const SignTransaction = () => {
                   {needsReviewAuth ? (
                     <Button
                       disabled={isSubmitDisabled}
-                      variant="tertiary"
+                      variant="secondary"
                       isFullWidth
                       size="md"
                       isLoading={isConfirming}
@@ -452,7 +452,7 @@ export const SignTransaction = () => {
                   ) : (
                     <Button
                       disabled={isSubmitDisabled}
-                      variant="tertiary"
+                      variant="secondary"
                       isFullWidth
                       size="md"
                       isLoading={isConfirming}

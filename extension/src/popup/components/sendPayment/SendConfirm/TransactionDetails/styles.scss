@@ -1,3 +1,5 @@
+@use "../../../../styles/utils.scss" as *;
+
 .TransactionDetails {
   display: flex;
   flex-direction: column;
@@ -40,7 +42,7 @@
     justify-content: space-between;
 
     &__right {
-      color: var(--color-gray-90);
+      color: var(--sds-clr-gray-12);
       overflow-y: hidden;
 
       &__item {
@@ -65,7 +67,7 @@
 
     &__header {
       display: flex;
-      color: var(--color-gray-90);
+      color: var(--sds-clr-gray-12);
       font-weight: var(--font-weight-medium);
       align-items: center;
       span {
@@ -142,12 +144,13 @@
   display: flex;
   flex-direction: column;
   border-radius: 0.5rem;
-  border: 1px solid var(--color-gray-10);
+  border: 1px solid var(--sds-clr-gray-01);
   position: relative;
   margin: -1.5rem 0 1.5rem 0;
+  padding-top: #{pxToRem(24px)};
 
   &__row:first-child {
-    border-bottom: 1px solid var(--color-gray-10);
+    border-bottom: 1px solid var(--sds-clr-gray-01);
   }
 
   &__row {
@@ -161,12 +164,12 @@
       display: flex;
       align-items: center;
       font-weight: var(--font-weight-medium);
-      color: var(--color-gray-90);
+      color: var(--sds-clr-gray-12);
     }
 
     &__right {
       font-weight: var(--font-weight-medium);
-      color: var(--color-gray-90);
+      color: var(--sds-clr-gray-12);
     }
   }
 
@@ -176,13 +179,13 @@
     left: calc((100% - 2.5rem) / 2);
     width: 2.5rem;
     height: 2.5rem;
-    border: 1px solid var(--color-gray-10);
+    border: 1px solid var(--sds-clr-gray-01);
     border-radius: 2.5rem;
     z-index: 2;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--color-gray-00);
+    background: var(--sds-clr-gray-01);
 
     svg {
       width: 1.5rem;

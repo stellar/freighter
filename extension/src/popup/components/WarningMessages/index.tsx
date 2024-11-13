@@ -124,9 +124,9 @@ export const WarningMessage = ({
       header={header}
       icon={
         variant ? (
-          <Icon.Warning className="WarningMessage__icon" />
+          <Icon.InfoOctagon className="WarningMessage__icon" />
         ) : (
-          <Icon.Info className="WarningMessage__default-icon" />
+          <Icon.InfoCircle className="WarningMessage__default-icon" />
         )
       }
       variant={variant}
@@ -142,7 +142,7 @@ export const WarningMessage = ({
         <div className="WarningMessage__children-wrapper">{children}</div>
         <Button
           size="md"
-          variant="secondary"
+          variant="tertiary"
           isFullWidth
           type="button"
           onClick={() =>
@@ -243,7 +243,7 @@ export const BackupPhraseWarningMessage = () => {
     <div className="WarningMessage__backup">
       <div className="WarningMessage__infoBlock">
         <div className="WarningMessage__header">
-          <Icon.Warning className="WarningMessage__icon" />
+          <Icon.InfoOctagon className="WarningMessage__icon" />
           <div>{t("Important")}</div>
         </div>
 
@@ -763,7 +763,7 @@ export const TokenWarning = ({
               <div className="TokenWarning__domain">{domain}</div>
               <div className="TokenWarning__description">
                 <div className="TokenWarning__description__icon">
-                  <Icon.VerifiedUser />
+                  <Icon.User02 />
                 </div>
                 <div className="TokenWarning__description__text">
                   {t("Add Asset Trustline")}
@@ -894,7 +894,7 @@ export const InvokerAuthWarning = () => {
   return (
     <WarningMessage
       header="Your account is signing this authorization. Proceed with caution."
-      variant={WarningMessageVariant.default}
+      variant={WarningMessageVariant.warning}
     >
       <div className="InvokerAuthWarning">
         <p>
@@ -1072,21 +1072,9 @@ export const BlockAidMaliciousLabel = () => {
       data-testid="blockaid-malicious-label"
     >
       <div className="Icon">
-        <Icon.Warning className="WarningMessage__icon" />
+        <Icon.InfoOctagon className="WarningMessage__icon" />
       </div>
       <p className="Message">{t("This site was flagged as malicious")}</p>
-    </div>
-  );
-};
-
-export const BlockAidBenignLabel = () => {
-  const { t } = useTranslation();
-  return (
-    <div className="ScanLabel ScanBenign" data-testid="blockaid-benign-label">
-      <div className="Icon">
-        <Icon.Warning className="WarningMessage__icon" />
-      </div>
-      <p className="Message">{t("This site has been scanned and verified")}</p>
     </div>
   );
 };
@@ -1096,7 +1084,7 @@ export const BlockAidMissLabel = () => {
   return (
     <div className="ScanLabel ScanMiss" data-testid="blockaid-miss-label">
       <div className="Icon">
-        <Icon.Warning className="WarningMessage__icon" />
+        <Icon.InfoOctagon className="WarningMessage__icon" />
       </div>
       <p className="Message">
         {t("Unable to scan site for malicious behavior")}
@@ -1337,7 +1325,7 @@ export const BlockaidWarningModal = ({
             <Button
               data-testid="BlockaidWarningModal__button"
               size="md"
-              variant="secondary"
+              variant="tertiary"
               isFullWidth
               type="button"
               onClick={() =>

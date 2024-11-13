@@ -86,7 +86,7 @@ const InvalidAddressWarning = () => {
     <div className="SendTo__info-block">
       <Notification
         variant="warning"
-        icon={<Icon.Warning />}
+        icon={<Icon.InfoOctagon />}
         title={t("INVALID STELLAR ADDRESS")}
       >
         {t("Addresses are uppercase and begin with letters “G“, “M“, or “C“.")}
@@ -232,7 +232,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
         title="Send To"
         customBackAction={() => navigateTo(previous)}
       />
-      <View.Content>
+      <View.Content hasNoTopPadding>
         <FormRows>
           <Input
             fieldSize="md"

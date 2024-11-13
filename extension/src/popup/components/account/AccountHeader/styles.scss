@@ -10,13 +10,18 @@
     display: flex;
   }
 
+  &__left {
+    display: flex;
+    flex-direction: column;
+  }
+
   &__network-wrapper {
     cursor: pointer;
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
     justify-content: right;
-    border: 1px solid var(--color-gray-30);
+    border: 1px solid var(--sds-clr-gray-03);
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
   }
@@ -69,7 +74,7 @@
     padding-bottom: 0.5rem;
 
     &__link {
-      color: var(--color-gray-90);
+      color: var(--sds-clr-gray-12);
       display: flex;
       align-items: center;
     }
@@ -98,7 +103,7 @@
   &__list-divider {
     border: none;
     height: 1px;
-    background: var(--color-gray-30);
+    background: var(--sds-clr-gray-03);
     border-radius: 1rem;
     margin-top: 0;
     margin-bottom: 1.2rem;

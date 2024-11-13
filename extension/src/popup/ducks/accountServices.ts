@@ -39,11 +39,15 @@ import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData } from "helpers/metrics";
 
 export const createAccount = createAsyncThunk<
-  { allAccounts: Account[]; publicKey: string },
+  { allAccounts: Account[]; publicKey: string; hasPrivateKey: boolean },
   string,
   { rejectValue: ErrorMessage }
 >("auth/createAccount", async (password, thunkApi) => {
-  let res = { allAccounts: [] as Account[], publicKey: "" };
+  let res = {
+    allAccounts: [] as Account[],
+    publicKey: "",
+    hasPrivateKey: false,
+  };
 
   try {
     res = await createAccountService(password);
@@ -494,15 +498,17 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(createAccount.fulfilled, (state, action) => {
-      const { allAccounts, publicKey } = action.payload || {
+      const { allAccounts, publicKey, hasPrivateKey } = action.payload || {
         publicKey: "",
         allAccounts: [],
+        hasPrivateKey: false,
       };
 
       return {
         ...state,
         allAccounts,
         applicationState: APPLICATION_STATE.PASSWORD_CREATED,
+        hasPrivateKey,
         publicKey,
       };
     });

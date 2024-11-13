@@ -15,6 +15,7 @@
   &__wrapper {
     display: flex;
     flex-direction: column;
+    height: 100%;
   }
 
   &__assets {
@@ -27,7 +28,7 @@
 
   &__button {
     a {
-      color: var(--color-gray-90);
+      color: var(--sds-clr-gray-12);
     }
 
     button {

@@ -24,7 +24,7 @@ const PillCopy = ({ pillType }: PillyCopyProps) => {
   if (pillType === "Transaction") {
     return (
       <>
-        <Icon.Link />
+        <Icon.Link01 />
         <div>{t("Transaction Request")}</div>
       </>
     );
@@ -41,7 +41,7 @@ const PillCopy = ({ pillType }: PillyCopyProps) => {
 
   return (
     <>
-      <Icon.Link />
+      <Icon.Link01 />
       <div>{t("Connection Request")}</div>
     </>
   );
@@ -75,7 +75,7 @@ export const ModalInfo = ({
 
   return (
     <div className={cardClasses}>
-      <Card variant="secondary">
+      <Card>
         <div className="ModalInfo__icon">
           <AssetIcon
             assetIcons={assetIcons}
@@ -119,7 +119,7 @@ export const DomainScanModalInfo = ({
       <PunycodedDomain domain={domain} />
       <div className="ModalInfo--connection-request">
         <div className="ModalInfo--connection-request-pill">
-          <Icon.Link />
+          <Icon.Link01 />
           <p>Connection Request</p>
         </div>
       </div>

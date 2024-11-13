@@ -150,7 +150,10 @@ export const AssetDetail = ({
                 className="AssetDetail__available__icon"
                 onClick={() => setIsModalOpen(true)}
               >
-                <IconButton altText="Available Info" icon={<Icon.Info />} />{" "}
+                <IconButton
+                  altText="Available Info"
+                  icon={<Icon.InfoCircle />}
+                />{" "}
               </span>
             </div>
           ) : null

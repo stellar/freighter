@@ -29,7 +29,7 @@ export const SendSettingsTxTimeout = ({ previous }: { previous: ROUTES }) => {
       <SubviewHeader
         title="Transaction Timeout"
         customBackAction={() => navigateTo(previous)}
-        customBackIcon={<Icon.Close />}
+        customBackIcon={<Icon.XClose />}
         rightButton={
           <InfoTooltip
             infoText={
@@ -61,7 +61,7 @@ export const SendSettingsTxTimeout = ({ previous }: { previous: ROUTES }) => {
       >
         {({ values, isValid, errors }) => (
           <Form className="View__contentAndFooterWrapper">
-            <View.Content>
+            <View.Content hasNoTopPadding>
               <FormRows>
                 <Field name="transactionTimeout">
                   {({ field }: FieldProps) => (

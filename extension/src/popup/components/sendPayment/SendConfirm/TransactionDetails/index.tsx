@@ -532,7 +532,7 @@ export const TransactionDetails = ({
       <Button
         size="md"
         isFullWidth
-        variant="secondary"
+        variant="tertiary"
         onClick={() =>
           openTab(
             `${getStellarExpertUrl(networkDetails)}/tx/${transactionHash}`,
@@ -582,11 +582,11 @@ export const TransactionDetails = ({
             customBackAction={goBack}
             customBackIcon={
               submission.submitStatus === ActionStatus.SUCCESS ? (
-                <Icon.Close />
+                <Icon.XClose />
               ) : null
             }
           />
-          <View.Content>
+          <View.Content hasNoTopPadding>
             {!(isPathPayment || isSwap) && (
               <div className="TransactionDetails__cards">
                 <Card>

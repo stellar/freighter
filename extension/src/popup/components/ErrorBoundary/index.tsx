@@ -70,7 +70,7 @@ export const UnhandledError = ({
         {isOnAccount ? (
           <Button
             isFullWidth
-            variant="secondary"
+            variant="tertiary"
             size="md"
             onClick={window.close}
           >
@@ -79,7 +79,7 @@ export const UnhandledError = ({
         ) : (
           <Button
             isFullWidth
-            variant="secondary"
+            variant="tertiary"
             size="md"
             onClick={() => {
               navigateTo(ROUTES.account);

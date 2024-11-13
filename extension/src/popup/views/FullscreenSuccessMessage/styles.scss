@@ -1,6 +1,6 @@
 .InfoBlock {
   &__header {
-    color: var(--color-gray-90);
+    color: var(--sds-clr-gray-12);
     display: inline-block;
     font-weight: var(--font-weight-bold);
     font-size: 1.1rem;
@@ -41,7 +41,7 @@
     flex-direction: column;
     justify-content: start;
     padding: 0 0 2rem 0;
-    color: var(--color-gray-70);
+    color: var(--sds-clr-gray-12);
     max-width: 31rem;
   }
 
@@ -81,10 +81,10 @@
     margin-bottom: 1.5rem;
 
     p {
-      color: var(--color-gray-70) !important;
+      color: var(--sds-clr-gray-12) !important;
 
       strong {
-        color: var(--color-gray-80) !important;
+        color: var(--sds-clr-gray-12) !important;
       }
     }
   }

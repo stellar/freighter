@@ -28,7 +28,7 @@
     }
 
     &--border {
-      border-bottom: 1px solid var(--color-gray-40);
+      border-bottom: 1px solid var(--sds-clr-gray-04);
     }
 
     &__logo {
@@ -61,7 +61,7 @@
     &__subtitle {
       font-size: pxToRem(14px);
       line-height: pxToRem(22px);
-      color: var(--color-gray-60);
+      color: var(--sds-clr-gray-12);
       margin-top: -1.5rem;
     }
   }
@@ -158,47 +158,29 @@
 
     &--vertical-border {
       @media (min-width: 850px) {
-        border-left: 1px solid var(--color-gray-40);
-        border-right: 1px solid var(--color-gray-40);
+        border-left: 1px solid var(--sds-clr-gray-04);
+        border-right: 1px solid var(--sds-clr-gray-04);
       }
     }
 
     &--top-border {
-      border-top: 1px solid var(--color-gray-40);
+      border-top: 1px solid var(--sds-clr-gray-04);
     }
+  }
+
+  &__inset--no-top-padding {
+    padding-top: 0 !important;
   }
 
   &__inset--scroll-shadows {
     // https://css-tricks.com/books/greatest-css-tricks/scroll-shadows/
-    --bgRGB: 0, 0, 0;
+    --bgRGB: 22, 22, 24;
     --bg: rgb(var(--bgRGB));
     --bgTrans: rgba(var(--bgRGB), 0);
     --shadow: rgba(255, 255, 255, 0.2);
 
     overflow: auto;
-    background:
-        /* Shadow Cover TOP */ linear-gradient(
-          var(--bg) 30%,
-          var(--bgTrans)
-        )
-        center top,
-      /* Shadow Cover BOTTOM */ linear-gradient(var(--bgTrans), var(--bg) 70%)
-        center bottom,
-      /* Shadow TOP */
-        radial-gradient(
-          farthest-side at 50% 0,
-          var(--shadow),
-          rgba(0, 0, 0, 0.1)
-        )
-        center top,
-      /* Shadow BOTTOM */
-        radial-gradient(
-          farthest-side at 50% 100%,
-          var(--shadow),
-          rgba(0, 0, 0, 0.1)
-        )
-        center bottom;
-
+    background: var(--sds-clr-gray-01);
     background-repeat: no-repeat;
     background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
     background-attachment: local, local, scroll, scroll;

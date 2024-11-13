@@ -25,7 +25,6 @@ import IconCube from "popup/assets/icon-cube.svg";
 import "./styles.scss";
 
 interface AccountHeaderProps {
-  // accountDropDownRef: React.RefObject<HTMLDivElement>;
   allAccounts: Account[];
   currentAccountName: string;
   publicKey: string;
@@ -33,7 +32,6 @@ interface AccountHeaderProps {
 }
 
 export const AccountHeader = ({
-  // accountDropDownRef,
   allAccounts,
   currentAccountName,
   publicKey,
@@ -63,7 +61,6 @@ export const AccountHeader = ({
 
   return (
     <View.AppHeader
-      // ref={accountDropDownRef}
       data-testid="account-header"
       leftContent={
         <div
@@ -112,7 +109,7 @@ export const AccountHeader = ({
                 }}
               >
                 <div className="AccountHeader__account-list-item__icon">
-                  <Icon.AddCircle />
+                  <Icon.BookmarkAdd />
                 </div>
                 <span className="AccountHeader__account-list-item__link-copy">
                   {t("Create a new Stellar address")}
@@ -125,7 +122,7 @@ export const AccountHeader = ({
                 to={ROUTES.importAccount}
               >
                 <div className="AccountHeader__account-list-item__icon">
-                  <Icon.Download />
+                  <Icon.Download01 />
                 </div>
                 <span className="AccountHeader__account-list-item__link-copy">
                   {t("Import a Stellar secret key")}
@@ -183,7 +180,7 @@ export const AccountHeader = ({
               to={ROUTES.addNetwork}
             >
               <div className="AccountHeader__account-list-item__icon">
-                <Icon.AddCircle />
+                <Icon.BookmarkAdd />
               </div>
               <span className="AccountHeader__account-list-item__link-copy">
                 {t("Add custom network")}
@@ -196,7 +193,7 @@ export const AccountHeader = ({
               to={ROUTES.networkSettings}
             >
               <div className="AccountHeader__account-list-item__icon">
-                <Icon.Settings />
+                <Icon.Settings01 />
               </div>
               <span className="AccountHeader__account-list-item__link-copy">
                 {t("Manage network settings")}

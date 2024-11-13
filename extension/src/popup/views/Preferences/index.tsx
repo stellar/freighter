@@ -72,6 +72,7 @@ export const Preferences = () => {
                     {t("Validate addresses that require a memo")}
                   </label>
                   <Toggle
+                    fieldSize="md"
                     checked={initialValues.isValidatingMemoValue}
                     customInput={<Field />}
                     id="isValidatingMemoValue"
@@ -94,6 +95,7 @@ export const Preferences = () => {
                     )}
                   </label>
                   <Toggle
+                    fieldSize="md"
                     checked={initialValues.isDataSharingAllowedValue}
                     customInput={<Field />}
                     id="isDataSharingAllowedValue"
@@ -114,6 +116,7 @@ export const Preferences = () => {
                     {t("Hide payments smaller than 0.1 XLM")}
                   </label>
                   <Toggle
+                    fieldSize="md"
                     checked={initialValues.isHideDustEnabledValue}
                     customInput={<Field />}
                     id="isHideDustEnabledValue"

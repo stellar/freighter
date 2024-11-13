@@ -1,7 +1,7 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Button, Icon, Paragraph } from "@stellar/design-system";
+import { Button, Icon, Text } from "@stellar/design-system";
 
 import { AppDispatch } from "popup/App";
 
@@ -36,18 +36,17 @@ export const BlockaidAnnouncement = () => {
         <div className="BlockaidAnnouncement__modal">
           <div className="BlockaidAnnouncement__modal__title">
             <div>{t("Freighter is adding a new layer of protection")}</div>
-            <div className="BlockaidAnnouncement__modal__close">
-              <Icon.Close onClick={handleCloseModal} />
-            </div>
           </div>
           <div className="BlockaidAnnouncement__modal__image">
             <img src={BlockaidLogo} alt="Blockaid Logo" />
           </div>
           <div className="BlockaidAnnouncement__modal__description">
-            <Paragraph size="sm">
+            <Text as="p" size="sm">
               {t("Freighter now uses Blockaid to keep your accounts safer.")}
-            </Paragraph>
-            <Paragraph size="sm">{t("By default it will verify")}:</Paragraph>
+            </Text>
+            <Text as="p" size="sm">
+              {t("By default it will verify")}:
+            </Text>
           </div>
           <div className="BlockaidAnnouncement__modal__list">
             <ul>
@@ -66,10 +65,10 @@ export const BlockaidAnnouncement = () => {
             <Button
               size="md"
               isFullWidth
-              variant="secondary"
+              variant="tertiary"
               type="button"
               onClick={handleLearnMore}
-              icon={<Icon.ExternalLink />}
+              icon={<Icon.LinkExternal02 />}
               iconPosition="right"
             >
               {t("Learn more")}
@@ -77,7 +76,7 @@ export const BlockaidAnnouncement = () => {
             <Button
               data-testid="BlockaidAnnouncement__accept"
               size="md"
-              variant="primary"
+              variant="secondary"
               isFullWidth
               type="button"
               onClick={handleCloseModal}

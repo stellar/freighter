@@ -438,11 +438,19 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       APPLICATION_STATE.PASSWORD_CREATED,
     );
 
+    sessionStore.dispatch(timeoutAccountAccess());
+
+    sessionTimer.startSession();
+    sessionStore.dispatch(
+      setActivePrivateKey({ privateKey: keyPair.privateKey }),
+    );
+
     const currentState = sessionStore.getState();
 
     return {
       allAccounts: allAccountsSelector(currentState),
       publicKey: publicKeySelector(currentState),
+      hasPrivateKey: await hasPrivateKeySelector(currentState),
     };
   };
 
@@ -802,12 +810,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       await localStore.setItem(APPLICATION_ID, applicationState);
 
-      // start the timer now that we have active private key
-      sessionTimer.startSession();
-      sessionStore.dispatch(
-        setActivePrivateKey({ privateKey: keyPair.privateKey }),
-      );
-
       // lets check first couple of accounts and pre-load them if funded on mainnet
       // eslint-disable-next-line no-restricted-syntax
       for (let i = 1; i <= numOfPublicKeysToCheck; i += 1) {
@@ -844,6 +846,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       // let's make the first public key the active one
       await _activatePublicKey({ publicKey: wallet.getPublicKey(0) });
+
+      // start the timer now that we have active private key
+      sessionTimer.startSession();
+      sessionStore.dispatch(
+        setActivePrivateKey({ privateKey: wallet.getSecret(0) }),
+      );
     }
 
     const currentState = sessionStore.getState();

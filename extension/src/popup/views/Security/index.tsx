@@ -17,7 +17,6 @@ import {
 
 import IconAssetList from "popup/assets/icon-security-asset-list.svg?react";
 import IconPhrase from "popup/assets/icon-security-phrase.svg?react";
-import IconConnected from "popup/assets/icon-security-connected.svg?react";
 import IconExperimentalLink from "popup/assets/icon-security-experimental-link.svg?react";
 
 import "./styles.scss";
@@ -36,12 +35,6 @@ export const Security = () => {
       */}
           <ListNavLink href={ROUTES.manageAssetsLists} icon={<IconAssetList />}>
             {t("Asset lists")}
-          </ListNavLink>
-          <ListNavLink
-            href={ROUTES.manageConnectedApps}
-            icon={<IconConnected />}
-          >
-            {t("Manage connected apps")}
           </ListNavLink>
           <ListNavLink href={ROUTES.displayBackupPhrase} icon={<IconPhrase />}>
             {t("Show recovery phrase")}

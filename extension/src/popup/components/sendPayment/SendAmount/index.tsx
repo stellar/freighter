@@ -485,7 +485,7 @@ export const SendAmount = ({
                 onClick={() => navigateTo(ROUTES.sendPaymentType)}
                 className="SendAmount__icon-slider"
               >
-                <Icon.MoreHoriz />
+                <Icon.Expand01 />
               </button>
             )
           }

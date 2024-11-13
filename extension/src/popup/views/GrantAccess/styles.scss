@@ -11,7 +11,16 @@
     border-radius: 7px;
     border: 1px solid;
     margin-top: 10px;
-    border-color: var(--color-gray-40);
+    border-color: var(--sds-clr-gray-06);
+  }
+
+  &__loader {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
   }
 
   &__loader {
