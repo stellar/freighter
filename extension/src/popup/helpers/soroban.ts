@@ -444,7 +444,7 @@ const isInvocationArg = (
   invocation: InvocationArgs | undefined,
 ): invocation is InvocationArgs => !!invocation;
 
-function getInvocationArgs(
+export function getInvocationArgs(
   invocation: xdr.SorobanAuthorizedInvocation,
 ): InvocationArgs | undefined {
   const fn = invocation.function();
@@ -465,7 +465,10 @@ function getInvocationArgs(
     // sorobanAuthorizedFunctionTypeCreateContractHostFn
     case 2:
     case 1: {
-      const _invocation = fn.createContractHostFn();
+      const _invocation =
+        fn.switch().value === 2
+          ? fn.createContractV2HostFn()
+          : fn.createContractHostFn();
       const [exec, preimage] = [
         _invocation.executable(),
         _invocation.contractIdPreimage(),
