@@ -500,7 +500,10 @@ const AuthDetail = ({
           ))}
           {createWasms.map((detail) => (
             <React.Fragment key={detail.hash}>
-              <div className="AuthDetail__TitleRow">
+              <div
+                className="AuthDetail__TitleRow"
+                data-testid="AuthDetail__createWasmInvocation"
+              >
                 <Icon.CodeSnippet01 />
                 <h5>Contract Creation</h5>
               </div>
