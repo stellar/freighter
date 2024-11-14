@@ -351,10 +351,12 @@ const AuthDetail = ({
     async function getIsToken() {
       try {
         const transfers = [];
-        const isToken = await getIsTokenSpec({
-          contractId: rootJson.args.source,
-          networkDetails,
-        });
+        const isToken = !rootJson.args.source
+          ? false
+          : await getIsTokenSpec({
+              contractId: rootJson.args.source,
+              networkDetails,
+            });
         if (isToken && rootJson.args.function === "transfer") {
           transfers.push({
             contractId: rootJson.args.source as string,
@@ -366,10 +368,12 @@ const AuthDetail = ({
         // check for sub transfers
         // eslint-disable-next-line no-restricted-syntax
         for (const subInvocation of rootJson.invocations) {
-          const isSubInvokeToken = await getIsTokenSpec({
-            contractId: subInvocation.args.source,
-            networkDetails,
-          });
+          const isSubInvokeToken = !subInvocation.args.source
+            ? false
+            : await getIsTokenSpec({
+                contractId: subInvocation.args.source,
+                networkDetails,
+              });
           if (isSubInvokeToken && subInvocation.args.function === "transfer") {
             transfers.push({
               contractId: subInvocation.args.source as string,
@@ -381,6 +385,7 @@ const AuthDetail = ({
         }
         setAuthTransfers(transfers);
         setCheckingTransfers(false);
+        setLoading(false);
       } catch (error) {
         console.error(error);
         setCheckingTransfers(false);
@@ -391,6 +396,7 @@ const AuthDetail = ({
       getIsToken();
     } else {
       setCheckingTransfers(false);
+      setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInvokeContract, rootJsonDepKey]);
@@ -439,6 +445,7 @@ const AuthDetail = ({
     _getTokenDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transfersDepKey]);
+
   return (
     <div className="AuthDetail" data-testid="AuthDetail">
       {isLoading || isCheckingTransfers ? (

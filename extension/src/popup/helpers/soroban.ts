@@ -252,8 +252,9 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
     }
 
     // sorobanAuthorizedFunctionTypeCreateContractHostFn
+    case 2:
     case 1: {
-      const _inner = inner as xdr.CreateContractArgs;
+      const _inner = inner as xdr.CreateContractArgs | xdr.CreateContractArgsV2;
       output.type = "create";
       output.args = {} as {
         type: string;
@@ -291,6 +292,11 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
             hash: exec.wasmHash().toString("hex"),
             address: Address.fromScAddress(details.address()).toString(),
           };
+          // create contract V2
+          if (fn.switch().value === 2) {
+            const v2Args = _inner as xdr.CreateContractArgsV2;
+            output.args.constructorArgs = v2Args.constructorArgs();
+          }
           break;
         }
 
@@ -300,6 +306,11 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
           output.args.asset = Asset.fromOperation(
             preimage.fromAsset(),
           ).toString();
+          // create contract V2
+          if (fn.switch().value === 2) {
+            const v2Args = _inner as xdr.CreateContractArgsV2;
+            output.args.constructorArgs = v2Args.constructorArgs();
+          }
           break;
 
         default:
@@ -436,6 +447,7 @@ export interface FnArgsCreateWasm {
 export interface FnArgsCreateSac {
   type: "sac";
   asset: string;
+  args?: xdr.ScVal[];
 }
 
 type InvocationArgs = FnArgsInvoke | FnArgsCreateWasm | FnArgsCreateSac;
@@ -496,11 +508,20 @@ export function getInvocationArgs(
         }
 
         // contractExecutableStellarAsset
-        case 1:
-          return {
+        case 1: {
+          const sacDetails = {
             type: "sac",
             asset: Asset.fromOperation(preimage.fromAsset()).toString(),
-          };
+          } as FnArgsCreateSac;
+
+          if (fn.switch().value === 2) {
+            sacDetails.args = (
+              _invocation as xdr.CreateContractArgsV2
+            ).constructorArgs();
+          }
+
+          return sacDetails;
+        }
 
         default:
           throw new Error(`unknown creation type: ${JSON.stringify(exec)}`);
