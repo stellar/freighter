@@ -52,9 +52,11 @@ describe("getInvocationArgs", () => {
       subInvocations: [],
     });
     const invocationArgs = getInvocationArgs(authorizedInvocation);
+    // console.log(invocationArgs);
     expect(invocationArgs).toEqual({
       type: "sac",
       asset: `${assetCode}:${TEST_PUBLIC_KEY}`,
+      args: args.constructorArgs(),
     });
   });
 });

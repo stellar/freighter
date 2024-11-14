@@ -537,6 +537,7 @@ const AuthDetail = ({
                   operationKey={t("Asset")}
                   operationValue={truncateString(detail.asset)}
                 />
+                {detail.args && <KeyValueInvokeHostFnArgs args={detail.args} />}
               </div>
             </React.Fragment>
           ))}
