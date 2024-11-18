@@ -456,7 +456,13 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const addAccount = async () => {
-    const { password } = request;
+    let password = request.password;
+    // in case a password is not provided, let's try using the value saved
+    // in current session store
+    if (!password) {
+      password = passwordSelector(sessionStore.getState()) || "";
+    }
+
     const mnemonicPhrase = mnemonicPhraseSelector(sessionStore.getState());
 
     if (!mnemonicPhrase) {

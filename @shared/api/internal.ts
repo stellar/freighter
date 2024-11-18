@@ -112,7 +112,7 @@ export const fundAccount = async (publicKey: string): Promise<void> => {
 };
 
 export const addAccount = async (
-  password: string,
+  password: string = "",
 ): Promise<{
   publicKey: string;
   allAccounts: Array<Account>;
