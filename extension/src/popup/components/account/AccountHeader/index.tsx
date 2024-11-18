@@ -65,6 +65,7 @@ export const AccountHeader = ({
       leftContent={
         <div
           className="AccountHeader__icon-btn"
+          data-testid="AccountHeader__icon-btn"
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         >
           <AccountListIdenticon
