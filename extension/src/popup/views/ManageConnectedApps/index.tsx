@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from "react-redux";
 
 import { saveAllowList, settingsSelector } from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { View } from "popup/basics/layout/View";
 import { RemoveButton } from "popup/basics/buttons/RemoveButton";
 
@@ -44,7 +45,7 @@ export const ManageConnectedApps = () => {
                         className="ManageConnectedApps__row"
                         key={allowedDomain}
                       >
-                        <div>{allowedDomain}</div>
+                        <PunycodedDomain domain={allowedDomain} isRow />
                         <RemoveButton
                           onClick={() => handleRemove(allowedDomain)}
                         />
