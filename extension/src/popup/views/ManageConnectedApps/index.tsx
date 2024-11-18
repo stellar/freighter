@@ -1,18 +1,17 @@
 import React from "react";
-
-import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { PillButton } from "popup/basics/buttons/PillButton";
+import { useSelector, useDispatch } from "react-redux";
 
 import { saveAllowList, settingsSelector } from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
+import { RemoveButton } from "popup/basics/buttons/RemoveButton";
 
 import "./styles.scss";
 
 export const ManageConnectedApps = () => {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const { allowList } = useSelector(settingsSelector);
 
   const handleRemove = (domainToRemove: string) => {
@@ -27,7 +26,7 @@ export const ManageConnectedApps = () => {
 
   return (
     <React.Fragment>
-      <SubviewHeader title="Manage Connected Apps" />
+      <SubviewHeader title={t("Connected apps")} />
       <View.Content>
         <div className="ManageConnectedApps">
           {allowList.length ? (
@@ -41,9 +40,9 @@ export const ManageConnectedApps = () => {
                         key={allowedDomain}
                       >
                         <div>{allowedDomain}</div>
-                        <PillButton onClick={() => handleRemove(allowedDomain)}>
-                          {t("Remove")}
-                        </PillButton>
+                        <RemoveButton
+                          onClick={() => handleRemove(allowedDomain)}
+                        />
                       </div>
                     ),
                 )}
@@ -51,7 +50,7 @@ export const ManageConnectedApps = () => {
             </div>
           ) : (
             <div className="ManageConnectedApps__empty">
-              No connected apps found
+              {t("No connected apps found")}
             </div>
           )}
         </div>
