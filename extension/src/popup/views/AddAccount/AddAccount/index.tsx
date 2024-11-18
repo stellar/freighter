@@ -88,7 +88,7 @@ export const AddAccount = () => {
   // Ask for user password in case it's not saved in current session store
   return (
     <React.Fragment>
-      <SubviewHeader title={t("Add a new Stellar address")} />
+      <SubviewHeader title={t("Enter Password")} />
       <Formik initialValues={initialValues} onSubmit={handleEnterPassword}>
         {({ dirty, isSubmitting, isValid, errors, touched }) => (
           <Form className="View__contentAndFooterWrapper">
@@ -123,7 +123,7 @@ export const AddAccount = () => {
                 isLoading={isSubmitting}
                 type="submit"
               >
-                {t("Add New Address")}
+                {t("Create New Address")}
               </Button>
             </View.Footer>
           </Form>
