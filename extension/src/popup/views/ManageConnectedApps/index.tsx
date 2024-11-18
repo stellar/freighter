@@ -1,3 +1,4 @@
+import { Button } from "@stellar/design-system";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
@@ -24,6 +25,10 @@ export const ManageConnectedApps = () => {
     );
   };
 
+  const handleRemoveAll = () => {
+    dispatch(saveAllowList({ allowList: [] }));
+  };
+
   return (
     <React.Fragment>
       <SubviewHeader title={t("Connected apps")} />
@@ -31,7 +36,7 @@ export const ManageConnectedApps = () => {
         <div className="ManageConnectedApps">
           {allowList.length ? (
             <div className="ManageConnectedApps__wrapper">
-              <div className="ManageConnectedApps__content">
+              <div className="ManageConnectedApps__list">
                 {allowList.map(
                   (allowedDomain) =>
                     allowedDomain && (
@@ -47,6 +52,15 @@ export const ManageConnectedApps = () => {
                     ),
                 )}
               </div>
+
+              <Button
+                size="md"
+                variant="error"
+                isFullWidth
+                onClick={handleRemoveAll}
+              >
+                {t("Disconnect all")}
+              </Button>
             </div>
           ) : (
             <div className="ManageConnectedApps__empty">
