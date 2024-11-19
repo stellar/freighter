@@ -12,8 +12,6 @@ import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { navigateTo } from "popup/helpers/navigate";
-import { Loading } from "popup/components/Loading";
-import { AppError } from "popup/components/AppError";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   addAccount,
@@ -74,15 +72,9 @@ export const AddAccount = () => {
   );
 
   // No need to ask for password if it's already stored, so let's just briefly
-  // display a loading screen while user is being redirected to next screen
-  if (hasPrivateKey) {
-    return (
-      <React.Fragment>
-        <SubviewHeader title="" />
-        {!authError && <Loading />}
-        {authError && <AppError>{authError}</AppError>}
-      </React.Fragment>
-    );
+  // wait until user is navigated to the next screen
+  if (hasPrivateKey && !authError) {
+    return null;
   }
 
   // Ask for user password in case it's not saved in current session store
