@@ -145,6 +145,7 @@
   "Different source and destination assets": "Different source and destination assets",
   "digits after the decimal allowed": "digits after the decimal allowed",
   "Disabled": "Disabled",
+  "Disconnect all": "Disconnect all",
   "Done": "Done",
   "Double check the domain name": {
     " If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct": "Double check the domain name. If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct."
@@ -321,6 +322,7 @@
   "New asset": "New asset",
   "New password": "New password",
   "Next": "Next",
+  "No connected apps found": "No connected apps found",
   "no path found": "no path found",
   "No transactions to show": "No transactions to show",
   "None": "None",
