@@ -77,7 +77,7 @@ export const addAccount = createAsyncThunk<
   { publicKey: string; allAccounts: Account[]; hasPrivateKey: boolean },
   string,
   { rejectValue: ErrorMessage }
->("auth/addAccount", async (password, thunkApi) => {
+>("auth/addAccount", async (password = "", thunkApi) => {
   let res = {
     publicKey: "",
     allAccounts: [] as Account[],
