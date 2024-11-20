@@ -2,6 +2,8 @@ name: Run Tests
 env:
   INDEXER_URL: ${{ secrets.INDEXER_URL }}
 on: [pull_request]
+concurrency:
+  group: ${{ github.workflow }}
 jobs:
   test-ci:
     name: test
