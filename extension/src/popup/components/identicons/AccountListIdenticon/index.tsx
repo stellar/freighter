@@ -32,7 +32,9 @@ export const AccountListIdenticon = ({
   const shortPublicKey = truncatedPublicKey(publicKey);
 
   const handleMakeAccountActive = () => {
-    if (setLoading) {
+    // If this account is already active (selected) we don't need to load any
+    // more stuff, so let's just collapse the dropdown in this case
+    if (!active && setLoading) {
       setLoading(true);
     }
 
