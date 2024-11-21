@@ -1496,6 +1496,33 @@ export const simulateTokenTransfer = async (args: {
   };
 };
 
+export const simulateTransaction = async (args: {
+  xdr: string;
+  networkDetails: NetworkDetails;
+}) => {
+  const { xdr, networkDetails } = args;
+  const options = {
+    method: "POST",
+    headers: {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      xdr,
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      network_url: networkDetails.sorobanRpcUrl,
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      network_passphrase: networkDetails.networkPassphrase,
+    }),
+  };
+  const res = await fetch(`${INDEXER_URL}/simulate-tx`, options);
+  const response = await res.json();
+  return {
+    ok: res.ok,
+    response,
+  };
+};
+
 export const saveIsBlockaidAnnounced = async ({
   isBlockaidAnnounced,
 }: {
