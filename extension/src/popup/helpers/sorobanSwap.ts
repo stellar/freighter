@@ -10,9 +10,9 @@ import {
 import BigNumber from "bignumber.js";
 
 import { NetworkDetails } from "@shared/constants/stellar";
-import { getSdk } from "@shared/helpers/stellar";
+import { getSdk, isCustomNetwork } from "@shared/helpers/stellar";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
-import { getTokenDetails } from "@shared/api/internal";
+import { getTokenDetails, simulateTransaction } from "@shared/api/internal";
 import { SoroswapToken } from "@shared/api/types";
 import { buildSorobanServer } from "@shared/helpers/soroban/server";
 import { isTestnet, xlmToStroop } from "helpers/stellar";
@@ -290,26 +290,42 @@ export const buildAndSimulateSoroswapTx = async ({
   }
   const builtTx = tx.build();
 
-  // Now we can simulate and see if we have any issues
-  const simulationTransaction = await sorobanServer.simulateTransaction(
-    builtTx,
-  );
+  if (isCustomNetwork(networkDetails)) {
+    // Now we can simulate and see if we have any issues
+    const simulationTransaction = await sorobanServer.simulateTransaction(
+      builtTx,
+    );
 
-  // If the simulation response is valid, we can prepare the transaction to be submitted to the network
-  // This is the transaction the user will sign and then submit to complete the swap
-  const preparedTransaction = Sdk.SorobanRpc.assembleTransaction(
-    builtTx,
-    simulationTransaction,
-  )
-    .build()
-    .toXDR();
+    // If the simulation response is valid, we can prepare the transaction to be submitted to the network
+    // This is the transaction the user will sign and then submit to complete the swap
+    const preparedTransaction = Sdk.SorobanRpc.assembleTransaction(
+      builtTx,
+      simulationTransaction,
+    )
+      .build()
+      .toXDR();
 
-  if (Sdk.SorobanRpc.Api.isSimulationError(simulationTransaction)) {
-    throw new Error(simulationTransaction.error);
+    if (Sdk.SorobanRpc.Api.isSimulationError(simulationTransaction)) {
+      throw new Error(simulationTransaction.error);
+    }
+
+    return {
+      simulationTransaction,
+      preparedTransaction,
+    };
+  }
+
+  const { ok, response } = await simulateTransaction({
+    xdr: builtTx.toXDR(),
+    networkDetails,
+  });
+
+  if (!ok) {
+    throw new Error(response as string);
   }
 
   return {
-    simulationTransaction,
-    preparedTransaction,
+    preparedTransaction: response.preparedTransaction,
+    simulationTransaction: response.simulationResponse,
   };
 };
