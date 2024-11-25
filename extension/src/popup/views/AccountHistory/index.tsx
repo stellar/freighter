@@ -163,8 +163,6 @@ export const AccountHistory = () => {
     return <TransactionDetail {...detailViewProps} />;
   }
 
-  console.log(getHistoryState);
-
   return showLoader ? (
     <Loading />
   ) : (
