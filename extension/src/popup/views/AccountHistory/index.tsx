@@ -163,9 +163,11 @@ export const AccountHistory = () => {
     return <TransactionDetail {...detailViewProps} />;
   }
 
-  return showLoader ? (
-    <Loading />
-  ) : (
+  if (showLoader) {
+    return <Loading />;
+  }
+
+  return (
     <View.Content>
       <div className="AccountHistory" data-testid="AccountHistory">
         <header className="AccountHistory__header">{t("Transactions")}</header>
