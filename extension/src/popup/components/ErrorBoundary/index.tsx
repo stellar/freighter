@@ -5,8 +5,6 @@ import { useTranslation } from "react-i18next";
 
 import IconFail from "popup/assets/icon-fail.svg";
 import { Button } from "@stellar/design-system";
-import { navigateTo } from "popup/helpers/navigate";
-import { ROUTES } from "popup/constants/routes";
 
 import "./styles.scss";
 
@@ -51,10 +49,8 @@ export const UnhandledError = ({
   errorString: string;
 }) => {
   const { t } = useTranslation();
-  // expected to work outside of <Router />
-  const isOnAccount = window.location.hash === "#/account";
   return (
-    <React.Fragment>
+    <div className="UnexpectedError">
       <View.AppHeader pageTitle={t("Error")} />
       <View.Content>
         <div className="UnexpectedError__content">
@@ -67,28 +63,19 @@ export const UnhandledError = ({
         <div className="UnexpectedError__error-string">{errorString}</div>
       </View.Content>
       <View.Footer>
-        {isOnAccount ? (
-          <Button
-            isFullWidth
-            variant="tertiary"
-            size="md"
-            onClick={window.close}
-          >
-            {t("Close")}
-          </Button>
-        ) : (
-          <Button
-            isFullWidth
-            variant="tertiary"
-            size="md"
-            onClick={() => {
-              navigateTo(ROUTES.account);
-            }}
-          >
-            {t("Got it")}
-          </Button>
-        )}
+        <Button
+          isFullWidth
+          variant="tertiary"
+          size="md"
+          onClick={() => {
+            // https://stackoverflow.com/questions/57854/how-can-i-close-a-browser-window-without-receiving-the-do-you-want-to-close-thi
+            window.open("", "_self", "");
+            window.close();
+          }}
+        >
+          {t("Close")}
+        </Button>
       </View.Footer>
-    </React.Fragment>
+    </div>
   );
 };
