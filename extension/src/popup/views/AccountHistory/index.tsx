@@ -30,7 +30,7 @@ import {
   TransactionDetailProps,
 } from "popup/components/accountHistory/TransactionDetail";
 import { View } from "popup/basics/layout/View";
-import { RequestState, useGetHistory } from "helpers/hooks/use-get-history";
+import { RequestState, useGetHistory } from "helpers/hooks/useGetHistory";
 
 import "./styles.scss";
 import { Loading } from "popup/components/Loading";
