@@ -157,7 +157,6 @@ export const AccountHistory = () => {
   const showLoader =
     getHistoryState.state === RequestState.IDLE ||
     getHistoryState.state === RequestState.LOADING;
-  const hasEmptyHistory = !showLoader || !getHistoryState.data;
 
   if (isDetailViewShowing) {
     return <TransactionDetail {...detailViewProps} />;
@@ -166,6 +165,8 @@ export const AccountHistory = () => {
   if (showLoader) {
     return <Loading />;
   }
+
+  const hasEmptyHistory = !getHistoryState?.data?.length;
 
   return (
     <View.Content>
