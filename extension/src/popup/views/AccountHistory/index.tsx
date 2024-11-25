@@ -154,7 +154,7 @@ export const AccountHistory = () => {
     isHideDustEnabled,
   ]);
 
-  const showLoader =
+  const isLoaderShowing =
     getHistoryState.state === RequestState.IDLE ||
     getHistoryState.state === RequestState.LOADING;
 
@@ -162,7 +162,7 @@ export const AccountHistory = () => {
     return <TransactionDetail {...detailViewProps} />;
   }
 
-  if (showLoader) {
+  if (isLoaderShowing) {
     return <Loading />;
   }
 
