@@ -1,0 +1,81 @@
+@use "../../styles/utils.scss" as *;
+
+.MnemonicPhrase {
+  &__view {
+    &__wrapper {
+      display: flex;
+      height: 100%;
+      align-items: center;
+    }
+  }
+
+  &__modal {
+    &__text {
+      &--highlight {
+        color: var(--sds-clr-gray-12);
+      }
+    }
+
+    &__rows {
+      display: flex;
+      flex-direction: column;
+      gap: #{pxToRem(12px)};
+      margin-bottom: #{pxToRem(32px)};
+    }
+
+    &__row {
+      display: flex;
+      gap: #{pxToRem(12px)};
+
+      &:nth-child(1) {
+        svg {
+          stroke: var(--sds-clr-lime-09);
+        }
+      }
+
+      &:nth-child(2) {
+        svg {
+          stroke: var(--sds-clr-gold-09);
+        }
+      }
+
+      &:nth-child(3) {
+        svg {
+          stroke: var(--sds-clr-pink-09);
+        }
+      }
+
+      &:nth-child(4) {
+        svg {
+          stroke: var(--sds-clr-navy-09);
+        }
+      }
+
+      &__icon {
+        align-items: center;
+        background: var(--sds-clr-gray-01);
+        border-radius: #{pxToRem(100px)};
+        border: 1px solid var(--sds-clr-gray-06);
+        display: flex;
+        height: #{pxToRem(32px)};
+        justify-content: center;
+        padding: #{pxToRem(6px)};
+        width: #{pxToRem(32px)};
+
+        svg {
+          width: #{pxToRem(20px)};
+        }
+      }
+
+      &__text {
+        line-height: #{pxToRem(24px)};
+      }
+    }
+
+    &__footer {
+      display: flex;
+      flex-direction: column;
+      gap: #{pxToRem(12px)};
+    }
+  }
+}

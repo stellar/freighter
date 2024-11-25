@@ -8,6 +8,7 @@ type CheckButtonProps = {
   onKeyDown?: (e: any) => void;
   wordKey: string;
   word: string;
+  wordNumber: () => string;
 };
 
 export const CheckButton = ({
@@ -15,8 +16,9 @@ export const CheckButton = ({
   onKeyDown,
   wordKey,
   word,
+  wordNumber,
 }: CheckButtonProps) => (
-  <span>
+  <div className="CheckButton__wrapper">
     <Field
       className="CheckButton"
       id={wordKey}
@@ -30,9 +32,11 @@ export const CheckButton = ({
           onKeyDown(e);
         }
       }}
+      value={wordKey}
     />
     <label className="ButtonLabel" htmlFor={wordKey} data-testid={word}>
-      {word}
+      <div className="ButtonLabel__number">{wordNumber()}</div>{" "}
+      <div className="ButtonLabel__word">{word}</div>
     </label>
-  </span>
+  </div>
 );

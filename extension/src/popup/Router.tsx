@@ -65,7 +65,6 @@ import { ManageAssets } from "popup/views/ManageAssets";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Swap } from "popup/views/Swap";
 import { ManageNetwork } from "popup/views/ManageNetwork";
-import { PinExtension } from "popup/views/PinExtension";
 import { LeaveFeedback } from "popup/views/LeaveFeedback";
 import { AccountMigration } from "popup/views/AccountMigration";
 
@@ -256,7 +255,6 @@ const NO_APP_LAYOUT_ROUTES = [
   ROUTES.accountMigration,
   ROUTES.recoverAccount,
   ROUTES.recoverAccountSuccess,
-  ROUTES.pinExtension,
   ROUTES.welcome,
 ];
 
@@ -362,9 +360,6 @@ const Outlet = () => {
           </UnlockAccountRoute>
           <PublicKeyRoute path={ROUTES.mnemonicPhraseConfirmed}>
             <FullscreenSuccessMessage />
-          </PublicKeyRoute>
-          <PublicKeyRoute path={ROUTES.pinExtension}>
-            <PinExtension />
           </PublicKeyRoute>
           <Route path={ROUTES.accountCreator}>
             <AccountCreator />

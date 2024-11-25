@@ -1,33 +1,33 @@
 @use "../../styles/utils.scss" as *;
 
 .AccountCreator {
-  margin-bottom: 1rem;
+  align-items: center;
+  display: flex;
+  height: 100%;
 
-  &__header {
-    text-align: center;
+  &__subheading {
+    color: var(--sds-clr-gray-11);
+    margin-top: #{pxToRem(8px)};
+    margin-bottom: #{pxToRem(32px)};
   }
 
-  &__buttow-row {
-    margin-top: 1.5rem;
-    padding: 1.5rem;
-  }
-
-  &__screen {
-    flex-flow: column wrap;
-    align-content: center;
-  }
-
-  &__half-screen {
+  &__form-rows {
+    display: flex;
     flex-direction: column;
-    justify-content: center;
+    gap: 0.5rem;
   }
-}
 
-.Onboarding {
-  .Checkbox__container {
-    input[type="checkbox"]:focus + label {
-      span {
-        @include native-like-outline;
+  &__tos {
+    color: var(--sds-clr-gray-11);
+
+    &__label {
+      align-items: center;
+      display: flex;
+      gap: 0.25rem;
+
+      svg {
+        height: 1rem;
+        width: 1rem;
       }
     }
   }
