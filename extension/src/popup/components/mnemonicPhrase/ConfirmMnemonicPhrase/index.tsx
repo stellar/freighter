@@ -118,8 +118,6 @@ export const ConfirmMnemonicPhrase = ({
                       <CheckButton
                         key={wordKey}
                         onChange={(e) => {
-                          console.log("change");
-                          console.log(e.target.checked);
                           handleChange(e);
                           updatePhrase(e.target as HTMLInputElement);
                         }}
