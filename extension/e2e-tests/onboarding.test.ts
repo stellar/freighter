@@ -196,7 +196,7 @@ test("Import wallet with wrong password", async ({ page }) => {
 });
 
 test("Incorrect mnemonic phrase", async ({ page }) => {
-  await page.getByText("Create Wallet").click();
+  await page.getByText("Create new wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -204,7 +204,10 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
   await page.locator("#termsOfUse-input").check({ force: true });
   await page.getByText("Confirm").click();
 
-  await expect(page.getByText("Secret Recovery phrase")).toBeVisible();
+  await expect(page.getByTestId("MnemonicPhrase__modal")).toBeVisible();
+  await expectPageToHaveScreenshot({ page, screenshot: "recovery-modal.png" });
+
+  await page.getByText("Show recovery phrase").click();
   await expectPageToHaveScreenshot(
     { page, screenshot: "recovery-page.png" },
     {
@@ -230,9 +233,7 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
   }
 
   await page.getByTestId("display-mnemonic-phrase-confirm-btn").click();
-  await expect(
-    page.getByText("The secret phrase you entered is incorrect."),
-  ).toBeVisible();
+  await expect(page.getByText("Order is incorrect, try again")).toBeVisible();
   await expectPageToHaveScreenshot(
     { page, screenshot: "incorrect-recovery-phrase-page.png" },
     {
