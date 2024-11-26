@@ -96,7 +96,7 @@ test("Import 12 word wallet", async ({ page }) => {
   await page.locator("#termsOfUse-input").check({ force: true });
   await page.getByRole("button", { name: "Import" }).click();
 
-  await expect(page.getByText("Wallet created successfully!")).toBeVisible();
+  await expect(page.getByText("You’re all set!")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-import-complete-page.png",
@@ -146,7 +146,7 @@ test("Import 24 word wallet", async ({ page }) => {
   await page.locator("#termsOfUse-input").check({ force: true });
   await page.getByRole("button", { name: "Import" }).click();
 
-  await expect(page.getByText("Wallet created successfully!")).toBeVisible();
+  await expect(page.getByText("You’re all set!")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-import-complete-page.png",
