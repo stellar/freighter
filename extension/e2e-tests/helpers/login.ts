@@ -17,7 +17,7 @@ export const login = async ({ page, extensionId }) => {
   await page.locator("#confirm-password-input").fill(PASSWORD);
   await page.locator("#termsOfUse-input").check({ force: true });
   await page.getByRole("button", { name: "Import" }).click();
-  await expect(page.getByText("Wallet created successfully!")).toBeVisible({
+  await expect(page.getByText("You’re all set!")).toBeVisible({
     timeout: 20000,
   });
 
@@ -74,7 +74,7 @@ export const loginToTestAccount = async ({ page, extensionId }) => {
   await page.locator("#confirm-password-input").fill(PASSWORD);
   await page.locator("#termsOfUse-input").check({ force: true });
   await page.getByRole("button", { name: "Import" }).click();
-  await expect(page.getByText("Wallet created successfully!")).toBeVisible({
+  await expect(page.getByText("You’re all set!")).toBeVisible({
     timeout: 20000,
   });
 

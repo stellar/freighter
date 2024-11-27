@@ -1,10 +1,11 @@
 import React from "react";
 import { useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button, Heading } from "@stellar/design-system";
+import { Button, Heading, Card } from "@stellar/design-system";
 
 import { BackButton } from "popup/basics/buttons/BackButton";
 import { Box } from "popup/basics/layout/Box";
+import { View } from "popup/basics/layout/View";
 
 import "./styles.scss";
 
@@ -51,7 +52,7 @@ export const OnboardingOneCol = ({
 }: {
   children: React.ReactElement | React.ReactElement[];
 }) => (
-  <Box display="flex" gridCellWidth="24rem" gapVertical="1.5rem" {...props}>
+  <Box display="flex" gridCellWidth="24rem" gapVertical="2rem" {...props}>
     {children}
   </Box>
 );
@@ -92,12 +93,12 @@ export const OnboardingButtons = ({
 
   if (children || showBackButton) {
     return (
-      <Box display="flex" isFlexRow gapHorizontal="1rem">
+      <Box display="flex" isFlexRow gapHorizontal=".75rem">
         <>
           {showBackButton ? (
             <BackButton
               customButtonComponent={
-                <Button variant="secondary" size="md" type="button">
+                <Button variant="tertiary" size="lg" type="button">
                   {t("Back")}
                 </Button>
               }
@@ -113,3 +114,33 @@ export const OnboardingButtons = ({
 
   return null;
 };
+
+interface OnboardingModalProps {
+  children: React.ReactNode;
+  headerText: string;
+  bodyText: React.ReactNode;
+}
+
+export const OnboardingModal = ({
+  children,
+  headerText,
+  bodyText,
+}: OnboardingModalProps) => (
+  <View.Content
+    alignment="center"
+    data-testid="account-creator-view"
+    hasNoTopPadding
+  >
+    <div className="Onboarding__card__wrapper">
+      <Card variant="secondary">
+        <div className="Onboarding__card">
+          <Heading as="h2" size="xs" weight="semi-bold">
+            {headerText}
+          </Heading>
+          <div className="Onboarding__card__text">{bodyText}</div>
+        </div>
+        {children}
+      </Card>
+    </div>
+  </View.Content>
+);

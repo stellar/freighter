@@ -13,7 +13,7 @@ interface GenerateMnemonicPhraseDisplayProps {
 export const generateMnemonicPhraseDisplay = ({
   mnemonicPhrase = "",
 }: GenerateMnemonicPhraseDisplayProps) =>
-  mnemonicPhrase.split(" ").map((word: string) => {
+  mnemonicPhrase.split(" ").map((word: string, i: number) => {
     /*
       As a security measure, we want to prevent writing the mnemonic phrase to the DOM.
       The browser can leak this string into memory where a hacker could possibly access it.
@@ -27,25 +27,18 @@ export const generateMnemonicPhraseDisplay = ({
     const randomWord = randomWordArr[randomWordIndex];
 
     return (
-      <li className="MnemonicDisplay__list-item" key={word}>
+      // eslint-disable-next-line react/no-array-index-key
+      <li className="MnemonicDisplay__list-item" key={`${word}-${i}`}>
         {randomNumber % 2 === 0 ? (
           <>
-            <span className="MnemonicDisplay__random-word">
-              <strong>{randomWord}</strong>
-            </span>
+            <span className="MnemonicDisplay__random-word">{randomWord}</span>
 
-            <span>
-              <strong data-testid="word">{word}</strong>
-            </span>
+            <span data-testid="word">{word}</span>
           </>
         ) : (
           <>
-            <span>
-              <strong data-testid="word">{word}</strong>
-            </span>
-            <span className="MnemonicDisplay__random-word">
-              <strong>{randomWord}</strong>
-            </span>
+            <span data-testid="word">{word}</span>
+            <span className="MnemonicDisplay__random-word">{randomWord}</span>
           </>
         )}
       </li>
@@ -62,7 +55,7 @@ export const MnemonicDisplay = ({
   isPopupView,
 }: MnemonicDisplayProps) => (
   <div className="MnemonicDisplay">
-    <Card variant="secondary">
+    <Card variant="primary">
       <ol
         onCopy={(e) => e.preventDefault()}
         className={`MnemonicDisplay__ordered-list ${

@@ -27,7 +27,6 @@ const routeToEventName = {
   [ROUTES.unlockAccount]: METRIC_NAMES.viewUnlockAccount,
   [ROUTES.verifyAccount]: METRIC_NAMES.viewVerifyAccount,
   [ROUTES.mnemonicPhraseConfirmed]: METRIC_NAMES.viewMnemonicPhraseConfirmed,
-  [ROUTES.pinExtension]: METRIC_NAMES.viewPinExtension,
   [ROUTES.accountCreator]: METRIC_NAMES.viewAccountCreator,
   [ROUTES.recoverAccount]: METRIC_NAMES.viewRecoverAccount,
   [ROUTES.recoverAccountSuccess]: METRIC_NAMES.viewRecoverAccountSuccess,

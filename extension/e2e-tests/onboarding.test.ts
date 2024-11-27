@@ -7,16 +7,15 @@ test.beforeEach(async ({ page, extensionId }) => {
 
 test("Welcome page loads", async ({ page }) => {
   await page.locator(".Welcome__column").waitFor();
-  await expect(
-    page.getByText("Welcome! Is this your first time using Freighter?"),
-  ).toBeVisible();
-  await expect(page.getByText("I’m going to need a seed phrase")).toBeVisible();
-  await expect(page.getByText("I’ve done this before")).toBeVisible();
+  await expect(page.getByText("Welcome to Freighter")).toBeVisible();
+  await expect(page.getByText("Your favorite Stellar wallet")).toBeVisible();
+  await expect(page.getByText("Create new wallet")).toBeVisible();
+  await expect(page.getByText("Import wallet")).toBeVisible();
   await expectPageToHaveScreenshot({ page, screenshot: "welcome-page.png" });
 });
 
 test("Create new wallet", async ({ page }) => {
-  await page.getByText("Create Wallet").click();
+  await page.getByText("Create new wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -24,7 +23,11 @@ test("Create new wallet", async ({ page }) => {
   await page.locator("#termsOfUse-input").check({ force: true });
   await page.getByText("Confirm").click();
 
-  await expect(page.getByText("Secret Recovery phrase")).toBeVisible();
+  await expect(page.getByTestId("MnemonicPhrase__modal")).toBeVisible();
+  await expectPageToHaveScreenshot({ page, screenshot: "recovery-modal.png" });
+
+  await page.getByText("Show recovery phrase").click();
+
   await expectPageToHaveScreenshot(
     { page, screenshot: "recovery-page.png" },
     {
@@ -56,9 +59,7 @@ test("Create new wallet", async ({ page }) => {
     await page.getByTestId(words[i]).check({ force: true });
   }
   await page.getByTestId("display-mnemonic-phrase-confirm-btn").click();
-  await expect(
-    page.getByText("Your Freighter install is complete"),
-  ).toBeVisible();
+  await expect(page.getByText("You’re all set!")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-create-complete-page.png",
@@ -95,7 +96,7 @@ test("Import 12 word wallet", async ({ page }) => {
   await page.locator("#termsOfUse-input").check({ force: true });
   await page.getByRole("button", { name: "Import" }).click();
 
-  await expect(page.getByText("Wallet created successfully!")).toBeVisible();
+  await expect(page.getByText("You’re all set!")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-import-complete-page.png",
@@ -145,7 +146,7 @@ test("Import 24 word wallet", async ({ page }) => {
   await page.locator("#termsOfUse-input").check({ force: true });
   await page.getByRole("button", { name: "Import" }).click();
 
-  await expect(page.getByText("Wallet created successfully!")).toBeVisible();
+  await expect(page.getByText("You’re all set!")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-import-complete-page.png",
@@ -195,7 +196,7 @@ test("Import wallet with wrong password", async ({ page }) => {
 });
 
 test("Incorrect mnemonic phrase", async ({ page }) => {
-  await page.getByText("Create Wallet").click();
+  await page.getByText("Create new wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -203,7 +204,10 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
   await page.locator("#termsOfUse-input").check({ force: true });
   await page.getByText("Confirm").click();
 
-  await expect(page.getByText("Secret Recovery phrase")).toBeVisible();
+  await expect(page.getByTestId("MnemonicPhrase__modal")).toBeVisible();
+  await expectPageToHaveScreenshot({ page, screenshot: "recovery-modal.png" });
+
+  await page.getByText("Show recovery phrase").click();
   await expectPageToHaveScreenshot(
     { page, screenshot: "recovery-page.png" },
     {
@@ -229,9 +233,7 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
   }
 
   await page.getByTestId("display-mnemonic-phrase-confirm-btn").click();
-  await expect(
-    page.getByText("The secret phrase you entered is incorrect."),
-  ).toBeVisible();
+  await expect(page.getByText("Order is incorrect, try again")).toBeVisible();
   await expectPageToHaveScreenshot(
     { page, screenshot: "incorrect-recovery-phrase-page.png" },
     {

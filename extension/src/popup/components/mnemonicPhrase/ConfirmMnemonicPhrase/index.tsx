@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import shuffle from "lodash/shuffle";
 import { Form, Formik, FormikHelpers, FormikValues } from "formik";
 import { useSelector, useDispatch } from "react-redux";
-import { Button, Card } from "@stellar/design-system";
+import { Alert, Button, Card, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { AppDispatch } from "popup/App";
@@ -10,16 +11,12 @@ import {
   confirmMigratedMnemonicPhrase,
   authErrorSelector,
 } from "popup/ducks/accountServices";
-import { FormError } from "popup/basics/Forms";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
+import { View } from "popup/basics/layout/View";
 
-import {
-  OnboardingHeader,
-  OnboardingButtons,
-} from "popup/components/Onboarding";
-import { generateMnemonicPhraseDisplay } from "popup/components/mnemonicPhrase/MnemonicDisplay";
+import { OnboardingModal } from "popup/components/Onboarding";
 
 import { CheckButton } from "../CheckButton";
 
@@ -28,18 +25,21 @@ import "./styles.scss";
 const convertToWord = (wordKey: string) => wordKey.replace(/-.*/, "");
 
 export const ConfirmMnemonicPhrase = ({
-  words = [""],
+  mnemonicPhrase,
   isMigration,
-  customBackAction,
-  hasGoBackBtn,
 }: {
-  words: string[];
+  mnemonicPhrase: string;
   isMigration?: boolean;
-  customBackAction?: () => void;
-  hasGoBackBtn?: boolean;
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
+  const [words, setWords] = useState([""]);
+
+  useEffect(() => {
+    if (mnemonicPhrase) {
+      setWords(shuffle(mnemonicPhrase.split(" ")));
+    }
+  }, [mnemonicPhrase]);
 
   const initialWordState = words.reduce(
     (obj, current, i) => ({
@@ -84,79 +84,111 @@ export const ConfirmMnemonicPhrase = ({
     formikHelpers.resetForm();
   };
 
+  const handleSkip = async () => {
+    // confirm the mnemonic phrase for the user
+
+    await dispatch(confirmMnemonicPhrase(mnemonicPhrase));
+  };
+
   const joinSelectedWords = () =>
     selectedWords.map((word) => convertToWord(word)).join(" ");
 
   return (
-    <div
-      data-testid="ConfirmMnemonicPhrase"
-      className="ConfirmMnemonicPhrase__screen"
-    >
-      <OnboardingHeader>{t("Confirm your recovery phrase")}</OnboardingHeader>
+    <div className="ConfirmMnemonicPhrase">
+      <OnboardingModal
+        data-testid="confirm-mnemonic-phrase"
+        headerText="Confirm Your Recovery Phrase"
+        bodyText={
+          <>
+            <Text as="p" size="md">
+              {t(
+                "Please select each word in the same order you have them noted to confirm you got them right.",
+              )}
+            </Text>
+          </>
+        }
+      >
+        <Formik initialValues={initialWordState} onSubmit={handleSubmit}>
+          {({ dirty, isSubmitting, handleChange }) => (
+            <Form>
+              <div className="ConfirmMnemonicPhrase__card-wrapper">
+                <Card variant="primary">
+                  <div className="ConfirmMnemonicPhrase__word-bubble-wrapper">
+                    {wordStateArr.map(([wordKey]) => (
+                      <CheckButton
+                        key={wordKey}
+                        onChange={(e) => {
+                          handleChange(e);
+                          updatePhrase(e.target as HTMLInputElement);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            e.target.checked = e.target.value !== "true";
+                            handleChange(e);
+                            updatePhrase(e.target as HTMLInputElement);
+                          }
+                        }}
+                        wordKey={wordKey}
+                        word={convertToWord(wordKey)}
+                        wordNumber={() => {
+                          const wordIndex = selectedWords.findIndex(
+                            (selectedWord) => selectedWord === wordKey,
+                          );
 
-      <div className="ConfirmMnemonicPhrase__content">
-        <p>{t("Please select each word in the same order you have")}</p>
-        <p>{t("them noted to confirm you got them right")}</p>
-      </div>
-
-      <Formik initialValues={initialWordState} onSubmit={handleSubmit}>
-        {({ dirty, isSubmitting, handleChange }) => (
-          <Form>
-            <div className="ConfirmMnemonicPhrase__selected-words-wrapper">
-              <Card variant="secondary">
-                <ul
-                  className="ConfirmMnemonicPhrase__selected-words-text"
-                  onCopy={(e) => e.preventDefault()}
-                >
-                  {generateMnemonicPhraseDisplay({
-                    mnemonicPhrase: joinSelectedWords(),
-                  })}
-                </ul>
-              </Card>
-            </div>
-
-            {authError ? <FormError>{authError}</FormError> : null}
-
-            <div className="ConfirmMnemonicPhrase__word-bubble-wrapper">
-              {wordStateArr.map(([wordKey]) => (
-                <CheckButton
-                  key={wordKey}
-                  onChange={(e) => {
-                    handleChange(e);
-                    updatePhrase(e.target as HTMLInputElement);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      e.target.checked = e.target.value !== "true";
-                      handleChange(e);
-                      updatePhrase(e.target as HTMLInputElement);
-                    }
-                  }}
-                  wordKey={wordKey}
-                  word={convertToWord(wordKey)}
-                />
-              ))}
-            </div>
-
-            <OnboardingButtons
-              hasGoBackBtn={hasGoBackBtn}
-              customBackAction={customBackAction}
-            >
-              <Button
-                size="md"
-                data-testid="display-mnemonic-phrase-confirm-btn"
-                variant="tertiary"
-                type="submit"
-                disabled={!dirty && !!joinSelectedWords().length}
-                isLoading={isSubmitting}
-              >
-                {t("Confirm")}
-              </Button>
-            </OnboardingButtons>
-          </Form>
-        )}
-      </Formik>
+                          if (wordIndex > -1) {
+                            return String(wordIndex + 1);
+                          }
+                          return "";
+                        }}
+                      />
+                    ))}
+                  </div>
+                </Card>
+              </div>
+              <div className="ConfirmMnemonicPhrase__footer">
+                <div className="ConfirmMnemonicPhrase__footer__buttons">
+                  <Button
+                    size="lg"
+                    data-testid="display-mnemonic-phrase-skip-btn"
+                    variant="tertiary"
+                    isFullWidth
+                    type="button"
+                    onClick={handleSkip}
+                  >
+                    {t("Skip")}
+                  </Button>
+                  <Button
+                    size="lg"
+                    data-testid="display-mnemonic-phrase-confirm-btn"
+                    variant="secondary"
+                    type="submit"
+                    disabled={!dirty && !!joinSelectedWords().length}
+                    isLoading={isSubmitting}
+                    isFullWidth
+                  >
+                    {t("Confirm")}
+                  </Button>
+                </div>
+                <div>
+                  {t(
+                    "You can access this later in the app, but we strongly recommend saving this in a safe place.",
+                  )}
+                </div>
+              </div>
+            </Form>
+          )}
+        </Formik>
+      </OnboardingModal>
+      <View.Content hasNoTopPadding>
+        <div className="ConfirmMnemonicPhrase__error">
+          {authError ? (
+            <Alert placement="inline" variant="error">
+              {authError ? t("Order is incorrect, try again") : ""}
+            </Alert>
+          ) : null}
+        </div>
+      </View.Content>
     </div>
   );
 };

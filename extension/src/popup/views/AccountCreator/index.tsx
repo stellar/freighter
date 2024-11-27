@@ -1,6 +1,14 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Input, Checkbox, Link, Button } from "@stellar/design-system";
+import {
+  Input,
+  Checkbox,
+  Link,
+  Button,
+  Card,
+  Heading,
+  Icon,
+} from "@stellar/design-system";
 import { Field, FieldProps, Formik, Form } from "formik";
 import { object as YupObject } from "yup";
 import { useTranslation } from "react-i18next";
@@ -16,16 +24,13 @@ import {
   publicKeySelector,
   authErrorSelector,
 } from "popup/ducks/accountServices";
-import { FormRows } from "popup/basics/Forms";
 import { View } from "popup/basics/layout/View";
 
 import {
   Onboarding,
   OnboardingButtons,
-  OnboardingHeader,
   OnboardingOneCol,
 } from "popup/components/Onboarding";
-import { PasswordRequirements } from "popup/components/PasswordRequirements";
 import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
 
 import "./styles.scss";
@@ -67,106 +72,127 @@ export const AccountCreator = () => {
     <MnemonicPhrase mnemonicPhrase={mnemonicPhrase} />
   ) : (
     <React.Fragment>
-      <View.Header />
-      <View.Content alignment="center" data-testid="account-creator-view">
+      <View.Content
+        alignment="center"
+        data-testid="account-creator-view"
+        hasNoTopPadding
+      >
         <Formik
           initialValues={initialValues}
           onSubmit={handleSubmit}
           validationSchema={AccountCreatorSchema}
         >
           {({ isValid, dirty, isSubmitting, errors, touched }) => (
-            <Onboarding layout="half">
-              <OnboardingHeader>{t("Create a password")}</OnboardingHeader>
-              <Form>
-                <OnboardingOneCol>
-                  <FormRows>
-                    <Field name="password">
-                      {({ field }: FieldProps) => (
-                        <Input
-                          data-testid="account-creator-password-input"
-                          fieldSize="md"
-                          autoComplete="off"
-                          id="new-password-input"
-                          placeholder={t("New password")}
-                          type="password"
-                          error={
-                            authError ||
-                            (errors.password && touched.password
-                              ? errors.password
-                              : "")
-                          }
-                          {...field}
-                        />
-                      )}
-                    </Field>
-                    <Field name="confirmPassword">
-                      {({ field }: FieldProps) => (
-                        <Input
-                          data-testid="account-creator-confirm-password-input"
-                          fieldSize="md"
-                          autoComplete="off"
-                          id="confirm-password-input"
-                          placeholder={t("Confirm password")}
-                          type="password"
-                          error={
-                            authError ||
-                            (errors.confirmPassword && touched.confirmPassword
-                              ? errors.confirmPassword
-                              : null)
-                          }
-                          {...field}
-                        />
-                      )}
-                    </Field>
-                  </FormRows>
+            <div className="AccountCreator">
+              <Onboarding layout="half">
+                <Card variant="secondary">
+                  <Heading as="h2" size="xs" weight="semi-bold">
+                    {t("Create a Password")}
+                  </Heading>
+                  <div className="AccountCreator__subheading">
+                    {t("This will be used to unlock your wallet")}
+                  </div>
+                  <Form>
+                    <OnboardingOneCol>
+                      <div className="AccountCreator__form-rows">
+                        <Field name="password">
+                          {({ field }: FieldProps) => (
+                            <Input
+                              data-testid="account-creator-password-input"
+                              fieldSize="md"
+                              autoComplete="off"
+                              id="new-password-input"
+                              placeholder={t("New password")}
+                              type="password"
+                              error={
+                                authError ||
+                                (errors.password && touched.password
+                                  ? errors.password
+                                  : "")
+                              }
+                              {...field}
+                            />
+                          )}
+                        </Field>
+                        <Field name="confirmPassword">
+                          {({ field }: FieldProps) => (
+                            <Input
+                              data-testid="account-creator-confirm-password-input"
+                              fieldSize="md"
+                              autoComplete="off"
+                              id="confirm-password-input"
+                              placeholder={t("Confirm password")}
+                              type="password"
+                              error={
+                                authError ||
+                                (errors.confirmPassword &&
+                                touched.confirmPassword
+                                  ? errors.confirmPassword
+                                  : null)
+                              }
+                              {...field}
+                            />
+                          )}
+                        </Field>
+                      </div>
 
-                  <PasswordRequirements />
+                      <Field name="termsOfUse">
+                        {({ field, form }: FieldProps) => (
+                          <div className="AccountCreator__tos">
+                            <Checkbox
+                              data-testid="account-creator-termsOfUse-input"
+                              fieldSize="md"
+                              autoComplete="off"
+                              error={
+                                touched.termsOfUse ? errors.termsOfUse : null
+                              }
+                              id="termsOfUse-input"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  form.setFieldValue(
+                                    "termsOfUse",
+                                    !field.value,
+                                  );
+                                  e.currentTarget.checked = !field.value;
+                                }
+                              }}
+                              label={
+                                <div className="AccountCreator__tos__label">
+                                  <span>
+                                    {t("I have read and agree to")}{" "}
+                                    <Link
+                                      variant="secondary"
+                                      href="https://stellar.org/terms-of-service"
+                                    >
+                                      {t("Terms of Use")}
+                                    </Link>
+                                  </span>
+                                  <Icon.LinkExternal01 />
+                                </div>
+                              }
+                              {...field}
+                            />
+                          </div>
+                        )}
+                      </Field>
 
-                  <Field name="termsOfUse">
-                    {({ field, form }: FieldProps) => (
-                      <Checkbox
-                        data-testid="account-creator-termsOfUse-input"
-                        fieldSize="md"
-                        autoComplete="off"
-                        error={touched.termsOfUse ? errors.termsOfUse : null}
-                        id="termsOfUse-input"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            form.setFieldValue("termsOfUse", !field.value);
-                            e.currentTarget.checked = !field.value;
-                          }
-                        }}
-                        label={
-                          <>
-                            {t("I have read and agree to")}{" "}
-                            <Link
-                              variant="secondary"
-                              href="https://stellar.org/terms-of-service"
-                            >
-                              {t("Terms of Use")}
-                            </Link>
-                          </>
-                        }
-                        {...field}
-                      />
-                    )}
-                  </Field>
-
-                  <OnboardingButtons hasGoBackBtn>
-                    <Button
-                      data-testid="account-creator-submit"
-                      size="md"
-                      variant="tertiary"
-                      type="submit"
-                      isLoading={isSubmitting}
-                      disabled={!(dirty && isValid)}
-                    >
-                      {t("Confirm")}
-                    </Button>
-                  </OnboardingButtons>
-                </OnboardingOneCol>
-              </Form>
-            </Onboarding>
+                      <OnboardingButtons hasGoBackBtn>
+                        <Button
+                          data-testid="account-creator-submit"
+                          size="lg"
+                          variant="secondary"
+                          type="submit"
+                          isLoading={isSubmitting}
+                          disabled={!(dirty && isValid)}
+                        >
+                          {t("Confirm")}
+                        </Button>
+                      </OnboardingButtons>
+                    </OnboardingOneCol>
+                  </Form>
+                </Card>
+              </Onboarding>
+            </div>
           )}
         </Formik>
       </View.Content>
