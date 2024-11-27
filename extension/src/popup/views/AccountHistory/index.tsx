@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Loader } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 
-import { getAccountHistory } from "@shared/api/internal";
-import { ActionStatus } from "@shared/api/types";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -33,8 +30,10 @@ import {
   TransactionDetailProps,
 } from "popup/components/accountHistory/TransactionDetail";
 import { View } from "popup/basics/layout/View";
+import { RequestState, useGetHistory } from "helpers/hooks/useGetHistory";
 
 import "./styles.scss";
+import { Loading } from "popup/components/Loading";
 
 enum SELECTOR_OPTIONS {
   ALL = "ALL",
@@ -55,13 +54,14 @@ export const AccountHistory = () => {
     | null;
 
   const { t } = useTranslation();
-  const dispatch = useDispatch();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { accountBalances, accountBalanceStatus } = useSelector(
-    transactionSubmissionSelector,
-  );
+  const { accountBalances } = useSelector(transactionSubmissionSelector);
   const { isHideDustEnabled } = useSelector(settingsSelector);
+  const { state: getHistoryState, fetchData } = useGetHistory(
+    publicKey,
+    networkDetails,
+  );
 
   const [selectedSegment, setSelectedSegment] = useState(SELECTOR_OPTIONS.ALL);
   const [historySegments, setHistorySegments] = useState(
@@ -76,14 +76,16 @@ export const AccountHistory = () => {
   const [detailViewProps, setDetailViewProps] = useState(
     defaultDetailViewProps,
   );
-  const [isLoading, setIsLoading] = useState(false);
 
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
-  const isAccountHistoryLoading =
-    historySegments === null ||
-    accountBalanceStatus === ActionStatus.IDLE ||
-    accountBalanceStatus === ActionStatus.PENDING;
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const createSegments = (
@@ -141,86 +143,75 @@ export const AccountHistory = () => {
       return segments;
     };
 
-    const fetchAccountHistory = async () => {
-      try {
-        const operations = await getAccountHistory(publicKey, networkDetails);
-        setHistorySegments(createSegments(operations));
-      } catch (e) {
-        console.error(e);
-      }
-    };
+    if (getHistoryState.state === RequestState.SUCCESS) {
+      setHistorySegments(createSegments(getHistoryState.data));
+    }
+  }, [
+    getHistoryState.state,
+    getHistoryState.data,
+    publicKey,
+    networkDetails,
+    isHideDustEnabled,
+  ]);
 
-    const getData = async () => {
-      setIsLoading(true);
-      await fetchAccountHistory();
-      setIsLoading(false);
-    };
+  const isLoaderShowing =
+    getHistoryState.state === RequestState.IDLE ||
+    getHistoryState.state === RequestState.LOADING;
 
-    getData();
-  }, [publicKey, networkDetails, dispatch, isHideDustEnabled]);
+  if (isDetailViewShowing) {
+    return <TransactionDetail {...detailViewProps} />;
+  }
 
-  return isDetailViewShowing ? (
-    <TransactionDetail {...detailViewProps} />
-  ) : (
-    <>
-      <View.Content>
-        <div className="AccountHistory" data-testid="AccountHistory">
-          {isLoading ? (
-            <div className="AccountHistory__loader">
-              <Loader size="2rem" />
+  if (isLoaderShowing) {
+    return <Loading />;
+  }
+
+  const hasEmptyHistory = !getHistoryState?.data?.length;
+
+  return (
+    <View.Content>
+      <div className="AccountHistory" data-testid="AccountHistory">
+        <header className="AccountHistory__header">{t("Transactions")}</header>
+        <div className="AccountHistory__selector">
+          {Object.values(SELECTOR_OPTIONS).map((option) => (
+            <div
+              key={option}
+              className={`AccountHistory__selector__item ${
+                option === selectedSegment
+                  ? "AccountHistory__selector__item--active"
+                  : ""
+              }`}
+              onClick={() => setSelectedSegment(option)}
+            >
+              {t(option)}
             </div>
-          ) : (
-            <>
-              <header className="AccountHistory__header">
-                {t("Transactions")}
-              </header>
-              <div className="AccountHistory__selector">
-                {Object.values(SELECTOR_OPTIONS).map((option) => (
-                  <div
-                    key={option}
-                    className={`AccountHistory__selector__item ${
-                      option === selectedSegment
-                        ? "AccountHistory__selector__item--active"
-                        : ""
-                    }`}
-                    onClick={() => setSelectedSegment(option)}
-                  >
-                    {t(option)}
-                  </div>
-                ))}
-              </div>
-              <div className="AccountHistory__list">
-                {historySegments?.[SELECTOR_OPTIONS[selectedSegment]].length ? (
-                  <HistoryList>
-                    <>
-                      {historySegments[SELECTOR_OPTIONS[selectedSegment]].map(
-                        (operation: HistoryItemOperation) => (
-                          <HistoryItem
-                            key={operation.id}
-                            accountBalances={accountBalances}
-                            operation={operation}
-                            publicKey={publicKey}
-                            url={stellarExpertUrl}
-                            networkDetails={networkDetails}
-                            setDetailViewProps={setDetailViewProps}
-                            setIsDetailViewShowing={setIsDetailViewShowing}
-                          />
-                        ),
-                      )}
-                    </>
-                  </HistoryList>
-                ) : (
-                  <div>
-                    {isAccountHistoryLoading
-                      ? null
-                      : t("No transactions to show")}
-                  </div>
+          ))}
+        </div>
+        <div className="AccountHistory__list">
+          {historySegments?.[SELECTOR_OPTIONS[selectedSegment]].length ? (
+            <HistoryList>
+              <>
+                {historySegments[SELECTOR_OPTIONS[selectedSegment]].map(
+                  (operation: HistoryItemOperation) => (
+                    <HistoryItem
+                      key={operation.id}
+                      accountBalances={accountBalances}
+                      operation={operation}
+                      publicKey={publicKey}
+                      url={stellarExpertUrl}
+                      networkDetails={networkDetails}
+                      setDetailViewProps={setDetailViewProps}
+                      setIsDetailViewShowing={setIsDetailViewShowing}
+                    />
+                  ),
                 )}
-              </div>
-            </>
+              </>
+            </HistoryList>
+          ) : (
+            <div>{hasEmptyHistory ? t("No transactions to show") : null}</div>
           )}
         </div>
-      </View.Content>
-    </>
+      </div>
+    </View.Content>
   );
 };
