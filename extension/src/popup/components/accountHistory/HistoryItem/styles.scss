@@ -2,15 +2,15 @@
   color: var(--sds-clr-gray-12);
   cursor: pointer;
 
+  &__row {
+    display: flex;
+  }
+
   &__loader {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-  }
-
-  &__row {
-    display: flex;
   }
 
   &__icon {

@@ -11,7 +11,6 @@ import {
   getAvailableBalance,
   getIsPayment,
   getIsSwap,
-  getStellarExpertUrl,
   getRawBalance,
   getIssuerFromBalance,
   isSorobanIssuer,
@@ -103,8 +102,6 @@ export const AssetDetail = ({
 
   const availableTotal = `${formatAmount(balanceAvailable)} ${canonical.code}`;
   const displayTotal = `${formatAmount(total)} ${canonical.code}`;
-
-  const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailViewShowing, setIsDetailViewShowing] = useState(false);
@@ -257,7 +254,6 @@ export const AssetDetail = ({
                       accountBalances={balances}
                       operation={historyItemOperation}
                       publicKey={publicKey}
-                      url={stellarExpertUrl}
                       networkDetails={networkDetails}
                       setDetailViewProps={setDetailViewProps}
                       setIsDetailViewShowing={setIsDetailViewShowing}
