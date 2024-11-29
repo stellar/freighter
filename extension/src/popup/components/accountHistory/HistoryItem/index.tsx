@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { captureException } from "@sentry/browser";
 import camelCase from "lodash/camelCase";
-import { Icon, Loader } from "@stellar/design-system";
+import { Badge, Icon, Loader } from "@stellar/design-system";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { Asset } from "stellar-sdk";
@@ -137,7 +137,17 @@ export const HistoryItem = ({
     null as React.ReactElement | null,
   );
 
-  const renderBodyComponent = () => BodyComponent;
+  const renderBodyComponent = () => {
+    if (BodyComponent) {
+      return BodyComponent;
+    }
+
+    return (
+      <Badge variant="tertiary" size="md">
+        {t("N/A")}
+      </Badge>
+    );
+  };
   const renderIcon = () => IconComponent;
   /* eslint-disable react-hooks/exhaustive-deps */
   const translations = useCallback(t, []);
@@ -146,9 +156,11 @@ export const HistoryItem = ({
     const buildHistoryItem = async () => {
       if (isSwap) {
         setBodyComponent(
-          <>
-            {new BigNumber(amount).toFixed(2, 1)} {destAssetCode}
-          </>,
+          <Badge variant="primary" size="md">
+            {`${formatAmount(
+              new BigNumber(amount).toString(),
+            )} ${destAssetCode}`}
+          </Badge>,
         );
         setRowText(
           translations(`{{srcAssetCode}} for {{destAssetCode}}`, {
@@ -172,10 +184,11 @@ export const HistoryItem = ({
         const _isRecipient = to === publicKey && from !== publicKey;
         const paymentDifference = _isRecipient ? "+" : "-";
         setBodyComponent(
-          <>
-            {paymentDifference}
-            {formatAmount(new BigNumber(amount).toString())} {destAssetCode}
-          </>,
+          <Badge variant={_isRecipient ? "success" : "primary"} size="md">
+            {`${paymentDifference}${formatAmount(
+              new BigNumber(amount).toString(),
+            )} ${destAssetCode}`}
+          </Badge>,
         );
         setIconComponent(
           _isRecipient ? (
@@ -203,7 +216,9 @@ export const HistoryItem = ({
         }));
       } else if (isCreateExternalAccount) {
         setBodyComponent(
-          <>-{new BigNumber(startingBalance).toFixed(2, 1)} XLM</>,
+          <Badge variant="primary" size="md">
+            {`-${formatAmount(new BigNumber(startingBalance).toString())} XLM`}
+          </Badge>,
         );
         setIconComponent(<Icon.ArrowUp className="HistoryItem__icon--sent" />);
         setRowText("XLM");
@@ -293,10 +308,14 @@ export const HistoryItem = ({
                   _token.decimals,
                 );
                 setBodyComponent(
-                  <>
-                    {isRecieving && "+"}
-                    {formattedTokenAmount} {_token.symbol}
-                  </>,
+                  <Badge
+                    variant={isRecieving ? "success" : "primary"}
+                    size="md"
+                  >
+                    {`${isRecieving && "+"}${formattedTokenAmount} ${
+                      _token.symbol
+                    }`}
+                  </Badge>,
                 );
 
                 setDateText(
@@ -329,10 +348,9 @@ export const HistoryItem = ({
               captureException(`Error fetching token details: ${error}`);
               setRowText(translations(capitalize(attrs.fnName)));
               setBodyComponent(
-                <>
-                  {isRecieving && "+ "}
-                  Unknown
-                </>,
+                <Badge variant={isRecieving ? "success" : "primary"} size="md">
+                  {`${isRecieving && "+"}${translations("Unknown")}`}
+                </Badge>,
               );
               setDateText(
                 (_dateText) =>
@@ -364,10 +382,9 @@ export const HistoryItem = ({
               decimals,
             );
             setBodyComponent(
-              <>
-                {isRecieving && "+"}
-                {formattedTokenAmount} {token.code}
-              </>,
+              <Badge variant={isRecieving ? "success" : "primary"} size="md">
+                {`${isRecieving && "+"}${formattedTokenAmount} ${token.code}`}
+              </Badge>,
             );
 
             setDateText(
@@ -426,10 +443,9 @@ export const HistoryItem = ({
               attrs.to === publicKey && attrs.from !== publicKey;
             const paymentDifference = _isRecipient ? "+" : "-";
             setBodyComponent(
-              <>
-                {paymentDifference}
-                {formattedTokenAmount} {code}
-              </>,
+              <Badge variant={_isRecipient ? "success" : "primary"} size="md">
+                {`${paymentDifference}${formattedTokenAmount} ${code}`}
+              </Badge>,
             );
             setIconComponent(
               _isRecipient ? (
