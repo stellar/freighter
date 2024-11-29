@@ -13,6 +13,7 @@ import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { emitMetric } from "helpers/metrics";
+import { getStellarExpertUrl } from "popup/helpers/account";
 import {
   formatTokenAmount,
   getAttrsFromSorobanHorizonOp,
@@ -58,7 +59,6 @@ interface HistoryItemProps {
   accountBalances: AccountBalancesInterface;
   operation: HistoryItemOperation;
   publicKey: string;
-  url: string;
   networkDetails: NetworkDetails;
   setDetailViewProps: (props: TransactionDetailProps) => void;
   setIsDetailViewShowing: (isDetailViewShowing: boolean) => void;
@@ -68,7 +68,6 @@ export const HistoryItem = ({
   accountBalances,
   operation,
   publicKey,
-  url,
   networkDetails,
   setDetailViewProps,
   setIsDetailViewShowing,
@@ -110,6 +109,8 @@ export const HistoryItem = ({
   const destAssetCode = assetCode || "XLM";
   const isInvokeHostFn = typeI === 24;
 
+  const stellarExpertUrl = getStellarExpertUrl(networkDetails);
+
   const transactionDetailPropsBase: TransactionDetailProps = {
     operation: _op,
     isCreateExternalAccount,
@@ -118,7 +119,7 @@ export const HistoryItem = ({
     isSwap,
     headerTitle: "",
     operationText: "",
-    externalUrl: `${url}/op/${id}`,
+    externalUrl: `${stellarExpertUrl}/op/${id}`,
     setIsDetailViewShowing,
   };
 

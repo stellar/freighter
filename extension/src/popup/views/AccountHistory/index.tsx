@@ -12,11 +12,7 @@ import {
   settingsSelector,
 } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
-import {
-  getIsPayment,
-  getIsSwap,
-  getStellarExpertUrl,
-} from "popup/helpers/account";
+import { getIsPayment, getIsSwap } from "popup/helpers/account";
 import { getAttrsFromSorobanHorizonOp } from "popup/helpers/soroban";
 
 import {
@@ -76,8 +72,6 @@ export const AccountHistory = () => {
   const [detailViewProps, setDetailViewProps] = useState(
     defaultDetailViewProps,
   );
-
-  const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
   useEffect(() => {
     const getData = async () => {
@@ -198,7 +192,6 @@ export const AccountHistory = () => {
                       accountBalances={accountBalances}
                       operation={operation}
                       publicKey={publicKey}
-                      url={stellarExpertUrl}
                       networkDetails={networkDetails}
                       setDetailViewProps={setDetailViewProps}
                       setIsDetailViewShowing={setIsDetailViewShowing}
