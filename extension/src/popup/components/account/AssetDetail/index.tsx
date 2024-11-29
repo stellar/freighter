@@ -247,7 +247,7 @@ export const AssetDetail = ({
           </div>
 
           {assetOperations.length ? (
-            <HistoryList assetDetail>
+            <HistoryList>
               <>
                 {assetOperations.map((operation) => {
                   const historyItemOperation = {
