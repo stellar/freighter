@@ -257,10 +257,10 @@ export const HistoryItem = ({
             operationText: operationString,
           }));
         } else if (attrs.fnName === SorobanTokenInterface.mint) {
-          const isRecieving = attrs.to === publicKey;
+          const isReceiving = attrs.to === publicKey;
 
           setIconComponent(
-            isRecieving ? (
+            isReceiving ? (
               <Icon.ArrowDown className="HistoryItem__icon--received" />
             ) : (
               <Icon.RefreshCcw01 className="HistoryItem__icon--default" />
@@ -290,7 +290,7 @@ export const HistoryItem = ({
               } else {
                 const _token = {
                   contractId: attrs.contractId,
-                  total: isRecieving ? attrs.amount : 0,
+                  total: isReceiving ? attrs.amount : 0,
                   decimals: tokenDetailsResponse.decimals,
                   name: tokenDetailsResponse.name,
                   symbol: tokenDetailsResponse.symbol,
@@ -301,11 +301,11 @@ export const HistoryItem = ({
                   _token.decimals,
                 );
                 const formattedAmount = `${
-                  isRecieving && "+"
+                  isReceiving && "+"
                 }${formattedTokenAmount} ${_token.symbol}`;
                 setBodyComponent(
                   <Badge
-                    variant={isRecieving ? "success" : "primary"}
+                    variant={isReceiving ? "success" : "primary"}
                     size="md"
                   >
                     {formattedAmount}
@@ -315,7 +315,7 @@ export const HistoryItem = ({
                 setDateText(
                   (_dateText) =>
                     `${
-                      isRecieving
+                      isReceiving
                         ? translations("Received")
                         : translations("Minted")
                     } \u2022 ${date}`,
@@ -332,7 +332,7 @@ export const HistoryItem = ({
                     _token.symbol
                   }`,
                   isPayment: false,
-                  isRecipient: isRecieving,
+                  isRecipient: isReceiving,
                   operationText: formattedAmount,
                 }));
               }
@@ -342,14 +342,14 @@ export const HistoryItem = ({
               captureException(`Error fetching token details: ${error}`);
               setRowText(translations(capitalize(attrs.fnName)));
               setBodyComponent(
-                <Badge variant={isRecieving ? "success" : "primary"} size="md">
-                  {`${isRecieving && "+"}${translations("Unknown")}`}
+                <Badge variant={isReceiving ? "success" : "primary"} size="md">
+                  {`${isReceiving && "+"}${translations("Unknown")}`}
                 </Badge>,
               );
               setDateText(
                 (_dateText) =>
                   `${
-                    isRecieving
+                    isReceiving
                       ? translations("Received")
                       : translations("Minted")
                   } \u2022 ${date}`,
@@ -364,7 +364,7 @@ export const HistoryItem = ({
                 headerTitle: translations(capitalize(attrs.fnName)),
                 // manually set `isPayment` now that we've passed the above `isPayment` conditional
                 isPayment: false,
-                isRecipient: isRecieving,
+                isRecipient: isReceiving,
                 operationText: operationString,
               }));
               setIsLoading(false);
@@ -376,10 +376,10 @@ export const HistoryItem = ({
               decimals,
             );
             const formattedAmount = `${
-              isRecieving && "+"
+              isReceiving && "+"
             }${formattedTokenAmount} ${token.code}`;
             setBodyComponent(
-              <Badge variant={isRecieving ? "success" : "primary"} size="md">
+              <Badge variant={isReceiving ? "success" : "primary"} size="md">
                 {formattedAmount}
               </Badge>,
             );
@@ -387,7 +387,7 @@ export const HistoryItem = ({
             setDateText(
               (_dateText) =>
                 `${
-                  isRecieving
+                  isReceiving
                     ? translations("Received")
                     : translations("Minted")
                 } \u2022 ${date}`,
@@ -404,7 +404,7 @@ export const HistoryItem = ({
                 token.code
               }`,
               isPayment: false,
-              isRecipient: isRecieving,
+              isRecipient: isReceiving,
               operationText: formattedAmount,
             }));
           }
