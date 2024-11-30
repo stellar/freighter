@@ -155,11 +155,13 @@ export const HistoryItem = ({
   useEffect(() => {
     const buildHistoryItem = async () => {
       if (isSwap) {
+        const formattedAmount = `${formatAmount(
+          new BigNumber(amount).toString(),
+        )} ${destAssetCode}`;
+
         setBodyComponent(
           <Badge variant="primary" size="md">
-            {`${formatAmount(
-              new BigNumber(amount).toString(),
-            )} ${destAssetCode}`}
+            {formattedAmount}
           </Badge>,
         );
         setRowText(
@@ -177,17 +179,18 @@ export const HistoryItem = ({
               destAssetCode,
             },
           ),
-          operationText: `+${new BigNumber(amount)} ${destAssetCode}`,
+          operationText: formattedAmount,
         }));
       } else if (isPayment) {
         // default to Sent if a payment to self
         const _isRecipient = to === publicKey && from !== publicKey;
         const paymentDifference = _isRecipient ? "+" : "-";
+        const formattedAmount = `${paymentDifference}${formatAmount(
+          new BigNumber(amount).toString(),
+        )} ${destAssetCode}`;
         setBodyComponent(
           <Badge variant={_isRecipient ? "success" : "primary"} size="md">
-            {`${paymentDifference}${formatAmount(
-              new BigNumber(amount).toString(),
-            )} ${destAssetCode}`}
+            {formattedAmount}
           </Badge>,
         );
         setIconComponent(
@@ -210,14 +213,15 @@ export const HistoryItem = ({
           headerTitle: `${
             _isRecipient ? translations("Received") : translations("Sent")
           } ${destAssetCode}`,
-          operationText: `${paymentDifference}${new BigNumber(
-            amount,
-          )} ${destAssetCode}`,
+          operationText: formattedAmount,
         }));
       } else if (isCreateExternalAccount) {
+        const formattedAmount = `-${formatAmount(
+          new BigNumber(startingBalance).toString(),
+        )} XLM`;
         setBodyComponent(
           <Badge variant="primary" size="md">
-            {`-${formatAmount(new BigNumber(startingBalance).toString())} XLM`}
+            {formattedAmount}
           </Badge>,
         );
         setIconComponent(<Icon.ArrowUp className="HistoryItem__icon--sent" />);
@@ -233,7 +237,7 @@ export const HistoryItem = ({
             asset_type: "native",
             to: account,
           } as any, // TODO: overloaded op type, native not valid
-          operationText: `-${new BigNumber(startingBalance)} XLM`,
+          operationText: formattedAmount,
         }));
       } else if (isInvokeHostFn) {
         const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
@@ -307,14 +311,15 @@ export const HistoryItem = ({
                   new BigNumber(attrs.amount),
                   _token.decimals,
                 );
+                const formattedAmount = `${
+                  isRecieving && "+"
+                }${formattedTokenAmount} ${_token.symbol}`;
                 setBodyComponent(
                   <Badge
                     variant={isRecieving ? "success" : "primary"}
                     size="md"
                   >
-                    {`${isRecieving && "+"}${formattedTokenAmount} ${
-                      _token.symbol
-                    }`}
+                    {formattedAmount}
                   </Badge>,
                 );
 
@@ -339,7 +344,7 @@ export const HistoryItem = ({
                   }`,
                   isPayment: false,
                   isRecipient: isRecieving,
-                  operationText: `${formattedTokenAmount} ${_token.symbol}`,
+                  operationText: formattedAmount,
                 }));
               }
               setIsLoading(false);
@@ -381,9 +386,12 @@ export const HistoryItem = ({
               new BigNumber(attrs.amount),
               decimals,
             );
+            const formattedAmount = `${
+              isRecieving && "+"
+            }${formattedTokenAmount} ${token.code}`;
             setBodyComponent(
               <Badge variant={isRecieving ? "success" : "primary"} size="md">
-                {`${isRecieving && "+"}${formattedTokenAmount} ${token.code}`}
+                {formattedAmount}
               </Badge>,
             );
 
@@ -408,7 +416,7 @@ export const HistoryItem = ({
               }`,
               isPayment: false,
               isRecipient: isRecieving,
-              operationText: `${formattedTokenAmount} ${token.code}`,
+              operationText: formattedAmount,
             }));
           }
         } else if (attrs.fnName === SorobanTokenInterface.transfer) {
@@ -442,9 +450,10 @@ export const HistoryItem = ({
             const _isRecipient =
               attrs.to === publicKey && attrs.from !== publicKey;
             const paymentDifference = _isRecipient ? "+" : "-";
+            const formattedAmount = `${paymentDifference}${formattedTokenAmount} ${code}`;
             setBodyComponent(
               <Badge variant={_isRecipient ? "success" : "primary"} size="md">
-                {`${paymentDifference}${formattedTokenAmount} ${code}`}
+                {formattedAmount}
               </Badge>,
             );
             setIconComponent(
@@ -467,7 +476,7 @@ export const HistoryItem = ({
               headerTitle: `${
                 _isRecipient ? translations("Received") : translations("Sent")
               } ${code}`,
-              operationText: `${paymentDifference}${formattedTokenAmount} ${code}`,
+              operationText: formattedAmount,
             }));
           } catch (error) {
             // falls back to only showing contract ID
