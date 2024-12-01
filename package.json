@@ -78,7 +78,7 @@
     "@types/styled-components": "5.1.4",
     "@typescript-eslint/eslint-plugin": "^5.5.0",
     "@typescript-eslint/parser": "^5.5.0",
-    "@vercel/ncc": "^0.38.2",
+    "@vercel/ncc": "^0.38.3",
     "babel-eslint": "10.x",
     "babel-jest": "^29.7.0",
     "babel-loader": "^9.2.1",
@@ -108,7 +108,7 @@
     "pretty-quick": "^2.0.1",
     "ts-loader": "9.5.1",
     "typescript": "^5.3.3",
-    "webpack": "5.95.0",
+    "webpack": "5.96.1",
     "webpack-cli": "5.1.4",
     "webpack-dev-server": "5.1.0",
     "webpack-merge": "5.10.0"
