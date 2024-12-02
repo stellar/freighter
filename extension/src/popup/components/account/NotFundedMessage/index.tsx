@@ -1,10 +1,12 @@
-import React from "react";
-import { useDispatch } from "react-redux";
+import { Button, Notification } from "@stellar/design-system";
 import { Formik, Form } from "formik";
-import { Button, Icon } from "@stellar/design-system";
+import React from "react";
 import { useTranslation } from "react-i18next";
+import { useDispatch } from "react-redux";
 
 import { fundAccount } from "popup/ducks/accountServices";
+import { ROUTES } from "popup/constants/routes";
+import { navigateTo } from "popup/helpers/navigate";
 
 import "./styles.scss";
 
@@ -27,47 +29,41 @@ export const NotFundedMessage = ({
   };
 
   return (
-    <>
-      <div className="NotFunded" data-testid="not-funded">
-        <div className="NotFunded__header">
-          <Icon.InfoCircle />
-          {t("Stellar address is not funded")}
-        </div>
-        <div className="NotFunded__copy">
-          {t("To create this account, fund it with a minimum of 1 XLM.")}
-          {canUseFriendbot ? (
-            <span>
-              {t(
-                "You can fund this account using the friendbot tool. The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens.",
-              )}
-            </span>
-          ) : null}{" "}
-          <a
-            href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
-            rel="noreferrer"
-            target="_blank"
-          >
-            {t("Learn more about account creation")}
-          </a>
-        </div>
-      </div>
-      {canUseFriendbot ? (
+    <div className="NotFunded" data-testid="not-funded">
+      <Notification
+        variant="primary"
+        title={t("To start using this account, fund it with at least 1 XLM.")}
+      />
+
+      <div className="NotFunded__spacer" />
+
+      <Button
+        variant="secondary"
+        size="md"
+        isFullWidth
+        onClick={() => navigateTo(ROUTES.viewPublicKey)}
+      >
+        {t("Add XLM")}
+      </Button>
+
+      <div className="NotFunded__spacer" />
+
+      {canUseFriendbot && (
         <Formik initialValues={{}} onSubmit={handleFundAccount}>
           {({ isSubmitting }) => (
-            <Form className="NotFunded__form">
+            <Form>
               <Button
                 variant="primary"
                 size="md"
                 isFullWidth
                 isLoading={isSubmitting}
-                type="submit"
               >
                 {t("Fund with Friendbot")}
               </Button>
             </Form>
           )}
         </Formik>
-      ) : null}
-    </>
+      )}
+    </div>
   );
 };
