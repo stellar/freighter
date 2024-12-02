@@ -9,7 +9,6 @@ import { useTranslation } from "react-i18next";
 import { ROUTES } from "popup/constants/routes";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
-import { FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
 import { View } from "popup/basics/layout/View";
 import {
   confirmPassword,
@@ -55,45 +54,42 @@ export const UnlockAccount = () => {
           <Formik onSubmit={handleSubmit} initialValues={initialValues}>
             {({ dirty, isSubmitting, isValid, errors, touched }) => (
               <Form>
-                <div>
-                  <FormRows>
-                    <Field name="password">
-                      {({ field }: FieldProps) => (
-                        <Input
-                          fieldSize="md"
-                          autoComplete="off"
-                          id="password-input"
-                          placeholder={t("Enter Password")}
-                          type="password"
-                          error={
-                            authError ||
-                            (errors.password && touched.password
-                              ? errors.password
-                              : "")
-                          }
-                          {...field}
-                        />
-                      )}
-                    </Field>
-                  </FormRows>
-                  <SubmitButtonWrapper>
-                    <Button
-                      size="md"
-                      isFullWidth
-                      variant="secondary"
-                      type="submit"
-                      isLoading={isSubmitting}
-                      disabled={!(dirty && isValid)}
-                    >
-                      {t("Log In")}
-                    </Button>
-                  </SubmitButtonWrapper>
-                </div>
+                <Field name="password">
+                  {({ field }: FieldProps) => (
+                    <Input
+                      id="password-input"
+                      isPassword
+                      fieldSize="md"
+                      autoComplete="off"
+                      placeholder={t("Enter Password")}
+                      error={
+                        authError ||
+                        (errors.password && touched.password
+                          ? errors.password
+                          : "")
+                      }
+                      {...field}
+                    />
+                  )}
+                </Field>
+
+                <div className="UnlockAccount__spacer-small" />
+
+                <Button
+                  size="md"
+                  isFullWidth
+                  variant="secondary"
+                  isLoading={isSubmitting}
+                  disabled={!(dirty && isValid)}
+                >
+                  {t("Login")}
+                </Button>
               </Form>
             )}
           </Formik>
         </div>
       </View.Content>
+
       <View.Footer hasExtraPaddingBottom customGap="0.25rem">
         <div className="UnlockAccount__footer-label">
           {t("Want to add another account?")}
