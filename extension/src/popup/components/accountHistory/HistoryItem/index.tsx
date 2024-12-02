@@ -87,7 +87,6 @@ export const HistoryItem = ({
     amount,
     asset_code: assetCode,
     asset_issuer: assetIssuer,
-    asset_type: assetType,
     created_at: createdAt,
     id,
     to,
@@ -101,8 +100,12 @@ export const HistoryItem = ({
     isSwap = false,
   } = _op;
   let sourceAssetCode;
+  let sourceAssetIssuer: string;
   if ("source_asset_code" in operation) {
-    sourceAssetCode = operation.source_asset_code;
+    sourceAssetCode = operation.source_asset_code || "";
+  }
+  if ("source_asset_issuer" in operation) {
+    sourceAssetIssuer = operation.source_asset_issuer || "";
   }
   const operationType = camelCase(type) as keyof typeof OPERATION_TYPES;
   const opTypeStr = OPERATION_TYPES[operationType] || t("Transaction");
@@ -137,9 +140,7 @@ export const HistoryItem = ({
   const [rowText, setRowText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [IconComponent, setIconComponent] = useState(
-    (
-      <Icon.RefreshCcw01 className="HistoryItem__icon--default" />
-    ) as React.ReactElement | null,
+    null as React.ReactElement | null,
   );
   const [BodyComponent, setBodyComponent] = useState(
     null as React.ReactElement | null,
@@ -156,7 +157,14 @@ export const HistoryItem = ({
       </Badge>
     );
   };
-  const renderIcon = () => IconComponent;
+  const renderIcon = () => {
+    if (IconComponent) {
+      return IconComponent;
+    }
+
+    return <Icon.RefreshCcw01 className="HistoryItem__icon--default" />;
+  };
+
   /* eslint-disable react-hooks/exhaustive-deps */
   const translations = useCallback(t, []);
 
@@ -172,6 +180,40 @@ export const HistoryItem = ({
             {formattedAmount}
           </Badge>,
         );
+
+        const destIcon =
+          destAssetCode === "XLM"
+            ? StellarLogo
+            : await getIconUrlFromIssuer({
+                key: assetIssuer || "",
+                code: destAssetCode || "",
+                networkDetails,
+              });
+
+        const sourceIcon =
+          srcAssetCode === "XLM"
+            ? StellarLogo
+            : await getIconUrlFromIssuer({
+                key: sourceAssetIssuer || "",
+                code: srcAssetCode || "",
+                networkDetails,
+              });
+
+        setIconComponent(
+          <AssetSds
+            size="lg"
+            variant="swap"
+            sourceOne={{
+              altText: "Swap source token logo",
+              image: sourceIcon || PlaceholderIcon,
+            }}
+            sourceTwo={{
+              altText: "Swap destination token logo",
+              image: destIcon || PlaceholderIcon,
+            }}
+          />,
+        );
+
         setRowText(
           translations(`{{srcAssetCode}} for {{destAssetCode}}`, {
             srcAssetCode,
@@ -202,8 +244,8 @@ export const HistoryItem = ({
           </Badge>,
         );
 
-        const iconUrl =
-          assetType === "native"
+        const destIcon =
+          destAssetCode === "XLM"
             ? StellarLogo
             : await getIconUrlFromIssuer({
                 key: assetIssuer || "",
@@ -217,7 +259,7 @@ export const HistoryItem = ({
             variant="platform"
             sourceOne={{
               altText: "Payment token logo",
-              image: iconUrl || PlaceholderIcon,
+              image: destIcon || PlaceholderIcon,
             }}
             sourceTwo={{
               altText: "Payment detail icon",

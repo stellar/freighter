@@ -1,3 +1,4 @@
+// TODO: clean-up unused props
 .HistoryItem {
   color: var(--sds-clr-gray-12);
   cursor: pointer;
@@ -14,8 +15,6 @@
   }
 
   &__icon {
-    border: 1px solid var(--sds-clr-gray-03);
-    border-radius: 2rem;
     display: flex;
     align-items: center;
     justify-content: center;
