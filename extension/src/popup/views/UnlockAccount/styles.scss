@@ -1,12 +1,29 @@
 .UnlockAccount {
-  display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  gap: 2rem;
+  display: flex;
+  width: 100%;
   padding-top: 1.5rem;
 
-  &__spacer {
-    height: 1rem;
+  &__wrapper {
+    flex-direction: column;
+    display: flex;
+    width: 100%;
+    background-color: var(--sds-clr-gray-02);
+    padding: 1rem;
+    border-radius: 0.5rem;
+  }
+
+  &__title {
+    align-self: center;
+  }
+
+  &__subtitle {
+    align-self: center;
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__spacer-big {
+    height: 1.5rem;
   }
 
   &__spacer-small {
