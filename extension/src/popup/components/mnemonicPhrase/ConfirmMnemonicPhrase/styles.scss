@@ -1,7 +1,10 @@
 @use "../../../styles/utils.scss" as *;
 
 .ConfirmMnemonicPhrase {
-  margin-top: #{pxToRem(168px)};
+  margin-top: #{pxToRem(146px)};
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 
   &__card-wrapper {
     margin-bottom: #{pxToRem(32px)};
@@ -27,17 +30,6 @@
     &__buttons {
       display: flex;
       gap: #{pxToRem(12px)};
-    }
-  }
-
-  &__error {
-    height: #{pxToRem(74px)};
-    margin: 0 auto;
-    padding: #{pxToRem(8px)};
-    width: #{pxToRem(284px)};
-
-    .Alert__content {
-      align-items: center;
     }
   }
 }
