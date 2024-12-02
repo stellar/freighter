@@ -3,7 +3,7 @@ import get from "lodash/get";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useHistory } from "react-router-dom";
 import { Field, Form, Formik, FieldProps } from "formik";
-import { Button, Heading, Input, Link } from "@stellar/design-system";
+import { Button, Heading, Input } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
@@ -95,31 +95,33 @@ export const UnlockAccount = () => {
         </div>
       </View.Content>
       <View.Footer hasExtraPaddingBottom customGap="0.25rem">
-        <div>{t("Want to add another account?")}</div>
-        <div>
-          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-          <Link
-            variant="secondary"
-            role="button"
-            onClick={() => {
-              openTab(newTabHref(ROUTES.recoverAccount));
-            }}
-          >
-            {t("Import using account seed phrase")}
-          </Link>
+        <div className="UnlockAccount__footer-label">
+          {t("Want to add another account?")}
         </div>
-        <div>
-          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-          <Link
-            variant="secondary"
-            role="button"
-            onClick={() => {
-              openTab(newTabHref(ROUTES.accountCreator));
-            }}
-          >
-            {t("Create a wallet")}
-          </Link>
-        </div>
+
+        <Button
+          size="md"
+          isFullWidth
+          variant="tertiary"
+          onClick={() => {
+            openTab(newTabHref(ROUTES.recoverAccount));
+          }}
+        >
+          {t("Import using account seed phrase")}
+        </Button>
+
+        <div className="UnlockAccount__spacer" />
+
+        <Button
+          size="md"
+          isFullWidth
+          variant="tertiary"
+          onClick={() => {
+            openTab(newTabHref(ROUTES.accountCreator));
+          }}
+        >
+          {t("Create a wallet")}
+        </Button>
       </View.Footer>
     </React.Fragment>
   );

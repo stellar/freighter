@@ -4,4 +4,16 @@
   justify-content: flex-start;
   gap: 2rem;
   padding-top: 1.5rem;
+
+  &__spacer {
+    height: 1rem;
+  }
+
+  &__footer-label {
+    color: var(--sds-clr-gray-11);
+    width: 100%;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.5rem;
+  }
 }
