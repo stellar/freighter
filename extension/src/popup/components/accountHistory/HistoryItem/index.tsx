@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { captureException } from "@sentry/browser";
 import camelCase from "lodash/camelCase";
-import { Badge, Icon, Loader } from "@stellar/design-system";
+import { Badge, Icon, Loader, Asset as AssetSds } from "@stellar/design-system";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { Asset } from "stellar-sdk";
@@ -30,6 +30,12 @@ import {
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getTokenDetails } from "@shared/api/internal";
+import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
+
+import StellarLogo from "popup/assets/stellar-logo.png";
+import SentIcon from "popup/assets/sent-icon.png";
+import ReceivedIcon from "popup/assets/received-icon.png";
+import PlaceholderIcon from "popup/assets/placeholder-icon.png";
 
 import { TransactionDetailProps } from "../TransactionDetail";
 import "./styles.scss";
@@ -80,6 +86,8 @@ export const HistoryItem = ({
     account,
     amount,
     asset_code: assetCode,
+    asset_issuer: assetIssuer,
+    asset_type: assetType,
     created_at: createdAt,
     id,
     to,
@@ -193,12 +201,29 @@ export const HistoryItem = ({
             {formattedAmount}
           </Badge>,
         );
+
+        const iconUrl =
+          assetType === "native"
+            ? StellarLogo
+            : await getIconUrlFromIssuer({
+                key: assetIssuer || "",
+                code: destAssetCode || "",
+                networkDetails,
+              });
+
         setIconComponent(
-          _isRecipient ? (
-            <Icon.ArrowDown className="HistoryItem__icon--received" />
-          ) : (
-            <Icon.ArrowUp className="HistoryItem__icon--sent" />
-          ),
+          <AssetSds
+            size="lg"
+            variant="platform"
+            sourceOne={{
+              altText: "Payment token logo",
+              image: iconUrl || PlaceholderIcon,
+            }}
+            sourceTwo={{
+              altText: "Payment detail icon",
+              image: _isRecipient ? ReceivedIcon : SentIcon,
+            }}
+          />,
         );
         setRowText(destAssetCode);
         setDateText(
