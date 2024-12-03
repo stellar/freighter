@@ -33,7 +33,16 @@ export const NotFundedMessage = ({
       <Notification
         variant="primary"
         title={t("To start using this account, fund it with at least 1 XLM.")}
-      />
+      >
+        <a
+          className="NotFunded__link"
+          href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
+          rel="noreferrer"
+          target="_blank"
+        >
+          {t("Learn more about account creation")}
+        </a>
+      </Notification>
 
       <div className="NotFunded__spacer" />
 
