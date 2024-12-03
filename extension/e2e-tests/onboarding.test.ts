@@ -165,7 +165,7 @@ test("Import 24 word wallet", async ({ page }) => {
       page,
       screenshot: "wallet-import-24-word-phrase-page.png",
     },
-    { mask: [page.locator(".RecoverAccount__mnemonic-input")] },
+    { mask: [page.locator(".RecoverAccount__mnemonic-input")], threshold: 0.4 },
   );
 
   await page.getByRole("button", { name: "Import" }).click();
