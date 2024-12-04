@@ -1,27 +1,29 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Field, Form, Formik, FieldProps } from "formik";
+import { Formik, Form } from "formik";
 import { object as YupObject } from "yup";
 import {
+  Card,
   Input,
-  Checkbox,
   Icon,
-  Link,
   Button,
+  Text,
   Toggle,
 } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
+import { AppDispatch } from "popup/App";
+import {
+  PasswordForm,
+  initialValues,
+  FormValues,
+} from "popup/components/accountCreator/PasswordForm";
 import {
   Onboarding,
-  OnboardingButtons,
-  OnboardingHeader,
-  OnboardingOneCol,
-  OnboardingTwoCol,
+  OnboardingError,
+  OnboardingModal,
 } from "popup/components/Onboarding";
-import { FormError, FormRows } from "popup/basics/Forms";
 import { View } from "popup/basics/layout/View";
-import { PasswordRequirements } from "popup/components/PasswordRequirements";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
@@ -61,6 +63,9 @@ const PhraseInput = ({
 
   return (
     <div key={phraseInput} className="RecoverAccount__phrase-input">
+      <div className="RecoverAccount__phrase-input__number">
+        {(index + 1).toString().padStart(2, "0")}
+      </div>
       <Input
         fieldSize="md"
         autoComplete="off"
@@ -71,7 +76,6 @@ const PhraseInput = ({
           setInputValue(e.target.value);
         }}
         onPaste={(e) => e.preventDefault()}
-        placeholder={`${index + 1}.`}
         type={isTextShowing ? "text" : "password"}
         value={inputValue}
       />
@@ -86,18 +90,6 @@ const buildMnemonicPhrase = (mnemonicPhraseArr: string[]) =>
   mnemonicPhraseArr.join(" ").trim();
 
 export const RecoverAccount = () => {
-  interface FormValues {
-    password: string;
-    confirmPassword: string;
-    termsOfUse: boolean;
-  }
-
-  const initialValues: FormValues = {
-    password: "",
-    confirmPassword: "",
-    termsOfUse: false,
-  };
-
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
   const authError = useSelector(authErrorSelector);
@@ -108,16 +100,18 @@ export const RecoverAccount = () => {
     termsOfUse: termsofUseValidator,
   });
 
-  const dispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch();
   const [isLongPhrase, setIsLongPhrase] = useState(false);
   const [isTextShowing, setIsTextShowing] = useState(false);
   const [phraseInputs, setPhraseInputs] = useState([] as string[]);
   const [mnemonicPhraseArr, setMnemonicPhraseArr] = useState([] as string[]);
+  const [password, setPassword] = useState("");
 
-  const handleSubmit = async (values: FormValues) => {
-    const { password } = values;
+  const handleConfirm = (values: FormValues) => {
+    setPassword(values.password);
+  };
 
-    // eslint-disable-next-line
+  const handleSubmit = async () => {
     await dispatch(
       recoverAccount({
         password,
@@ -162,161 +156,117 @@ export const RecoverAccount = () => {
 
   return (
     <React.Fragment>
-      <View.Header />
-      <View.Content alignment="center">
+      <View.Content alignment="center" hasNoTopPadding hasNoBottomPadding>
         <Formik
           initialValues={initialValues}
           validationSchema={RecoverAccountSchema}
           onSubmit={handleSubmit}
         >
-          {({ dirty, touched, isSubmitting, isValid, errors }) => (
-            <Onboarding layout="full">
-              <Form>
-                <OnboardingOneCol>
-                  <OnboardingHeader>
-                    {t("Import wallet from recovery phrase")}
-                  </OnboardingHeader>
-                  <div className="RecoverAccount__subheader">
-                    {t("Enter your 12 word phrase to restore your wallet")}
-                  </div>
-                </OnboardingOneCol>
-
-                <OnboardingTwoCol>
-                  <OnboardingOneCol>
-                    <div>
-                      <div
-                        className={`RecoverAccount__mnemonic-input ${
-                          isLongPhrase
-                            ? "RecoverAccount__mnemonic-input--long-phrase"
-                            : ""
-                        }`}
-                      >
-                        {phraseInputs.map((phraseInput, i) => (
-                          <PhraseInput
-                            key={phraseInput}
-                            phraseInput={phraseInput}
-                            handleMnemonicInputChange={
-                              handleMnemonicInputChange
-                            }
-                            isTextShowing={isTextShowing}
-                            isLongPhrase={isLongPhrase}
-                            index={i}
-                          />
-                        ))}
-                      </div>
-                      {authError ? <FormError>{authError}</FormError> : <></>}
-                      <div className="RecoverAccount__mnemonic-footer">
-                        <div className="RecoverAccount__phrase-toggle">
-                          <div>{SHORT_PHRASE} word</div>
-                          <Toggle
-                            fieldSize="md"
-                            checked={isLongPhrase}
-                            id="RecoverAccount__toggle"
-                            onChange={() => setIsLongPhrase(!isLongPhrase)}
-                          />
-                          <div>{LONG_PHRASE} word</div>
-                        </div>
-                        <div className="RecoverAccount__mnemonic__text-toggle">
-                          <Button
-                            variant="secondary"
-                            onClick={() => setIsTextShowing(!isTextShowing)}
-                            size="sm"
-                            type="button"
-                          >
-                            <span> {isTextShowing ? "Hide" : "Show"}</span>
-                            {isTextShowing ? <Icon.EyeOff /> : <Icon.Eye />}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </OnboardingOneCol>
-
-                  <OnboardingOneCol>
-                    <FormRows>
-                      <Input
-                        fieldSize="md"
-                        autoComplete="off"
-                        customInput={<Field />}
-                        id="password-input"
-                        name="password"
-                        placeholder={t("New password")}
-                        type="password"
-                        error={
-                          errors.password && touched.password
-                            ? errors.password
-                            : ""
-                        }
-                      />
-                      <Input
-                        fieldSize="md"
-                        autoComplete="off"
-                        customInput={<Field />}
-                        id="confirm-password-input"
-                        name="confirmPassword"
-                        placeholder={t("Confirm password")}
-                        type="password"
-                        error={
-                          errors.confirmPassword && touched.confirmPassword
-                            ? errors.confirmPassword
-                            : null
-                        }
-                      />
-                      <PasswordRequirements />
-                    </FormRows>
-
-                    <Field name="termsOfUse">
-                      {({ field, form }: FieldProps) => (
-                        <Checkbox
-                          fieldSize="md"
-                          autoComplete="off"
-                          id="termsOfUse-input"
-                          error={
-                            errors.termsOfUse && touched.termsOfUse
-                              ? errors.termsOfUse
-                              : null
-                          }
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              form.setFieldValue("termsOfUse", !field.value);
-                              e.currentTarget.checked = !field.value;
-                            }
-                          }}
-                          label={
-                            <>
-                              {t("I have read and agree to the")}{" "}
-                              <Link
-                                variant="primary"
-                                href="https://stellar.org/terms-of-service"
-                              >
-                                {t("Terms of Use")}
-                              </Link>
-                            </>
-                          }
-                          {...field}
-                        />
-                      )}
-                    </Field>
-
-                    <OnboardingButtons hasGoBackBtn>
-                      <Button
-                        size="md"
-                        variant="tertiary"
-                        isLoading={isSubmitting}
-                        disabled={
-                          !(
-                            dirty &&
-                            isValid &&
-                            buildMnemonicPhrase(mnemonicPhraseArr).length
-                          )
+          {({ dirty, touched, isSubmitting, isValid, errors, values }) => (
+            <>
+              {password ? (
+                <div className="RecoverAccount">
+                  <Form>
+                    <Onboarding layout="half">
+                      <OnboardingModal
+                        data-testid="confirm-mnemonic-phrase"
+                        headerText="Import wallet from recovery phrase"
+                        bodyText={
+                          <>
+                            <Text as="p" size="md">
+                              {t(
+                                "Enter your mnemonic phrase to restore your wallet",
+                              )}
+                            </Text>
+                          </>
                         }
                       >
-                        {t("Import")}
-                      </Button>
-                    </OnboardingButtons>
-                  </OnboardingOneCol>
-                </OnboardingTwoCol>
-              </Form>
-            </Onboarding>
+                        <Card variant="primary">
+                          <div className="RecoverAccount__mnemonic-wrapper">
+                            <div
+                              className={`RecoverAccount__mnemonic-input ${
+                                isLongPhrase
+                                  ? "RecoverAccount__mnemonic-input--long-phrase"
+                                  : ""
+                              }`}
+                            >
+                              {phraseInputs.map((phraseInput, i) => (
+                                <PhraseInput
+                                  key={phraseInput}
+                                  phraseInput={phraseInput}
+                                  handleMnemonicInputChange={
+                                    handleMnemonicInputChange
+                                  }
+                                  isTextShowing={isTextShowing}
+                                  isLongPhrase={isLongPhrase}
+                                  index={i}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </Card>
+                        <div className="RecoverAccount__mnemonic-footer">
+                          <div className="RecoverAccount__phrase-toggle">
+                            <div>{SHORT_PHRASE} word</div>
+                            <Toggle
+                              fieldSize="md"
+                              checked={isLongPhrase}
+                              id="RecoverAccount__toggle"
+                              onChange={() => setIsLongPhrase(!isLongPhrase)}
+                            />
+                            <div>{LONG_PHRASE} word</div>
+                          </div>
+                          <div className="RecoverAccount__mnemonic__text-toggle">
+                            <Button
+                              variant="secondary"
+                              onClick={() => setIsTextShowing(!isTextShowing)}
+                              size="sm"
+                              type="button"
+                            >
+                              <span> {isTextShowing ? "Hide" : "Show"}</span>
+                              {isTextShowing ? <Icon.EyeOff /> : <Icon.Eye />}
+                            </Button>
+                          </div>
+                          <div className="RecoverAccount__import">
+                            <Button
+                              variant="secondary"
+                              size="lg"
+                              type="submit"
+                              isFullWidth
+                              disabled={
+                                !(
+                                  dirty &&
+                                  isValid &&
+                                  buildMnemonicPhrase(mnemonicPhraseArr).length
+                                )
+                              }
+                              isLoading={isSubmitting}
+                            >
+                              {t("Import")}
+                            </Button>
+                          </div>
+                        </div>
+                      </OnboardingModal>
+                      <OnboardingError
+                        errorString={
+                          authError ? t("Invalid mnemonic phrase") : ""
+                        }
+                      />
+                    </Onboarding>
+                  </Form>
+                </div>
+              ) : (
+                <PasswordForm
+                  isValid={isValid}
+                  dirty={dirty}
+                  isSubmitting={isSubmitting}
+                  errors={errors}
+                  touched={touched}
+                  values={values}
+                  handleSubmit={handleConfirm}
+                />
+              )}
+            </>
           )}
         </Formik>
       </View.Content>

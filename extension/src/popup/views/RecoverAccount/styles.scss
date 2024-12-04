@@ -1,55 +1,25 @@
-.TextArea {
-  padding: 1.5rem !important;
-  resize: none;
-}
+@use "../../styles/utils.scss" as *;
 
 .RecoverAccount {
-  &__header {
-    font-size: 2.5rem;
-    line-height: 3rem;
-    font-weight: var(--font-weight-medium);
-    color: var(--sds-clr-gray-12);
-    text-align: left;
-    margin-bottom: 1.5rem;
-  }
+  align-items: center;
+  display: flex;
+  height: 100%;
+  margin-top: #{pxToRem(121px)};
 
-  &__subheader {
-    line-height: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  &__screen {
-    display: flex;
-    flex-flow: row wrap;
-    justify-content: space-between;
-    height: calc(100vh - var(--header--height));
-    max-height: 40rem;
-    max-width: 57rem;
-    width: 100%;
-    margin: auto;
-  }
-
-  &__half-screen {
-    display: flex;
-    flex-direction: column;
-    justify-content: start;
-    padding: 0 0 2rem 1.55rem;
-    width: 27rem;
-
-    .Checkbox__container label {
-      color: rgba(255, 255, 255, 0.6);
-    }
+  &__mnemonic-wrapper {
+    overflow: scroll;
+    height: #{pxToRem(246px)};
   }
 
   &__mnemonic-input {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 0.25rem;
-    max-height: 23.25rem;
+    gap: #{pxToRem(6px)} #{pxToRem(16px)};
+    max-height: #{pxToRem(244px)};
     overflow: hidden;
+    padding: #{pxToRem(3px)} #{pxToRem(6px)};
+    position: relative;
     transition: max-height var(--dropdown-animation);
-    width: 24rem;
 
     &--long-phrase {
       max-height: 48rem;
@@ -60,7 +30,25 @@
     align-items: center;
     display: flex;
     gap: 0.5rem;
-    width: 11.6875rem;
+    width: #{pxToRem(153px)};
+
+    &__number {
+      color: var(--sds-clr-gray-11);
+      font-size: #{pxToRem(14px)};
+      line-height: #{pxToRem(20px)};
+      margin-left: #{pxToRem(10px)};
+      position: absolute;
+      z-index: var(--z-index-tooltip);
+    }
+
+    .Input__container {
+      padding-left: #{pxToRem(30px)};
+      padding-right: 0;
+
+      input {
+        width: #{pxToRem(130px)};
+      }
+    }
   }
 
   &__phrase-toggle {
@@ -74,6 +62,9 @@
     display: flex;
     justify-content: space-between;
     margin-top: 0.5rem;
+    flex-direction: column;
+    align-items: center;
+    gap: #{pxToRem(16px)};
   }
 
   &__text-toggle {
@@ -85,5 +76,21 @@
       color: var(--color-white);
       font-size: 0.875rem;
     }
+  }
+
+  &__import {
+    margin-top: #{pxToRem(16px)};
+    width: 100%;
+  }
+
+  // @TODO: remove when Toggle is updated to be tab-able
+  .Toggle__input {
+    display: block;
+    height: 0;
+    width: 0;
+  }
+
+  .Toggle__input:focus-visible ~ .Toggle__track {
+    box-shadow: 0 0 0 #{pxToRem(2px)} var(--sds-input-color-border-default-focus);
   }
 }
