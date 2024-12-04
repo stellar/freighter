@@ -51,11 +51,12 @@ export const UnlockAccount = () => {
 
   useEffect(() => {
     const fetchLastUsedAccount = async () => {
-      // eslint-disable-next-line @typescript-eslint/await-thenable
-      const res = (await dispatch(loadLastUsedAccount())) as any;
-      if (loadLastUsedAccount.fulfilled.match(res)) {
-        setLastUsedAccount(res.payload.lastUsedAccount);
+      /* eslint-disable */
+      const response = (await dispatch(loadLastUsedAccount())) as any;
+      if (loadLastUsedAccount.fulfilled.match(response)) {
+        setLastUsedAccount(response.payload.lastUsedAccount);
       }
+      /* eslint-enable */
     };
 
     fetchLastUsedAccount();
