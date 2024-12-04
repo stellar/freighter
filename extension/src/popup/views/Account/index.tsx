@@ -284,15 +284,17 @@ export const Account = () => {
                   />
                 </div>
               )}
-              {!isFunded && !hasError && !error?.horizon && (
-                <NotFundedMessage
-                  canUseFriendbot={!!networkDetails.friendbotUrl}
-                  setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
-                  publicKey={publicKey}
-                />
-              )}
             </div>
           </View.Content>
+          <View.Footer>
+            {!isFunded && !hasError && !error?.horizon && (
+              <NotFundedMessage
+                canUseFriendbot={!!networkDetails.friendbotUrl}
+                setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
+                publicKey={publicKey}
+              />
+            )}
+          </View.Footer>
         </>
       )}
     </>
