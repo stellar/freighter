@@ -45,6 +45,7 @@ import {
   KEY_ID,
   KEY_ID_LIST,
   RECENT_ADDRESSES,
+  LAST_USED_ACCOUNT,
   CACHED_MEMO_REQUIRED_ACCOUNTS_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
@@ -1216,6 +1217,17 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { recentAddresses };
   };
 
+  const setLastUsedAccount = async () => {
+    const { publicKey } = request;
+    await localStore.setItem(LAST_USED_ACCOUNT, publicKey);
+    return { lastUsedAccount: publicKey };
+  };
+
+  const loadLastUsedAccount = async () => {
+    const lastUsedAccount = (await localStore.getItem(LAST_USED_ACCOUNT)) || "";
+    return { lastUsedAccount };
+  };
+
   const signOut = async () => {
     sessionStore.dispatch(logOut());
 
@@ -1803,6 +1815,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       signFreighterSorobanTransaction,
     [SERVICE_TYPES.ADD_RECENT_ADDRESS]: addRecentAddress,
     [SERVICE_TYPES.LOAD_RECENT_ADDRESSES]: loadRecentAddresses,
+    [SERVICE_TYPES.SET_LAST_USED_ACCOUNT]: setLastUsedAccount,
+    [SERVICE_TYPES.LOAD_LAST_USED_ACCOUNT]: loadLastUsedAccount,
     [SERVICE_TYPES.SIGN_OUT]: signOut,
     [SERVICE_TYPES.SHOW_BACKUP_PHRASE]: showBackupPhrase,
     [SERVICE_TYPES.SAVE_ALLOWLIST]: saveAllowList,

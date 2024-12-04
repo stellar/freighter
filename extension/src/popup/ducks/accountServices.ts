@@ -13,6 +13,8 @@ import {
   importHardwareWallet as importHardwareWalletService,
   makeAccountActive as makeAccountActiveService,
   updateAccountName as updateAccountNameService,
+  setLastUsedAccount as setLastUsedAccountService,
+  loadLastUsedAccount as loadLastUsedAccountService,
   confirmMnemonicPhrase as confirmMnemonicPhraseService,
   confirmMigratedMnemonicPhrase as confirmMigratedMnemonicPhraseService,
   createAccount as createAccountService,
@@ -171,6 +173,32 @@ export const updateAccountName = createAsyncThunk(
   "auth/updateAccountName",
   (accountName: string) => updateAccountNameService(accountName),
 );
+
+export const setLastUsedAccount = createAsyncThunk<
+  { lastUsedAccount: string },
+  { publicKey: string },
+  { rejectValue: ErrorMessage }
+>("auth/setLastUsedAccount", async ({ publicKey }, thunkApi) => {
+  try {
+    return await setLastUsedAccountService({ publicKey });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
+  }
+});
+
+export const loadLastUsedAccount = createAsyncThunk<
+  { lastUsedAccount: string },
+  undefined,
+  { rejectValue: ErrorMessage }
+>("auth/loadLastUsedAccount", async (_: any, thunkApi) => {
+  try {
+    return await loadLastUsedAccountService();
+  } catch (e) {
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return thunkApi.rejectWithValue({ errorMessage: message });
+  }
+});
 
 export const recoverAccount = createAsyncThunk<
   {
