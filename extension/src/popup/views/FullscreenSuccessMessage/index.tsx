@@ -41,11 +41,7 @@ export const FullscreenSuccessMessage = () => {
           </div>
         </div>
       </div>
-      <View.Content
-        alignment="center"
-        data-testid="account-creator-view"
-        hasNoTopPadding
-      >
+      <View.Content alignment="center" hasNoTopPadding>
         <div className="FullscreenSuccessMessage">
           <Onboarding layout="half">
             <OnboardingModal

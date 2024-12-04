@@ -1,7 +1,7 @@
 import React from "react";
 import { useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button, Heading, Card } from "@stellar/design-system";
+import { Alert, Button, Heading, Card } from "@stellar/design-system";
 
 import { BackButton } from "popup/basics/buttons/BackButton";
 import { Box } from "popup/basics/layout/Box";
@@ -36,16 +36,6 @@ export const Onboarding = ({
   );
 };
 
-interface OnboardingHeaderProps {
-  children: React.ReactNode;
-}
-
-export const OnboardingHeader = ({ children }: OnboardingHeaderProps) => (
-  <Heading as="h1" size="lg">
-    {children}
-  </Heading>
-);
-
 export const OnboardingOneCol = ({
   children,
   ...props
@@ -53,23 +43,6 @@ export const OnboardingOneCol = ({
   children: React.ReactElement | React.ReactElement[];
 }) => (
   <Box display="flex" gridCellWidth="24rem" gapVertical="2rem" {...props}>
-    {children}
-  </Box>
-);
-
-export const OnboardingTwoCol = ({
-  children,
-  ...props
-}: {
-  children: React.ReactElement | React.ReactElement[];
-}) => (
-  <Box
-    display="grid"
-    gridCellWidth="24rem"
-    gapVertical="1.5rem"
-    gapHorizontal="2rem"
-    {...props}
-  >
     {children}
   </Box>
 );
@@ -126,11 +99,7 @@ export const OnboardingModal = ({
   headerText,
   bodyText,
 }: OnboardingModalProps) => (
-  <View.Content
-    alignment="center"
-    data-testid="account-creator-view"
-    hasNoTopPadding
-  >
+  <View.Content alignment="center" hasNoTopPadding hasNoBottomPadding>
     <div className="Onboarding__card__wrapper">
       <Card variant="secondary">
         <div className="Onboarding__card">
@@ -141,6 +110,18 @@ export const OnboardingModal = ({
         </div>
         {children}
       </Card>
+    </div>
+  </View.Content>
+);
+
+export const OnboardingError = ({ errorString }: { errorString: string }) => (
+  <View.Content hasNoTopPadding>
+    <div className="Onboarding__error">
+      {errorString ? (
+        <Alert placement="inline" variant="error">
+          {errorString}
+        </Alert>
+      ) : null}
     </div>
   </View.Content>
 );

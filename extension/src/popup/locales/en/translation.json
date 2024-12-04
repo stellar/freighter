@@ -25,6 +25,7 @@
   "Add manually": "Add manually",
   "Add network": "Add network",
   "Add new list": "Add new list",
+  "Add XLM": "Add XLM",
   "Address": "Address",
   "Addresses are uppercase and begin with letters “G“, “M“, or “C“": "Addresses are uppercase and begin with letters “G“, “M“, or “C“.",
   "Advanced settings": "Advanced settings",
@@ -69,7 +70,6 @@
   "Asset Info": "Asset Info",
   "Asset lists": "Asset lists",
   "Asset not found": "Asset not found",
-  "At least one uppercase letter": "At least one uppercase letter",
   "At the end of this process, Freighter will only display accounts related to the new backup phrase": {
     " You’ll still be able to import your current backup phrase into Freighter and control current accounts as long as they were not merged into the new accounts": "At the end of this process, Freighter will only display accounts related to the new backup phrase. You’ll still be able to import your current backup phrase into Freighter and control current accounts as long as they were not merged into the new accounts."
   },
@@ -154,13 +154,13 @@
   "Enter Password": "Enter Password",
   "Enter password to unlock Freighter": "Enter password to unlock Freighter",
   "Enter Soroban RPC URL": "Enter Soroban RPC URL",
-  "Enter your 12 word phrase to restore your wallet": "Enter your 12 word phrase to restore your wallet",
   "Enter your account password to authorize this transaction": {
     " You won’t be asked to do this for the next 24 hours": "Enter your account password to authorize this transaction. You won’t be asked to do this for the next 24 hours."
   },
   "Enter your account password to verify your account": {
     " You won’t be asked to do this for the next 24 hours": "Enter your account password to verify your account. You won’t be asked to do this for the next 24 hours."
   },
+  "Enter your mnemonic phrase to restore your wallet": "Enter your mnemonic phrase to restore your wallet",
   "Enter your password": "Enter your password",
   "Entered amount is higher than the maximum send amount": "Entered amount is higher than the maximum send amount",
   "Entered amount is higher than your balance": "Entered amount is higher than your balance",
@@ -215,7 +215,6 @@
   "HORIZON RPC URL": "HORIZON RPC URL",
   "How do you want to get started?": "How do you want to get started?",
   "I have read and agree to": "I have read and agree to",
-  "I have read and agree to the": "I have read and agree to the",
   "I understand, continue": "I understand, continue",
   "I understand, start migration": "I understand, start migration",
   "I’m aware Freighter can’t recover the imported  secret key": "I’m aware Freighter can’t recover the imported  secret key",
@@ -228,7 +227,6 @@
   "Import Stellar Secret Key": "Import Stellar Secret Key",
   "Import using account seed phrase": "Import using account seed phrase",
   "Import wallet": "Import wallet",
-  "Import wallet from recovery phrase": "Import wallet from recovery phrase",
   "Important": "Important",
   "in order to remove an asset": "in order to remove an asset.",
   "In this process, Freighter will create a new backup phrase for you and migrate your lumens, trustlines, and assets to the new account": "In this process, Freighter will create a new backup phrase for you and migrate your lumens, trustlines, and assets to the new account.",
@@ -240,6 +238,7 @@
   "invalid destination address": "invalid destination address",
   "invalid federation address": "invalid federation address",
   "Invalid Format Asset": "Invalid Format Asset",
+  "Invalid mnemonic phrase": "Invalid mnemonic phrase",
   "INVALID STELLAR ADDRESS": "INVALID STELLAR ADDRESS",
   "Invocation Type": "Invocation Type",
   "is requesting approval to sign a message": "is requesting approval to sign a message",
@@ -291,7 +290,6 @@
     "": "Migrating..."
   },
   "Migration complete": "Migration complete",
-  "Min 8 characters": "Min 8 characters",
   "Min Amount A": "Min Amount A",
   "Min Amount B": "Min Amount B",
   "Min Price": "Min Price",
@@ -430,7 +428,6 @@
   "Source": "Source",
   "Sponsored ID": "Sponsored ID",
   "Starting Balance": "Starting Balance",
-  "Stellar address is not funded": "Stellar address is not funded",
   "Submit": "Submit",
   "Successfully": "Successfully",
   "swap": "swap",
@@ -487,7 +484,7 @@
   "To": "To",
   "To access your wallet, click Freighter from your browser Extensions browser menu": "To access your wallet, click Freighter from your browser Extensions browser menu.",
   "To create a new account you need to send at least 1 XLM to it": "To create a new account you need to send at least 1 XLM to it.",
-  "To create this account, fund it with a minimum of 1 XLM": "To create this account, fund it with a minimum of 1 XLM.",
+  "To start using this account, fund it with at least 1 XLM": "To start using this account, fund it with at least 1 XLM.",
   "Token List URL": "Token List URL",
   "Total Available": "Total Available",
   "Total Balance": "Total Balance",
@@ -537,9 +534,6 @@
   "You can access this later in the app, but we strongly recommend saving this in a safe place": "You can access this later in the app, but we strongly recommend saving this in a safe place.",
   "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account": {
     " Merging is optional and will allow you to send your current account’s funding lumens to the new accounts": "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account. Merging is optional and will allow you to send your current account’s funding lumens to the new accounts."
-  },
-  "You can fund this account using the friendbot tool": {
-    " The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens": "You can fund this account using the friendbot tool. The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens."
   },
   "You must have a balance of": "You must have a balance of",
   "You must have a buying liability of": "You must have a buying liability of",

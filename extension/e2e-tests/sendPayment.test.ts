@@ -291,9 +291,8 @@ test.afterAll(async ({ page, extensionId }) => {
     test.slow();
     await loginToTestAccount({ page, extensionId });
 
+    await page.getByTestId("account-options-dropdown").click();
     await page.getByText("Manage Assets").click({ force: true });
-    await page.getByPlaceholder("Enter password").fill(PASSWORD);
-    await page.getByText("Log In").click({ force: true });
 
     await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
     await page.getByText("Remove asset").click();
