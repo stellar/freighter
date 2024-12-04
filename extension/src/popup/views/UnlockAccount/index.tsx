@@ -1,23 +1,20 @@
-import { Button, Text, Input } from "@stellar/design-system";
-import { Field, Form, Formik, FieldProps } from "formik";
+import { Button } from "@stellar/design-system";
 import get from "lodash/get";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useLocation, useHistory } from "react-router-dom";
 
 import { newTabHref } from "helpers/urls";
-import { truncatedPublicKey } from "helpers/stellar";
 
-import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { ROUTES } from "popup/constants/routes";
 import { openTab } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
 import {
   confirmPassword,
-  authErrorSelector,
   loadLastUsedAccount,
 } from "popup/ducks/accountServices";
+import { EnterPassword } from "popup/components/EnterPassword";
 
 import "./styles.scss";
 
@@ -32,17 +29,8 @@ export const UnlockAccount = () => {
   const [lastUsedAccount, setLastUsedAccount] = useState("");
 
   const dispatch = useDispatch();
-  const authError = useSelector(authErrorSelector);
 
-  interface FormValues {
-    password: string;
-  }
-  const initialValues: FormValues = {
-    password: "",
-  };
-
-  const handleSubmit = async (values: FormValues) => {
-    const { password } = values;
+  const handleSubmit = async (password: string) => {
     // eslint-disable-next-line @typescript-eslint/await-thenable
     await dispatch(confirmPassword(password));
     // skip this location in history, we won't need to come back here after unlocking account
@@ -65,72 +53,17 @@ export const UnlockAccount = () => {
   return (
     <React.Fragment>
       <View.Header />
-      <View.Content alignment="center">
-        <div className="UnlockAccount">
-          <div className="UnlockAccount__wrapper">
-            <div className="UnlockAccount__identicon">
-              <IdenticonImg publicKey={lastUsedAccount} />
-            </div>
 
-            <Text as="div" size="xs" addlClassName="UnlockAccount__gray11">
-              {truncatedPublicKey(lastUsedAccount)}
-            </Text>
-
-            <div className="UnlockAccount__spacer-big" />
-
-            <Text as="div" size="sm">
-              {t("Welcome back!")}
-            </Text>
-
-            <Text as="div" size="sm" addlClassName="UnlockAccount__gray11">
-              {t("Enter password to unlock Freighter")}
-            </Text>
-
-            <div className="UnlockAccount__formik">
-              <Formik onSubmit={handleSubmit} initialValues={initialValues}>
-                {({ dirty, isSubmitting, isValid, errors, touched }) => (
-                  <Form>
-                    <Field name="password">
-                      {({ field }: FieldProps) => (
-                        <Input
-                          id="password-input"
-                          isPassword
-                          fieldSize="md"
-                          autoComplete="off"
-                          placeholder={t("Enter Password")}
-                          error={
-                            authError ||
-                            (errors.password && touched.password
-                              ? errors.password
-                              : "")
-                          }
-                          {...field}
-                        />
-                      )}
-                    </Field>
-
-                    <div className="UnlockAccount__spacer-small" />
-
-                    <Button
-                      size="md"
-                      isFullWidth
-                      variant="secondary"
-                      type="submit"
-                      isLoading={isSubmitting}
-                      disabled={!(dirty && isValid)}
-                    >
-                      {t("Login")}
-                    </Button>
-                  </Form>
-                )}
-              </Formik>
-            </div>
-          </div>
-        </div>
-      </View.Content>
+      <EnterPassword
+        accountAddress={lastUsedAccount}
+        title={t("Welcome back!")}
+        description={t("Enter password to unlock Freighter")}
+        onConfirm={handleSubmit}
+        confirmButtonTitle={t("Login")}
+      />
 
       <View.Footer customGap="0.5rem">
-        <div className="UnlockAccount__footer-label UnlockAccount__gray11">
+        <div className="UnlockAccount__footer-label">
           {t("Want to add another account?")}
         </div>
 

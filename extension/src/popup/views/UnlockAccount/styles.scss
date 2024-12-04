@@ -1,52 +1,9 @@
 .UnlockAccount {
-  flex-direction: column;
-  display: flex;
-  width: 100%;
-  padding-top: 1.5rem;
-
-  &__wrapper {
-    flex-direction: column;
-    display: flex;
-    width: 100%;
-    background-color: var(--sds-clr-gray-02);
-    padding: 1.5rem;
-    border-radius: 0.75rem;
-    align-items: center;
-  }
-
-  &__identicon {
-    display: flex;
-    width: 64px;
-    height: 64px;
-    padding: 16px;
-    justify-content: center;
-    align-items: center;
-    border-radius: 200px;
-    background-color: var(--sds-clr-gray-03);
-    margin-bottom: 0.5rem;
-  }
-
-  &__gray11 {
-    color: var(--sds-clr-gray-11);
-  }
-
-  &__formik {
-    margin-top: 1.5rem;
-    width: 100%;
-  }
-
-  &__spacer-big {
-    height: 1.5rem;
-  }
-
-  &__spacer-small {
-    height: 0.5rem;
-  }
-
   &__footer-label {
     width: 100%;
     text-align: center;
     font-size: 12px;
     line-height: 1.5rem;
+    color: var(--sds-clr-gray-11);
   }
 }
