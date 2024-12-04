@@ -91,6 +91,6 @@
   }
 
   .Toggle__input:focus-visible ~ .Toggle__track {
-    outline: 1px solid var(--sds-input-color-border-default-focus);
+    box-shadow: 0 0 0 #{pxToRem(2px)} var(--sds-input-color-border-default-focus);
   }
 }
