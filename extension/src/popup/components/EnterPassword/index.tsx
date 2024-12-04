@@ -20,7 +20,7 @@ interface EnterPasswordProps {
   accountAddress: string;
   title?: string;
   description?: string;
-  onConfirm: (password: string) => void;
+  onConfirm: (password: string) => Promise<void>;
   onCancel?: () => void;
   confirmButtonTitle?: string;
   cancelButtonTitle?: string;
@@ -37,7 +37,11 @@ export const EnterPassword = ({
 }: EnterPasswordProps) => {
   const { t } = useTranslation();
   const titleLabel = title || t("Enter your password");
-  const descriptionLabel = description || t("Enter your password to continue");
+  const descriptionLabel =
+    description ||
+    t(
+      "Enter your account password to verify your account. You won’t be asked to do this for the next 24 hours.",
+    );
   const confirmLabel = confirmButtonTitle || t("Continue");
   const cancelLabel = cancelButtonTitle || t("Cancel");
 
@@ -47,8 +51,8 @@ export const EnterPassword = ({
 
   const authError = useSelector(authErrorSelector);
 
-  const handleSubmit = (values: FormValues) => {
-    onConfirm(values.password);
+  const handleSubmit = async (values: FormValues) => {
+    await onConfirm(values.password);
   };
 
   const handleReset = () => {
@@ -79,15 +83,16 @@ export const EnterPassword = ({
 
           <div className="EnterPassword__wrapper__formik">
             <Formik
+              initialValues={initialValues}
               onSubmit={handleSubmit}
               onReset={handleReset}
-              initialValues={initialValues}
             >
               {({ dirty, isSubmitting, isValid, errors, touched }) => (
                 <Form>
                   <Field name="password">
                     {({ field }: FieldProps) => (
                       <Input
+                        {...field}
                         id="password-input"
                         isPassword
                         fieldSize="md"
@@ -99,7 +104,6 @@ export const EnterPassword = ({
                             ? errors.password
                             : "")
                         }
-                        {...field}
                       />
                     )}
                   </Field>
