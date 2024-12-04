@@ -82,4 +82,15 @@
     margin-top: #{pxToRem(16px)};
     width: 100%;
   }
+
+  // @TODO: remove when Toggle is updated to be tab-able
+  .Toggle__input {
+    display: block;
+    height: 0;
+    width: 0;
+  }
+
+  .Toggle__input:focus-visible ~ .Toggle__track {
+    outline: 1px solid var(--sds-input-color-border-default-focus);
+  }
 }
