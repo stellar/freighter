@@ -14,31 +14,15 @@ interface ViewContextProps {
 const ViewContext = createContext<ViewContextProps>({ isAppLayout: undefined });
 
 // Header
-interface ViewHeaderProps {
-  showFreighterLogo?: boolean;
-  showBottomBorder?: boolean;
-}
-
-const ViewHeader: React.FC<ViewHeaderProps> = ({
-  showFreighterLogo = true,
-  showBottomBorder = true,
-  ...props
-}: ViewHeaderProps) => (
-  <header
-    className={`View__header ${addStyleClasses([
-      showBottomBorder ? "View__header--border" : "",
-    ])}`}
-    {...props}
-  >
-    <ViewInset isWide={true} isInline={true}>
-      <div className="View__header__box View__header__box--left">
-        {showFreighterLogo ? (
-          <img
-            className="View__header__logo"
-            alt="Freighter logo"
-            src={FreighterLogo}
-          />
-        ) : null}
+const ViewHeader: React.FC = ({ ...props }) => (
+  <header className="View__header" {...props}>
+    <ViewInset isInline hasVerticalBorder>
+      <div className="View__header__box View__header__box--center">
+        <img
+          className="View__header__logo"
+          alt="Freighter logo"
+          src={FreighterLogo}
+        />
       </div>
     </ViewInset>
   </header>
@@ -69,8 +53,8 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
   children,
   ...props
 }: ViewAppHeaderProps) => (
-  <div className="View__header View__header--tall" {...props}>
-    <ViewInset isInline={true} hasVerticalBorder>
+  <div className="View__header" {...props}>
+    <ViewInset isInline hasVerticalBorder>
       {/* Left */}
       <div className="View__header__box View__header__box--left">
         {hasBackButton ? (
@@ -268,7 +252,7 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
 
 // View
 interface ViewComponent {
-  Header: React.FC<ViewHeaderProps>;
+  Header: React.FC;
   AppHeader: React.FC<ViewAppHeaderProps>;
   Content: React.FC<ViewContentProps>;
   Footer: React.FC<ViewFooterProps>;
