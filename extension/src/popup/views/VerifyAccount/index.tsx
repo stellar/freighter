@@ -62,9 +62,7 @@ export const VerifyAccount = ({
           description={
             isApproval
               ? undefined
-              : t(
-                  "Enter your account password to authorize this transaction. You won’t be asked to do this for the next 24 hours.",
-                )
+              : t("Enter your account password to authorize this transaction.")
           }
           confirmButtonTitle={isApproval ? undefined : t("Submit")}
           onConfirm={handleConfirm}
