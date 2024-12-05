@@ -1,16 +1,12 @@
 import { Heading, Icon } from "@stellar/design-system";
 import React from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
-import {
-  publicKeySelector,
-  signOut,
-  setLastUsedAccount,
-} from "popup/ducks/accountServices";
+import { signOut } from "popup/ducks/accountServices";
 import { navigateTo } from "popup/helpers/navigate";
 
 import IconNetwork from "popup/assets/icon-settings-network.svg?react";
@@ -28,14 +24,10 @@ export const Settings = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
-  const publicKey = useSelector(publicKeySelector);
-
   const signOutAndClose = async (e: React.FormEvent) => {
     e.preventDefault();
-    /* eslint-disable @typescript-eslint/await-thenable */
-    await dispatch(setLastUsedAccount({ publicKey }));
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await dispatch(signOut());
-    /* eslint-enable @typescript-eslint/await-thenable */
     navigateTo(ROUTES.welcome);
   };
 
