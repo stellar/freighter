@@ -26,7 +26,7 @@ export const UnlockAccount = () => {
   const queryParams = get(location, "search", "");
   const destination = from || ROUTES.account;
 
-  const [lastUsedAccount, setLastUsedAccount] = useState("");
+  const [accountAddress, setAccountAddress] = useState("");
 
   const dispatch = useDispatch();
 
@@ -42,7 +42,7 @@ export const UnlockAccount = () => {
       /* eslint-disable */
       const response = (await dispatch(loadLastUsedAccount())) as any;
       if (loadLastUsedAccount.fulfilled.match(response)) {
-        setLastUsedAccount(response.payload.lastUsedAccount);
+        setAccountAddress(response.payload.lastUsedAccount);
       }
       /* eslint-enable */
     };
@@ -55,7 +55,7 @@ export const UnlockAccount = () => {
       <View.Header />
 
       <EnterPassword
-        accountAddress={lastUsedAccount}
+        accountAddress={accountAddress}
         title={t("Welcome back!")}
         description={t("Enter password to unlock Freighter")}
         onConfirm={handleSubmit}
