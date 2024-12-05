@@ -116,6 +116,10 @@
         & > * {
           flex: 1;
         }
+
+        &--no-padding {
+          padding-bottom: 0;
+        }
       }
     }
 
@@ -164,7 +168,7 @@
     }
 
     &--top-border {
-      border-top: 1px solid var(--sds-clr-gray-04);
+      border-top: 1px solid var(--sds-clr-gray-06);
     }
   }
 

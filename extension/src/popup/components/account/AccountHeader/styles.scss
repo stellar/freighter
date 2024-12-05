@@ -1,3 +1,5 @@
+@use "../../../styles/utils.scss" as *;
+
 .AccountHeader {
   display: flex;
   flex-direction: row;
@@ -21,13 +23,13 @@
     flex-flow: row nowrap;
     align-items: center;
     justify-content: right;
-    border: 1px solid var(--sds-clr-gray-03);
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
+    border: 1px solid var(--sds-clr-gray-06);
+    padding: pxToRem(2px) pxToRem(6px);
+    border-radius: pxToRem(6px);
   }
 
   &__network-copy {
-    font-size: 0.875rem;
+    font-size: pxToRem(12px);
     line-height: 1.5rem;
     font-weight: var(--font-weight-medium);
     white-space: nowrap;
@@ -71,27 +73,38 @@
   }
 
   &__account-list-item {
-    padding-bottom: 0.5rem;
+    padding: pxToRem(12px) pxToRem(24px);
 
     &__link {
       color: var(--sds-clr-gray-12);
       display: flex;
       align-items: center;
+      justify-content: space-between;
+    }
+
+    &__row {
+      display: flex;
+      align-items: center;
     }
 
     &__link-copy {
-      margin-left: 0.75rem;
+      margin-left: pxToRem(16px);
       font-size: 0.875rem;
       line-height: 1.5rem;
     }
 
     &__icon {
+      color: var(--sds-clr-gray-09);
       display: flex;
       align-items: center;
-      width: 0.875rem;
-      height: 0.875rem;
+      width: pxToRem(20px);
+      height: pxToRem(20px);
       justify-content: center;
-      margin: 0.25rem;
+    }
+
+    &__arrow {
+      color: var(--sds-clr-gray-09);
+      display: flex;
     }
   }
 
@@ -106,6 +119,6 @@
     background: var(--sds-clr-gray-03);
     border-radius: 1rem;
     margin-top: 0;
-    margin-bottom: 1.2rem;
+    margin-bottom: pxToRem(12px);
   }
 }

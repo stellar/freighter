@@ -173,6 +173,7 @@ interface ViewFooterProps {
   customGap?: string;
   hasExtraPaddingBottom?: boolean;
   hasTopBorder?: boolean;
+  hasNoBottomPadding?: boolean;
   isInline?: boolean;
   allowWrap?: boolean;
   style?: React.CSSProperties;
@@ -184,6 +185,7 @@ const ViewFooter: React.FC<ViewFooterProps> = ({
   customGap,
   hasExtraPaddingBottom,
   hasTopBorder,
+  hasNoBottomPadding,
   isInline,
   allowWrap,
   style,
@@ -212,6 +214,7 @@ const ViewFooter: React.FC<ViewFooterProps> = ({
         hasVerticalBorder
         hasTopBorder={hasTopBorder}
         isInline={isInline}
+        hasNoBottomPadding={hasNoBottomPadding}
       >
         {children}
       </ViewInset>
