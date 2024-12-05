@@ -154,12 +154,8 @@
   "Enter Password": "Enter Password",
   "Enter password to unlock Freighter": "Enter password to unlock Freighter",
   "Enter Soroban RPC URL": "Enter Soroban RPC URL",
-  "Enter your account password to authorize this transaction": {
-    " You won’t be asked to do this for the next 24 hours": "Enter your account password to authorize this transaction. You won’t be asked to do this for the next 24 hours."
-  },
-  "Enter your account password to verify your account": {
-    " You won’t be asked to do this for the next 24 hours": "Enter your account password to verify your account. You won’t be asked to do this for the next 24 hours."
-  },
+  "Enter your account password to authorize this transaction": "Enter your account password to authorize this transaction.",
+  "Enter your account password to verify your account": "Enter your account password to verify your account.",
   "Enter your mnemonic phrase to restore your wallet": "Enter your mnemonic phrase to restore your wallet",
   "Enter your password": "Enter your password",
   "Entered amount is higher than the maximum send amount": "Entered amount is higher than the maximum send amount",
@@ -539,6 +535,7 @@
   "You must have a buying liability of": "You must have a buying liability of",
   "You still have a balance of": "You still have a balance of",
   "You still have a buying liability of": "You still have a buying liability of",
+  "You won’t be asked to do this again for the next 24 hours": "You won’t be asked to do this again for the next 24 hours.",
   "You’re all set!": "You’re all set!",
   "You’re good to go!": "You’re good to go!",
   "Your account balance is not sufficient for this transaction": {
