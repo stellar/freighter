@@ -8,7 +8,6 @@ import { useTranslation } from "react-i18next";
 
 import { isCustomNetwork } from "@shared/helpers/stellar";
 
-import { PillButton } from "popup/basics/buttons/PillButton";
 import { emitMetric } from "helpers/metrics";
 import { truncatedPublicKey } from "helpers/stellar";
 
@@ -128,7 +127,9 @@ export const ViewPublicKey = () => {
           </div>
           <div className="ViewPublicKey__copy-btn">
             <CopyText textToCopy={publicKey} doneLabel="ADDRESS COPIED">
-              <PillButton>{t("COPY")}</PillButton>
+              <Button size="md" variant="tertiary">
+                {t("COPY")}
+              </Button>
             </CopyText>
           </div>
         </div>
@@ -139,7 +140,7 @@ export const ViewPublicKey = () => {
             <Button
               size="md"
               isFullWidth
-              variant="secondary"
+              variant="tertiary"
               onClick={() => {
                 openTab(
                   `https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/account/${publicKey}`,
