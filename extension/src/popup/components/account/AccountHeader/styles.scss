@@ -53,7 +53,11 @@
       flex-grow: 2;
       display: flex;
       justify-content: flex-end;
-      margin-right: 0.5rem;
+
+      svg {
+        height: pxToRem(20px);
+        width: pxToRem(20px);
+      }
     }
   }
 
