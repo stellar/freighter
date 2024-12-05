@@ -126,8 +126,10 @@
     margin: 0 auto;
     // 848px = 796 + 16 * 2 (padding) + 20 (scrollbar)
     max-width: pxToRem(848px);
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
+    padding: {
+      left: pxToRem(24px);
+      right: pxToRem(24px);
+    }
 
     &--align-center {
       display: flex;
