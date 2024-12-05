@@ -17,7 +17,7 @@ interface FormValues {
 }
 
 interface EnterPasswordProps {
-  accountAddress: string;
+  accountAddress?: string;
   title?: string;
   description?: string;
   onConfirm: (password: string) => Promise<void>;
@@ -63,15 +63,19 @@ export const EnterPassword = ({
     <View.Content alignment="center">
       <div className="EnterPassword">
         <div className="EnterPassword__wrapper">
-          <div className="EnterPassword__wrapper__identicon">
-            <IdenticonImg publicKey={accountAddress} />
-          </div>
+          {accountAddress && (
+            <>
+              <div className="EnterPassword__wrapper__identicon">
+                <IdenticonImg publicKey={accountAddress} />
+              </div>
 
-          <Text as="div" size="xs" addlClassName="EnterPassword__gray11">
-            {truncatedPublicKey(accountAddress)}
-          </Text>
+              <Text as="div" size="xs" addlClassName="EnterPassword__gray11">
+                {truncatedPublicKey(accountAddress)}
+              </Text>
 
-          <div className="EnterPassword__spacer-big" />
+              <div className="EnterPassword__spacer-big" />
+            </>
+          )}
 
           <Text as="div" size="sm">
             {titleLabel}
