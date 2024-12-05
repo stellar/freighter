@@ -189,11 +189,16 @@ export const AccountHeader = ({
               className="AccountHeader__account-list-item__link"
               to={ROUTES.addNetwork}
             >
-              <div className="AccountHeader__account-list-item__icon">
-                <Icon.BookmarkAdd />
+              <div className="AccountHeader__account-list-item__row">
+                <div className="AccountHeader__account-list-item__icon">
+                  <Icon.BookmarkAdd />
+                </div>
+                <span className="AccountHeader__account-list-item__link-copy">
+                  {t("Add custom network")}
+                </span>
               </div>
-              <span className="AccountHeader__account-list-item__link-copy">
-                {t("Add custom network")}
+              <span className="AccountHeader__account-list-item__arrow">
+                <Icon.ChevronRight />
               </span>
             </Link>
           </div>
@@ -202,11 +207,16 @@ export const AccountHeader = ({
               className="AccountHeader__account-list-item__link"
               to={ROUTES.networkSettings}
             >
-              <div className="AccountHeader__account-list-item__icon">
-                <Icon.Settings01 />
+              <div className="AccountHeader__account-list-item__row">
+                <div className="AccountHeader__account-list-item__icon">
+                  <Icon.Settings01 />
+                </div>
+                <span className="AccountHeader__account-list-item__link-copy">
+                  {t("Manage network settings")}
+                </span>
               </div>
-              <span className="AccountHeader__account-list-item__link-copy">
-                {t("Manage network settings")}
+              <span className="AccountHeader__account-list-item__arrow">
+                <Icon.ChevronRight />
               </span>
             </Link>
           </div>
