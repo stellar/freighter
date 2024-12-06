@@ -62,7 +62,7 @@ interface UiData {
 
 interface AppData {
   privateKey?: string;
-  password?: string;
+  password: string;
 }
 
 export const sessionSlice = createSlice({
@@ -72,11 +72,12 @@ export const sessionSlice = createSlice({
     reset: () => initialState,
     logOut: () => initialState,
     setActivePrivateKey: (state, action: { payload: AppData }) => {
-      const { privateKey = "" } = action.payload;
+      const { privateKey = "", password = "" } = action.payload;
 
       return {
         ...state,
         privateKey,
+        password,
       };
     },
     setMigratedMnemonicPhrase: (
@@ -90,7 +91,11 @@ export const sessionSlice = createSlice({
         migratedMnemonicPhrase,
       };
     },
-    timeoutAccountAccess: (state) => ({ ...state, privateKey: "" }),
+    timeoutAccountAccess: (state) => ({
+      ...state,
+      privateKey: "",
+      password: "",
+    }),
     updateAllAccountsAccountName: (
       state,
       action: { payload: { updatedAccountName: string } },

@@ -108,6 +108,18 @@ export const UnlockAccount = () => {
             {t("Import using account seed phrase")}
           </Link>
         </div>
+        <div>
+          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+          <Link
+            variant="secondary"
+            role="button"
+            onClick={() => {
+              openTab(newTabHref(ROUTES.accountCreator));
+            }}
+          >
+            {t("Create a wallet")}
+          </Link>
+        </div>
       </View.Footer>
     </React.Fragment>
   );

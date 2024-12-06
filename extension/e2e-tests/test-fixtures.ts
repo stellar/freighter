@@ -33,11 +33,15 @@ export const test = base.extend<{
 });
 
 export const expectPageToHaveScreenshot = async (
-  { page, screenshot }: { page: any; screenshot: string },
+  {
+    page,
+    screenshot,
+    threshold,
+  }: { page: any; screenshot: string; threshold?: number },
   options?: any,
 ) => {
   await expect(page).toHaveScreenshot(screenshot, {
-    maxDiffPixelRatio: 0.02,
+    maxDiffPixelRatio: threshold || 0.02,
     ...options,
   });
 };

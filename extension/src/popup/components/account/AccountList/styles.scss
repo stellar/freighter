@@ -1,10 +1,12 @@
+@use "../../../styles/utils.scss" as *;
+
 .AccountList {
   &__item {
     display: flex;
     justify-content: space-between;
     width: 100%;
-    height: 5rem;
     align-items: center;
+    padding: pxToRem(12px) pxToRem(24px);
 
     > div {
       max-width: 15rem;
@@ -21,13 +23,18 @@
 
   &__option-check {
     align-items: center;
+    color: var(--sds-clr-lilac-09);
     display: flex;
-    margin-right: 1rem;
     width: 1.25rem;
+
+    svg {
+      height: pxToRem(20px);
+      width: pxToRem(20px);
+    }
   }
 
   &__option-tag {
-    color: var(--sds-clr-gray-12);
+    color: var(--sds-clr-gray-11);
     flex: 1;
     text-align: left;
     font-size: 0.875rem;
@@ -37,6 +44,7 @@
 
   &__accountsWrapper {
     flex: 1;
+    padding-bottom: pxToRem(12px);
   }
 
   &__footer {

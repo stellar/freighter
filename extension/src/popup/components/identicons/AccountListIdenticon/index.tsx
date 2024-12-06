@@ -32,7 +32,9 @@ export const AccountListIdenticon = ({
   const shortPublicKey = truncatedPublicKey(publicKey);
 
   const handleMakeAccountActive = () => {
-    if (setLoading) {
+    // If this account is already active (selected) we don't need to load any
+    // more stuff, so let's just collapse the dropdown in this case
+    if (!active && setLoading) {
       setLoading(true);
     }
 
@@ -48,11 +50,7 @@ export const AccountListIdenticon = ({
 
   return (
     <div className="AccountListIdenticon">
-      <div
-        className={`AccountListIdenticon__active-wrapper ${
-          active ? "active" : ""
-        }`}
-      >
+      <div className="AccountListIdenticon__active-wrapper">
         <div className="AccountListIdenticon__identicon-wrapper">
           <IdenticonImg publicKey={publicKey} />
         </div>

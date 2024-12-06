@@ -36,7 +36,6 @@ export const Preferences = () => {
       isDataSharingAllowedValue,
       isHideDustEnabledValue,
     } = formValue;
-    console.log(formValue);
 
     // eslint-disable-next-line
     await dispatch(

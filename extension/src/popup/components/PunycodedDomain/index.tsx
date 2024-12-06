@@ -23,7 +23,7 @@ export const PunycodedDomain = ({
       className={`PunycodedDomain ${isRow ? "PunycodedDomain--row" : ""}`}
       {...props}
     >
-      <div>
+      <div className="PunycodedDomain__favicon-container">
         <img
           className="PunycodedDomain__favicon"
           src={favicon}

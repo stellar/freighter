@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import shuffle from "lodash/shuffle";
 
 import { getMigratedMnemonicPhrase } from "@shared/api/internal";
 
@@ -15,9 +14,8 @@ export const MnemonicPhrase = () => {
 
   useEffect(() => {
     const fetchMnemonicPhrase = async () => {
-      const {
-        mnemonicPhrase: migratedMnemonicPhrase,
-      } = await getMigratedMnemonicPhrase();
+      const { mnemonicPhrase: migratedMnemonicPhrase } =
+        await getMigratedMnemonicPhrase();
 
       setMnemonicPhrase(migratedMnemonicPhrase);
     };
@@ -27,10 +25,7 @@ export const MnemonicPhrase = () => {
   return isConfirmed ? (
     <Onboarding layout="full" customWidth="31rem">
       <div className="MigrationMnemonicPhrase">
-        <ConfirmMnemonicPhrase
-          isMigration
-          words={shuffle(mnemonicPhrase.split(" "))}
-        />
+        <ConfirmMnemonicPhrase isMigration mnemonicPhrase={mnemonicPhrase} />
       </div>
     </Onboarding>
   ) : (
@@ -39,7 +34,6 @@ export const MnemonicPhrase = () => {
         <DisplayMnemonicPhrase
           mnemonicPhrase={mnemonicPhrase}
           setIsConfirmed={setIsConfirmed}
-          isMigration
         />
       </div>
     </Onboarding>
