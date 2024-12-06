@@ -6,9 +6,9 @@ import "./styles.scss";
   Custom network icon colors are determined by where they fall in the list. We cycle through 4 colors and repeat if we get to the end. 
 */
 
-const DEFAULT_NETWORK_COLORS = ["#30A46C", "#6E56CF"];
+const DEFAULT_NETWORK_COLORS = ["mainnet", "testnet"];
 
-const CUSTOM_NETWORK_COLORS = ["#E93D82", "#C4F042", "#0091FF", "#F76808"];
+const CUSTOM_NETWORK_COLORS = ["custom1", "custom2", "custom3", "custom4"];
 
 const getNetworkColor = (index: number | null): any => {
   if (index === null) {
@@ -38,5 +38,5 @@ interface NetworkIconProps {
 }
 
 export const NetworkIcon = ({ index }: NetworkIconProps) => (
-  <div className="NetworkIcon" style={{ background: getNetworkColor(index) }} />
+  <div className={`NetworkIcon NetworkIcon--${getNetworkColor(index)}`} />
 );

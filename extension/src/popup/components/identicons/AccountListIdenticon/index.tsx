@@ -50,11 +50,7 @@ export const AccountListIdenticon = ({
 
   return (
     <div className="AccountListIdenticon">
-      <div
-        className={`AccountListIdenticon__active-wrapper ${
-          active ? "active" : ""
-        }`}
-      >
+      <div className="AccountListIdenticon__active-wrapper">
         <div className="AccountListIdenticon__identicon-wrapper">
           <IdenticonImg publicKey={publicKey} />
         </div>
