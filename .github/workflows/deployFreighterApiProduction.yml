@@ -1,0 +1,52 @@
+name: Deploy @stellar/freighter-api
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Release Number
+        default: "2.0.0"
+        required: true
+jobs:
+  bump-version:
+    name: Checkout code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: release/${{ github.event.inputs.release }}
+      - name: Build package
+        uses: actions/setup-node@v4
+        with:
+          node-version: "21"
+      - name: Version npm package
+        run: |
+          cd @stellar/freighter-api
+          yarn version --new-version ${{ github.event.inputs.release }}
+          cd ../../
+      - run: yarn && yarn build:freighter-api
+      - name: Publish npm package
+        run: |
+          yarn publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Commit files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "@stellar/freighter-api: bumping version to ${{ github.event.inputs.release }}"
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@5e914681df9dc83aa4e4905692ca88beb2f9e91f #v7.0.5
+        with:
+          title: Bump @stellar/freighter-api version to ${{ github.event.inputs.version }}
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@4e5fb42d249be6a45a298f3c9543b111b02f7907 #v2.3.0
+        env:
+          MSG_MINIMAL: true
+          SLACK_CHANNEL: release
+          SLACK_COLOR: "#70E1C8"
+          SLACK_ICON: https://github.com/stellar/freighter/blob/master/docs/static/images/logo.png?size=48
+          SLACK_MESSAGE: "https://github.com/stellar/freighter/releases/tag/${{ github.event.inputs.release }}"
+          SLACK_TITLE: "@stellar/freighter-api has been deployed to npm!"
+          SLACK_USERNAME: Freighter Administrative Assistant
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
