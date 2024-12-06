@@ -22,6 +22,8 @@ jobs:
       - name: Version npm package
         run: |
           cd @stellar/freighter-api
+          yarn config set version-tag-prefix "@stellar/freighter-api@"
+          yarn config set version-git-message "@stellar/freighter-api: bumping version to %s"
           yarn version --new-version ${{ github.event.inputs.release }}
           cd ../../
       - run: yarn && yarn build:freighter-api
@@ -30,11 +32,6 @@ jobs:
           yarn publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Commit files
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git commit -m "@stellar/freighter-api: bumping version to ${{ github.event.inputs.release }}"
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@5e914681df9dc83aa4e4905692ca88beb2f9e91f #v7.0.5
         with:
