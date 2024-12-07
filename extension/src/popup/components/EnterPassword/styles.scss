@@ -1,0 +1,51 @@
+.EnterPassword {
+  flex-direction: column;
+  display: flex;
+  width: 100%;
+
+  &__wrapper {
+    flex-direction: column;
+    display: flex;
+    width: 100%;
+    background-color: var(--sds-clr-gray-02);
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    align-items: center;
+
+    &__identicon {
+      display: flex;
+      width: 64px;
+      height: 64px;
+      padding: 16px;
+      justify-content: center;
+      align-items: center;
+      border-radius: 200px;
+      background-color: var(--sds-clr-gray-03);
+      margin-bottom: 0.5rem;
+    }
+
+    &__formik {
+      margin-top: 1.5rem;
+      width: 100%;
+
+      &__buttons {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+    }
+  }
+
+  &__gray11 {
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__spacer-big {
+    height: 1.5rem;
+  }
+
+  &__spacer-small {
+    height: 0.5rem;
+  }
+}

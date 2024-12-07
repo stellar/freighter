@@ -1,7 +1,9 @@
 .UnlockAccount {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 2rem;
-  padding-top: 1.5rem;
+  &__footer-label {
+    width: 100%;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.5rem;
+    color: var(--sds-clr-gray-11);
+  }
 }

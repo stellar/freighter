@@ -1,7 +1,7 @@
 @use "../../../styles/utils.scss" as *;
 
 .View {
-  --View-header-height: #{pxToRem(60px)};
+  --View-header-height: #{pxToRem(80px)};
   --View-inset-padding-top: #{pxToRem(24px)};
   --View-footer-height: #{pxToRem(80px)};
   --View-footer-padding-bottom: 1.5rem;
@@ -23,17 +23,9 @@
     flex-shrink: 0;
     flex-grow: 0;
 
-    &--tall {
-      --View-header-height: #{pxToRem(80px)};
-    }
-
-    &--border {
-      border-bottom: 1px solid var(--sds-clr-gray-04);
-    }
-
     &__logo {
-      width: pxToRem(100px);
-      height: pxToRem(24px);
+      width: pxToRem(114px);
+      height: pxToRem(30px);
       display: block;
     }
 
@@ -138,8 +130,10 @@
     margin: 0 auto;
     // 848px = 796 + 16 * 2 (padding) + 20 (scrollbar)
     max-width: pxToRem(848px);
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding: {
+      left: pxToRem(24px);
+      right: pxToRem(24px);
+    }
 
     &--align-center {
       display: flex;

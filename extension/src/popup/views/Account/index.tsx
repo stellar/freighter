@@ -26,6 +26,7 @@ import {
   accountNameSelector,
   allAccountsSelector,
   publicKeySelector,
+  setLastUsedAccount,
 } from "popup/ducks/accountServices";
 import {
   getAssetIcons,
@@ -86,6 +87,13 @@ export const Account = () => {
   const isFullscreenModeEnabled = isFullscreenMode();
 
   const { balances, isFunded, error } = accountBalances;
+
+  // Make sure lastUsedAccount is always updated with current selected account
+  useEffect(() => {
+    if (publicKey) {
+      dispatch(setLastUsedAccount({ publicKey }));
+    }
+  }, [publicKey, dispatch]);
 
   useEffect(() => {
     // reset to avoid any residual data eg switching between send and swap or
@@ -286,15 +294,17 @@ export const Account = () => {
                   />
                 </div>
               )}
-              {!isFunded && !hasError && !error?.horizon && (
-                <NotFundedMessage
-                  canUseFriendbot={!!networkDetails.friendbotUrl}
-                  setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
-                  publicKey={publicKey}
-                />
-              )}
             </div>
           </View.Content>
+          <View.Footer>
+            {!isFunded && !hasError && !error?.horizon && (
+              <NotFundedMessage
+                canUseFriendbot={!!networkDetails.friendbotUrl}
+                setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
+                publicKey={publicKey}
+              />
+            )}
+          </View.Footer>
         </>
       )}
     </>

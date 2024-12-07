@@ -74,6 +74,7 @@ export interface Response {
   networkIndex: number;
   networkName: string;
   recentAddresses: string[];
+  lastUsedAccount: string;
   hardwareWalletType: WalletType;
   bipPath: string;
   memoRequiredAccounts: MemoRequiredAccount[];

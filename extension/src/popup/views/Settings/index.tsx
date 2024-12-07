@@ -1,15 +1,14 @@
+import { Heading, Icon } from "@stellar/design-system";
 import React from "react";
 import { useDispatch } from "react-redux";
-import { Heading, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { ROUTES } from "popup/constants/routes";
-
-import { navigateTo } from "popup/helpers/navigate";
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 import { View } from "popup/basics/layout/View";
-
+import { ROUTES } from "popup/constants/routes";
 import { signOut } from "popup/ducks/accountServices";
+import { navigateTo } from "popup/helpers/navigate";
+
 import IconNetwork from "popup/assets/icon-settings-network.svg?react";
 import IconSecurity from "popup/assets/icon-settings-security.svg?react";
 import IconHelp from "popup/assets/icon-settings-help.svg?react";
@@ -27,7 +26,7 @@ export const Settings = () => {
 
   const signOutAndClose = async (e: React.FormEvent) => {
     e.preventDefault();
-    // eslint-disable-next-line
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await dispatch(signOut());
     navigateTo(ROUTES.welcome);
   };
