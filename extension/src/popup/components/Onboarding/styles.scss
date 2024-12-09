@@ -1,7 +1,8 @@
-.Onboarding {
-  --Onboarding-layout-width: auto;
+@use "../../styles/utils.scss" as *;
 
-  margin-top: 4.5rem;
+.Onboarding {
+  --Onboarding-layout-width: #{pxToRem(448px)};
+
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -17,22 +18,35 @@
     color: var(--sds-clr-gray-12);
   }
 
-  .Checkbox label {
-    color: var(--sds-clr-gray-12);
-  }
-
   .Link--secondary {
     --Link-color-default: var(--sds-clr-gray-12);
     --Link-color-hover: var(--sds-clr-gray-12);
     --Link-color-disabled: var(--sds-clr-gray-12);
   }
-}
 
-.OnboardingScreen {
-  display: flex;
-  height: calc(100vh - var(--header--height));
-  max-height: 40rem;
-  max-width: 57rem;
-  width: 100%;
-  margin: auto;
+  &__card {
+    display: flex;
+    flex-direction: column;
+    gap: #{pxToRem(8px)};
+
+    &__wrapper {
+      width: #{pxToRem(448px)};
+    }
+
+    &__text {
+      color: var(--sds-clr-gray-11);
+      margin-bottom: #{pxToRem(32px)};
+    }
+  }
+
+  &__error {
+    height: #{pxToRem(74px)};
+    margin: 0 auto;
+    padding: #{pxToRem(8px)};
+    width: #{pxToRem(284px)};
+
+    .Alert__content {
+      align-items: center;
+    }
+  }
 }

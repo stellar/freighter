@@ -1,6 +1,32 @@
+@use "../../../styles/utils.scss" as *;
+
 .NetworkIcon {
-  border-radius: 2rem;
-  margin-right: 0.5rem;
-  height: 0.5rem;
-  width: 0.5rem;
+  border-radius: pxToRem(32px);
+  margin-right: pxToRem(8px);
+  height: pxToRem(8px);
+  width: pxToRem(8px);
+
+  &--mainnet {
+    background-color: var(--sds-clr-lime-09);
+  }
+
+  &--testnet {
+    background-color: var(--sds-clr-lilac-09);
+  }
+
+  &--custom1 {
+    background-color: var(--sds-clr-pink-09);
+  }
+
+  &--custom2 {
+    background-color: var(--sds-clr-green-09);
+  }
+
+  &--custom3 {
+    background-color: var(--sds-clr-teal-09);
+  }
+
+  &--custom4 {
+    background-color: var(--sds-clr-red-09);
+  }
 }

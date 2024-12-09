@@ -1,27 +1,42 @@
 @use "../../../styles/utils.scss" as *;
 
 .ButtonLabel {
-  border: 1px solid var(--sds-clr-gray-01);
-  border-radius: 6.25rem;
+  border: 1px solid var(--sds-clr-gray-07);
+  border-radius: #{pxToRem(6px)};
   color: var(--sds-clr-gray-12);
   cursor: pointer;
-  display: inline-block;
-  font-weight: var(--font-weight-medium);
-  font-size: 0.875rem;
-  margin: 3px;
-  padding: 0.25rem 1rem;
+  display: flex;
+  font-weight: var(--sds-fw-semi-bold);
+  font-size: #{pxToRem(14px)};
+  line-height: #{pxToRem(20px)};
+  padding: #{pxToRem(6px)} #{pxToRem(10px)};
   text-transform: none;
+  width: 100%;
+
+  &__number {
+    color: var(--sds-clr-gray-11);
+    position: absolute;
+    width: #{pxToRem(24px)};
+  }
+  &__word {
+    text-align: center;
+    width: 100%;
+  }
 }
 
 .CheckButton {
   opacity: 0;
+  position: absolute;
 
   &:focus + label {
     @include native-like-outline;
   }
 
   &:checked + label {
-    background: var(--sds-clr-gray-01);
-    color: white;
+    background: var(--sds-clr-gray-04);
+  }
+
+  &__wrapper {
+    width: 50%;
   }
 }

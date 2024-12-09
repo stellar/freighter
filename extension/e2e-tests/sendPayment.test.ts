@@ -282,3 +282,22 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   await expect(page.getByText("Sent E2E")).toBeVisible();
   await expect(page.getByTestId("asset-amount")).toContainText(".001 E2E");
 });
+test.afterAll(async ({ page, extensionId }) => {
+  if (
+    test.info().status !== test.info().expectedStatus &&
+    test.info().title === "Send SAC to C address"
+  ) {
+    // remove trustline in cleanup if Send SAC to C address test failed
+    test.slow();
+    await loginToTestAccount({ page, extensionId });
+
+    await page.getByTestId("account-options-dropdown").click();
+    await page.getByText("Manage Assets").click({ force: true });
+
+    await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
+    await page.getByText("Remove asset").click();
+    await expect(page.getByTestId("account-view")).toBeVisible({
+      timeout: 30000,
+    });
+  }
+});

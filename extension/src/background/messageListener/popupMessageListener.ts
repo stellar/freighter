@@ -45,6 +45,7 @@ import {
   KEY_ID,
   KEY_ID_LIST,
   RECENT_ADDRESSES,
+  LAST_USED_ACCOUNT,
   CACHED_MEMO_REQUIRED_ACCOUNTS_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
@@ -201,6 +202,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     bipPath: string;
   }) => {
     const mnemonicPhrase = mnemonicPhraseSelector(sessionStore.getState());
+    const password = passwordSelector(sessionStore.getState()) || "";
     let allAccounts = allAccountsSelector(sessionStore.getState());
 
     const keyId = `${HW_PREFIX}${publicKey}`;
@@ -245,7 +247,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     );
 
     // an active hw account should not have an active private key
-    sessionStore.dispatch(setActivePrivateKey({ privateKey: "" }));
+    sessionStore.dispatch(setActivePrivateKey({ privateKey: "", password }));
   };
 
   const _storeAccount = async ({
@@ -442,7 +444,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     sessionTimer.startSession();
     sessionStore.dispatch(
-      setActivePrivateKey({ privateKey: keyPair.privateKey }),
+      setActivePrivateKey({ privateKey: keyPair.privateKey, password }),
     );
 
     const currentState = sessionStore.getState();
@@ -455,7 +457,13 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const addAccount = async () => {
-    const { password } = request;
+    let password = request.password;
+    // in case a password is not provided, let's try using the value saved
+    // in current session store
+    if (!password) {
+      password = passwordSelector(sessionStore.getState()) || "";
+    }
+
     const mnemonicPhrase = mnemonicPhraseSelector(sessionStore.getState());
 
     if (!mnemonicPhrase) {
@@ -494,7 +502,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     sessionTimer.startSession();
     sessionStore.dispatch(
-      setActivePrivateKey({ privateKey: keyPair.privateKey }),
+      setActivePrivateKey({ privateKey: keyPair.privateKey, password }),
     );
 
     const currentState = sessionStore.getState();
@@ -540,7 +548,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     });
 
     sessionTimer.startSession();
-    sessionStore.dispatch(setActivePrivateKey({ privateKey }));
+    sessionStore.dispatch(setActivePrivateKey({ privateKey, password }));
 
     const currentState = sessionStore.getState();
 
@@ -572,7 +580,19 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const { publicKey } = request;
     await _activatePublicKey({ publicKey });
 
-    sessionStore.dispatch(timeoutAccountAccess());
+    const password = passwordSelector(sessionStore.getState()) || "";
+    const keyID = (await localStore.getItem(KEY_ID)) || "";
+
+    try {
+      const wallet = await _unlockKeystore({ keyID, password });
+      const privateKey = wallet.privateKey;
+
+      if (!(await getIsHardwareWalletActive())) {
+        sessionStore.dispatch(setActivePrivateKey({ privateKey, password }));
+      }
+    } catch (e) {
+      console.error(e);
+    }
 
     const currentState = sessionStore.getState();
 
@@ -850,7 +870,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       // start the timer now that we have active private key
       sessionTimer.startSession();
       sessionStore.dispatch(
-        setActivePrivateKey({ privateKey: wallet.getSecret(0) }),
+        setActivePrivateKey({ privateKey: wallet.getSecret(0), password }),
       );
     }
 
@@ -999,7 +1019,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     sessionTimer.startSession();
     if (!(await getIsHardwareWalletActive())) {
       sessionStore.dispatch(
-        setActivePrivateKey({ privateKey: activePrivateKey }),
+        setActivePrivateKey({ privateKey: activePrivateKey, password }),
       );
     }
 
@@ -1195,6 +1215,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const storedData = (await localStore.getItem(RECENT_ADDRESSES)) || [];
     const recentAddresses = storedData;
     return { recentAddresses };
+  };
+
+  const loadLastUsedAccount = async () => {
+    const lastUsedAccount = (await localStore.getItem(LAST_USED_ACCOUNT)) || "";
+    return { lastUsedAccount };
   };
 
   const signOut = async () => {
@@ -1680,7 +1705,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       sessionTimer.startSession();
       sessionStore.dispatch(
-        setActivePrivateKey({ privateKey: newWallet.getSecret(0) }),
+        setActivePrivateKey({ privateKey: newWallet.getSecret(0), password }),
       );
     }
 
@@ -1784,6 +1809,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       signFreighterSorobanTransaction,
     [SERVICE_TYPES.ADD_RECENT_ADDRESS]: addRecentAddress,
     [SERVICE_TYPES.LOAD_RECENT_ADDRESSES]: loadRecentAddresses,
+    [SERVICE_TYPES.LOAD_LAST_USED_ACCOUNT]: loadLastUsedAccount,
     [SERVICE_TYPES.SIGN_OUT]: signOut,
     [SERVICE_TYPES.SHOW_BACKUP_PHRASE]: showBackupPhrase,
     [SERVICE_TYPES.SAVE_ALLOWLIST]: saveAllowList,

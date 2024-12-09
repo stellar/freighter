@@ -112,7 +112,7 @@ export const fundAccount = async (publicKey: string): Promise<void> => {
 };
 
 export const addAccount = async (
-  password: string,
+  password: string = "",
 ): Promise<{
   publicKey: string;
   allAccounts: Array<Account>;
@@ -1122,6 +1122,14 @@ export const loadRecentAddresses = async (): Promise<{
   });
 };
 
+export const loadLastUsedAccount = async (): Promise<{
+  lastUsedAccount: string;
+}> => {
+  return await sendMessageToBackground({
+    type: SERVICE_TYPES.LOAD_LAST_USED_ACCOUNT,
+  });
+};
+
 export const signOut = async (): Promise<{
   publicKey: string;
   applicationState: APPLICATION_STATE;
@@ -1489,6 +1497,33 @@ export const simulateTokenTransfer = async (args: {
     }),
   };
   const res = await fetch(`${INDEXER_URL}/simulate-token-transfer`, options);
+  const response = await res.json();
+  return {
+    ok: res.ok,
+    response,
+  };
+};
+
+export const simulateTransaction = async (args: {
+  xdr: string;
+  networkDetails: NetworkDetails;
+}) => {
+  const { xdr, networkDetails } = args;
+  const options = {
+    method: "POST",
+    headers: {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      xdr,
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      network_url: networkDetails.sorobanRpcUrl,
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      network_passphrase: networkDetails.networkPassphrase,
+    }),
+  };
+  const res = await fetch(`${INDEXER_URL}/simulate-tx`, options);
   const response = await res.json();
   return {
     ok: res.ok,
