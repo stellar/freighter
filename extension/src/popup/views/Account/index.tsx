@@ -43,7 +43,6 @@ import {
   sortBalances,
   sortOperationsByAsset,
 } from "popup/helpers/account";
-import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
@@ -198,9 +197,12 @@ export const Account = () => {
                   >
                     {currentAccountName}
                   </div>
-                  <CopyText textToCopy={publicKey} tooltipPlacement="right">
+                  <CopyText
+                    textToCopy={publicKey}
+                    tooltipPlacement="bottom"
+                    doneLabel="Copied address"
+                  >
                     <div className="AccountView__account-num">
-                      {truncatedPublicKey(publicKey)}
                       <Icon.Copy01 />
                     </div>
                   </CopyText>

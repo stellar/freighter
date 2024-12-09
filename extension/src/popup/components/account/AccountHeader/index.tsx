@@ -20,8 +20,6 @@ import { AccountList } from "popup/components/account/AccountList";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 
-import IconCube from "popup/assets/icon-cube.svg";
-
 import "./styles.scss";
 
 interface AccountHeaderProps {
@@ -109,11 +107,16 @@ export const AccountHeader = ({
                   },
                 }}
               >
-                <div className="AccountHeader__account-list-item__icon">
-                  <Icon.BookmarkAdd />
+                <div className="AccountHeader__account-list-item__row">
+                  <div className="AccountHeader__account-list-item__icon">
+                    <Icon.PlusCircle />
+                  </div>
+                  <span className="AccountHeader__account-list-item__link-copy">
+                    {t("Create a new Stellar address")}
+                  </span>
                 </div>
-                <span className="AccountHeader__account-list-item__link-copy">
-                  {t("Create a new Stellar address")}
+                <span className="AccountHeader__account-list-item__arrow">
+                  <Icon.ChevronRight />
                 </span>
               </Link>
             </li>
@@ -122,11 +125,16 @@ export const AccountHeader = ({
                 className="AccountHeader__account-list-item__link"
                 to={ROUTES.importAccount}
               >
-                <div className="AccountHeader__account-list-item__icon">
-                  <Icon.Download01 />
+                <div className="AccountHeader__account-list-item__row">
+                  <div className="AccountHeader__account-list-item__icon">
+                    <Icon.Key01 />
+                  </div>
+                  <span className="AccountHeader__account-list-item__link-copy">
+                    {t("Import a Stellar secret key")}
+                  </span>
                 </div>
-                <span className="AccountHeader__account-list-item__link-copy">
-                  {t("Import a Stellar secret key")}
+                <span className="AccountHeader__account-list-item__arrow">
+                  <Icon.ChevronRight />
                 </span>
               </Link>
             </li>
@@ -135,15 +143,16 @@ export const AccountHeader = ({
                 className="AccountHeader__account-list-item__link"
                 to={ROUTES.connectWallet}
               >
-                <div className="AccountHeader__account-list-item__icon">
-                  <img
-                    className="AccountHeader__img-cube-icon"
-                    src={IconCube}
-                    alt=""
-                  />
+                <div className="AccountHeader__account-list-item__row">
+                  <div className="AccountHeader__account-list-item__icon">
+                    <Icon.ShieldPlus />
+                  </div>
+                  <span className="AccountHeader__account-list-item__link-copy">
+                    Connect a hardware wallet
+                  </span>
                 </div>
-                <span className="AccountHeader__account-list-item__link-copy">
-                  Connect a hardware wallet
+                <span className="AccountHeader__account-list-item__arrow">
+                  <Icon.ChevronRight />
                 </span>
               </Link>
             </li>
@@ -180,11 +189,16 @@ export const AccountHeader = ({
               className="AccountHeader__account-list-item__link"
               to={ROUTES.addNetwork}
             >
-              <div className="AccountHeader__account-list-item__icon">
-                <Icon.BookmarkAdd />
+              <div className="AccountHeader__account-list-item__row">
+                <div className="AccountHeader__account-list-item__icon">
+                  <Icon.BookmarkAdd />
+                </div>
+                <span className="AccountHeader__account-list-item__link-copy">
+                  {t("Add custom network")}
+                </span>
               </div>
-              <span className="AccountHeader__account-list-item__link-copy">
-                {t("Add custom network")}
+              <span className="AccountHeader__account-list-item__arrow">
+                <Icon.ChevronRight />
               </span>
             </Link>
           </div>
@@ -193,11 +207,16 @@ export const AccountHeader = ({
               className="AccountHeader__account-list-item__link"
               to={ROUTES.networkSettings}
             >
-              <div className="AccountHeader__account-list-item__icon">
-                <Icon.Settings01 />
+              <div className="AccountHeader__account-list-item__row">
+                <div className="AccountHeader__account-list-item__icon">
+                  <Icon.Settings01 />
+                </div>
+                <span className="AccountHeader__account-list-item__link-copy">
+                  {t("Manage network settings")}
+                </span>
               </div>
-              <span className="AccountHeader__account-list-item__link-copy">
-                {t("Manage network settings")}
+              <span className="AccountHeader__account-list-item__arrow">
+                <Icon.ChevronRight />
               </span>
             </Link>
           </div>
