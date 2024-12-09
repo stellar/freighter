@@ -33,8 +33,10 @@ import "./styles.scss";
 
 export const HardwareSign = ({
   walletType,
+  isSignSorobanAuthorization,
 }: {
   walletType: ConfigurableWalletType;
+  isSignSorobanAuthorization?: boolean;
 }) => {
   const dispatch: AppDispatch = useDispatch();
   const { t } = useTranslation();
@@ -86,14 +88,15 @@ export const HardwareSign = ({
           bipPath,
           walletType,
           isHashSigningEnabled,
+          isSignSorobanAuthorization,
         }),
       );
       if (signWithHardwareWallet.fulfilled.match(res)) {
-        if (shouldSubmit) {
+        if (shouldSubmit && !isSignSorobanAuthorization) {
           const submitResp = await dispatch(
             submitFreighterTransaction({
               publicKey,
-              signedXDR: res.payload,
+              signedXDR: res.payload as string,
               networkDetails,
             }),
           );

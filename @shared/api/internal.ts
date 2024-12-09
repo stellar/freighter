@@ -945,7 +945,7 @@ export const grantAccess = async (url: string): Promise<void> => {
 export const handleSignedHwTransaction = async ({
   signedTransaction,
 }: {
-  signedTransaction: string;
+  signedTransaction: string | Buffer;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
