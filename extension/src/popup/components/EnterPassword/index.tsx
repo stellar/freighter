@@ -79,7 +79,11 @@ export const EnterPassword = ({
             {titleLabel}
           </Text>
 
-          <Text as="div" size="sm" addlClassName="EnterPassword__gray11">
+          <Text
+            as="div"
+            size="xs"
+            addlClassName="EnterPassword__gray11 EnterPassword__text-centered"
+          >
             {descriptionLabel}
           </Text>
 

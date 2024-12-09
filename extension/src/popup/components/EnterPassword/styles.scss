@@ -41,6 +41,10 @@
     color: var(--sds-clr-gray-11);
   }
 
+  &__text-centered {
+    text-align: center;
+  }
+
   &__spacer-big {
     height: 1.5rem;
   }
