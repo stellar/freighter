@@ -1122,17 +1122,6 @@ export const loadRecentAddresses = async (): Promise<{
   });
 };
 
-export const setLastUsedAccount = async ({
-  publicKey,
-}: {
-  publicKey: string;
-}): Promise<{ lastUsedAccount: string }> => {
-  return await sendMessageToBackground({
-    publicKey,
-    type: SERVICE_TYPES.SET_LAST_USED_ACCOUNT,
-  });
-};
-
 export const loadLastUsedAccount = async (): Promise<{
   lastUsedAccount: string;
 }> => {

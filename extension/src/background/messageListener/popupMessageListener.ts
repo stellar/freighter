@@ -1217,12 +1217,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { recentAddresses };
   };
 
-  const setLastUsedAccount = async () => {
-    const { publicKey } = request;
-    await localStore.setItem(LAST_USED_ACCOUNT, publicKey);
-    return { lastUsedAccount: publicKey };
-  };
-
   const loadLastUsedAccount = async () => {
     const lastUsedAccount = (await localStore.getItem(LAST_USED_ACCOUNT)) || "";
     return { lastUsedAccount };
@@ -1815,7 +1809,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       signFreighterSorobanTransaction,
     [SERVICE_TYPES.ADD_RECENT_ADDRESS]: addRecentAddress,
     [SERVICE_TYPES.LOAD_RECENT_ADDRESSES]: loadRecentAddresses,
-    [SERVICE_TYPES.SET_LAST_USED_ACCOUNT]: setLastUsedAccount,
     [SERVICE_TYPES.LOAD_LAST_USED_ACCOUNT]: loadLastUsedAccount,
     [SERVICE_TYPES.SIGN_OUT]: signOut,
     [SERVICE_TYPES.SHOW_BACKUP_PHRASE]: showBackupPhrase,
