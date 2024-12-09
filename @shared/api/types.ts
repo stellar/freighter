@@ -41,6 +41,7 @@ export interface Response {
   transactionXDR: string;
   signerAddress: string;
   signedTransaction: string;
+  signedPayload: string | Buffer;
   signedBlob: Buffer | null;
   signedAuthEntry: Buffer | null;
   source: string;

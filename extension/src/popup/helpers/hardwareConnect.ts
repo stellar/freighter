@@ -98,6 +98,39 @@ export const hardwareSign: HardwareSign = {
   },
 };
 
+interface HardwareSignAuthParams {
+  bipPath?: string;
+  auth: Buffer;
+  isHashSigningEnabled?: boolean;
+}
+
+type HardwareSignAuth = {
+  [key in ConfigurableWalletType]: ({
+    bipPath,
+    auth,
+  }: HardwareSignAuthParams) => Promise<Buffer>;
+};
+
+/*
+ * Returns a Soroban auth entry signature from the hardware wallet
+ * @param {string} bipPath - The bip path to pass to the API (optional).
+ * @param {Buffer} auth - The authorization that will be signed by the wallet.
+ * @returns {Buffer} A signature that will be added to the Transaction.
+ */
+export const hardwareSignAuth: HardwareSignAuth = {
+  [WalletType.LEDGER]: async ({
+    bipPath = "",
+    auth,
+  }: HardwareSignAuthParams) => {
+    const transport = await TransportWebUSB.create();
+    const ledgerApi = new LedgerApi(transport);
+    let result = { signature: Buffer.from([]) };
+
+    result = await ledgerApi.signSorobanAuthorization(bipPath, auth);
+    return result.signature;
+  },
+};
+
 /*
  ** UI ELEMENTS
  */

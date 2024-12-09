@@ -1060,13 +1060,13 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     }
   };
 
-  const handleSignedHwTransaction = () => {
-    const { signedTransaction } = request;
+  const handleSignedHwPayload = () => {
+    const { signedPayload } = request;
 
     const transactionResponse = responseQueue.pop();
 
     if (typeof transactionResponse === "function") {
-      transactionResponse(signedTransaction);
+      transactionResponse(signedPayload);
       return {};
     }
 
@@ -1802,7 +1802,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.SIGN_TRANSACTION]: signTransaction,
     [SERVICE_TYPES.SIGN_BLOB]: signBlob,
     [SERVICE_TYPES.SIGN_AUTH_ENTRY]: signAuthEntry,
-    [SERVICE_TYPES.HANDLE_SIGNED_HW_TRANSACTION]: handleSignedHwTransaction,
+    [SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD]: handleSignedHwPayload,
     [SERVICE_TYPES.REJECT_TRANSACTION]: rejectTransaction,
     [SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION]: signFreighterTransaction,
     [SERVICE_TYPES.SIGN_FREIGHTER_SOROBAN_TRANSACTION]:
