@@ -1,20 +1,20 @@
-import React from "react";
+import { Button } from "@stellar/design-system";
 import get from "lodash/get";
-import { useDispatch, useSelector } from "react-redux";
-import { useLocation, useHistory } from "react-router-dom";
-import { Field, Form, Formik, FieldProps } from "formik";
-import { Button, Heading, Input, Link } from "@stellar/design-system";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useDispatch } from "react-redux";
+import { useLocation, useHistory } from "react-router-dom";
+
+import { newTabHref } from "helpers/urls";
 
 import { ROUTES } from "popup/constants/routes";
 import { openTab } from "popup/helpers/navigate";
-import { newTabHref } from "helpers/urls";
-import { FormRows, SubmitButtonWrapper } from "popup/basics/Forms";
 import { View } from "popup/basics/layout/View";
 import {
   confirmPassword,
-  authErrorSelector,
+  loadLastUsedAccount,
 } from "popup/ducks/accountServices";
+import { EnterPassword } from "popup/components/EnterPassword";
 
 import "./styles.scss";
 
@@ -26,100 +26,68 @@ export const UnlockAccount = () => {
   const queryParams = get(location, "search", "");
   const destination = from || ROUTES.account;
 
+  const [accountAddress, setAccountAddress] = useState("");
+
   const dispatch = useDispatch();
-  const authError = useSelector(authErrorSelector);
 
-  interface FormValues {
-    password: string;
-  }
-  const initialValues: FormValues = {
-    password: "",
-  };
-
-  const handleSubmit = async (values: FormValues) => {
-    const { password } = values;
-    // eslint-disable-next-line
+  const handleSubmit = async (password: string) => {
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     await dispatch(confirmPassword(password));
     // skip this location in history, we won't need to come back here after unlocking account
     history.replace(`${destination}${queryParams}`);
   };
 
+  useEffect(() => {
+    const fetchLastUsedAccount = async () => {
+      /* eslint-disable */
+      const response = (await dispatch(loadLastUsedAccount())) as any;
+      if (loadLastUsedAccount.fulfilled.match(response)) {
+        setAccountAddress(response.payload.lastUsedAccount);
+      }
+      /* eslint-enable */
+    };
+
+    fetchLastUsedAccount();
+  }, [dispatch]);
+
   return (
     <React.Fragment>
       <View.Header />
-      <View.Content alignment="center">
-        <div className="UnlockAccount">
-          <Heading as="h1" size="lg">
-            {t("A Stellar wallet for every website")}
-          </Heading>
-          <Formik onSubmit={handleSubmit} initialValues={initialValues}>
-            {({ dirty, isSubmitting, isValid, errors, touched }) => (
-              <Form>
-                <div>
-                  <FormRows>
-                    <Field name="password">
-                      {({ field }: FieldProps) => (
-                        <Input
-                          fieldSize="md"
-                          autoComplete="off"
-                          id="password-input"
-                          placeholder={t("Enter Password")}
-                          type="password"
-                          error={
-                            authError ||
-                            (errors.password && touched.password
-                              ? errors.password
-                              : "")
-                          }
-                          {...field}
-                        />
-                      )}
-                    </Field>
-                  </FormRows>
-                  <SubmitButtonWrapper>
-                    <Button
-                      size="md"
-                      isFullWidth
-                      variant="secondary"
-                      type="submit"
-                      isLoading={isSubmitting}
-                      disabled={!(dirty && isValid)}
-                    >
-                      {t("Log In")}
-                    </Button>
-                  </SubmitButtonWrapper>
-                </div>
-              </Form>
-            )}
-          </Formik>
+
+      <EnterPassword
+        accountAddress={accountAddress}
+        title={t("Welcome back!")}
+        description={t("Enter password to unlock Freighter.")}
+        onConfirm={handleSubmit}
+        confirmButtonTitle={t("Login")}
+      />
+
+      <View.Footer customGap="0.5rem">
+        <div className="UnlockAccount__footer-label">
+          {t("Want to add another account?")}
         </div>
-      </View.Content>
-      <View.Footer hasExtraPaddingBottom customGap="0.25rem">
-        <div>{t("Want to add another account?")}</div>
-        <div>
-          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-          <Link
-            variant="secondary"
-            role="button"
-            onClick={() => {
-              openTab(newTabHref(ROUTES.recoverAccount));
-            }}
-          >
-            {t("Import using account seed phrase")}
-          </Link>
-        </div>
-        <div>
-          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-          <Link
-            variant="secondary"
-            role="button"
-            onClick={() => {
-              openTab(newTabHref(ROUTES.accountCreator));
-            }}
-          >
-            {t("Create a wallet")}
-          </Link>
-        </div>
+
+        <Button
+          size="md"
+          isFullWidth
+          variant="tertiary"
+          onClick={() => {
+            openTab(newTabHref(ROUTES.recoverAccount));
+          }}
+        >
+          {t("Import using account seed phrase")}
+        </Button>
+
+        <Button
+          size="md"
+          isFullWidth
+          variant="tertiary"
+          onClick={() => {
+            openTab(newTabHref(ROUTES.accountCreator));
+          }}
+        >
+          {t("Create a wallet")}
+        </Button>
       </View.Footer>
     </React.Fragment>
   );

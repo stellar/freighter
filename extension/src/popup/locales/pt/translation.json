@@ -3,7 +3,6 @@
   "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign": {
     " Freighter automatically disabled the option to sign this transaction": "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign. Freighter automatically disabled the option to sign this transaction."
   },
-  "A Stellar wallet for every website": "A Stellar wallet for every website",
   "About": "About",
   "Account": "Account",
   "Account details": "Account details",
@@ -26,6 +25,7 @@
   "Add manually": "Add manually",
   "Add network": "Add network",
   "Add new list": "Add new list",
+  "Add XLM": "Add XLM",
   "Address": "Address",
   "Addresses are uppercase and begin with letters “G“, “M“, or “C“": "Addresses are uppercase and begin with letters “G“, “M“, or “C“.",
   "Advanced settings": "Advanced settings",
@@ -152,6 +152,7 @@
   "Enter passphrase": "Enter passphrase",
   "Enter password": "Enter password",
   "Enter Password": "Enter Password",
+  "Enter password to unlock Freighter": "Enter password to unlock Freighter",
   "Enter Soroban RPC URL": "Enter Soroban RPC URL",
   "Enter your account password to authorize this transaction": "Enter your account password to authorize this transaction.",
   "Enter your account password to verify your account": "Enter your account password to verify your account.",
@@ -259,8 +260,8 @@
   "Limit": "Limit",
   "LINKS": "LINKS",
   "Liquidity Pool ID": "Liquidity Pool ID",
-  "Log In": "Log In",
   "Log Out": "Log Out",
+  "Login": "Login",
   "Low Threshold": "Low Threshold",
   "Make sure it is a funded Stellar account and try again": "Make sure it is a funded Stellar account and try again.",
   "Make sure you have your 12 word backup phrase": "Make sure you have your 12 word backup phrase",
@@ -423,7 +424,6 @@
   "Source": "Source",
   "Sponsored ID": "Sponsored ID",
   "Starting Balance": "Starting Balance",
-  "Stellar address is not funded": "Stellar address is not funded",
   "Submit": "Submit",
   "Successfully": "Successfully",
   "swap": "swap",
@@ -480,7 +480,7 @@
   "To": "To",
   "To access your wallet, click Freighter from your browser Extensions browser menu": "To access your wallet, click Freighter from your browser Extensions browser menu.",
   "To create a new account you need to send at least 1 XLM to it": "To create a new account you need to send at least 1 XLM to it.",
-  "To create this account, fund it with a minimum of 1 XLM": "To create this account, fund it with a minimum of 1 XLM.",
+  "To start using this account, fund it with at least 1 XLM": "To start using this account, fund it with at least 1 XLM.",
   "Token List URL": "Token List URL",
   "Total Available": "Total Available",
   "Total Balance": "Total Balance",
@@ -507,7 +507,6 @@
   "Use Futurenet": "Use Futurenet",
   "Validate addresses that require a memo": "Validate addresses that require a memo",
   "Value": "Value",
-  "Verification": "Verification",
   "Verification with": "Verification with",
   "View on": "View on",
   "View options": "View options",
@@ -515,6 +514,7 @@
   "Want to add another account?": "Want to add another account?",
   "wasm": "wasm",
   "WEBSITE CONNECTION IS NOT SECURE": "WEBSITE CONNECTION IS NOT SECURE",
+  "Welcome back!": "Welcome back!",
   "Welcome to Freighter": "Welcome to Freighter",
   "which is not available on Freighter": {
     " If you own this account, you can import it into Freighter to complete this request": "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request."
@@ -531,13 +531,11 @@
   "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account": {
     " Merging is optional and will allow you to send your current account’s funding lumens to the new accounts": "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account. Merging is optional and will allow you to send your current account’s funding lumens to the new accounts."
   },
-  "You can fund this account using the friendbot tool": {
-    " The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens": "You can fund this account using the friendbot tool. The friendbot is a horizon API endpoint that will fund an account with 10,000 lumens."
-  },
   "You must have a balance of": "You must have a balance of",
   "You must have a buying liability of": "You must have a buying liability of",
   "You still have a balance of": "You still have a balance of",
   "You still have a buying liability of": "You still have a buying liability of",
+  "You won’t be asked to do this again for the next 24 hours": "You won’t be asked to do this again for the next 24 hours.",
   "You’re all set!": "You’re all set!",
   "You’re good to go!": "You’re good to go!",
   "Your account balance is not sufficient for this transaction": {
