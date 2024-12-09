@@ -942,15 +942,15 @@ export const grantAccess = async (url: string): Promise<void> => {
   }
 };
 
-export const handleSignedHwTransaction = async ({
-  signedTransaction,
+export const handleSignedHwPayload = async ({
+  signedPayload,
 }: {
-  signedTransaction: string | Buffer;
+  signedPayload: string | Buffer;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
-      signedTransaction,
-      type: SERVICE_TYPES.HANDLE_SIGNED_HW_TRANSACTION,
+      signedPayload,
+      type: SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD,
     });
   } catch (e) {
     console.error(e);

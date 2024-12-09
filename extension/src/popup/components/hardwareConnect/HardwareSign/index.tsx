@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Button, Icon, Loader } from "@stellar/design-system";
-import { handleSignedHwTransaction } from "@shared/api/internal";
+import { handleSignedHwPayload } from "@shared/api/internal";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 
 import { POPUP_HEIGHT } from "constants/dimensions";
@@ -109,7 +109,7 @@ export const HardwareSign = ({
         } else {
           // right now there are only two cases after signing,
           // submitting to network or handling in background script
-          await handleSignedHwTransaction({ signedTransaction: res.payload });
+          await handleSignedHwPayload({ signedPayload: res.payload });
         }
         closeOverlay();
       } else {
