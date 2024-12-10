@@ -92,7 +92,6 @@ export interface Response {
   isMergeSelected: boolean;
   recommendedFee: string;
   isNonSSLEnabled: boolean;
-  isBlockaidAnnounced: boolean;
   isHideDustEnabled: boolean;
 }
 
@@ -146,7 +145,6 @@ export interface Preferences {
   isMemoValidationEnabled: boolean;
   networksList: NetworkDetails[];
   isHideDustEnabled: boolean;
-  isBlockaidAnnounced: boolean;
   error: string;
 }
 
