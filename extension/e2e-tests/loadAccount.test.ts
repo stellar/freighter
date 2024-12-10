@@ -27,7 +27,10 @@ test("Load accounts on standalone network", async ({ page, extensionId }) => {
   });
   await expect(page.getByTestId("account-assets")).toContainText("XLM");
 });
-test("Switches account with password prompt", async ({ page, extensionId }) => {
+test("Switches account without password prompt", async ({
+  page,
+  extensionId,
+}) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
   await expect(page.getByTestId("account-assets")).toContainText("XLM");
