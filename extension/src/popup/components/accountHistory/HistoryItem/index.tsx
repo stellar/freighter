@@ -225,6 +225,9 @@ export const HistoryItem = ({
             destAssetCode,
           }),
         );
+        setDateText(
+          (_dateText) => `${translations("Swapped")} \u2022 ${date}`,
+        );
         setTxDetails((_state) => ({
           ..._state,
           headerTitle: translations(
