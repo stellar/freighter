@@ -159,12 +159,14 @@ export const HistoryItem = ({
       return IconComponent;
     }
 
-    return <div className="HistoryItem__icon__bordered HistoryItem__icon--gray">
-          <Icon.User01 />
+    return (
+      <div className="HistoryItem__icon__bordered HistoryItem__icon--gray">
+        <Icon.User01 />
         <div className="HistoryItem__icon__small HistoryItem__icon--gray">
           <Icon.Plus />
         </div>
-      </div>;
+      </div>
+    );
   };
 
   /* eslint-disable react-hooks/exhaustive-deps */
@@ -271,12 +273,16 @@ export const HistoryItem = ({
                 image: destIcon || PlaceholderIcon,
               }}
             />
-            {_isRecipient && <div className="HistoryItem__icon__small HistoryItem__icon--green ">
-               <Icon.ArrowDown />
-            </div>}
-            {!_isRecipient && <div className="HistoryItem__icon__small HistoryItem__icon--gray HistoryItem__icon--rotate ">
-               <Icon.Send03 />
-            </div>}
+            {_isRecipient && (
+              <div className="HistoryItem__icon__small HistoryItem__icon--green ">
+                <Icon.ArrowDown />
+              </div>
+            )}
+            {!_isRecipient && (
+              <div className="HistoryItem__icon__small HistoryItem__icon--gray HistoryItem__icon--rotate ">
+                <Icon.Send03 />
+              </div>
+            )}
           </div>,
         );
         setRowText(destAssetCode);
