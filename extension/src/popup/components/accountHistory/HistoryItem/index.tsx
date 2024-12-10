@@ -32,9 +32,10 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { getTokenDetails } from "@shared/api/internal";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
+import SentIcon from "popup/assets/icon-history-sent.svg?react";
+import ReceivedIcon from "popup/assets/icon-history-received.svg?react";
+import SwapIcon from "popup/assets/icon-history-swap.svg?react";
 import StellarLogo from "popup/assets/stellar-logo.png";
-import SentIcon from "popup/assets/sent-icon.png";
-import ReceivedIcon from "popup/assets/received-icon.png";
 import PlaceholderIcon from "popup/assets/placeholder-icon.png";
 
 import { TransactionDetailProps } from "../TransactionDetail";
@@ -200,18 +201,23 @@ export const HistoryItem = ({
               });
 
         setIconComponent(
-          <AssetSds
-            size="lg"
-            variant="swap"
-            sourceOne={{
-              altText: "Swap source token logo",
-              image: sourceIcon || PlaceholderIcon,
-            }}
-            sourceTwo={{
-              altText: "Swap destination token logo",
-              image: destIcon || PlaceholderIcon,
-            }}
-          />,
+          <div>
+            <AssetSds
+              size="lg"
+              variant="swap"
+              sourceOne={{
+                altText: "Swap source token logo",
+                image: sourceIcon || PlaceholderIcon,
+              }}
+              sourceTwo={{
+                altText: "Swap destination token logo",
+                image: destIcon || PlaceholderIcon,
+              }}
+            />
+            <div className="HistoryItem__icon__avatar">
+              <SwapIcon />
+            </div>
+          </div>,
         );
 
         setRowText(
@@ -254,18 +260,20 @@ export const HistoryItem = ({
               });
 
         setIconComponent(
-          <AssetSds
-            size="lg"
-            variant="platform"
-            sourceOne={{
-              altText: "Payment token logo",
-              image: destIcon || PlaceholderIcon,
-            }}
-            sourceTwo={{
-              altText: "Payment detail icon",
-              image: _isRecipient ? ReceivedIcon : SentIcon,
-            }}
-          />,
+          <div>
+            <AssetSds
+              size="lg"
+              variant="single"
+              sourceOne={{
+                altText: "Payment token logo",
+                image: destIcon || PlaceholderIcon,
+              }}
+            />
+            <div className="HistoryItem__icon__avatar">
+              {_isRecipient && <SentIcon />}
+              {!_isRecipient && <ReceivedIcon />}
+            </div>
+          </div>,
         );
         setRowText(destAssetCode);
         setDateText(
@@ -291,6 +299,7 @@ export const HistoryItem = ({
             {formattedAmount}
           </Badge>,
         );
+        // TODO: redesign all sections below
         setIconComponent(<Icon.ArrowUp className="HistoryItem__icon--sent" />);
         setRowText("XLM");
         setDateText((_dateText) => `${translations("Sent")} \u2022 ${date}`);
