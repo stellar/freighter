@@ -52,7 +52,7 @@ import {
   soroswapGetBestPath,
   getSoroswapTokens as getSoroswapTokensService,
 } from "popup/helpers/sorobanSwap";
-import { hardwareSign } from "popup/helpers/hardwareConnect";
+import { hardwareSign, hardwareSignAuth } from "popup/helpers/hardwareConnect";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -224,7 +224,7 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
 );
 
 export const signWithHardwareWallet = createAsyncThunk<
-  string,
+  string | Buffer,
   {
     transactionXDR: string;
     networkPassphrase: string;
@@ -232,6 +232,7 @@ export const signWithHardwareWallet = createAsyncThunk<
     bipPath: string;
     walletType: ConfigurableWalletType;
     isHashSigningEnabled: boolean;
+    isSignSorobanAuthorization?: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
@@ -244,9 +245,27 @@ export const signWithHardwareWallet = createAsyncThunk<
       bipPath,
       walletType,
       isHashSigningEnabled,
+      isSignSorobanAuthorization,
     },
     thunkApi,
   ) => {
+    if (isSignSorobanAuthorization) {
+      try {
+        const auth = Buffer.from(transactionXDR, "base64");
+
+        const signature = await hardwareSignAuth[walletType]({
+          bipPath,
+          auth,
+          isHashSigningEnabled,
+        });
+
+        return signature;
+      } catch (e) {
+        const message = e instanceof Error ? e.message : JSON.stringify(e);
+        return thunkApi.rejectWithValue({ errorMessage: message });
+      }
+    }
+
     try {
       const tx = TransactionBuilder.fromXDR(transactionXDR, networkPassphrase);
 
