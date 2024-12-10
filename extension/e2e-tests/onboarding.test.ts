@@ -68,6 +68,13 @@ test("Create new wallet", async ({ page }) => {
 
 test("Import 12 word wallet", async ({ page }) => {
   await page.getByText("Import Wallet").click();
+  await expect(page.getByText("Create a Password")).toBeVisible();
+
+  await page.locator("#new-password-input").fill("My-password123");
+  await page.locator("#confirm-password-input").fill("My-password123");
+  await page.locator("#termsOfUse-input").check({ force: true });
+  await page.getByText("Confirm").click();
+
   await expect(
     page.getByText("Import wallet from recovery phrase"),
   ).toBeVisible();
@@ -91,9 +98,14 @@ test("Import 12 word wallet", async ({ page }) => {
     await page.locator(`#MnemonicPhrase-${i}`).fill(TEST_WORDS[i - 1]);
   }
 
-  await page.locator("#password-input").fill("My-password123");
-  await page.locator("#confirm-password-input").fill("My-password123");
-  await page.locator("#termsOfUse-input").check({ force: true });
+  await expectPageToHaveScreenshot(
+    {
+      page,
+      screenshot: "wallet-import-12-word-phrase-page.png",
+    },
+    { mask: [page.locator(".RecoverAccount__mnemonic-input")] },
+  );
+
   await page.getByRole("button", { name: "Import" }).click();
 
   await expect(page.getByText("You’re all set!")).toBeVisible();
@@ -105,6 +117,13 @@ test("Import 12 word wallet", async ({ page }) => {
 
 test("Import 24 word wallet", async ({ page }) => {
   await page.getByText("Import Wallet").click();
+  await expect(page.getByText("Create a Password")).toBeVisible();
+
+  await page.locator("#new-password-input").fill("My-password123");
+  await page.locator("#confirm-password-input").fill("My-password123");
+  await page.locator("#termsOfUse-input").check({ force: true });
+  await page.getByText("Confirm").click();
+
   await expect(
     page.getByText("Import wallet from recovery phrase"),
   ).toBeVisible();
@@ -141,9 +160,17 @@ test("Import 24 word wallet", async ({ page }) => {
     await page.locator(`#MnemonicPhrase-${i}`).fill(TEST_WORDS[i - 1]);
   }
 
-  await page.locator("#password-input").fill("My-password123");
-  await page.locator("#confirm-password-input").fill("My-password123");
-  await page.locator("#termsOfUse-input").check({ force: true });
+  await expectPageToHaveScreenshot(
+    {
+      page,
+      screenshot: "wallet-import-24-word-phrase-page.png",
+      threshold: 0.04,
+    },
+    {
+      mask: [page.locator(".RecoverAccount__mnemonic-input")],
+    },
+  );
+
   await page.getByRole("button", { name: "Import" }).click();
 
   await expect(page.getByText("You’re all set!")).toBeVisible();
@@ -155,30 +182,9 @@ test("Import 24 word wallet", async ({ page }) => {
 
 test("Import wallet with wrong password", async ({ page }) => {
   await page.getByText("Import Wallet").click();
-  await expect(
-    page.getByText("Import wallet from recovery phrase"),
-  ).toBeVisible();
+  await expect(page.getByText("Create a password")).toBeVisible();
 
-  const TEST_WORDS = [
-    "have",
-    "style",
-    "milk",
-    "flush",
-    "you",
-    "possible",
-    "thrive",
-    "dice",
-    "delay",
-    "police",
-    "seminar",
-    "face",
-  ];
-
-  for (let i = 1; i <= TEST_WORDS.length; i++) {
-    await page.locator(`#MnemonicPhrase-${i}`).fill(TEST_WORDS[i - 1]);
-  }
-
-  await page.locator("#password-input").fill("My-password123");
+  await page.locator("#new-password-input").fill("My-password123");
   await page.locator("#confirm-password-input").fill("Not-my-password123");
   await page.locator("#termsOfUse-input").focus();
 
@@ -187,8 +193,7 @@ test("Import wallet with wrong password", async ({ page }) => {
     { page, screenshot: "recovery-bad-password.png" },
     {
       mask: [
-        page.locator(".RecoverAccount__mnemonic-input"),
-        page.locator("#password-input"),
+        page.locator("#new-password-input"),
         page.locator("#confirm-password-input"),
       ],
     },

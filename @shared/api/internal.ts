@@ -1122,6 +1122,14 @@ export const loadRecentAddresses = async (): Promise<{
   });
 };
 
+export const loadLastUsedAccount = async (): Promise<{
+  lastUsedAccount: string;
+}> => {
+  return await sendMessageToBackground({
+    type: SERVICE_TYPES.LOAD_LAST_USED_ACCOUNT,
+  });
+};
+
 export const signOut = async (): Promise<{
   publicKey: string;
   applicationState: APPLICATION_STATE;

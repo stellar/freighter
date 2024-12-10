@@ -1,5 +1,3 @@
-import { Button, Input } from "@stellar/design-system";
-import { Field, Form, Formik, FieldProps } from "formik";
 import React, { useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -7,8 +5,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { emitMetric } from "helpers/metrics";
 
 import { AppDispatch } from "popup/App";
-import { FormRows } from "popup/basics/Forms";
-import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { navigateTo } from "popup/helpers/navigate";
@@ -18,22 +14,15 @@ import {
   authErrorSelector,
   clearApiError,
   hasPrivateKeySelector,
+  publicKeySelector,
 } from "popup/ducks/accountServices";
-
-import "./styles.scss";
-
-interface FormValues {
-  password: string;
-}
-
-const initialValues: FormValues = {
-  password: "",
-};
+import { EnterPassword } from "popup/components/EnterPassword";
 
 export const AddAccount = () => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
+  const publicKey = useSelector(publicKeySelector);
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
 
   // In case a password is not provided here popupMessageListener/addAccount
@@ -53,8 +42,8 @@ export const AddAccount = () => {
     [dispatch],
   );
 
-  const handleEnterPassword = async (values: FormValues) => {
-    await handleAddAccount(values.password);
+  const handleEnterPassword = async (password: string) => {
+    await handleAddAccount(password);
   };
 
   // If we have a private key we can assume the user password is also saved in
@@ -80,47 +69,13 @@ export const AddAccount = () => {
   // Ask for user password in case it's not saved in current session store
   return (
     <React.Fragment>
-      <SubviewHeader title={t("Enter Password")} />
-      <Formik initialValues={initialValues} onSubmit={handleEnterPassword}>
-        {({ dirty, isSubmitting, isValid, errors, touched }) => (
-          <Form className="View__contentAndFooterWrapper">
-            <View.Content>
-              <FormRows>
-                <Field name="password">
-                  {({ field }: FieldProps) => (
-                    <Input
-                      fieldSize="md"
-                      autoComplete="off"
-                      id="password-input"
-                      placeholder={t("Enter Password")}
-                      type="password"
-                      error={
-                        authError ||
-                        (errors.password && touched.password
-                          ? errors.password
-                          : "")
-                      }
-                      {...field}
-                    />
-                  )}
-                </Field>
-              </FormRows>
-            </View.Content>
-            <View.Footer>
-              <Button
-                size="md"
-                isFullWidth
-                variant="primary"
-                disabled={!(dirty && isValid)}
-                isLoading={isSubmitting}
-                type="submit"
-              >
-                {t("Create New Address")}
-              </Button>
-            </View.Footer>
-          </Form>
-        )}
-      </Formik>
+      <SubviewHeader title="" />
+
+      <EnterPassword
+        accountAddress={publicKey}
+        onConfirm={handleEnterPassword}
+        confirmButtonTitle={t("Create New Address")}
+      />
     </React.Fragment>
   );
 };

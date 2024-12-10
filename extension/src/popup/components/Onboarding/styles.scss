@@ -38,13 +38,15 @@
       margin-bottom: #{pxToRem(32px)};
     }
   }
-}
 
-.OnboardingScreen {
-  display: flex;
-  height: calc(100vh - var(--header--height));
-  max-height: 40rem;
-  max-width: 57rem;
-  width: 100%;
-  margin: auto;
+  &__error {
+    height: #{pxToRem(74px)};
+    margin: 0 auto;
+    padding: #{pxToRem(8px)};
+    width: #{pxToRem(284px)};
+
+    .Alert__content {
+      align-items: center;
+    }
+  }
 }

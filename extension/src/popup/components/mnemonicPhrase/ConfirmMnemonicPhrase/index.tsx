@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import shuffle from "lodash/shuffle";
 import { Form, Formik, FormikHelpers, FormikValues } from "formik";
 import { useSelector, useDispatch } from "react-redux";
-import { Alert, Button, Card, Text } from "@stellar/design-system";
+import { Button, Card, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { AppDispatch } from "popup/App";
@@ -14,9 +14,8 @@ import {
 
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
-import { View } from "popup/basics/layout/View";
 
-import { OnboardingModal } from "popup/components/Onboarding";
+import { OnboardingModal, OnboardingError } from "popup/components/Onboarding";
 
 import { CheckButton } from "../CheckButton";
 
@@ -180,15 +179,9 @@ export const ConfirmMnemonicPhrase = ({
           )}
         </Formik>
       </OnboardingModal>
-      <View.Content hasNoTopPadding>
-        <div className="ConfirmMnemonicPhrase__error">
-          {authError ? (
-            <Alert placement="inline" variant="error">
-              {authError ? t("Order is incorrect, try again") : ""}
-            </Alert>
-          ) : null}
-        </div>
-      </View.Content>
+      <OnboardingError
+        errorString={authError ? t("Order is incorrect, try again") : ""}
+      />
     </div>
   );
 };
