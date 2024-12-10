@@ -41,6 +41,7 @@ export interface Response {
   transactionXDR: string;
   signerAddress: string;
   signedTransaction: string;
+  signedPayload: string | Buffer;
   signedBlob: Buffer | null;
   signedAuthEntry: Buffer | null;
   source: string;
@@ -74,6 +75,7 @@ export interface Response {
   networkIndex: number;
   networkName: string;
   recentAddresses: string[];
+  lastUsedAccount: string;
   hardwareWalletType: WalletType;
   bipPath: string;
   memoRequiredAccounts: MemoRequiredAccount[];

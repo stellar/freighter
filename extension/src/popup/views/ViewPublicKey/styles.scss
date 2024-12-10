@@ -1,3 +1,5 @@
+@use "../../styles/utils.scss" as *;
+
 .ViewPublicKey {
   &__content {
     display: flex;
@@ -46,6 +48,7 @@
   }
 
   &__qr-code {
+    border: pxToRem(16px) solid var(--sds-clr-base-01);
     height: 11.5rem;
     width: 11.5rem;
     background: var(--color-white);

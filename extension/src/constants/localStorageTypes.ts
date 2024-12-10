@@ -11,6 +11,7 @@ export const CACHED_ASSET_DOMAINS_ID = "cachedAssetDomainsId";
 export const IS_VALIDATING_MEMO_ID = "isValidatingMemo";
 export const IS_EXPERIMENTAL_MODE_ID = "isExperimentalMode";
 export const RECENT_ADDRESSES = "recentAddresses";
+export const LAST_USED_ACCOUNT = "lastUsedAccount";
 export const NETWORK_ID = "network";
 export const NETWORKS_LIST_ID = "networksList";
 export const METRICS_DATA = "metricsData";

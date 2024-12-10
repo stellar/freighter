@@ -113,7 +113,6 @@ describe.skip("MnemonicPhrase", () => {
           screen.getByTestId("display-mnemonic-phrase-confirm-btn"),
         );
       });
-      await waitFor(() => screen.getByText(`redirect ${ROUTES.pinExtension}`));
     });
   });
 });

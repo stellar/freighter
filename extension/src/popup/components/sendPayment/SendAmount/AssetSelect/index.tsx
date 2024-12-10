@@ -12,6 +12,7 @@ import {
   saveAssetSelectSource,
   saveAssetSelectType,
   AssetSelectType,
+  saveAmount,
 } from "popup/ducks/transactionSubmission";
 import { isContractId } from "popup/helpers/soroban";
 import { useIsSwap } from "popup/helpers/useIsSwap";
@@ -121,6 +122,9 @@ export const PathPayAssetSelect = ({
       ),
     );
     dispatch(saveAssetSelectSource(source));
+    if (source) {
+      dispatch(saveAmount("0"));
+    }
     navigateTo(ROUTES.manageAssets, isSwap ? "?swap=true" : "");
   };
 

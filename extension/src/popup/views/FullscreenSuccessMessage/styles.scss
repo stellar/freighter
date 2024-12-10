@@ -1,3 +1,5 @@
+@use "../../styles/utils.scss" as *;
+
 .InfoBlock {
   &__header {
     color: var(--sds-clr-gray-12);
@@ -27,6 +29,93 @@
 }
 
 .FullscreenSuccessMessage {
+  display: flex;
+  height: 100%;
+  align-items: center;
+
+  &__pin {
+    background: var(--sds-clr-gray-03);
+    border-radius: #{pxToRem(12px)};
+    display: flex;
+    flex-direction: column;
+    gap: #{pxToRem(16px)};
+    padding: #{pxToRem(16px)};
+    position: absolute;
+    z-index: var(--z-index-tooltip);
+    width: #{pxToRem(336px)};
+    top: #{pxToRem(24px)};
+    right: #{pxToRem(24px)};
+
+    &__row {
+      display: flex;
+      line-height: #{pxToRem(24px)};
+
+      &:nth-child(2) {
+        gap: #{pxToRem(8px)};
+      }
+
+      &:nth-child(3) {
+        border-radius: #{pxToRem(8px)};
+        align-items: center;
+        background: var(--sds-clr-gray-04);
+        gap: #{pxToRem(12px)};
+        padding: #{pxToRem(8px)};
+      }
+
+      &__gradient {
+        background: linear-gradient(
+          90deg,
+          var(--sds-clr-gray-03) 0%,
+          var(--sds-clr-gray-04) 49.96%
+        );
+        border-top-right-radius: #{pxToRem(16px)};
+        border-bottom-right-radius: #{pxToRem(16px)};
+        width: #{pxToRem(264px)};
+        height: #{pxToRem(32px)};
+      }
+
+      &__toolbar {
+        align-items: center;
+        display: flex;
+        border: 1px solid var(--sds-clr-gray-06);
+        border-radius: #{pxToRem(16px)};
+        justify-content: center;
+        width: #{pxToRem(32px)};
+        height: #{pxToRem(32px)};
+
+        svg {
+          width: #{pxToRem(20px)};
+          height: #{pxToRem(20px)};
+        }
+      }
+
+      &__logo {
+        display: flex;
+        align-items: center;
+        img {
+          width: #{pxToRem(24px)};
+          height: #{pxToRem(24px)};
+        }
+      }
+
+      &__text {
+        flex: 1 0 0;
+      }
+
+      &__pin-icon {
+        display: flex;
+
+        svg {
+          fill: var(--sds-clr-navy-09);
+          stroke: var(--sds-clr-navy-09);
+        }
+      }
+    }
+  }
+
+  &__text {
+    color: var(--sds-clr-gray-12);
+  }
   &__wrapper {
     display: flex;
     flex-flow: column wrap;
@@ -46,45 +135,44 @@
   }
 
   &__infoBlock {
-    margin-bottom: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: #{pxToRem(12px)};
 
-    &__list {
-      list-style: inside;
+    &__row {
+      display: flex;
+      gap: #{pxToRem(12px)};
 
-      ::before {
-        content: none !important;
+      &__icon {
+        align-items: center;
+        background: var(--sds-clr-gray-01);
+        border-radius: #{pxToRem(100px)};
+        border: 1px solid var(--sds-clr-gray-06);
+        display: flex;
+        height: #{pxToRem(24px)};
+        justify-content: center;
+        padding: #{pxToRem(4px)};
+        width: #{pxToRem(24px)};
+
+        svg {
+          width: #{pxToRem(16px)};
+        }
       }
 
-      li:not(:last-of-type) {
-        margin-bottom: 1rem;
+      &__text {
+        color: var(--sds-clr-gray-11);
       }
-    }
-  }
 
-  &__illo-container {
-    position: relative;
-  }
+      &:nth-child(1) {
+        svg {
+          stroke: var(--sds-clr-mint-09);
+        }
+      }
 
-  &__success-image {
-    height: 4.25rem;
-  }
-
-  &__extension-image {
-    height: 3.5rem;
-    margin-top: 0.5rem;
-  }
-
-  &__copy {
-    font-size: 1rem;
-    line-height: 1.5rem;
-    font-weight: var(--font-weight-regular);
-    margin-bottom: 1.5rem;
-
-    p {
-      color: var(--sds-clr-gray-12) !important;
-
-      strong {
-        color: var(--sds-clr-gray-12) !important;
+      &:nth-child(2) {
+        svg {
+          stroke: var(--sds-clr-lime-09);
+        }
       }
     }
   }

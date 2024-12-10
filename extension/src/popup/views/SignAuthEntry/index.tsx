@@ -57,7 +57,6 @@ export const SignAuthEntry = () => {
     publicKey,
     handleApprove,
     hwStatus,
-    isHardwareWallet,
     rejectAndClose,
     setIsPasswordRequired,
     verifyPasswordThenSign,
@@ -68,23 +67,6 @@ export const SignAuthEntry = () => {
     params.entry,
     accountToSign,
   );
-
-  if (isHardwareWallet) {
-    return (
-      <WarningMessage
-        variant={WarningMessageVariant.warning}
-        handleCloseClick={() => window.close()}
-        isActive
-        header={t("Unsupported signing method")}
-      >
-        <p>
-          {t(
-            "Signing arbitrary data with a hardware wallet is currently not supported.",
-          )}
-        </p>
-      </WarningMessage>
-    );
-  }
 
   if (entryNetworkPassphrase && entryNetworkPassphrase !== networkPassphrase) {
     return (
@@ -116,7 +98,10 @@ export const SignAuthEntry = () => {
   ) : (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
-        <HardwareSign walletType={hardwareWalletType} />
+        <HardwareSign
+          walletType={hardwareWalletType}
+          isSignSorobanAuthorization
+        />
       )}
       <React.Fragment>
         <View.AppHeader pageTitle={t("Confirm Entry")} />

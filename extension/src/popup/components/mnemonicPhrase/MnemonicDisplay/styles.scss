@@ -1,16 +1,24 @@
+@use "../../../styles/utils.scss" as *;
+
 .MnemonicDisplay {
   position: relative;
   text-align: center;
+  margin-bottom: #{pxToRem(32px)};
 
   &__ordered-list {
     columns: 2;
     text-align: start;
     counter-reset: item;
     list-style-type: none;
+    padding: 0 #{pxToRem(8px)} !important;
 
     li::before {
       counter-increment: item;
       content: counter(item) !important;
+      display: inline-block;
+      width: #{pxToRem(24px)};
+      position: relative !important;
+      left: 0 !important;
     }
 
     &--popup-view {
@@ -20,11 +28,16 @@
   }
 
   &__list-item {
-    padding-left: 1rem;
+    display: flex;
+    gap: #{pxToRem(8px)};
 
     &::before {
-      color: var(--sds-clr-gray-12);
+      color: var(--sds-clr-gray-11);
       content: none !important;
+    }
+
+    span {
+      font-weight: var(--sds-fw-semi-bold);
     }
   }
 

@@ -25,10 +25,3 @@ export const SubmitButtonWrapper = ({
     {children}
   </div>
 );
-
-interface ErrorMessageProps {
-  children: React.ReactNode;
-}
-export const FormError = ({ children }: ErrorMessageProps) => (
-  <div className="FormError">{children}</div>
-);

@@ -15,7 +15,6 @@ export const METRIC_NAMES = {
   viewMnemonicPhrase: "loaded screen: mnemonic phrase",
   viewMnemonicPhraseConfirm: "loaded screen: confirm mnemonic phrase",
   viewMnemonicPhraseConfirmed: "loaded screen: account creator finished",
-  viewPinExtension: "loaded screen: pix extension",
   viewRecoverAccount: "loaded screen: recover account",
   viewRecoverAccountSuccess: "loaded screen: recover account: success",
   viewSignTransaction: "loaded screen: sign transaction",

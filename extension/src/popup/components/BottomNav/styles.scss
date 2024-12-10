@@ -1,14 +1,16 @@
+@use "../../styles/utils.scss" as *;
+
 .BottomNav {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
   height: 100%;
-  padding-top: 1rem;
+  padding: pxToRem(16px) pxToRem(24px);
 
-  &--link {
+  &__link {
     display: block;
-    width: 4.875rem;
+    width: pxToRem(30px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -21,6 +23,20 @@
 
     &:hover {
       filter: brightness(1);
+    }
+
+    &__icon {
+      align-items: center;
+      color: var(--sds-clr-gray-12);
+      display: flex;
+      flex-direction: column;
+      font-size: pxToRem(12px);
+      gap: pxToRem(4px);
+
+      svg {
+        width: pxToRem(18px);
+        height: pxToRem(18px);
+      }
     }
   }
 }

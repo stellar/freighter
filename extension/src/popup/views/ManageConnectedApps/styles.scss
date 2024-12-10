@@ -3,11 +3,18 @@
   flex-direction: column;
   height: 100%;
 
-  &__content {
+  &__wrapper {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    height: 100%;
+    gap: 2rem;
     justify-content: space-between;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
   }
 
   &__row {

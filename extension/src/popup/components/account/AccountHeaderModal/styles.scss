@@ -1,11 +1,11 @@
 @use "../../../styles/utils.scss" as *;
 
 .AccountHeaderModal {
-  width: calc(100% - 2rem);
+  width: 100%;
   // 848px = 796 + 16 * 2 (padding) + 20 (scrollbar)
   max-width: pxToRem(848px);
-  margin-top: 0.5rem;
-  border-radius: 0.5rem;
+  border-bottom-left-radius: pxToRem(24px);
+  border-bottom-right-radius: pxToRem(24px);
   background: var(--sds-clr-gray-01);
   overflow: hidden;
   position: absolute;
@@ -20,7 +20,7 @@
   max-height: 0;
 
   &__content {
-    padding: 0.25rem 1rem;
+    padding: pxToRem(8px) 0;
     max-height: calc(100vh - 1rem);
   }
 }

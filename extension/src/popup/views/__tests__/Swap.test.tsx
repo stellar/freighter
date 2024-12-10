@@ -10,6 +10,7 @@ import {
 import * as ApiInternal from "@shared/api/internal";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import * as BlockaidHelpers from "popup/helpers/blockaid";
+import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
 import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
@@ -378,6 +379,13 @@ describe("Swap", () => {
           settings: {
             networkDetails: TESTNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            transactionData: {
+              ...transactionSubmissionInitialState.transactionData,
+            },
+            accountBalances: swapMockBalances,
           },
         }}
       >

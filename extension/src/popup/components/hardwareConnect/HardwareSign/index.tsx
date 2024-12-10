@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Button, Icon, Loader } from "@stellar/design-system";
-import { handleSignedHwTransaction } from "@shared/api/internal";
+import { handleSignedHwPayload } from "@shared/api/internal";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 
 import { POPUP_HEIGHT } from "constants/dimensions";
@@ -33,8 +33,10 @@ import "./styles.scss";
 
 export const HardwareSign = ({
   walletType,
+  isSignSorobanAuthorization,
 }: {
   walletType: ConfigurableWalletType;
+  isSignSorobanAuthorization?: boolean;
 }) => {
   const dispatch: AppDispatch = useDispatch();
   const { t } = useTranslation();
@@ -86,14 +88,15 @@ export const HardwareSign = ({
           bipPath,
           walletType,
           isHashSigningEnabled,
+          isSignSorobanAuthorization,
         }),
       );
       if (signWithHardwareWallet.fulfilled.match(res)) {
-        if (shouldSubmit) {
+        if (shouldSubmit && !isSignSorobanAuthorization) {
           const submitResp = await dispatch(
             submitFreighterTransaction({
               publicKey,
-              signedXDR: res.payload,
+              signedXDR: res.payload as string,
               networkDetails,
             }),
           );
@@ -106,7 +109,7 @@ export const HardwareSign = ({
         } else {
           // right now there are only two cases after signing,
           // submitting to network or handling in background script
-          await handleSignedHwTransaction({ signedTransaction: res.payload });
+          await handleSignedHwPayload({ signedPayload: res.payload });
         }
         closeOverlay();
       } else {

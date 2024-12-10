@@ -13,6 +13,7 @@ import {
   IS_NON_SSL_ENABLED_ID,
   IS_BLOCKAID_ANNOUNCED_ID,
   IS_HIDE_DUST_ENABLED_ID,
+  LAST_USED_ACCOUNT,
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
@@ -231,6 +232,10 @@ export const getFeatureFlags = async () => {
 };
 
 export const subscribeAccount = async (publicKey: string) => {
+  // update last used account so we can use it to properly
+  // display the identicon component on login screen
+  await localStore.setItem(LAST_USED_ACCOUNT, publicKey);
+
   // if pub key already has a subscription setup, skip this
   const keyId = await localStore.getItem(KEY_ID);
   const hasAccountSubByKeyId =
