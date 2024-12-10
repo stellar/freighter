@@ -31,9 +31,6 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { getTokenDetails } from "@shared/api/internal";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
-import SentIcon from "popup/assets/icon-history-sent.svg?react";
-import ReceivedIcon from "popup/assets/icon-history-received.svg?react";
-import SwapIcon from "popup/assets/icon-history-swap.svg?react";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import PlaceholderIcon from "popup/assets/placeholder-icon.png";
 
@@ -162,7 +159,12 @@ export const HistoryItem = ({
       return IconComponent;
     }
 
-    return <Icon.RefreshCcw01 className="HistoryItem__icon--default" />;
+    return <div className="HistoryItem__icon__bordered HistoryItem__icon--gray">
+          <Icon.User01 />
+        <div className="HistoryItem__icon__small HistoryItem__icon--gray">
+          <Icon.Plus />
+        </div>
+      </div>;
   };
 
   /* eslint-disable react-hooks/exhaustive-deps */
@@ -213,8 +215,8 @@ export const HistoryItem = ({
                 image: destIcon || PlaceholderIcon,
               }}
             />
-            <div className="HistoryItem__icon__avatar">
-              <SwapIcon />
+            <div className="HistoryItem__icon__small HistoryItem__icon--gray ">
+              <Icon.RefreshCcw03 />
             </div>
           </div>,
         );
@@ -225,9 +227,7 @@ export const HistoryItem = ({
             destAssetCode,
           }),
         );
-        setDateText(
-          (_dateText) => `${translations("Swapped")} \u2022 ${date}`,
-        );
+        setDateText((_dateText) => `${translations("Swapped")} \u2022 ${date}`);
         setTxDetails((_state) => ({
           ..._state,
           headerTitle: translations(
@@ -271,10 +271,12 @@ export const HistoryItem = ({
                 image: destIcon || PlaceholderIcon,
               }}
             />
-            <div className="HistoryItem__icon__avatar">
-              {_isRecipient && <SentIcon />}
-              {!_isRecipient && <ReceivedIcon />}
-            </div>
+            {_isRecipient && <div className="HistoryItem__icon__small HistoryItem__icon--green ">
+               <Icon.ArrowDown />
+            </div>}
+            {!_isRecipient && <div className="HistoryItem__icon__small HistoryItem__icon--gray HistoryItem__icon--rotate ">
+               <Icon.Send03 />
+            </div>}
           </div>,
         );
         setRowText(destAssetCode);
