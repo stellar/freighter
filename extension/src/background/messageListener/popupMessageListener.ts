@@ -52,7 +52,6 @@ import {
   TOKEN_ID_LIST,
   IS_HASH_SIGNING_ENABLED_ID,
   IS_NON_SSL_ENABLED_ID,
-  IS_BLOCKAID_ANNOUNCED_ID,
   IS_HIDE_DUST_ENABLED_ID,
 } from "constants/localStorageTypes";
 import {
@@ -80,7 +79,6 @@ import {
   getNetworksList,
   getAssetsLists,
   getIsNonSSLEnabled,
-  getIsBlockaidAnnounced,
   getIsHideDustEnabled,
   HW_PREFIX,
   getBipPath,
@@ -1317,7 +1315,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const isHashSigningEnabled = await getIsHashSigningEnabled();
     const assetsLists = await getAssetsLists();
     const isNonSSLEnabled = await getIsNonSSLEnabled();
-    const isBlockaidAnnounced = await getIsBlockaidAnnounced();
     const isHideDustEnabled = await getIsHideDustEnabled();
 
     return {
@@ -1333,7 +1330,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       userNotification,
       assetsLists,
       isNonSSLEnabled,
-      isBlockaidAnnounced,
       isHideDustEnabled,
     };
   };
@@ -1770,14 +1766,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { assetsLists: await getAssetsLists() };
   };
 
-  const saveIsBlockaidAnnounced = async () => {
-    const { isBlockaidAnnounced } = request;
-
-    await localStore.setItem(IS_BLOCKAID_ANNOUNCED_ID, isBlockaidAnnounced);
-
-    return { isBlockaidAnnounced: await getIsBlockaidAnnounced() };
-  };
-
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -1830,7 +1818,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.MIGRATE_ACCOUNTS]: migrateAccounts,
     [SERVICE_TYPES.ADD_ASSETS_LIST]: addAssetsList,
     [SERVICE_TYPES.MODIFY_ASSETS_LIST]: modifyAssetsList,
-    [SERVICE_TYPES.SAVE_IS_BLOCKAID_ANNOUNCED]: saveIsBlockaidAnnounced,
   };
 
   return messageResponder[request.type]();
