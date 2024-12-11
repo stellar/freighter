@@ -201,13 +201,11 @@ export const HistoryItem = ({
         const formattedAmount = `${formatAmount(
           new BigNumber(amount).toString(),
         )} ${destAssetCode}`;
-
         setAmountComponent(
           <Badge variant="primary" size="md">
             {formattedAmount}
           </Badge>,
         );
-
         const destIcon =
           destAssetCode === "XLM"
             ? StellarLogo
@@ -216,7 +214,6 @@ export const HistoryItem = ({
                 code: destAssetCode || "",
                 networkDetails,
               });
-
         const sourceIcon =
           srcAssetCode === "XLM"
             ? StellarLogo
@@ -225,7 +222,6 @@ export const HistoryItem = ({
                 code: srcAssetCode || "",
                 networkDetails,
               });
-
         setIconComponent(
           <>
             <div className="HistoryItem__icon__swap-source">
@@ -241,7 +237,6 @@ export const HistoryItem = ({
               )}
               {!sourceIcon && renderIconPlaceholder(srcAssetCode, "xs")}
             </div>
-
             <div className="HistoryItem__icon__swap-dest">
               {destIcon && (
                 <AssetSds
@@ -255,7 +250,6 @@ export const HistoryItem = ({
               )}
               {!destIcon && renderIconPlaceholder(destIcon, "xs")}
             </div>
-
             <div className="HistoryItem__icon__small HistoryItem--gray09 ">
               <Icon.RefreshCcw03 />
             </div>
@@ -291,7 +285,6 @@ export const HistoryItem = ({
             {formattedAmount}
           </Badge>,
         );
-
         const destIcon =
           destAssetCode === "XLM"
             ? StellarLogo
@@ -300,7 +293,6 @@ export const HistoryItem = ({
                 code: destAssetCode || "",
                 networkDetails,
               });
-
         setIconComponent(
           <>
             {destIcon && (
@@ -392,7 +384,6 @@ export const HistoryItem = ({
           }));
         } else if (attrs.fnName === SorobanTokenInterface.mint) {
           const isReceiving = attrs.to === publicKey;
-
           setIconComponent(
             <div className="HistoryItem__icon__bordered HistoryItem--gray09">
               <Icon.User01 />
@@ -453,7 +444,6 @@ export const HistoryItem = ({
                     {formattedAmount}
                   </Badge>,
                 );
-
                 setDateText(
                   (_dateText) =>
                     `${
@@ -525,7 +515,6 @@ export const HistoryItem = ({
                 {formattedAmount}
               </Badge>,
             );
-
             setDateText(
               (_dateText) =>
                 `${
@@ -592,7 +581,6 @@ export const HistoryItem = ({
                 {formattedAmount}
               </Badge>,
             );
-
             setIconComponent(
               <div className="HistoryItem__icon__bordered HistoryItem--gray09">
                 <Icon.User01 />
