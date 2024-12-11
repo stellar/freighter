@@ -1,10 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
-import { Horizon } from "stellar-sdk";
 import BigNumber from "bignumber.js";
-
-import { SorobanTokenInterface } from "@shared/constants/soroban/token";
+import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+import { Horizon } from "stellar-sdk";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import {
@@ -13,7 +11,6 @@ import {
 } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import { getIsPayment, getIsSwap } from "popup/helpers/account";
-import { getAttrsFromSorobanHorizonOp } from "popup/helpers/soroban";
 
 import {
   historyItemDetailViewProps,
@@ -25,30 +22,14 @@ import {
   TransactionDetail,
   TransactionDetailProps,
 } from "popup/components/accountHistory/TransactionDetail";
+import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
+
 import { RequestState, useGetHistory } from "helpers/hooks/useGetHistory";
 
 import "./styles.scss";
-import { Loading } from "popup/components/Loading";
-
-enum SELECTOR_OPTIONS {
-  ALL = "ALL",
-  SENT = "SENT",
-  RECEIVED = "RECEIVED",
-}
 
 export const AccountHistory = () => {
-  /*
-      t("ALL");
-      t("SENT");
-      t("RECEIVED");
-    */
-  type HistorySegments =
-    | {
-        [key in SELECTOR_OPTIONS]: HistoryItemOperation[] | [];
-      }
-    | null;
-
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -59,10 +40,9 @@ export const AccountHistory = () => {
     networkDetails,
   );
 
-  const [selectedSegment, setSelectedSegment] = useState(SELECTOR_OPTIONS.ALL);
-  const [historySegments, setHistorySegments] = useState(
-    null as HistorySegments,
-  );
+  const [historyOperations, setHistoryOperations] = useState<
+    HistoryItemOperation[]
+  >([]);
   const [isDetailViewShowing, setIsDetailViewShowing] = useState(false);
 
   const defaultDetailViewProps: TransactionDetailProps = {
@@ -82,69 +62,48 @@ export const AccountHistory = () => {
   }, []);
 
   useEffect(() => {
-    const createSegments = (
+    const createOperations = (
       operations: Horizon.ServerApi.OperationRecord[],
-    ) => {
-      const segments = {
-        [SELECTOR_OPTIONS.ALL]: [] as HistoryItemOperation[],
-        [SELECTOR_OPTIONS.SENT]: [] as HistoryItemOperation[],
-        [SELECTOR_OPTIONS.RECEIVED]: [] as HistoryItemOperation[],
-      };
-      operations.forEach((operation) => {
-        const isPayment = getIsPayment(operation.type);
-        const isSorobanXfer =
-          getAttrsFromSorobanHorizonOp(operation, networkDetails)?.fnName ===
-          SorobanTokenInterface.transfer;
-        const isSwap = getIsSwap(operation);
-        const isCreateExternalAccount =
-          operation.type ===
-            Horizon.HorizonApi.OperationResponseType.createAccount &&
-          operation.account !== publicKey;
-        const isDustPayment =
-          isPayment &&
-          "asset_type" in operation &&
-          operation.asset_type === "native" &&
-          "to" in operation &&
-          operation.to === publicKey &&
-          "amount" in operation &&
-          new BigNumber(operation.amount).lte(new BigNumber(0.1));
-        const historyOperation = {
-          ...operation,
-          isPayment,
-          isSwap,
-          isCreateExternalAccount,
-        };
+    ) =>
+      operations
+        .map((operation) => {
+          const isPayment = getIsPayment(operation.type);
+          const isSwap = getIsSwap(operation);
+          const isCreateExternalAccount =
+            operation.type ===
+              Horizon.HorizonApi.OperationResponseType.createAccount &&
+            operation.account !== publicKey;
+          const isDustPayment =
+            isPayment &&
+            "asset_type" in operation &&
+            operation.asset_type === "native" &&
+            "to" in operation &&
+            operation.to === publicKey &&
+            "amount" in operation &&
+            new BigNumber(operation.amount).lte(new BigNumber(0.1));
+          const historyOperation = {
+            ...operation,
+            isPayment,
+            isSwap,
+            isCreateExternalAccount,
+          };
 
-        if (isDustPayment && isHideDustEnabled) {
-          return;
-        }
-
-        if ((isPayment || isSorobanXfer) && !isSwap) {
-          if (operation.source_account === publicKey) {
-            segments[SELECTOR_OPTIONS.SENT].push(historyOperation);
-          } else if ("to" in operation && operation.to === publicKey) {
-            segments[SELECTOR_OPTIONS.RECEIVED].push(historyOperation);
+          if (isDustPayment && isHideDustEnabled) {
+            return undefined;
           }
-        }
 
-        if (isCreateExternalAccount) {
-          segments[SELECTOR_OPTIONS.SENT].push(historyOperation);
-        }
-
-        segments[SELECTOR_OPTIONS.ALL].push(historyOperation);
-      });
-
-      return segments;
-    };
+          return historyOperation;
+        })
+        .filter(Boolean) as HistoryItemOperation[];
 
     if (getHistoryState.state === RequestState.SUCCESS) {
-      setHistorySegments(createSegments(getHistoryState.data));
+      const operations = createOperations(getHistoryState.data);
+      setHistoryOperations(operations);
     }
   }, [
     getHistoryState.state,
     getHistoryState.data,
     publicKey,
-    networkDetails,
     isHideDustEnabled,
   ]);
 
@@ -160,49 +119,31 @@ export const AccountHistory = () => {
     return <Loading />;
   }
 
-  const hasEmptyHistory = !getHistoryState?.data?.length;
+  const hasHistoryContent = historyOperations.length > 0;
 
   return (
     <View.Content>
       <div className="AccountHistory" data-testid="AccountHistory">
-        <header className="AccountHistory__header">{t("Transactions")}</header>
-        <div className="AccountHistory__selector">
-          {Object.values(SELECTOR_OPTIONS).map((option) => (
-            <div
-              key={option}
-              className={`AccountHistory__selector__item ${
-                option === selectedSegment
-                  ? "AccountHistory__selector__item--active"
-                  : ""
-              }`}
-              onClick={() => setSelectedSegment(option)}
-            >
-              {t(option)}
-            </div>
-          ))}
-        </div>
+        <header className="AccountHistory__header">{t("History")}</header>
         <div className="AccountHistory__list">
-          {historySegments?.[SELECTOR_OPTIONS[selectedSegment]].length ? (
+          {hasHistoryContent && (
             <HistoryList>
               <>
-                {historySegments[SELECTOR_OPTIONS[selectedSegment]].map(
-                  (operation: HistoryItemOperation) => (
-                    <HistoryItem
-                      key={operation.id}
-                      accountBalances={accountBalances}
-                      operation={operation}
-                      publicKey={publicKey}
-                      networkDetails={networkDetails}
-                      setDetailViewProps={setDetailViewProps}
-                      setIsDetailViewShowing={setIsDetailViewShowing}
-                    />
-                  ),
-                )}
+                {historyOperations.map((operation: HistoryItemOperation) => (
+                  <HistoryItem
+                    key={operation.id}
+                    accountBalances={accountBalances}
+                    operation={operation}
+                    publicKey={publicKey}
+                    networkDetails={networkDetails}
+                    setDetailViewProps={setDetailViewProps}
+                    setIsDetailViewShowing={setIsDetailViewShowing}
+                  />
+                ))}
               </>
             </HistoryList>
-          ) : (
-            <div>{hasEmptyHistory ? t("No transactions to show") : null}</div>
           )}
+          {!hasHistoryContent && <div>{t("No transactions to show")}</div>}
         </div>
       </div>
     </View.Content>
