@@ -170,9 +170,6 @@ export const HistoryItem = ({
     return (
       <div className="HistoryItem__icon__bordered HistoryItem--gray09">
         <Icon.User01 />
-        <div className="HistoryItem__icon__small HistoryItem--gray09">
-          <Icon.Plus />
-        </div>
       </div>
     );
   };
