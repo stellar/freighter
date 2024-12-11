@@ -34,6 +34,9 @@
     margin-right: 1rem;
 
     &__swap-source {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       position: absolute;
       top: 0;
       left: 0;
@@ -44,6 +47,9 @@
     }
 
     &__swap-dest {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       position: absolute;
       bottom: 0;
       right: 0;
