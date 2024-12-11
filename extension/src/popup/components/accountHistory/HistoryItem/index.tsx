@@ -144,13 +144,13 @@ export const HistoryItem = ({
   const [IconComponent, setIconComponent] = useState(
     null as React.ReactElement | null,
   );
-  const [BodyComponent, setBodyComponent] = useState(
+  const [AmountComponent, setAmountComponent] = useState(
     null as React.ReactElement | null,
   );
 
-  const renderBodyComponent = () => {
-    if (BodyComponent) {
-      return BodyComponent;
+  const renderAmountComponent = () => {
+    if (AmountComponent) {
+      return AmountComponent;
     }
 
     return (
@@ -160,7 +160,7 @@ export const HistoryItem = ({
     );
   };
 
-  const renderIcon = () => {
+  const renderIconComponent = () => {
     if (IconComponent) {
       return IconComponent;
     }
@@ -175,7 +175,7 @@ export const HistoryItem = ({
     );
   };
 
-  const renderPlaceholder = (tokenCode: string) => (
+  const renderIconPlaceholder = (tokenCode: string) => (
     <div className="HistoryItem__icon__bordered">
       <Text
         as="div"
@@ -198,7 +198,7 @@ export const HistoryItem = ({
           new BigNumber(amount).toString(),
         )} ${destAssetCode}`;
 
-        setBodyComponent(
+        setAmountComponent(
           <Badge variant="primary" size="md">
             {formattedAmount}
           </Badge>,
@@ -267,7 +267,7 @@ export const HistoryItem = ({
         const formattedAmount = `${paymentDifference}${formatAmount(
           new BigNumber(amount).toString(),
         )} ${destAssetCode}`;
-        setBodyComponent(
+        setAmountComponent(
           <Badge variant={_isRecipient ? "success" : "primary"} size="md">
             {formattedAmount}
           </Badge>,
@@ -294,7 +294,7 @@ export const HistoryItem = ({
                 }}
               />
             )}
-            {!destIcon && renderPlaceholder(destAssetCode)}
+            {!destIcon && renderIconPlaceholder(destAssetCode)}
             {_isRecipient && (
               <div className="HistoryItem__icon__small HistoryItem--green">
                 <Icon.ArrowDown />
@@ -326,7 +326,7 @@ export const HistoryItem = ({
         const formattedAmount = `-${formatAmount(
           new BigNumber(startingBalance).toString(),
         )} XLM`;
-        setBodyComponent(
+        setAmountComponent(
           <Badge variant="primary" size="md">
             {formattedAmount}
           </Badge>,
@@ -412,7 +412,7 @@ export const HistoryItem = ({
                 const formattedAmount = `${
                   isReceiving && "+"
                 }${formattedTokenAmount} ${_token.symbol}`;
-                setBodyComponent(
+                setAmountComponent(
                   <Badge
                     variant={isReceiving ? "success" : "primary"}
                     size="md"
@@ -450,7 +450,7 @@ export const HistoryItem = ({
               console.error(error);
               captureException(`Error fetching token details: ${error}`);
               setRowText(translations(capitalize(attrs.fnName)));
-              setBodyComponent(
+              setAmountComponent(
                 <Badge variant={isReceiving ? "success" : "primary"} size="md">
                   {`${isReceiving && "+"}${translations("Unknown")}`}
                 </Badge>,
@@ -487,7 +487,7 @@ export const HistoryItem = ({
             const formattedAmount = `${
               isReceiving && "+"
             }${formattedTokenAmount} ${token.code}`;
-            setBodyComponent(
+            setAmountComponent(
               <Badge variant={isReceiving ? "success" : "primary"} size="md">
                 {formattedAmount}
               </Badge>,
@@ -549,7 +549,7 @@ export const HistoryItem = ({
               attrs.to === publicKey && attrs.from !== publicKey;
             const paymentDifference = _isRecipient ? "+" : "-";
             const formattedAmount = `${paymentDifference}${formattedTokenAmount} ${code}`;
-            setBodyComponent(
+            setAmountComponent(
               <Badge variant={_isRecipient ? "success" : "primary"} size="md">
                 {formattedAmount}
               </Badge>,
@@ -646,12 +646,12 @@ export const HistoryItem = ({
         {!isLoading && (
           <div className="HistoryItem__row HistoryItem--space-between">
             <div className="HistoryItem__row">
-              <div className="HistoryItem__icon">{renderIcon()}</div>
+              <div className="HistoryItem__icon">{renderIconComponent()}</div>
               <Text
                 as="div"
                 size="md"
                 weight="regular"
-                addlClassName="HistoryItem__operation HistoryItem--gray12"
+                addlClassName="HistoryItem__description HistoryItem--gray12"
               >
                 {rowText}
                 <Text
@@ -665,10 +665,10 @@ export const HistoryItem = ({
               </Text>
             </div>
             <div
-              className="HistoryItem__payment"
-              data-testid="history-item-body-component"
+              className="HistoryItem__amount"
+              data-testid="history-item-amount-component"
             >
-              {renderBodyComponent()}
+              {renderAmountComponent()}
             </div>
           </div>
         )}
