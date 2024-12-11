@@ -51,7 +51,6 @@ import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsD
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
-import { BlockaidAnnouncement } from "popup/components/account/BlockaidAnnouncement";
 
 import "popup/metrics/authServices";
 
@@ -178,7 +177,6 @@ export const Account = () => {
             publicKey={publicKey}
             setLoading={setLoading}
           />
-          <BlockaidAnnouncement />
           <View.Content hasNoTopPadding>
             <div className="AccountView" data-testid="account-view">
               <div className="AccountView__account-actions">
@@ -288,15 +286,15 @@ export const Account = () => {
               )}
             </div>
           </View.Content>
-          <View.Footer>
-            {!isFunded && !hasError && !error?.horizon && (
+          {!isFunded && !hasError && !error?.horizon && (
+            <View.Footer>
               <NotFundedMessage
                 canUseFriendbot={!!networkDetails.friendbotUrl}
                 setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
                 publicKey={publicKey}
               />
-            )}
-          </View.Footer>
+            </View.Footer>
+          )}
         </>
       )}
     </>
