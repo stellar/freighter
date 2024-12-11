@@ -261,7 +261,6 @@ export const HistoryItem = ({
             </div>
           </>,
         );
-
         setRowText(
           translations(`{{srcAssetCode}} for {{destAssetCode}}`, {
             srcAssetCode,
@@ -351,8 +350,14 @@ export const HistoryItem = ({
             {formattedAmount}
           </Badge>,
         );
-        // TODO: redesign all sections below
-        setIconComponent(<Icon.ArrowUp className="HistoryItem__icon--sent" />);
+        setIconComponent(
+          <div className="HistoryItem__icon__bordered HistoryItem--gray09">
+            <Icon.User01 />
+            <div className="HistoryItem__icon__small HistoryItem--gray09">
+              <Icon.Plus />
+            </div>
+          </div>,
+        );
         setRowText("XLM");
         setDateText((_dateText) => `${translations("Sent")} \u2022 ${date}`);
         setTxDetails((_state) => ({
@@ -389,11 +394,19 @@ export const HistoryItem = ({
           const isReceiving = attrs.to === publicKey;
 
           setIconComponent(
-            isReceiving ? (
-              <Icon.ArrowDown className="HistoryItem__icon--received" />
-            ) : (
-              <Icon.RefreshCcw01 className="HistoryItem__icon--default" />
-            ),
+            <div className="HistoryItem__icon__bordered HistoryItem--gray09">
+              <Icon.User01 />
+              {isReceiving && (
+                <div className="HistoryItem__icon__small HistoryItem--green">
+                  <Icon.ArrowDown />
+                </div>
+              )}
+              {!isReceiving && (
+                <div className="HistoryItem__icon__small HistoryItem--gray09 ">
+                  <Icon.RefreshCcw01 />
+                </div>
+              )}
+            </div>,
           );
 
           // Minter does not need to have tokens to mint, and
@@ -539,7 +552,12 @@ export const HistoryItem = ({
           }
         } else if (attrs.fnName === SorobanTokenInterface.transfer) {
           setIconComponent(
-            <Icon.ArrowUp className="HistoryItem__icon--sent" />,
+            <div className="HistoryItem__icon__bordered HistoryItem--gray09">
+              <Icon.User01 />
+              <div className="HistoryItem__icon__small HistoryItem--gray09">
+                <Icon.ArrowUp />
+              </div>
+            </div>,
           );
           setIsLoading(true);
 
@@ -574,12 +592,21 @@ export const HistoryItem = ({
                 {formattedAmount}
               </Badge>,
             );
+
             setIconComponent(
-              _isRecipient ? (
-                <Icon.ArrowDown className="HistoryItem__icon--received" />
-              ) : (
-                <Icon.ArrowUp className="HistoryItem__icon--sent" />
-              ),
+              <div className="HistoryItem__icon__bordered HistoryItem--gray09">
+                <Icon.User01 />
+                {_isRecipient && (
+                  <div className="HistoryItem__icon__small HistoryItem--green">
+                    <Icon.ArrowDown />
+                  </div>
+                )}
+                {!_isRecipient && (
+                  <div className="HistoryItem__icon__small HistoryItem--gray09">
+                    <Icon.ArrowUp />
+                  </div>
+                )}
+              </div>,
             );
             setRowText(code);
             setDateText(
