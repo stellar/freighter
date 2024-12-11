@@ -4,7 +4,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { captureException } from "@sentry/browser";
 import camelCase from "lodash/camelCase";
-import { Badge, Icon, Loader, Asset as AssetSds } from "@stellar/design-system";
+import {
+  Badge,
+  Icon,
+  Loader,
+  Asset as AssetSds,
+  Text,
+} from "@stellar/design-system";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 
@@ -32,7 +38,6 @@ import { getTokenDetails } from "@shared/api/internal";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
-import PlaceholderIcon from "popup/assets/placeholder-icon.png";
 
 import { TransactionDetailProps } from "../TransactionDetail";
 import "./styles.scss";
@@ -154,20 +159,34 @@ export const HistoryItem = ({
       </Badge>
     );
   };
+
   const renderIcon = () => {
     if (IconComponent) {
       return IconComponent;
     }
 
     return (
-      <div className="HistoryItem__icon__bordered HistoryItem__icon--gray">
+      <div className="HistoryItem__icon__bordered HistoryItem--gray09">
         <Icon.User01 />
-        <div className="HistoryItem__icon__small HistoryItem__icon--gray">
+        <div className="HistoryItem__icon__small HistoryItem--gray09">
           <Icon.Plus />
         </div>
       </div>
     );
   };
+
+  const renderPlaceholder = (tokenCode: string) => (
+    <div className="HistoryItem__icon__bordered">
+      <Text
+        as="div"
+        size="sm"
+        weight="bold"
+        addlClassName="HistoryItem--gray11"
+      >
+        {tokenCode.slice(0, 2)}
+      </Text>
+    </div>
+  );
 
   /* eslint-disable react-hooks/exhaustive-deps */
   const translations = useCallback(t, []);
@@ -210,14 +229,14 @@ export const HistoryItem = ({
               variant="swap"
               sourceOne={{
                 altText: "Swap source token logo",
-                image: sourceIcon || PlaceholderIcon,
+                image: sourceIcon,
               }}
               sourceTwo={{
                 altText: "Swap destination token logo",
-                image: destIcon || PlaceholderIcon,
+                image: destIcon,
               }}
             />
-            <div className="HistoryItem__icon__small HistoryItem__icon--gray ">
+            <div className="HistoryItem__icon__small HistoryItem--gray09 ">
               <Icon.RefreshCcw03 />
             </div>
           </div>,
@@ -264,26 +283,29 @@ export const HistoryItem = ({
               });
 
         setIconComponent(
-          <div>
-            <AssetSds
-              size="lg"
-              variant="single"
-              sourceOne={{
-                altText: "Payment token logo",
-                image: destIcon || PlaceholderIcon,
-              }}
-            />
+          <>
+            {destIcon && (
+              <AssetSds
+                size="lg"
+                variant="single"
+                sourceOne={{
+                  altText: "Payment token logo",
+                  image: destIcon,
+                }}
+              />
+            )}
+            {!destIcon && renderPlaceholder(destAssetCode)}
             {_isRecipient && (
-              <div className="HistoryItem__icon__small HistoryItem__icon--green ">
+              <div className="HistoryItem__icon__small HistoryItem--green">
                 <Icon.ArrowDown />
               </div>
             )}
             {!_isRecipient && (
-              <div className="HistoryItem__icon__small HistoryItem__icon--gray HistoryItem__icon--rotate ">
+              <div className="HistoryItem__icon__small HistoryItem--gray09 HistoryItem__icon--rotate">
                 <Icon.Send03 />
               </div>
             )}
-          </div>,
+          </>,
         );
         setRowText(destAssetCode);
         setDateText(
@@ -608,7 +630,7 @@ export const HistoryItem = ({
   return (
     <div
       data-testid="history-item"
-      className="HistoryItem"
+      className="HistoryItem HistoryItem--gray12"
       onClick={() => {
         emitMetric(METRIC_NAMES.historyOpenItem);
         setDetailViewProps(txDetails);
@@ -616,25 +638,39 @@ export const HistoryItem = ({
       }}
     >
       <div className="HistoryItem__row">
-        {isLoading ? (
+        {isLoading && (
           <div className="HistoryItem__loader">
             <Loader size="2rem" />
           </div>
-        ) : (
-          <>
-            <div className="HistoryItem__icon">{renderIcon()}</div>
-            <div className="HistoryItem__operation">
-              {rowText}
-              <div className="HistoryItem__date">{dateText}</div>
+        )}
+        {!isLoading && (
+          <div className="HistoryItem__row HistoryItem--space-between">
+            <div className="HistoryItem__row">
+              <div className="HistoryItem__icon">{renderIcon()}</div>
+              <Text
+                as="div"
+                size="md"
+                weight="regular"
+                addlClassName="HistoryItem__operation HistoryItem--gray12"
+              >
+                {rowText}
+                <Text
+                  as="div"
+                  size="xs"
+                  weight="regular"
+                  addlClassName="HistoryItem--gray11"
+                >
+                  {dateText}
+                </Text>
+              </Text>
             </div>
-
             <div
               className="HistoryItem__payment"
               data-testid="history-item-body-component"
             >
               {renderBodyComponent()}
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>
