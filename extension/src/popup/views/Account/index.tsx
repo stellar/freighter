@@ -288,15 +288,15 @@ export const Account = () => {
               )}
             </div>
           </View.Content>
-          <View.Footer>
-            {!isFunded && !hasError && !error?.horizon && (
+          {!isFunded && !hasError && !error?.horizon && (
+            <View.Footer>
               <NotFundedMessage
                 canUseFriendbot={!!networkDetails.friendbotUrl}
                 setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
                 publicKey={publicKey}
               />
-            )}
-          </View.Footer>
+            </View.Footer>
+          )}
         </>
       )}
     </>
