@@ -1,10 +1,10 @@
-// TODO: clean-up unused props
 .HistoryItem {
-  color: var(--sds-clr-gray-12);
   cursor: pointer;
 
   &__row {
     display: flex;
+    flex: 1;
+    flex-direction: row;
   }
 
   &__loader {
@@ -12,6 +12,15 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+  }
+
+  &__operation {
+    flex: 1;
+  }
+
+  &__payment {
+    text-align: right;
+    max-width: 50%;
   }
 
   &__icon {
@@ -52,32 +61,28 @@
     &--rotate {
       transform: rotate(-0.125turn);
     }
-
-    &--gray {
-      color: var(--sds-clr-gray-09);
-    }
-
-    &--green {
-      color: var(--sds-clr-green-09);
-    }
-
-    &--red {
-      color: var(--sds-clr-red-09);
-    }
   }
 
-  &__operation {
-    flex-grow: 2;
-    line-height: 1.5rem;
+  &--space-between {
+    justify-content: space-between;
   }
 
-  &__date {
+  &--gray09 {
+    // #707070
+    color: var(--sds-clr-gray-09);
+  }
+
+  &--gray11 {
+    // #A0A0A0
     color: var(--sds-clr-gray-11);
-    font-size: 0.75rem;
-    line-height: 1.125rem;
   }
 
-  &__payment {
-    line-height: 1.5rem;
+  &--gray12 {
+    // #EDEDED
+    color: var(--sds-clr-gray-12);
+  }
+
+  &--green {
+    color: var(--sds-clr-green-09);
   }
 }
