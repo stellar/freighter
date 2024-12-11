@@ -1206,7 +1206,6 @@ export const saveSettings = async ({
     settingsState: SettingsState.IDLE,
     isSorobanPublicEnabled: false,
     isNonSSLEnabled: false,
-    isBlockaidAnnounced: false,
     isHideDustEnabled: true,
     error: "",
   };
@@ -1528,26 +1527,5 @@ export const simulateTransaction = async (args: {
   return {
     ok: res.ok,
     response,
-  };
-};
-
-export const saveIsBlockaidAnnounced = async ({
-  isBlockaidAnnounced,
-}: {
-  isBlockaidAnnounced: boolean;
-}) => {
-  let response = {
-    error: "",
-    isBlockaidAnnounced: false,
-  };
-
-  response = await sendMessageToBackground({
-    type: SERVICE_TYPES.SAVE_IS_BLOCKAID_ANNOUNCED,
-    isBlockaidAnnounced,
-  });
-
-  return {
-    isBlockaidAnnounced: response.isBlockaidAnnounced,
-    error: response.error,
   };
 };
