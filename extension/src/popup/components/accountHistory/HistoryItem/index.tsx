@@ -10,6 +10,7 @@ import {
   Loader,
   Asset as AssetSds,
   Text,
+  TextProps,
 } from "@stellar/design-system";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
@@ -176,11 +177,14 @@ export const HistoryItem = ({
     );
   };
 
-  const renderIconPlaceholder = (tokenCode: string) => (
+  const renderIconPlaceholder = (
+    tokenCode: string = "",
+    size: TextProps["size"] = "sm",
+  ) => (
     <div className="HistoryItem__icon__bordered">
       <Text
         as="div"
-        size="sm"
+        size={size}
         weight="bold"
         addlClassName="HistoryItem--gray11"
       >
@@ -224,23 +228,39 @@ export const HistoryItem = ({
               });
 
         setIconComponent(
-          <div>
-            <AssetSds
-              size="lg"
-              variant="swap"
-              sourceOne={{
-                altText: "Swap source token logo",
-                image: sourceIcon,
-              }}
-              sourceTwo={{
-                altText: "Swap destination token logo",
-                image: destIcon,
-              }}
-            />
+          <>
+            <div className="HistoryItem__icon__swap-source">
+              {sourceIcon && (
+                <AssetSds
+                  size="md"
+                  variant="single"
+                  sourceOne={{
+                    altText: "Swap source token logo",
+                    image: sourceIcon,
+                  }}
+                />
+              )}
+              {!sourceIcon && renderIconPlaceholder(srcAssetCode, "xs")}
+            </div>
+
+            <div className="HistoryItem__icon__swap-dest">
+              {destIcon && (
+                <AssetSds
+                  size="md"
+                  variant="single"
+                  sourceOne={{
+                    altText: "Swap destination token logo",
+                    image: destIcon,
+                  }}
+                />
+              )}
+              {!destIcon && renderIconPlaceholder(destIcon, "xs")}
+            </div>
+
             <div className="HistoryItem__icon__small HistoryItem--gray09 ">
               <Icon.RefreshCcw03 />
             </div>
-          </div>,
+          </>,
         );
 
         setRowText(
