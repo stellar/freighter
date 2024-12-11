@@ -33,6 +33,27 @@
     border-radius: 2rem;
     margin-right: 1rem;
 
+    &__swap-source {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      height: 1.5rem;
+      width: 1.5rem;
+      border-radius: 1.5rem;
+    }
+
+    &__swap-dest {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      z-index: 2;
+      height: 1.5rem;
+      width: 1.5rem;
+      border-radius: 1.5rem;
+      background-color: var(--sds-clr-gray-01);
+    }
+
     &__bordered {
       display: flex;
       height: 100%;
