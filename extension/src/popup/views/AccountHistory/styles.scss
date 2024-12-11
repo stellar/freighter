@@ -2,27 +2,7 @@
   &__header {
     font-size: 1.25rem;
     margin-bottom: 1.5rem;
-  }
-
-  &__selector {
-    border-bottom: 1px solid var(--sds-clr-gray-04);
-    display: flex;
-    gap: 1rem;
-    margin: 0.5rem 0 1.5rem;
-
-    &__item {
-      color: var(--sds-clr-gray-12);
-      cursor: pointer;
-      font-size: 0.875rem;
-      font-weight: var(--font-weight-medium);
-      padding: 0.5rem 0;
-      text-transform: uppercase;
-
-      &--active {
-        border-bottom: 2px solid var(--color-purple-60);
-        color: var(--color-white);
-      }
-    }
+    text-align: center;
   }
 
   &__list {
