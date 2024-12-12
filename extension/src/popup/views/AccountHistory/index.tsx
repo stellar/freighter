@@ -152,12 +152,10 @@ export const AccountHistory = () => {
   const hasHistoryContent = historySections.length > 0;
 
   return (
-    <View.Content>
-      <div className="AccountHistory" data-testid="AccountHistory">
-        <Text as="div" size="md" addlClassName="AccountHistory__header">
-          {t("History")}
-        </Text>
-        <div className="AccountHistory__list">
+    <>
+      <View.AppHeader pageTitle={t("History")} />
+      <View.Content hasNoTopPadding>
+        <div className="AccountHistory" data-testid="AccountHistory">
           {hasHistoryContent && (
             <>
               {historySections.map((section: HistorySection) => (
@@ -191,7 +189,7 @@ export const AccountHistory = () => {
           )}
           {!hasHistoryContent && <div>{t("No transactions to show")}</div>}
         </div>
-      </div>
-    </View.Content>
+      </View.Content>
+    </>
   );
 };
