@@ -1,3 +1,4 @@
+import { Text } from "@stellar/design-system";
 import BigNumber from "bignumber.js";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -29,6 +30,11 @@ import { RequestState, useGetHistory } from "helpers/hooks/useGetHistory";
 
 import "./styles.scss";
 
+type HistorySection = {
+  monthYear: string; // in format {month}:{year}
+  operations: HistoryItemOperation[];
+};
+
 export const AccountHistory = () => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
@@ -40,9 +46,8 @@ export const AccountHistory = () => {
     networkDetails,
   );
 
-  const [historyOperations, setHistoryOperations] = useState<
-    HistoryItemOperation[]
-  >([]);
+  const [historySections, setHistorySections] = useState<HistorySection[]>([]);
+
   const [isDetailViewShowing, setIsDetailViewShowing] = useState(false);
 
   const defaultDetailViewProps: TransactionDetailProps = {
@@ -62,11 +67,14 @@ export const AccountHistory = () => {
   }, []);
 
   useEffect(() => {
-    const createOperations = (
+    const createHistorySections = (
       operations: Horizon.ServerApi.OperationRecord[],
     ) =>
-      operations
-        .map((operation) => {
+      operations.reduce(
+        (
+          sections: HistorySection[],
+          operation: Horizon.ServerApi.OperationRecord,
+        ) => {
           const isPayment = getIsPayment(operation.type);
           const isSwap = getIsSwap(operation);
           const isCreateExternalAccount =
@@ -81,7 +89,7 @@ export const AccountHistory = () => {
             operation.to === publicKey &&
             "amount" in operation &&
             new BigNumber(operation.amount).lte(new BigNumber(0.1));
-          const historyOperation = {
+          const parsedOperation = {
             ...operation,
             isPayment,
             isSwap,
@@ -89,16 +97,43 @@ export const AccountHistory = () => {
           };
 
           if (isDustPayment && isHideDustEnabled) {
-            return undefined;
+            return sections;
           }
 
-          return historyOperation;
-        })
-        .filter(Boolean) as HistoryItemOperation[];
+          const date = new Date(operation.created_at);
+          const month = date.getMonth() + 1; // january has index 0
+          const year = date.getFullYear();
+          const monthYear = `${month}:${year}`;
+
+          // pop() is a very performant method to get the last element of an array
+          // but it actually removes the last element, so we need to make sure
+          // to put it back later.
+          const lastSection = sections.pop();
+
+          // if we have no sections yet, let's create the first one
+          if (!lastSection) {
+            return [{ monthYear, operations: [parsedOperation] }];
+          }
+
+          // if element belongs to this section let's add it right away
+          if (lastSection.monthYear === monthYear) {
+            lastSection.operations.push(parsedOperation);
+            return [...sections, lastSection];
+          }
+
+          // otherwise let's add a new section at the bottom of the array
+          return [
+            ...sections,
+            lastSection,
+            { monthYear, operations: [parsedOperation] },
+          ];
+        },
+        [] as HistorySection[],
+      );
 
     if (getHistoryState.state === RequestState.SUCCESS) {
-      const operations = createOperations(getHistoryState.data);
-      setHistoryOperations(operations);
+      const sections = createHistorySections(getHistoryState.data);
+      setHistorySections(sections);
     }
   }, [
     getHistoryState.state,
@@ -119,29 +154,47 @@ export const AccountHistory = () => {
     return <Loading />;
   }
 
-  const hasHistoryContent = historyOperations.length > 0;
+  const hasHistoryContent = historySections.length > 0;
 
   return (
     <View.Content>
       <div className="AccountHistory" data-testid="AccountHistory">
-        <header className="AccountHistory__header">{t("History")}</header>
+        <Text as="div" size="md" addlClassName="AccountHistory__header">
+          {t("History")}
+        </Text>
         <div className="AccountHistory__list">
           {hasHistoryContent && (
-            <HistoryList>
-              <>
-                {historyOperations.map((operation: HistoryItemOperation) => (
-                  <HistoryItem
-                    key={operation.id}
-                    accountBalances={accountBalances}
-                    operation={operation}
-                    publicKey={publicKey}
-                    networkDetails={networkDetails}
-                    setDetailViewProps={setDetailViewProps}
-                    setIsDetailViewShowing={setIsDetailViewShowing}
-                  />
-                ))}
-              </>
-            </HistoryList>
+            <>
+              {historySections.map((section: HistorySection) => (
+                <div className="AccountHistory__list">
+                  <Text
+                    as="div"
+                    size="sm"
+                    addlClassName="AccountHistory__section-header"
+                  >
+                    {`Month: ${section.monthYear}`}
+                  </Text>
+
+                  <HistoryList>
+                    <>
+                      {section.operations.map(
+                        (operation: HistoryItemOperation) => (
+                          <HistoryItem
+                            key={operation.id}
+                            accountBalances={accountBalances}
+                            operation={operation}
+                            publicKey={publicKey}
+                            networkDetails={networkDetails}
+                            setDetailViewProps={setDetailViewProps}
+                            setIsDetailViewShowing={setIsDetailViewShowing}
+                          />
+                        ),
+                      )}
+                    </>
+                  </HistoryList>
+                </div>
+              ))}
+            </>
           )}
           {!hasHistoryContent && <div>{t("No transactions to show")}</div>}
         </div>
