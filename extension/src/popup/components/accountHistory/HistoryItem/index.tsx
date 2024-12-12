@@ -14,6 +14,7 @@ import {
 } from "@stellar/design-system";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
+import { Horizon } from "stellar-sdk";
 
 import { OPERATION_TYPES } from "constants/transaction";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
@@ -194,7 +195,91 @@ export const HistoryItem = ({
 
   useEffect(() => {
     const buildHistoryItem = async () => {
-      if (isSwap) {
+      if (type === Horizon.HorizonApi.OperationResponseType.createAccount) {
+        // If you're not creating an external account then this means you're
+        // receiving some XLM to create(fund) your own account
+        const _isRecipient = !isCreateExternalAccount;
+        const paymentDifference = _isRecipient ? "+" : "-";
+        const formattedAmount = `${paymentDifference}${formatAmount(
+          new BigNumber(startingBalance).toString(),
+        )} ${destAssetCode}`;
+
+        setAmountComponent(
+          <Badge variant={_isRecipient ? "success" : "primary"} size="md">
+            {formattedAmount}
+          </Badge>,
+        );
+        setIconComponent(
+          <div className="HistoryItem__icon__bordered HistoryItem--gray09">
+            <Icon.User01 />
+            <div className="HistoryItem__icon__small HistoryItem--gray09">
+              {/* When you've received XLM to create your own account */}
+              {_isRecipient && <Icon.Plus />}
+              {/* When you've sent XLM to create external account */}
+              {!_isRecipient && <Icon.ArrowUp />}
+            </div>
+          </div>,
+        );
+        setRowText(translations("Create account"));
+        setDateText(
+          (_dateText) =>
+            `${
+              _isRecipient ? translations("Received") : translations("Sent")
+            } \u2022 ${date}`,
+        );
+        if (isCreateExternalAccount) {
+          setTxDetails((_state) => ({
+            ..._state,
+            headerTitle: translations("Create account"),
+            isPayment: true,
+            operation: {
+              ...operation,
+              // eslint-disable-next-line
+              asset_type: "native",
+              to: account,
+            } as any, // TODO: overloaded op type, native not valid
+            operationText: formattedAmount,
+          }));
+        } else {
+          setTxDetails((_state) => ({
+            ..._state,
+            headerTitle: translations("Create account"),
+            operationText: operationString,
+          }));
+        }
+      } else if (
+        type === Horizon.HorizonApi.OperationResponseType.changeTrust
+      ) {
+        const destIcon = await getIconUrlFromIssuer({
+          key: assetIssuer || "",
+          code: destAssetCode || "",
+          networkDetails,
+        });
+        setIconComponent(
+          <>
+            {destIcon && (
+              <AssetSds
+                size="lg"
+                variant="single"
+                sourceOne={{
+                  altText: "Add trustline token logo",
+                  image: destIcon,
+                }}
+              />
+            )}
+            {!destIcon && renderIconPlaceholder(destAssetCode)}
+            <div className="HistoryItem__icon__small HistoryItem--green">
+              <Icon.CheckCircle />
+            </div>
+          </>,
+        );
+        setRowText(translations("Add trustline"));
+        setTxDetails((_state) => ({
+          ..._state,
+          headerTitle: translations("Add trustline"),
+          operationText: operationString,
+        }));
+      } else if (isSwap) {
         const formattedAmount = `${formatAmount(
           new BigNumber(amount).toString(),
         )} ${destAssetCode}`;
@@ -328,37 +413,6 @@ export const HistoryItem = ({
           headerTitle: `${
             _isRecipient ? translations("Received") : translations("Sent")
           } ${destAssetCode}`,
-          operationText: formattedAmount,
-        }));
-      } else if (isCreateExternalAccount) {
-        const formattedAmount = `-${formatAmount(
-          new BigNumber(startingBalance).toString(),
-        )} XLM`;
-        setAmountComponent(
-          <Badge variant="primary" size="md">
-            {formattedAmount}
-          </Badge>,
-        );
-        setIconComponent(
-          <div className="HistoryItem__icon__bordered HistoryItem--gray09">
-            <Icon.User01 />
-            <div className="HistoryItem__icon__small HistoryItem--gray09">
-              <Icon.Plus />
-            </div>
-          </div>,
-        );
-        setRowText("XLM");
-        setDateText((_dateText) => `${translations("Sent")} \u2022 ${date}`);
-        setTxDetails((_state) => ({
-          ..._state,
-          headerTitle: translations("Create Account"),
-          isPayment: true,
-          operation: {
-            ...operation,
-            // eslint-disable-next-line
-            asset_type: "native",
-            to: account,
-          } as any, // TODO: overloaded op type, native not valid
           operationText: formattedAmount,
         }));
       } else if (isInvokeHostFn) {
@@ -644,6 +698,7 @@ export const HistoryItem = ({
     date,
     destAssetCode,
     from,
+    type,
     isCreateExternalAccount,
     isInvokeHostFn,
     isPayment,
