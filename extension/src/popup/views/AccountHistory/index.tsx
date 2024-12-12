@@ -41,7 +41,7 @@ export const AccountHistory = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { accountBalances } = useSelector(transactionSubmissionSelector);
   const { isHideDustEnabled } = useSelector(settingsSelector);
-  const { state: getHistoryState, fetchData } = useGetHistory(
+  const { state: historyState, fetchData } = useGetHistory(
     publicKey,
     networkDetails,
   );
@@ -131,20 +131,15 @@ export const AccountHistory = () => {
         [] as HistorySection[],
       );
 
-    if (getHistoryState.state === RequestState.SUCCESS) {
-      const sections = createHistorySections(getHistoryState.data);
+    if (historyState.state === RequestState.SUCCESS) {
+      const sections = createHistorySections(historyState.data);
       setHistorySections(sections);
     }
-  }, [
-    getHistoryState.state,
-    getHistoryState.data,
-    publicKey,
-    isHideDustEnabled,
-  ]);
+  }, [historyState.state, historyState.data, publicKey, isHideDustEnabled]);
 
   const isLoaderShowing =
-    getHistoryState.state === RequestState.IDLE ||
-    getHistoryState.state === RequestState.LOADING;
+    historyState.state === RequestState.IDLE ||
+    historyState.state === RequestState.LOADING;
 
   if (isDetailViewShowing) {
     return <TransactionDetail {...detailViewProps} />;
