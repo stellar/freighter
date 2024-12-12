@@ -12,6 +12,7 @@ import {
 } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import { getIsPayment, getIsSwap } from "popup/helpers/account";
+import { getMonthLabel } from "popup/helpers/getMonthLabel";
 
 import {
   historyItemDetailViewProps,
@@ -100,7 +101,7 @@ export const AccountHistory = () => {
           }
 
           const date = new Date(operation.created_at);
-          const month = date.getMonth() + 1; // january has index 0
+          const month = date.getMonth();
           const year = date.getFullYear();
           const monthYear = `${month}:${year}`;
 
@@ -171,7 +172,7 @@ export const AccountHistory = () => {
                     size="sm"
                     addlClassName="AccountHistory__section-header"
                   >
-                    {`Month: ${section.monthYear}`}
+                    {getMonthLabel(Number(section.monthYear.split(":")[0]))}
                   </Text>
 
                   <div className="AccountHistory__list">
