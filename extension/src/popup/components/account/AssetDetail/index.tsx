@@ -25,7 +25,6 @@ import {
   historyItemDetailViewProps,
   HistoryItem,
 } from "popup/components/accountHistory/HistoryItem";
-import { HistoryList } from "popup/components/accountHistory/HistoryList";
 import { AssetNetworkInfo } from "popup/components/accountHistory/AssetNetworkInfo";
 import {
   TransactionDetail,
@@ -244,7 +243,7 @@ export const AssetDetail = ({
           </div>
 
           {assetOperations.length ? (
-            <HistoryList>
+            <div className="AssetDetail__list">
               <>
                 {assetOperations.map((operation) => {
                   const historyItemOperation = {
@@ -265,7 +264,7 @@ export const AssetDetail = ({
                   );
                 })}
               </>
-            </HistoryList>
+            </div>
           ) : (
             <div className="AssetDetail__empty">
               {t("No transactions to show")}

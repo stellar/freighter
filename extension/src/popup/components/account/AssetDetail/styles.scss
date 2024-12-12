@@ -3,6 +3,12 @@
     position: relative;
   }
 
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
   .SubviewHeader {
     padding-bottom: 0.25rem;
     height: auto;
