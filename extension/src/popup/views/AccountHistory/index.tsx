@@ -154,7 +154,7 @@ export const AccountHistory = () => {
   return (
     <>
       <View.AppHeader pageTitle={t("History")} />
-      <View.Content hasNoTopPadding>
+      <View.Content hasNoTopPadding hasNoBottomPadding>
         <div className="AccountHistory" data-testid="AccountHistory">
           {hasHistoryContent && (
             <>
