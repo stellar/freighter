@@ -115,7 +115,7 @@ jobs:
           SLACK_CHANNEL: team-wallet-eng
           SLACK_COLOR: "#391EDA"
           SLACK_ICON: https://github.com/stellar/freighter/blob/master/docs/static/images/logo.png?size=48
-          SLACK_MESSAGE: "https://github.com/stellar/freighter/releases/tag/{{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}"
+          SLACK_MESSAGE: "https://github.com/stellar/freighter/releases/tag/${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}"
           SLACK_TITLE: Freighter v${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }} has been submitted for testing!
           SLACK_USERNAME: Freighter Administrative Assistant
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
