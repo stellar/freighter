@@ -18,7 +18,6 @@ import {
   HistoryItem,
   HistoryItemOperation,
 } from "popup/components/accountHistory/HistoryItem";
-import { HistoryList } from "popup/components/accountHistory/HistoryList";
 import {
   TransactionDetail,
   TransactionDetailProps,
@@ -175,23 +174,21 @@ export const AccountHistory = () => {
                     {`Month: ${section.monthYear}`}
                   </Text>
 
-                  <HistoryList>
-                    <>
-                      {section.operations.map(
-                        (operation: HistoryItemOperation) => (
-                          <HistoryItem
-                            key={operation.id}
-                            accountBalances={accountBalances}
-                            operation={operation}
-                            publicKey={publicKey}
-                            networkDetails={networkDetails}
-                            setDetailViewProps={setDetailViewProps}
-                            setIsDetailViewShowing={setIsDetailViewShowing}
-                          />
-                        ),
-                      )}
-                    </>
-                  </HistoryList>
+                  <div className="AccountHistory__list">
+                    {section.operations.map(
+                      (operation: HistoryItemOperation) => (
+                        <HistoryItem
+                          key={operation.id}
+                          accountBalances={accountBalances}
+                          operation={operation}
+                          publicKey={publicKey}
+                          networkDetails={networkDetails}
+                          setDetailViewProps={setDetailViewProps}
+                          setIsDetailViewShowing={setIsDetailViewShowing}
+                        />
+                      ),
+                    )}
+                  </div>
                 </div>
               ))}
             </>
