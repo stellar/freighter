@@ -6,7 +6,10 @@
   margin-bottom: #{pxToRem(32px)};
 
   &__ordered-list {
-    columns: 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: pxToRem(16px);
+    row-gap: pxToRem(8px);
     text-align: start;
     counter-reset: item;
     list-style-type: none;
@@ -14,7 +17,7 @@
 
     li::before {
       counter-increment: item;
-      content: counter(item) !important;
+      content: counter(item, decimal-leading-zero) !important;
       display: inline-block;
       width: #{pxToRem(24px)};
       position: relative !important;
@@ -28,8 +31,11 @@
   }
 
   &__list-item {
+    border: 1px solid var(--sds-clr-gray-06);
+    border-radius: pxToRem(6px);
     display: flex;
-    gap: #{pxToRem(8px)};
+    gap: pxToRem(4px);
+    padding: pxToRem(6px) pxToRem(10px);
 
     &::before {
       color: var(--sds-clr-gray-11);
