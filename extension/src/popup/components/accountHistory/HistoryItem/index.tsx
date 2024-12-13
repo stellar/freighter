@@ -150,18 +150,6 @@ export const HistoryItem = ({
     null as React.ReactElement | null,
   );
 
-  const renderAmountComponent = () => {
-    if (AmountComponent) {
-      return AmountComponent;
-    }
-
-    return (
-      <Badge variant="tertiary" size="md">
-        {t("N/A")}
-      </Badge>
-    );
-  };
-
   const renderIconComponent = () => {
     if (IconComponent) {
       return IconComponent;
@@ -765,7 +753,7 @@ export const HistoryItem = ({
               className="HistoryItem__amount"
               data-testid="history-item-amount-component"
             >
-              {renderAmountComponent()}
+              {AmountComponent}
             </div>
           </div>
         )}
