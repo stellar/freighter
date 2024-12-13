@@ -277,7 +277,7 @@ const Outlet = () => {
     ((location.pathname === ROUTES.welcome &&
       applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) ||
       SHOW_NAV_ROUTES.some((route) => location.pathname === route) ||
-      isSwap);
+      (isSwap && location.pathname !== ROUTES.unlockAccount));
 
   const isAppLayout = NO_APP_LAYOUT_ROUTES.every(
     (route) => route !== location.pathname,

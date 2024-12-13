@@ -206,27 +206,30 @@ export const RecoverAccount = () => {
                           </div>
                         </Card>
                         <div className="RecoverAccount__mnemonic-footer">
-                          <div className="RecoverAccount__phrase-toggle">
-                            <div>{SHORT_PHRASE} word</div>
-                            <Toggle
-                              fieldSize="md"
-                              checked={isLongPhrase}
-                              id="RecoverAccount__toggle"
-                              onChange={() => setIsLongPhrase(!isLongPhrase)}
-                            />
-                            <div>{LONG_PHRASE} word</div>
+                          <div className="RecoverAccount__mnemonic-footer__row">
+                            <div className="RecoverAccount__phrase-toggle">
+                              <div>{SHORT_PHRASE} word</div>
+                              <Toggle
+                                fieldSize="md"
+                                checked={isLongPhrase}
+                                id="RecoverAccount__toggle"
+                                onChange={() => setIsLongPhrase(!isLongPhrase)}
+                              />
+                              <div>{LONG_PHRASE} word</div>
+                            </div>
+                            <div className="RecoverAccount__mnemonic__text-toggle">
+                              <Button
+                                variant="tertiary"
+                                onClick={() => setIsTextShowing(!isTextShowing)}
+                                size="sm"
+                                type="button"
+                              >
+                                <span> {isTextShowing ? "Hide" : "Show"}</span>
+                                {isTextShowing ? <Icon.EyeOff /> : <Icon.Eye />}
+                              </Button>
+                            </div>
                           </div>
-                          <div className="RecoverAccount__mnemonic__text-toggle">
-                            <Button
-                              variant="secondary"
-                              onClick={() => setIsTextShowing(!isTextShowing)}
-                              size="sm"
-                              type="button"
-                            >
-                              <span> {isTextShowing ? "Hide" : "Show"}</span>
-                              {isTextShowing ? <Icon.EyeOff /> : <Icon.Eye />}
-                            </Button>
-                          </div>
+
                           <div className="RecoverAccount__import">
                             <Button
                               variant="secondary"

@@ -39,7 +39,7 @@ export const EnterPassword = ({
   const titleLabel = title || t("Enter your password");
   const descriptionLabel = `${
     description || t("Enter your account password to verify your account.")
-  } ${t("You won’t be asked to do this again for the next 24 hours.")}`;
+  }`;
   const confirmLabel = confirmButtonTitle || t("Continue");
   const cancelLabel = cancelButtonTitle || t("Cancel");
 

@@ -71,6 +71,7 @@ export const PasswordForm = ({
                 <Field name="password">
                   {({ field }: FieldProps) => (
                     <Input
+                      autoFocus
                       data-testid="account-creator-password-input"
                       fieldSize="md"
                       autoComplete="off"
