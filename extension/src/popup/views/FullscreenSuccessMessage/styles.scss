@@ -161,6 +161,7 @@
 
       &__text {
         color: var(--sds-clr-gray-11);
+        line-height: pxToRem(24px);
       }
 
       &:nth-child(1) {

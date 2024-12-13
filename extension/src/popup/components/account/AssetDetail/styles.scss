@@ -10,7 +10,6 @@
 
   &__available {
     align-items: center;
-    color: rgba(255, 255, 255, 0.6);
     display: flex;
     justify-content: center;
     font-size: 0.875rem;
@@ -21,10 +20,6 @@
     .IconButton {
       width: 0.75rem;
       height: 0.75rem;
-
-      svg {
-        fill: rgba(255, 255, 255, 0.6);
-      }
     }
   }
 
@@ -70,6 +65,7 @@
   }
 
   &__empty {
+    color: var(--sds-clr-gray-11);
     text-align: center;
   }
 

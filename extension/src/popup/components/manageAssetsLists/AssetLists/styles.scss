@@ -1,3 +1,5 @@
+@use "../../../styles/utils.scss" as *;
+
 .ManageAssetsLists {
   &__select {
     padding-left: 1.625rem !important;
@@ -5,8 +7,8 @@
 
   &__network {
     position: absolute;
-    top: 0.65rem;
-    left: 1.6875rem;
+    top: pxToRem(14px);
+    left: pxToRem(34px);
   }
 
   &__loader {
@@ -32,7 +34,11 @@
 
   &__subtitle {
     font-size: 0.75rem;
-    color: var(--sds-clr-gray-12);
+    color: var(--sds-clr-gray-11);
     line-height: 1.125rem;
+  }
+
+  &__select-wrapper {
+    margin-top: pxToRem(4px);
   }
 }

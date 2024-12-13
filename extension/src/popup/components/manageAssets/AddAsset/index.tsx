@@ -151,8 +151,8 @@ export const AddAsset = () => {
           setVerifiedLists(verifiedTokens[0].verifiedLists);
           setAssetRows(
             verifiedTokens.map((record: VerifiedTokenRecord) => ({
-              code: record.code,
-              issuer: record.issuer,
+              code: record.code || record.contract,
+              issuer: record.issuer || record.contract,
               image: record.icon,
               domain: record.domain,
               contract: record.contract,
