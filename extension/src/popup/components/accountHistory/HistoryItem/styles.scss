@@ -16,6 +16,7 @@
 
   &__description {
     flex: 1;
+    color: var(--sds-clr-gray-12);
   }
 
   &__amount {
@@ -68,6 +69,7 @@
       justify-content: center;
       border-radius: 2rem;
       border: 1px solid var(--sds-clr-gray-06);
+      color: var(--sds-clr-gray-09);
     }
 
     &__small {
@@ -84,32 +86,32 @@
       border-radius: 1rem;
       background-color: var(--sds-clr-gray-02);
     }
+  }
 
-    &--rotate {
-      transform: rotate(-0.125turn);
-    }
+  &--rotate {
+    transform: rotate(-0.125turn);
   }
 
   &--space-between {
     justify-content: space-between;
   }
 
-  &--gray09 {
-    // #707070
-    color: var(--sds-clr-gray-09);
-  }
-
-  &--gray11 {
-    // #A0A0A0
+  &--date {
     color: var(--sds-clr-gray-11);
   }
 
-  &--gray12 {
-    // #EDEDED
-    color: var(--sds-clr-gray-12);
+  &--placeholder {
+    color: var(--sds-clr-gray-11);
   }
 
-  &--green {
+  &--received,
+  &--add-trustline {
     color: var(--sds-clr-green-09);
+  }
+
+  &--sent,
+  &--swap,
+  &--create-account {
+    color: var(--sds-clr-gray-09);
   }
 }

@@ -168,7 +168,7 @@ export const HistoryItem = ({
     }
 
     return (
-      <div className="HistoryItem__icon__bordered HistoryItem--gray09">
+      <div className="HistoryItem__icon__bordered">
         <Icon.User01 />
       </div>
     );
@@ -183,7 +183,7 @@ export const HistoryItem = ({
         as="div"
         size={size}
         weight="bold"
-        addlClassName="HistoryItem--gray11"
+        addlClassName="HistoryItem--placeholder"
       >
         {tokenCode.slice(0, 2)}
       </Text>
@@ -210,9 +210,9 @@ export const HistoryItem = ({
           </Badge>,
         );
         setIconComponent(
-          <div className="HistoryItem__icon__bordered HistoryItem--gray09">
+          <div className="HistoryItem__icon__bordered">
             <Icon.User01 />
-            <div className="HistoryItem__icon__small HistoryItem--gray09">
+            <div className="HistoryItem__icon__small HistoryItem--create-account">
               {/* When you've received XLM to create your own account */}
               {_isRecipient && <Icon.Plus />}
               {/* When you've sent XLM to create external account */}
@@ -268,7 +268,7 @@ export const HistoryItem = ({
               />
             )}
             {!destIcon && renderIconPlaceholder(destAssetCode)}
-            <div className="HistoryItem__icon__small HistoryItem--green">
+            <div className="HistoryItem__icon__small HistoryItem--add-trustline">
               <Icon.CheckCircle />
             </div>
           </>,
@@ -332,7 +332,7 @@ export const HistoryItem = ({
               )}
               {!destIcon && renderIconPlaceholder(destIcon, "xs")}
             </div>
-            <div className="HistoryItem__icon__small HistoryItem--gray09 ">
+            <div className="HistoryItem__icon__small HistoryItem--swap">
               <Icon.RefreshCcw03 />
             </div>
           </>,
@@ -389,12 +389,12 @@ export const HistoryItem = ({
             )}
             {!destIcon && renderIconPlaceholder(destAssetCode)}
             {_isRecipient && (
-              <div className="HistoryItem__icon__small HistoryItem--green">
+              <div className="HistoryItem__icon__small HistoryItem--received">
                 <Icon.ArrowDown />
               </div>
             )}
             {!_isRecipient && (
-              <div className="HistoryItem__icon__small HistoryItem--gray09 HistoryItem__icon--rotate">
+              <div className="HistoryItem__icon__small HistoryItem--sent HistoryItem--rotate">
                 <Icon.Send03 />
               </div>
             )}
@@ -446,15 +446,15 @@ export const HistoryItem = ({
         } else if (attrs.fnName === SorobanTokenInterface.mint) {
           const isReceiving = attrs.to === publicKey;
           setIconComponent(
-            <div className="HistoryItem__icon__bordered HistoryItem--gray09">
+            <div className="HistoryItem__icon__bordered">
               <Icon.User01 />
               {isReceiving && (
-                <div className="HistoryItem__icon__small HistoryItem--green">
+                <div className="HistoryItem__icon__small HistoryItem--received">
                   <Icon.ArrowDown />
                 </div>
               )}
               {!isReceiving && (
-                <div className="HistoryItem__icon__small HistoryItem--gray09 ">
+                <div className="HistoryItem__icon__small HistoryItem--sent">
                   <Icon.RefreshCcw01 />
                 </div>
               )}
@@ -602,9 +602,9 @@ export const HistoryItem = ({
           }
         } else if (attrs.fnName === SorobanTokenInterface.transfer) {
           setIconComponent(
-            <div className="HistoryItem__icon__bordered HistoryItem--gray09">
+            <div className="HistoryItem__icon__bordered">
               <Icon.User01 />
-              <div className="HistoryItem__icon__small HistoryItem--gray09">
+              <div className="HistoryItem__icon__small HistoryItem--sent">
                 <Icon.ArrowUp />
               </div>
             </div>,
@@ -643,15 +643,15 @@ export const HistoryItem = ({
               </Badge>,
             );
             setIconComponent(
-              <div className="HistoryItem__icon__bordered HistoryItem--gray09">
+              <div className="HistoryItem__icon__bordered">
                 <Icon.User01 />
                 {_isRecipient && (
-                  <div className="HistoryItem__icon__small HistoryItem--green">
+                  <div className="HistoryItem__icon__small HistoryItem--received">
                     <Icon.ArrowDown />
                   </div>
                 )}
                 {!_isRecipient && (
-                  <div className="HistoryItem__icon__small HistoryItem--gray09">
+                  <div className="HistoryItem__icon__small HistoryItem--sent">
                     <Icon.ArrowUp />
                   </div>
                 )}
@@ -727,7 +727,7 @@ export const HistoryItem = ({
   return (
     <div
       data-testid="history-item"
-      className="HistoryItem HistoryItem--gray12"
+      className="HistoryItem"
       onClick={() => {
         emitMetric(METRIC_NAMES.historyOpenItem);
         setDetailViewProps(txDetails);
@@ -748,14 +748,14 @@ export const HistoryItem = ({
                 as="div"
                 size="md"
                 weight="regular"
-                addlClassName="HistoryItem__description HistoryItem--gray12"
+                addlClassName="HistoryItem__description"
               >
                 {rowText}
                 <Text
                   as="div"
                   size="xs"
                   weight="regular"
-                  addlClassName="HistoryItem--gray11"
+                  addlClassName="HistoryItem--date"
                 >
                   {dateText}
                 </Text>
