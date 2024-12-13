@@ -105,10 +105,8 @@ export const AccountHistory = () => {
           const year = date.getFullYear();
           const monthYear = `${month}:${year}`;
 
-          // pop() is a very performant method to get the last element of an array
-          // but it actually removes the last element, so we need to make sure
-          // to put it back later.
-          const lastSection = sections.pop();
+          const lastSection =
+            sections.length > 0 && sections[sections.length - 1];
 
           // if we have no sections yet, let's create the first one
           if (!lastSection) {
@@ -118,15 +116,11 @@ export const AccountHistory = () => {
           // if element belongs to this section let's add it right away
           if (lastSection.monthYear === monthYear) {
             lastSection.operations.push(parsedOperation);
-            return [...sections, lastSection];
+            return sections;
           }
 
           // otherwise let's add a new section at the bottom of the array
-          return [
-            ...sections,
-            lastSection,
-            { monthYear, operations: [parsedOperation] },
-          ];
+          return [...sections, { monthYear, operations: [parsedOperation] }];
         },
         [] as HistorySection[],
       );
