@@ -192,6 +192,7 @@ export const AssetDetail = ({
               new BigNumber(balance?.total).toNumber() > 0 ? (
                 <>
                   <PillButton
+                    variant="tertiary"
                     onClick={() => {
                       dispatch(saveAsset(selectedAsset));
                       if (isContract) {
@@ -206,6 +207,7 @@ export const AssetDetail = ({
                   </PillButton>
                   {!isSorobanAsset && (
                     <PillButton
+                      variant="tertiary"
                       onClick={() => {
                         dispatch(saveAsset(selectedAsset));
                         navigateTo(ROUTES.swap);
@@ -217,6 +219,7 @@ export const AssetDetail = ({
                 </>
               ) : (
                 <PillButton
+                  variant="tertiary"
                   onClick={() => {
                     dispatch(saveDestinationAsset(selectedAsset));
                     navigateTo(ROUTES.swap);
