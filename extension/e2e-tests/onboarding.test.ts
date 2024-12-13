@@ -164,7 +164,7 @@ test("Import 24 word wallet", async ({ page }) => {
     {
       page,
       screenshot: "wallet-import-24-word-phrase-page.png",
-      threshold: 0.04,
+      threshold: 0.03,
     },
     {
       mask: [page.locator(".RecoverAccount__mnemonic-input")],
