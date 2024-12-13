@@ -167,7 +167,7 @@ test("Import 24 word wallet", async ({ page }) => {
       threshold: 0.03,
     },
     {
-      mask: [page.locator(".RecoverAccount__mnemonic-input")],
+      mask: [page.locator(".RecoverAccount__mnemonic-wrapper")],
     },
   );
 
