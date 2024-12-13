@@ -69,8 +69,8 @@ describe("HistoryItem", () => {
     render(<HistoryItem {...props} />);
     await waitFor(() => screen.getByTestId("history-item"));
     expect(screen.getByTestId("history-item")).toBeDefined();
-    expect(screen.getByTestId("history-item-body-component")).toHaveTextContent(
-      "+10 XLM",
-    );
+    expect(
+      screen.getByTestId("history-item-amount-component"),
+    ).toHaveTextContent("+10 XLM");
   });
 });
