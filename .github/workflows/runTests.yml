@@ -20,7 +20,7 @@ jobs:
       - run: yarn build:freighter-api
       - run: yarn build:extension
       - run: yarn test:ci
-      - run: yarn test:e2e
+      - run: ${{ github.base_ref == 'master' && 'IS_INTEGRATION_MODE=true' }} yarn test:e2e
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
