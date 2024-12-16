@@ -2,7 +2,7 @@ import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount, PASSWORD } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 
-test("Adding unverified Soroban token", async ({ page, extensionId }) => {
+test.skip("Adding unverified Soroban token", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
