@@ -11,7 +11,6 @@ import {
   AssetSelect,
   PathPayAssetSelect,
 } from "popup/components/sendPayment/SendAmount/AssetSelect";
-import { PillButton } from "popup/basics/buttons/PillButton";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
@@ -518,7 +517,9 @@ export const SendAmount = ({
           <div className="SendAmount">
             <div className="SendAmount__content">
               <div className="SendAmount__btn-set-max">
-                <PillButton
+                <Button
+                  size="md"
+                  variant="tertiary"
                   onClick={() => {
                     emitMetric(METRIC_NAMES.sendPaymentSetMax);
                     formik.setFieldValue(
@@ -529,7 +530,7 @@ export const SendAmount = ({
                   data-testid="SendAmountSetMax"
                 >
                   {t("SET MAX")}
-                </PillButton>
+                </Button>
               </div>
 
               <form>
@@ -553,6 +554,7 @@ export const SendAmount = ({
                           e.target.selectionStart || 1,
                         );
                       formik.setFieldValue("amount", newAmount);
+                      dispatch(saveAmount(newAmount));
                       runAfterUpdate(() => {
                         input.selectionStart = newCursor;
                         input.selectionEnd = newCursor;

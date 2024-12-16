@@ -86,7 +86,7 @@ jobs:
           apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
           timeout: 900000
       - name: Remove scripts tag
-        uses: restackio/update-json-file-action@1e34d747ca044df80b37bc4ef5a9aa41be9dac8f #v2.1
+        uses: restackio/update-json-file-action@f8ef1561cb15ba86a6367b547216375bc60e7f91 #v2.1
         with:
           file: ./extension/build/manifest.json
           fields: '{"background": {"service_worker": "background.min.js"}}'
@@ -120,7 +120,7 @@ jobs:
           asset_name: build-${{ github.event.inputs.version }}.zip
           asset_content_type: application/zip
       - name: Slack Notification
-        uses: rtCamp/action-slack-notify@4e5fb42d249be6a45a298f3c9543b111b02f7907 #v2.3.0
+        uses: rtCamp/action-slack-notify@c33737706dea87cd7784c687dadc9adf1be59990 #v2.3.2
         env:
           MSG_MINIMAL: true
           SLACK_CHANNEL: release

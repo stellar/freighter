@@ -1,17 +1,4 @@
 .AccountHistory {
-  &__loader {
-    height: 100%;
-    width: 100%;
-    z-index: calc(var(--back--button-z-index) + 1);
-    position: absolute;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    top: 0;
-    left: 0;
-  }
-
   &__header {
     font-size: 1.25rem;
     margin-bottom: 1.5rem;

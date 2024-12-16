@@ -11,8 +11,8 @@ import {
   ASSETS_LISTS_ID,
   IS_HASH_SIGNING_ENABLED_ID,
   IS_NON_SSL_ENABLED_ID,
-  IS_BLOCKAID_ANNOUNCED_ID,
   IS_HIDE_DUST_ENABLED_ID,
+  LAST_USED_ACCOUNT,
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
@@ -155,16 +155,6 @@ export const getIsNonSSLEnabled = async () => {
   return isNonSSLEnabled;
 };
 
-export const getIsBlockaidAnnounced = async () => {
-  if (!(await localStore.getItem(IS_BLOCKAID_ANNOUNCED_ID))) {
-    await localStore.setItem(IS_BLOCKAID_ANNOUNCED_ID, false);
-  }
-  const isBlockaidAnnounced =
-    (await localStore.getItem(IS_BLOCKAID_ANNOUNCED_ID)) ?? false;
-
-  return isBlockaidAnnounced;
-};
-
 export const getIsHideDustEnabled = async () => {
   const isHideDustEnabled =
     (await localStore.getItem(IS_HIDE_DUST_ENABLED_ID)) ?? true;
@@ -231,6 +221,10 @@ export const getFeatureFlags = async () => {
 };
 
 export const subscribeAccount = async (publicKey: string) => {
+  // update last used account so we can use it to properly
+  // display the identicon component on login screen
+  await localStore.setItem(LAST_USED_ACCOUNT, publicKey);
+
   // if pub key already has a subscription setup, skip this
   const keyId = await localStore.getItem(KEY_ID);
   const hasAccountSubByKeyId =

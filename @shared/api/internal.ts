@@ -112,7 +112,7 @@ export const fundAccount = async (publicKey: string): Promise<void> => {
 };
 
 export const addAccount = async (
-  password: string,
+  password: string = "",
 ): Promise<{
   publicKey: string;
   allAccounts: Array<Account>;
@@ -942,15 +942,15 @@ export const grantAccess = async (url: string): Promise<void> => {
   }
 };
 
-export const handleSignedHwTransaction = async ({
-  signedTransaction,
+export const handleSignedHwPayload = async ({
+  signedPayload,
 }: {
-  signedTransaction: string;
+  signedPayload: string | Buffer;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
-      signedTransaction,
-      type: SERVICE_TYPES.HANDLE_SIGNED_HW_TRANSACTION,
+      signedPayload,
+      type: SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD,
     });
   } catch (e) {
     console.error(e);
@@ -1122,6 +1122,14 @@ export const loadRecentAddresses = async (): Promise<{
   });
 };
 
+export const loadLastUsedAccount = async (): Promise<{
+  lastUsedAccount: string;
+}> => {
+  return await sendMessageToBackground({
+    type: SERVICE_TYPES.LOAD_LAST_USED_ACCOUNT,
+  });
+};
+
 export const signOut = async (): Promise<{
   publicKey: string;
   applicationState: APPLICATION_STATE;
@@ -1198,7 +1206,6 @@ export const saveSettings = async ({
     settingsState: SettingsState.IDLE,
     isSorobanPublicEnabled: false,
     isNonSSLEnabled: false,
-    isBlockaidAnnounced: false,
     isHideDustEnabled: true,
     error: "",
   };
@@ -1496,23 +1503,29 @@ export const simulateTokenTransfer = async (args: {
   };
 };
 
-export const saveIsBlockaidAnnounced = async ({
-  isBlockaidAnnounced,
-}: {
-  isBlockaidAnnounced: boolean;
+export const simulateTransaction = async (args: {
+  xdr: string;
+  networkDetails: NetworkDetails;
 }) => {
-  let response = {
-    error: "",
-    isBlockaidAnnounced: false,
+  const { xdr, networkDetails } = args;
+  const options = {
+    method: "POST",
+    headers: {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      xdr,
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      network_url: networkDetails.sorobanRpcUrl,
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      network_passphrase: networkDetails.networkPassphrase,
+    }),
   };
-
-  response = await sendMessageToBackground({
-    type: SERVICE_TYPES.SAVE_IS_BLOCKAID_ANNOUNCED,
-    isBlockaidAnnounced,
-  });
-
+  const res = await fetch(`${INDEXER_URL}/simulate-tx`, options);
+  const response = await res.json();
   return {
-    isBlockaidAnnounced: response.isBlockaidAnnounced,
-    error: response.error,
+    ok: res.ok,
+    response,
   };
 };

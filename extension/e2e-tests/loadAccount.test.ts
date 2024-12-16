@@ -1,5 +1,5 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
-import { loginToTestAccount } from "./helpers/login";
+import { loginToTestAccount, loginAndFund } from "./helpers/login";
 
 test("Load accounts on standalone network", async ({ page, extensionId }) => {
   test.slow();
@@ -26,4 +26,19 @@ test("Load accounts on standalone network", async ({ page, extensionId }) => {
     timeout: 30000,
   });
   await expect(page.getByTestId("account-assets")).toContainText("XLM");
+});
+test("Switches account without password prompt", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId });
+  await expect(page.getByTestId("account-assets")).toContainText("XLM");
+  await page.getByTestId("AccountHeader__icon-btn").click();
+  await page.getByText("Account 2").click();
+
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Manage Assets").click({ force: true });
+
+  await expect(page.getByText("Your assets")).toBeVisible();
 });

@@ -1,3 +1,5 @@
+@use "../../../styles/utils.scss" as *;
+
 .AccountListIdenticon {
   align-items: center;
   display: flex;
@@ -8,10 +10,6 @@
     border-width: 1.5px;
     border-style: solid;
     border-color: var(--sds-clr-gray-03);
-
-    &.active {
-      border-color: rgba(61, 204, 152, 1);
-    }
   }
 
   &__identicon-wrapper {
@@ -26,7 +24,7 @@
   &__identicon-button {
     background: none;
     border: 0;
-    margin-left: 0.5rem;
+    margin-left: pxToRem(16px);
     text-align: left;
     width: 100%;
     font-size: 0.875rem;
@@ -47,7 +45,7 @@
   }
 
   &__account-num {
-    color: var(--sds-clr-gray-12);
+    color: var(--sds-clr-gray-11);
     width: 100%;
   }
 }

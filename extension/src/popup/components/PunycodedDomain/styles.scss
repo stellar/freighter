@@ -11,6 +11,12 @@
     margin-bottom: 0;
   }
 
+  &__favicon-container {
+    width: 32px;
+    height: 32px;
+    overflow: hidden;
+  }
+
   &__favicon {
     width: 2rem;
   }

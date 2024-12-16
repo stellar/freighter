@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { IconButton, Icon } from "@stellar/design-system";
+import { IconButton, Icon, Button } from "@stellar/design-system";
 
 import { HorizonOperation, AssetType } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -21,8 +21,6 @@ import { navigateTo } from "popup/helpers/navigate";
 import { formatTokenAmount, isContractId } from "popup/helpers/soroban";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
-
-import { PillButton } from "popup/basics/buttons/PillButton";
 
 import {
   historyItemDetailViewProps,
@@ -195,7 +193,9 @@ export const AssetDetail = ({
               {balance?.total &&
               new BigNumber(balance?.total).toNumber() > 0 ? (
                 <>
-                  <PillButton
+                  <Button
+                    size="md"
+                    variant="tertiary"
                     onClick={() => {
                       dispatch(saveAsset(selectedAsset));
                       if (isContract) {
@@ -207,27 +207,31 @@ export const AssetDetail = ({
                     }}
                   >
                     {t("SEND")}
-                  </PillButton>
+                  </Button>
                   {!isSorobanAsset && (
-                    <PillButton
+                    <Button
+                      size="md"
+                      variant="tertiary"
                       onClick={() => {
                         dispatch(saveAsset(selectedAsset));
                         navigateTo(ROUTES.swap);
                       }}
                     >
                       {t("SWAP")}
-                    </PillButton>
+                    </Button>
                   )}
                 </>
               ) : (
-                <PillButton
+                <Button
+                  size="md"
+                  variant="tertiary"
                   onClick={() => {
                     dispatch(saveDestinationAsset(selectedAsset));
                     navigateTo(ROUTES.swap);
                   }}
                 >
                   {t("SWAP")}
-                </PillButton>
+                </Button>
               )}
             </div>
           )}

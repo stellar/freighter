@@ -1,18 +1,4 @@
 .VerifyAccount {
-  &__copy {
-    color: var(--sds-clr-gray-12);
-    font-size: var(--font-size);
-    line-height: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  &__btn-continue {
-    position: absolute;
-    top: calc(
-      var(--popup--height) - var(--continue-btn-height) -
-        var(--bottom-btn-margin)
-    );
-    width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
-    left: var(--popup--side-padding);
-  }
+  margin-top: auto;
+  margin-bottom: auto;
 }

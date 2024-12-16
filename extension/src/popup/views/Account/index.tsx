@@ -42,7 +42,6 @@ import {
   sortBalances,
   sortOperationsByAsset,
 } from "popup/helpers/account";
-import { truncatedPublicKey } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
@@ -52,7 +51,6 @@ import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsD
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
-import { BlockaidAnnouncement } from "popup/components/account/BlockaidAnnouncement";
 
 import "popup/metrics/authServices";
 
@@ -179,7 +177,6 @@ export const Account = () => {
             publicKey={publicKey}
             setLoading={setLoading}
           />
-          <BlockaidAnnouncement />
           <View.Content hasNoTopPadding>
             <div className="AccountView" data-testid="account-view">
               <div className="AccountView__account-actions">
@@ -190,9 +187,12 @@ export const Account = () => {
                   >
                     {currentAccountName}
                   </div>
-                  <CopyText textToCopy={publicKey} tooltipPlacement="right">
+                  <CopyText
+                    textToCopy={publicKey}
+                    tooltipPlacement="bottom"
+                    doneLabel="Copied address"
+                  >
                     <div className="AccountView__account-num">
-                      {truncatedPublicKey(publicKey)}
                       <Icon.Copy01 />
                     </div>
                   </CopyText>
@@ -284,15 +284,17 @@ export const Account = () => {
                   />
                 </div>
               )}
-              {!isFunded && !hasError && !error?.horizon && (
-                <NotFundedMessage
-                  canUseFriendbot={!!networkDetails.friendbotUrl}
-                  setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
-                  publicKey={publicKey}
-                />
-              )}
             </div>
           </View.Content>
+          {!isFunded && !hasError && !error?.horizon && (
+            <View.Footer>
+              <NotFundedMessage
+                canUseFriendbot={!!networkDetails.friendbotUrl}
+                setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
+                publicKey={publicKey}
+              />
+            </View.Footer>
+          )}
         </>
       )}
     </>

@@ -22,7 +22,7 @@ import {
   getAssetDomains,
   rejectAccess,
   grantAccess,
-  handleSignedHwTransaction,
+  handleSignedHwPayload,
   signTransaction,
   signFreighterTransaction,
   addRecentAddress,
@@ -254,9 +254,9 @@ export const IntegrationTest = () => {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       runAsserts("grantAccess", () => {});
 
-      await handleSignedHwTransaction({ signedTransaction: "" });
+      await handleSignedHwPayload({ signedPayload: "" });
       // eslint-disable-next-line @typescript-eslint/no-empty-function
-      runAsserts("handleSignedHwTransaction", () => {});
+      runAsserts("handleSignedHwPayload", () => {});
 
       await signTransaction();
       // eslint-disable-next-line @typescript-eslint/no-empty-function

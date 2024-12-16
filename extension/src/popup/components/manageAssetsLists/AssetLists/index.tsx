@@ -56,22 +56,24 @@ export const AssetLists = ({
     <>
       <SubviewHeader title="Asset Lists" />
       <View.Content hasNoTopPadding>
-        <Select
-          fieldSize="sm"
-          id="select"
-          className="ManageAssetsLists__select"
-          onChange={handleSelectChange}
-        >
-          {ASSETS_LISTS_NETWORKS.map(([networkName, networkValue]) => (
-            <option
-              value={networkValue}
-              key={networkName}
-              selected={networkValue === selectedNetwork}
-            >
-              {networkName}
-            </option>
-          ))}
-        </Select>
+        <div className="ManageAssetsLists__select-wrapper">
+          <Select
+            fieldSize="sm"
+            id="select"
+            className="ManageAssetsLists__select"
+            onChange={handleSelectChange}
+          >
+            {ASSETS_LISTS_NETWORKS.map(([networkName, networkValue]) => (
+              <option
+                value={networkValue}
+                key={networkName}
+                selected={networkValue === selectedNetwork}
+              >
+                {networkName}
+              </option>
+            ))}
+          </Select>
+        </div>
         <div className="ManageAssetsLists__network">
           <NetworkIcon index={selectedNetwork === NETWORKS.PUBLIC ? 0 : 1} />
         </div>

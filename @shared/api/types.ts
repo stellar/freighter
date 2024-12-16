@@ -41,6 +41,7 @@ export interface Response {
   transactionXDR: string;
   signerAddress: string;
   signedTransaction: string;
+  signedPayload: string | Buffer;
   signedBlob: Buffer | null;
   signedAuthEntry: Buffer | null;
   source: string;
@@ -74,6 +75,7 @@ export interface Response {
   networkIndex: number;
   networkName: string;
   recentAddresses: string[];
+  lastUsedAccount: string;
   hardwareWalletType: WalletType;
   bipPath: string;
   memoRequiredAccounts: MemoRequiredAccount[];
@@ -90,7 +92,6 @@ export interface Response {
   isMergeSelected: boolean;
   recommendedFee: string;
   isNonSSLEnabled: boolean;
-  isBlockaidAnnounced: boolean;
   isHideDustEnabled: boolean;
 }
 
@@ -144,7 +145,6 @@ export interface Preferences {
   isMemoValidationEnabled: boolean;
   networksList: NetworkDetails[];
   isHideDustEnabled: boolean;
-  isBlockaidAnnounced: boolean;
   error: string;
 }
 

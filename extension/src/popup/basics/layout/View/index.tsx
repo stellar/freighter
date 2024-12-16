@@ -14,31 +14,15 @@ interface ViewContextProps {
 const ViewContext = createContext<ViewContextProps>({ isAppLayout: undefined });
 
 // Header
-interface ViewHeaderProps {
-  showFreighterLogo?: boolean;
-  showBottomBorder?: boolean;
-}
-
-const ViewHeader: React.FC<ViewHeaderProps> = ({
-  showFreighterLogo = true,
-  showBottomBorder = true,
-  ...props
-}: ViewHeaderProps) => (
-  <header
-    className={`View__header ${addStyleClasses([
-      showBottomBorder ? "View__header--border" : "",
-    ])}`}
-    {...props}
-  >
-    <ViewInset isWide={true} isInline={true}>
-      <div className="View__header__box View__header__box--left">
-        {showFreighterLogo ? (
-          <img
-            className="View__header__logo"
-            alt="Freighter logo"
-            src={FreighterLogo}
-          />
-        ) : null}
+const ViewHeader: React.FC = ({ ...props }) => (
+  <header className="View__header" {...props}>
+    <ViewInset isInline hasVerticalBorder>
+      <div className="View__header__box View__header__box--center">
+        <img
+          className="View__header__logo"
+          alt="Freighter logo"
+          src={FreighterLogo}
+        />
       </div>
     </ViewInset>
   </header>
@@ -69,8 +53,8 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
   children,
   ...props
 }: ViewAppHeaderProps) => (
-  <div className="View__header View__header--tall" {...props}>
-    <ViewInset isInline={true} hasVerticalBorder>
+  <div className="View__header" {...props}>
+    <ViewInset isInline hasVerticalBorder>
       {/* Left */}
       <div className="View__header__box View__header__box--left">
         {hasBackButton ? (
@@ -129,6 +113,7 @@ interface ViewContentProps {
   alignment?: "center";
   contentFooter?: React.ReactNode;
   hasNoTopPadding?: boolean;
+  hasNoBottomPadding?: boolean;
 }
 
 const ViewContent: React.FC<ViewContentProps> = ({
@@ -136,6 +121,7 @@ const ViewContent: React.FC<ViewContentProps> = ({
   alignment,
   contentFooter,
   hasNoTopPadding,
+  hasNoBottomPadding,
   ...props
 }: ViewContentProps) => {
   const { isAppLayout } = useContext(ViewContext);
@@ -146,6 +132,7 @@ const ViewContent: React.FC<ViewContentProps> = ({
         alignment={alignment}
         hasVerticalBorder={isAppLayout}
         hasNoTopPadding={hasNoTopPadding}
+        hasNoBottomPadding={hasNoBottomPadding}
         hasScrollShadow
       >
         {children}
@@ -170,6 +157,7 @@ interface ViewFooterProps {
   customGap?: string;
   hasExtraPaddingBottom?: boolean;
   hasTopBorder?: boolean;
+  hasNoBottomPadding?: boolean;
   isInline?: boolean;
   allowWrap?: boolean;
   style?: React.CSSProperties;
@@ -181,6 +169,7 @@ const ViewFooter: React.FC<ViewFooterProps> = ({
   customGap,
   hasExtraPaddingBottom,
   hasTopBorder,
+  hasNoBottomPadding,
   isInline,
   allowWrap,
   style,
@@ -209,6 +198,7 @@ const ViewFooter: React.FC<ViewFooterProps> = ({
         hasVerticalBorder
         hasTopBorder={hasTopBorder}
         isInline={isInline}
+        hasNoBottomPadding={hasNoBottomPadding}
       >
         {children}
       </ViewInset>
@@ -230,6 +220,7 @@ interface ViewInsetProps {
   additionalClassName?: string;
   hasScrollShadow?: boolean;
   hasNoTopPadding?: boolean;
+  hasNoBottomPadding?: boolean;
 }
 
 export const ViewInset: React.FC<ViewInsetProps> = ({
@@ -242,6 +233,7 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
   additionalClassName,
   hasScrollShadow,
   hasNoTopPadding,
+  hasNoBottomPadding,
   ...props
 }: ViewInsetProps) => (
   <div
@@ -253,6 +245,7 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
       hasTopBorder ? "View__inset--top-border" : "",
       hasScrollShadow ? "View__inset--scroll-shadows" : "",
       hasNoTopPadding ? "View__inset--no-top-padding" : "",
+      hasNoBottomPadding ? "View__inset--no-bottom-padding" : "",
     ])}${additionalClassName ? ` ${additionalClassName}` : ""}`}
     {...props}
   >
@@ -262,7 +255,7 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
 
 // View
 interface ViewComponent {
-  Header: React.FC<ViewHeaderProps>;
+  Header: React.FC;
   AppHeader: React.FC<ViewAppHeaderProps>;
   Content: React.FC<ViewContentProps>;
   Footer: React.FC<ViewFooterProps>;
