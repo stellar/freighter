@@ -29,7 +29,7 @@ const STELLAR_EXPERT_ASSET_LIST_JSON = {
 test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   if (!process.env.IS_INTEGRATION_MODE) {
     await page.route("*/**/testnet/asset-list/top50", async (route) => {
-      const json = [STELLAR_EXPERT_ASSET_LIST_JSON];
+      const json = STELLAR_EXPERT_ASSET_LIST_JSON;
       await route.fulfill({ json });
     });
   }
@@ -66,7 +66,7 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
 test("Adding Soroban verified token", async ({ page, extensionId }) => {
   if (!process.env.IS_INTEGRATION_MODE) {
     await page.route("*/**/testnet/asset-list/top50", async (route) => {
-      const json = [STELLAR_EXPERT_ASSET_LIST_JSON];
+      const json = STELLAR_EXPERT_ASSET_LIST_JSON;
       await route.fulfill({ json });
     });
   }
@@ -112,6 +112,7 @@ test("Adding Soroban verified token", async ({ page, extensionId }) => {
 });
 test.afterAll(async ({ page, extensionId }) => {
   if (
+    process.env.IS_INTEGRATION_MODE &&
     test.info().status !== test.info().expectedStatus &&
     test.info().title === "Adding Soroban verified token"
   ) {
