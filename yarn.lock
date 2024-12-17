@@ -1308,7 +1308,20 @@
     "@babel/parser" "^7.25.9"
     "@babel/types" "^7.25.9"
 
-"@babel/traverse--for-generate-function-map@npm:@babel/traverse@^7.25.3", "@babel/traverse@^7.25.3", "@babel/traverse@^7.25.9", "@babel/traverse@^7.4.5", "@babel/traverse@^7.7.0", "@babel/traverse@^7.7.2":
+"@babel/traverse--for-generate-function-map@npm:@babel/traverse@^7.25.3":
+  version "7.25.9"
+  resolved "https://registry.yarnpkg.com/@babel/traverse/-/traverse-7.25.9.tgz#a50f8fe49e7f69f53de5bea7e413cd35c5e13c84"
+  integrity sha512-ZCuvfwOwlz/bawvAuvcj8rrithP2/N55Tzz342AkTvq4qaWbGfmCk/tKhNaV2cthijKrPAA8SRJV5WWe7IBMJw==
+  dependencies:
+    "@babel/code-frame" "^7.25.9"
+    "@babel/generator" "^7.25.9"
+    "@babel/parser" "^7.25.9"
+    "@babel/template" "^7.25.9"
+    "@babel/types" "^7.25.9"
+    debug "^4.3.1"
+    globals "^11.1.0"
+
+"@babel/traverse@^7.25.3", "@babel/traverse@^7.25.9", "@babel/traverse@^7.4.5", "@babel/traverse@^7.7.0", "@babel/traverse@^7.7.2":
   version "7.25.9"
   resolved "https://registry.yarnpkg.com/@babel/traverse/-/traverse-7.25.9.tgz#a50f8fe49e7f69f53de5bea7e413cd35c5e13c84"
   integrity sha512-ZCuvfwOwlz/bawvAuvcj8rrithP2/N55Tzz342AkTvq4qaWbGfmCk/tKhNaV2cthijKrPAA8SRJV5WWe7IBMJw==
@@ -3458,7 +3471,7 @@
   optionalDependencies:
     sodium-native "^4.1.1"
 
-"@stellar/stellar-sdk@13.0.0-beta.1", "stellar-sdk-next@yarn:@stellar/stellar-sdk@13.0.0-beta.1", "stellar-sdk@yarn:@stellar/stellar-sdk@13.0.0-beta.1":
+"@stellar/stellar-sdk@13.0.0-beta.1":
   version "13.0.0-beta.1"
   resolved "https://registry.yarnpkg.com/@stellar/stellar-sdk/-/stellar-sdk-13.0.0-beta.1.tgz#9a995575b806bea3a383b2d9fe4b1fde065caeb4"
   integrity sha512-yJN2HzibhZFJsdLRU83bkUwb9dq1sZRRiQptTJyunVv0hQsF+tTldrP3hHst3LROv/2GWTn20tmAqnp0hkzOhg==
@@ -12599,9 +12612,9 @@ nan@^2.14.0:
   integrity sha512-nbajikzWTMwsW+eSsNm3QwlOs7het9gGJU5dDZzRTQGk03vyBOauxgI4VakDzE0PtsGTmXPsXTbbjVhRwR5mpw==
 
 nanoid@^3.3.7:
-  version "3.3.7"
-  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.7.tgz#d0c301a691bc8d54efa0a2226ccf3fe2fd656bd8"
-  integrity sha512-eSRppjcPIatRIMC1U6UngP8XFcz8MQWGQdt1MTBQ7NaAmvXDfvNxbvWV3x2y6CdEUciCSsDHDQZbhYaB8QEo2g==
+  version "3.3.8"
+  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.8.tgz#b1be3030bee36aaff18bacb375e5cce521684baf"
+  integrity sha512-WNLf5Sd8oZxOm+TzppcYk8gVOgP+l58xNy58D0nbUnOxOWRWvlcCV4kUF7ltmI6PsrLl/BgKEyS4mqsGChFN0w==
 
 natural-compare-lite@^1.4.0:
   version "1.4.0"
@@ -15959,6 +15972,34 @@ stellar-identicon-js@^1.0.0:
   integrity sha512-zUp8i3U4G/oj4B5LunWyalmvp0DigNxF7A2uQM7IGfPO4QR587K/BH5nQ1WsD4Hz7sDA9aERsBIkNpvO1xHoyA==
   dependencies:
     html-webpack-plugin "^3.2.0"
+
+"stellar-sdk-next@yarn:@stellar/stellar-sdk@13.0.0-beta.1":
+  version "13.0.0-beta.1"
+  resolved "https://registry.yarnpkg.com/@stellar/stellar-sdk/-/stellar-sdk-13.0.0-beta.1.tgz#9a995575b806bea3a383b2d9fe4b1fde065caeb4"
+  integrity sha512-yJN2HzibhZFJsdLRU83bkUwb9dq1sZRRiQptTJyunVv0hQsF+tTldrP3hHst3LROv/2GWTn20tmAqnp0hkzOhg==
+  dependencies:
+    "@stellar/stellar-base" "13.0.0-beta.1"
+    axios "^1.7.7"
+    bignumber.js "^9.1.2"
+    eventsource "^2.0.2"
+    feaxios "^0.0.20"
+    randombytes "^2.1.0"
+    toml "^3.0.0"
+    urijs "^1.19.1"
+
+"stellar-sdk@yarn:@stellar/stellar-sdk@13.0.0-beta.1":
+  version "13.0.0-beta.1"
+  resolved "https://registry.yarnpkg.com/@stellar/stellar-sdk/-/stellar-sdk-13.0.0-beta.1.tgz#9a995575b806bea3a383b2d9fe4b1fde065caeb4"
+  integrity sha512-yJN2HzibhZFJsdLRU83bkUwb9dq1sZRRiQptTJyunVv0hQsF+tTldrP3hHst3LROv/2GWTn20tmAqnp0hkzOhg==
+  dependencies:
+    "@stellar/stellar-base" "13.0.0-beta.1"
+    axios "^1.7.7"
+    bignumber.js "^9.1.2"
+    eventsource "^2.0.2"
+    feaxios "^0.0.20"
+    randombytes "^2.1.0"
+    toml "^3.0.0"
+    urijs "^1.19.1"
 
 stop-iteration-iterator@^1.0.0:
   version "1.0.0"
