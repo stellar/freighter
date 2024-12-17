@@ -27,7 +27,6 @@ const STELLAR_EXPERT_ASSET_LIST_JSON = {
 };
 
 test("Adding unverified Soroban token", async ({ page, extensionId }) => {
-  console.log(process.env.IS_INTEGRATION_MODE);
   if (!process.env.IS_INTEGRATION_MODE) {
     await page.route("*/**/testnet/asset-list/top50", async (route) => {
       const json = [STELLAR_EXPERT_ASSET_LIST_JSON];
