@@ -1,5 +1,4 @@
 import packageJson from "../package.json";
-import semver from "semver";
 import { Buffer } from "buffer";
 
 import { submitMessage } from "@shared/api/external";
@@ -29,18 +28,10 @@ export const signMessage = async (
   }
 ): Promise<SignMessageV3Response | SignMessageV4Response> => {
   if (isBrowser) {
-    const req = await submitMessage(message, opts);
+    const req = await submitMessage(message, packageJson.version, opts);
 
     if (req.error) {
       return { signedMessage: null, signerAddress: "", error: req.error };
-    }
-
-    if (semver.gte(packageJson.version, "4.0.0") && req.signedMessage) {
-      const signedMessage = Buffer.from(req.signedMessage).toString("base64");
-      return {
-        signedMessage,
-        signerAddress: req.signerAddress,
-      };
     }
 
     return {
