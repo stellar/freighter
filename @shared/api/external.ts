@@ -94,6 +94,7 @@ export const submitTransaction = async (
 
 export const submitMessage = async (
   blob: string,
+  version: string,
   opts?: {
     address?: string;
     networkPassphrase?: string;
@@ -110,6 +111,7 @@ export const submitMessage = async (
     response = await sendMessageToContentScript({
       blob,
       accountToSign,
+      apiVersion: version,
       type: EXTERNAL_SERVICE_TYPES.SUBMIT_BLOB,
     });
   } catch (e) {
