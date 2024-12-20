@@ -1,13 +1,13 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount, PASSWORD } from "./helpers/login";
-import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
+import { TEST_TOKEN_ADDRESS, USDC_TOKEN_ADDRESS } from "./helpers/test-token";
 
-test.skip("Adding unverified Soroban token", async ({ page, extensionId }) => {
+test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
   await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Manage Assets").click({ force: true });
+  await page.getByText("Manage assets").click({ force: true });
   await expect(page.getByText("Your assets")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
@@ -34,14 +34,6 @@ test.skip("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await expect(page.getByTestId("account-view")).toContainText("E2E");
 });
 test("Adding Soroban verified token", async ({ page, extensionId }) => {
-  const assetsList = await fetch(
-    "https://api.stellar.expert/explorer/testnet/asset-list/top50",
-  );
-  const assetsListData = await assetsList.json();
-  const verifiedToken =
-    assetsListData?.assets[0]?.contract ||
-    "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
-
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
@@ -51,7 +43,7 @@ test("Adding Soroban verified token", async ({ page, extensionId }) => {
   await expect(page.getByText("Your assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });
   await page.getByText("Add manually").click({ force: true });
-  await page.getByTestId("search-token-input").fill(verifiedToken);
+  await page.getByTestId("search-token-input").fill(USDC_TOKEN_ADDRESS);
   await expect(page.getByTestId("asset-notification")).toHaveText(
     "On your listsFreighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
   );
@@ -83,6 +75,7 @@ test("Adding Soroban verified token", async ({ page, extensionId }) => {
 });
 test.afterAll(async ({ page, extensionId }) => {
   if (
+    process.env.IS_INTEGRATION_MODE &&
     test.info().status !== test.info().expectedStatus &&
     test.info().title === "Adding Soroban verified token"
   ) {

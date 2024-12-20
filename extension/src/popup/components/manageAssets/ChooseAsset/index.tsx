@@ -172,18 +172,27 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
           </div>
         ) : (
           <div className="ChooseAsset__wrapper">
-            <div
-              className={`ChooseAsset__assets${
-                isManagingAssets && isSorobanSuported ? "--short" : ""
-              }`}
-              ref={ManageAssetRowsWrapperRef}
-            >
-              {isManagingAssets ? (
-                <ManageAssetRows assetRows={assetRows} />
-              ) : (
-                <SelectAssetRows assetRows={assetRows} />
-              )}
-            </div>
+            {!assetRows.length ? (
+              <div className="ChooseAsset__empty">
+                <p>
+                  You have no assets added. Get started by adding an asset
+                  below.
+                </p>
+              </div>
+            ) : (
+              <div
+                className={`ChooseAsset__assets${
+                  isManagingAssets && isSorobanSuported ? "--short" : ""
+                }`}
+                ref={ManageAssetRowsWrapperRef}
+              >
+                {isManagingAssets ? (
+                  <ManageAssetRows assetRows={assetRows} />
+                ) : (
+                  <SelectAssetRows assetRows={assetRows} />
+                )}
+              </div>
+            )}
           </div>
         )}
       </View.Content>
