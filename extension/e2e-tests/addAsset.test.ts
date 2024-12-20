@@ -1,38 +1,8 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount, PASSWORD } from "./helpers/login";
-import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
-
-const USDC_TOKEN_ADDRESS =
-  "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
-
-const STELLAR_EXPERT_ASSET_LIST_JSON = {
-  name: "StellarExpert Top 50",
-  provider: "StellarExpert",
-  description:
-    "Dynamically generated list based on technical asset metrics, including payments and trading volumes, interoperability, userbase, etc. Assets included in this list were not verified by StellarExpert team. StellarExpert is not affiliated with issuers, and does not endorse or advertise assets in the list. Assets reported for fraudulent activity removed from the list automatically.",
-  version: "1.0",
-  network: "testnet",
-  feedback: "https://stellar.expert",
-  assets: [
-    {
-      code: "USDC",
-      issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-      contract: USDC_TOKEN_ADDRESS,
-      name: "USDC",
-      org: "unknown",
-      domain: "centre.io",
-      decimals: 7,
-    },
-  ],
-};
+import { TEST_TOKEN_ADDRESS, USDC_TOKEN_ADDRESS } from "./helpers/test-token";
 
 test("Adding unverified Soroban token", async ({ page, extensionId }) => {
-  if (!process.env.IS_INTEGRATION_MODE) {
-    await page.route("*/**/testnet/asset-list/top50", async (route) => {
-      const json = STELLAR_EXPERT_ASSET_LIST_JSON;
-      await route.fulfill({ json });
-    });
-  }
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
@@ -64,13 +34,6 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await expect(page.getByTestId("account-view")).toContainText("E2E");
 });
 test("Adding Soroban verified token", async ({ page, extensionId }) => {
-  if (!process.env.IS_INTEGRATION_MODE) {
-    await page.route("*/**/testnet/asset-list/top50", async (route) => {
-      const json = STELLAR_EXPERT_ASSET_LIST_JSON;
-      await route.fulfill({ json });
-    });
-  }
-
   test.slow();
   await loginToTestAccount({ page, extensionId });
 

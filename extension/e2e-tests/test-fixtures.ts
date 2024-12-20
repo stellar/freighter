@@ -1,9 +1,12 @@
-import { test as base, chromium, BrowserContext } from "@playwright/test";
+import { test as base, chromium, BrowserContext, Page } from "@playwright/test";
 import path from "path";
+
+import { STELLAR_EXPERT_ASSET_LIST_JSON } from "./helpers/stubs.ts";
 
 export const test = base.extend<{
   context: BrowserContext;
   extensionId: string;
+  page: Page;
 }>({
   context: async ({}, use) => {
     const pathToExtension = path.join(__dirname, "../build");
@@ -15,6 +18,7 @@ export const test = base.extend<{
         `--load-extension=${pathToExtension}`,
       ],
     });
+
     await use(context);
     await context.close();
   },
@@ -29,6 +33,15 @@ export const test = base.extend<{
 
     const extensionId = background.url().split("/")[2];
     await use(extensionId);
+  },
+  page: async ({ page }, use) => {
+    if (!process.env.IS_INTEGRATION_MODE) {
+      await page.route("*/**/testnet/asset-list/top50", async (route) => {
+        const json = STELLAR_EXPERT_ASSET_LIST_JSON;
+        await route.fulfill({ json });
+      });
+    }
+    use(page);
   },
 });
 
