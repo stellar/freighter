@@ -1,7 +1,24 @@
+import packageJson from "../package.json";
+import { Buffer } from "buffer";
+
 import { submitMessage } from "@shared/api/external";
 import { FreighterApiError } from "@shared/api/types";
 import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
+
+type SignMessageV3Response = {
+  signedMessage: Buffer | null;
+  signerAddress: string;
+} & {
+  error?: FreighterApiError;
+};
+
+type SignMessageV4Response = {
+  signedMessage: string;
+  signerAddress: string;
+} & {
+  error?: FreighterApiError;
+};
 
 export const signMessage = async (
   message: string,
@@ -9,13 +26,9 @@ export const signMessage = async (
     networkPassphrase?: string;
     address?: string;
   }
-): Promise<
-  { signedMessage: Buffer | null; signerAddress: string } & {
-    error?: FreighterApiError;
-  }
-> => {
+): Promise<SignMessageV3Response | SignMessageV4Response> => {
   if (isBrowser) {
-    const req = await submitMessage(message, opts);
+    const req = await submitMessage(message, packageJson.version, opts);
 
     if (req.error) {
       return { signedMessage: null, signerAddress: "", error: req.error };

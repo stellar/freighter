@@ -3,6 +3,7 @@
 import * as StellarSdk from "stellar-sdk";
 import browser from "webextension-polyfill";
 import { Store } from "redux";
+import semver from "semver";
 
 import {
   ExternalRequestAuthEntry,
@@ -288,7 +289,7 @@ export const freighterApiMessageListener = (
 
   const submitBlob = async () => {
     try {
-      const { blob, accountToSign, address, networkPassphrase } =
+      const { apiVersion, blob, accountToSign, address, networkPassphrase } =
         request as ExternalRequestBlob;
 
       const { tab, url: tabUrl = "" } = sender;
@@ -338,6 +339,14 @@ export const freighterApiMessageListener = (
             if (!isDomainListedAllowed) {
               allowList.push(punycodedDomain);
               localStore.setItem(ALLOWLIST_ID, allowList.join());
+            }
+
+            if (semver.gte(apiVersion, "4.0.0")) {
+              resolve({
+                signedBlob: Buffer.from(signedBlob).toString("base64"),
+                signerAddress,
+              });
+              return;
             }
             resolve({ signedBlob, signerAddress });
           }
