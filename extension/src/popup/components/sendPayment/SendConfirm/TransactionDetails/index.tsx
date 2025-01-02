@@ -693,7 +693,7 @@ export const TransactionDetails = ({
                 <div>{t("XDR")} </div>
                 <div
                   className="TransactionDetails__row__right--hasOverflow"
-                  data-testid="TransactionDetailsMinimumReceived"
+                  data-testid="TransactionDetailsXDR"
                 >
                   <CopyText textToCopy={transactionXdr}>
                     <>
