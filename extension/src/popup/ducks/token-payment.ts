@@ -22,7 +22,7 @@ export const simulateTokenPayment = createAsyncThunk<
   {
     address: string;
     publicKey: string;
-    memo: string;
+    memo?: string;
     params: {
       publicKey: string;
       destination: string;
@@ -118,7 +118,7 @@ export const simulateSwap = createAsyncThunk<
     amountInDecimals: number;
     amountOut: string;
     amountOutDecimals: number;
-    memo: string;
+    memo?: string;
     transactionFee: string;
     path: string[];
   },

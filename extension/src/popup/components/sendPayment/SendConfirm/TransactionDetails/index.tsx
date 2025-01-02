@@ -218,7 +218,7 @@ const getBuiltTx = async (
   fee: string,
   transactionTimeout: number,
   networkDetails: NetworkDetails,
-  memo: string,
+  memo?: string,
 ) => {
   const {
     sourceAsset,

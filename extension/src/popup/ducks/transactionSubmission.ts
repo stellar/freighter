@@ -564,7 +564,7 @@ interface TransactionData {
   federationAddress: string;
   transactionFee: string;
   transactionTimeout: number;
-  memo: string;
+  memo?: string;
   destinationAsset: string;
   destinationDecimals?: number;
   destinationAmount: string;
