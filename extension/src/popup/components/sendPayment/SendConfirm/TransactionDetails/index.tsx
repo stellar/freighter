@@ -9,7 +9,7 @@ import {
   TransactionBuilder,
   Networks,
 } from "stellar-sdk";
-import { Card, Loader, Icon, Button } from "@stellar/design-system";
+import { Card, Loader, Icon, Button, CopyText } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -218,6 +218,7 @@ const getBuiltTx = async (
   fee: string,
   transactionTimeout: number,
   networkDetails: NetworkDetails,
+  memo: string,
 ) => {
   const {
     sourceAsset,
@@ -249,12 +250,18 @@ const getBuiltTx = async (
     isFunded,
     publicKey,
   );
-  return new TransactionBuilder(sourceAccount, {
+  const transaction = new TransactionBuilder(sourceAccount, {
     fee: xlmToStroop(fee).toFixed(),
     networkPassphrase: networkDetails.networkPassphrase,
   })
     .addOperation(operation)
     .setTimeout(transactionTimeout);
+
+  if (memo) {
+    transaction.addMemo(Memo.text(memo));
+  }
+
+  return transaction;
 };
 
 export const TransactionDetails = ({
@@ -303,6 +310,7 @@ export const TransactionDetails = ({
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
   const isHardwareWallet = !!hardwareWalletType;
   const [destAssetIcons, setDestAssetIcons] = useState({} as AssetIcons);
+  const [transactionXdr, setTransactionXdr] = useState("");
 
   const sourceAsset = getAssetFromCanonical(asset);
   const destAsset = getAssetFromCanonical(destinationAsset || "native");
@@ -353,6 +361,7 @@ export const TransactionDetails = ({
   useEffect(() => {
     const url = "internal"; // blockaid prefers a URL for this endpoint, but this does not originate from a URL
     const scanSorobanTx = async () => {
+      setTransactionXdr(transactionSimulation.preparedTransaction!);
       if (
         shouldScanTx &&
         submission.submitStatus === ActionStatus.IDLE &&
@@ -385,9 +394,11 @@ export const TransactionDetails = ({
           transactionFee,
           transactionTimeout,
           networkDetails,
+          memo,
         );
-
-        await scanTx(transaction.build().toXDR(), url, networkDetails);
+        const xdr = transaction.build().toXDR();
+        setTransactionXdr(xdr);
+        await scanTx(xdr, url, networkDetails);
       }
       setLoading(false);
     };
@@ -443,33 +454,10 @@ export const TransactionDetails = ({
 
   const handlePaymentTransaction = async () => {
     try {
-      const transaction = await getBuiltTx(
-        publicKey,
-        {
-          sourceAsset,
-          destAsset,
-          amount,
-          destinationAmount,
-          destination,
-          allowedSlippage,
-          path,
-          isPathPayment,
-          isSwap,
-          isFunded: destinationBalances.isFunded!,
-        },
-        transactionFee,
-        transactionTimeout,
-        networkDetails,
-      );
-
-      if (memo) {
-        transaction.addMemo(Memo.text(memo));
-      }
-
       if (isHardwareWallet) {
         dispatch(
           startHwSign({
-            transactionXDR: transaction.build().toXDR(),
+            transactionXDR: transactionXdr,
             shouldSubmit: true,
           }),
         );
@@ -477,7 +465,7 @@ export const TransactionDetails = ({
       }
       const res = await dispatch(
         signFreighterTransaction({
-          transactionXDR: transaction.build().toXDR(),
+          transactionXDR: transactionXdr,
           network: networkDetails.networkPassphrase,
         }),
       );
@@ -700,6 +688,25 @@ export const TransactionDetails = ({
                 </div>
               </div>
             )}
+            {submission.submitStatus !== ActionStatus.SUCCESS ? (
+              <div className="TransactionDetails__row">
+                <div>{t("XDR")} </div>
+                <div
+                  className="TransactionDetails__row__right--hasOverflow"
+                  data-testid="TransactionDetailsMinimumReceived"
+                >
+                  <CopyText textToCopy={transactionXdr}>
+                    <>
+                      <div className="TransactionDetails__row__copy">
+                        <Icon.Copy01 />
+                      </div>
+                      {`${transactionXdr.slice(0, 10)}…`}
+                    </>
+                  </CopyText>
+                </div>
+              </div>
+            ) : null}
+
             <div className="TransactionDetails__warnings">
               {scanResult && (
                 <BlockaidTxScanLabel scanResult={scanResult} isPopup />
