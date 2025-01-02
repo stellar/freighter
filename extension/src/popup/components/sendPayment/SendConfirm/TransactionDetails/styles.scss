@@ -49,6 +49,20 @@
         margin-bottom: 0.25rem;
       }
     }
+
+    &__right--hasOverflow {
+      color: var(--sds-clr-gray-12);
+    }
+
+    &__copy {
+      margin-right: pxToRem(4px);
+
+      svg {
+        stroke: var(--sds-clr-gray-09);
+        height: pxToRem(14px);
+        width: pxToRem(14px);
+      }
+    }
   }
 
   &__processing {

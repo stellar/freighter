@@ -6,6 +6,7 @@ import {
   PASSWORD,
 } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
+import { toBeVisible } from "@testing-library/jest-dom/matchers";
 
 test("Swap doesn't throw error when account is unfunded", async ({
   page,
@@ -81,6 +82,7 @@ test("Send XLM payment to G address", async ({ page, extensionId }) => {
   await page.getByText("Review Send").click({ force: true });
 
   await expect(page.getByText("Confirm Send")).toBeVisible();
+  await expect(page.getByText("XDR")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "send-payment-confirm.png",
