@@ -98,6 +98,8 @@ export const mockBalances = {
       total: new BigNumber("100"),
       available: new BigNumber("100"),
       blockaidData: {
+        address:
+          "USDC-GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
         result_type: "Spam",
         features: [{ feature_id: "METADATA", description: "baz" }],
       },

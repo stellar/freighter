@@ -357,9 +357,7 @@ const testPaymentFlow = async (
         screen.getByTestId("BlockaidWarningModal__button__tx"),
       ).toBeDefined();
 
-      await fireEvent.click(
-        screen.getByTestId("BlockaidWarningModal__button__tx"),
-      );
+      await fireEvent.click(screen.getByTestId("BlockaidByLine__arrow__tx"));
       expect(screen.getByTestId("BlockaidWarningModal__tx")).toBeDefined();
       if (hasSimError) {
         expect(
@@ -373,9 +371,7 @@ const testPaymentFlow = async (
 
       await fireEvent.click(screen.getByTestId("BlockaidWarningModal__button"));
 
-      await fireEvent.click(
-        screen.getByTestId("BlockaidWarningModal__button__asset"),
-      );
+      await fireEvent.click(screen.getByTestId("BlockaidByLine__arrow__asset"));
       expect(screen.getByTestId("BlockaidWarningModal__asset")).toBeDefined();
       expect(
         screen.getByTestId("BlockaidWarningModal__asset"),

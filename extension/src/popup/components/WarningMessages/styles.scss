@@ -20,9 +20,13 @@
   }
 
   &__feedback {
-    cursor: pointer;
     flex-grow: 1;
     text-align: right;
+
+    &__button {
+      cursor: pointer;
+      display: inline-block;
+    }
   }
 
   &__arrow {
