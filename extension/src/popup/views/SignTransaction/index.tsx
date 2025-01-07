@@ -300,28 +300,30 @@ export const SignTransaction = () => {
     }
 
     return (
-      <div className="BodyWrapper">
-        {accountNotFound && accountToSign ? (
-          <div className="SignTransaction__account-not-found">
-            <Notification
-              variant="warning"
-              icon={<Icon.InfoOctagon />}
-              title={t("Account not available")}
-            >
-              {t("The application is requesting a specific account")} (
-              {truncatedPublicKey(accountToSign)}),{" "}
-              {t(
-                "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request.",
-              )}
-            </Notification>
-          </div>
-        ) : null}
-        <MemoWarningMessage isMemoRequired={isMemoRequired} />
-        {!isDomainListedAllowed && !isSubmitDisabled ? (
-          <FirstTimeWarningMessage />
-        ) : null}
+      <div className="SignTransaction__tabWrapper">
         {scanResult && <BlockaidTxScanLabel scanResult={scanResult} />}
-        {renderTabBody()}
+        <div className="BodyWrapper">
+          {accountNotFound && accountToSign ? (
+            <div className="SignTransaction__account-not-found">
+              <Notification
+                variant="warning"
+                icon={<Icon.InfoOctagon />}
+                title={t("Account not available")}
+              >
+                {t("The application is requesting a specific account")} (
+                {truncatedPublicKey(accountToSign)}),{" "}
+                {t(
+                  "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request.",
+                )}
+              </Notification>
+            </div>
+          ) : null}
+          <MemoWarningMessage isMemoRequired={isMemoRequired} />
+          {!isDomainListedAllowed && !isSubmitDisabled ? (
+            <FirstTimeWarningMessage />
+          ) : null}
+          {renderTabBody()}
+        </div>
       </div>
     );
   }

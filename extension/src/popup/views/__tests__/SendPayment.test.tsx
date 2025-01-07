@@ -178,6 +178,7 @@ describe("SendPayment", () => {
           result_type: "Malicious" as any,
           status: "Success" as any,
         },
+        request_id: "123",
       };
       return {
         scanTx: () => Promise.resolve(null),
@@ -215,6 +216,7 @@ describe("SendPayment", () => {
           result_type: "Malicious" as any,
           status: "Success" as any,
         },
+        request_id: "123",
       };
       return {
         scanTx: () => Promise.resolve(null),

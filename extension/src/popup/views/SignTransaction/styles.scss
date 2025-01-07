@@ -1,3 +1,5 @@
+@use "../../styles/utils.scss" as *;
+
 .SignTransaction {
   height: 100vh;
   overflow: hidden;
@@ -6,6 +8,13 @@
   background-color: var(--sds-clr-gray-01);
   display: flex;
   justify-content: center;
+
+  &__tabWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8px);
+    width: 100%;
+  }
 
   &__Title {
     display: flex;
