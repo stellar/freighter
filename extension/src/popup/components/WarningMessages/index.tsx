@@ -447,20 +447,26 @@ const BlockaidByLine = ({
         </Text>
       </div>
       {isMainnet(networkDetails) || isTestnet(networkDetails) ? (
-        <div
-          onClick={() => {
-            setIsFeedbackActive(true);
-          }}
-          className="BlockaidByLine__feedback"
-        >
-          <Text as="p" size="xs" weight="medium">
-            {t("Feedback?")}
-          </Text>
+        <div className="BlockaidByLine__feedback">
+          <div
+            className="BlockaidByLine__feedback__button"
+            onClick={() => {
+              setIsFeedbackActive(true);
+            }}
+          >
+            <Text as="p" size="xs" weight="medium">
+              {t("Feedback?")}
+            </Text>
+          </div>
         </div>
       ) : null}
 
       {hasArrow && (
-        <div className="BlockaidByLine__arrow" onClick={handleClick}>
+        <div
+          className="BlockaidByLine__arrow"
+          data-testid={`BlockaidByLine__arrow__${address ? "asset" : "tx"}`}
+          onClick={handleClick}
+        >
           <Icon.ChevronRight />
         </div>
       )}
