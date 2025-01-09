@@ -158,10 +158,9 @@
   display: flex;
   flex-direction: column;
   border-radius: 0.5rem;
-  border: 1px solid var(--sds-clr-gray-01);
+  border: 1px solid var(--sds-clr-gray-06);
   position: relative;
-  margin: -1.5rem 0 1.5rem 0;
-  padding-top: #{pxToRem(24px)};
+  margin: 0 0 pxToRem(24px) 0;
 
   &__row:first-child {
     border-bottom: 1px solid var(--sds-clr-gray-01);
