@@ -9,9 +9,15 @@
     }
   },
   "background": {
-    "service_worker": "background.js",
-    "scripts": ["background.min.js"]
+    "service_worker": "background.js"
   },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-script.js"],
+      "run_at": "document_start"
+    }
+  ],
   "permissions": ["storage", "alarms"],
   "manifest_version": 3,
   "action": {
