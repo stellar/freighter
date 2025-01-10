@@ -7,6 +7,8 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { isContractId } from "./soroban";
 
 /*
+  Attempts to match a balance to a related contract ID, expects a token or SAC contract ID.
+
   BalanceMap keys can be one of two variants - 
   An asset balance - {code}:{issuer}
   A token - {symbol}:{contract id}
@@ -17,7 +19,7 @@ export const getBalanceByKey = (
   balances: BalanceMap,
   networkDetails: NetworkDetails,
 ) => {
-  const tokenKey = Object.keys(balances).find((balanceKey) => {
+  const key = Object.keys(balances).find((balanceKey) => {
     const [code, issuer] =
       balanceKey === "native" ? ["XLM"] : balanceKey.split(":");
     const matchesIssuer = contractId === issuer;
@@ -42,5 +44,5 @@ export const getBalanceByKey = (
     }
     return matchesIssuer;
   });
-  return tokenKey;
+  return key;
 };

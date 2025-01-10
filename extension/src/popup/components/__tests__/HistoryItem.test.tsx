@@ -1,11 +1,11 @@
 import React from "react";
 import { render, waitFor, screen } from "@testing-library/react";
+import BigNumber from "bignumber.js";
 
 import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import * as sorobanHelpers from "popup/helpers/soroban";
 import * as internalApi from "@shared/api/internal";
-import BigNumber from "bignumber.js";
 
 describe("HistoryItem", () => {
   afterAll(() => {
