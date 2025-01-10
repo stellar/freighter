@@ -15,6 +15,7 @@ import {
 import { INDEXER_URL } from "@shared/constants/mercury";
 
 export const CUSTOM_NETWORK = "STANDALONE";
+export const LP_ISSUER_KEY = "lp";
 
 export const isNextSdk = (networkPassphrase: string) =>
   [""].includes(networkPassphrase);
@@ -40,7 +41,7 @@ export function getBalanceIdentifier(
       return `${balance.asset_code}:${balance.asset_issuer}`;
 
     case "liquidity_pool_shares":
-      return `${balance.liquidity_pool_id}:lp`;
+      return `${balance.liquidity_pool_id}:${LP_ISSUER_KEY}`;
 
     default:
       return "native";
