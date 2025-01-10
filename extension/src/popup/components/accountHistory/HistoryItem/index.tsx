@@ -7,8 +7,6 @@ import camelCase from "lodash/camelCase";
 import { Icon, Loader } from "@stellar/design-system";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { Asset } from "stellar-sdk";
-import * as Sentry from "@sentry/browser";
 
 import { OPERATION_TYPES } from "constants/transaction";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
@@ -18,9 +16,9 @@ import { emitMetric } from "helpers/metrics";
 import {
   formatTokenAmount,
   getAttrsFromSorobanHorizonOp,
-  isContractId,
 } from "popup/helpers/soroban";
 import { formatAmount } from "popup/helpers/formatters";
+import { getBalanceByKey } from "popup/helpers/balance";
 
 import {
   AccountBalancesInterface,
@@ -225,28 +223,11 @@ export const HistoryItem = ({
         const balances =
           accountBalances.balances || ({} as NonNullable<Balances>);
 
-        const tokenKey = Object.keys(balances).find((balanceKey) => {
-          const [code, issuer] =
-            balanceKey === "native" ? ["XLM"] : balanceKey.split(":");
-          const matchesIssuer = attrs?.contractId === issuer;
-
-          // if issuer is a G address or xlm, check for a SAC match
-          if ((issuer && !isContractId(issuer)) || code === "XLM") {
-            try {
-              const sacAddress = new Asset(code, issuer).contractId(
-                networkDetails.networkPassphrase,
-              );
-              const matchesSac = attrs?.contractId === sacAddress;
-              return matchesSac;
-            } catch (e) {
-              console.error(e);
-              Sentry.captureException(
-                `Error checking for SAC match with code ${code} and issuer ${issuer}. Error: ${e}`,
-              );
-            }
-          }
-          return matchesIssuer;
-        });
+        const tokenKey = getBalanceByKey(
+          attrs.contractId,
+          balances,
+          networkDetails,
+        );
 
         if (!attrs) {
           setRowText(operationString);
