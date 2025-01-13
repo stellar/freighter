@@ -21,6 +21,9 @@ export interface UserInfo {
 
 export type MigratableAccount = Account & { keyIdIndex: number };
 
+export type IssuerKey = string; // issuer pub key for classic, contract ID for tokens
+export type AssetVisibility = "visible" | "hidden";
+
 export interface Response {
   error: string;
   apiError: FreighterApiError;
@@ -93,6 +96,11 @@ export interface Response {
   recommendedFee: string;
   isNonSSLEnabled: boolean;
   isHideDustEnabled: boolean;
+  assetVisibility: {
+    issuer: IssuerKey;
+    visibility: AssetVisibility;
+  };
+  hiddenAssets: Record<IssuerKey, AssetVisibility>;
 }
 
 export interface MemoRequiredAccount {
@@ -181,6 +189,7 @@ export type Settings = {
   networkDetails: NetworkDetails;
   networksList: NetworkDetails[];
   error: string;
+  hiddenAssets: Record<IssuerKey, AssetVisibility>;
 } & Preferences;
 
 export interface AssetIcons {

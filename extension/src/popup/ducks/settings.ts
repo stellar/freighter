@@ -16,6 +16,7 @@ import {
   editCustomNetwork as editCustomNetworkService,
   addAssetsList as addAssetsListService,
   modifyAssetsList as modifyAssetsListService,
+  getHiddenAssets as getHiddenAssetsService,
 } from "@shared/api/internal";
 import {
   NETWORKS,
@@ -34,6 +35,8 @@ import {
   IndexerSettings,
   SettingsState,
   ExperimentalFeatures,
+  IssuerKey,
+  AssetVisibility,
 } from "@shared/api/types";
 
 import { isMainnet } from "helpers/stellar";
@@ -56,6 +59,7 @@ const settingsInitialState: Settings = {
   isMemoValidationEnabled: true,
   isHideDustEnabled: true,
   error: "",
+  hiddenAssets: {},
 };
 
 const experimentalFeaturesInitialState = {
@@ -271,6 +275,24 @@ export const modifyAssetsList = createAsyncThunk<
     return res;
   },
 );
+
+export const getHiddenAssets = createAsyncThunk<
+  {},
+  {
+    hiddenAssets: Record<IssuerKey, AssetVisibility>;
+  },
+  { rejectValue: ErrorMessage }
+>("settings/modifyAssetsList", async ({}, thunkApi) => {
+  const res = await getHiddenAssetsService();
+
+  if (res.error) {
+    return thunkApi.rejectWithValue({
+      errorMessage: res.error || "Unable to get hidden assets",
+    });
+  }
+
+  return res;
+});
 
 const settingsSlice = createSlice({
   name: "settings",

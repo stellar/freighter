@@ -42,6 +42,8 @@ import {
   IndexerSettings,
   SettingsState,
   ExperimentalFeatures,
+  IssuerKey,
+  AssetVisibility,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -1528,4 +1530,40 @@ export const simulateTransaction = async (args: {
     ok: res.ok,
     response,
   };
+};
+
+export const getHiddenAssets = async () => {
+  let response = {
+    error: "",
+    hiddenAssets: {} as Record<IssuerKey, AssetVisibility>,
+  };
+
+  response = await sendMessageToBackground({
+    type: SERVICE_TYPES.GET_HIDDEN_ASSETS,
+  });
+
+  return { hiddenAssets: response.hiddenAssets, error: response.error };
+};
+
+export const changeAssetVisibility = async ({
+  assetIssuer,
+  assetVisibility,
+}: {
+  assetIssuer: IssuerKey;
+  assetVisibility: AssetVisibility;
+}) => {
+  let response = {
+    error: "",
+    hiddenAssets: {} as Record<IssuerKey, AssetVisibility>,
+  };
+
+  response = await sendMessageToBackground({
+    type: SERVICE_TYPES.CHANGE_ASSET_VISIBILITY,
+    assetVisibility: {
+      issuer: assetIssuer,
+      visibility: assetVisibility,
+    },
+  });
+
+  return { hiddenAssets: response.hiddenAssets, error: response.error };
 };
