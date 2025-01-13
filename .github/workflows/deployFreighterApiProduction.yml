@@ -13,8 +13,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: release/${{ github.event.inputs.release }}
       - name: Build package
         uses: actions/setup-node@v4
         with:
