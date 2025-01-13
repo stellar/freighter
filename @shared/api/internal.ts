@@ -1467,7 +1467,7 @@ export const modifyAssetsList = async ({
 export const simulateTokenTransfer = async (args: {
   address: string;
   publicKey: string;
-  memo: string;
+  memo?: string;
   params: {
     publicKey: string;
     destination: string;

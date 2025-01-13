@@ -115,6 +115,7 @@ export interface ExternalRequestTx extends ExternalRequestBase {
 }
 
 export interface ExternalRequestBlob extends ExternalRequestBase {
+  apiVersion: string;
   blob: string;
 }
 

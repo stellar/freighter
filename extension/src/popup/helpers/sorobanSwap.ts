@@ -186,7 +186,7 @@ interface BuildAndSimulateSoroswapTxParams {
   path: string[];
   networkDetails: NetworkDetails;
   publicKey: string;
-  memo: string;
+  memo?: string;
   transactionFee: string;
 }
 

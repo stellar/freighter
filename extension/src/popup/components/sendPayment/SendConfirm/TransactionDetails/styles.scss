@@ -49,6 +49,20 @@
         margin-bottom: 0.25rem;
       }
     }
+
+    &__right--hasOverflow {
+      color: var(--sds-clr-gray-12);
+    }
+
+    &__copy {
+      margin-right: pxToRem(4px);
+
+      svg {
+        stroke: var(--sds-clr-gray-09);
+        height: pxToRem(14px);
+        width: pxToRem(14px);
+      }
+    }
   }
 
   &__processing {
@@ -144,10 +158,9 @@
   display: flex;
   flex-direction: column;
   border-radius: 0.5rem;
-  border: 1px solid var(--sds-clr-gray-01);
+  border: 1px solid var(--sds-clr-gray-06);
   position: relative;
-  margin: -1.5rem 0 1.5rem 0;
-  padding-top: #{pxToRem(24px)};
+  margin: 0 0 pxToRem(24px) 0;
 
   &__row:first-child {
     border-bottom: 1px solid var(--sds-clr-gray-01);
