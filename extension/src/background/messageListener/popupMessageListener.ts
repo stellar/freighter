@@ -53,6 +53,7 @@ import {
   HIDDEN_ASSETS,
   TEMPORARY_STORE_ID,
   TEMPORARY_STORE_EXTRA_ID,
+  HIDDEN_ASSETS,
 } from "constants/localStorageTypes";
 import {
   FUTURENET_NETWORK_DETAILS,
@@ -2073,6 +2074,21 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { isAccountMismatch: publicKey !== activePublicKey };
   };
 
+  const changeAssetVisibility = async () => {
+    const { assetVisibility } = request;
+
+    const hiddenAssets = await localStore.getItem(HIDDEN_ASSETS);
+    hiddenAssets[assetVisibility.issuer] = assetVisibility.visibility;
+
+    await localStore.setItem(HIDDEN_ASSETS, hiddenAssets);
+    return { hiddenAssets };
+  };
+
+  const getHiddenAssets = async () => {
+    const hiddenAssets = await localStore.getItem(HIDDEN_ASSETS);
+    return hiddenAssets;
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -2129,6 +2145,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.CHANGE_ASSET_VISIBILITY]: changeAssetVisibility,
     [SERVICE_TYPES.GET_HIDDEN_ASSETS]: getHiddenAssets,
     [SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH]: getIsAccountMismatch,
+    [SERVICE_TYPES.CHANGE_ASSET_VISIBILITY]: changeAssetVisibility,
+    [SERVICE_TYPES.GET_HIDDEN_ASSETS]: getHiddenAssets,
   };
 
   const currentState = sessionStore.getState();

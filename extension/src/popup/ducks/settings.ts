@@ -36,7 +36,7 @@ import {
   IndexerSettings,
   SettingsState,
   ExperimentalFeatures,
-  AssetKey,
+  IssuerKey,
   AssetVisibility,
 } from "@shared/api/types";
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -347,7 +347,7 @@ export const modifyAssetsList = createAsyncThunk<
 );
 
 export const getHiddenAssets = createAsyncThunk<
-  { hiddenAssets: Record<AssetKey, AssetVisibility>; error: string },
+  { hiddenAssets: Record<IssuerKey, AssetVisibility>; error: string },
   { rejectValue: ErrorMessage }
 >("settings/getHiddenAssets", async (_, thunkApi) => {
   const res = await getHiddenAssetsService();
@@ -362,8 +362,8 @@ export const getHiddenAssets = createAsyncThunk<
 });
 
 export const changeAssetVisibility = createAsyncThunk<
-  { hiddenAssets: Record<AssetKey, AssetVisibility>; error: string },
-  { issuer: AssetKey; visibility: AssetVisibility },
+  { hiddenAssets: Record<IssuerKey, AssetVisibility>; error: string },
+  { issuer: IssuerKey; visibility: AssetVisibility },
   { rejectValue: ErrorMessage }
 >(
   "settings/changeAssetVisibility",
@@ -653,7 +653,7 @@ const settingsSlice = createSlice({
       (
         state,
         action: PayloadAction<{
-          hiddenAssets: Record<AssetKey, AssetVisibility>;
+          hiddenAssets: Record<IssuerKey, AssetVisibility>;
         }>,
       ) => {
         const { hiddenAssets } = action?.payload;
@@ -678,7 +678,7 @@ const settingsSlice = createSlice({
       (
         state,
         action: PayloadAction<{
-          hiddenAssets: Record<AssetKey, AssetVisibility>;
+          hiddenAssets: Record<IssuerKey, AssetVisibility>;
         }>,
       ) => {
         const { hiddenAssets } = action.payload;

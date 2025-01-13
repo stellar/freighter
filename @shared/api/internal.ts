@@ -51,6 +51,8 @@ import {
   AssetKey,
   AssetVisibility,
   ApiTokenPrices,
+  IssuerKey,
+  AssetVisibility,
 } from "./types";
 import { AccountBalancesInterface, Balances } from "./types/backend-api";
 import {
@@ -1903,4 +1905,40 @@ export const getIsAccountMismatch = async ({
     isAccountMismatch: response.isAccountMismatch,
     error: response.error,
   };
+};
+
+export const getHiddenAssets = async () => {
+  let response = {
+    error: "",
+    hiddenAssets: {} as Record<IssuerKey, AssetVisibility>,
+  };
+
+  response = await sendMessageToBackground({
+    type: SERVICE_TYPES.GET_HIDDEN_ASSETS,
+  });
+
+  return { hiddenAssets: response.hiddenAssets, error: response.error };
+};
+
+export const changeAssetVisibility = async ({
+  assetIssuer,
+  assetVisibility,
+}: {
+  assetIssuer: IssuerKey;
+  assetVisibility: AssetVisibility;
+}) => {
+  let response = {
+    error: "",
+    hiddenAssets: {} as Record<IssuerKey, AssetVisibility>,
+  };
+
+  response = await sendMessageToBackground({
+    type: SERVICE_TYPES.CHANGE_ASSET_VISIBILITY,
+    assetVisibility: {
+      issuer: assetIssuer,
+      visibility: assetVisibility,
+    },
+  });
+
+  return { hiddenAssets: response.hiddenAssets, error: response.error };
 };
