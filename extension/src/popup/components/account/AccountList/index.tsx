@@ -59,7 +59,7 @@ export const AccountListItem = ({
       <OptionTag imported={imported} hardwareWalletType={hardwareWalletType} />
     </AccountListIdenticon>
     <span className="AccountList__option-check">
-      {isSelected ? <Icon.Check /> : null}
+      {isSelected ? <Icon.CheckCircle /> : null}
     </span>
   </li>
 );
