@@ -162,8 +162,20 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   return (
     <React.Fragment>
       <SubviewHeader
-        title={t("Your assets")}
-        customBackIcon={!isManagingAssets ? <Icon.XClose /> : undefined}
+        title={t("Manage assets")}
+        customBackIcon={<Icon.XClose className="close-btn" />}
+        rightButton={
+          <Button
+            size="sm"
+            className="ChooseAsset__hide-btn"
+            variant="tertiary"
+            onClick={() => {
+              console.log("hide");
+            }}
+          >
+            <Icon.Settings03 />
+          </Button>
+        }
       />
       <View.Content hasNoTopPadding>
         {isLoading ? (

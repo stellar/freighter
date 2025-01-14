@@ -1,4 +1,20 @@
 .ChooseAsset {
+  &__close-btn {
+    color: var(--sds-clr-gray-10);
+  }
+
+  &__hide-btn {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    width: var(--back--button-dimension);
+    height: var(--back--button-dimension);
+    color: var(--sds-clr-gray-10);
+  }
+
   &__loader {
     height: 100%;
     width: 100%;
