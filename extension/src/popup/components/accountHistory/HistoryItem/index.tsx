@@ -405,14 +405,6 @@ export const HistoryItem = ({
         }));
       } else if (isInvokeHostFn) {
         const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
-        const balances =
-          accountBalances.balances || ({} as NonNullable<Balances>);
-
-        const tokenKey = getBalanceByKey(
-          attrs.contractId,
-          balances,
-          networkDetails,
-        );
 
         if (!attrs) {
           setRowText(operationString);
@@ -422,6 +414,15 @@ export const HistoryItem = ({
             operationText: operationString,
           }));
         } else if (attrs.fnName === SorobanTokenInterface.mint) {
+          const balances =
+            accountBalances.balances || ({} as NonNullable<Balances>);
+
+          const tokenKey = getBalanceByKey(
+            attrs.contractId,
+            balances,
+            networkDetails,
+          );
+
           const isReceiving = attrs.to === publicKey;
           setIconComponent(
             <div className="HistoryItem__icon__bordered">
