@@ -69,6 +69,17 @@ export const ChooseAsset = () => {
         customBackIcon={
           !domainState.data?.isManagingAssets ? <Icon.XClose /> : undefined
         }
+        rightButton={
+          <Link to={ROUTES.assetVisibility}>
+            <Button
+              size="sm"
+              className="ChooseAsset__hide-btn"
+              variant="tertiary"
+            >
+              <Icon.Settings03 />
+            </Button>
+          </Link>
+        }
       />
       <View.Content hasNoTopPadding>
         <div className="ChooseAsset__wrapper" data-testid="ChooseAssetWrapper">
@@ -89,7 +100,9 @@ export const ChooseAsset = () => {
             >
               {domainState.data.isManagingAssets ? (
                 <ManageAssetRows
-                  assetRows={domainState.data.domains}
+                  shouldSplitAssetsByVerificationStatus={false}
+                  verifiedAssetRows={domainState.data.domains}
+                  unverifiedAssetRows={[]}
                   balances={domainState.data.balances}
                 />
               ) : (

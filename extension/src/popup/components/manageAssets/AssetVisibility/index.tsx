@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
@@ -23,8 +23,8 @@ import "./styles.scss";
 
 export const AssetVisibility = () => {
   const { t } = useTranslation();
-  const history = useHistory();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -50,7 +50,7 @@ export const AssetVisibility = () => {
 
   const goBack = () => {
     dispatch(resetSubmission());
-    history.goBack();
+    navigate(-1);
   };
 
   const isLoading =

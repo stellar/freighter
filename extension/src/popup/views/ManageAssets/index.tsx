@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
 import { SearchAsset } from "popup/components/manageAssets/SearchAsset";
 import { AddAsset } from "popup/components/manageAssets/AddAsset";
+import { AssetVisibility } from "popup/components/manageAssets/AssetVisibility";
 import { PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 import { getPathFromRoute } from "popup/helpers/route";
@@ -12,6 +13,10 @@ export const ManageAssets = () => {
   const manageAssetsBasePath = "/manage-assets/";
   const searchAssetsPath = getPathFromRoute({
     fullRoute: ROUTES.searchAsset,
+    basePath: manageAssetsBasePath,
+  });
+  const assetVisibility = getPathFromRoute({
+    fullRoute: ROUTES.assetVisibility,
     basePath: manageAssetsBasePath,
   });
   const addAssetsPath = getPathFromRoute({
@@ -35,6 +40,14 @@ export const ManageAssets = () => {
           element={
             <PrivateKeyRoute>
               <SearchAsset />
+            </PrivateKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={assetVisibility}
+          element={
+            <PrivateKeyRoute>
+              <AssetVisibility balances={balances} />
             </PrivateKeyRoute>
           }
         ></Route>
