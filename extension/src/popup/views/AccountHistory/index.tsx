@@ -153,7 +153,7 @@ export const AccountHistory = () => {
           {hasHistoryContent && (
             <>
               {historySections.map((section: HistorySection) => (
-                <div className="AccountHistory__list">
+                <div key={section.monthYear} className="AccountHistory__list">
                   <Text
                     as="div"
                     size="sm"
