@@ -35,7 +35,6 @@
       " Only utilize these features if you can understand and manage the potential security risks": "Advanced settings are not recommended for new or unexperienced users. Enabling these may impact the security of your wallets and result in loss of funds. Only utilize these features if you can understand and manage the potential security risks."
     }
   },
-  "ALL": "TUDO",
   "Allow connecting to non-HTTPS networks": "Allow connecting to non-HTTPS networks",
   "Allow Freighter to collect anonymous information about usage": {
     " Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts": "Allow Freighter to collect anonymous information about usage. Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts."
@@ -355,7 +354,6 @@
   "Processing": "Processing",
   "Read before importing your key": "Read before importing your key",
   "Ready to migrate": "Ready to migrate",
-  "RECEIVED": "RECEIVED",
   "RECENT": "RECENT",
   "Recipient Stellar address": "Recipient Stellar address",
   "Recovery Phrase": "Recovery Phrase",
@@ -394,7 +392,6 @@
   "Sending to": "Sending to",
   "sent": "sent",
   "Sent": "Sent",
-  "SENT": "SENT",
   "Set default": "Set default",
   "Set Flags": "Set Flags",
   "SET MAX": "SET MAX",
@@ -483,7 +480,6 @@
   "Transaction fee": "Transaction fee",
   "Transaction Request": "Transaction Request",
   "Transaction timeout": "Transaction timeout",
-  "Transactions": "Transactions",
   "trustlines": "trustlines",
   "Trustor": "Trustor",
   "Type": "Type",
