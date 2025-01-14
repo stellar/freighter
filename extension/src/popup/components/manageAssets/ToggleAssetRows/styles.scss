@@ -1,0 +1,67 @@
+.ToggleAssetRows {
+  &__empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+
+    .EmptyMessage {
+      display: flex;
+      align-items: center;
+      color: var(--sds-clr-gray-09);
+
+      svg {
+        margin-right: 0.25rem;
+        stroke: var(--sds-clr-gray-09);
+      }
+    }
+  }
+  &__scrollbar {
+    height: 100%;
+  }
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    justify-content: space-between;
+  }
+
+  &--scrolling {
+    padding-right: 0.625rem;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    &:last-child {
+      padding-bottom: 4rem;
+    }
+
+    &__info {
+      color: var(--sds-clr-gray-12);
+      flex-grow: 1;
+      line-height: 1.5rem;
+      &__header {
+        display: flex;
+      }
+    }
+  }
+
+  &__icon {
+    width: 2rem;
+  }
+
+  &__bullet {
+    background: var(--color-purple-60);
+    height: 1.5rem;
+    width: 1.5rem;
+  }
+
+  &__domain {
+    color: var(--sds-clr-gray-09);
+    font-size: var(--sds-fs-secondary);
+    line-height: 1.375rem;
+  }
+}

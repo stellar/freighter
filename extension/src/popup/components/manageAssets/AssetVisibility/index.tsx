@@ -1,39 +1,35 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
-import { Button, Icon, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { Loader } from "@stellar/design-system";
 
-import { ROUTES } from "popup/constants/routes";
-import { sortBalances } from "popup/helpers/account";
-import { useIsSoroswapEnabled, useIsSwap } from "popup/helpers/useIsSwap";
+import { View } from "popup/basics/layout/View";
+import { SubviewHeader } from "popup/components/SubviewHeader";
+import { Balances } from "@shared/api/types";
 import {
-  transactionSubmissionSelector,
   AssetSelectType,
+  transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
-import { SubviewHeader } from "popup/components/SubviewHeader";
-import { View } from "popup/basics/layout/View";
-import { getCanonicalFromAsset } from "helpers/stellar";
+import { useIsSoroswapEnabled, useIsSwap } from "popup/helpers/useIsSwap";
+import { sortBalances } from "popup/helpers/account";
 import { getAssetDomain } from "popup/helpers/getAssetDomain";
-import { getNativeContractDetails } from "popup/helpers/searchAsset";
+import { getCanonicalFromAsset } from "helpers/stellar";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
-
-import { Balances } from "@shared/api/types";
-
-import { ManageAssetCurrency, ManageAssetRows } from "../ManageAssetRows";
-import { SelectAssetRows } from "../SelectAssetRows";
+import { getNativeContractDetails } from "popup/helpers/searchAsset";
+import { ToggleAssetRows } from "../ToggleAssetRows";
+import { ManageAssetCurrency } from "../ManageAssetRows";
 
 import "./styles.scss";
 
-interface ChooseAssetProps {
+interface AssetVisibilityProps {
   balances: Balances;
 }
 
-export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
+export const AssetVisibility = ({ balances }: AssetVisibilityProps) => {
   const { t } = useTranslation();
   const { assetIcons, assetSelect, soroswapTokens } = useSelector(
     transactionSubmissionSelector,
@@ -160,22 +156,8 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   ]);
 
   return (
-    <React.Fragment>
-      <SubviewHeader
-        title={t("Manage assets")}
-        customBackIcon={<Icon.XClose className="close-btn" />}
-        rightButton={
-          <Link to={ROUTES.assetVisibility}>
-            <Button
-              size="sm"
-              className="ChooseAsset__hide-btn"
-              variant="tertiary"
-            >
-              <Icon.Settings03 />
-            </Button>
-          </Link>
-        }
-      />
+    <View>
+      <SubviewHeader title={t("Toggle Assets")} />
       <View.Content hasNoTopPadding>
         {isLoading ? (
           <div className="ChooseAsset__loader">
@@ -189,31 +171,11 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
               }`}
               ref={ManageAssetRowsWrapperRef}
             >
-              {isManagingAssets ? (
-                <ManageAssetRows assetRows={assetRows} />
-              ) : (
-                <SelectAssetRows assetRows={assetRows} />
-              )}
+              <ToggleAssetRows assetRows={assetRows} />
             </div>
           </div>
         )}
       </View.Content>
-      {isManagingAssets && (
-        <View.Footer isInline allowWrap>
-          <div className="ChooseAsset__button">
-            <Link to={ROUTES.searchAsset}>
-              <Button
-                size="md"
-                isFullWidth
-                variant="tertiary"
-                data-testid="ChooseAssetAddAssetButton"
-              >
-                {t("Add an asset")}
-              </Button>
-            </Link>
-          </div>
-        </View.Footer>
-      )}
-    </React.Fragment>
+    </View>
   );
 };
