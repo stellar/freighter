@@ -27,6 +27,10 @@ jobs:
           yarn version --new-version ${{ github.event.inputs.release }}
           cd ../../
       - run: yarn && yarn build:freighter-api
+      - name: Setup .yarnrc.yml
+        run: yarn config set npmAuthToken $NODE_AUTH_TOKEN
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish npm package
         run: |
           cd @stellar/freighter-api
