@@ -463,7 +463,6 @@ export const HistoryItem = ({
               } else {
                 const _token = {
                   contractId: attrs.contractId,
-                  total: isReceiving ? attrs.amount : 0,
                   decimals: tokenDetailsResponse.decimals,
                   name: tokenDetailsResponse.name,
                   symbol: tokenDetailsResponse.symbol,
@@ -473,9 +472,11 @@ export const HistoryItem = ({
                   new BigNumber(attrs.amount),
                   _token.decimals,
                 );
+
                 const formattedAmount = `${
-                  isReceiving && "+"
+                  isReceiving ? "+" : ""
                 }${formattedTokenAmount} ${_token.symbol}`;
+
                 setAmountComponent(
                   <Badge
                     variant={isReceiving ? "success" : "primary"}
@@ -515,7 +516,7 @@ export const HistoryItem = ({
               setRowText(translations(capitalize(attrs.fnName)));
               setAmountComponent(
                 <Badge variant={isReceiving ? "success" : "primary"} size="md">
-                  {`${isReceiving && "+"}${translations("Unknown")}`}
+                  {`${isReceiving ? "+" : ""}${translations("Unknown")}`}
                 </Badge>,
               );
               setDateText(
@@ -548,7 +549,7 @@ export const HistoryItem = ({
               decimals,
             );
             const formattedAmount = `${
-              isReceiving && "+"
+              isReceiving ? "+" : ""
             }${formattedTokenAmount} ${token.code}`;
             setAmountComponent(
               <Badge variant={isReceiving ? "success" : "primary"} size="md">
