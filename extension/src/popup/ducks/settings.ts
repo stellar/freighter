@@ -17,6 +17,7 @@ import {
   addAssetsList as addAssetsListService,
   modifyAssetsList as modifyAssetsListService,
   getHiddenAssets as getHiddenAssetsService,
+  changeAssetVisibility as changeAssetVisibilityService,
 } from "@shared/api/internal";
 import {
   NETWORKS,
@@ -290,6 +291,28 @@ export const getHiddenAssets = createAsyncThunk<
 
   return res;
 });
+
+export const changeAssetVisibility = createAsyncThunk<
+  { hiddenAssets: Record<IssuerKey, AssetVisibility>; error: string },
+  { issuer: IssuerKey; visibility: AssetVisibility },
+  { rejectValue: ErrorMessage }
+>(
+  "settings/changeAssetVisibility",
+  async ({ issuer, visibility }, thunkApi) => {
+    const res = await changeAssetVisibilityService({
+      assetIssuer: issuer,
+      assetVisibility: visibility,
+    });
+
+    if (res.error) {
+      return thunkApi.rejectWithValue({
+        errorMessage: res.error || "Unable to toggle asset visibility",
+      });
+    }
+
+    return res;
+  },
+);
 
 const settingsSlice = createSlice({
   name: "settings",
@@ -579,6 +602,22 @@ const settingsSlice = createSlice({
       ...state,
       settingsState: SettingsState.ERROR,
     }));
+    builder.addCase(
+      changeAssetVisibility.fulfilled,
+      (
+        state,
+        action: PayloadAction<{
+          hiddenAssets: Record<IssuerKey, AssetVisibility>;
+        }>,
+      ) => {
+        const { hiddenAssets } = action.payload;
+
+        return {
+          ...state,
+          hiddenAssets,
+        };
+      },
+    );
   },
 });
 
