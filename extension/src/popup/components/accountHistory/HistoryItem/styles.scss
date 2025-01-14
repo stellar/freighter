@@ -88,10 +88,6 @@
     }
   }
 
-  &--rotate {
-    transform: rotate(-0.125turn);
-  }
-
   &--space-between {
     justify-content: space-between;
   }
@@ -109,7 +105,11 @@
     color: var(--sds-clr-green-09);
   }
 
-  &--sent,
+  &--sent {
+    transform: rotate(-0.125turn);
+    color: var(--sds-clr-gray-09);
+  }
+
   &--swap,
   &--create-account {
     color: var(--sds-clr-gray-09);

@@ -382,7 +382,7 @@ export const HistoryItem = ({
               </div>
             )}
             {!_isRecipient && (
-              <div className="HistoryItem__icon__small HistoryItem--sent HistoryItem--rotate">
+              <div className="HistoryItem__icon__small HistoryItem--sent">
                 <Icon.Send03 />
               </div>
             )}
@@ -434,7 +434,7 @@ export const HistoryItem = ({
               )}
               {!isReceiving && (
                 <div className="HistoryItem__icon__small HistoryItem--sent">
-                  <Icon.RefreshCcw01 />
+                  <Icon.Send03 />
                 </div>
               )}
             </div>,
@@ -584,7 +584,7 @@ export const HistoryItem = ({
             <div className="HistoryItem__icon__bordered">
               <Icon.User01 />
               <div className="HistoryItem__icon__small HistoryItem--sent">
-                <Icon.ArrowUp />
+                <Icon.Send03 />
               </div>
             </div>,
           );
@@ -631,7 +631,7 @@ export const HistoryItem = ({
                 )}
                 {!_isRecipient && (
                   <div className="HistoryItem__icon__small HistoryItem--sent">
-                    <Icon.ArrowUp />
+                    <Icon.Send03 />
                   </div>
                 )}
               </div>,
