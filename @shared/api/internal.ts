@@ -1210,6 +1210,7 @@ export const saveSettings = async ({
     isNonSSLEnabled: false,
     isHideDustEnabled: true,
     error: "",
+    hiddenAssets: {},
   };
 
   try {

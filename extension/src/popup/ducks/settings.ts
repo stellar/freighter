@@ -277,12 +277,9 @@ export const modifyAssetsList = createAsyncThunk<
 );
 
 export const getHiddenAssets = createAsyncThunk<
-  {},
-  {
-    hiddenAssets: Record<IssuerKey, AssetVisibility>;
-  },
+  { hiddenAssets: Record<IssuerKey, AssetVisibility>; error: string },
   { rejectValue: ErrorMessage }
->("settings/modifyAssetsList", async ({}, thunkApi) => {
+>("settings/getHiddenAssets", async (_, thunkApi) => {
   const res = await getHiddenAssetsService();
 
   if (res.error) {
@@ -557,6 +554,31 @@ const settingsSlice = createSlice({
         };
       },
     );
+    builder.addCase(
+      getHiddenAssets.fulfilled,
+      (
+        state,
+        action: PayloadAction<{
+          hiddenAssets: Record<IssuerKey, AssetVisibility>;
+        }>,
+      ) => {
+        const { hiddenAssets } = action?.payload;
+
+        return {
+          ...state,
+          hiddenAssets,
+          settingsState: SettingsState.SUCCESS,
+        };
+      },
+    );
+    builder.addCase(getHiddenAssets.pending, (state) => ({
+      ...state,
+      settingsState: SettingsState.LOADING,
+    }));
+    builder.addCase(getHiddenAssets.rejected, (state) => ({
+      ...state,
+      settingsState: SettingsState.ERROR,
+    }));
   },
 });
 
