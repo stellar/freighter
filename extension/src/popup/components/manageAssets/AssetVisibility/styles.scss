@@ -1,0 +1,54 @@
+.ToggleAsset {
+  &__close-btn {
+    color: var(--sds-clr-gray-10);
+  }
+
+  &__hide-btn {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    width: var(--back--button-dimension);
+    height: var(--back--button-dimension);
+    color: var(--sds-clr-gray-10);
+  }
+
+  &__loader {
+    height: 100%;
+    width: 100%;
+    z-index: calc(var(--back--button-z-index) + 1);
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    top: 0;
+    left: 0;
+  }
+
+  &__wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  &__assets {
+    flex-grow: 1;
+
+    &--short {
+      flex-grow: 1;
+    }
+  }
+
+  &__button {
+    a {
+      color: var(--sds-clr-gray-12);
+    }
+
+    button {
+      text-wrap: nowrap;
+    }
+  }
+}

@@ -160,13 +160,13 @@ export const AssetVisibility = ({ balances }: AssetVisibilityProps) => {
       <SubviewHeader title={t("Toggle Assets")} />
       <View.Content hasNoTopPadding>
         {isLoading ? (
-          <div className="ChooseAsset__loader">
+          <div className="ToggleAsset__loader">
             <Loader size="2rem" />
           </div>
         ) : (
-          <div className="ChooseAsset__wrapper">
+          <div className="ToggleAsset__wrapper">
             <div
-              className={`ChooseAsset__assets${
+              className={`ToggleAsset__assets${
                 isManagingAssets && isSorobanSuported ? "--short" : ""
               }`}
               ref={ManageAssetRowsWrapperRef}

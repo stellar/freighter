@@ -36,8 +36,8 @@ export const ToggleAssetRows = ({ assetRows }: ToggleAssetRowsProps) => {
 
   return (
     <>
-      <div className="ManageAssetRows__scrollbar">
-        <div className="ManageAssetRows__content">
+      <div className="ToggleAssetRows__scrollbar">
+        <div className="ToggleAssetRows__content">
           {assetRows.map(
             ({
               code = "",
@@ -50,9 +50,9 @@ export const ToggleAssetRows = ({ assetRows }: ToggleAssetRowsProps) => {
               const canonicalAsset = getCanonicalFromAsset(code, issuer);
               return (
                 <div
-                  className="ManageAssetRows__row"
+                  className="ToggleAssetRows__row"
                   key={canonicalAsset}
-                  data-testid="ManageAssetRow"
+                  data-testid="ToggleAssetRow"
                 >
                   <ToggleAssetRow
                     code={code}
@@ -101,13 +101,13 @@ export const ToggleAssetRow = ({
         issuerKey={issuer}
         isSuspicious={isSuspicious}
       />
-      <div className="ManageAssetRows__row__info">
-        <div className="ManageAssetRows__row__info__header">
-          <span data-testid="ManageAssetCode">{truncatedAssetCode}</span>
+      <div className="ToggleAssetRows__row__info">
+        <div className="ToggleAssetRows__row__info__header">
+          <span data-testid="ToggleAssetCode">{truncatedAssetCode}</span>
         </div>
         <div
-          className="ManageAssetRows__domain"
-          data-testid="ManageAssetDomain"
+          className="ToggleAssetRows__domain"
+          data-testid="ToggleAssetDomain"
         >
           {formatDomain(domain)}
         </div>
