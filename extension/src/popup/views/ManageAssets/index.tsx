@@ -47,7 +47,7 @@ export const ManageAssets = () => {
           path={assetVisibility}
           element={
             <PrivateKeyRoute>
-              <AssetVisibility balances={balances} />
+              <AssetVisibility />
             </PrivateKeyRoute>
           }
         ></Route>

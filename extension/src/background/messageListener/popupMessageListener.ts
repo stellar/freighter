@@ -53,7 +53,6 @@ import {
   HIDDEN_ASSETS,
   TEMPORARY_STORE_ID,
   TEMPORARY_STORE_EXTRA_ID,
-  HIDDEN_ASSETS,
 } from "constants/localStorageTypes";
 import {
   FUTURENET_NETWORK_DETAILS,
@@ -2046,21 +2045,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { assetsLists: await getAssetsLists() };
   };
 
-  const changeAssetVisibility = async () => {
-    const { assetVisibility } = request;
-
-    const { hiddenAssets } = await getHiddenAssets();
-    hiddenAssets[assetVisibility.issuer] = assetVisibility.visibility;
-
-    await localStore.setItem(HIDDEN_ASSETS, hiddenAssets);
-    return { hiddenAssets };
-  };
-
-  const getHiddenAssets = async () => {
-    const hiddenAssets = (await localStore.getItem(HIDDEN_ASSETS)) || {};
-    return { hiddenAssets };
-  };
-
   const getIsAccountMismatch = () => {
     const { activePublicKey } = request;
 
@@ -2077,7 +2061,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const changeAssetVisibility = async () => {
     const { assetVisibility } = request;
 
-    const hiddenAssets = await localStore.getItem(HIDDEN_ASSETS);
+    const { hiddenAssets } = await getHiddenAssets();
     hiddenAssets[assetVisibility.issuer] = assetVisibility.visibility;
 
     await localStore.setItem(HIDDEN_ASSETS, hiddenAssets);
@@ -2085,8 +2069,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const getHiddenAssets = async () => {
-    const hiddenAssets = await localStore.getItem(HIDDEN_ASSETS);
-    return hiddenAssets;
+    const hiddenAssets = (await localStore.getItem(HIDDEN_ASSETS)) || {};
+    return { hiddenAssets };
   };
 
   const messageResponder: MessageResponder = {
@@ -2145,8 +2129,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.CHANGE_ASSET_VISIBILITY]: changeAssetVisibility,
     [SERVICE_TYPES.GET_HIDDEN_ASSETS]: getHiddenAssets,
     [SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH]: getIsAccountMismatch,
-    [SERVICE_TYPES.CHANGE_ASSET_VISIBILITY]: changeAssetVisibility,
-    [SERVICE_TYPES.GET_HIDDEN_ASSETS]: getHiddenAssets,
   };
 
   const currentState = sessionStore.getState();
