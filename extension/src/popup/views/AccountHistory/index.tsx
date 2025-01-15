@@ -1,5 +1,4 @@
 import { Text } from "@stellar/design-system";
-import BigNumber from "bignumber.js";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -11,7 +10,11 @@ import {
   settingsSelector,
 } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
-import { getIsPayment, getIsSwap } from "popup/helpers/account";
+import {
+  getIsDustPayment,
+  getIsPayment,
+  getIsSwap,
+} from "popup/helpers/account";
 import { getMonthLabel } from "popup/helpers/getMonthLabel";
 
 import {
@@ -81,14 +84,8 @@ export const AccountHistory = () => {
             operation.type ===
               Horizon.HorizonApi.OperationResponseType.createAccount &&
             operation.account !== publicKey;
-          const isDustPayment =
-            isPayment &&
-            "asset_type" in operation &&
-            operation.asset_type === "native" &&
-            "to" in operation &&
-            operation.to === publicKey &&
-            "amount" in operation &&
-            new BigNumber(operation.amount).lte(new BigNumber(0.1));
+          const isDustPayment = getIsDustPayment(publicKey, operation);
+
           const parsedOperation = {
             ...operation,
             isPayment,
