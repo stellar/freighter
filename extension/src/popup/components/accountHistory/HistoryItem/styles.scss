@@ -1,6 +1,13 @@
+@use "../../../styles/utils.scss" as *;
+
 .HistoryItem {
-  color: var(--sds-clr-gray-12);
   cursor: pointer;
+
+  &__row {
+    display: flex;
+    flex: 1;
+    flex-direction: row;
+  }
 
   &__loader {
     display: flex;
@@ -9,46 +16,104 @@
     justify-content: center;
   }
 
-  &__row {
-    display: flex;
+  &__description {
+    flex: 1;
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__amount {
+    text-align: right;
+    max-width: 45%;
   }
 
   &__icon {
-    border: 1px solid var(--sds-clr-gray-03);
-    border-radius: 2rem;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 2rem;
-    margin-right: 1rem;
-    width: 2rem;
+    height: pxToRem(32px);
+    width: pxToRem(32px);
+    border-radius: pxToRem(32px);
+    margin-right: pxToRem(10px);
 
-    &--default {
-      width: 0.875rem;
+    &__swap-source {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      height: pxToRem(22px);
+      width: pxToRem(22px);
+      border-radius: pxToRem(22px);
     }
 
-    &--received,
-    &--sent {
-      width: 1.2rem;
+    &__swap-dest {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      z-index: 2;
+      height: pxToRem(22px);
+      width: pxToRem(22px);
+      border-radius: pxToRem(22px);
+      background-color: var(--sds-clr-gray-01);
     }
 
-    &--received {
-      color: var(--color-green-60);
+    &__bordered {
+      display: flex;
+      height: 100%;
+      width: 100%;
+      align-items: center;
+      justify-content: center;
+      border-radius: pxToRem(32px);
+      border: 1px solid var(--sds-clr-gray-06);
+      color: var(--sds-clr-gray-09);
+    }
+
+    &__small {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      z-index: 10;
+      height: pxToRem(16px);
+      width: pxToRem(16px);
+      padding: pxToRem(4px);
+      border-radius: pxToRem(16px);
+      background-color: var(--sds-clr-gray-02);
     }
   }
 
-  &__operation {
-    flex-grow: 2;
-    line-height: 1.5rem;
+  &--space-between {
+    justify-content: space-between;
   }
 
-  &__date {
+  &--date {
     color: var(--sds-clr-gray-11);
-    font-size: 0.875rem;
-    line-height: 1.375rem;
   }
 
-  &__payment {
-    line-height: 1.5rem;
+  &--placeholder {
+    color: var(--sds-clr-gray-11);
+  }
+
+  &--received,
+  &--add-trustline {
+    color: var(--sds-clr-green-09);
+  }
+
+  &--sent {
+    transform: rotate(-0.125turn);
+    color: var(--sds-clr-gray-09);
+  }
+
+  &--swap,
+  &--create-account {
+    color: var(--sds-clr-gray-09);
   }
 }
