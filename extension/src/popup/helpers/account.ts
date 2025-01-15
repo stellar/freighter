@@ -2,8 +2,11 @@ import { Horizon } from "stellar-sdk";
 import { BigNumber } from "bignumber.js";
 import {
   AssetType,
+  AssetVisibility,
+  BalanceMap,
   Balances,
   HorizonOperation,
+  IssuerKey,
   SorobanBalance,
   TokenBalances,
 } from "@shared/api/types";
@@ -16,6 +19,7 @@ import {
   isTestnet,
 } from "helpers/stellar";
 import { getAttrsFromSorobanHorizonOp } from "./soroban";
+import { isAssetVisible } from "./settings";
 
 export const LP_IDENTIFIER = ":lp";
 
@@ -258,3 +262,25 @@ export const displaySorobanId = (
 };
 
 export const isSorobanIssuer = (issuer: string) => !issuer.startsWith("G");
+
+export const filterHiddenBalances = (
+  balances: BalanceMap,
+  hiddenAssets: Record<IssuerKey, AssetVisibility>,
+) => {
+  const balanceKeys = Object.keys(balances);
+  const hiddenKeys = balanceKeys.filter((key) => {
+    if (key === "native") {
+      return false;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [_, issuer] = key.split(":");
+    if (!issuer) {
+      return true;
+    }
+    return !isAssetVisible(hiddenAssets, issuer);
+  });
+
+  return Object.fromEntries(
+    Object.entries(balances).filter(([key]) => !hiddenKeys.includes(key)),
+  ) as BalanceMap;
+};

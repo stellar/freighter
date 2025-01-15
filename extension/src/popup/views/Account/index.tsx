@@ -286,7 +286,7 @@ export const Account = () => {
               )}
             </div>
           </View.Content>
-          {!isFunded && !hasError && !error?.horizon && (
+          {!isLoading && !isFunded && !hasError && !error?.horizon && (
             <View.Footer>
               <NotFundedMessage
                 canUseFriendbot={!!networkDetails.friendbotUrl}

@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
 
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import { Balances } from "@shared/api/types";
 import {
   AssetSelectType,
+  getAccountBalances,
+  resetAccountBalanceStatus,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import {
@@ -20,30 +21,55 @@ import { getAssetDomain } from "popup/helpers/getAssetDomain";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
+import {
+  publicKeySelector,
+  resetAccountStatus,
+} from "popup/ducks/accountServices";
+import { ActionStatus } from "@shared/api/types";
 import { ToggleAssetRows } from "../ToggleAssetRows";
 import { ManageAssetCurrency } from "../ManageAssetRows";
 
 import "./styles.scss";
 
-interface AssetVisibilityProps {
-  balances: Balances;
-}
-
-export const AssetVisibility = ({ balances }: AssetVisibilityProps) => {
+export const AssetVisibility = () => {
   const { t } = useTranslation();
-  const { assetIcons, assetSelect, soroswapTokens } = useSelector(
-    transactionSubmissionSelector,
-  );
+  const {
+    assetIcons,
+    assetSelect,
+    soroswapTokens,
+    accountBalances,
+    accountBalanceStatus,
+  } = useSelector(transactionSubmissionSelector);
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const dispatch = useDispatch();
+  const publicKey = useSelector(publicKeySelector);
 
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(
+    accountBalanceStatus === ActionStatus.PENDING ||
+      accountBalanceStatus === ActionStatus.IDLE,
+  );
   const isSwap = useIsSwap();
   const isSoroswapEnabled = useIsSoroswapEnabled();
 
   const isManagingAssets = assetSelect.type === AssetSelectType.MANAGE;
+  const { balances } = accountBalances;
+
+  useEffect(() => {
+    dispatch(
+      getAccountBalances({
+        publicKey,
+        networkDetails,
+        showHidden: true,
+      }),
+    );
+    return () => {
+      dispatch(resetAccountBalanceStatus());
+      dispatch(resetAccountStatus());
+    };
+  }, [publicKey, dispatch, networkDetails]);
 
   useEffect(() => {
     const fetchDomains = async () => {
