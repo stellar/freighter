@@ -412,6 +412,7 @@ const settingsSlice = createSlice({
           isRpcHealthy,
           userNotification,
           assetsLists,
+          hiddenAssets,
           isNonSSLEnabled,
           isHideDustEnabled,
         } = action?.payload || {
@@ -431,6 +432,7 @@ const settingsSlice = createSlice({
           isRpcHealthy,
           userNotification,
           assetsLists,
+          hiddenAssets,
           isNonSSLEnabled,
           isHideDustEnabled,
           settingsState: SettingsState.SUCCESS,
