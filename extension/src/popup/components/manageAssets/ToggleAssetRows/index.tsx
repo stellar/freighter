@@ -2,7 +2,7 @@ import React from "react";
 import { Toggle } from "@stellar/design-system";
 import { useDispatch, useSelector } from "react-redux";
 
-import { AssetVisibility, Balances, IssuerKey } from "@shared/api/types";
+import { IssuerKey } from "@shared/api/types";
 import {
   formatDomain,
   getCanonicalFromAsset,
@@ -10,6 +10,7 @@ import {
 } from "helpers/stellar";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { changeAssetVisibility, settingsSelector } from "popup/ducks/settings";
+import { isAssetVisible } from "popup/helpers/settings";
 import { AssetRowData, ManageAssetCurrency } from "../ManageAssetRows";
 
 import "./styles.scss";
@@ -21,10 +22,10 @@ interface ToggleAssetRowsProps {
 export const ToggleAssetRows = ({ assetRows }: ToggleAssetRowsProps) => {
   const dispatch = useDispatch();
   const { hiddenAssets } = useSelector(settingsSelector);
-  const handleIsVisibleChange = (
-    issuer: IssuerKey,
-    visibility: AssetVisibility,
-  ) => {
+  const handleIsVisibleChange = (issuer: IssuerKey) => {
+    const visibility = isAssetVisible(hiddenAssets, issuer)
+      ? "hidden"
+      : "visible";
     dispatch(
       changeAssetVisibility({
         issuer,
@@ -62,11 +63,11 @@ export const ToggleAssetRows = ({ assetRows }: ToggleAssetRowsProps) => {
                     isSuspicious={isSuspicious}
                   />
                   <Toggle
-                    checked={hiddenAssets[issuer] === "visible"}
+                    checked={isAssetVisible(hiddenAssets, issuer)}
                     id="isVisible"
                     // @ts-ignore
                     onChange={(_e: React.ChangeEvent<HTMLInputElement>) =>
-                      handleIsVisibleChange(issuer, hiddenAssets[issuer])
+                      handleIsVisibleChange(issuer)
                     }
                   />
                 </div>
