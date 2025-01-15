@@ -20,6 +20,7 @@ import {
   removeTokenId as internalRemoveTokenId,
   submitFreighterTransaction as internalSubmitFreighterTransaction,
   submitFreighterSorobanTransaction as internalSubmitFreighterSorobanTransaction,
+  getHiddenAssets as internalGetHiddenAssets,
 } from "@shared/api/internal";
 
 import {
@@ -53,6 +54,7 @@ import {
   getSoroswapTokens as getSoroswapTokensService,
 } from "popup/helpers/sorobanSwap";
 import { hardwareSign, hardwareSignAuth } from "popup/helpers/hardwareConnect";
+import { filterHiddenBalances } from "popup/helpers/account";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -373,33 +375,45 @@ export const getAccountBalances = createAsyncThunk<
   {
     publicKey: string;
     networkDetails: NetworkDetails;
+    showHidden?: boolean;
   },
   { rejectValue: ErrorMessage }
->("getAccountBalances", async ({ publicKey, networkDetails }, thunkApi) => {
-  try {
-    let balances;
+>(
+  "getAccountBalances",
+  async ({ publicKey, networkDetails, showHidden = false }, thunkApi) => {
+    try {
+      let balances;
 
-    const isMainnet = isMainnetHelper(networkDetails);
+      const isMainnet = isMainnetHelper(networkDetails);
+      const hiddenAssets = await internalGetHiddenAssets();
 
-    if (isCustomNetwork(networkDetails)) {
-      balances = await internalGetAccountBalancesStandalone({
-        publicKey,
-        networkDetails,
-        isMainnet,
-      });
-    } else {
-      balances = await internalgetAccountIndexerBalances(
-        publicKey,
-        networkDetails,
-      );
+      if (isCustomNetwork(networkDetails)) {
+        balances = await internalGetAccountBalancesStandalone({
+          publicKey,
+          networkDetails,
+          isMainnet,
+        });
+      } else {
+        balances = await internalgetAccountIndexerBalances(
+          publicKey,
+          networkDetails,
+        );
+      }
+
+      storeBalanceMetricData(publicKey, balances.isFunded || false);
+      const filteredBalances = showHidden
+        ? balances.balances
+        : // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          filterHiddenBalances(balances.balances, hiddenAssets.hiddenAssets);
+      return {
+        ...balances,
+        balances: filteredBalances,
+      };
+    } catch (e) {
+      return thunkApi.rejectWithValue({ errorMessage: e as string });
     }
-
-    storeBalanceMetricData(publicKey, balances.isFunded || false);
-    return balances;
-  } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e as string });
-  }
-});
+  },
+);
 
 export const getDestinationBalances = createAsyncThunk<
   AccountBalancesInterface,

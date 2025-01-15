@@ -1317,7 +1317,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const assetsLists = await getAssetsLists();
     const isNonSSLEnabled = await getIsNonSSLEnabled();
     const isHideDustEnabled = await getIsHideDustEnabled();
-    const hiddenAssets = await getHiddenAssets();
+    const { hiddenAssets } = await getHiddenAssets();
 
     return {
       allowList: await getAllowList(),
@@ -1772,7 +1772,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const changeAssetVisibility = async () => {
     const { assetVisibility } = request;
 
-    const hiddenAssets = (await localStore.getItem(HIDDEN_ASSETS)) || {};
+    const { hiddenAssets } = await getHiddenAssets();
     hiddenAssets[assetVisibility.issuer] = assetVisibility.visibility;
 
     await localStore.setItem(HIDDEN_ASSETS, hiddenAssets);
@@ -1780,8 +1780,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const getHiddenAssets = async () => {
-    const hiddenAssets = await localStore.getItem(HIDDEN_ASSETS);
-    return hiddenAssets;
+    const hiddenAssets = (await localStore.getItem(HIDDEN_ASSETS)) || {};
+    return { hiddenAssets };
   };
 
   const messageResponder: MessageResponder = {
