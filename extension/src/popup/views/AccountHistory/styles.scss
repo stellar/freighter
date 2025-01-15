@@ -1,9 +1,11 @@
+@use "../../styles/utils.scss" as *;
+
 .AccountHistory {
   &__list {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
-    margin-bottom: 0.75rem;
+    gap: pxToRem(24px);
+    margin-bottom: pxToRem(24px);
   }
 
   &__section-header {
