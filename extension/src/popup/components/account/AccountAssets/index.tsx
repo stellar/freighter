@@ -233,23 +233,19 @@ export const AccountAssets = ({
           key: "",
         };
         let code = "";
-        let amountUnit;
         if (rb.liquidityPoolId) {
           isLP = true;
           code = getLPShareCode(rb.reserves as Horizon.HorizonApi.Reserve[]);
-          amountUnit = "shares";
         } else if (rb.contractId && "symbol" in rb) {
           issuer = {
             key: rb.contractId,
           };
           code = rb.symbol;
-          amountUnit = rb.symbol;
         } else {
           if ("issuer" in rb.token && rb.token) {
             issuer = rb.token.issuer;
           }
           code = rb.token.code;
-          amountUnit = rb.token.code;
         }
 
         const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
@@ -285,7 +281,7 @@ export const AccountAssets = ({
             </div>
             <div className="AccountAssets__copy-right">
               <div className="asset-amount" data-testid="asset-amount">
-                {formatAmount(amountVal)} <span>{amountUnit}</span>
+                {formatAmount(amountVal)}
               </div>
             </div>
           </div>
