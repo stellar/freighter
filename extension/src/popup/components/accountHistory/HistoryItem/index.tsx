@@ -608,7 +608,8 @@ export const HistoryItem = ({
             }
 
             const { symbol, decimals } = tokenDetailsResponse!;
-            const code = symbol === "native" ? "XLM" : symbol;
+            const isNative = symbol === "native";
+            const code = isNative ? "XLM" : symbol;
             const formattedTokenAmount = formatTokenAmount(
               new BigNumber(attrs.amount),
               decimals,
@@ -623,8 +624,22 @@ export const HistoryItem = ({
               </Badge>,
             );
             setIconComponent(
-              <div className="HistoryItem__icon__bordered">
-                <Icon.User01 />
+              <>
+                {isNative && (
+                  <AssetSds
+                    size="lg"
+                    variant="single"
+                    sourceOne={{
+                      altText: "Stellar token logo",
+                      image: StellarLogo,
+                    }}
+                  />
+                )}
+                {!isNative && (
+                  <div className="HistoryItem__icon__bordered">
+                    <Icon.User01 />
+                  </div>
+                )}
                 {_isRecipient && (
                   <div className="HistoryItem__icon__small HistoryItem--received">
                     <Icon.ArrowDown />
@@ -635,7 +650,7 @@ export const HistoryItem = ({
                     <Icon.Send03 />
                   </div>
                 )}
-              </div>,
+              </>,
             );
             setRowText(code);
             setDateText(
