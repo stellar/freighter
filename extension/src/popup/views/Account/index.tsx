@@ -9,11 +9,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { getAccountHistory } from "@shared/api/internal";
-import {
-  AccountBalancesInterface,
-  ActionStatus,
-  AssetType,
-} from "@shared/api/types";
+import { ActionStatus, AssetType } from "@shared/api/types";
 
 import {
   settingsNetworkDetailsSelector,
@@ -53,13 +49,7 @@ import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 
 import "popup/metrics/authServices";
-
 import "./styles.scss";
-
-export const defaultAccountBalances = {
-  balances: null,
-  isFunded: null,
-} as AccountBalancesInterface;
 
 export const Account = () => {
   const { t } = useTranslation();
@@ -152,7 +142,7 @@ export const Account = () => {
     ) {
       setLoading(false);
     }
-  }, [accountBalanceStatus, accountStatus]);
+  }, [accountBalanceStatus, accountStatus, accountBalances]);
 
   if (selectedAsset) {
     return (

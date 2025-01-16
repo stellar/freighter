@@ -11,7 +11,6 @@ import {
   transactionSubmissionSelector,
   AssetSelectType,
   getAccountBalances,
-  resetAccountBalanceStatus,
 } from "popup/ducks/transactionSubmission";
 import {
   settingsNetworkDetailsSelector,
@@ -23,10 +22,7 @@ import { getCanonicalFromAsset } from "helpers/stellar";
 import { getAssetDomain } from "popup/helpers/getAssetDomain";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
-import {
-  publicKeySelector,
-  resetAccountStatus,
-} from "popup/ducks/accountServices";
+import { publicKeySelector } from "popup/ducks/accountServices";
 import { ActionStatus } from "@shared/api/types";
 
 import { ManageAssetCurrency, ManageAssetRows } from "../ManageAssetRows";
@@ -57,18 +53,7 @@ export const ChooseAsset = () => {
   );
   const isSwap = useIsSwap();
   const isSoroswapEnabled = useIsSoroswapEnabled();
-
   const isManagingAssets = assetSelect.type === AssetSelectType.MANAGE;
-  let balances;
-  // path payment destAsset is the only time we use recipient trustlines
-  if (
-    assetSelect.type === AssetSelectType.PATH_PAY &&
-    assetSelect.isSource === false
-  ) {
-    balances = destinationBalances.balances;
-  } else {
-    balances = accountBalances.balances;
-  }
 
   useEffect(() => {
     dispatch(
@@ -77,15 +62,22 @@ export const ChooseAsset = () => {
         networkDetails,
       }),
     );
-    return () => {
-      dispatch(resetAccountBalanceStatus());
-      dispatch(resetAccountStatus());
-    };
   }, [publicKey, dispatch, networkDetails]);
 
   useEffect(() => {
     const fetchDomains = async () => {
       setIsLoading(true);
+      let balances;
+      // path payment destAsset is the only time we use recipient trustlines
+      if (
+        assetSelect.type === AssetSelectType.PATH_PAY &&
+        assetSelect.isSource === false
+      ) {
+        balances = destinationBalances.balances;
+      } else {
+        balances = accountBalances.balances;
+      }
+
       const collection = [] as ManageAssetCurrency[];
       const sortedBalances = sortBalances(balances);
 
@@ -183,7 +175,7 @@ export const ChooseAsset = () => {
     fetchDomains();
   }, [
     assetIcons,
-    balances,
+    accountBalances.balances,
     isManagingAssets,
     isSorobanSuported,
     isSwap,
@@ -191,6 +183,8 @@ export const ChooseAsset = () => {
     assetSelect.isSource,
     soroswapTokens,
     networkDetails,
+    assetSelect.type,
+    destinationBalances.balances,
   ]);
 
   return (

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useHistory } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
@@ -8,7 +9,7 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   AssetSelectType,
   getAccountBalances,
-  resetAccountBalanceStatus,
+  resetSubmission,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import {
@@ -21,10 +22,7 @@ import { getAssetDomain } from "popup/helpers/getAssetDomain";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
-import {
-  publicKeySelector,
-  resetAccountStatus,
-} from "popup/ducks/accountServices";
+import { publicKeySelector } from "popup/ducks/accountServices";
 import { ActionStatus } from "@shared/api/types";
 import { ToggleAssetRows } from "../ToggleAssetRows";
 import { ManageAssetCurrency } from "../ManageAssetRows";
@@ -40,6 +38,7 @@ export const AssetVisibility = () => {
     accountBalances,
     accountBalanceStatus,
   } = useSelector(transactionSubmissionSelector);
+  const history = useHistory();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const dispatch = useDispatch();
@@ -66,8 +65,7 @@ export const AssetVisibility = () => {
       }),
     );
     return () => {
-      dispatch(resetAccountBalanceStatus());
-      dispatch(resetAccountStatus());
+      dispatch(resetSubmission());
     };
   }, [publicKey, dispatch, networkDetails]);
 
@@ -181,9 +179,14 @@ export const AssetVisibility = () => {
     networkDetails,
   ]);
 
+  const goBack = () => {
+    dispatch(resetSubmission());
+    history.goBack();
+  };
+
   return (
     <View>
-      <SubviewHeader title={t("Toggle Assets")} />
+      <SubviewHeader customBackAction={goBack} title={t("Toggle Assets")} />
       <View.Content hasNoTopPadding>
         {isLoading ? (
           <div className="ToggleAsset__loader">
