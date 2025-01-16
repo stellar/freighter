@@ -242,7 +242,7 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   // add E2E token
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Manage Assets").click({ force: true });
-  await expect(page.getByText("Your assets")).toBeVisible();
+  await expect(page.getByText("Manage assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });
   await page.getByText("Add manually").click({ force: true });
   await page.getByTestId("search-token-input").fill(TEST_TOKEN_ADDRESS);

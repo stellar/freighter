@@ -40,7 +40,7 @@ test("Switches account without password prompt", async ({
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Manage Assets").click({ force: true });
 
-  await expect(page.getByText("Your assets")).toBeVisible();
+  await expect(page.getByText("Manage assets")).toBeVisible();
 });
 
 test("Can't change settings on a stale window", async ({
