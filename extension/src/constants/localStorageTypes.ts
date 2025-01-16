@@ -26,4 +26,4 @@ export const IS_HIDE_DUST_ENABLED_ID = "isHideDustEnabled";
 export const HIDDEN_ASSETS = "hiddenAssets";
 export const TEMPORARY_STORE_ID = "temporaryStore";
 export const TEMPORARY_STORE_EXTRA_ID = "temporaryStoreExtra";
-export const HIDDEN_ASSETS = "hiddenAsset";
+export const HIDDEN_ASSETS = "hiddenAssets";
