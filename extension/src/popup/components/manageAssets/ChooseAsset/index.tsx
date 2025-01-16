@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import { Button, Icon, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -11,6 +11,7 @@ import {
   transactionSubmissionSelector,
   AssetSelectType,
   getAccountBalances,
+  resetSubmission,
 } from "popup/ducks/transactionSubmission";
 import {
   settingsNetworkDetailsSelector,
@@ -31,6 +32,7 @@ import { SelectAssetRows } from "../SelectAssetRows";
 import "./styles.scss";
 
 export const ChooseAsset = () => {
+  const history = useHistory();
   const { t } = useTranslation();
   const {
     assetIcons,
@@ -187,13 +189,22 @@ export const ChooseAsset = () => {
     destinationBalances.balances,
   ]);
 
+  const goBack = () => {
+    dispatch(resetSubmission());
+    history.goBack();
+  };
+
   return (
     <React.Fragment>
       <SubviewHeader
         title={t("Manage assets")}
         customBackIcon={<Icon.XClose className="close-btn" />}
+        customBackAction={goBack}
         rightButton={
-          <Link to={ROUTES.assetVisibility}>
+          <Link
+            to={ROUTES.assetVisibility}
+            data-testid="ChooseAssetHideAssetBtn"
+          >
             <Button
               size="sm"
               className="ChooseAsset__hide-btn"
@@ -210,7 +221,10 @@ export const ChooseAsset = () => {
             <Loader size="2rem" />
           </div>
         ) : (
-          <div className="ChooseAsset__wrapper">
+          <div
+            className="ChooseAsset__wrapper"
+            data-testid="ChooseAssetWrapper"
+          >
             <div
               className={`ChooseAsset__assets${
                 isManagingAssets && isSorobanSuported ? "--short" : ""

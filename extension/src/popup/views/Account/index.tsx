@@ -140,19 +140,9 @@ export const Account = () => {
         accountStatus === ActionStatus.PENDING
       )
     ) {
-      console.log({
-        accountBalanceStatus,
-        accountBalances,
-      });
       setLoading(false);
     }
   }, [accountBalanceStatus, accountStatus, accountBalances]);
-
-  console.log({
-    loading: isLoading,
-    funded: isFunded,
-    accountBalances,
-  });
 
   return selectedAsset ? (
     <AssetDetail
