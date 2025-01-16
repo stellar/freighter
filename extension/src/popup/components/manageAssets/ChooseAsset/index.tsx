@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button, Icon, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -24,6 +24,7 @@ import "./styles.scss";
 
 export const ChooseAsset = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -62,6 +63,10 @@ export const ChooseAsset = () => {
     );
   }
 
+  const goBack = () => {
+    navigate(-1);
+  };
+
   return (
     <React.Fragment>
       <SubviewHeader
@@ -69,8 +74,12 @@ export const ChooseAsset = () => {
         customBackIcon={
           !domainState.data?.isManagingAssets ? <Icon.XClose /> : undefined
         }
+        customBackAction={goBack}
         rightButton={
-          <Link to={ROUTES.assetVisibility}>
+          <Link
+            to={ROUTES.assetVisibility}
+            data-testid="ChooseAssetHideAssetBtn"
+          >
             <Button
               size="sm"
               className="ChooseAsset__hide-btn"
