@@ -142,7 +142,7 @@ export const Account = () => {
     ) {
       setLoading(false);
     }
-  }, [accountBalanceStatus, accountStatus, accountBalances]);
+  }, [accountBalanceStatus, accountStatus]);
 
   if (selectedAsset) {
     return (
