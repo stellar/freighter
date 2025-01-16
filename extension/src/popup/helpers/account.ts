@@ -6,7 +6,7 @@ import {
   BalanceMap,
   Balances,
   HorizonOperation,
-  IssuerKey,
+  AssetKey,
   SorobanBalance,
   TokenBalances,
 } from "@shared/api/types";
@@ -277,19 +277,18 @@ export const isSorobanIssuer = (issuer: string) => !issuer.startsWith("G");
 
 export const filterHiddenBalances = (
   balances: BalanceMap,
-  hiddenAssets: Record<IssuerKey, AssetVisibility>,
+  hiddenAssets: Record<AssetKey, AssetVisibility>,
 ) => {
   const balanceKeys = Object.keys(balances);
   const hiddenKeys = balanceKeys.filter((key) => {
     if (key === "native") {
       return false;
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [_, issuer] = key.split(":");
+    const [code, issuer] = key.split(":");
     if (!issuer) {
       return true;
     }
-    return !isAssetVisible(hiddenAssets, issuer);
+    return !isAssetVisible(hiddenAssets, getCanonicalFromAsset(code, issuer));
   });
 
   return Object.fromEntries(

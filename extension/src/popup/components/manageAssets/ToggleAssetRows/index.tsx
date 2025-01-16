@@ -2,7 +2,7 @@ import React from "react";
 import { Toggle } from "@stellar/design-system";
 import { useDispatch, useSelector } from "react-redux";
 
-import { IssuerKey } from "@shared/api/types";
+import { AssetKey } from "@shared/api/types";
 import {
   formatDomain,
   getCanonicalFromAsset,
@@ -22,7 +22,8 @@ interface ToggleAssetRowsProps {
 export const ToggleAssetRows = ({ assetRows }: ToggleAssetRowsProps) => {
   const dispatch = useDispatch();
   const { hiddenAssets } = useSelector(settingsSelector);
-  const handleIsVisibleChange = (issuer: IssuerKey) => {
+
+  const handleIsVisibleChange = (issuer: AssetKey) => {
     const visibility = isAssetVisible(hiddenAssets, issuer)
       ? "hidden"
       : "visible";
@@ -66,11 +67,11 @@ export const ToggleAssetRows = ({ assetRows }: ToggleAssetRowsProps) => {
                     isSuspicious={isSuspicious}
                   />
                   <Toggle
-                    checked={isAssetVisible(hiddenAssets, issuer)}
-                    id="isVisible"
+                    checked={isAssetVisible(hiddenAssets, canonicalAsset)}
+                    id={`isVisible-${canonicalAsset}`}
                     // @ts-ignore
                     onChange={(_e: React.ChangeEvent<HTMLInputElement>) =>
-                      handleIsVisibleChange(issuer)
+                      handleIsVisibleChange(canonicalAsset)
                     }
                   />
                 </div>

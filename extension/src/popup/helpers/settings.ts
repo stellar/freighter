@@ -1,6 +1,6 @@
-import { AssetVisibility, IssuerKey } from "@shared/api/types";
+import { AssetVisibility, AssetKey } from "@shared/api/types";
 
 export const isAssetVisible = (
   hiddenAssets: Record<string, AssetVisibility>,
-  issuer: IssuerKey,
-) => !hiddenAssets[issuer] || hiddenAssets[issuer] === "visible";
+  key: AssetKey,
+) => !hiddenAssets[key] || hiddenAssets[key] === "visible";

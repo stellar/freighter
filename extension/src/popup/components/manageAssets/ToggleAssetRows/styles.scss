@@ -1,3 +1,5 @@
+@use "../../../styles/utils.scss" as *;
+
 .ToggleAssetRows {
   &__empty {
     display: flex;
@@ -11,7 +13,7 @@
       color: var(--sds-clr-gray-09);
 
       svg {
-        margin-right: 0.25rem;
+        margin-right: pxToRem(10px);
         stroke: var(--sds-clr-gray-09);
       }
     }

@@ -42,7 +42,7 @@ import {
   IndexerSettings,
   SettingsState,
   ExperimentalFeatures,
-  IssuerKey,
+  AssetKey,
   AssetVisibility,
 } from "./types";
 import {
@@ -1536,7 +1536,7 @@ export const simulateTransaction = async (args: {
 export const getHiddenAssets = async () => {
   let response = {
     error: "",
-    hiddenAssets: {} as Record<IssuerKey, AssetVisibility>,
+    hiddenAssets: {} as Record<AssetKey, AssetVisibility>,
   };
 
   response = await sendMessageToBackground({
@@ -1550,12 +1550,12 @@ export const changeAssetVisibility = async ({
   assetIssuer,
   assetVisibility,
 }: {
-  assetIssuer: IssuerKey;
+  assetIssuer: AssetKey;
   assetVisibility: AssetVisibility;
 }) => {
   let response = {
     error: "",
-    hiddenAssets: {} as Record<IssuerKey, AssetVisibility>,
+    hiddenAssets: {} as Record<AssetKey, AssetVisibility>,
   };
 
   response = await sendMessageToBackground({

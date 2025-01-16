@@ -21,7 +21,7 @@ export interface UserInfo {
 
 export type MigratableAccount = Account & { keyIdIndex: number };
 
-export type IssuerKey = string; // issuer pub key for classic, contract ID for tokens
+export type AssetKey = string; // {assetCode}:{issuer/contract ID} issuer pub key for classic, contract ID for tokens
 export type AssetVisibility = "visible" | "hidden";
 
 export interface Response {
@@ -97,10 +97,10 @@ export interface Response {
   isNonSSLEnabled: boolean;
   isHideDustEnabled: boolean;
   assetVisibility: {
-    issuer: IssuerKey;
+    issuer: AssetKey;
     visibility: AssetVisibility;
   };
-  hiddenAssets: Record<IssuerKey, AssetVisibility>;
+  hiddenAssets: Record<AssetKey, AssetVisibility>;
 }
 
 export interface MemoRequiredAccount {
@@ -190,7 +190,7 @@ export type Settings = {
   networkDetails: NetworkDetails;
   networksList: NetworkDetails[];
   error: string;
-  hiddenAssets: Record<IssuerKey, AssetVisibility>;
+  hiddenAssets: Record<AssetKey, AssetVisibility>;
 } & Preferences;
 
 export interface AssetIcons {
