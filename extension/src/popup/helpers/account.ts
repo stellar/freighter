@@ -3,7 +3,7 @@ import { BigNumber } from "bignumber.js";
 import {
   AssetVisibility,
   HorizonOperation,
-  IssuerKey,
+  AssetKey,
   SorobanBalance,
   TokenBalances,
 } from "@shared/api/types";
@@ -259,7 +259,7 @@ export const displaySorobanId = (
 
 export const filterHiddenBalances = (
   balances: BalanceMap,
-  hiddenAssets: Record<IssuerKey, AssetVisibility>,
+  hiddenAssets: Record<AssetKey, AssetVisibility>,
 ) => {
   const balanceKeys = Object.keys(balances);
   const hiddenKeys = balanceKeys.filter((key) => {
