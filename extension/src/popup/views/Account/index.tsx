@@ -9,11 +9,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { getAccountHistory } from "@shared/api/internal";
-import {
-  AccountBalancesInterface,
-  ActionStatus,
-  AssetType,
-} from "@shared/api/types";
+import { ActionStatus, AssetType } from "@shared/api/types";
 
 import {
   settingsNetworkDetailsSelector,
@@ -53,13 +49,7 @@ import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 
 import "popup/metrics/authServices";
-
 import "./styles.scss";
-
-export const defaultAccountBalances = {
-  balances: null,
-  isFunded: null,
-} as AccountBalancesInterface;
 
 export const Account = () => {
   const { t } = useTranslation();
@@ -150,9 +140,19 @@ export const Account = () => {
         accountStatus === ActionStatus.PENDING
       )
     ) {
+      console.log({
+        accountBalanceStatus,
+        accountBalances,
+      });
       setLoading(false);
     }
-  }, [accountBalanceStatus, accountStatus]);
+  }, [accountBalanceStatus, accountStatus, accountBalances]);
+
+  console.log({
+    loading: isLoading,
+    funded: isFunded,
+    accountBalances,
+  });
 
   return selectedAsset ? (
     <AssetDetail
@@ -171,7 +171,6 @@ export const Account = () => {
       ) : (
         <>
           <AccountHeader
-            // accountDropDownRef={accountDropDownRef}
             allAccounts={allAccounts}
             currentAccountName={currentAccountName}
             publicKey={publicKey}
@@ -286,7 +285,7 @@ export const Account = () => {
               )}
             </div>
           </View.Content>
-          {!isLoading && !isFunded && !hasError && !error?.horizon && (
+          {!isFunded && !hasError && !error?.horizon && (
             <View.Footer>
               <NotFundedMessage
                 canUseFriendbot={!!networkDetails.friendbotUrl}
