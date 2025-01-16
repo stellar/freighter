@@ -37,7 +37,10 @@ export const ToggleAssetRows = ({ assetRows }: ToggleAssetRowsProps) => {
   return (
     <>
       <div className="ToggleAssetRows__scrollbar">
-        <div className="ToggleAssetRows__content">
+        <div
+          className="ToggleAssetRows__content"
+          data-testid="ToggleAssetContent"
+        >
           {assetRows.map(
             ({
               code = "",
@@ -52,7 +55,7 @@ export const ToggleAssetRows = ({ assetRows }: ToggleAssetRowsProps) => {
                 <div
                   className="ToggleAssetRows__row"
                   key={canonicalAsset}
-                  data-testid="ToggleAssetRow"
+                  data-testid={`Toggle-${code}`}
                 >
                   <ToggleAssetRow
                     code={code}

@@ -165,7 +165,6 @@ export const Account = () => {
   return (
     <>
       <AccountHeader
-        // accountDropDownRef={accountDropDownRef}
         allAccounts={allAccounts}
         currentAccountName={currentAccountName}
         publicKey={publicKey}
