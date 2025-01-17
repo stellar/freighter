@@ -7,5 +7,13 @@ title: signMessage
 
 import { SignMessageDemo } from "./components/SignMessageDemo";
 
+<p>The signed message from the response is a base64 encoded string of the signature. Verification Example:</p>
+<p>
+```
+const kp = <signing key pair>
+const res = await stellarApi.signMessage("hi", { networkPassphrase: SorobanClient.Networks.TESTNET })
+const passes = kp.verify(Buffer.from("hi", "base64"), Buffer.from(res.signedMessage, "base64")) // true
+```
+</p>
 <strong>Test Freighter's `signMessage` method:</strong>
 <SignMessageDemo />
