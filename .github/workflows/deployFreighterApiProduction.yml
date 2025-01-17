@@ -16,7 +16,9 @@ jobs:
       - name: Build package
         uses: actions/setup-node@v4
         with:
-          node-version: "21"
+          node-version: '21.x'
+          registry-url: 'https://registry.npmjs.org'
+          always-auth: true
       - name: Version npm package
         run: |
           git config --local user.email "action@github.com"

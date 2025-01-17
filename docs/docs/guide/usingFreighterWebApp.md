@@ -200,9 +200,9 @@ The second parameter is an optional `opts` object where you can specify which ac
 
 ### signMessage
 
-#### `signMessage(message: string, opts: { address: string }) -> <Promise<{ signedMessage: Buffer | null; signerAddress: string; } & { error?: string; }>>`
+#### `signMessage(message: string, opts: { address: string }) -> <Promise<{ signedMessage: string | null; signerAddress: string; } & { error?: string; }>>`
 
-This function accepts a string as the first parameter, which it will decode, sign as the user, and return a Buffer of the signed contents.
+This function accepts a string as the first parameter, which it will decode, sign as the user, and return a base64 encoded string of the signed contents.
 
 The second parameter is an optional `opts` object where you can specify which account's signature you’re requesting. If Freighter has the public key requested, it will switch to that account. If not, it will alert the user that they do not have the requested account.
 
