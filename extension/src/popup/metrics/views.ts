@@ -51,6 +51,7 @@ const routeToEventName = {
   [ROUTES.sendPaymentConfirm]: METRIC_NAMES.sendPaymentConfirm,
   [ROUTES.manageAssets]: METRIC_NAMES.viewManageAssets,
   [ROUTES.searchAsset]: METRIC_NAMES.viewSearchAsset,
+  [ROUTES.assetVisibility]: METRIC_NAMES.viewAssetVisibility,
   [ROUTES.addAsset]: METRIC_NAMES.viewAddAsset,
   [ROUTES.swap]: METRIC_NAMES.viewSwap,
   [ROUTES.swapAmount]: METRIC_NAMES.swapAmount,

@@ -23,6 +23,10 @@ jest.mock("stellar-identicon-js");
 jest.setTimeout(20000);
 
 jest
+  .spyOn(ApiInternal, "getHiddenAssets")
+  .mockImplementation(() => Promise.resolve({ hiddenAssets: {}, error: "" }));
+
+jest
   .spyOn(ApiInternal, "getAccountIndexerBalances")
   .mockImplementation(() => Promise.resolve(mockBalances));
 
@@ -144,6 +148,7 @@ describe("SignTransactions", () => {
               ...defaultSettingsState.networkDetails,
               networkPassphrase: "Test SDF Future Network ; October 2022",
             },
+            hiddenAssets: {},
           },
         }}
       >

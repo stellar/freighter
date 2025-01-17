@@ -74,6 +74,10 @@ jest.spyOn(global, "fetch").mockImplementation((url) => {
 });
 
 jest
+  .spyOn(ApiInternal, "getHiddenAssets")
+  .mockImplementation(() => Promise.resolve({ hiddenAssets: {}, error: "" }));
+
+jest
   .spyOn(ApiInternal, "getAccountIndexerBalances")
   .mockImplementation(() => Promise.resolve(mockBalances));
 
@@ -187,6 +191,7 @@ describe("Account view", () => {
           settings: {
             networkDetails: TESTNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
+            hiddenAssets: {},
           },
         }}
       >

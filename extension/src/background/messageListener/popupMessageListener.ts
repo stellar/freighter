@@ -53,6 +53,7 @@ import {
   IS_HASH_SIGNING_ENABLED_ID,
   IS_NON_SSL_ENABLED_ID,
   IS_HIDE_DUST_ENABLED_ID,
+  HIDDEN_ASSETS,
 } from "constants/localStorageTypes";
 import {
   FUTURENET_NETWORK_DETAILS,
@@ -1316,6 +1317,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const assetsLists = await getAssetsLists();
     const isNonSSLEnabled = await getIsNonSSLEnabled();
     const isHideDustEnabled = await getIsHideDustEnabled();
+    const { hiddenAssets } = await getHiddenAssets();
 
     return {
       allowList: await getAllowList(),
@@ -1331,6 +1333,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       assetsLists,
       isNonSSLEnabled,
       isHideDustEnabled,
+      hiddenAssets,
     };
   };
 
@@ -1766,6 +1769,21 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { assetsLists: await getAssetsLists() };
   };
 
+  const changeAssetVisibility = async () => {
+    const { assetVisibility } = request;
+
+    const { hiddenAssets } = await getHiddenAssets();
+    hiddenAssets[assetVisibility.issuer] = assetVisibility.visibility;
+
+    await localStore.setItem(HIDDEN_ASSETS, hiddenAssets);
+    return { hiddenAssets };
+  };
+
+  const getHiddenAssets = async () => {
+    const hiddenAssets = (await localStore.getItem(HIDDEN_ASSETS)) || {};
+    return { hiddenAssets };
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -1818,6 +1836,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.MIGRATE_ACCOUNTS]: migrateAccounts,
     [SERVICE_TYPES.ADD_ASSETS_LIST]: addAssetsList,
     [SERVICE_TYPES.MODIFY_ASSETS_LIST]: modifyAssetsList,
+    [SERVICE_TYPES.CHANGE_ASSET_VISIBILITY]: changeAssetVisibility,
+    [SERVICE_TYPES.GET_HIDDEN_ASSETS]: getHiddenAssets,
   };
 
   return messageResponder[request.type]();

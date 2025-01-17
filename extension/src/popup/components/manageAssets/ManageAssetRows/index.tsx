@@ -244,7 +244,7 @@ export const ManageAssetRows = ({
   );
 };
 
-interface AssetRowData {
+export interface AssetRowData {
   code?: string;
   issuer?: string;
   image?: string;

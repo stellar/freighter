@@ -42,6 +42,8 @@ import {
   IndexerSettings,
   SettingsState,
   ExperimentalFeatures,
+  AssetKey,
+  AssetVisibility,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -1208,6 +1210,7 @@ export const saveSettings = async ({
     isNonSSLEnabled: false,
     isHideDustEnabled: true,
     error: "",
+    hiddenAssets: {},
   };
 
   try {
@@ -1528,4 +1531,40 @@ export const simulateTransaction = async (args: {
     ok: res.ok,
     response,
   };
+};
+
+export const getHiddenAssets = async () => {
+  let response = {
+    error: "",
+    hiddenAssets: {} as Record<AssetKey, AssetVisibility>,
+  };
+
+  response = await sendMessageToBackground({
+    type: SERVICE_TYPES.GET_HIDDEN_ASSETS,
+  });
+
+  return { hiddenAssets: response.hiddenAssets, error: response.error };
+};
+
+export const changeAssetVisibility = async ({
+  assetIssuer,
+  assetVisibility,
+}: {
+  assetIssuer: AssetKey;
+  assetVisibility: AssetVisibility;
+}) => {
+  let response = {
+    error: "",
+    hiddenAssets: {} as Record<AssetKey, AssetVisibility>,
+  };
+
+  response = await sendMessageToBackground({
+    type: SERVICE_TYPES.CHANGE_ASSET_VISIBILITY,
+    assetVisibility: {
+      issuer: assetIssuer,
+      visibility: assetVisibility,
+    },
+  });
+
+  return { hiddenAssets: response.hiddenAssets, error: response.error };
 };
