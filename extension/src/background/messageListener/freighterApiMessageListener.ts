@@ -341,7 +341,7 @@ export const freighterApiMessageListener = (
               localStore.setItem(ALLOWLIST_ID, allowList.join());
             }
 
-            if (semver.gte(apiVersion, "4.0.0")) {
+            if (apiVersion && semver.gte(apiVersion, "4.0.0")) {
               resolve({
                 signedBlob: Buffer.from(signedBlob).toString("base64"),
                 signerAddress,
