@@ -1,6 +1,14 @@
+@use "../../../styles/utils.scss" as *;
+
 .AssetDetail {
   &__wrapper {
     position: relative;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(24px);
   }
 
   .SubviewHeader {

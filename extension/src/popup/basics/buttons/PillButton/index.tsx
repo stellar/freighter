@@ -1,10 +1,11 @@
 import React from "react";
-import { Button } from "@stellar/design-system";
+import { Button, ButtonProps } from "@stellar/design-system";
 
 interface PillButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   disabled?: boolean;
   isLoading?: boolean;
+  variant?: ButtonProps["variant"];
   children: React.ReactNode;
 }
 
@@ -12,6 +13,7 @@ export const PillButton = ({
   children,
   disabled,
   isLoading,
+  variant = "secondary",
   ...props
 }: PillButtonProps) => (
   <div className="PillButton">
@@ -19,7 +21,7 @@ export const PillButton = ({
       size="md"
       disabled={disabled}
       isLoading={isLoading}
-      variant="secondary"
+      variant={variant}
       {...props}
     >
       {children}
