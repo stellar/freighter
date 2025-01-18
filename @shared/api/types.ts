@@ -103,15 +103,19 @@ export interface MemoRequiredAccount {
 }
 
 export interface ExternalRequestBase {
-  network: string;
-  networkPassphrase: string;
   accountToSign?: string;
   address?: string;
+  networkPassphrase?: string;
   type: EXTERNAL_SERVICE_TYPES;
+}
+
+export interface ExternalRequestToken extends ExternalRequestBase {
+  contractId: string;
 }
 
 export interface ExternalRequestTx extends ExternalRequestBase {
   transactionXdr: string;
+  network?: string;
 }
 
 export interface ExternalRequestBlob extends ExternalRequestBase {
@@ -124,6 +128,7 @@ export interface ExternalRequestAuthEntry extends ExternalRequestBase {
 }
 
 export type ExternalRequest =
+  | ExternalRequestToken
   | ExternalRequestTx
   | ExternalRequestBlob
   | ExternalRequestAuthEntry;

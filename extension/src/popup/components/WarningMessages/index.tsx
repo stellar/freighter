@@ -673,7 +673,7 @@ export const NewAssetWarning = ({
                 isLoading={isSubmitting}
                 data-testid="NewAssetWarningAddButton"
               >
-                {t("Add asset")}
+                {t("Add asset 222")}
               </Button>
             </div>
           </div>
@@ -842,7 +842,7 @@ export const TokenWarning = ({
                     isSubmitting || submitStatus === ActionStatus.PENDING
                   }
                 >
-                  {t("Add asset")}
+                  {t("Add asset 111")}
                 </Button>
               </div>{" "}
             </div>

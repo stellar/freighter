@@ -15,6 +15,8 @@ import freighterApi from "@stellar/freighter-api";
 
 or import just the modules you require:
 
+// TODO: add docs for addToken as well
+
 ```javascript
 import {
   isConnected,

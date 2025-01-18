@@ -7,5 +7,6 @@ describe("freighter API", () => {
     expect(typeof FreighterAPI.signTransaction).toBe("function");
     expect(typeof FreighterAPI.signMessage).toBe("function");
     expect(typeof FreighterAPI.signAuthEntry).toBe("function");
+    expect(typeof FreighterAPI.addToken).toBe("function");
   });
 });

@@ -4,6 +4,8 @@ title: Sign XDR
 slug: /sign-xdr
 ---
 
+// TODO: add docs for "Adding a Token" (maybe the section for manual adding already exists)
+
 ## Signing XDR
 
 You trigger an "xdr signing" workflow by utilizing the [signTransaction API](https://docs.freighter.app/docs/playground/signTransaction).

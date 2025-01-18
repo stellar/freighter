@@ -78,6 +78,7 @@ import { ReviewAuth } from "./views/ReviewAuth";
 import { View } from "./basics/layout/View";
 import { BottomNav } from "./components/BottomNav";
 import { useIsSwap } from "./helpers/useIsSwap";
+import { AddToken } from "./views/AddToken";
 
 export const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
@@ -318,6 +319,9 @@ const Outlet = () => {
           </PublicKeyRoute>
           <PublicKeyRoute path={ROUTES.viewPublicKey}>
             <ViewPublicKey />
+          </PublicKeyRoute>
+          <PublicKeyRoute path={ROUTES.addToken}>
+            <AddToken />
           </PublicKeyRoute>
           <PublicKeyRoute path={ROUTES.signTransaction}>
             <SignTransaction />

@@ -152,6 +152,8 @@ export const ManageAssetRowButton = ({
     }
   };
 
+  // TODO: extract/share this code which adds the trustline
+  // But to use it we need to lookup asset info first (code, issuer, etc..)
   const changeTrustline = async (
     addTrustline: boolean,
     successfulCallback?: () => Promise<void>,
@@ -229,6 +231,8 @@ export const ManageAssetRowButton = ({
       setSuspiciousAssetData(assetRowData);
       setAssetSubmitting("");
     } else {
+      console.log("> > > > > > > > >  handleRowClick changeTrustline OOOO !!!");
+      // Also add Trustline here
       changeTrustline(!isTrustlineActive, () =>
         Promise.resolve(navigateTo(ROUTES.account)),
       );
@@ -259,9 +263,19 @@ export const ManageAssetRowButton = ({
 
           navigateTo(ROUTES.account);
         };
+
+        // TODO: this is where it's adding the trustline
+        console.log(
+          "> > > > > > > > >  handleTokenRowClick assetRowData: ",
+          assetRowData,
+        );
         if (StrKey.isValidEd25519PublicKey(assetRowData.issuer)) {
+          console.log(
+            "> > > > > > > > >  handleTokenRowClick changeTrustline !!!",
+          );
           await changeTrustline(true, addToken);
         } else {
+          console.log("> > > > > > > > >  handleTokenRowClick addToken !!!");
           await addToken();
         }
       };
@@ -400,7 +414,9 @@ export const ManageAssetRowButton = ({
           type="button"
           data-testid="ManageAssetRowButton"
         >
-          <div className="ManageAssetRowButton__label">{t("Add")}</div>
+          <div className="ManageAssetRowButton__label">
+            {t("Add aaassssetttt")}
+          </div>
           <img src={IconAdd} alt="icon add" />
         </Button>
       )}

@@ -957,6 +957,16 @@ export const handleSignedHwPayload = async ({
   }
 };
 
+export const addToken = async (): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      type: SERVICE_TYPES.ADD_TOKEN,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 export const signTransaction = async (): Promise<void> => {
   try {
     await sendMessageToBackground({

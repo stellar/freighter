@@ -24,6 +24,7 @@ import {
   grantAccess,
   handleSignedHwPayload,
   signTransaction,
+  // addToken,
   signFreighterTransaction,
   addRecentAddress,
   loadRecentAddresses,

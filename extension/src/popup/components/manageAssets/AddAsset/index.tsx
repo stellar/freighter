@@ -51,6 +51,8 @@ interface AssetDomainToml {
   NETWORK_PASSPHRASE?: string;
 }
 
+// TODO: this is the manual approach
+// Figure how the trustline is being added
 export const AddAsset = () => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
@@ -68,6 +70,7 @@ export const AddAsset = () => {
   const isAllowListVerificationEnabled =
     isMainnet(networkDetails) || isTestnet(networkDetails);
 
+  // TODO: Could be useful on the new UI to lookup Contract ID
   const handleTokenLookup = async (contractId: string) => {
     // clear the UI while we work through the flow
     setIsSearching(true);

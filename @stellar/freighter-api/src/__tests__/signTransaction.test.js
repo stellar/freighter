@@ -2,6 +2,7 @@ import * as extensionMessaging from "@shared/api/helpers/extensionMessaging";
 
 import { signTransaction } from "../signTransaction";
 
+// TODO: add test for addToken
 describe("signTransaction", () => {
   it("returns a transaction", async () => {
     const TEST_TRANSACTION = "AAA";

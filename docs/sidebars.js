@@ -7,6 +7,7 @@ const playgroundPaths = [
   "getAddress",
   "getNetwork",
   "getNetworkDetails",
+  "addToken",
   "signTransaction",
   "signAuthEntry",
   "signMessage",

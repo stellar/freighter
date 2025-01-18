@@ -3,6 +3,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import {
   rejectAccess as internalRejectAccess,
   grantAccess as internalGrantAccess,
+  addToken as internalAddToken,
   signTransaction as internalSignTransaction,
   signBlob as internalSignBlob,
   signAuthEntry as internalSignAuthEntry,
@@ -22,6 +23,13 @@ export const signTransaction = createAsyncThunk(
 
 export const signBlob = createAsyncThunk("signBlob", internalSignBlob);
 export const signEntry = createAsyncThunk("signEntry", internalSignAuthEntry);
+
+export const addToken = createAsyncThunk("addToken", internalAddToken);
+
+export const rejectToken = createAsyncThunk(
+  "rejectToken",
+  internalRejectAccess,
+);
 
 // Basically an alias for metrics purposes
 export const rejectTransaction = createAsyncThunk(
