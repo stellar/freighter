@@ -53,6 +53,8 @@ import {
   IS_HASH_SIGNING_ENABLED_ID,
   IS_NON_SSL_ENABLED_ID,
   IS_HIDE_DUST_ENABLED_ID,
+  TEMPORARY_STORE_ID,
+  TEMPORARY_STORE_EXTRA_ID,
 } from "constants/localStorageTypes";
 import {
   FUTURENET_NETWORK_DETAILS,
@@ -88,7 +90,14 @@ import {
   getFeatureFlags,
   verifySorobanRpcUrls,
 } from "background/helpers/account";
-import { SessionTimer } from "background/helpers/session";
+import {
+  SessionTimer,
+  deriveKeyFromString,
+  getEncryptedTemporaryData,
+  storeEncryptedTemporaryData,
+  getActiveHashKeyCryptoKey,
+  storeActiveHashKey,
+} from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
 import {
   dataStorageAccess,
@@ -100,14 +109,12 @@ import { xlmToStroop } from "helpers/stellar";
 import {
   allAccountsSelector,
   hasPrivateKeySelector,
-  privateKeySelector,
   logIn,
   logOut,
   migratedMnemonicPhraseSelector,
   mnemonicPhraseSelector,
   publicKeySelector,
   setActivePublicKey,
-  setActivePrivateKey,
   timeoutAccountAccess,
   updateAllAccountsAccountName,
   reset,
@@ -200,7 +207,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     bipPath: string;
   }) => {
     const mnemonicPhrase = mnemonicPhraseSelector(sessionStore.getState());
-    const password = passwordSelector(sessionStore.getState()) || "";
     let allAccounts = allAccountsSelector(sessionStore.getState());
 
     const keyId = `${HW_PREFIX}${publicKey}`;
@@ -245,7 +251,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     );
 
     // an active hw account should not have an active private key
-    sessionStore.dispatch(setActivePrivateKey({ privateKey: "", password }));
+
+    await localStore.setItem(TEMPORARY_STORE_ID, "");
   };
 
   const _storeAccount = async ({
@@ -291,13 +298,39 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       encrypterName: ScryptEncrypter.name,
     };
 
-    let keyStore = { id: "" };
+    console.log(sessionStore.getState());
 
+    let keyStore = { id: "" };
+    let activeHashKey = await getActiveHashKeyCryptoKey({ sessionStore });
+    if (activeHashKey === null) {
+      activeHashKey = await deriveKeyFromString(password);
+    }
+
+    // store encrypted extra data
     try {
       keyStore = await keyManager.storeKey(keyMetadata);
+      await storeEncryptedTemporaryData({
+        localStore,
+        keyName: TEMPORARY_STORE_EXTRA_ID,
+        temporaryData: mnemonicPhrase,
+        hashKey: activeHashKey,
+      });
     } catch (e) {
       console.error(e);
     }
+
+    // store encrypted keypair data
+    await storeEncryptedTemporaryData({
+      localStore,
+      keyName: keyStore.id,
+      temporaryData: keyPair.privateKey,
+      hashKey: activeHashKey,
+    });
+
+    await storeActiveHashKey({
+      sessionStore,
+      hashKey: activeHashKey,
+    });
 
     const keyIdListArr = await getKeyIdList();
     keyIdListArr.push(keyStore.id);
@@ -417,16 +450,16 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const wallet = fromMnemonic(mnemonicPhrase);
 
     const KEY_DERIVATION_NUMBER = 0;
+    const keyId = KEY_DERIVATION_NUMBER.toString();
 
-    await localStore.setItem(
-      KEY_DERIVATION_NUMBER_ID,
-      KEY_DERIVATION_NUMBER.toString(),
-    );
+    await localStore.setItem(KEY_DERIVATION_NUMBER_ID, keyId);
 
     const keyPair = {
       publicKey: wallet.getPublicKey(KEY_DERIVATION_NUMBER),
       privateKey: wallet.getSecret(KEY_DERIVATION_NUMBER),
     };
+
+    sessionStore.dispatch(timeoutAccountAccess());
 
     await _storeAccount({
       password,
@@ -436,13 +469,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     await localStore.setItem(
       APPLICATION_ID,
       APPLICATION_STATE.PASSWORD_CREATED,
-    );
-
-    sessionStore.dispatch(timeoutAccountAccess());
-
-    sessionTimer.startSession();
-    sessionStore.dispatch(
-      setActivePrivateKey({ privateKey: keyPair.privateKey, password }),
     );
 
     const currentState = sessionStore.getState();
@@ -462,7 +488,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       password = passwordSelector(sessionStore.getState()) || "";
     }
 
-    const mnemonicPhrase = mnemonicPhraseSelector(sessionStore.getState());
+    const mnemonicPhrase = await getEncryptedTemporaryData({
+      sessionStore,
+      localStore,
+      keyName: TEMPORARY_STORE_EXTRA_ID,
+    });
 
     if (!mnemonicPhrase) {
       return { error: "Mnemonic phrase not found" };
@@ -472,10 +502,20 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       ? await _getNonHwKeyID()
       : (await localStore.getItem(KEY_ID)) || "";
 
+    let activePrivateKey = "";
     try {
-      await _unlockKeystore({ keyID, password });
+      // await _unlockKeystore({ keyID, password });
+      activePrivateKey = await getEncryptedTemporaryData({
+        sessionStore,
+        localStore,
+        keyName: keyID,
+      });
     } catch (e) {
       console.error(e);
+      return { error: "Incorrect password" };
+    }
+
+    if (!activePrivateKey) {
       return { error: "Incorrect password" };
     }
 
@@ -494,14 +534,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       mnemonicPhrase,
     });
 
-    await localStore.setItem(KEY_DERIVATION_NUMBER_ID, keyNumber.toString());
-
-    sessionStore.dispatch(timeoutAccountAccess());
-
-    sessionTimer.startSession();
-    sessionStore.dispatch(
-      setActivePrivateKey({ privateKey: keyPair.privateKey, password }),
-    );
+    const keyId = keyNumber.toString();
+    await localStore.setItem(KEY_DERIVATION_NUMBER_ID, keyId);
 
     const currentState = sessionStore.getState();
 
@@ -545,9 +579,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       imported: true,
     });
 
-    sessionTimer.startSession();
-    sessionStore.dispatch(setActivePrivateKey({ privateKey, password }));
-
     const currentState = sessionStore.getState();
 
     return {
@@ -578,19 +609,24 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const { publicKey } = request;
     await _activatePublicKey({ publicKey });
 
-    const password = passwordSelector(sessionStore.getState()) || "";
-    const keyID = (await localStore.getItem(KEY_ID)) || "";
+    // const keyID = (await localStore.getItem(KEY_ID)) || "";
 
-    try {
-      const wallet = await _unlockKeystore({ keyID, password });
-      const privateKey = wallet.privateKey;
+    // try {
+    //   const wallet = await _unlockKeystore({ keyID, password });
+    //   const privateKey = wallet.privateKey;
 
-      if (!(await getIsHardwareWalletActive())) {
-        sessionStore.dispatch(setActivePrivateKey({ privateKey, password }));
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    //   if (!(await getIsHardwareWalletActive())) {
+    //     await storeActivePrivateKey({
+    //       sessionStore,
+    //       localStore,
+    //       keyId: keyID,
+    //       privateKey,
+    //       hashKey: await deriveKeyFromString(password),
+    //     });
+    //   }
+    // } catch (e) {
+    //   console.error(e);
+    // }
 
     const currentState = sessionStore.getState();
 
@@ -815,6 +851,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       await localStore.setItem(KEY_DERIVATION_NUMBER_ID, "0");
 
+      sessionStore.dispatch(timeoutAccountAccess());
+
       await _storeAccount({
         mnemonicPhrase: recoverMnemonic,
         password,
@@ -867,9 +905,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       // start the timer now that we have active private key
       sessionTimer.startSession();
-      sessionStore.dispatch(
-        setActivePrivateKey({ privateKey: wallet.getSecret(0), password }),
-      );
     }
 
     const currentState = sessionStore.getState();
@@ -990,11 +1025,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     const {
       publicKey: activePublicKey,
-      privateKey: activePrivateKey,
       extra: activeExtra = { mnemonicPhrase: "" },
     } = activeAccountKeystore;
 
     const activeMnemonicPhrase = activeExtra.mnemonicPhrase;
+    const hashKey = await deriveKeyFromString(password);
 
     if (
       !publicKeySelector(sessionStore.getState()) ||
@@ -1013,13 +1048,38 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       );
     }
 
+    await localStore.remove(TEMPORARY_STORE_ID);
+    await storeEncryptedTemporaryData({
+      localStore,
+      keyName: TEMPORARY_STORE_EXTRA_ID,
+      temporaryData: activeMnemonicPhrase,
+      hashKey,
+    });
+
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of
+    for (let i = 0; i < keyIdList.length; i += 1) {
+      const keyStoreToUnlock = await _unlockKeystore({
+        keyID: keyIdList[i],
+        password,
+      });
+
+      if (!(await getIsHardwareWalletActive())) {
+        await storeEncryptedTemporaryData({
+          localStore,
+          keyName: keyIdList[i],
+          temporaryData: keyStoreToUnlock.privateKey,
+          hashKey,
+        });
+      }
+    }
+
+    await storeActiveHashKey({
+      sessionStore,
+      hashKey,
+    });
+
     // start the timer now that we have active private key
     sessionTimer.startSession();
-    if (!(await getIsHardwareWalletActive())) {
-      sessionStore.dispatch(
-        setActivePrivateKey({ privateKey: activePrivateKey, password }),
-      );
-    }
 
     return {
       publicKey: publicKeySelector(sessionStore.getState()),
@@ -1072,7 +1132,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const signTransaction = async () => {
-    const privateKey = privateKeySelector(sessionStore.getState());
+    const keyId = (await localStore.getItem(KEY_ID)) || "";
+    const privateKey = await getEncryptedTemporaryData({
+      localStore,
+      sessionStore,
+      keyName: keyId,
+    });
     const networkDetails = await getNetworkDetails();
 
     const Sdk = getSdk(networkDetails.networkPassphrase);
@@ -1106,7 +1171,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const signBlob = async () => {
-    const privateKey = privateKeySelector(sessionStore.getState());
+    const keyId = (await localStore.getItem(KEY_ID)) || "";
+    const privateKey = await getEncryptedTemporaryData({
+      localStore,
+      sessionStore,
+      keyName: keyId,
+    });
     const networkDetails = await getNetworkDetails();
 
     const Sdk = getSdk(networkDetails.networkPassphrase);
@@ -1131,7 +1201,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const signAuthEntry = async () => {
-    const privateKey = privateKeySelector(sessionStore.getState());
+    const keyId = (await localStore.getItem(KEY_ID)) || "";
+    const privateKey = await getEncryptedTemporaryData({
+      localStore,
+      sessionStore,
+      keyName: keyId,
+    });
     const networkDetails = await getNetworkDetails();
 
     const Sdk = getSdk(networkDetails.networkPassphrase);
@@ -1163,14 +1238,18 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     }
   };
 
-  const signFreighterTransaction = () => {
+  const signFreighterTransaction = async () => {
     const { transactionXDR, network } = request;
 
     const Sdk = getSdk(network);
 
     const transaction = Sdk.TransactionBuilder.fromXDR(transactionXDR, network);
-
-    const privateKey = privateKeySelector(sessionStore.getState());
+    const keyId = (await localStore.getItem(KEY_ID)) || "";
+    const privateKey = await getEncryptedTemporaryData({
+      localStore,
+      sessionStore,
+      keyName: keyId,
+    });
     if (privateKey.length) {
       const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
       transaction.sign(sourceKeys);
@@ -1180,14 +1259,18 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { error: "Session timed out" };
   };
 
-  const signFreighterSorobanTransaction = () => {
+  const signFreighterSorobanTransaction = async () => {
     const { transactionXDR, network } = request;
 
     const Sdk = getSdk(network);
 
     const transaction = Sdk.TransactionBuilder.fromXDR(transactionXDR, network);
-
-    const privateKey = privateKeySelector(sessionStore.getState());
+    const keyId = (await localStore.getItem(KEY_ID)) || "";
+    const privateKey = await getEncryptedTemporaryData({
+      localStore,
+      sessionStore,
+      keyName: keyId,
+    });
     if (privateKey.length) {
       const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
       transaction.sign(sourceKeys);
@@ -1700,9 +1783,17 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       sessionStore.dispatch(timeoutAccountAccess());
 
       sessionTimer.startSession();
-      sessionStore.dispatch(
-        setActivePrivateKey({ privateKey: newWallet.getSecret(0), password }),
-      );
+      const hashKey = await deriveKeyFromString(password);
+      await storeEncryptedTemporaryData({
+        localStore,
+        keyName: await localStore.getItem(KEY_ID),
+        temporaryData: newWallet.getSecret(0),
+        hashKey,
+      });
+      await storeActiveHashKey({
+        sessionStore,
+        hashKey,
+      });
     }
 
     const currentState = sessionStore.getState();

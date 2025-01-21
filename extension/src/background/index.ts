@@ -83,6 +83,7 @@ export const initAlarmListener = () => {
   browser?.alarms?.onAlarm.addListener(async ({ name }: { name: string }) => {
     const sessionStore = await buildStore();
     if (name === SESSION_ALARM_NAME) {
+      console.log("Session timed out!!!");
       sessionStore.dispatch(timeoutAccountAccess());
     }
   });

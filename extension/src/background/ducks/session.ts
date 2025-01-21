@@ -45,9 +45,19 @@ export const setActivePublicKey = createAsyncThunk<
   }
 });
 
-const initialState = {
+export type InitialState = UiData & AppData;
+
+export interface SessionState {
+  session: InitialState;
+}
+
+const initialState: InitialState = {
   publicKey: "",
   privateKey: "",
+  hashKey: {
+    iv: "",
+    key: "",
+  },
   mnemonicPhrase: "",
   allAccounts: [] as Account[],
   migratedMnemonicPhrase: "",
@@ -62,7 +72,8 @@ interface UiData {
 
 interface AppData {
   privateKey?: string;
-  password: string;
+  hashKey?: { key: string; iv: string };
+  password?: string;
 }
 
 export const sessionSlice = createSlice({
@@ -80,6 +91,19 @@ export const sessionSlice = createSlice({
         password,
       };
     },
+    setActiveHashKey: (state, action: { payload: AppData }) => {
+      const {
+        hashKey = {
+          iv: "",
+          key: "",
+        },
+      } = action.payload;
+
+      return {
+        ...state,
+        hashKey,
+      };
+    },
     setMigratedMnemonicPhrase: (
       state,
       action: { payload: { migratedMnemonicPhrase: string } },
@@ -93,7 +117,10 @@ export const sessionSlice = createSlice({
     },
     timeoutAccountAccess: (state) => ({
       ...state,
-      privateKey: "",
+      hashKey: {
+        iv: "",
+        key: "",
+      },
       password: "",
     }),
     updateAllAccountsAccountName: (
@@ -101,6 +128,10 @@ export const sessionSlice = createSlice({
       action: { payload: { updatedAccountName: string } },
     ) => {
       const { updatedAccountName = "" } = action.payload;
+
+      if (!state.allAccounts) {
+        return state;
+      }
 
       const newAllAccounts = state.allAccounts.map((account) => {
         if (state.publicKey === account.publicKey) {
@@ -141,6 +172,7 @@ export const {
     reset,
     logOut,
     setActivePrivateKey,
+    setActiveHashKey,
     timeoutAccountAccess,
     updateAllAccountsAccountName,
     setMigratedMnemonicPhrase,
@@ -167,7 +199,7 @@ export const hasPrivateKeySelector = createSelector(
   sessionSelector,
   async (session) => {
     const isHardwareWalletActive = await getIsHardwareWalletActive();
-    return isHardwareWalletActive || !!session?.privateKey?.length;
+    return isHardwareWalletActive || !!session?.hashKey?.key;
   },
 );
 export const privateKeySelector = createSelector(
@@ -177,4 +209,8 @@ export const privateKeySelector = createSelector(
 export const passwordSelector = createSelector(
   sessionSelector,
   (session) => session.password,
+);
+export const hashKeySelector = createSelector(
+  sessionSelector,
+  (session) => session.hashKey,
 );
