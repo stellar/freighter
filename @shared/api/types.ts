@@ -244,7 +244,9 @@ export interface Balance {
 export type BlockAidScanAssetResult = Blockaid.TokenScanResponse;
 
 export type BlockAidScanSiteResult = Blockaid.SiteScanResponse;
-export type BlockAidScanTxResult = Blockaid.StellarTransactionScanResponse;
+export type BlockAidScanTxResult = Blockaid.StellarTransactionScanResponse & {
+  request_id: string;
+};
 export type BlockAidBulkScanAssetResult = Blockaid.TokenBulkScanResponse;
 
 export interface AssetBalance extends Balance {

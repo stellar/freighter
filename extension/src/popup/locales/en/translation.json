@@ -167,6 +167,7 @@
   "Failed to fetch your account balances": "Failed to fetch your account balances.",
   "FEDERATION ADDRESS": "FEDERATION ADDRESS",
   "Fee": "Fee",
+  "Feedback?": "Feedback?",
   "Fees can vary depending on the network congestion": {
     " Please try using the suggested fee and try again": "Fees can vary depending on the network congestion. Please try using the suggested fee and try again."
   },
@@ -252,6 +253,7 @@
   "Learn more about transaction fees": "Learn more about transaction fees",
   "Learn more about trustlines": "Learn more about trustlines",
   "Leave Feedback": "Leave Feedback",
+  "Leave feedback about Blockaid warnings and messages": "Leave feedback about Blockaid warnings and messages",
   "Less common": "Less common",
   "Limit": "Limit",
   "LINKS": "LINKS",
@@ -397,6 +399,7 @@
   "SET MAX": "SET MAX",
   "Set recommended": "Set recommended",
   "Settings": "Settings",
+  "Should be benign": "Should be benign",
   "Show recovery phrase": "Show recovery phrase",
   "Sign": "Sign",
   "Sign anyway": "Sign anyway",
@@ -465,7 +468,6 @@
   "This transaction could not be completed": "This transaction could not be completed.",
   "This transaction is expected to fail": "This transaction is expected to fail",
   "This transaction was flagged as malicious": "This transaction was flagged as malicious",
-  "This transaction was flagged by Blockaid for the following reasons": "This transaction was flagged by Blockaid for the following reasons",
   "This will be used to unlock your wallet": "This will be used to unlock your wallet",
   "To": "To",
   "To access your wallet, click Freighter from your browser Extensions browser menu": "To access your wallet, click Freighter from your browser Extensions browser menu.",
@@ -508,6 +510,7 @@
   "which is not available on Freighter": {
     " If you own this account, you can import it into Freighter to complete this request": "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request."
   },
+  "Wrong simulation result": "Wrong simulation result",
   "XDR": "XDR",
   "XLM": "XLM",
   "You are attempting to sign an arbitrary message": {
