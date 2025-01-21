@@ -14,6 +14,7 @@ import {
   ActionStatus,
   AssetType,
 } from "@shared/api/types";
+import { Account as Account2 } from "@shared/view/Account";
 
 import {
   settingsNetworkDetailsSelector,
@@ -178,6 +179,7 @@ export const Account = () => {
             setLoading={setLoading}
           />
           <View.Content hasNoTopPadding>
+            <Account2 />
             <div className="AccountView" data-testid="account-view">
               <div className="AccountView__account-actions">
                 <div className="AccountView__name-key-display">

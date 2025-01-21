@@ -16,6 +16,8 @@ import { Router } from "./Router";
 
 import "./styles/global.scss";
 
+import "@shared/view/global.css";
+
 const rootReducer = combineReducers({
   auth,
   settings,

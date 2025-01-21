@@ -56,6 +56,9 @@ const commonConfig = (
       buffer: require.resolve("buffer"),
       "process/browser": require.resolve("process/browser"),
     },
+    alias: {
+      "react-native$": "react-native-web",
+    },
   },
   module: {
     rules: [
@@ -101,7 +104,7 @@ const commonConfig = (
         use: ["@svgr/webpack"],
       },
       {
-        test: /\.(css|sass|scss)$/,
+        test: /\.(sass|scss)$/,
         use: [
           MiniCssExtractPlugin.loader,
           {
@@ -115,6 +118,39 @@ const commonConfig = (
             options: {
               api: "modern-compiler",
             },
+          },
+        ],
+      },
+      {
+        test: /styles.min.css$/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          {
+            loader: "css-loader",
+            options: {
+              sourceMap: true,
+            },
+          },
+          {
+            loader: "sass-loader",
+            options: {
+              api: "modern-compiler",
+            },
+          },
+        ],
+      },
+      {
+        test: /global\.css$/,
+        use: [
+          { loader: "style-loader" },
+          {
+            loader: "css-loader",
+            options: {
+              sourceMap: true,
+            },
+          },
+          {
+            loader: "postcss-loader",
           },
         ],
       },

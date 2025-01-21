@@ -7,7 +7,8 @@
       "@types/jest",
       "node",
       "jest",
-      "@testing-library/jest-dom"
+      "@testing-library/jest-dom",
+      "nativewind/types"
     ]
   },
   "include": ["src", "public"],

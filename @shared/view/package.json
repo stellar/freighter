@@ -1,0 +1,11 @@
+{
+  "name": "@shared/view",
+  "prettier": "@stellar/prettier-config",
+  "version": "1.0.0",
+  "license": "MIT",
+  "dependencies": {
+    "nativewind": "^4.1.23",
+    "react-native": "0.76.6",
+    "tailwindcss": "^3.4.17"
+  }
+}
