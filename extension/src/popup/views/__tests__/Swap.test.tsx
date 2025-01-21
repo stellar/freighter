@@ -93,6 +93,10 @@ const swapMaliciousMockBalances = {
 };
 
 jest
+  .spyOn(ApiInternal, "getHiddenAssets")
+  .mockImplementation(() => Promise.resolve({ hiddenAssets: {}, error: "" }));
+
+jest
   .spyOn(ApiInternal, "getAccountIndexerBalances")
   .mockImplementation(() => Promise.resolve(swapMockBalances));
 
@@ -210,6 +214,7 @@ describe("Swap", () => {
           settings: {
             networkDetails: TESTNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
+            hiddenAssets: {},
           },
         }}
       >

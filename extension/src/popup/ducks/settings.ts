@@ -16,6 +16,8 @@ import {
   editCustomNetwork as editCustomNetworkService,
   addAssetsList as addAssetsListService,
   modifyAssetsList as modifyAssetsListService,
+  getHiddenAssets as getHiddenAssetsService,
+  changeAssetVisibility as changeAssetVisibilityService,
 } from "@shared/api/internal";
 import {
   NETWORKS,
@@ -34,6 +36,8 @@ import {
   IndexerSettings,
   SettingsState,
   ExperimentalFeatures,
+  AssetKey,
+  AssetVisibility,
 } from "@shared/api/types";
 
 import { isMainnet } from "helpers/stellar";
@@ -56,6 +60,7 @@ const settingsInitialState: Settings = {
   isMemoValidationEnabled: true,
   isHideDustEnabled: true,
   error: "",
+  hiddenAssets: {},
 };
 
 const experimentalFeaturesInitialState = {
@@ -272,6 +277,43 @@ export const modifyAssetsList = createAsyncThunk<
   },
 );
 
+export const getHiddenAssets = createAsyncThunk<
+  { hiddenAssets: Record<AssetKey, AssetVisibility>; error: string },
+  { rejectValue: ErrorMessage }
+>("settings/getHiddenAssets", async (_, thunkApi) => {
+  const res = await getHiddenAssetsService();
+
+  if (res.error) {
+    return thunkApi.rejectWithValue({
+      errorMessage: res.error || "Unable to get hidden assets",
+    });
+  }
+
+  return res;
+});
+
+export const changeAssetVisibility = createAsyncThunk<
+  { hiddenAssets: Record<AssetKey, AssetVisibility>; error: string },
+  { issuer: AssetKey; visibility: AssetVisibility },
+  { rejectValue: ErrorMessage }
+>(
+  "settings/changeAssetVisibility",
+  async ({ issuer, visibility }, thunkApi) => {
+    const res = await changeAssetVisibilityService({
+      assetIssuer: issuer,
+      assetVisibility: visibility,
+    });
+
+    if (res.error) {
+      return thunkApi.rejectWithValue({
+        errorMessage: res.error || "Unable to toggle asset visibility",
+      });
+    }
+
+    return res;
+  },
+);
+
 const settingsSlice = createSlice({
   name: "settings",
   initialState,
@@ -370,6 +412,7 @@ const settingsSlice = createSlice({
           isRpcHealthy,
           userNotification,
           assetsLists,
+          hiddenAssets,
           isNonSSLEnabled,
           isHideDustEnabled,
         } = action?.payload || {
@@ -389,6 +432,7 @@ const settingsSlice = createSlice({
           isRpcHealthy,
           userNotification,
           assetsLists,
+          hiddenAssets,
           isNonSSLEnabled,
           isHideDustEnabled,
           settingsState: SettingsState.SUCCESS,
@@ -532,6 +576,47 @@ const settingsSlice = createSlice({
         return {
           ...state,
           assetsLists,
+        };
+      },
+    );
+    builder.addCase(
+      getHiddenAssets.fulfilled,
+      (
+        state,
+        action: PayloadAction<{
+          hiddenAssets: Record<AssetKey, AssetVisibility>;
+        }>,
+      ) => {
+        const { hiddenAssets } = action?.payload;
+
+        return {
+          ...state,
+          hiddenAssets,
+          settingsState: SettingsState.SUCCESS,
+        };
+      },
+    );
+    builder.addCase(getHiddenAssets.pending, (state) => ({
+      ...state,
+      settingsState: SettingsState.LOADING,
+    }));
+    builder.addCase(getHiddenAssets.rejected, (state) => ({
+      ...state,
+      settingsState: SettingsState.ERROR,
+    }));
+    builder.addCase(
+      changeAssetVisibility.fulfilled,
+      (
+        state,
+        action: PayloadAction<{
+          hiddenAssets: Record<AssetKey, AssetVisibility>;
+        }>,
+      ) => {
+        const { hiddenAssets } = action.payload;
+
+        return {
+          ...state,
+          hiddenAssets,
         };
       },
     );

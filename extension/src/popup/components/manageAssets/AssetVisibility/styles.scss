@@ -1,4 +1,4 @@
-.ChooseAsset {
+.ToggleAsset {
   &__close-btn {
     color: var(--sds-clr-gray-10);
   }
@@ -28,19 +28,6 @@
     left: 0;
   }
 
-  &__empty {
-    display: flex;
-    justify-content: center;
-    height: 100%;
-    width: 100%;
-    color: var(--sds-clr-gray-11);
-    text-align: center;
-
-    p {
-      font-size: var(--sds-fs-secondary);
-    }
-  }
-
   &__wrapper {
     display: flex;
     flex-direction: column;
@@ -49,10 +36,6 @@
 
   &__assets {
     flex-grow: 1;
-
-    &--short {
-      flex-grow: 1;
-    }
   }
 
   &__button {
