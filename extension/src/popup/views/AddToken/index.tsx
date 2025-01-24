@@ -113,7 +113,6 @@ export const AddToken = () => {
 
         <Text as="p" size="sm">
           {assetCurrency &&
-            !isSearching &&
             t(
               `You are trying to add this Token: ${JSON.stringify(
                 assetCurrency,
