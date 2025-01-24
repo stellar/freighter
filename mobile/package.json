@@ -5,8 +5,8 @@
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest --watchAll",
     "lint": "expo lint"
@@ -15,7 +15,9 @@
     "preset": "jest-expo"
   },
   "dependencies": {
+    "@expo/cli": "^0.22.10",
     "@expo/vector-icons": "^14.0.2",
+    "@expo/webpack-config": "^19.0.1",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
     "@shared/view": "1.0.0",
@@ -26,6 +28,7 @@
     "expo-haptics": "~14.0.1",
     "expo-linking": "~7.0.4",
     "expo-router": "~4.0.17",
+    "expo-secure-store": "~14.0.1",
     "expo-splash-screen": "~0.29.21",
     "expo-status-bar": "~2.0.1",
     "expo-symbols": "~0.2.1",
@@ -40,7 +43,8 @@
     "react-native-screens": "~4.4.0",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
-    "react-redux": "^7.2.6"
+    "react-redux": "^7.2.6",
+    "wrap-ansi": "5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
@@ -51,5 +55,8 @@
     "jest-expo": "~52.0.3",
     "react-test-renderer": "18.3.1",
     "typescript": "^5.3.3"
+  },
+  "resolutions": {
+    "webpack": "5.97.1"
   }
 }
