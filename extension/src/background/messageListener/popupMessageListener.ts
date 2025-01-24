@@ -1461,8 +1461,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     }
 
     try {
-      await subscribeTokenBalance(publicKey, tokenId);
-      await subscribeTokenHistory(publicKey, tokenId);
+      await subscribeTokenBalance({ publicKey, contractId: tokenId, network });
+      await subscribeTokenHistory({ publicKey, contractId: tokenId, network });
 
       accountTokenIdList.push(tokenId);
       await localStore.setItem(TOKEN_ID_LIST, {
