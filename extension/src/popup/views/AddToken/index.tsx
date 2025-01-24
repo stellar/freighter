@@ -1,5 +1,5 @@
 import { Button, Text } from "@stellar/design-system";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -20,8 +20,6 @@ import {
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { View } from "popup/basics/layout/View";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
-import { SearchResults } from "popup/components/manageAssets/AssetResults";
-import { AssetNotifcation } from "popup/components/AssetNotification";
 import { useTokenLookup } from "popup/helpers/useTokenLookup";
 import { isContractId } from "popup/helpers/soroban";
 
@@ -37,12 +35,6 @@ export const AddToken = () => {
 
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const [isSearching, setIsSearching] = useState(false);
-  const [hasNoResults, setHasNoResults] = useState(false);
-  const [isVerifiedToken, setIsVerifiedToken] = useState(false);
-  const [isVerificationInfoShowing, setIsVerificationInfoShowing] =
-    useState(false);
-
-  const ResultsRef = useRef<HTMLDivElement>(null);
 
   const assetCurrency: ManageAssetCurrency | undefined = assetRows[0];
   const assetCode = assetCurrency?.code || "";
@@ -65,13 +57,7 @@ export const AddToken = () => {
   const { handleTokenLookup } = useTokenLookup({
     setAssetRows,
     setIsSearching,
-    setIsVerifiedToken,
-    setIsVerificationInfoShowing,
   });
-
-  useEffect(() => {
-    setHasNoResults(!assetRows.length);
-  }, [assetRows]);
 
   useEffect(() => {
     if (!isContractId(contractId)) {
@@ -115,37 +101,27 @@ export const AddToken = () => {
   return (
     <React.Fragment>
       <View.Content>
-        <Text as="h1" size="lg">
+        <Text as="p" size="lg">
           {t("Test Add Token")}
         </Text>
 
-        <Text as="h4" size="md">
+        <Text as="p" size="md">
           {t(
             `You are trying to add this Contract Id: ${contractId}, with this NetworkPassphrase: ${networkPassphrase}`,
           )}
         </Text>
 
-        <Text as="h6" size="sm">
-          {assetCurrency
-            ? t(
-                `You are trying to add this Token: ${JSON.stringify(
-                  assetCurrency,
-                )}`,
-              )
-            : t("Loading...")}
+        <Text as="p" size="sm">
+          {assetCurrency &&
+            !isSearching &&
+            t(
+              `You are trying to add this Token: ${JSON.stringify(
+                assetCurrency,
+              )}`,
+            )}
+          {!assetCurrency && isSearching && t("Loading...")}
+          {!assetCurrency && !isSearching && t("Asset not found")}
         </Text>
-
-        <SearchResults isSearching={isSearching} resultsRef={ResultsRef}>
-          {assetRows.length && isVerificationInfoShowing ? (
-            <AssetNotifcation isVerified={isVerifiedToken} />
-          ) : null}
-
-          {hasNoResults && !isSearching ? (
-            <Text as="p" size="md">
-              {t("Asset not found")}
-            </Text>
-          ) : null}
-        </SearchResults>
       </View.Content>
 
       <View.Footer isInline>
