@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-
+import { BigNumber } from "bignumber.js";
 import { Store } from "redux";
 import * as StellarSdk from "stellar-sdk";
+// @ts-ignore
+import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
 import {
   KeyManager,
   BrowserStorageKeyStore,
@@ -9,10 +11,6 @@ import {
   KeyType,
 } from "@stellar/typescript-wallet-sdk-km";
 import { BrowserStorageConfigParams } from "@stellar/typescript-wallet-sdk-km/lib/Plugins/BrowserStorageFacade";
-import browser from "webextension-polyfill";
-// @ts-ignore
-import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
-import { BigNumber } from "bignumber.js";
 
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
@@ -62,7 +60,13 @@ import {
 } from "@shared/constants/stellar";
 
 import { EXPERIMENTAL } from "constants/featureFlag";
-import { getPunycodedDomain, getUrlHostname } from "helpers/urls";
+import {
+  EntryToSign,
+  getPunycodedDomain,
+  getUrlHostname,
+  MessageToSign,
+  TokenToAdd,
+} from "helpers/urls";
 import {
   addAccountName,
   getAccountNameList,
@@ -129,24 +133,14 @@ const sessionTimer = new SessionTimer();
 export const responseQueue: Array<
   (message?: any, messageAddress?: any) => void
 > = [];
-export const transactionQueue: StellarSdk.Transaction[] = [];
-export const blobQueue: {
-  isDomainListedAllowed: boolean;
-  domain: string;
-  tab: browser.Tabs.Tab | undefined;
-  message: string;
-  url: string;
-  accountToSign?: string;
-  address?: string;
-}[] = [];
 
-export const authEntryQueue: {
-  accountToSign?: string;
-  address?: string;
-  tab: browser.Tabs.Tab | undefined;
-  entry: string; // xdr.SorobanAuthorizationEntry
-  url: string;
-}[] = [];
+export const transactionQueue: StellarSdk.Transaction[] = [];
+
+export const tokenQueue: TokenToAdd[] = [];
+
+export const blobQueue: MessageToSign[] = [];
+
+export const authEntryQueue: EntryToSign[] = [];
 
 interface KeyPair {
   publicKey: string;
@@ -1071,6 +1065,34 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { error: "Session timed out" };
   };
 
+  const addToken = async () => {
+    const privateKey = privateKeySelector(sessionStore.getState());
+    const networkDetails = await getNetworkDetails();
+
+    const Sdk = getSdk(networkDetails.networkPassphrase);
+
+    if (privateKey.length) {
+      const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
+      const tokenInfo = tokenQueue.pop();
+
+      const response = await addTokenWithContractId({
+        contractId: tokenInfo?.contractId || "",
+        network: networkDetails.network,
+        publicKey: sourceKeys.publicKey(),
+      });
+
+      const tokenResponse = responseQueue.pop();
+
+      if (typeof tokenResponse === "function") {
+        // We're only interested here if it was a success or not
+        tokenResponse(!response.error);
+        return {};
+      }
+    }
+
+    return { error: "Session timed out" };
+  };
+
   const signTransaction = async () => {
     const privateKey = privateKeySelector(sessionStore.getState());
     const networkDetails = await getNetworkDetails();
@@ -1113,8 +1135,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     if (privateKey.length) {
       const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
-
       const blob = blobQueue.pop();
+
       const response = blob
         ? sourceKeys.sign(Buffer.from(blob.message, "base64"))
         : null;
@@ -1411,6 +1433,23 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const addTokenId = async () => {
     const { tokenId, network, publicKey } = request;
+
+    const response = await addTokenWithContractId({
+      contractId: tokenId,
+      network,
+      publicKey,
+    });
+
+    return response;
+  };
+
+  const addTokenWithContractId = async (args: {
+    contractId: string;
+    network: string;
+    publicKey: string;
+  }) => {
+    const { contractId: tokenId, network, publicKey } = args;
+
     const tokenIdsByNetwork = (await localStore.getItem(TOKEN_ID_LIST)) || {};
     const tokenIdList = tokenIdsByNetwork[network] || {};
     const keyId = (await localStore.getItem(KEY_ID)) || "";
@@ -1787,6 +1826,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.CONFIRM_PASSWORD]: confirmPassword,
     [SERVICE_TYPES.GRANT_ACCESS]: grantAccess,
     [SERVICE_TYPES.REJECT_ACCESS]: rejectAccess,
+    [SERVICE_TYPES.ADD_TOKEN]: addToken,
     [SERVICE_TYPES.SIGN_TRANSACTION]: signTransaction,
     [SERVICE_TYPES.SIGN_BLOB]: signBlob,
     [SERVICE_TYPES.SIGN_AUTH_ENTRY]: signAuthEntry,

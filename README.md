@@ -96,6 +96,8 @@ That should launch your project in xcode. You should run the project, with a tar
 
 [The `signTransaction` playground](http://localhost:3000/docs/playground/signTransaction)
 
+[The `addToken` playground](http://localhost:3000/docs/playground/addToken)
+
 It's important to note that these last functions won't interact with the _dev server_ popup
 UI on `localhost:9000` — you'll need to re-install the unpacked extension each
 time you make a change.

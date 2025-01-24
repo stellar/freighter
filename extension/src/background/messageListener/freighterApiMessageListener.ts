@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-
-import * as StellarSdk from "stellar-sdk";
-import browser from "webextension-polyfill";
 import { Store } from "redux";
 import semver from "semver";
+import * as StellarSdk from "stellar-sdk";
+import browser from "webextension-polyfill";
 
 import {
   ExternalRequestAuthEntry,
   ExternalRequestBlob,
+  ExternalRequestToken,
   ExternalRequestTx,
   ExternalRequest as Request,
 } from "@shared/api/types";
@@ -16,15 +16,28 @@ import {
   FreighterApiInternalError,
   FreighterApiDeclinedError,
 } from "@shared/api/helpers/extensionMessaging";
-import { MessageResponder } from "background/types";
-import { FlaggedKeys, TransactionInfo } from "types/transactions";
-
 import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
 import {
   MAINNET_NETWORK_DETAILS,
   NetworkDetails,
 } from "@shared/constants/stellar";
+import { getSdk } from "@shared/helpers/stellar";
+
+import { MessageResponder } from "background/types";
 import { STELLAR_EXPERT_MEMO_REQUIRED_ACCOUNTS_URL } from "background/constants/apiUrls";
+import {
+  getIsMainnet,
+  getIsMemoValidationEnabled,
+  getNetworkDetails,
+} from "background/helpers/account";
+import { isSenderAllowed } from "background/helpers/allowListAuthorization";
+import { cachedFetch } from "background/helpers/cachedFetch";
+import {
+  dataStorageAccess,
+  browserLocalStorage,
+} from "background/helpers/dataStorageAccess";
+import { publicKeySelector } from "background/ducks/session";
+
 import { POPUP_HEIGHT, POPUP_WIDTH } from "constants/dimensions";
 import {
   ALLOWLIST_ID,
@@ -33,24 +46,21 @@ import {
 import { TRANSACTION_WARNING } from "constants/transaction";
 
 import {
-  getIsMainnet,
-  getIsMemoValidationEnabled,
-  getNetworkDetails,
-} from "background/helpers/account";
-import { isSenderAllowed } from "background/helpers/allowListAuthorization";
-import { cachedFetch } from "background/helpers/cachedFetch";
-import { encodeObject, getUrlHostname, getPunycodedDomain } from "helpers/urls";
-import {
-  dataStorageAccess,
-  browserLocalStorage,
-} from "background/helpers/dataStorageAccess";
-import { publicKeySelector } from "background/ducks/session";
-import { getSdk } from "@shared/helpers/stellar";
+  encodeObject,
+  getUrlHostname,
+  getPunycodedDomain,
+  TokenToAdd,
+  MessageToSign,
+  EntryToSign,
+} from "helpers/urls";
+
+import { FlaggedKeys, TransactionInfo } from "types/transactions";
 
 import {
   authEntryQueue,
   blobQueue,
   responseQueue,
+  tokenQueue,
   transactionQueue,
 } from "./popupMessageListener";
 
@@ -121,6 +131,80 @@ export const freighterApiMessageListener = (
       }
 
       return { publicKey: "" };
+    } catch (e) {
+      return {
+        // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
+        apiError: FreighterApiInternalError,
+        error: FreighterApiInternalError.message,
+      };
+    }
+  };
+
+  const submitToken = async () => {
+    try {
+      const { contractId, networkPassphrase } = request as ExternalRequestToken;
+
+      const { tab, url: tabUrl = "" } = sender;
+      const domain = getUrlHostname(tabUrl);
+      const punycodedDomain = getPunycodedDomain(domain);
+
+      const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
+      const allowList = allowListStr.split(",");
+      const isDomainListedAllowed = await isSenderAllowed({ sender });
+
+      const tokenInfo: TokenToAdd = {
+        isDomainListedAllowed,
+        domain,
+        tab,
+        url: tabUrl,
+        contractId,
+        networkPassphrase,
+      };
+
+      tokenQueue.push(tokenInfo);
+      const encodedTokenInfo = encodeObject(tokenInfo);
+
+      const popup = browser.windows.create({
+        url: chrome.runtime.getURL(
+          `/index.html#/add-token?${encodedTokenInfo}`,
+        ),
+        ...WINDOW_SETTINGS,
+      });
+
+      return new Promise((resolve) => {
+        if (!popup) {
+          resolve({
+            // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
+            apiError: FreighterApiInternalError,
+            error: FreighterApiInternalError.message,
+          });
+        } else {
+          browser.windows.onRemoved.addListener(() =>
+            resolve({
+              // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
+              apiError: FreighterApiDeclinedError,
+              error: FreighterApiDeclinedError.message,
+            }),
+          );
+        }
+        const response = (success: boolean) => {
+          if (success) {
+            if (!isDomainListedAllowed) {
+              allowList.push(punycodedDomain);
+              localStore.setItem(ALLOWLIST_ID, allowList.join());
+            }
+            resolve({});
+          }
+
+          resolve({
+            // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
+            apiError: FreighterApiDeclinedError,
+            error: FreighterApiDeclinedError.message,
+          });
+        };
+
+        responseQueue.push(response);
+      });
     } catch (e) {
       return {
         // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
@@ -210,7 +294,7 @@ export const freighterApiMessageListener = (
         });
       }
 
-      const server = stellarSdkServer(networkUrl, networkPassphrase);
+      const server = stellarSdkServer(networkUrl, networkPassphrase || "");
 
       try {
         await server.checkMemoRequired(transaction as StellarSdk.Transaction);
@@ -280,7 +364,6 @@ export const freighterApiMessageListener = (
     } catch (e) {
       return {
         // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
-
         apiError: FreighterApiInternalError,
         error: FreighterApiInternalError.message,
       };
@@ -300,7 +383,7 @@ export const freighterApiMessageListener = (
       const allowList = allowListStr.split(",");
       const isDomainListedAllowed = await isSenderAllowed({ sender });
 
-      const blobData = {
+      const blobData: MessageToSign = {
         isDomainListedAllowed,
         domain,
         tab,
@@ -382,7 +465,8 @@ export const freighterApiMessageListener = (
       const allowList = allowListStr.split(",");
       const isDomainListedAllowed = await isSenderAllowed({ sender });
 
-      const authEntry = {
+      const authEntry: EntryToSign = {
+        isDomainListedAllowed,
         entry: entryXdr,
         accountToSign: accountToSign || address,
         tab,
@@ -551,6 +635,7 @@ export const freighterApiMessageListener = (
   const messageResponder: MessageResponder = {
     [EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS]: requestAccess,
     [EXTERNAL_SERVICE_TYPES.REQUEST_PUBLIC_KEY]: requestPublicKey,
+    [EXTERNAL_SERVICE_TYPES.SUBMIT_TOKEN]: submitToken,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_TRANSACTION]: submitTransaction,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_BLOB]: submitBlob,
     [EXTERNAL_SERVICE_TYPES.SUBMIT_AUTH_ENTRY]: submitAuthEntry,

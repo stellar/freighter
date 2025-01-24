@@ -40,6 +40,28 @@ export const requestPublicKey = async (): Promise<{
   return { publicKey: response?.publicKey || "", error: response?.apiError };
 };
 
+export const submitToken = async (args: {
+  contractId: string;
+  networkPassphrase?: string;
+}): Promise<{
+  error?: FreighterApiError;
+}> => {
+  let response;
+  try {
+    response = await sendMessageToContentScript({
+      contractId: args.contractId,
+      networkPassphrase: args.networkPassphrase,
+      type: EXTERNAL_SERVICE_TYPES.SUBMIT_TOKEN,
+    });
+  } catch (e) {
+    return {
+      error: FreighterApiInternalError,
+    };
+  }
+
+  return { error: response?.apiError };
+};
+
 export const submitTransaction = async (
   transactionXdr: string,
   opts?:

@@ -17,6 +17,7 @@ export const METRIC_NAMES = {
   viewMnemonicPhraseConfirmed: "loaded screen: account creator finished",
   viewRecoverAccount: "loaded screen: recover account",
   viewRecoverAccountSuccess: "loaded screen: recover account: success",
+  viewAddToken: "loaded screen: add token",
   viewSignTransaction: "loaded screen: sign transaction",
   viewReviewAuthorization: "loaded screen: review authorization",
   viewSignMessage: "loaded screen: sign message",
@@ -125,6 +126,9 @@ export const METRIC_NAMES = {
   grantAccessSuccess: "grant access: granted",
   grantAccessFail: "grant access: rejected",
 
+  addToken: "add token: confirmed",
+  rejectToken: "add token: rejected",
+
   signTransaction: "sign transaction: confirmed",
   signTransactionMemoRequired: "sign transaction: memo required error",
   rejectTransaction: "sign transaction: rejected",
@@ -148,6 +152,9 @@ export const METRIC_NAMES = {
   viewLeaveFeedback: "loaded screen: leave feedback",
 
   invalidAuthEntry: "invalid authorization entry",
+
+  tokenAddedApi: "user added token through api",
+  tokenRejectApi: "user cancelled adding token through api",
 
   rejectSigning: "user cancelled signing flow",
   approveSign: "user signed transaction",
