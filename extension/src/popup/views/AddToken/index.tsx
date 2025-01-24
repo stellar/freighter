@@ -25,8 +25,6 @@ import { AssetNotifcation } from "popup/components/AssetNotification";
 import { useTokenLookup } from "popup/helpers/useTokenLookup";
 import { isContractId } from "popup/helpers/soroban";
 
-import "./styles.scss";
-
 export const AddToken = () => {
   const location = useLocation();
   const params = parsedSearchParam(location.search) as TokenToAdd;
@@ -43,7 +41,6 @@ export const AddToken = () => {
   const [isVerifiedToken, setIsVerifiedToken] = useState(false);
   const [isVerificationInfoShowing, setIsVerificationInfoShowing] =
     useState(false);
-  const [_, setVerifiedLists] = useState([] as string[]);
 
   const ResultsRef = useRef<HTMLDivElement>(null);
 
@@ -70,7 +67,6 @@ export const AddToken = () => {
     setIsSearching,
     setIsVerifiedToken,
     setIsVerificationInfoShowing,
-    setVerifiedLists,
   });
 
   useEffect(() => {

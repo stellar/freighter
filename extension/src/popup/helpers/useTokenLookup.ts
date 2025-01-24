@@ -31,7 +31,7 @@ export const useTokenLookup = ({
   setIsSearching: (value: boolean) => void;
   setIsVerifiedToken: (value: boolean) => void;
   setIsVerificationInfoShowing: (value: boolean) => void;
-  setVerifiedLists: (lists: string[]) => void;
+  setVerifiedLists?: (lists: string[]) => void;
 }): {
   handleTokenLookup: (contractId: string) => Promise<void>;
 } => {
@@ -121,7 +121,7 @@ export const useTokenLookup = ({
         try {
           if (verifiedTokens.length) {
             setIsVerifiedToken(true);
-            setVerifiedLists(verifiedTokens[0].verifiedLists);
+            setVerifiedLists?.(verifiedTokens[0].verifiedLists);
             setAssetRows(
               verifiedTokens.map((record: VerifiedTokenRecord) => ({
                 code: record.code || record.contract,
