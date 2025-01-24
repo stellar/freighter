@@ -1075,8 +1075,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
       const tokenInfo = tokenQueue.pop();
 
+      if (!tokenInfo?.contractId) {
+        throw Error("Missing contract id");
+      }
+
       const response = await addTokenWithContractId({
-        contractId: tokenInfo?.contractId || "",
+        contractId: tokenInfo.contractId,
         network: networkDetails.network,
         publicKey: sourceKeys.publicKey(),
       });
