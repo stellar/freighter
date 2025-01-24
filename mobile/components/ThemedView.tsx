@@ -17,6 +17,12 @@ export function ThemedView({
     { light: lightColor, dark: darkColor },
     "background"
   );
+  const padding = {
+    paddingTop: 50,
+    paddingLeft: 20,
+    paddingRight: 20,
+    paddingBottom: 20,
+  }
 
-  return <View style={[{ backgroundColor }, style]} {...otherProps} />;
+  return <View style={[{ backgroundColor, ...padding }, style]} {...otherProps} />;
 }

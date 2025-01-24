@@ -58,6 +58,7 @@ const commonConfig = (
     },
     alias: {
       "react-native$": "react-native-web",
+       "react-native-svg": "react-native-svg-web"
     },
   },
   module: {
@@ -139,21 +140,21 @@ const commonConfig = (
           },
         ],
       },
-      {
-        test: /global\.css$/,
-        use: [
-          { loader: "style-loader" },
-          {
-            loader: "css-loader",
-            options: {
-              sourceMap: true,
-            },
-          },
-          {
-            loader: "postcss-loader",
-          },
-        ],
-      },
+      // {
+      //   test: /global\.css$/,
+      //   use: [
+      //     MiniCssExtractPlugin.loader,
+      //     {
+      //       loader: "css-loader",
+      //       // options: {
+      //       //   sourceMap: true,
+      //       // },
+      //     },
+      //     {
+      //       loader: "postcss-loader",
+      //     },
+      //   ],
+      // },
       {
         test: /\.(woff(2)?|ttf|eot)(\?v=\d+\.\d+\.\d+)?$/,
         type: "asset/resource",

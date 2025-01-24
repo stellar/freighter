@@ -8,7 +8,6 @@
       "node",
       "jest",
       "@testing-library/jest-dom",
-      "nativewind/types"
     ]
   },
   "include": ["src", "public"],

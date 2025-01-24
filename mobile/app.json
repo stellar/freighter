@@ -36,6 +36,10 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "packagerOpts": {
+      "sourceExts": ["ts", "tsx", "svgx"],
+      "transformer": "../node_modules/react-native-svg-transformer/index.js"
     }
   }
 }

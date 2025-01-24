@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+
 import { useDispatch, useSelector } from "react-redux";
 import {
   CopyText,
@@ -14,7 +15,7 @@ import {
   ActionStatus,
   AssetType,
 } from "@shared/api/types";
-import { Account as Account2 } from "@shared/view/Account";
+import { AccountCounter } from "@shared/view/AccountCounter";
 
 import {
   settingsNetworkDetailsSelector,
@@ -179,7 +180,7 @@ export const Account = () => {
             setLoading={setLoading}
           />
           <View.Content hasNoTopPadding>
-            <Account2 />
+            <AccountCounter accountName="Extension Account" textColor="#FFFFFF" />
             <div className="AccountView" data-testid="account-view">
               <div className="AccountView__account-actions">
                 <div className="AccountView__name-key-display">

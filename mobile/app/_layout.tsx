@@ -8,11 +8,11 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { Provider } from "react-redux";
 import "react-native-reanimated";
 
-import "@shared/view/global.css";
-
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { store } from "@shared/view/store";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -34,6 +34,7 @@ export default function RootLayout() {
   }
 
   return (
+    <Provider store={store}>
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -41,5 +42,6 @@ export default function RootLayout() {
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
+    </Provider>
   );
 }

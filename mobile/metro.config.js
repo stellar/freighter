@@ -1,6 +1,5 @@
 // Learn more https://docs.expo.io/guides/customizing-metro
 const { getDefaultConfig } = require("expo/metro-config");
-const { withNativeWind } = require("nativewind/metro");
 
 const path = require("path");
 
@@ -34,6 +33,4 @@ config.resolver.nodeModulesPaths = [
   path.resolve(monorepoRoot, "node_modules"),
 ];
 
-module.exports = withNativeWind(config, {
-  input: path.resolve(monorepoRoot, "@shared/view/global.css"),
-});
+module.exports = config;

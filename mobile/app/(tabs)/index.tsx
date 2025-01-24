@@ -1,18 +1,19 @@
-import { StyleSheet, View, Text } from "react-native";
-import Account from "@shared/view/Account";
+import { StyleSheet, Platform } from "react-native";
+import { AccountCounter } from "@shared/view/AccountCounter";
 
 // import { HelloWave } from '@/components/HelloWave';
 // import ParallaxScrollView from '@/components/ParallaxScrollView';
 // import { ThemedText } from '@/components/ThemedText';
-// import { ThemedView } from '@/components/ThemedView';
+import { ThemedView } from "@/components/ThemedView";
 
 export default function HomeScreen() {
   return (
-    <View>
-      <Account />
-      {/* <View className="w-10 h-10 bg-blue-500" /> */}
-      <Text>aaaa</Text>
-    </View>
+    <ThemedView>
+      <AccountCounter
+        accountName="Mobile account"
+        textColor={Platform.OS === "ios" ? "red" : "blue"}
+      />
+    </ThemedView>
 
     // <ParallaxScrollView
     //   headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -62,6 +63,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  viewWrapper: {},
   titleContainer: {
     flexDirection: "row",
     alignItems: "center",

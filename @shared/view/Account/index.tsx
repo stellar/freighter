@@ -1,17 +1,33 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { Button, View, Text } from "react-native";
 
-import "../global.css";
+import FreighterLogo from "../assets/FreighterLogo";
 
-const currentAccountName = "Account Name!!";
+const style = { backgroundColor: "green", height: 100, width: 100 };
 
-export const Account = () => (
+interface AccountProps {
+  accountName: string;
+  count: number;
+  handleIncrement: () => void;
+  handleDecrement: () => void;
+  textColor: string;
+}
+
+export const Account = ({
+  accountName,
+  count,
+  handleIncrement,
+  handleDecrement,
+  textColor,
+}: AccountProps) => (
   <View data-testid="account-view-account-name">
-    <View className="w-10 h-10 bg-blue-500" />
-    <Text className="text-red-500">{currentAccountName}</Text>
-    <View className="w-10 h-10 bg-blue-500" />
-
-    <Text>btm111</Text>
+    <View style={style} />
+    <FreighterLogo />
+    <Text style={{ color: textColor }}>
+      {accountName} {count}
+    </Text>
+    <Button title="Increment" onPress={handleIncrement} />
+    <Button title="Decrement" onPress={handleDecrement} />
   </View>
 );
 
