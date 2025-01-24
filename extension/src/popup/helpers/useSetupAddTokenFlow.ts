@@ -51,13 +51,18 @@ export const useSetupAddTokenFlow = ({
       await dispatch(addTokenFn());
     };
 
-    if (StrKey.isValidEd25519PublicKey(assetIssuer)) {
-      await changeTrustline(true, addTokenDispatch);
-    } else {
-      await addTokenDispatch();
+    try {
+      if (StrKey.isValidEd25519PublicKey(assetIssuer)) {
+        await changeTrustline(true, addTokenDispatch);
+      } else {
+        await addTokenDispatch();
+      }
+      await emitMetric(METRIC_NAMES.tokenAddedApi);
+    } catch (e) {
+      console.error(e);
+      await emitMetric(METRIC_NAMES.tokenFailedApi);
     }
 
-    await emitMetric(METRIC_NAMES.tokenAddedApi);
     window.close();
   };
 

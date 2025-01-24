@@ -154,6 +154,7 @@ export const METRIC_NAMES = {
   invalidAuthEntry: "invalid authorization entry",
 
   tokenAddedApi: "user added token through api",
+  tokenFailedApi: "failed adding token through api",
   tokenRejectApi: "user cancelled adding token through api",
 
   rejectSigning: "user cancelled signing flow",
