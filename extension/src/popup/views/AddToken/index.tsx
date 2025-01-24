@@ -134,6 +134,7 @@ export const AddToken = () => {
           {t("Cancel")}
         </Button>
         <Button
+          disabled={!assetCurrency}
           isFullWidth
           size="md"
           variant="primary"
