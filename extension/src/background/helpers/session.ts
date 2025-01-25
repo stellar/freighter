@@ -6,6 +6,7 @@ import {
   setActiveHashKey,
   hashKeySelector,
   SessionState,
+  timeoutAccountAccess,
 } from "../ducks/session";
 import { DataStorageAccess } from "./dataStorageAccess";
 import { TEMPORARY_STORE_ID } from "../../constants/localStorageTypes";
@@ -187,7 +188,6 @@ interface GetActiveHashKey {
 export const getActiveHashKeyCryptoKey = async ({
   sessionStore,
 }: GetActiveHashKey) => {
-  console.log(sessionStore.getState());
   const hashKey = hashKeySelector(sessionStore.getState() as SessionState);
 
   if (hashKey?.key && hashKey?.iv) {
@@ -239,8 +239,6 @@ export const getEncryptedTemporaryData = async ({
     return "";
   }
 
-  console.log(sessionStore.getState());
-
   if (hashKey) {
     const format = "jwk";
     // JSON Web Key can be parsed with decoding
@@ -265,4 +263,17 @@ export const getEncryptedTemporaryData = async ({
   }
 
   return "";
+};
+
+interface ClearSession {
+  localStore: DataStorageAccess;
+  sessionStore: Store;
+}
+
+export const clearSession = async ({
+  localStore,
+  sessionStore,
+}: ClearSession) => {
+  sessionStore.dispatch(timeoutAccountAccess());
+  await localStore.remove(TEMPORARY_STORE_ID);
 };
