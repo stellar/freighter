@@ -11,9 +11,7 @@ import { navigateTo } from "popup/helpers/navigate";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   addAccount,
-  authErrorSelector,
   clearApiError,
-  hasPrivateKeySelector,
   publicKeySelector,
 } from "popup/ducks/accountServices";
 import { EnterPassword } from "popup/components/EnterPassword";
@@ -21,14 +19,10 @@ import { EnterPassword } from "popup/components/EnterPassword";
 export const AddAccount = () => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
-  const authError = useSelector(authErrorSelector);
   const publicKey = useSelector(publicKeySelector);
-  const hasPrivateKey = useSelector(hasPrivateKeySelector);
 
-  // In case a password is not provided here popupMessageListener/addAccount
-  // will try to use the existing password value saved in the session store
   const handleAddAccount = useCallback(
-    async (password: string = "") => {
+    async (password: string) => {
       const res = await dispatch(addAccount(password));
 
       if (addAccount.fulfilled.match(res)) {
@@ -46,25 +40,10 @@ export const AddAccount = () => {
     await handleAddAccount(password);
   };
 
-  // If we have a private key we can assume the user password is also saved in
-  // the current session store, so no need to ask for it again
-  useEffect(() => {
-    if (hasPrivateKey) {
-      handleAddAccount();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   useEffect(
     () => () => dispatch(clearApiError()) as unknown as void,
     [dispatch],
   );
-
-  // No need to ask for password if it's already stored, so let's just briefly
-  // wait until user is navigated to the next screen
-  if (hasPrivateKey && !authError) {
-    return null;
-  }
 
   // Ask for user password in case it's not saved in current session store
   return (

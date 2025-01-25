@@ -97,6 +97,7 @@ import {
   storeEncryptedTemporaryData,
   getActiveHashKeyCryptoKey,
   storeActiveHashKey,
+  clearSession,
 } from "background/helpers/session";
 import { cachedFetch } from "background/helpers/cachedFetch";
 import {
@@ -112,10 +113,8 @@ import {
   logIn,
   logOut,
   migratedMnemonicPhraseSelector,
-  mnemonicPhraseSelector,
   publicKeySelector,
   setActivePublicKey,
-  timeoutAccountAccess,
   updateAllAccountsAccountName,
   reset,
   passwordSelector,
@@ -206,7 +205,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     hardwareWalletType: WalletType;
     bipPath: string;
   }) => {
-    const mnemonicPhrase = mnemonicPhraseSelector(sessionStore.getState());
     let allAccounts = allAccountsSelector(sessionStore.getState());
 
     const keyId = `${HW_PREFIX}${publicKey}`;
@@ -245,14 +243,9 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     await sessionStore.dispatch(
       logIn({
         publicKey,
-        mnemonicPhrase,
         allAccounts,
       }) as any,
     );
-
-    // an active hw account should not have an active private key
-
-    await localStore.setItem(TEMPORARY_STORE_ID, "");
   };
 
   const _storeAccount = async ({
@@ -274,7 +267,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     await sessionStore.dispatch(
       logIn({
         publicKey,
-        mnemonicPhrase,
         allAccounts: [
           ...allAccounts,
           {
@@ -297,8 +289,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       password,
       encrypterName: ScryptEncrypter.name,
     };
-
-    console.log(sessionStore.getState());
 
     let keyStore = { id: "" };
     let activeHashKey = await getActiveHashKeyCryptoKey({ sessionStore });
@@ -375,7 +365,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     await sessionStore.dispatch(
       logIn({
         publicKey,
-        mnemonicPhrase,
         allAccounts: newAllAccounts,
       }) as any,
     );
@@ -459,7 +448,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       privateKey: wallet.getSecret(KEY_DERIVATION_NUMBER),
     };
 
-    sessionStore.dispatch(timeoutAccountAccess());
+    await clearSession({ localStore, sessionStore });
 
     await _storeAccount({
       password,
@@ -566,16 +555,14 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       privateKey,
     };
 
-    const mnemonicPhrase = mnemonicPhraseSelector(sessionStore.getState());
-
-    if (!mnemonicPhrase) {
-      return { error: "Mnemonic phrase not found" };
-    }
-
     await _storeAccount({
       password,
       keyPair,
-      mnemonicPhrase,
+      mnemonicPhrase: await getEncryptedTemporaryData({
+        sessionStore,
+        localStore,
+        keyName: TEMPORARY_STORE_EXTRA_ID,
+      }),
       imported: true,
     });
 
@@ -608,26 +595,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const makeAccountActive = async () => {
     const { publicKey } = request;
     await _activatePublicKey({ publicKey });
-
-    // const keyID = (await localStore.getItem(KEY_ID)) || "";
-
-    // try {
-    //   const wallet = await _unlockKeystore({ keyID, password });
-    //   const privateKey = wallet.privateKey;
-
-    //   if (!(await getIsHardwareWalletActive())) {
-    //     await storeActivePrivateKey({
-    //       sessionStore,
-    //       localStore,
-    //       keyId: keyID,
-    //       privateKey,
-    //       hashKey: await deriveKeyFromString(password),
-    //     });
-    //   }
-    // } catch (e) {
-    //   console.error(e);
-    // }
-
     const currentState = sessionStore.getState();
 
     return {
@@ -775,21 +742,38 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       ? await _getNonHwKeyID()
       : (await localStore.getItem(KEY_ID)) || "";
 
+    let mnemonicPhrase = "";
+
     try {
       await _unlockKeystore({ keyID, password });
     } catch (e) {
       console.error(e);
       return { error: "Incorrect password" };
     }
+
+    try {
+      mnemonicPhrase = await getEncryptedTemporaryData({
+        sessionStore,
+        localStore,
+        keyName: TEMPORARY_STORE_EXTRA_ID,
+      });
+    } catch (e) {
+      console.error(e);
+      return { error: "Mnemonic phrase not found" };
+    }
+
     return {
-      mnemonicPhrase: mnemonicPhraseSelector(sessionStore.getState()),
+      mnemonicPhrase,
     };
   };
 
   const confirmMnemonicPhrase = async () => {
-    const isCorrectPhrase =
-      mnemonicPhraseSelector(sessionStore.getState()) ===
-      request.mnemonicPhraseToConfirm;
+    const mnemonicPhrase = await getEncryptedTemporaryData({
+      sessionStore,
+      localStore,
+      keyName: TEMPORARY_STORE_EXTRA_ID,
+    });
+    const isCorrectPhrase = mnemonicPhrase === request.mnemonicPhraseToConfirm;
 
     const applicationState = isCorrectPhrase
       ? APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED
@@ -851,7 +835,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       await localStore.setItem(KEY_DERIVATION_NUMBER_ID, "0");
 
-      sessionStore.dispatch(timeoutAccountAccess());
+      await clearSession({ localStore, sessionStore });
 
       await _storeAccount({
         mnemonicPhrase: recoverMnemonic,
@@ -931,7 +915,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     }
 
     return {
-      mnemonicPhrase: mnemonicPhraseSelector(sessionStore.getState()),
+      mnemonicPhrase: await getEncryptedTemporaryData({
+        sessionStore,
+        localStore,
+        keyName: TEMPORARY_STORE_EXTRA_ID,
+      }),
     };
   };
 
@@ -1042,13 +1030,14 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       await sessionStore.dispatch(
         logIn({
           publicKey: hwPublicKey || activePublicKey,
-          mnemonicPhrase: activeMnemonicPhrase,
           allAccounts: await _getLocalStorageAccounts(password),
         }) as any,
       );
     }
 
+    // clear the temporary store so we can replace it with the new encrypted data
     await localStore.remove(TEMPORARY_STORE_ID);
+
     await storeEncryptedTemporaryData({
       localStore,
       keyName: TEMPORARY_STORE_EXTRA_ID,
@@ -1058,12 +1047,14 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < keyIdList.length; i += 1) {
-      const keyStoreToUnlock = await _unlockKeystore({
-        keyID: keyIdList[i],
-        password,
-      });
+      const currentKeyId = keyIdList[i];
 
-      if (!(await getIsHardwareWalletActive())) {
+      if (!currentKeyId.includes(HW_PREFIX)) {
+        const keyStoreToUnlock = await _unlockKeystore({
+          keyID: keyIdList[i],
+          password,
+        });
+
         await storeEncryptedTemporaryData({
           localStore,
           keyName: keyIdList[i],
@@ -1558,7 +1549,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const getMigratableAccounts = async () => {
     const keyIdList = (await getKeyIdList()) as string[];
 
-    const mnemonicPhrase = mnemonicPhraseSelector(sessionStore.getState());
+    const mnemonicPhrase = await getEncryptedTemporaryData({
+      sessionStore,
+      localStore,
+      keyName: TEMPORARY_STORE_EXTRA_ID,
+    });
     const allAccounts = allAccountsSelector(sessionStore.getState());
     const wallet = fromMnemonic(mnemonicPhrase);
 
@@ -1780,7 +1775,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       // let's make the first public key the active one
       await _activatePublicKey({ publicKey: newWallet.getPublicKey(0) });
 
-      sessionStore.dispatch(timeoutAccountAccess());
+      await clearSession({ localStore, sessionStore });
 
       sessionTimer.startSession();
       const hashKey = await deriveKeyFromString(password);
