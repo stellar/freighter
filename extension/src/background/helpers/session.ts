@@ -10,10 +10,9 @@ import {
 } from "../ducks/session";
 import { DataStorageAccess } from "./dataStorageAccess";
 import { TEMPORARY_STORE_ID } from "../../constants/localStorageTypes";
-// import { RootState } from "../store";
 
 // 24 hours
-const SESSION_LENGTH = 2;
+const SESSION_LENGTH = 60 * 24;
 export const SESSION_ALARM_NAME = "session-timer";
 
 export class SessionTimer {
