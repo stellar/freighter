@@ -34,13 +34,16 @@ interface HashString {
   keyObject: { iv: ArrayBuffer; key: CryptoKey };
 }
 
+const TEMPORARY_STORE_ENCRYPTION_NAME = "AES-CBC";
+const HASH_KEY_ENCRYPTION_PARAMS = { name: "PBKDF2", hash: "SHA-256" };
+
 export const encryptHashString = ({ str, keyObject }: HashString) => {
   const encoder = new TextEncoder();
   const encodedStr = encoder.encode(str);
 
   return crypto.subtle.encrypt(
     {
-      name: "AES-CBC",
+      name: TEMPORARY_STORE_ENCRYPTION_NAME,
       iv: keyObject.iv,
     },
     keyObject.key,
@@ -59,7 +62,7 @@ export const decryptHashString = async ({
 }: DecodeHashString) => {
   const decrypted = await crypto.subtle.decrypt(
     {
-      name: "AES-CBC",
+      name: TEMPORARY_STORE_ENCRYPTION_NAME,
       iv: keyObject.iv,
     },
     keyObject.key,
@@ -84,15 +87,14 @@ export const deriveKeyFromString = async (str: string) => {
   const importedKey = await crypto.subtle.importKey(
     "raw",
     keyMaterial,
-    { name: "PBKDF2", hash: "SHA-256" },
+    HASH_KEY_ENCRYPTION_PARAMS,
     false,
     ["deriveBits"],
   );
 
   const saltBuffer = encoder.encode(salt);
   const params = {
-    name: "PBKDF2",
-    hash: "SHA-256",
+    ...HASH_KEY_ENCRYPTION_PARAMS,
     salt: saltBuffer,
     iterations,
   };
@@ -108,7 +110,7 @@ export const deriveKeyFromString = async (str: string) => {
   const importedEncryptionKey = await crypto.subtle.importKey(
     "raw",
     derivedKey,
-    { name: "AES-CBC" },
+    { name: TEMPORARY_STORE_ENCRYPTION_NAME },
     true,
     ["encrypt", "decrypt"],
   );
@@ -148,38 +150,6 @@ export const storeActiveHashKey = async ({
   );
 };
 
-interface StoreEncryptedTemporaryData {
-  localStore: DataStorageAccess;
-  keyName: string;
-  temporaryData: string;
-  hashKey: {
-    key: CryptoKey;
-    iv: ArrayBuffer;
-  };
-}
-
-export const storeEncryptedTemporaryData = async ({
-  localStore,
-  keyName,
-  temporaryData,
-  hashKey,
-}: StoreEncryptedTemporaryData) => {
-  // if keyId starts with hd, don't bother
-
-  const encryptedPrivateKey = await encryptHashString({
-    str: temporaryData,
-    keyObject: hashKey,
-  });
-
-  const existingTemporaryStore = await localStore.getItem(TEMPORARY_STORE_ID);
-
-  // store encrypted private key in local storage, a separate space from where the password is stored
-  await localStore.setItem(TEMPORARY_STORE_ID, {
-    ...existingTemporaryStore,
-    [keyName]: encode(encryptedPrivateKey),
-  });
-};
-
 interface GetActiveHashKey {
   sessionStore: Store;
 }
@@ -198,7 +168,7 @@ export const getActiveHashKeyCryptoKey = async ({
       const key = await crypto.subtle.importKey(
         format,
         exportedHashKey,
-        "AES-CBC",
+        TEMPORARY_STORE_ENCRYPTION_NAME,
         true,
         ["encrypt", "decrypt"],
       );
@@ -213,6 +183,36 @@ export const getActiveHashKeyCryptoKey = async ({
   }
 
   return null;
+};
+
+interface StoreEncryptedTemporaryData {
+  localStore: DataStorageAccess;
+  keyName: string;
+  temporaryData: string;
+  hashKey: {
+    key: CryptoKey;
+    iv: ArrayBuffer;
+  };
+}
+
+export const storeEncryptedTemporaryData = async ({
+  localStore,
+  keyName,
+  temporaryData,
+  hashKey,
+}: StoreEncryptedTemporaryData) => {
+  const encryptedPrivateKey = await encryptHashString({
+    str: temporaryData,
+    keyObject: hashKey,
+  });
+
+  const existingTemporaryStore = await localStore.getItem(TEMPORARY_STORE_ID);
+
+  // store encrypted private key in local storage, a separate space from where the password is stored
+  await localStore.setItem(TEMPORARY_STORE_ID, {
+    ...existingTemporaryStore,
+    [keyName]: encode(encryptedPrivateKey),
+  });
 };
 
 interface GetEncryptedTemporaryData {
@@ -239,17 +239,15 @@ export const getEncryptedTemporaryData = async ({
   }
 
   if (hashKey) {
-    const format = "jwk";
     // JSON Web Key can be parsed with decoding
     const exportedHashKey = JSON.parse(hashKey.key) as JsonWebKey;
     // import the password key for future use indecryption
     const key = await crypto.subtle.importKey(
-      // @ts-ignore
-      format,
+      "jwk",
       exportedHashKey,
-      "AES-CBC",
+      TEMPORARY_STORE_ENCRYPTION_NAME,
       false,
-      exportedHashKey.key_ops,
+      ["encrypt", "decrypt"],
     );
 
     // use the hashed password to decrypt the private key
