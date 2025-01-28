@@ -286,7 +286,10 @@ export const freighterApiMessageListener = (
         });
       }
 
-      const server = stellarSdkServer(networkUrl, networkPassphrase || "");
+      const server = stellarSdkServer(
+        networkUrl,
+        networkPassphrase || transaction.networkPassphrase,
+      );
 
       try {
         await server.checkMemoRequired(transaction as StellarSdk.Transaction);
