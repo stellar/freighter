@@ -1066,13 +1066,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const addToken = async () => {
-    const privateKey = privateKeySelector(sessionStore.getState());
+    const publicKey = publicKeySelector(sessionStore.getState());
     const networkDetails = await getNetworkDetails();
 
-    const Sdk = getSdk(networkDetails.networkPassphrase);
-
-    if (privateKey.length) {
-      const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
+    if (publicKey.length) {
       const tokenInfo = tokenQueue.pop();
 
       if (!tokenInfo?.contractId) {
@@ -1082,7 +1079,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const response = await addTokenWithContractId({
         contractId: tokenInfo.contractId,
         network: networkDetails.network,
-        publicKey: sourceKeys.publicKey(),
+        publicKey: publicKey,
       });
 
       const tokenResponse = responseQueue.pop();
