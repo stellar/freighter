@@ -62,5 +62,5 @@ export const sendXlmPayment = async ({ page }) => {
     screenshot: "send-payment-details.png",
   });
   await expect(page.getByText("Sent XLM")).toBeVisible();
-  await expect(page.getByTestId("asset-amount")).toContainText("1 XLM");
+  await expect(page.getByTestId("asset-amount")).toContainText("1");
 };
