@@ -1079,7 +1079,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const response = await addTokenWithContractId({
         contractId: tokenInfo.contractId,
         network: networkDetails.network,
-        publicKey: publicKey,
+        publicKey,
       });
 
       const tokenResponse = responseQueue.pop();

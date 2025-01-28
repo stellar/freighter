@@ -189,7 +189,9 @@ export const freighterApiMessageListener = (
               allowList.push(punycodedDomain);
               localStore.setItem(ALLOWLIST_ID, allowList.join());
             }
-            resolve({});
+            resolve({
+              contractId,
+            });
           }
 
           resolve({

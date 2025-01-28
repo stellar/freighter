@@ -6,18 +6,16 @@ import { isBrowser } from ".";
 export const addToken = async (args: {
   contractId: string;
   networkPassphrase?: string;
-}): Promise<{
-  error?: FreighterApiError;
-}> => {
+}): Promise<{ contractId: string } & { error?: FreighterApiError }> => {
   if (isBrowser) {
     const req = await submitToken(args);
 
     if (req.error) {
-      return { error: req.error };
+      return { contractId: args.contractId, error: req.error };
     }
 
-    return {};
+    return { contractId: req.contractId || "" };
   }
 
-  return { error: FreighterApiNodeError };
+  return { contractId: args.contractId, error: FreighterApiNodeError };
 };

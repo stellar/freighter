@@ -44,6 +44,7 @@ export const submitToken = async (args: {
   contractId: string;
   networkPassphrase?: string;
 }): Promise<{
+  contractId?: string;
   error?: FreighterApiError;
 }> => {
   let response;
@@ -59,7 +60,10 @@ export const submitToken = async (args: {
     };
   }
 
-  return { error: response?.apiError };
+  return {
+    contractId: response.contractId,
+    error: response?.apiError,
+  };
 };
 
 export const submitTransaction = async (
