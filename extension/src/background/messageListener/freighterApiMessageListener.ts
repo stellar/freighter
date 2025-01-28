@@ -174,16 +174,12 @@ export const freighterApiMessageListener = (
       return new Promise((resolve) => {
         if (!popup) {
           resolve({
-            // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
             apiError: FreighterApiInternalError,
-            error: FreighterApiInternalError.message,
           });
         } else {
           browser.windows.onRemoved.addListener(() =>
             resolve({
-              // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
               apiError: FreighterApiDeclinedError,
-              error: FreighterApiDeclinedError.message,
             }),
           );
         }
@@ -197,9 +193,7 @@ export const freighterApiMessageListener = (
           }
 
           resolve({
-            // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
             apiError: FreighterApiDeclinedError,
-            error: FreighterApiDeclinedError.message,
           });
         };
 
@@ -207,9 +201,7 @@ export const freighterApiMessageListener = (
       });
     } catch (e) {
       return {
-        // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
         apiError: FreighterApiInternalError,
-        error: FreighterApiInternalError.message,
       };
     }
   };
