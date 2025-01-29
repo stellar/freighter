@@ -142,7 +142,11 @@ export const freighterApiMessageListener = (
 
   const submitToken = async () => {
     try {
-      const { contractId, networkPassphrase } = request as ExternalRequestToken;
+      const { contractId, networkPassphrase: reqNetworkPassphrase } =
+        request as ExternalRequestToken;
+
+      const networkPassphrase =
+        reqNetworkPassphrase || MAINNET_NETWORK_DETAILS.networkPassphrase;
 
       const { tab, url: tabUrl = "" } = sender;
       const domain = getUrlHostname(tabUrl);
