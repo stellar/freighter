@@ -285,7 +285,7 @@ export const AccountAssets = ({
             </div>
             <div className="AccountAssets__copy-right">
               <div className="asset-amount" data-testid="asset-amount">
-                {formatAmount(amountVal)} <span>{amountUnit}</span>
+                {formatAmount(amountVal)}
               </div>
             </div>
           </div>
