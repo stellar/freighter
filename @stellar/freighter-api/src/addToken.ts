@@ -11,11 +11,11 @@ export const addToken = async (args: {
     const req = await submitToken(args);
 
     if (req.error) {
-      return { contractId: args.contractId, error: req.error };
+      return { contractId: "", error: req.error };
     }
 
     return { contractId: req.contractId || "" };
   }
 
-  return { contractId: args.contractId, error: FreighterApiNodeError };
+  return { contractId: "", error: FreighterApiNodeError };
 };
