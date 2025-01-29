@@ -14,24 +14,28 @@ import {
 
 import { useChangeTrustline } from "./useChangeTrustline";
 
-export const useSetupAddTokenFlow = ({
-  rejectToken: rejectTokenFn,
-  addToken: addTokenFn,
-  assetCode,
-  assetIssuer,
-}: {
+type Params = {
   rejectToken: typeof rejectToken;
   addToken: typeof addToken;
   assetCode: string;
   assetIssuer: string;
-}): {
+};
+
+type Response = {
   isConfirming: boolean;
   isPasswordRequired: boolean;
   setIsPasswordRequired: (value: boolean) => void;
   verifyPasswordThenAddToken: (password: string) => Promise<void>;
   handleApprove: () => Promise<void>;
   rejectAndClose: () => void;
-} => {
+};
+
+export const useSetupAddTokenFlow = ({
+  rejectToken: rejectTokenFn,
+  addToken: addTokenFn,
+  assetCode,
+  assetIssuer,
+}: Params): Response => {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
 
