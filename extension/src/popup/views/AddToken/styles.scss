@@ -1,0 +1,62 @@
+@use "../../styles/utils.scss" as *;
+
+.AddToken {
+  height: var(--popup--height);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background-color: green;
+
+  &__info-text-test {
+    position: relative;
+    flex-direction: column;
+    word-break: break-all;
+  }
+
+  &__wrapper {
+    position: relative;
+    flex-direction: column;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    margin-top: pxToRem(116px);
+    border-radius: pxToRem(16px);
+    padding: pxToRem(32px) pxToRem(24px) pxToRem(24px) pxToRem(24px);
+    gap: pxToRem(8px);
+    background: var(--sds-clr-gray-02);
+
+    &__domain-logo {
+      height: pxToRem(60px);
+    }
+
+    &__info {
+      gap: pxToRem(8px);
+      background: var(--sds-clr-gray-03);
+      border-radius: pxToRem(8px);
+      display: flex;
+      width: 100%;
+      padding: pxToRem(12px) pxToRem(16px);
+      flex-direction: column;
+
+      &__title {
+        color: var(--sds-clr-gray-11);
+      }
+
+      &__row {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+      }
+    }
+
+    &__footer {
+      margin-top: auto;
+      display: flex;
+      align-items: flex-start;
+      gap: pxToRem(8px);
+      align-self: stretch;
+    }
+  }
+}

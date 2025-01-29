@@ -38,6 +38,10 @@ export const BottomNav = () => {
           <Icon.ClockRewind />
           {t("History")}
         </BottomNavLink>
+        <BottomNavLink to={ROUTES.addToken}>
+          <Icon.ClockRewind />
+          {t("Add Token")}
+        </BottomNavLink>
         <BottomNavLink to={ROUTES.swap}>
           <Icon.RefreshCcw05 />
           {t("Swap")}
