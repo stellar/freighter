@@ -3491,6 +3491,7 @@
     sodium-native "^4.1.1"
 
 "@stellar/stellar-sdk@13.0.0-beta.1", "stellar-sdk-next@yarn:@stellar/stellar-sdk@13.0.0-beta.1", "stellar-sdk@yarn:@stellar/stellar-sdk@13.0.0-beta.1":
+  name stellar-sdk
   version "13.0.0-beta.1"
   resolved "https://registry.yarnpkg.com/@stellar/stellar-sdk/-/stellar-sdk-13.0.0-beta.1.tgz#9a995575b806bea3a383b2d9fe4b1fde065caeb4"
   integrity sha512-yJN2HzibhZFJsdLRU83bkUwb9dq1sZRRiQptTJyunVv0hQsF+tTldrP3hHst3LROv/2GWTn20tmAqnp0hkzOhg==
@@ -10279,6 +10280,11 @@ jest-environment-node@^29.6.3, jest-environment-node@^29.7.0:
     "@types/node" "*"
     jest-mock "^29.7.0"
     jest-util "^29.7.0"
+
+jest-fixed-jsdom@^0.0.9:
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/jest-fixed-jsdom/-/jest-fixed-jsdom-0.0.9.tgz#12d594d3edfdd2ae09fd1f6c6c4e68baf4c4a1a7"
+  integrity sha512-KPfqh2+sn5q2B+7LZktwDcwhCpOpUSue8a1I+BcixWLOQoEVyAjAGfH+IYZGoxZsziNojoHGRTC8xRbB1wDD4g==
 
 jest-get-type@^29.6.3:
   version "29.6.3"

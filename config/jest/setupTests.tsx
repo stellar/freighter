@@ -18,6 +18,8 @@ global.DEV_SERVER = true;
 global.DEV_EXTENSION = true;
 global.PRODUCTION = false;
 global.EXPERIMENTAL = false;
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
 
 process.env.INDEXER_URL = "http://localhost:3002/api/v1";
 

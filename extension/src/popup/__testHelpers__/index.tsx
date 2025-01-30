@@ -1,7 +1,7 @@
 import React from "react";
 import { Provider } from "react-redux";
 import BigNumber from "bignumber.js";
-import { createMemoryHistory } from "history";
+import { MemoryHistory } from "history";
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { Balances } from "@shared/api/types";
@@ -25,7 +25,7 @@ const rootReducer = combineReducers({
   tokenPaymentSimulation,
 });
 
-const { Router } = jest.requireActual("react-router-dom");
+// const { MemoryRouter } = jest.requireActual("react-router-dom");
 
 const makeDummyStore = (state: any) =>
   configureStore({
@@ -41,27 +41,24 @@ export const Wrapper: React.FunctionComponent<any> = ({
 }: {
   children: React.ReactNode;
   state: {};
-  history?: any;
+  history?: MemoryHistory;
 }) => {
-  const routerHistory = history || createMemoryHistory();
-
+  console.log(history);
   return (
     <>
-      <Router history={routerHistory}>
-        <Provider
-          store={makeDummyStore({
-            auth: {
-              allAccounts: ["G123"],
-              publicKey: "G123",
-              applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
-            },
-            transactionSubmission: transactionSubmissionInitialState,
-            ...state,
-          })}
-        >
-          {children}
-        </Provider>
-      </Router>
+      <Provider
+        store={makeDummyStore({
+          auth: {
+            allAccounts: ["G123"],
+            publicKey: "G123",
+            applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+          },
+          transactionSubmission: transactionSubmissionInitialState,
+          ...state,
+        })}
+      >
+        {children}
+      </Provider>
     </>
   );
 };

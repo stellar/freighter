@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 import { useTranslation } from "react-i18next";
 
@@ -106,20 +106,30 @@ export const ManageAssetsLists = () => {
   return assetsLists ? (
     <>
       <Routes>
-        <PublicKeyRoute path={ROUTES.manageAssetsLists}>
-          <AssetLists
-            sortedAssetsListsData={sortedAssetsListsData}
-            handleSelectChange={handleSelectChange}
-            selectedNetwork={selectedNetwork}
-            isLoading={isLoading}
-          />
-        </PublicKeyRoute>
-        <PublicKeyRoute path={ROUTES.manageAssetsListsModifyAssetList}>
-          <ModifyAssetList
-            assetsListsData={assetsListsData}
-            selectedNetwork={selectedNetwork}
-          />
-        </PublicKeyRoute>
+        <Route
+          path={ROUTES.manageAssetsLists}
+          element={
+            <PublicKeyRoute>
+              <AssetLists
+                sortedAssetsListsData={sortedAssetsListsData}
+                handleSelectChange={handleSelectChange}
+                selectedNetwork={selectedNetwork}
+                isLoading={isLoading}
+              />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.manageAssetsListsModifyAssetList}
+          element={
+            <PublicKeyRoute>
+              <ModifyAssetList
+                assetsListsData={assetsListsData}
+                selectedNetwork={selectedNetwork}
+              />
+            </PublicKeyRoute>
+          }
+        ></Route>
       </Routes>
     </>
   ) : (

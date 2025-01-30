@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
 import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
@@ -19,29 +19,62 @@ export const AccountMigration = () => (
       <View.Header />
       <View.Content alignment="center">
         <Routes>
-          <PublicKeyRoute path={ROUTES.accountMigration}>
-            <div className="AccountMigration">
-              <MigrationStart />
-            </div>
-          </PublicKeyRoute>
-          <PublicKeyRoute path={ROUTES.accountMigrationReviewMigration}>
-            <div className="AccountMigration">
-              <ReviewMigration />
-            </div>
-          </PublicKeyRoute>
-          <VerifiedAccountRoute path={ROUTES.accountMigrationMnemonicPhrase}>
-            <MnemonicPhrase />
-          </VerifiedAccountRoute>
-          <VerifiedAccountRoute path={ROUTES.accountMigrationConfirmMigration}>
-            <div className="AccountMigration">
-              <ConfirmMigration />
-            </div>
-          </VerifiedAccountRoute>
-          <PublicKeyRoute path={ROUTES.accountMigrationMigrationComplete}>
-            <div className="AccountMigration">
-              <MigrationComplete />
-            </div>
-          </PublicKeyRoute>
+          <Route
+            path={ROUTES.accountMigration}
+            element={
+              <PublicKeyRoute>
+                <div className="AccountMigration">
+                  <MigrationStart />
+                </div>
+              </PublicKeyRoute>
+            }
+          ></Route>
+          <Route
+            path={ROUTES.accountMigrationReviewMigration}
+            element={
+              <PublicKeyRoute>
+                <div className="AccountMigration">
+                  <ReviewMigration />
+                </div>
+              </PublicKeyRoute>
+            }
+          ></Route>
+          <Route
+            path={ROUTES.accountMigrationMnemonicPhrase}
+            element={
+              <VerifiedAccountRoute>
+                <MnemonicPhrase />
+              </VerifiedAccountRoute>
+            }
+          ></Route>
+          <Route
+            path={ROUTES.accountMigrationMnemonicPhrase}
+            element={
+              <VerifiedAccountRoute>
+                <MnemonicPhrase />
+              </VerifiedAccountRoute>
+            }
+          ></Route>
+          <Route
+            path={ROUTES.accountMigrationConfirmMigration}
+            element={
+              <VerifiedAccountRoute>
+                <div className="AccountMigration">
+                  <ConfirmMigration />
+                </div>
+              </VerifiedAccountRoute>
+            }
+          ></Route>
+          <Route
+            path={ROUTES.accountMigrationMigrationComplete}
+            element={
+              <PublicKeyRoute>
+                <div className="AccountMigration">
+                  <MigrationComplete />
+                </div>
+              </PublicKeyRoute>
+            }
+          ></Route>
         </Routes>
       </View.Content>
     </React.Fragment>

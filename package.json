@@ -117,7 +117,8 @@
     "@lavamoat/allow-scripts": "^3.3.1",
     "@lavamoat/preinstall-always-fail": "^2.1.0",
     "eslint-plugin-jsdoc": "^50.6.2",
-    "eslint-plugin-prefer-arrow": "^1.2.3"
+    "eslint-plugin-prefer-arrow": "^1.2.3",
+    "jest-fixed-jsdom": "^0.0.9"
   },
   "lavamoat": {
     "allowScripts": {

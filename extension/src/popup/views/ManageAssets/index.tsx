@@ -41,12 +41,22 @@ export const ManageAssets = () => {
   return (
     <>
       <Routes>
-        <PrivateKeyRoute path={ROUTES.manageAssets}>
-          <ChooseAsset balances={balances} />
-        </PrivateKeyRoute>
-        <PrivateKeyRoute path={ROUTES.searchAsset}>
-          <SearchAsset />
-        </PrivateKeyRoute>
+        <Route
+          path={ROUTES.manageAssets}
+          element={
+            <PrivateKeyRoute>
+              <ChooseAsset balances={balances} />
+            </PrivateKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.searchAsset}
+          element={
+            <PrivateKeyRoute>
+              <SearchAsset />
+            </PrivateKeyRoute>
+          }
+        ></Route>
         <Route path={ROUTES.addAsset}>
           <AddAsset />
         </Route>

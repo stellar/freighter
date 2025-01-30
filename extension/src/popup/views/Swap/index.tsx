@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Routes, Navigate } from "react-router-dom";
+import { Routes, Navigate, Route } from "react-router-dom";
 
 import { AppDispatch } from "popup/App";
 import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
@@ -50,27 +50,65 @@ export const Swap = () => {
 
   return (
     <Routes>
-      <PublicKeyRoute path={ROUTES.swap}>
-        <Navigate to={ROUTES.swapAmount} />
-      </PublicKeyRoute>
-      <PublicKeyRoute path={ROUTES.swapAmount}>
-        <SendAmount previous={ROUTES.account} next={ROUTES.swapSettings} />
-      </PublicKeyRoute>
-      <PublicKeyRoute path={ROUTES.swapSettings}>
-        <SendSettings previous={ROUTES.swapAmount} next={ROUTES.swapConfirm} />
-      </PublicKeyRoute>
-      <PublicKeyRoute path={ROUTES.swapSettingsFee}>
-        <SendSettingsFee previous={ROUTES.swapSettings} />
-      </PublicKeyRoute>
-      <PublicKeyRoute path={ROUTES.swapSettingsSlippage}>
-        <SendSettingsSlippage previous={ROUTES.swapSettings} />
-      </PublicKeyRoute>
-      <PublicKeyRoute path={ROUTES.swapSettingsTimeout}>
-        <SendSettingsTxTimeout previous={ROUTES.swapSettings} />
-      </PublicKeyRoute>
-      <VerifiedAccountRoute path={ROUTES.swapConfirm}>
-        <SendConfirm previous={ROUTES.swapSettings} />
-      </VerifiedAccountRoute>
+      <Route
+        path={ROUTES.swap}
+        element={
+          <PublicKeyRoute>
+            <Navigate to={ROUTES.swapAmount} />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={ROUTES.swapAmount}
+        element={
+          <PublicKeyRoute>
+            <SendAmount previous={ROUTES.account} next={ROUTES.swapSettings} />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={ROUTES.swapSettings}
+        element={
+          <PublicKeyRoute>
+            <SendSettings
+              previous={ROUTES.swapAmount}
+              next={ROUTES.swapConfirm}
+            />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={ROUTES.swapSettingsFee}
+        element={
+          <PublicKeyRoute>
+            <SendSettingsFee previous={ROUTES.swapSettings} />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={ROUTES.swapSettingsSlippage}
+        element={
+          <PublicKeyRoute>
+            <SendSettingsSlippage previous={ROUTES.swapSettings} />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={ROUTES.swapSettingsTimeout}
+        element={
+          <PublicKeyRoute>
+            <SendSettingsTxTimeout previous={ROUTES.swapSettings} />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={ROUTES.swapConfirm}
+        element={
+          <VerifiedAccountRoute>
+            <SendConfirm previous={ROUTES.swapSettings} />
+          </VerifiedAccountRoute>
+        }
+      ></Route>
     </Routes>
   );
 };

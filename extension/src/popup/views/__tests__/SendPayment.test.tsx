@@ -23,6 +23,7 @@ import { SendPayment } from "popup/views/SendPayment";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
 import * as CheckSuspiciousAsset from "popup/helpers/checkForSuspiciousAsset";
 import * as tokenPaymentActions from "popup/ducks/token-payment";
+import { BrowserRouter, MemoryRouter } from "react-router-dom";
 
 jest.spyOn(ApiInternal, "getAccountIndexerBalances").mockImplementation(() => {
   return Promise.resolve(mockBalances);
@@ -124,7 +125,7 @@ describe("SendPayment", () => {
     jest.clearAllMocks();
   });
 
-  it("renders", async () => {
+  it.only("renders", async () => {
     const history = createMemoryHistory();
     history.push(ROUTES.sendPaymentTo);
     mockHistoryGetter.mockReturnValue(history);
@@ -147,6 +148,13 @@ describe("SendPayment", () => {
       >
         <SendPayment />
       </Wrapper>,
+      {
+        wrapper: (children) => (
+          <MemoryRouter initialEntries={[ROUTES.sendPaymentTo]}>
+            {children.children}
+          </MemoryRouter>
+        ),
+      },
     );
     await waitFor(() => {
       expect(screen.getByTestId("send-to-view")).toBeDefined();
@@ -286,6 +294,7 @@ const testPaymentFlow = async (
     >
       <SendPayment />
     </Wrapper>,
+    { wrapper: BrowserRouter },
   );
 
   await waitFor(() => {

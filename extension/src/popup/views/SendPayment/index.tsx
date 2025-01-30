@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Routes, Navigate } from "react-router-dom";
+import { Routes, Navigate, Route } from "react-router-dom";
 
 import { AppDispatch } from "popup/App";
 import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
@@ -53,39 +53,84 @@ export const SendPayment = () => {
 
   return (
     <Routes>
-      <PublicKeyRoute path={ROUTES.sendPayment}>
-        <Navigate to={ROUTES.sendPaymentTo} />
-      </PublicKeyRoute>
-      <PublicKeyRoute path={ROUTES.sendPaymentTo}>
-        <SendTo previous={ROUTES.account} />
-      </PublicKeyRoute>
-      <PublicKeyRoute path={ROUTES.sendPaymentAmount}>
-        <SendAmount
-          previous={ROUTES.sendPaymentTo}
-          next={ROUTES.sendPaymentSettings}
-        />
-      </PublicKeyRoute>
-      <PublicKeyRoute path={ROUTES.sendPaymentType}>
-        <SendType />
-      </PublicKeyRoute>
-      <PublicKeyRoute path={ROUTES.sendPaymentSettings}>
-        <SendSettings
-          previous={ROUTES.sendPaymentAmount}
-          next={ROUTES.sendPaymentConfirm}
-        />
-      </PublicKeyRoute>
-      <PublicKeyRoute path={ROUTES.sendPaymentSettingsFee}>
-        <SendSettingsFee previous={ROUTES.sendPaymentSettings} />
-      </PublicKeyRoute>
-      <PublicKeyRoute path={ROUTES.sendPaymentSettingsSlippage}>
-        <SendSettingsSlippage previous={ROUTES.sendPaymentSettings} />
-      </PublicKeyRoute>
-      <PublicKeyRoute path={ROUTES.sendPaymentSettingsTimeout}>
-        <SendSettingsTxTimeout previous={ROUTES.sendPaymentSettings} />
-      </PublicKeyRoute>
-      <VerifiedAccountRoute path={ROUTES.sendPaymentConfirm}>
-        <SendConfirm previous={ROUTES.sendPaymentSettings} />
-      </VerifiedAccountRoute>
+      <Route
+        path={ROUTES.sendPayment}
+        element={
+          <PublicKeyRoute>
+            <Navigate to={ROUTES.sendPaymentTo} />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={ROUTES.sendPaymentTo}
+        element={
+          <PublicKeyRoute>
+            <SendTo previous={ROUTES.account} />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={ROUTES.sendPaymentAmount}
+        element={
+          <PublicKeyRoute>
+            <SendAmount
+              previous={ROUTES.sendPaymentTo}
+              next={ROUTES.sendPaymentSettings}
+            />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={ROUTES.sendPaymentType}
+        element={
+          <PublicKeyRoute>
+            <SendType />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={ROUTES.sendPaymentSettings}
+        element={
+          <PublicKeyRoute>
+            <SendSettings
+              previous={ROUTES.sendPaymentAmount}
+              next={ROUTES.sendPaymentConfirm}
+            />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={ROUTES.sendPaymentSettingsFee}
+        element={
+          <PublicKeyRoute>
+            <SendSettingsFee previous={ROUTES.sendPaymentSettings} />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={ROUTES.sendPaymentSettingsSlippage}
+        element={
+          <PublicKeyRoute>
+            <SendSettingsSlippage previous={ROUTES.sendPaymentSettings} />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={ROUTES.sendPaymentSettingsTimeout}
+        element={
+          <PublicKeyRoute>
+            <SendSettingsTxTimeout previous={ROUTES.sendPaymentSettings} />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={ROUTES.sendPaymentConfirm}
+        element={
+          <VerifiedAccountRoute>
+            <SendConfirm previous={ROUTES.sendPaymentSettings} />
+          </VerifiedAccountRoute>
+        }
+      ></Route>
     </Routes>
   );
 };
