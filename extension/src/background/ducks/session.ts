@@ -14,12 +14,11 @@ export const logIn = createAsyncThunk<
   UiData,
   UiData,
   { rejectValue: ErrorMessage }
->("logIn", async ({ publicKey, mnemonicPhrase, allAccounts }, thunkApi) => {
+>("logIn", async ({ publicKey, allAccounts }, thunkApi) => {
   try {
     await internalSubscribeAccount(publicKey);
     return {
       publicKey,
-      mnemonicPhrase,
       allAccounts,
     };
   } catch (e) {
@@ -53,19 +52,16 @@ export interface SessionState {
 
 const initialState: InitialState = {
   publicKey: "",
-  privateKey: "",
   hashKey: {
     iv: "",
     key: "",
   },
-  mnemonicPhrase: "",
   allAccounts: [] as Account[],
   migratedMnemonicPhrase: "",
 };
 
 interface UiData {
   publicKey: string;
-  mnemonicPhrase?: string;
   allAccounts?: Account[];
   migratedMnemonicPhrase?: string;
 }
@@ -154,7 +150,6 @@ export const sessionSlice = createSlice({
   extraReducers: (builder) => {
     builder.addCase(logIn.fulfilled, (state, action) => {
       state.publicKey = action.payload.publicKey;
-      state.mnemonicPhrase = action.payload.mnemonicPhrase || "";
       state.allAccounts = action.payload.allAccounts || [];
     });
     builder.addCase(setActivePublicKey.fulfilled, (state, action) => {
@@ -182,10 +177,6 @@ export const {
 export const publicKeySelector = createSelector(
   sessionSelector,
   (session) => session.publicKey,
-);
-export const mnemonicPhraseSelector = createSelector(
-  sessionSelector,
-  (session) => session.mnemonicPhrase,
 );
 export const migratedMnemonicPhraseSelector = createSelector(
   sessionSelector,
