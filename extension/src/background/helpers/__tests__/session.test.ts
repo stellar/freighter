@@ -16,8 +16,6 @@ describe("session", () => {
       keyObject: { key, iv },
     });
 
-    console.log(encryptedPrivateKey);
-
     const decryptedPrivateKey = await decryptHashString({
       hash: encryptedPrivateKey,
       keyObject: { key, iv },
