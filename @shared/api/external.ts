@@ -80,9 +80,9 @@ export const submitTransaction = async (
   signerAddress: string;
   error?: FreighterApiError;
 }> => {
-  let network = "";
-  let _accountToSign = "";
-  let networkPassphrase = "";
+  let network;
+  let _accountToSign;
+  let networkPassphrase;
 
   /* 
   As of v1.3.0, this method now accepts an object as its second param. 
@@ -90,11 +90,11 @@ export const submitTransaction = async (
   This logic maintains backwards compatibility for older versions
   */
   if (typeof opts === "object") {
-    _accountToSign = opts.accountToSign || "";
-    networkPassphrase = opts.networkPassphrase || "";
+    _accountToSign = opts.accountToSign;
+    networkPassphrase = opts.networkPassphrase;
   } else {
-    network = opts || "";
-    _accountToSign = accountToSign || "";
+    network = opts;
+    _accountToSign = accountToSign;
   }
 
   let response;
@@ -132,7 +132,7 @@ export const submitMessage = async (
 }> => {
   let response;
   const _opts = opts || {};
-  const accountToSign = _opts.address || "";
+  const accountToSign = _opts.address;
   try {
     response = await sendMessageToContentScript({
       blob,
@@ -168,7 +168,7 @@ export const submitAuthEntry = async (
   error?: FreighterApiError;
 }> => {
   const _opts = opts || {};
-  const accountToSign = _opts.address || "";
+  const accountToSign = _opts.address;
   let response;
   try {
     response = await sendMessageToContentScript({
