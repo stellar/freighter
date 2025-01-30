@@ -125,6 +125,7 @@ import {
   DEFAULT_ASSETS_LISTS,
 } from "@shared/constants/soroban/token";
 import { getSdk } from "@shared/helpers/stellar";
+import { captureException } from "@sentry/browser";
 
 // number of public keys to auto-import
 const numOfPublicKeysToCheck = 5;
@@ -296,17 +297,14 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     }
 
     // store encrypted extra data
-    try {
-      keyStore = await keyManager.storeKey(keyMetadata);
-      await storeEncryptedTemporaryData({
-        localStore,
-        keyName: TEMPORARY_STORE_EXTRA_ID,
-        temporaryData: mnemonicPhrase,
-        hashKey: activeHashKey,
-      });
-    } catch (e) {
-      console.error(e);
-    }
+
+    keyStore = await keyManager.storeKey(keyMetadata);
+    await storeEncryptedTemporaryData({
+      localStore,
+      keyName: TEMPORARY_STORE_EXTRA_ID,
+      temporaryData: mnemonicPhrase,
+      hashKey: activeHashKey,
+    });
 
     // store encrypted keypair data
     await storeEncryptedTemporaryData({
@@ -449,11 +447,18 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     await clearSession({ localStore, sessionStore });
 
-    await _storeAccount({
-      password,
-      keyPair,
-      mnemonicPhrase,
-    });
+    try {
+      await _storeAccount({
+        password,
+        keyPair,
+        mnemonicPhrase,
+      });
+    } catch (e) {
+      console.error(e);
+      captureException(`Error creating account: ${JSON.stringify(e)}`);
+      return { error: "Error creating account" };
+    }
+
     await localStore.setItem(
       APPLICATION_ID,
       APPLICATION_STATE.PASSWORD_CREATED,
@@ -511,11 +516,17 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       privateKey: wallet.getSecret(keyNumber),
     };
 
-    await _storeAccount({
-      password,
-      keyPair,
-      mnemonicPhrase,
-    });
+    try {
+      await _storeAccount({
+        password,
+        keyPair,
+        mnemonicPhrase,
+      });
+    } catch (e) {
+      await clearSession({ localStore, sessionStore });
+      captureException(`Error adding account: ${JSON.stringify(e)}`);
+      return { error: "Error adding account" };
+    }
 
     const keyId = keyNumber.toString();
     await localStore.setItem(KEY_DERIVATION_NUMBER_ID, keyId);
@@ -549,16 +560,21 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       privateKey,
     };
 
-    await _storeAccount({
-      password,
-      keyPair,
-      mnemonicPhrase: await getEncryptedTemporaryData({
-        sessionStore,
-        localStore,
-        keyName: TEMPORARY_STORE_EXTRA_ID,
-      }),
-      imported: true,
-    });
+    try {
+      await _storeAccount({
+        password,
+        keyPair,
+        mnemonicPhrase: await getEncryptedTemporaryData({
+          sessionStore,
+          localStore,
+          keyName: TEMPORARY_STORE_EXTRA_ID,
+        }),
+        imported: true,
+      });
+    } catch (e) {
+      captureException(`Error importing account: ${JSON.stringify(e)}`);
+      return { error: "Error importing account" };
+    }
 
     const currentState = sessionStore.getState();
 
@@ -831,11 +847,15 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       await clearSession({ localStore, sessionStore });
 
-      await _storeAccount({
-        mnemonicPhrase: recoverMnemonic,
-        password,
-        keyPair,
-      });
+      try {
+        await _storeAccount({
+          mnemonicPhrase: recoverMnemonic,
+          password,
+          keyPair,
+        });
+      } catch (e) {
+        captureException(`Error recovering account: ${JSON.stringify(e)}`);
+      }
 
       // if we don't have an application state, assign them one
       applicationState =
@@ -874,6 +894,9 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
             await localStore.setItem(KEY_DERIVATION_NUMBER_ID, String(i));
           }
         } catch (e) {
+          captureException(
+            `Error preloading account: ${JSON.stringify(e)} - ${i}`,
+          );
           // continue
         }
       }
@@ -1032,12 +1055,19 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     // clear the temporary store so we can replace it with the new encrypted data
     await localStore.remove(TEMPORARY_STORE_ID);
 
-    await storeEncryptedTemporaryData({
-      localStore,
-      keyName: TEMPORARY_STORE_EXTRA_ID,
-      temporaryData: activeMnemonicPhrase,
-      hashKey,
-    });
+    try {
+      await storeEncryptedTemporaryData({
+        localStore,
+        keyName: TEMPORARY_STORE_EXTRA_ID,
+        temporaryData: activeMnemonicPhrase,
+        hashKey,
+      });
+    } catch (e) {
+      await clearSession({ localStore, sessionStore });
+      captureException(
+        `Error storing encrypted temporary data: ${JSON.stringify(e)}`,
+      );
+    }
 
     // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < keyIdList.length; i += 1) {
@@ -1049,19 +1079,32 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
           password,
         });
 
-        await storeEncryptedTemporaryData({
-          localStore,
-          keyName: keyIdList[i],
-          temporaryData: keyStoreToUnlock.privateKey,
-          hashKey,
-        });
+        try {
+          await storeEncryptedTemporaryData({
+            localStore,
+            keyName: keyIdList[i],
+            temporaryData: keyStoreToUnlock.privateKey,
+            hashKey,
+          });
+        } catch (e) {
+          captureException(
+            `Error storing encrypted temporary data: ${JSON.stringify(
+              e,
+            )} - ${JSON.stringify(keyIdList)}: ${i}`,
+          );
+        }
       }
     }
 
-    await storeActiveHashKey({
-      sessionStore,
-      hashKey,
-    });
+    try {
+      await storeActiveHashKey({
+        sessionStore,
+        hashKey,
+      });
+    } catch (e) {
+      await clearSession({ localStore, sessionStore });
+      captureException(`Error storing active hash key: ${JSON.stringify(e)}`);
+    }
 
     // start the timer now that we have active private key
     sessionTimer.startSession();
@@ -1118,11 +1161,20 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const signTransaction = async () => {
     const keyId = (await localStore.getItem(KEY_ID)) || "";
-    const privateKey = await getEncryptedTemporaryData({
-      localStore,
-      sessionStore,
-      keyName: keyId,
-    });
+    let privateKey = "";
+
+    try {
+      privateKey = await getEncryptedTemporaryData({
+        localStore,
+        sessionStore,
+        keyName: keyId,
+      });
+    } catch (e) {
+      captureException(
+        `Sign transaction: No private key found: ${JSON.stringify(e)}`,
+      );
+    }
+
     const networkDetails = await getNetworkDetails();
 
     const Sdk = getSdk(networkDetails.networkPassphrase);
@@ -1157,11 +1209,18 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const signBlob = async () => {
     const keyId = (await localStore.getItem(KEY_ID)) || "";
-    const privateKey = await getEncryptedTemporaryData({
-      localStore,
-      sessionStore,
-      keyName: keyId,
-    });
+    let privateKey = "";
+
+    try {
+      privateKey = await getEncryptedTemporaryData({
+        localStore,
+        sessionStore,
+        keyName: keyId,
+      });
+    } catch (e) {
+      captureException(`Sign blob: No private key found: ${JSON.stringify(e)}`);
+    }
+
     const networkDetails = await getNetworkDetails();
 
     const Sdk = getSdk(networkDetails.networkPassphrase);
@@ -1187,11 +1246,20 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const signAuthEntry = async () => {
     const keyId = (await localStore.getItem(KEY_ID)) || "";
-    const privateKey = await getEncryptedTemporaryData({
-      localStore,
-      sessionStore,
-      keyName: keyId,
-    });
+    let privateKey = "";
+
+    try {
+      privateKey = await getEncryptedTemporaryData({
+        localStore,
+        sessionStore,
+        keyName: keyId,
+      });
+    } catch (e) {
+      captureException(
+        `Sign auth entry: No private key found: ${JSON.stringify(e)}`,
+      );
+    }
+
     const networkDetails = await getNetworkDetails();
 
     const Sdk = getSdk(networkDetails.networkPassphrase);
@@ -1230,11 +1298,21 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     const transaction = Sdk.TransactionBuilder.fromXDR(transactionXDR, network);
     const keyId = (await localStore.getItem(KEY_ID)) || "";
-    const privateKey = await getEncryptedTemporaryData({
-      localStore,
-      sessionStore,
-      keyName: keyId,
-    });
+    let privateKey = "";
+    try {
+      privateKey = await getEncryptedTemporaryData({
+        localStore,
+        sessionStore,
+        keyName: keyId,
+      });
+    } catch (e) {
+      captureException(
+        `Sign freighter transaction: No private key found: ${JSON.stringify(
+          e,
+        )}`,
+      );
+    }
+
     if (privateKey.length) {
       const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
       transaction.sign(sourceKeys);
@@ -1251,11 +1329,22 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     const transaction = Sdk.TransactionBuilder.fromXDR(transactionXDR, network);
     const keyId = (await localStore.getItem(KEY_ID)) || "";
-    const privateKey = await getEncryptedTemporaryData({
-      localStore,
-      sessionStore,
-      keyName: keyId,
-    });
+    let privateKey = "";
+
+    try {
+      privateKey = await getEncryptedTemporaryData({
+        localStore,
+        sessionStore,
+        keyName: keyId,
+      });
+    } catch (e) {
+      captureException(
+        `Sign freighter Soroban transaction: No private key found: ${JSON.stringify(
+          e,
+        )}`,
+      );
+    }
+
     if (privateKey.length) {
       const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
       transaction.sign(sourceKeys);
