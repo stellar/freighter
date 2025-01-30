@@ -85,7 +85,7 @@ export const ManageAssetRowButton = ({
   setHandleAddToken,
   recommendedFee,
 }: ManageAssetRowButtonProps) => {
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
   const [rowButtonShowing, setRowButtonShowing] = useState("");
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);

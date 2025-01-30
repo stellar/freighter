@@ -67,11 +67,12 @@ import { Details } from "./Preview/Details";
 import { Data } from "./Preview/Data";
 
 import "./styles.scss";
+import { AppDispatch } from "popup/App";
 
 export const SignTransaction = () => {
   const location = useLocation();
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =

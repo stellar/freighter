@@ -7,6 +7,7 @@ import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { changeNetwork } from "popup/ducks/settings";
 import { NETWORK_NAMES } from "@shared/constants/stellar";
+import { AppDispatch } from "popup/App";
 
 import {
   MigrationHeader,
@@ -19,7 +20,7 @@ import "./styles.scss";
 
 export const MigrationStart = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [isConfirmed, setIsConfirmed] = useState(false);
 
   const handleContinue = async () => {

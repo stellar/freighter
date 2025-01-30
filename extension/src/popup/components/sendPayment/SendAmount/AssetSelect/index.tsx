@@ -18,6 +18,7 @@ import { isContractId } from "popup/helpers/soroban";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { settingsSelector } from "popup/ducks/settings";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
+import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
 
@@ -30,7 +31,7 @@ export const AssetSelect = ({
   issuerKey: string;
   isSuspicious: boolean;
 }) => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
   const { networkDetails, assetsLists } = useSelector(settingsSelector);
   const [isUnverifiedToken, setIsUnverifiedToken] = useState(false);

@@ -1,5 +1,5 @@
 import React from "react";
-import { Switch } from "react-router-dom";
+import { Routes } from "react-router-dom";
 
 import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
@@ -18,37 +18,31 @@ export const AccountMigration = () => (
     <React.Fragment>
       <View.Header />
       <View.Content alignment="center">
-        <Switch>
-          <PublicKeyRoute exact path={ROUTES.accountMigration}>
+        <Routes>
+          <PublicKeyRoute path={ROUTES.accountMigration}>
             <div className="AccountMigration">
               <MigrationStart />
             </div>
           </PublicKeyRoute>
-          <PublicKeyRoute exact path={ROUTES.accountMigrationReviewMigration}>
+          <PublicKeyRoute path={ROUTES.accountMigrationReviewMigration}>
             <div className="AccountMigration">
               <ReviewMigration />
             </div>
           </PublicKeyRoute>
-          <VerifiedAccountRoute
-            exact
-            path={ROUTES.accountMigrationMnemonicPhrase}
-          >
+          <VerifiedAccountRoute path={ROUTES.accountMigrationMnemonicPhrase}>
             <MnemonicPhrase />
           </VerifiedAccountRoute>
-          <VerifiedAccountRoute
-            exact
-            path={ROUTES.accountMigrationConfirmMigration}
-          >
+          <VerifiedAccountRoute path={ROUTES.accountMigrationConfirmMigration}>
             <div className="AccountMigration">
               <ConfirmMigration />
             </div>
           </VerifiedAccountRoute>
-          <PublicKeyRoute exact path={ROUTES.accountMigrationMigrationComplete}>
+          <PublicKeyRoute path={ROUTES.accountMigrationMigrationComplete}>
             <div className="AccountMigration">
               <MigrationComplete />
             </div>
           </PublicKeyRoute>
-        </Switch>
+        </Routes>
       </View.Content>
     </React.Fragment>
   </>

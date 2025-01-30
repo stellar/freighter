@@ -29,7 +29,7 @@ import "./styles.scss";
 export const ConfirmMigration = () => {
   const { t } = useTranslation();
   const { recommendedFee } = useNetworkFees();
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch<AppDispatch>();
   const { balancesToMigrate, isMergeSelected } = useSelector(
     transactionDataSelector,
   );

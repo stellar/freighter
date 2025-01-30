@@ -4,6 +4,7 @@ import { Field, Form, Formik } from "formik";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { View } from "popup/basics/layout/View";
+import { AppDispatch } from "popup/App";
 
 import { saveSettings, settingsSelector } from "popup/ducks/settings";
 
@@ -14,7 +15,7 @@ import "./styles.scss";
 
 export const Preferences = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { isDataSharingAllowed, isMemoValidationEnabled, isHideDustEnabled } =
     useSelector(settingsSelector);
 

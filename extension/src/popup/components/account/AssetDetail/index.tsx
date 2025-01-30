@@ -69,7 +69,7 @@ export const AssetDetail = ({
   setSelectedAsset,
   subentryCount,
 }: AssetDetailProps) => {
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch<AppDispatch>();
   const isNative = selectedAsset === "native";
 
   const canonical = getAssetFromCanonical(selectedAsset);

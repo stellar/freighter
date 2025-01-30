@@ -2,11 +2,7 @@ import React from "react";
 import { Provider } from "react-redux";
 import BigNumber from "bignumber.js";
 import { createMemoryHistory } from "history";
-import {
-  configureStore,
-  combineReducers,
-  getDefaultMiddleware,
-} from "@reduxjs/toolkit";
+import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { Balances } from "@shared/api/types";
 
@@ -35,11 +31,7 @@ const makeDummyStore = (state: any) =>
   configureStore({
     reducer: rootReducer,
     preloadedState: state,
-    middleware: [
-      ...getDefaultMiddleware({
-        serializableCheck: false,
-      }),
-    ],
+    middleware: (defaults) => defaults({ serializableCheck: false }),
   });
 
 export const Wrapper: React.FunctionComponent<any> = ({

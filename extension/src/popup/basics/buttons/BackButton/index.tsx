@@ -1,6 +1,6 @@
 import React from "react";
 import { Icon } from "@stellar/design-system";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import "./styles.scss";
 
@@ -8,7 +8,7 @@ interface BackButtonProps {
   customBackAction?: () => void;
   customBackIcon?: React.ReactNode;
   hasBackCopy?: boolean;
-  customButtonComponent?: React.ReactElement;
+  customButtonComponent?: React.ReactElement<HTMLButtonElement>;
 }
 
 export const BackButton = ({
@@ -17,18 +17,19 @@ export const BackButton = ({
   hasBackCopy,
   customButtonComponent,
 }: BackButtonProps) => {
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const handleClick = () => {
     if (customBackAction) {
       customBackAction();
     } else {
-      history.goBack();
+      navigate(-1);
     }
   };
 
   if (customButtonComponent) {
-    return React.cloneElement(customButtonComponent, { onClick: handleClick });
+    const ClonedComponent = customButtonComponent;
+    return React.cloneElement(ClonedComponent, { onclick: handleClick });
   }
 
   return (

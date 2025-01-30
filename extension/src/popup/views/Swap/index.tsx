@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Switch, Redirect } from "react-router-dom";
+import { Routes, Navigate } from "react-router-dom";
 
 import { AppDispatch } from "popup/App";
 import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
@@ -49,28 +49,28 @@ export const Swap = () => {
   }, [dispatch, publicKey, networkDetails, accountBalances]);
 
   return (
-    <Switch>
-      <PublicKeyRoute exact path={ROUTES.swap}>
-        <Redirect to={ROUTES.swapAmount} />
+    <Routes>
+      <PublicKeyRoute path={ROUTES.swap}>
+        <Navigate to={ROUTES.swapAmount} />
       </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.swapAmount}>
+      <PublicKeyRoute path={ROUTES.swapAmount}>
         <SendAmount previous={ROUTES.account} next={ROUTES.swapSettings} />
       </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.swapSettings}>
+      <PublicKeyRoute path={ROUTES.swapSettings}>
         <SendSettings previous={ROUTES.swapAmount} next={ROUTES.swapConfirm} />
       </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.swapSettingsFee}>
+      <PublicKeyRoute path={ROUTES.swapSettingsFee}>
         <SendSettingsFee previous={ROUTES.swapSettings} />
       </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.swapSettingsSlippage}>
+      <PublicKeyRoute path={ROUTES.swapSettingsSlippage}>
         <SendSettingsSlippage previous={ROUTES.swapSettings} />
       </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.swapSettingsTimeout}>
+      <PublicKeyRoute path={ROUTES.swapSettingsTimeout}>
         <SendSettingsTxTimeout previous={ROUTES.swapSettings} />
       </PublicKeyRoute>
-      <VerifiedAccountRoute exact path={ROUTES.swapConfirm}>
+      <VerifiedAccountRoute path={ROUTES.swapConfirm}>
         <SendConfirm previous={ROUTES.swapSettings} />
       </VerifiedAccountRoute>
-    </Switch>
+    </Routes>
   );
 };

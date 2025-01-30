@@ -31,7 +31,7 @@ export const ConfirmMnemonicPhrase = ({
   isMigration?: boolean;
 }) => {
   const { t } = useTranslation();
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [words, setWords] = useState([""]);
 
   useEffect(() => {

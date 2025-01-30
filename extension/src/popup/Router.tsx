@@ -1,8 +1,8 @@
 import React, { useEffect } from "react";
 import {
   HashRouter,
-  Switch,
-  Redirect,
+  Routes,
+  Navigate,
   Route,
   useLocation,
   RouteProps,
@@ -78,6 +78,7 @@ import { ReviewAuth } from "./views/ReviewAuth";
 import { View } from "./basics/layout/View";
 import { BottomNav } from "./components/BottomNav";
 import { useIsSwap } from "./helpers/useIsSwap";
+import { AppDispatch } from "./App";
 
 export const PublicKeyRoute = (props: RouteProps) => {
   const location = useLocation();
@@ -95,7 +96,7 @@ export const PublicKeyRoute = (props: RouteProps) => {
 
   if (applicationState === APPLICATION_STATE.APPLICATION_STARTED) {
     return (
-      <Redirect
+      <Navigate
         to={{
           pathname: "/",
         }}
@@ -104,12 +105,10 @@ export const PublicKeyRoute = (props: RouteProps) => {
   }
   if (!publicKey) {
     return (
-      <Redirect
-        to={{
-          pathname: ROUTES.unlockAccount,
-          search: location.search,
-          state: { from: location },
-        }}
+      <Navigate
+        to={`${ROUTES.unlockAccount}${location.search}`}
+        state={{ from: location }}
+        replace
       />
     );
   }
@@ -130,12 +129,10 @@ export const PrivateKeyRoute = (props: RouteProps) => {
   }
   if (!hasPrivateKey) {
     return (
-      <Redirect
-        to={{
-          pathname: ROUTES.unlockAccount,
-          search: location.search,
-          state: { from: location },
-        }}
+      <Navigate
+        to={`${ROUTES.unlockAccount}${location.search}`}
+        state={{ from: location }}
+        replace
       />
     );
   }
@@ -154,7 +151,7 @@ const UnlockAccountRoute = (props: RouteProps) => {
 
   if (applicationState === APPLICATION_STATE.APPLICATION_STARTED) {
     return (
-      <Redirect
+      <Navigate
         to={{
           pathname: "/",
         }}
@@ -170,12 +167,7 @@ export const VerifiedAccountRoute = (props: RouteProps) => {
 
   if (!hasPrivateKey) {
     return (
-      <Redirect
-        to={{
-          pathname: ROUTES.verifyAccount,
-          state: { from: location },
-        }}
-      />
+      <Navigate to={ROUTES.verifyAccount} state={{ from: location }} replace />
     );
   }
   return <Route {...props} />;
@@ -196,7 +188,7 @@ const HomeRoute = () => {
 
   if (!publicKey || !allAccounts.length) {
     if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
-      return <Redirect to={ROUTES.unlockAccount} />;
+      return <Navigate to={ROUTES.unlockAccount} />;
     }
 
     /*
@@ -212,7 +204,7 @@ const HomeRoute = () => {
 
   switch (applicationState) {
     case APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED:
-      return <Redirect to={ROUTES.account} />;
+      return <Navigate to={ROUTES.account} />;
     case APPLICATION_STATE.PASSWORD_CREATED:
     case APPLICATION_STATE.MNEMONIC_PHRASE_FAILED:
       openTab(newTabHref(ROUTES.mnemonicPhrase));
@@ -225,7 +217,7 @@ const HomeRoute = () => {
 // Broadcast to Redux when the route changes. We don't store location state, but
 // we do use the actions for metrics.
 const RouteListener = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const location = useLocation();
   const settingsState = useSelector(settingsStateSelector);
 
@@ -259,7 +251,7 @@ const NO_APP_LAYOUT_ROUTES = [
 ];
 
 const Outlet = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const location = useLocation();
   const isSwap = useIsSwap();
 
@@ -294,8 +286,8 @@ const Outlet = () => {
       {isLoadingSettings ? (
         <Loading />
       ) : (
-        <Switch>
-          <PublicKeyRoute exact path={ROUTES.account}>
+        <Routes>
+          <PublicKeyRoute path={ROUTES.account}>
             <Account />
           </PublicKeyRoute>
           <PublicKeyRoute path={ROUTES.accountHistory}>
@@ -307,7 +299,7 @@ const Outlet = () => {
           <PublicKeyRoute path={ROUTES.importAccount}>
             <ImportAccount />
           </PublicKeyRoute>
-          <PublicKeyRoute exact path={ROUTES.connectWallet}>
+          <PublicKeyRoute path={ROUTES.connectWallet}>
             <SelectHardwareWallet />
           </PublicKeyRoute>
           <PublicKeyRoute path={ROUTES.connectWalletPlugin}>
@@ -340,7 +332,7 @@ const Outlet = () => {
           <PublicKeyRoute path={ROUTES.mnemonicPhrase}>
             <MnemonicPhrase mnemonicPhrase="" />
           </PublicKeyRoute>
-          <PublicKeyRoute path={ROUTES.settings} exact>
+          <PublicKeyRoute path={ROUTES.settings}>
             <Settings />
           </PublicKeyRoute>
           <PublicKeyRoute path={ROUTES.preferences}>
@@ -409,7 +401,7 @@ const Outlet = () => {
             </>
           )}
           <HomeRoute />
-        </Switch>
+        </Routes>
       )}
       {showNav && <BottomNav />}
     </View>
@@ -419,8 +411,8 @@ const Outlet = () => {
 export const Router = () => (
   <HashRouter>
     <RouteListener />
-    <Switch>
-      <Route path="/" component={Outlet} />
-    </Switch>
+    <Routes>
+      <Route path="/" element={<Outlet />} />
+    </Routes>
   </HashRouter>
 );

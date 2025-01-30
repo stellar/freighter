@@ -1,6 +1,6 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { Redirect, Route, Switch } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import {
   transactionSubmissionSelector,
@@ -30,7 +30,7 @@ export const ManageAssets = () => {
 
   if (!balances) {
     return (
-      <Redirect
+      <Navigate
         to={{
           pathname: ROUTES.account,
         }}
@@ -40,17 +40,17 @@ export const ManageAssets = () => {
 
   return (
     <>
-      <Switch>
-        <PrivateKeyRoute exact path={ROUTES.manageAssets}>
+      <Routes>
+        <PrivateKeyRoute path={ROUTES.manageAssets}>
           <ChooseAsset balances={balances} />
         </PrivateKeyRoute>
-        <PrivateKeyRoute exact path={ROUTES.searchAsset}>
+        <PrivateKeyRoute path={ROUTES.searchAsset}>
           <SearchAsset />
         </PrivateKeyRoute>
-        <Route exact path={ROUTES.addAsset}>
+        <Route path={ROUTES.addAsset}>
           <AddAsset />
         </Route>
-      </Switch>
+      </Routes>
     </>
   );
 };

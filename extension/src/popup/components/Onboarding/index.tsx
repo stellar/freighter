@@ -1,5 +1,4 @@
 import React from "react";
-import { useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Alert, Button, Heading, Card } from "@stellar/design-system";
 
@@ -58,10 +57,9 @@ export const OnboardingButtons = ({
   customBackAction,
   children,
 }: OnboardingButtonsProps) => {
-  const history = useHistory();
   const { t } = useTranslation();
 
-  const isNewTabSession = history.length === 1;
+  const isNewTabSession = window.history.length === 1;
   const showBackButton = hasGoBackBtn && !isNewTabSession;
 
   if (children || showBackButton) {

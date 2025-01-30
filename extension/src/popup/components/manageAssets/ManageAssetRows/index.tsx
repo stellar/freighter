@@ -81,7 +81,7 @@ export const ManageAssetRows = ({
     hardwareWalletData: { status: hwStatus },
   } = useSelector(transactionSubmissionSelector);
   const [assetSubmitting, setAssetSubmitting] = useState("");
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { accountBalanceStatus } = useSelector(tokensSelector);
   const walletType = useSelector(hardwareWalletTypeSelector);
   const { recommendedFee } = useNetworkFees();

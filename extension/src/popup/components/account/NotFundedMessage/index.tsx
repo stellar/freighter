@@ -9,6 +9,7 @@ import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 
 import "./styles.scss";
+import { AppDispatch } from "popup/App";
 
 export const NotFundedMessage = ({
   canUseFriendbot,
@@ -20,7 +21,7 @@ export const NotFundedMessage = ({
   setIsAccountFriendbotFunded: (isAccountFriendbotFunded: boolean) => void;
 }) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   const handleFundAccount = async () => {
     // eslint-disable-next-line

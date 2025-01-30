@@ -24,6 +24,7 @@ import {
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 
 import { navigateTo } from "popup/helpers/navigate";
+import { AppDispatch } from "popup/App";
 
 import {
   MigrationHeader,
@@ -231,7 +232,7 @@ const AccountListItems = ({
 
 export const ReviewMigration = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [accountToMigrateList, setAccountToMigrateList] = useState(
     [] as AccountToMigrate[],

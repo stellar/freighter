@@ -35,6 +35,7 @@ import {
 
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import { ManageAssets } from "../ManageAssets";
+import { useLocation } from "react-router-dom";
 
 const mockXDR =
   "AAAAAgAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAGQAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAAAAAAAAAvrwgAAAAAAAAAABHUtNEwAAAEBY/jSiXJNsA2NpiXrOi6Ll6RiIY7v8QZEEZviM8HmmzeI4FBP9wGZm7YMorQue+DK9KI5BEXDt3hi0VOA9gD8A";
@@ -413,8 +414,8 @@ describe("Manage assets", () => {
       await fireEvent.click(addAssetButton);
     });
 
-    const lastRoute = history.entries.pop();
-    expect(lastRoute?.pathname).toBe("/account");
+    const location = useLocation();
+    expect(location?.pathname).toBe("/account");
   });
 
   it("remove asset", async () => {
@@ -441,8 +442,8 @@ describe("Manage assets", () => {
       fireEvent.click(removeButton);
     });
 
-    const lastRoute = history.entries.pop();
-    expect(lastRoute?.pathname).toBe("/account");
+    const location = useLocation();
+    expect(location?.pathname).toBe("/account");
   });
 
   it("show error view when removing asset with balance", async () => {
@@ -704,8 +705,8 @@ describe("Manage assets", () => {
       await fireEvent.click(warningAddButton);
     });
 
-    const lastRoute = history.entries.pop();
-    expect(lastRoute?.pathname).toBe("/account");
+    const location = useLocation();
+    expect(location?.pathname).toBe("/account");
   });
   it("show warning when adding an asset with Blockaid warning on Mainnet", async () => {
     await initView(true);
@@ -763,8 +764,8 @@ describe("Manage assets", () => {
       await fireEvent.click(addAssetButton);
     });
 
-    const lastRoute = history.entries.pop();
-    expect(lastRoute?.pathname).toBe("/account");
+    const location = useLocation();
+    expect(location?.pathname).toBe("/account");
   });
   it("add soroban token on asset list", async () => {
     // init Mainnet view

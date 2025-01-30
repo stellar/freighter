@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Switch } from "react-router-dom";
+import { Routes } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 import { useTranslation } from "react-i18next";
 
@@ -105,8 +105,8 @@ export const ManageAssetsLists = () => {
 
   return assetsLists ? (
     <>
-      <Switch>
-        <PublicKeyRoute exact path={ROUTES.manageAssetsLists}>
+      <Routes>
+        <PublicKeyRoute path={ROUTES.manageAssetsLists}>
           <AssetLists
             sortedAssetsListsData={sortedAssetsListsData}
             handleSelectChange={handleSelectChange}
@@ -114,13 +114,13 @@ export const ManageAssetsLists = () => {
             isLoading={isLoading}
           />
         </PublicKeyRoute>
-        <PublicKeyRoute exact path={ROUTES.manageAssetsListsModifyAssetList}>
+        <PublicKeyRoute path={ROUTES.manageAssetsListsModifyAssetList}>
           <ModifyAssetList
             assetsListsData={assetsListsData}
             selectedNetwork={selectedNetwork}
           />
         </PublicKeyRoute>
-      </Switch>
+      </Routes>
     </>
   ) : (
     <div>{t("Unable to parse assets lists")}</div>

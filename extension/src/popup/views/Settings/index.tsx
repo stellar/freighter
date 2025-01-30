@@ -8,6 +8,7 @@ import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
 import { signOut } from "popup/ducks/accountServices";
 import { navigateTo } from "popup/helpers/navigate";
+import { AppDispatch } from "popup/App";
 
 import IconNetwork from "popup/assets/icon-settings-network.svg?react";
 import IconSecurity from "popup/assets/icon-settings-security.svg?react";
@@ -22,7 +23,7 @@ import "./styles.scss";
 
 export const Settings = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   const signOutAndClose = async (e: React.FormEvent) => {
     e.preventDefault();

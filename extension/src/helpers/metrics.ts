@@ -1,14 +1,23 @@
 import throttle from "lodash/throttle";
-import { Middleware, AnyAction } from "redux";
+import { Action, Middleware } from "redux";
+import { captureException } from "@sentry/browser";
+import { PayloadAction } from "@reduxjs/toolkit";
+import { Location } from "react-router-dom";
 
 import { store } from "popup/App";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { AMPLITUDE_KEY } from "constants/env";
 import { settingsDataSharingSelector } from "popup/ducks/settings";
 import { AccountType } from "@shared/api/types";
-import { captureException } from "@sentry/browser";
 
-type MetricHandler<AppState> = (state: AppState, action: AnyAction) => void;
+type MetricsPayloadAction = PayloadAction<{
+  errorMessage?: string;
+  location?: Location;
+}>;
+type MetricHandler<AppState> = (
+  state: AppState,
+  action: MetricsPayloadAction,
+) => void;
 const handlersLookup: { [key: string]: MetricHandler<any>[] } = {};
 
 /*
@@ -17,13 +26,14 @@ const handlersLookup: { [key: string]: MetricHandler<any>[] } = {};
  * of registered handlers and passes the current state and action. These are
  * intended for metrics emission, nothing else.
  */
-export function metricsMiddleware<State>(): Middleware<object, State> {
+export function metricsMiddleware<State>(): Middleware<Action, State> {
   return ({ getState }) =>
     (next) =>
-    (action: AnyAction) => {
+    (action: unknown) => {
       const state = getState();
-      (handlersLookup[action.type] || []).forEach((handler) =>
-        handler(state, action),
+      const _action = action as PayloadAction<{ errorMessage: string }>; // Redux Middleware type forces this unknown for some reason
+      (handlersLookup[_action.type] || []).forEach((handler) =>
+        handler(state, _action),
       );
       return next(action);
     };
@@ -40,7 +50,7 @@ export function metricsMiddleware<State>(): Middleware<object, State> {
  */
 export function registerHandler<State>(
   actionType: string | { type: string },
-  handler: (state: State, action: AnyAction) => void,
+  handler: (state: State, action: MetricsPayloadAction) => void,
 ) {
   const type = typeof actionType === "string" ? actionType : actionType.type;
   if (handlersLookup[type]) {

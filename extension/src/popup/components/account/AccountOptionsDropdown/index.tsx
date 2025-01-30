@@ -16,6 +16,7 @@ import {
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 
 import "./styles.scss";
+import { AppDispatch } from "popup/App";
 
 interface DropdownModalProps {
   isFunded: boolean;
@@ -23,7 +24,7 @@ interface DropdownModalProps {
 
 const DropdownModal = ({ isFunded }: DropdownModalProps) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   return (
     <div className="AccountOptionsDropdown__modal">
