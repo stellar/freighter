@@ -1,5 +1,4 @@
 import browser from "webextension-polyfill";
-import { encode, decode } from "base64-arraybuffer-es6";
 import { Store } from "redux";
 
 import {
@@ -10,6 +9,7 @@ import {
 } from "../ducks/session";
 import { DataStorageAccess } from "./dataStorageAccess";
 import { TEMPORARY_STORE_ID } from "../../constants/localStorageTypes";
+import { encode, decode } from "./base64-arraybuffer";
 
 // 24 hours
 const SESSION_LENGTH = 60 * 24;
@@ -190,8 +190,8 @@ interface StoreEncryptedTemporaryData {
   keyName: string;
   temporaryData: string;
   hashKey: {
-    key: CryptoKey;
     iv: ArrayBuffer;
+    key: CryptoKey;
   };
 }
 
@@ -232,28 +232,13 @@ export const getEncryptedTemporaryData = async ({
     return "";
   }
   const encryptedKey = decode(encryptedKeyJSON as string);
-  const hashKey = hashKeySelector(sessionStore.getState() as SessionState);
+  const hashKey = await getActiveHashKeyCryptoKey({ sessionStore });
 
-  if (!hashKey?.key || !hashKey.iv || !encryptedKey) {
-    return "";
-  }
-
-  if (hashKey) {
-    // JSON Web Key can be parsed with decoding
-    const exportedHashKey = JSON.parse(hashKey.key) as JsonWebKey;
-    // import the password key for future use indecryption
-    const key = await crypto.subtle.importKey(
-      "jwk",
-      exportedHashKey,
-      TEMPORARY_STORE_ENCRYPTION_NAME,
-      false,
-      ["encrypt", "decrypt"],
-    );
-
+  if (hashKey !== null) {
     // use the hashed password to decrypt the private key
     const activePrivateKey = await decryptHashString({
       hash: encryptedKey,
-      keyObject: { iv: decode(hashKey.iv), key },
+      keyObject: hashKey,
     });
 
     return activePrivateKey;
