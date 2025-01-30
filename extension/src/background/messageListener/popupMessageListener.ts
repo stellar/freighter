@@ -476,14 +476,26 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const addAccount = async () => {
     const password = request.password;
 
-    const mnemonicPhrase = await getEncryptedTemporaryData({
+    let mnemonicPhrase = await getEncryptedTemporaryData({
       sessionStore,
       localStore,
       keyName: TEMPORARY_STORE_EXTRA_ID,
     });
 
     if (!mnemonicPhrase) {
-      return { error: "Mnemonic phrase not found" };
+      try {
+        await loginToAllAccounts(password);
+        mnemonicPhrase = await getEncryptedTemporaryData({
+          sessionStore,
+          localStore,
+          keyName: TEMPORARY_STORE_EXTRA_ID,
+        });
+      } catch (e) {
+        captureException(
+          `Could not login when adding account: ${JSON.stringify(e)}`,
+        );
+        return { error: "Incorrect password" };
+      }
     }
 
     const keyID = (await getIsHardwareWalletActive())
@@ -986,25 +998,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return unlockedAccounts;
   };
 
-  const confirmPassword = async () => {
-    /* In Popup, we call loadAccount to figure out what the state the user is in,
-    then redirect them to <UnlockAccount /> if there's any missing data (public/private key, allAccounts, etc.)
-    <UnlockAccount /> calls this method to fill in any missing data */
-
-    const { password } = request;
+  const loginToAllAccounts = async (password: string) => {
     const keyIdList = await getKeyIdList();
-
-    /* migration needed to v1.0.6-beta data model */
-    if (!keyIdList.length) {
-      const keyId = await localStore.getItem(KEY_ID);
-      if (keyId) {
-        keyIdList.push(keyId);
-        await localStore.setItem(KEY_ID_LIST, keyIdList);
-        await localStore.setItem(KEY_DERIVATION_NUMBER_ID, "0");
-        await addAccountName({ keyId, accountName: "Account 1" });
-      }
-    }
-    /* end migration script */
 
     // if active hw then use the first non-hw keyID to check password
     // with keyManager
@@ -1015,18 +1010,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       keyID = await _getNonHwKeyID();
     }
 
-    let activeAccountKeystore;
-
     // first make sure the password is correct to get active keystore, short circuit if not
-    try {
-      activeAccountKeystore = await _unlockKeystore({
-        keyID,
-        password,
-      });
-    } catch (e) {
-      console.error(e);
-      return { error: "Could not log into selected account" };
-    }
+    const activeAccountKeystore = await _unlockKeystore({
+      keyID,
+      password,
+    });
 
     const {
       publicKey: activePublicKey,
@@ -1108,6 +1096,36 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     // start the timer now that we have active private key
     sessionTimer.startSession();
+  };
+
+  const confirmPassword = async () => {
+    /* In Popup, we call loadAccount to figure out what the state the user is in,
+    then redirect them to <UnlockAccount /> if there's any missing data (public/private key, allAccounts, etc.)
+    <UnlockAccount /> calls this method to fill in any missing data */
+
+    const { password } = request;
+    const keyIdList = await getKeyIdList();
+
+    /* migration needed to v1.0.6-beta data model */
+    if (!keyIdList.length) {
+      const keyId = await localStore.getItem(KEY_ID);
+      if (keyId) {
+        keyIdList.push(keyId);
+        await localStore.setItem(KEY_ID_LIST, keyIdList);
+        await localStore.setItem(KEY_DERIVATION_NUMBER_ID, "0");
+        await addAccountName({ keyId, accountName: "Account 1" });
+      }
+    }
+    /* end migration script */
+
+    try {
+      await loginToAllAccounts(password);
+    } catch (e) {
+      captureException(
+        `Could not login when confirming password: ${JSON.stringify(e)}`,
+      );
+      return { error: "Incorrect password" };
+    }
 
     return {
       publicKey: publicKeySelector(sessionStore.getState()),
