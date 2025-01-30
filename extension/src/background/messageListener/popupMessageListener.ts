@@ -117,7 +117,6 @@ import {
   setActivePublicKey,
   updateAllAccountsAccountName,
   reset,
-  passwordSelector,
   setMigratedMnemonicPhrase,
 } from "background/ducks/session";
 import { STELLAR_EXPERT_MEMO_REQUIRED_ACCOUNTS_URL } from "background/constants/apiUrls";
@@ -470,12 +469,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const addAccount = async () => {
-    let password = request.password;
-    // in case a password is not provided, let's try using the value saved
-    // in current session store
-    if (!password) {
-      password = passwordSelector(sessionStore.getState()) || "";
-    }
+    const password = request.password;
 
     const mnemonicPhrase = await getEncryptedTemporaryData({
       sessionStore,
@@ -1591,14 +1585,14 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const migrateAccounts = async () => {
-    const { balancesToMigrate, isMergeSelected, recommendedFee } = request;
+    const { balancesToMigrate, isMergeSelected, recommendedFee, password } =
+      request;
 
     const migratedMnemonicPhrase = migratedMnemonicPhraseSelector(
       sessionStore.getState(),
     );
     const migratedAccounts = [];
 
-    const password = passwordSelector(sessionStore.getState());
     if (!password || !migratedMnemonicPhrase) {
       return { error: "Authentication error" };
     }

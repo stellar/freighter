@@ -193,14 +193,6 @@ export const hasPrivateKeySelector = createSelector(
     return isHardwareWalletActive || !!session?.hashKey?.key;
   },
 );
-export const privateKeySelector = createSelector(
-  sessionSelector,
-  (session) => session.privateKey || "",
-);
-export const passwordSelector = createSelector(
-  sessionSelector,
-  (session) => session.password,
-);
 export const hashKeySelector = createSelector(
   sessionSelector,
   (session) => session.hashKey,
