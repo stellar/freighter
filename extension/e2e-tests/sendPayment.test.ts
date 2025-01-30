@@ -71,6 +71,21 @@ test("Send XLM payments from multiple accounts to G Address", async ({
 
   await page.getByText("Account 1").click();
   await sendXlmPayment({ page });
+
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("BottomNav-link-account").click();
+  await page.getByTestId("AccountHeader__icon-btn").click();
+  await page.getByText("Import a Stellar secret key").click();
+
+  // test private key account from different mnemonic phrase
+  await page
+    .locator("#privateKey-input")
+    .fill("SDCUXKGHQ4HX5NRX5JN7GMJZUXQBWZXLKF34DLVYZ4KLXXIZTG7Q26JJ");
+  await page.locator("#password-input").fill(PASSWORD);
+  await page.locator("#authorization-input").click({ force: true });
+
+  await page.getByTestId("import-account-button").click();
+  await sendXlmPayment({ page });
 });
 
 test("Send XLM payment to C address", async ({ page, extensionId }) => {
