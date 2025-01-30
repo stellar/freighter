@@ -1,5 +1,6 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   Button,
   Heading,
@@ -33,6 +34,7 @@ export const ConfirmMigration = () => {
   const { balancesToMigrate, isMergeSelected } = useSelector(
     transactionDataSelector,
   );
+  const navigate = useNavigate();
 
   const handleCancel = () => {
     window.close();
@@ -48,7 +50,7 @@ export const ConfirmMigration = () => {
     );
 
     if (migrateAccounts.fulfilled.match(migrateAccountsRes)) {
-      navigateTo(ROUTES.accountMigrationMigrationComplete);
+      navigateTo(ROUTES.accountMigrationMigrationComplete, navigate);
     }
   };
 

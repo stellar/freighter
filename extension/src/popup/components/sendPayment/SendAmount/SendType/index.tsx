@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik } from "formik";
 import { Button, Icon, Link } from "@stellar/design-system";
@@ -14,9 +15,9 @@ import {
   saveDestinationAsset,
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
+import { InfoTooltip } from "popup/basics/InfoTooltip";
 
 import "./styles.scss";
-import { InfoTooltip } from "popup/basics/InfoTooltip";
 
 enum PAYMENT_TYPES {
   REGULAR = "REGULAR",
@@ -75,6 +76,7 @@ export const SendType = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { destinationAsset } = useSelector(transactionDataSelector);
+  const navigate = useNavigate();
 
   const submitForm = (values: { paymentType: string }) => {
     // path payment flag is a non empty string in redux destinationAsset
@@ -88,14 +90,14 @@ export const SendType = () => {
         ? METRIC_NAMES.sendPaymentTypePathPayment
         : METRIC_NAMES.sendPaymentTypePayment,
     );
-    navigateTo(ROUTES.sendPaymentAmount);
+    navigateTo(ROUTES.sendPaymentAmount, navigate);
   };
 
   return (
     <React.Fragment>
       <SubviewHeader
         title={t("Send Type")}
-        customBackAction={() => navigateTo(ROUTES.sendPaymentAmount)}
+        customBackAction={() => navigateTo(ROUTES.sendPaymentAmount, navigate)}
         customBackIcon={<Icon.XClose />}
       />
       <Formik

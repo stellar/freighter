@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { Icon } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
@@ -34,6 +35,8 @@ export const AssetSelect = ({
   const dispatch = useDispatch<AppDispatch>();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
   const { networkDetails, assetsLists } = useSelector(settingsSelector);
+  const navigate = useNavigate();
+
   const [isUnverifiedToken, setIsUnverifiedToken] = useState(false);
 
   useEffect(() => {
@@ -63,7 +66,7 @@ export const AssetSelect = ({
   const handleSelectAsset = () => {
     dispatch(saveAssetSelectType(AssetSelectType.REGULAR));
     dispatch(saveAssetSelectSource(true));
-    navigateTo(ROUTES.manageAssets);
+    navigateTo(ROUTES.manageAssets, navigate);
   };
 
   return (
@@ -115,6 +118,7 @@ export const PathPayAssetSelect = ({
   const dispatch = useDispatch();
   const { assetIcons } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
+  const navigate = useNavigate();
 
   const handleSelectAsset = () => {
     dispatch(
@@ -126,7 +130,7 @@ export const PathPayAssetSelect = ({
     if (source) {
       dispatch(saveAmount("0"));
     }
-    navigateTo(ROUTES.manageAssets, isSwap ? "?swap=true" : "");
+    navigateTo(ROUTES.manageAssets, navigate, isSwap ? "?swap=true" : "");
   };
 
   const truncateLongAssetCode = (code: string) => {

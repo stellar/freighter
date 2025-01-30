@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CopyText,
@@ -65,6 +66,7 @@ export const defaultAccountBalances = {
 export const Account = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
   );
@@ -205,7 +207,7 @@ export const Account = () => {
                       title={t("Send Payment")}
                       id="nav-btn-send"
                       icon={<Icon.Send01 />}
-                      onClick={() => navigateTo(ROUTES.sendPayment)}
+                      onClick={() => navigateTo(ROUTES.sendPayment, navigate)}
                     />
                   </div>
                   <div

@@ -42,7 +42,7 @@ export const VerifyAccount = ({
     } else {
       // eslint-disable-next-line
       await dispatch(confirmPassword(password));
-      navigateTo(from || ROUTES.account);
+      navigateTo(from || ROUTES.account, navigate);
     }
   };
 

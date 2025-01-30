@@ -15,7 +15,6 @@ import {
   DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
-import { createMemoryHistory } from "history";
 
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
@@ -23,7 +22,6 @@ import { SendPayment } from "popup/views/SendPayment";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
 import * as CheckSuspiciousAsset from "popup/helpers/checkForSuspiciousAsset";
 import * as tokenPaymentActions from "popup/ducks/token-payment";
-import { BrowserRouter, MemoryRouter } from "react-router-dom";
 
 jest.spyOn(ApiInternal, "getAccountIndexerBalances").mockImplementation(() => {
   return Promise.resolve(mockBalances);
@@ -100,12 +98,6 @@ jest.mock("react-router-dom", () => {
     Redirect: ({ to }: any) => <div>redirect {to}</div>,
   };
 });
-const mockHistoryGetter = jest.fn();
-jest.mock("popup/constants/history", () => ({
-  get history() {
-    return mockHistoryGetter();
-  },
-}));
 
 const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 
@@ -125,13 +117,10 @@ describe("SendPayment", () => {
     jest.clearAllMocks();
   });
 
-  it.only("renders", async () => {
-    const history = createMemoryHistory();
-    history.push(ROUTES.sendPaymentTo);
-    mockHistoryGetter.mockReturnValue(history);
+  it("renders", async () => {
     render(
       <Wrapper
-        history={history}
+        routes={[ROUTES.sendPaymentTo]}
         state={{
           auth: {
             error: null,
@@ -148,13 +137,6 @@ describe("SendPayment", () => {
       >
         <SendPayment />
       </Wrapper>,
-      {
-        wrapper: (children) => (
-          <MemoryRouter initialEntries={[ROUTES.sendPaymentTo]}>
-            {children.children}
-          </MemoryRouter>
-        ),
-      },
     );
     await waitFor(() => {
       expect(screen.getByTestId("send-to-view")).toBeDefined();
@@ -257,12 +239,9 @@ const testPaymentFlow = async (
   isMainnet: boolean,
   hasSimError: boolean,
 ) => {
-  const history = createMemoryHistory();
-  history.push(ROUTES.sendPaymentTo);
-  mockHistoryGetter.mockReturnValue(history);
   render(
     <Wrapper
-      history={history}
+      routes={[ROUTES.sendPaymentTo]}
       state={{
         auth: {
           error: null,
@@ -294,7 +273,6 @@ const testPaymentFlow = async (
     >
       <SendPayment />
     </Wrapper>,
-    { wrapper: BrowserRouter },
   );
 
   await waitFor(() => {

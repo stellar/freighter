@@ -1,11 +1,10 @@
-import React, { useEffect } from "react";
+import React, { JSX, useEffect } from "react";
 import {
   HashRouter,
   Routes,
   Navigate,
   Route,
   useLocation,
-  RouteProps,
   Outlet,
 } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -81,7 +80,7 @@ import { BottomNav } from "./components/BottomNav";
 import { useIsSwap } from "./helpers/useIsSwap";
 import { AppDispatch } from "./App";
 
-export const PublicKeyRoute = (props: RouteProps) => {
+export const PublicKeyRoute = ({ children }: { children: JSX.Element }) => {
   const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
   const publicKey = useSelector(publicKeySelector);
@@ -113,10 +112,10 @@ export const PublicKeyRoute = (props: RouteProps) => {
       />
     );
   }
-  return <Route {...props} />;
+  return children;
 };
 
-export const PrivateKeyRoute = (props: RouteProps) => {
+export const PrivateKeyRoute = ({ children }: { children: JSX.Element }) => {
   const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
@@ -137,7 +136,7 @@ export const PrivateKeyRoute = (props: RouteProps) => {
       />
     );
   }
-  return <Route {...props} />;
+  return children;
 };
 
 /*
@@ -147,7 +146,7 @@ We are checking for applicationState here to find out if the account doesn’t e
 If an account doesn't exist, go to the <Welcome /> page; otherwise, go to <UnlockAccount/>
 */
 
-const UnlockAccountRoute = (props: RouteProps) => {
+const UnlockAccountRoute = ({ children }: { children: JSX.Element }) => {
   const applicationState = useSelector(applicationStateSelector);
 
   if (applicationState === APPLICATION_STATE.APPLICATION_STARTED) {
@@ -159,10 +158,14 @@ const UnlockAccountRoute = (props: RouteProps) => {
       />
     );
   }
-  return <Route {...props} />;
+  return children;
 };
 
-export const VerifiedAccountRoute = (props: RouteProps) => {
+export const VerifiedAccountRoute = ({
+  children,
+}: {
+  children: JSX.Element;
+}) => {
   const location = useLocation();
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
 
@@ -171,7 +174,7 @@ export const VerifiedAccountRoute = (props: RouteProps) => {
       <Navigate to={ROUTES.verifyAccount} state={{ from: location }} replace />
     );
   }
-  return <Route {...props} />;
+  return children;
 };
 
 const HomeRoute = () => {

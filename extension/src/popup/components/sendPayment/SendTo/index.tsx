@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import debounce from "lodash/debounce";
 import { Asset, StrKey, MuxedAccount, Federation } from "stellar-sdk";
@@ -105,6 +106,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const { destinationBalances, destinationAccountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
   );
+  const navigate = useNavigate();
 
   const [recentAddresses, setRecentAddresses] = useState<string[]>([]);
   const [validatedAddress, setValidatedAddress] = useState("");
@@ -117,7 +119,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   ) => {
     dispatch(saveDestination(validatedDestination));
     dispatch(saveFederationAddress(validatedFedAdress || ""));
-    navigateTo(ROUTES.sendPaymentAmount);
+    navigateTo(ROUTES.sendPaymentAmount, navigate);
   };
 
   const formik = useFormik({
@@ -230,7 +232,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
     <React.Fragment>
       <SubviewHeader
         title="Send To"
-        customBackAction={() => navigateTo(previous)}
+        customBackAction={() => navigateTo(previous, navigate)}
       />
       <View.Content hasNoTopPadding>
         <FormRows>
@@ -267,9 +269,8 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                               setIsLoading(true);
                               // recentAddresses already validated so safe to dispatch
                               if (isFederationAddress(address)) {
-                                const fedResp = await Federation.Server.resolve(
-                                  address,
-                                );
+                                const fedResp =
+                                  await Federation.Server.resolve(address);
                                 const publicKey = fedResp.account_id;
                                 setValidatedAddress(publicKey);
                                 handleContinue(publicKey, address);

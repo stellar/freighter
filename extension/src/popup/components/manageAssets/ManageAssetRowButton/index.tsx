@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import { Networks, StrKey } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -95,6 +96,7 @@ export const ManageAssetRowButton = ({
   const walletType = useSelector(hardwareWalletTypeSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
+  const navigate = useNavigate();
 
   const isHardwareWallet = !!walletType;
   const ManageAssetRowDropdownRef = useRef<HTMLDivElement>(null);
@@ -230,7 +232,7 @@ export const ManageAssetRowButton = ({
       setAssetSubmitting("");
     } else {
       changeTrustline(!isTrustlineActive, () =>
-        Promise.resolve(navigateTo(ROUTES.account)),
+        Promise.resolve(navigateTo(ROUTES.account, navigate)),
       );
     }
   };
@@ -257,7 +259,7 @@ export const ManageAssetRowButton = ({
             }),
           );
 
-          navigateTo(ROUTES.account);
+          navigateTo(ROUTES.account, navigate);
         };
         if (StrKey.isValidEd25519PublicKey(assetRowData.issuer)) {
           await changeTrustline(true, addToken);
@@ -284,7 +286,7 @@ export const ManageAssetRowButton = ({
             network: networkDetails.network as Networks,
           }),
         );
-        navigateTo(ROUTES.account);
+        navigateTo(ROUTES.account, navigate);
       }
     } else {
       await dispatch(
@@ -293,7 +295,7 @@ export const ManageAssetRowButton = ({
           network: networkDetails.network as NETWORKS,
         }),
       );
-      navigateTo(ROUTES.account);
+      navigateTo(ROUTES.account, navigate);
     }
   };
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
 import { useFormik } from "formik";
@@ -139,6 +140,7 @@ export const SendAmount = ({
 
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
+  const navigate = useNavigate();
   const [loadingRate, setLoadingRate] = useState(false);
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] =
     useState(false);
@@ -242,7 +244,7 @@ export const SendAmount = ({
           defaultBlockaidScanAssetResult,
       });
     } else {
-      navigateTo(next);
+      navigateTo(next, navigate);
     }
   };
 
@@ -447,7 +449,7 @@ export const SendAmount = ({
           issuer={suspiciousAssetData.issuer}
           image={suspiciousAssetData.image}
           onClose={() => setShowBlockedDomainWarning(false)}
-          onContinue={() => navigateTo(next)}
+          onContinue={() => navigateTo(next, navigate)}
           blockaidData={suspiciousAssetData.blockaidData}
         />
       )}
@@ -477,11 +479,11 @@ export const SendAmount = ({
             </div>
           }
           hasBackButton={!isSwap}
-          customBackAction={() => navigateTo(previous)}
+          customBackAction={() => navigateTo(previous, navigate)}
           rightButton={
             isSwap ? null : (
               <button
-                onClick={() => navigateTo(ROUTES.sendPaymentType)}
+                onClick={() => navigateTo(ROUTES.sendPaymentType, navigate)}
                 className="SendAmount__icon-slider"
               >
                 <Icon.Expand01 />

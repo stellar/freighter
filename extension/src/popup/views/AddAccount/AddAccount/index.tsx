@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -20,6 +21,7 @@ import { EnterPassword } from "popup/components/EnterPassword";
 
 export const AddAccount = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const dispatch: AppDispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
   const publicKey = useSelector(publicKeySelector);
@@ -36,7 +38,7 @@ export const AddAccount = () => {
           // eslint-disable-next-line @typescript-eslint/naming-convention
           number_of_accounts: res.payload.allAccounts.length,
         });
-        navigateTo(ROUTES.account);
+        navigateTo(ROUTES.account, navigate);
       }
     },
     [dispatch],

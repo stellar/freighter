@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Formik, Form } from "formik";
 import { object as YupObject } from "yup";
@@ -93,6 +94,7 @@ export const RecoverAccount = () => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
   const authError = useSelector(authErrorSelector);
+  const navigate = useNavigate();
   const publicKeyRef = useRef(publicKey);
   const RecoverAccountSchema = YupObject().shape({
     password: passwordValidator,
@@ -122,7 +124,7 @@ export const RecoverAccount = () => {
 
   useEffect(() => {
     if (publicKey && publicKey !== publicKeyRef.current) {
-      navigateTo(ROUTES.recoverAccountSuccess);
+      navigateTo(ROUTES.recoverAccountSuccess, navigate);
     }
   }, [publicKey]);
 

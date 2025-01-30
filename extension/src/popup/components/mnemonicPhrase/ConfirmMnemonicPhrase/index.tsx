@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import shuffle from "lodash/shuffle";
 import { Form, Formik, FormikHelpers, FormikValues } from "formik";
 import { useSelector, useDispatch } from "react-redux";
@@ -32,6 +33,7 @@ export const ConfirmMnemonicPhrase = ({
 }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const [words, setWords] = useState([""]);
 
   useEffect(() => {
@@ -73,7 +75,7 @@ export const ConfirmMnemonicPhrase = ({
         confirmMigratedMnemonicPhrase(joinSelectedWords()),
       );
       if (confirmMigratedMnemonicPhrase.fulfilled.match(res)) {
-        navigateTo(ROUTES.accountMigrationConfirmMigration);
+        navigateTo(ROUTES.accountMigrationConfirmMigration, navigate);
       }
     } else {
       dispatch(confirmMnemonicPhrase(joinSelectedWords()));

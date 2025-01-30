@@ -3,7 +3,7 @@ import { Button, Input, Toggle, Notification } from "@stellar/design-system";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 
 import {
@@ -19,9 +19,9 @@ import { View } from "popup/basics/layout/View";
 import { addAssetsList, modifyAssetsList } from "popup/ducks/settings";
 import { navigateTo } from "popup/helpers/navigate";
 import { schemaValidatedAssetList } from "popup/helpers/searchAsset";
+import { DeleteModal } from "../DeleteModal";
 
 import "./styles.scss";
-import { DeleteModal } from "../DeleteModal";
 
 interface ModifyAssetListProps {
   selectedNetwork: AssetsListKey;
@@ -38,6 +38,7 @@ export const ModifyAssetList = ({
 }: ModifyAssetListProps) => {
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
   const assetListUrl = params.get("asset-list-url");
   const dispatch = useDispatch<AppDispatch>();
@@ -206,7 +207,7 @@ export const ModifyAssetList = ({
     }
 
     if (addAssetsList.fulfilled.match(addAssetsListResp)) {
-      navigateTo(ROUTES.manageAssetsLists);
+      navigateTo(ROUTES.manageAssetsLists, navigate);
     }
   };
 
@@ -231,7 +232,7 @@ export const ModifyAssetList = ({
     }
 
     if (modifyAssetsList.fulfilled.match(modifyAssetsListResp)) {
-      navigateTo(ROUTES.manageAssetsLists);
+      navigateTo(ROUTES.manageAssetsLists, navigate);
     }
   };
 

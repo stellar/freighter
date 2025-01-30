@@ -50,7 +50,6 @@
     "dotenv-webpack": "^8.1.0",
     "fetch": "^1.1.0",
     "formik": "^2.4.6",
-    "history": "^5",
     "html-loader": "^5.1.0",
     "html-webpack-plugin": "^5.6.3",
     "i18next": "^24.2.1",

@@ -1,7 +1,7 @@
 import React from "react";
 import { Provider } from "react-redux";
+import { MemoryRouter } from "react-router-dom";
 import BigNumber from "bignumber.js";
-import { MemoryHistory } from "history";
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { Balances } from "@shared/api/types";
@@ -25,8 +25,6 @@ const rootReducer = combineReducers({
   tokenPaymentSimulation,
 });
 
-// const { MemoryRouter } = jest.requireActual("react-router-dom");
-
 const makeDummyStore = (state: any) =>
   configureStore({
     reducer: rootReducer,
@@ -37,15 +35,14 @@ const makeDummyStore = (state: any) =>
 export const Wrapper: React.FunctionComponent<any> = ({
   children,
   state,
-  history,
+  routes,
 }: {
   children: React.ReactNode;
   state: {};
-  history?: MemoryHistory;
+  routes?: string[];
 }) => {
-  console.log(history);
   return (
-    <>
+    <MemoryRouter initialEntries={routes || []}>
       <Provider
         store={makeDummyStore({
           auth: {
@@ -59,7 +56,7 @@ export const Wrapper: React.FunctionComponent<any> = ({
       >
         {children}
       </Provider>
-    </>
+    </MemoryRouter>
   );
 };
 

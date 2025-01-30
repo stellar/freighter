@@ -1,5 +1,6 @@
 import React from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@stellar/design-system";
 
@@ -25,6 +26,7 @@ export const NetworkSettings = () => {
   const networksList = useSelector(settingsNetworksListSelector);
   const activeNetworkDetails = useSelector(settingsNetworkDetailsSelector);
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   return (
     <React.Fragment>
@@ -68,7 +70,7 @@ export const NetworkSettings = () => {
         <Button
           size="md"
           variant="secondary"
-          onClick={() => navigateTo(ROUTES.addNetwork)}
+          onClick={() => navigateTo(ROUTES.addNetwork, navigate)}
         >
           {t("Add custom network")}
         </Button>

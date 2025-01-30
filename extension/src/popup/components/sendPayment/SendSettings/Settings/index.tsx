@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button, Loader } from "@stellar/design-system";
@@ -79,6 +80,8 @@ export const Settings = ({
   const { simulation } = useSelector(tokenSimulationSelector);
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
+  const navigate = useNavigate();
+
   const [isLoadingSimulation, setLoadingSimulation] = useState(true);
 
   const isSendSacToContract =
@@ -236,16 +239,21 @@ export const Settings = ({
   ]);
 
   const handleTxFeeNav = () =>
-    navigateTo(isSwap ? ROUTES.swapSettingsFee : ROUTES.sendPaymentSettingsFee);
+    navigateTo(
+      isSwap ? ROUTES.swapSettingsFee : ROUTES.sendPaymentSettingsFee,
+      navigate,
+    );
 
   const handleSlippageNav = () =>
     navigateTo(
       isSwap ? ROUTES.swapSettingsSlippage : ROUTES.sendPaymentSettingsSlippage,
+      navigate,
     );
 
   const handleTimeoutNav = () =>
     navigateTo(
       isSwap ? ROUTES.swapSettingsTimeout : ROUTES.sendPaymentSettingsTimeout,
+      navigate,
     );
 
   // dont show memo for regular sends to Muxed, or for swaps
@@ -256,7 +264,7 @@ export const Settings = ({
     <React.Fragment>
       <SubviewHeader
         title={`${isSwap ? t("Swap") : t("Send")} ${t("Settings")}`}
-        customBackAction={() => navigateTo(previous)}
+        customBackAction={() => navigateTo(previous, navigate)}
       />
       {isLoadingSimulation && !recommendedFee ? (
         <div className="SendSettings__loadingWrapper">
@@ -267,6 +275,7 @@ export const Settings = ({
           initialValues={{ memo }}
           onSubmit={(values) => {
             dispatch(saveMemo(values.memo));
+            navigateTo(next, navigate);
           }}
         >
           {({ submitForm }) => (
@@ -453,7 +462,6 @@ export const Settings = ({
                   disabled={!transactionFee}
                   size="md"
                   isFullWidth
-                  onClick={() => navigateTo(next)}
                   type="submit"
                   variant="secondary"
                   data-testid="send-settings-btn-continue"

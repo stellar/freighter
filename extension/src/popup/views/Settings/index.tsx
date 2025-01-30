@@ -1,7 +1,8 @@
-import { Heading, Icon } from "@stellar/design-system";
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { Heading, Icon } from "@stellar/design-system";
 
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 import { View } from "popup/basics/layout/View";
@@ -23,13 +24,14 @@ import "./styles.scss";
 
 export const Settings = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
 
   const signOutAndClose = async (e: React.FormEvent) => {
     e.preventDefault();
     // eslint-disable-next-line @typescript-eslint/await-thenable
     await dispatch(signOut());
-    navigateTo(ROUTES.welcome);
+    navigateTo(ROUTES.welcome, navigate);
   };
 
   return (

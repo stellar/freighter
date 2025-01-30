@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { Button, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -21,12 +22,13 @@ import "./styles.scss";
 export const MigrationStart = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const [isConfirmed, setIsConfirmed] = useState(false);
 
   const handleContinue = async () => {
     // eslint-disable-next-line
     await dispatch(changeNetwork({ networkName: NETWORK_NAMES.PUBNET }));
-    navigateTo(ROUTES.accountMigrationReviewMigration);
+    navigateTo(ROUTES.accountMigrationReviewMigration, navigate);
   };
 
   return isConfirmed ? (

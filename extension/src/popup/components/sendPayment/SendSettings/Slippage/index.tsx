@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { object as YupObject, number as YupNumber } from "yup";
@@ -22,6 +23,7 @@ const defaultSlippage = "1";
 export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { allowedSlippage } = useSelector(transactionDataSelector);
 
   let presetSlippage = "";
@@ -36,7 +38,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
     <React.Fragment>
       <SubviewHeader
         title="Allowed Slippage"
-        customBackAction={() => navigateTo(previous)}
+        customBackAction={() => navigateTo(previous, navigate)}
         customBackIcon={<Icon.XClose />}
         rightButton={
           <InfoTooltip
@@ -58,7 +60,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
           dispatch(
             saveAllowedSlippage(values.customSlippage || values.presetSlippage),
           );
-          navigateTo(previous);
+          navigateTo(previous, navigate);
         }}
         validationSchema={YupObject().shape({
           customSlippage: YupNumber().max(10, `${t("must be below")} 10%`),

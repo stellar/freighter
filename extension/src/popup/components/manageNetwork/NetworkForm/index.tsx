@@ -108,7 +108,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     );
 
     if (removeCustomNetwork.fulfilled.match(res)) {
-      navigateTo(ROUTES.account);
+      navigateTo(ROUTES.account, navigate);
     }
   };
 
@@ -151,7 +151,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       }),
     );
     if (editCustomNetwork.fulfilled.match(res)) {
-      navigateTo(ROUTES.account);
+      navigateTo(ROUTES.account, navigate);
     }
   };
 
