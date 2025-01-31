@@ -1,0 +1,94 @@
+@use "../../styles/utils.scss" as *;
+
+.AddToken {
+  position: relative;
+  flex-direction: column;
+  display: flex;
+  height: 100%;
+  justify-content: flex-end;
+
+  &__loader {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+  }
+
+  &__wrapper {
+    overflow: scroll;
+    position: relative;
+    flex-direction: column;
+    display: flex;
+    border-radius: pxToRem(16px);
+    padding: pxToRem(32px) pxToRem(24px) pxToRem(24px) pxToRem(24px);
+    background: var(--sds-clr-gray-02);
+
+    &__header {
+      position: relative;
+      flex-direction: column;
+      display: flex;
+      align-items: center;
+    }
+
+    &__domain-logo {
+      height: pxToRem(40px);
+      width: pxToRem(40px);
+      border-radius: pxToRem(60px);
+      margin-bottom: pxToRem(8px);
+      background-color: gray;
+    }
+
+    &__badge {
+      margin-top: pxToRem(14px);
+      margin-bottom: pxToRem(24px);
+    }
+
+    &__domain-label {
+      color: var(--sds-clr-gray-11);
+    }
+
+    &__info {
+      position: relative;
+      gap: pxToRem(6px);
+      margin-bottom: pxToRem(8px);
+      background: var(--sds-clr-gray-03);
+      border-radius: pxToRem(8px);
+      display: flex;
+      width: 100%;
+      padding: pxToRem(12px) pxToRem(16px);
+      flex-direction: column;
+
+      &--title {
+        color: var(--sds-clr-gray-11);
+      }
+
+      &__row {
+        display: flex;
+        flex-direction: row;
+        gap: pxToRem(8px);
+
+        &--icon {
+          color: var(--sds-clr-gray-09);
+        }
+
+        &__right_label {
+          text-align: right;
+          flex: 1;
+        }
+      }
+
+      &--amount {
+        color: var(--sds-clr-green-11);
+      }
+    }
+
+    &__footer {
+      margin-top: pxToRem(16px);
+      display: flex;
+      align-items: flex-start;
+      gap: pxToRem(8px);
+      align-self: stretch;
+    }
+  }
+}
