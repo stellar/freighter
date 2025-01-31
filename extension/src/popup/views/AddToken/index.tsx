@@ -10,6 +10,7 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { StellarToml } from "stellar-sdk";
 
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
@@ -56,6 +57,9 @@ export const AddToken = () => {
 
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const [assetIcon, setAssetIcon] = useState<string | undefined>(undefined);
+  const [assetTomlName, setAssetTomlName] = useState<string | undefined>(
+    undefined,
+  );
   const [isSearching, setIsSearching] = useState(true);
   const [isVerifiedToken, setIsVerifiedToken] = useState(false);
   const [isVerificationInfoShowing, setIsVerificationInfoShowing] =
@@ -67,8 +71,11 @@ export const AddToken = () => {
   const assetCurrency: ManageAssetCurrency | undefined = assetRows[0];
   const assetCode = assetCurrency?.code || "";
   const assetIssuer = assetCurrency?.issuer || "";
-  const assetName = assetCurrency?.name || "";
+  const assetName = assetTomlName || assetCurrency?.name?.split(":")[0];
   const assetDomain = assetCurrency?.domain || "";
+
+  const isLoading =
+    isSearching || assetIcon === undefined || assetName === undefined;
 
   const {
     isConfirming,
@@ -140,6 +147,37 @@ export const AddToken = () => {
     getAssetIcon();
   }, [assetCode, assetIssuer, assetIcon, networkDetails]);
 
+  useEffect(() => {
+    if (assetCode && assetIssuer && !assetDomain) {
+      setAssetTomlName("");
+      return;
+    }
+
+    if (
+      !assetDomain ||
+      !assetCode ||
+      !assetIssuer ||
+      assetTomlName !== undefined
+    ) {
+      return;
+    }
+
+    const getAssetTomlName = async () => {
+      try {
+        const toml = await StellarToml.Resolver.resolve(assetDomain);
+        const currency = toml?.CURRENCIES?.find(
+          ({ code, issuer }) => code === assetCode && issuer === assetIssuer,
+        );
+        setAssetTomlName(currency?.name || "");
+      } catch (e) {
+        console.error(e);
+        setAssetTomlName("");
+      }
+    };
+
+    getAssetTomlName();
+  }, [assetDomain, assetCode, assetIssuer, assetTomlName]);
+
   if (entryNetworkPassphrase && entryNetworkPassphrase !== networkPassphrase) {
     return (
       <WarningMessage
@@ -170,7 +208,7 @@ export const AddToken = () => {
     );
   }
 
-  if (isSearching) {
+  if (isLoading) {
     return (
       <React.Fragment>
         <View.Content>
@@ -278,7 +316,7 @@ export const AddToken = () => {
                 </div>
               )}
 
-              {assetName && (
+              {assetName && assetName !== assetCode && (
                 <div className="AddToken__wrapper__info__row">
                   <div className="AddToken__wrapper__info__row--icon">
                     <Icon.TypeSquare />
