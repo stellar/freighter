@@ -8,7 +8,6 @@ import {
   DEFAULT_NETWORKS,
 } from "@shared/constants/stellar";
 import { Balances } from "@shared/api/types";
-import { createMemoryHistory } from "history";
 
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
@@ -34,13 +33,6 @@ jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() =>
 jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => ({
   recommendedFee: "0.00001",
   networkCongestion: UseNetworkFees.NetworkCongestion.MEDIUM,
-}));
-
-const mockHistoryGetter = jest.fn();
-jest.mock("popup/constants/history", () => ({
-  get history() {
-    return mockHistoryGetter();
-  },
 }));
 
 jest.mock("popup/helpers/horizonGetBestPath", () => ({
@@ -105,13 +97,9 @@ describe("Swap unfunded account", () => {
     );
   });
   beforeEach(async () => {
-    const history = createMemoryHistory();
-    history.push(ROUTES.swap);
-    mockHistoryGetter.mockReturnValue(history);
-
     render(
       <Wrapper
-        history={history}
+        routes={[ROUTES.swap]}
         state={{
           auth: {
             error: null,
