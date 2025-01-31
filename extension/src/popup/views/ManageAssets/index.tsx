@@ -57,9 +57,14 @@ export const ManageAssets = () => {
             </PrivateKeyRoute>
           }
         ></Route>
-        <Route path={ROUTES.addAsset}>
-          <AddAsset />
-        </Route>
+        <Route
+          path={ROUTES.addAsset}
+          element={
+            <PrivateKeyRoute>
+              <AddAsset />
+            </PrivateKeyRoute>
+          }
+        ></Route>
       </Routes>
     </>
   );
