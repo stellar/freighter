@@ -29,8 +29,8 @@ export const useTokenLookup = ({
 }: {
   setAssetRows: (rows: ManageAssetCurrency[]) => void;
   setIsSearching: (value: boolean) => void;
-  setIsVerifiedToken?: (value: boolean) => void;
-  setIsVerificationInfoShowing?: (value: boolean) => void;
+  setIsVerifiedToken: (value: boolean) => void;
+  setIsVerificationInfoShowing: (value: boolean) => void;
   setVerifiedLists?: (lists: string[]) => void;
 }): {
   handleTokenLookup: (contractId: string) => Promise<void>;
@@ -45,8 +45,8 @@ export const useTokenLookup = ({
     async (contractId: string) => {
       // clear the UI while we work through the flow
       setIsSearching(true);
-      setIsVerifiedToken?.(false);
-      setIsVerificationInfoShowing?.(false);
+      setIsVerifiedToken(false);
+      setIsVerificationInfoShowing(false);
       setAssetRows([]);
 
       const nativeContractDetails = getNativeContractDetails(networkDetails);
@@ -55,7 +55,7 @@ export const useTokenLookup = ({
       // step around verification for native contract and unverifiable networks
       if (nativeContractDetails.contract === contractId) {
         // override our rules for verification for XLM
-        setIsVerificationInfoShowing?.(false);
+        setIsVerificationInfoShowing(false);
         setAssetRows([
           {
             code: nativeContractDetails.code,
@@ -69,7 +69,7 @@ export const useTokenLookup = ({
 
       const tokenLookup = async () => {
         // lookup contract
-        setIsVerifiedToken?.(false);
+        setIsVerifiedToken(false);
         let tokenDetailsResponse;
 
         try {
@@ -120,7 +120,7 @@ export const useTokenLookup = ({
 
         try {
           if (verifiedTokens.length) {
-            setIsVerifiedToken?.(true);
+            setIsVerifiedToken(true);
             setVerifiedLists?.(verifiedTokens[0].verifiedLists);
             setAssetRows(
               verifiedTokens.map((record: VerifiedTokenRecord) => ({
@@ -147,7 +147,7 @@ export const useTokenLookup = ({
         await tokenLookup();
       }
       setIsSearching(false);
-      setIsVerificationInfoShowing?.(isAllowListVerificationEnabled);
+      setIsVerificationInfoShowing(isAllowListVerificationEnabled);
     },
     [
       assetsLists,

@@ -32,6 +32,7 @@ import {
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { View } from "popup/basics/layout/View";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
+import { AssetNotifcation } from "popup/components/AssetNotification";
 import { useTokenLookup } from "popup/helpers/useTokenLookup";
 import { isContractId } from "popup/helpers/soroban";
 import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
@@ -55,7 +56,10 @@ export const AddToken = () => {
 
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const [assetIcon, setAssetIcon] = useState<string | undefined>(undefined);
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching, setIsSearching] = useState(true);
+  const [isVerifiedToken, setIsVerifiedToken] = useState(false);
+  const [isVerificationInfoShowing, setIsVerificationInfoShowing] =
+    useState(false);
   const [blockaidData, setBlockaidData] = useState<
     BlockAidScanAssetResult | undefined
   >(undefined);
@@ -83,6 +87,8 @@ export const AddToken = () => {
   const { handleTokenLookup } = useTokenLookup({
     setAssetRows,
     setIsSearching,
+    setIsVerifiedToken,
+    setIsVerificationInfoShowing,
   });
 
   useEffect(() => {
@@ -236,6 +242,10 @@ export const AddToken = () => {
             </div>
 
             {!isDomainListedAllowed && <FirstTimeWarningMessage />}
+
+            {assetCurrency && isVerificationInfoShowing && (
+              <AssetNotifcation isVerified={isVerifiedToken} />
+            )}
 
             {blockaidData && (
               <BlockaidAssetWarning blockaidData={blockaidData} />
