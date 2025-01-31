@@ -298,277 +298,274 @@ export const Router = () => (
     <RouteListener />
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Routes>
-          <Route
-            path={ROUTES.account}
-            element={
-              <PublicKeyRoute>
-                <Account />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.accountHistory}
-            element={
-              <PublicKeyRoute>
-                <AccountHistory />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.addAccount}
-            element={
-              <PublicKeyRoute>
-                <AddAccount />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.importAccount}
-            element={
-              <PublicKeyRoute>
-                <ImportAccount />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.connectWallet}
-            element={
-              <PublicKeyRoute>
-                <SelectHardwareWallet />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.connectWalletPlugin}
-            element={
-              <PublicKeyRoute>
-                <PluginWallet />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.connectDevice}
-            element={
-              <PublicKeyRoute>
-                <DeviceConnect />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.viewPublicKey}
-            element={
-              <PublicKeyRoute>
-                <ViewPublicKey />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.signTransaction}
-            element={
-              <PublicKeyRoute>
-                <SignTransaction />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.reviewAuthorization}
-            element={
-              <PublicKeyRoute>
-                <ReviewAuth />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.signAuthEntry}
-            element={
-              <PublicKeyRoute>
-                <SignAuthEntry />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.signMessage}
-            element={
-              <PublicKeyRoute>
-                <SignMessage />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.displayBackupPhrase}
-            element={
-              <PublicKeyRoute>
-                <DisplayBackupPhrase />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.grantAccess}
-            element={
-              <PublicKeyRoute>
-                <GrantAccess />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.mnemonicPhrase}
-            element={
-              <PublicKeyRoute>
-                <MnemonicPhrase mnemonicPhrase="" />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.settings}
-            element={
-              <PublicKeyRoute>
-                <Settings />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.preferences}
-            element={
-              <PublicKeyRoute>
-                <Preferences />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.security}
-            element={
-              <PublicKeyRoute>
-                <Security />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.about}
-            element={
-              <PublicKeyRoute>
-                <About />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.leaveFeedback}
-            element={
-              <PublicKeyRoute>
-                <LeaveFeedback />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.unlockAccount}
-            element={
-              <UnlockAccountRoute>
-                <UnlockAccount />
-              </UnlockAccountRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.mnemonicPhraseConfirmed}
-            element={
-              <PublicKeyRoute>
-                <FullscreenSuccessMessage />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route path={ROUTES.accountCreator}>
-            <AccountCreator />
-          </Route>
-          <Route path={ROUTES.recoverAccount}>
-            <RecoverAccount />
-          </Route>
-          <Route path={ROUTES.verifyAccount}>
-            <VerifyAccount />
-          </Route>
-          <Route
-            path={ROUTES.recoverAccountSuccess}
-            element={
-              <PublicKeyRoute>
-                <FullscreenSuccessMessage />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.sendPayment}
-            element={
-              <PublicKeyRoute>
-                <SendPayment />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.manageAssets}
-            element={
-              <PublicKeyRoute>
-                <ManageAssets />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.swap}
-            element={
-              <PublicKeyRoute>
-                <Swap />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.manageNetwork}
-            element={
-              <PublicKeyRoute>
-                <ManageNetwork />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.manageConnectedApps}
-            element={
-              <PublicKeyRoute>
-                <ManageConnectedApps />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.manageAssetsLists}
-            element={
-              <PublicKeyRoute>
-                <ManageAssetsLists />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.accountMigration}
-            element={
-              <PublicKeyRoute>
-                <AccountMigration />
-              </PublicKeyRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.advancedSettings}
-            element={
-              <PublicKeyRoute>
-                <AdvancedSettings />
-              </PublicKeyRoute>
-            }
-          ></Route>
+        <Route
+          path={ROUTES.account}
+          element={
+            <PublicKeyRoute>
+              <Account />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.accountHistory}
+          element={
+            <PublicKeyRoute>
+              <AccountHistory />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.addAccount}
+          element={
+            <PublicKeyRoute>
+              <AddAccount />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.importAccount}
+          element={
+            <PublicKeyRoute>
+              <ImportAccount />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.connectWallet}
+          element={
+            <PublicKeyRoute>
+              <SelectHardwareWallet />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.connectWalletPlugin}
+          element={
+            <PublicKeyRoute>
+              <PluginWallet />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.connectDevice}
+          element={
+            <PublicKeyRoute>
+              <DeviceConnect />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.viewPublicKey}
+          element={
+            <PublicKeyRoute>
+              <ViewPublicKey />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.signTransaction}
+          element={
+            <PublicKeyRoute>
+              <SignTransaction />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.reviewAuthorization}
+          element={
+            <PublicKeyRoute>
+              <ReviewAuth />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.signAuthEntry}
+          element={
+            <PublicKeyRoute>
+              <SignAuthEntry />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.signMessage}
+          element={
+            <PublicKeyRoute>
+              <SignMessage />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.displayBackupPhrase}
+          element={
+            <PublicKeyRoute>
+              <DisplayBackupPhrase />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.grantAccess}
+          element={
+            <PublicKeyRoute>
+              <GrantAccess />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.mnemonicPhrase}
+          element={
+            <PublicKeyRoute>
+              <MnemonicPhrase mnemonicPhrase="" />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.settings}
+          element={
+            <PublicKeyRoute>
+              <Settings />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.preferences}
+          element={
+            <PublicKeyRoute>
+              <Preferences />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.security}
+          element={
+            <PublicKeyRoute>
+              <Security />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.about}
+          element={
+            <PublicKeyRoute>
+              <About />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.leaveFeedback}
+          element={
+            <PublicKeyRoute>
+              <LeaveFeedback />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.unlockAccount}
+          element={
+            <UnlockAccountRoute>
+              <UnlockAccount />
+            </UnlockAccountRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.mnemonicPhraseConfirmed}
+          element={
+            <PublicKeyRoute>
+              <FullscreenSuccessMessage />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.accountCreator}
+          element={<AccountCreator />}
+        ></Route>
+        <Route
+          path={ROUTES.recoverAccount}
+          element={<RecoverAccount />}
+        ></Route>
+        <Route path={ROUTES.verifyAccount} element={<VerifyAccount />}></Route>
+        <Route
+          path={ROUTES.recoverAccountSuccess}
+          element={
+            <PublicKeyRoute>
+              <FullscreenSuccessMessage />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.sendPayment}
+          element={
+            <PublicKeyRoute>
+              <SendPayment />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.manageAssets}
+          element={
+            <PublicKeyRoute>
+              <ManageAssets />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.swap}
+          element={
+            <PublicKeyRoute>
+              <Swap />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.manageNetwork}
+          element={
+            <PublicKeyRoute>
+              <ManageNetwork />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.manageConnectedApps}
+          element={
+            <PublicKeyRoute>
+              <ManageConnectedApps />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.manageAssetsLists}
+          element={
+            <PublicKeyRoute>
+              <ManageAssetsLists />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.accountMigration}
+          element={
+            <PublicKeyRoute>
+              <AccountMigration />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.advancedSettings}
+          element={
+            <PublicKeyRoute>
+              <AdvancedSettings />
+            </PublicKeyRoute>
+          }
+        ></Route>
 
-          {DEV_SERVER && (
-            <>
-              <Route path={ROUTES.debug}>
-                <Debug />
-              </Route>
-              <Route path={ROUTES.integrationTest}>
-                <IntegrationTest />
-              </Route>
-            </>
-          )}
-          <HomeRoute />
-        </Routes>
+        {DEV_SERVER && (
+          <>
+            <Route path={ROUTES.debug} element={<Debug />}></Route>
+            <Route
+              path={ROUTES.integrationTest}
+              element={<IntegrationTest />}
+            ></Route>
+          </>
+        )}
+        <Route index element={<HomeRoute />}></Route>
       </Route>
     </Routes>
   </HashRouter>
