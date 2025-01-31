@@ -5,6 +5,7 @@ import * as helpersUrls from "helpers/urls";
 import * as ApiInternal from "@shared/api/internal";
 
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
+import { ROUTES } from "popup/constants/routes";
 
 const defaultSettingsState = {
   networkDetails: {
@@ -45,6 +46,7 @@ it("renders mint token invocation", async () => {
 
   render(
     <Wrapper
+      routes={[ROUTES.reviewAuthorization]}
       state={{
         auth: {
           allAccounts: mockAccounts,
@@ -107,6 +109,7 @@ it("renders all subinvocations", async () => {
 
   render(
     <Wrapper
+      routes={[ROUTES.reviewAuthorization]}
       state={{
         auth: {
           allAccounts: mockAccounts,
@@ -147,6 +150,7 @@ it("renders create contract args for subinvocations", async () => {
 
   render(
     <Wrapper
+      routes={[ROUTES.reviewAuthorization]}
       state={{
         auth: {
           allAccounts: mockAccounts,
