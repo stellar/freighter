@@ -31,12 +31,21 @@
       align-items: center;
     }
 
-    &__domain-logo {
+    &__icon-logo {
+      margin-bottom: pxToRem(8px);
+      align-items: center;
+    }
+
+    &__code-logo {
       height: pxToRem(40px);
       width: pxToRem(40px);
-      border-radius: pxToRem(60px);
+      border-radius: pxToRem(40px);
       margin-bottom: pxToRem(8px);
-      background-color: gray;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--sds-clr-gray-06);
+      color: var(--sds-clr-gray-09);
     }
 
     &__badge {
@@ -44,7 +53,8 @@
       margin-bottom: pxToRem(24px);
     }
 
-    &__domain-label {
+    &--logo-label,
+    &--domain-label {
       color: var(--sds-clr-gray-11);
     }
 

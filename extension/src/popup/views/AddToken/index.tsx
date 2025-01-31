@@ -1,10 +1,18 @@
-import { Badge, Button, Icon, Loader, Text } from "@stellar/design-system";
+import {
+  Asset,
+  Badge,
+  Button,
+  Icon,
+  Loader,
+  Text,
+} from "@stellar/design-system";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import { BlockAidScanAssetResult } from "@shared/api/types";
+import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
 import { parsedSearchParam, TokenToAdd } from "helpers/urls";
 
@@ -46,6 +54,7 @@ export const AddToken = () => {
   const { networkName, networkPassphrase } = networkDetails;
 
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
+  const [assetIcon, setAssetIcon] = useState<string | undefined>(undefined);
   const [isSearching, setIsSearching] = useState(false);
   const [blockaidData, setBlockaidData] = useState<
     BlockAidScanAssetResult | undefined
@@ -107,6 +116,24 @@ export const AddToken = () => {
     getBlockaidData();
   }, [assetCode, assetIssuer, blockaidData, networkDetails]);
 
+  useEffect(() => {
+    if (!assetCode || !assetIssuer || assetIcon !== undefined) {
+      return;
+    }
+
+    const getAssetIcon = async () => {
+      const iconUrl = await getIconUrlFromIssuer({
+        key: assetIssuer,
+        code: assetCode,
+        networkDetails,
+      });
+
+      setAssetIcon(iconUrl || "");
+    };
+
+    getAssetIcon();
+  }, [assetCode, assetIssuer, assetIcon, networkDetails]);
+
   if (entryNetworkPassphrase && entryNetworkPassphrase !== networkPassphrase) {
     return (
       <WarningMessage
@@ -155,8 +182,31 @@ export const AddToken = () => {
         <div className="AddToken">
           <div className="AddToken__wrapper">
             <div className="AddToken__wrapper__header">
-              {/* TODO: replace with real logo  */}
-              <div className="AddToken__wrapper__domain-logo" />
+              {assetIcon && (
+                <div className="AddToken__wrapper__icon-logo">
+                  <Asset
+                    size="lg"
+                    variant="single"
+                    sourceOne={{
+                      altText: "Add token logo",
+                      image: assetIcon,
+                    }}
+                  />
+                </div>
+              )}
+
+              {!assetIcon && assetCode && (
+                <div className="AddToken__wrapper__code-logo">
+                  <Text
+                    as="div"
+                    size="sm"
+                    weight="bold"
+                    addlClassName="AddToken__wrapper--logo-label"
+                  >
+                    {assetCode.slice(0, 2)}
+                  </Text>
+                </div>
+              )}
 
               {assetCurrency && (
                 <Text as="div" size="sm" weight="medium">
@@ -167,7 +217,7 @@ export const AddToken = () => {
                 <Text
                   as="div"
                   size="sm"
-                  addlClassName="AddToken__wrapper__domain-label"
+                  addlClassName="AddToken__wrapper--domain-label"
                 >
                   {assetDomain}
                 </Text>
