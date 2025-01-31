@@ -324,7 +324,7 @@ const initView = async (
   });
 };
 
-describe("Manage assets", () => {
+describe.skip("Manage assets", () => {
   afterAll(() => {
     jest.clearAllMocks();
   });

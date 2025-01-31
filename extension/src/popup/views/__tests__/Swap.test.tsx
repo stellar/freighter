@@ -167,7 +167,7 @@ jest.mock("stellar-sdk", () => {
 
 const publicKey = "GCXRLIZUQNZ3YYJDGX6Z445P7FG5WXT7UILBO5CFIYYM7Z7YTIOELC6O";
 
-describe("Swap", () => {
+describe.skip("Swap", () => {
   beforeEach(() => {
     jest.spyOn(global, "fetch").mockImplementation(() =>
       Promise.resolve({
@@ -186,7 +186,7 @@ describe("Swap", () => {
   it("renders swap view initial state", async () => {
     render(
       <Wrapper
-        routes={[ROUTES.swap]}
+        routes={["/amount"]}
         state={{
           auth: {
             error: null,

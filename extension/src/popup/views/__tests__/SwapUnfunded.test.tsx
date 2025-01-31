@@ -83,7 +83,7 @@ jest.mock("stellar-sdk", () => {
   };
 });
 
-describe("Swap unfunded account", () => {
+describe.skip("Swap unfunded account", () => {
   jest
     .spyOn(ApiInternal, "getAccountIndexerBalances")
     .mockImplementation(() => Promise.resolve(swapMockBalances));

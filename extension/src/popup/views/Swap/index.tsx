@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Routes, Navigate, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import { AppDispatch } from "popup/App";
 import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
@@ -48,18 +48,18 @@ export const Swap = () => {
     })();
   }, [dispatch, publicKey, networkDetails, accountBalances]);
 
+  const amountSlug = ROUTES.swapAmount.split("/swap/")[1];
+  const settingsSlug = ROUTES.swapSettings.split("/swap/")[1];
+  const settingsFeeSlug = ROUTES.swapSettingsFee.split("/swap/")[1];
+  const settingsSlippageSlug = ROUTES.swapSettingsSlippage.split("/swap/")[1];
+  const settingsTimeoutSlug = ROUTES.swapSettingsTimeout.split("/swap/")[1];
+  const swapConfirmSlug = ROUTES.swapConfirm.split("/swap/")[1];
+
   return (
     <Routes>
       <Route
-        path={ROUTES.swap}
-        element={
-          <PublicKeyRoute>
-            <Navigate to={ROUTES.swapAmount} />
-          </PublicKeyRoute>
-        }
-      ></Route>
-      <Route
-        path={ROUTES.swapAmount}
+        index
+        path={amountSlug}
         element={
           <PublicKeyRoute>
             <SendAmount previous={ROUTES.account} next={ROUTES.swapSettings} />
@@ -67,7 +67,7 @@ export const Swap = () => {
         }
       ></Route>
       <Route
-        path={ROUTES.swapSettings}
+        path={settingsSlug}
         element={
           <PublicKeyRoute>
             <SendSettings
@@ -78,7 +78,7 @@ export const Swap = () => {
         }
       ></Route>
       <Route
-        path={ROUTES.swapSettingsFee}
+        path={settingsFeeSlug}
         element={
           <PublicKeyRoute>
             <SendSettingsFee previous={ROUTES.swapSettings} />
@@ -86,7 +86,7 @@ export const Swap = () => {
         }
       ></Route>
       <Route
-        path={ROUTES.swapSettingsSlippage}
+        path={settingsSlippageSlug}
         element={
           <PublicKeyRoute>
             <SendSettingsSlippage previous={ROUTES.swapSettings} />
@@ -94,7 +94,7 @@ export const Swap = () => {
         }
       ></Route>
       <Route
-        path={ROUTES.swapSettingsTimeout}
+        path={settingsTimeoutSlug}
         element={
           <PublicKeyRoute>
             <SendSettingsTxTimeout previous={ROUTES.swapSettings} />
@@ -102,7 +102,7 @@ export const Swap = () => {
         }
       ></Route>
       <Route
-        path={ROUTES.swapConfirm}
+        path={swapConfirmSlug}
         element={
           <VerifiedAccountRoute>
             <SendConfirm previous={ROUTES.swapSettings} />

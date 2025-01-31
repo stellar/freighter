@@ -13,14 +13,25 @@ import { MigrationComplete } from "popup/components/accountMigration/MigrationCo
 
 import "./styles.scss";
 
-export const AccountMigration = () => (
-  <>
+export const AccountMigration = () => {
+  const reviewSlug = ROUTES.accountMigrationReviewMigration.split(
+    "/account-migration/",
+  )[1];
+  const mnemonicPhraseSlug = ROUTES.accountMigrationMnemonicPhrase.split(
+    "/account-migration/",
+  )[1];
+  const mnemonicConfirmPhraseSlug =
+    ROUTES.accountMigrationConfirmMigration.split("/account-migration/")[1];
+  const migrationCompleteSlug = ROUTES.accountMigrationMigrationComplete.split(
+    "/account-migration/",
+  )[1];
+  return (
     <React.Fragment>
       <View.Header />
       <View.Content alignment="center">
         <Routes>
           <Route
-            path={ROUTES.accountMigration}
+            index
             element={
               <PublicKeyRoute>
                 <div className="AccountMigration">
@@ -30,7 +41,7 @@ export const AccountMigration = () => (
             }
           ></Route>
           <Route
-            path={ROUTES.accountMigrationReviewMigration}
+            path={reviewSlug}
             element={
               <PublicKeyRoute>
                 <div className="AccountMigration">
@@ -40,7 +51,7 @@ export const AccountMigration = () => (
             }
           ></Route>
           <Route
-            path={ROUTES.accountMigrationMnemonicPhrase}
+            path={mnemonicPhraseSlug}
             element={
               <VerifiedAccountRoute>
                 <MnemonicPhrase />
@@ -48,15 +59,7 @@ export const AccountMigration = () => (
             }
           ></Route>
           <Route
-            path={ROUTES.accountMigrationMnemonicPhrase}
-            element={
-              <VerifiedAccountRoute>
-                <MnemonicPhrase />
-              </VerifiedAccountRoute>
-            }
-          ></Route>
-          <Route
-            path={ROUTES.accountMigrationConfirmMigration}
+            path={mnemonicConfirmPhraseSlug}
             element={
               <VerifiedAccountRoute>
                 <div className="AccountMigration">
@@ -66,7 +69,7 @@ export const AccountMigration = () => (
             }
           ></Route>
           <Route
-            path={ROUTES.accountMigrationMigrationComplete}
+            path={migrationCompleteSlug}
             element={
               <PublicKeyRoute>
                 <div className="AccountMigration">
@@ -78,5 +81,5 @@ export const AccountMigration = () => (
         </Routes>
       </View.Content>
     </React.Fragment>
-  </>
-);
+  );
+};

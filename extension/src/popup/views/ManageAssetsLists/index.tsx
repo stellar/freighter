@@ -102,12 +102,15 @@ export const ManageAssetsLists = () => {
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedNetwork(e.target.value as AssetsListKey);
   };
+  const modifyAssetListSlug = ROUTES.manageAssetsListsModifyAssetList.split(
+    "/manage-assets-list/",
+  )[1];
 
   return assetsLists ? (
     <>
       <Routes>
         <Route
-          path={ROUTES.manageAssetsLists}
+          index
           element={
             <PublicKeyRoute>
               <AssetLists
@@ -120,7 +123,7 @@ export const ManageAssetsLists = () => {
           }
         ></Route>
         <Route
-          path={ROUTES.manageAssetsListsModifyAssetList}
+          path={modifyAssetListSlug}
           element={
             <PublicKeyRoute>
               <ModifyAssetList

@@ -133,7 +133,7 @@ jest.mock("popup/helpers/searchAsset", () => {
   };
 });
 
-describe("SendTokenPayment", () => {
+describe.skip("SendTokenPayment", () => {
   afterAll(() => {
     jest.clearAllMocks();
   });

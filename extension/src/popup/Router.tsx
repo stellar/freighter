@@ -492,7 +492,7 @@ export const Router = () => (
           }
         ></Route>
         <Route
-          path={ROUTES.sendPayment}
+          path={`${ROUTES.sendPayment}/*`}
           element={
             <PublicKeyRoute>
               <SendPayment />
@@ -500,7 +500,7 @@ export const Router = () => (
           }
         ></Route>
         <Route
-          path={ROUTES.manageAssets}
+          path={`${ROUTES.manageAssets}/*`}
           element={
             <PublicKeyRoute>
               <ManageAssets />
@@ -508,7 +508,7 @@ export const Router = () => (
           }
         ></Route>
         <Route
-          path={ROUTES.swap}
+          path={`${ROUTES.swap}/*`}
           element={
             <PublicKeyRoute>
               <Swap />
@@ -516,7 +516,7 @@ export const Router = () => (
           }
         ></Route>
         <Route
-          path={ROUTES.manageNetwork}
+          path={`${ROUTES.manageNetwork}/*`}
           element={
             <PublicKeyRoute>
               <ManageNetwork />
@@ -532,7 +532,7 @@ export const Router = () => (
           }
         ></Route>
         <Route
-          path={ROUTES.manageAssetsLists}
+          path={`${ROUTES.manageAssetsLists}/*`}
           element={
             <PublicKeyRoute>
               <ManageAssetsLists />
@@ -540,7 +540,7 @@ export const Router = () => (
           }
         ></Route>
         <Route
-          path={ROUTES.accountMigration}
+          path={`${ROUTES.accountMigration}/*`}
           element={
             <PublicKeyRoute>
               <AccountMigration />

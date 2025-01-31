@@ -38,11 +38,14 @@ export const ManageAssets = () => {
     );
   }
 
+  const searchAssetsSlug = ROUTES.searchAsset.split("/manage-assets/")[1];
+  const addAssetsSlug = ROUTES.addAsset.split("/manage-assets/")[1];
+
   return (
     <>
       <Routes>
         <Route
-          path={ROUTES.manageAssets}
+          index
           element={
             <PrivateKeyRoute>
               <ChooseAsset balances={balances} />
@@ -50,7 +53,7 @@ export const ManageAssets = () => {
           }
         ></Route>
         <Route
-          path={ROUTES.searchAsset}
+          path={searchAssetsSlug}
           element={
             <PrivateKeyRoute>
               <SearchAsset />
@@ -58,7 +61,7 @@ export const ManageAssets = () => {
           }
         ></Route>
         <Route
-          path={ROUTES.addAsset}
+          path={addAssetsSlug}
           element={
             <PrivateKeyRoute>
               <AddAsset />
