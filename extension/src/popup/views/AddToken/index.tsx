@@ -75,7 +75,7 @@ export const AddToken = () => {
   const assetDomain = assetCurrency?.domain || "";
 
   const isLoading =
-    isSearching || assetIcon === undefined || assetName === undefined;
+    isSearching || assetIcon === undefined || assetTomlName === undefined;
 
   const {
     isConfirming,
