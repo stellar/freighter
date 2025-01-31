@@ -26,7 +26,6 @@ import * as ManageAssetXDR from "popup/helpers/getManageAssetXDR";
 import * as SearchAsset from "popup/helpers/searchAsset";
 import * as SorobanHelpers from "popup/helpers/soroban";
 import * as BlockaidHelpers from "popup/helpers/blockaid";
-import * as Navigateto from "popup/helpers/navigate";
 
 import {
   AssetSelectType,
@@ -35,7 +34,6 @@ import {
 
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import { ManageAssets } from "../ManageAssets";
-import { useLocation } from "react-router-dom";
 
 const mockXDR =
   "AAAAAgAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAGQAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAAAAAAAAAvrwgAAAAAAAAAABHUtNEwAAAEBY/jSiXJNsA2NpiXrOi6Ll6RiIY7v8QZEEZviM8HmmzeI4FBP9wGZm7YMorQue+DK9KI5BEXDt3hi0VOA9gD8A";
