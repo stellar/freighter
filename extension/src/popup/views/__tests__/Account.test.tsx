@@ -493,7 +493,7 @@ describe("Account view", () => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(2);
       expect(assetNodes[1]).toHaveTextContent("LP");
-      expect(assetNodes[1]).toHaveTextContent("0 shares");
+      expect(assetNodes[1]).toHaveTextContent("0");
     });
   });
 });

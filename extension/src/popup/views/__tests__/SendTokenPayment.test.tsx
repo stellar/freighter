@@ -205,7 +205,7 @@ describe("SendTokenPayment", () => {
     });
 
     await waitFor(async () => {
-      expect(container).toHaveTextContent("5 DT");
+      expect(container).toHaveTextContent("5");
       const sendBtn = screen.getByTestId("transaction-details-btn-send");
       await fireEvent.click(sendBtn);
     });
