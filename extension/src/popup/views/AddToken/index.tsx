@@ -54,6 +54,8 @@ export const AddToken = () => {
   const assetCurrency: ManageAssetCurrency | undefined = assetRows[0];
   const assetCode = assetCurrency?.code || "";
   const assetIssuer = assetCurrency?.issuer || "";
+  const assetName = assetCurrency?.name || "";
+  const assetDomain = assetCurrency?.domain || "";
 
   const {
     isConfirming,
@@ -153,18 +155,23 @@ export const AddToken = () => {
         <div className="AddToken">
           <div className="AddToken__wrapper">
             <div className="AddToken__wrapper__header">
-              {/* TODO: replace with real logo */}
+              {/* TODO: replace with real logo  */}
               <div className="AddToken__wrapper__domain-logo" />
-              <Text as="div" size="sm" weight="medium">
-                {t("Go Stellar")}
-              </Text>
-              <Text
-                as="div"
-                size="sm"
-                addlClassName="AddToken__wrapper__domain-label"
-              >
-                {t("go-stellar.app")}
-              </Text>
+
+              {assetCurrency && (
+                <Text as="div" size="sm" weight="medium">
+                  {assetName || assetCode}
+                </Text>
+              )}
+              {assetDomain && (
+                <Text
+                  as="div"
+                  size="sm"
+                  addlClassName="AddToken__wrapper__domain-label"
+                >
+                  {assetDomain}
+                </Text>
+              )}
               <div className="AddToken__wrapper__badge">
                 <Badge
                   size="sm"
@@ -192,37 +199,42 @@ export const AddToken = () => {
               >
                 {t("Asset info")}
               </Text>
-              <div className="AddToken__wrapper__info__row">
-                <div className="AddToken__wrapper__info__row--icon">
-                  <Icon.Coins01 />
+
+              {assetCode && (
+                <div className="AddToken__wrapper__info__row">
+                  <div className="AddToken__wrapper__info__row--icon">
+                    <Icon.Coins01 />
+                  </div>
+                  <Text as="div" size="xs">
+                    {t("Symbol")}
+                  </Text>
+                  <Text
+                    as="div"
+                    size="xs"
+                    addlClassName="AddToken__wrapper__info__row__right_label"
+                  >
+                    {assetCode}
+                  </Text>
                 </div>
-                <Text as="div" size="xs">
-                  {t("Symbol")}
-                </Text>
-                <Text
-                  as="div"
-                  size="xs"
-                  addlClassName="AddToken__wrapper__info__row__right_label"
-                >
-                  {(assetCurrency && assetCurrency.code) || ""}
-                </Text>
-              </div>
-              <div className="AddToken__wrapper__info__row">
-                <div className="AddToken__wrapper__info__row--icon">
-                  <Icon.TypeSquare />
+              )}
+
+              {assetName && (
+                <div className="AddToken__wrapper__info__row">
+                  <div className="AddToken__wrapper__info__row--icon">
+                    <Icon.TypeSquare />
+                  </div>
+                  <Text as="div" size="xs">
+                    {t("Name")}
+                  </Text>
+                  <Text
+                    as="div"
+                    size="xs"
+                    addlClassName="AddToken__wrapper__info__row__right_label"
+                  >
+                    {assetName}
+                  </Text>
                 </div>
-                <Text as="div" size="xs">
-                  {t("Name")}
-                </Text>
-                {/* TODO: hide if name does not exist */}
-                <Text
-                  as="div"
-                  size="xs"
-                  addlClassName="AddToken__wrapper__info__row__right_label"
-                >
-                  {(assetCurrency && assetCurrency.name) || "TOKEN NAME"}
-                </Text>
-              </div>
+              )}
             </div>
 
             {/* TODO: fetch actual values */}
