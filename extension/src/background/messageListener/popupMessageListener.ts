@@ -1074,7 +1074,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       );
     }
 
-    // clear the temporary store so we can replace it with the new encrypted data
+    // clear the temporary store (if it exists) so we can replace it with the new encrypted data
     await localStore.remove(TEMPORARY_STORE_ID);
 
     try {
