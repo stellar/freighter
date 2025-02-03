@@ -52,9 +52,13 @@ test("Send XLM payments from multiple accounts to G Address", async ({
   await page.getByTestId("AccountHeader__icon-btn").click();
   await page.getByText("Create a new Stellar address").click();
 
-  await page.locator("#password-input").fill(PASSWORD);
-
+  // test incorrect password
+  await page.locator("#password-input").fill("wrong password");
   await page.getByText("Create New Address").click();
+  await expect(page.getByText("Incorrect password")).toBeVisible();
+  await page.locator("#password-input").fill(PASSWORD);
+  await page.getByText("Create New Address").click();
+
   await expect(page.getByTestId("not-funded")).toBeVisible({
     timeout: 10000,
   });
@@ -81,10 +85,17 @@ test("Send XLM payments from multiple accounts to G Address", async ({
   await page
     .locator("#privateKey-input")
     .fill("SDCUXKGHQ4HX5NRX5JN7GMJZUXQBWZXLKF34DLVYZ4KLXXIZTG7Q26JJ");
-  await page.locator("#password-input").fill(PASSWORD);
+  // test incorrect password
+  await page.locator("#password-input").fill("wrongpassword");
   await page.locator("#authorization-input").click({ force: true });
 
   await page.getByTestId("import-account-button").click();
+  await expect(
+    page.getByText("Please enter a valid secret key/password combination"),
+  ).toHaveCount(2);
+  await page.locator("#password-input").fill(PASSWORD);
+  await page.getByTestId("import-account-button").click();
+
   await sendXlmPayment({ page });
 });
 

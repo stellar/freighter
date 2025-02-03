@@ -248,6 +248,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     );
   };
 
+  /* Append an additional account to user's account list */
   const _storeAccount = async ({
     mnemonicPhrase,
     password,
@@ -264,6 +265,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const allAccounts = allAccountsSelector(sessionStore.getState());
     const accountName = `Account ${allAccounts.length + 1}`;
 
+    // set the active public key
     await sessionStore.dispatch(
       logIn({
         publicKey,
@@ -293,6 +295,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     let keyStore = { id: "" };
     let activeHashKey = await getActiveHashKeyCryptoKey({ sessionStore });
     if (activeHashKey === null) {
+      // this should only happen on account creation & account recovery
       activeHashKey = await deriveKeyFromString(password);
     }
 
@@ -466,6 +469,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     const currentState = sessionStore.getState();
 
+    sessionTimer.startSession();
+
     return {
       allAccounts: allAccountsSelector(currentState),
       publicKey: publicKeySelector(currentState),
@@ -491,9 +496,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
           keyName: TEMPORARY_STORE_EXTRA_ID,
         });
       } catch (e) {
-        captureException(
-          `Could not login when adding account: ${JSON.stringify(e)}`,
-        );
         return { error: "Incorrect password" };
       }
     }
@@ -502,9 +504,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       ? await _getNonHwKeyID()
       : (await localStore.getItem(KEY_ID)) || "";
 
+    // if the session is active, confirm that the password is correct and the hashkey properly unlocks
     let activePrivateKey = "";
     try {
-      // await _unlockKeystore({ keyID, password });
+      await _unlockKeystore({ keyID, password });
       activePrivateKey = await getEncryptedTemporaryData({
         sessionStore,
         localStore,
@@ -516,6 +519,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     }
 
     if (!activePrivateKey) {
+      captureException("Error decrypting active private key in Add Account");
       return { error: "Incorrect password" };
     }
 
@@ -528,6 +532,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       privateKey: wallet.getSecret(keyNumber),
     };
 
+    // Add the new account to our data store
     try {
       await _storeAccount({
         password,
@@ -555,12 +560,39 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const importAccount = async () => {
     const { password, privateKey } = request;
     let sourceKeys;
+
+    let mnemonicPhrase = await getEncryptedTemporaryData({
+      sessionStore,
+      localStore,
+      keyName: TEMPORARY_STORE_EXTRA_ID,
+    });
+
+    if (!mnemonicPhrase) {
+      try {
+        await loginToAllAccounts(password);
+        mnemonicPhrase = await getEncryptedTemporaryData({
+          sessionStore,
+          localStore,
+          keyName: TEMPORARY_STORE_EXTRA_ID,
+        });
+      } catch (e) {
+        return { error: "Incorrect password" };
+      }
+    }
+
     const keyID = (await getIsHardwareWalletActive())
       ? await _getNonHwKeyID()
       : (await localStore.getItem(KEY_ID)) || "";
+    // if the session is active, confirm that the password is correct and the hashkey properly unlocks
+    let activePrivateKey = "";
 
     try {
       await _unlockKeystore({ keyID, password });
+      activePrivateKey = await getEncryptedTemporaryData({
+        sessionStore,
+        localStore,
+        keyName: keyID,
+      });
       sourceKeys = StellarSdk.Keypair.fromSecret(privateKey);
     } catch (e) {
       console.error(e);
@@ -576,15 +608,16 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       await _storeAccount({
         password,
         keyPair,
-        mnemonicPhrase: await getEncryptedTemporaryData({
-          sessionStore,
-          localStore,
-          keyName: TEMPORARY_STORE_EXTRA_ID,
-        }),
+        mnemonicPhrase,
         imported: true,
       });
     } catch (e) {
       captureException(`Error importing account: ${JSON.stringify(e)}`);
+      return { error: "Error importing account" };
+    }
+
+    if (!activePrivateKey) {
+      captureException("Error decrypting active private key in Import Account");
       return { error: "Error importing account" };
     }
 
@@ -998,6 +1031,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return unlockedAccounts;
   };
 
+  /* Retrive and store encrypted data for all existing accounts */
   const loginToAllAccounts = async (password: string) => {
     const keyIdList = await getKeyIdList();
 
@@ -1040,7 +1074,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       );
     }
 
-    // clear the temporary store so we can replace it with the new encrypted data
+    // clear the temporary store (if it exists) so we can replace it with the new encrypted data
     await localStore.remove(TEMPORARY_STORE_ID);
 
     try {
@@ -1121,9 +1155,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     try {
       await loginToAllAccounts(password);
     } catch (e) {
-      captureException(
-        `Could not login when confirming password: ${JSON.stringify(e)}`,
-      );
       return { error: "Incorrect password" };
     }
 
