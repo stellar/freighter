@@ -780,12 +780,34 @@ export const getTokenDetails = async ({
   contractId,
   publicKey,
   networkDetails,
+  fetchBalance,
 }: {
   contractId: string;
   publicKey: string;
   networkDetails: NetworkDetails;
-}): Promise<{ name: string; decimals: number; symbol: string } | null> => {
+  fetchBalance?: boolean;
+}): Promise<{
+  name: string;
+  decimals: number;
+  symbol: string;
+  balance?: number;
+} | null> => {
   try {
+    let balance;
+    if (fetchBalance && networkDetails.sorobanRpcUrl) {
+      const server = buildSorobanServer(
+        networkDetails.sorobanRpcUrl,
+        networkDetails.networkPassphrase,
+      );
+
+      balance = await getBalance(
+        contractId,
+        [new Address(publicKey).toScVal()],
+        server,
+        await getNewTxBuilder(publicKey, networkDetails, server),
+      );
+    }
+
     if (isCustomNetwork(networkDetails)) {
       if (!networkDetails.sorobanRpcUrl) {
         throw new SorobanRpcNotSupportedError();
@@ -816,6 +838,7 @@ export const getTokenDetails = async ({
         name,
         symbol,
         decimals,
+        balance,
       };
     }
 
@@ -826,6 +849,11 @@ export const getTokenDetails = async ({
     if (!response.ok) {
       throw new Error(data);
     }
+
+    if (fetchBalance && balance) {
+      data.balance = balance;
+    }
+
     return data;
   } catch (error) {
     console.error(error);

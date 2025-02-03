@@ -77,6 +77,7 @@ export const useTokenLookup = ({
             contractId,
             publicKey,
             networkDetails,
+            fetchBalance: true,
           });
         } catch (e) {
           setAssetRows([]);
@@ -104,6 +105,8 @@ export const useTokenLookup = ({
               issuer,
               domain: "",
               name: tokenDetailsResponse.name,
+              balance: tokenDetailsResponse.balance,
+              decimals: tokenDetailsResponse.decimals,
               isSuspicious: isAssetSuspicious(scannedAsset),
             },
           ]);

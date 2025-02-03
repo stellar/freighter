@@ -6,6 +6,7 @@ import {
   Loader,
   Text,
 } from "@stellar/design-system";
+import BigNumber from "bignumber.js";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
@@ -35,7 +36,7 @@ import { View } from "popup/basics/layout/View";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { AssetNotifcation } from "popup/components/AssetNotification";
 import { useTokenLookup } from "popup/helpers/useTokenLookup";
-import { isContractId } from "popup/helpers/soroban";
+import { formatTokenAmount, isContractId } from "popup/helpers/soroban";
 import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
 
 import "./styles.scss";
@@ -69,10 +70,28 @@ export const AddToken = () => {
   >(undefined);
 
   const assetCurrency: ManageAssetCurrency | undefined = assetRows[0];
+
+  const getAssetBalance = () => {
+    const code = assetCurrency?.code;
+    const balance = assetCurrency?.balance;
+    const decimals = assetCurrency?.decimals;
+    if (code && balance && decimals) {
+      const formattedTokenAmount = formatTokenAmount(
+        new BigNumber(balance),
+        decimals,
+      );
+      return `+${formattedTokenAmount} ${code}`;
+    }
+
+    return undefined;
+  };
+
   const assetCode = assetCurrency?.code || "";
   const assetIssuer = assetCurrency?.issuer || "";
   const assetName = assetTomlName || assetCurrency?.name?.split(":")[0];
   const assetDomain = assetCurrency?.domain || "";
+  const assetBalance = getAssetBalance();
+  const hasBalance = assetBalance !== undefined;
 
   const isLoading =
     isSearching || assetIcon === undefined || assetTomlName === undefined;
@@ -335,31 +354,32 @@ export const AddToken = () => {
               )}
             </div>
 
-            {/* TODO: fetch actual values */}
-            <div className="AddToken__wrapper__info">
-              <Text
-                as="div"
-                size="xs"
-                addlClassName="AddToken__wrapper__info--title"
-              >
-                {t("Simulated Balance Changes")}
-              </Text>
-              <div className="AddToken__wrapper__info__row">
-                <div className="AddToken__wrapper__info__row--icon">
-                  <Icon.CoinsStacked03 />
-                </div>
-                <Text as="div" size="xs">
-                  {t("Amount")}
-                </Text>
+            {hasBalance && (
+              <div className="AddToken__wrapper__info">
                 <Text
                   as="div"
                   size="xs"
-                  addlClassName="AddToken__wrapper__info--amount AddToken__wrapper__info__row__right_label"
+                  addlClassName="AddToken__wrapper__info--title"
                 >
-                  +1000.00 GO
+                  {t("Simulated Balance Changes")}
                 </Text>
+                <div className="AddToken__wrapper__info__row">
+                  <div className="AddToken__wrapper__info__row--icon">
+                    <Icon.CoinsStacked03 />
+                  </div>
+                  <Text as="div" size="xs">
+                    {t("Amount")}
+                  </Text>
+                  <Text
+                    as="div"
+                    size="xs"
+                    addlClassName="AddToken__wrapper__info--amount AddToken__wrapper__info__row__right_label"
+                  >
+                    {assetBalance}
+                  </Text>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="AddToken__wrapper__footer">
               <Button
