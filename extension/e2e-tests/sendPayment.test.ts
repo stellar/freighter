@@ -15,7 +15,7 @@ test("Swap doesn't throw error when account is unfunded", async ({
   test.slow();
   await login({ page, extensionId });
 
-  await page.getByTestId("BottomNav-link-swap").click();
+  await page.getByTestId("BottomNav-link-swap/amount").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
     "Swap XLM",
   );
@@ -173,7 +173,7 @@ test("Send SAC to C address", async ({ page, extensionId }) => {
   });
 
   // swap to get some USDC
-  await page.getByTestId("BottomNav-link-swap").click({ force: true });
+  await page.getByTestId("BottomNav-link-swap/amount").click({ force: true });
   await expect(page.getByText("Swap XLM")).toBeVisible();
   await expect(
     page.getByTestId("AssetSelect").filter({ hasText: "USDC" }),
