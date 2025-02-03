@@ -508,6 +508,14 @@ export const Router = () => (
           }
         ></Route>
         <Route
+          path={ROUTES.swap}
+          element={
+            <PublicKeyRoute>
+              <Swap />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
           path={`${ROUTES.swap}/*`}
           element={
             <PublicKeyRoute>

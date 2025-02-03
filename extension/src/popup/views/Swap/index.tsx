@@ -59,6 +59,14 @@ export const Swap = () => {
     <Routes>
       <Route
         index
+        element={
+          <PublicKeyRoute>
+            <SendAmount previous={ROUTES.account} next={ROUTES.swapSettings} />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        index
         path={amountSlug}
         element={
           <PublicKeyRoute>
