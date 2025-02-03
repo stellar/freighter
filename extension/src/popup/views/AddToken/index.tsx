@@ -68,6 +68,7 @@ export const AddToken = () => {
   const [blockaidData, setBlockaidData] = useState<
     BlockAidScanAssetResult | undefined
   >(undefined);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const assetCurrency: ManageAssetCurrency | undefined = assetRows[0];
 
@@ -119,6 +120,11 @@ export const AddToken = () => {
 
   useEffect(() => {
     if (!isContractId(contractId)) {
+      setErrorMessage(
+        t(
+          "This is not a valid contract id. Please try again with a different value.",
+        ),
+      );
       return;
     }
 
@@ -224,6 +230,20 @@ export const AddToken = () => {
         customBackAction={() => setIsPasswordRequired(false)}
         customSubmit={verifyPasswordThenAddToken}
       />
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <React.Fragment>
+        <View.Content>
+          <div className="AddToken__error">
+            <Text as="h1" size="xl">
+              {errorMessage}
+            </Text>
+          </div>
+        </View.Content>
+      </React.Fragment>
     );
   }
 
