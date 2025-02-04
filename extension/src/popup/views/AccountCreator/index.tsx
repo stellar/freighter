@@ -19,12 +19,13 @@ import {
   FormValues,
 } from "popup/components/accountCreator/PasswordForm";
 import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
+import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
 
 export const AccountCreator = () => {
   const publicKey = useSelector(publicKeySelector);
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
 

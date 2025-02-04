@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button, Input } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Field, Form, Formik } from "formik";
@@ -21,6 +22,7 @@ import "./styles.scss";
 
 export const DisplayBackupPhrase = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState("");
   const [isPhraseUnlocked, setIsPhraseUnlocked] = useState(false);
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
@@ -78,7 +80,7 @@ export const DisplayBackupPhrase = () => {
               size="md"
               isFullWidth
               variant="tertiary"
-              onClick={() => navigateTo(ROUTES.account)}
+              onClick={() => navigateTo(ROUTES.account, navigate)}
             >
               {t("Done")}
             </Button>

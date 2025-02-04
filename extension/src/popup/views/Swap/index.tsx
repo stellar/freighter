@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Switch, Redirect } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import { AppDispatch } from "popup/App";
 import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
@@ -48,29 +48,85 @@ export const Swap = () => {
     })();
   }, [dispatch, publicKey, networkDetails, accountBalances]);
 
+  const amountSlug = ROUTES.swapAmount.split("/swap/")[1];
+  const settingsSlug = ROUTES.swapSettings.split("/swap/")[1];
+  const settingsFeeSlug = ROUTES.swapSettingsFee.split("/swap/settings/")[1];
+  const settingsSlippageSlug =
+    ROUTES.swapSettingsSlippage.split("/swap/settings/")[1];
+  const settingsTimeoutSlug =
+    ROUTES.swapSettingsTimeout.split("/swap/settings/")[1];
+  const swapConfirmSlug = ROUTES.swapConfirm.split("/swap/")[1];
+
   return (
-    <Switch>
-      <PublicKeyRoute exact path={ROUTES.swap}>
-        <Redirect to={ROUTES.swapAmount} />
-      </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.swapAmount}>
-        <SendAmount previous={ROUTES.account} next={ROUTES.swapSettings} />
-      </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.swapSettings}>
-        <SendSettings previous={ROUTES.swapAmount} next={ROUTES.swapConfirm} />
-      </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.swapSettingsFee}>
-        <SendSettingsFee previous={ROUTES.swapSettings} />
-      </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.swapSettingsSlippage}>
-        <SendSettingsSlippage previous={ROUTES.swapSettings} />
-      </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.swapSettingsTimeout}>
-        <SendSettingsTxTimeout previous={ROUTES.swapSettings} />
-      </PublicKeyRoute>
-      <VerifiedAccountRoute exact path={ROUTES.swapConfirm}>
-        <SendConfirm previous={ROUTES.swapSettings} />
-      </VerifiedAccountRoute>
-    </Switch>
+    <Routes>
+      <Route
+        index
+        element={
+          <PublicKeyRoute>
+            <SendAmount previous={ROUTES.account} next={ROUTES.swapSettings} />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={amountSlug}
+        element={
+          <PublicKeyRoute>
+            <SendAmount previous={ROUTES.account} next={ROUTES.swapSettings} />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={`${settingsSlug}/*`}
+        element={
+          <PublicKeyRoute>
+            <Routes>
+              <Route
+                index
+                element={
+                  <PublicKeyRoute>
+                    <SendSettings
+                      previous={ROUTES.swapAmount}
+                      next={ROUTES.swapConfirm}
+                    />
+                  </PublicKeyRoute>
+                }
+              ></Route>
+              <Route
+                path={settingsFeeSlug}
+                element={
+                  <PublicKeyRoute>
+                    <SendSettingsFee previous={ROUTES.swapSettings} />
+                  </PublicKeyRoute>
+                }
+              ></Route>
+              <Route
+                path={settingsSlippageSlug}
+                element={
+                  <PublicKeyRoute>
+                    <SendSettingsSlippage previous={ROUTES.swapSettings} />
+                  </PublicKeyRoute>
+                }
+              ></Route>
+              <Route
+                path={settingsTimeoutSlug}
+                element={
+                  <PublicKeyRoute>
+                    <SendSettingsTxTimeout previous={ROUTES.swapSettings} />
+                  </PublicKeyRoute>
+                }
+              ></Route>
+            </Routes>
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={swapConfirmSlug}
+        element={
+          <VerifiedAccountRoute>
+            <SendConfirm previous={ROUTES.swapSettings} />
+          </VerifiedAccountRoute>
+        }
+      ></Route>
+    </Routes>
   );
 };

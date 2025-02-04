@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
+import { configureStore } from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
 import { Provider } from "react-redux";
 
@@ -26,11 +26,10 @@ export type AppState = ReturnType<typeof rootReducer>;
 export const store = configureStore({
   reducer: rootReducer,
 
-  middleware: [
-    ...getDefaultMiddleware({
-      serializableCheck: false,
-    }),
-  ].concat(metricsMiddleware<AppState>()),
+  middleware: (defaults) =>
+    defaults({ serializableCheck: false }).concat(
+      metricsMiddleware<AppState>(),
+    ),
 });
 
 export type AppDispatch = typeof store.dispatch;

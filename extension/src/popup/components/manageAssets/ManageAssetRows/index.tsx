@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { StellarToml } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
@@ -81,10 +82,11 @@ export const ManageAssetRows = ({
     hardwareWalletData: { status: hwStatus },
   } = useSelector(transactionSubmissionSelector);
   const [assetSubmitting, setAssetSubmitting] = useState("");
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { accountBalanceStatus } = useSelector(tokensSelector);
   const walletType = useSelector(hardwareWalletTypeSelector);
   const { recommendedFee } = useNetworkFees();
+  const navigate = useNavigate();
 
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] =
     useState(false);
@@ -117,7 +119,7 @@ export const ManageAssetRows = ({
   useEffect(() => {
     if (submitStatus === ActionStatus.SUCCESS) {
       dispatch(resetSubmission());
-      navigateTo(ROUTES.account);
+      navigateTo(ROUTES.account, navigate);
     }
   }, [submitStatus, dispatch]);
 

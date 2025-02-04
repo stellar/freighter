@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { IconButton, Icon, Button } from "@stellar/design-system";
@@ -69,7 +70,8 @@ export const AssetDetail = ({
   setSelectedAsset,
   subentryCount,
 }: AssetDetailProps) => {
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const isNative = selectedAsset === "native";
 
   const canonical = getAssetFromCanonical(selectedAsset);
@@ -203,7 +205,7 @@ export const AssetDetail = ({
                       } else {
                         dispatch(saveIsToken(false));
                       }
-                      navigateTo(ROUTES.sendPayment);
+                      navigateTo(ROUTES.sendPayment, navigate);
                     }}
                   >
                     {t("SEND")}
@@ -214,7 +216,7 @@ export const AssetDetail = ({
                       variant="tertiary"
                       onClick={() => {
                         dispatch(saveAsset(selectedAsset));
-                        navigateTo(ROUTES.swap);
+                        navigateTo(ROUTES.swap, navigate);
                       }}
                     >
                       {t("SWAP")}
@@ -227,7 +229,7 @@ export const AssetDetail = ({
                   variant="tertiary"
                   onClick={() => {
                     dispatch(saveDestinationAsset(selectedAsset));
-                    navigateTo(ROUTES.swap);
+                    navigateTo(ROUTES.swap, navigate);
                   }}
                 >
                   {t("SWAP")}

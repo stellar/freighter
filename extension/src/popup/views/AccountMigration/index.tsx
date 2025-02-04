@@ -1,5 +1,5 @@
 import React from "react";
-import { Switch } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
 import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
@@ -13,43 +13,73 @@ import { MigrationComplete } from "popup/components/accountMigration/MigrationCo
 
 import "./styles.scss";
 
-export const AccountMigration = () => (
-  <>
+export const AccountMigration = () => {
+  const reviewSlug = ROUTES.accountMigrationReviewMigration.split(
+    "/account-migration/",
+  )[1];
+  const mnemonicPhraseSlug = ROUTES.accountMigrationMnemonicPhrase.split(
+    "/account-migration/",
+  )[1];
+  const mnemonicConfirmPhraseSlug =
+    ROUTES.accountMigrationConfirmMigration.split("/account-migration/")[1];
+  const migrationCompleteSlug = ROUTES.accountMigrationMigrationComplete.split(
+    "/account-migration/",
+  )[1];
+  return (
     <React.Fragment>
       <View.Header />
       <View.Content alignment="center">
-        <Switch>
-          <PublicKeyRoute exact path={ROUTES.accountMigration}>
-            <div className="AccountMigration">
-              <MigrationStart />
-            </div>
-          </PublicKeyRoute>
-          <PublicKeyRoute exact path={ROUTES.accountMigrationReviewMigration}>
-            <div className="AccountMigration">
-              <ReviewMigration />
-            </div>
-          </PublicKeyRoute>
-          <VerifiedAccountRoute
-            exact
-            path={ROUTES.accountMigrationMnemonicPhrase}
-          >
-            <MnemonicPhrase />
-          </VerifiedAccountRoute>
-          <VerifiedAccountRoute
-            exact
-            path={ROUTES.accountMigrationConfirmMigration}
-          >
-            <div className="AccountMigration">
-              <ConfirmMigration />
-            </div>
-          </VerifiedAccountRoute>
-          <PublicKeyRoute exact path={ROUTES.accountMigrationMigrationComplete}>
-            <div className="AccountMigration">
-              <MigrationComplete />
-            </div>
-          </PublicKeyRoute>
-        </Switch>
+        <Routes>
+          <Route
+            index
+            element={
+              <PublicKeyRoute>
+                <div className="AccountMigration">
+                  <MigrationStart />
+                </div>
+              </PublicKeyRoute>
+            }
+          ></Route>
+          <Route
+            path={reviewSlug}
+            element={
+              <PublicKeyRoute>
+                <div className="AccountMigration">
+                  <ReviewMigration />
+                </div>
+              </PublicKeyRoute>
+            }
+          ></Route>
+          <Route
+            path={mnemonicPhraseSlug}
+            element={
+              <VerifiedAccountRoute>
+                <MnemonicPhrase />
+              </VerifiedAccountRoute>
+            }
+          ></Route>
+          <Route
+            path={mnemonicConfirmPhraseSlug}
+            element={
+              <VerifiedAccountRoute>
+                <div className="AccountMigration">
+                  <ConfirmMigration />
+                </div>
+              </VerifiedAccountRoute>
+            }
+          ></Route>
+          <Route
+            path={migrationCompleteSlug}
+            element={
+              <PublicKeyRoute>
+                <div className="AccountMigration">
+                  <MigrationComplete />
+                </div>
+              </PublicKeyRoute>
+            }
+          ></Route>
+        </Routes>
       </View.Content>
     </React.Fragment>
-  </>
-);
+  );
+};

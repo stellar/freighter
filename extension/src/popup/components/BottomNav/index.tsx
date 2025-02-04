@@ -16,8 +16,9 @@ interface NavLinkProps {
 const BottomNavLink = ({ children, to }: NavLinkProps) => (
   <NavLink
     to={to}
-    activeClassName="BottomNav__link--active"
-    className="BottomNav__link"
+    className={({ isActive }) =>
+      isActive ? "BottomNav__link BottomNav__link--active" : "BottomNav__link"
+    }
     data-testid={`BottomNav-link-${to.replace("/", "")}`}
   >
     <div className="BottomNav__link__icon">{children}</div>

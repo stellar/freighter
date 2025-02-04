@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Switch } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 import { useTranslation } from "react-i18next";
 
@@ -102,25 +102,38 @@ export const ManageAssetsLists = () => {
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedNetwork(e.target.value as AssetsListKey);
   };
+  const modifyAssetListSlug = ROUTES.manageAssetsListsModifyAssetList.split(
+    "/manage-assets-list/",
+  )[1];
 
   return assetsLists ? (
     <>
-      <Switch>
-        <PublicKeyRoute exact path={ROUTES.manageAssetsLists}>
-          <AssetLists
-            sortedAssetsListsData={sortedAssetsListsData}
-            handleSelectChange={handleSelectChange}
-            selectedNetwork={selectedNetwork}
-            isLoading={isLoading}
-          />
-        </PublicKeyRoute>
-        <PublicKeyRoute exact path={ROUTES.manageAssetsListsModifyAssetList}>
-          <ModifyAssetList
-            assetsListsData={assetsListsData}
-            selectedNetwork={selectedNetwork}
-          />
-        </PublicKeyRoute>
-      </Switch>
+      <Routes>
+        <Route
+          index
+          element={
+            <PublicKeyRoute>
+              <AssetLists
+                sortedAssetsListsData={sortedAssetsListsData}
+                handleSelectChange={handleSelectChange}
+                selectedNetwork={selectedNetwork}
+                isLoading={isLoading}
+              />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={modifyAssetListSlug}
+          element={
+            <PublicKeyRoute>
+              <ModifyAssetList
+                assetsListsData={assetsListsData}
+                selectedNetwork={selectedNetwork}
+              />
+            </PublicKeyRoute>
+          }
+        ></Route>
+      </Routes>
     </>
   ) : (
     <div>{t("Unable to parse assets lists")}</div>

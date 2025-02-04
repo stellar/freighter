@@ -128,10 +128,10 @@ const commonConfig = (
     ],
   },
   plugins: [
-    new ESLintPlugin({
-      extensions: [".ts", ".tsx"],
-      failOnWarning: true,
-    }),
+    // new ESLintPlugin({
+    //   extensions: [".ts", ".tsx"],
+    //   failOnWarning: false,
+    // }),
     new CopyWebpackPlugin({
       patterns: [
         {

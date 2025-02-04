@@ -32,7 +32,7 @@ export const SearchCopy = ({ children }: { children: React.ReactNode }) => (
 
 interface SearchResultsProps {
   isSearching: boolean;
-  resultsRef: React.RefObject<HTMLDivElement>;
+  resultsRef: React.RefObject<HTMLDivElement | null>;
   children: React.ReactNode;
 }
 

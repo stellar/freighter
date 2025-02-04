@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux";
 import { truncatedPublicKey } from "helpers/stellar";
 import { makeAccountActive } from "popup/ducks/accountServices";
 import { resetAccountBalanceStatus } from "popup/ducks/transactionSubmission";
+import { AppDispatch } from "popup/App";
 
 import { IdenticonImg } from "../IdenticonImg";
 
@@ -28,7 +29,7 @@ export const AccountListIdenticon = ({
   setIsDropdownOpen,
   setLoading,
 }: KeyIdenticonProps) => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const shortPublicKey = truncatedPublicKey(publicKey);
 
   const handleMakeAccountActive = () => {
