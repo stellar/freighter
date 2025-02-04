@@ -49,16 +49,16 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  if (!loaded) {
-    return null;
-  }
-
-  React.useEffect(() => {
+  useEffect(() => {
     console.log("runing effect");
     console.log(serviceLayerTest);
     serviceLayerTest();
     console.log("effect done");
   }, []);
+
+  if (!loaded) {
+    return null;
+  }
 
   return (
     <Provider store={store}>
