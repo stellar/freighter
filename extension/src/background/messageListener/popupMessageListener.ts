@@ -254,16 +254,28 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     password,
     keyPair,
     imported = false,
+    isSettingHashKey = false,
   }: {
     mnemonicPhrase: string;
     password: string;
     keyPair: KeyPair;
     imported?: boolean;
+    isSettingHashKey?: boolean;
   }) => {
     const { publicKey, privateKey } = keyPair;
 
     const allAccounts = allAccountsSelector(sessionStore.getState());
     const accountName = `Account ${allAccounts.length + 1}`;
+
+    let activeHashKey = await getActiveHashKeyCryptoKey({ sessionStore });
+    if (activeHashKey === null && isSettingHashKey) {
+      // this should only happen on account creation & account recovery
+      activeHashKey = await deriveKeyFromString(password);
+    }
+
+    if (activeHashKey === null) {
+      throw new Error("Error deriving hash key");
+    }
 
     // set the active public key
     await sessionStore.dispatch(
@@ -293,11 +305,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     };
 
     let keyStore = { id: "" };
-    let activeHashKey = await getActiveHashKeyCryptoKey({ sessionStore });
-    if (activeHashKey === null) {
-      // this should only happen on account creation & account recovery
-      activeHashKey = await deriveKeyFromString(password);
-    }
 
     // store encrypted extra data
 
@@ -455,6 +462,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         password,
         keyPair,
         mnemonicPhrase,
+        isSettingHashKey: true,
       });
     } catch (e) {
       console.error(e);
@@ -496,7 +504,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
           keyName: TEMPORARY_STORE_EXTRA_ID,
         });
       } catch (e) {
-        return { error: "Incorrect password" };
+        captureException(
+          `Error logging in to all accounts in Add Account - ${JSON.stringify(
+            e,
+          )}`,
+        );
+        return { error: "Unable to login" };
       }
     }
 
@@ -576,7 +589,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
           keyName: TEMPORARY_STORE_EXTRA_ID,
         });
       } catch (e) {
-        return { error: "Incorrect password" };
+        captureException(
+          `Error logging in to all accounts in Import Account - ${JSON.stringify(
+            e,
+          )}`,
+        );
+        return { error: "Unable to login" };
       }
     }
 
@@ -897,6 +915,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
           mnemonicPhrase: recoverMnemonic,
           password,
           keyPair,
+          isSettingHashKey: true,
         });
       } catch (e) {
         captureException(`Error recovering account: ${JSON.stringify(e)}`);
@@ -976,12 +995,27 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       return { error: "Incorrect Password" };
     }
 
+    let mnemonicPhrase = await getEncryptedTemporaryData({
+      sessionStore,
+      localStore,
+      keyName: TEMPORARY_STORE_EXTRA_ID,
+    });
+
+    if (!mnemonicPhrase) {
+      try {
+        await loginToAllAccounts(password);
+        mnemonicPhrase = await getEncryptedTemporaryData({
+          sessionStore,
+          localStore,
+          keyName: TEMPORARY_STORE_EXTRA_ID,
+        });
+      } catch (e) {
+        return { error: "Incorrect password" };
+      }
+    }
+
     return {
-      mnemonicPhrase: await getEncryptedTemporaryData({
-        sessionStore,
-        localStore,
-        keyName: TEMPORARY_STORE_EXTRA_ID,
-      }),
+      mnemonicPhrase,
     };
   };
 
@@ -1428,6 +1462,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   const signOut = async () => {
     sessionStore.dispatch(logOut());
+    await localStore.remove(TEMPORARY_STORE_ID);
 
     return {
       publicKey: publicKeySelector(sessionStore.getState()),
