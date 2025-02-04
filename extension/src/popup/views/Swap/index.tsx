@@ -50,9 +50,11 @@ export const Swap = () => {
 
   const amountSlug = ROUTES.swapAmount.split("/swap/")[1];
   const settingsSlug = ROUTES.swapSettings.split("/swap/")[1];
-  const settingsFeeSlug = ROUTES.swapSettingsFee.split("/swap/")[1];
-  const settingsSlippageSlug = ROUTES.swapSettingsSlippage.split("/swap/")[1];
-  const settingsTimeoutSlug = ROUTES.swapSettingsTimeout.split("/swap/")[1];
+  const settingsFeeSlug = ROUTES.swapSettingsFee.split("/swap/settings/")[1];
+  const settingsSlippageSlug =
+    ROUTES.swapSettingsSlippage.split("/swap/settings/")[1];
+  const settingsTimeoutSlug =
+    ROUTES.swapSettingsTimeout.split("/swap/settings/")[1];
   const swapConfirmSlug = ROUTES.swapConfirm.split("/swap/")[1];
 
   return (
@@ -66,7 +68,6 @@ export const Swap = () => {
         }
       ></Route>
       <Route
-        index
         path={amountSlug}
         element={
           <PublicKeyRoute>
@@ -75,37 +76,46 @@ export const Swap = () => {
         }
       ></Route>
       <Route
-        path={settingsSlug}
+        path={`${settingsSlug}/*`}
         element={
           <PublicKeyRoute>
-            <SendSettings
-              previous={ROUTES.swapAmount}
-              next={ROUTES.swapConfirm}
-            />
-          </PublicKeyRoute>
-        }
-      ></Route>
-      <Route
-        path={settingsFeeSlug}
-        element={
-          <PublicKeyRoute>
-            <SendSettingsFee previous={ROUTES.swapSettings} />
-          </PublicKeyRoute>
-        }
-      ></Route>
-      <Route
-        path={settingsSlippageSlug}
-        element={
-          <PublicKeyRoute>
-            <SendSettingsSlippage previous={ROUTES.swapSettings} />
-          </PublicKeyRoute>
-        }
-      ></Route>
-      <Route
-        path={settingsTimeoutSlug}
-        element={
-          <PublicKeyRoute>
-            <SendSettingsTxTimeout previous={ROUTES.swapSettings} />
+            <Routes>
+              <Route
+                index
+                element={
+                  <PublicKeyRoute>
+                    <SendSettings
+                      previous={ROUTES.swapAmount}
+                      next={ROUTES.swapConfirm}
+                    />
+                  </PublicKeyRoute>
+                }
+              ></Route>
+              <Route
+                path={settingsFeeSlug}
+                element={
+                  <PublicKeyRoute>
+                    <SendSettingsFee previous={ROUTES.swapSettings} />
+                  </PublicKeyRoute>
+                }
+              ></Route>
+              <Route
+                path={settingsSlippageSlug}
+                element={
+                  <PublicKeyRoute>
+                    <SendSettingsSlippage previous={ROUTES.swapSettings} />
+                  </PublicKeyRoute>
+                }
+              ></Route>
+              <Route
+                path={settingsTimeoutSlug}
+                element={
+                  <PublicKeyRoute>
+                    <SendSettingsTxTimeout previous={ROUTES.swapSettings} />
+                  </PublicKeyRoute>
+                }
+              ></Route>
+            </Routes>
           </PublicKeyRoute>
         }
       ></Route>

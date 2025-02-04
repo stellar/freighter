@@ -275,7 +275,6 @@ export const Settings = ({
           initialValues={{ memo }}
           onSubmit={(values) => {
             dispatch(saveMemo(values.memo));
-            navigateTo(next, navigate);
           }}
         >
           {({ submitForm }) => (
@@ -302,7 +301,8 @@ export const Settings = ({
                       >
                         <span
                           className="SendSettings__row__title SendSettings__clickable"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
                             submitForm();
                             handleTxFeeNav();
                           }}
@@ -313,7 +313,8 @@ export const Settings = ({
                     </div>
                     <div
                       className="SendSettings__row__right SendSettings__clickable"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
                         submitForm();
                         handleTxFeeNav();
                       }}
@@ -341,7 +342,8 @@ export const Settings = ({
                       >
                         <span
                           className="SendSettings__row__title SendSettings__clickable"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
                             submitForm();
                             handleTimeoutNav();
                           }}
@@ -352,7 +354,8 @@ export const Settings = ({
                     </div>
                     <div
                       className="SendSettings__row__right SendSettings__clickable"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
                         submitForm();
                         handleTimeoutNav();
                       }}
@@ -389,7 +392,8 @@ export const Settings = ({
                         >
                           <span
                             className="SendSettings__row__title SendSettings__clickable"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.preventDefault();
                               submitForm();
                               handleSlippageNav();
                             }}
@@ -400,7 +404,8 @@ export const Settings = ({
                       </div>
                       <div
                         className="SendSettings__row__right SendSettings__clickable"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.preventDefault();
                           submitForm();
                           handleSlippageNav();
                         }}
@@ -465,6 +470,7 @@ export const Settings = ({
                   type="submit"
                   variant="secondary"
                   data-testid="send-settings-btn-continue"
+                  onClick={() => navigateTo(next, navigate)}
                 >
                   {t("Review")} {isSwap ? t("Swap") : t("Send")}
                 </Button>
