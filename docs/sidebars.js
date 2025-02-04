@@ -7,10 +7,10 @@ const playgroundPaths = [
   "getAddress",
   "getNetwork",
   "getNetworkDetails",
-  "addToken",
   "signTransaction",
   "signAuthEntry",
   "signMessage",
+  "addToken",
   "watchWalletChanges",
 ];
 
@@ -19,6 +19,7 @@ const introPaths = ["introduction", "gettingStarted"];
 const userGuidePaths = [
   "account",
   "advancedSettings",
+  "addToken",
   "addAsset",
   "makePayment",
   "signXdr",
