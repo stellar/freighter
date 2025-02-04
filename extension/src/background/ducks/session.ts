@@ -78,15 +78,6 @@ export const sessionSlice = createSlice({
   reducers: {
     reset: () => initialState,
     logOut: () => initialState,
-    setActivePrivateKey: (state, action: { payload: AppData }) => {
-      const { privateKey = "", password = "" } = action.payload;
-
-      return {
-        ...state,
-        privateKey,
-        password,
-      };
-    },
     setActiveHashKey: (state, action: { payload: AppData }) => {
       const {
         hashKey = {
@@ -166,7 +157,6 @@ export const {
   actions: {
     reset,
     logOut,
-    setActivePrivateKey,
     setActiveHashKey,
     timeoutAccountAccess,
     updateAllAccountsAccountName,
