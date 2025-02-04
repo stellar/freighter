@@ -504,7 +504,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
           keyName: TEMPORARY_STORE_EXTRA_ID,
         });
       } catch (e) {
-        return { error: "Incorrect password" };
+        captureException(
+          `Error logging in to all accounts in Add Account - ${JSON.stringify(
+            e,
+          )}`,
+        );
+        return { error: "Unable to login" };
       }
     }
 
@@ -584,7 +589,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
           keyName: TEMPORARY_STORE_EXTRA_ID,
         });
       } catch (e) {
-        return { error: "Incorrect password" };
+        captureException(
+          `Error logging in to all accounts in Import Account - ${JSON.stringify(
+            e,
+          )}`,
+        );
+        return { error: "Unable to login" };
       }
     }
 
