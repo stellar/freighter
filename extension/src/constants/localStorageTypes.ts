@@ -23,3 +23,5 @@ export const IS_HASH_SIGNING_ENABLED_ID = "isHashSigningEnabled";
 export const IS_NON_SSL_ENABLED_ID = "isNonSSLEnabled";
 export const IS_BLOCKAID_ANNOUNCED_ID = "isBlockaidAnnounced";
 export const IS_HIDE_DUST_ENABLED_ID = "isHideDustEnabled";
+export const TEMPORARY_STORE_ID = "temporaryStore";
+export const TEMPORARY_STORE_EXTRA_ID = "temporaryStoreExtra";

@@ -38,6 +38,13 @@ export const dataStorage = (
   },
 });
 
+export interface DataStorageAccess {
+  getItem: (key: string) => Promise<any>;
+  setItem: (key: string, value: any) => Promise<void>;
+  clear: () => Promise<void>;
+  remove: (keys: string | string[]) => Promise<void>;
+}
+
 export const dataStorageAccess = (
   storageApi: StorageOption = browserLocalStorage,
 ) => {

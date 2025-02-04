@@ -6,7 +6,7 @@ import {
   PASSWORD,
 } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
-import { toBeVisible } from "@testing-library/jest-dom/matchers";
+import { sendXlmPayment } from "./helpers/sendPayment";
 
 test("Swap doesn't throw error when account is unfunded", async ({
   page,
@@ -39,71 +39,64 @@ test("Send doesn't throw error when account is unfunded", async ({
   );
 });
 
-test("Send XLM payment to G address", async ({ page, extensionId }) => {
+test("Send XLM payments from multiple accounts to G Address", async ({
+  page,
+  extensionId,
+}) => {
   test.slow();
   await loginAndFund({ page, extensionId });
-  await page.getByTitle("Send Payment").click({ force: true });
+  await sendXlmPayment({ page });
 
-  await expect(page.getByText("Send To")).toBeVisible();
-  await expectPageToHaveScreenshot({
-    page,
-    screenshot: "send-payment-to.png",
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("BottomNav-link-account").click();
+  await page.getByTestId("AccountHeader__icon-btn").click();
+  await page.getByText("Create a new Stellar address").click();
+
+  // test incorrect password
+  await page.locator("#password-input").fill("wrong password");
+  await page.getByText("Create New Address").click();
+  await expect(page.getByText("Incorrect password")).toBeVisible();
+  await page.locator("#password-input").fill(PASSWORD);
+  await page.getByText("Create New Address").click();
+
+  await expect(page.getByTestId("not-funded")).toBeVisible({
+    timeout: 10000,
   });
+  await page.getByRole("button", { name: "Fund with Friendbot" }).click();
+
+  await expect(page.getByTestId("account-assets")).toBeVisible({
+    timeout: 30000,
+  });
+  await sendXlmPayment({ page });
+
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("BottomNav-link-account").click();
+  await page.getByTestId("AccountHeader__icon-btn").click();
+
+  await page.getByText("Account 1").click();
+  await sendXlmPayment({ page });
+
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("BottomNav-link-account").click();
+  await page.getByTestId("AccountHeader__icon-btn").click();
+  await page.getByText("Import a Stellar secret key").click();
+
+  // test private key account from different mnemonic phrase
   await page
-    .getByTestId("send-to-input")
-    .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
-  await page.getByText("Continue").click({ force: true });
+    .locator("#privateKey-input")
+    .fill("SDCUXKGHQ4HX5NRX5JN7GMJZUXQBWZXLKF34DLVYZ4KLXXIZTG7Q26JJ");
+  // test incorrect password
+  await page.locator("#password-input").fill("wrongpassword");
+  await page.locator("#authorization-input").click({ force: true });
 
-  await expect(page.getByText("Send XLM")).toBeVisible();
-  await expectPageToHaveScreenshot({
-    page,
-    screenshot: "send-payment-amount.png",
-  });
-  await page.getByTestId("send-amount-amount-input").fill("1");
-  await page.getByText("Continue").click({ force: true });
-
-  await expect(page.getByText("Send Settings")).toBeVisible();
-  await expect(page.getByTestId("SendSettingsTransactionFee")).toHaveText(
-    /[0-9]/,
-  );
-  // 100 XLM is the default, so likely a sign the fee was not set properly from Horizon
+  await page.getByTestId("import-account-button").click();
   await expect(
-    page.getByTestId("SendSettingsTransactionFee"),
-  ).not.toContainText("100 XLM");
-  await expectPageToHaveScreenshot(
-    {
-      page,
-      screenshot: "send-payment-settings.png",
-    },
-    {
-      mask: [page.locator("[data-testid='SendSettingsTransactionFee']")],
-    },
-  );
-  await page.getByText("Review Send").click({ force: true });
+    page.getByText("Please enter a valid secret key/password combination"),
+  ).toHaveCount(2);
+  await page.locator("#password-input").fill(PASSWORD);
+  await page.getByTestId("import-account-button").click();
 
-  await expect(page.getByText("Confirm Send")).toBeVisible();
-  await expect(page.getByText("XDR")).toBeVisible();
-  await expectPageToHaveScreenshot({
-    page,
-    screenshot: "send-payment-confirm.png",
-  });
-  await page.getByTestId("transaction-details-btn-send").click({ force: true });
-
-  await expect(page.getByText("Successfully sent")).toBeVisible({
-    timeout: 60000,
-  });
-  await expectPageToHaveScreenshot({
-    page,
-    screenshot: "send-payment-sent.png",
-  });
-
-  await page.getByText("Details").click({ force: true });
-  await expectPageToHaveScreenshot({
-    page,
-    screenshot: "send-payment-details.png",
-  });
-  await expect(page.getByText("Sent XLM")).toBeVisible();
-  await expect(page.getByTestId("asset-amount")).toContainText("1 XLM");
+  await sendXlmPayment({ page });
 });
 
 test("Send XLM payment to C address", async ({ page, extensionId }) => {
