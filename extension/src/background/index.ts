@@ -9,14 +9,17 @@ import { buildStore } from "background/store";
 
 import { popupMessageListener } from "./messageListener/popupMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
-import { SESSION_ALARM_NAME } from "./helpers/session";
-import { timeoutAccountAccess } from "./ducks/session";
+import { SESSION_ALARM_NAME, clearSession } from "./helpers/session";
 import {
   migrateFriendBotUrlNetworkDetails,
   normalizeMigratedData,
   migrateSorobanRpcUrlNetworkDetails,
   versionedMigration,
 } from "./helpers/dataStorage";
+import {
+  dataStorageAccess,
+  browserLocalStorage,
+} from "./helpers/dataStorageAccess";
 
 export const initContentScriptMessageListener = () => {
   browser?.runtime?.onMessage?.addListener((message) => {
@@ -80,8 +83,10 @@ export const initInstalledListener = () => {
 export const initAlarmListener = () => {
   browser?.alarms?.onAlarm.addListener(async ({ name }: { name: string }) => {
     const sessionStore = await buildStore();
+    const localStore = dataStorageAccess(browserLocalStorage);
+
     if (name === SESSION_ALARM_NAME) {
-      sessionStore.dispatch(timeoutAccountAccess());
+      await clearSession({ sessionStore, localStore });
     }
   });
 };
