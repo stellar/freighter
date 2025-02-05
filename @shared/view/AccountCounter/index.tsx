@@ -13,6 +13,44 @@ export function AccountCounter({ accountName, textColor }: CounterProps) {
   const count = useSelector((state: any) => state.counter.value);
   const dispatch = useDispatch();
 
+  const loadFromKeychain = async () => {
+    try {
+      const credentials = await Keychain.getGenericPassword({
+        service: "freighter_service",
+      });
+      console.log("Keychain LOAD 2 result:", credentials);
+      if (credentials) {
+        const { count: savedCount } = JSON.parse(credentials.password);
+        console.log("Successfully loaded from keychain 2:", { savedCount });
+      } else {
+        console.log("No saved credentials found in keychain 2");
+      }
+    } catch (error) {
+      console.error("Error loading from keychain 2:", error);
+    }
+  };
+
+  // Load initial count from Keychain when component mounts
+  useEffect(() => {
+    const loadInitialCount = async () => {
+      try {
+        const credentials = await Keychain.getGenericPassword({
+          service: "freighter_service",
+        });
+        console.log("Keychain LOAD 1 result:", credentials);
+        if (credentials) {
+          const { count: savedCount } = JSON.parse(credentials.password);
+          console.log("Successfully loaded from keychain 1:", { savedCount });
+          dispatch(incrementByAmount(savedCount)); // Set initial state from keychain
+        }
+      } catch (error) {
+        console.error("Error loading initial count from keychain 1:", error);
+      }
+    };
+
+    loadInitialCount();
+  }, []); // Empty dependency array means this runs once on mount
+
   // Save count to Keychain whenever it changes
   useEffect(() => {
     const saveToKeychain = async () => {
@@ -22,7 +60,7 @@ export function AccountCounter({ accountName, textColor }: CounterProps) {
           JSON.stringify({ count }),
           { service: "freighter_service" },
         );
-        console.log("Keychain result:", result);
+        console.log("Keychain SET result:", result);
       } catch (error) {
         console.error("Error saving to keychain:", error);
       }
@@ -30,23 +68,6 @@ export function AccountCounter({ accountName, textColor }: CounterProps) {
 
     saveToKeychain();
   }, [count, accountName]);
-
-  const loadFromKeychain = async () => {
-    try {
-      const credentials = await Keychain.getGenericPassword({
-        service: "freighter_service",
-      });
-      console.log("Credentials:", credentials);
-      if (credentials) {
-        const { count: savedCount } = JSON.parse(credentials.password);
-        console.log("Successfully loaded from keychain:", { savedCount });
-      } else {
-        console.log("No saved credentials found in keychain");
-      }
-    } catch (error) {
-      console.error("Error loading from keychain:", error);
-    }
-  };
 
   return (
     <Account
