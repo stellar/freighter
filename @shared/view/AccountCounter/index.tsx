@@ -2,7 +2,10 @@ import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { decrement, incrementByAmount } from "../ducks/account";
 import * as Keychain from "react-native-keychain";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Account from "../Account";
+
+const STORAGE_KEY = "@freighter_counter";
 
 interface CounterProps {
   accountName: string;
@@ -30,10 +33,26 @@ export function AccountCounter({ accountName, textColor }: CounterProps) {
     }
   };
 
-  // Load initial count from Keychain when component mounts
+  const loadFromStorage = async () => {
+    try {
+      const savedData = await AsyncStorage.getItem(STORAGE_KEY);
+      console.log("AsyncStorage LOAD 2 result:", savedData);
+      if (savedData) {
+        const { count: savedCount } = JSON.parse(savedData);
+        console.log("Successfully loaded from AsyncStorage 2:", { savedCount });
+      } else {
+        console.log("No saved data found in AsyncStorage 2");
+      }
+    } catch (error) {
+      console.error("Error loading from AsyncStorage 2:", error);
+    }
+  };
+
+  // Load initial count from both storages when component mounts
   useEffect(() => {
     const loadInitialCount = async () => {
       try {
+        // Load from Keychain
         const credentials = await Keychain.getGenericPassword({
           service: "freighter_service",
         });
@@ -41,32 +60,48 @@ export function AccountCounter({ accountName, textColor }: CounterProps) {
         if (credentials) {
           const { count: savedCount } = JSON.parse(credentials.password);
           console.log("Successfully loaded from keychain 1:", { savedCount });
-          dispatch(incrementByAmount(savedCount)); // Set initial state from keychain
+          dispatch(incrementByAmount(savedCount));
+        }
+
+        // Load from AsyncStorage
+        const savedData = await AsyncStorage.getItem(STORAGE_KEY);
+        console.log("AsyncStorage LOAD 1 result:", savedData);
+        if (savedData) {
+          const { count: savedCount } = JSON.parse(savedData);
+          console.log("Successfully loaded from AsyncStorage 1:", {
+            savedCount,
+          });
+          dispatch(incrementByAmount(savedCount));
         }
       } catch (error) {
-        console.error("Error loading initial count from keychain 1:", error);
+        console.error("Error loading initial count:", error);
       }
     };
 
     loadInitialCount();
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
 
-  // Save count to Keychain whenever it changes
+  // Save count to both storages whenever it changes
   useEffect(() => {
-    const saveToKeychain = async () => {
+    const saveData = async () => {
       try {
-        const result = await Keychain.setGenericPassword(
+        // Save to Keychain
+        const keychainResult = await Keychain.setGenericPassword(
           "freighter_account_count",
           JSON.stringify({ count }),
           { service: "freighter_service" },
         );
-        console.log("Keychain SET result:", result);
+        console.log("Keychain SET result:", keychainResult);
+
+        // Save to AsyncStorage
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ count }));
+        console.log("AsyncStorage SET successful");
       } catch (error) {
-        console.error("Error saving to keychain:", error);
+        console.error("Error saving data:", error);
       }
     };
 
-    saveToKeychain();
+    saveData();
   }, [count, accountName]);
 
   return (
@@ -76,7 +111,10 @@ export function AccountCounter({ accountName, textColor }: CounterProps) {
       count={count}
       handleIncrement={() => dispatch(incrementByAmount(50))}
       handleDecrement={() => dispatch(decrement())}
-      logFromKeychain={loadFromKeychain}
+      logFromKeychain={() => {
+        loadFromKeychain();
+        loadFromStorage();
+      }}
     />
   );
 }
