@@ -11,6 +11,7 @@ interface AccountProps {
   handleIncrement: () => void;
   handleDecrement: () => void;
   textColor: string;
+  logFromKeychain: () => void;
 }
 
 export const Account = ({
@@ -19,6 +20,7 @@ export const Account = ({
   handleIncrement,
   handleDecrement,
   textColor,
+  logFromKeychain,
 }: AccountProps) => (
   <View data-testid="account-view-account-name">
     <View style={style} />
@@ -28,6 +30,7 @@ export const Account = ({
     </Text>
     <Button title="Increment" onPress={handleIncrement} />
     <Button title="Decrement" onPress={handleDecrement} />
+    <Button title="Log Keychain" onPress={logFromKeychain} />
   </View>
 );
 
