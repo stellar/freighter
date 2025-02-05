@@ -7,7 +7,8 @@ const style = { backgroundColor: "green", height: 100, width: 100 };
 
 interface AccountProps {
   accountName: string;
-  count: number;
+  keychainCount: number;
+  asyncCount: number;
   handleIncrement: () => void;
   handleDecrement: () => void;
   textColor: string;
@@ -16,7 +17,8 @@ interface AccountProps {
 
 export const Account = ({
   accountName,
-  count,
+  keychainCount,
+  asyncCount,
   handleIncrement,
   handleDecrement,
   textColor,
@@ -25,12 +27,12 @@ export const Account = ({
   <View data-testid="account-view-account-name">
     <View style={style} />
     <FreighterLogo />
-    <Text style={{ color: textColor }}>
-      {accountName} {count}
-    </Text>
+    <Text style={{ color: textColor }}>{accountName}</Text>
+    <Text style={{ color: textColor }}>Keychain: {keychainCount}</Text>
+    <Text style={{ color: textColor }}>AsyncStorage: {asyncCount}</Text>
     <Button title="Increment" onPress={handleIncrement} />
     <Button title="Decrement" onPress={handleDecrement} />
-    <Button title="Log Keychain" onPress={logFromKeychain} />
+    <Button title="Log Storage" onPress={logFromKeychain} />
   </View>
 );
 
