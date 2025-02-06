@@ -22,6 +22,7 @@ import {
   signAuthEntry,
   signTransaction,
   signBlob,
+  addToken,
 } from "@stellar/freighter-api";
 ```
 
@@ -290,6 +291,43 @@ const transactionToSubmit = TransactionBuilder.fromXDR(
 
 const response = await server.submitTransaction(transactionToSubmit);
 ```
+
+### addToken
+
+#### `addToken({ contractId: string, networkPassphrase?: string }) -> <Promise<{ contractId: string } & { error?: string; }>>`
+
+This function allows you to trigger an "add token" workflow to add a Soroban token to the user's Freighter wallet. It takes a contract ID as a required parameter and an optional network passphrase. If the network passphrase is omitted, it defaults to Pubnet's passphrase.
+
+When called, Freighter will load the token details (symbol, name, decimals, and balance) from the contract and display them in a modal popup for user review. The user can then verify the token's legitimacy and approve adding it to their wallet. After approval, Freighter will track the token's balance and display it alongside other account balances.
+
+```typescript
+import { isConnected, addToken } from "@stellar/freighter-api";
+
+const addSorobanToken = async () => {
+  if (!(await isConnected())) {
+    return;
+  }
+
+  const result = await addToken({
+    contractId: "CC...ABCD", // The Soroban token contract ID
+    networkPassphrase: "Test SDF Network ; September 2015", // Optional, defaults to Pubnet
+  });
+
+  if (result.error) {
+    console.error(result.error);
+    return;
+  }
+
+  console.log(
+    `Successfully added token with contract ID: ${result.contractId}`
+  );
+};
+```
+
+The function returns a Promise that resolves to an object containing either:
+
+- The contract ID of the added token on success
+- An error message if the request fails or the user rejects it
 
 ### WatchWalletChanges
 
