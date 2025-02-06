@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 import { NETWORKS } from "@shared/constants/stellar";
-import { AssetsListKey } from "@shared/constants/soroban/token";
+import { AssetsListKey } from "@shared/constants/soroban/asset-list";
 import { settingsSelector } from "popup/ducks/settings";
 import { PublicKeyRoute } from "popup/Router";
 

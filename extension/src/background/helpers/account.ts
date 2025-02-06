@@ -15,7 +15,7 @@ import {
   LAST_USED_ACCOUNT,
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
-import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 import { getSorobanRpcUrl } from "@shared/helpers/soroban/sorobanRpcUrl";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { decodeString, encodeObject } from "helpers/urls";

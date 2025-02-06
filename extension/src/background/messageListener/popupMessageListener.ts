@@ -126,7 +126,7 @@ import { STELLAR_EXPERT_MEMO_REQUIRED_ACCOUNTS_URL } from "background/constants/
 import {
   AssetsListKey,
   DEFAULT_ASSETS_LISTS,
-} from "@shared/constants/soroban/token";
+} from "@shared/constants/soroban/asset-list";
 import { getSdk } from "@shared/helpers/stellar";
 import { captureException } from "@sentry/browser";
 
