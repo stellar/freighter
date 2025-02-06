@@ -187,7 +187,10 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
                 ref={ManageAssetRowsWrapperRef}
               >
                 {isManagingAssets ? (
-                  <ManageAssetRows assetRows={assetRows} />
+                  <ManageAssetRows
+                    verifiedAssetRows={assetRows}
+                    unverifiedAssetRows={[]}
+                  />
                 ) : (
                   <SelectAssetRows assetRows={assetRows} />
                 )}
