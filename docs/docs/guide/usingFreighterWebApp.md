@@ -173,6 +173,39 @@ const retrieveNetwork = async () => {
 const result = retrieveNetwork();
 ```
 
+### getNetworkDetails
+
+#### `getNetworkDetails() -> <Promise<{ network: string; networkUrl: string; networkPassphrase: string; sorobanRpcUrl?: string; } & { error?: string; }>>`
+
+Similar to `getNetwork()`, this function retrieves network information from Freighter. However, while `getNetwork()` returns only the network name (such as "PUBLIC" or "TESTNET"), `getNetworkDetails()` provides comprehensive network configuration including the full network URL, network passphrase, and Soroban RPC URL when available.
+
+```typescript
+import {
+  isConnected,
+  getNetwork,
+  getNetworkDetails,
+} from "@stellar/freighter-api";
+
+const checkNetworks = async () => {
+  if (!(await isConnected())) {
+    return;
+  }
+
+  // Basic network name
+  const network = await getNetwork();
+  console.log("Network:", network); // e.g., "TESTNET"
+
+  // Detailed network information
+  const details = await getNetworkDetails();
+  console.log("Network:", details.network); // e.g., "TESTNET"
+  console.log("Network URL:", details.networkUrl); // e.g., "https://horizon-testnet.stellar.org"
+  console.log("Network Passphrase:", details.networkPassphrase); // e.g., "Test SDF Network ; September 2015"
+  console.log("Soroban RPC URL:", details.sorobanRpcUrl); // e.g., "https://soroban-testnet.stellar.org"
+};
+```
+
+Use this method when you need detailed network configuration information, particularly when working with Soroban smart contracts or when the specific network endpoints are required.
+
 ### signTransaction
 
 #### `signTransaction(xdr: string, opts?: { network?: string, networkPassphrase?: string, address?: string }) -> <Promise<{ signedTxXdr: string; signerAddress: string; } & { error?: string; }>>`
