@@ -75,6 +75,7 @@ export const ManageAssetRows = ({
   isVerificationInfoShowing,
   verifiedLists,
 }: ManageAssetRowsProps) => {
+  console.log(assetRows);
   const {
     accountBalances,
     submitStatus,
