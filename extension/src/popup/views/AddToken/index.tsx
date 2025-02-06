@@ -381,7 +381,7 @@ export const AddToken = () => {
                   size="xs"
                   addlClassName="AddToken__wrapper__info--title"
                 >
-                  {t("Simulated Balance Changes")}
+                  {t("Balance Info")}
                 </Text>
                 <div className="AddToken__wrapper__info__row">
                   <div className="AddToken__wrapper__info__row--icon">
