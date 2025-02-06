@@ -55,7 +55,9 @@ export interface NewAssetFlags {
 interface ManageAssetRowsProps {
   children?: React.ReactNode;
   header?: React.ReactNode;
-  assetRows: ManageAssetCurrency[];
+  // assetRows: ManageAssetCurrency[];
+  verifiedAssetRows: ManageAssetCurrency[];
+  unverifiedAssetRows: ManageAssetCurrency[];
   isVerifiedToken?: boolean;
   isVerificationInfoShowing?: boolean;
   verifiedLists?: string[];
@@ -73,12 +75,12 @@ interface SuspiciousAssetData {
 export const ManageAssetRows = ({
   children,
   header,
-  assetRows,
+  verifiedAssetRows,
+  unverifiedAssetRows,
   isVerifiedToken,
   isVerificationInfoShowing,
   verifiedLists,
 }: ManageAssetRowsProps) => {
-  console.log(assetRows);
   const {
     accountBalances,
     submitStatus,
@@ -173,7 +175,69 @@ export const ManageAssetRows = ({
       <div className="ManageAssetRows__scrollbar">
         {header}
         <div className="ManageAssetRows__content">
-          {assetRows.map(
+          <h5>On your list</h5>
+          {verifiedAssetRows.map(
+            ({
+              code = "",
+              domain,
+              image = "",
+              issuer = "",
+              name = "",
+              contract = "",
+              isSuspicious,
+            }) => {
+              if (!accountBalances.balances) {
+                return null;
+              }
+              const isContract = isContractId(contract);
+              const canonicalAsset = getCanonicalFromAsset(code, issuer);
+              const isTrustlineActive = Object.keys(
+                accountBalances.balances,
+              ).some((balance) => balance === canonicalAsset);
+              const isActionPending =
+                submitStatus === ActionStatus.PENDING ||
+                accountBalanceStatus === ActionStatus.PENDING;
+              return (
+                <div
+                  className="ManageAssetRows__row"
+                  key={canonicalAsset}
+                  data-testid="ManageAssetRow"
+                >
+                  <ManageAssetRow
+                    code={code}
+                    issuer={issuer}
+                    image={image}
+                    domain={domain}
+                    name={name}
+                    isSuspicious={isSuspicious}
+                  />
+                  <ManageAssetRowButton
+                    code={code}
+                    contract={contract}
+                    issuer={issuer}
+                    image={image}
+                    domain={domain}
+                    isTrustlineActive={isTrustlineActive}
+                    isActionPending={isActionPending}
+                    isContract={isContract}
+                    isVerifiedToken={!!isVerifiedToken}
+                    isVerificationInfoShowing={!!isVerificationInfoShowing}
+                    setNewAssetFlags={setNewAssetFlags}
+                    setSuspiciousAssetData={setSuspiciousAssetData}
+                    setHandleAddToken={setHandleAddToken}
+                    setShowBlockedDomainWarning={setShowBlockedDomainWarning}
+                    assetSubmitting={assetSubmitting}
+                    setAssetSubmitting={setAssetSubmitting}
+                    setShowNewAssetWarning={setShowNewAssetWarning}
+                    setShowUnverifiedWarning={setShowUnverifiedWarning}
+                    recommendedFee={recommendedFee}
+                  />
+                </div>
+              );
+            },
+          )}
+          <h5>Not on your list</h5>
+          {unverifiedAssetRows.map(
             ({
               code = "",
               domain,

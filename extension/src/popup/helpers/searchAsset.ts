@@ -238,7 +238,7 @@ export const splitVerifiedAssetCurrency = async ({
     if (responses.status === "fulfilled") {
       // confirm that this list still adheres to the agreed upon schema
       const validatedList = await schemaValidatedAssetList(responses.value);
-      validatedAssets.concat(validatedList.assets);
+      validatedAssets.push(...validatedList.assets);
     }
   }
   // make a unique set of contract IDs and issuers

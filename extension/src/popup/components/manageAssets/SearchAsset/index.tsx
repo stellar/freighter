@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Redirect } from "react-router-dom";
 import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
@@ -12,8 +12,12 @@ import { BlockAidScanAssetResult } from "@shared/api/types";
 
 import { FormRows } from "popup/basics/Forms";
 import { ROUTES } from "popup/constants/routes";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  settingsNetworkDetailsSelector,
+  settingsSelector,
+} from "popup/ducks/settings";
 import { searchAsset } from "popup/helpers/searchAsset";
+import { splitVerifiedAssetCurrency } from "popup/helpers/searchAsset";
 import { isMainnet } from "helpers/stellar";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 
@@ -61,7 +65,13 @@ const ResultsHeader = () => {
 export const SearchAsset = () => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
+  const { assetsLists } = useSelector(settingsSelector);
+  const [verifiedAssetRows, setVerifiedAssetRows] = useState(
+    [] as ManageAssetCurrency[],
+  );
+  const [unverifiedAssetRows, setUnverifiedAssetRows] = useState(
+    [] as ManageAssetCurrency[],
+  );
   const [isSearching, setIsSearching] = useState(false);
   const [hasNoResults, setHasNoResults] = useState(false);
   const ResultsRef = useRef<HTMLDivElement>(null);
@@ -76,7 +86,8 @@ export const SearchAsset = () => {
   const handleSearch = useCallback(
     debounce(async ({ target: { value: asset } }) => {
       if (!asset) {
-        setAssetRows([]);
+        setVerifiedAssetRows([]);
+        setUnverifiedAssetRows([]);
         return;
       }
       setIsSearching(true);
@@ -121,38 +132,57 @@ export const SearchAsset = () => {
 
       setIsSearching(false);
 
-      setAssetRows(
-        assetRecords
-          // only show records that have a domain and domains that don't have just whitespace
-          .filter(
-            (record: AssetRecord) => record.domain && /\S/.test(record.domain),
-          )
-          .map((record: AssetRecord) => {
-            const assetSplit = record.asset.split("-");
-            const assetId = `${assetSplit[0]}-${assetSplit[1]}`;
-            return {
-              code: assetSplit[0],
-              issuer: assetSplit[1],
-              image: record?.tomlInfo?.image,
-              domain: record.domain,
-              isSuspicious: blockaidScanResults[assetId]
-                ? isAssetSuspicious(blockaidScanResults[assetId])
-                : null,
-            };
-          }),
-      );
+      const { verifiedAssets, unverifiedAssets } =
+        await splitVerifiedAssetCurrency({
+          networkDetails,
+          assets: assetRecords
+            .filter(
+              (record: AssetRecord) =>
+                record.domain && /\S/.test(record.domain),
+            )
+            .map(
+              (record: {
+                asset: string;
+                tomlInfo: { image: string };
+                domain: string;
+              }) => {
+                const [code, issuer] = record.asset.split("-");
+                const assetId = `${code}-${issuer}`;
+                return {
+                  code,
+                  issuer,
+                  image: record?.tomlInfo?.image,
+                  domain: record.domain,
+                  isSuspicious: blockaidScanResults[assetId]
+                    ? isAssetSuspicious(blockaidScanResults[assetId])
+                    : null,
+                };
+              },
+            ),
+          assetsListsDetails: assetsLists,
+        });
+      setVerifiedAssetRows(verifiedAssets);
+      setUnverifiedAssetRows(unverifiedAssets);
     }, 500),
     [],
   );
 
   useEffect(() => {
-    setHasNoResults(!assetRows.length);
-  }, [assetRows]);
+    setHasNoResults(!verifiedAssetRows.length && !unverifiedAssetRows.length);
+  }, [verifiedAssetRows, unverifiedAssetRows]);
 
   useEffect(() => {
-    const firstNullSuspiciousIndex = assetRows.findIndex(
+    // start with verified list, keep index across lists to know when to switch lists
+    const fullList = [...verifiedAssetRows, ...unverifiedAssetRows];
+    const firstNullSuspiciousIndex = fullList.findIndex(
       (r) => r.isSuspicious === null,
     );
+
+    const isVerifiedListActive =
+      firstNullSuspiciousIndex <= verifiedAssetRows.length;
+    const activeList = isVerifiedListActive
+      ? verifiedAssetRows
+      : unverifiedAssetRows;
 
     const fetchBlockaidResults = async (url: URL) => {
       let blockaidScanResults: { [key: string]: BlockAidScanAssetResult } = {};
@@ -165,7 +195,7 @@ export const SearchAsset = () => {
       }
 
       // take our scanned assets and update the assetRows with the new isSuspicious values
-      const assetRowsAddendum = assetRows
+      const assetRowsAddendum = activeList
         .slice(
           firstNullSuspiciousIndex,
           firstNullSuspiciousIndex + MAX_ASSETS_TO_SCAN,
@@ -181,25 +211,37 @@ export const SearchAsset = () => {
         });
 
       // insert our newly scanned rows into the existing data
-      setAssetRows([
-        ...assetRows.slice(0, firstNullSuspiciousIndex),
-        ...assetRowsAddendum,
-        ...assetRows.slice(firstNullSuspiciousIndex + MAX_ASSETS_TO_SCAN),
-      ]);
+      if (isVerifiedListActive) {
+        setVerifiedAssetRows([
+          ...verifiedAssetRows.slice(0, firstNullSuspiciousIndex),
+          ...assetRowsAddendum,
+          ...verifiedAssetRows.slice(
+            firstNullSuspiciousIndex + MAX_ASSETS_TO_SCAN,
+          ),
+        ]);
+      } else {
+        setUnverifiedAssetRows([
+          ...unverifiedAssetRows.slice(0, firstNullSuspiciousIndex),
+          ...assetRowsAddendum,
+          ...unverifiedAssetRows.slice(
+            firstNullSuspiciousIndex + MAX_ASSETS_TO_SCAN,
+          ),
+        ]);
+      }
 
       return blockaidScanResults;
     };
 
     // if there are any assets with "null" (meaning we haven't scanned some assets yet), scan the next batch
     if (
-      assetRows.length &&
+      fullList.length &&
       isMainnet(networkDetails) &&
       firstNullSuspiciousIndex !== -1
     ) {
       const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
 
       // grab the next section of assets to scan
-      assetRows
+      activeList
         .slice(
           firstNullSuspiciousIndex,
           firstNullSuspiciousIndex + MAX_ASSETS_TO_SCAN,
@@ -212,10 +254,10 @@ export const SearchAsset = () => {
 
       fetchBlockaidResults(url);
     }
-  }, [assetRows, networkDetails]);
+  }, [verifiedAssetRows, unverifiedAssetRows, networkDetails]);
 
   if (isCustomNetwork(networkDetails)) {
-    return <Navigate to={ROUTES.addAsset} />;
+    return <Redirect to={ROUTES.addAsset} />;
   }
 
   return (
@@ -238,7 +280,7 @@ export const SearchAsset = () => {
           </div>
         }
       >
-        {}
+        {/* eslint-disable-next-line @typescript-eslint/no-empty-function */}
         <Formik initialValues={initialValues} onSubmit={() => {}}>
           {({ dirty }) => (
             <Form
@@ -274,10 +316,16 @@ export const SearchAsset = () => {
                   isSearching={isSearching}
                   resultsRef={ResultsRef}
                 >
-                  {assetRows.length ? (
+                  {verifiedAssetRows.length || unverifiedAssetRows.length ? (
                     <ManageAssetRows
-                      header={assetRows.length > 1 ? <ResultsHeader /> : null}
-                      assetRows={assetRows}
+                      header={
+                        verifiedAssetRows.length > 1 ||
+                        unverifiedAssetRows.length > 1 ? (
+                          <ResultsHeader />
+                        ) : null
+                      }
+                      verifiedAssetRows={verifiedAssetRows}
+                      unverifiedAssetRows={unverifiedAssetRows}
                     />
                   ) : null}
                 </SearchResults>
