@@ -13,6 +13,7 @@ import { FormRows } from "popup/basics/Forms";
 import { settingsNetworkDetailsSelector, settingsSelector } from "popup/ducks/settings";
 import { isMainnet, isTestnet } from "helpers/stellar";
 import {
+  getAssetListForAsset,
   getNativeContractDetails,
   splitVerifiedAssetCurrency,
 } from "popup/helpers/searchAsset";
@@ -56,7 +57,7 @@ export const AddAsset = () => {
   const [isVerifiedToken, setIsVerifiedToken] = useState(false);
   const [isVerificationInfoShowing, setIsVerificationInfoShowing] =
     useState(false);
-  const [verifiedLists] = useState([] as string[]);
+  const [verifiedLists, setVerifiedLists] = useState([] as string[]);
   const { assetsLists } = useSelector(settingsSelector);
 
   const ResultsRef = useRef<HTMLDivElement>(null);
@@ -145,9 +146,16 @@ export const AddAsset = () => {
           });
         setVerifiedAssetRows(verifiedAssets);
         setUnverifiedAssetRows(unverifiedAssets);
-        // whats this?
-        // setIsVerifiedToken(true);
-        // setVerifiedLists(verifiedTokens[0].verifiedLists);
+
+        const assetListsForToken = await getAssetListForAsset({
+          asset: token,
+          assetsListsDetails: assetsLists,
+          networkDetails,
+        });
+        setVerifiedLists(assetListsForToken);
+        if (assetListsForToken.length) {
+          setIsVerifiedToken(true);
+        }
       }
     } else {
       // Futurenet token lookup

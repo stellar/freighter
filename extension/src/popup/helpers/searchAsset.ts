@@ -102,6 +102,39 @@ export type VerifiedTokenRecord = AssetListReponseItem & {
   verifiedLists: string[];
 };
 
+export const getAssetLists = async ({
+  assetsListsDetails,
+  networkDetails,
+}: {
+  assetsListsDetails: AssetsLists;
+  networkDetails: NetworkDetails;
+}) => {
+  const network = networkDetails.network;
+  const assetsListsDetailsByNetwork =
+    assetsListsDetails[network as AssetsListKey];
+
+  const assetListsResponses = [] as AssetListResponse[];
+  // eslint-disable-next-line no-restricted-syntax
+  for (const networkList of assetsListsDetailsByNetwork) {
+    const { url, isEnabled } = networkList;
+
+    if (isEnabled) {
+      const fetchAndParse = async (): Promise<AssetListResponse> => {
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error(res.statusText);
+        }
+        return res.json();
+      };
+
+      assetListsResponses.push(await fetchAndParse());
+    }
+  }
+
+  const settledResponses = await Promise.allSettled(assetListsResponses);
+  return settledResponses;
+};
+
 export const getVerifiedTokens = async ({
   networkDetails,
   contractId,
@@ -208,29 +241,11 @@ export const splitVerifiedAssetCurrency = async ({
   assets: ManageAssetCurrency[];
   assetsListsDetails: AssetsLists;
 }) => {
-  const network = networkDetails.network;
-  const assetsListsDetailsByNetwork =
-    assetsListsDetails[network as AssetsListKey];
+  const settledResponses = await getAssetLists({
+    assetsListsDetails,
+    networkDetails,
+  });
 
-  const assetListsResponses = [] as AssetListResponse[];
-  // eslint-disable-next-line no-restricted-syntax
-  for (const networkList of assetsListsDetailsByNetwork) {
-    const { url, isEnabled } = networkList;
-
-    if (isEnabled) {
-      const fetchAndParse = async (): Promise<AssetListResponse> => {
-        const res = await fetch(url);
-        if (!res.ok) {
-          throw new Error(res.statusText);
-        }
-        return res.json();
-      };
-
-      assetListsResponses.push(await fetchAndParse());
-    }
-  }
-
-  const settledResponses = await Promise.allSettled(assetListsResponses);
   // eslint-disable-next-line no-restricted-syntax
   const validatedAssets = [] as AssetListReponseItem[];
   // eslint-disable-next-line no-restricted-syntax
@@ -277,4 +292,39 @@ export const splitVerifiedAssetCurrency = async ({
     verifiedAssets,
     unverifiedAssets,
   };
+};
+
+export const getAssetListForAsset = async ({
+  asset,
+  assetsListsDetails,
+  networkDetails,
+}: {
+  asset: ManageAssetCurrency;
+  assetsListsDetails: AssetsLists;
+  networkDetails: NetworkDetails;
+}) => {
+  const settledResponses = await getAssetLists({
+    assetsListsDetails,
+    networkDetails,
+  });
+
+  // eslint-disable-next-line no-restricted-syntax
+  const validatedAssets = {} as Record<string, AssetListReponseItem[]>;
+  // eslint-disable-next-line no-restricted-syntax
+  for (const responses of settledResponses) {
+    if (responses.status === "fulfilled") {
+      // confirm that this list still adheres to the agreed upon schema
+      const validatedList = await schemaValidatedAssetList(responses.value);
+      validatedAssets[responses.value.name] = validatedList.assets;
+    }
+  }
+
+  return Object.entries(validatedAssets)
+    .filter(([_, items]) =>
+      items.some(
+        ({ issuer, contract }) =>
+          asset.issuer === issuer || asset.contract === contract,
+      ),
+    )
+    .map(([name]) => name);
 };
