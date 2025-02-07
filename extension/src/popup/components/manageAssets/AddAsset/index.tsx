@@ -29,7 +29,6 @@ import {
   scanAssetBulk,
 } from "popup/helpers/blockaid";
 
-import { AssetNotifcation } from "popup/components/AssetNotification";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 
@@ -265,7 +264,7 @@ export const AddAsset = () => {
     setIsVerificationInfoShowing(isAllowListVerificationEnabled);
   }, [isAllowListVerificationEnabled]);
 
-  const hasAssets = verifiedAssetRows.length && unverifiedAssetRows.length;
+  const hasAssets = verifiedAssetRows.length || unverifiedAssetRows.length;
 
   return (
     // eslint-disable-next-line
@@ -304,10 +303,6 @@ export const AddAsset = () => {
                   isSearching={isSearching}
                   resultsRef={ResultsRef}
                 >
-                  {hasAssets && isVerificationInfoShowing ? (
-                    <AssetNotifcation isVerified={isVerifiedToken} />
-                  ) : null}
-
                   {hasAssets ? (
                     <ManageAssetRows
                       header={null}
