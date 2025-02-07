@@ -55,7 +55,6 @@ export interface NewAssetFlags {
 interface ManageAssetRowsProps {
   children?: React.ReactNode;
   header?: React.ReactNode;
-  // assetRows: ManageAssetCurrency[];
   verifiedAssetRows: ManageAssetCurrency[];
   unverifiedAssetRows: ManageAssetCurrency[];
   isVerifiedToken?: boolean;
