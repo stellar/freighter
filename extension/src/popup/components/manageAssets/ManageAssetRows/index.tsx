@@ -294,17 +294,19 @@ const AssetRows = ({
   if (shouldSplitAssetsByVerificationStatus) {
     return (
       <>
-        <InfoTooltip
-          infoText={
-            <span>
-              Freighter uses asset lists to verify assets before interactions.
-              You can define your own assets lists in Settings.
-            </span>
-          }
-          placement="bottom-start"
-        >
-          <h5 className="ManageAssetRows__tooltip">On your lists</h5>
-        </InfoTooltip>
+        {verifiedAssetRows.length > 0 && (
+          <InfoTooltip
+            infoText={
+              <span>
+                Freighter uses asset lists to verify assets before interactions.
+                You can define your own assets lists in Settings.
+              </span>
+            }
+            placement="bottom-start"
+          >
+            <h5 className="ManageAssetRows__tooltip">On your lists</h5>
+          </InfoTooltip>
+        )}
         {verifiedAssetRows.map(
           ({
             code = "",
@@ -344,17 +346,19 @@ const AssetRows = ({
             );
           },
         )}
-        <InfoTooltip
-          infoText={
-            <span>
-              These assets are not on any of your lists. Proceed with caution
-              before adding.
-            </span>
-          }
-          placement="bottom-start"
-        >
-          <h5 className="ManageAssetRows__tooltip">Not on your lists</h5>
-        </InfoTooltip>
+        {unverifiedAssetRows.length > 0 && (
+          <InfoTooltip
+            infoText={
+              <span>
+                These assets are not on any of your lists. Proceed with caution
+                before adding.
+              </span>
+            }
+            placement="bottom-start"
+          >
+            <h5 className="ManageAssetRows__tooltip">Not on your lists</h5>
+          </InfoTooltip>
+        )}
         {unverifiedAssetRows.map(
           ({
             code = "",

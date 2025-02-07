@@ -18,8 +18,12 @@ import {
   splitVerifiedAssetCurrency,
 } from "popup/helpers/searchAsset";
 import { isContractId } from "popup/helpers/soroban";
-import { isAssetSuspicious, scanAsset, scanAssetBulk } from "popup/helpers/blockaid";
-import { AssetNotifcation } from "popup/components/AssetNotification";
+import {
+  isAssetSuspicious,
+  scanAsset,
+  scanAssetBulk,
+} from "popup/helpers/blockaid";
+
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -257,7 +261,7 @@ export const AddAsset = () => {
     setIsVerificationInfoShowing(isAllowListVerificationEnabled);
   }, [isAllowListVerificationEnabled]);
 
-  const hasAssets = verifiedAssetRows.length && unverifiedAssetRows.length;
+  const hasAssets = verifiedAssetRows.length || unverifiedAssetRows.length;
 
   return (
     <Formik initialValues={initialValues} onSubmit={() => {}}>
@@ -295,10 +299,6 @@ export const AddAsset = () => {
                   isSearching={isSearching}
                   resultsRef={ResultsRef}
                 >
-                  {hasAssets && isVerificationInfoShowing ? (
-                    <AssetNotifcation isVerified={isVerifiedToken} />
-                  ) : null}
-
                   {hasAssets ? (
                     <ManageAssetRows
                       header={null}
