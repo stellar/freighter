@@ -184,6 +184,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
               >
                 {isManagingAssets ? (
                   <ManageAssetRows
+                    shouldSplitAssetsByVerificationStatus={false}
                     verifiedAssetRows={assetRows}
                     unverifiedAssetRows={[]}
                   />

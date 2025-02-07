@@ -257,6 +257,8 @@ export const AddAsset = () => {
     setIsVerificationInfoShowing(isAllowListVerificationEnabled);
   }, [isAllowListVerificationEnabled]);
 
+  const hasAssets = verifiedAssetRows.length && unverifiedAssetRows.length;
+
   return (
     <Formik initialValues={initialValues} onSubmit={() => {}}>
       {({ dirty }) => (
@@ -293,13 +295,11 @@ export const AddAsset = () => {
                   isSearching={isSearching}
                   resultsRef={ResultsRef}
                 >
-                  {verifiedAssetRows.length &&
-                  unverifiedAssetRows.length &&
-                  isVerificationInfoShowing ? (
+                  {hasAssets && isVerificationInfoShowing ? (
                     <AssetNotifcation isVerified={isVerifiedToken} />
                   ) : null}
 
-                  {verifiedAssetRows.length && unverifiedAssetRows.length ? (
+                  {hasAssets ? (
                     <ManageAssetRows
                       header={null}
                       verifiedAssetRows={verifiedAssetRows}

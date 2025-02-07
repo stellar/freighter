@@ -3,7 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { StellarToml } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
-import { ActionStatus, BlockAidScanAssetResult } from "@shared/api/types";
+import {
+  AccountBalancesInterface,
+  ActionStatus,
+  BlockAidScanAssetResult,
+} from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
 
@@ -33,6 +37,7 @@ import {
   NewAssetWarning,
   TokenWarning,
 } from "popup/components/WarningMessages";
+import { InfoTooltip } from "popup/basics/InfoTooltip";
 
 import { ManageAssetRowButton } from "../ManageAssetRowButton";
 
@@ -60,6 +65,7 @@ interface ManageAssetRowsProps {
   isVerifiedToken?: boolean;
   isVerificationInfoShowing?: boolean;
   verifiedLists?: string[];
+  shouldSplitAssetsByVerificationStatus?: boolean;
 }
 
 interface SuspiciousAssetData {
@@ -79,6 +85,7 @@ export const ManageAssetRows = ({
   isVerifiedToken,
   isVerificationInfoShowing,
   verifiedLists,
+  shouldSplitAssetsByVerificationStatus = true,
 }: ManageAssetRowsProps) => {
   const {
     accountBalances,
@@ -127,6 +134,10 @@ export const ManageAssetRows = ({
     }
   }, [submitStatus, dispatch, navigate]);
 
+  const isActionPending =
+    submitStatus === ActionStatus.PENDING ||
+    accountBalanceStatus === ActionStatus.PENDING;
+
   return (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && walletType && (
@@ -174,128 +185,57 @@ export const ManageAssetRows = ({
       <div className="ManageAssetRows__scrollbar">
         {header}
         <div className="ManageAssetRows__content">
-          <h5>On your list</h5>
-          {verifiedAssetRows.map(
-            ({
-              code = "",
+          <AssetRows
+            accountBalances={accountBalances}
+            verifiedAssetRows={verifiedAssetRows}
+            unverifiedAssetRows={unverifiedAssetRows}
+            shouldSplitAssetsByVerificationStatus={
+              shouldSplitAssetsByVerificationStatus
+            }
+            renderAssetRow={({
+              code,
+              contract,
               domain,
-              image = "",
-              issuer = "",
-              name = "",
-              contract = "",
+              image,
+              isContract,
+              issuer,
               isSuspicious,
-            }) => {
-              if (!accountBalances.balances) {
-                return null;
-              }
-              const isContract = isContractId(contract);
-              const canonicalAsset = getCanonicalFromAsset(code, issuer);
-              const isTrustlineActive = Object.keys(
-                accountBalances.balances,
-              ).some((balance) => balance === canonicalAsset);
-              const isActionPending =
-                submitStatus === ActionStatus.PENDING ||
-                accountBalanceStatus === ActionStatus.PENDING;
-              return (
-                <div
-                  className="ManageAssetRows__row"
-                  key={canonicalAsset}
-                  data-testid="ManageAssetRow"
-                >
-                  <ManageAssetRow
-                    code={code}
-                    issuer={issuer}
-                    image={image}
-                    domain={domain}
-                    name={name}
-                    isSuspicious={isSuspicious}
-                  />
-                  <ManageAssetRowButton
-                    code={code}
-                    contract={contract}
-                    issuer={issuer}
-                    image={image}
-                    domain={domain}
-                    isTrustlineActive={isTrustlineActive}
-                    isActionPending={isActionPending}
-                    isContract={isContract}
-                    isVerifiedToken={!!isVerifiedToken}
-                    isVerificationInfoShowing={!!isVerificationInfoShowing}
-                    setNewAssetFlags={setNewAssetFlags}
-                    setSuspiciousAssetData={setSuspiciousAssetData}
-                    setHandleAddToken={setHandleAddToken}
-                    setShowBlockedDomainWarning={setShowBlockedDomainWarning}
-                    assetSubmitting={assetSubmitting}
-                    setAssetSubmitting={setAssetSubmitting}
-                    setShowNewAssetWarning={setShowNewAssetWarning}
-                    setShowUnverifiedWarning={setShowUnverifiedWarning}
-                    recommendedFee={recommendedFee}
-                  />
-                </div>
-              );
-            },
-          )}
-          <h5>Not on your list</h5>
-          {unverifiedAssetRows.map(
-            ({
-              code = "",
-              domain,
-              image = "",
-              issuer = "",
-              name = "",
-              contract = "",
-              isSuspicious,
-            }) => {
-              if (!accountBalances.balances) {
-                return null;
-              }
-              const isContract = isContractId(contract);
-              const canonicalAsset = getCanonicalFromAsset(code, issuer);
-              const isTrustlineActive = Object.keys(
-                accountBalances.balances,
-              ).some((balance) => balance === canonicalAsset);
-              const isActionPending =
-                submitStatus === ActionStatus.PENDING ||
-                accountBalanceStatus === ActionStatus.PENDING;
-              return (
-                <div
-                  className="ManageAssetRows__row"
-                  key={canonicalAsset}
-                  data-testid="ManageAssetRow"
-                >
-                  <ManageAssetRow
-                    code={code}
-                    issuer={issuer}
-                    image={image}
-                    domain={domain}
-                    name={name}
-                    isSuspicious={isSuspicious}
-                  />
-                  <ManageAssetRowButton
-                    code={code}
-                    contract={contract}
-                    issuer={issuer}
-                    image={image}
-                    domain={domain}
-                    isTrustlineActive={isTrustlineActive}
-                    isActionPending={isActionPending}
-                    isContract={isContract}
-                    isVerifiedToken={!!isVerifiedToken}
-                    isVerificationInfoShowing={!!isVerificationInfoShowing}
-                    setNewAssetFlags={setNewAssetFlags}
-                    setSuspiciousAssetData={setSuspiciousAssetData}
-                    setHandleAddToken={setHandleAddToken}
-                    setShowBlockedDomainWarning={setShowBlockedDomainWarning}
-                    assetSubmitting={assetSubmitting}
-                    setAssetSubmitting={setAssetSubmitting}
-                    setShowNewAssetWarning={setShowNewAssetWarning}
-                    setShowUnverifiedWarning={setShowUnverifiedWarning}
-                    recommendedFee={recommendedFee}
-                  />
-                </div>
-              );
-            },
-          )}
+              isTrustlineActive,
+              name,
+            }) => (
+              <>
+                <ManageAssetRow
+                  code={code}
+                  issuer={issuer}
+                  image={image}
+                  domain={domain}
+                  name={name}
+                  isSuspicious={isSuspicious}
+                />
+                <ManageAssetRowButton
+                  code={code}
+                  contract={contract}
+                  issuer={issuer}
+                  image={image}
+                  domain={domain}
+                  isTrustlineActive={isTrustlineActive}
+                  isActionPending={isActionPending}
+                  isContract={isContract}
+                  isVerifiedToken={!!isVerifiedToken}
+                  isVerificationInfoShowing={!!isVerificationInfoShowing}
+                  setNewAssetFlags={setNewAssetFlags}
+                  setSuspiciousAssetData={setSuspiciousAssetData}
+                  setHandleAddToken={setHandleAddToken}
+                  setShowBlockedDomainWarning={setShowBlockedDomainWarning}
+                  assetSubmitting={assetSubmitting}
+                  setAssetSubmitting={setAssetSubmitting}
+                  setShowNewAssetWarning={setShowNewAssetWarning}
+                  setShowUnverifiedWarning={setShowUnverifiedWarning}
+                  recommendedFee={recommendedFee}
+                />
+              </>
+            )}
+          />
         </div>
         {children}
       </div>
@@ -311,12 +251,197 @@ export const ManageAssetRows = ({
 
 interface AssetRowData {
   code?: string;
-  issuer?: string;
-  image?: string;
   domain: string;
-  name?: string;
+  image?: string;
+  issuer?: string;
   isSuspicious?: boolean;
+  name?: string;
 }
+
+const AssetRows = ({
+  accountBalances,
+  renderAssetRow,
+  shouldSplitAssetsByVerificationStatus,
+  unverifiedAssetRows,
+  verifiedAssetRows,
+}: {
+  accountBalances: AccountBalancesInterface;
+  shouldSplitAssetsByVerificationStatus?: boolean;
+  unverifiedAssetRows: ManageAssetCurrency[];
+  verifiedAssetRows: ManageAssetCurrency[];
+  renderAssetRow: ({
+    code,
+    domain,
+    image,
+    issuer,
+    name,
+    contract,
+    isContract,
+    isTrustlineActive,
+    isSuspicious,
+  }: {
+    code: string;
+    domain: string;
+    image: string;
+    issuer: string;
+    name: string;
+    contract: string;
+    isContract: boolean;
+    isTrustlineActive: boolean;
+    isSuspicious?: boolean;
+  }) => React.ReactNode;
+}) => {
+  if (shouldSplitAssetsByVerificationStatus) {
+    return (
+      <>
+        <InfoTooltip
+          infoText={
+            <span>
+              Freighter uses asset lists to verify assets before interactions.
+              You can define your own assets lists in Settings.
+            </span>
+          }
+          placement="bottom-start"
+        >
+          <h5 className="ManageAssetRows__tooltip">On your lists</h5>
+        </InfoTooltip>
+        {verifiedAssetRows.map(
+          ({
+            code = "",
+            domain,
+            image = "",
+            issuer = "",
+            name = "",
+            contract = "",
+            isSuspicious,
+          }) => {
+            if (!accountBalances.balances) {
+              return null;
+            }
+            const isContract = isContractId(contract);
+            const canonicalAsset = getCanonicalFromAsset(code, issuer);
+            const isTrustlineActive = Object.keys(
+              accountBalances.balances,
+            ).some((balance) => balance === canonicalAsset);
+            return (
+              <div
+                className="ManageAssetRows__row"
+                key={canonicalAsset}
+                data-testid="ManageAssetRow"
+              >
+                {renderAssetRow({
+                  code,
+                  contract,
+                  domain,
+                  image,
+                  isContract,
+                  issuer,
+                  isSuspicious,
+                  isTrustlineActive,
+                  name,
+                })}
+              </div>
+            );
+          },
+        )}
+        <InfoTooltip
+          infoText={
+            <span>
+              These assets are not on any of your lists. Proceed with caution
+              before adding.
+            </span>
+          }
+          placement="bottom-start"
+        >
+          <h5 className="ManageAssetRows__tooltip">Not on your lists</h5>
+        </InfoTooltip>
+        {unverifiedAssetRows.map(
+          ({
+            code = "",
+            domain,
+            image = "",
+            issuer = "",
+            name = "",
+            contract = "",
+            isSuspicious,
+          }) => {
+            if (!accountBalances.balances) {
+              return null;
+            }
+            const isContract = isContractId(contract);
+            const canonicalAsset = getCanonicalFromAsset(code, issuer);
+            const isTrustlineActive = Object.keys(
+              accountBalances.balances,
+            ).some((balance) => balance === canonicalAsset);
+            return (
+              <div
+                className="ManageAssetRows__row"
+                key={canonicalAsset}
+                data-testid="ManageAssetRow"
+              >
+                {renderAssetRow({
+                  code,
+                  contract,
+                  domain,
+                  image,
+                  isContract,
+                  issuer,
+                  isSuspicious,
+                  isTrustlineActive,
+                  name,
+                })}
+              </div>
+            );
+          },
+        )}
+      </>
+    );
+  }
+  const combinedAssets = [...verifiedAssetRows, ...unverifiedAssetRows];
+  return (
+    <>
+      {combinedAssets.map(
+        ({
+          code = "",
+          domain,
+          image = "",
+          issuer = "",
+          name = "",
+          contract = "",
+          isSuspicious,
+        }) => {
+          if (!accountBalances.balances) {
+            return null;
+          }
+          const isContract = isContractId(contract);
+          const canonicalAsset = getCanonicalFromAsset(code, issuer);
+          const isTrustlineActive = Object.keys(accountBalances.balances).some(
+            (balance) => balance === canonicalAsset,
+          );
+          return (
+            <div
+              className="ManageAssetRows__row"
+              key={canonicalAsset}
+              data-testid="ManageAssetRow"
+            >
+              {renderAssetRow({
+                code,
+                contract,
+                domain,
+                image,
+                isContract,
+                issuer,
+                isSuspicious,
+                isTrustlineActive,
+                name,
+              })}
+            </div>
+          );
+        },
+      )}
+    </>
+  );
+};
 
 export const ManageAssetRow = ({
   code = "",
