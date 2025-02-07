@@ -64,4 +64,10 @@
     font-size: var(--sds-fs-secondary);
     line-height: 1.375rem;
   }
+
+  &__tooltip {
+    color: var(--sds-clr-gray-11);
+    font-size: 14px;
+    font-weight: 500;
+  }
 }
