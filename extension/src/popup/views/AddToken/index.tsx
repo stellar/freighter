@@ -77,10 +77,14 @@ export const AddToken = () => {
     const balance = assetCurrency?.balance;
     const decimals = assetCurrency?.decimals;
     if (code && balance && decimals) {
-      const formattedTokenAmount = formatTokenAmount(
-        new BigNumber(balance),
-        decimals,
-      );
+      const balanceNumber = new BigNumber(balance);
+
+      // Let's only show the balance if it's greater than 0
+      if (balanceNumber.isZero()) {
+        return undefined;
+      }
+
+      const formattedTokenAmount = formatTokenAmount(balanceNumber, decimals);
       return `+${formattedTokenAmount} ${code}`;
     }
 

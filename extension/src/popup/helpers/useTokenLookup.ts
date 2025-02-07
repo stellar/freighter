@@ -77,7 +77,7 @@ export const useTokenLookup = ({
             contractId,
             publicKey,
             networkDetails,
-            fetchBalance: true,
+            shouldFetchBalance: true,
           });
         } catch (e) {
           setAssetRows([]);

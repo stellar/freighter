@@ -780,34 +780,19 @@ export const getTokenDetails = async ({
   contractId,
   publicKey,
   networkDetails,
-  fetchBalance,
+  shouldFetchBalance,
 }: {
   contractId: string;
   publicKey: string;
   networkDetails: NetworkDetails;
-  fetchBalance?: boolean;
+  shouldFetchBalance?: boolean;
 }): Promise<{
   name: string;
   decimals: number;
   symbol: string;
-  balance?: number;
+  balance?: string;
 } | null> => {
   try {
-    let balance;
-    if (fetchBalance && networkDetails.sorobanRpcUrl) {
-      const server = buildSorobanServer(
-        networkDetails.sorobanRpcUrl,
-        networkDetails.networkPassphrase,
-      );
-
-      balance = await getBalance(
-        contractId,
-        [new Address(publicKey).toScVal()],
-        server,
-        await getNewTxBuilder(publicKey, networkDetails, server),
-      );
-    }
-
     if (isCustomNetwork(networkDetails)) {
       if (!networkDetails.sorobanRpcUrl) {
         throw new SorobanRpcNotSupportedError();
@@ -834,24 +819,32 @@ export const getTokenDetails = async ({
         await getNewTxBuilder(publicKey, networkDetails, server),
       );
 
+      let balance;
+      if (shouldFetchBalance) {
+        balance = await getBalance(
+          contractId,
+          [new Address(publicKey).toScVal()],
+          server,
+          await getNewTxBuilder(publicKey, networkDetails, server),
+        );
+      }
+
       return {
         name,
         symbol,
         decimals,
-        balance,
+        ...(balance ? { balance: balance.toString() } : {}),
       };
     }
 
     const response = await fetch(
-      `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${networkDetails.network}`,
+      `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${
+        networkDetails.network
+      }${shouldFetchBalance ? "&should_fetch_balance=true" : ""}`,
     );
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data);
-    }
-
-    if (fetchBalance && balance) {
-      data.balance = balance;
     }
 
     return data;
