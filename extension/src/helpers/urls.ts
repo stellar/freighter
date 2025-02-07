@@ -2,13 +2,22 @@ import punycode from "punycode";
 import browser from "webextension-polyfill";
 import { TransactionInfo } from "../types/transactions";
 
+export interface TokenToAdd {
+  isDomainListedAllowed: boolean;
+  domain: string;
+  tab?: browser.Tabs.Tab;
+  url: string;
+  contractId: string;
+  networkPassphrase?: string;
+}
+
 export interface MessageToSign {
   isDomainListedAllowed: boolean;
   domain: string;
   tab?: browser.Tabs.Tab;
   message: string;
   url: string;
-  accountToSign: string;
+  accountToSign?: string;
   networkPassphrase?: string;
 }
 
@@ -16,9 +25,9 @@ export interface EntryToSign {
   isDomainListedAllowed: boolean;
   domain: string;
   tab?: browser.Tabs.Tab;
-  entry: string;
+  entry: string; // xdr.SorobanAuthorizationEntry
   url: string;
-  accountToSign: string;
+  accountToSign?: string;
   networkPassphrase?: string;
 }
 
@@ -35,7 +44,7 @@ export const removeQueryParam = (url = "") => url.replace(/\?(.*)/, "");
 
 export const parsedSearchParam = (
   param: string,
-): TransactionInfo | MessageToSign | EntryToSign => {
+): TransactionInfo | TokenToAdd | MessageToSign | EntryToSign => {
   const decodedSearchParam = decodeString(param.replace("?", ""));
   return decodedSearchParam ? JSON.parse(decodedSearchParam) : {};
 };
