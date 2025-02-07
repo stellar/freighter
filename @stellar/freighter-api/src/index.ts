@@ -1,4 +1,5 @@
 import { getAddress } from "./getAddress";
+import { addToken } from "./addToken";
 import { signTransaction } from "./signTransaction";
 import { signMessage } from "./signMessage";
 import { signAuthEntry } from "./signAuthEntry";
@@ -14,6 +15,7 @@ export const isBrowser = typeof window !== "undefined";
 
 export {
   getAddress,
+  addToken,
   signTransaction,
   signMessage,
   signAuthEntry,
@@ -27,6 +29,7 @@ export {
 };
 export default {
   getAddress,
+  addToken,
   signTransaction,
   signMessage,
   signAuthEntry,

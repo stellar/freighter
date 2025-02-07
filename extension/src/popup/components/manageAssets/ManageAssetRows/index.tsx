@@ -42,6 +42,8 @@ export type ManageAssetCurrency = StellarToml.Api.Currency & {
   contract?: string;
   icon?: string;
   isSuspicious?: boolean;
+  decimals?: number;
+  balance?: string;
 };
 
 export interface NewAssetFlags {

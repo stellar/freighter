@@ -780,11 +780,18 @@ export const getTokenDetails = async ({
   contractId,
   publicKey,
   networkDetails,
+  shouldFetchBalance,
 }: {
   contractId: string;
   publicKey: string;
   networkDetails: NetworkDetails;
-}): Promise<{ name: string; decimals: number; symbol: string } | null> => {
+  shouldFetchBalance?: boolean;
+}): Promise<{
+  name: string;
+  decimals: number;
+  symbol: string;
+  balance?: string;
+} | null> => {
   try {
     if (isCustomNetwork(networkDetails)) {
       if (!networkDetails.sorobanRpcUrl) {
@@ -812,20 +819,34 @@ export const getTokenDetails = async ({
         await getNewTxBuilder(publicKey, networkDetails, server),
       );
 
+      let balance;
+      if (shouldFetchBalance) {
+        balance = await getBalance(
+          contractId,
+          [new Address(publicKey).toScVal()],
+          server,
+          await getNewTxBuilder(publicKey, networkDetails, server),
+        );
+      }
+
       return {
         name,
         symbol,
         decimals,
+        ...(balance ? { balance: balance.toString() } : {}),
       };
     }
 
     const response = await fetch(
-      `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${networkDetails.network}`,
+      `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${
+        networkDetails.network
+      }${shouldFetchBalance ? "&should_fetch_balance=true" : ""}`,
     );
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data);
     }
+
     return data;
   } catch (error) {
     console.error(error);
@@ -951,6 +972,16 @@ export const handleSignedHwPayload = async ({
     await sendMessageToBackground({
       signedPayload,
       type: SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+export const addToken = async (): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      type: SERVICE_TYPES.ADD_TOKEN,
     });
   } catch (e) {
     console.error(e);
