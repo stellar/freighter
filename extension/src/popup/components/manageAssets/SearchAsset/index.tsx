@@ -173,72 +173,90 @@ export const SearchAsset = () => {
     setHasNoResults(!verifiedAssetRows.length && !unverifiedAssetRows.length);
   }, [verifiedAssetRows, unverifiedAssetRows]);
 
-  // TODO: how to make this work with 2 lists
-  // useEffect(() => {
-  //   const fullList = [...unverifiedAssetRows, ...unverifiedAssetRows];
-  //   const firstNullSuspiciousIndex = fullList.findIndex(
-  //     (r) => r.isSuspicious === null,
-  //   );
+  useEffect(() => {
+    // start with verified list, keep index across lists to know when to switch lists
+    const fullList = [...verifiedAssetRows, ...unverifiedAssetRows];
+    const firstNullSuspiciousIndex = fullList.findIndex(
+      (r) => r.isSuspicious === null,
+    );
 
-  //   const fetchBlockaidResults = async (url: URL) => {
-  //     let blockaidScanResults: { [key: string]: BlockAidScanAssetResult } = {};
-  //     try {
-  //       const response = await fetch(url.href);
-  //       const data = await response.json();
-  //       blockaidScanResults = data.data.results;
-  //     } catch (e) {
-  //       console.error(e);
-  //     }
+    const isVerifiedListActive =
+      firstNullSuspiciousIndex <= verifiedAssetRows.length;
+    const activeList = isVerifiedListActive
+      ? verifiedAssetRows
+      : unverifiedAssetRows;
 
-  //     // take our scanned assets and update the assetRows with the new isSuspicious values
-  //     const assetRowsAddendum = fullList
-  //       .slice(
-  //         firstNullSuspiciousIndex,
-  //         firstNullSuspiciousIndex + MAX_ASSETS_TO_SCAN,
-  //       )
-  //       .map((row) => {
-  //         const assetId = `${row.code}-${row.issuer}`;
-  //         return {
-  //           ...row,
-  //           isSuspicious: blockaidScanResults[assetId]
-  //             ? isAssetSuspicious(blockaidScanResults[assetId])
-  //             : row.isSuspicious,
-  //         };
-  //       });
+    const fetchBlockaidResults = async (url: URL) => {
+      let blockaidScanResults: { [key: string]: BlockAidScanAssetResult } = {};
+      try {
+        const response = await fetch(url.href);
+        const data = await response.json();
+        blockaidScanResults = data.data.results;
+      } catch (e) {
+        console.error(e);
+      }
 
-  //     // insert our newly scanned rows into the existing data
-  //     setAssetRows([
-  //       ...assetRows.slice(0, firstNullSuspiciousIndex),
-  //       ...assetRowsAddendum,
-  //       ...assetRows.slice(firstNullSuspiciousIndex + MAX_ASSETS_TO_SCAN),
-  //     ]);
+      // take our scanned assets and update the assetRows with the new isSuspicious values
+      const assetRowsAddendum = activeList
+        .slice(
+          firstNullSuspiciousIndex,
+          firstNullSuspiciousIndex + MAX_ASSETS_TO_SCAN,
+        )
+        .map((row) => {
+          const assetId = `${row.code}-${row.issuer}`;
+          return {
+            ...row,
+            isSuspicious: blockaidScanResults[assetId]
+              ? isAssetSuspicious(blockaidScanResults[assetId])
+              : row.isSuspicious,
+          };
+        });
 
-  //     return blockaidScanResults;
-  //   };
+      // insert our newly scanned rows into the existing data
+      if (isVerifiedListActive) {
+        setVerifiedAssetRows([
+          ...verifiedAssetRows.slice(0, firstNullSuspiciousIndex),
+          ...assetRowsAddendum,
+          ...verifiedAssetRows.slice(
+            firstNullSuspiciousIndex + MAX_ASSETS_TO_SCAN,
+          ),
+        ]);
+      } else {
+        setUnverifiedAssetRows([
+          ...unverifiedAssetRows.slice(0, firstNullSuspiciousIndex),
+          ...assetRowsAddendum,
+          ...unverifiedAssetRows.slice(
+            firstNullSuspiciousIndex + MAX_ASSETS_TO_SCAN,
+          ),
+        ]);
+      }
 
-  //   // if there are any assets with "null" (meaning we haven't scanned some assets yet), scan the next batch
-  //   if (
-  //     fullList.length &&
-  //     isMainnet(networkDetails) &&
-  //     firstNullSuspiciousIndex !== -1
-  //   ) {
-  //     const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
+      return blockaidScanResults;
+    };
 
-  //     // grab the next section of assets to scan
-  //     fullList
-  //       .slice(
-  //         firstNullSuspiciousIndex,
-  //         firstNullSuspiciousIndex + MAX_ASSETS_TO_SCAN,
-  //       )
-  //       .forEach((row) => {
-  //         if (row.code && row.issuer && row.isSuspicious === null) {
-  //           url.searchParams.append("asset_ids", `${row.code}-${row.issuer}`);
-  //         }
-  //       });
+    // if there are any assets with "null" (meaning we haven't scanned some assets yet), scan the next batch
+    if (
+      fullList.length &&
+      isMainnet(networkDetails) &&
+      firstNullSuspiciousIndex !== -1
+    ) {
+      const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
 
-  //     fetchBlockaidResults(url);
-  //   }
-  // }, [verifiedAssetRows, unverifiedAssetRows, networkDetails]);
+      // grab the next section of assets to scan
+      activeList
+        .slice(
+          firstNullSuspiciousIndex,
+          firstNullSuspiciousIndex + MAX_ASSETS_TO_SCAN,
+        )
+        .forEach((row) => {
+          if (row.code && row.issuer && row.isSuspicious === null) {
+            url.searchParams.append("asset_ids", `${row.code}-${row.issuer}`);
+          }
+        });
+
+      fetchBlockaidResults(url);
+    }
+  }, [verifiedAssetRows, unverifiedAssetRows, networkDetails]);
 
   if (isCustomNetwork(networkDetails)) {
     return <Redirect to={ROUTES.addAsset} />;
