@@ -61,7 +61,7 @@ jobs:
       - name: Convert extension to Xcode project
         run: xcrun safari-web-extension-converter ./extension/build --project-location $GYM_PROJECT --macos-only
       - name: Set up ruby env
-        uses: ruby/setup-ruby@v1.204.0
+        uses: ruby/setup-ruby@v1.218.0
         with:
           ruby-version: 2.6.10
           bundler-cache: true
