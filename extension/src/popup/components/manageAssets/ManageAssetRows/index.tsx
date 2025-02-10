@@ -466,7 +466,8 @@ export const ManageAssetRow = ({
   isSuspicious = false,
 }: AssetRowData) => {
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
-  const assetCode = name || code;
+  // use the name unless the name is SAC format "code:issuer"
+  const assetCode = name && !name.includes(":") ? name : code;
   const truncatedAssetCode =
     assetCode.length > 20 ? truncateString(assetCode) : assetCode;
 
