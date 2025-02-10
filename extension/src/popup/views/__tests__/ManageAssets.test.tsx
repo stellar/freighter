@@ -181,6 +181,36 @@ jest.spyOn(SearchAsset, "searchAsset").mockImplementation(({ asset }) => {
     },
   });
 });
+
+jest
+  .spyOn(SearchAsset, "getAssetLists")
+  .mockImplementation(({ networkDetails }) => {
+    return Promise.resolve([
+      {
+        status: "fulfilled",
+        value: {
+          name: "Test Asset List",
+          description: "fake asset list for testing",
+          network: networkDetails.network,
+          version: "1",
+          provider: "test-provider",
+          assets: [
+            {
+              code: "USDC",
+              contract:
+                "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+              decimals: 7,
+              domain: "centre.io",
+              icon: "",
+              issuer:
+                "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+            },
+          ],
+        },
+      },
+    ]);
+  });
+
 jest
   .spyOn(SearchAsset, "getVerifiedTokens")
   .mockImplementation(({ contractId }) => {
@@ -204,9 +234,14 @@ jest
 
 jest
   .spyOn(ApiInternal, "getTokenDetails")
-  .mockImplementation(() =>
-    Promise.resolve({ name: "foo", symbol: "baz", decimals: 7 }),
-  );
+  .mockImplementation(({ contractId }) => {
+    if (
+      contractId === "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA"
+    ) {
+      return Promise.resolve({ name: "USDC", symbol: "USDC", decimals: 7 });
+    }
+    return Promise.resolve({ name: "foo", symbol: "baz", decimals: 7 });
+  });
 
 jest
   .spyOn(SorobanHelpers, "isContractId")
@@ -304,6 +339,14 @@ const initView = async (
           networksList: DEFAULT_NETWORKS,
           isSorobanPublicEnabled: true,
           isRpcHealthy: true,
+          assetsLists: {
+            [configuredNetworkDetails.network]: [
+              {
+                url: "asset_list_url",
+                isEnabled: true,
+              },
+            ],
+          },
         },
         transactionSubmission: {
           ...transactionSubmissionInitialState,
@@ -796,19 +839,14 @@ describe.skip("Manage assets", () => {
     });
     await waitFor(async () => {
       const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
-      const verificationBadge = screen.getByTestId("asset-notification");
+      const verificationBadge = screen.getByTestId("asset-on-list");
 
-      expect(verificationBadge).toHaveTextContent(
-        "On your listsFreighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
-      );
+      expect(verificationBadge).toHaveTextContent("On your lists");
 
       expect(addedTrustlines.length).toBe(1);
       expect(
         within(addedTrustlines[0]).getByTestId("ManageAssetCode"),
       ).toHaveTextContent("USDC");
-      expect(
-        within(addedTrustlines[0]).getByTestId("ManageAssetDomain"),
-      ).toHaveTextContent("centre.io");
 
       const addAssetButton = within(addedTrustlines[0]).getByTestId(
         "ManageAssetRowButton",
@@ -845,19 +883,14 @@ describe.skip("Manage assets", () => {
     });
     await waitFor(async () => {
       const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
-      const verificationBadge = screen.getByTestId("asset-notification");
+      const verificationBadge = screen.getByTestId("not-asset-on-list");
 
-      expect(verificationBadge).toHaveTextContent(
-        "Not on your listsFreighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
-      );
+      expect(verificationBadge).toHaveTextContent("Not on your lists");
 
       expect(addedTrustlines.length).toBe(1);
       expect(
         within(addedTrustlines[0]).getByTestId("ManageAssetCode"),
       ).toHaveTextContent("foo");
-      expect(
-        within(addedTrustlines[0]).getByTestId("ManageAssetDomain"),
-      ).toHaveTextContent("Stellar Network");
 
       const addAssetButton = within(addedTrustlines[0]).getByTestId(
         "ManageAssetRowButton",

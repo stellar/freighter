@@ -15,7 +15,6 @@ import {
 
 import { getApiStellarExpertUrl } from "popup/helpers/account";
 import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
-import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 
 export const searchAsset = async ({
   asset,
@@ -230,101 +229,4 @@ export const getVerifiedTokens = async ({
   }
 
   return verifiedTokens;
-};
-
-export const splitVerifiedAssetCurrency = async ({
-  networkDetails,
-  assets,
-  assetsListsDetails,
-}: {
-  networkDetails: NetworkDetails;
-  assets: ManageAssetCurrency[];
-  assetsListsDetails: AssetsLists;
-}) => {
-  const settledResponses = await getAssetLists({
-    assetsListsDetails,
-    networkDetails,
-  });
-
-  // eslint-disable-next-line no-restricted-syntax
-  const validatedAssets = [] as AssetListReponseItem[];
-  // eslint-disable-next-line no-restricted-syntax
-  for (const responses of settledResponses) {
-    if (responses.status === "fulfilled") {
-      // confirm that this list still adheres to the agreed upon schema
-      const validatedList = await schemaValidatedAssetList(responses.value);
-      validatedAssets.push(...validatedList.assets);
-    }
-  }
-  // make a unique set of contract IDs and issuers
-  const verifiedIds = new Set<string>();
-  // eslint-disable-next-line no-restricted-syntax
-  for (const validAsset of validatedAssets) {
-    if (!verifiedIds.has(validAsset.contract)) {
-      verifiedIds.add(validAsset.contract);
-    }
-    if (!verifiedIds.has(validAsset.issuer)) {
-      verifiedIds.add(validAsset.issuer);
-    }
-  }
-
-  const [verifiedAssets, unverifiedAssets] = assets.reduce<
-    [typeof assets, typeof assets]
-  >(
-    ([inC, notInC], item) => {
-      if (item.issuer && verifiedIds.has(item.issuer)) {
-        inC.push(item);
-        return [inC, notInC];
-      }
-
-      if (item.contract && verifiedIds.has(item.contract)) {
-        inC.push(item);
-        return [inC, notInC];
-      }
-
-      notInC.push(item);
-      return [inC, notInC];
-    },
-    [[], []],
-  );
-
-  return {
-    verifiedAssets,
-    unverifiedAssets,
-  };
-};
-
-export const getAssetListForAsset = async ({
-  asset,
-  assetsListsDetails,
-  networkDetails,
-}: {
-  asset: ManageAssetCurrency;
-  assetsListsDetails: AssetsLists;
-  networkDetails: NetworkDetails;
-}) => {
-  const settledResponses = await getAssetLists({
-    assetsListsDetails,
-    networkDetails,
-  });
-
-  // eslint-disable-next-line no-restricted-syntax
-  const validatedAssets = {} as Record<string, AssetListReponseItem[]>;
-  // eslint-disable-next-line no-restricted-syntax
-  for (const responses of settledResponses) {
-    if (responses.status === "fulfilled") {
-      // confirm that this list still adheres to the agreed upon schema
-      const validatedList = await schemaValidatedAssetList(responses.value);
-      validatedAssets[responses.value.name] = validatedList.assets;
-    }
-  }
-
-  return Object.entries(validatedAssets)
-    .filter(([_, items]) =>
-      items.some(
-        ({ issuer, contract }) =>
-          asset.issuer === issuer || asset.contract === contract,
-      ),
-    )
-    .map(([name]) => name);
 };

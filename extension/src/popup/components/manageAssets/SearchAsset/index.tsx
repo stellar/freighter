@@ -17,7 +17,7 @@ import {
   settingsSelector,
 } from "popup/ducks/settings";
 import { searchAsset } from "popup/helpers/searchAsset";
-import { splitVerifiedAssetCurrency } from "popup/helpers/searchAsset";
+import { splitVerifiedAssetCurrency } from "popup/helpers/assetList";
 import { isMainnet } from "helpers/stellar";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 
