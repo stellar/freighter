@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { StellarToml } from "stellar-sdk";
+import { Networks, StellarToml } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
 import {
@@ -17,7 +17,7 @@ import {
   getCanonicalFromAsset,
   truncateString,
 } from "helpers/stellar";
-import { isContractId } from "popup/helpers/soroban";
+import { isContractId, isSacContract } from "popup/helpers/soroban";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
@@ -30,6 +30,7 @@ import {
   ShowOverlayStatus,
   tokensSelector,
 } from "popup/ducks/transactionSubmission";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import {
@@ -211,6 +212,7 @@ export const ManageAssetRows = ({
                   domain={domain}
                   name={name}
                   isSuspicious={isSuspicious}
+                  contractId={contract}
                 />
                 <ManageAssetRowButton
                   code={code}
@@ -256,6 +258,7 @@ interface AssetRowData {
   issuer?: string;
   isSuspicious?: boolean;
   name?: string;
+  contractId?: string;
 }
 
 const AssetRows = ({
@@ -464,10 +467,21 @@ export const ManageAssetRow = ({
   domain,
   name,
   isSuspicious = false,
+  contractId,
 }: AssetRowData) => {
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
-  // use the name unless the name is SAC format "code:issuer"
-  const assetCode = name && !name.includes(":") ? name : code;
+  // use the name unless the name is SAC, format "code:issuer"
+  const assetCode =
+    name &&
+    contractId &&
+    !isSacContract(
+      name,
+      contractId,
+      networkDetails.networkPassphrase as Networks,
+    )
+      ? name
+      : code;
   const truncatedAssetCode =
     assetCode.length > 20 ? truncateString(assetCode) : assetCode;
 
