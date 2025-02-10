@@ -303,7 +303,12 @@ const AssetRows = ({
             }
             placement="bottom-start"
           >
-            <h5 className="ManageAssetRows__tooltip">On your lists</h5>
+            <h5
+              className="ManageAssetRows__tooltip"
+              data-testid="asset-on-list"
+            >
+              On your lists
+            </h5>
           </InfoTooltip>
         )}
         {verifiedAssetRows.map(
@@ -355,7 +360,12 @@ const AssetRows = ({
             }
             placement="bottom-start"
           >
-            <h5 className="ManageAssetRows__tooltip">Not on your lists</h5>
+            <h5
+              className="ManageAssetRows__tooltip"
+              data-testid="not-asset-on-list"
+            >
+              Not on your lists
+            </h5>
           </InfoTooltip>
         )}
         {unverifiedAssetRows.map(

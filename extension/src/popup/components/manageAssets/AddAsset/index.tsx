@@ -17,11 +17,11 @@ import {
   settingsSelector,
 } from "popup/ducks/settings";
 import { isMainnet, isTestnet } from "helpers/stellar";
+import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import {
   getAssetListForAsset,
-  getNativeContractDetails,
   splitVerifiedAssetCurrency,
-} from "popup/helpers/searchAsset";
+} from "popup/helpers/assetList";
 import { isContractId } from "popup/helpers/soroban";
 import {
   isAssetSuspicious,

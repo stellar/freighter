@@ -66,8 +66,10 @@ describe("searchAsset", () => {
     });
   });
   it("schemaValidatedAssetList should return list if valid", async () => {
-    const v = await SearchAsset.schemaValidatedAssetList(validAssetList);
-    expect(v).toStrictEqual(validAssetList);
+    const { assets } = await SearchAsset.schemaValidatedAssetList(
+      validAssetList,
+    );
+    expect(assets).toStrictEqual(validAssetList.assets);
   });
   it("schemaValidatedAssetList should return empty list if schema fetch fails", async () => {
     jest.spyOn(global, "fetch").mockImplementation(() =>
@@ -75,11 +77,13 @@ describe("searchAsset", () => {
         ok: false,
       }),
     );
-    const v = await SearchAsset.schemaValidatedAssetList(validAssetList);
-    expect(v).toStrictEqual({ assets: [] });
+    const { assets } = await SearchAsset.schemaValidatedAssetList(
+      validAssetList,
+    );
+    expect(assets).toStrictEqual([]);
   });
   it("schemaValidatedAssetList should return empty list and errors if validation fails", async () => {
-    const v = await SearchAsset.schemaValidatedAssetList({
+    const { assets, errors } = await SearchAsset.schemaValidatedAssetList({
       // incorrect key
       title: "PiyalBasu Top 50",
 
@@ -101,9 +105,9 @@ describe("searchAsset", () => {
         },
       ],
     });
-    expect(v.assets).toStrictEqual([]);
+    expect(assets).toStrictEqual([]);
 
     // error for missing `name` and error for additional key `title`
-    expect(v.errors).toHaveLength(2);
+    expect(errors).toHaveLength(2);
   });
 });
