@@ -147,7 +147,7 @@ export const ModifyAssetList = ({
         network === "public" ? "Mainnet" : "Testnet";
       setFetchErrorString(
         `The entered asset list belongs to "${getNetworkName(
-          resJson.network as string,
+          resJson.network,
         )}": Currently editing "${getNetworkName(
           selectedNetwork.toLowerCase(),
         )}" lists.`,
