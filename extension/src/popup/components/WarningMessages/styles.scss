@@ -8,6 +8,7 @@
 }
 
 .BlockaidByLine {
+  color: var(--sds-clr-gray-11);
   display: flex;
   font-size: var(--sds-fs-secondary);
   justify-content: space-between;
@@ -189,6 +190,10 @@
   .View__inset {
     background: none;
     padding: 0.5rem;
+  }
+
+  &__alert {
+    flex-grow: 2;
   }
 
   &__box {
