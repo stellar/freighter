@@ -107,7 +107,6 @@ export const SendType = () => {
               ? PAYMENT_TYPES.REGULAR
               : PAYMENT_TYPES.PATH_PAYMENT,
         }}
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
         onSubmit={() => {}}
       >
         {({ values }) => (

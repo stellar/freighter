@@ -32,7 +32,6 @@ export const UnlockAccount = () => {
   const dispatch = useDispatch<AppDispatch>();
 
   const handleSubmit = async (password: string) => {
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await dispatch(confirmPassword(password));
     // skip this location in history, we won't need to come back here after unlocking account
     navigate(`${destination}${queryParams}`, { replace: true });
@@ -40,12 +39,10 @@ export const UnlockAccount = () => {
 
   useEffect(() => {
     const fetchLastUsedAccount = async () => {
-      /* eslint-disable */
       const response = (await dispatch(loadLastUsedAccount())) as any;
       if (loadLastUsedAccount.fulfilled.match(response)) {
         setAccountAddress(response.payload.lastUsedAccount);
       }
-      /* eslint-enable */
     };
 
     fetchLastUsedAccount();

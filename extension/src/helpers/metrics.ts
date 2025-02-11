@@ -61,7 +61,6 @@ export function registerHandler<State>(
 }
 
 interface Event {
-  /* eslint-disable camelcase */
   event_type: string;
   event_properties: { [key: string]: any };
   user_id: string;
@@ -70,7 +69,6 @@ interface Event {
   hw_connected: boolean;
   secret_key_account: boolean;
   secret_key_account_funded: boolean;
-  /* eslint-enable camelcase */
 }
 
 export interface MetricsData {
@@ -90,7 +88,6 @@ const uploadMetrics = throttle(async () => {
   const toUpload = cache;
   cache = [];
   if (!AMPLITUDE_KEY) {
-    // eslint-disable-next-line no-console
     console.log("Not uploading metrics", toUpload);
     return;
   }
@@ -99,11 +96,9 @@ const uploadMetrics = throttle(async () => {
     const amplitudeFetchRes = await fetch(METRICS_ENDPOINT, {
       method: "POST",
       headers: {
-        // eslint-disable-next-line
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        // eslint-disable-next-line
         api_key: AMPLITUDE_KEY,
         events: toUpload,
       }),
@@ -158,7 +153,6 @@ export const emitMetric = async (name: string, body?: any) => {
   );
 
   cache.push({
-    /* eslint-disable */
     event_type: name,
     event_properties: body,
     user_id: getUserId(),
@@ -167,7 +161,6 @@ export const emitMetric = async (name: string, body?: any) => {
     hw_connected: metricsData.hwExists,
     secret_key_account: metricsData.importedExists,
     secret_key_account_funded: metricsData.importedFunded,
-    /* eslint-enable */
   });
   await uploadMetrics();
 };

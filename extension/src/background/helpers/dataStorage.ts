@@ -41,13 +41,12 @@ export const normalizeMigratedData = async () => {
     return;
   }
 
-  // eslint-disable-next-line
   for (let i = 0; i < localStorageEntries.length; i++) {
     const [key, value] = localStorageEntries[i];
     try {
       if (typeof value === "string") {
         const parsedValue = JSON.parse(value);
-        // eslint-disable-next-line no-await-in-loop
+
         await localStore.setItem(key, parsedValue);
       }
     } catch (e) {
@@ -196,9 +195,8 @@ export const migrateSorobanRpcUrlNetwork = async () => {
     // but not the `network`, which is the current active network,
     // If a user has Futurenet selected by default, they will not have sorobanRpcUrl set
 
-    const migratedNetwork: NetworkDetails = await localStore.getItem(
-      NETWORK_ID,
-    );
+    const migratedNetwork: NetworkDetails =
+      await localStore.getItem(NETWORK_ID);
     if (
       migratedNetwork &&
       migratedNetwork.network === NETWORKS.FUTURENET &&

@@ -208,7 +208,7 @@ export const SendAmount = ({
   }) => {
     dispatch(saveAmount(cleanAmount(values.amount)));
     dispatch(saveAsset(values.asset));
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     let isDestAssetScam = false;
 
     if (values.destinationAsset) {
@@ -634,7 +634,6 @@ export const SendAmount = ({
         </View.Content>
       </React.Fragment>
       <LoadingBackground
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
         onClick={() => {}}
         isActive={showBlockedDomainWarning}
       />

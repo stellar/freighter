@@ -121,7 +121,7 @@ export const ManageAssetRows = ({
       dispatch(resetSubmission());
       navigateTo(ROUTES.account, navigate);
     }
-  }, [submitStatus, dispatch]);
+  }, [submitStatus, dispatch, navigate]);
 
   return (
     <>
@@ -233,12 +233,7 @@ export const ManageAssetRows = ({
       </div>
       {showNewAssetWarning || showBlockedDomainWarning
         ? createPortal(
-            <LoadingBackground
-              // eslint-disable-next-line @typescript-eslint/no-empty-function
-              onClick={() => {}}
-              isActive
-              isFullScreen
-            />,
+            <LoadingBackground onClick={() => {}} isActive isFullScreen />,
             document.querySelector("#modal-root")!,
           )
         : null}

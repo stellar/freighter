@@ -1,6 +1,6 @@
 {
   "name": "@shared/api",
-  "prettier": "@stellar/prettier-config",
+  "prettier": "../../.prettierrc.yaml",
   "version": "1.0.0",
   "private": true,
   "dependencies": {
@@ -14,8 +14,7 @@
     "webextension-polyfill": "^0.12.0"
   },
   "devDependencies": {
-    "@lavamoat/allow-scripts": "^3.3.1",
-    "@stellar/prettier-config": "^1.2.0"
+    "@lavamoat/allow-scripts": "^3.3.1"
   },
   "lavamoat": {
     "allowScripts": {

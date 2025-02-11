@@ -85,7 +85,7 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
                         error={errors.transactionFee}
                       />
                       <div className="TransactionFee__row">
-                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                        {}
                         <Link
                           isUnderline
                           isDisabled={field.value === recommendedFee}

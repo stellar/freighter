@@ -122,7 +122,6 @@ export const SearchAsset = () => {
       setIsSearching(false);
 
       setAssetRows(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         assetRecords
           // only show records that have a domain and domains that don't have just whitespace
           .filter(
@@ -239,7 +238,7 @@ export const SearchAsset = () => {
           </div>
         }
       >
-        {/* eslint-disable-next-line @typescript-eslint/no-empty-function */}
+        {}
         <Formik initialValues={initialValues} onSubmit={() => {}}>
           {({ dirty }) => (
             <Form

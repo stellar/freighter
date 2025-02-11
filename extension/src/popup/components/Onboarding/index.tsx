@@ -21,10 +21,9 @@ export const Onboarding = ({
 }: OnboardingProps) => {
   const customStyle = {
     ...(!customWidth && layout === "full"
-      ? // eslint-disable-next-line
-        { "--Onboarding-layout-width": "100%" }
+      ? { "--Onboarding-layout-width": "100%" }
       : {}),
-    // eslint-disable-next-line
+
     ...(customWidth ? { "--Onboarding-layout-width": customWidth } : {}),
   } as React.CSSProperties;
 

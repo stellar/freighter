@@ -126,7 +126,7 @@ export const RecoverAccount = () => {
     if (publicKey && publicKey !== publicKeyRef.current) {
       navigateTo(ROUTES.recoverAccountSuccess, navigate);
     }
-  }, [publicKey]);
+  }, [publicKey, navigate]);
 
   useEffect(() => {
     const phraseInputsArr: string[] = [];
@@ -136,7 +136,6 @@ export const RecoverAccount = () => {
     setTimeout(() => {
       PHRASE_LENGTH = isLongPhrase ? LONG_PHRASE : SHORT_PHRASE;
 
-      // eslint-disable-next-line no-plusplus
       for (let i = 1; i <= PHRASE_LENGTH; i++) {
         phraseInputsArr.push(`MnemonicPhrase-${i}`);
       }

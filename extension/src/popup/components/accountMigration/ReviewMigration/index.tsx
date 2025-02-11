@@ -254,11 +254,9 @@ export const ReviewMigration = () => {
         return;
       }
 
-      // eslint-disable-next-line
       for (let i = 0; i < migratableAccounts.length; i++) {
         const publicKey = migratableAccounts[i].publicKey;
 
-        // eslint-disable-next-line no-await-in-loop
         const { account, isSigner } = await getAccountInfo({
           publicKey,
           networkDetails,

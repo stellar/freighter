@@ -35,13 +35,12 @@ export const AddAccount = () => {
 
       if (addAccount.fulfilled.match(res)) {
         emitMetric(METRIC_NAMES.accountScreenAddAccount, {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           number_of_accounts: res.payload.allAccounts.length,
         });
         navigateTo(ROUTES.account, navigate);
       }
     },
-    [dispatch],
+    [dispatch, navigate],
   );
 
   const handleEnterPassword = async (password: string) => {

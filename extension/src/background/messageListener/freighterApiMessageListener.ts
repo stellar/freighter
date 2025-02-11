@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-
 import * as StellarSdk from "stellar-sdk";
 import browser from "webextension-polyfill";
 import { Store } from "redux";
@@ -564,5 +562,3 @@ export const freighterApiMessageListener = (
 
   return messageResponder[request.type]();
 };
-
-/* eslint-enable @typescript-eslint/no-unsafe-argument */

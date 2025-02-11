@@ -285,9 +285,7 @@ export type AssetType = AssetBalance | NativeBalance | TokenBalance;
 
 export type TokenBalances = SorobanBalance[];
 
-/* eslint-disable camelcase */
 export type HorizonOperation = Horizon.ServerApi.OperationRecord;
-/* eslint-enable camelcase */
 
 export interface AccountBalancesInterface {
   balances: Balances;

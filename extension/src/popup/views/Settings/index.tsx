@@ -29,7 +29,7 @@ export const Settings = () => {
 
   const signOutAndClose = async (e: React.FormEvent) => {
     e.preventDefault();
-    // eslint-disable-next-line @typescript-eslint/await-thenable
+
     await dispatch(signOut());
     navigateTo(ROUTES.welcome, navigate);
   };

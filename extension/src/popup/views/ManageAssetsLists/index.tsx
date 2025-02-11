@@ -53,7 +53,7 @@ export const ManageAssetsLists = () => {
       setIsLoading(true);
 
       // TODO: make these calls concurrent
-      // eslint-disable-next-line no-restricted-syntax
+
       for (const networkList of networkLists) {
         const { url = "", isEnabled } = networkList;
         try {

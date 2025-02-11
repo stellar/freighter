@@ -92,7 +92,6 @@ export const AdvancedSettings = () => {
       isNonSSLEnabledValue,
     } = formValue;
 
-    // eslint-disable-next-line
     await dispatch(
       saveExperimentalFeatures({
         isExperimentalModeEnabled: isExperimentalModeEnabledValue,

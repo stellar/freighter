@@ -180,7 +180,6 @@ export const ManageAssetRowButton = ({
     };
 
     if (isHardwareWallet) {
-      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       setIsSigningWithHardwareWallet(true);
       trackChangeTrustline();

@@ -139,7 +139,6 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     };
 
     if (isHardwareWallet) {
-      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       trackRemoveTrustline();
     } else {

@@ -128,7 +128,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
                   )}
                 </Field>
               </div>
-              {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+              {}
               <Link
                 isUnderline
                 variant="secondary"

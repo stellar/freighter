@@ -38,7 +38,6 @@ export const Preferences = () => {
       isHideDustEnabledValue,
     } = formValue;
 
-    // eslint-disable-next-line
     await dispatch(
       saveSettings({
         isMemoValidationEnabled: isValidatingMemoValue,
