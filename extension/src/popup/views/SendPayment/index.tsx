@@ -21,6 +21,7 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { getPathFromRoute } from "popup/helpers/route";
 
 export const SendPayment = () => {
   const dispatch: AppDispatch = useDispatch<AppDispatch>();
@@ -51,21 +52,40 @@ export const SendPayment = () => {
     })();
   }, [dispatch, publicKey, networkDetails, accountBalances]);
 
-  const sendToSlug = ROUTES.sendPaymentTo.split("/sendPayment/")[1];
-  const sendAmountSlug = ROUTES.sendPaymentAmount.split("/sendPayment/")[1];
-  const sendTypeSlug = ROUTES.sendPaymentType.split("/sendPayment/")[1];
-  const sendSettingsSlug = ROUTES.sendPaymentSettings.split("/sendPayment/")[1];
-  const settingsFeeSlug = ROUTES.sendPaymentSettingsFee.split(
-    "/sendPayment/settings/",
-  )[1];
-  const settingsSlippageSlug = ROUTES.sendPaymentSettingsSlippage.split(
-    "/sendPayment/settings/",
-  )[1];
-  const settingsTimeoutSlug = ROUTES.sendPaymentSettingsTimeout.split(
-    "/sendPayment/settings/",
-  )[1];
-  const settingsConfirmSlug =
-    ROUTES.sendPaymentConfirm.split("/sendPayment/")[1];
+  const sendPaymentBasePath = "/sendPayment/";
+  const sendPaymentSettingsBasePath = "/sendPayment/settings/";
+  const sendToPath = getPathFromRoute({
+    fullRoute: ROUTES.sendPaymentTo,
+    basePath: sendPaymentBasePath,
+  });
+  const sendAmountPath = getPathFromRoute({
+    fullRoute: ROUTES.sendPaymentAmount,
+    basePath: sendPaymentBasePath,
+  });
+  const sendTypePath = getPathFromRoute({
+    fullRoute: ROUTES.sendPaymentType,
+    basePath: sendPaymentBasePath,
+  });
+  const sendSettingsPath = getPathFromRoute({
+    fullRoute: ROUTES.sendPaymentSettings,
+    basePath: sendPaymentBasePath,
+  });
+  const settingsFeePath = getPathFromRoute({
+    fullRoute: ROUTES.sendPaymentSettingsFee,
+    basePath: sendPaymentSettingsBasePath,
+  });
+  const settingsSlippagePath = getPathFromRoute({
+    fullRoute: ROUTES.sendPaymentSettingsSlippage,
+    basePath: sendPaymentSettingsBasePath,
+  });
+  const settingsTimeoutPath = getPathFromRoute({
+    fullRoute: ROUTES.sendPaymentSettingsTimeout,
+    basePath: sendPaymentSettingsBasePath,
+  });
+  const settingsConfirmPath = getPathFromRoute({
+    fullRoute: ROUTES.sendPaymentConfirm,
+    basePath: sendPaymentBasePath,
+  });
 
   return (
     <Routes>
@@ -73,12 +93,12 @@ export const SendPayment = () => {
         index
         element={
           <PublicKeyRoute>
-            <Navigate to={sendToSlug} />
+            <Navigate to={sendToPath} />
           </PublicKeyRoute>
         }
       ></Route>
       <Route
-        path={sendToSlug}
+        path={sendToPath}
         element={
           <PublicKeyRoute>
             <SendTo previous={ROUTES.account} />
@@ -86,7 +106,7 @@ export const SendPayment = () => {
         }
       ></Route>
       <Route
-        path={sendAmountSlug}
+        path={sendAmountPath}
         element={
           <PublicKeyRoute>
             <SendAmount
@@ -97,7 +117,7 @@ export const SendPayment = () => {
         }
       ></Route>
       <Route
-        path={sendTypeSlug}
+        path={sendTypePath}
         element={
           <PublicKeyRoute>
             <SendType />
@@ -105,7 +125,7 @@ export const SendPayment = () => {
         }
       ></Route>
       <Route
-        path={`${sendSettingsSlug}/*`}
+        path={`${sendSettingsPath}/*`}
         element={
           <PublicKeyRoute>
             <Routes>
@@ -121,7 +141,7 @@ export const SendPayment = () => {
                 }
               ></Route>
               <Route
-                path={settingsFeeSlug}
+                path={settingsFeePath}
                 element={
                   <PublicKeyRoute>
                     <SendSettingsFee previous={ROUTES.sendPaymentSettings} />
@@ -129,7 +149,7 @@ export const SendPayment = () => {
                 }
               ></Route>
               <Route
-                path={settingsSlippageSlug}
+                path={settingsSlippagePath}
                 element={
                   <PublicKeyRoute>
                     <SendSettingsSlippage
@@ -139,7 +159,7 @@ export const SendPayment = () => {
                 }
               ></Route>
               <Route
-                path={settingsTimeoutSlug}
+                path={settingsTimeoutPath}
                 element={
                   <PublicKeyRoute>
                     <SendSettingsTxTimeout
@@ -153,7 +173,7 @@ export const SendPayment = () => {
         }
       ></Route>
       <Route
-        path={settingsConfirmSlug}
+        path={settingsConfirmPath}
         element={
           <VerifiedAccountRoute>
             <SendConfirm previous={ROUTES.sendPaymentSettings} />

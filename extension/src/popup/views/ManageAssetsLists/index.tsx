@@ -14,6 +14,7 @@ import { AssetLists } from "popup/components/manageAssetsLists/AssetLists";
 import { ModifyAssetList } from "popup/components/manageAssetsLists/ModifyAssetList";
 
 import "./styles.scss";
+import { getPathFromRoute } from "popup/helpers/route";
 
 export interface AssetsListsData {
   url: string;
@@ -102,9 +103,11 @@ export const ManageAssetsLists = () => {
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedNetwork(e.target.value as AssetsListKey);
   };
-  const modifyAssetListSlug = ROUTES.manageAssetsListsModifyAssetList.split(
-    "/manage-assets-list/",
-  )[1];
+
+  const addNetworkPath = getPathFromRoute({
+    fullRoute: ROUTES.manageAssetsListsModifyAssetList,
+    basePath: "/manage-assets-list/",
+  });
 
   return assetsLists ? (
     <>
@@ -123,7 +126,7 @@ export const ManageAssetsLists = () => {
           }
         ></Route>
         <Route
-          path={modifyAssetListSlug}
+          path={addNetworkPath}
           element={
             <PublicKeyRoute>
               <ModifyAssetList

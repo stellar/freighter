@@ -11,6 +11,7 @@ import { SearchAsset } from "popup/components/manageAssets/SearchAsset";
 import { AddAsset } from "popup/components/manageAssets/AddAsset";
 import { PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
+import { getPathFromRoute } from "popup/helpers/route";
 
 export const ManageAssets = () => {
   const { accountBalances, destinationBalances, assetSelect } = useSelector(
@@ -38,8 +39,15 @@ export const ManageAssets = () => {
     );
   }
 
-  const searchAssetsSlug = ROUTES.searchAsset.split("/manage-assets/")[1];
-  const addAssetsSlug = ROUTES.addAsset.split("/manage-assets/")[1];
+  const manageAssetsBasePath = "/manage-assets/";
+  const searchAssetsPath = getPathFromRoute({
+    fullRoute: ROUTES.searchAsset,
+    basePath: manageAssetsBasePath,
+  });
+  const addAssetsPath = getPathFromRoute({
+    fullRoute: ROUTES.addAsset,
+    basePath: manageAssetsBasePath,
+  });
 
   return (
     <>
@@ -53,7 +61,7 @@ export const ManageAssets = () => {
           }
         ></Route>
         <Route
-          path={searchAssetsSlug}
+          path={searchAssetsPath}
           element={
             <PrivateKeyRoute>
               <SearchAsset />
@@ -61,7 +69,7 @@ export const ManageAssets = () => {
           }
         ></Route>
         <Route
-          path={addAssetsSlug}
+          path={addAssetsPath}
           element={
             <PrivateKeyRoute>
               <AddAsset />

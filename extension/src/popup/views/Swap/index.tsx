@@ -18,6 +18,7 @@ import {
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { SendSettingsTxTimeout } from "popup/components/sendPayment/SendSettings/TxTimeout";
+import { getPathFromRoute } from "popup/helpers/route";
 
 export const Swap = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -48,14 +49,32 @@ export const Swap = () => {
     })();
   }, [dispatch, publicKey, networkDetails, accountBalances]);
 
-  const amountSlug = ROUTES.swapAmount.split("/swap/")[1];
-  const settingsSlug = ROUTES.swapSettings.split("/swap/")[1];
-  const settingsFeeSlug = ROUTES.swapSettingsFee.split("/swap/settings/")[1];
-  const settingsSlippageSlug =
-    ROUTES.swapSettingsSlippage.split("/swap/settings/")[1];
-  const settingsTimeoutSlug =
-    ROUTES.swapSettingsTimeout.split("/swap/settings/")[1];
-  const swapConfirmSlug = ROUTES.swapConfirm.split("/swap/")[1];
+  const swapBasePath = "/swap/";
+  const swapSettingsBasePath = "/swap/settings/";
+  const amountPath = getPathFromRoute({
+    fullRoute: ROUTES.swapAmount,
+    basePath: swapBasePath,
+  });
+  const settingsPath = getPathFromRoute({
+    fullRoute: ROUTES.swapSettings,
+    basePath: swapBasePath,
+  });
+  const settingsFeePath = getPathFromRoute({
+    fullRoute: ROUTES.swapSettingsFee,
+    basePath: swapSettingsBasePath,
+  });
+  const settingsSlippagePath = getPathFromRoute({
+    fullRoute: ROUTES.swapSettingsSlippage,
+    basePath: swapSettingsBasePath,
+  });
+  const settingsTimeoutPath = getPathFromRoute({
+    fullRoute: ROUTES.swapSettingsTimeout,
+    basePath: swapSettingsBasePath,
+  });
+  const swapConfirmPath = getPathFromRoute({
+    fullRoute: ROUTES.swapConfirm,
+    basePath: swapBasePath,
+  });
 
   return (
     <Routes>
@@ -68,7 +87,7 @@ export const Swap = () => {
         }
       ></Route>
       <Route
-        path={amountSlug}
+        path={amountPath}
         element={
           <PublicKeyRoute>
             <SendAmount previous={ROUTES.account} next={ROUTES.swapSettings} />
@@ -76,7 +95,7 @@ export const Swap = () => {
         }
       ></Route>
       <Route
-        path={`${settingsSlug}/*`}
+        path={`${settingsPath}/*`}
         element={
           <PublicKeyRoute>
             <Routes>
@@ -92,7 +111,7 @@ export const Swap = () => {
                 }
               ></Route>
               <Route
-                path={settingsFeeSlug}
+                path={settingsFeePath}
                 element={
                   <PublicKeyRoute>
                     <SendSettingsFee previous={ROUTES.swapSettings} />
@@ -100,7 +119,7 @@ export const Swap = () => {
                 }
               ></Route>
               <Route
-                path={settingsSlippageSlug}
+                path={settingsSlippagePath}
                 element={
                   <PublicKeyRoute>
                     <SendSettingsSlippage previous={ROUTES.swapSettings} />
@@ -108,7 +127,7 @@ export const Swap = () => {
                 }
               ></Route>
               <Route
-                path={settingsTimeoutSlug}
+                path={settingsTimeoutPath}
                 element={
                   <PublicKeyRoute>
                     <SendSettingsTxTimeout previous={ROUTES.swapSettings} />
@@ -120,7 +139,7 @@ export const Swap = () => {
         }
       ></Route>
       <Route
-        path={swapConfirmSlug}
+        path={swapConfirmPath}
         element={
           <VerifiedAccountRoute>
             <SendConfirm previous={ROUTES.swapSettings} />

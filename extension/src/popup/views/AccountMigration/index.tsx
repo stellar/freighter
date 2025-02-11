@@ -10,21 +10,28 @@ import { ReviewMigration } from "popup/components/accountMigration/ReviewMigrati
 import { MnemonicPhrase } from "popup/components/accountMigration/MnemonicPhrase";
 import { ConfirmMigration } from "popup/components/accountMigration/ConfirmMigration";
 import { MigrationComplete } from "popup/components/accountMigration/MigrationComplete";
+import { getPathFromRoute } from "popup/helpers/route";
 
 import "./styles.scss";
 
 export const AccountMigration = () => {
-  const reviewSlug = ROUTES.accountMigrationReviewMigration.split(
-    "/account-migration/",
-  )[1];
-  const mnemonicPhraseSlug = ROUTES.accountMigrationMnemonicPhrase.split(
-    "/account-migration/",
-  )[1];
-  const mnemonicConfirmPhraseSlug =
-    ROUTES.accountMigrationConfirmMigration.split("/account-migration/")[1];
-  const migrationCompleteSlug = ROUTES.accountMigrationMigrationComplete.split(
-    "/account-migration/",
-  )[1];
+  const accountMigrationBasePath = "/account-migration/";
+  const reviewPath = getPathFromRoute({
+    fullRoute: ROUTES.accountMigrationReviewMigration,
+    basePath: accountMigrationBasePath,
+  });
+  const mnemonicPhrasePath = getPathFromRoute({
+    fullRoute: ROUTES.accountMigrationMnemonicPhrase,
+    basePath: accountMigrationBasePath,
+  });
+  const mnemonicConfirmPhrasePath = getPathFromRoute({
+    fullRoute: ROUTES.accountMigrationConfirmMigration,
+    basePath: accountMigrationBasePath,
+  });
+  const migrationCompletePath = getPathFromRoute({
+    fullRoute: ROUTES.accountMigrationMigrationComplete,
+    basePath: accountMigrationBasePath,
+  });
   return (
     <React.Fragment>
       <View.Header />
@@ -41,7 +48,7 @@ export const AccountMigration = () => {
             }
           ></Route>
           <Route
-            path={reviewSlug}
+            path={reviewPath}
             element={
               <PublicKeyRoute>
                 <div className="AccountMigration">
@@ -51,7 +58,7 @@ export const AccountMigration = () => {
             }
           ></Route>
           <Route
-            path={mnemonicPhraseSlug}
+            path={mnemonicPhrasePath}
             element={
               <VerifiedAccountRoute>
                 <MnemonicPhrase />
@@ -59,7 +66,7 @@ export const AccountMigration = () => {
             }
           ></Route>
           <Route
-            path={mnemonicConfirmPhraseSlug}
+            path={mnemonicConfirmPhrasePath}
             element={
               <VerifiedAccountRoute>
                 <div className="AccountMigration">
@@ -69,7 +76,7 @@ export const AccountMigration = () => {
             }
           ></Route>
           <Route
-            path={migrationCompleteSlug}
+            path={migrationCompletePath}
             element={
               <PublicKeyRoute>
                 <div className="AccountMigration">

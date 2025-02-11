@@ -6,16 +6,26 @@ import { ROUTES } from "popup/constants/routes";
 
 import { NetworkForm } from "popup/components/manageNetwork/NetworkForm";
 import { NetworkSettings } from "popup/components/manageNetwork/NetworkSettings";
+import { getPathFromRoute } from "popup/helpers/route";
 
 export const ManageNetwork = () => {
-  const addNetworkSlug = ROUTES.addNetwork.split("/manage-network/")[1];
-  const networkSettingsSlug =
-    ROUTES.networkSettings.split("/manage-network/")[1];
-  const editNetworkSlug = ROUTES.editNetwork.split("/manage-network/")[1];
+  const manageNetworkBasePath = "/manage-network/";
+  const addNetworkPath = getPathFromRoute({
+    fullRoute: ROUTES.addNetwork,
+    basePath: manageNetworkBasePath,
+  });
+  const networkSettingsPath = getPathFromRoute({
+    fullRoute: ROUTES.networkSettings,
+    basePath: manageNetworkBasePath,
+  });
+  const editNetworkPath = getPathFromRoute({
+    fullRoute: ROUTES.editNetwork,
+    basePath: manageNetworkBasePath,
+  });
   return (
     <Routes>
       <Route
-        path={addNetworkSlug}
+        path={addNetworkPath}
         element={
           <PublicKeyRoute>
             <NetworkForm isEditing={false} />
@@ -23,7 +33,7 @@ export const ManageNetwork = () => {
         }
       ></Route>
       <Route
-        path={networkSettingsSlug}
+        path={networkSettingsPath}
         element={
           <PublicKeyRoute>
             <NetworkSettings />
@@ -31,7 +41,7 @@ export const ManageNetwork = () => {
         }
       ></Route>
       <Route
-        path={editNetworkSlug}
+        path={editNetworkPath}
         element={
           <PublicKeyRoute>
             <NetworkForm isEditing />
