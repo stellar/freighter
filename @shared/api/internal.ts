@@ -1529,3 +1529,28 @@ export const simulateTransaction = async (args: {
     response,
   };
 };
+
+export const getIsAccountMismatch = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}) => {
+  let response = {
+    error: "",
+    isAccountMismatch: false,
+  };
+
+  response = await sendMessageToBackground({
+    type: SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH,
+    activePublicKey,
+  });
+
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
+  return {
+    isAccountMismatch: response.isAccountMismatch,
+    error: response.error,
+  };
+};

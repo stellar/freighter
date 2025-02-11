@@ -6,6 +6,7 @@ import {
   EXTERNAL_SERVICE_TYPES,
   SERVICE_TYPES,
 } from "../../constants/services";
+import { storeHolder } from "./storeHolder";
 import { Response } from "../types";
 
 interface Msg {
@@ -67,11 +68,20 @@ export const sendMessageToContentScript = (msg: Msg): Promise<Response> => {
 
 export const sendMessageToBackground = async (msg: Msg): Promise<Response> => {
   let res;
+  const extensionState = storeHolder.currentStore?.getState();
+
+  const appendedMsg = {
+    ...msg,
+    activePublicKey: extensionState?.auth?.publicKey,
+  };
+
+  console.log(appendedMsg);
+
   if (DEV_SERVER) {
     // treat this as an external call because we're making the call from the browser, not the popup
-    res = await sendMessageToContentScript(msg);
+    res = await sendMessageToContentScript(appendedMsg);
   } else {
-    res = (await browser.runtime.sendMessage(msg)) as Response;
+    res = (await browser.runtime.sendMessage(appendedMsg)) as Response;
   }
 
   return res as Response;

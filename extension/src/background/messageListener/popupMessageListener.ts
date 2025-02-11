@@ -1766,6 +1766,19 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { assetsLists: await getAssetsLists() };
   };
 
+  const getIsAccountMismatch = () => {
+    const { activePublicKey } = request;
+
+    if (!activePublicKey) {
+      return { isAccountMismatch: false };
+    }
+
+    const currentState = sessionStore.getState();
+    const publicKey = publicKeySelector(currentState);
+
+    return { isAccountMismatch: publicKey !== activePublicKey };
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -1818,7 +1831,21 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.MIGRATE_ACCOUNTS]: migrateAccounts,
     [SERVICE_TYPES.ADD_ASSETS_LIST]: addAssetsList,
     [SERVICE_TYPES.MODIFY_ASSETS_LIST]: modifyAssetsList,
+    [SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH]: getIsAccountMismatch,
   };
+
+  const currentState = sessionStore.getState();
+  const publicKey = publicKeySelector(currentState);
+
+  if (
+    request.activePublicKey &&
+    request.activePublicKey !== publicKey &&
+    request.type !== SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH
+  ) {
+    console.log(request.activePublicKey);
+    console.log(publicKey);
+    return { error: "Public key does not match active public key" };
+  }
 
   return messageResponder[request.type]();
 };

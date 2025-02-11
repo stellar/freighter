@@ -93,6 +93,8 @@ export interface Response {
   recommendedFee: string;
   isNonSSLEnabled: boolean;
   isHideDustEnabled: boolean;
+  activePublicKey: string;
+  isAccountMismatch: boolean;
 }
 
 export interface MemoRequiredAccount {
