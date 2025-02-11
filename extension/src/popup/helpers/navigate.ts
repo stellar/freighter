@@ -1,7 +1,6 @@
 import browser from "webextension-polyfill";
 
 import { ROUTES } from "popup/constants/routes";
-// import { history } from "popup/constants/history";
 import { NavigateFunction } from "react-router-dom";
 
 export const navigateTo = (
