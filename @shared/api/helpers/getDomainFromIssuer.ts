@@ -19,6 +19,7 @@ export const getDomainFromIssuer = async ({
   try {
     /* First, check our localStorage cache in Background to see if we've found this url before */
     ({ assetDomain } = await sendMessageToBackground({
+      activePublicKey: null,
       assetCanonical: `${code}:${key}`,
       type: SERVICE_TYPES.GET_CACHED_ASSET_DOMAIN,
     }));
@@ -48,6 +49,7 @@ export const getDomainFromIssuer = async ({
 
   /* And also save into the cache to prevent having to do this process again */
   await sendMessageToBackground({
+    activePublicKey: null,
     assetCanonical: `${code}:${key}`,
     assetDomain,
     type: SERVICE_TYPES.CACHE_ASSET_DOMAIN,

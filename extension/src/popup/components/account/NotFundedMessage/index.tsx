@@ -27,7 +27,7 @@ export const NotFundedMessage = ({
 
   const handleFundAccount = async () => {
     // eslint-disable-next-line
-    await dispatch(fundAccount(publicKey));
+    await dispatch(fundAccount({ publicKey }));
     setIsAccountFriendbotFunded(true);
   };
 

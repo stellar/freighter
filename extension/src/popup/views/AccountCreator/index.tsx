@@ -32,7 +32,10 @@ export const AccountCreator = () => {
   const handleSubmit = async (values: FormValues) => {
     // eslint-disable-next-line
     await dispatch(createAccount(values.password));
-    const res = await showBackupPhrase(values.password);
+    const res = await showBackupPhrase({
+      activePublicKey: null,
+      password: values.password,
+    });
 
     setMnemonicPhrase(res.mnemonicPhrase);
   };

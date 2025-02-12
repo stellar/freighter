@@ -13,7 +13,6 @@ import { reducer as tokenPaymentSimulation } from "popup/ducks/token-payment";
 import { Loading } from "popup/components/Loading";
 import { ErrorTracking } from "popup/components/ErrorTracking";
 import { AccountMismatch } from "popup/components/AccountMismatch";
-import { popupStoreFacade } from "@shared/api/helpers/popupStoreFacade";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Router } from "./Router";
 
@@ -37,9 +36,6 @@ export const store = configureStore({
 });
 
 export type AppDispatch = typeof store.dispatch;
-
-// saving a pointer to the store in the popupStoreFacade so the background can access it, if needed
-popupStoreFacade.currentStore = store;
 
 export const App = () => (
   <ErrorBoundary>

@@ -35,6 +35,8 @@ import {
   SettingsState,
   ExperimentalFeatures,
 } from "@shared/api/types";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { AppState } from "popup/App";
 
 import { isMainnet } from "helpers/stellar";
 
@@ -88,24 +90,29 @@ export const saveAllowList = createAsyncThunk<
   {
     allowList: string[];
   },
-  { rejectValue: ErrorMessage }
->("settings/saveAllowList", async ({ allowList }, thunkApi) => {
-  let res = { allowList: settingsInitialState.allowList };
+  { rejectValue: ErrorMessage; state: AppState }
+>(
+  "settings/saveAllowList",
+  async ({ allowList }, { getState, rejectWithValue }) => {
+    let res = { allowList: settingsInitialState.allowList };
+    const activePublicKey = publicKeySelector(getState());
 
-  try {
-    res = await saveAllowListService({
-      allowList,
-    });
-  } catch (e) {
-    console.error(e);
-    const message = e instanceof Error ? e.message : JSON.stringify(e);
-    return thunkApi.rejectWithValue({
-      errorMessage: message,
-    });
-  }
+    try {
+      res = await saveAllowListService({
+        activePublicKey,
+        allowList,
+      });
+    } catch (e) {
+      console.error(e);
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      return rejectWithValue({
+        errorMessage: message,
+      });
+    }
 
-  return res;
-});
+    return res;
+  },
+);
 
 export const saveSettings = createAsyncThunk<
   Settings & IndexerSettings,
@@ -114,12 +121,12 @@ export const saveSettings = createAsyncThunk<
     isMemoValidationEnabled: boolean;
     isHideDustEnabled: boolean;
   },
-  { rejectValue: ErrorMessage }
+  { rejectValue: ErrorMessage; state: AppState }
 >(
   "settings/saveSettings",
   async (
     { isDataSharingAllowed, isMemoValidationEnabled, isHideDustEnabled },
-    thunkApi,
+    { getState, rejectWithValue },
   ) => {
     let res = {
       ...settingsInitialState,
@@ -129,9 +136,11 @@ export const saveSettings = createAsyncThunk<
       settingsState: SettingsState.IDLE,
       isHideDustEnabled: true,
     };
+    const activePublicKey = publicKeySelector(getState());
 
     try {
       res = await saveSettingsService({
+        activePublicKey,
         isDataSharingAllowed,
         isMemoValidationEnabled,
         isHideDustEnabled,
@@ -139,7 +148,7 @@ export const saveSettings = createAsyncThunk<
     } catch (e) {
       console.error(e);
       const message = e instanceof Error ? e.message : JSON.stringify(e);
-      return thunkApi.rejectWithValue({
+      return rejectWithValue({
         errorMessage: message,
       });
     }
@@ -155,21 +164,23 @@ export const saveExperimentalFeatures = createAsyncThunk<
     isHashSigningEnabled: boolean;
     isNonSSLEnabled: boolean;
   },
-  { rejectValue: ErrorMessage }
+  { rejectValue: ErrorMessage; state: AppState }
 >(
   "settings/saveExperimentalFeaturss",
   async (
     { isExperimentalModeEnabled, isHashSigningEnabled, isNonSSLEnabled },
-    thunkApi,
+    { getState, rejectWithValue },
   ) => {
     let res = {
       ...experimentalFeaturesInitialState,
       networkDetails: settingsInitialState.networkDetails,
       networksList: settingsInitialState.networksList,
     };
+    const activePublicKey = publicKeySelector(getState());
 
     try {
       res = await saveExperimentalFeaturesService({
+        activePublicKey,
         isExperimentalModeEnabled,
         isHashSigningEnabled,
         isNonSSLEnabled,
@@ -177,7 +188,7 @@ export const saveExperimentalFeatures = createAsyncThunk<
     } catch (e) {
       console.error(e);
       const message = e instanceof Error ? e.message : JSON.stringify(e);
-      return thunkApi.rejectWithValue({
+      return rejectWithValue({
         errorMessage: message,
       });
     }
@@ -189,61 +200,113 @@ export const saveExperimentalFeatures = createAsyncThunk<
 export const changeNetwork = createAsyncThunk<
   { networkDetails: NetworkDetails; isRpcHealthy: boolean },
   { networkName: string },
-  { rejectValue: ErrorMessage }
->("settings/changeNetwork", ({ networkName }) =>
-  changeNetworkService(networkName),
-);
+  { rejectValue: ErrorMessage; state: AppState }
+>("settings/changeNetwork", ({ networkName }, { getState }) => {
+  const activePublicKey = publicKeySelector(getState());
+
+  return changeNetworkService({ activePublicKey, networkName });
+});
 
 export const addCustomNetwork = createAsyncThunk<
   { networksList: NetworkDetails[] },
   { networkDetails: NetworkDetails },
-  { rejectValue: ErrorMessage }
->("settings/addCustomNetwork", async ({ networkDetails }, thunkApi) => {
-  let res;
-  try {
-    res = await addCustomNetworkService(networkDetails);
-  } catch (e) {
-    console.error(e);
-    const message = e instanceof Error ? e.message : JSON.stringify(e);
-    return thunkApi.rejectWithValue({
-      errorMessage: message,
-    });
-  }
+  { rejectValue: ErrorMessage; state: AppState }
+>(
+  "settings/addCustomNetwork",
+  async ({ networkDetails }, { getState, rejectWithValue }) => {
+    const activePublicKey = publicKeySelector(getState());
+    let res;
+    try {
+      res = await addCustomNetworkService({ activePublicKey, networkDetails });
+    } catch (e) {
+      console.error(e);
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      return rejectWithValue({
+        errorMessage: message,
+      });
+    }
 
-  return res;
-});
+    return res;
+  },
+);
 
 export const removeCustomNetwork = createAsyncThunk<
   { networkDetails: NetworkDetails; networksList: NetworkDetails[] },
   { networkName: string },
-  { rejectValue: ErrorMessage }
->("settings/removeCustomNetwork", ({ networkName }) =>
-  removeCustomNetworkService(networkName),
+  { rejectValue: ErrorMessage; state: AppState }
+>(
+  "settings/removeCustomNetwork",
+  async ({ networkName }, { getState, rejectWithValue }) => {
+    const activePublicKey = publicKeySelector(getState());
+
+    const res = await removeCustomNetworkService({
+      activePublicKey,
+      networkName,
+    });
+
+    if (res.error) {
+      return rejectWithValue({
+        errorMessage: res.error || "Unable to edit custom network",
+      });
+    }
+
+    return res;
+  },
 );
 
 export const editCustomNetwork = createAsyncThunk<
-  { networkDetails: NetworkDetails; networksList: NetworkDetails[] },
+  {
+    networkDetails: NetworkDetails;
+    networksList: NetworkDetails[];
+    error: string;
+  },
   { networkDetails: NetworkDetails; networkIndex: number },
-  { rejectValue: ErrorMessage }
->("settings/editCustomNetwork", ({ networkDetails, networkIndex }) =>
-  editCustomNetworkService({ networkDetails, networkIndex }),
+  { rejectValue: ErrorMessage; state: AppState }
+>(
+  "settings/editCustomNetwork",
+  async ({ networkDetails, networkIndex }, { getState, rejectWithValue }) => {
+    const activePublicKey = publicKeySelector(getState());
+
+    const res = await editCustomNetworkService({
+      activePublicKey,
+      networkDetails,
+      networkIndex,
+    });
+
+    if (res.error) {
+      return rejectWithValue({
+        errorMessage: res.error || "Unable to edit custom network",
+      });
+    }
+
+    return res;
+  },
 );
 
 export const addAssetsList = createAsyncThunk<
   { assetsLists: AssetsLists; error: string },
   { assetsList: AssetsListItem; network: NETWORKS },
-  { rejectValue: ErrorMessage }
->("settings/addAssetsList", async ({ assetsList, network }, thunkApi) => {
-  const res = await addAssetsListService({ assetsList, network });
+  { rejectValue: ErrorMessage; state: AppState }
+>(
+  "settings/addAssetsList",
+  async ({ assetsList, network }, { getState, rejectWithValue }) => {
+    const activePublicKey = publicKeySelector(getState());
 
-  if (res.error) {
-    return thunkApi.rejectWithValue({
-      errorMessage: res.error || "Unable to add asset list",
+    const res = await addAssetsListService({
+      activePublicKey,
+      assetsList,
+      network,
     });
-  }
 
-  return res;
-});
+    if (res.error) {
+      return rejectWithValue({
+        errorMessage: res.error || "Unable to add asset list",
+      });
+    }
+
+    return res;
+  },
+);
 
 export const modifyAssetsList = createAsyncThunk<
   { assetsLists: AssetsLists; error: string },
@@ -252,18 +315,24 @@ export const modifyAssetsList = createAsyncThunk<
     network: NETWORKS;
     isDeleteAssetsList: boolean;
   },
-  { rejectValue: ErrorMessage }
+  { rejectValue: ErrorMessage; state: AppState }
 >(
   "settings/modifyAssetsList",
-  async ({ assetsList, network, isDeleteAssetsList }, thunkApi) => {
+  async (
+    { assetsList, network, isDeleteAssetsList },
+    { getState, rejectWithValue },
+  ) => {
+    const activePublicKey = publicKeySelector(getState());
+
     const res = await modifyAssetsListService({
+      activePublicKey,
       assetsList,
       network,
       isDeleteAssetsList,
     });
 
     if (res.error) {
-      return thunkApi.rejectWithValue({
+      return rejectWithValue({
         errorMessage: res.error || "Unable to modify asset list",
       });
     }

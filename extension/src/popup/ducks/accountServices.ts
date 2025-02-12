@@ -65,9 +65,11 @@ export const createAccount = createAsyncThunk<
 
 export const fundAccount = createAsyncThunk(
   "auth/fundAccount",
-  async (publicKey: string) => {
+  async ({ publicKey }: { publicKey: string }, { getState }) => {
+    const activePublicKey = publicKeySelector(getState() as AppState);
+
     try {
-      await fundAccountService(publicKey);
+      await fundAccountService({ activePublicKey, publicKey });
     } catch (e) {
       const message = e instanceof Error ? e.message : JSON.stringify(e);
       console.error("Failed when funding an account: ", message);
@@ -77,9 +79,11 @@ export const fundAccount = createAsyncThunk(
 
 export const addAccount = createAsyncThunk<
   { publicKey: string; allAccounts: Account[]; hasPrivateKey: boolean },
-  string,
+  { password: string },
   { rejectValue: ErrorMessage }
->("auth/addAccount", async (password = "", thunkApi) => {
+>("auth/addAccount", async ({ password }, { getState, rejectWithValue }) => {
+  const activePublicKey = publicKeySelector(getState() as AppState);
+
   let res = {
     publicKey: "",
     allAccounts: [] as Account[],
@@ -87,11 +91,11 @@ export const addAccount = createAsyncThunk<
   };
 
   try {
-    res = await addAccountService(password);
+    res = await addAccountService({ activePublicKey, password });
   } catch (e) {
     const message = e instanceof Error ? e.message : JSON.stringify(e);
     console.error("Failed when creating an account: ", message);
-    return thunkApi.rejectWithValue({
+    return rejectWithValue({
       errorMessage: message,
     });
   }
@@ -102,24 +106,32 @@ export const importAccount = createAsyncThunk<
   { publicKey: string; allAccounts: Account[]; hasPrivateKey: boolean },
   { password: string; privateKey: string },
   { rejectValue: ErrorMessage }
->("auth/importAccount", async ({ password, privateKey }, thunkApi) => {
-  let res = {
-    publicKey: "",
-    allAccounts: [] as Account[],
-    hasPrivateKey: false,
-  };
+>(
+  "auth/importAccount",
+  async ({ password, privateKey }, { getState, rejectWithValue }) => {
+    let res = {
+      publicKey: "",
+      allAccounts: [] as Account[],
+      hasPrivateKey: false,
+    };
+    const activePublicKey = publicKeySelector(getState() as AppState);
 
-  try {
-    res = await importAccountService(password, privateKey);
-  } catch (e) {
-    console.error("Failed when importing an account: ", e);
-    const message = e instanceof Error ? e.message : JSON.stringify(e);
-    return thunkApi.rejectWithValue({
-      errorMessage: message,
-    });
-  }
-  return res;
-});
+    try {
+      res = await importAccountService({
+        activePublicKey,
+        password,
+        privateKey,
+      });
+    } catch (e) {
+      console.error("Failed when importing an account: ", e);
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      return rejectWithValue({
+        errorMessage: message,
+      });
+    }
+    return res;
+  },
+);
 
 export const importHardwareWallet = createAsyncThunk<
   {
@@ -132,23 +144,29 @@ export const importHardwareWallet = createAsyncThunk<
   { rejectValue: ErrorMessage }
 >(
   "auth/importHardwareWallet",
-  async ({ publicKey, hardwareWalletType, bipPath }, thunkApi) => {
+  async (
+    { publicKey, hardwareWalletType, bipPath },
+    { getState, rejectWithValue },
+  ) => {
     let res = {
       publicKey: "",
       allAccounts: [] as Account[],
       hasPrivateKey: false,
       bipPath: "",
     };
+    const activePublicKey = publicKeySelector(getState() as AppState);
+
     try {
-      res = await importHardwareWalletService(
+      res = await importHardwareWalletService({
+        activePublicKey,
         publicKey,
         hardwareWalletType,
         bipPath,
-      );
+      });
     } catch (e) {
       console.error("Failed when importing hardware wallet: ", e);
       const message = e instanceof Error ? e.message : JSON.stringify(e);
-      return thunkApi.rejectWithValue({ errorMessage: message });
+      return rejectWithValue({ errorMessage: message });
     }
     return res;
   },
@@ -158,21 +176,34 @@ export const makeAccountActive = createAsyncThunk<
   { publicKey: string; hasPrivateKey: boolean; bipPath: string },
   string,
   { rejectValue: ErrorMessage; state: AppState }
->("auth/makeAccountActive", async (publicKey: string, thunkApi) => {
-  try {
-    const res = await makeAccountActiveService(publicKey);
-    const { allAccounts } = authSelector(thunkApi.getState());
-    storeAccountMetricsData(publicKey, allAccounts);
-    return res;
-  } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e as string });
-  }
-});
+>(
+  "auth/makeAccountActive",
+  async (publicKey: string, { getState, rejectWithValue }) => {
+    const activePublicKey = publicKeySelector(getState());
 
-export const updateAccountName = createAsyncThunk(
-  "auth/updateAccountName",
-  (accountName: string) => updateAccountNameService(accountName),
+    try {
+      const res = await makeAccountActiveService({
+        activePublicKey,
+        publicKey,
+      });
+      const { allAccounts } = authSelector(getState());
+      storeAccountMetricsData(publicKey, allAccounts);
+      return res;
+    } catch (e) {
+      return rejectWithValue({ errorMessage: e as string });
+    }
+  },
 );
+
+export const updateAccountName = createAsyncThunk<
+  { allAccounts: Account[] },
+  string,
+  { rejectValue: ErrorMessage; state: AppState }
+>("auth/updateAccountName", (accountName: string, { getState }) => {
+  const activePublicKey = publicKeySelector(getState());
+
+  return updateAccountNameService({ activePublicKey, accountName });
+});
 
 export const loadLastUsedAccount = createAsyncThunk<
   { lastUsedAccount: string },
@@ -388,21 +419,23 @@ export const loadAccount = createAsyncThunk(
 
 export const signOut = createAsyncThunk<
   APPLICATION_STATE,
-  void,
-  { rejectValue: ErrorMessage }
->("auth/signOut", async (_arg, thunkApi) => {
+  undefined,
+  { rejectValue: ErrorMessage; state: AppState }
+>("auth/signOut", async (_, { getState, rejectWithValue }) => {
   let res = {
     publicKey: "",
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
   };
+  const activePublicKey = publicKeySelector(getState());
+
   try {
-    res = await signOutService();
+    res = await signOutService({ activePublicKey });
   } catch (e) {
     console.error(e);
   }
 
   if (res?.publicKey) {
-    return thunkApi.rejectWithValue({
+    return rejectWithValue({
       errorMessage: "Unable to sign out",
     });
   }
@@ -412,24 +445,37 @@ export const signOut = createAsyncThunk<
 
 export const addTokenId = createAsyncThunk<
   { tokenIdList: string[] },
-  { publicKey: string; tokenId: string; network: Networks },
-  { rejectValue: ErrorMessage }
->("auth/addToken", async ({ publicKey, tokenId, network }, thunkApi) => {
-  let res = {
-    tokenIdList: [] as string[],
-  };
+  {
+    publicKey: string;
+    tokenId: string;
+    network: Networks;
+  },
+  { rejectValue: ErrorMessage; state: AppState }
+>(
+  "auth/addToken",
+  async ({ publicKey, tokenId, network }, { getState, rejectWithValue }) => {
+    let res = {
+      tokenIdList: [] as string[],
+    };
+    const activePublicKey = publicKeySelector(getState());
 
-  try {
-    res = await addTokenIdService(publicKey, tokenId, network);
-  } catch (e) {
-    const message = e instanceof Error ? e.message : JSON.stringify(e);
-    console.error("Failed when adding a token: ", message);
-    return thunkApi.rejectWithValue({
-      errorMessage: message,
-    });
-  }
-  return res;
-});
+    try {
+      res = await addTokenIdService({
+        activePublicKey,
+        publicKey,
+        tokenId,
+        network,
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      console.error("Failed when adding a token: ", message);
+      return rejectWithValue({
+        errorMessage: message,
+      });
+    }
+    return res;
+  },
+);
 
 export const migrateAccounts = createAsyncThunk<
   {
@@ -892,7 +938,7 @@ export const authErrorSelector = createSelector(
 );
 export const publicKeySelector = createSelector(
   authSelector,
-  (auth: InitialState) => auth.publicKey,
+  (auth: InitialState) => auth.publicKey || "",
 );
 export const bipPathSelector = createSelector(
   authSelector,

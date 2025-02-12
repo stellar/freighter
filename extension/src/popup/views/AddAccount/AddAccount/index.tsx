@@ -31,7 +31,7 @@ export const AddAccount = () => {
   // will try to use the existing password value saved in the session store
   const handleAddAccount = useCallback(
     async (password: string = "") => {
-      const res = await dispatch(addAccount(password));
+      const res = await dispatch(addAccount({ password }));
 
       if (addAccount.fulfilled.match(res)) {
         emitMetric(METRIC_NAMES.accountScreenAddAccount, {
