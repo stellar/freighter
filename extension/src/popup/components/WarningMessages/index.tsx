@@ -1440,7 +1440,7 @@ export const BlockaidWarningModal = ({
       className={`ScamAssetWarning__box ${
         isWarning ? "ScamAssetWarning__box--isWarning" : ""
       }`}
-      data-testid="ScamAssetWarning__box"
+      data-testid="BlockaidWarningModal__alert"
     >
       <div className="ScamAssetWarning__box__content">
         <div className="Icon">
