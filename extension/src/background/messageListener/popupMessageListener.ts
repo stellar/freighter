@@ -1842,11 +1842,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     request.activePublicKey !== publicKey &&
     request.type !== SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH
   ) {
-    console.log(request.activePublicKey);
-    console.log(publicKey);
     return { error: "Public key does not match active public key" };
   }
-
   return messageResponder[request.type]();
 };
 

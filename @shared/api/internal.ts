@@ -1221,6 +1221,10 @@ export const saveSettings = async ({
     console.error(e);
   }
 
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
   return response;
 };
 
@@ -1262,14 +1266,19 @@ export const changeNetwork = async (
 ): Promise<{ networkDetails: NetworkDetails; isRpcHealthy: boolean }> => {
   let networkDetails = MAINNET_NETWORK_DETAILS;
   let isRpcHealthy = false;
+  let error = "";
 
   try {
-    ({ networkDetails, isRpcHealthy } = await sendMessageToBackground({
+    ({ networkDetails, isRpcHealthy, error } = await sendMessageToBackground({
       networkName,
       type: SERVICE_TYPES.CHANGE_NETWORK,
     }));
   } catch (e) {
     console.error(e);
+  }
+
+  if (error) {
+    throw new Error(error);
   }
 
   return { networkDetails, isRpcHealthy };
@@ -1337,6 +1346,7 @@ export const editCustomNetwork = async ({
   let response = {
     networkDetails: MAINNET_NETWORK_DETAILS,
     networksList: [] as NetworkDetails[],
+    error: "",
   };
 
   try {
@@ -1347,6 +1357,10 @@ export const editCustomNetwork = async ({
     });
   } catch (e) {
     console.error(e);
+  }
+
+  if (response.error) {
+    throw new Error(response.error);
   }
 
   return response;
