@@ -73,14 +73,18 @@ export const ConfirmMnemonicPhrase = ({
         confirmMigratedMnemonicPhrase(joinSelectedWords()),
       );
       if (confirmMigratedMnemonicPhrase.fulfilled.match(res)) {
+        setSelectedWords([]);
+        formikHelpers.resetForm();
         navigateTo(ROUTES.accountMigrationConfirmMigration);
       }
     } else {
-      dispatch(confirmMnemonicPhrase(joinSelectedWords()));
+      const res = await dispatch(confirmMnemonicPhrase(joinSelectedWords()));
+      if (confirmMnemonicPhrase.fulfilled.match(res)) {
+        setSelectedWords([]);
+        formikHelpers.resetForm();
+        navigateTo(ROUTES.mnemonicPhraseConfirmed);
+      }
     }
-
-    setSelectedWords([]);
-    formikHelpers.resetForm();
   };
 
   const handleSkip = async () => {
