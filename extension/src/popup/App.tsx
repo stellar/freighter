@@ -4,7 +4,7 @@ import { combineReducers } from "redux";
 import { Provider } from "react-redux";
 
 import { metricsMiddleware } from "helpers/metrics";
-import { actibePublicKeyMiddleware } from "helpers/activePublicKeyMiddleware";
+import { activePublicKeyMiddleware } from "helpers/activePublicKeyMiddleware";
 
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
@@ -32,7 +32,7 @@ export const store = configureStore({
   middleware: (defaults) =>
     defaults({ serializableCheck: false }).concat(
       metricsMiddleware<AppState>(),
-      actibePublicKeyMiddleware<AppState>(),
+      activePublicKeyMiddleware<AppState>(),
     ),
 });
 
