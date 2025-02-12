@@ -342,17 +342,6 @@ export const TransactionDetails = ({
   const { scannedAsset: scannedDestAsset } = useScanAsset(destAssetToScan);
   const isDestAssetSuspicious = isAssetSuspicious(scannedDestAsset);
 
-  // user has refreshed the page and lost needed transaction data. Force them to start over
-  if (amount === "0") {
-    return (
-      <Navigate
-        to={{
-          pathname: ROUTES.account,
-        }}
-      />
-    );
-  }
-
   // load destination asset icons
   useEffect(() => {
     (async () => {
