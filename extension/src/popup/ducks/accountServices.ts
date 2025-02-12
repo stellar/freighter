@@ -24,6 +24,7 @@ import {
   signOut as signOutService,
   addTokenId as addTokenIdService,
   migrateAccounts as migrateAccountsService,
+  getIsAccountMismatch as getIsAccountMismatchService,
 } from "@shared/api/internal";
 import {
   Account,
@@ -473,6 +474,27 @@ export const migrateAccounts = createAsyncThunk<
   },
 );
 
+export const getIsAccountMismatch = createAsyncThunk<
+  { isAccountMismatch: boolean },
+  { activePublicKey: string },
+  { rejectValue: ErrorMessage }
+>("auth/getIsAccountMismatch", async ({ activePublicKey }, thunkApi) => {
+  let res = {
+    isAccountMismatch: false,
+  };
+
+  try {
+    res = await getIsAccountMismatchService({ activePublicKey });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    console.error("Failed when getting account mismatch: ", message);
+    return thunkApi.rejectWithValue({
+      errorMessage: message,
+    });
+  }
+  return res;
+});
+
 interface InitialState {
   allAccounts: Account[];
   migratedAccounts: MigratedAccount[];
@@ -484,6 +506,7 @@ interface InitialState {
   tokenIdList: string[];
   error: string;
   accountStatus: ActionStatus;
+  isAccountMismatch: boolean;
 }
 
 const initialState: InitialState = {
@@ -497,6 +520,7 @@ const initialState: InitialState = {
   tokenIdList: [],
   error: "",
   accountStatus: ActionStatus.IDLE,
+  isAccountMismatch: false,
 };
 
 const authSlice = createSlice({
@@ -826,6 +850,25 @@ const authSlice = createSlice({
         error: errorMessage,
       };
     });
+    builder.addCase(getIsAccountMismatch.fulfilled, (state, action) => {
+      const { isAccountMismatch } = action.payload || {
+        isAccountMismatch: false,
+      };
+
+      return {
+        ...state,
+        error: "",
+        isAccountMismatch,
+      };
+    });
+    builder.addCase(getIsAccountMismatch.rejected, (state, action) => {
+      const { errorMessage } = action.payload || { errorMessage: "" };
+
+      return {
+        ...state,
+        error: errorMessage,
+      };
+    });
   },
 });
 
@@ -886,6 +929,11 @@ export const hardwareWalletTypeSelector = createSelector(
 export const accountStatusSelector = createSelector(
   authSelector,
   (auth: InitialState) => auth.accountStatus,
+);
+
+export const isAccountMismatchSelector = createSelector(
+  authSelector,
+  (auth: InitialState) => auth.isAccountMismatch,
 );
 
 export const { clearApiError, setConnectingWalletType } = authSlice.actions;

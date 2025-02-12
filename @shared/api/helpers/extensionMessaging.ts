@@ -6,6 +6,7 @@ import {
   EXTERNAL_SERVICE_TYPES,
   SERVICE_TYPES,
 } from "../../constants/services";
+import { popupStoreFacade } from "./popupStoreFacade";
 import { Response } from "../types";
 
 interface Msg {
@@ -67,11 +68,21 @@ export const sendMessageToContentScript = (msg: Msg): Promise<Response> => {
 
 export const sendMessageToBackground = async (msg: Msg): Promise<Response> => {
   let res;
+
+  // grab the active public key from the popup and pass it along with every message.
+  // this will be used to determine if the popup is open to the correct account.
+  const extensionState = popupStoreFacade.currentStore?.getState();
+
+  const appendedMsg = {
+    ...msg,
+    activePublicKey: extensionState?.auth?.publicKey,
+  };
+
   if (DEV_SERVER) {
     // treat this as an external call because we're making the call from the browser, not the popup
-    res = await sendMessageToContentScript(msg);
+    res = await sendMessageToContentScript(appendedMsg);
   } else {
-    res = (await browser.runtime.sendMessage(msg)) as Response;
+    res = (await browser.runtime.sendMessage(appendedMsg)) as Response;
   }
 
   return res as Response;
