@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
 import {
-  Alert,
   Button,
   Card,
   Icon,
@@ -1405,7 +1404,7 @@ export const BlockaidAssetScanLabel = ({
 
   return (
     <BlockaidWarningModal
-      header={`This asset was flagged as ${blockaidData.result_type}`}
+      header={`This asset was flagged as ${blockaidData.result_type.toLowerCase()}`}
       description={blockaidData.features?.map((f) => f.description) || []}
       isWarning={isWarning}
       address={blockaidData.address}
@@ -1437,18 +1436,31 @@ export const BlockaidWarningModal = ({
   const isAsset = !!address;
 
   const WarningInfoBlock = ({ hasArrow = false }: { hasArrow?: boolean }) => (
-    <Alert
-      placement="inline"
-      variant={isWarning ? "warning" : "error"}
-      title={header}
+    <div
+      className={`ScamAssetWarning__box ${
+        isWarning ? "ScamAssetWarning__box--isWarning" : ""
+      }`}
+      data-testid="BlockaidWarningModal__alert"
     >
-      <BlockaidByLine
-        hasArrow={hasArrow}
-        handleClick={() => setIsModalActive(true)}
-        requestId={requestId}
-        address={address}
-      />
-    </Alert>
+      <div className="ScamAssetWarning__box__content">
+        <div className="Icon">
+          <img
+            className="ScamAssetWarning__box__icon"
+            src={isWarning ? IconWarningBlockaidYellow : IconWarningBlockaid}
+            alt="icon warning blockaid"
+          />
+        </div>
+        <div className="ScamAssetWarning__alert">
+          <div className="ScamAssetWarning__description">{header}</div>
+          <BlockaidByLine
+            hasArrow={hasArrow}
+            handleClick={() => setIsModalActive(true)}
+            requestId={requestId}
+            address={address}
+          />
+        </div>
+      </div>
+    </div>
   );
 
   const truncatedDescription = (desc: string) => {
