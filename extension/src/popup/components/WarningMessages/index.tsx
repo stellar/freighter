@@ -926,6 +926,7 @@ export const TokenWarning = ({
   isVerifiedToken,
   verifiedLists = [],
   handleAddToken,
+  isCustomToken,
 }: {
   domain: string;
   code: string;
@@ -933,6 +934,7 @@ export const TokenWarning = ({
   isVerifiedToken: boolean;
   verifiedLists?: string[];
   handleAddToken: null | (() => Promise<void>);
+  isCustomToken: boolean;
 }) => {
   const { t } = useTranslation();
   const warningRef = useRef<HTMLDivElement>(null);
@@ -988,8 +990,11 @@ export const TokenWarning = ({
                 <div className="TokenWarning__description__icon">
                   <Icon.User02 />
                 </div>
-                <div className="TokenWarning__description__text">
-                  {t("Add Asset Trustline")}
+                <div
+                  className="TokenWarning__description__text"
+                  data-testid="DescriptionLabel"
+                >
+                  {isCustomToken ? t("Add Token") : t("Add Asset Trustline")}
                 </div>
               </div>
             </div>
@@ -1065,7 +1070,7 @@ export const TokenWarning = ({
                     isSubmitting || submitStatus === ActionStatus.PENDING
                   }
                 >
-                  {t("Add asset")}
+                  {isCustomToken ? t("Add token") : t("Add asset")}
                 </Button>
               </div>{" "}
             </div>
