@@ -1404,7 +1404,7 @@ export const BlockaidAssetScanLabel = ({
 
   return (
     <BlockaidWarningModal
-      header={`This asset was flagged as ${blockaidData.result_type}`}
+      header={`This asset was flagged as ${blockaidData.result_type.toLowerCase()}`}
       description={blockaidData.features?.map((f) => f.description) || []}
       isWarning={isWarning}
       address={blockaidData.address}
