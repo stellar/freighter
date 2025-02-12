@@ -66,6 +66,18 @@ export const getIsSupportedSorobanOp = (
 export const getIsSwap = (operation: HorizonOperation) =>
   operation.type_i === 13 && operation.source_account === operation.to;
 
+export const getIsDustPayment = (
+  publicKey: string,
+  operation: HorizonOperation,
+) =>
+  getIsPayment(operation.type) &&
+  "asset_type" in operation &&
+  operation.asset_type === "native" &&
+  "to" in operation &&
+  operation.to === publicKey &&
+  "amount" in operation &&
+  new BigNumber(operation.amount).lte(new BigNumber(0.1));
+
 interface SortOperationsByAsset {
   operations: HorizonOperation[];
   balances: AssetType[] | SorobanBalance[];

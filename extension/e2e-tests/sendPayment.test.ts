@@ -135,7 +135,7 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   await page.getByText("Details").click({ force: true });
 
   await expect(page.getByText("Sent XLM")).toBeVisible();
-  await expect(page.getByTestId("asset-amount")).toContainText(".001 XLM");
+  await expect(page.getByTestId("asset-amount")).toContainText("0.001");
 
   await page.getByTestId("BackButton").click({ force: true });
   await page.getByTestId("BottomNav-link-account").click({ force: true });
@@ -275,7 +275,7 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   await page.getByText("Details").click({ force: true });
 
   await expect(page.getByText("Sent E2E")).toBeVisible();
-  await expect(page.getByTestId("asset-amount")).toContainText(".001 E2E");
+  await expect(page.getByTestId("asset-amount")).toContainText("0.001");
 });
 test.afterAll(async ({ page, extensionId }) => {
   if (

@@ -4,6 +4,8 @@ import {
   grantAccess,
   rejectAccess,
   signEntry,
+  addToken,
+  rejectToken,
   signTransaction,
   signBlob,
   rejectTransaction,
@@ -17,6 +19,17 @@ registerHandler<AppState>(grantAccess.fulfilled, () => {
 });
 registerHandler<AppState>(rejectAccess.fulfilled, () => {
   emitMetric(METRIC_NAMES.grantAccessFail);
+});
+registerHandler<AppState>(addToken.fulfilled, () => {
+  const metricsData: MetricsData = JSON.parse(
+    localStorage.getItem(METRICS_DATA) || "{}",
+  );
+  emitMetric(METRIC_NAMES.addToken, {
+    accountType: metricsData.accountType,
+  });
+});
+registerHandler<AppState>(rejectToken.fulfilled, () => {
+  emitMetric(METRIC_NAMES.rejectToken);
 });
 registerHandler<AppState>(signTransaction.fulfilled, () => {
   const metricsData: MetricsData = JSON.parse(

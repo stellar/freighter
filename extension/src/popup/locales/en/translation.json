@@ -35,7 +35,6 @@
       " Only utilize these features if you can understand and manage the potential security risks": "Advanced settings are not recommended for new or unexperienced users. Enabling these may impact the security of your wallets and result in loss of funds. Only utilize these features if you can understand and manage the potential security risks."
     }
   },
-  "ALL": "ALL",
   "Allow connecting to non-HTTPS networks": "Allow connecting to non-HTTPS networks",
   "Allow Freighter to collect anonymous information about usage": {
     " Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts": "Allow Freighter to collect anonymous information about usage. Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts."
@@ -168,6 +167,7 @@
   "Failed to fetch your account balances": "Failed to fetch your account balances.",
   "FEDERATION ADDRESS": "FEDERATION ADDRESS",
   "Fee": "Fee",
+  "Feedback?": "Feedback?",
   "Fees can vary depending on the network congestion": {
     " Please try using the suggested fee and try again": "Fees can vary depending on the network congestion. Please try using the suggested fee and try again."
   },
@@ -253,6 +253,7 @@
   "Learn more about transaction fees": "Learn more about transaction fees",
   "Learn more about trustlines": "Learn more about trustlines",
   "Leave Feedback": "Leave Feedback",
+  "Leave feedback about Blockaid warnings and messages": "Leave feedback about Blockaid warnings and messages",
   "Less common": "Less common",
   "Limit": "Limit",
   "LINKS": "LINKS",
@@ -355,7 +356,6 @@
   "Processing": "Processing",
   "Read before importing your key": "Read before importing your key",
   "Ready to migrate": "Ready to migrate",
-  "RECEIVED": "RECEIVED",
   "RECENT": "RECENT",
   "Recipient Stellar address": "Recipient Stellar address",
   "Recovery Phrase": "Recovery Phrase",
@@ -394,12 +394,12 @@
   "Sending to": "Sending to",
   "sent": "sent",
   "Sent": "Sent",
-  "SENT": "SENT",
   "Set default": "Set default",
   "Set Flags": "Set Flags",
   "SET MAX": "SET MAX",
   "Set recommended": "Set recommended",
   "Settings": "Settings",
+  "Should be benign": "Should be benign",
   "Show recovery phrase": "Show recovery phrase",
   "Sign": "Sign",
   "Sign anyway": "Sign anyway",
@@ -468,7 +468,6 @@
   "This transaction could not be completed": "This transaction could not be completed.",
   "This transaction is expected to fail": "This transaction is expected to fail",
   "This transaction was flagged as malicious": "This transaction was flagged as malicious",
-  "This transaction was flagged by Blockaid for the following reasons": "This transaction was flagged by Blockaid for the following reasons",
   "This will be used to unlock your wallet": "This will be used to unlock your wallet",
   "To": "To",
   "To access your wallet, click Freighter from your browser Extensions browser menu": "To access your wallet, click Freighter from your browser Extensions browser menu.",
@@ -483,7 +482,6 @@
   "Transaction fee": "Transaction fee",
   "Transaction Request": "Transaction Request",
   "Transaction timeout": "Transaction timeout",
-  "Transactions": "Transactions",
   "trustlines": "trustlines",
   "Trustor": "Trustor",
   "Type": "Type",
@@ -512,6 +510,7 @@
   "which is not available on Freighter": {
     " If you own this account, you can import it into Freighter to complete this request": "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request."
   },
+  "Wrong simulation result": "Wrong simulation result",
   "XDR": "XDR",
   "XLM": "XLM",
   "You are attempting to sign an arbitrary message": {

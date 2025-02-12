@@ -4,15 +4,24 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { captureException } from "@sentry/browser";
 import camelCase from "lodash/camelCase";
-import { Icon, Loader } from "@stellar/design-system";
+import {
+  Badge,
+  Icon,
+  Loader,
+  Asset as AssetSds,
+  Text,
+  TextProps,
+} from "@stellar/design-system";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
+import { Horizon } from "stellar-sdk";
 
 import { OPERATION_TYPES } from "constants/transaction";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { emitMetric } from "helpers/metrics";
+import { getStellarExpertUrl } from "popup/helpers/account";
 import {
   formatTokenAmount,
   getAttrsFromSorobanHorizonOp,
@@ -28,6 +37,9 @@ import {
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getTokenDetails } from "@shared/api/internal";
+import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
+
+import StellarLogo from "popup/assets/stellar-logo.png";
 
 import { TransactionDetailProps } from "../TransactionDetail";
 import "./styles.scss";
@@ -58,7 +70,6 @@ interface HistoryItemProps {
   accountBalances: AccountBalancesInterface;
   operation: HistoryItemOperation;
   publicKey: string;
-  url: string;
   networkDetails: NetworkDetails;
   setDetailViewProps: (props: TransactionDetailProps) => void;
   setIsDetailViewShowing: (isDetailViewShowing: boolean) => void;
@@ -68,7 +79,6 @@ export const HistoryItem = ({
   accountBalances,
   operation,
   publicKey,
-  url,
   networkDetails,
   setDetailViewProps,
   setIsDetailViewShowing,
@@ -80,6 +90,7 @@ export const HistoryItem = ({
     account,
     amount,
     asset_code: assetCode,
+    asset_issuer: assetIssuer,
     created_at: createdAt,
     id,
     to,
@@ -93,8 +104,12 @@ export const HistoryItem = ({
     isSwap = false,
   } = _op;
   let sourceAssetCode;
+  let sourceAssetIssuer: string;
   if ("source_asset_code" in operation) {
-    sourceAssetCode = operation.source_asset_code;
+    sourceAssetCode = operation.source_asset_code || "";
+  }
+  if ("source_asset_issuer" in operation) {
+    sourceAssetIssuer = operation.source_asset_issuer || "";
   }
   const operationType = camelCase(type) as keyof typeof OPERATION_TYPES;
   const opTypeStr = OPERATION_TYPES[operationType] || t("Transaction");
@@ -110,6 +125,8 @@ export const HistoryItem = ({
   const destAssetCode = assetCode || "XLM";
   const isInvokeHostFn = typeI === 24;
 
+  const stellarExpertUrl = getStellarExpertUrl(networkDetails);
+
   const transactionDetailPropsBase: TransactionDetailProps = {
     operation: _op,
     isCreateExternalAccount,
@@ -118,7 +135,7 @@ export const HistoryItem = ({
     isSwap,
     headerTitle: "",
     operationText: "",
-    externalUrl: `${url}/op/${id}`,
+    externalUrl: `${stellarExpertUrl}/op/${id}`,
     setIsDetailViewShowing,
   };
 
@@ -127,25 +144,185 @@ export const HistoryItem = ({
   const [rowText, setRowText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [IconComponent, setIconComponent] = useState(
-    (
-      <Icon.RefreshCcw01 className="HistoryItem__icon--default" />
-    ) as React.ReactElement | null,
+    null as React.ReactElement | null,
   );
-  const [BodyComponent, setBodyComponent] = useState(
+  const [AmountComponent, setAmountComponent] = useState(
     null as React.ReactElement | null,
   );
 
-  const renderBodyComponent = () => BodyComponent;
-  const renderIcon = () => IconComponent;
+  const renderIconComponent = () => {
+    if (IconComponent) {
+      return IconComponent;
+    }
+
+    return (
+      <div className="HistoryItem__icon__bordered">
+        <Icon.User01 />
+      </div>
+    );
+  };
+
+  const renderIconPlaceholder = (
+    tokenCode: string = "",
+    size: TextProps["size"] = "sm",
+  ) => (
+    <div className="HistoryItem__icon__bordered">
+      <Text
+        as="div"
+        size={size}
+        weight="bold"
+        addlClassName="HistoryItem--placeholder"
+      >
+        {tokenCode.slice(0, 2)}
+      </Text>
+    </div>
+  );
+
   /* eslint-disable react-hooks/exhaustive-deps */
   const translations = useCallback(t, []);
 
   useEffect(() => {
     const buildHistoryItem = async () => {
-      if (isSwap) {
-        setBodyComponent(
+      if (type === Horizon.HorizonApi.OperationResponseType.createAccount) {
+        // If you're not creating an external account then this means you're
+        // receiving some XLM to create(fund) your own account
+        const _isRecipient = !isCreateExternalAccount;
+        const paymentDifference = _isRecipient ? "+" : "-";
+        const formattedAmount = `${paymentDifference}${formatAmount(
+          new BigNumber(startingBalance).toString(),
+        )} ${destAssetCode}`;
+
+        setAmountComponent(
+          <Badge variant={_isRecipient ? "success" : "primary"} size="md">
+            {formattedAmount}
+          </Badge>,
+        );
+        setIconComponent(
+          <div className="HistoryItem__icon__bordered">
+            <Icon.User01 />
+            <div className="HistoryItem__icon__small HistoryItem--create-account">
+              {/* When you've received XLM to create your own account */}
+              {_isRecipient && <Icon.Plus />}
+              {/* When you've sent XLM to create external account */}
+              {!_isRecipient && <Icon.ArrowUp />}
+            </div>
+          </div>,
+        );
+        setRowText(translations("Create account"));
+        setDateText(
+          (_dateText) =>
+            `${
+              _isRecipient ? translations("Received") : translations("Sent")
+            } \u2022 ${date}`,
+        );
+        if (isCreateExternalAccount) {
+          setTxDetails((_state) => ({
+            ..._state,
+            headerTitle: translations("Create account"),
+            isPayment: true,
+            operation: {
+              ...operation,
+              // eslint-disable-next-line
+              asset_type: "native",
+              to: account,
+            } as any, // TODO: overloaded op type, native not valid
+            operationText: formattedAmount,
+          }));
+        } else {
+          setTxDetails((_state) => ({
+            ..._state,
+            headerTitle: translations("Create account"),
+            operationText: operationString,
+          }));
+        }
+      } else if (
+        type === Horizon.HorizonApi.OperationResponseType.changeTrust
+      ) {
+        const destIcon = await getIconUrlFromIssuer({
+          key: assetIssuer || "",
+          code: destAssetCode || "",
+          networkDetails,
+        });
+        setIconComponent(
           <>
-            {new BigNumber(amount).toFixed(2, 1)} {destAssetCode}
+            {destIcon && (
+              <AssetSds
+                size="lg"
+                variant="single"
+                sourceOne={{
+                  altText: "Add trustline token logo",
+                  image: destIcon,
+                }}
+              />
+            )}
+            {!destIcon && renderIconPlaceholder(destAssetCode)}
+            <div className="HistoryItem__icon__small HistoryItem--add-trustline">
+              <Icon.CheckCircle />
+            </div>
+          </>,
+        );
+        setRowText(translations("Add trustline"));
+        setTxDetails((_state) => ({
+          ..._state,
+          headerTitle: translations("Add trustline"),
+          operationText: operationString,
+        }));
+      } else if (isSwap) {
+        const formattedAmount = `${formatAmount(
+          new BigNumber(amount).toString(),
+        )} ${destAssetCode}`;
+        setAmountComponent(
+          <Badge variant="primary" size="md">
+            {formattedAmount}
+          </Badge>,
+        );
+        const destIcon =
+          destAssetCode === "XLM"
+            ? StellarLogo
+            : await getIconUrlFromIssuer({
+                key: assetIssuer || "",
+                code: destAssetCode || "",
+                networkDetails,
+              });
+        const sourceIcon =
+          srcAssetCode === "XLM"
+            ? StellarLogo
+            : await getIconUrlFromIssuer({
+                key: sourceAssetIssuer || "",
+                code: srcAssetCode || "",
+                networkDetails,
+              });
+        setIconComponent(
+          <>
+            <div className="HistoryItem__icon__swap-source">
+              {sourceIcon && (
+                <AssetSds
+                  size="md"
+                  variant="single"
+                  sourceOne={{
+                    altText: "Swap source token logo",
+                    image: sourceIcon,
+                  }}
+                />
+              )}
+              {!sourceIcon && renderIconPlaceholder(srcAssetCode, "xs")}
+            </div>
+            <div className="HistoryItem__icon__swap-dest">
+              {destIcon && (
+                <AssetSds
+                  size="md"
+                  variant="single"
+                  sourceOne={{
+                    altText: "Swap destination token logo",
+                    image: destIcon,
+                  }}
+                />
+              )}
+              {!destIcon && renderIconPlaceholder(destIcon, "xs")}
+            </div>
+            <div className="HistoryItem__icon__small HistoryItem--swap">
+              <Icon.RefreshCcw03 />
+            </div>
           </>,
         );
         setRowText(
@@ -154,6 +331,7 @@ export const HistoryItem = ({
             destAssetCode,
           }),
         );
+        setDateText((_dateText) => `${translations("Swapped")} \u2022 ${date}`);
         setTxDetails((_state) => ({
           ..._state,
           headerTitle: translations(
@@ -163,24 +341,52 @@ export const HistoryItem = ({
               destAssetCode,
             },
           ),
-          operationText: `+${new BigNumber(amount)} ${destAssetCode}`,
+          operationText: formattedAmount,
         }));
       } else if (isPayment) {
         // default to Sent if a payment to self
         const _isRecipient = to === publicKey && from !== publicKey;
         const paymentDifference = _isRecipient ? "+" : "-";
-        setBodyComponent(
-          <>
-            {paymentDifference}
-            {formatAmount(new BigNumber(amount).toString())} {destAssetCode}
-          </>,
+        const formattedAmount = `${paymentDifference}${formatAmount(
+          new BigNumber(amount).toString(),
+        )} ${destAssetCode}`;
+        setAmountComponent(
+          <Badge variant={_isRecipient ? "success" : "primary"} size="md">
+            {formattedAmount}
+          </Badge>,
         );
+        const destIcon =
+          destAssetCode === "XLM"
+            ? StellarLogo
+            : await getIconUrlFromIssuer({
+                key: assetIssuer || "",
+                code: destAssetCode || "",
+                networkDetails,
+              });
         setIconComponent(
-          _isRecipient ? (
-            <Icon.ArrowDown className="HistoryItem__icon--received" />
-          ) : (
-            <Icon.ArrowUp className="HistoryItem__icon--sent" />
-          ),
+          <>
+            {destIcon && (
+              <AssetSds
+                size="lg"
+                variant="single"
+                sourceOne={{
+                  altText: "Payment token logo",
+                  image: destIcon,
+                }}
+              />
+            )}
+            {!destIcon && renderIconPlaceholder(destAssetCode)}
+            {_isRecipient && (
+              <div className="HistoryItem__icon__small HistoryItem--received">
+                <Icon.ArrowDown />
+              </div>
+            )}
+            {!_isRecipient && (
+              <div className="HistoryItem__icon__small HistoryItem--sent">
+                <Icon.Send03 />
+              </div>
+            )}
+          </>,
         );
         setRowText(destAssetCode);
         setDateText(
@@ -195,39 +401,10 @@ export const HistoryItem = ({
           headerTitle: `${
             _isRecipient ? translations("Received") : translations("Sent")
           } ${destAssetCode}`,
-          operationText: `${paymentDifference}${new BigNumber(
-            amount,
-          )} ${destAssetCode}`,
-        }));
-      } else if (isCreateExternalAccount) {
-        setBodyComponent(
-          <>-{new BigNumber(startingBalance).toFixed(2, 1)} XLM</>,
-        );
-        setIconComponent(<Icon.ArrowUp className="HistoryItem__icon--sent" />);
-        setRowText("XLM");
-        setDateText((_dateText) => `${translations("Sent")} \u2022 ${date}`);
-        setTxDetails((_state) => ({
-          ..._state,
-          headerTitle: translations("Create Account"),
-          isPayment: true,
-          operation: {
-            ...operation,
-            // eslint-disable-next-line
-            asset_type: "native",
-            to: account,
-          } as any, // TODO: overloaded op type, native not valid
-          operationText: `-${new BigNumber(startingBalance)} XLM`,
+          operationText: formattedAmount,
         }));
       } else if (isInvokeHostFn) {
         const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
-        const balances =
-          accountBalances.balances || ({} as NonNullable<Balances>);
-
-        const tokenKey = getBalanceByKey(
-          attrs.contractId,
-          balances,
-          networkDetails,
-        );
 
         if (!attrs) {
           setRowText(operationString);
@@ -237,14 +414,30 @@ export const HistoryItem = ({
             operationText: operationString,
           }));
         } else if (attrs.fnName === SorobanTokenInterface.mint) {
-          const isRecieving = attrs.to === publicKey;
+          const balances =
+            accountBalances.balances || ({} as NonNullable<Balances>);
 
+          const tokenKey = getBalanceByKey(
+            attrs.contractId,
+            balances,
+            networkDetails,
+          );
+
+          const isReceiving = attrs.to === publicKey;
           setIconComponent(
-            isRecieving ? (
-              <Icon.ArrowDown className="HistoryItem__icon--received" />
-            ) : (
-              <Icon.RefreshCcw01 className="HistoryItem__icon--default" />
-            ),
+            <div className="HistoryItem__icon__bordered">
+              <Icon.User01 />
+              {isReceiving && (
+                <div className="HistoryItem__icon__small HistoryItem--received">
+                  <Icon.ArrowDown />
+                </div>
+              )}
+              {!isReceiving && (
+                <div className="HistoryItem__icon__small HistoryItem--sent">
+                  <Icon.Send03 />
+                </div>
+              )}
+            </div>,
           );
 
           // Minter does not need to have tokens to mint, and
@@ -270,7 +463,6 @@ export const HistoryItem = ({
               } else {
                 const _token = {
                   contractId: attrs.contractId,
-                  total: isRecieving ? attrs.amount : 0,
                   decimals: tokenDetailsResponse.decimals,
                   name: tokenDetailsResponse.name,
                   symbol: tokenDetailsResponse.symbol,
@@ -280,17 +472,23 @@ export const HistoryItem = ({
                   new BigNumber(attrs.amount),
                   _token.decimals,
                 );
-                setBodyComponent(
-                  <>
-                    {isRecieving && "+"}
-                    {formattedTokenAmount} {_token.symbol}
-                  </>,
-                );
 
+                const formattedAmount = `${
+                  isReceiving ? "+" : ""
+                }${formattedTokenAmount} ${_token.symbol}`;
+
+                setAmountComponent(
+                  <Badge
+                    variant={isReceiving ? "success" : "primary"}
+                    size="md"
+                  >
+                    {formattedAmount}
+                  </Badge>,
+                );
                 setDateText(
                   (_dateText) =>
                     `${
-                      isRecieving
+                      isReceiving
                         ? translations("Received")
                         : translations("Minted")
                     } \u2022 ${date}`,
@@ -307,8 +505,8 @@ export const HistoryItem = ({
                     _token.symbol
                   }`,
                   isPayment: false,
-                  isRecipient: isRecieving,
-                  operationText: `${formattedTokenAmount} ${_token.symbol}`,
+                  isRecipient: isReceiving,
+                  operationText: formattedAmount,
                 }));
               }
               setIsLoading(false);
@@ -316,16 +514,15 @@ export const HistoryItem = ({
               console.error(error);
               captureException(`Error fetching token details: ${error}`);
               setRowText(translations(capitalize(attrs.fnName)));
-              setBodyComponent(
-                <>
-                  {isRecieving && "+ "}
-                  Unknown
-                </>,
+              setAmountComponent(
+                <Badge variant={isReceiving ? "success" : "primary"} size="md">
+                  {`${isReceiving ? "+" : ""}${translations("Unknown")}`}
+                </Badge>,
               );
               setDateText(
                 (_dateText) =>
                   `${
-                    isRecieving
+                    isReceiving
                       ? translations("Received")
                       : translations("Minted")
                   } \u2022 ${date}`,
@@ -340,7 +537,7 @@ export const HistoryItem = ({
                 headerTitle: translations(capitalize(attrs.fnName)),
                 // manually set `isPayment` now that we've passed the above `isPayment` conditional
                 isPayment: false,
-                isRecipient: isRecieving,
+                isRecipient: isReceiving,
                 operationText: operationString,
               }));
               setIsLoading(false);
@@ -351,17 +548,18 @@ export const HistoryItem = ({
               new BigNumber(attrs.amount),
               decimals,
             );
-            setBodyComponent(
-              <>
-                {isRecieving && "+"}
-                {formattedTokenAmount} {token.code}
-              </>,
+            const formattedAmount = `${
+              isReceiving ? "+" : ""
+            }${formattedTokenAmount} ${token.code}`;
+            setAmountComponent(
+              <Badge variant={isReceiving ? "success" : "primary"} size="md">
+                {formattedAmount}
+              </Badge>,
             );
-
             setDateText(
               (_dateText) =>
                 `${
-                  isRecieving
+                  isReceiving
                     ? translations("Received")
                     : translations("Minted")
                 } \u2022 ${date}`,
@@ -378,13 +576,18 @@ export const HistoryItem = ({
                 token.code
               }`,
               isPayment: false,
-              isRecipient: isRecieving,
-              operationText: `${formattedTokenAmount} ${token.code}`,
+              isRecipient: isReceiving,
+              operationText: formattedAmount,
             }));
           }
         } else if (attrs.fnName === SorobanTokenInterface.transfer) {
           setIconComponent(
-            <Icon.ArrowUp className="HistoryItem__icon--sent" />,
+            <div className="HistoryItem__icon__bordered">
+              <Icon.User01 />
+              <div className="HistoryItem__icon__small HistoryItem--sent">
+                <Icon.Send03 />
+              </div>
+            </div>,
           );
           setIsLoading(true);
 
@@ -405,7 +608,8 @@ export const HistoryItem = ({
             }
 
             const { symbol, decimals } = tokenDetailsResponse!;
-            const code = symbol === "native" ? "XLM" : symbol;
+            const isNative = symbol === "native";
+            const code = isNative ? "XLM" : symbol;
             const formattedTokenAmount = formatTokenAmount(
               new BigNumber(attrs.amount),
               decimals,
@@ -413,18 +617,40 @@ export const HistoryItem = ({
             const _isRecipient =
               attrs.to === publicKey && attrs.from !== publicKey;
             const paymentDifference = _isRecipient ? "+" : "-";
-            setBodyComponent(
-              <>
-                {paymentDifference}
-                {formattedTokenAmount} {code}
-              </>,
+            const formattedAmount = `${paymentDifference}${formattedTokenAmount} ${code}`;
+            setAmountComponent(
+              <Badge variant={_isRecipient ? "success" : "primary"} size="md">
+                {formattedAmount}
+              </Badge>,
             );
             setIconComponent(
-              _isRecipient ? (
-                <Icon.ArrowDown className="HistoryItem__icon--received" />
-              ) : (
-                <Icon.ArrowUp className="HistoryItem__icon--sent" />
-              ),
+              <>
+                {isNative && (
+                  <AssetSds
+                    size="lg"
+                    variant="single"
+                    sourceOne={{
+                      altText: "Stellar token logo",
+                      image: StellarLogo,
+                    }}
+                  />
+                )}
+                {!isNative && (
+                  <div className="HistoryItem__icon__bordered">
+                    <Icon.User01 />
+                  </div>
+                )}
+                {_isRecipient && (
+                  <div className="HistoryItem__icon__small HistoryItem--received">
+                    <Icon.ArrowDown />
+                  </div>
+                )}
+                {!_isRecipient && (
+                  <div className="HistoryItem__icon__small HistoryItem--sent">
+                    <Icon.Send03 />
+                  </div>
+                )}
+              </>,
             );
             setRowText(code);
             setDateText(
@@ -439,7 +665,7 @@ export const HistoryItem = ({
               headerTitle: `${
                 _isRecipient ? translations("Received") : translations("Sent")
               } ${code}`,
-              operationText: `${paymentDifference}${formattedTokenAmount} ${code}`,
+              operationText: formattedAmount,
             }));
           } catch (error) {
             // falls back to only showing contract ID
@@ -477,6 +703,7 @@ export const HistoryItem = ({
     date,
     destAssetCode,
     from,
+    type,
     isCreateExternalAccount,
     isInvokeHostFn,
     isPayment,
@@ -503,25 +730,39 @@ export const HistoryItem = ({
       }}
     >
       <div className="HistoryItem__row">
-        {isLoading ? (
+        {isLoading && (
           <div className="HistoryItem__loader">
             <Loader size="2rem" />
           </div>
-        ) : (
-          <>
-            <div className="HistoryItem__icon">{renderIcon()}</div>
-            <div className="HistoryItem__operation">
-              {rowText}
-              <div className="HistoryItem__date">{dateText}</div>
+        )}
+        {!isLoading && (
+          <div className="HistoryItem__row HistoryItem--space-between">
+            <div className="HistoryItem__row">
+              <div className="HistoryItem__icon">{renderIconComponent()}</div>
+              <Text
+                as="div"
+                size="md"
+                weight="regular"
+                addlClassName="HistoryItem__description"
+              >
+                {rowText}
+                <Text
+                  as="div"
+                  size="xs"
+                  weight="regular"
+                  addlClassName="HistoryItem--date"
+                >
+                  {dateText}
+                </Text>
+              </Text>
             </div>
-
             <div
-              className="HistoryItem__payment"
-              data-testid="history-item-body-component"
+              className="HistoryItem__amount"
+              data-testid="history-item-amount-component"
             >
-              {renderBodyComponent()}
+              {AmountComponent}
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

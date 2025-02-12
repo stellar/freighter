@@ -26,6 +26,7 @@ export enum ROUTES {
   swapSettingsTimeout = "/swap/settings/timeout",
   swapConfirm = "/swap/confirm",
   addAccount = "/add-account",
+  addToken = "/add-token",
   signTransaction = "/sign-transaction",
   reviewAuthorization = "/review-auth",
   signMessage = "/sign-message",

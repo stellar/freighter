@@ -1,10 +1,10 @@
 ---
 id: addAsset
-title: Adding an Asset
+title: Manually adding an Asset
 slug: /add-asset
 ---
 
-## Adding a new asset to your account
+## Manually adding a new asset to your account
 
 If you would like to add an asset to your account balances, you can do that by clicking "Manage Assets" on the account balances screen.
 This will navigate you to a screen where you can see your current assets and an "Add Asset" button. You can click that to find and add another asset.
