@@ -12,7 +12,7 @@ import { AppDispatch } from "popup/App";
 
   This middleware will dispatch an action to check for mismatch on every single action that is dispatched.
 */
-export function actibePublicKeyMiddleware<State>(): Middleware<Action, State> {
+export function activePublicKeyMiddleware<State>(): Middleware<Action, State> {
   return ({ getState, dispatch }) =>
     (next) =>
     (action) => {
