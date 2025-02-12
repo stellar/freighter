@@ -53,11 +53,11 @@ export const ConfirmMnemonicPhrase = ({
 
   const updatePhrase = (target: HTMLInputElement) => {
     if (target.checked) {
-      return setSelectedWords((prevState) => [...prevState, target.name]);
+      return setSelectedWords((prevState) => [...prevState, target.value]);
     }
     return setSelectedWords((prevState) => {
       const currentArr = [...prevState];
-      currentArr.splice(currentArr.indexOf(target.name), 1);
+      currentArr.splice(currentArr.indexOf(target.value), 1);
       return [...currentArr];
     });
   };
@@ -113,9 +113,11 @@ export const ConfirmMnemonicPhrase = ({
               <div className="ConfirmMnemonicPhrase__card-wrapper">
                 <Card variant="primary">
                   <div className="ConfirmMnemonicPhrase__word-bubble-wrapper">
-                    {wordStateArr.map(([wordKey]) => (
+                    {wordStateArr.map(([wordKey], i) => (
                       <CheckButton
-                        key={wordKey}
+                        wordIndex={`word-${i}`}
+                        // eslint-disable-next-line react/no-array-index-key
+                        key={i}
                         onChange={(e) => {
                           handleChange(e);
                           updatePhrase(e.target as HTMLInputElement);
