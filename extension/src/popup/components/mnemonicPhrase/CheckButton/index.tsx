@@ -9,6 +9,7 @@ type CheckButtonProps = {
   wordKey: string;
   word: string;
   wordNumber: () => string;
+  wordIndex: string;
 };
 
 export const CheckButton = ({
@@ -17,15 +18,15 @@ export const CheckButton = ({
   wordKey,
   word,
   wordNumber,
+  wordIndex,
 }: CheckButtonProps) => (
   <div className="CheckButton__wrapper">
     <Field
       className="CheckButton"
-      id={wordKey}
+      id={wordIndex}
       onChange={(e: React.FormEvent) => onChange(e)}
       type="checkbox"
-      name={wordKey}
-      key={wordKey}
+      name={wordIndex}
       text={word}
       onKeyDown={(e: React.KeyboardEvent) => {
         if (onKeyDown) {
@@ -34,7 +35,7 @@ export const CheckButton = ({
       }}
       value={wordKey}
     />
-    <label className="ButtonLabel" htmlFor={wordKey} data-testid={word}>
+    <label className="ButtonLabel" htmlFor={wordIndex}>
       <div className="ButtonLabel__number">{wordNumber()}</div>{" "}
       <div className="ButtonLabel__word">{word}</div>
     </label>
