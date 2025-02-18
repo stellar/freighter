@@ -1,3 +1,5 @@
+@use "../../styles/utils.scss" as *;
+
 .ManageConnectedApps {
   display: flex;
   flex-direction: column;
@@ -27,5 +29,47 @@
     align-items: center;
     display: flex;
     justify-content: center;
+    padding-top: pxToRem(24px);
+  }
+
+  &__select {
+    padding-left: 1.625rem !important;
+  }
+
+  &__network {
+    position: absolute;
+    top: pxToRem(14px);
+    left: pxToRem(34px);
+  }
+
+  &__loader {
+    align-items: center;
+    display: flex;
+    height: 100%;
+    justify-content: center;
+  }
+
+  &__list {
+    margin-top: 1.5rem;
+  }
+
+  &__badge {
+    display: flex;
+    margin-bottom: 1rem;
+  }
+
+  &__title {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  &__subtitle {
+    font-size: 0.75rem;
+    color: var(--sds-clr-gray-11);
+    line-height: 1.125rem;
+  }
+
+  &__select-wrapper {
+    margin-top: pxToRem(4px);
   }
 }

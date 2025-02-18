@@ -30,7 +30,6 @@ import {
 import { MessageResponder } from "background/types";
 
 import {
-  ALLOWLIST_ID,
   ACCOUNT_NAME_LIST_ID,
   APPLICATION_ID,
   ASSETS_LISTS_ID,
@@ -73,6 +72,8 @@ import {
   addAccountName,
   getAccountNameList,
   getAllowList,
+  removeAllowListDomain,
+  setAllowListDomain,
   getKeyIdList,
   getIsMemoValidationEnabled,
   getIsExperimentalModeEnabled,
@@ -1199,15 +1200,18 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const { url = "" } = request;
     const sanitizedUrl = getUrlHostname(url);
     const punycodedDomain = getPunycodedDomain(sanitizedUrl);
+    const publicKey = publicKeySelector(sessionStore.getState());
+    const networkDetails = await getNetworkDetails();
 
     // TODO: right now we're just grabbing the last thing in the queue, but this should be smarter.
     // Maybe we need to search through responses to find a matching reponse :thinking_face
     const response = responseQueue.pop();
-    const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
-    const allowList = allowListStr.split(",");
-    allowList.push(punycodedDomain);
 
-    await localStore.setItem(ALLOWLIST_ID, allowList.join());
+    await setAllowListDomain({
+      publicKey,
+      networkDetails,
+      domain: punycodedDomain,
+    });
 
     if (typeof response === "function") {
       return response(url);
@@ -1494,9 +1498,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const saveAllowList = async () => {
-    const { allowList } = request;
+    const { domain, networkName } = request;
 
-    await localStore.setItem(ALLOWLIST_ID, allowList.join());
+    const publicKey = publicKeySelector(sessionStore.getState());
+
+    await removeAllowListDomain({ publicKey, networkName, domain });
 
     return {
       allowList: await getAllowList(),
