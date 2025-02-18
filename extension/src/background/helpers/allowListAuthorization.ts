@@ -1,9 +1,16 @@
-import { getPunycodedDomain } from "helpers/urls";
+import browser from "webextension-polyfill";
+
+import { getUrlHostname, getPunycodedDomain } from "helpers/urls";
 
 export const isSenderAllowed = ({
+  sender,
   allowListSegment,
-  domain,
 }: {
+  sender: browser.Runtime.MessageSender;
   allowListSegment: string[];
-  domain: string;
-}) => allowListSegment.includes(getPunycodedDomain(domain));
+}) => {
+  const { url: tabUrl = "" } = sender;
+  const domain = getUrlHostname(tabUrl);
+
+  return allowListSegment.includes(getPunycodedDomain(domain));
+};
