@@ -34,6 +34,7 @@ import {
 import {
   Account,
   AccountBalancesInterface,
+  AllowList,
   BalanceToMigrate,
   Balances,
   MigratableAccount,
@@ -75,6 +76,12 @@ export const GetTxStatus: {
   Success: SorobanRpc.Api.GetTransactionStatus.SUCCESS,
   NotFound: SorobanRpc.Api.GetTransactionStatus.NOT_FOUND,
   Failed: SorobanRpc.Api.GetTransactionStatus.FAILED,
+};
+
+export const DEFAULT_ALLOW_LIST: AllowList = {
+  [NETWORKS.PUBLIC]: {},
+  [NETWORKS.TESTNET]: {},
+  [NETWORKS.FUTURENET]: {},
 };
 
 export const createAccount = async (
@@ -1203,17 +1210,20 @@ export const showBackupPhrase = async (
 };
 
 export const saveAllowList = async ({
-  allowList,
+  domain,
+  networkName,
 }: {
-  allowList: string[];
-}): Promise<{ allowList: string[] }> => {
+  domain: string;
+  networkName: string;
+}): Promise<{ allowList: AllowList }> => {
   let response = {
-    allowList: [""],
+    allowList: DEFAULT_ALLOW_LIST,
   };
 
   try {
     response = await sendMessageToBackground({
-      allowList,
+      domain,
+      networkName,
       type: SERVICE_TYPES.SAVE_ALLOWLIST,
     });
   } catch (e) {
@@ -1233,7 +1243,7 @@ export const saveSettings = async ({
   isHideDustEnabled: boolean;
 }): Promise<Settings & IndexerSettings> => {
   let response = {
-    allowList: [""],
+    allowList: DEFAULT_ALLOW_LIST,
     isDataSharingAllowed: false,
     networkDetails: MAINNET_NETWORK_DETAILS,
     networksList: DEFAULT_NETWORKS,
