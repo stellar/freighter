@@ -31,6 +31,7 @@ import {
   getNetworkDetails,
   getNetworksList,
   getAllowListSegment,
+  setAllowListDomain,
 } from "background/helpers/account";
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -258,6 +259,8 @@ export const freighterApiMessageListener = (
       const publicKey = publicKeySelector(sessionStore.getState());
 
       const { tab, url: tabUrl = "" } = sender;
+      const domain = getUrlHostname(tabUrl);
+      const punycodedDomain = getPunycodedDomain(domain);
 
       const networkDetails = await getNetworkDetails();
       const allowListSegment = await getAllowListSegment({
@@ -265,7 +268,7 @@ export const freighterApiMessageListener = (
         networkDetails,
       });
       const isDomainListedAllowed = isSenderAllowed({
-        sender,
+        domain,
         allowListSegment,
       });
 
@@ -375,6 +378,13 @@ export const freighterApiMessageListener = (
         }
         const response = (signedTransaction: string, signerAddress: string) => {
           if (signedTransaction) {
+            if (!isDomainListedAllowed) {
+              setAllowListDomain({
+                publicKey,
+                domain: punycodedDomain,
+                networkDetails,
+              });
+            }
             resolve({ signedTransaction, signerAddress });
           }
 
@@ -415,7 +425,7 @@ export const freighterApiMessageListener = (
         networkDetails,
       });
       const isDomainListedAllowed = isSenderAllowed({
-        sender,
+        domain,
         allowListSegment,
       });
 
@@ -455,6 +465,13 @@ export const freighterApiMessageListener = (
 
         const response = (signedBlob: string, signerAddress: string) => {
           if (signedBlob) {
+            if (!isDomainListedAllowed) {
+              setAllowListDomain({
+                publicKey,
+                domain: punycodedDomain,
+                networkDetails,
+              });
+            }
             if (apiVersion && semver.gte(apiVersion, "4.0.0")) {
               resolve({
                 signedBlob: Buffer.from(signedBlob).toString("base64"),
@@ -501,7 +518,7 @@ export const freighterApiMessageListener = (
         networkDetails,
       });
       const isDomainListedAllowed = isSenderAllowed({
-        sender,
+        domain,
         allowListSegment,
       });
 
@@ -542,6 +559,13 @@ export const freighterApiMessageListener = (
         }
         const response = (signedAuthEntry: string) => {
           if (signedAuthEntry) {
+            if (!isDomainListedAllowed) {
+              setAllowListDomain({
+                publicKey,
+                domain: punycodedDomain,
+                networkDetails,
+              });
+            }
             resolve({ signedAuthEntry });
           }
 
