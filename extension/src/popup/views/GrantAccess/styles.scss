@@ -1,8 +1,17 @@
+@use "../../styles/utils.scss" as *;
+
 .GrantAccess {
   &__SigningWith {
     display: flex;
     flex-direction: column;
     min-width: 300px;
+  }
+
+  &__network {
+    align-items: center;
+    display: flex;
+    font-size: pxToRem(14);
+    margin-top: pxToRem(10);
   }
 
   &__PublicKey {
