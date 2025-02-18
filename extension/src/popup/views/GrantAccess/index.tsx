@@ -10,7 +10,11 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { ButtonsContainer, ModalWrapper } from "popup/basics/Modal";
 import { DomainScanModalInfo } from "popup/components/ModalInfo";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
+import {
+  settingsNetworkDetailsSelector,
+  settingsNetworksListSelector,
+} from "popup/ducks/settings";
 import { useScanSite } from "popup/helpers/blockaid";
 
 import "popup/metrics/access";
@@ -26,6 +30,7 @@ export const GrantAccess = () => {
   const domain = getUrlHostname(url);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const networksList = useSelector(settingsNetworksListSelector);
   const { scanSite, isLoading, data } = useScanSite();
 
   useEffect(() => {
@@ -72,6 +77,15 @@ export const GrantAccess = () => {
               data-testid="grant-access-view"
             >
               <h5>Connecting with</h5>
+              <div className="GrantAccess__network">
+                <NetworkIcon
+                  index={networksList.findIndex(
+                    ({ networkName: currNetworkName }) =>
+                      currNetworkName === networkDetails.networkName,
+                  )}
+                />
+                <span>{networkDetails.networkName}</span>
+              </div>
               <div className="GrantAccess__PublicKey">
                 <KeyIdenticon publicKey={publicKey} />
               </div>

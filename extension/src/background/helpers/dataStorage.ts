@@ -299,20 +299,28 @@ export const migrateAllowlistToKeyNetworkSchema = async () => {
 
   if (!storageVersion || semver.lt(storageVersion, "4.6.0")) {
     const currentAllowlist = await localStore.getItem(ALLOWLIST_ID);
+    const lastUsedAccount = await localStore.getItem(LAST_USED_ACCOUNT);
+    let allowlistByKey = {};
 
-    if (currentAllowlist) {
-      const lastUsedAccount = await localStore.getItem(LAST_USED_ACCOUNT);
+    if (currentAllowlist && lastUsedAccount) {
       const allowlistArr = currentAllowlist.split(",").slice(1);
 
-      const allowlistByKey = {
+      allowlistByKey = {
         [NETWORK_NAMES.PUBNET]: {},
         [NETWORK_NAMES.TESTNET]: {
           [lastUsedAccount]: allowlistArr,
         },
         [NETWORK_NAMES.FUTURENET]: {},
       };
-      await localStore.setItem(ALLOWLIST_ID, allowlistByKey);
+    } else {
+      allowlistByKey = {
+        [NETWORK_NAMES.PUBNET]: {},
+        [NETWORK_NAMES.TESTNET]: {},
+        [NETWORK_NAMES.FUTURENET]: {},
+      };
     }
+
+    await localStore.setItem(ALLOWLIST_ID, allowlistByKey);
 
     await migrateDataStorageVersion("4.6.0");
   }
