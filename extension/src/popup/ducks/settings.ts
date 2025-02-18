@@ -16,6 +16,7 @@ import {
   editCustomNetwork as editCustomNetworkService,
   addAssetsList as addAssetsListService,
   modifyAssetsList as modifyAssetsListService,
+  DEFAULT_ALLOW_LIST,
 } from "@shared/api/internal";
 import {
   NETWORKS,
@@ -30,6 +31,7 @@ import {
 } from "@shared/constants/soroban/token";
 
 import {
+  AllowList,
   Settings,
   IndexerSettings,
   SettingsState,
@@ -43,7 +45,7 @@ interface ErrorMessage {
 }
 
 const settingsInitialState: Settings = {
-  allowList: [],
+  allowList: DEFAULT_ALLOW_LIST,
   isDataSharingAllowed: false,
   networkDetails: {
     network: "",
@@ -84,17 +86,19 @@ export const loadSettings = createAsyncThunk("settings/loadSettings", () =>
 );
 
 export const saveAllowList = createAsyncThunk<
-  { allowList: string[] },
+  { allowList: AllowList },
   {
-    allowList: string[];
+    domain: string;
+    networkName: string;
   },
   { rejectValue: ErrorMessage }
->("settings/saveAllowList", async ({ allowList }, thunkApi) => {
+>("settings/saveAllowList", async ({ domain, networkName }, thunkApi) => {
   let res = { allowList: settingsInitialState.allowList };
 
   try {
     res = await saveAllowListService({
-      allowList,
+      domain,
+      networkName,
     });
   } catch (e) {
     console.error(e);
@@ -286,7 +290,7 @@ const settingsSlice = createSlice({
       (
         state,
         action: PayloadAction<{
-          allowList: string[];
+          allowList: AllowList;
         }>,
       ) => {
         const { allowList } = action?.payload || {

@@ -79,6 +79,7 @@ export const GrantAccess = () => {
             {isMalicious ? (
               <ButtonsContainer>
                 <Button
+                  data-testid="grant-access-connect-anyway-button"
                   size="md"
                   isFullWidth
                   variant="error"
@@ -107,6 +108,7 @@ export const GrantAccess = () => {
                   {t("Cancel")}
                 </Button>
                 <Button
+                  data-testid="grant-access-connect-button"
                   size="md"
                   isFullWidth
                   variant="secondary"
