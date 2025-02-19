@@ -12,42 +12,30 @@ import {
   signFreighterSorobanTransaction as internalSignFreighterSorobanTransaction,
   addRecentAddress as internalAddRecentAddress,
   loadRecentAddresses as internalLoadRecentAddresses,
-  getAccountIndexerBalances as internalgetAccountIndexerBalances,
-  getAccountBalancesStandalone as internalGetAccountBalancesStandalone,
   getAssetIcons as getAssetIconsService,
   getAssetDomains as getAssetDomainsService,
   getMemoRequiredAccounts as internalGetMemoRequiredAccounts,
   removeTokenId as internalRemoveTokenId,
   submitFreighterTransaction as internalSubmitFreighterTransaction,
   submitFreighterSorobanTransaction as internalSubmitFreighterSorobanTransaction,
-  getHiddenAssets as internalGetHiddenAssets,
 } from "@shared/api/internal";
 
 import {
-  AccountBalancesInterface,
   AssetIcons,
   AssetDomains,
   Balances,
   ErrorMessage,
-  AccountType,
   ActionStatus,
   MemoRequiredAccount,
   BalanceToMigrate,
   SoroswapToken,
-  BalanceMap,
 } from "@shared/api/types";
 
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 
-import {
-  getCanonicalFromAsset,
-  isMainnet as isMainnetHelper,
-} from "helpers/stellar";
-import { METRICS_DATA } from "constants/localStorageTypes";
-import { MetricsData, emitMetric } from "helpers/metrics";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { getCanonicalFromAsset } from "helpers/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
 import {
@@ -55,7 +43,6 @@ import {
   getSoroswapTokens as getSoroswapTokensService,
 } from "popup/helpers/sorobanSwap";
 import { hardwareSign, hardwareSignAuth } from "popup/helpers/hardwareConnect";
-import { filterHiddenBalances } from "popup/helpers/account";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -104,15 +91,13 @@ export const submitFreighterTransaction = createAsyncThunk<
   }
 >(
   "submitFreighterTransaction",
-  async ({ publicKey, signedXDR, networkDetails }, thunkApi) => {
+  async ({ signedXDR, networkDetails }, thunkApi) => {
     if (isCustomNetwork(networkDetails)) {
       try {
         const txRes = await internalSubmitFreighterTransaction({
           signedXDR,
           networkDetails,
         });
-
-        thunkApi.dispatch(getAccountBalances({ publicKey, networkDetails }));
 
         return txRes;
       } catch (e) {
@@ -171,15 +156,13 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
   }
 >(
   "submitFreighterSorobanTransaction",
-  async ({ publicKey, signedXDR, networkDetails }, thunkApi) => {
+  async ({ signedXDR, networkDetails }, thunkApi) => {
     if (isCustomNetwork(networkDetails)) {
       try {
         const txRes = await internalSubmitFreighterSorobanTransaction({
           signedXDR,
           networkDetails,
         });
-
-        thunkApi.dispatch(getAccountBalances({ publicKey, networkDetails }));
 
         return txRes;
       } catch (e) {
@@ -320,40 +303,6 @@ export const loadRecentAddresses = createAsyncThunk<
   }
 });
 
-const storeBalanceMetricData = (publicKey: string, accountFunded: boolean) => {
-  const metricsData: MetricsData = JSON.parse(
-    localStorage.getItem(METRICS_DATA) || "{}",
-  );
-  const accountType = metricsData.accountType;
-
-  if (accountFunded && accountType === AccountType.HW) {
-    metricsData.hwFunded = true;
-  }
-  if (accountFunded && accountType === AccountType.IMPORTED) {
-    metricsData.importedFunded = true;
-  }
-  if (accountType === AccountType.FREIGHTER) {
-    // check if we found a previously unfunded freighter account for metrics
-    const unfundedFreighterAccounts =
-      metricsData.unfundedFreighterAccounts || [];
-    const idx = unfundedFreighterAccounts.indexOf(publicKey);
-
-    if (accountFunded) {
-      metricsData.freighterFunded = true;
-      if (idx !== -1) {
-        emitMetric(METRIC_NAMES.freighterAccountFunded, { publicKey });
-        unfundedFreighterAccounts.splice(idx, 1);
-      }
-    }
-    if (!accountFunded && idx === -1) {
-      unfundedFreighterAccounts.push(publicKey);
-    }
-    metricsData.unfundedFreighterAccounts = unfundedFreighterAccounts;
-  }
-
-  localStorage.setItem(METRICS_DATA, JSON.stringify(metricsData));
-};
-
 export const removeTokenId = createAsyncThunk<
   void,
   {
@@ -368,75 +317,6 @@ export const removeTokenId = createAsyncThunk<
   } catch (e) {
     console.error(e);
     thunkApi.rejectWithValue({ errorMessage: e as string });
-  }
-});
-
-export const getAccountBalances = createAsyncThunk<
-  AccountBalancesInterface,
-  {
-    publicKey: string;
-    networkDetails: NetworkDetails;
-    showHidden?: boolean;
-  },
-  { rejectValue: ErrorMessage }
->(
-  "getAccountBalances",
-  async ({ publicKey, networkDetails, showHidden = false }, thunkApi) => {
-    try {
-      let balances: AccountBalancesInterface;
-
-      const isMainnet = isMainnetHelper(networkDetails);
-      const hiddenAssets = await internalGetHiddenAssets();
-
-      if (isCustomNetwork(networkDetails)) {
-        balances = await internalGetAccountBalancesStandalone({
-          publicKey,
-          networkDetails,
-          isMainnet,
-        });
-      } else {
-        balances = await internalgetAccountIndexerBalances(
-          publicKey,
-          networkDetails,
-        );
-      }
-
-      storeBalanceMetricData(publicKey, balances.isFunded || false);
-      const filteredBalances = showHidden
-        ? balances.balances
-        : filterHiddenBalances(
-            balances.balances as NonNullable<BalanceMap>,
-            hiddenAssets.hiddenAssets,
-          );
-      return {
-        ...balances,
-        balances: filteredBalances,
-      };
-    } catch (e) {
-      return thunkApi.rejectWithValue({ errorMessage: e as string });
-    }
-  },
-);
-
-export const getDestinationBalances = createAsyncThunk<
-  AccountBalancesInterface,
-  {
-    publicKey: string;
-    networkDetails: NetworkDetails;
-  },
-  { rejectValue: ErrorMessage }
->("getDestinationBalances", async ({ publicKey, networkDetails }, thunkApi) => {
-  try {
-    if (isCustomNetwork(networkDetails)) {
-      return await internalGetAccountBalancesStandalone({
-        publicKey,
-        networkDetails,
-        isMainnet: isMainnetHelper(networkDetails),
-      });
-    }
-    return await internalgetAccountIndexerBalances(publicKey, networkDetails);
-  } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e as string });
   }
 });
 
@@ -608,8 +488,6 @@ export enum AssetSelectType {
 }
 interface InitialState {
   submitStatus: ActionStatus;
-  accountBalanceStatus: ActionStatus;
-  destinationAccountBalanceStatus: ActionStatus;
   hardwareWalletData: HardwareWalletData;
   response:
     | Horizon.HorizonApi.TransactionResponse
@@ -621,8 +499,6 @@ interface InitialState {
     response: SorobanRpc.Api.SimulateTransactionSuccessResponse | null;
     preparedTransaction: string | null;
   };
-  accountBalances: AccountBalancesInterface;
-  destinationBalances: AccountBalancesInterface;
   assetIcons: AssetIcons;
   assetDomains: AssetDomains;
   soroswapTokens: SoroswapToken[];
@@ -635,8 +511,6 @@ interface InitialState {
 
 export const initialState: InitialState = {
   submitStatus: ActionStatus.IDLE,
-  accountBalanceStatus: ActionStatus.IDLE,
-  destinationAccountBalanceStatus: ActionStatus.IDLE,
   response: null,
   error: undefined,
   transactionData: {
@@ -666,16 +540,6 @@ export const initialState: InitialState = {
     transactionXDR: "",
     shouldSubmit: true,
   },
-  accountBalances: {
-    balances: null,
-    isFunded: false,
-    subentryCount: 0,
-  },
-  destinationBalances: {
-    balances: null,
-    isFunded: true,
-    subentryCount: 0,
-  },
   assetIcons: {},
   assetDomains: {},
   soroswapTokens: [],
@@ -691,14 +555,6 @@ const transactionSubmissionSlice = createSlice({
   initialState,
   reducers: {
     resetSubmission: () => initialState,
-    resetAccountBalanceStatus: (state) => {
-      state.accountBalanceStatus = initialState.accountBalanceStatus;
-      state.accountBalances = initialState.accountBalances;
-    },
-    resetDestinationAmount: (state) => {
-      state.transactionData.destinationAmount =
-        initialState.transactionData.destinationAmount;
-    },
     resetSubmitStatus: (state) => {
       state.submitStatus = initialState.submitStatus;
     },
@@ -824,22 +680,6 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.destinationAmount =
         initialState.transactionData.destinationAmount;
     });
-    builder.addCase(getAccountBalances.pending, (state) => {
-      state.accountBalanceStatus = ActionStatus.PENDING;
-      state.accountBalances = initialState.accountBalances;
-    });
-    builder.addCase(getAccountBalances.rejected, (state, action) => {
-      state.error = action.payload;
-      state.accountBalanceStatus = ActionStatus.ERROR;
-    });
-    builder.addCase(getAccountBalances.fulfilled, (state, action) => {
-      state.accountBalances = action.payload;
-      state.accountBalanceStatus = ActionStatus.SUCCESS;
-    });
-    builder.addCase(getDestinationBalances.fulfilled, (state, action) => {
-      state.destinationBalances = action.payload;
-      state.destinationAccountBalanceStatus = ActionStatus.SUCCESS;
-    });
     builder.addCase(getAssetIcons.fulfilled, (state, action) => {
       const assetIcons = action.payload || {};
 
@@ -857,7 +697,7 @@ const transactionSubmissionSlice = createSlice({
       };
     });
     builder.addCase(getSoroswapTokens.fulfilled, (state, action) => {
-      const soroswapTokens = action.payload || {};
+      const soroswapTokens = action.payload;
 
       return {
         ...state,
@@ -907,8 +747,6 @@ const transactionSubmissionSlice = createSlice({
 
 export const {
   resetSubmission,
-  resetAccountBalanceStatus,
-  resetDestinationAmount,
   resetSubmitStatus,
   saveDestination,
   saveFederationAddress,
