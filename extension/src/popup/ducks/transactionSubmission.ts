@@ -34,6 +34,7 @@ import {
   MemoRequiredAccount,
   BalanceToMigrate,
   SoroswapToken,
+  BalanceMap,
 } from "@shared/api/types";
 
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
@@ -382,7 +383,7 @@ export const getAccountBalances = createAsyncThunk<
   "getAccountBalances",
   async ({ publicKey, networkDetails, showHidden = false }, thunkApi) => {
     try {
-      let balances;
+      let balances: AccountBalancesInterface;
 
       const isMainnet = isMainnetHelper(networkDetails);
       const hiddenAssets = await internalGetHiddenAssets();
@@ -403,8 +404,10 @@ export const getAccountBalances = createAsyncThunk<
       storeBalanceMetricData(publicKey, balances.isFunded || false);
       const filteredBalances = showHidden
         ? balances.balances
-        : // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          filterHiddenBalances(balances.balances, hiddenAssets.hiddenAssets);
+        : filterHiddenBalances(
+            balances.balances as NonNullable<BalanceMap>,
+            hiddenAssets.hiddenAssets,
+          );
       return {
         ...balances,
         balances: filteredBalances,

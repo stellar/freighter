@@ -590,7 +590,7 @@ export const getAccountBalancesStandalone = async ({
       balances,
       isFunded: false,
       subentryCount,
-    };
+    } as AccountBalancesInterface;
   }
 
   // Get token balances to combine with classic balances
@@ -652,7 +652,7 @@ export const getAccountBalancesStandalone = async ({
     balances: { ...balances, ...tokenBalances },
     isFunded,
     subentryCount,
-  };
+  } as AccountBalancesInterface;
 };
 
 export const getAccountHistoryStandalone = async ({
@@ -776,6 +776,21 @@ export const getAccountHistory = async (
     publicKey,
     networkDetails,
   });
+};
+
+export const getAccountBalances = async (
+  publicKey: string,
+  networkDetails: NetworkDetails,
+  isMainnet: boolean,
+) => {
+  if (isCustomNetwork(networkDetails)) {
+    return await getAccountBalancesStandalone({
+      publicKey,
+      networkDetails,
+      isMainnet,
+    });
+  }
+  return await getAccountIndexerBalances(publicKey, networkDetails);
 };
 
 export const getTokenDetails = async ({
