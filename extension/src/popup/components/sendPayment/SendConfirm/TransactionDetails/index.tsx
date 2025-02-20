@@ -590,7 +590,6 @@ export const TransactionDetails = ({
               {txDetailsData.data!.scanResult && (
                 <BlockaidTxScanLabel
                   scanResult={txDetailsData.data!.scanResult}
-                  isPopup
                 />
               )}
               {submission.submitStatus === ActionStatus.IDLE && (

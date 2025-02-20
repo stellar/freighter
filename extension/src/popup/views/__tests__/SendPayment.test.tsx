@@ -181,22 +181,36 @@ describe.skip("SendPayment", () => {
   });
 
   it("sending non-native asset on Mainnet with Blockaid validation and asset warnings", async () => {
-    jest.spyOn(BlockAidHelpers, "scanAsset").mockImplementation(() =>
-      Promise.resolve({
-        address: "",
-        chain: "stellar",
-        attack_types: {},
-        fees: {},
-        malicious_score: "0.5",
-        metadata: {},
-        financial_stats: {},
-        trading_limits: {},
-        result_type: "Malicious",
-        features: [
-          { description: "", feature_id: "KNOWN_MALICIOUS", type: "Malicious" },
-        ],
-      }),
-    );
+    jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
+      const scanTxResult = {
+        simulation: {
+          status: "Success",
+        } as any,
+        validation: {
+          classification: "",
+          features: [
+            {
+              feature_id: "KNOWN_MALICIOUS",
+              type: "Malicious",
+              address: "baz",
+              description: "foo",
+            },
+          ] as any,
+          description: "foo",
+          reason: "",
+          result_type: "Malicious" as any,
+          status: "Success" as any,
+        },
+        request_id: "123",
+      };
+      return {
+        scanTx: () => Promise.resolve(null),
+        isLoading: false,
+        data: scanTxResult,
+        error: null,
+        setLoading: () => {},
+      };
+    });
     await testPaymentFlow(
       "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
       true,
@@ -225,6 +239,7 @@ describe.skip("SendPayment", () => {
           result_type: "Malicious" as any,
           status: "Success" as any,
         },
+        request_id: "123",
       };
       return {
         scanTx: () => Promise.resolve(null),
@@ -362,6 +377,7 @@ const testPaymentFlow = async (
         screen.getByTestId("BlockaidWarningModal__button__asset"),
       ).toBeDefined();
 
+      await fireEvent.click(screen.getByTestId("BlockaidByLine__arrow__tx"));
       expect(screen.getByTestId("BlockaidWarningModal__tx")).toBeDefined();
       if (hasSimError) {
         expect(
@@ -375,9 +391,7 @@ const testPaymentFlow = async (
 
       await fireEvent.click(screen.getByTestId("BlockaidWarningModal__button"));
 
-      await fireEvent.click(
-        screen.getByTestId("BlockaidWarningModal__button__asset"),
-      );
+      await fireEvent.click(screen.getByTestId("BlockaidByLine__arrow__asset"));
       expect(screen.getByTestId("BlockaidWarningModal__asset")).toBeDefined();
       expect(
         screen.getByTestId("BlockaidWarningModal__asset"),
