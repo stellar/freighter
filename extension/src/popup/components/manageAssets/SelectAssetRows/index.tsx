@@ -19,6 +19,7 @@ import {
   formatDomain,
   getAssetFromCanonical,
 } from "helpers/stellar";
+import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getTokenBalance, isContractId } from "popup/helpers/soroban";
 import { Balance, Balances, SorobanBalance } from "@shared/api/types";
 import { formatAmount } from "popup/helpers/formatters";
@@ -27,16 +28,17 @@ import { useIsSoroswapEnabled, useIsSwap } from "popup/helpers/useIsSwap";
 import "./styles.scss";
 
 interface SelectAssetRowsProps {
+  balances: AccountBalances;
   assetRows: ManageAssetCurrency[];
 }
 
-export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
-  const {
-    accountBalances: { balances = {} },
-    assetSelect,
-    soroswapTokens,
-    transactionData,
-  } = useSelector(transactionSubmissionSelector);
+export const SelectAssetRows = ({
+  assetRows,
+  balances,
+}: SelectAssetRowsProps) => {
+  const { assetSelect, soroswapTokens, transactionData } = useSelector(
+    transactionSubmissionSelector,
+  );
   const dispatch: AppDispatch = useDispatch();
   const history = useHistory();
   const isSoroswapEnabled = useIsSoroswapEnabled();

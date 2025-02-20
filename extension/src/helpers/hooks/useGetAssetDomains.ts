@@ -14,7 +14,13 @@ import { isAssetSuspicious } from "../../popup/helpers/blockaid";
 import { getNativeContractDetails } from "../../popup/helpers/searchAsset";
 import { useIsSoroswapEnabled, useIsSwap } from "../../popup/helpers/useIsSwap";
 import { getAssetDomain } from "../../popup/helpers/getAssetDomain";
-import { useGetBalances } from "./useGetBalances";
+import { AccountBalances, useGetBalances } from "./useGetBalances";
+
+interface AssetDomains {
+  balances: AccountBalances;
+  domains: ManageAssetCurrency[];
+  isManagingAssets: boolean;
+}
 
 export function useGetAssetDomains(
   publicKey: string,
@@ -33,7 +39,7 @@ export function useGetAssetDomains(
   const isManagingAssets = assetSelect.type === AssetSelectType.MANAGE;
 
   const [state, dispatch] = useReducer(
-    reducer<ManageAssetCurrency[], unknown>,
+    reducer<AssetDomains, unknown>,
     initialState,
   );
   const { fetchData: fetchBalances } = useGetBalances(
@@ -47,7 +53,7 @@ export function useGetAssetDomains(
     try {
       const balances = await fetchBalances();
 
-      const payload = [] as ManageAssetCurrency[];
+      const domains = [] as ManageAssetCurrency[];
       // TODO: cache home domain when getting asset icon
       // https://github.com/stellar/freighter/issues/410
       // eslint-disable-next-line @typescript-eslint/prefer-for-of
@@ -94,7 +100,7 @@ export function useGetAssetDomains(
             }
           }
 
-          payload.push({
+          domains.push({
             code,
             issuer: issuer.key,
             image: balances.icons[getCanonicalFromAsset(code, issuer.key)],
@@ -104,7 +110,7 @@ export function useGetAssetDomains(
           });
           // include native asset for asset dropdown selection
         } else if (!isManagingAssets) {
-          payload.push({
+          domains.push({
             code,
             issuer: "",
             image: "",
@@ -128,7 +134,7 @@ export function useGetAssetDomains(
             !balances[canonical] &&
             token.contract !== nativeContractDetails.contract
           ) {
-            payload.push({
+            domains.push({
               code: token.code,
               issuer: token.contract,
               image: token.icon,
@@ -139,6 +145,7 @@ export function useGetAssetDomains(
         });
       }
 
+      const payload = { domains, isManagingAssets, balances };
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
