@@ -17,6 +17,7 @@ const routeToEventName = {
   [ROUTES.connectWallet]: METRIC_NAMES.viewConnectWallet,
   [ROUTES.connectWalletPlugin]: METRIC_NAMES.viewConnectWalletPlugin,
   [ROUTES.connectDevice]: METRIC_NAMES.viewConnectDevice,
+  [ROUTES.addToken]: METRIC_NAMES.viewAddToken,
   [ROUTES.signMessage]: METRIC_NAMES.viewSignMessage,
   [ROUTES.signTransaction]: METRIC_NAMES.viewSignTransaction,
   [ROUTES.reviewAuthorization]: METRIC_NAMES.viewReviewAuthorization,
@@ -99,6 +100,14 @@ registerHandler<AppState>(navigate, (_, a) => {
     };
 
     emitMetric(eventName, METRIC_OPTION_DOMAIN);
+  } else if (pathname === ROUTES.addToken) {
+    const { url } = parsedSearchParam(search);
+    const METRIC_OPTIONS = {
+      domain: getUrlDomain(url),
+      subdomain: getUrlHostname(url),
+    };
+
+    emitMetric(eventName, METRIC_OPTIONS);
   } else if (pathname === ROUTES.signTransaction) {
     const { url } = parsedSearchParam(search);
     const info = getTransactionInfo(search);

@@ -234,6 +234,8 @@ export const subscribeAccount = async (publicKey: string) => {
 
   try {
     const networkDetails = await getNetworkDetails();
+
+    /* eslint-disable @typescript-eslint/naming-convention */
     const options = {
       method: "POST",
       headers: {
@@ -244,6 +246,8 @@ export const subscribeAccount = async (publicKey: string) => {
         network: networkDetails.network,
       }),
     };
+    /* eslint-enable @typescript-eslint/naming-convention */
+
     const res = await fetch(`${INDEXER_URL}/subscription/account`, options);
     const subsByKeyId = {
       ...hasAccountSubByKeyId,
@@ -263,12 +267,17 @@ export const subscribeAccount = async (publicKey: string) => {
   return { publicKey };
 };
 
-export const subscribeTokenBalance = async (
-  publicKey: string,
-  contractId: string,
-) => {
+export const subscribeTokenBalance = async ({
+  publicKey,
+  contractId,
+  network,
+}: {
+  publicKey: string;
+  contractId: string;
+  network: string;
+}) => {
   try {
-    const networkDetails = await getNetworkDetails();
+    /* eslint-disable @typescript-eslint/naming-convention */
     const options = {
       method: "POST",
       headers: {
@@ -276,11 +285,12 @@ export const subscribeTokenBalance = async (
       },
       body: JSON.stringify({
         pub_key: publicKey,
-
         contract_id: contractId,
-        network: networkDetails.network,
+        network,
       }),
     };
+    /* eslint-enable @typescript-eslint/naming-convention */
+
     const res = await fetch(
       `${INDEXER_URL}/subscription/token-balance`,
       options,
@@ -296,19 +306,30 @@ export const subscribeTokenBalance = async (
   }
 };
 
-export const subscribeTokenHistory = async (
-  publicKey: string,
-  contractId: string,
-) => {
+export const subscribeTokenHistory = async ({
+  publicKey,
+  contractId,
+  network,
+}: {
+  publicKey: string;
+  contractId: string;
+  network: string;
+}) => {
   try {
+    /* eslint-disable @typescript-eslint/naming-convention */
     const options = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-
-      body: JSON.stringify({ pub_key: publicKey, contract_id: contractId }),
+      body: JSON.stringify({
+        pub_key: publicKey,
+        contract_id: contractId,
+        network,
+      }),
     };
+    /* eslint-enable @typescript-eslint/naming-convention */
+
     const res = await fetch(`${INDEXER_URL}/subscription/token`, options);
 
     if (!res.ok) {

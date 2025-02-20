@@ -47,6 +47,7 @@ import { GrantAccess } from "popup/views/GrantAccess";
 import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
 import { FullscreenSuccessMessage } from "popup/views/FullscreenSuccessMessage";
 import { RecoverAccount } from "popup/views/RecoverAccount";
+import { AddToken } from "popup/views/AddToken";
 import { SignTransaction } from "popup/views/SignTransaction";
 import { SignAuthEntry } from "popup/views/SignAuthEntry";
 import { UnlockAccount } from "popup/views/UnlockAccount";
@@ -319,6 +320,14 @@ export const Router = () => (
           element={
             <PublicKeyRoute>
               <AddAccount />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={ROUTES.addToken}
+          element={
+            <PublicKeyRoute>
+              <AddToken />
             </PublicKeyRoute>
           }
         ></Route>

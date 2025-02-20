@@ -47,7 +47,7 @@ describe("AccountHistory", () => {
     const historyNodes = screen.getAllByTestId("history-item");
     expect(historyNodes.length).toEqual(4);
     const historyNodeAmounts = screen.getAllByTestId(
-      "history-item-body-component",
+      "history-item-amount-component",
     );
     await waitFor(() =>
       expect(historyNodeAmounts[0]).toHaveTextContent("+1 XLM"),
@@ -90,7 +90,7 @@ describe("AccountHistory", () => {
     expect(historyNodes.length).toEqual(2);
     await waitFor(() => screen.getAllByTestId("history-item"));
     const historyNodeAmounts = screen.getAllByTestId(
-      "history-item-body-component",
+      "history-item-amount-component",
     );
     await waitFor(() =>
       expect(historyNodeAmounts[0]).toHaveTextContent("+1 XLM"),

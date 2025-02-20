@@ -710,9 +710,7 @@ export const TransactionDetails = ({
             ) : null}
 
             <div className="TransactionDetails__warnings">
-              {scanResult && (
-                <BlockaidTxScanLabel scanResult={scanResult} isPopup />
-              )}
+              {scanResult && <BlockaidTxScanLabel scanResult={scanResult} />}
               {submission.submitStatus === ActionStatus.IDLE && (
                 <FlaggedWarningMessage
                   isMemoRequired={isMemoRequired}

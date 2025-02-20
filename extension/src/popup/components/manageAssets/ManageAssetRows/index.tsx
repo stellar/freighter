@@ -43,6 +43,8 @@ export type ManageAssetCurrency = StellarToml.Api.Currency & {
   contract?: string;
   icon?: string;
   isSuspicious?: boolean;
+  decimals?: number;
+  balance?: string;
 };
 
 export interface NewAssetFlags {
@@ -128,19 +130,21 @@ export const ManageAssetRows = ({
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && walletType && (
         <HardwareSign walletType={walletType} />
       )}
-      {showBlockedDomainWarning && (
-        <ScamAssetWarning
-          pillType="Trustline"
-          domain={suspiciousAssetData.domain}
-          code={suspiciousAssetData.code}
-          issuer={suspiciousAssetData.issuer}
-          image={suspiciousAssetData.image}
-          blockaidData={suspiciousAssetData.blockaidData}
-          onClose={() => {
-            setShowBlockedDomainWarning(false);
-          }}
-        />
-      )}
+      {showBlockedDomainWarning &&
+        createPortal(
+          <ScamAssetWarning
+            pillType="Trustline"
+            domain={suspiciousAssetData.domain}
+            code={suspiciousAssetData.code}
+            issuer={suspiciousAssetData.issuer}
+            image={suspiciousAssetData.image}
+            blockaidData={suspiciousAssetData.blockaidData}
+            onClose={() => {
+              setShowBlockedDomainWarning(false);
+            }}
+          />,
+          document.querySelector("#modal-root")!,
+        )}
       {showNewAssetWarning && (
         <NewAssetWarning
           domain={suspiciousAssetData.domain}
