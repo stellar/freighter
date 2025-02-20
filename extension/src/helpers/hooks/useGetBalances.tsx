@@ -1,45 +1,85 @@
 import { useReducer } from "react";
 
-import { getAccountBalances, getHiddenAssets } from "@shared/api/internal";
+import {
+  getAccountBalances,
+  getAssetIcons,
+  getHiddenAssets,
+} from "@shared/api/internal";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { AccountBalancesInterface, BalanceMap } from "@shared/api/types";
+import {
+  AccountBalancesInterface,
+  AssetIcons,
+  AssetType,
+  BalanceMap,
+} from "@shared/api/types";
 import { RequestState } from "constants/request";
 import { initialState, reducer } from "helpers/request";
 import { storeBalanceMetricData } from "helpers/metrics";
-import { filterHiddenBalances } from "popup/helpers/account";
+import { filterHiddenBalances, sortBalances } from "popup/helpers/account";
+
+export interface AccountBalances {
+  balances: AssetType[];
+  isFunded: AccountBalancesInterface["isFunded"];
+  subentryCount: AccountBalancesInterface["subentryCount"];
+  error?: AccountBalancesInterface["error"];
+  icons?: AssetIcons;
+}
 
 function useGetBalances(
   publicKey: string,
   networkDetails: NetworkDetails,
-  isMainnet: boolean,
-  showHidden: boolean,
+  options: {
+    isMainnet: boolean;
+    showHidden: boolean;
+    includeIcons: boolean;
+  },
 ) {
   const [state, dispatch] = useReducer(
-    reducer<AccountBalancesInterface, unknown>,
+    reducer<AccountBalances, unknown>,
     initialState,
   );
 
-  const fetchData = async () => {
+  const fetchData = async (): Promise<AccountBalances> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const data = await getAccountBalances(
         publicKey,
         networkDetails,
-        isMainnet,
+        options.isMainnet,
       );
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload: data });
-      storeBalanceMetricData(publicKey, data.isFunded || false);
-      if (!showHidden) {
+
+      if (!options.showHidden) {
         const hiddenAssets = await getHiddenAssets();
         return {
           ...data,
-          balances: filterHiddenBalances(
-            data.balances as NonNullable<BalanceMap>,
-            hiddenAssets.hiddenAssets,
+          balances: sortBalances(
+            filterHiddenBalances(
+              data.balances as NonNullable<BalanceMap>,
+              hiddenAssets.hiddenAssets,
+            ),
           ),
-        } as AccountBalancesInterface;
+        } as AccountBalances;
       }
-      return data;
+
+      if (options.includeIcons) {
+        const icons = await getAssetIcons({
+          balances: data.balances,
+          networkDetails,
+        });
+        return {
+          ...data,
+          balances: sortBalances(data.balances),
+          icons,
+        } as AccountBalances;
+      }
+
+      const accountBalances = {
+        ...data,
+        balances: sortBalances(data.balances),
+      };
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload: accountBalances });
+      storeBalanceMetricData(publicKey, data.isFunded || false);
+      return accountBalances;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
       return error;

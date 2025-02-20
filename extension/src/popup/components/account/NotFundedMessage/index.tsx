@@ -13,11 +13,9 @@ import "./styles.scss";
 export const NotFundedMessage = ({
   canUseFriendbot,
   publicKey,
-  setIsAccountFriendbotFunded,
 }: {
   canUseFriendbot: boolean;
   publicKey: string;
-  setIsAccountFriendbotFunded: (isAccountFriendbotFunded: boolean) => void;
 }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -25,7 +23,7 @@ export const NotFundedMessage = ({
   const handleFundAccount = async () => {
     // eslint-disable-next-line
     await dispatch(fundAccount(publicKey));
-    setIsAccountFriendbotFunded(true);
+    // TODO: Do we need to refetch account data here?
   };
 
   return (

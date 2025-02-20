@@ -12,7 +12,7 @@ function useGetHistory(publicKey: string, networkDetails: NetworkDetails) {
     initialState,
   );
 
-  const fetchData = async () => {
+  const fetchData = async (): Promise<ServerApi.OperationRecord[]> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const data = await getAccountHistory(publicKey, networkDetails);

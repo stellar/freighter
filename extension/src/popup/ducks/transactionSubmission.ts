@@ -12,7 +12,6 @@ import {
   signFreighterSorobanTransaction as internalSignFreighterSorobanTransaction,
   addRecentAddress as internalAddRecentAddress,
   loadRecentAddresses as internalLoadRecentAddresses,
-  getAssetIcons as getAssetIconsService,
   getAssetDomains as getAssetDomainsService,
   getMemoRequiredAccounts as internalGetMemoRequiredAccounts,
   removeTokenId as internalRemoveTokenId,
@@ -21,7 +20,6 @@ import {
 } from "@shared/api/internal";
 
 import {
-  AssetIcons,
   AssetDomains,
   Balances,
   ErrorMessage,
@@ -320,21 +318,6 @@ export const removeTokenId = createAsyncThunk<
   }
 });
 
-export const getAssetIcons = createAsyncThunk<
-  AssetIcons,
-  { balances: Balances; networkDetails: NetworkDetails },
-  { rejectValue: ErrorMessage }
->(
-  "auth/getAssetIcons",
-  ({
-    balances,
-    networkDetails,
-  }: {
-    balances: Balances;
-    networkDetails: NetworkDetails;
-  }) => getAssetIconsService({ balances, networkDetails }),
-);
-
 export const getAssetDomains = createAsyncThunk<
   AssetDomains,
   { balances: Balances; networkDetails: NetworkDetails },
@@ -499,7 +482,6 @@ interface InitialState {
     response: SorobanRpc.Api.SimulateTransactionSuccessResponse | null;
     preparedTransaction: string | null;
   };
-  assetIcons: AssetIcons;
   assetDomains: AssetDomains;
   soroswapTokens: SoroswapToken[];
   assetSelect: {
@@ -540,7 +522,6 @@ export const initialState: InitialState = {
     transactionXDR: "",
     shouldSubmit: true,
   },
-  assetIcons: {},
   assetDomains: {},
   soroswapTokens: [],
   assetSelect: {
@@ -679,22 +660,6 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.path = initialState.transactionData.path;
       state.transactionData.destinationAmount =
         initialState.transactionData.destinationAmount;
-    });
-    builder.addCase(getAssetIcons.fulfilled, (state, action) => {
-      const assetIcons = action.payload || {};
-
-      return {
-        ...state,
-        assetIcons,
-      };
-    });
-    builder.addCase(getAssetDomains.fulfilled, (state, action) => {
-      const assetDomains = action.payload || {};
-
-      return {
-        ...state,
-        assetDomains,
-      };
     });
     builder.addCase(getSoroswapTokens.fulfilled, (state, action) => {
       const soroswapTokens = action.payload;
