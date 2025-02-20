@@ -21,8 +21,6 @@ import {
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
-  getAccountBalances,
-  resetSubmission,
   signFreighterTransaction,
   submitFreighterTransaction,
   transactionSubmissionSelector,
@@ -130,14 +128,7 @@ export const ManageAssetRowButton = ({
       );
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-        dispatch(
-          getAccountBalances({
-            publicKey,
-            networkDetails,
-          }),
-        );
         trackChangeTrustline();
-        dispatch(resetSubmission());
         if (successfulCallback) {
           await successfulCallback();
         }

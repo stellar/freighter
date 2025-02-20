@@ -1,22 +1,14 @@
-import React, { useEffect, useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useRef } from "react";
+import { useSelector } from "react-redux";
 import { Link, useHistory } from "react-router-dom";
 import { Button, Icon, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
-import {
-  getAccountBalances,
-  resetSubmission,
-} from "popup/ducks/transactionSubmission";
-import {
-  settingsNetworkDetailsSelector,
-  settingsSorobanSupportedSelector,
-} from "popup/ducks/settings";
+import { settingsSorobanSupportedSelector } from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
-import { publicKeySelector } from "popup/ducks/accountServices";
-import { useFetchDomains } from "popup/helpers/useFetchDomains";
+import { useFetchDomains } from "helpers/hooks/useGetAssetDomains";
 
 import { ManageAssetRows } from "../ManageAssetRows";
 import { SelectAssetRows } from "../SelectAssetRows";
@@ -27,25 +19,12 @@ export const ChooseAsset = () => {
   const history = useHistory();
   const { t } = useTranslation();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const dispatch = useDispatch();
-  const publicKey = useSelector(publicKeySelector);
 
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    dispatch(
-      getAccountBalances({
-        publicKey,
-        networkDetails,
-      }),
-    );
-  }, [publicKey, dispatch, networkDetails]);
 
   const { assets, isManagingAssets } = useFetchDomains();
 
   const goBack = () => {
-    dispatch(resetSubmission());
     history.goBack();
   };
 

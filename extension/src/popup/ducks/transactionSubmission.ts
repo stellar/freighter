@@ -12,7 +12,6 @@ import {
   signFreighterSorobanTransaction as internalSignFreighterSorobanTransaction,
   addRecentAddress as internalAddRecentAddress,
   loadRecentAddresses as internalLoadRecentAddresses,
-  getAssetDomains as getAssetDomainsService,
   getMemoRequiredAccounts as internalGetMemoRequiredAccounts,
   removeTokenId as internalRemoveTokenId,
   submitFreighterTransaction as internalSubmitFreighterTransaction,
@@ -20,8 +19,6 @@ import {
 } from "@shared/api/internal";
 
 import {
-  AssetDomains,
-  Balances,
   ErrorMessage,
   ActionStatus,
   MemoRequiredAccount,
@@ -318,21 +315,6 @@ export const removeTokenId = createAsyncThunk<
   }
 });
 
-export const getAssetDomains = createAsyncThunk<
-  AssetDomains,
-  { balances: Balances; networkDetails: NetworkDetails },
-  { rejectValue: ErrorMessage }
->(
-  "auth/getAssetDomains",
-  ({
-    balances,
-    networkDetails,
-  }: {
-    balances: Balances;
-    networkDetails: NetworkDetails;
-  }) => getAssetDomainsService({ balances, networkDetails }),
-);
-
 export const getSoroswapTokens = createAsyncThunk<
   SoroswapToken[],
   undefined,
@@ -482,7 +464,6 @@ interface InitialState {
     response: SorobanRpc.Api.SimulateTransactionSuccessResponse | null;
     preparedTransaction: string | null;
   };
-  assetDomains: AssetDomains;
   soroswapTokens: SoroswapToken[];
   assetSelect: {
     type: AssetSelectType;
@@ -522,7 +503,6 @@ export const initialState: InitialState = {
     transactionXDR: "",
     shouldSubmit: true,
   },
-  assetDomains: {},
   soroswapTokens: [],
   assetSelect: {
     type: AssetSelectType.MANAGE,
