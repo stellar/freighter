@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -18,6 +19,7 @@ import { EnterPassword } from "popup/components/EnterPassword";
 
 export const AddAccount = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const dispatch: AppDispatch = useDispatch();
   const publicKey = useSelector(publicKeySelector);
 
@@ -27,13 +29,12 @@ export const AddAccount = () => {
 
       if (addAccount.fulfilled.match(res)) {
         emitMetric(METRIC_NAMES.accountScreenAddAccount, {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           number_of_accounts: res.payload.allAccounts.length,
         });
-        navigateTo(ROUTES.account);
+        navigateTo(ROUTES.account, navigate);
       }
     },
-    [dispatch],
+    [dispatch, navigate],
   );
 
   const handleEnterPassword = async (password: string) => {

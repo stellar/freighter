@@ -366,7 +366,7 @@ const AuthDetail = ({
           });
         }
         // check for sub transfers
-        // eslint-disable-next-line no-restricted-syntax
+
         for (const subInvocation of rootJson.invocations) {
           const isSubInvokeToken = !subInvocation.args.source
             ? false
@@ -409,10 +409,8 @@ const AuthDetail = ({
       setLoading(true);
       const _tokenDetails = {} as TokenDetailMap;
 
-      // eslint-disable-next-line
       for (const transfer of authTransfers) {
         try {
-          // eslint-disable-next-line
           const tokenDetailsResponse = await getTokenDetails({
             contractId: transfer.contractId,
             publicKey,

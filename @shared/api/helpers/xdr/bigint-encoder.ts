@@ -1,7 +1,6 @@
 // Ported from https://github.com/stellar/js-xdr/pull/96
 // Can remove this and use them through stellar base once it is merged
 
-/* eslint-disable */
 export function encodeBigIntFromBits(
   parts: any[],
   size: number,

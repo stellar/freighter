@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
 import React, { useEffect, useCallback, useRef, useState } from "react";
@@ -138,7 +137,6 @@ export const AddAsset = () => {
   }, [isAllowListVerificationEnabled]);
 
   return (
-    // eslint-disable-next-line
     <Formik initialValues={initialValues} onSubmit={() => {}}>
       {({ dirty }) => (
         <Form
@@ -201,4 +199,3 @@ export const AddAsset = () => {
     </Formik>
   );
 };
-/* eslint-enable @typescript-eslint/no-unsafe-argument */

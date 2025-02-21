@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   CopyText,
@@ -51,6 +52,7 @@ import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsD
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
+import { AppDispatch } from "popup/App";
 
 import "popup/metrics/authServices";
 
@@ -63,7 +65,8 @@ export const defaultAccountBalances = {
 
 export const Account = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
     transactionSubmissionSelector,
   );
@@ -208,7 +211,7 @@ export const Account = () => {
                   title={t("Send Payment")}
                   id="nav-btn-send"
                   icon={<Icon.Send01 />}
-                  onClick={() => navigateTo(ROUTES.sendPayment)}
+                  onClick={() => navigateTo(ROUTES.sendPayment, navigate)}
                 />
               </div>
               <div

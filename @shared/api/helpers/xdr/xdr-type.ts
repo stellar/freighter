@@ -4,8 +4,6 @@ import { XdrReader } from "./serialization/xdr-reader";
 import { XdrWriter } from "./serialization/xdr-writer";
 import { XdrNotImplementedDefinitionError } from "./errors";
 
-/* eslint-disable */
-
 /* tslint:disable */
 class XdrType {
   write: any;
@@ -90,7 +88,7 @@ export class XdrPrimitiveType extends XdrType {
    * @return {this}
    * @abstract
    */
-  // eslint-disable-next-line no-unused-vars
+
   static read(reader) {
     throw new XdrNotImplementedDefinitionError();
   }
@@ -102,7 +100,7 @@ export class XdrPrimitiveType extends XdrType {
    * @return {void}
    * @abstract
    */
-  // eslint-disable-next-line no-unused-vars
+
   static write(value, writer) {
     throw new XdrNotImplementedDefinitionError();
   }
@@ -113,7 +111,7 @@ export class XdrPrimitiveType extends XdrType {
    * @return {Boolean}
    * @abstract
    */
-  // eslint-disable-next-line no-unused-vars
+
   static isValid(value) {
     return false;
   }
@@ -128,7 +126,7 @@ export class XdrCompositeType extends XdrType {
    * @return {Boolean}
    * @abstract
    */
-  // eslint-disable-next-line no-unused-vars
+
   isValid(value) {
     return false;
   }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { Badge, Button, Checkbox, Loader } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
 import { getAccountInfo, getMigratableAccounts } from "@shared/api/internal";
@@ -24,6 +25,7 @@ import {
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 
 import { navigateTo } from "popup/helpers/navigate";
+import { AppDispatch } from "popup/App";
 
 import {
   MigrationHeader,
@@ -231,7 +233,8 @@ const AccountListItems = ({
 
 export const ReviewMigration = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [accountToMigrateList, setAccountToMigrateList] = useState(
     [] as AccountToMigrate[],
@@ -251,11 +254,9 @@ export const ReviewMigration = () => {
         return;
       }
 
-      // eslint-disable-next-line
       for (let i = 0; i < migratableAccounts.length; i++) {
         const publicKey = migratableAccounts[i].publicKey;
 
-        // eslint-disable-next-line no-await-in-loop
         const { account, isSigner } = await getAccountInfo({
           publicKey,
           networkDetails,
@@ -334,7 +335,7 @@ export const ReviewMigration = () => {
     );
     dispatch(saveBalancesToMigrate(migratableBalances));
     dispatch(saveIsMergeSelected(values.isMergeSelected));
-    navigateTo(ROUTES.accountMigrationMnemonicPhrase);
+    navigateTo(ROUTES.accountMigrationMnemonicPhrase, navigate);
   };
 
   const initialValues: FormValues = {

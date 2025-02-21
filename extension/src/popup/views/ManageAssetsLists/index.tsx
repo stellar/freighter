@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Switch } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 import { useTranslation } from "react-i18next";
 
@@ -14,6 +14,7 @@ import { AssetLists } from "popup/components/manageAssetsLists/AssetLists";
 import { ModifyAssetList } from "popup/components/manageAssetsLists/ModifyAssetList";
 
 import "./styles.scss";
+import { getPathFromRoute } from "popup/helpers/route";
 
 export interface AssetsListsData {
   url: string;
@@ -52,7 +53,7 @@ export const ManageAssetsLists = () => {
       setIsLoading(true);
 
       // TODO: make these calls concurrent
-      // eslint-disable-next-line no-restricted-syntax
+
       for (const networkList of networkLists) {
         const { url = "", isEnabled } = networkList;
         try {
@@ -103,24 +104,39 @@ export const ManageAssetsLists = () => {
     setSelectedNetwork(e.target.value as AssetsListKey);
   };
 
+  const addNetworkPath = getPathFromRoute({
+    fullRoute: ROUTES.manageAssetsListsModifyAssetList,
+    basePath: "/manage-assets-list/",
+  });
+
   return assetsLists ? (
     <>
-      <Switch>
-        <PublicKeyRoute exact path={ROUTES.manageAssetsLists}>
-          <AssetLists
-            sortedAssetsListsData={sortedAssetsListsData}
-            handleSelectChange={handleSelectChange}
-            selectedNetwork={selectedNetwork}
-            isLoading={isLoading}
-          />
-        </PublicKeyRoute>
-        <PublicKeyRoute exact path={ROUTES.manageAssetsListsModifyAssetList}>
-          <ModifyAssetList
-            assetsListsData={assetsListsData}
-            selectedNetwork={selectedNetwork}
-          />
-        </PublicKeyRoute>
-      </Switch>
+      <Routes>
+        <Route
+          index
+          element={
+            <PublicKeyRoute>
+              <AssetLists
+                sortedAssetsListsData={sortedAssetsListsData}
+                handleSelectChange={handleSelectChange}
+                selectedNetwork={selectedNetwork}
+                isLoading={isLoading}
+              />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={addNetworkPath}
+          element={
+            <PublicKeyRoute>
+              <ModifyAssetList
+                assetsListsData={assetsListsData}
+                selectedNetwork={selectedNetwork}
+              />
+            </PublicKeyRoute>
+          }
+        ></Route>
+      </Routes>
     </>
   ) : (
     <div>{t("Unable to parse assets lists")}</div>

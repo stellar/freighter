@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
@@ -114,7 +115,7 @@ export const SendAmount = ({
   next: ROUTES;
 }) => {
   const { t } = useTranslation();
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const runAfterUpdate = useRunAfterUpdate();
 
@@ -140,6 +141,7 @@ export const SendAmount = ({
 
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
+  const navigate = useNavigate();
   const [loadingRate, setLoadingRate] = useState(false);
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] =
     useState(false);
@@ -207,7 +209,7 @@ export const SendAmount = ({
   }) => {
     dispatch(saveAmount(cleanAmount(values.amount)));
     dispatch(saveAsset(values.asset));
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     let isDestAssetScam = false;
 
     if (values.destinationAsset) {
@@ -243,7 +245,7 @@ export const SendAmount = ({
           defaultBlockaidScanAssetResult,
       });
     } else {
-      navigateTo(next);
+      navigateTo(next, navigate);
     }
   };
 
@@ -449,7 +451,7 @@ export const SendAmount = ({
             issuer={suspiciousAssetData.issuer}
             image={suspiciousAssetData.image}
             onClose={() => setShowBlockedDomainWarning(false)}
-            onContinue={() => navigateTo(next)}
+            onContinue={() => navigateTo(next, navigate)}
             blockaidData={suspiciousAssetData.blockaidData}
           />,
           document.querySelector("#modal-root")!,
@@ -480,11 +482,11 @@ export const SendAmount = ({
             </div>
           }
           hasBackButton={!isSwap}
-          customBackAction={() => navigateTo(previous)}
+          customBackAction={() => navigateTo(previous, navigate)}
           rightButton={
             isSwap ? null : (
               <button
-                onClick={() => navigateTo(ROUTES.sendPaymentType)}
+                onClick={() => navigateTo(ROUTES.sendPaymentType, navigate)}
                 className="SendAmount__icon-slider"
               >
                 <Icon.Expand01 />
@@ -635,7 +637,6 @@ export const SendAmount = ({
         </View.Content>
       </React.Fragment>
       <LoadingBackground
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
         onClick={() => {}}
         isActive={showBlockedDomainWarning}
       />
