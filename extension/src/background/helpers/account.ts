@@ -235,7 +235,6 @@ export const subscribeAccount = async (publicKey: string) => {
   try {
     const networkDetails = await getNetworkDetails();
 
-    /* eslint-disable @typescript-eslint/naming-convention */
     const options = {
       method: "POST",
       headers: {
@@ -246,7 +245,6 @@ export const subscribeAccount = async (publicKey: string) => {
         network: networkDetails.network,
       }),
     };
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     const res = await fetch(`${INDEXER_URL}/subscription/account`, options);
     const subsByKeyId = {
@@ -277,7 +275,6 @@ export const subscribeTokenBalance = async ({
   network: string;
 }) => {
   try {
-    /* eslint-disable @typescript-eslint/naming-convention */
     const options = {
       method: "POST",
       headers: {
@@ -289,7 +286,6 @@ export const subscribeTokenBalance = async ({
         network,
       }),
     };
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     const res = await fetch(
       `${INDEXER_URL}/subscription/token-balance`,
@@ -316,7 +312,6 @@ export const subscribeTokenHistory = async ({
   network: string;
 }) => {
   try {
-    /* eslint-disable @typescript-eslint/naming-convention */
     const options = {
       method: "POST",
       headers: {
@@ -328,7 +323,6 @@ export const subscribeTokenHistory = async ({
         network,
       }),
     };
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     const res = await fetch(`${INDEXER_URL}/subscription/token`, options);
 

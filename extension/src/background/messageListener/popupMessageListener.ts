@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { BigNumber } from "bignumber.js";
 import { Store } from "redux";
 import * as StellarSdk from "stellar-sdk";
@@ -1114,7 +1113,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < keyIdList.length; i += 1) {
       const currentKeyId = keyIdList[i];
 

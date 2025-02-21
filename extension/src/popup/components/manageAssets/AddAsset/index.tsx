@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
 import React, { useEffect, useCallback, useRef, useState } from "react";

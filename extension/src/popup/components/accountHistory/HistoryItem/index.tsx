@@ -221,7 +221,6 @@ export const HistoryItem = ({
             isPayment: true,
             operation: {
               ...operation,
-              // eslint-disable-next-line
               asset_type: "native",
               to: account,
             } as any, // TODO: overloaded op type, native not valid
