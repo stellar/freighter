@@ -86,11 +86,11 @@ export const getAssetListForAsset = async ({
   // eslint-disable-next-line no-restricted-syntax
   const validatedAssets = {} as Record<string, AssetListReponseItem[]>;
   // eslint-disable-next-line no-restricted-syntax
-  for (const responses of settledResponses) {
-    if (responses.status === "fulfilled") {
+  for (const response of settledResponses) {
+    if (response.status === "fulfilled") {
       // confirm that this list still adheres to the agreed upon schema
-      const validatedList = await schemaValidatedAssetList(responses.value);
-      validatedAssets[responses.value.name] = validatedList.assets;
+      const validatedList = await schemaValidatedAssetList(response.value);
+      validatedAssets[response.value.name] = validatedList.assets;
     }
   }
 
