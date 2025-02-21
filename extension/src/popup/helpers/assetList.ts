@@ -24,10 +24,10 @@ export const splitVerifiedAssetCurrency = async ({
   // eslint-disable-next-line no-restricted-syntax
   const validatedAssets = [] as AssetListReponseItem[];
   // eslint-disable-next-line no-restricted-syntax
-  for (const responses of settledResponses) {
-    if (responses.status === "fulfilled") {
+  for (const response of settledResponses) {
+    if (response.status === "fulfilled") {
       // confirm that this list still adheres to the agreed upon schema
-      const validatedList = await schemaValidatedAssetList(responses.value);
+      const validatedList = await schemaValidatedAssetList(response.value);
       validatedAssets.push(...validatedList.assets);
     }
   }
