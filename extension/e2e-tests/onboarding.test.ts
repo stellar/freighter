@@ -56,7 +56,7 @@ test("Create new wallet", async ({ page }) => {
   );
 
   for (let i = 0; i < words.length; i++) {
-    await page.getByTestId(words[i]).check({ force: true });
+    await page.getByLabel(words[i]).check({ force: true });
   }
   await page.getByTestId("display-mnemonic-phrase-confirm-btn").click();
   await expect(page.getByText("You’re all set!")).toBeVisible();
@@ -234,7 +234,7 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
   const shuffledWords = shuffle(words);
 
   for (let i = 0; i < shuffledWords.length; i++) {
-    await page.getByTestId(shuffledWords[i]).check({ force: true });
+    await page.getByLabel(shuffledWords[i] ).check({ force: true });
   }
 
   await page.getByTestId("display-mnemonic-phrase-confirm-btn").click();
