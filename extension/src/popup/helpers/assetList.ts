@@ -69,7 +69,7 @@ export const splitVerifiedAssetCurrency = async ({
   };
 };
 
-export const getAssetListForAsset = async ({
+export const getAssetListsForAsset = async ({
   asset,
   assetsListsDetails,
   networkDetails,
