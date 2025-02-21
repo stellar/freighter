@@ -1,7 +1,7 @@
 import React from "react";
 
 // Remove when not needed! 👇
-// eslint-disable-next-line arrow-body-style
+
 export const Debug = () => {
   return (
     <div>

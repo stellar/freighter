@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Switch, Redirect } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import { AppDispatch } from "popup/App";
 import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
@@ -18,6 +18,7 @@ import {
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { SendSettingsTxTimeout } from "popup/components/sendPayment/SendSettings/TxTimeout";
+import { getPathFromRoute } from "popup/helpers/route";
 
 export const Swap = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -48,29 +49,103 @@ export const Swap = () => {
     })();
   }, [dispatch, publicKey, networkDetails, accountBalances]);
 
+  const swapBasePath = "/swap/";
+  const swapSettingsBasePath = "/swap/settings/";
+  const amountPath = getPathFromRoute({
+    fullRoute: ROUTES.swapAmount,
+    basePath: swapBasePath,
+  });
+  const settingsPath = getPathFromRoute({
+    fullRoute: ROUTES.swapSettings,
+    basePath: swapBasePath,
+  });
+  const settingsFeePath = getPathFromRoute({
+    fullRoute: ROUTES.swapSettingsFee,
+    basePath: swapSettingsBasePath,
+  });
+  const settingsSlippagePath = getPathFromRoute({
+    fullRoute: ROUTES.swapSettingsSlippage,
+    basePath: swapSettingsBasePath,
+  });
+  const settingsTimeoutPath = getPathFromRoute({
+    fullRoute: ROUTES.swapSettingsTimeout,
+    basePath: swapSettingsBasePath,
+  });
+  const swapConfirmPath = getPathFromRoute({
+    fullRoute: ROUTES.swapConfirm,
+    basePath: swapBasePath,
+  });
+
   return (
-    <Switch>
-      <PublicKeyRoute exact path={ROUTES.swap}>
-        <Redirect to={ROUTES.swapAmount} />
-      </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.swapAmount}>
-        <SendAmount previous={ROUTES.account} next={ROUTES.swapSettings} />
-      </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.swapSettings}>
-        <SendSettings previous={ROUTES.swapAmount} next={ROUTES.swapConfirm} />
-      </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.swapSettingsFee}>
-        <SendSettingsFee previous={ROUTES.swapSettings} />
-      </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.swapSettingsSlippage}>
-        <SendSettingsSlippage previous={ROUTES.swapSettings} />
-      </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.swapSettingsTimeout}>
-        <SendSettingsTxTimeout previous={ROUTES.swapSettings} />
-      </PublicKeyRoute>
-      <VerifiedAccountRoute exact path={ROUTES.swapConfirm}>
-        <SendConfirm previous={ROUTES.swapSettings} />
-      </VerifiedAccountRoute>
-    </Switch>
+    <Routes>
+      <Route
+        index
+        element={
+          <PublicKeyRoute>
+            <SendAmount previous={ROUTES.account} next={ROUTES.swapSettings} />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={amountPath}
+        element={
+          <PublicKeyRoute>
+            <SendAmount previous={ROUTES.account} next={ROUTES.swapSettings} />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={`${settingsPath}/*`}
+        element={
+          <PublicKeyRoute>
+            <Routes>
+              <Route
+                index
+                element={
+                  <PublicKeyRoute>
+                    <SendSettings
+                      previous={ROUTES.swapAmount}
+                      next={ROUTES.swapConfirm}
+                    />
+                  </PublicKeyRoute>
+                }
+              ></Route>
+              <Route
+                path={settingsFeePath}
+                element={
+                  <PublicKeyRoute>
+                    <SendSettingsFee previous={ROUTES.swapSettings} />
+                  </PublicKeyRoute>
+                }
+              ></Route>
+              <Route
+                path={settingsSlippagePath}
+                element={
+                  <PublicKeyRoute>
+                    <SendSettingsSlippage previous={ROUTES.swapSettings} />
+                  </PublicKeyRoute>
+                }
+              ></Route>
+              <Route
+                path={settingsTimeoutPath}
+                element={
+                  <PublicKeyRoute>
+                    <SendSettingsTxTimeout previous={ROUTES.swapSettings} />
+                  </PublicKeyRoute>
+                }
+              ></Route>
+            </Routes>
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={swapConfirmPath}
+        element={
+          <VerifiedAccountRoute>
+            <SendConfirm previous={ROUTES.swapSettings} />
+          </VerifiedAccountRoute>
+        }
+      ></Route>
+    </Routes>
   );
 };

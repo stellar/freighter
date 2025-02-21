@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Notification, Button, Toggle, Loader } from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
 
@@ -17,6 +17,7 @@ import { View } from "popup/basics/layout/View";
 import IconExperimental from "popup/assets/icon-settings-experimental.svg";
 
 import "./styles.scss";
+import { AppDispatch } from "popup/App";
 
 interface AdvancedSettingFeatureParams {
   title: string;
@@ -61,8 +62,8 @@ const AdvancedSettingFeature = ({
 
 export const AdvancedSettings = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-  const history = useHistory();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const [isUnderstood, setIsUnderstood] = useState(false);
 
   const {
@@ -91,7 +92,6 @@ export const AdvancedSettings = () => {
       isNonSSLEnabledValue,
     } = formValue;
 
-    // eslint-disable-next-line
     await dispatch(
       saveExperimentalFeatures({
         isExperimentalModeEnabled: isExperimentalModeEnabledValue,
@@ -180,7 +180,7 @@ export const AdvancedSettings = () => {
               size="md"
               variant="tertiary"
               isFullWidth
-              onClick={() => history.goBack()}
+              onClick={() => navigate(-1)}
             >
               {t("Go back")}
             </Button>

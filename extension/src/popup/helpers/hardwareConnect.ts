@@ -87,13 +87,10 @@ export const hardwareSign: HardwareSign = {
   }: HardwareSignParams) => {
     const transport = await TransportWebUSB.create();
     const ledgerApi = new LedgerApi(transport);
-    let result = { signature: Buffer.from([]) };
+    const result = isHashSigningEnabled
+      ? await ledgerApi.signHash(bipPath, tx.hash())
+      : await ledgerApi.signTransaction(bipPath, tx.signatureBase());
 
-    if (isHashSigningEnabled) {
-      result = await ledgerApi.signHash(bipPath, tx.hash());
-    } else {
-      result = await ledgerApi.signTransaction(bipPath, tx.signatureBase());
-    }
     return result.signature;
   },
 };
@@ -124,9 +121,8 @@ export const hardwareSignAuth: HardwareSignAuth = {
   }: HardwareSignAuthParams) => {
     const transport = await TransportWebUSB.create();
     const ledgerApi = new LedgerApi(transport);
-    let result = { signature: Buffer.from([]) };
 
-    result = await ledgerApi.signSorobanAuthorization(bipPath, auth);
+    const result = await ledgerApi.signSorobanAuthorization(bipPath, auth);
     return result.signature;
   },
 };

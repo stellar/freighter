@@ -72,7 +72,7 @@ const testBalances = {
   native: {
     token: { type: "native", code: "XLM" },
   },
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
     token: {
       type: "credit_alphanum4",
@@ -117,7 +117,7 @@ export const IntegrationTest = () => {
       });
 
       await fundAccount(testPublicKey);
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
+
       runAsserts("fundAccount", () => {});
 
       res = await addAccount(testPassword);
@@ -181,7 +181,7 @@ export const IntegrationTest = () => {
       });
 
       await resetDevData();
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
+
       runAsserts("resetDevData", () => {});
 
       res = await recoverAccount(testPassword, mnemonicPhrase);
@@ -247,19 +247,19 @@ export const IntegrationTest = () => {
       });
 
       await rejectAccess();
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
+
       runAsserts("rejectAccess", () => {});
 
       await grantAccess("https://laboratory.stellar.org");
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
+
       runAsserts("grantAccess", () => {});
 
       await handleSignedHwPayload({ signedPayload: "" });
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
+
       runAsserts("handleSignedHwPayload", () => {});
 
       await signTransaction();
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
+
       runAsserts("signTransaction", () => {});
 
       res = await signFreighterTransaction({
@@ -394,7 +394,6 @@ export const IntegrationTest = () => {
   );
 };
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
 const runAsserts = (func: string, asserts = () => {}) => {
   try {
     asserts();

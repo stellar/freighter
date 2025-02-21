@@ -3,7 +3,7 @@ import get from "lodash/get";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { useLocation, useHistory } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { newTabHref } from "helpers/urls";
 
@@ -17,34 +17,32 @@ import {
 import { EnterPassword } from "popup/components/EnterPassword";
 
 import "./styles.scss";
+import { AppDispatch } from "popup/App";
 
 export const UnlockAccount = () => {
   const { t } = useTranslation();
   const location = useLocation();
-  const history = useHistory();
+  const navigate = useNavigate();
   const from = get(location, "state.from.pathname", "") as ROUTES;
   const queryParams = get(location, "search", "");
   const destination = from || ROUTES.account;
 
   const [accountAddress, setAccountAddress] = useState("");
 
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   const handleSubmit = async (password: string) => {
-    // eslint-disable-next-line @typescript-eslint/await-thenable
     await dispatch(confirmPassword(password));
     // skip this location in history, we won't need to come back here after unlocking account
-    history.replace(`${destination}${queryParams}`);
+    navigate(`${destination}${queryParams}`, { replace: true });
   };
 
   useEffect(() => {
     const fetchLastUsedAccount = async () => {
-      /* eslint-disable */
       const response = (await dispatch(loadLastUsedAccount())) as any;
       if (loadLastUsedAccount.fulfilled.match(response)) {
         setAccountAddress(response.payload.lastUsedAccount);
       }
-      /* eslint-enable */
     };
 
     fetchLastUsedAccount();

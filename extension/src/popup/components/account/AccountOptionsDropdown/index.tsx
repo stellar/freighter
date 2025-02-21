@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 import { NavButton, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -14,6 +15,7 @@ import {
 } from "popup/ducks/transactionSubmission";
 
 import { LoadingBackground } from "popup/basics/LoadingBackground";
+import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
 
@@ -23,13 +25,14 @@ interface DropdownModalProps {
 
 const DropdownModal = ({ isFunded }: DropdownModalProps) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
 
   return (
     <div className="AccountOptionsDropdown__modal">
       <div
         className="AccountOptionsDropdown__modal__item"
-        onClick={() => navigateTo(ROUTES.viewPublicKey)}
+        onClick={() => navigateTo(ROUTES.viewPublicKey, navigate)}
       >
         <div className="AccountOptionsDropdown__modal__item__title">
           {t("Account details")}
@@ -40,7 +43,7 @@ const DropdownModal = ({ isFunded }: DropdownModalProps) => {
       </div>
       <div
         className="AccountOptionsDropdown__modal__item"
-        onClick={() => navigateTo(ROUTES.manageConnectedApps)}
+        onClick={() => navigateTo(ROUTES.manageConnectedApps, navigate)}
       >
         <div className="AccountOptionsDropdown__modal__item__title">
           {t("Connected apps")}
@@ -54,7 +57,7 @@ const DropdownModal = ({ isFunded }: DropdownModalProps) => {
           className="AccountOptionsDropdown__modal__item"
           onClick={() => {
             dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
-            navigateTo(ROUTES.manageAssets);
+            navigateTo(ROUTES.manageAssets, navigate);
           }}
         >
           <div className="AccountOptionsDropdown__modal__item__title">

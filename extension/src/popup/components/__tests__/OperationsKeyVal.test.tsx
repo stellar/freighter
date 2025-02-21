@@ -10,7 +10,7 @@ import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
 } from "@shared/constants/stellar";
-import { createMemoryHistory } from "history";
+import { ROUTES } from "popup/constants/routes";
 
 describe("Operations KeyVal", () => {
   describe("InvokeHostFunction", () => {
@@ -99,11 +99,9 @@ describe("Operations KeyVal", () => {
         func,
       } as Operation.InvokeHostFunction;
 
-      const history = createMemoryHistory();
-
       render(
         <Wrapper
-          history={history}
+          routes={[ROUTES.reviewAuthorization]}
           state={{
             auth: {
               error: null,

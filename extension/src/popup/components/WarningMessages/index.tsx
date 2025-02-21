@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
 import {
@@ -535,7 +536,7 @@ export const ScamAssetWarning = ({
   issuer,
   image,
   onClose,
-  // eslint-disable-next-line
+
   onContinue = () => {},
   blockaidData,
 }: {
@@ -558,6 +559,8 @@ export const ScamAssetWarning = ({
   const { submitStatus } = useSelector(transactionSubmissionSelector);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+  const navigate = useNavigate();
+
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
 
   const closeOverlay = () => {
@@ -602,7 +605,6 @@ export const ScamAssetWarning = ({
       .toXDR();
 
     if (isHardwareWallet) {
-      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
     } else {
@@ -622,7 +624,7 @@ export const ScamAssetWarning = ({
           }),
         );
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-          navigateTo(ROUTES.account);
+          navigateTo(ROUTES.account, navigate);
           emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
         } else {
           setIsTrustlineErrorShowing(true);
@@ -729,6 +731,8 @@ export const NewAssetWarning = ({
   const publicKey = useSelector(publicKeySelector);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+  const navigate = useNavigate();
+
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
 
   const { isRevocable, isInvalidDomain } = newAssetFlags;
@@ -778,7 +782,6 @@ export const NewAssetWarning = ({
     });
 
     if (isHardwareWallet) {
-      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
     } else {
@@ -798,7 +801,7 @@ export const NewAssetWarning = ({
           }),
         );
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-          navigateTo(ROUTES.account);
+          navigateTo(ROUTES.account, navigate);
           emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
         } else {
           setIsTrustlineErrorShowing(true);
@@ -1141,7 +1144,6 @@ export const UnverifiedTokenTransferWarning = ({
       return;
     }
     const fetchVerifiedTokens = async () => {
-      // eslint-disable-next-line
       for (let j = 0; j < transfers.length; j += 1) {
         const c = transfers[j].contractId;
         const verifiedTokens = await getVerifiedTokens({
@@ -1224,7 +1226,7 @@ const WarningMessageTokenDetails = ({
   return (
     <div className="TokenDetails">
       <p className="FnName">TRANSFER #{index + 1}:</p>
-      {/* eslint-disable-next-line */}
+      {}
       {isLoadingTokenDetails ? (
         <div className="TokenDetails__loader">
           <Loader size="1rem" />

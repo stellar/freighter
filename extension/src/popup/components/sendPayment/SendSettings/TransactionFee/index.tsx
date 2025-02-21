@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import { Formik, Form, Field, FieldProps } from "formik";
@@ -23,6 +24,7 @@ import "./styles.scss";
 export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { transactionFee } = useSelector(transactionDataSelector);
   const { networkCongestion, recommendedFee } = useNetworkFees();
 
@@ -30,7 +32,7 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
     <React.Fragment>
       <SubviewHeader
         title="Transaction Fee"
-        customBackAction={() => navigateTo(previous)}
+        customBackAction={() => navigateTo(previous, navigate)}
         customBackIcon={<Icon.XClose />}
         rightButton={
           <InfoTooltip
@@ -58,7 +60,7 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
         initialValues={{ transactionFee }}
         onSubmit={(values) => {
           dispatch(saveTransactionFee(String(values.transactionFee)));
-          navigateTo(previous);
+          navigateTo(previous, navigate);
         }}
         validationSchema={YupObject().shape({
           transactionFee: YupNumber().min(
@@ -83,7 +85,7 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
                         error={errors.transactionFee}
                       />
                       <div className="TransactionFee__row">
-                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                        {}
                         <Link
                           isUnderline
                           isDisabled={field.value === recommendedFee}

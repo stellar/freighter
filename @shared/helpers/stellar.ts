@@ -49,7 +49,6 @@ export function getBalanceIdentifier(
 }
 
 export const defaultBlockaidScanAssetResult: BlockAidScanAssetResult = {
-  /* eslint-disable @typescript-eslint/naming-convention */
   address: "",
   chain: "stellar",
   attack_types: {},
@@ -60,7 +59,6 @@ export const defaultBlockaidScanAssetResult: BlockAidScanAssetResult = {
   trading_limits: {},
   result_type: "Benign",
   features: [{ description: "", feature_id: "METADATA", type: "Benign" }],
-  /* eslint-enable @typescript-eslint/naming-convention */
 };
 
 export const makeDisplayableBalances = async (

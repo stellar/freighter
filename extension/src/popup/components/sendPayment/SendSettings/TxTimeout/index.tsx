@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import { Formik, Form, Field, FieldProps } from "formik";
@@ -22,13 +23,14 @@ import "./styles.scss";
 export const SendSettingsTxTimeout = ({ previous }: { previous: ROUTES }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { transactionTimeout } = useSelector(transactionDataSelector);
 
   return (
     <React.Fragment>
       <SubviewHeader
         title="Transaction Timeout"
-        customBackAction={() => navigateTo(previous)}
+        customBackAction={() => navigateTo(previous, navigate)}
         customBackIcon={<Icon.XClose />}
         rightButton={
           <InfoTooltip
@@ -50,7 +52,7 @@ export const SendSettingsTxTimeout = ({ previous }: { previous: ROUTES }) => {
         initialValues={{ transactionTimeout }}
         onSubmit={(values) => {
           dispatch(saveTransactionTimeout(values.transactionTimeout));
-          navigateTo(previous);
+          navigateTo(previous, navigate);
         }}
         validationSchema={YupObject().shape({
           transactionTimeout: YupNumber().min(

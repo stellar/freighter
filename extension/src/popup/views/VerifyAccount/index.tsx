@@ -2,7 +2,7 @@ import get from "lodash/get";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { useHistory, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
@@ -13,6 +13,7 @@ import {
 import { EnterPassword } from "popup/components/EnterPassword";
 
 import "./styles.scss";
+import { AppDispatch } from "popup/App";
 
 interface VerifyAccountProps {
   isApproval?: boolean;
@@ -27,21 +28,20 @@ export const VerifyAccount = ({
 }: VerifyAccountProps) => {
   const { t } = useTranslation();
   const location = useLocation();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   const publicKey = useSelector(publicKeySelector);
 
   const from = get(location, "state.from.pathname", "") as ROUTES;
 
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const handleConfirm = async (password: string) => {
     if (customSubmit) {
       await customSubmit(password);
     } else {
-      // eslint-disable-next-line
       await dispatch(confirmPassword(password));
-      navigateTo(from || ROUTES.account);
+      navigateTo(from || ROUTES.account, navigate);
     }
   };
 
@@ -51,7 +51,7 @@ export const VerifyAccount = ({
       return;
     }
 
-    history.goBack();
+    navigate(-1);
   };
 
   return (

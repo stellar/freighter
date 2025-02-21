@@ -2,6 +2,7 @@ import { useReducer } from "react";
 
 import { getAccountHistory } from "@shared/api/internal";
 import { NetworkDetails } from "@shared/constants/stellar";
+// eslint-disable-next-line import/no-unresolved
 import { ServerApi } from "stellar-sdk/lib/horizon";
 
 enum RequestState {

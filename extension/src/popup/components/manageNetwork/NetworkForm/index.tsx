@@ -4,7 +4,7 @@ import { Button, Checkbox, Input } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Field, FieldProps, Form, Formik } from "formik";
 import { object as YupObject, string as YupString } from "yup";
-import { useHistory, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import { NETWORKS } from "@shared/constants/stellar";
 import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
@@ -53,7 +53,7 @@ export const NETWORK_INDEX_SEARCH_PARAM = "networkIndex";
 
 export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const { t } = useTranslation();
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
   const settingsError = useSelector(settingsErrorSelector);
@@ -62,7 +62,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const [isConfirmingRemoval, setIsConfirmingRemoval] = useState(false);
   const [isNetworkUrlValid, setIsNetworkUrlValid] = useState(false);
   const [invalidUrl, setInvalidUrl] = useState("");
-  const history = useHistory();
+  const navigate = useNavigate();
   const { search } = useLocation();
 
   const networkIndex = Number(
@@ -108,7 +108,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     );
 
     if (removeCustomNetwork.fulfilled.match(res)) {
-      navigateTo(ROUTES.account);
+      navigateTo(ROUTES.account, navigate);
     }
   };
 
@@ -151,7 +151,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       }),
     );
     if (editCustomNetwork.fulfilled.match(res)) {
-      navigateTo(ROUTES.account);
+      navigateTo(ROUTES.account, navigate);
     }
   };
 
@@ -186,7 +186,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
 
     if (addCustomNetworkFulfilled && changeNetworkFulfilled) {
       clearSettingsError();
-      history.goBack();
+      navigate(-1);
     }
   };
 
@@ -250,7 +250,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       <div className="NetworkForm__editing-buttons">
         <Button
           size="md"
-          onClick={() => history.goBack()}
+          onClick={() => navigate(-1)}
           type="button"
           variant="secondary"
           isFullWidth

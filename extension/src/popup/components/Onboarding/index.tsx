@@ -1,5 +1,4 @@
 import React from "react";
-import { useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Alert, Button, Heading, Card } from "@stellar/design-system";
 
@@ -22,10 +21,9 @@ export const Onboarding = ({
 }: OnboardingProps) => {
   const customStyle = {
     ...(!customWidth && layout === "full"
-      ? // eslint-disable-next-line
-        { "--Onboarding-layout-width": "100%" }
+      ? { "--Onboarding-layout-width": "100%" }
       : {}),
-    // eslint-disable-next-line
+
     ...(customWidth ? { "--Onboarding-layout-width": customWidth } : {}),
   } as React.CSSProperties;
 
@@ -58,10 +56,9 @@ export const OnboardingButtons = ({
   customBackAction,
   children,
 }: OnboardingButtonsProps) => {
-  const history = useHistory();
   const { t } = useTranslation();
 
-  const isNewTabSession = history.length === 1;
+  const isNewTabSession = window.history.length === 1;
   const showBackButton = hasGoBackBtn && !isNewTabSession;
 
   if (children || showBackButton) {

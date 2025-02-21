@@ -38,7 +38,7 @@ export const HardwareSign = ({
   walletType: ConfigurableWalletType;
   isSignSorobanAuthorization?: boolean;
 }) => {
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
   const [isDetecting, setIsDetecting] = useState(false);
   const { networkDetails, isHashSigningEnabled } =

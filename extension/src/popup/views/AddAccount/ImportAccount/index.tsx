@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Form, Field, FieldProps, Formik } from "formik";
 import { bool as YupBool, object as YupObject, string as YupString } from "yup";
@@ -20,9 +21,9 @@ import { FormRows } from "popup/basics/Forms";
 import { importAccount, authErrorSelector } from "popup/ducks/accountServices";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { View } from "popup/basics/layout/View";
 
 import "./styles.scss";
-import { View } from "popup/basics/layout/View";
 
 export const ImportAccount = () => {
   interface FormValues {
@@ -46,6 +47,7 @@ export const ImportAccount = () => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const authError = useSelector(authErrorSelector);
+  const navigate = useNavigate();
 
   const handleSubmit = async (values: FormValues) => {
     const { password, privateKey } = values;
@@ -54,13 +56,11 @@ export const ImportAccount = () => {
 
     if (importAccount.fulfilled.match(res)) {
       emitMetric(METRIC_NAMES.accountScreenImportAccount, {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         number_of_accounts: res.payload.allAccounts.length,
       });
-      navigateTo(ROUTES.account);
+      navigateTo(ROUTES.account, navigate);
     } else {
       emitMetric(METRIC_NAMES.accountScreenImportAccountFail, {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         error_type: res.payload?.errorMessage || "",
       });
     }
@@ -137,7 +137,7 @@ export const ImportAccount = () => {
                 size="md"
                 isFullWidth
                 variant="secondary"
-                onClick={() => navigateTo(ROUTES.account)}
+                onClick={() => navigateTo(ROUTES.account, navigate)}
               >
                 {t("Cancel")}
               </Button>

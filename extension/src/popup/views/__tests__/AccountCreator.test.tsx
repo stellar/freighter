@@ -10,6 +10,7 @@ import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applica
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import { AccountCreator } from "../AccountCreator";
 import * as internalApi from "@shared/api/internal";
+import { ROUTES } from "popup/constants/routes";
 
 describe("Account Creator View", () => {
   afterAll(() => {
@@ -19,6 +20,7 @@ describe("Account Creator View", () => {
   it("renders", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -44,6 +46,7 @@ describe("Account Creator View", () => {
   it("rejects mis-matches in passwords", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -83,6 +86,7 @@ describe("Account Creator View", () => {
   it("rejects missing TOS confirmation", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -125,6 +129,7 @@ describe("Account Creator View", () => {
       );
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,

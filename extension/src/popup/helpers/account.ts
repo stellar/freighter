@@ -239,7 +239,6 @@ export const isNetworkUrlValid = (
   let isValid = true;
 
   try {
-    // eslint-disable-next-line no-new
     new Horizon.Server(networkUrl, { allowHttp: isHttpAllowed });
   } catch (e) {
     console.error(e);

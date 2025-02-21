@@ -27,7 +27,7 @@ const jsdomTests = {
   },
   moduleFileExtensions: ["js", "jsx", "json", "node", "mjs", "ts", "tsx"],
   moduleDirectories: ["node_modules", "<rootDir>/extension/src", "<rootDir>/."],
-  testEnvironment: "jsdom",
+  testEnvironment: "jest-fixed-jsdom",
   resolver: "<rootDir>/config/jest/resolver.js",
   modulePathIgnorePatterns: ["extension/e2e-tests"],
 };

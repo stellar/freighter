@@ -17,7 +17,6 @@ registerHandler<AppState>(createAccount.rejected, (_state, action) => {
   const { errorMessage } = action.payload;
 
   emitMetric(METRIC_NAMES.accountCreatorReject, {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     error_type: errorMessage,
   });
 });
@@ -29,7 +28,6 @@ registerHandler<AppState>(confirmPassword.rejected, (_state, action) => {
   const { errorMessage } = action.payload;
 
   emitMetric(METRIC_NAMES.confirmPasswordFail, {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     error_type: errorMessage,
   });
 });
@@ -41,7 +39,6 @@ registerHandler<AppState>(confirmMnemonicPhrase.rejected, (_state, action) => {
   const { errorMessage } = action.payload;
 
   emitMetric(METRIC_NAMES.accountCreatorConfirmMnemonicFail, {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     error_type: errorMessage,
   });
 });
@@ -53,7 +50,6 @@ registerHandler<AppState>(recoverAccount.rejected, (_state, action) => {
   const { errorMessage } = action.payload;
 
   emitMetric(METRIC_NAMES.recoverAccountFail, {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     error_type: errorMessage,
   });
 });

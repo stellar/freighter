@@ -34,9 +34,8 @@ export const KeyIdenticon = ({
   const customStyle = {
     ...(isSmall
       ? {
-          // eslint-disable-next-line
           "--Icon-padding": "0.2rem",
-          // eslint-disable-next-line
+
           "--Icon-dimension": "1.5rem",
           marginRight: iconSide === "left" ? "0.5rem" : 0,
           marginLeft: iconSide === "right" ? "0.5rem" : 0,
@@ -46,9 +45,8 @@ export const KeyIdenticon = ({
         }),
     ...(customSize
       ? {
-          // eslint-disable-next-line
           "--Icon-padding": customSize.padding,
-          // eslint-disable-next-line
+
           "--Icon-dimension": customSize.dimension,
           marginRight: iconSide === "left" ? "0.5rem" : 0,
           marginLeft: iconSide === "right" ? "0.5rem" : 0,
