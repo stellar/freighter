@@ -29,7 +29,6 @@ describe.skip("regular account flow", () => {
 
       // check store
       expect(publicKeySelector(store.getState())).toBeTruthy();
-      expect(privateKeySelector(store.getState())).toBe("");
       expect(allAccountsSelector(store.getState()).length).toBe(1);
       // check localStorage
       expect(JSON.parse(localStorage.getItem("keyIdList")).length).toBe(1);

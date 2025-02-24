@@ -133,6 +133,10 @@ type ScanAssetBulkResponse =
   | ScanAssetBulkResponseSuccess
   | ScanAssetBulkResponseError;
 
+type ReportAssetWarningResponse = { data: number; error: string };
+
+type ReportTransactionWarningResponse = { data: number; error: string };
+
 export const scanAsset = async (
   address: string,
   networkDetails: NetworkDetails,
@@ -245,4 +249,78 @@ export const scanAssetBulk = async (
     Sentry.captureException(err);
   }
   return {} as BlockAidBulkScanAssetResult;
+};
+
+interface ReportAssetWarningParams {
+  address: string;
+  details: string;
+  networkDetails: NetworkDetails;
+}
+
+export const reportAssetWarning = async ({
+  address,
+  details,
+  networkDetails,
+}: ReportAssetWarningParams) => {
+  try {
+    if (!isMainnet(networkDetails)) {
+      /* Reporting assets is only supported on Mainnet */
+      return {} as ReportAssetWarningResponse;
+    }
+    const res = await fetchJson<ReportAssetWarningResponse>(
+      `${INDEXER_URL}/report-asset-warning?address=${address}&details=${encodeURIComponent(
+        details,
+      )}`,
+    );
+
+    if (res.error) {
+      Sentry.captureException(res.error || "Failed to report asset warning");
+    }
+
+    emitMetric(METRIC_NAMES.blockaidAssetScan, { response: res.data });
+    if (!res.data) {
+      return {} as ReportAssetWarningResponse;
+    }
+    return res.data;
+  } catch (err) {
+    console.error("Failed to report asset warning");
+    Sentry.captureException(err);
+  }
+  return {} as ReportAssetWarningResponse;
+};
+
+interface ReportTransactionWarningParams {
+  details: string;
+  requestId: string;
+  event: string;
+}
+
+export const reportTransactionWarning = async ({
+  details,
+  requestId,
+  event,
+}: ReportTransactionWarningParams) => {
+  try {
+    const res = await fetchJson<ReportTransactionWarningResponse>(
+      `${INDEXER_URL}/report-transaction-warning?details=${encodeURIComponent(
+        details,
+      )}&request_id=${requestId}&event=${event}`,
+    );
+
+    if (res.error) {
+      Sentry.captureException(
+        res.error || "Failed to report transaction warning",
+      );
+    }
+
+    emitMetric(METRIC_NAMES.blockaidAssetScan, { response: res.data });
+    if (!res.data) {
+      return {} as ReportTransactionWarningResponse;
+    }
+    return res.data;
+  } catch (err) {
+    console.error("Failed to report transaction warning");
+    Sentry.captureException(err);
+  }
+  return {} as ReportTransactionWarningResponse;
 };

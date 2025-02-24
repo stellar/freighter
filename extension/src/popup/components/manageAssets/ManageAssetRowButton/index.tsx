@@ -1,37 +1,28 @@
+import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+import { NETWORKS } from "@shared/constants/stellar";
+import { Button, Icon, CopyText } from "@stellar/design-system";
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Networks, StrKey } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Button, Icon, CopyText } from "@stellar/design-system";
 
 import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
-import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
-import { emitMetric } from "helpers/metrics";
+
 import { getCanonicalFromAsset } from "helpers/stellar";
-import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
 import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
-import {
-  publicKeySelector,
-  hardwareWalletTypeSelector,
-  addTokenId,
-} from "popup/ducks/accountServices";
+import { useChangeTrustline } from "popup/helpers/useChangeTrustline";
+import { publicKeySelector, addTokenId } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
-  getAccountBalances,
-  resetSubmission,
-  signFreighterTransaction,
-  submitFreighterTransaction,
   transactionSubmissionSelector,
-  startHwSign,
   removeTokenId,
   resetSubmitStatus,
 } from "popup/ducks/transactionSubmission";
 import { ActionStatus } from "@shared/api/types";
-import { NETWORKS } from "@shared/constants/stellar";
+
 import { ROUTES } from "popup/constants/routes";
 
 import IconAdd from "popup/assets/icon-add.svg";
@@ -92,104 +83,29 @@ export const ManageAssetRowButton = ({
   const [isSigningWithHardwareWallet, setIsSigningWithHardwareWallet] =
     useState(false);
   const { submitStatus } = useSelector(transactionSubmissionSelector);
-  const walletType = useSelector(hardwareWalletTypeSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
 
-  const isHardwareWallet = !!walletType;
   const ManageAssetRowDropdownRef = useRef<HTMLDivElement>(null);
   const server = stellarSdkServer(
     networkDetails.networkUrl,
     networkDetails.networkPassphrase,
   );
 
+  const { changeTrustline } = useChangeTrustline({
+    assetCode: code,
+    assetIssuer: issuer,
+    recommendedFee,
+    setAssetSubmitting,
+    setIsSigningWithHardwareWallet,
+    setIsTrustlineErrorShowing,
+    setRowButtonShowing,
+  });
+
   const handleBackgroundClick = () => {
     setRowButtonShowing("");
   };
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
-
-  const signAndSubmit = async (
-    transactionXDR: string,
-    trackChangeTrustline: () => void,
-    successfulCallback?: () => Promise<void>,
-  ) => {
-    const res = await dispatch(
-      signFreighterTransaction({
-        transactionXDR,
-        network: networkDetails.networkPassphrase,
-      }),
-    );
-
-    if (signFreighterTransaction.fulfilled.match(res)) {
-      const submitResp = await dispatch(
-        submitFreighterTransaction({
-          publicKey,
-          signedXDR: res.payload.signedTransaction,
-          networkDetails,
-        }),
-      );
-
-      if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-        dispatch(
-          getAccountBalances({
-            publicKey,
-            networkDetails,
-          }),
-        );
-        trackChangeTrustline();
-        dispatch(resetSubmission());
-        if (successfulCallback) {
-          await successfulCallback();
-        }
-      }
-
-      if (submitFreighterTransaction.rejected.match(submitResp)) {
-        setIsTrustlineErrorShowing(true);
-      }
-
-      setAssetSubmitting("");
-      setRowButtonShowing("");
-    }
-  };
-
-  const changeTrustline = async (
-    addTrustline: boolean,
-    successfulCallback?: () => Promise<void>,
-  ) => {
-    setAssetSubmitting(canonicalAsset);
-
-    const transactionXDR: string = await getManageAssetXDR({
-      publicKey,
-      assetCode: code,
-      assetIssuer: issuer,
-      addTrustline,
-      server,
-      recommendedFee,
-      networkDetails,
-    });
-
-    const trackChangeTrustline = () => {
-      emitMetric(
-        addTrustline
-          ? METRIC_NAMES.manageAssetAddAsset
-          : METRIC_NAMES.manageAssetRemoveAsset,
-        { code, issuer },
-      );
-    };
-
-    if (isHardwareWallet) {
-      // eslint-disable-next-line
-      await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
-      setIsSigningWithHardwareWallet(true);
-      trackChangeTrustline();
-    } else {
-      await signAndSubmit(
-        transactionXDR,
-        trackChangeTrustline,
-        successfulCallback,
-      );
-    }
-  };
 
   const handleRowClick = async (
     assetRowData = {
@@ -246,6 +162,7 @@ export const ManageAssetRowButton = ({
   ) => {
     const contractId = assetRowData.contract;
     setAssetSubmitting(canonicalAsset || contractId);
+
     if (!isTrustlineActive) {
       const addSac = async () => {
         const addToken = async () => {
@@ -259,6 +176,7 @@ export const ManageAssetRowButton = ({
 
           navigateTo(ROUTES.account);
         };
+
         if (StrKey.isValidEd25519PublicKey(assetRowData.issuer)) {
           await changeTrustline(true, addToken);
         } else {

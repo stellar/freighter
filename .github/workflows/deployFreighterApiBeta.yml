@@ -22,7 +22,7 @@ jobs:
       - name: Build package
         uses: actions/setup-node@v4
         with:
-          node-version: "21"
+          node-version: 22
       - name: Version npm package
         run: |
           cd @stellar/freighter-api

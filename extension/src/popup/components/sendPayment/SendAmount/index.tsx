@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { createPortal } from "react-dom";
 import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
 import { useFormik } from "formik";
@@ -438,19 +439,21 @@ export const SendAmount = ({
 
   return (
     <>
-      {showBlockedDomainWarning && (
-        <ScamAssetWarning
-          isSendWarning
-          pillType="Transaction"
-          domain={suspiciousAssetData.domain}
-          code={suspiciousAssetData.code}
-          issuer={suspiciousAssetData.issuer}
-          image={suspiciousAssetData.image}
-          onClose={() => setShowBlockedDomainWarning(false)}
-          onContinue={() => navigateTo(next)}
-          blockaidData={suspiciousAssetData.blockaidData}
-        />
-      )}
+      {showBlockedDomainWarning &&
+        createPortal(
+          <ScamAssetWarning
+            isSendWarning
+            pillType="Transaction"
+            domain={suspiciousAssetData.domain}
+            code={suspiciousAssetData.code}
+            issuer={suspiciousAssetData.issuer}
+            image={suspiciousAssetData.image}
+            onClose={() => setShowBlockedDomainWarning(false)}
+            onContinue={() => navigateTo(next)}
+            blockaidData={suspiciousAssetData.blockaidData}
+          />,
+          document.querySelector("#modal-root")!,
+        )}
       <React.Fragment>
         <SubviewHeader
           title={
