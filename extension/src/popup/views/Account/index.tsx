@@ -66,13 +66,14 @@ export const Account = () => {
   if (selectedAsset) {
     return (
       <AssetDetail
-        accountBalances={accountData.data.balances.balances}
-        assetOperations={accountData.data.history[selectedAsset] || []}
+        accountBalances={accountData.data!.balances.balances}
+        // TODO: how do we filter by selected now
+        assetOperations={accountData.data!.history}
         networkDetails={networkDetails}
         publicKey={publicKey}
         selectedAsset={selectedAsset}
         setSelectedAsset={setSelectedAsset}
-        subentryCount={accountData.data.balances.subentryCount}
+        subentryCount={accountData.data!.balances.subentryCount}
       />
     );
   }
@@ -128,7 +129,7 @@ export const Account = () => {
                 data-testid="account-options-dropdown"
               >
                 <AccountOptionsDropdown
-                  isFunded={!!accountData.data.balances.isFunded}
+                  isFunded={!!accountData.data!.balances.isFunded}
                 />
               </div>
             </div>
@@ -153,7 +154,7 @@ export const Account = () => {
               </Notification>
             </div>
           )}
-          {accountData.data.balances.error?.horizon && (
+          {accountData.data!.balances.error?.horizon && (
             <div className="AccountView__fetch-fail">
               <Notification
                 title={t("Horizon is temporarily experiencing issues")}
@@ -188,21 +189,21 @@ export const Account = () => {
             </div>
           )}
 
-          {accountData.data.balances.isFunded && !hasError && (
+          {accountData.data!.balances.isFunded && !hasError && (
             <div
               className="AccountView__assets-wrapper"
               data-testid="account-assets"
             >
               <AccountAssets
-                sortedBalances={accountData.data.balances.balances}
-                assetIcons={accountData.data.balances.icons}
+                sortedBalances={accountData.data!.balances.balances}
+                assetIcons={accountData.data!.balances.icons!}
                 setSelectedAsset={setSelectedAsset}
               />
             </div>
           )}
         </div>
       </View.Content>
-      {!accountData.data.balances.isFunded &&
+      {!accountData.data!.balances.isFunded &&
         !hasError &&
         !accountData.data.balances.error?.horizon && (
           <View.Footer>

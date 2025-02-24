@@ -8,7 +8,7 @@ import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { useScanTx } from "popup/helpers/blockaid";
 
 interface SignTxData {
-  scanResult: BlockAidScanTxResult;
+  scanResult: BlockAidScanTxResult | null;
   balances: AccountBalances;
 }
 
@@ -39,13 +39,18 @@ function useGetSignTxData(
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const balances = await fetchBalances();
+      const balancesResult = await fetchBalances();
       const scanResult = await scanTx(
         scanOptions.xdr,
         scanOptions.url,
         networkDetails,
       );
-      const payload = { balances, scanResult };
+
+      // TODO: make type narrow functions
+      if (!("balances" in balancesResult)) {
+        throw new Error(balancesResult.message);
+      }
+      const payload = { balances: balancesResult, scanResult };
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {

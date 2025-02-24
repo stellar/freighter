@@ -9,12 +9,6 @@ import {
   settingsNetworkDetailsSelector,
   settingsSelector,
 } from "popup/ducks/settings";
-import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
-import {
-  getIsDustPayment,
-  getIsPayment,
-  getIsSwap,
-} from "popup/helpers/account";
 import { getMonthLabel } from "popup/helpers/getMonthLabel";
 
 import {
@@ -28,28 +22,29 @@ import {
 } from "popup/components/accountHistory/TransactionDetail";
 import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
-
-import { RequestState, useGetHistory } from "helpers/hooks/useGetHistory";
+import { isMainnet } from "helpers/stellar";
+import { RequestState } from "constants/request";
+import { useGetHistoryData } from "./hooks/useGetHistoryData";
 
 import "./styles.scss";
-
-type HistorySection = {
-  monthYear: string; // in format {month}:{year}
-  operations: HistoryItemOperation[];
-};
 
 export const AccountHistory = () => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { accountBalances } = useSelector(transactionSubmissionSelector);
   const { isHideDustEnabled } = useSelector(settingsSelector);
-  const { state: historyState, fetchData } = useGetHistory(
+  const { state: historyState, fetchData } = useGetHistoryData(
     publicKey,
     networkDetails,
+    {
+      isMainnet: isMainnet(networkDetails),
+      showHidden: false,
+      includeIcons: true,
+    },
+    {
+      isHideDustEnabled,
+    },
   );
-
-  const [historySections, setHistorySections] = useState<HistorySection[]>([]);
 
   const [isDetailViewShowing, setIsDetailViewShowing] = useState(false);
 
@@ -69,65 +64,6 @@ export const AccountHistory = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    const createHistorySections = (
-      operations: Horizon.ServerApi.OperationRecord[],
-    ) =>
-      operations.reduce(
-        (
-          sections: HistorySection[],
-          operation: Horizon.ServerApi.OperationRecord,
-        ) => {
-          const isPayment = getIsPayment(operation.type);
-          const isSwap = getIsSwap(operation);
-          const isCreateExternalAccount =
-            operation.type ===
-              Horizon.HorizonApi.OperationResponseType.createAccount &&
-            operation.account !== publicKey;
-          const isDustPayment = getIsDustPayment(publicKey, operation);
-
-          const parsedOperation = {
-            ...operation,
-            isPayment,
-            isSwap,
-            isCreateExternalAccount,
-          };
-
-          if (isDustPayment && isHideDustEnabled) {
-            return sections;
-          }
-
-          const date = new Date(operation.created_at);
-          const month = date.getMonth();
-          const year = date.getFullYear();
-          const monthYear = `${month}:${year}`;
-
-          const lastSection =
-            sections.length > 0 && sections[sections.length - 1];
-
-          // if we have no sections yet, let's create the first one
-          if (!lastSection) {
-            return [{ monthYear, operations: [parsedOperation] }];
-          }
-
-          // if element belongs to this section let's add it right away
-          if (lastSection.monthYear === monthYear) {
-            lastSection.operations.push(parsedOperation);
-            return sections;
-          }
-
-          // otherwise let's add a new section at the bottom of the array
-          return [...sections, { monthYear, operations: [parsedOperation] }];
-        },
-        [] as HistorySection[],
-      );
-
-    if (historyState.state === RequestState.SUCCESS) {
-      const sections = createHistorySections(historyState.data);
-      setHistorySections(sections);
-    }
-  }, [historyState.state, historyState.data, publicKey, isHideDustEnabled]);
-
   const isLoaderShowing =
     historyState.state === RequestState.IDLE ||
     historyState.state === RequestState.LOADING;
@@ -140,45 +76,50 @@ export const AccountHistory = () => {
     return <Loading />;
   }
 
-  const hasHistoryContent = historySections.length > 0;
-
   return (
     <>
       <View.AppHeader pageTitle={t("History")} />
       <View.Content hasNoTopPadding hasNoBottomPadding>
         <div className="AccountHistory" data-testid="AccountHistory">
-          {hasHistoryContent && (
-            <>
-              {historySections.map((section: HistorySection) => (
-                <div key={section.monthYear} className="AccountHistory__list">
-                  <Text
-                    as="div"
-                    size="sm"
-                    addlClassName="AccountHistory__section-header"
-                  >
-                    {getMonthLabel(Number(section.monthYear.split(":")[0]))}
-                  </Text>
+          {historyState.data!.history.map((section) => (
+            <div key={section.monthYear} className="AccountHistory__list">
+              <Text
+                as="div"
+                size="sm"
+                addlClassName="AccountHistory__section-header"
+              >
+                {getMonthLabel(Number(section.monthYear.split(":")[0]))}
+              </Text>
 
-                  <div className="AccountHistory__list">
-                    {section.operations.map(
-                      (operation: HistoryItemOperation) => (
-                        <HistoryItem
-                          key={operation.id}
-                          accountBalances={accountBalances}
-                          operation={operation}
-                          publicKey={publicKey}
-                          networkDetails={networkDetails}
-                          setDetailViewProps={setDetailViewProps}
-                          setIsDetailViewShowing={setIsDetailViewShowing}
-                        />
-                      ),
-                    )}
-                  </div>
-                </div>
-              ))}
-            </>
+              <div className="AccountHistory__list">
+                {section.operations
+                  .filter((operation: HistoryItemOperation) => {
+                    return (
+                      operation.type !==
+                        Horizon.HorizonApi.OperationResponseType
+                          .claimClaimableBalance &&
+                      operation.type !==
+                        Horizon.HorizonApi.OperationResponseType
+                          .createClaimableBalance
+                    );
+                  })
+                  .map((operation: HistoryItemOperation) => (
+                    <HistoryItem
+                      key={operation.id}
+                      accountBalances={historyState.data!.balances}
+                      operation={operation}
+                      publicKey={publicKey}
+                      networkDetails={networkDetails}
+                      setDetailViewProps={setDetailViewProps}
+                      setIsDetailViewShowing={setIsDetailViewShowing}
+                    />
+                  ))}
+              </div>
+            </div>
+          ))}
+          {historyState.data!.history.length < 1 && (
+            <div>{t("No transactions to show")}</div>
           )}
-          {!hasHistoryContent && <div>{t("No transactions to show")}</div>}
         </div>
       </View.Content>
     </>

@@ -39,7 +39,7 @@ function useGetBalances(
     initialState,
   );
 
-  const fetchData = async (): Promise<AccountBalances> => {
+  const fetchData = async (): Promise<AccountBalances | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const data = await getAccountBalances(

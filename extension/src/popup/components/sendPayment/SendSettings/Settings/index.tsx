@@ -14,6 +14,7 @@ import {
   isMuxedAccount,
   getAssetFromCanonical,
   stroopToXlm,
+  isMainnet,
 } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -25,7 +26,6 @@ import {
   isPathPaymentSelector,
   saveTransactionFee,
   saveSimulation,
-  transactionSubmissionSelector,
   saveIsToken,
 } from "popup/ducks/transactionSubmission";
 import {
@@ -45,6 +45,7 @@ import {
 } from "popup/helpers/soroban";
 import { Balances, TokenBalance } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
+import { useGetBalances } from "helpers/hooks/useGetBalances";
 
 import "../../styles.scss";
 
@@ -75,11 +76,19 @@ export const Settings = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
   const publicKey = useSelector(publicKeySelector);
-  const { accountBalances } = useSelector(transactionSubmissionSelector);
   const { simulation } = useSelector(tokenSimulationSelector);
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
   const [isLoadingSimulation, setLoadingSimulation] = useState(true);
+  const { state: accountData, fetchData } = useGetBalances(
+    publicKey,
+    networkDetails,
+    {
+      isMainnet: isMainnet(networkDetails),
+      showHidden: false,
+      includeIcons: true,
+    },
+  );
 
   const isSendSacToContract =
     isContractId(destination) &&

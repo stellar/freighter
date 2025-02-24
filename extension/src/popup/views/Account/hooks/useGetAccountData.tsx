@@ -35,9 +35,15 @@ function useGetAccountData(
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const balances = await fetchBalances();
+      const balancesResult = await fetchBalances();
       const history = await fetchHistory();
-      const payload = { balances, history };
+
+      // TODO: make type narrow functions
+      if (!("balances" in balancesResult)) {
+        throw new Error(balancesResult.message);
+      }
+
+      const payload = { balances: balancesResult, history };
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {

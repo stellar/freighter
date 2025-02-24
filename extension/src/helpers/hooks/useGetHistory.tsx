@@ -3,7 +3,6 @@ import { useReducer } from "react";
 import { getAccountHistory } from "@shared/api/internal";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { ServerApi } from "stellar-sdk/lib/horizon";
-import { RequestState } from "constants/request";
 import { initialState, reducer } from "helpers/request";
 
 function useGetHistory(publicKey: string, networkDetails: NetworkDetails) {
@@ -30,4 +29,4 @@ function useGetHistory(publicKey: string, networkDetails: NetworkDetails) {
   };
 }
 
-export { useGetHistory, RequestState };
+export { useGetHistory };

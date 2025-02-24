@@ -121,7 +121,7 @@ export const SignTransaction = () => {
       includeIcons: true,
     },
   );
-  const scanResult = scanTxState.data.scanResult;
+  const scanResult = scanTxState.data?.scanResult;
   const flaggedMalicious =
     scanResult?.validation &&
     "result_type" in scanResult.validation &&
@@ -225,7 +225,7 @@ export const SignTransaction = () => {
     return <Loading />;
   }
 
-  const hasEnoughXlm = scanTxState.data.balances.balances.some(
+  const hasEnoughXlm = scanTxState.data?.balances.balances.some(
     (balance) =>
       balance.token.code === "XLM" &&
       balance.available.gt(stroopToXlm(_fee as string)),

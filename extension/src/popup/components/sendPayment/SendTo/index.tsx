@@ -38,7 +38,6 @@ import {
   transactionDataSelector,
   loadRecentAddresses,
   transactionSubmissionSelector,
-  getDestinationBalances,
 } from "popup/ducks/transactionSubmission";
 
 import "../styles.scss";
@@ -102,9 +101,6 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
     transactionDataSelector,
   );
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { destinationBalances, destinationAccountBalanceStatus } = useSelector(
-    transactionSubmissionSelector,
-  );
 
   const [recentAddresses, setRecentAddresses] = useState<string[]>([]);
   const [validatedAddress, setValidatedAddress] = useState("");
@@ -207,7 +203,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       return;
     }
 
-    // TODO - remove once wallet-sdk can handle muxed
+    // TODO: use to get dest balances
     let address = validatedAddress;
 
     if (isContractId(validatedAddress)) {
@@ -218,13 +214,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       const mAccount = MuxedAccount.fromAddress(validatedAddress, "0");
       address = mAccount.baseAccount().accountId();
     }
-    dispatch(
-      getDestinationBalances({
-        publicKey: address,
-        networkDetails,
-      }),
-    );
-  }, [dispatch, validatedAddress, networkDetails]);
+  }, [validatedAddress]);
 
   return (
     <React.Fragment>

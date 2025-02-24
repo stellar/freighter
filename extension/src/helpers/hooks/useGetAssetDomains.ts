@@ -103,7 +103,7 @@ export function useGetAssetDomains(
           domains.push({
             code,
             issuer: issuer.key,
-            image: balances.icons[getCanonicalFromAsset(code, issuer.key)],
+            image: balances.icons![getCanonicalFromAsset(code, issuer.key)],
             domain,
             contract: contractId,
             isSuspicious: isAssetSuspicious(blockaidData),
@@ -131,7 +131,8 @@ export function useGetAssetDomains(
           // This is designed to populate tokens available from Soroswap that the user does not already have
           if (
             balances &&
-            !balances[canonical] &&
+            // TODO: how to remake this check?
+            // !balances[canonical] &&
             token.contract !== nativeContractDetails.contract
           ) {
             domains.push({
