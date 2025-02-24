@@ -8,6 +8,7 @@ import {
   Transaction,
   TransactionBuilder,
   xdr,
+  XdrLargeInt,
 } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 import { INDEXER_URL } from "@shared/constants/mercury";
@@ -17,6 +18,7 @@ import {
   getDecimals,
   getName,
   getSymbol,
+  transfer,
 } from "@shared/helpers/soroban/token";
 import {
   getSdk,
@@ -30,6 +32,7 @@ import {
 import {
   getContractSpec as getContractSpecHelper,
   getIsTokenSpec as getIsTokenSpecHelper,
+  xlmToStroop,
 } from "./helpers/soroban";
 import {
   Account,
@@ -1493,8 +1496,58 @@ export const simulateTokenTransfer = async (args: {
   };
   networkDetails: NetworkDetails;
   transactionFee: string;
-}) => {
-  const { address, publicKey, memo, params, networkDetails } = args;
+}): Promise<{
+  ok: boolean;
+  response: {
+    preparedTransaction: string;
+    simulationTransaction: SorobanRpc.Api.SimulateTransactionSuccessResponse;
+  };
+}> => {
+  const { address, publicKey, memo, params, networkDetails, transactionFee } =
+    args;
+
+  if (isCustomNetwork(networkDetails)) {
+    if (!networkDetails.sorobanRpcUrl) {
+      throw new SorobanRpcNotSupportedError();
+    }
+    const server = buildSorobanServer(
+      networkDetails.sorobanRpcUrl,
+      networkDetails.networkPassphrase,
+    );
+    const builder = await getNewTxBuilder(
+      publicKey,
+      networkDetails,
+      server,
+      xlmToStroop(transactionFee).toFixed(),
+    );
+
+    const transferParams = [
+      new Address(publicKey).toScVal(), // from
+      new Address(address).toScVal(), // to
+      new XdrLargeInt("i128", params.amount).toI128(), // amount
+    ];
+    const transaction = transfer(address, transferParams, memo, builder);
+    // TODO: type narrow instead of cast
+    const simulationTransaction = (await server.simulateTransaction(
+      transaction,
+    )) as SorobanRpc.Api.SimulateTransactionSuccessResponse;
+
+    const preparedTransaction = SorobanRpc.assembleTransaction(
+      transaction,
+      simulationTransaction,
+    )
+      .build()
+      .toXDR();
+
+    return {
+      ok: true,
+      response: {
+        simulationTransaction,
+        preparedTransaction,
+      },
+    };
+  }
+
   const options = {
     method: "POST",
     headers: {
