@@ -82,7 +82,7 @@ function useGetBalances(
       return accountBalances;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
-      return error;
+      return new Error(JSON.stringify(error));
     }
   };
 

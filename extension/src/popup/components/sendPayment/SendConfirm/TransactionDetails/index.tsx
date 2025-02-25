@@ -566,11 +566,12 @@ export const TransactionDetails = ({
                   blockaidData={
                     // TODO: helper to get asset & dest asset
                     (txDetailsData.data?.isSourceAssetSuspicious!
-                      ? txDetailsData.data?.balances.balances?.[asset]
-                          ?.blockaidData
-                      : txDetailsData.data?.balances.balances?.[
-                          destinationAsset
-                        ]?.blockaidData) || defaultBlockaidScanAssetResult
+                      ? txDetailsData.data?.balances.balances?.find(
+                          (balance) => balance.token.code === asset,
+                        )?.blockaidData
+                      : txDetailsData.data?.balances.balances?.find(
+                          (balance) => balance.token.code === asset,
+                        )?.blockaidData) || defaultBlockaidScanAssetResult
                   }
                   isSuspicious={
                     txDetailsData.data?.isSourceAssetSuspicious! ||

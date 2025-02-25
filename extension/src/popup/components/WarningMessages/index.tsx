@@ -15,6 +15,7 @@ import { captureException } from "@sentry/browser";
 
 import {
   ActionStatus,
+  AssetIcons,
   BlockAidScanAssetResult,
   BlockAidScanTxResult,
 } from "@shared/api/types";
@@ -323,6 +324,7 @@ export const ScamAssetWarning = ({
   // eslint-disable-next-line
   onContinue = () => {},
   blockaidData,
+  assetIcons,
 }: {
   pillType: "Connection" | "Trustline" | "Transaction";
   isSendWarning?: boolean;
@@ -333,6 +335,7 @@ export const ScamAssetWarning = ({
   onClose: () => void;
   onContinue?: () => void;
   blockaidData: BlockAidScanAssetResult;
+  assetIcons: AssetIcons;
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -430,6 +433,7 @@ export const ScamAssetWarning = ({
           issuer={issuer}
           domain={domain}
           image={image}
+          assetIcons={assetIcons}
           variant={isAssetSuspicious(blockaidData) ? "malicious" : "default"}
           asset={code}
           pillType={pillType}

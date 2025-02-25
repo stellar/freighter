@@ -1,74 +1,100 @@
 import { useReducer } from "react";
-import { useSelector } from "react-redux";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { initialState, reducer } from "helpers/request";
-
+import {
+  AccountBalancesInterface,
+  AssetIcons,
+  BalanceMap,
+  Balances,
+} from "@shared/api/types";
+import {
+  getAccountBalances,
+  getAssetIcons,
+  getHiddenAssets,
+} from "@shared/api/internal";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
+import { filterHiddenBalances, sortBalances } from "popup/helpers/account";
+import { useIsSoroswapEnabled, useIsSwap } from "popup/helpers/useIsSwap";
+import { useSelector } from "react-redux";
 import {
   AssetSelectType,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
+import { getAssetDomain } from "popup/helpers/getAssetDomain";
 import { getCanonicalFromAsset } from "helpers/stellar";
-import { isAssetSuspicious } from "../../popup/helpers/blockaid";
-import { getNativeContractDetails } from "../../popup/helpers/searchAsset";
-import { useIsSoroswapEnabled, useIsSwap } from "../../popup/helpers/useIsSwap";
-import { getAssetDomain } from "../../popup/helpers/getAssetDomain";
-import { AccountBalances, useGetBalances } from "./useGetBalances";
+import { isAssetSuspicious } from "popup/helpers/blockaid";
+import { getNativeContractDetails } from "popup/helpers/searchAsset";
 
-interface AssetDomains {
-  balances: AccountBalances;
+interface SendAmountData {
+  userBalances: AccountBalancesInterface;
+  destinationBalances: AccountBalancesInterface;
+  icons: AssetIcons;
   domains: ManageAssetCurrency[];
-  isManagingAssets: boolean;
 }
 
-export function useGetAssetDomains(
+function useGetSendAmountData(
   publicKey: string,
+  destinationPublicKey: string,
   networkDetails: NetworkDetails,
   options: {
     isMainnet: boolean;
     showHidden: boolean;
-    includeIcons: boolean;
   },
 ) {
-  const isSwap = useIsSwap();
-  const isSoroswapEnabled = useIsSoroswapEnabled();
-  const { assetSelect, soroswapTokens } = useSelector(
-    transactionSubmissionSelector,
-  );
-  const isManagingAssets = assetSelect.type === AssetSelectType.MANAGE;
-
   const [state, dispatch] = useReducer(
-    reducer<AssetDomains, unknown>,
+    reducer<SendAmountData, unknown>,
     initialState,
-  );
-  const { fetchData: fetchBalances } = useGetBalances(
-    publicKey,
-    networkDetails,
-    options,
   );
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const balances = await fetchBalances();
+      const isSwap = useIsSwap();
+      const isSoroswapEnabled = useIsSoroswapEnabled();
+      const { assetSelect, soroswapTokens } = useSelector(
+        transactionSubmissionSelector,
+      );
+      const isManagingAssets = assetSelect.type === AssetSelectType.MANAGE;
 
-      // TODO: make type narrow functions
-      if (!("balances" in balances)) {
-        throw new Error(balances.message);
-      }
+      const userBalances = await getAccountBalances(
+        publicKey,
+        networkDetails,
+        options.isMainnet,
+      );
+      const destinationBalances = await getAccountBalances(
+        destinationPublicKey,
+        networkDetails,
+        options.isMainnet,
+      );
+
+      const balances = {
+        ...userBalances.balances,
+        ...destinationBalances.balances,
+      } as Balances;
+      const icons = await getAssetIcons({
+        balances,
+        networkDetails,
+      });
 
       const domains = [] as ManageAssetCurrency[];
+      const hiddenAssets = await getHiddenAssets();
+      const balancesList = sortBalances(
+        filterHiddenBalances(
+          balances as NonNullable<BalanceMap>,
+          hiddenAssets.hiddenAssets,
+        ),
+      );
       // TODO: cache home domain when getting asset icon
       // https://github.com/stellar/freighter/issues/410
       // eslint-disable-next-line @typescript-eslint/prefer-for-of
-      for (let i = 0; i < balances.balances.length; i += 1) {
-        if (balances.balances[i].liquidityPoolId) {
+      for (let i = 0; i < balancesList.length; i += 1) {
+        if (balancesList[i].liquidityPoolId) {
           // eslint-disable-next-line
           continue;
         }
 
-        const { token, contractId, blockaidData } = balances.balances[i];
+        const { token, contractId, blockaidData } = balancesList[i];
 
         const code = token.code || "";
         let issuer = {
@@ -80,11 +106,7 @@ export function useGetAssetDomains(
         }
 
         // If we are in the swap flow and the asset has decimals (is a token), we skip it if Soroswap is not enabled
-        if (
-          "decimals" in balances.balances[i] &&
-          isSwap &&
-          !isSoroswapEnabled
-        ) {
+        if ("decimals" in balancesList[i] && isSwap && !isSoroswapEnabled) {
           // eslint-disable-next-line
           continue;
         }
@@ -108,7 +130,7 @@ export function useGetAssetDomains(
           domains.push({
             code,
             issuer: issuer.key,
-            image: balances.icons![getCanonicalFromAsset(code, issuer.key)],
+            image: icons![getCanonicalFromAsset(code, issuer.key)],
             domain,
             contract: contractId,
             isSuspicious: isAssetSuspicious(blockaidData),
@@ -151,7 +173,12 @@ export function useGetAssetDomains(
         });
       }
 
-      const payload = { domains, isManagingAssets, balances };
+      const payload = {
+        userBalances,
+        destinationBalances,
+        icons,
+        domains,
+      };
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
@@ -165,3 +192,5 @@ export function useGetAssetDomains(
     fetchData,
   };
 }
+
+export { useGetSendAmountData };

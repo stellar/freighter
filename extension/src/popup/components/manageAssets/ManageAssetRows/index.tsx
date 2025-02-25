@@ -36,6 +36,7 @@ import {
 import { ManageAssetRowButton } from "../ManageAssetRowButton";
 
 import "./styles.scss";
+import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;
@@ -56,6 +57,7 @@ interface ManageAssetRowsProps {
   isVerifiedToken?: boolean;
   isVerificationInfoShowing?: boolean;
   verifiedLists?: string[];
+  balances: AccountBalances;
 }
 
 interface SuspiciousAssetData {
@@ -74,9 +76,9 @@ export const ManageAssetRows = ({
   isVerifiedToken,
   isVerificationInfoShowing,
   verifiedLists,
+  balances,
 }: ManageAssetRowsProps) => {
   const {
-    accountBalances,
     submitStatus,
     hardwareWalletData: { status: hwStatus },
   } = useSelector(transactionSubmissionSelector);
@@ -130,6 +132,7 @@ export const ManageAssetRows = ({
         <ScamAssetWarning
           pillType="Trustline"
           domain={suspiciousAssetData.domain}
+          assetIcons={balances.icons!}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
           image={suspiciousAssetData.image}
@@ -176,14 +179,15 @@ export const ManageAssetRows = ({
               contract = "",
               isSuspicious,
             }) => {
-              if (!accountBalances.balances) {
+              if (!balances) {
                 return null;
               }
               const isContract = isContractId(contract);
               const canonicalAsset = getCanonicalFromAsset(code, issuer);
-              const isTrustlineActive = Object.keys(
-                accountBalances.balances,
-              ).some((balance) => balance === canonicalAsset);
+              // TODO: is this trustline check correct?
+              const isTrustlineActive = Object.keys(balances).some(
+                (balance) => balance === canonicalAsset,
+              );
               const isActionPending =
                 submitStatus === ActionStatus.PENDING ||
                 accountBalanceStatus === ActionStatus.PENDING;

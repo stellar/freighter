@@ -11,6 +11,7 @@ import IconShieldPlus from "popup/assets/icon-shield-plus.svg";
 import { BlockAidSiteScanLabel } from "../WarningMessages";
 
 import "./styles.scss";
+import { AssetIcons } from "@shared/api/types";
 
 export type PillType = "Connection" | "Trustline" | "Transaction";
 
@@ -55,6 +56,7 @@ interface ModalInfoProps {
   pillType: PillType;
   domain: string;
   asset: string;
+  assetIcons: AssetIcons;
   variant?: "default" | "malicious";
 }
 
@@ -67,11 +69,11 @@ export const ModalInfo = ({
   domain,
   asset,
   variant = "default",
+  assetIcons,
 }: ModalInfoProps) => {
   const cardClasses = classNames("ModalInfo--card", {
     Malicious: variant === "malicious",
   });
-  const { assetIcons } = useSelector(transactionSubmissionSelector);
 
   return (
     <div className={cardClasses}>

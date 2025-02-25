@@ -10,7 +10,7 @@ import { AppDispatch } from "popup/App";
 import { AssetIcons, ErrorMessage } from "@shared/api/types";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
-import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
+import { getAssetFromCanonical, isMainnet, xlmToStroop } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { RESULT_CODES, getResultCodes } from "popup/helpers/parseTransaction";
 import { useIsSwap } from "popup/helpers/useIsSwap";
@@ -36,6 +36,7 @@ import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { formatAmount } from "popup/helpers/formatters";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
+import { useGetAccountData } from "popup/views/Account/hooks/useGetAccountData";
 
 import "./styles.scss";
 
@@ -78,7 +79,6 @@ const SwapAssetsIcon = ({
 
 export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const {
-    accountBalances,
     transactionData: {
       destination,
       federationAddress,
@@ -86,7 +86,6 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       asset,
       destinationAsset,
     },
-    assetIcons,
   } = useSelector(transactionSubmissionSelector);
 
   const { t } = useTranslation();
@@ -98,17 +97,31 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
+  const { state: accountData, fetchData } = useGetAccountData(
+    publicKey,
+    networkDetails,
+    {
+      isMainnet: isMainnet(networkDetails),
+      showHidden: false,
+      includeIcons: true,
+    },
+  );
 
   const server = stellarSdkServer(
     networkDetails.networkUrl,
     networkDetails.networkPassphrase,
   );
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+  // TODO: asset filter helper
   const isSourceAssetSuspicious = isAssetSuspicious(
-    accountBalances.balances?.[asset]?.blockaidData,
+    accountData.data?.balances.balances?.find(
+      (balance) => balance.contractId === asset,
+    )?.blockaidData,
   );
   const isDestAssetSuspicious = isAssetSuspicious(
-    accountBalances.balances?.[destinationAsset]?.blockaidData,
+    accountData.data?.balances.balances?.find(
+      (balance) => balance.contractId === destinationAsset,
+    )?.blockaidData,
   );
 
   const removeTrustline = async (assetCode: string, assetIssuer: string) => {
@@ -177,11 +190,17 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   };
 
   // TODO: the remove trustline logic here does not work Soroban tokens. We should handle this case
+  const suggestRemoveTrustline = accountData.data?.balances.balances
+    ?.find((balance) => balance.contractId === asset)
+    ?.available?.isZero();
 
-  const suggestRemoveTrustline =
-    accountBalances.balances &&
-    accountBalances.balances[asset] &&
-    accountBalances.balances[asset].available?.isZero();
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <React.Fragment>
@@ -226,7 +245,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
               <SwapAssetsIcon
                 sourceCanon={asset}
                 destCanon={destinationAsset}
-                assetIcons={assetIcons}
+                assetIcons={accountData.data?.balances.icons!}
                 isSourceSuspicious={isSourceAssetSuspicious}
                 isDestSuspicious={isDestAssetSuspicious}
               />

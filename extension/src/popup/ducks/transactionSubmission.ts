@@ -11,7 +11,6 @@ import {
   signFreighterTransaction as internalSignFreighterTransaction,
   signFreighterSorobanTransaction as internalSignFreighterSorobanTransaction,
   addRecentAddress as internalAddRecentAddress,
-  loadRecentAddresses as internalLoadRecentAddresses,
   getMemoRequiredAccounts as internalGetMemoRequiredAccounts,
   removeTokenId as internalRemoveTokenId,
   submitFreighterTransaction as internalSubmitFreighterTransaction,
@@ -279,19 +278,6 @@ export const addRecentAddress = createAsyncThunk<
 >("addRecentAddress", async ({ publicKey }, thunkApi) => {
   try {
     return await internalAddRecentAddress({ publicKey });
-  } catch (e) {
-    const message = e instanceof Error ? e.message : JSON.stringify(e);
-    return thunkApi.rejectWithValue({ errorMessage: message });
-  }
-});
-
-export const loadRecentAddresses = createAsyncThunk<
-  { recentAddresses: string[] },
-  undefined,
-  { rejectValue: ErrorMessage }
->("loadRecentAddresses", async (_: any, thunkApi) => {
-  try {
-    return await internalLoadRecentAddresses();
   } catch (e) {
     const message = e instanceof Error ? e.message : JSON.stringify(e);
     return thunkApi.rejectWithValue({ errorMessage: message });

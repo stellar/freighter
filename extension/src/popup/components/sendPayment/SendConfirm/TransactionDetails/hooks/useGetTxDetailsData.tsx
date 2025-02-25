@@ -240,7 +240,6 @@ function useGetTxDetailsData(
           path,
           isPathPayment,
           isSwap,
-          isFunded, // TODO: destinationBalances.isFunded!
           transactionFee,
           transactionTimeout,
           memo,
@@ -257,7 +256,7 @@ function useGetTxDetailsData(
             path,
             isPathPayment,
             isSwap,
-            isFunded,
+            isFunded: true, // TODO: destinationBalances.isFunded!
           },
           transactionFee,
           transactionTimeout,
