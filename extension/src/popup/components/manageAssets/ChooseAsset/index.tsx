@@ -13,12 +13,12 @@ import { publicKeySelector } from "background/ducks/session";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 
+import { RequestState } from "constants/request";
 import { useGetAssetDomains } from "helpers/hooks/useGetAssetDomains";
 import { isMainnet } from "helpers/stellar";
 
 import { ManageAssetRows } from "../ManageAssetRows";
 import { SelectAssetRows } from "../SelectAssetRows";
-import { RequestState } from "constants/request";
 
 import "./styles.scss";
 

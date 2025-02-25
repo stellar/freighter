@@ -173,7 +173,7 @@ export const TrustlineError = ({
           const asset = `${code}:${issuer}`;
           // TODO: get balance helper
           const balance = balances.balances?.find(
-            (balance) => balance.contractId === asset,
+            ({ contractId }) => contractId === asset,
           );
 
           if (!balance) {

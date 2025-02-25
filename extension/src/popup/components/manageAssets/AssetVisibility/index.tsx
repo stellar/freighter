@@ -10,11 +10,13 @@ import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
-import { useGetAssetDomains } from "helpers/hooks/useGetAssetDomains";
-import { ToggleAssetRows } from "../ToggleAssetRows";
 import { isMainnet } from "helpers/stellar";
 import { publicKeySelector } from "popup/ducks/accountServices";
+
 import { RequestState } from "constants/request";
+import { useGetAssetDomains } from "helpers/hooks/useGetAssetDomains";
+
+import { ToggleAssetRows } from "../ToggleAssetRows";
 
 import "./styles.scss";
 
@@ -70,7 +72,7 @@ export const AssetVisibility = () => {
               }`}
               ref={ManageAssetRowsWrapperRef}
             >
-              <ToggleAssetRows assetRows={domainState.data?.domains!} />
+              <ToggleAssetRows assetRows={domainState.data!.domains} />
             </div>
           </div>
         )}

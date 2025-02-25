@@ -6,10 +6,11 @@ import { useTranslation } from "react-i18next";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import IconShieldPlus from "popup/assets/icon-shield-plus.svg";
+import { AssetIcons } from "@shared/api/types";
+
 import { BlockAidSiteScanLabel } from "../WarningMessages";
 
 import "./styles.scss";
-import { AssetIcons } from "@shared/api/types";
 
 export type PillType = "Connection" | "Trustline" | "Transaction";
 

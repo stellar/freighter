@@ -76,7 +76,7 @@ export const AssetDetail = ({
   // TODO: balance helper
   const isSuspicious = isAssetSuspicious(
     accountBalances.balances?.find(
-      (balance) => balance.contractId === selectedAsset,
+      ({ contractId }) => contractId === selectedAsset,
     )?.blockaidData,
   );
 
@@ -236,7 +236,7 @@ export const AssetDetail = ({
               <BlockaidAssetWarning
                 blockaidData={
                   accountBalances.balances?.find(
-                    (balance) => balance.contractId === selectedAsset,
+                    ({ contractId }) => contractId === selectedAsset,
                   )?.blockaidData || defaultBlockaidScanAssetResult
                 }
               />

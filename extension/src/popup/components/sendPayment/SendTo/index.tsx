@@ -36,10 +36,11 @@ import {
   saveFederationAddress,
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
+
+import { RequestState } from "constants/request";
 import { useSendToData } from "./hooks/useSendToData";
 
 import "../styles.scss";
-import { RequestState } from "constants/request";
 
 const baseReserve = new BigNumber(1);
 
@@ -246,11 +247,11 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                       <div className="SendTo__subheading">Address</div>
                       <div className="SendTo__subheading-identicon">
                         <IdenticonImg
-                          publicKey={sendDataState.data?.validatedAddress!}
+                          publicKey={sendDataState.data!.validatedAddress}
                         />
                         <span>
                           {truncatedPublicKey(
-                            sendDataState.data?.validatedAddress!,
+                            sendDataState.data!.validatedAddress,
                           )}
                         </span>
                       </div>

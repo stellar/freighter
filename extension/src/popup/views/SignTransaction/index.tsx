@@ -56,6 +56,7 @@ import { Loading } from "popup/components/Loading";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Tabs } from "popup/components/Tabs";
 
+import { RequestState } from "constants/request";
 import { useGetSignTxData } from "./hooks/useGetSignTxData";
 
 import { Summary } from "./Preview/Summary";
@@ -63,7 +64,6 @@ import { Details } from "./Preview/Details";
 import { Data } from "./Preview/Data";
 
 import "./styles.scss";
-import { RequestState } from "constants/request";
 
 export const SignTransaction = () => {
   const location = useLocation();

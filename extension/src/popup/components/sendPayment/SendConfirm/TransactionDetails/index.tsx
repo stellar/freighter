@@ -294,7 +294,7 @@ export const TransactionDetails = ({
       }
       const res = await dispatch(
         signFreighterTransaction({
-          transactionXDR: txDetailsData.data?.transactionXdr!,
+          transactionXDR: txDetailsData.data!.transactionXdr,
           network: networkDetails.networkPassphrase,
         }),
       );
@@ -420,7 +420,7 @@ export const TransactionDetails = ({
               <div className="TransactionDetails__cards">
                 <Card>
                   <AccountAssets
-                    assetIcons={txDetailsData.data?.balances.icons!}
+                    assetIcons={txDetailsData.data!.balances.icons!}
                     sortedBalances={[
                       {
                         token: {
@@ -438,18 +438,18 @@ export const TransactionDetails = ({
 
             {(isPathPayment || isSwap) && (
               <TwoAssetCard
-                sourceAssetIcons={txDetailsData.data?.balances.icons!}
+                sourceAssetIcons={txDetailsData.data!.balances.icons!}
                 sourceCanon={asset}
                 sourceAmount={amount}
                 // TODO: get dest icons
-                destAssetIcons={txDetailsData.data?.balances.icons!}
+                destAssetIcons={txDetailsData.data!.balances.icons!}
                 destCanon={destinationAsset || "native"}
                 destAmount={destinationAmount}
                 isSourceAssetSuspicious={
-                  txDetailsData.data?.isSourceAssetSuspicious!
+                  txDetailsData.data!.isSourceAssetSuspicious
                 }
                 isDestAssetSuspicious={
-                  txDetailsData.data?.isDestAssetSuspicious!
+                  txDetailsData.data!.isDestAssetSuspicious
                 }
               />
             )}
@@ -541,12 +541,12 @@ export const TransactionDetails = ({
                   className="TransactionDetails__row__right--hasOverflow"
                   data-testid="TransactionDetailsXDR"
                 >
-                  <CopyText textToCopy={txDetailsData.data?.transactionXdr!}>
+                  <CopyText textToCopy={txDetailsData.data!.transactionXdr}>
                     <>
                       <div className="TransactionDetails__row__copy">
                         <Icon.Copy01 />
                       </div>
-                      {`${txDetailsData.data?.transactionXdr!.slice(0, 10)}…`}
+                      {`${txDetailsData.data!.transactionXdr.slice(0, 10)}…`}
                     </>
                   </CopyText>
                 </div>
@@ -554,9 +554,9 @@ export const TransactionDetails = ({
             ) : null}
 
             <div className="TransactionDetails__warnings">
-              {txDetailsData.data?.scanResult! && (
+              {txDetailsData.data!.scanResult && (
                 <BlockaidTxScanLabel
-                  scanResult={txDetailsData.data?.scanResult!}
+                  scanResult={txDetailsData.data!.scanResult}
                   isPopup
                 />
               )}
@@ -565,17 +565,17 @@ export const TransactionDetails = ({
                   isMemoRequired={isMemoRequired}
                   blockaidData={
                     // TODO: helper to get asset & dest asset
-                    (txDetailsData.data?.isSourceAssetSuspicious!
-                      ? txDetailsData.data?.balances.balances?.find(
+                    (txDetailsData.data!.isSourceAssetSuspicious
+                      ? txDetailsData.data!.balances.balances.find(
                           (balance) => balance.token.code === asset,
                         )?.blockaidData
-                      : txDetailsData.data?.balances.balances?.find(
+                      : txDetailsData.data!.balances.balances.find(
                           (balance) => balance.token.code === asset,
                         )?.blockaidData) || defaultBlockaidScanAssetResult
                   }
                   isSuspicious={
-                    txDetailsData.data?.isSourceAssetSuspicious! ||
-                    txDetailsData.data?.isDestAssetSuspicious!
+                    txDetailsData.data!.isSourceAssetSuspicious ||
+                    txDetailsData.data!.isDestAssetSuspicious
                   }
                 />
               )}
@@ -604,10 +604,10 @@ export const TransactionDetails = ({
                 <Button
                   size="md"
                   variant={
-                    txDetailsData.data?.isSourceAssetSuspicious! ||
-                    txDetailsData.data?.isDestAssetSuspicious! ||
-                    (txDetailsData.data?.scanResult &&
-                      isTxSuspicious(txDetailsData.data?.scanResult))
+                    txDetailsData.data!.isSourceAssetSuspicious ||
+                    txDetailsData.data!.isDestAssetSuspicious ||
+                    (txDetailsData.data!.scanResult &&
+                      isTxSuspicious(txDetailsData.data!.scanResult))
                       ? "error"
                       : "primary"
                   }

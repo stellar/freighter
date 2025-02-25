@@ -12,42 +12,40 @@ import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 import { SendSettingsTxTimeout } from "popup/components/sendPayment/SendSettings/TxTimeout";
 
-export const SendPayment = () => {
-  return (
-    <Switch>
-      <PublicKeyRoute exact path={ROUTES.sendPayment}>
-        <Redirect to={ROUTES.sendPaymentTo} />
-      </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.sendPaymentTo}>
-        <SendTo previous={ROUTES.account} />
-      </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.sendPaymentAmount}>
-        <SendAmount
-          previous={ROUTES.sendPaymentTo}
-          next={ROUTES.sendPaymentSettings}
-        />
-      </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.sendPaymentType}>
-        <SendType />
-      </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.sendPaymentSettings}>
-        <SendSettings
-          previous={ROUTES.sendPaymentAmount}
-          next={ROUTES.sendPaymentConfirm}
-        />
-      </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsFee}>
-        <SendSettingsFee previous={ROUTES.sendPaymentSettings} />
-      </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsSlippage}>
-        <SendSettingsSlippage previous={ROUTES.sendPaymentSettings} />
-      </PublicKeyRoute>
-      <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsTimeout}>
-        <SendSettingsTxTimeout previous={ROUTES.sendPaymentSettings} />
-      </PublicKeyRoute>
-      <VerifiedAccountRoute exact path={ROUTES.sendPaymentConfirm}>
-        <SendConfirm previous={ROUTES.sendPaymentSettings} />
-      </VerifiedAccountRoute>
-    </Switch>
-  );
-};
+export const SendPayment = () => (
+  <Switch>
+    <PublicKeyRoute exact path={ROUTES.sendPayment}>
+      <Redirect to={ROUTES.sendPaymentTo} />
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentTo}>
+      <SendTo previous={ROUTES.account} />
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentAmount}>
+      <SendAmount
+        previous={ROUTES.sendPaymentTo}
+        next={ROUTES.sendPaymentSettings}
+      />
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentType}>
+      <SendType />
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentSettings}>
+      <SendSettings
+        previous={ROUTES.sendPaymentAmount}
+        next={ROUTES.sendPaymentConfirm}
+      />
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsFee}>
+      <SendSettingsFee previous={ROUTES.sendPaymentSettings} />
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsSlippage}>
+      <SendSettingsSlippage previous={ROUTES.sendPaymentSettings} />
+    </PublicKeyRoute>
+    <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsTimeout}>
+      <SendSettingsTxTimeout previous={ROUTES.sendPaymentSettings} />
+    </PublicKeyRoute>
+    <VerifiedAccountRoute exact path={ROUTES.sendPaymentConfirm}>
+      <SendConfirm previous={ROUTES.sendPaymentSettings} />
+    </VerifiedAccountRoute>
+  </Switch>
+);

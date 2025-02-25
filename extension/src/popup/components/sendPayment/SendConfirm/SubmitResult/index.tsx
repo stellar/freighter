@@ -245,7 +245,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
               <SwapAssetsIcon
                 sourceCanon={asset}
                 destCanon={destinationAsset}
-                assetIcons={accountData.data?.balances.icons!}
+                assetIcons={accountData.data!.balances.icons!}
                 isSourceSuspicious={isSourceAssetSuspicious}
                 isDestSuspicious={isDestAssetSuspicious}
               />
@@ -279,7 +279,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       </View.Footer>
       {isTrustlineErrorShowing
         ? createPortal(
-            <TrustlineError balances={accountData.data?.balances!} />,
+            <TrustlineError balances={accountData.data!.balances} />,
             document.querySelector("#modal-root")!,
           )
         : null}

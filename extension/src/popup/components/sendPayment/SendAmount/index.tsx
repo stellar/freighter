@@ -161,7 +161,7 @@ export const SendAmount = ({
       let _availBalance = new BigNumber("0");
       if (isToken) {
         // TODO: balances is incorrectly typed and does not include SorobanBalance
-        const tokenBalance = sendAmountData.data?.userBalances!?.balances?.[
+        const tokenBalance = sendAmountData.data!.userBalances.balances?.[
           selectedAsset
         ] as any as SorobanBalance;
         return getTokenBalance(tokenBalance);
@@ -169,11 +169,11 @@ export const SendAmount = ({
       if (sendAmountData.data?.userBalances!.balances) {
         // take base reserve into account for XLM payments
         const minBalance = new BigNumber(
-          (2 + sendAmountData.data?.userBalances!.subentryCount) * BASE_RESERVE,
+          (2 + sendAmountData.data.userBalances.subentryCount) * BASE_RESERVE,
         );
 
         const balance =
-          sendAmountData.data?.userBalances!.balances[selectedAsset]?.total ||
+          sendAmountData.data.userBalances.balances[selectedAsset]?.total ||
           new BigNumber("0");
         if (selectedAsset === "native") {
           // needed for different wallet-sdk bignumber.js version
@@ -193,7 +193,7 @@ export const SendAmount = ({
 
       return _availBalance.toFixed().toString();
     },
-    [sendAmountData.data?.userBalances!, recommendedFee, isToken],
+    [sendAmountData.data?.userBalances, recommendedFee, isToken],
   );
 
   const [availBalance, setAvailBalance] = useState(
@@ -227,12 +227,12 @@ export const SendAmount = ({
         code: getAssetFromCanonical(values.asset).code,
         issuer: getAssetFromCanonical(values.asset).issuer,
         // TODO: was assetDomain and assetIcons a map?
-        domain: sendAmountData.data?.domains.find(
+        domain: sendAmountData.data!.domains.find(
           (domain) => domain.code === values.asset,
-        )?.domain!,
-        image: sendAmountData.data?.icons[values.asset]!,
+        )!.domain,
+        image: sendAmountData.data!.icons[values.asset]!,
         blockaidData:
-          sendAmountData.data?.userBalances.balances?.[asset]?.blockaidData ||
+          sendAmountData.data!.userBalances.balances?.[asset].blockaidData ||
           defaultBlockaidScanAssetResult,
       });
     } else if (isDestAssetScam) {
@@ -240,12 +240,12 @@ export const SendAmount = ({
       setSuspiciousAssetData({
         code: getAssetFromCanonical(values.destinationAsset).code,
         issuer: getAssetFromCanonical(values.destinationAsset).issuer,
-        domain: sendAmountData.data?.domains.find(
+        domain: sendAmountData.data!.domains.find(
           (domain) => domain.code === values.destinationAsset,
-        )?.domain!,
-        image: sendAmountData.data?.icons[values.destinationAsset]!,
+        )!.domain,
+        image: sendAmountData.data!.icons[values.destinationAsset]!,
         blockaidData:
-          sendAmountData.data?.destinationBalances.balances?.[destinationAsset]
+          sendAmountData.data!.destinationBalances.balances?.[destinationAsset]
             ?.blockaidData || defaultBlockaidScanAssetResult,
       });
     } else {
@@ -376,7 +376,7 @@ export const SendAmount = ({
     isSwap,
     dispatch,
     destinationAsset,
-    sendAmountData.data?.userBalances!,
+    sendAmountData.data?.userBalances,
     formik.values.asset,
     asset,
   ]);
@@ -444,11 +444,7 @@ export const SendAmount = ({
           ${formatAmountPreserveCursor(
             TX_SEND_MAX,
             formik.values.amount,
-            getAssetDecimals(
-              asset,
-              sendAmountData.data?.userBalances!,
-              isToken,
-            ),
+            getAssetDecimals(asset, sendAmountData.data!.userBalances, isToken),
           )}
           )`}
         />
@@ -465,7 +461,7 @@ export const SendAmount = ({
           pillType="Transaction"
           // TODO: Uses AccountBalanceInterface instead of AccountBalances
           balances={[] as any}
-          assetIcons={sendAmountData.data?.icons!}
+          assetIcons={sendAmountData.data!.icons}
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
@@ -576,7 +572,7 @@ export const SendAmount = ({
                           formik.values.amount,
                           getAssetDecimals(
                             asset,
-                            sendAmountData.data?.userBalances!,
+                            sendAmountData.data!.userBalances,
                             isToken,
                           ),
                           e.target.selectionStart || 1,
@@ -617,7 +613,7 @@ export const SendAmount = ({
                       <AssetSelect
                         assetCode={parsedSourceAsset.code}
                         issuerKey={parsedSourceAsset.issuer}
-                        icons={sendAmountData.data?.icons!}
+                        icons={sendAmountData.data!.icons}
                         isSuspicious={isAssetSuspicious(
                           sendAmountData.data?.userBalances!.balances?.[asset]
                             ?.blockaidData,
@@ -632,7 +628,7 @@ export const SendAmount = ({
                           issuerKey={parsedSourceAsset.issuer}
                           balance={formik.values.amount}
                           icon=""
-                          icons={sendAmountData.data?.icons!}
+                          icons={sendAmountData.data!.icons}
                           isSuspicious={isAssetSuspicious(
                             sendAmountData.data?.userBalances!.balances?.[asset]
                               ?.blockaidData,
@@ -648,7 +644,7 @@ export const SendAmount = ({
                               : "0"
                           }
                           icon={destinationIcon}
-                          icons={sendAmountData.data?.icons!}
+                          icons={sendAmountData.data!.icons}
                           isSuspicious={isAssetSuspicious(
                             sendAmountData.data?.userBalances!.balances?.[
                               formik.values.destinationAsset

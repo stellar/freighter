@@ -4,10 +4,11 @@ import { Federation, MuxedAccount } from "stellar-sdk";
 import { NetworkDetails } from "@shared/constants/stellar";
 
 import { initialState, reducer } from "helpers/request";
-import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
-import { loadRecentAddresses } from "@shared/api/internal";
+import { AccountBalances } from "helpers/hooks/useGetBalances";
+import { getAccountBalances, loadRecentAddresses } from "@shared/api/internal";
 import { isFederationAddress, isMuxedAccount } from "helpers/stellar";
 import { isContractId } from "popup/helpers/soroban";
+import { sortBalances } from "popup/helpers/account";
 
 interface SendToData {
   recentAddresses: string[];
@@ -57,11 +58,6 @@ function useSendToData(
       const { validatedAddress, fedAddress } = await getAddressFromInput(
         userInput,
       );
-      const { fetchData: fetchBalances } = useGetBalances(
-        validatedAddress,
-        networkDetails,
-        balanceOptions,
-      );
 
       const { recentAddresses } = await loadRecentAddresses();
 
@@ -71,14 +67,16 @@ function useSendToData(
         fedAddress,
       } as SendToData;
 
-      if (isContractId(validatedAddress)) {
-        const balancesResult = await fetchBalances();
-
-        // TODO: make type narrow functions
-        if (!("balances" in balancesResult)) {
-          throw new Error(balancesResult.message);
-        }
-        payload.destinationBalances = balancesResult;
+      if (!isContractId(validatedAddress)) {
+        const data = await getAccountBalances(
+          validatedAddress,
+          networkDetails,
+          balanceOptions.isMainnet,
+        );
+        payload.destinationBalances = {
+          ...data,
+          balances: sortBalances(data.balances),
+        };
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

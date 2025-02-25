@@ -29,10 +29,25 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { isContractId } from "popup/helpers/soroban";
 import { AppDispatch } from "popup/App";
-import { useGetSettingsData } from "./hooks/useGetSettingsData";
+
 import { RequestState } from "constants/request";
+import { useGetSettingsData } from "./hooks/useGetSettingsData";
 
 import "../../styles.scss";
+
+function getSimulationMode(
+  isSoroswap: boolean,
+  isToken: boolean,
+  isSendSacToContract: boolean,
+) {
+  if (isSoroswap) {
+    return "Soroswap";
+  }
+  if (isToken || isSendSacToContract) {
+    return "TokenPayment";
+  }
+  return "ClassicPayment";
+}
 
 export const Settings = ({
   previous,
@@ -67,11 +82,11 @@ export const Settings = ({
   const isSendSacToContract =
     isContractId(destination) &&
     !isContractId(getAssetFromCanonical(asset).issuer);
-  const simulationMode = isSoroswap
-    ? "Soroswap"
-    : isToken || isSendSacToContract
-    ? "TokenPayment"
-    : "ClassicPayment";
+  const simulationMode = getSimulationMode(
+    isSoroswap,
+    isToken,
+    isSendSacToContract,
+  );
   const getSacContractAddress = useCallback(() => {
     if (asset === "native") {
       return getNativeContractDetails(networkDetails).contract;

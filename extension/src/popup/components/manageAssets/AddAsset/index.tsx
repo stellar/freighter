@@ -34,10 +34,11 @@ import { AssetNotifcation } from "popup/components/AssetNotification";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 
+import { useGetBalances } from "helpers/hooks/useGetBalances";
+
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
 import "./styles.scss";
-import { useGetBalances } from "helpers/hooks/useGetBalances";
 
 interface FormValues {
   asset: string;

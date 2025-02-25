@@ -23,7 +23,6 @@ import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { isMainnet } from "helpers/stellar";
-import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
@@ -31,6 +30,8 @@ import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsD
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
+
+import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
@@ -195,8 +196,8 @@ export const Account = () => {
               data-testid="account-assets"
             >
               <AccountAssets
-                sortedBalances={accountData.data!.balances.balances}
-                assetIcons={accountData.data!.balances.icons!}
+                sortedBalances={accountData.data.balances.balances}
+                assetIcons={accountData.data.balances.icons!}
                 setSelectedAsset={setSelectedAsset}
               />
             </div>

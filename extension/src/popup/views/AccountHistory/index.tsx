@@ -93,16 +93,15 @@ export const AccountHistory = () => {
 
               <div className="AccountHistory__list">
                 {section.operations
-                  .filter((operation: HistoryItemOperation) => {
-                    return (
+                  .filter(
+                    (operation: HistoryItemOperation) =>
                       operation.type !==
                         Horizon.HorizonApi.OperationResponseType
                           .claimClaimableBalance &&
                       operation.type !==
                         Horizon.HorizonApi.OperationResponseType
-                          .createClaimableBalance
-                    );
-                  })
+                          .createClaimableBalance,
+                  )
                   .map((operation: HistoryItemOperation) => (
                     <HistoryItem
                       key={operation.id}

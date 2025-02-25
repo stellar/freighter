@@ -63,10 +63,11 @@ import IconWarningBlockaid from "popup/assets/icon-warning-blockaid.svg";
 import IconWarningBlockaidYellow from "popup/assets/icon-warning-blockaid-yellow.svg";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
 import { isAssetSuspicious, isBlockaidWarning } from "popup/helpers/blockaid";
+import { AccountBalances } from "helpers/hooks/useGetBalances";
+
 import { CopyValue } from "../CopyValue";
 
 import "./styles.scss";
-import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 export enum WarningMessageVariant {
   default = "",

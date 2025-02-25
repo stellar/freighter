@@ -19,12 +19,14 @@ import { isAssetSuspicious } from "popup/helpers/blockaid";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
+
+import { useGetBalances } from "helpers/hooks/useGetBalances";
+import { publicKeySelector } from "popup/ducks/accountServices";
+
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
 
 import "./styles.scss";
-import { useGetBalances } from "helpers/hooks/useGetBalances";
-import { publicKeySelector } from "popup/ducks/accountServices";
 
 interface FormValues {
   asset: string;

@@ -27,6 +27,120 @@ interface GetSettingsData {
   balances: AccountBalances;
 }
 
+const simulateTx = async ({
+  mode,
+  options,
+  recommendedFee,
+}: {
+  mode: Mode;
+  recommendedFee: string;
+  options: {
+    soroswap: {
+      amountIn: string;
+      amountInDecimals: number;
+      amountOut: string;
+      amountOutDecimals: number;
+      memo?: string;
+      transactionFee: string;
+      path: string[];
+      networkDetails: NetworkDetails;
+      publicKey: string;
+    };
+    tokenPayment: {
+      address: string;
+      publicKey: string;
+      memo?: string;
+      params: {
+        publicKey: string;
+        destination: string;
+        amount: number;
+      };
+      networkDetails: NetworkDetails;
+      transactionFee: string;
+    };
+  };
+}) => {
+  const baseFee = new BigNumber(recommendedFee || stroopToXlm(BASE_FEE));
+
+  switch (mode) {
+    case "Soroswap": {
+      const {
+        amountIn,
+        amountInDecimals,
+        amountOut,
+        amountOutDecimals,
+        memo,
+        transactionFee,
+        path,
+        networkDetails,
+        publicKey,
+      } = options.soroswap;
+      const simulationResponse = await buildAndSimulateSoroswapTx({
+        networkDetails,
+        publicKey,
+        amountIn,
+        amountInDecimals,
+        amountOut,
+        amountOutDecimals,
+        memo,
+        transactionFee,
+        path,
+      });
+      const minResourceFee = formatTokenAmount(
+        new BigNumber(
+          simulationResponse.simulationTransaction.minResourceFee as string,
+        ),
+        CLASSIC_ASSET_DECIMALS,
+      );
+      return {
+        payload: simulationResponse,
+        recommendedFee: baseFee.plus(new BigNumber(minResourceFee)).toString(),
+      };
+    }
+
+    case "TokenPayment": {
+      const {
+        address,
+        publicKey,
+        memo,
+        params,
+        networkDetails,
+        transactionFee,
+      } = options.tokenPayment;
+      const { ok, response } = await simulateTokenTransfer({
+        address,
+        publicKey,
+        memo,
+        params,
+        networkDetails,
+        transactionFee,
+      });
+
+      if (!ok) {
+        throw new Error("failed to simulate token transfer");
+      }
+
+      const minResourceFee = formatTokenAmount(
+        new BigNumber(response.simulationTransaction.minResourceFee as string),
+        CLASSIC_ASSET_DECIMALS,
+      );
+      return {
+        payload: response,
+        recommendedFee: baseFee.plus(new BigNumber(minResourceFee)).toString(),
+      };
+    }
+
+    case "ClassicPayment": {
+      return {
+        recommendedFee: baseFee.toString(),
+      };
+    }
+
+    default:
+      throw new Error("mode not supported");
+  }
+};
+
 function useGetSettingsData(
   publicKey: string,
   networkDetails: NetworkDetails,
@@ -70,119 +184,6 @@ function useGetSettingsData(
     balanceOptions,
   );
 
-  const simulateTx = async ({
-    mode,
-    options,
-  }: {
-    mode: Mode;
-    recommendedFee: string;
-    options: {
-      soroswap: {
-        amountIn: string;
-        amountInDecimals: number;
-        amountOut: string;
-        amountOutDecimals: number;
-        memo?: string;
-        transactionFee: string;
-        path: string[];
-      };
-      tokenPayment: {
-        address: string;
-        publicKey: string;
-        memo?: string;
-        params: {
-          publicKey: string;
-          destination: string;
-          amount: number;
-        };
-        networkDetails: NetworkDetails;
-        transactionFee: string;
-      };
-    };
-  }) => {
-    const baseFee = new BigNumber(recommendedFee || stroopToXlm(BASE_FEE));
-
-    switch (mode) {
-      case "Soroswap": {
-        const {
-          amountIn,
-          amountInDecimals,
-          amountOut,
-          amountOutDecimals,
-          memo,
-          transactionFee,
-          path,
-        } = options.soroswap;
-        const simulationResponse = await buildAndSimulateSoroswapTx({
-          networkDetails,
-          publicKey,
-          amountIn,
-          amountInDecimals,
-          amountOut,
-          amountOutDecimals,
-          memo,
-          transactionFee,
-          path,
-        });
-        const minResourceFee = formatTokenAmount(
-          new BigNumber(
-            simulationResponse.simulationTransaction.minResourceFee,
-          ),
-          CLASSIC_ASSET_DECIMALS,
-        );
-        return {
-          payload: simulationResponse,
-          recommendedFee: baseFee
-            .plus(new BigNumber(minResourceFee))
-            .toString(),
-        };
-      }
-
-      case "TokenPayment": {
-        const {
-          address,
-          publicKey,
-          memo,
-          params,
-          networkDetails,
-          transactionFee,
-        } = options.tokenPayment;
-        const { ok, response } = await simulateTokenTransfer({
-          address,
-          publicKey,
-          memo,
-          params,
-          networkDetails,
-          transactionFee,
-        });
-
-        if (!ok) {
-          throw new Error("failed to simulate token transfer");
-        }
-
-        const minResourceFee = formatTokenAmount(
-          new BigNumber(response.simulationTransaction.minResourceFee),
-          CLASSIC_ASSET_DECIMALS,
-        );
-        return {
-          payload: response,
-          recommendedFee: baseFee
-            .plus(new BigNumber(minResourceFee))
-            .toString(),
-        };
-      }
-
-      case "ClassicPayment": {
-        return {
-          recommendedFee: baseFee.toString(),
-        };
-      }
-
-      default:
-        throw new Error("mode not supported");
-    }
-  };
-
   const fetchData = async (): Promise<GetSettingsData | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
@@ -193,15 +194,8 @@ function useGetSettingsData(
         throw new Error(balancesResult.message);
       }
 
-      const {
-        address,
-        amount,
-        publicKey,
-        memo,
-        params,
-        networkDetails,
-        transactionFee,
-      } = tokenPaymentParameters;
+      const { address, amount, memo, params, transactionFee } =
+        tokenPaymentParameters;
 
       const assetBalance = balancesResult.balances.find(
         (balance) => balance.contractId === address,
@@ -219,7 +213,11 @@ function useGetSettingsData(
         mode,
         recommendedFee,
         options: {
-          soroswap: soroswapParameters,
+          soroswap: {
+            ...soroswapParameters,
+            publicKey,
+            networkDetails,
+          },
           tokenPayment: {
             address,
             publicKey,

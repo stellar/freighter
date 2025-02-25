@@ -46,15 +46,15 @@ function useGetSendAmountData(
     reducer<SendAmountData, unknown>,
     initialState,
   );
+  const isSwap = useIsSwap();
+  const isSoroswapEnabled = useIsSoroswapEnabled();
+  const { assetSelect, soroswapTokens } = useSelector(
+    transactionSubmissionSelector,
+  );
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const isSwap = useIsSwap();
-      const isSoroswapEnabled = useIsSoroswapEnabled();
-      const { assetSelect, soroswapTokens } = useSelector(
-        transactionSubmissionSelector,
-      );
       const isManagingAssets = assetSelect.type === AssetSelectType.MANAGE;
 
       const userBalances = await getAccountBalances(
@@ -130,7 +130,7 @@ function useGetSendAmountData(
           domains.push({
             code,
             issuer: issuer.key,
-            image: icons![getCanonicalFromAsset(code, issuer.key)],
+            image: icons[getCanonicalFromAsset(code, issuer.key)],
             domain,
             contract: contractId,
             isSuspicious: isAssetSuspicious(blockaidData),

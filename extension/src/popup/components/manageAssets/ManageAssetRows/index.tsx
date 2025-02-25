@@ -33,10 +33,11 @@ import {
   TokenWarning,
 } from "popup/components/WarningMessages";
 
+import { AccountBalances } from "helpers/hooks/useGetBalances";
+
 import { ManageAssetRowButton } from "../ManageAssetRowButton";
 
 import "./styles.scss";
-import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 export type ManageAssetCurrency = StellarToml.Api.Currency & {
   domain: string;

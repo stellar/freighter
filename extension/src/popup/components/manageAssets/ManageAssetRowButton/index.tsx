@@ -36,10 +36,11 @@ import IconAdd from "popup/assets/icon-add.svg";
 import IconRemove from "popup/assets/icon-remove.svg";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
 
+import { AccountBalances } from "helpers/hooks/useGetBalances";
+
 import { TrustlineError } from "../TrustlineError";
 
 import "./styles.scss";
-import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 interface ManageAssetRowButtonProps {
   code: string;
