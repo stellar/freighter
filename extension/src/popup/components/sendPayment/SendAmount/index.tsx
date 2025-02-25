@@ -463,6 +463,8 @@ export const SendAmount = ({
         <ScamAssetWarning
           isSendWarning
           pillType="Transaction"
+          // TODO: Uses AccountBalanceInterface instead of AccountBalances
+          balances={[] as any}
           assetIcons={sendAmountData.data?.icons!}
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}

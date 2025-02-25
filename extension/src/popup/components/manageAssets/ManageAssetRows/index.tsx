@@ -131,6 +131,7 @@ export const ManageAssetRows = ({
       {showBlockedDomainWarning && (
         <ScamAssetWarning
           pillType="Trustline"
+          balances={balances}
           domain={suspiciousAssetData.domain}
           assetIcons={balances.icons!}
           code={suspiciousAssetData.code}
@@ -144,6 +145,7 @@ export const ManageAssetRows = ({
       )}
       {showNewAssetWarning && (
         <NewAssetWarning
+          balances={balances}
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
@@ -210,6 +212,7 @@ export const ManageAssetRows = ({
                     contract={contract}
                     issuer={issuer}
                     image={image}
+                    balances={balances}
                     domain={domain}
                     isTrustlineActive={isTrustlineActive}
                     isActionPending={isActionPending}

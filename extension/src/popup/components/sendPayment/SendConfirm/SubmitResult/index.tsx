@@ -279,7 +279,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       </View.Footer>
       {isTrustlineErrorShowing
         ? createPortal(
-            <TrustlineError />,
+            <TrustlineError balances={accountData.data?.balances!} />,
             document.querySelector("#modal-root")!,
           )
         : null}

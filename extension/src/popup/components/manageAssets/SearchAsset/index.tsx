@@ -23,6 +23,8 @@ import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
 
 import "./styles.scss";
+import { useGetBalances } from "helpers/hooks/useGetBalances";
+import { publicKeySelector } from "popup/ducks/accountServices";
 
 interface FormValues {
   asset: string;
@@ -61,10 +63,18 @@ const ResultsHeader = () => {
 export const SearchAsset = () => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
+
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasNoResults, setHasNoResults] = useState(false);
   const ResultsRef = useRef<HTMLDivElement>(null);
+  // TODO: use this loading state
+  const { state, fetchData } = useGetBalances(publicKey, networkDetails, {
+    isMainnet: isMainnet(networkDetails),
+    showHidden: true,
+    includeIcons: false,
+  });
 
   interface AssetRecord {
     asset: string;
@@ -215,6 +225,14 @@ export const SearchAsset = () => {
     }
   }, [assetRows, networkDetails]);
 
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (isCustomNetwork(networkDetails)) {
     return <Redirect to={ROUTES.addAsset} />;
   }
@@ -277,6 +295,7 @@ export const SearchAsset = () => {
                 >
                   {assetRows.length ? (
                     <ManageAssetRows
+                      balances={state.data!}
                       header={assetRows.length > 1 ? <ResultsHeader /> : null}
                       assetRows={assetRows}
                     />

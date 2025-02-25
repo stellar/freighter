@@ -29,7 +29,7 @@ import {
 import { formatAmount } from "popup/helpers/formatters";
 import { getBalanceByKey } from "popup/helpers/balance";
 
-import { Balances, HorizonOperation, TokenBalance } from "@shared/api/types";
+import { HorizonOperation, TokenBalance } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getTokenDetails } from "@shared/api/internal";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";

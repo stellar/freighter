@@ -66,7 +66,7 @@ export const Account = () => {
   if (selectedAsset) {
     return (
       <AssetDetail
-        accountBalances={accountData.data!.balances.balances}
+        accountBalances={accountData.data!.balances}
         // TODO: how do we filter by selected now
         assetOperations={accountData.data!.history}
         networkDetails={networkDetails}

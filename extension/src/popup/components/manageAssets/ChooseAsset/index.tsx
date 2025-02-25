@@ -18,9 +18,9 @@ import { isMainnet } from "helpers/stellar";
 
 import { ManageAssetRows } from "../ManageAssetRows";
 import { SelectAssetRows } from "../SelectAssetRows";
+import { RequestState } from "constants/request";
 
 import "./styles.scss";
-import { RequestState } from "constants/request";
 
 export const ChooseAsset = () => {
   const history = useHistory();
@@ -87,7 +87,7 @@ export const ChooseAsset = () => {
             className="ChooseAsset__wrapper"
             data-testid="ChooseAssetWrapper"
           >
-            {!domainState.data.domains.length ? (
+            {!domainState.data?.domains.length ? (
               <div className="ChooseAsset__empty">
                 <p>
                   You have no assets added. Get started by adding an asset
@@ -104,7 +104,10 @@ export const ChooseAsset = () => {
                 ref={ManageAssetRowsWrapperRef}
               >
                 {domainState.data.isManagingAssets ? (
-                  <ManageAssetRows assetRows={domainState.data.domains} />
+                  <ManageAssetRows
+                    assetRows={domainState.data.domains}
+                    balances={domainState.data.balances}
+                  />
                 ) : (
                   <SelectAssetRows
                     assetRows={domainState.data.domains}
@@ -116,7 +119,7 @@ export const ChooseAsset = () => {
           </div>
         )}
       </View.Content>
-      {domainState.data.isManagingAssets && (
+      {domainState.data?.isManagingAssets && (
         <View.Footer isInline allowWrap>
           <div className="ChooseAsset__button">
             <Link to={ROUTES.searchAsset}>

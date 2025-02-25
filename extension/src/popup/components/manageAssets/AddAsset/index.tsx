@@ -37,6 +37,7 @@ import { View } from "popup/basics/layout/View";
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
 import "./styles.scss";
+import { useGetBalances } from "helpers/hooks/useGetBalances";
 
 interface FormValues {
   asset: string;
@@ -63,6 +64,13 @@ export const AddAsset = () => {
     useState(false);
   const [verifiedLists, setVerifiedLists] = useState([] as string[]);
   const { assetsLists } = useSelector(settingsSelector);
+
+  // TODO: use this loading state
+  const { state, fetchData } = useGetBalances(publicKey, networkDetails, {
+    isMainnet: isMainnet(networkDetails),
+    showHidden: true,
+    includeIcons: false,
+  });
 
   const ResultsRef = useRef<HTMLDivElement>(null);
   const isAllowListVerificationEnabled =
@@ -255,6 +263,14 @@ export const AddAsset = () => {
     setIsVerificationInfoShowing(isAllowListVerificationEnabled);
   }, [isAllowListVerificationEnabled]);
 
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     // eslint-disable-next-line
     <Formik initialValues={initialValues} onSubmit={() => {}}>
@@ -300,6 +316,7 @@ export const AddAsset = () => {
                     <ManageAssetRows
                       header={null}
                       assetRows={assetRows}
+                      balances={state.data!}
                       isVerifiedToken={isVerifiedToken}
                       isVerificationInfoShowing={isVerificationInfoShowing}
                       verifiedLists={verifiedLists}

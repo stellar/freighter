@@ -2,11 +2,9 @@ import React from "react";
 import classNames from "classnames";
 import { Card, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { AssetIcon } from "popup/components/account/AccountAssets";
-import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import IconShieldPlus from "popup/assets/icon-shield-plus.svg";
 import { BlockAidSiteScanLabel } from "../WarningMessages";
 

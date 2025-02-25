@@ -128,7 +128,7 @@ export function useGetAssetDomains(
       if (isSoroswapEnabled && isSwap && !assetSelect.isSource) {
         soroswapTokens.forEach((token) => {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          const canonical = getCanonicalFromAsset(token.code, token.contract);
+          // const canonical = getCanonicalFromAsset(token.code, token.contract);
           const nativeContractDetails =
             getNativeContractDetails(networkDetails);
 

@@ -66,6 +66,7 @@ import { isAssetSuspicious, isBlockaidWarning } from "popup/helpers/blockaid";
 import { CopyValue } from "../CopyValue";
 
 import "./styles.scss";
+import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 export enum WarningMessageVariant {
   default = "",
@@ -325,6 +326,7 @@ export const ScamAssetWarning = ({
   onContinue = () => {},
   blockaidData,
   assetIcons,
+  balances,
 }: {
   pillType: "Connection" | "Trustline" | "Transaction";
   isSendWarning?: boolean;
@@ -336,6 +338,7 @@ export const ScamAssetWarning = ({
   onContinue?: () => void;
   blockaidData: BlockAidScanAssetResult;
   assetIcons: AssetIcons;
+  balances: AccountBalances;
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -422,7 +425,7 @@ export const ScamAssetWarning = ({
 
   return isTrustlineErrorShowing ? (
     createPortal(
-      <TrustlineError handleClose={() => closeOverlay()} />,
+      <TrustlineError handleClose={() => closeOverlay()} balances={balances} />,
       document.querySelector("#modal-root")!,
     )
   ) : (
@@ -497,6 +500,7 @@ export const NewAssetWarning = ({
   image,
   newAssetFlags,
   onClose,
+  balances,
 }: {
   domain: string;
   code: string;
@@ -504,6 +508,7 @@ export const NewAssetWarning = ({
   image: string;
   newAssetFlags: NewAssetFlags;
   onClose: () => void;
+  balances: AccountBalances;
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -594,7 +599,7 @@ export const NewAssetWarning = ({
 
   return isTrustlineErrorShowing ? (
     createPortal(
-      <TrustlineError handleClose={() => closeOverlay()} />,
+      <TrustlineError handleClose={() => closeOverlay()} balances={balances} />,
       document.querySelector("#modal-root")!,
     )
   ) : (

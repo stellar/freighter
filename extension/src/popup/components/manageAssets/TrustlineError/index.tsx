@@ -14,6 +14,7 @@ import { emitMetric } from "helpers/metrics";
 import { getResultCodes, RESULT_CODES } from "popup/helpers/parseTransaction";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import "./styles.scss";
 
@@ -134,11 +135,13 @@ const RenderedError = ({
 
 export const TrustlineError = ({
   handleClose,
+  balances,
 }: {
   handleClose?: () => void;
+  balances: AccountBalances;
 }) => {
   const { t } = useTranslation();
-  const { accountBalances, error } = useSelector(transactionSubmissionSelector);
+  const { error } = useSelector(transactionSubmissionSelector);
   const { networkPassphrase } = useSelector(settingsNetworkDetailsSelector);
   const [assetBalance, setAssetBalance] = useState("");
   const [buyingLiabilities, setBuyingLiabilities] = useState(0);
@@ -168,7 +171,10 @@ export const TrustlineError = ({
         if ("line" in op) {
           const { code, issuer } = op.line as Asset;
           const asset = `${code}:${issuer}`;
-          const balance = accountBalances?.balances?.[asset];
+          // TODO: get balance helper
+          const balance = balances.balances?.find(
+            (balance) => balance.contractId === asset,
+          );
 
           if (!balance) {
             return;
@@ -184,7 +190,7 @@ export const TrustlineError = ({
         }
       }
     }
-  }, [accountBalances, error, networkPassphrase]);
+  }, [balances, error, networkPassphrase]);
 
   const errorState: TRUSTLINE_ERROR_STATES = error
     ? mapErrorToErrorState(getResultCodes(error), buyingLiabilities)

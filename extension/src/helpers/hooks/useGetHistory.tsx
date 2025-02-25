@@ -19,7 +19,7 @@ function useGetHistory(publicKey: string, networkDetails: NetworkDetails) {
       return data;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
-      return error;
+      return [];
     }
   };
 
