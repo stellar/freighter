@@ -62,7 +62,7 @@ export const Account = () => {
     };
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [publicKey]);
 
   if (selectedAsset) {
     return (

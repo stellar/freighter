@@ -1,5 +1,7 @@
 import { useReducer } from "react";
 import { Federation, MuxedAccount } from "stellar-sdk";
+import { FormikErrors } from "formik";
+import debounce from "lodash/debounce";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 
@@ -52,13 +54,11 @@ function useSendToData(
     initialState,
   );
 
-  const fetchData = async (userInput: string) => {
-    dispatch({ type: "FETCH_DATA_START" });
+  const debouncedFetch = debounce(async (userInput: string) => {
     try {
       const { validatedAddress, fedAddress } = await getAddressFromInput(
         userInput,
       );
-
       const { recentAddresses } = await loadRecentAddresses();
 
       const payload = {
@@ -67,7 +67,7 @@ function useSendToData(
         fedAddress,
       } as SendToData;
 
-      if (!isContractId(validatedAddress)) {
+      if (validatedAddress && !isContractId(validatedAddress)) {
         const data = await getAccountBalances(
           validatedAddress,
           networkDetails,
@@ -85,6 +85,26 @@ function useSendToData(
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
       return error;
     }
+  }, 2000);
+
+  const fetchData = (
+    userInput: string,
+    errors: FormikErrors<{
+      destination: string;
+    }>,
+  ) => {
+    dispatch({ type: "FETCH_DATA_START" });
+    if (Object.keys(errors).length !== 0) {
+      const payload = {
+        recentAddresses: [],
+        validatedAddress: "",
+        fedAddress: "",
+      };
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      return payload;
+    }
+
+    return debouncedFetch(userInput);
   };
 
   return {

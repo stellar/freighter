@@ -1,6 +1,5 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import debounce from "lodash/debounce";
 import { Asset, StrKey } from "stellar-sdk";
 import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
@@ -149,28 +148,18 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
     return false;
   };
 
-  // calls form validation and then saves destination
-  /* eslint-disable react-hooks/exhaustive-deps */
-  const db = useCallback(
-    debounce(async (inputDest: string) => {
-      const errors = await formik.validateForm();
-      if (Object.keys(errors).length !== 0) {
-        return;
-      }
-
-      await fetchData(inputDest);
-    }, 2000),
-    [],
-  );
-
-  // on input reset destination and trigger debounce
   useEffect(() => {
-    // reset
-    db(formik.values.destination);
-  }, [db, formik.values.destination]);
+    const getData = async () => {
+      const errors = await formik.validateForm();
+      await fetchData(formik.values.destination, errors);
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formik.values.destination]);
 
   const isLoading =
-    sendDataState.state === RequestState.IDLE || RequestState.LOADING;
+    sendDataState.state === RequestState.IDLE ||
+    sendDataState.state === RequestState.LOADING;
 
   return (
     <React.Fragment>
@@ -210,7 +199,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                           <button
                             onClick={async () => {
                               emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
-                              await fetchData(address);
+                              await fetchData(address, {});
                               handleContinue(address);
                             }}
                             className="SendTo__subheading-identicon"
@@ -231,9 +220,10 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                 <div>
                   {formik.isValid ? (
                     <>
-                      {!sendDataState.data?.destinationBalances?.isFunded && (
-                        <AccountDoesntExistWarning />
-                      )}
+                      {sendDataState.data!.destinationBalances &&
+                        !sendDataState.data!.destinationBalances.isFunded && (
+                          <AccountDoesntExistWarning />
+                        )}
                       {isFederationAddress(formik.values.destination) && (
                         <>
                           <div className="SendTo__subheading">
