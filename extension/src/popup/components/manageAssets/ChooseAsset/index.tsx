@@ -9,9 +9,9 @@ import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
-import { publicKeySelector } from "background/ducks/session";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
+import { publicKeySelector } from "popup/ducks/accountServices";
 
 import { RequestState } from "constants/request";
 import { useGetAssetDomains } from "helpers/hooks/useGetAssetDomains";
@@ -46,7 +46,8 @@ export const ChooseAsset = () => {
   };
 
   const isLoading =
-    domainState.state === RequestState.IDLE || RequestState.LOADING;
+    domainState.state === RequestState.IDLE ||
+    domainState.state === RequestState.LOADING;
 
   useEffect(() => {
     const getData = async () => {

@@ -78,7 +78,6 @@ export const Account = () => {
     );
   }
 
-  console.log(accountData);
   if (
     accountData.state === RequestState.IDLE ||
     accountData.state === RequestState.LOADING

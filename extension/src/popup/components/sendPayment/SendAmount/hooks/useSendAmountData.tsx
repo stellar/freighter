@@ -35,12 +35,12 @@ interface SendAmountData {
 
 function useGetSendAmountData(
   publicKey: string,
-  destinationPublicKey: string,
   networkDetails: NetworkDetails,
   options: {
     isMainnet: boolean;
     showHidden: boolean;
   },
+  destinationPublicKey?: string,
 ) {
   const [state, dispatch] = useReducer(
     reducer<SendAmountData, unknown>,
@@ -62,11 +62,13 @@ function useGetSendAmountData(
         networkDetails,
         options.isMainnet,
       );
-      const destinationBalances = await getAccountBalances(
-        destinationPublicKey,
-        networkDetails,
-        options.isMainnet,
-      );
+      const destinationBalances = destinationPublicKey
+        ? await getAccountBalances(
+            destinationPublicKey,
+            networkDetails,
+            options.isMainnet,
+          )
+        : ({} as AccountBalancesInterface);
 
       const balances = {
         ...userBalances.balances,

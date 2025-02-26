@@ -47,12 +47,14 @@ import {
   AccountDoesntExistWarning,
   shouldAccountDoesntExistWarning,
 } from "popup/components/sendPayment/SendTo";
+import { Loading } from "popup/components/Loading";
 import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 import { BASE_RESERVE } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
 import { BalanceMap, SorobanBalance } from "@shared/api/types";
+import { RequestState } from "constants/request";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
 
 import "../styles.scss";
@@ -134,12 +136,12 @@ export const SendAmount = ({
   } = transactionData;
   const { state: sendAmountData, fetchData } = useGetSendAmountData(
     publicKey,
-    destination,
     networkDetails,
     {
       isMainnet: isMainnet(networkDetails),
       showHidden: false,
     },
+    destination,
   );
 
   const isSwap = useIsSwap();
@@ -245,7 +247,7 @@ export const SendAmount = ({
         )!.domain,
         image: sendAmountData.data!.icons[values.destinationAsset]!,
         blockaidData:
-          sendAmountData.data!.destinationBalances.balances?.[destinationAsset]
+          sendAmountData.data!.userBalances.balances?.[destinationAsset]
             ?.blockaidData || defaultBlockaidScanAssetResult,
       });
     } else {
@@ -411,7 +413,7 @@ export const SendAmount = ({
     if (
       !isSwap &&
       shouldAccountDoesntExistWarning(
-        sendAmountData.data?.destinationBalances!.isFunded || false,
+        isSwap ? false : sendAmountData.data!.destinationBalances.isFunded!,
         asset,
         formik.values.amount || "0",
       )
@@ -452,6 +454,14 @@ export const SendAmount = ({
     }
     return null;
   };
+
+  const isLoading =
+    sendAmountData.state === RequestState.IDLE ||
+    sendAmountData.state === RequestState.LOADING;
+
+  if (isLoading) {
+    return <Loading />;
+  }
 
   return (
     <>
