@@ -1,6 +1,7 @@
 import { useReducer } from "react";
 import { BASE_FEE, SorobanRpc } from "stellar-sdk";
 import BigNumber from "bignumber.js";
+import { useDispatch } from "react-redux";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 
@@ -15,6 +16,7 @@ import {
 } from "popup/helpers/soroban";
 import { simulateTokenTransfer } from "@shared/api/internal";
 import { TokenBalance } from "@shared/api/types";
+import { saveTransactionFee } from "popup/ducks/transactionSubmission";
 
 type Mode = "Soroswap" | "TokenPayment" | "ClassicPayment";
 
@@ -183,6 +185,7 @@ function useGetSettingsData(
     networkDetails,
     balanceOptions,
   );
+  const reduxDispatch = useDispatch();
 
   const fetchData = async (): Promise<GetSettingsData | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -197,17 +200,24 @@ function useGetSettingsData(
       const { address, amount, memo, params, transactionFee } =
         tokenPaymentParameters;
 
-      const assetBalance = balancesResult.balances.find(
-        (balance) => balance.contractId === address,
-      ) as TokenBalance;
+      const isXlm = address === "native";
+      const assetBalance = balancesResult.balances.find((balance) => {
+        if (isXlm) {
+          return balance.token.type === "native";
+        }
+        // TODO: check for classic assets
+
+        return balance.contractId === address;
+      }) as TokenBalance;
       if (!assetBalance) {
         throw new Error("asset balance not found");
       }
+      console.log(assetBalance);
 
       // TODO: check send to sac amount
       const parsedAmount = parseTokenAmount(
         amount,
-        Number(assetBalance.decimals),
+        Number(isXlm ? 7 : assetBalance.decimals),
       );
       const simResponse = await simulateTx({
         mode,
@@ -236,6 +246,8 @@ function useGetSettingsData(
         balances: balancesResult,
         ...simResponse,
       } as GetSettingsData;
+      // some flows still use transaction fee from the store
+      reduxDispatch(saveTransactionFee(payload.recommendedFee));
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {

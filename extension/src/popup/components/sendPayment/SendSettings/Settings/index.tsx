@@ -23,6 +23,7 @@ import {
   transactionDataSelector,
   isPathPaymentSelector,
 } from "popup/ducks/transactionSubmission";
+import { NetworkDetails } from "@shared/constants/stellar";
 
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -47,6 +48,33 @@ function getSimulationMode(
     return "TokenPayment";
   }
   return "ClassicPayment";
+}
+
+function getAssetAddress(
+  asset: string,
+  destination: string,
+  networkDetails: NetworkDetails,
+) {
+  if (asset === "native") {
+    return asset;
+  }
+  if (
+    isContractId(destination) &&
+    !isContractId(getAssetFromCanonical(asset).issuer)
+  ) {
+    const assetFromCanonical = new Asset(
+      getAssetFromCanonical(asset).code,
+      getAssetFromCanonical(asset).issuer,
+    );
+    const contractAddress = assetFromCanonical.contractId(
+      networkDetails.networkPassphrase,
+    );
+
+    return contractAddress;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_, issuer] = asset.split(":");
+  return issuer;
 }
 
 export const Settings = ({
@@ -102,14 +130,13 @@ export const Settings = ({
 
     return contractAddress;
   }, [asset, networkDetails]);
-  const assetAddress = isSendSacToContract
-    ? getSacContractAddress()
-    : asset.split(":")[1];
+
+  const assetAddress = getAssetAddress(asset, destination, networkDetails);
   const { state: settingsData, fetchData } = useGetSettingsData(
     publicKey,
     networkDetails,
     simulationMode,
-    recommendedFee,
+    transactionFee || recommendedFee,
     {
       isMainnet: isMainnet(networkDetails),
       showHidden: false,
