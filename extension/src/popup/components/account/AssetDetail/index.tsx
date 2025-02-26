@@ -4,7 +4,7 @@ import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { IconButton, Icon, Button } from "@stellar/design-system";
 
-import { HorizonOperation } from "@shared/api/types";
+import { AssetToken, Balance, HorizonOperation } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import {
@@ -73,12 +73,14 @@ export const AssetDetail = ({
   const canonical = getAssetFromCanonical(selectedAsset);
   const isSorobanAsset = canonical.issuer && isSorobanIssuer(canonical.issuer);
 
-  // TODO: balance helper
-  const isSuspicious = isAssetSuspicious(
-    accountBalances.balances?.find(
-      ({ contractId }) => contractId === selectedAsset,
-    )?.blockaidData,
+  // TODO: BALANCE TYPE FIX
+  const selectedBalance = (accountBalances.balances as Balance[]).find(
+    (balance) => {
+      return (balance.token as AssetToken).issuer.key;
+    },
   );
+  // TODO: balance helper
+  const isSuspicious = isAssetSuspicious(selectedBalance!.blockaidData);
 
   const balance = getRawBalance(accountBalances.balances, selectedAsset)!;
 
@@ -173,12 +175,16 @@ export const AssetDetail = ({
                 assetCode={canonical.code}
                 assetIssuer={assetIssuer}
                 assetType={
-                  (balance && "token" in balance && balance?.token.type) || ""
+                  // TODO: ASSET TYPE FIX
+                  (balance &&
+                    "token" in balance &&
+                    (balance?.token as AssetToken)!.type) ||
+                  ""
                 }
                 assetDomain={assetDomain}
                 contractId={
                   balance && "decimals" in balance
-                    ? balance.token.issuer.key
+                    ? balance.token!.issuer.key
                     : undefined
                 }
               />
@@ -235,9 +241,8 @@ export const AssetDetail = ({
             {isSuspicious && (
               <BlockaidAssetWarning
                 blockaidData={
-                  accountBalances.balances?.find(
-                    ({ contractId }) => contractId === selectedAsset,
-                  )?.blockaidData || defaultBlockaidScanAssetResult
+                  selectedBalance!.blockaidData ||
+                  defaultBlockaidScanAssetResult
                 }
               />
             )}

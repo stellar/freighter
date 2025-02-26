@@ -166,6 +166,7 @@ export const TransactionDetails = ({
     memoRequiredAccounts,
     transactionSimulation,
   } = submission;
+  console.log(submission);
 
   const transactionHash = submission.response?.hash;
   const isPathPayment = useSelector(isPathPaymentSelector);
@@ -199,7 +200,7 @@ export const TransactionDetails = ({
   const { state: txDetailsData, fetchData } = useGetTxDetailsData(
     publicKey,
     networkDetails,
-    getAssetFromCanonical(destinationAsset) as Asset,
+    getAssetFromCanonical(destinationAsset || "native") as Asset,
     getAssetFromCanonical(asset) as Asset,
     {
       shouldScan: shouldScanTx,

@@ -2,7 +2,11 @@ import React, { useState, useEffect } from "react";
 import { StellarToml } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
-import { ActionStatus, BlockAidScanAssetResult } from "@shared/api/types";
+import {
+  ActionStatus,
+  AssetToken,
+  BlockAidScanAssetResult,
+} from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
 
@@ -187,10 +191,14 @@ export const ManageAssetRows = ({
               }
               const isContract = isContractId(contract);
               const canonicalAsset = getCanonicalFromAsset(code, issuer);
-              // TODO: is this trustline check correct?
-              const isTrustlineActive = Object.keys(balances).some(
-                (balance) => balance === canonicalAsset,
-              );
+              const isTrustlineActive = balances.balances.some((balance) => {
+                // TODO: is this ever not AssetToken?
+                return (
+                  `${balance.token!.code}:${
+                    (balance.token as AssetToken).issuer.key
+                  }` === canonicalAsset
+                );
+              });
               const isActionPending =
                 submitStatus === ActionStatus.PENDING ||
                 accountBalanceStatus === ActionStatus.PENDING;

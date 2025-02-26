@@ -212,7 +212,6 @@ function useGetSettingsData(
       if (!assetBalance) {
         throw new Error("asset balance not found");
       }
-      console.log(assetBalance);
 
       // TODO: check send to sac amount
       const parsedAmount = parseTokenAmount(

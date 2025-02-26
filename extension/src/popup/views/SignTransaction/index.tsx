@@ -55,6 +55,7 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { Loading } from "popup/components/Loading";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Tabs } from "popup/components/Tabs";
+import { AssetToken, Balance } from "@shared/api/types";
 
 import { RequestState } from "constants/request";
 import { useGetSignTxData } from "./hooks/useGetSignTxData";
@@ -227,8 +228,8 @@ export const SignTransaction = () => {
 
   const hasEnoughXlm = scanTxState.data?.balances.balances.some(
     (balance) =>
-      balance.token.code === "XLM" &&
-      balance.available.gt(stroopToXlm(_fee as string)),
+      (balance.token as AssetToken).code === "XLM" &&
+      (balance as Balance).available.gt(stroopToXlm(_fee as string)),
   );
   if (
     currentAccount.publicKey &&

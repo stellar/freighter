@@ -33,7 +33,6 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   saveDestination,
   saveFederationAddress,
-  transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
 
 import { RequestState } from "constants/request";
@@ -96,9 +95,6 @@ const InvalidAddressWarning = () => {
 export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
-  const { destination, federationAddress } = useSelector(
-    transactionDataSelector,
-  );
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { state: sendDataState, fetchData } = useSendToData(networkDetails, {
     isMainnet: isMainnet(networkDetails),
@@ -116,7 +112,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   };
 
   const formik = useFormik({
-    initialValues: { destination: federationAddress || destination },
+    initialValues: { destination: "" },
     onSubmit: () => {
       handleContinue(
         sendDataState.data!.validatedAddress,
