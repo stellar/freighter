@@ -2,7 +2,6 @@ import { Text } from "@stellar/design-system";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Horizon } from "stellar-sdk";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import {
@@ -92,27 +91,17 @@ export const AccountHistory = () => {
               </Text>
 
               <div className="AccountHistory__list">
-                {section.operations
-                  .filter(
-                    (operation: HistoryItemOperation) =>
-                      operation.type !==
-                        Horizon.HorizonApi.OperationResponseType
-                          .claimClaimableBalance &&
-                      operation.type !==
-                        Horizon.HorizonApi.OperationResponseType
-                          .createClaimableBalance,
-                  )
-                  .map((operation: HistoryItemOperation) => (
-                    <HistoryItem
-                      key={operation.id}
-                      accountBalances={historyState.data!.balances}
-                      operation={operation}
-                      publicKey={publicKey}
-                      networkDetails={networkDetails}
-                      setDetailViewProps={setDetailViewProps}
-                      setIsDetailViewShowing={setIsDetailViewShowing}
-                    />
-                  ))}
+                {section.operations.map((operation: HistoryItemOperation) => (
+                  <HistoryItem
+                    key={operation.id}
+                    accountBalances={historyState.data!.balances}
+                    operation={operation}
+                    publicKey={publicKey}
+                    networkDetails={networkDetails}
+                    setDetailViewProps={setDetailViewProps}
+                    setIsDetailViewShowing={setIsDetailViewShowing}
+                  />
+                ))}
               </div>
             </div>
           ))}
