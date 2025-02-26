@@ -48,17 +48,22 @@ function useGetBalances(
         options.isMainnet,
       );
 
+      const payload = {
+        isFunded: data.isFunded,
+        subentryCount: data.subentryCount,
+        error: data.error,
+      } as AccountBalances;
+
       if (!options.showHidden) {
         const hiddenAssets = await getHiddenAssets();
-        return {
-          ...data,
-          balances: sortBalances(
-            filterHiddenBalances(
-              data.balances as NonNullable<BalanceMap>,
-              hiddenAssets.hiddenAssets,
-            ),
+        payload.balances = sortBalances(
+          filterHiddenBalances(
+            data.balances as NonNullable<BalanceMap>,
+            hiddenAssets.hiddenAssets,
           ),
-        } as AccountBalances;
+        );
+      } else {
+        payload.balances = sortBalances(data.balances);
       }
 
       if (options.includeIcons) {
@@ -66,20 +71,11 @@ function useGetBalances(
           balances: data.balances,
           networkDetails,
         });
-        return {
-          ...data,
-          balances: sortBalances(data.balances),
-          icons,
-        } as AccountBalances;
+        payload.icons = icons;
       }
-
-      const accountBalances = {
-        ...data,
-        balances: sortBalances(data.balances),
-      };
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload: accountBalances });
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       storeBalanceMetricData(publicKey, data.isFunded || false);
-      return accountBalances;
+      return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
       return new Error(JSON.stringify(error));

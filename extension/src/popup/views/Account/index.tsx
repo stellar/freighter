@@ -68,8 +68,7 @@ export const Account = () => {
     return (
       <AssetDetail
         accountBalances={accountData.data!.balances}
-        // TODO: how do we filter by selected now
-        assetOperations={accountData.data!.history}
+        assetOperations={accountData.data!.operationsByAsset[selectedAsset]}
         networkDetails={networkDetails}
         publicKey={publicKey}
         selectedAsset={selectedAsset}
@@ -79,6 +78,7 @@ export const Account = () => {
     );
   }
 
+  console.log(accountData);
   if (
     accountData.state === RequestState.IDLE ||
     accountData.state === RequestState.LOADING

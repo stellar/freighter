@@ -1,15 +1,15 @@
 import { useReducer } from "react";
-import { ServerApi } from "stellar-sdk/lib/horizon";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { RequestState } from "constants/request";
 import { initialState, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { useGetHistory } from "helpers/hooks/useGetHistory";
+import { AssetOperations, sortOperationsByAsset } from "popup/helpers/account";
 
 interface AccountData {
   balances: AccountBalances;
-  history: ServerApi.OperationRecord[];
+  operationsByAsset: AssetOperations;
 }
 
 function useGetAccountData(
@@ -43,7 +43,15 @@ function useGetAccountData(
         throw new Error(balancesResult.message);
       }
 
-      const payload = { balances: balancesResult, history };
+      const payload = {
+        balances: balancesResult,
+        operationsByAsset: sortOperationsByAsset({
+          balances: balancesResult.balances,
+          operations: history,
+          networkDetails,
+          publicKey,
+        }),
+      };
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
