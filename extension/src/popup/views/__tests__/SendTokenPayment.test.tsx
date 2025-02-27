@@ -2,6 +2,8 @@ import React from "react";
 import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryHistory } from "history";
+import { SorobanRpc } from "stellar-sdk";
+
 import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
@@ -38,9 +40,9 @@ jest.spyOn(ApiInternal, "simulateTokenTransfer").mockImplementation(() => {
     ok: true,
     response: {
       preparedTransaction: "xdr",
-      simulationResponse: {
+      simulationTransaction: {
         minResourceFee: "1234",
-      },
+      } as SorobanRpc.Api.SimulateTransactionSuccessResponse,
     },
   });
 });

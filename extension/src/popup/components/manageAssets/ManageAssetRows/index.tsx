@@ -2,7 +2,11 @@ import React, { useState, useEffect } from "react";
 import { StellarToml } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
-import { ActionStatus, BlockAidScanAssetResult } from "@shared/api/types";
+import {
+  ActionStatus,
+  AssetToken,
+  BlockAidScanAssetResult,
+} from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
 
@@ -33,6 +37,8 @@ import {
   TokenWarning,
 } from "popup/components/WarningMessages";
 
+import { AccountBalances } from "helpers/hooks/useGetBalances";
+
 import { ManageAssetRowButton } from "../ManageAssetRowButton";
 
 import "./styles.scss";
@@ -56,6 +62,7 @@ interface ManageAssetRowsProps {
   isVerifiedToken?: boolean;
   isVerificationInfoShowing?: boolean;
   verifiedLists?: string[];
+  balances: AccountBalances;
 }
 
 interface SuspiciousAssetData {
@@ -74,9 +81,9 @@ export const ManageAssetRows = ({
   isVerifiedToken,
   isVerificationInfoShowing,
   verifiedLists,
+  balances,
 }: ManageAssetRowsProps) => {
   const {
-    accountBalances,
     submitStatus,
     hardwareWalletData: { status: hwStatus },
   } = useSelector(transactionSubmissionSelector);
@@ -129,7 +136,9 @@ export const ManageAssetRows = ({
       {showBlockedDomainWarning && (
         <ScamAssetWarning
           pillType="Trustline"
+          balances={balances}
           domain={suspiciousAssetData.domain}
+          assetIcons={balances.icons!}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
           image={suspiciousAssetData.image}
@@ -141,6 +150,7 @@ export const ManageAssetRows = ({
       )}
       {showNewAssetWarning && (
         <NewAssetWarning
+          balances={balances}
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
@@ -176,14 +186,19 @@ export const ManageAssetRows = ({
               contract = "",
               isSuspicious,
             }) => {
-              if (!accountBalances.balances) {
+              if (!balances) {
                 return null;
               }
               const isContract = isContractId(contract);
               const canonicalAsset = getCanonicalFromAsset(code, issuer);
-              const isTrustlineActive = Object.keys(
-                accountBalances.balances,
-              ).some((balance) => balance === canonicalAsset);
+              const isTrustlineActive = balances.balances.some((balance) => {
+                // TODO: is this ever not AssetToken?
+                return (
+                  `${balance.token!.code}:${
+                    (balance.token as AssetToken).issuer.key
+                  }` === canonicalAsset
+                );
+              });
               const isActionPending =
                 submitStatus === ActionStatus.PENDING ||
                 accountBalanceStatus === ActionStatus.PENDING;
@@ -206,6 +221,7 @@ export const ManageAssetRows = ({
                     contract={contract}
                     issuer={issuer}
                     image={image}
+                    balances={balances}
                     domain={domain}
                     isTrustlineActive={isTrustlineActive}
                     isActionPending={isActionPending}

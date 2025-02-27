@@ -1,21 +1,21 @@
 import React, { useEffect, useRef } from "react";
 import { useHistory } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
 
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
-  getAccountBalances,
-  resetSubmission,
-} from "popup/ducks/transactionSubmission";
-import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
+import { isMainnet } from "helpers/stellar";
 import { publicKeySelector } from "popup/ducks/accountServices";
-import { useFetchDomains } from "popup/helpers/useFetchDomains";
+
+import { RequestState } from "constants/request";
+import { useGetAssetDomains } from "helpers/hooks/useGetAssetDomains";
+
 import { ToggleAssetRows } from "../ToggleAssetRows";
 
 import "./styles.scss";
@@ -24,37 +24,41 @@ export const AssetVisibility = () => {
   const { t } = useTranslation();
   const history = useHistory();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const dispatch = useDispatch();
   const publicKey = useSelector(publicKeySelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
-
-  const { assets, isManagingAssets } = useFetchDomains();
+  const { state: domainState, fetchData } = useGetAssetDomains(
+    publicKey,
+    networkDetails,
+    {
+      isMainnet: isMainnet(networkDetails),
+      showHidden: false,
+      includeIcons: true,
+    },
+  );
 
   useEffect(() => {
-    dispatch(
-      getAccountBalances({
-        publicKey,
-        networkDetails,
-        showHidden: true,
-      }),
-    );
-    return () => {
-      dispatch(resetSubmission());
+    const getData = async () => {
+      await fetchData();
     };
-  }, [publicKey, dispatch, networkDetails]);
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const goBack = () => {
-    dispatch(resetSubmission());
     history.goBack();
   };
+
+  const isLoading =
+    domainState.state === RequestState.IDLE ||
+    domainState.state === RequestState.LOADING;
 
   return (
     <View>
       <SubviewHeader customBackAction={goBack} title={t("Toggle Assets")} />
       <View.Content hasNoTopPadding>
-        {assets.isLoading ? (
+        {isLoading ? (
           <div className="ToggleAsset__loader">
             <Loader size="2rem" />
           </div>
@@ -62,11 +66,13 @@ export const AssetVisibility = () => {
           <div className="ToggleAsset__wrapper">
             <div
               className={`ToggleAsset__assets${
-                isManagingAssets && isSorobanSuported ? "--short" : ""
+                domainState.data?.isManagingAssets && isSorobanSuported
+                  ? "--short"
+                  : ""
               }`}
               ref={ManageAssetRowsWrapperRef}
             >
-              <ToggleAssetRows assetRows={assets.assetRows} />
+              <ToggleAssetRows assetRows={domainState.data!.domains} />
             </div>
           </div>
         )}
