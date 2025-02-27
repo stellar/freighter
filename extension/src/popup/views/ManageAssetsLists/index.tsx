@@ -106,7 +106,7 @@ export const ManageAssetsLists = () => {
 
   const addNetworkPath = getPathFromRoute({
     fullRoute: ROUTES.manageAssetsListsModifyAssetList,
-    basePath: "/manage-assets-list/",
+    basePath: "/manage-assets-lists/",
   });
 
   return assetsLists ? (
