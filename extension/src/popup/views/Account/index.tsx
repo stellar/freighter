@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import BigNumber from "bignumber.js";
 import {
   CopyText,
   Icon,
@@ -51,6 +52,7 @@ import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsD
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
+import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
 import "popup/metrics/authServices";
 
@@ -173,6 +175,20 @@ export const Account = () => {
     return <Loading />;
   }
 
+  const totalBalanceUsd = Object.keys(accountBalances.prices!).reduce(
+    (prev, curr) => {
+      const currentAssetBalance = accountBalances.balances![curr].total;
+      const currentPrice = accountBalances.prices![curr]
+        ? accountBalances.prices![curr].currentPrice
+        : "0";
+      const currentUsdBalance = new BigNumber(currentPrice).multipliedBy(
+        currentAssetBalance,
+      );
+      return currentUsdBalance.plus(prev);
+    },
+    new BigNumber(0),
+  );
+
   return (
     <>
       <AccountHeader
@@ -185,22 +201,27 @@ export const Account = () => {
       <View.Content hasNoTopPadding>
         <div className="AccountView" data-testid="account-view">
           <div className="AccountView__account-actions">
-            <div className="AccountView__name-key-display">
-              <div
-                className="AccountView__account-name"
-                data-testid="account-view-account-name"
-              >
-                {currentAccountName}
-              </div>
-              <CopyText
-                textToCopy={publicKey}
-                tooltipPlacement="bottom"
-                doneLabel="Copied address"
-              >
-                <div className="AccountView__account-num">
-                  <Icon.Copy01 />
+            <div className="AccountView__account-details">
+              <div className="AccountView__name-key-display">
+                <div
+                  className="AccountView__account-name"
+                  data-testid="account-view-account-name"
+                >
+                  {currentAccountName}
                 </div>
-              </CopyText>
+                <CopyText
+                  textToCopy={publicKey}
+                  tooltipPlacement="bottom"
+                  doneLabel="Copied address"
+                >
+                  <div className="AccountView__account-num">
+                    <Icon.Copy01 />
+                  </div>
+                </CopyText>
+              </div>
+              <div className="AccountView__total-usd-balance">
+                {`$${formatAmount(roundUsdValue(totalBalanceUsd.toString()))}`}
+              </div>
             </div>
             <div className="AccountView__send-receive-display">
               <div className="AccountView__send-receive-button">
@@ -282,7 +303,7 @@ export const Account = () => {
             >
               <AccountAssets
                 sortedBalances={sortedBalances}
-                assetPrices={accountBalances.prices!}
+                assetPrices={accountBalances.prices}
                 assetIcons={assetIcons}
                 setSelectedAsset={setSelectedAsset}
               />
