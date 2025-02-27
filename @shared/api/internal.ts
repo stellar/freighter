@@ -42,6 +42,7 @@ import {
   IndexerSettings,
   SettingsState,
   ExperimentalFeatures,
+  ApiTokenPrices,
 } from "./types";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -491,6 +492,25 @@ export const getAccountIndexerBalances = async (
     ...data,
     balances: formattedBalances,
   };
+};
+
+export const getLiveAssetPrices = async (assetIds: string[]) => {
+  const url = new URL(`${INDEXER_URL}/token-prices`);
+  for (const id of assetIds) {
+    url.searchParams.append("tokens", id);
+  }
+  const response = await fetch(url.href);
+  const data = (await response.json()) as ApiTokenPrices;
+
+  if (!response.ok) {
+    const _err = JSON.stringify(data);
+    captureException(
+      `Failed to fetch token prices - ${response.status}: ${response.statusText}`,
+    );
+    throw new Error(_err);
+  }
+
+  return data;
 };
 
 export const getSorobanTokenBalance = async (
