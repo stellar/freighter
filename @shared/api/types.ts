@@ -290,7 +290,7 @@ export interface SorobanBalance {
   token?: { code: string; issuer: { key: string } };
 }
 
-export type AssetType = AssetBalance | NativeBalance | TokenBalance;
+export type AssetType = NativeBalance | Balance | SorobanBalance;
 
 export type TokenBalances = SorobanBalance[];
 
