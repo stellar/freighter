@@ -3,14 +3,14 @@ import { useSelector } from "react-redux";
 import isEmpty from "lodash/isEmpty";
 import { Asset, Horizon } from "stellar-sdk";
 
-import { AssetIcons, AssetType } from "@shared/api/types";
+import { ApiTokenPrices, AssetIcons, AssetType } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
 import { formatTokenAmount } from "popup/helpers/soroban";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
-import { formatAmount } from "popup/helpers/formatters";
+import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -20,6 +20,7 @@ import ImageMissingIcon from "popup/assets/image-missing.svg?react";
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
 
 import "./styles.scss";
+import BigNumber from "bignumber.js";
 
 const getIsXlm = (code: string) => code === "XLM";
 
@@ -160,12 +161,14 @@ export const AssetIcon = ({
 interface AccountAssetsProps {
   assetIcons: AssetIcons;
   sortedBalances: AssetType[];
+  assetPrices?: ApiTokenPrices;
   setSelectedAsset?: (selectedAsset: string) => void;
 }
 
 export const AccountAssets = ({
   assetIcons: inputAssetIcons,
   sortedBalances,
+  assetPrices,
   setSelectedAsset,
 }: AccountAssetsProps) => {
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
@@ -249,6 +252,7 @@ export const AccountAssets = ({
         }
 
         const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
+        const assetPrice = assetPrices ? assetPrices[canonicalAsset] : null;
 
         const isSuspicious = isAssetSuspicious(rb.blockaidData);
 
@@ -269,21 +273,51 @@ export const AccountAssets = ({
             onClick={isLP ? () => null : () => handleClick(canonicalAsset)}
           >
             <div className="AccountAssets__copy-left">
-              <AssetIcon
-                assetIcons={assetIcons}
-                code={code}
-                issuerKey={issuer?.key}
-                retryAssetIconFetch={retryAssetIconFetch}
-                isLPShare={!!rb.liquidityPoolId}
-                isSuspicious={isSuspicious}
-              />
-              <span className="asset-code">{code}</span>
-            </div>
-            <div className="AccountAssets__copy-right">
-              <div className="asset-amount" data-testid="asset-amount">
-                {formatAmount(amountVal)}
+              <div className="asset-icon">
+                <AssetIcon
+                  assetIcons={assetIcons}
+                  code={code}
+                  issuerKey={issuer?.key}
+                  retryAssetIconFetch={retryAssetIconFetch}
+                  isLPShare={!!rb.liquidityPoolId}
+                  isSuspicious={isSuspicious}
+                />
+              </div>
+              <div className="asset-native-value">
+                <span className="asset-code">{code}</span>
+                <div className="asset-native-amount">
+                  {formatAmount(amountVal)}
+                </div>
               </div>
             </div>
+            {assetPrice && (
+              <div className="AccountAssets__copy-right">
+                <div className="asset-usd-amount" data-testid="asset-amount">
+                  $
+                  {formatAmount(
+                    roundUsdValue(
+                      new BigNumber(assetPrice.currentPrice)
+                        .multipliedBy(rb.total)
+                        .toString(),
+                    ),
+                  )}
+                </div>
+                {assetPrice.priceChange24h && (
+                  <div
+                    className={`asset-value-delta ${
+                      new BigNumber(assetPrice.priceChange24h).isNegative()
+                        ? "negative"
+                        : "positive"
+                    }
+                  `}
+                  >
+                    {`${formatAmount(
+                      roundUsdValue(assetPrice.priceChange24h),
+                    )}%`}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         );
       })}

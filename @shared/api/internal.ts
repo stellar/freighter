@@ -500,17 +500,17 @@ export const getLiveAssetPrices = async (assetIds: string[]) => {
     url.searchParams.append("tokens", id);
   }
   const response = await fetch(url.href);
-  const data = (await response.json()) as ApiTokenPrices;
+  const parsedResponse = (await response.json()) as { data: ApiTokenPrices };
 
   if (!response.ok) {
-    const _err = JSON.stringify(data);
+    const _err = JSON.stringify(parsedResponse);
     captureException(
       `Failed to fetch token prices - ${response.status}: ${response.statusText}`,
     );
     throw new Error(_err);
   }
 
-  return data;
+  return parsedResponse.data;
 };
 
 export const getSorobanTokenBalance = async (

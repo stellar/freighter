@@ -95,6 +95,7 @@ export const Account = () => {
       getAccountBalances({
         publicKey,
         networkDetails,
+        shouldGetPrices: true,
       }),
     );
 
@@ -281,6 +282,7 @@ export const Account = () => {
             >
               <AccountAssets
                 sortedBalances={sortedBalances}
+                assetPrices={accountBalances.prices!}
                 assetIcons={assetIcons}
                 setSelectedAsset={setSelectedAsset}
               />

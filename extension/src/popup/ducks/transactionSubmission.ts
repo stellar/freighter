@@ -14,6 +14,7 @@ import {
   loadRecentAddresses as internalLoadRecentAddresses,
   getAccountIndexerBalances as internalgetAccountIndexerBalances,
   getAccountBalancesStandalone as internalGetAccountBalancesStandalone,
+  getLiveAssetPrices as internalGetLiveAssetPrices,
   getAssetIcons as getAssetIconsService,
   getAssetDomains as getAssetDomainsService,
   getMemoRequiredAccounts as internalGetMemoRequiredAccounts,
@@ -373,33 +374,45 @@ export const getAccountBalances = createAsyncThunk<
   {
     publicKey: string;
     networkDetails: NetworkDetails;
+    shouldGetPrices?: boolean;
   },
   { rejectValue: ErrorMessage }
->("getAccountBalances", async ({ publicKey, networkDetails }, thunkApi) => {
-  try {
-    let balances;
+>(
+  "getAccountBalances",
+  async ({ publicKey, networkDetails, shouldGetPrices = false }, thunkApi) => {
+    try {
+      let balances;
+      let prices;
 
-    const isMainnet = isMainnetHelper(networkDetails);
+      const isMainnet = isMainnetHelper(networkDetails);
 
-    if (isCustomNetwork(networkDetails)) {
-      balances = await internalGetAccountBalancesStandalone({
-        publicKey,
-        networkDetails,
-        isMainnet,
-      });
-    } else {
-      balances = await internalgetAccountIndexerBalances(
-        publicKey,
-        networkDetails,
-      );
+      if (isCustomNetwork(networkDetails)) {
+        balances = await internalGetAccountBalancesStandalone({
+          publicKey,
+          networkDetails,
+          isMainnet,
+        });
+      } else {
+        balances = await internalgetAccountIndexerBalances(
+          publicKey,
+          networkDetails,
+        );
+        if (shouldGetPrices) {
+          const assetIds = Object.keys(balances.balances || {});
+          prices = await internalGetLiveAssetPrices(assetIds);
+        }
+      }
+
+      storeBalanceMetricData(publicKey, balances.isFunded || false);
+      return {
+        ...balances,
+        prices,
+      };
+    } catch (e) {
+      return thunkApi.rejectWithValue({ errorMessage: e as string });
     }
-
-    storeBalanceMetricData(publicKey, balances.isFunded || false);
-    return balances;
-  } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e as string });
-  }
-});
+  },
+);
 
 export const getDestinationBalances = createAsyncThunk<
   AccountBalancesInterface,
