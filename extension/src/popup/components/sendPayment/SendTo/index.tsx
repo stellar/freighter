@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Asset, StrKey } from "stellar-sdk";
 import { useFormik } from "formik";
@@ -95,7 +96,8 @@ const InvalidAddressWarning = () => {
 
 export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const { t } = useTranslation();
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { state: sendDataState, fetchData } = useSendToData(networkDetails, {
     isMainnet: isMainnet(networkDetails),
@@ -110,7 +112,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
     dispatch(saveDestination(validatedDestination));
     dispatch(saveDestinationAsset(""));
     dispatch(saveFederationAddress(validatedFedAdress || ""));
-    navigateTo(ROUTES.sendPaymentAmount);
+    navigateTo(ROUTES.sendPaymentAmount, navigate);
   };
 
   const formik = useFormik({
@@ -163,7 +165,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
     <React.Fragment>
       <SubviewHeader
         title="Send To"
-        customBackAction={() => navigateTo(previous)}
+        customBackAction={() => navigateTo(previous, navigate)}
       />
       <View.Content hasNoTopPadding>
         <FormRows>

@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Button, Select, Loader, Badge } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -51,6 +52,7 @@ export const AssetLists = ({
   isLoading,
 }: AssetListsProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   return (
     <>
@@ -115,7 +117,9 @@ export const AssetLists = ({
           size="md"
           isFullWidth
           variant="tertiary"
-          onClick={() => navigateTo(ROUTES.manageAssetsListsModifyAssetList)}
+          onClick={() =>
+            navigateTo(ROUTES.manageAssetsListsModifyAssetList, navigate)
+          }
         >
           {t("Add new list")}
         </Button>

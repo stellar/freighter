@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import { Networks } from "stellar-sdk";
@@ -148,6 +149,7 @@ export const TransactionDetails = ({
   shouldScanTx: boolean;
 }) => {
   const dispatch: AppDispatch = useDispatch();
+  const navigate = useNavigate();
   const submission = useSelector(transactionSubmissionSelector);
   const {
     transactionData: {
@@ -623,7 +625,7 @@ export const TransactionDetails = ({
                   variant="secondary"
                   onClick={() => {
                     dispatch(resetSimulation());
-                    navigateTo(ROUTES.account);
+                    navigateTo(ROUTES.account, navigate);
                   }}
                 >
                   {t("Cancel")}

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { BigNumber } from "bignumber.js";
 import { Store } from "redux";
 import * as StellarSdk from "stellar-sdk";
@@ -136,7 +135,6 @@ import { captureException } from "@sentry/browser";
 const numOfPublicKeysToCheck = 5;
 const sessionTimer = new SessionTimer();
 
-// eslint-disable-next-line
 export const responseQueue: Array<
   (message?: any, messageAddress?: any) => void
 > = [];
@@ -892,7 +890,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       if (keyIdList.length) {
         /* Clear any existing account data while maintaining app settings */
 
-        // eslint-disable-next-line @typescript-eslint/prefer-for-of
         for (let i = 0; i < keyIdList.length; i += 1) {
           await localStore.remove(`stellarkeys:${keyIdList[i]}`);
         }
@@ -924,17 +921,16 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       await localStore.setItem(APPLICATION_ID, applicationState);
 
       // lets check first couple of accounts and pre-load them if funded on mainnet
-      // eslint-disable-next-line no-restricted-syntax
+
       for (let i = 1; i <= numOfPublicKeysToCheck; i += 1) {
         try {
           const publicKey = wallet.getPublicKey(i);
           const privateKey = wallet.getSecret(i);
 
-          // eslint-disable-next-line no-await-in-loop
           const resp = await fetch(
             `${MAINNET_NETWORK_DETAILS.networkUrl}/accounts/${publicKey}`,
           );
-          // eslint-disable-next-line no-await-in-loop
+
           const j = await resp.json();
           if (j.account_id) {
             const newKeyPair = {
@@ -942,14 +938,13 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
               privateKey,
             };
 
-            // eslint-disable-next-line no-await-in-loop
             await _storeAccount({
               password,
               keyPair: newKeyPair,
               mnemonicPhrase: recoverMnemonic,
               imported: true,
             });
-            // eslint-disable-next-line no-await-in-loop
+
             await localStore.setItem(KEY_DERIVATION_NUMBER_ID, String(i));
           }
         } catch (e) {
@@ -1020,7 +1015,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const unlockedAccounts = [] as Account[];
 
     // for loop to preserve order of accounts
-    // eslint-disable-next-line
+
     for (let i = 0; i < keyIdList.length; i++) {
       const keyId = keyIdList[i];
       let keyStore;
@@ -1037,7 +1032,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         hardwareWalletType = WalletType.LEDGER;
       } else {
         try {
-          // eslint-disable-next-line no-await-in-loop
           keyStore = await keyManager.loadKey(keyId, password);
         } catch (e) {
           console.error(e);
@@ -1120,7 +1114,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < keyIdList.length; i += 1) {
       const currentKeyId = keyIdList[i];
 
@@ -1835,7 +1828,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       5. Start an account session with the destination account so the user can start signing tx's with their newly migrated account
     */
 
-    // eslint-disable-next-line
     for (let i = 0; i < balancesToMigrate.length; i += 1) {
       const {
         publicKey,
@@ -1852,10 +1844,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       const keyID = keyIdList[keyIdIndex];
 
-      // eslint-disable-next-line no-await-in-loop
       const store = await _unlockKeystore({ password, keyID });
 
-      // eslint-disable-next-line no-await-in-loop
       const sourceAccount = await server.loadAccount(publicKey);
 
       // create a new keystore and migrate while replacing the keyId in the list
@@ -1864,7 +1854,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         privateKey: newWallet.getSecret(keyIdIndex),
       };
 
-      // eslint-disable-next-line no-await-in-loop
       const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
         fee,
         networkPassphrase,
@@ -1899,7 +1888,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       }
 
       try {
-        // eslint-disable-next-line no-await-in-loop
         await submitTx({ server, tx: builtTransaction });
       } catch (e) {
         console.error(e);
@@ -1910,7 +1898,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       if (migratedAccount.isMigrated) {
         try {
           // now that the destination accounts are funded, we can add the trustline balances
-          // eslint-disable-next-line no-await-in-loop
+
           await migrateTrustlines({
             trustlineBalances,
             server,
@@ -1930,7 +1918,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       // if any of the preceding steps have failed, this will fail as well. Don't bother making the API call
       if (isMergeSelected && migratedAccount.isMigrated) {
         // since we're doing a merge, we can merge the old account into the new one, which will delete the old account
-        // eslint-disable-next-line no-await-in-loop
+
         const mergeTransaction = new StellarSdk.TransactionBuilder(
           sourceAccount,
           {
@@ -1953,7 +1941,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         }
 
         try {
-          // eslint-disable-next-line no-await-in-loop
           await submitTx({ server, tx: builtMergeTransaction });
         } catch (e) {
           console.error(e);
@@ -1963,7 +1950,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       if (migratedAccount.isMigrated) {
         // replace the source account with the new one in `allAccounts` and store the keys
-        // eslint-disable-next-line no-await-in-loop
+
         await _replaceAccount({
           mnemonicPhrase: migratedMnemonicPhrase,
           password,
@@ -2136,5 +2123,3 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
   return messageResponder[request.type]();
 };
-
-/* eslint-enable @typescript-eslint/no-unsafe-argument */

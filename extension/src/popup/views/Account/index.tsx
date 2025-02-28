@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   CopyText,
   Icon,
@@ -38,6 +39,7 @@ import "./styles.scss";
 
 export const Account = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
@@ -121,7 +123,7 @@ export const Account = () => {
                   title={t("Send Payment")}
                   id="nav-btn-send"
                   icon={<Icon.Send01 />}
-                  onClick={() => navigateTo(ROUTES.sendPayment)}
+                  onClick={() => navigateTo(ROUTES.sendPayment, navigate)}
                 />
               </div>
               <div

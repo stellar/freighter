@@ -45,6 +45,7 @@ import {
 import { Loading } from "popup/components/Loading";
 
 import "./styles.scss";
+import { useNavigate } from "react-router-dom";
 
 const SwapAssetsIcon = ({
   sourceCanon,
@@ -97,6 +98,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const { t } = useTranslation();
   const isSwap = useIsSwap();
   const dispatch: AppDispatch = useDispatch();
+  const navigate = useNavigate();
 
   const sourceAsset = getAssetFromCanonical(asset);
   const destinationCanonical = getAssetFromCanonical(
@@ -151,7 +153,6 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     };
 
     if (isHardwareWallet) {
-      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       trackRemoveTrustline();
     } else {
@@ -181,7 +182,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
         trackChangeTrustline();
-        navigateTo(ROUTES.account);
+        navigateTo(ROUTES.account, navigate);
       }
 
       if (submitFreighterTransaction.rejected.match(submitResp)) {
@@ -296,7 +297,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
           variant="secondary"
           onClick={() => {
             dispatch(resetSubmission());
-            navigateTo(ROUTES.account);
+            navigateTo(ROUTES.account, navigate);
           }}
         >
           {t("Done")}
@@ -323,6 +324,7 @@ export const SubmitFail = () => {
   const { error } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     emitMetric(METRIC_NAMES.sendPaymentError, { error });
@@ -506,7 +508,7 @@ export const SubmitFail = () => {
           variant="tertiary"
           size="md"
           onClick={() => {
-            navigateTo(ROUTES.account);
+            navigateTo(ROUTES.account, navigate);
           }}
         >
           {t("Got it")}

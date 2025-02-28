@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 import { ActionStatus } from "@shared/api/types";
 
@@ -18,6 +19,8 @@ import "../styles.scss";
 export const SendConfirm = ({ previous }: { previous: ROUTES }) => {
   const dispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
+  const navigate = useNavigate();
+
   const [isSendComplete, setIsSendComplete] = useState(false);
 
   const render = () => {
@@ -27,7 +30,7 @@ export const SendConfirm = ({ previous }: { previous: ROUTES }) => {
           shouldScanTx={false}
           goBack={() => {
             dispatch(resetSubmission());
-            navigateTo(ROUTES.accountHistory);
+            navigateTo(ROUTES.accountHistory, navigate);
           }}
         />
       );
@@ -37,14 +40,14 @@ export const SendConfirm = ({ previous }: { previous: ROUTES }) => {
         return (
           <TransactionDetails
             shouldScanTx={true}
-            goBack={() => navigateTo(previous)}
+            goBack={() => navigateTo(previous, navigate)}
           />
         );
       case ActionStatus.PENDING:
         return (
           <TransactionDetails
             shouldScanTx={false}
-            goBack={() => navigateTo(previous)}
+            goBack={() => navigateTo(previous, navigate)}
           />
         );
       case ActionStatus.SUCCESS:
@@ -55,7 +58,7 @@ export const SendConfirm = ({ previous }: { previous: ROUTES }) => {
         return (
           <TransactionDetails
             shouldScanTx={false}
-            goBack={() => navigateTo(previous)}
+            goBack={() => navigateTo(previous, navigate)}
           />
         );
     }

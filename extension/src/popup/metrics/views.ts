@@ -117,7 +117,7 @@ registerHandler<AppState>(navigate, (_, a) => {
     const METRIC_OPTIONS = {
       domain: getUrlDomain(url),
       subdomain: getUrlHostname(url),
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       number_of_operations: operations.length,
       operationTypes,
     };

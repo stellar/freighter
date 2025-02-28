@@ -16,7 +16,6 @@ import {
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { Balances } from "@shared/api/types/backend-api";
-import { createMemoryHistory } from "history";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
@@ -224,13 +223,6 @@ jest
       contractId === verifiedToken || contractId === unverifiedToken,
   );
 
-const mockHistoryGetter = jest.fn();
-jest.mock("popup/constants/history", () => ({
-  get history() {
-    return mockHistoryGetter();
-  },
-}));
-
 jest.mock("stellar-sdk", () => {
   const original = jest.requireActual("stellar-sdk");
   return {
@@ -283,23 +275,27 @@ jest.spyOn(BlockaidHelpers, "scanAsset").mockImplementation((address) => {
   });
 });
 
+const mockNavigateTo = jest.fn();
+jest.mock("popup/helpers/navigate", () => {
+  return {
+    navigateTo: (...args: any) => mockNavigateTo(args),
+  };
+});
+
 const publicKey = "GCXRLIZUQNZ3YYJDGX6Z445P7FG5WXT7UILBO5CFIYYM7Z7YTIOELC6O";
-const history = createMemoryHistory();
 
 const initView = async (
   rejectTxn: boolean = false,
   isMainnet: boolean = false,
   balances = manageAssetsMockBalances,
 ) => {
-  history.push(ROUTES.manageAssets);
-  mockHistoryGetter.mockReturnValue(history);
   const configuredNetworkDetails = isMainnet
     ? MAINNET_NETWORK_DETAILS
     : TESTNET_NETWORK_DETAILS;
 
   render(
     <Wrapper
-      history={history}
+      routes={[ROUTES.manageAssets]}
       state={{
         auth: {
           error: null,
@@ -428,8 +424,10 @@ describe.skip("Manage assets", () => {
       await fireEvent.click(addAssetButton);
     });
 
-    const lastRoute = history.entries.pop();
-    expect(lastRoute?.pathname).toBe("/account");
+    expect(mockNavigateTo).toHaveBeenCalledWith([
+      ROUTES.account,
+      expect.any(Function),
+    ]);
   });
 
   it("remove asset", async () => {
@@ -459,8 +457,10 @@ describe.skip("Manage assets", () => {
       fireEvent.click(removeButton);
     });
 
-    const lastRoute = history.entries.pop();
-    expect(lastRoute?.pathname).toBe("/account");
+    expect(mockNavigateTo).toHaveBeenCalledWith([
+      ROUTES.account,
+      expect.any(Function),
+    ]);
   });
 
   it("show error view when removing asset with balance", async () => {
@@ -689,8 +689,10 @@ describe.skip("Manage assets", () => {
       await fireEvent.click(warningAddButton);
     });
 
-    const lastRoute = history.entries.pop();
-    expect(lastRoute?.pathname).toBe("/account");
+    expect(mockNavigateTo).toHaveBeenCalledWith([
+      ROUTES.account,
+      expect.any(Function),
+    ]);
   });
 
   it("show warning when adding an asset with Blockaid warning on Mainnet", async () => {
@@ -752,8 +754,10 @@ describe.skip("Manage assets", () => {
       await fireEvent.click(addAssetButton);
     });
 
-    const lastRoute = history.entries.pop();
-    expect(lastRoute?.pathname).toBe("/account");
+    expect(mockNavigateTo).toHaveBeenCalledWith([
+      ROUTES.account,
+      expect.any(Function),
+    ]);
   });
 
   it("add soroban token on asset list", async () => {

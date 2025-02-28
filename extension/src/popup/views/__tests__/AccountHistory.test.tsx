@@ -14,6 +14,7 @@ import {
   mockBalances,
 } from "../../__testHelpers__";
 import { AccountHistory } from "../AccountHistory";
+import { ROUTES } from "popup/constants/routes";
 
 jest
   .spyOn(ApiInternal, "getAccountHistory")
@@ -38,6 +39,7 @@ describe("AccountHistory", () => {
   it("loads account history view with all transactions", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -79,6 +81,7 @@ describe("AccountHistory", () => {
   it("hides dust transactions", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,

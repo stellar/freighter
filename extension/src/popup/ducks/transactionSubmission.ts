@@ -105,15 +105,13 @@ export const submitFreighterTransaction = createAsyncThunk<
         const options = {
           method: "POST",
           headers: {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             signed_xdr: signedXDR,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
+
             network_url: networkDetails.networkUrl,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
+
             network_passphrase: networkDetails.networkPassphrase,
           }),
         };
@@ -170,15 +168,13 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
         const options = {
           method: "POST",
           headers: {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             signed_xdr: signedXDR,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
+
             network_url: networkDetails.networkUrl,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
+
             network_passphrase: networkDetails.networkPassphrase,
           }),
         };

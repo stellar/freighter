@@ -1,6 +1,6 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { AppDispatch } from "popup/App";
 import {
@@ -32,15 +32,14 @@ interface SelectAssetRowsProps {
   assetRows: ManageAssetCurrency[];
 }
 
-export const SelectAssetRows = ({
-  assetRows,
-  balances,
-}: SelectAssetRowsProps) => {
-  const { assetSelect, soroswapTokens, transactionData } = useSelector(
-    transactionSubmissionSelector,
-  );
-  const dispatch: AppDispatch = useDispatch();
-  const history = useHistory();
+export const SelectAssetRows = ({ assetRows, balances }: SelectAssetRowsProps) => {
+  const {
+    assetSelect,
+    soroswapTokens,
+    transactionData,
+  } = useSelector(transactionSubmissionSelector);
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const isSoroswapEnabled = useIsSoroswapEnabled();
   const isSwap = useIsSwap();
 
@@ -111,11 +110,11 @@ export const SelectAssetRows = ({
                   if (assetSelect.isSource) {
                     dispatch(saveAsset(canonical));
                     dispatch(saveIsToken(isContract));
-                    history.goBack();
+                    navigate(-1);
                   } else {
                     dispatch(saveDestinationAsset(canonical));
                     dispatch(saveDestinationIcon(icon));
-                    history.goBack();
+                    navigate(-1);
                   }
                   dispatch(saveIsSoroswap(isSoroswap));
                 }}

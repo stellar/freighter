@@ -3,6 +3,7 @@ import { NETWORKS } from "@shared/constants/stellar";
 import { Button, Icon, CopyText } from "@stellar/design-system";
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import { Networks, StrKey } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -80,7 +81,7 @@ export const ManageAssetRowButton = ({
   recommendedFee,
   balances,
 }: ManageAssetRowButtonProps) => {
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
   const [rowButtonShowing, setRowButtonShowing] = useState("");
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
@@ -89,6 +90,7 @@ export const ManageAssetRowButton = ({
   const { submitStatus } = useSelector(transactionSubmissionSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
+  const navigate = useNavigate();
 
   const ManageAssetRowDropdownRef = useRef<HTMLDivElement>(null);
   const server = stellarSdkServer(
@@ -150,7 +152,7 @@ export const ManageAssetRowButton = ({
       setAssetSubmitting("");
     } else {
       changeTrustline(!isTrustlineActive, () =>
-        Promise.resolve(navigateTo(ROUTES.account)),
+        Promise.resolve(navigateTo(ROUTES.account, navigate)),
       );
     }
   };
@@ -178,7 +180,7 @@ export const ManageAssetRowButton = ({
             }),
           );
 
-          navigateTo(ROUTES.account);
+          navigateTo(ROUTES.account, navigate);
         };
 
         if (StrKey.isValidEd25519PublicKey(assetRowData.issuer)) {
@@ -206,7 +208,7 @@ export const ManageAssetRowButton = ({
             network: networkDetails.network as Networks,
           }),
         );
-        navigateTo(ROUTES.account);
+        navigateTo(ROUTES.account, navigate);
       }
     } else {
       await dispatch(
@@ -215,7 +217,7 @@ export const ManageAssetRowButton = ({
           network: networkDetails.network as NETWORKS,
         }),
       );
-      navigateTo(ROUTES.account);
+      navigateTo(ROUTES.account, navigate);
     }
   };
 

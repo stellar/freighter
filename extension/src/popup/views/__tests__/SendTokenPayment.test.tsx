@@ -1,7 +1,6 @@
 import React from "react";
 import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createMemoryHistory } from "history";
 import { SorobanRpc } from "stellar-sdk";
 
 import {
@@ -129,12 +128,6 @@ jest.mock("helpers/metrics", () => {
     emitMetric: (_name: string, _body?: any) => ({}),
   };
 });
-const mockHistoryGetter = jest.fn();
-jest.mock("popup/constants/history", () => ({
-  get history() {
-    return mockHistoryGetter();
-  },
-}));
 
 jest.mock("popup/helpers/searchAsset", () => {
   return {
@@ -147,14 +140,10 @@ describe.skip("SendTokenPayment", () => {
     jest.clearAllMocks();
   });
 
-  const history = createMemoryHistory();
-  history.push(ROUTES.sendPaymentTo);
-  mockHistoryGetter.mockReturnValue(history);
-
   const asset = "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ";
   const { container } = render(
     <Wrapper
-      history={history}
+      routes={[ROUTES.sendPayment]}
       state={{
         auth: {
           error: null,

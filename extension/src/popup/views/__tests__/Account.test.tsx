@@ -25,6 +25,7 @@ import {
   mockTestnetBalances,
 } from "../../__testHelpers__";
 import { Account } from "../Account";
+import { ROUTES } from "popup/constants/routes";
 
 const mockHistoryOperations = {
   operations: [
@@ -185,6 +186,7 @@ describe("Account view", () => {
   it("renders", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -211,6 +213,7 @@ describe("Account view", () => {
   it("loads accounts", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -238,6 +241,7 @@ describe("Account view", () => {
   it("displays balances and scam notifications on Mainnet", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -278,6 +282,7 @@ describe("Account view", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -322,6 +327,7 @@ describe("Account view", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -356,6 +362,7 @@ describe("Account view", () => {
   it("goes to account details", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -392,6 +399,7 @@ describe("Account view", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -427,6 +435,7 @@ describe("Account view", () => {
   it("switches accounts", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -488,6 +497,7 @@ describe("Account view", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Store } from "redux";
 import semver from "semver";
 import * as StellarSdk from "stellar-sdk";
@@ -650,5 +649,3 @@ export const freighterApiMessageListener = (
 
   return messageResponder[request.type]();
 };
-
-/* eslint-enable @typescript-eslint/no-unsafe-argument */

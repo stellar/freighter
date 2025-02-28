@@ -39,7 +39,6 @@ jest.mock("helpers/metrics", () => ({
   storeBalanceMetricData: () => {},
 }));
 
-/* eslint-disable react/no-array-index-key */
 jest.mock("react-i18next", () => ({
   // this mock makes sure any components using the translate hook can use it without a warning being shown
   useTranslation: () => ({
@@ -55,7 +54,6 @@ jest.mock("react-i18next", () => ({
     return "";
   },
 }));
-/* eslint-enable react/no-array-index-key */
 
 jest.mock("react-dom", () => ({
   ...jest.requireActual("react-dom"),

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button, Loader } from "@stellar/design-system";
@@ -102,6 +103,7 @@ export const Settings = ({
   const publicKey = useSelector(publicKeySelector);
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
+  const navigate = useNavigate();
 
   const isSendSacToContract =
     isContractId(destination) &&
@@ -174,16 +176,21 @@ export const Settings = ({
   }, []);
 
   const handleTxFeeNav = () =>
-    navigateTo(isSwap ? ROUTES.swapSettingsFee : ROUTES.sendPaymentSettingsFee);
+    navigateTo(
+      isSwap ? ROUTES.swapSettingsFee : ROUTES.sendPaymentSettingsFee,
+      navigate,
+    );
 
   const handleSlippageNav = () =>
     navigateTo(
       isSwap ? ROUTES.swapSettingsSlippage : ROUTES.sendPaymentSettingsSlippage,
+      navigate,
     );
 
   const handleTimeoutNav = () =>
     navigateTo(
       isSwap ? ROUTES.swapSettingsTimeout : ROUTES.sendPaymentSettingsTimeout,
+      navigate,
     );
 
   // dont show memo for regular sends to Muxed, or for swaps
@@ -197,7 +204,7 @@ export const Settings = ({
     <React.Fragment>
       <SubviewHeader
         title={`${isSwap ? t("Swap") : t("Send")} ${t("Settings")}`}
-        customBackAction={() => navigateTo(previous)}
+        customBackAction={() => navigateTo(previous, navigate)}
       />
       {isLoading ? (
         <View.Content hasNoTopPadding>
@@ -236,7 +243,8 @@ export const Settings = ({
                       >
                         <span
                           className="SendSettings__row__title SendSettings__clickable"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
                             submitForm();
                             handleTxFeeNav();
                           }}
@@ -247,7 +255,8 @@ export const Settings = ({
                     </div>
                     <div
                       className="SendSettings__row__right SendSettings__clickable"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
                         submitForm();
                         handleTxFeeNav();
                       }}
@@ -275,7 +284,8 @@ export const Settings = ({
                       >
                         <span
                           className="SendSettings__row__title SendSettings__clickable"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
                             submitForm();
                             handleTimeoutNav();
                           }}
@@ -286,7 +296,8 @@ export const Settings = ({
                     </div>
                     <div
                       className="SendSettings__row__right SendSettings__clickable"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
                         submitForm();
                         handleTimeoutNav();
                       }}
@@ -323,7 +334,8 @@ export const Settings = ({
                         >
                           <span
                             className="SendSettings__row__title SendSettings__clickable"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.preventDefault();
                               submitForm();
                               handleSlippageNav();
                             }}
@@ -334,7 +346,8 @@ export const Settings = ({
                       </div>
                       <div
                         className="SendSettings__row__right SendSettings__clickable"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.preventDefault();
                           submitForm();
                           handleSlippageNav();
                         }}
@@ -396,10 +409,10 @@ export const Settings = ({
                   disabled={!settingsData.data?.recommendedFee}
                   size="md"
                   isFullWidth
-                  onClick={() => navigateTo(next)}
                   type="submit"
                   variant="secondary"
                   data-testid="send-settings-btn-continue"
+                  onClick={() => navigateTo(next, navigate)}
                 >
                   {t("Review")} {isSwap ? t("Swap") : t("Send")}
                 </Button>

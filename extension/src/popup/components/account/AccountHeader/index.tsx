@@ -21,6 +21,7 @@ import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal"
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 
 import "./styles.scss";
+import { AppDispatch } from "popup/App";
 
 interface AccountHeaderProps {
   allAccounts: Account[];
@@ -34,7 +35,7 @@ export const AccountHeader = ({
   publicKey,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -96,12 +97,10 @@ export const AccountHeader = ({
             <li className="AccountHeader__account-list-item">
               <Link
                 className="AccountHeader__account-list-item__link"
-                to={{
-                  pathname: ROUTES.addAccount,
-                  state: {
-                    header: t("Create a new Stellar address"),
-                    cta: t("Add address"),
-                  },
+                to={ROUTES.addAccount}
+                state={{
+                  header: t("Create a new Stellar address"),
+                  cta: t("Add address"),
                 }}
               >
                 <div className="AccountHeader__account-list-item__row">

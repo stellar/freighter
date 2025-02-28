@@ -18,6 +18,7 @@ import * as ApiInternal from "@shared/api/internal";
 import { SignTransaction } from "../SignTransaction";
 import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
 import { Balances } from "@shared/api/types/backend-api";
+import { ROUTES } from "popup/constants/routes";
 
 jest.mock("stellar-identicon-js");
 jest.setTimeout(20000);
@@ -141,6 +142,7 @@ describe("SignTransactions", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.signTransaction]}
         state={{
           auth: {
             allAccounts: mockAccounts,
@@ -181,6 +183,7 @@ describe("SignTransactions", () => {
     }));
     render(
       <Wrapper
+        routes={[ROUTES.signTransaction]}
         state={{
           auth: {
             allAccounts: mockAccounts,
@@ -224,6 +227,7 @@ describe("SignTransactions", () => {
     }));
     render(
       <Wrapper
+        routes={[ROUTES.signTransaction]}
         state={{
           auth: {
             allAccounts: mockAccounts,
@@ -263,6 +267,7 @@ describe("SignTransactions", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.signTransaction]}
         state={{
           auth: {
             allAccounts: mockAccounts,
@@ -281,9 +286,9 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
-    await waitFor(() => {
+    await waitFor(async () => {
       expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
-      userEvent.click(screen.getByTestId("Tab-Details"));
+      await userEvent.click(screen.getByTestId("Tab-Details"));
     });
 
     const args = getTokenInvocationArgs(op);
@@ -326,6 +331,7 @@ describe("SignTransactions", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.signTransaction]}
         state={{
           auth: {
             allAccounts: mockAccounts,
@@ -344,9 +350,9 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
 
-    await waitFor(() => {
+    await waitFor(async () => {
       expect(screen.getByTestId("Tab-Details")).toBeInTheDocument();
-      userEvent.click(screen.getByTestId("Tab-Details"));
+      await userEvent.click(screen.getByTestId("Tab-Details"));
     });
 
     const args = getTokenInvocationArgs(op);
@@ -383,7 +389,7 @@ describe("SignTransactions", () => {
     }));
 
     render(
-      <Wrapper state={{}}>
+      <Wrapper routes={[ROUTES.signTransaction]} state={{}}>
         <SignTransaction />
       </Wrapper>,
     );
@@ -404,6 +410,7 @@ describe("SignTransactions", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.signTransaction]}
         state={{
           auth: {
             allAccounts: mockAccounts,
@@ -441,6 +448,7 @@ describe("SignTransactions", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.signTransaction]}
         state={{
           auth: {
             allAccounts: mockAccounts,
@@ -477,6 +485,7 @@ describe("SignTransactions", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.signTransaction]}
         state={{
           auth: {
             allAccounts: mockAccounts,
@@ -514,6 +523,7 @@ describe("SignTransactions", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.signTransaction]}
         state={{
           auth: {
             allAccounts: mockAccounts,
@@ -564,6 +574,7 @@ describe("SignTransactions", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.signTransaction]}
         state={{
           auth: {
             allAccounts: mockAccounts,

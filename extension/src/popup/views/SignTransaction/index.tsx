@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 import { Button, Icon, Notification } from "@stellar/design-system";
 import {
@@ -68,6 +68,7 @@ import "./styles.scss";
 
 export const SignTransaction = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const tx = getTransactionInfo(location.search);
   const { url } = parsedSearchParam(location.search);
@@ -375,6 +376,7 @@ export const SignTransaction = () => {
                       onClick={() =>
                         navigateTo(
                           ROUTES.reviewAuthorization,
+                          navigate,
                           `?${encodeObject({
                             accountToSign,
                             transactionXdr,
@@ -429,6 +431,7 @@ export const SignTransaction = () => {
                       onClick={() =>
                         navigateTo(
                           ROUTES.reviewAuthorization,
+                          navigate,
                           `?${encodeObject({
                             accountToSign,
                             transactionXdr,

@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -20,6 +21,7 @@ export const SettingsFail = () => {
   const dispatch = useDispatch();
   const { error } = useSelector(tokenSimulationSelector);
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     emitMetric(METRIC_NAMES.simuilateTokenPaymentError, { error });
@@ -45,7 +47,7 @@ export const SettingsFail = () => {
           size="md"
           onClick={() => {
             dispatch(resetSimulation());
-            navigateTo(ROUTES.account);
+            navigateTo(ROUTES.account, navigate);
           }}
         >
           {t("Got it")}

@@ -1,5 +1,5 @@
 import React from "react";
-import { Switch, Redirect } from "react-router-dom";
+import { Routes, Navigate, Route } from "react-router-dom";
 
 import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
@@ -11,41 +11,137 @@ import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/Trans
 import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/Slippage";
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 import { SendSettingsTxTimeout } from "popup/components/sendPayment/SendSettings/TxTimeout";
+import { getPathFromRoute } from "popup/helpers/route";
 
-export const SendPayment = () => (
-  <Switch>
-    <PublicKeyRoute exact path={ROUTES.sendPayment}>
-      <Redirect to={ROUTES.sendPaymentTo} />
-    </PublicKeyRoute>
-    <PublicKeyRoute exact path={ROUTES.sendPaymentTo}>
-      <SendTo previous={ROUTES.account} />
-    </PublicKeyRoute>
-    <PublicKeyRoute exact path={ROUTES.sendPaymentAmount}>
-      <SendAmount
-        previous={ROUTES.sendPaymentTo}
-        next={ROUTES.sendPaymentSettings}
-      />
-    </PublicKeyRoute>
-    <PublicKeyRoute exact path={ROUTES.sendPaymentType}>
-      <SendType />
-    </PublicKeyRoute>
-    <PublicKeyRoute exact path={ROUTES.sendPaymentSettings}>
-      <SendSettings
-        previous={ROUTES.sendPaymentAmount}
-        next={ROUTES.sendPaymentConfirm}
-      />
-    </PublicKeyRoute>
-    <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsFee}>
-      <SendSettingsFee previous={ROUTES.sendPaymentSettings} />
-    </PublicKeyRoute>
-    <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsSlippage}>
-      <SendSettingsSlippage previous={ROUTES.sendPaymentSettings} />
-    </PublicKeyRoute>
-    <PublicKeyRoute exact path={ROUTES.sendPaymentSettingsTimeout}>
-      <SendSettingsTxTimeout previous={ROUTES.sendPaymentSettings} />
-    </PublicKeyRoute>
-    <VerifiedAccountRoute exact path={ROUTES.sendPaymentConfirm}>
-      <SendConfirm previous={ROUTES.sendPaymentSettings} />
-    </VerifiedAccountRoute>
-  </Switch>
-);
+export const SendPayment = () => {
+  const sendPaymentBasePath = "/sendPayment/";
+  const sendPaymentSettingsBasePath = "/sendPayment/settings/";
+  const sendToPath = getPathFromRoute({
+    fullRoute: ROUTES.sendPaymentTo,
+    basePath: sendPaymentBasePath,
+  });
+  const sendAmountPath = getPathFromRoute({
+    fullRoute: ROUTES.sendPaymentAmount,
+    basePath: sendPaymentBasePath,
+  });
+  const sendTypePath = getPathFromRoute({
+    fullRoute: ROUTES.sendPaymentType,
+    basePath: sendPaymentBasePath,
+  });
+  const sendSettingsPath = getPathFromRoute({
+    fullRoute: ROUTES.sendPaymentSettings,
+    basePath: sendPaymentBasePath,
+  });
+  const settingsFeePath = getPathFromRoute({
+    fullRoute: ROUTES.sendPaymentSettingsFee,
+    basePath: sendPaymentSettingsBasePath,
+  });
+  const settingsSlippagePath = getPathFromRoute({
+    fullRoute: ROUTES.sendPaymentSettingsSlippage,
+    basePath: sendPaymentSettingsBasePath,
+  });
+  const settingsTimeoutPath = getPathFromRoute({
+    fullRoute: ROUTES.sendPaymentSettingsTimeout,
+    basePath: sendPaymentSettingsBasePath,
+  });
+  const settingsConfirmPath = getPathFromRoute({
+    fullRoute: ROUTES.sendPaymentConfirm,
+    basePath: sendPaymentBasePath,
+  });
+
+  return (
+    <Routes>
+      <Route
+        index
+        element={
+          <PublicKeyRoute>
+            <Navigate to={sendToPath} />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={sendToPath}
+        element={
+          <PublicKeyRoute>
+            <SendTo previous={ROUTES.account} />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={sendAmountPath}
+        element={
+          <PublicKeyRoute>
+            <SendAmount
+              previous={ROUTES.sendPaymentTo}
+              next={ROUTES.sendPaymentSettings}
+            />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={sendTypePath}
+        element={
+          <PublicKeyRoute>
+            <SendType />
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={`${sendSettingsPath}/*`}
+        element={
+          <PublicKeyRoute>
+            <Routes>
+              <Route
+                index
+                element={
+                  <PublicKeyRoute>
+                    <SendSettings
+                      previous={ROUTES.sendPaymentAmount}
+                      next={ROUTES.sendPaymentConfirm}
+                    />
+                  </PublicKeyRoute>
+                }
+              ></Route>
+              <Route
+                path={settingsFeePath}
+                element={
+                  <PublicKeyRoute>
+                    <SendSettingsFee previous={ROUTES.sendPaymentSettings} />
+                  </PublicKeyRoute>
+                }
+              ></Route>
+              <Route
+                path={settingsSlippagePath}
+                element={
+                  <PublicKeyRoute>
+                    <SendSettingsSlippage
+                      previous={ROUTES.sendPaymentSettings}
+                    />
+                  </PublicKeyRoute>
+                }
+              ></Route>
+              <Route
+                path={settingsTimeoutPath}
+                element={
+                  <PublicKeyRoute>
+                    <SendSettingsTxTimeout
+                      previous={ROUTES.sendPaymentSettings}
+                    />
+                  </PublicKeyRoute>
+                }
+              ></Route>
+            </Routes>
+          </PublicKeyRoute>
+        }
+      ></Route>
+      <Route
+        path={settingsConfirmPath}
+        element={
+          <VerifiedAccountRoute>
+            <SendConfirm previous={ROUTES.sendPaymentSettings} />
+          </VerifiedAccountRoute>
+        }
+      ></Route>
+    </Routes>
+  );
+};

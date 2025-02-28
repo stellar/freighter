@@ -65,7 +65,6 @@ export const migrateTrustlines = async ({
 
   const recipientSourceKeys = Keypair.fromSecret(newKeyPair.privateKey);
 
-  // eslint-disable-next-line
   for (let i = 0; i < trustlineBalances.length; i += 1) {
     const bal = trustlineBalances[i];
     let asset;

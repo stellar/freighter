@@ -40,7 +40,6 @@ export const initExtensionMessageListener = () => {
     let res;
 
     if (Object.values(SERVICE_TYPES).includes(req.type as SERVICE_TYPES)) {
-      // eslint-disable-next-line
       res = await popupMessageListener(req as Response, sessionStore);
     }
     if (
@@ -48,7 +47,6 @@ export const initExtensionMessageListener = () => {
         req.type as EXTERNAL_SERVICE_TYPES,
       )
     ) {
-      // eslint-disable-next-line
       res = await freighterApiMessageListener(
         req as ExternalRequest,
         sender,
