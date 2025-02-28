@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { Link, Redirect } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
@@ -122,7 +122,6 @@ export const SearchAsset = () => {
       setIsSearching(false);
 
       setAssetRows(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         assetRecords
           // only show records that have a domain and domains that don't have just whitespace
           .filter(
@@ -216,7 +215,7 @@ export const SearchAsset = () => {
   }, [assetRows, networkDetails]);
 
   if (isCustomNetwork(networkDetails)) {
-    return <Redirect to={ROUTES.addAsset} />;
+    return <Navigate to={ROUTES.addAsset} />;
   }
 
   return (
@@ -239,7 +238,7 @@ export const SearchAsset = () => {
           </div>
         }
       >
-        {/* eslint-disable-next-line @typescript-eslint/no-empty-function */}
+        {}
         <Formik initialValues={initialValues} onSubmit={() => {}}>
           {({ dirty }) => (
             <Form

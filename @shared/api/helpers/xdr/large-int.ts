@@ -8,8 +8,6 @@ import {
 } from "./bigint-encoder";
 import { XdrNotImplementedDefinitionError, XdrWriterError } from "./errors";
 
-/* eslint-disable */
-
 /* tslint:disable */
 export class LargeInt extends XdrPrimitiveType {
   constructor(args) {

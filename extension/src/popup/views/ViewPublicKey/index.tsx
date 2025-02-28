@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import QrCode from "qrcode.react";
+import { QRCodeSVG } from "qrcode.react";
 import { Formik, Field, FieldProps, Form, useFormikContext } from "formik";
 import { object as YupObject, string as YupString } from "yup";
 import { Icon, Input, CopyText, Button } from "@stellar/design-system";
@@ -22,6 +22,7 @@ import {
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import "./styles.scss";
+import { AppDispatch } from "popup/App";
 
 export const ViewPublicKey = () => {
   const { t } = useTranslation();
@@ -44,7 +45,7 @@ export const ViewPublicKey = () => {
     );
   };
 
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   interface FormValue {
     accountName: string;
@@ -57,7 +58,6 @@ export const ViewPublicKey = () => {
   const handleSubmit = async (values: FormValue) => {
     const { accountName: newAccountName } = values;
     if (accountName !== newAccountName) {
-      // eslint-disable-next-line
       await dispatch(updateAccountName(newAccountName));
       emitMetric(METRIC_NAMES.viewPublicKeyAccountRenamed);
     }
@@ -111,7 +111,7 @@ export const ViewPublicKey = () => {
       <View.Content>
         <div className="ViewPublicKey__content">
           <div className="ViewPublicKey__qr-code">
-            <QrCode
+            <QRCodeSVG
               value={publicKey}
               style={{
                 width: "10rem",

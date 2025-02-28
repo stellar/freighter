@@ -569,13 +569,12 @@ export const getAccountBalancesStandalone = async ({
     balances = resp.balances;
     subentryCount = resp.subentryCount;
 
-    // eslint-disable-next-line no-plusplus
     for (let i = 0; i < Object.keys(resp.balances).length; i++) {
       const k = Object.keys(resp.balances)[i];
       const v = resp.balances[k];
       if (v.liquidityPoolId) {
         const server = stellarSdkServer(networkUrl, networkPassphrase);
-        // eslint-disable-next-line no-await-in-loop
+
         const lp = await server
           .liquidityPools()
           .liquidityPoolId(v.liquidityPoolId)
@@ -623,7 +622,6 @@ export const getAccountBalancesStandalone = async ({
         1 tx with an operation for each value.
       */
       try {
-        /* eslint-disable no-await-in-loop */
         const { balance, symbol, ...rest } = await getSorobanTokenBalance(
           server,
           tokenId,
@@ -635,7 +633,6 @@ export const getAccountBalancesStandalone = async ({
           },
           params,
         );
-        /* eslint-enable no-await-in-loop */
 
         const total = new BigNumber(balance);
 
@@ -877,7 +874,7 @@ export const getAssetIcons = async ({
   if (balances) {
     let icon = "";
     const balanceValues = Object.values(balances);
-    // eslint-disable-next-line no-plusplus
+
     for (let i = 0; i < balanceValues.length; i++) {
       const { token } = balanceValues[i];
       if (token && "issuer" in token) {
@@ -885,7 +882,7 @@ export const getAssetIcons = async ({
           issuer: { key },
           code,
         } = token;
-        // eslint-disable-next-line no-await-in-loop
+
         icon = await getIconUrlFromIssuer({ key, code, networkDetails });
         assetIcons[`${code}:${key}`] = icon;
       }
@@ -931,7 +928,7 @@ export const getAssetDomains = async ({
 
   if (balances) {
     const balanceValues = Object.values(balances);
-    // eslint-disable-next-line no-plusplus
+
     for (let i = 0; i < balanceValues.length; i++) {
       const { token } = balanceValues[i];
       if (token && "issuer" in token) {
@@ -939,7 +936,7 @@ export const getAssetDomains = async ({
           issuer: { key },
           code,
         } = token;
-        // eslint-disable-next-line no-await-in-loop
+
         const domain = await getDomainFromIssuer({ key, code, networkDetails });
         assetDomains[`${code}:${key}`] = domain;
       }
@@ -1124,15 +1121,14 @@ export const submitFreighterSorobanTransaction = async ({
     // Poll this until the status is not "NOT_FOUND"
     while (txResponse.status === GetTxStatus.NotFound) {
       // See if the transaction is complete
-      // eslint-disable-next-line no-await-in-loop
+
       txResponse = await server.getTransaction(response.hash);
       // Wait a second
-      // eslint-disable-next-line no-await-in-loop
+
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
     return response;
-    // eslint-disable-next-line no-else-return
   } else {
     throw new Error(
       `Unabled to submit transaction, status: ${response.status}`,
@@ -1517,18 +1513,17 @@ export const simulateTokenTransfer = async (args: {
   const options = {
     method: "POST",
     headers: {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       address,
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       pub_key: publicKey,
       memo,
       params,
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       network_url: networkDetails.sorobanRpcUrl,
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       network_passphrase: networkDetails.networkPassphrase,
     }),
   };
@@ -1548,14 +1543,13 @@ export const simulateTransaction = async (args: {
   const options = {
     method: "POST",
     headers: {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       xdr,
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       network_url: networkDetails.sorobanRpcUrl,
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       network_passphrase: networkDetails.networkPassphrase,
     }),
   };

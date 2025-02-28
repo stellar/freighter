@@ -12,6 +12,7 @@ import { GrantAccess } from "../GrantAccess";
 import * as blockAidHelpers from "popup/helpers/blockaid";
 import { BlockAidScanSiteResult } from "@shared/api/types";
 import * as urlHelpers from "../../../helpers/urls";
+import { ROUTES } from "popup/constants/routes";
 
 jest.spyOn(urlHelpers, "parsedSearchParam").mockImplementation(() => {
   const original = jest.requireActual("../../../helpers/urls");
@@ -29,6 +30,7 @@ describe("Grant Access view", () => {
   it("renders", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -68,6 +70,7 @@ describe("Grant Access view", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -107,6 +110,7 @@ describe("Grant Access view", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -146,6 +150,7 @@ describe("Grant Access view", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,

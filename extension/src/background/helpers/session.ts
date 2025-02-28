@@ -163,6 +163,7 @@ export const getActiveHashKeyCryptoKey = async ({
     try {
       const format = "jwk";
       // JSON Web Key can be parsed with decoding
+      // eslint-disable-next-line no-undef
       const exportedHashKey = JSON.parse(hashKey.key) as JsonWebKey;
       // import the password key for future use indecryption
       const key = await crypto.subtle.importKey(

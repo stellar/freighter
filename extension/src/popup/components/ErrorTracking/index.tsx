@@ -29,14 +29,14 @@ export const ErrorTracking = () => {
         if (url?.includes(`${INDEXER_URL}/account-history`)) {
           const route = "account-history/";
           const scrubbedUrl = scrubPathGkey(route, url);
-          // eslint-disable-next-line no-param-reassign
+
           event.request.url = scrubbedUrl;
         }
 
         if (url?.includes(`${INDEXER_URL}/account-balances`)) {
           const route = "account-balances/";
           const scrubbedUrl = scrubPathGkey(route, url);
-          // eslint-disable-next-line no-param-reassign
+
           event.request.url = scrubbedUrl;
         }
 

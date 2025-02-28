@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button, Checkbox, Input, Link } from "@stellar/design-system";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 
@@ -8,14 +8,15 @@ import { navigateTo, openTab } from "popup/helpers/navigate";
 import { pluginWalletInfo } from "popup/helpers/hardwareConnect";
 import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { View } from "popup/basics/layout/View";
 
 import "./styles.scss";
-import { View } from "popup/basics/layout/View";
 
 export const defaultStellarBipPath = "44'/148'/0'";
 
 export const PluginWallet = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const walletType = new URLSearchParams(location.search).get(
     "walletType",
   ) as ConfigurableWalletType;
@@ -29,7 +30,7 @@ export const PluginWallet = () => {
       <SubviewHeader
         title={`Connect with ${walletType}`}
         hasBackButton={true}
-        customBackAction={() => navigateTo(ROUTES.connectWallet)}
+        customBackAction={() => navigateTo(ROUTES.connectWallet, navigate)}
       />
       <View.Content>
         <p>{pluginWalletInfoSection.instruction}</p>

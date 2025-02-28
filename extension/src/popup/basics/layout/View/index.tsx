@@ -176,13 +176,11 @@ const ViewFooter: React.FC<ViewFooterProps> = ({
   ...props
 }: ViewFooterProps) => {
   const customStyle = {
-    // eslint-disable-next-line
     ...(customHeight ? { "--View-footer-height": customHeight } : {}),
     ...(hasExtraPaddingBottom
-      ? // eslint-disable-next-line
-        { "--View-footer-padding-bottom": "1.5rem" }
+      ? { "--View-footer-padding-bottom": "1.5rem" }
       : {}),
-    // eslint-disable-next-line
+
     ...(customGap ? { "--View-footer-gap": customGap } : {}),
   } as React.CSSProperties;
 

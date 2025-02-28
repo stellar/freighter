@@ -131,7 +131,7 @@ export const getVerifiedTokens = async ({
   if (contractId === nativeContract.contract) {
     return [{ ...nativeContract, verifiedLists: [] }];
   }
-  // eslint-disable-next-line no-restricted-syntax
+
   for (const networkList of networkLists) {
     const { url = "", isEnabled } = networkList;
 
@@ -158,7 +158,6 @@ export const getVerifiedTokens = async ({
   let verifiedToken = {} as TokenRecord;
   const verifiedLists: string[] = [];
 
-  // eslint-disable-next-line no-restricted-syntax
   for (const r of promiseRes) {
     if (r.status === "fulfilled") {
       // confirm that this list still adheres to the agreed upon schema
@@ -167,7 +166,6 @@ export const getVerifiedTokens = async ({
         ? validatedList?.tokens
         : validatedList?.assets;
       if (list) {
-        // eslint-disable-next-line no-restricted-syntax
         for (const record of list) {
           const regex = new RegExp(contractId, "i");
           if (record.contract && record.contract.match(regex)) {

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 import { Button, Icon, Notification } from "@stellar/design-system";
@@ -67,11 +67,13 @@ import { Details } from "./Preview/Details";
 import { Data } from "./Preview/Data";
 
 import "./styles.scss";
+import { AppDispatch } from "popup/App";
 
 export const SignTransaction = () => {
   const location = useLocation();
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =
@@ -384,6 +386,7 @@ export const SignTransaction = () => {
                       onClick={() =>
                         navigateTo(
                           ROUTES.reviewAuthorization,
+                          navigate,
                           `?${encodeObject({
                             accountToSign,
                             transactionXdr,
@@ -438,6 +441,7 @@ export const SignTransaction = () => {
                       onClick={() =>
                         navigateTo(
                           ROUTES.reviewAuthorization,
+                          navigate,
                           `?${encodeObject({
                             accountToSign,
                             transactionXdr,

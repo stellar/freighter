@@ -1,6 +1,6 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { Redirect, Route, Switch } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import {
   transactionSubmissionSelector,
@@ -11,6 +11,7 @@ import { SearchAsset } from "popup/components/manageAssets/SearchAsset";
 import { AddAsset } from "popup/components/manageAssets/AddAsset";
 import { PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
+import { getPathFromRoute } from "popup/helpers/route";
 
 export const ManageAssets = () => {
   const { accountBalances, destinationBalances, assetSelect } = useSelector(
@@ -30,7 +31,7 @@ export const ManageAssets = () => {
 
   if (!balances) {
     return (
-      <Redirect
+      <Navigate
         to={{
           pathname: ROUTES.account,
         }}
@@ -38,19 +39,44 @@ export const ManageAssets = () => {
     );
   }
 
+  const manageAssetsBasePath = "/manage-assets/";
+  const searchAssetsPath = getPathFromRoute({
+    fullRoute: ROUTES.searchAsset,
+    basePath: manageAssetsBasePath,
+  });
+  const addAssetsPath = getPathFromRoute({
+    fullRoute: ROUTES.addAsset,
+    basePath: manageAssetsBasePath,
+  });
+
   return (
     <>
-      <Switch>
-        <PrivateKeyRoute exact path={ROUTES.manageAssets}>
-          <ChooseAsset balances={balances} />
-        </PrivateKeyRoute>
-        <PrivateKeyRoute exact path={ROUTES.searchAsset}>
-          <SearchAsset />
-        </PrivateKeyRoute>
-        <Route exact path={ROUTES.addAsset}>
-          <AddAsset />
-        </Route>
-      </Switch>
+      <Routes>
+        <Route
+          index
+          element={
+            <PrivateKeyRoute>
+              <ChooseAsset balances={balances} />
+            </PrivateKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={searchAssetsPath}
+          element={
+            <PrivateKeyRoute>
+              <SearchAsset />
+            </PrivateKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={addAssetsPath}
+          element={
+            <PrivateKeyRoute>
+              <AddAsset />
+            </PrivateKeyRoute>
+          }
+        ></Route>
+      </Routes>
     </>
   );
 };

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 // In order to allow that rule we need to refactor this to use the correct Horizon types and narrow operation types
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -222,7 +221,6 @@ export const HistoryItem = ({
             isPayment: true,
             operation: {
               ...operation,
-              // eslint-disable-next-line
               asset_type: "native",
               to: account,
             } as any, // TODO: overloaded op type, native not valid
@@ -768,4 +766,3 @@ export const HistoryItem = ({
     </div>
   );
 };
-/* eslint-enable @typescript-eslint/no-unsafe-argument */

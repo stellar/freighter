@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import {
@@ -302,6 +303,7 @@ export const TransactionDetails = ({
   const { isMemoValidationEnabled } = useSelector(settingsSelector);
   const isSwap = useIsSwap();
   const { scanTx, data: scanResult, isLoading, setLoading } = useScanTx();
+  const navigate = useNavigate();
 
   const { t } = useTranslation();
 
@@ -740,7 +742,7 @@ export const TransactionDetails = ({
                   variant="secondary"
                   onClick={() => {
                     dispatch(resetSimulation());
-                    navigateTo(ROUTES.account);
+                    navigateTo(ROUTES.account, navigate);
                   }}
                 >
                   {t("Cancel")}
