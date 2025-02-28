@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -6,11 +6,15 @@ import { Button, Icon } from "@stellar/design-system";
 import { captureException } from "@sentry/browser";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
 import { publicKeySelector } from "popup/ducks/accountServices";
-import { INDEXER_URL } from "@shared/constants/mercury";
 import { ROUTES } from "popup/constants/routes";
-import { openTab, navigateTo } from "popup/helpers/navigate";
+import { navigateTo, openTab } from "popup/helpers/navigate";
+import {
+  useGetOnrampToken,
+  RequestState,
+} from "helpers/hooks/useGetOnrampToken";
 
 import CoinbaseLogo from "popup/assets/coinbase-logo.svg";
 
@@ -21,38 +25,38 @@ export const AddXlm = () => {
   const navigate = useNavigate();
   const publicKey = useSelector(publicKeySelector);
   const [tokenError, setTokenError] = useState("");
+  const { state: onrampTokenState, fetchData } = useGetOnrampToken(publicKey);
 
-  const handleOnrampClick = async () => {
-    const options = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ address: publicKey }),
-    };
-    const url = `${INDEXER_URL}/onramp/token`;
-    const response = await fetch(url, options);
-    const resJson = await response.json();
-
-    const token = resJson?.data?.token;
-
-    if (!token) {
+  useEffect(() => {
+    if (onrampTokenState.state === RequestState.ERROR) {
       setTokenError("Unable to communicate with Coinbase");
-      captureException(
-        `Unable to fetch Coinbase session token: ${resJson?.data?.error}`
-      );
-      return;
+      captureException("Unable to fetch Coinbase session token");
     }
 
-    setTokenError("");
-    const coinbaseUrl = `https://pay.coinbase.com/buy/select-asset?sessionToken=${token}&defaultExperience=buy&assets=["XLM"]`;
+    if (onrampTokenState.state === RequestState.SUCCESS) {
+      const token = onrampTokenState.data.token;
 
-    openTab(coinbaseUrl);
+      setTokenError("");
+      captureException("Unable to fetch Coinbase session token");
+      const coinbaseUrl = `https://pay.coinbase.com/buy/select-asset?sessionToken=${token}&defaultExperience=buy&assets=["XLM"]`;
+
+      openTab(coinbaseUrl);
+    }
+  }, [onrampTokenState]);
+
+  const handleOnrampClick = async () => {
+    await fetchData();
   };
 
   const handleTransferClick = () => {
     navigateTo(ROUTES.viewPublicKey, navigate);
   };
+
+  const isLoaderShowing = onrampTokenState.state === RequestState.LOADING;
+
+  if (isLoaderShowing) {
+    return <Loading />;
+  }
 
   return (
     <>
@@ -77,7 +81,7 @@ export const AddXlm = () => {
             variant="secondary"
             onClick={handleOnrampClick}
           >
-            {t("Buy XLM with Coinbase")}
+            {t("Buy with Coinbase")}
           </Button>
           <Button
             iconPosition="left"
