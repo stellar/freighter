@@ -1,3 +1,177 @@
+# Release notes - Wallets - FE-Freighter-5.28.1
+
+Upgrades core dependencies #1865
+
+# Release notes - Wallets - FE-Freighter-5.28.0
+
+Account history redesign #1785
+Blockaid feedback form #1767
+"Add Token" API #1815
+
+# Release notes - Wallets - FE-Freighter-5.27.2
+
+bumps version to 5.27.1 by @aristidesstaffieri in #1804
+release/5.27.2 (#1827) by @piyalbasu in #1828
+Improvements around memory storage layer
+
+# Release notes - Wallets - FE-Freighter-5.27.1
+
+Fixes the backwards compatible check in the signMessage API #1799
+
+# Release notes - Wallets - FE-Freighter-5.27.0
+
+Empty state for manage assets screen #1619
+SAC transfers not rendering correctly #1776
+Show full xdr and signatures during send/swap flow #1715
+Freighter 5.27.0-beta.0 QA #1769
+
+# Release notes - Wallets - FE-Freighter-5.26.0
+
+This release consists of redesigning some flows along with some minor bug fixes and dependency updates
+
+#1710
+#1672
+#1564
+#1589
+#1595
+#1591
+#1459
+#1540
+#1651
+#923
+#1545
+#1700
+#1736
+#1495
+#1352
+#1401
+#1539
+
+# Release notes - Wallets - FE-Freighter-5.25.1
+
+[BUG] fixes an incorrect reference to the old create contract class for v2 (#1661)
+adds unit test and jest view tests for creator contract deployer pattern (#1668)
+
+# Release notes - Wallets - FE-Freighter-5.25.0
+
+Upgrades to the SDS version 3 #1560
+Adds Safari support #929
+Adds fullscreen #1580
+Enabled blockaid welcome modal #1617
+Start session properly after create/recover account #1590
+
+# Release notes - Wallets - FE-Freighter-5.24.0
+
+re-enabling Firefox cmd by @piyalbasu in #1537
+Bump versions to 5.23.4 by @github-actions in #1536
+release/5.24.0 by @piyalbasu in #1561
+disable FF pipeline by @piyalbasu in #1572
+Hide dust transactions #1566
+
+# Release notes - Wallets - FE-Freighter-5.23.3
+
+Bump versions to 5.23.2 by @github-actions in #1515
+Release/5.23.3 by @piyalbasu in #1517
+[Blockaid] Implement malicious dApp scanning and warnings #1387
+[Blockaid] Implement simulation and validation #1386
+[Blockaid] Implement spam/malicious asset detection and warnings when adding assets #1388
+
+# Release notes - Wallets - FE-Freighter-5.23.2
+
+Bump versions to 5.23.1 by @github-actions in #1439
+update call signatures for playground components by @piyalbasu in #1441
+add contribution guidelines and code of conduct by @piyalbasu in #1512
+
+# Release notes - Wallets - FE-Freighter-5.23.1
+
+Bump versions to 5.23.0 by @github-actions in #1422
+Release/5.23.1 by @piyalbasu in #1432
+Allow sending to C address in Send Payment flow #1414
+
+# Release notes - Wallets - FE-Freighter-5.23.0
+
+release/5.23.0 by @piyalbasu in #1371
+Setting up Blockaid integration for transaction, asset, and domain scanning #1423
+Upgrade Ledger SDK #1406
+User configuration that allows connecting to a non-SSL domain #1344
+Implement SEP-43 wallet interface: #1340
+
+# Release notes - Wallets - FE-Freighter-5.22.2
+
+Add dependabot.yml for dependency version updates by @kanwalpreetd in #1372
+Bump the all-actions group with 10 updates by @dependabot in #1394
+Release/5.22.2 by @piyalbasu in #1419
+[BUG] Tokens with 0 decimals triggering "token not found" notification #1420
+[BUG] Recursively display tx subinvocations
+
+# Release notes - Wallets - FE-Freighter-5.22.1
+
+release/5.22.1 by @piyalbasu in #1383
+[BUG] Fix issue send token payment on Testnet #1385
+
+# Release notes - Wallets - FE-Freighter-5.22.0
+
+Release/5.22.0 by @piyalbasu in #1365
+Insufficient fee warning in SignTransaction: #1336
+Implement swap for Soroban tokens on Testnet using Soroswap #1341
+Add documentation for Soroswap integration #1342
+
+# Release notes - Wallets - FE-Freighter-5.21.0
+
+This release did not actually include any changes due to an issue with deploying the
+
+# Release notes - Wallets - FE-Freighter-5.20.0
+
+Redesign Experimental Features
+Add hash signing capabilities for Ledger: #1258
+Enable hardware wallet for Soroban XDR's (if supported by hardware wallet)
+Better errors for removing a trustline with buy offers: #1277
+Reduce the amount of erroring API calls from tokens
+Redesign Manage Assets
+Automatically add trustlines when adding a SAC
+Updated Sign Transaction for tokens that don’t conform to the token interface
+
+# Release notes - Wallets - FE-Freighter-5.29.2
+
+Upgrade stellar-sdk to v12.1.0: #1331
+
+# Release notes - Wallets - FE-Freighter-5.19.0
+
+Upgrade Freighter to Manifest v3
+[BUG] Fix issue with data migration on newly recovered account
+
+release/5.19.0 by @piyalbasu in #1292
+Full Changelog: 5.18.5...5.19.1
+
+# NOTE
+
+v5.19.0 was skipped due to a semantic versioning issue. v5.19.1 reflects the changes from release branch 5.19.0
+
+# Release notes - Wallets - FE-Freighter-5.18.5
+## Story
+[FE] Toggle P21 SDK for Testnet
+
+# Release notes - Wallets - [FE] Freighter 5.18.4
+## Bug
+Firefox create account flow bug
+
+Add parameter names from contract spec during signing
+
+Long operations names overflow tx detail rows
+
+Fix Amplitude reporting on page load
+
+## Story
+Migrate away from @stellar/wallet-sdk DataProvider
+
+Implement KeyManager with TS-Wallet-SDK
+
+[FE] Toggle SDK versions for Futurenet
+
+Make tx timeout configurable
+
+Render byte arrays as b64 arrays
+
 # Release notes - Wallets - FE Freighter 5.18.3
 
 ### Bug
