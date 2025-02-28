@@ -8,6 +8,7 @@ import {
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
+import { ROUTES } from "popup/constants/routes";
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import { AddXlm } from "../AddXlm";
 
@@ -28,7 +29,7 @@ jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
     applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: mockAccounts,
     bipPath: "foo",
-  }),
+  })
 );
 
 const newTabSpy = jest
@@ -46,6 +47,7 @@ describe("AddXlm view", () => {
   it("displays Coinbase onramp button and opens Coinbase's flow", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.addXlm]}
         state={{
           auth: {
             error: null,
@@ -60,12 +62,12 @@ describe("AddXlm view", () => {
         }}
       >
         <AddXlm />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(async () => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Add XLM",
+        "Add XLM"
       );
       const coinbaseButton = screen.getByTestId("add-xlm-coinbase-button");
       await fireEvent.click(coinbaseButton);
