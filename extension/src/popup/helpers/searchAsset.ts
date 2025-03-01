@@ -113,7 +113,6 @@ export const getAssetLists = async ({
     assetsListsDetails[network as AssetsListKey];
 
   const assetListsResponses = [] as AssetListResponse[];
-  // eslint-disable-next-line no-restricted-syntax
   for (const networkList of assetsListsDetailsByNetwork) {
     const { url, isEnabled } = networkList;
 
@@ -189,13 +188,11 @@ export const getVerifiedTokens = async ({
     }
   }
 
-  const promiseRes = await Promise.allSettled<Promise<AssetListResponse>>(
-    promiseArr,
-  );
+  const promiseRes =
+    await Promise.allSettled<Promise<AssetListResponse>>(promiseArr);
 
   const verifiedTokens = [] as VerifiedTokenRecord[];
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   let verifiedToken = {} as AssetListReponseItem;
   const verifiedLists: string[] = [];
 

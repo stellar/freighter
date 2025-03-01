@@ -21,9 +21,7 @@ export const splitVerifiedAssetCurrency = async ({
     networkDetails,
   });
 
-  // eslint-disable-next-line no-restricted-syntax
   const validatedAssets = [] as AssetListReponseItem[];
-  // eslint-disable-next-line no-restricted-syntax
   for (const response of settledResponses) {
     if (response.status === "fulfilled") {
       // confirm that this list still adheres to the agreed upon schema
@@ -33,7 +31,6 @@ export const splitVerifiedAssetCurrency = async ({
   }
   // make a unique set of contract IDs and issuers
   const verifiedIds = new Set<string>();
-  // eslint-disable-next-line no-restricted-syntax
   for (const validAsset of validatedAssets) {
     if (!verifiedIds.has(validAsset.contract)) {
       verifiedIds.add(validAsset.contract);
@@ -83,9 +80,7 @@ export const getAssetListsForAsset = async ({
     networkDetails,
   });
 
-  // eslint-disable-next-line no-restricted-syntax
   const validatedAssets = {} as Record<string, AssetListReponseItem[]>;
-  // eslint-disable-next-line no-restricted-syntax
   for (const response of settledResponses) {
     if (response.status === "fulfilled") {
       // confirm that this list still adheres to the agreed upon schema

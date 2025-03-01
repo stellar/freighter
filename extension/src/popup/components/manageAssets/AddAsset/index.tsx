@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Networks, StellarToml, StrKey } from "stellar-sdk";
@@ -10,11 +9,14 @@ import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { isSacContractExecutable } from "@shared/helpers/soroban/token";
 
 import { FormRows } from "popup/basics/Forms";
-import { settingsNetworkDetailsSelector, settingsSelector } from "popup/ducks/settings";
+import {
+  settingsNetworkDetailsSelector,
+  settingsSelector,
+} from "popup/ducks/settings";
 import { isMainnet, isTestnet } from "helpers/stellar";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import {
-  getAssetListForAsset,
+  getAssetListsForAsset,
   splitVerifiedAssetCurrency,
 } from "popup/helpers/assetList";
 import { isContractId } from "popup/helpers/soroban";
@@ -151,7 +153,7 @@ export const AddAsset = () => {
         setVerifiedAssetRows(verifiedAssets);
         setUnverifiedAssetRows(unverifiedAssets);
 
-        const assetListsForToken = await getAssetListForAsset({
+        const assetListsForToken = await getAssetListsForAsset({
           asset: token,
           assetsListsDetails: assetsLists,
           networkDetails,
@@ -216,7 +218,7 @@ export const AddAsset = () => {
               isSuspicious: isAssetSuspicious(
                 scannedAssets.results[`${record.code}-${record.issuer}`],
               ),
-            } as ManageAssetCurrency),
+            }) as ManageAssetCurrency,
         );
 
         const { verifiedAssets, unverifiedAssets } =
