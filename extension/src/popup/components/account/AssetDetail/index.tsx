@@ -148,6 +148,8 @@ export const AssetDetail = ({
     return <Loading />;
   }
 
+  const isOnrampSupported = isNative;
+
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
@@ -240,6 +242,17 @@ export const AssetDetail = ({
                       }}
                     >
                       {t("SWAP")}
+                    </Button>
+                  )}
+                  {isOnrampSupported && (
+                    <Button
+                      size="md"
+                      variant="tertiary"
+                      onClick={() => {
+                        navigateTo(ROUTES.addXlm, navigate);
+                      }}
+                    >
+                      {t("BUY")}
                     </Button>
                   )}
                 </>
