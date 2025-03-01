@@ -19,7 +19,7 @@ import {
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { navigateTo } from "popup/helpers/navigate";
 import { formatTokenAmount, isContractId } from "popup/helpers/soroban";
-import { getAssetFromCanonical } from "helpers/stellar";
+import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 
 import {
@@ -244,7 +244,7 @@ export const AssetDetail = ({
                       {t("SWAP")}
                     </Button>
                   )}
-                  {isOnrampSupported && (
+                  {isOnrampSupported && isMainnet(networkDetails) && (
                     <Button
                       size="md"
                       variant="tertiary"
