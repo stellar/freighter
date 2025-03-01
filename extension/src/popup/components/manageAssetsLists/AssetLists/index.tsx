@@ -7,7 +7,7 @@ import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { NETWORKS } from "@shared/constants/stellar";
-import { AssetsListKey } from "@shared/constants/soroban/token";
+import { AssetsListKey } from "@shared/constants/soroban/asset-list";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";

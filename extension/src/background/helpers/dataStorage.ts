@@ -22,7 +22,7 @@ import {
   FUTURENET_NETWORK_DETAILS,
   SOROBAN_RPC_URLS,
 } from "@shared/constants/stellar";
-import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 import { dataStorageAccess, browserLocalStorage } from "./dataStorageAccess";
 
 // Session Storage Feature Flag - turn on when storage.session is supported

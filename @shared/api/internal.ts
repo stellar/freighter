@@ -11,7 +11,10 @@ import {
 } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 import { INDEXER_URL } from "@shared/constants/mercury";
-import { AssetsListItem, AssetsLists } from "@shared/constants/soroban/token";
+import {
+  AssetsListItem,
+  AssetsLists,
+} from "@shared/constants/soroban/asset-list";
 import {
   getBalance,
   getDecimals,

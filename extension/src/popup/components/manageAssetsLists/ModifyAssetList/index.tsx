@@ -9,7 +9,8 @@ import { captureException } from "@sentry/browser";
 import {
   DEFAULT_ASSETS_LISTS,
   AssetsListKey,
-} from "@shared/constants/soroban/token";
+  AssetListResponse,
+} from "@shared/constants/soroban/asset-list";
 import { ROUTES } from "popup/constants/routes";
 import { AppDispatch } from "popup/App";
 
@@ -116,7 +117,7 @@ export const ModifyAssetList = ({
       return;
     }
 
-    const resJson = await res.json();
+    const resJson: AssetListResponse = await res.json();
 
     // check against the SEP-0042 schema
     const validatedList = await schemaValidatedAssetList(resJson);
@@ -146,7 +147,7 @@ export const ModifyAssetList = ({
         network === "public" ? "Mainnet" : "Testnet";
       setFetchErrorString(
         `The entered asset list belongs to "${getNetworkName(
-          resJson.network as string,
+          resJson.network,
         )}": Currently editing "${getNetworkName(
           selectedNetwork.toLowerCase(),
         )}" lists.`,
