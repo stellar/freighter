@@ -319,10 +319,11 @@ export const IntegrationTest = () => {
 
       res = await saveAllowList({
         activePublicKey: testPublicKey,
-        allowList: ["foo", "bar"],
+        domain: "foo",
+        networkName: "baz",
       });
       runAsserts("saveAllowList", () => {
-        assertEq(res.allowList, ["foo", "bar"]);
+        assertEq(res.allowList, { baz: { testPublicKey: ["foo"] } });
       });
 
       res = await saveSettings({

@@ -41,6 +41,7 @@ import {
 } from "./helpers/soroban";
 import {
   Account,
+  AllowList,
   BalanceToMigrate,
   MigratableAccount,
   MigratedAccount,
@@ -87,13 +88,21 @@ export const GetTxStatus: {
   Failed: SorobanRpc.Api.GetTransactionStatus.FAILED,
 };
 
-export const createAccount = async ({
-  password,
-  isOverwritingAccount = false,
-}: {
-  password: string;
-  isOverwritingAccount: boolean;
-}): Promise<{
+export const DEFAULT_ALLOW_LIST: AllowList = {
+  [NETWORKS.PUBLIC]: {},
+  [NETWORKS.TESTNET]: {},
+  [NETWORKS.FUTURENET]: {},
+};
+
+export const createAccount = async (
+  {
+    password,
+    isOverwritingAccount = false,
+  }: {
+    password: string;
+    isOverwritingAccount: boolean;
+  }
+): Promise<{
   publicKey: string;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
@@ -1370,19 +1379,22 @@ export const showBackupPhrase = async ({
 
 export const saveAllowList = async ({
   activePublicKey,
-  allowList,
+  domain,
+  networkName,
 }: {
   activePublicKey: string;
-  allowList: string[];
-}): Promise<{ allowList: string[] }> => {
+  domain: string;
+  networkName: string;
+}): Promise<{ allowList: AllowList }> => {
   let response = {
-    allowList: [""],
+    allowList: DEFAULT_ALLOW_LIST,
   };
 
   try {
     response = await sendMessageToBackground({
       activePublicKey,
-      allowList,
+      domain,
+      networkName,
       type: SERVICE_TYPES.SAVE_ALLOWLIST,
     });
   } catch (e) {
@@ -1404,7 +1416,7 @@ export const saveSettings = async ({
   isHideDustEnabled: boolean;
 }): Promise<Settings & IndexerSettings> => {
   let response = {
-    allowList: [""],
+    allowList: DEFAULT_ALLOW_LIST,
     isDataSharingAllowed: false,
     networkDetails: MAINNET_NETWORK_DETAILS,
     networksList: DEFAULT_NETWORKS,

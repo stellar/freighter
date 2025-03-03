@@ -12,11 +12,14 @@ import {
   IS_NON_SSL_ENABLED_ID,
   IS_BLOCKAID_ANNOUNCED_ID,
   IS_HIDE_DUST_ENABLED_ID,
+  ALLOWLIST_ID,
+  LAST_USED_ACCOUNT,
 } from "constants/localStorageTypes";
 import {
   DEFAULT_NETWORKS,
   NetworkDetails,
   NETWORKS,
+  NETWORK_NAMES,
   MAINNET_NETWORK_DETAILS,
   TESTNET_NETWORK_DETAILS,
   FUTURENET_NETWORK_DETAILS,
@@ -288,6 +291,39 @@ export const addBlockaidAnnouncedIsEnabled = async () => {
   }
 };
 
+export const migrateAllowlistToKeyNetworkSchema = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "4.6.0")) {
+    const currentAllowlist = await localStore.getItem(ALLOWLIST_ID);
+    const lastUsedAccount = await localStore.getItem(LAST_USED_ACCOUNT);
+    let allowlistByKey = {};
+
+    if (currentAllowlist && lastUsedAccount) {
+      const allowlistArr = currentAllowlist.split(",").slice(1);
+
+      allowlistByKey = {
+        [NETWORK_NAMES.PUBNET]: {},
+        [NETWORK_NAMES.TESTNET]: {
+          [lastUsedAccount]: allowlistArr,
+        },
+        [NETWORK_NAMES.FUTURENET]: {},
+      };
+    } else {
+      allowlistByKey = {
+        [NETWORK_NAMES.PUBNET]: {},
+        [NETWORK_NAMES.TESTNET]: {},
+        [NETWORK_NAMES.FUTURENET]: {},
+      };
+    }
+
+    await localStore.setItem(ALLOWLIST_ID, allowlistByKey);
+
+    await migrateDataStorageVersion("4.6.0");
+  }
+};
+
 export const versionedMigration = async () => {
   // sequentially call migrations in order to enforce smooth schema upgrades
 
@@ -301,6 +337,7 @@ export const versionedMigration = async () => {
   await addIsHashSigningEnabled();
   await addIsNonSSLEnabled();
   await removeStellarExpertData();
+  await migrateAllowlistToKeyNetworkSchema();
 };
 
 // Updates storage version

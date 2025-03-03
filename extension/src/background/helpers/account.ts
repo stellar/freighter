@@ -78,14 +78,84 @@ export const getIsFuturenet = async () => {
 };
 
 export const getAllowList = async () => {
-  const allowList = (await localStore.getItem(ALLOWLIST_ID)) || "";
+  const allowList = (await localStore.getItem(ALLOWLIST_ID)) || {};
 
-  if (allowList === "") {
-    // manually return an empty array as calling .split(",") will return [""]
-    return [];
+  return allowList;
+};
+
+export const getAllowListSegment = async ({
+  publicKey,
+  networkDetails,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}) => {
+  const allowList = (await localStore.getItem(ALLOWLIST_ID)) || {};
+  const allowListByNetwork = allowList[networkDetails.networkName] || {};
+  const allowListByKey: string[] = allowListByNetwork[publicKey] || [];
+
+  return allowListByKey;
+};
+
+export const setAllowListDomain = async ({
+  publicKey,
+  networkDetails,
+  domain,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+  domain: string;
+}) => {
+  const allowList = (await localStore.getItem(ALLOWLIST_ID)) || {};
+  const allowListByNetwork = { ...allowList[networkDetails.networkName] };
+  const allowListPublicKeyArray: string[] = allowListByNetwork[publicKey] || [];
+
+  if (allowListPublicKeyArray.includes(domain)) {
+    return allowListPublicKeyArray;
   }
 
-  return allowList.split(",");
+  allowListPublicKeyArray.push(domain);
+  await localStore.setItem(ALLOWLIST_ID, {
+    ...allowList,
+    [networkDetails.networkName]: {
+      ...allowListByNetwork,
+      [publicKey]: allowListPublicKeyArray,
+    },
+  });
+
+  return allowListPublicKeyArray;
+};
+
+export const removeAllowListDomain = async ({
+  publicKey,
+  networkName,
+  domain,
+}: {
+  publicKey: string;
+  networkName: string;
+  domain: string;
+}) => {
+  const allowList = (await localStore.getItem(ALLOWLIST_ID)) || {};
+  const allowListByNetwork = { ...allowList[networkName] };
+  const allowListPublicKeyArray: string[] = allowListByNetwork[publicKey] || [];
+
+  if (!allowListPublicKeyArray.includes(domain)) {
+    return allowListPublicKeyArray;
+  }
+
+  const editedAllowList = allowListPublicKeyArray.filter(
+    (item) => item !== domain,
+  );
+
+  await localStore.setItem(ALLOWLIST_ID, {
+    ...allowList,
+    [networkName]: {
+      ...allowListByNetwork,
+      [publicKey]: editedAllowList,
+    },
+  });
+
+  return allowListPublicKeyArray;
 };
 
 export const getIsMemoValidationEnabled = async () =>
