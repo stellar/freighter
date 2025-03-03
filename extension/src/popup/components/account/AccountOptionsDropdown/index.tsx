@@ -48,10 +48,10 @@ const DropdownModal = ({ isFunded }: DropdownModalProps) => {
       {isMainnet(networkDetails) && (
         <div
           className="AccountOptionsDropdown__modal__item"
-          onClick={() => navigateTo(ROUTES.addXlm, navigate)}
+          onClick={() => navigateTo(ROUTES.buy, navigate)}
         >
           <div className="AccountOptionsDropdown__modal__item__title">
-            {t("Add XLM")}
+            {t("Buy")}
           </div>
           <div className="AccountOptionsDropdown__modal__item__icon">
             <Icon.PlusCircle />
@@ -131,7 +131,7 @@ export const AccountOptionsDropdown = ({
               isClear
               isActive={isDropdownOpen}
             />,
-            document.querySelector("#modal-root")!
+            document.querySelector("#modal-root")!,
           )
         : null}
     </>

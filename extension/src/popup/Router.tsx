@@ -69,6 +69,7 @@ import { ManageNetwork } from "popup/views/ManageNetwork";
 import { LeaveFeedback } from "popup/views/LeaveFeedback";
 import { AccountMigration } from "popup/views/AccountMigration";
 import { AddXlm } from "popup/views/AddXlm";
+import { Buy } from "popup/views/Buy";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
@@ -578,6 +579,14 @@ export const Router = () => (
           element={
             <PublicKeyRoute>
               <AddXlm />
+            </PublicKeyRoute>
+          }
+        />
+        <Route
+          path={ROUTES.buy}
+          element={
+            <PublicKeyRoute>
+              <Buy />
             </PublicKeyRoute>
           }
         />

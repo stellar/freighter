@@ -1,39 +1,30 @@
-import React from "react";
+import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
-import { Button, Icon } from "@stellar/design-system";
+import { Button } from "@stellar/design-system";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
 import { publicKeySelector } from "popup/ducks/accountServices";
-import { ROUTES } from "popup/constants/routes";
-import { navigateTo } from "popup/helpers/navigate";
 import {
   useGetOnrampToken,
   RequestState,
 } from "helpers/hooks/useGetOnrampToken";
 import { useOnramp } from "popup/helpers/useOnramp";
 
-import CoinbaseLogo from "popup/assets/coinbase-logo.svg";
-
 import "./styles.scss";
 
-export const AddXlm = () => {
+export const Buy = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const publicKey = useSelector(publicKeySelector);
+  const [asset, setAsset] = useState("XLM");
   const { state: onrampTokenState, fetchData } = useGetOnrampToken(publicKey);
 
-  const { tokenError } = useOnramp({ onrampTokenState, asset: "XLM" });
+  const { tokenError } = useOnramp({ onrampTokenState, asset });
 
   const handleOnrampClick = async () => {
     await fetchData();
-  };
-
-  const handleTransferClick = () => {
-    navigateTo(ROUTES.viewPublicKey, navigate);
   };
 
   const isLoaderShowing = onrampTokenState.state === RequestState.LOADING;
@@ -44,40 +35,36 @@ export const AddXlm = () => {
 
   return (
     <>
-      <SubviewHeader
-        title={t("Add XLM")}
-        subtitle={<div>{t("Choose your method")}</div>}
-      />
+      <SubviewHeader title={t("Buy with Coinbase")} />
       <View.Content>
-        <div className="AddXlm__content">
+        <div className="Buy__content">
           <Button
-            data-testid="add-xlm-coinbase-button"
+            data-testid="xlm-buy-button"
             iconPosition="left"
             isFullWidth
-            icon={
-              <img
-                className="AddXlm__onrampLogo"
-                src={CoinbaseLogo}
-                alt="Coinbase Logo"
-              />
-            }
             size="lg"
             variant="secondary"
-            onClick={handleOnrampClick}
+            onClick={() => {
+              setAsset("XLM");
+              handleOnrampClick();
+            }}
           >
-            {t("Buy with Coinbase")}
+            {t("Buy XLM on Coinbase")}
           </Button>
           <Button
+            data-testid="usdc-buy-button"
             iconPosition="left"
             isFullWidth
-            icon={<Icon.QrCode01 />}
             size="lg"
-            variant="tertiary"
-            onClick={handleTransferClick}
+            variant="secondary"
+            onClick={() => {
+              setAsset("USDC");
+              handleOnrampClick();
+            }}
           >
-            {t("Transfer from another account")}
+            {t("Buy USDC on Coinbase")}
           </Button>
-          {tokenError && <div className="AddXlm__error">{tokenError}</div>}
+          {tokenError && <div className="Buy__error">{tokenError}</div>}
         </div>
       </View.Content>
     </>
