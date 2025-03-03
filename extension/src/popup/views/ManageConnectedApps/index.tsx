@@ -42,7 +42,6 @@ export const ManageConnectedApps = () => {
   };
 
   const handleRemoveAll = () => {
-    // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < selectedAllowlist.length; i += 1) {
       const domain = selectedAllowlist[i];
       dispatch(saveAllowList({ domain, networkName: selectedNetworkName }));
