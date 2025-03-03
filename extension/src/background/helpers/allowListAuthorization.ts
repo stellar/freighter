@@ -1,23 +1,16 @@
 import browser from "webextension-polyfill";
 
-import { ALLOWLIST_ID } from "constants/localStorageTypes";
 import { getUrlHostname, getPunycodedDomain } from "helpers/urls";
-import {
-  dataStorageAccess,
-  browserLocalStorage,
-} from "background/helpers/dataStorageAccess";
 
-export const isSenderAllowed = async ({
+export const isSenderAllowed = ({
   sender,
+  allowListSegment,
 }: {
   sender: browser.Runtime.MessageSender;
+  allowListSegment: string[];
 }) => {
-  const localStore = dataStorageAccess(browserLocalStorage);
-  const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
-  const allowList = allowListStr.split(",");
-
   const { url: tabUrl = "" } = sender;
   const domain = getUrlHostname(tabUrl);
 
-  return allowList.includes(getPunycodedDomain(domain));
+  return allowListSegment.includes(getPunycodedDomain(domain));
 };
