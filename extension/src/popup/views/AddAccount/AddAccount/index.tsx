@@ -24,8 +24,8 @@ export const AddAccount = () => {
   const publicKey = useSelector(publicKeySelector);
 
   const handleAddAccount = useCallback(
-    async (password: string) => {
-      const res = await dispatch(addAccount(password));
+    async (password: string = "") => {
+      const res = await dispatch(addAccount({ password }));
 
       if (addAccount.fulfilled.match(res)) {
         emitMetric(METRIC_NAMES.accountScreenAddAccount, {
