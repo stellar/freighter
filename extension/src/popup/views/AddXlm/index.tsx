@@ -10,11 +10,7 @@ import { View } from "popup/basics/layout/View";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
-import {
-  useGetOnrampToken,
-  RequestState,
-} from "helpers/hooks/useGetOnrampToken";
-import { useOnramp } from "popup/helpers/useOnramp";
+import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
 
 import CoinbaseLogo from "popup/assets/coinbase-logo.svg";
 
@@ -24,9 +20,11 @@ export const AddXlm = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const publicKey = useSelector(publicKeySelector);
-  const { state: onrampTokenState, fetchData } = useGetOnrampToken(publicKey);
-
-  const { tokenError } = useOnramp({ onrampTokenState, asset: "XLM" });
+  const {
+    isLoading: isTokenRequestLoading,
+    fetchData,
+    tokenError,
+  } = useGetOnrampToken({ publicKey, asset: "XLM" });
 
   const handleOnrampClick = async () => {
     await fetchData();
@@ -36,9 +34,7 @@ export const AddXlm = () => {
     navigateTo(ROUTES.viewPublicKey, navigate);
   };
 
-  const isLoaderShowing = onrampTokenState.state === RequestState.LOADING;
-
-  if (isLoaderShowing) {
+  if (isTokenRequestLoading) {
     return <Loading />;
   }
 

@@ -79,7 +79,6 @@ const routeToEventName = {
     METRIC_NAMES.viewAccountMigrationMigrationComplete,
   [ROUTES.advancedSettings]: METRIC_NAMES.viewAdvancedSettings,
   [ROUTES.addXlm]: METRIC_NAMES.viewAddXlm,
-  [ROUTES.buy]: METRIC_NAMES.viewBuy,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {

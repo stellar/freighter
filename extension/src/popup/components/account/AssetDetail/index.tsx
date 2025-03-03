@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { BigNumber } from "bignumber.js";
@@ -45,9 +46,12 @@ import StellarLogo from "popup/assets/stellar-logo.png";
 import { formatAmount } from "popup/helpers/formatters";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { Loading } from "popup/components/Loading";
-import { BlockaidAssetWarning } from "popup/components/WarningMessages";
+import {
+  BlockaidAssetWarning,
+  WarningMessage,
+  WarningMessageVariant,
+} from "popup/components/WarningMessages";
 import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
-import { useOnramp } from "popup/helpers/useOnramp";
 
 import "./styles.scss";
 
@@ -122,9 +126,15 @@ export const AssetDetail = ({
     defaultDetailViewProps,
   );
   const [onrampAsset, setOnrampAsset] = useState("");
-  const { state: onrampTokenState, fetchData } = useGetOnrampToken(publicKey);
-
-  useOnramp({ onrampTokenState, asset: onrampAsset });
+  const {
+    fetchData,
+    isLoading: isTokenRequestLoading,
+    tokenError,
+    clearTokenError,
+  } = useGetOnrampToken({
+    publicKey,
+    asset: onrampAsset,
+  });
 
   const handleOnrampClick = async () => {
     let asset = "";
@@ -249,6 +259,7 @@ export const AssetDetail = ({
                       onClick={() => {
                         handleOnrampClick();
                       }}
+                      isLoading={isTokenRequestLoading}
                     >
                       {t("BUY")}
                     </Button>
@@ -361,6 +372,19 @@ export const AssetDetail = ({
           </div>
         </SlideupModal>
       )}
+      {tokenError
+        ? createPortal(
+            <WarningMessage
+              header={t("Error fetching Coinbase token. Please try again.")}
+              isActive={!!tokenError}
+              variant={WarningMessageVariant.warning}
+              handleCloseClick={clearTokenError}
+            >
+              <div>{tokenError}</div>
+            </WarningMessage>,
+            document.querySelector("#modal-root")!,
+          )
+        : null}
     </React.Fragment>
   );
 };

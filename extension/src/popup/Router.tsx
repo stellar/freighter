@@ -69,7 +69,6 @@ import { ManageNetwork } from "popup/views/ManageNetwork";
 import { LeaveFeedback } from "popup/views/LeaveFeedback";
 import { AccountMigration } from "popup/views/AccountMigration";
 import { AddXlm } from "popup/views/AddXlm";
-import { Buy } from "popup/views/Buy";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
@@ -279,7 +278,7 @@ const Layout = () => {
       (isSwap && location.pathname !== ROUTES.unlockAccount));
 
   const isAppLayout = NO_APP_LAYOUT_ROUTES.every(
-    (route) => route !== location.pathname
+    (route) => route !== location.pathname,
   );
 
   const isLoadingSettings =
@@ -579,14 +578,6 @@ export const Router = () => (
           element={
             <PublicKeyRoute>
               <AddXlm />
-            </PublicKeyRoute>
-          }
-        />
-        <Route
-          path={ROUTES.buy}
-          element={
-            <PublicKeyRoute>
-              <Buy />
             </PublicKeyRoute>
           }
         />

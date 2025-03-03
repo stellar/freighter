@@ -51,7 +51,6 @@ export enum ROUTES {
   manageAssetsListsModifyAssetList = "/settings/manage-assets-lists/modify-asset-list",
   advancedSettings = "/settings/advanced-settings",
   addXlm = "/add-xlm",
-  buy = "/buy",
 
   manageAssets = "/manage-assets",
   searchAsset = "/manage-assets/search-asset",
