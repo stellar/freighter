@@ -30,11 +30,11 @@ describe("Token Warning", () => {
     );
     await waitFor(() => screen.getByTestId("TokenWarning"));
     expect(screen.getByTestId("DescriptionLabel")).toHaveTextContent(
-      "Add Token",
+      "Add Asset",
     );
-    expect(screen.getByTestId("add-asset")).toHaveTextContent("Add token");
+    expect(screen.getByTestId("add-asset")).toHaveTextContent("Add asset");
   });
-  it("should correctly label warning as asset", async () => {
+  it("should correctly label warning as asset trustline", async () => {
     render(
       <Wrapper
         routes={[ROUTES.addAsset]}
@@ -57,7 +57,7 @@ describe("Token Warning", () => {
     );
     await waitFor(() => screen.getByTestId("TokenWarning"));
     expect(screen.getByTestId("DescriptionLabel")).toHaveTextContent(
-      "Add Asset",
+      "Add Asset Trustline",
     );
     expect(screen.getByTestId("add-asset")).toHaveTextContent("Add asset");
   });
