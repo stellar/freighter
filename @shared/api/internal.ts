@@ -1045,10 +1045,14 @@ export const handleSignedHwPayload = async ({
   }
 };
 
-export const addToken = async (): Promise<void> => {
+export const addToken = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}): Promise<void> => {
   try {
     await sendMessageToBackground({
-      activePublicKey: null,
+      activePublicKey,
       type: SERVICE_TYPES.ADD_TOKEN,
     });
   } catch (e) {
@@ -1056,10 +1060,14 @@ export const addToken = async (): Promise<void> => {
   }
 };
 
-export const signTransaction = async (): Promise<void> => {
+export const signTransaction = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}): Promise<void> => {
   try {
     await sendMessageToBackground({
-      activePublicKey: null,
+      activePublicKey,
       type: SERVICE_TYPES.SIGN_TRANSACTION,
     });
   } catch (e) {
@@ -1067,10 +1075,14 @@ export const signTransaction = async (): Promise<void> => {
   }
 };
 
-export const signBlob = async (): Promise<void> => {
+export const signBlob = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}): Promise<void> => {
   try {
     await sendMessageToBackground({
-      activePublicKey: null,
+      activePublicKey,
       type: SERVICE_TYPES.SIGN_BLOB,
     });
   } catch (e) {
@@ -1078,10 +1090,14 @@ export const signBlob = async (): Promise<void> => {
   }
 };
 
-export const signAuthEntry = async (): Promise<void> => {
+export const signAuthEntry = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}): Promise<void> => {
   try {
     await sendMessageToBackground({
-      activePublicKey: null,
+      activePublicKey,
       type: SERVICE_TYPES.SIGN_AUTH_ENTRY,
     });
   } catch (e) {

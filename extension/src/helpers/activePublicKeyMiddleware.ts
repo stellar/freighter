@@ -6,7 +6,7 @@ import {
 import { AppDispatch } from "popup/App";
 
 /* 
-  This middleware is design to check if there is a mismatch between the popup's active account and the 
+  This middleware is designed to check if there is a mismatch between the popup's active account and the 
   background's active account. This can happen if a user opens the popup in fullscreen mode,
   and then changes the account in another screen. 
 

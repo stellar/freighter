@@ -19,30 +19,32 @@ export const AccountMismatch = () => {
   const isAccountMismatch = useSelector(isAccountMismatchSelector);
   const publicKey = useSelector(publicKeySelector);
 
-  return isAccountMismatch
-    ? createPortal(
-        <>
-          <div
-            className="AccountMismatch__notification"
-            data-testid="account-mismatch"
-          >
-            <View.Content hasNoTopPadding hasNoBottomPadding>
-              <div className="AccountMismatch__notification__content">
-                <div>
-                  <Notification
-                    title={t(
-                      `Your session with the public key ${truncatedPublicKey(publicKey)} has ended. Please refresh the browser.`,
-                    )}
-                    variant="warning"
-                  />
-                </div>
+  if (isAccountMismatch) {
+    return createPortal(
+      <>
+        <div
+          className="AccountMismatch__notification"
+          data-testid="account-mismatch"
+        >
+          <View.Content hasNoTopPadding hasNoBottomPadding>
+            <div className="AccountMismatch__notification__content">
+              <div>
+                <Notification
+                  title={t(
+                    `Your session with the public key ${truncatedPublicKey(publicKey)} has ended. Please refresh the browser.`,
+                  )}
+                  variant="warning"
+                />
               </div>
-            </View.Content>
-          </div>
-          <LoadingBackground isActive isFullScreen isOpaque />,
-        </>,
+            </div>
+          </View.Content>
+        </div>
+        <LoadingBackground isActive isFullScreen isOpaque />,
+      </>,
 
-        document.querySelector("#modal-root")!,
-      )
-    : null;
+      document.querySelector("#modal-root")!,
+    );
+  }
+
+  return null;
 };
