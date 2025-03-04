@@ -1,20 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Button, Icon } from "@stellar/design-system";
-import { captureException } from "@sentry/browser";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
-import { navigateTo, openTab } from "popup/helpers/navigate";
-import {
-  useGetOnrampToken,
-  RequestState,
-} from "helpers/hooks/useGetOnrampToken";
+import { navigateTo } from "popup/helpers/navigate";
+import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
 
 import CoinbaseLogo from "popup/assets/coinbase-logo.svg";
 
@@ -24,25 +20,11 @@ export const AddXlm = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const publicKey = useSelector(publicKeySelector);
-  const [tokenError, setTokenError] = useState("");
-  const { state: onrampTokenState, fetchData } = useGetOnrampToken(publicKey);
-
-  useEffect(() => {
-    if (onrampTokenState.state === RequestState.ERROR) {
-      setTokenError("Unable to communicate with Coinbase");
-      captureException("Unable to fetch Coinbase session token");
-    }
-
-    if (onrampTokenState.state === RequestState.SUCCESS) {
-      const token = onrampTokenState.data.token;
-
-      setTokenError("");
-      captureException("Unable to fetch Coinbase session token");
-      const coinbaseUrl = `https://pay.coinbase.com/buy/select-asset?sessionToken=${token}&defaultExperience=buy&assets=["XLM"]`;
-
-      openTab(coinbaseUrl);
-    }
-  }, [onrampTokenState]);
+  const {
+    isLoading: isTokenRequestLoading,
+    fetchData,
+    tokenError,
+  } = useGetOnrampToken({ publicKey, asset: "XLM" });
 
   const handleOnrampClick = async () => {
     await fetchData();
@@ -52,9 +34,7 @@ export const AddXlm = () => {
     navigateTo(ROUTES.viewPublicKey, navigate);
   };
 
-  const isLoaderShowing = onrampTokenState.state === RequestState.LOADING;
-
-  if (isLoaderShowing) {
+  if (isTokenRequestLoading) {
     return <Loading />;
   }
 
