@@ -27,7 +27,7 @@ import {
   AssetsListItem,
   AssetsLists,
   DEFAULT_ASSETS_LISTS,
-} from "@shared/constants/soroban/token";
+} from "@shared/constants/soroban/asset-list";
 
 import {
   Settings,

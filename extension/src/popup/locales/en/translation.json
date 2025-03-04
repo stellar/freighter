@@ -26,6 +26,7 @@
   "Add network": "Add network",
   "Add new list": "Add new list",
   "Add XLM": "Add XLM",
+  "Adding this token is not possible at the moment": "Adding this token is not possible at the moment.",
   "Address": "Address",
   "Addresses are uppercase and begin with letters “G“, “M“, or “C“": "Addresses are uppercase and begin with letters “G“, “M“, or “C“.",
   "Advanced settings": "Advanced settings",
@@ -54,6 +55,7 @@
   "Approve": "Approve",
   "Approve and continue": "Approve and continue",
   "Approve and review next": "Approve and review next",
+  "Approve Token": "Approve Token",
   "Approve using": "Approve using",
   "are required to add a new asset": "are required to add a new asset.",
   "Are you sure you want to delete this list?": "Are you sure you want to delete this list?",
@@ -66,6 +68,7 @@
   "Asset B": "Asset B",
   "Asset Code": "Asset Code",
   "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description": "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description",
+  "Asset info": "Asset info",
   "Asset Info": "Asset Info",
   "Asset lists": "Asset lists",
   "Asset not found": "Asset not found",
@@ -77,6 +80,7 @@
   "available": "available",
   "Back": "Back",
   "Balance ID": "Balance ID",
+  "Balance Info": "Balance Info",
   "Before we start with migration, please read": "Before we start with migration, please read",
   "Before You Add This Asset": "Before You Add This Asset",
   "Bump To": "Bump To",
@@ -188,6 +192,7 @@
   "Freighter uses asset lists to check assets you interact with": {
     " You can define your own assets lists in Settings": "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
   },
+  "Freighter uses asset lists to verify assets before interactions": "Freighter uses asset lists to verify assets before interactions.",
   "Friendbot URL": "Friendbot URL",
   "From": "From",
   "Function Name": "Function Name",
@@ -430,6 +435,7 @@
   "swapped": "swapped",
   "Swapped": "Swapped",
   "Switch to this network": "Switch to this network",
+  "Symbol": "Symbol",
   "Terms of Service": "Terms of Service",
   "Terms of Use": "Terms of Use",
   "The application is requesting a specific account": "The application is requesting a specific account",
@@ -442,11 +448,15 @@
   "The final amount is approximate and may change": "The final amount is approximate and may change",
   "The requester expects you to sign this auth entry on": "The requester expects you to sign this auth entry on",
   "The requester expects you to sign this message on": "The requester expects you to sign this message on",
+  "The token you’re trying to add is on": "The token you’re trying to add is on",
   "The transaction you’re trying to sign is on": "The transaction you’re trying to sign is on",
   "The website <1>{url}</1> does not use an SSL certificate": {
     " For additional safety Freighter only works with websites that provide an SSL certificate by default": {
       " You may enable connection to domains that do not use an SSL certificate in Settings &gt; Security &gt; Advanced Settings": "The website <1>{url}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate by default. You may enable connection to domains that do not use an SSL certificate in Settings &gt; Security &gt; Advanced Settings."
     }
+  },
+  "These assets are not on any of your lists": {
+    " Proceed with caution before adding": "These assets are not on any of your lists. Proceed with caution before adding."
   },
   "This asset has a balance": "This asset has a balance",
   "This asset has buying liabilities": "This asset has buying liabilities",
@@ -464,6 +474,9 @@
   },
   "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed": "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed.",
   "This is a relatively new asset": "This is a relatively new asset.",
+  "This is not a valid contract id": {
+    " Please try again with a different value": "This is not a valid contract id. Please try again with a different value."
+  },
   "This site was flagged as malicious": "This site was flagged as malicious",
   "This transaction could not be completed": "This transaction could not be completed.",
   "This transaction is expected to fail": "This transaction is expected to fail",
@@ -524,6 +537,7 @@
   "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account": {
     " Merging is optional and will allow you to send your current account’s funding lumens to the new accounts": "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account. Merging is optional and will allow you to send your current account’s funding lumens to the new accounts."
   },
+  "You can define your own assets lists in Settings": "You can define your own assets lists in Settings.",
   "You must have a balance of": "You must have a balance of",
   "You must have a buying liability of": "You must have a buying liability of",
   "You still have a balance of": "You still have a balance of",

@@ -16,8 +16,8 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await page.getByText("Add an asset").click({ force: true });
   await page.getByText("Add manually").click({ force: true });
   await page.getByTestId("search-token-input").fill(TEST_TOKEN_ADDRESS);
-  await expect(page.getByTestId("asset-notification")).toHaveText(
-    "Not on your listsFreighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
+  await expect(page.getByTestId("not-asset-on-list")).toHaveText(
+    "Not on your lists",
   );
   await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E Token");
   await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");
@@ -44,9 +44,7 @@ test("Adding Soroban verified token", async ({ page, extensionId }) => {
   await page.getByText("Add an asset").click({ force: true });
   await page.getByText("Add manually").click({ force: true });
   await page.getByTestId("search-token-input").fill(USDC_TOKEN_ADDRESS);
-  await expect(page.getByTestId("asset-notification")).toHaveText(
-    "On your listsFreighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
-  );
+  await expect(page.getByTestId("asset-on-list")).toHaveText("On your lists");
   await expect(page.getByTestId("ManageAssetCode")).toHaveText("USDC");
   await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");
   await page.getByTestId("ManageAssetRowButton").click({ force: true });
