@@ -279,7 +279,7 @@ export const IntegrationTest = () => {
 
       runAsserts("handleSignedHwPayload", () => {});
 
-      await signTransaction();
+      await signTransaction({ activePublicKey: testPublicKey });
 
       runAsserts("signTransaction", () => {});
 
