@@ -994,7 +994,7 @@ export const TokenWarning = ({
                   className="TokenWarning__description__text"
                   data-testid="DescriptionLabel"
                 >
-                  {isCustomToken ? t("Add Token") : t("Add Asset Trustline")}
+                  {isCustomToken ? t("Add Asset") : t("Add Asset Trustline")}
                 </div>
               </div>
             </div>
@@ -1070,7 +1070,7 @@ export const TokenWarning = ({
                     isSubmitting || submitStatus === ActionStatus.PENDING
                   }
                 >
-                  {isCustomToken ? t("Add token") : t("Add asset")}
+                  {t("Add asset")}
                 </Button>
               </div>{" "}
             </div>
