@@ -160,7 +160,7 @@ export const emitMetric = async (name: string, body?: any) => {
   } catch {
     // Fallback to default values if parsing fails or data is missing
     metricsData = {
-      accountType: AccountType.FREIGHTER,
+      accountType: AccountType.Unknown,
       hwExists: false,
       importedExists: false,
       hwFunded: false,
