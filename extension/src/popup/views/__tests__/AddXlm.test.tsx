@@ -29,7 +29,7 @@ jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
     applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: mockAccounts,
     bipPath: "foo",
-  })
+  }),
 );
 
 const newTabSpy = jest
@@ -62,17 +62,17 @@ describe("AddXlm view", () => {
         }}
       >
         <AddXlm />
-      </Wrapper>
+      </Wrapper>,
     );
 
     await waitFor(async () => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Add XLM"
+        "Add XLM",
       );
       const coinbaseButton = screen.getByTestId("add-xlm-coinbase-button");
       await fireEvent.click(coinbaseButton);
       expect(newTabSpy).toHaveBeenCalledWith({
-        url: `https://pay.coinbase.com/buy/select-asset?sessionToken=${token}&defaultExperience=buy&assets=["XLM"]`,
+        url: `https://pay.coinbase.com/buy/select-asset?sessionToken=${token}&defaultExperience=buy&defaultAsset=XLM`,
       });
     });
   });

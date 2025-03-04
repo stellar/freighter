@@ -84,8 +84,9 @@
   "Before we start with migration, please read": "Before we start with migration, please read",
   "Before You Add This Asset": "Before You Add This Asset",
   "Bump To": "Bump To",
+  "BUY": "BUY",
   "Buy Amount": "Buy Amount",
-  "Buy XLM with Coinbase": "Buy XLM with Coinbase",
+  "Buy with Coinbase": "Buy with Coinbase",
   "Buying": "Buying",
   "by": "by",
   "Can’t find the asset you’re looking for? Add it manually": "Can’t find the asset you’re looking for? Add it manually",
@@ -166,6 +167,9 @@
   "Entered amount is higher than your balance": "Entered amount is higher than your balance",
   "Error": "Error",
   "Error code": "Error code",
+  "Error fetching Coinbase token": {
+    " Please try again": "Error fetching Coinbase token. Please try again."
+  },
   "Executable Type": "Executable Type",
   "Executable Wasm Hash": "Executable Wasm Hash",
   "Expand view": "Expand view",

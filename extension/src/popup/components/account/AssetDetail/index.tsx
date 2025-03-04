@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { BigNumber } from "bignumber.js";
@@ -45,7 +46,12 @@ import StellarLogo from "popup/assets/stellar-logo.png";
 import { formatAmount } from "popup/helpers/formatters";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { Loading } from "popup/components/Loading";
-import { BlockaidAssetWarning } from "popup/components/WarningMessages";
+import {
+  BlockaidAssetWarning,
+  WarningMessage,
+  WarningMessageVariant,
+} from "popup/components/WarningMessages";
+import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
 
 import "./styles.scss";
 
@@ -70,7 +76,12 @@ export const AssetDetail = ({
 }: AssetDetailProps) => {
   const dispatch: AppDispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const USDC_ASSET =
+    "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
   const isNative = selectedAsset === "native";
+  const isUsdc = selectedAsset === USDC_ASSET;
+
+  const isOnrampSupported = (isNative || isUsdc) && isMainnet(networkDetails);
 
   const canonical = getAssetFromCanonical(selectedAsset);
   const isSorobanAsset = canonical.issuer && isSorobanIssuer(canonical.issuer);
@@ -114,6 +125,29 @@ export const AssetDetail = ({
   const [detailViewProps, setDetailViewProps] = useState(
     defaultDetailViewProps,
   );
+  const [onrampAsset, setOnrampAsset] = useState("");
+  const {
+    fetchData,
+    isLoading: isTokenRequestLoading,
+    tokenError,
+    clearTokenError,
+  } = useGetOnrampToken({
+    publicKey,
+    asset: onrampAsset,
+  });
+
+  const handleOnrampClick = async () => {
+    let asset = "";
+    if (isUsdc) {
+      asset = "USDC";
+    }
+
+    if (isNative) {
+      asset = "XLM";
+    }
+    setOnrampAsset(asset);
+    await fetchData();
+  };
 
   const { assetDomain, error: assetError } = useAssetDomain({
     assetIssuer,
@@ -129,8 +163,6 @@ export const AssetDetail = ({
     // if we have an asset issuer, wait until we have the asset domain before continuing
     return <Loading />;
   }
-
-  const isOnrampSupported = isNative;
 
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
@@ -220,13 +252,14 @@ export const AssetDetail = ({
                       {t("SWAP")}
                     </Button>
                   )}
-                  {isOnrampSupported && isMainnet(networkDetails) && (
+                  {isOnrampSupported && (
                     <Button
                       size="md"
                       variant="tertiary"
                       onClick={() => {
-                        navigateTo(ROUTES.addXlm, navigate);
+                        handleOnrampClick();
                       }}
+                      isLoading={isTokenRequestLoading}
                     >
                       {t("BUY")}
                     </Button>
@@ -339,6 +372,19 @@ export const AssetDetail = ({
           </div>
         </SlideupModal>
       )}
+      {tokenError
+        ? createPortal(
+            <WarningMessage
+              header={t("Error fetching Coinbase token. Please try again.")}
+              isActive={!!tokenError}
+              variant={WarningMessageVariant.warning}
+              handleCloseClick={clearTokenError}
+            >
+              <div>{tokenError}</div>
+            </WarningMessage>,
+            document.querySelector("#modal-root")!,
+          )
+        : null}
     </React.Fragment>
   );
 };
