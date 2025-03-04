@@ -43,19 +43,19 @@ export const splitVerifiedAssetCurrency = async ({
   const [verifiedAssets, unverifiedAssets] = assets.reduce<
     [typeof assets, typeof assets]
   >(
-    ([inC, notInC], item) => {
+    ([inVerifiedList, notInVerifiedList], item) => {
       if (item.issuer && verifiedIds.has(item.issuer)) {
-        inC.push(item);
-        return [inC, notInC];
+        inVerifiedList.push(item);
+        return [inVerifiedList, notInVerifiedList];
       }
 
       if (item.contract && verifiedIds.has(item.contract)) {
-        inC.push(item);
-        return [inC, notInC];
+        inVerifiedList.push(item);
+        return [inVerifiedList, notInVerifiedList];
       }
 
-      notInC.push(item);
-      return [inC, notInC];
+      notInVerifiedList.push(item);
+      return [inVerifiedList, notInVerifiedList];
     },
     [[], []],
   );

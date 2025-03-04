@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Networks, StellarToml } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import {
   AccountBalancesInterface,
   ActionStatus,
@@ -294,6 +295,7 @@ const AssetRows = ({
     isSuspicious?: boolean;
   }) => React.ReactNode;
 }) => {
+  const { t } = useTranslation();
   if (shouldSplitAssetsByVerificationStatus) {
     return (
       <>
@@ -301,8 +303,10 @@ const AssetRows = ({
           <InfoTooltip
             infoText={
               <span>
-                Freighter uses asset lists to verify assets before interactions.
-                You can define your own assets lists in Settings.
+                {t(
+                  "Freighter uses asset lists to verify assets before interactions.",
+                )}
+                {t("You can define your own assets lists in Settings.")}
               </span>
             }
             placement="bottom-start"
@@ -358,8 +362,9 @@ const AssetRows = ({
           <InfoTooltip
             infoText={
               <span>
-                These assets are not on any of your lists. Proceed with caution
-                before adding.
+                {t(
+                  "These assets are not on any of your lists. Proceed with caution before adding.",
+                )}
               </span>
             }
             placement="bottom-start"
