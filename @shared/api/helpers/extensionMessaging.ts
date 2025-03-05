@@ -8,10 +8,16 @@ import {
 } from "../../constants/services";
 import { Response } from "../types";
 
-interface Msg {
-  [key: string]: any;
-  type: EXTERNAL_SERVICE_TYPES | SERVICE_TYPES;
-}
+type Msg =
+  | {
+      [key: string]: any;
+      activePublicKey: string | null;
+      type: SERVICE_TYPES;
+    }
+  | {
+      [key: string]: any;
+      type: EXTERNAL_SERVICE_TYPES;
+    };
 
 export const sendMessageToContentScript = (msg: Msg): Promise<Response> => {
   /* 
@@ -67,6 +73,7 @@ export const sendMessageToContentScript = (msg: Msg): Promise<Response> => {
 
 export const sendMessageToBackground = async (msg: Msg): Promise<Response> => {
   let res;
+
   if (DEV_SERVER) {
     // treat this as an external call because we're making the call from the browser, not the popup
     res = await sendMessageToContentScript(msg);

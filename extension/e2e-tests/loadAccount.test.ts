@@ -42,3 +42,39 @@ test("Switches account without password prompt", async ({
 
   await expect(page.getByText("Your assets")).toBeVisible();
 });
+
+test("Can't change settings on a stale window", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+
+  const pageOne = await page.context().newPage();
+  await loginToTestAccount({ page: pageOne, extensionId });
+
+  // open a second tab and change the account
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  await pageTwo.goto(`chrome-extension://${extensionId}/index.html`);
+  await expect(pageTwo.getByTestId("account-view")).toBeVisible({
+    timeout: 30000,
+  });
+  await pageTwo.getByTestId("AccountHeader__icon-btn").click();
+  await pageTwo.getByText("Account 2").click();
+  await expect(pageTwo.getByTestId("account-view")).toBeVisible({
+    timeout: 30000,
+  });
+
+  // go back to the first tab (still on the old account) and try to change a setting
+  await pageOne.getByTestId("BottomNav-link-settings").click();
+  await pageOne.getByText("Preferences").click();
+  await expect(pageOne.locator("#isValidatingMemoValue")).toHaveValue("true");
+  await pageOne.getByText("Validate addresses that require a memo").click();
+  await expect(pageOne.getByTestId("account-mismatch")).toBeVisible();
+
+  // go back to the second tab and confirm the setting didn't change
+  await pageTwo.getByTestId("BottomNav-link-settings").click();
+  await pageTwo.getByText("Preferences").click();
+  await expect(pageTwo.locator("#isValidatingMemoValue")).toHaveValue("true");
+});
