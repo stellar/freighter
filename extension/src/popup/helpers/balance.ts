@@ -19,8 +19,10 @@ export const getBalanceByKey = (
     // if issuer is a G address or xlm, check for a SAC match
     // TODO: check for correctness of the AssetType issuer
     if (
-      ("issuer" in balance.token && !isContractId(balance.token.issuer.key)) ||
-      balance.token.code === "XLM"
+      (balance.token &&
+        "issuer" in balance.token &&
+        !isContractId(balance.token.issuer.key)) ||
+      (balance.token && balance.token.code === "XLM")
     ) {
       const assetToken = balance.token as AssetToken;
       try {

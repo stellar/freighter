@@ -216,20 +216,18 @@ export const getAvailableBalance = ({
 
 export const getRawBalance = (accountBalances: AssetType[], asset: string) =>
   accountBalances.find((balance) => {
-    if ("token" in balance) {
-      if (balance.token.type === "native") {
-        return asset === balance.token.type;
-      }
+    if ("type" in balance.token! && balance.token?.type === "native") {
+      return asset === balance.token.type;
+    }
 
-      if ("issuer" in balance.token) {
-        return asset === `${balance.token.code}:${balance.token.issuer.key}`;
-      }
+    if (balance.token && "issuer" in balance.token) {
+      return asset === `${balance.token.code}:${balance.token.issuer.key}`;
     }
     throw new Error("Asset type not supported");
   });
 
 export const getIssuerFromBalance = (balance: AssetType) => {
-  if ("token" in balance && "issuer" in balance?.token) {
+  if (balance.token && "token" in balance && "issuer" in balance.token) {
     return balance.token.issuer.key.toString();
   }
 

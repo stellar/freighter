@@ -5,6 +5,7 @@ import { initialState, reducer } from "helpers/request";
 import {
   AccountBalancesInterface,
   AssetIcons,
+  Balance,
   BalanceMap,
   Balances,
 } from "@shared/api/types";
@@ -86,7 +87,7 @@ function useGetSendAmountData(
           balances as NonNullable<BalanceMap>,
           hiddenAssets.hiddenAssets,
         ),
-      );
+      ) as Balance[];
       // TODO: cache home domain when getting asset icon
       // https://github.com/stellar/freighter/issues/410
       // eslint-disable-next-line @typescript-eslint/prefer-for-of

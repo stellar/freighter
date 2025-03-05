@@ -13,7 +13,12 @@ import {
   truncatedFedAddress,
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
-import { AssetBalance, AssetIcons, ActionStatus } from "@shared/api/types";
+import {
+  AssetBalance,
+  AssetIcons,
+  ActionStatus,
+  Balance,
+} from "@shared/api/types";
 import {
   defaultBlockaidScanAssetResult,
   isCustomNetwork,
@@ -64,13 +69,13 @@ import { TRANSACTION_WARNING } from "constants/transaction";
 import { formatAmount } from "popup/helpers/formatters";
 
 import { resetSimulation } from "popup/ducks/token-payment";
-
-import "./styles.scss";
 import { RequestState } from "popup/views/Account/hooks/useGetAccountData";
 import {
   computeDestMinWithSlippage,
   useGetTxDetailsData,
 } from "./hooks/useGetTxDetailsData";
+
+import "./styles.scss";
 
 const TwoAssetCard = ({
   sourceAssetIcons,
@@ -567,12 +572,14 @@ export const TransactionDetails = ({
                   blockaidData={
                     // TODO: helper to get asset & dest asset
                     (txDetailsData.data!.isSourceAssetSuspicious
-                      ? txDetailsData.data!.balances.balances.find(
-                          (balance) => balance.token.code === asset,
-                        )?.blockaidData
-                      : txDetailsData.data!.balances.balances.find(
-                          (balance) => balance.token.code === asset,
-                        )?.blockaidData) || defaultBlockaidScanAssetResult
+                      ? (
+                          txDetailsData.data!.balances.balances as Balance[]
+                        ).find((balance) => balance.token?.code === asset)
+                          ?.blockaidData
+                      : (
+                          txDetailsData.data!.balances.balances as Balance[]
+                        ).find((balance) => balance.token?.code === asset)
+                          ?.blockaidData) || defaultBlockaidScanAssetResult
                   }
                   isSuspicious={
                     txDetailsData.data!.isSourceAssetSuspicious ||

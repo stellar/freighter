@@ -15,6 +15,7 @@ import { getResultCodes, RESULT_CODES } from "popup/helpers/parseTransaction";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
+import { Balance } from "@shared/api/types";
 
 import "./styles.scss";
 
@@ -172,7 +173,7 @@ export const TrustlineError = ({
           const { code, issuer } = op.line as Asset;
           const asset = `${code}:${issuer}`;
           // TODO: get balance helper
-          const balance = balances.balances?.find(
+          const balance = (balances.balances as Balance[])?.find(
             ({ contractId }) => contractId === asset,
           );
 

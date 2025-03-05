@@ -75,9 +75,7 @@ export const AssetDetail = ({
 
   // TODO: BALANCE TYPE FIX
   const selectedBalance = (accountBalances.balances as Balance[]).find(
-    (balance) => {
-      return (balance.token as AssetToken).issuer.key;
-    },
+    (_balance) => (_balance.token as AssetToken).issuer.key,
   );
   // TODO: balance helper
   const isSuspicious = isAssetSuspicious(selectedBalance!.blockaidData);

@@ -123,7 +123,7 @@ const simulateTx = async ({
       }
 
       const minResourceFee = formatTokenAmount(
-        new BigNumber(response.simulationTransaction.minResourceFee as string),
+        new BigNumber(response.simulationTransaction.minResourceFee),
         CLASSIC_ASSET_DECIMALS,
       );
       return {
@@ -203,7 +203,11 @@ function useGetSettingsData(
       const isXlm = address === "native";
       const assetBalance = balancesResult.balances.find((balance) => {
         if (isXlm) {
-          return balance.token.type === "native";
+          return (
+            balance.token &&
+            "type" in balance.token &&
+            balance.token.type === "native"
+          );
         }
         // TODO: check for classic assets
 

@@ -191,14 +191,13 @@ export const ManageAssetRows = ({
               }
               const isContract = isContractId(contract);
               const canonicalAsset = getCanonicalFromAsset(code, issuer);
-              const isTrustlineActive = balances.balances.some((balance) => {
-                // TODO: is this ever not AssetToken?
-                return (
+              const isTrustlineActive = balances.balances.some(
+                (balance) =>
+                  // TODO: is this ever not AssetToken?
                   `${balance.token!.code}:${
                     (balance.token as AssetToken).issuer.key
-                  }` === canonicalAsset
-                );
-              });
+                  }` === canonicalAsset,
+              );
               const isActionPending =
                 submitStatus === ActionStatus.PENDING ||
                 accountBalanceStatus === ActionStatus.PENDING;

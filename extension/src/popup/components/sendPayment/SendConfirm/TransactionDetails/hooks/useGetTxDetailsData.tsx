@@ -17,7 +17,7 @@ import {
   scanAsset,
   useScanTx,
 } from "popup/helpers/blockaid";
-import { BlockAidScanTxResult } from "@shared/api/types";
+import { Balance, BlockAidScanTxResult } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
@@ -227,7 +227,9 @@ function useGetTxDetailsData(
       const payload = {
         balances: balancesResult,
         destAssetIconUrl,
-        isSourceAssetSuspicious: isAssetSuspicious(source.blockaidData),
+        isSourceAssetSuspicious: isAssetSuspicious(
+          (source as Balance).blockaidData,
+        ),
         isDestAssetSuspicious: isAssetSuspicious(scannedDestAsset),
       } as TxDetailsData;
 

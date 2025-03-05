@@ -2,6 +2,7 @@ import { useReducer } from "react";
 import { useSelector } from "react-redux";
 
 import { NetworkDetails } from "@shared/constants/stellar";
+import { Balance } from "@shared/api/types";
 import { initialState, reducer } from "helpers/request";
 
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
@@ -63,12 +64,13 @@ export function useGetAssetDomains(
       // https://github.com/stellar/freighter/issues/410
       // eslint-disable-next-line @typescript-eslint/prefer-for-of
       for (let i = 0; i < balances.balances.length; i += 1) {
-        if (balances.balances[i].liquidityPoolId) {
+        const balance = balances.balances[i];
+        if ("liquidityPoolId" in balance && balance.liquidityPoolId) {
           // eslint-disable-next-line
           continue;
         }
 
-        const { token, contractId, blockaidData } = balances.balances[i];
+        const { token, contractId, blockaidData } = balance as Balance;
 
         const code = token.code || "";
         let issuer = {

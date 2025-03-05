@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { Account, Asset, Operation, TransactionBuilder } from "stellar-sdk";
 import { AppDispatch } from "popup/App";
 
-import { AssetIcons, ErrorMessage } from "@shared/api/types";
+import { AssetIcons, Balance, ErrorMessage } from "@shared/api/types";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
 import { getAssetFromCanonical, isMainnet, xlmToStroop } from "helpers/stellar";
@@ -114,12 +114,12 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
   // TODO: asset filter helper
   const isSourceAssetSuspicious = isAssetSuspicious(
-    accountData.data?.balances.balances?.find(
+    (accountData.data?.balances.balances as Balance[])?.find(
       (balance) => balance.contractId === asset,
     )?.blockaidData,
   );
   const isDestAssetSuspicious = isAssetSuspicious(
-    accountData.data?.balances.balances?.find(
+    (accountData.data?.balances.balances as Balance[])?.find(
       (balance) => balance.contractId === destinationAsset,
     )?.blockaidData,
   );
@@ -190,7 +190,9 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   };
 
   // TODO: the remove trustline logic here does not work Soroban tokens. We should handle this case
-  const suggestRemoveTrustline = accountData.data?.balances.balances
+  const suggestRemoveTrustline = (
+    accountData.data?.balances.balances as Balance[]
+  )
     ?.find((balance) => balance.contractId === asset)
     ?.available?.isZero();
 
