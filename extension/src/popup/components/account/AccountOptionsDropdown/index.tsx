@@ -1,18 +1,26 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import { NavButton, Icon } from "@stellar/design-system";
+import { NavButton, Icon, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { navigateTo, openTab } from "popup/helpers/navigate";
+import { isMainnet } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { newTabHref } from "helpers/urls";
 import {
   saveAssetSelectType,
   AssetSelectType,
 } from "popup/ducks/transactionSubmission";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  WarningMessage,
+  WarningMessageVariant,
+} from "popup/components/WarningMessages";
 
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { AppDispatch } from "popup/App";
@@ -27,6 +35,21 @@ const DropdownModal = ({ isFunded }: DropdownModalProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
+
+  const {
+    isLoading: isTokenRequestLoading,
+    fetchData,
+    tokenError,
+    clearTokenError,
+  } = useGetOnrampToken({
+    publicKey,
+  });
+
+  const handleBuyClick = async () => {
+    await fetchData();
+  };
 
   return (
     <div className="AccountOptionsDropdown__modal">
@@ -41,6 +64,21 @@ const DropdownModal = ({ isFunded }: DropdownModalProps) => {
           <Icon.QrCode01 />
         </div>
       </div>
+
+      {isMainnet(networkDetails) && (
+        <div
+          className="AccountOptionsDropdown__modal__item"
+          onClick={handleBuyClick}
+        >
+          <div className="AccountOptionsDropdown__modal__item__title">
+            {t("Buy with Coinbase")}
+          </div>
+          <div className="AccountOptionsDropdown__modal__item__icon">
+            {isTokenRequestLoading ? <Loader /> : <Icon.PlusCircle />}
+          </div>
+        </div>
+      )}
+
       <div
         className="AccountOptionsDropdown__modal__item"
         onClick={() => navigateTo(ROUTES.manageConnectedApps, navigate)}
@@ -80,6 +118,19 @@ const DropdownModal = ({ isFunded }: DropdownModalProps) => {
           <Icon.Expand04 />
         </div>
       </div>
+      {tokenError
+        ? createPortal(
+            <WarningMessage
+              header={t("Error fetching Coinbase token. Please try again.")}
+              isActive={!!tokenError}
+              variant={WarningMessageVariant.warning}
+              handleCloseClick={clearTokenError}
+            >
+              <div>{tokenError}</div>
+            </WarningMessage>,
+            document.querySelector("#modal-root")!,
+          )
+        : null}
     </div>
   );
 };

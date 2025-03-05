@@ -68,6 +68,7 @@ import { Swap } from "popup/views/Swap";
 import { ManageNetwork } from "popup/views/ManageNetwork";
 import { LeaveFeedback } from "popup/views/LeaveFeedback";
 import { AccountMigration } from "popup/views/AccountMigration";
+import { AddXlm } from "popup/views/AddXlm";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
@@ -572,6 +573,14 @@ export const Router = () => (
             </PublicKeyRoute>
           }
         ></Route>
+        <Route
+          path={ROUTES.addXlm}
+          element={
+            <PublicKeyRoute>
+              <AddXlm />
+            </PublicKeyRoute>
+          }
+        />
 
         {DEV_SERVER && (
           <>
