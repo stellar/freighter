@@ -27,6 +27,7 @@ import {
   startHwSign,
   removeTokenId,
   resetSubmitStatus,
+  resetSubmission,
 } from "popup/ducks/transactionSubmission";
 import { ActionStatus } from "@shared/api/types";
 import { NETWORKS } from "@shared/constants/stellar";
@@ -133,6 +134,7 @@ export const ManageAssetRowButton = ({
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
         trackChangeTrustline();
+        dispatch(resetSubmission());
         if (successfulCallback) {
           await successfulCallback();
         }

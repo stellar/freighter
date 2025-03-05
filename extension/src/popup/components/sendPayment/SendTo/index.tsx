@@ -32,6 +32,7 @@ import { View } from "popup/basics/layout/View";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   saveDestination,
+  saveDestinationAsset,
   saveFederationAddress,
 } from "popup/ducks/transactionSubmission";
 
@@ -107,6 +108,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
     validatedFedAdress?: string,
   ) => {
     dispatch(saveDestination(validatedDestination));
+    dispatch(saveDestinationAsset(""));
     dispatch(saveFederationAddress(validatedFedAdress || ""));
     navigateTo(ROUTES.sendPaymentAmount);
   };

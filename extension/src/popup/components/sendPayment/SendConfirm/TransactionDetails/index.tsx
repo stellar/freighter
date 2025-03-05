@@ -171,7 +171,6 @@ export const TransactionDetails = ({
     memoRequiredAccounts,
     transactionSimulation,
   } = submission;
-  console.log(submission);
 
   const transactionHash = submission.response?.hash;
   const isPathPayment = useSelector(isPathPaymentSelector);

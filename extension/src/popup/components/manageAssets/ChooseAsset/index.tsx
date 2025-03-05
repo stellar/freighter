@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, useHistory } from "react-router-dom";
 import { Button, Icon, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -16,6 +16,7 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { RequestState } from "constants/request";
 import { useGetAssetDomains } from "helpers/hooks/useGetAssetDomains";
 import { isMainnet } from "helpers/stellar";
+import { resetSubmission } from "popup/ducks/transactionSubmission";
 
 import { ManageAssetRows } from "../ManageAssetRows";
 import { SelectAssetRows } from "../SelectAssetRows";
@@ -25,6 +26,7 @@ import "./styles.scss";
 export const ChooseAsset = () => {
   const history = useHistory();
   const { t } = useTranslation();
+  const dispatch = useDispatch();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -42,6 +44,7 @@ export const ChooseAsset = () => {
   );
 
   const goBack = () => {
+    dispatch(resetSubmission());
     history.goBack();
   };
 
