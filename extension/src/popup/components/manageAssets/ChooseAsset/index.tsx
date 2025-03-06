@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Link, useHistory } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 import { Button, Icon, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -16,7 +16,6 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { RequestState } from "constants/request";
 import { useGetAssetDomains } from "helpers/hooks/useGetAssetDomains";
 import { isMainnet } from "helpers/stellar";
-import { resetSubmission } from "popup/ducks/transactionSubmission";
 
 import { ManageAssetRows } from "../ManageAssetRows";
 import { SelectAssetRows } from "../SelectAssetRows";
@@ -24,9 +23,7 @@ import { SelectAssetRows } from "../SelectAssetRows";
 import "./styles.scss";
 
 export const ChooseAsset = () => {
-  const history = useHistory();
   const { t } = useTranslation();
-  const dispatch = useDispatch();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -43,11 +40,6 @@ export const ChooseAsset = () => {
     },
   );
 
-  const goBack = () => {
-    dispatch(resetSubmission());
-    history.goBack();
-  };
-
   const isLoading =
     domainState.state === RequestState.IDLE ||
     domainState.state === RequestState.LOADING;
@@ -60,68 +52,55 @@ export const ChooseAsset = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  if (isLoading) {
+    return (
+      <View.Content hasNoTopPadding>
+        <div className="ChooseAsset__loader">
+          <Loader size="2rem" />
+        </div>
+      </View.Content>
+    );
+  }
+
   return (
     <React.Fragment>
       <SubviewHeader
-        title={t("Manage assets")}
-        customBackIcon={<Icon.XClose className="close-btn" />}
-        customBackAction={goBack}
-        rightButton={
-          <Link
-            to={ROUTES.assetVisibility}
-            data-testid="ChooseAssetHideAssetBtn"
-          >
-            <Button
-              size="sm"
-              className="ChooseAsset__hide-btn"
-              variant="tertiary"
-            >
-              <Icon.Settings03 />
-            </Button>
-          </Link>
+        title={t("Your assets")}
+        customBackIcon={
+          !domainState.data?.isManagingAssets ? <Icon.XClose /> : undefined
         }
       />
       <View.Content hasNoTopPadding>
-        {isLoading ? (
-          <div className="ChooseAsset__loader">
-            <Loader size="2rem" />
-          </div>
-        ) : (
-          <div
-            className="ChooseAsset__wrapper"
-            data-testid="ChooseAssetWrapper"
-          >
-            {!domainState.data?.domains.length ? (
-              <div className="ChooseAsset__empty">
-                <p>
-                  You have no assets added. Get started by adding an asset
-                  below.
-                </p>
-              </div>
-            ) : (
-              <div
-                className={`ChooseAsset__assets${
-                  domainState.data.isManagingAssets && isSorobanSuported
-                    ? "--short"
-                    : ""
-                }`}
-                ref={ManageAssetRowsWrapperRef}
-              >
-                {domainState.data.isManagingAssets ? (
-                  <ManageAssetRows
-                    assetRows={domainState.data.domains}
-                    balances={domainState.data.balances}
-                  />
-                ) : (
-                  <SelectAssetRows
-                    assetRows={domainState.data.domains}
-                    balances={domainState.data.balances}
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        <div className="ChooseAsset__wrapper" data-testid="ChooseAssetWrapper">
+          {!domainState.data?.domains.length ? (
+            <div className="ChooseAsset__empty">
+              <p>
+                You have no assets added. Get started by adding an asset below.
+              </p>
+            </div>
+          ) : (
+            <div
+              className={`ChooseAsset__assets${
+                domainState.data.isManagingAssets && isSorobanSuported
+                  ? "--short"
+                  : ""
+              }`}
+              ref={ManageAssetRowsWrapperRef}
+            >
+              {domainState.data.isManagingAssets ? (
+                <ManageAssetRows
+                  assetRows={domainState.data.domains}
+                  balances={domainState.data.balances}
+                />
+              ) : (
+                <SelectAssetRows
+                  assetRows={domainState.data.domains}
+                  balances={domainState.data.balances}
+                />
+              )}
+            </div>
+          )}
+        </div>
       </View.Content>
       {domainState.data?.isManagingAssets && (
         <View.Footer isInline allowWrap>
