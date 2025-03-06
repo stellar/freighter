@@ -41,6 +41,7 @@ export interface Response {
   transactionXDR: string;
   signerAddress: string;
   signedTransaction: string;
+  signature: string;
   signedPayload: string | Buffer;
   signedBlob: Buffer | null;
   signedAuthEntry: Buffer | null;
@@ -146,6 +147,7 @@ export enum AccountType {
   HW = "HW",
   IMPORTED = "IMPORTED",
   FREIGHTER = "FREIGHTER",
+  UNKNOWN = "UNKNOWN",
 }
 
 export interface Preferences {

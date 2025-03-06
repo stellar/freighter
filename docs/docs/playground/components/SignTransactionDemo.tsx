@@ -8,12 +8,13 @@ export const SignTransactionDemo = () => {
   const [publicKey, setPublicKey] = useState("");
   const [transactionResult, setTransactionResult] = useState("");
   const [signerAddressResult, setSignerAddressResult] = useState("");
+  const [signatureResult, setSignatureResult] = useState("");
 
   const xdrOnChangeHandler = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setTransactionXdr(e.currentTarget.value);
   };
   const networkPassphraseOnChangeHandler = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     setNetworkPassphrase(e.currentTarget.value);
   };
@@ -34,6 +35,7 @@ export const SignTransactionDemo = () => {
     } else {
       setTransactionResult(signedTransaction.signedTxXdr);
       setSignerAddressResult(signedTransaction.signerAddress);
+      setSignatureResult(signedTransaction.signature || "");
     }
   };
   return (
@@ -55,6 +57,8 @@ export const SignTransactionDemo = () => {
         <PlaygroundTextarea readOnly value={transactionResult} />
         Signer address:
         <PlaygroundInput readOnly value={signerAddressResult} />
+        Signature:
+        <PlaygroundTextarea readOnly value={signatureResult} />
       </div>
       <button type="button" onClick={btnHandler}>
         Sign Transaction XDR

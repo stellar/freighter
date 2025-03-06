@@ -148,28 +148,27 @@ export const emitMetric = async (name: string, body?: any) => {
     return;
   }
 
-let metricsData: MetricsData;
+  let metricsData: MetricsData;
 
-try {
-  const storedData = localStorage.getItem(METRICS_DATA);
-  if (storedData) {
-    metricsData = JSON.parse(storedData);
-  } else {
-    throw new Error("No metrics data found in localStorage");
+  try {
+    const storedData = localStorage.getItem(METRICS_DATA);
+    if (storedData) {
+      metricsData = JSON.parse(storedData);
+    } else {
+      throw new Error("No metrics data found in localStorage");
+    }
+  } catch {
+    // Fallback to default values if parsing fails or data is missing
+    metricsData = {
+      accountType: AccountType.UNKNOWN,
+      hwExists: false,
+      importedExists: false,
+      hwFunded: false,
+      importedFunded: false,
+      freighterFunded: false,
+      unfundedFreighterAccounts: [],
+    };
   }
-} catch {
-  // Fallback to default values if parsing fails or data is missing
-  metricsData = {
-    accountType: AccountType.Unknown,
-    hwExists: false,
-    importedExists: false,
-    hwFunded: false,
-    importedFunded: false,
-    freighterFunded: false,
-    unfundedFreighterAccounts: [],
-  };
-}
-
 
   cache.push({
     event_type: name,

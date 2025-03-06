@@ -135,7 +135,7 @@ const numOfPublicKeysToCheck = 5;
 const sessionTimer = new SessionTimer();
 
 export const responseQueue: Array<
-  (message?: any, messageAddress?: any) => void
+  (message?: any, messageAddress?: any, signature?: any) => void
 > = [];
 
 export const transactionQueue: StellarSdk.Transaction[] = [];
@@ -1280,15 +1280,21 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     if (privateKey.length) {
       const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
-
-      let response;
+      let signedTransaction;
+      let signature;
 
       const transactionToSign = transactionQueue.pop();
 
       if (transactionToSign) {
         try {
           transactionToSign.sign(sourceKeys);
-          response = transactionToSign.toXDR();
+          signedTransaction = transactionToSign.toXDR();
+
+          // Make sure to get the last signature which we've just added
+          // since the XDR transaction could have multiple signatures
+          const signatureList = transactionToSign.signatures;
+          const lastSignature = signatureList[signatureList.length - 1];
+          signature = lastSignature.signature().toString("hex");
         } catch (e) {
           console.error(e);
           return { error: e };
@@ -1298,7 +1304,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       const transactionResponse = responseQueue.pop();
 
       if (typeof transactionResponse === "function") {
-        transactionResponse(response, sourceKeys.publicKey());
+        transactionResponse(
+          signedTransaction,
+          sourceKeys.publicKey(),
+          signature,
+        );
         return {};
       }
     }

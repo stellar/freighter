@@ -78,6 +78,7 @@ export const submitTransaction = async (
 ): Promise<{
   signedTransaction: string;
   signerAddress: string;
+  signature: string;
   error?: FreighterApiError;
 }> => {
   let network;
@@ -110,12 +111,18 @@ export const submitTransaction = async (
     return {
       signedTransaction: "",
       signerAddress: "",
+      signature: "",
       error: FreighterApiInternalError,
     };
   }
-  const { signedTransaction, signerAddress } = response;
+  const { signedTransaction, signerAddress, signature } = response;
 
-  return { signedTransaction, signerAddress, error: response?.apiError };
+  return {
+    signedTransaction,
+    signerAddress,
+    signature,
+    error: response?.apiError,
+  };
 };
 
 export const submitMessage = async (
