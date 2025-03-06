@@ -15,6 +15,22 @@ describe("signTransaction", () => {
       signerAddress: "baz",
     });
   });
+  it("returns a transaction with signature", async () => {
+    const TEST_TRANSACTION = "AAA";
+    const TEST_SIGNATURE = "BBB";
+    extensionMessaging.sendMessageToContentScript = jest.fn().mockReturnValue({
+      signedTransaction: TEST_TRANSACTION,
+      signerAddress: "baz",
+      signature: TEST_SIGNATURE,
+    });
+    const transaction = await signTransaction();
+    expect(transaction).toEqual({
+      signedTxXdr: TEST_TRANSACTION,
+      signerAddress: "baz",
+      signature: TEST_SIGNATURE,
+    });
+  });
+
   it("returns a generic error", async () => {
     extensionMessaging.sendMessageToContentScript = jest
       .fn()
@@ -24,6 +40,7 @@ describe("signTransaction", () => {
     expect(transaction).toEqual({
       signedTxXdr: "",
       signerAddress: "",
+      signature: "",
       error: "baz",
     });
   });
