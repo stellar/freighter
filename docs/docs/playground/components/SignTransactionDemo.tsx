@@ -35,7 +35,7 @@ export const SignTransactionDemo = () => {
     } else {
       setTransactionResult(signedTransaction.signedTxXdr);
       setSignerAddressResult(signedTransaction.signerAddress);
-      setSignatureResult(signedTransaction.signature || "");
+      setSignatureResult(signedTransaction.signature);
     }
   };
   return (
