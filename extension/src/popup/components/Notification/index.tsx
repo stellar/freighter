@@ -3,9 +3,6 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 import classNames from "classnames";
 
-// import IconWarning from "../../assets/icon-warning.svg";
-// import IconShieldPlus from "../../assets/icon-shield-plus.svg";
-
 import "./styles.scss";
 
 type NotificationType = "warning" | "info";
