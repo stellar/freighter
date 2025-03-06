@@ -174,6 +174,7 @@ export const ManageAssetRows = ({
       )}
       {showUnverifiedWarning && (
         <TokenWarning
+          isCustomToken={isContractId(suspiciousAssetData.issuer)}
           handleAddToken={handleAddToken}
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
