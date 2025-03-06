@@ -147,7 +147,6 @@ export enum AccountType {
   HW = "HW",
   IMPORTED = "IMPORTED",
   FREIGHTER = "FREIGHTER",
-  UNKNOWN = "UNKNOWN",
 }
 
 export interface Preferences {
