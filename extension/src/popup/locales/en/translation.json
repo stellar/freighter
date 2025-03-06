@@ -16,6 +16,7 @@
   "Add an asset": "Add an asset",
   "Add anyway": "Add anyway",
   "Add asset": "Add asset",
+  "Add Asset": "Add Asset",
   "Add Asset trustline": "Add Asset trustline",
   "Add Asset Trustline": "Add Asset Trustline",
   "Add by address": "Add by address",
@@ -55,7 +56,7 @@
   "Approve": "Approve",
   "Approve and continue": "Approve and continue",
   "Approve and review next": "Approve and review next",
-  "Approve Token": "Approve Token",
+  "Approve Asset": "Approve Asset",
   "Approve using": "Approve using",
   "are required to add a new asset": "are required to add a new asset.",
   "Are you sure you want to delete this list?": "Are you sure you want to delete this list?",
@@ -461,13 +462,12 @@
   "This asset has a balance": "This asset has a balance",
   "This asset has buying liabilities": "This asset has buying liabilities",
   "This asset is not part of an asset list": {
-    " Please, double-check the asset you’re interacting with and proceed with care": {
+    " Please, double-check the asset you're interacting with and proceed with care": {
       " Freighter uses asset lists to check assets you interact with": {
-        " You can define your own assets lists in Settings": "This asset is not part of an asset list. Please, double-check the asset you’re interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
+        " You can define your own assets lists in Settings": "This asset is not part of an asset list. Please, double-check the asset you're interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
       }
     }
   },
-  "This asset is part of the asset lists": "This asset is part of the asset lists",
   "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction": "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction.",
   "This can be used to sign arbitrary transaction hashes without having to decode them first": {
     " Ledger will not display the transaction details in the device display prior to signing so make sure you only interact with applications you know and trust": "This can be used to sign arbitrary transaction hashes without having to decode them first. Ledger will not display the transaction details in the device display prior to signing so make sure you only interact with applications you know and trust."
