@@ -4,7 +4,11 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { BlockAidScanTxResult } from "@shared/api/types";
 
 import { initialState, reducer } from "helpers/request";
-import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
+import {
+  AccountBalances,
+  isGetBalancesError,
+  useGetBalances,
+} from "helpers/hooks/useGetBalances";
 import { useScanTx } from "popup/helpers/blockaid";
 
 interface SignTxData {
@@ -46,8 +50,7 @@ function useGetSignTxData(
         networkDetails,
       );
 
-      // TODO: make type narrow functions
-      if (!("balances" in balancesResult)) {
+      if (isGetBalancesError(balancesResult)) {
         throw new Error(balancesResult.message);
       }
       const payload = { balances: balancesResult, scanResult };

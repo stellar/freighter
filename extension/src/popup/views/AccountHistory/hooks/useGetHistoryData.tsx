@@ -3,7 +3,11 @@ import { Horizon } from "stellar-sdk";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { initialState, reducer } from "helpers/request";
-import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
+import {
+  AccountBalances,
+  isGetBalancesError,
+  useGetBalances,
+} from "helpers/hooks/useGetBalances";
 import { useGetHistory } from "helpers/hooks/useGetHistory";
 import { HistoryItemOperation } from "popup/components/accountHistory/HistoryItem";
 import {
@@ -104,8 +108,7 @@ function useGetHistoryData(
       const balancesResult = await fetchBalances();
       const history = await fetchHistory();
 
-      // TODO: make type narrow functions
-      if (!("balances" in balancesResult)) {
+      if (isGetBalancesError(balancesResult)) {
         throw new Error(balancesResult.message);
       }
 

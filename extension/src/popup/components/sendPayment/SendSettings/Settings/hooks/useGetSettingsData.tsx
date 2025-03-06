@@ -6,7 +6,11 @@ import { useDispatch } from "react-redux";
 import { NetworkDetails } from "@shared/constants/stellar";
 
 import { initialState, reducer } from "helpers/request";
-import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
+import {
+  AccountBalances,
+  isGetBalancesError,
+  useGetBalances,
+} from "helpers/hooks/useGetBalances";
 import { buildAndSimulateSoroswapTx } from "popup/helpers/sorobanSwap";
 import { stroopToXlm } from "helpers/stellar";
 import {
@@ -192,8 +196,7 @@ function useGetSettingsData(
     try {
       const balancesResult = await fetchBalances();
 
-      // TODO: make type narrow functions
-      if (!("balances" in balancesResult)) {
+      if (isGetBalancesError(balancesResult)) {
         throw new Error(balancesResult.message);
       }
 

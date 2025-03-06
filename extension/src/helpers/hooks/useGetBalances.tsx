@@ -17,6 +17,15 @@ import { initialState, reducer } from "helpers/request";
 import { storeBalanceMetricData } from "helpers/metrics";
 import { filterHiddenBalances, sortBalances } from "popup/helpers/account";
 
+export function isGetBalancesError(
+  response: AccountBalances | Error,
+): response is Error {
+  if (!("balances" in response)) {
+    return true;
+  }
+  return false;
+}
+
 export interface AccountBalances {
   balances: AssetType[];
   isFunded: AccountBalancesInterface["isFunded"];
