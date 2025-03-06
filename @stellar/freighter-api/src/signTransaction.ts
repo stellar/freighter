@@ -8,9 +8,9 @@ export const signTransaction = async (
   opts?: {
     networkPassphrase?: string;
     address?: string;
-  }
+  },
 ): Promise<
-  { signedTxXdr: string; signerAddress: string } & {
+  { signedTxXdr: string; signerAddress: string; signature: string } & {
     error?: FreighterApiError;
   }
 > => {
@@ -18,14 +18,25 @@ export const signTransaction = async (
     const req = await submitTransaction(transactionXdr, opts);
 
     if (req.error) {
-      return { signedTxXdr: "", signerAddress: "", error: req.error };
+      return {
+        signedTxXdr: "",
+        signerAddress: "",
+        signature: "",
+        error: req.error,
+      };
     }
 
     return {
       signedTxXdr: req.signedTransaction,
       signerAddress: req.signerAddress,
+      signature: req.signature,
     };
   }
 
-  return { signedTxXdr: "", signerAddress: "", error: FreighterApiNodeError };
+  return {
+    signedTxXdr: "",
+    signerAddress: "",
+    signature: "",
+    error: FreighterApiNodeError,
+  };
 };
