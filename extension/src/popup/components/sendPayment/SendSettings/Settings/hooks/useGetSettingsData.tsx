@@ -8,6 +8,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { initialState, reducer } from "helpers/request";
 import {
   AccountBalances,
+  findAddressBalance,
   isGetBalancesError,
   useGetBalances,
 } from "helpers/hooks/useGetBalances";
@@ -19,7 +20,6 @@ import {
   parseTokenAmount,
 } from "popup/helpers/soroban";
 import { simulateTokenTransfer } from "@shared/api/internal";
-import { TokenBalance } from "@shared/api/types";
 import { saveTransactionFee } from "popup/ducks/transactionSubmission";
 
 type Mode = "Soroswap" | "TokenPayment" | "ClassicPayment";
@@ -203,19 +203,7 @@ function useGetSettingsData(
       const { address, amount, memo, params, transactionFee } =
         tokenPaymentParameters;
 
-      const isXlm = address === "native";
-      const assetBalance = balancesResult.balances.find((balance) => {
-        if (isXlm) {
-          return (
-            balance.token &&
-            "type" in balance.token &&
-            balance.token.type === "native"
-          );
-        }
-        // TODO: check for classic assets
-
-        return balance.contractId === address;
-      }) as TokenBalance;
+      const assetBalance = findAddressBalance(balancesResult.balances, address);
       if (!assetBalance) {
         throw new Error("asset balance not found");
       }
@@ -223,7 +211,7 @@ function useGetSettingsData(
       // TODO: check send to sac amount
       const parsedAmount = parseTokenAmount(
         amount,
-        Number(isXlm ? 7 : assetBalance.decimals),
+        Number("decimals" in assetBalance ? assetBalance.decimals : 7),
       );
       const simResponse = await simulateTx({
         mode,

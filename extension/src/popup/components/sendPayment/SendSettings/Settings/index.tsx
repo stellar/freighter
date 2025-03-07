@@ -254,7 +254,7 @@ export const Settings = ({
                       }}
                     >
                       <span data-testid="SendSettingsTransactionFee">
-                        {transactionFee} XLM
+                        {settingsData.data?.recommendedFee} XLM
                       </span>
                       <div>
                         <Icon.ChevronRight />
@@ -394,7 +394,7 @@ export const Settings = ({
               </View.Content>
               <View.Footer>
                 <Button
-                  disabled={!transactionFee}
+                  disabled={!settingsData.data?.recommendedFee}
                   size="md"
                   isFullWidth
                   onClick={() => navigateTo(next)}

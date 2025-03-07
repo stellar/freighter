@@ -1,4 +1,5 @@
 import { useReducer } from "react";
+import { Asset } from "stellar-sdk";
 
 import {
   getAccountBalances,
@@ -10,6 +11,7 @@ import {
   AccountBalancesInterface,
   AssetIcons,
   AssetType,
+  Balance,
   BalanceMap,
 } from "@shared/api/types";
 import { RequestState } from "constants/request";
@@ -17,14 +19,42 @@ import { initialState, reducer } from "helpers/request";
 import { storeBalanceMetricData } from "helpers/metrics";
 import { filterHiddenBalances, sortBalances } from "popup/helpers/account";
 
-export function isGetBalancesError(
+export const isGetBalancesError = (
   response: AccountBalances | Error,
-): response is Error {
+): response is Error => {
   if (!("balances" in response)) {
     return true;
   }
   return false;
-}
+};
+
+export const findAssetBalance = (balances: AssetType[], asset: Asset) => {
+  if (asset.isNative()) {
+    return (balances as Balance[]).find(
+      (balance) => balance.token.type === "native",
+    );
+  }
+  return (balances as Balance[]).find((balance) => {
+    // Token = NativeToken | AssetToken
+    const balanceIssuer =
+      "issuer" in balance.token ? balance.token.issuer.key : "";
+    return balanceIssuer === asset.issuer;
+  });
+};
+
+export const findAddressBalance = (balances: AssetType[], address: string) => {
+  if (address === "native") {
+    return (balances as Balance[]).find(
+      (balance) => balance.token.type === "native",
+    );
+  }
+  return (balances as Balance[]).find((balance) => {
+    // Token = NativeToken | AssetToken
+    const balanceIssuer =
+      "issuer" in balance.token ? balance.token.issuer.key : "";
+    return balanceIssuer === address;
+  });
+};
 
 export interface AccountBalances {
   balances: AssetType[];

@@ -15,7 +15,11 @@ import { isAssetSuspicious } from "../../popup/helpers/blockaid";
 import { getNativeContractDetails } from "../../popup/helpers/searchAsset";
 import { useIsSoroswapEnabled, useIsSwap } from "../../popup/helpers/useIsSwap";
 import { getAssetDomain } from "../../popup/helpers/getAssetDomain";
-import { AccountBalances, useGetBalances } from "./useGetBalances";
+import {
+  AccountBalances,
+  isGetBalancesError,
+  useGetBalances,
+} from "./useGetBalances";
 
 interface AssetDomains {
   balances: AccountBalances;
@@ -54,8 +58,7 @@ export function useGetAssetDomains(
     try {
       const balances = await fetchBalances();
 
-      // TODO: make type narrow functions
-      if (!("balances" in balances)) {
+      if (isGetBalancesError(balances)) {
         throw new Error(balances.message);
       }
 

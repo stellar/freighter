@@ -13,6 +13,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { initialState, reducer } from "helpers/request";
 import {
   AccountBalances,
+  findAssetBalance,
   isGetBalancesError,
   useGetBalances,
 } from "helpers/hooks/useGetBalances";
@@ -21,7 +22,7 @@ import {
   scanAsset,
   useScanTx,
 } from "popup/helpers/blockaid";
-import { Balance, BlockAidScanTxResult } from "@shared/api/types";
+import { BlockAidScanTxResult } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
@@ -209,9 +210,7 @@ function useGetTxDetailsData(
         throw new Error(balancesResult.message);
       }
 
-      const source = balancesResult.balances.find(
-        (balance) => balance.contractId === sourceAsset.issuer,
-      );
+      const source = findAssetBalance(balancesResult.balances, sourceAsset);
       if (!source) {
         throw new Error("source asset not found");
       }
@@ -230,9 +229,7 @@ function useGetTxDetailsData(
       const payload = {
         balances: balancesResult,
         destAssetIconUrl,
-        isSourceAssetSuspicious: isAssetSuspicious(
-          (source as Balance).blockaidData,
-        ),
+        isSourceAssetSuspicious: isAssetSuspicious(source.blockaidData),
         isDestAssetSuspicious: isAssetSuspicious(scannedDestAsset),
       } as TxDetailsData;
 
