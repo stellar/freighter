@@ -31,23 +31,15 @@ import {
 } from "background/helpers/account";
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
 import { cachedFetch } from "background/helpers/cachedFetch";
-import {
-  dataStorageAccess,
-  browserLocalStorage,
-} from "background/helpers/dataStorageAccess";
 import { publicKeySelector } from "background/ducks/session";
 
 import { POPUP_HEIGHT, POPUP_WIDTH } from "constants/dimensions";
-import {
-  ALLOWLIST_ID,
-  CACHED_MEMO_REQUIRED_ACCOUNTS_ID,
-} from "constants/localStorageTypes";
+import { CACHED_MEMO_REQUIRED_ACCOUNTS_ID } from "constants/localStorageTypes";
 import { TRANSACTION_WARNING } from "constants/transaction";
 
 import {
   encodeObject,
   getUrlHostname,
-  getPunycodedDomain,
   TokenToAdd,
   MessageToSign,
   EntryToSign,
@@ -62,8 +54,6 @@ import {
   tokenQueue,
   transactionQueue,
 } from "./popupMessageListener";
-
-const localStore = dataStorageAccess(browserLocalStorage);
 
 interface WindowParams {
   height: number;
@@ -149,10 +139,6 @@ export const freighterApiMessageListener = (
 
       const { tab, url: tabUrl = "" } = sender;
       const domain = getUrlHostname(tabUrl);
-      const punycodedDomain = getPunycodedDomain(domain);
-
-      const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
-      const allowList = allowListStr.split(",");
       const isDomainListedAllowed = await isSenderAllowed({ sender });
 
       const tokenInfo: TokenToAdd = {
@@ -167,7 +153,7 @@ export const freighterApiMessageListener = (
       tokenQueue.push(tokenInfo);
       const encodedTokenInfo = encodeObject(tokenInfo);
 
-      const popup = browser.windows.create({
+      const popup = await browser.windows.create({
         url: chrome.runtime.getURL(
           `/index.html#/add-token?${encodedTokenInfo}`,
         ),
@@ -188,14 +174,12 @@ export const freighterApiMessageListener = (
         }
         const response = (success: boolean) => {
           if (success) {
-            if (!isDomainListedAllowed) {
-              allowList.push(punycodedDomain);
-              localStore.setItem(ALLOWLIST_ID, allowList.join());
-            }
             resolve({
               contractId,
             });
           }
+
+          console.log("RESPONSE");
 
           resolve({
             apiError: FreighterApiDeclinedError,
@@ -232,11 +216,7 @@ export const freighterApiMessageListener = (
       const Sdk = getSdk(currentNetworkPassphrase);
 
       const { tab, url: tabUrl = "" } = sender;
-      const domain = getUrlHostname(tabUrl);
-      const punycodedDomain = getPunycodedDomain(domain);
 
-      const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
-      const allowList = allowListStr.split(",");
       const isDomainListedAllowed = await isSenderAllowed({ sender });
 
       const transaction = Sdk.TransactionBuilder.fromXDR(
@@ -320,7 +300,7 @@ export const freighterApiMessageListener = (
       transactionQueue.push(transaction as StellarSdk.Transaction);
       const encodedBlob = encodeObject(transactionInfo);
 
-      const popup = browser.windows.create({
+      const popup = await browser.windows.create({
         url: chrome.runtime.getURL(
           `/index.html#/sign-transaction?${encodedBlob}`,
         ),
@@ -345,10 +325,6 @@ export const freighterApiMessageListener = (
         }
         const response = (signedTransaction: string, signerAddress: string) => {
           if (signedTransaction) {
-            if (!isDomainListedAllowed) {
-              allowList.push(punycodedDomain);
-              localStore.setItem(ALLOWLIST_ID, allowList.join());
-            }
             resolve({ signedTransaction, signerAddress });
           }
 
@@ -377,10 +353,6 @@ export const freighterApiMessageListener = (
 
       const { tab, url: tabUrl = "" } = sender;
       const domain = getUrlHostname(tabUrl);
-      const punycodedDomain = getPunycodedDomain(domain);
-
-      const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
-      const allowList = allowListStr.split(",");
       const isDomainListedAllowed = await isSenderAllowed({ sender });
 
       const blobData: MessageToSign = {
@@ -395,7 +367,7 @@ export const freighterApiMessageListener = (
 
       blobQueue.push(blobData);
       const encodedBlob = encodeObject(blobData);
-      const popup = browser.windows.create({
+      const popup = await browser.windows.create({
         url: chrome.runtime.getURL(`/index.html#/sign-message?${encodedBlob}`),
         ...WINDOW_SETTINGS,
       });
@@ -419,11 +391,6 @@ export const freighterApiMessageListener = (
 
         const response = (signedBlob: string, signerAddress: string) => {
           if (signedBlob) {
-            if (!isDomainListedAllowed) {
-              allowList.push(punycodedDomain);
-              localStore.setItem(ALLOWLIST_ID, allowList.join());
-            }
-
             if (apiVersion && semver.gte(apiVersion, "4.0.0")) {
               resolve({
                 signedBlob: Buffer.from(signedBlob).toString("base64"),
@@ -459,10 +426,6 @@ export const freighterApiMessageListener = (
 
       const { tab, url: tabUrl = "" } = sender;
       const domain = getUrlHostname(tabUrl);
-      const punycodedDomain = getPunycodedDomain(domain);
-
-      const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
-      const allowList = allowListStr.split(",");
       const isDomainListedAllowed = await isSenderAllowed({ sender });
 
       const authEntry: EntryToSign = {
@@ -477,7 +440,7 @@ export const freighterApiMessageListener = (
 
       authEntryQueue.push(authEntry);
       const encodedAuthEntry = encodeObject(authEntry);
-      const popup = browser.windows.create({
+      const popup = await browser.windows.create({
         url: chrome.runtime.getURL(
           `/index.html#/sign-auth-entry?${encodedAuthEntry}`,
         ),
@@ -502,10 +465,6 @@ export const freighterApiMessageListener = (
         }
         const response = (signedAuthEntry: string) => {
           if (signedAuthEntry) {
-            if (!isDomainListedAllowed) {
-              allowList.push(punycodedDomain);
-              localStore.setItem(ALLOWLIST_ID, allowList.join());
-            }
             resolve({ signedAuthEntry });
           }
 

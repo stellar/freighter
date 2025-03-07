@@ -16,7 +16,7 @@ import {
 import {
   WarningMessageVariant,
   WarningMessage,
-  FirstTimeWarningMessage,
+  DomainNotAllowedWarningMessage,
   SSLWarningMessage,
 } from "popup/components/WarningMessages";
 import { View } from "popup/basics/layout/View";
@@ -105,6 +105,10 @@ export const SignMessage = () => {
     );
   }
 
+  if (!isDomainListedAllowed) {
+    return <DomainNotAllowedWarningMessage domain={domain} />;
+  }
+
   if (!url.startsWith("https") && !isNonSSLEnabled) {
     return <SSLWarningMessage url={domain} />;
   }
@@ -145,7 +149,6 @@ export const SignMessage = () => {
               )}
             </p>
           </WarningMessage>
-          {!isDomainListedAllowed ? <FirstTimeWarningMessage /> : null}
           <div className="SignMessage__info">
             <Card variant="secondary">
               <PunycodedDomain domain={domain} isRow />
