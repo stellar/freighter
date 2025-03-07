@@ -21,14 +21,13 @@ import {
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
-  getAccountBalances,
-  resetSubmission,
   signFreighterTransaction,
   submitFreighterTransaction,
   transactionSubmissionSelector,
   startHwSign,
   removeTokenId,
   resetSubmitStatus,
+  resetSubmission,
 } from "popup/ducks/transactionSubmission";
 import { ActionStatus } from "@shared/api/types";
 import { NETWORKS } from "@shared/constants/stellar";
@@ -37,6 +36,8 @@ import { ROUTES } from "popup/constants/routes";
 import IconAdd from "popup/assets/icon-add.svg";
 import IconRemove from "popup/assets/icon-remove.svg";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
+
+import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import { TrustlineError } from "../TrustlineError";
 
@@ -62,6 +63,7 @@ interface ManageAssetRowButtonProps {
   setShowUnverifiedWarning: (rowButtonShowing: boolean) => void;
   setHandleAddToken: (func: any) => void;
   recommendedFee: string;
+  balances: AccountBalances;
 }
 
 export const ManageAssetRowButton = ({
@@ -84,6 +86,7 @@ export const ManageAssetRowButton = ({
   setShowUnverifiedWarning,
   setHandleAddToken,
   recommendedFee,
+  balances,
 }: ManageAssetRowButtonProps) => {
   const dispatch: AppDispatch = useDispatch();
   const { t } = useTranslation();
@@ -130,12 +133,6 @@ export const ManageAssetRowButton = ({
       );
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-        dispatch(
-          getAccountBalances({
-            publicKey,
-            networkDetails,
-          }),
-        );
         trackChangeTrustline();
         dispatch(resetSubmission());
         if (successfulCallback) {
@@ -407,6 +404,7 @@ export const ManageAssetRowButton = ({
       {isTrustlineErrorShowing
         ? createPortal(
             <TrustlineError
+              balances={balances}
               handleClose={() => {
                 setIsTrustlineErrorShowing(false);
                 dispatch(resetSubmitStatus());

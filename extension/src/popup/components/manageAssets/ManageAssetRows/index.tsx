@@ -33,6 +33,11 @@ import {
   TokenWarning,
 } from "popup/components/WarningMessages";
 
+import {
+  AccountBalances,
+  findAddressBalance,
+} from "helpers/hooks/useGetBalances";
+
 import { ManageAssetRowButton } from "../ManageAssetRowButton";
 
 import "./styles.scss";
@@ -56,6 +61,7 @@ interface ManageAssetRowsProps {
   isVerifiedToken?: boolean;
   isVerificationInfoShowing?: boolean;
   verifiedLists?: string[];
+  balances: AccountBalances;
 }
 
 interface SuspiciousAssetData {
@@ -74,9 +80,9 @@ export const ManageAssetRows = ({
   isVerifiedToken,
   isVerificationInfoShowing,
   verifiedLists,
+  balances,
 }: ManageAssetRowsProps) => {
   const {
-    accountBalances,
     submitStatus,
     hardwareWalletData: { status: hwStatus },
   } = useSelector(transactionSubmissionSelector);
@@ -129,7 +135,9 @@ export const ManageAssetRows = ({
       {showBlockedDomainWarning && (
         <ScamAssetWarning
           pillType="Trustline"
+          balances={balances}
           domain={suspiciousAssetData.domain}
+          assetIcons={balances.icons!}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
           image={suspiciousAssetData.image}
@@ -141,6 +149,7 @@ export const ManageAssetRows = ({
       )}
       {showNewAssetWarning && (
         <NewAssetWarning
+          balances={balances}
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
@@ -176,14 +185,15 @@ export const ManageAssetRows = ({
               contract = "",
               isSuspicious,
             }) => {
-              if (!accountBalances.balances) {
+              if (!balances) {
                 return null;
               }
               const isContract = isContractId(contract);
               const canonicalAsset = getCanonicalFromAsset(code, issuer);
-              const isTrustlineActive = Object.keys(
-                accountBalances.balances,
-              ).some((balance) => balance === canonicalAsset);
+              const isTrustlineActive = findAddressBalance(
+                balances.balances,
+                issuer,
+              );
               const isActionPending =
                 submitStatus === ActionStatus.PENDING ||
                 accountBalanceStatus === ActionStatus.PENDING;
@@ -206,8 +216,9 @@ export const ManageAssetRows = ({
                     contract={contract}
                     issuer={issuer}
                     image={image}
+                    balances={balances}
                     domain={domain}
-                    isTrustlineActive={isTrustlineActive}
+                    isTrustlineActive={!!isTrustlineActive}
                     isActionPending={isActionPending}
                     isContract={isContract}
                     isVerifiedToken={!!isVerifiedToken}

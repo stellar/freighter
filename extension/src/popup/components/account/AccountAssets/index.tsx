@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import isEmpty from "lodash/isEmpty";
 import { Asset, Horizon } from "stellar-sdk";
 
-import { AssetIcons, AssetType } from "@shared/api/types";
+import { AssetIcons, AssetType, Balance } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
@@ -233,7 +233,7 @@ export const AccountAssets = ({
           key: "",
         };
         let code = "";
-        if (rb.liquidityPoolId) {
+        if ("liquidityPoolId" in rb) {
           isLP = true;
           code = getLPShareCode(rb.reserves as Horizon.HorizonApi.Reserve[]);
         } else if (rb.contractId && "symbol" in rb) {
@@ -242,15 +242,18 @@ export const AccountAssets = ({
           };
           code = rb.symbol;
         } else {
-          if ("issuer" in rb.token && rb.token) {
+          if (rb.token && "issuer" in rb.token) {
             issuer = rb.token.issuer;
           }
-          code = rb.token.code;
+
+          if (rb.token && "code" in rb.token) {
+            code = rb.token.code;
+          }
         }
 
         const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
 
-        const isSuspicious = isAssetSuspicious(rb.blockaidData);
+        const isSuspicious = isAssetSuspicious((rb as Balance).blockaidData);
 
         const amountVal =
           rb.contractId && "decimals" in rb
@@ -274,7 +277,7 @@ export const AccountAssets = ({
                 code={code}
                 issuerKey={issuer?.key}
                 retryAssetIconFetch={retryAssetIconFetch}
-                isLPShare={!!rb.liquidityPoolId}
+                isLPShare={"liquidityPoolId" in rb && !!rb.liquidityPoolId}
                 isSuspicious={isSuspicious}
               />
               <span className="asset-code">{code}</span>

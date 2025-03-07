@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { IconButton, Icon, Button } from "@stellar/design-system";
 
-import { HorizonOperation, AssetType } from "@shared/api/types";
+import { AssetToken, Balance, HorizonOperation } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import {
@@ -37,7 +37,6 @@ import {
   saveAsset,
   saveDestinationAsset,
   saveIsToken,
-  transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { AppDispatch } from "popup/App";
 import StellarLogo from "popup/assets/stellar-logo.png";
@@ -45,12 +44,13 @@ import { formatAmount } from "popup/helpers/formatters";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { Loading } from "popup/components/Loading";
 import { BlockaidAssetWarning } from "popup/components/WarningMessages";
+import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import "./styles.scss";
 
 interface AssetDetailProps {
   assetOperations: HorizonOperation[];
-  accountBalances: AssetType[];
+  accountBalances: AccountBalances;
   networkDetails: NetworkDetails;
   publicKey: string;
   selectedAsset: string;
@@ -73,14 +73,14 @@ export const AssetDetail = ({
   const canonical = getAssetFromCanonical(selectedAsset);
   const isSorobanAsset = canonical.issuer && isSorobanIssuer(canonical.issuer);
 
-  const { accountBalances: balances } = useSelector(
-    transactionSubmissionSelector,
+  // TODO: BALANCE TYPE FIX
+  const selectedBalance = (accountBalances.balances as Balance[]).find(
+    (_balance) => (_balance.token as AssetToken).issuer.key,
   );
-  const isSuspicious = isAssetSuspicious(
-    balances.balances?.[selectedAsset]?.blockaidData,
-  );
+  // TODO: balance helper
+  const isSuspicious = isAssetSuspicious(selectedBalance!.blockaidData);
 
-  const balance = getRawBalance(accountBalances, selectedAsset)!;
+  const balance = getRawBalance(accountBalances.balances, selectedAsset)!;
 
   const assetIssuer = balance ? getIssuerFromBalance(balance) : "";
   const total =
@@ -92,7 +92,7 @@ export const AssetDetail = ({
       : (balance && new BigNumber(balance?.total).toString()) || "0";
 
   const balanceAvailable = getAvailableBalance({
-    accountBalances,
+    accountBalances: accountBalances.balances,
     selectedAsset,
     subentryCount,
   });
@@ -173,12 +173,16 @@ export const AssetDetail = ({
                 assetCode={canonical.code}
                 assetIssuer={assetIssuer}
                 assetType={
-                  (balance && "token" in balance && balance?.token.type) || ""
+                  // TODO: ASSET TYPE FIX
+                  (balance &&
+                    "token" in balance &&
+                    (balance?.token as AssetToken)!.type) ||
+                  ""
                 }
                 assetDomain={assetDomain}
                 contractId={
                   balance && "decimals" in balance
-                    ? balance.token.issuer.key
+                    ? balance.token!.issuer.key
                     : undefined
                 }
               />
@@ -235,7 +239,7 @@ export const AssetDetail = ({
             {isSuspicious && (
               <BlockaidAssetWarning
                 blockaidData={
-                  balances.balances?.[selectedAsset]?.blockaidData ||
+                  selectedBalance!.blockaidData ||
                   defaultBlockaidScanAssetResult
                 }
               />
@@ -254,7 +258,7 @@ export const AssetDetail = ({
                   return (
                     <HistoryItem
                       key={operation.id}
-                      accountBalances={balances}
+                      accountBalances={accountBalances}
                       operation={historyItemOperation}
                       publicKey={publicKey}
                       networkDetails={networkDetails}

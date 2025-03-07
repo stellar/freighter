@@ -8,7 +8,6 @@ import { isMainnet, isTestnet } from "helpers/stellar";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { UnverifiedTokenNotification } from "popup/components/WarningMessages";
 import {
-  transactionSubmissionSelector,
   saveAssetSelectSource,
   saveAssetSelectType,
   AssetSelectType,
@@ -18,6 +17,7 @@ import { isContractId } from "popup/helpers/soroban";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { settingsSelector } from "popup/ducks/settings";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
+import { AssetIcons } from "@shared/api/types";
 
 import "./styles.scss";
 
@@ -25,13 +25,14 @@ export const AssetSelect = ({
   assetCode,
   issuerKey,
   isSuspicious,
+  icons,
 }: {
   assetCode: string;
   issuerKey: string;
   isSuspicious: boolean;
+  icons: AssetIcons;
 }) => {
   const dispatch = useDispatch();
-  const { assetIcons } = useSelector(transactionSubmissionSelector);
   const { networkDetails, assetsLists } = useSelector(settingsSelector);
   const [isUnverifiedToken, setIsUnverifiedToken] = useState(false);
 
@@ -80,7 +81,7 @@ export const AssetSelect = ({
         <div className="AssetSelect__content">
           <div className="AssetSelect__content__left">
             <AssetIcon
-              assetIcons={assetIcons}
+              assetIcons={icons}
               code={assetCode}
               issuerKey={issuerKey}
               isSuspicious={isSuspicious}
@@ -102,6 +103,7 @@ export const PathPayAssetSelect = ({
   issuerKey,
   balance,
   icon,
+  icons,
   isSuspicious,
 }: {
   source: boolean;
@@ -110,9 +112,9 @@ export const PathPayAssetSelect = ({
   balance: string;
   icon: string;
   isSuspicious: boolean;
+  icons: AssetIcons;
 }) => {
   const dispatch = useDispatch();
-  const { assetIcons } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
 
   const handleSelectAsset = () => {
@@ -150,7 +152,7 @@ export const PathPayAssetSelect = ({
             {source ? "From" : "To"}
           </span>
           <AssetIcon
-            assetIcons={assetIcons}
+            assetIcons={icons}
             code={assetCode}
             issuerKey={issuerKey}
             icon={icon}
