@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { Button, Input } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Field, Form, Formik } from "formik";
 
 import { showBackupPhrase } from "@shared/api/internal";
+import { publicKeySelector } from "popup/ducks/accountServices";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
@@ -23,6 +25,7 @@ import "./styles.scss";
 export const DisplayBackupPhrase = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const publicKey = useSelector(publicKeySelector);
   const [errorMessage, setErrorMessage] = useState("");
   const [isPhraseUnlocked, setIsPhraseUnlocked] = useState(false);
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
@@ -44,7 +47,10 @@ export const DisplayBackupPhrase = () => {
 
   const handleSubmit = async (values: FormValues) => {
     const { password } = values;
-    const res = await showBackupPhrase(password);
+    const res = await showBackupPhrase({
+      activePublicKey: publicKey,
+      password,
+    });
 
     if (res.error) {
       setErrorMessage(res.error);

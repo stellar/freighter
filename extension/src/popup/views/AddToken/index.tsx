@@ -317,7 +317,7 @@ export const AddToken = () => {
                   icon={<Icon.ShieldPlus />}
                   iconPosition="left"
                 >
-                  {t("Approve Token")}
+                  {t("Approve Asset")}
                 </Badge>
               </div>
             </div>

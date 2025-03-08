@@ -26,7 +26,7 @@ export const NotFundedMessage = ({
   const navigate = useNavigate();
 
   const handleFundAccount = async () => {
-    await dispatch(fundAccount(publicKey));
+    await dispatch(fundAccount({ publicKey }));
     setIsAccountFriendbotFunded(true);
   };
 

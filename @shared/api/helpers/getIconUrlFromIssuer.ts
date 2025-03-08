@@ -43,6 +43,7 @@ export const getIconUrlFromIssuer = async ({
   try {
     /* First, check our localStorage cache in Background to see if we've found this url before */
     ({ iconUrl } = await sendMessageToBackground({
+      activePublicKey: null,
       assetCanonical: `${code}:${key}`,
       type: SERVICE_TYPES.GET_CACHED_ASSET_ICON,
     }));
@@ -89,6 +90,7 @@ export const getIconUrlFromIssuer = async ({
         iconUrl = image;
         /* And also save into the cache to prevent having to do this process again */
         await sendMessageToBackground({
+          activePublicKey: null,
           assetCanonical: `${code}:${key}`,
           iconUrl,
           type: SERVICE_TYPES.CACHE_ASSET_ICON,

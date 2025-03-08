@@ -16,7 +16,7 @@ import {
 } from "constants/localStorageTypes";
 import * as DataStorage from "../dataStorage";
 import * as DataStorageAccess from "../dataStorageAccess";
-import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 
 class MockStorage {
   storage: Record<string, any>;

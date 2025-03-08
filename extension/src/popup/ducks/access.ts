@@ -8,6 +8,8 @@ import {
   signBlob as internalSignBlob,
   signAuthEntry as internalSignAuthEntry,
 } from "@shared/api/internal";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { AppState } from "popup/App";
 
 export const grantAccess = createAsyncThunk("grantAccess", internalGrantAccess);
 
@@ -18,13 +20,25 @@ export const rejectAccess = createAsyncThunk(
 
 export const signTransaction = createAsyncThunk(
   "signTransaction",
-  internalSignTransaction,
+  (_, { getState }) => {
+    const activePublicKey = publicKeySelector(getState() as AppState);
+    return internalSignTransaction({ activePublicKey });
+  },
 );
 
-export const signBlob = createAsyncThunk("signBlob", internalSignBlob);
-export const signEntry = createAsyncThunk("signEntry", internalSignAuthEntry);
+export const signBlob = createAsyncThunk("signBlob", (_, { getState }) => {
+  const activePublicKey = publicKeySelector(getState() as AppState);
+  internalSignBlob({ activePublicKey });
+});
+export const signEntry = createAsyncThunk("signEntry", (_, { getState }) => {
+  const activePublicKey = publicKeySelector(getState() as AppState);
+  internalSignAuthEntry({ activePublicKey });
+});
 
-export const addToken = createAsyncThunk("addToken", internalAddToken);
+export const addToken = createAsyncThunk("addToken", (_, { getState }) => {
+  const activePublicKey = publicKeySelector(getState() as AppState);
+  internalAddToken({ activePublicKey });
+});
 
 export const rejectToken = createAsyncThunk(
   "rejectToken",
