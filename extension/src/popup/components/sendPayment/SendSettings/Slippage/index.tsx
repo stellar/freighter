@@ -63,11 +63,16 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
           navigateTo(previous, navigate);
         }}
         validationSchema={YupObject().shape({
-          customSlippage: YupNumber().max(10, `${t("must be below")} 10%`),
+          customSlippage: YupNumber()
+            .min(0, `${t("must be at least")} 0%`)
+            .max(10, `${t("must be below")} 10%`),
         })}
       >
         {({ setFieldValue, values, errors }) => (
-          <Form className="View__contentAndFooterWrapper">
+          <Form
+            className="View__contentAndFooterWrapper"
+            data-testid="slippage-form"
+          >
             <View.Content hasNoTopPadding>
               <div className="Slippage__cards">
                 <label className="Slippage--radio-label">
@@ -114,8 +119,11 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
                 <Field name="customSlippage">
                   {({ field }: FieldProps) => (
                     <Input
+                      data-testid="custom-slippage-input"
                       fieldSize="md"
                       id="custom-input"
+                      min={0}
+                      max={10}
                       placeholder={`${t("Custom")} %`}
                       type="number"
                       {...field}
