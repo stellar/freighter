@@ -123,7 +123,7 @@ export const SignTransaction = () => {
 
   const decodedMemo = decodeMemo(_memo);
 
-  const memo = decodedMemo?.value;
+  const memo = decodedMemo.value;
   let accountToSign = _accountToSign;
 
   const {

@@ -17,7 +17,11 @@ export const decodeMemo = (memo: any): { value: string; type: MemoType } => {
 
   return {
     value: _memo.value
-      ? buffer.Buffer.from(_memo.value).toString(decodeMethod)
+      ? buffer.Buffer.from(
+          typeof _memo.value === "string"
+            ? Buffer.from(_memo.value, "utf-8")
+            : _memo.value,
+        ).toString(decodeMethod)
       : "",
     type: _memo.type,
   };
