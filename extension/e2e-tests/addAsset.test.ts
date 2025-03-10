@@ -50,7 +50,7 @@ test("Adding Soroban verified token", async ({ page, extensionId }) => {
   await page.getByTestId("ManageAssetRowButton").click({ force: true });
 
   await expect(page.getByTestId("token-warning-notification")).toHaveText(
-    `This asset is part of the asset lists "StellarExpert Top 50."Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.
+    `This asset is part of the asset list(s): "StellarExpert Top 50". Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.
     `,
   );
   await expectPageToHaveScreenshot({
