@@ -107,15 +107,8 @@ test("Sign Message", async ({ page, extensionId }) => {
 
   const MSG_TO_SIGN = "test message";
 
-  const SIGNED_MSG = JSON.stringify({
-    type: "Buffer",
-    data: [
-      190, 208, 102, 217, 188, 135, 3, 71, 216, 217, 155, 21, 227, 171, 118,
-      163, 11, 255, 176, 62, 81, 125, 47, 162, 19, 26, 187, 254, 237, 251, 11,
-      182, 68, 227, 77, 81, 0, 107, 8, 176, 66, 7, 125, 214, 197, 168, 231, 179,
-      248, 163, 162, 5, 180, 211, 240, 18, 175, 30, 218, 188, 253, 101, 216, 0,
-    ],
-  });
+  const SIGNED_MSG =
+    '"vtBm2byHA0fY2ZsV46t2owv/sD5RfS+iExq7/u37C7ZE401RAGsIsEIHfdbFqOez+KOiBbTT8BKvHtq8/WXYAA=="';
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
