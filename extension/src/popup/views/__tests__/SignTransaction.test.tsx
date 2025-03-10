@@ -1,7 +1,7 @@
 import React from "react";
 import { render, waitFor, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import * as createStellarIdenticon from "stellar-identicon-js";
+import * as createStellarIdenticon from "helpers/stellarIdenticon";
 import {
   Memo,
   MemoType,
@@ -20,7 +20,7 @@ import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
 import { Balances } from "@shared/api/types";
 import { ROUTES } from "popup/constants/routes";
 
-jest.mock("stellar-identicon-js");
+jest.mock("helpers/stellarIdenticon");
 jest.setTimeout(20000);
 
 jest
