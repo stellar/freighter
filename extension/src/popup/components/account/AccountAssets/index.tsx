@@ -302,7 +302,7 @@ export const AccountAssets = ({
                     ),
                   )}
                 </div>
-                {assetPrice.priceChange24h && (
+                {assetPrice.priceChange24h ? (
                   <div
                     className={`asset-value-delta ${
                       new BigNumber(assetPrice.priceChange24h).isNegative()
@@ -315,6 +315,8 @@ export const AccountAssets = ({
                       roundUsdValue(assetPrice.priceChange24h),
                     )}%`}
                   </div>
+                ) : (
+                  <div className="asset-value-delta">--</div>
                 )}
               </div>
             )}

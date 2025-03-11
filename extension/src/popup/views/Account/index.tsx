@@ -53,6 +53,7 @@ import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+import { isMainnet } from "helpers/stellar";
 
 import "popup/metrics/authServices";
 
@@ -87,7 +88,7 @@ export const Account = () => {
   const isFullscreenModeEnabled = isFullscreenMode();
 
   const { balances, isFunded, error } = accountBalances;
-
+  const arePricesSupported = isMainnet(networkDetails);
   useEffect(() => {
     // reset to avoid any residual data eg switching between send and swap or
     // previous stale sends
@@ -97,14 +98,20 @@ export const Account = () => {
       getAccountBalances({
         publicKey,
         networkDetails,
-        shouldGetPrices: true,
+        shouldGetPrices: arePricesSupported,
       }),
     );
 
     return () => {
       dispatch(resetAccountBalanceStatus());
     };
-  }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
+  }, [
+    publicKey,
+    networkDetails,
+    isAccountFriendbotFunded,
+    dispatch,
+    arePricesSupported,
+  ]);
 
   useEffect(() => {
     if (!balances) {
@@ -175,19 +182,17 @@ export const Account = () => {
     return <Loading />;
   }
 
-  const totalBalanceUsd = Object.keys(accountBalances.prices!).reduce(
-    (prev, curr) => {
-      const currentAssetBalance = accountBalances.balances![curr].total;
-      const currentPrice = accountBalances.prices![curr]
-        ? accountBalances.prices![curr].currentPrice
-        : "0";
-      const currentUsdBalance = new BigNumber(currentPrice).multipliedBy(
-        currentAssetBalance,
-      );
-      return currentUsdBalance.plus(prev);
-    },
-    new BigNumber(0),
-  );
+  const prices = accountBalances.prices || {};
+  const totalBalanceUsd = Object.keys(prices).reduce((prev, curr) => {
+    const currentAssetBalance = accountBalances.balances![curr].total;
+    const currentPrice = accountBalances.prices![curr]
+      ? accountBalances.prices![curr].currentPrice
+      : "0";
+    const currentUsdBalance = new BigNumber(currentPrice).multipliedBy(
+      currentAssetBalance,
+    );
+    return currentUsdBalance.plus(prev);
+  }, new BigNumber(0));
 
   return (
     <>
@@ -220,7 +225,11 @@ export const Account = () => {
                 </CopyText>
               </div>
               <div className="AccountView__total-usd-balance">
-                {`$${formatAmount(roundUsdValue(totalBalanceUsd.toString()))}`}
+                {arePricesSupported
+                  ? `$${formatAmount(
+                      roundUsdValue(totalBalanceUsd.toString()),
+                    )}`
+                  : "--"}
               </div>
             </div>
             <div className="AccountView__send-receive-display">

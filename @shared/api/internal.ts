@@ -494,12 +494,19 @@ export const getAccountIndexerBalances = async (
   };
 };
 
-export const getLiveAssetPrices = async (assetIds: string[]) => {
+export const getLiveAssetPrices = async (tokens: string[]) => {
+  // NOTE: API does not accept LP IDs
+  const filteredTokens = tokens.filter((tokenId) => !tokenId.includes(":lp"));
   const url = new URL(`${INDEXER_URL}/token-prices`);
-  for (const id of assetIds) {
-    url.searchParams.append("tokens", id);
-  }
-  const response = await fetch(url.href);
+  const options = {
+    method: "POST",
+    headers: {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ tokens: filteredTokens }),
+  };
+  const response = await fetch(url.href, options);
   const parsedResponse = (await response.json()) as { data: ApiTokenPrices };
 
   if (!response.ok) {
