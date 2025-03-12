@@ -21,6 +21,7 @@ import IconSoroban from "popup/assets/icon-soroban.svg?react";
 
 import "./styles.scss";
 import BigNumber from "bignumber.js";
+import { AnimatedNumber } from "popup/components/AnimatedNumber";
 
 const getIsXlm = (code: string) => code === "XLM";
 
@@ -292,29 +293,32 @@ export const AccountAssets = ({
             </div>
             {assetPrice && (
               <div className="AccountAssets__copy-right">
-                <div className="asset-usd-amount" data-testid="asset-amount">
-                  $
-                  {formatAmount(
+                <AnimatedNumber
+                  valueAddlClasses="asset-usd-amount"
+                  // eslint-disable-next-line @typescript-eslint/naming-convention
+                  valueAddlProperties={{ "data-testid": "asset-amount" }}
+                  value={`$ ${formatAmount(
                     roundUsdValue(
                       new BigNumber(assetPrice.currentPrice)
                         .multipliedBy(rb.total)
                         .toString(),
                     ),
-                  )}
-                </div>
-                {assetPrice.priceChange24h ? (
-                  <div
-                    className={`asset-value-delta ${
-                      new BigNumber(assetPrice.priceChange24h).isNegative()
+                  )}`}
+                />
+                {assetPrice.percentagePriceChange24h ? (
+                  <AnimatedNumber
+                    valueAddlClasses={`asset-value-delta ${
+                      new BigNumber(
+                        assetPrice.percentagePriceChange24h,
+                      ).isNegative()
                         ? "negative"
                         : "positive"
                     }
-                  `}
-                  >
-                    {`${formatAmount(
-                      roundUsdValue(assetPrice.priceChange24h),
+                    `}
+                    value={`${formatAmount(
+                      roundUsdValue(assetPrice.percentagePriceChange24h),
                     )}%`}
-                  </div>
+                  />
                 ) : (
                   <div className="asset-value-delta">--</div>
                 )}

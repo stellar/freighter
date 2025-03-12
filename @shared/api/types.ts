@@ -298,7 +298,6 @@ export type HorizonOperation = Horizon.ServerApi.OperationRecord;
 
 export interface AccountBalancesInterface {
   balances: Balances;
-  prices?: ApiTokenPrices;
   isFunded: boolean | null;
   subentryCount: number;
   error?: { horizon: any; soroban: any };
@@ -341,5 +340,8 @@ export interface FreighterApiError {
 }
 
 export interface ApiTokenPrices {
-  [key: string]: { currentPrice: string; priceChange24h?: string } | null;
+  [key: string]: {
+    currentPrice: string;
+    percentagePriceChange24h?: string;
+  } | null;
 }

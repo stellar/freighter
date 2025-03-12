@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import {
@@ -36,6 +36,7 @@ import {
   resetAccountBalanceStatus,
   getAccountBalances,
   getSoroswapTokens,
+  getTokenPrices,
 } from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -58,6 +59,7 @@ import { isMainnet } from "helpers/stellar";
 import "popup/metrics/authServices";
 
 import "./styles.scss";
+import { AnimatedNumber } from "popup/components/AnimatedNumber";
 
 export const defaultAccountBalances = {
   balances: null,
@@ -67,9 +69,13 @@ export const defaultAccountBalances = {
 export const Account = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
-    transactionSubmissionSelector,
-  );
+  const {
+    accountBalances,
+    assetIcons,
+    accountBalanceStatus,
+    tokenPrices,
+    tokenPricesStatus,
+  } = useSelector(transactionSubmissionSelector);
   const accountStatus = useSelector(accountStatusSelector);
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] =
     useState(false);
@@ -89,7 +95,15 @@ export const Account = () => {
 
   const { balances, isFunded, error } = accountBalances;
   const arePricesSupported = isMainnet(networkDetails);
+  // This ensures that the effect does not depend on dispatch, avoiding unnecessary re-renders.
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const hasFetchedRef = useRef(false); // Prevent re-triggering initial effect
   useEffect(() => {
+    // Prevent re-running on state updates
+    if (hasFetchedRef.current) {
+      return;
+    }
+    hasFetchedRef.current = true;
     // reset to avoid any residual data eg switching between send and swap or
     // previous stale sends
     setLoading(true);
@@ -98,10 +112,10 @@ export const Account = () => {
       getAccountBalances({
         publicKey,
         networkDetails,
-        shouldGetPrices: arePricesSupported,
       }),
     );
 
+    /* eslint-disable consistent-return */
     return () => {
       dispatch(resetAccountBalanceStatus());
     };
@@ -111,7 +125,40 @@ export const Account = () => {
     isAccountFriendbotFunded,
     dispatch,
     arePricesSupported,
+    accountBalances.balances,
   ]);
+
+  // Run first one right away when we have balances
+  useEffect(() => {
+    if (!arePricesSupported || !balances) {
+      return;
+    }
+    dispatch(getTokenPrices({ balances, networkDetails }));
+  }, [balances, networkDetails, arePricesSupported, dispatch]);
+
+  useEffect(() => {
+    if (!arePricesSupported || !balances) {
+      return;
+    }
+
+    // Clear any existing interval before setting a new one
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    /* eslint-disable consistent-return */
+    intervalRef.current = setInterval(() => {
+      dispatch(getTokenPrices({ balances, networkDetails }));
+    }, 5000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+        // reset token prices status
+      }
+    };
+  }, [arePricesSupported, dispatch, networkDetails, balances]);
 
   useEffect(() => {
     if (!balances) {
@@ -182,17 +229,21 @@ export const Account = () => {
     return <Loading />;
   }
 
-  const prices = accountBalances.prices || {};
-  const totalBalanceUsd = Object.keys(prices).reduce((prev, curr) => {
+  const totalBalanceUsd = Object.keys(tokenPrices).reduce((prev, curr) => {
     const currentAssetBalance = accountBalances.balances![curr].total;
-    const currentPrice = accountBalances.prices![curr]
-      ? accountBalances.prices![curr].currentPrice
+    const currentPrice = tokenPrices[curr]
+      ? tokenPrices[curr].currentPrice
       : "0";
     const currentUsdBalance = new BigNumber(currentPrice).multipliedBy(
       currentAssetBalance,
     );
     return currentUsdBalance.plus(prev);
   }, new BigNumber(0));
+
+  const shouldShowTotalBalances =
+    arePricesSupported &&
+    tokenPricesStatus !== ActionStatus.IDLE &&
+    tokenPricesStatus !== ActionStatus.ERROR;
 
   return (
     <>
@@ -224,13 +275,18 @@ export const Account = () => {
                   </div>
                 </CopyText>
               </div>
-              <div className="AccountView__total-usd-balance">
-                {arePricesSupported
-                  ? `$${formatAmount(
-                      roundUsdValue(totalBalanceUsd.toString()),
-                    )}`
-                  : "--"}
-              </div>
+              <AnimatedNumber
+                containerAddlClasses="AccountView__total-usd-balance-container"
+                valueAddlClasses="AccountView__total-usd-balance"
+                value={
+                  shouldShowTotalBalances
+                    ? `$${formatAmount(
+                        roundUsdValue(totalBalanceUsd.toString()),
+                      )}`
+                    : "--"
+                }
+                key="total-balance"
+              />
             </div>
             <div className="AccountView__send-receive-display">
               <div className="AccountView__send-receive-button">
@@ -312,7 +368,7 @@ export const Account = () => {
             >
               <AccountAssets
                 sortedBalances={sortedBalances}
-                assetPrices={accountBalances.prices}
+                assetPrices={tokenPrices}
                 assetIcons={assetIcons}
                 setSelectedAsset={setSelectedAsset}
               />

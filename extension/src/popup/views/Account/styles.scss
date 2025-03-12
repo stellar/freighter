@@ -9,6 +9,9 @@
     display: flex;
     flex-direction: column;
   }
+  &__total-usd-balance-container {
+    width: 300px;
+  }
   &__total-usd-balance {
     font-size: 32px;
   }
