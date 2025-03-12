@@ -442,12 +442,14 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     await localStore.remove(LAST_USED_ACCOUNT);
     await localStore.remove(TOKEN_ID_LIST);
 
-    const keyIdList = await localStore.getItem(KEY_ID_LIST);
+    const keyIdList = await getKeyIdList();
 
     for (let i = 0; i < keyIdList.length; i += 1) {
       const k = keyIdList[i];
       await localStore.remove(`stellarkeys:${k}`);
     }
+
+    await localStore.remove(KEY_ID_LIST);
   };
 
   const createAccount = async () => {
