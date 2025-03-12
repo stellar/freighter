@@ -5,12 +5,17 @@ import { Formik } from "formik";
 import { object as YupObject } from "yup";
 
 import { showBackupPhrase } from "@shared/api/internal";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   password as passwordValidator,
   confirmPassword as confirmPasswordValidator,
   termsOfUse as termsofUseValidator,
 } from "popup/helpers/validators";
-import { createAccount, publicKeySelector } from "popup/ducks/accountServices";
+import {
+  createAccount,
+  publicKeySelector,
+  applicationStateSelector,
+} from "popup/ducks/accountServices";
 import { View } from "popup/basics/layout/View";
 
 import {
@@ -25,12 +30,21 @@ import "./styles.scss";
 
 export const AccountCreator = () => {
   const publicKey = useSelector(publicKeySelector);
+  const applicationState = useSelector(applicationStateSelector);
   const dispatch = useDispatch<AppDispatch>();
+
+  const isShowingOverwriteWarning =
+    applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
 
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
 
   const handleSubmit = async (values: FormValues) => {
-    await dispatch(createAccount(values.password));
+    await dispatch(
+      createAccount({
+        password: values.password,
+        isOverwritingAccount: isShowingOverwriteWarning,
+      }),
+    );
     const res = await showBackupPhrase({
       activePublicKey: null,
       password: values.password,
@@ -68,6 +82,7 @@ export const AccountCreator = () => {
               errors={errors}
               touched={touched}
               values={values}
+              isShowingOverwriteWarning={isShowingOverwriteWarning}
             />
           )}
         </Formik>

@@ -113,7 +113,10 @@ export const IntegrationTest = () => {
         assertEq(res, TESTNET_NETWORK_DETAILS);
       });
 
-      res = await createAccount(testPassword);
+      res = await createAccount({
+        password: testPassword,
+        isOverwritingAccount: false,
+      });
       runAsserts("createAccount", () => {
         assertArray(res.allAccounts);
         assertString(res.publicKey);
@@ -203,7 +206,11 @@ export const IntegrationTest = () => {
 
       runAsserts("resetDevData", () => {});
 
-      res = await recoverAccount(testPassword, mnemonicPhrase);
+      res = await recoverAccount({
+        password: testPassword,
+        recoverMnemonic: mnemonicPhrase,
+        isOverwritingAccount: false,
+      });
 
       runAsserts("recoverAccount", () => {
         assertArray(res.allAccounts);

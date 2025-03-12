@@ -1,4 +1,4 @@
-import { Button } from "@stellar/design-system";
+import { Button, Text } from "@stellar/design-system";
 import get from "lodash/get";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -62,7 +62,14 @@ export const UnlockAccount = () => {
 
       <View.Footer customGap="0.5rem">
         <div className="UnlockAccount__footer-label">
-          {t("Want to add another account?")}
+          {t("Lost your password? Want to add another account?")}
+          <Text
+            as="div"
+            size="xs"
+            className="UnlockAccount__footer-label__warning"
+          >
+            {t("This will completely erase all existing account information.")}
+          </Text>
         </div>
 
         <Button

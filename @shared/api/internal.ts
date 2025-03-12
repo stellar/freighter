@@ -80,9 +80,13 @@ export const GetTxStatus: {
   Failed: SorobanRpc.Api.GetTransactionStatus.FAILED,
 };
 
-export const createAccount = async (
-  password: string,
-): Promise<{
+export const createAccount = async ({
+  password,
+  isOverwritingAccount = false,
+}: {
+  password: string;
+  isOverwritingAccount: boolean;
+}): Promise<{
   publicKey: string;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
@@ -97,6 +101,7 @@ export const createAccount = async (
       await sendMessageToBackground({
         activePublicKey: null,
         password,
+        isOverwritingAccount,
         type: SERVICE_TYPES.CREATE_ACCOUNT,
       }));
   } catch (e) {
@@ -354,10 +359,15 @@ export const confirmMigratedMnemonicPhrase = async (
   return response;
 };
 
-export const recoverAccount = async (
-  password: string,
-  recoverMnemonic: string,
-): Promise<{
+export const recoverAccount = async ({
+  password,
+  recoverMnemonic,
+  isOverwritingAccount = false,
+}: {
+  password: string;
+  recoverMnemonic: string;
+  isOverwritingAccount: boolean;
+}): Promise<{
   publicKey: string;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
@@ -374,6 +384,7 @@ export const recoverAccount = async (
         activePublicKey: null,
         password,
         recoverMnemonic,
+        isOverwritingAccount,
         type: SERVICE_TYPES.RECOVER_ACCOUNT,
       }));
   } catch (e) {
