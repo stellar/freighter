@@ -149,7 +149,7 @@ export const Account = () => {
     /* eslint-disable consistent-return */
     intervalRef.current = setInterval(() => {
       dispatch(getTokenPrices({ balances, networkDetails }));
-    }, 5000);
+    }, 60000);
 
     return () => {
       if (intervalRef.current) {
