@@ -67,6 +67,7 @@ import { View } from "popup/basics/layout/View";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
 import { formatAmount } from "popup/helpers/formatters";
+import { isContractId } from "popup/helpers/soroban";
 
 import { resetSimulation } from "popup/ducks/token-payment";
 import { RequestState } from "popup/views/Account/hooks/useGetAccountData";
@@ -179,7 +180,7 @@ export const TransactionDetails = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isSwap = useIsSwap();
   const scanParams =
-    isToken || isSoroswap
+    isToken || isSoroswap || isContractId(destination)
       ? {
           type: "soroban" as const,
           xdr: transactionSimulation.preparedTransaction!,
@@ -425,7 +426,7 @@ export const TransactionDetails = ({
               <div className="TransactionDetails__cards">
                 <Card>
                   <AccountAssets
-                    assetIcons={txDetailsData.data!.balances.icons!}
+                    assetIcons={txDetailsData.data?.balances?.icons || {}}
                     sortedBalances={[
                       {
                         token: {

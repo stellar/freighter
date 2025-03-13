@@ -26,6 +26,7 @@ import { getAssetDomain } from "popup/helpers/getAssetDomain";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
+import { isContractId } from "popup/helpers/soroban";
 
 interface SendAmountData {
   userBalances: AccountBalancesInterface;
@@ -41,7 +42,7 @@ function useGetSendAmountData(
     isMainnet: boolean;
     showHidden: boolean;
   },
-  destinationPublicKey?: string,
+  destinationAddress?: string, // NOTE: can be a G or C address
 ) {
   const [state, dispatch] = useReducer(
     reducer<SendAmountData, unknown>,
@@ -63,13 +64,14 @@ function useGetSendAmountData(
         networkDetails,
         options.isMainnet,
       );
-      const destinationBalances = destinationPublicKey
-        ? await getAccountBalances(
-            destinationPublicKey,
-            networkDetails,
-            options.isMainnet,
-          )
-        : ({} as AccountBalancesInterface);
+      const destinationBalances =
+        destinationAddress && !isContractId(destinationAddress)
+          ? await getAccountBalances(
+              destinationAddress,
+              networkDetails,
+              options.isMainnet,
+            )
+          : ({} as AccountBalancesInterface);
 
       const balances = {
         ...userBalances.balances,

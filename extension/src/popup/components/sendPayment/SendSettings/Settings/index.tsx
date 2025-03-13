@@ -132,6 +132,7 @@ export const Settings = ({
   }, [asset, networkDetails]);
 
   const assetAddress = getAssetAddress(asset, destination, networkDetails);
+  // TODO: handle error state
   const { state: settingsData, fetchData } = useGetSettingsData(
     publicKey,
     networkDetails,

@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { BASE_FEE, SorobanRpc } from "stellar-sdk";
+import { Asset, BASE_FEE, SorobanRpc } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 import { useDispatch } from "react-redux";
 
@@ -20,7 +20,10 @@ import {
   parseTokenAmount,
 } from "popup/helpers/soroban";
 import { simulateTokenTransfer } from "@shared/api/internal";
-import { saveTransactionFee } from "popup/ducks/transactionSubmission";
+import {
+  saveSimulation,
+  saveTransactionFee,
+} from "popup/ducks/transactionSubmission";
 
 type Mode = "Soroswap" | "TokenPayment" | "ClassicPayment";
 
@@ -127,7 +130,7 @@ const simulateTx = async ({
       }
 
       const minResourceFee = formatTokenAmount(
-        new BigNumber(response.simulationTransaction.minResourceFee),
+        new BigNumber(response.simulationResponse.minResourceFee as string),
         CLASSIC_ASSET_DECIMALS,
       );
       return {
@@ -184,6 +187,7 @@ function useGetSettingsData(
     reducer<GetSettingsData, unknown>,
     initialState,
   );
+
   const { fetchData: fetchBalances } = useGetBalances(
     publicKey,
     networkDetails,
@@ -208,11 +212,17 @@ function useGetSettingsData(
         throw new Error("asset balance not found");
       }
 
-      // TODO: check send to sac amount
+      const assetAddress =
+        address === "native"
+          ? Asset.native().contractId(
+              tokenPaymentParameters.networkDetails.networkPassphrase,
+            )
+          : address;
       const parsedAmount = parseTokenAmount(
         amount,
         Number("decimals" in assetBalance ? assetBalance.decimals : 7),
       );
+
       const simResponse = await simulateTx({
         mode,
         recommendedFee,
@@ -223,7 +233,7 @@ function useGetSettingsData(
             networkDetails,
           },
           tokenPayment: {
-            address,
+            address: assetAddress,
             publicKey,
             memo,
             params: {
@@ -240,8 +250,18 @@ function useGetSettingsData(
         balances: balancesResult,
         ...simResponse,
       } as GetSettingsData;
-      // some flows still use transaction fee from the store
+      // some flows still use transaction details from the store
+      const simulationResponse =
+        simResponse.payload && "simulationTransaction" in simResponse.payload
+          ? simResponse.payload?.simulationTransaction
+          : "";
       reduxDispatch(saveTransactionFee(payload.recommendedFee));
+      reduxDispatch(
+        saveSimulation({
+          preparedTransaction: simResponse.payload?.preparedTransaction,
+          response: simulationResponse,
+        }),
+      );
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {

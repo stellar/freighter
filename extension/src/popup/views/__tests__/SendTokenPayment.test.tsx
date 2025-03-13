@@ -40,7 +40,7 @@ jest.spyOn(ApiInternal, "simulateTokenTransfer").mockImplementation(() => {
     ok: true,
     response: {
       preparedTransaction: "xdr",
-      simulationTransaction: {
+      simulationResponse: {
         minResourceFee: "1234",
       } as SorobanRpc.Api.SimulateTransactionSuccessResponse,
     },

@@ -9,6 +9,7 @@ import {
   AssetKey,
   SorobanBalance,
   TokenBalances,
+  Balance,
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
@@ -175,56 +176,39 @@ export const getApiStellarExpertUrl = (networkDetails: NetworkDetails) =>
   }`;
 
 interface GetAvailableBalance {
-  accountBalances: AssetType[];
-  selectedAsset: string;
+  balance: Balance | undefined;
   recommendedFee?: string;
   subentryCount: number;
 }
 
 export const getAvailableBalance = ({
-  accountBalances,
-  selectedAsset,
+  balance,
   recommendedFee,
   subentryCount,
 }: GetAvailableBalance) => {
   let availBalance = "0";
-  if (accountBalances.length) {
-    const balance = getRawBalance(accountBalances, selectedAsset);
-    if (!balance) {
-      return availBalance;
+  if (!balance) {
+    return availBalance;
+  }
+  if (balance.token.type === "native") {
+    // take base reserve into account for XLM payments
+    const baseReserve = (2 + subentryCount) * 0.5;
+
+    // needed for different wallet-sdk bignumber.js version
+    const currentBal = new BigNumber(balance.total.toFixed());
+    let newBalance = currentBal.minus(new BigNumber(baseReserve));
+
+    if (recommendedFee) {
+      newBalance = newBalance.minus(new BigNumber(Number(recommendedFee)));
     }
-    if (selectedAsset === "native") {
-      // take base reserve into account for XLM payments
-      const baseReserve = (2 + subentryCount) * 0.5;
 
-      // needed for different wallet-sdk bignumber.js version
-      const currentBal = new BigNumber(balance.total.toFixed());
-      let newBalance = currentBal.minus(new BigNumber(baseReserve));
-
-      if (recommendedFee) {
-        newBalance = newBalance.minus(new BigNumber(Number(recommendedFee)));
-      }
-
-      availBalance = newBalance.toFixed();
-    } else {
-      availBalance = balance.total.toFixed();
-    }
+    availBalance = newBalance.toFixed();
+  } else {
+    availBalance = balance.total.toFixed();
   }
 
   return availBalance;
 };
-
-export const getRawBalance = (accountBalances: AssetType[], asset: string) =>
-  accountBalances.find((balance) => {
-    if ("type" in balance.token! && balance.token?.type === "native") {
-      return asset === balance.token.type;
-    }
-
-    if (balance.token && "issuer" in balance.token) {
-      return asset === `${balance.token.code}:${balance.token.issuer.key}`;
-    }
-    throw new Error("Asset type not supported");
-  });
 
 export const getIssuerFromBalance = (balance: AssetType) => {
   if (balance.token && "token" in balance && "issuer" in balance.token) {

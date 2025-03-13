@@ -4,14 +4,13 @@ import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { IconButton, Icon, Button } from "@stellar/design-system";
 
-import { AssetToken, Balance, HorizonOperation } from "@shared/api/types";
+import { AssetToken, HorizonOperation } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import {
   getAvailableBalance,
   getIsPayment,
   getIsSwap,
-  getRawBalance,
   getIssuerFromBalance,
   isSorobanIssuer,
 } from "popup/helpers/account";
@@ -47,6 +46,7 @@ import { BlockaidAssetWarning } from "popup/components/WarningMessages";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import "./styles.scss";
+import { getBalanceByIssuer } from "popup/helpers/balance";
 
 interface AssetDetailProps {
   assetOperations: HorizonOperation[];
@@ -73,27 +73,26 @@ export const AssetDetail = ({
   const canonical = getAssetFromCanonical(selectedAsset);
   const isSorobanAsset = canonical.issuer && isSorobanIssuer(canonical.issuer);
 
-  // TODO: BALANCE TYPE FIX
-  const selectedBalance = (accountBalances.balances as Balance[]).find(
-    (_balance) => (_balance.token as AssetToken).issuer.key,
+  const selectedBalance = getBalanceByIssuer(
+    canonical.issuer,
+    accountBalances.balances,
   );
-  // TODO: balance helper
   const isSuspicious = isAssetSuspicious(selectedBalance!.blockaidData);
 
-  const balance = getRawBalance(accountBalances.balances, selectedAsset)!;
-
-  const assetIssuer = balance ? getIssuerFromBalance(balance) : "";
+  const assetIssuer = selectedBalance
+    ? getIssuerFromBalance(selectedBalance)
+    : "";
   const total =
-    balance && "decimals" in balance
+    selectedBalance && "decimals" in selectedBalance
       ? formatTokenAmount(
-          new BigNumber(balance.total || "0"),
-          Number(balance.decimals),
+          new BigNumber(selectedBalance.total || "0"),
+          Number(selectedBalance.decimals),
         )
-      : (balance && new BigNumber(balance?.total).toString()) || "0";
+      : (selectedBalance && new BigNumber(selectedBalance?.total).toString()) ||
+        "0";
 
   const balanceAvailable = getAvailableBalance({
-    accountBalances: accountBalances.balances,
-    selectedAsset,
+    balance: selectedBalance,
     subentryCount,
   });
 
@@ -156,8 +155,10 @@ export const AssetDetail = ({
       />
       <View.Content>
         <div className="AssetDetail__wrapper">
-          {balance && "name" in balance && (
-            <span className="AssetDetail__token-name">{balance.name}</span>
+          {selectedBalance && "name" in selectedBalance && (
+            <span className="AssetDetail__token-name">
+              {selectedBalance.name as string}
+            </span>
           )}
           <div className="AssetDetail__total">
             <div
@@ -174,15 +175,15 @@ export const AssetDetail = ({
                 assetIssuer={assetIssuer}
                 assetType={
                   // TODO: ASSET TYPE FIX
-                  (balance &&
-                    "token" in balance &&
-                    (balance?.token as AssetToken)!.type) ||
+                  (selectedBalance &&
+                    "token" in selectedBalance &&
+                    (selectedBalance?.token as AssetToken)!.type) ||
                   ""
                 }
                 assetDomain={assetDomain}
                 contractId={
-                  balance && "decimals" in balance
-                    ? balance.token!.issuer.key
+                  selectedBalance && "decimals" in selectedBalance
+                    ? (selectedBalance.token as AssetToken)?.issuer?.key
                     : undefined
                 }
               />
@@ -190,8 +191,8 @@ export const AssetDetail = ({
           </div>
           {isSuspicious ? null : (
             <div className="AssetDetail__actions">
-              {balance?.total &&
-              new BigNumber(balance?.total).toNumber() > 0 ? (
+              {selectedBalance?.total &&
+              new BigNumber(selectedBalance?.total).toNumber() > 0 ? (
                 <>
                   <Button
                     size="md"
@@ -294,14 +295,14 @@ export const AssetDetail = ({
               </div>
               <div className="AssetDetail__info-modal__balance-row">
                 <div>{t("Reserved Balance*")}</div>
-                {balance &&
-                "available" in balance &&
-                balance?.available &&
-                balance?.total ? (
+                {selectedBalance &&
+                "available" in selectedBalance &&
+                selectedBalance?.available &&
+                selectedBalance?.total ? (
                   <div>
                     {formatAmount(
                       new BigNumber(balanceAvailable)
-                        .minus(new BigNumber(balance?.total))
+                        .minus(new BigNumber(selectedBalance?.total))
                         .toString(),
                     )}{" "}
                     {canonical.code}

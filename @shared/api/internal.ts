@@ -1500,7 +1500,7 @@ export const simulateTokenTransfer = async (args: {
   ok: boolean;
   response: {
     preparedTransaction: string;
-    simulationTransaction: SorobanRpc.Api.SimulateTransactionSuccessResponse;
+    simulationResponse: SorobanRpc.Api.SimulateTransactionSuccessResponse;
   };
 }> => {
   const { address, publicKey, memo, params, networkDetails, transactionFee } =
@@ -1528,13 +1528,13 @@ export const simulateTokenTransfer = async (args: {
     ];
     const transaction = transfer(address, transferParams, memo, builder);
     // TODO: type narrow instead of cast
-    const simulationTransaction = (await server.simulateTransaction(
+    const simulationResponse = (await server.simulateTransaction(
       transaction,
     )) as SorobanRpc.Api.SimulateTransactionSuccessResponse;
 
     const preparedTransaction = SorobanRpc.assembleTransaction(
       transaction,
-      simulationTransaction,
+      simulationResponse,
     )
       .build()
       .toXDR();
@@ -1542,7 +1542,7 @@ export const simulateTokenTransfer = async (args: {
     return {
       ok: true,
       response: {
-        simulationTransaction,
+        simulationResponse,
         preparedTransaction,
       },
     };

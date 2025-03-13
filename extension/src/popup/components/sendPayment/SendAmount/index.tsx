@@ -24,7 +24,11 @@ import { LP_IDENTIFIER } from "popup/helpers/account";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
-import { getAssetDecimals, getTokenBalance } from "popup/helpers/soroban";
+import {
+  getAssetDecimals,
+  getTokenBalance,
+  isContractId,
+} from "popup/helpers/soroban";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -163,7 +167,7 @@ export const SendAmount = ({
       let _availBalance = new BigNumber("0");
       if (isToken) {
         // TODO: balances is incorrectly typed and does not include SorobanBalance
-        const tokenBalance = sendAmountData.data!.userBalances.balances?.[
+        const tokenBalance = sendAmountData.data?.userBalances.balances?.[
           selectedAsset
         ] as any as SorobanBalance;
         return getTokenBalance(tokenBalance);
@@ -411,6 +415,7 @@ export const SendAmount = ({
   const DecideWarning = () => {
     // unfunded destination
     if (
+      !isContractId(destination) &&
       !isSwap &&
       shouldAccountDoesntExistWarning(
         isSwap ? false : sendAmountData.data!.destinationBalances.isFunded!,
@@ -623,7 +628,7 @@ export const SendAmount = ({
                       <AssetSelect
                         assetCode={parsedSourceAsset.code}
                         issuerKey={parsedSourceAsset.issuer}
-                        icons={sendAmountData.data!.icons}
+                        icons={sendAmountData.data?.icons || {}}
                         isSuspicious={isAssetSuspicious(
                           sendAmountData.data?.userBalances!.balances?.[asset]
                             ?.blockaidData,
@@ -638,7 +643,7 @@ export const SendAmount = ({
                           issuerKey={parsedSourceAsset.issuer}
                           balance={formik.values.amount}
                           icon=""
-                          icons={sendAmountData.data!.icons}
+                          icons={sendAmountData.data?.icons || {}}
                           isSuspicious={isAssetSuspicious(
                             sendAmountData.data?.userBalances!.balances?.[asset]
                               ?.blockaidData,
