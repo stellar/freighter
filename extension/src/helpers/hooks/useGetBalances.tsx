@@ -18,6 +18,7 @@ import { RequestState } from "constants/request";
 import { initialState, reducer } from "helpers/request";
 import { storeBalanceMetricData } from "helpers/metrics";
 import { filterHiddenBalances, sortBalances } from "popup/helpers/account";
+import { isAsset } from "helpers/stellar";
 
 export const isGetBalancesError = (
   response: AccountBalances | Error,
@@ -28,8 +29,11 @@ export const isGetBalancesError = (
   return false;
 };
 
-export const findAssetBalance = (balances: AssetType[], asset: Asset) => {
-  if (asset.isNative()) {
+export const findAssetBalance = (
+  balances: AssetType[],
+  asset: Asset | { issuer: string; code: string },
+) => {
+  if (isAsset(asset) && asset.isNative()) {
     return (balances as Balance[]).find(
       (balance) => balance.token.type === "native",
     );

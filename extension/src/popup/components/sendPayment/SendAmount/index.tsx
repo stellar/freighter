@@ -160,10 +160,17 @@ export const SendAmount = ({
     image: "",
     blockaidData: defaultBlockaidScanAssetResult,
   });
+  const isLoading =
+    sendAmountData.state === RequestState.IDLE ||
+    sendAmountData.state === RequestState.LOADING;
 
   /* eslint-disable react-hooks/exhaustive-deps */
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
+      if (isLoading) {
+        return "";
+      }
+
       let _availBalance = new BigNumber("0");
       if (isToken) {
         // TODO: balances is incorrectly typed and does not include SorobanBalance
@@ -260,6 +267,10 @@ export const SendAmount = ({
   };
 
   const validate = (values: { amount: string }) => {
+    if (!availBalance) {
+      return {};
+    }
+
     const val = cleanAmount(values.amount);
     if (new BigNumber(val).gt(new BigNumber(availBalance))) {
       return { amount: AMOUNT_ERROR.TOO_HIGH };
@@ -459,10 +470,6 @@ export const SendAmount = ({
     }
     return null;
   };
-
-  const isLoading =
-    sendAmountData.state === RequestState.IDLE ||
-    sendAmountData.state === RequestState.LOADING;
 
   if (isLoading) {
     return <Loading />;

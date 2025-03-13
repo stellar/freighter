@@ -1,9 +1,20 @@
 import { Asset } from "stellar-sdk";
 import { captureException } from "@sentry/browser";
 
-import { AssetToken, AssetType, Balance } from "@shared/api/types";
+import {
+  AssetToken,
+  AssetType,
+  Balance,
+  SorobanBalance,
+} from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { isContractId } from "./soroban";
+
+export function isSorobanBalance(
+  balance: AssetType,
+): balance is SorobanBalance {
+  return (balance as SorobanBalance).decimals !== undefined;
+}
 
 export const getBalanceByIssuer = (issuer: string, balances: AssetType[]) =>
   (balances as Balance[]).find((balance) => {

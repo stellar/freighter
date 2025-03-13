@@ -38,8 +38,8 @@ interface TxDetailsData {
 
 interface ScanClassic {
   type: "classic";
-  sourceAsset: Asset;
-  destAsset: Asset;
+  sourceAsset: ReturnType<typeof getAssetFromCanonical>;
+  destAsset: ReturnType<typeof getAssetFromCanonical>;
   amount: string;
   destinationAmount: string;
   destination: string;
@@ -176,8 +176,8 @@ const getBuiltTx = async (
 function useGetTxDetailsData(
   publicKey: string,
   networkDetails: NetworkDetails,
-  destAsset: Asset,
-  sourceAsset: Asset,
+  destAsset: ReturnType<typeof getAssetFromCanonical>,
+  sourceAsset: ReturnType<typeof getAssetFromCanonical>,
   scanOptions: {
     shouldScan: boolean;
     url: string;

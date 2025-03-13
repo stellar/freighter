@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
-import { Asset, Networks } from "stellar-sdk";
+import { Networks } from "stellar-sdk";
 import { Card, Loader, Icon, Button, CopyText } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -187,10 +187,8 @@ export const TransactionDetails = ({
         }
       : {
           type: "classic" as const,
-          sourceAsset: getAssetFromCanonical(asset) as Asset,
-          destAsset: getAssetFromCanonical(
-            destinationAsset || "native",
-          ) as Asset,
+          sourceAsset: getAssetFromCanonical(asset),
+          destAsset: getAssetFromCanonical(destinationAsset || "native"),
           amount,
           destinationAmount,
           destination,
@@ -205,8 +203,8 @@ export const TransactionDetails = ({
   const { state: txDetailsData, fetchData } = useGetTxDetailsData(
     publicKey,
     networkDetails,
-    getAssetFromCanonical(destinationAsset || "native") as Asset,
-    getAssetFromCanonical(asset) as Asset,
+    getAssetFromCanonical(destinationAsset || "native"),
+    getAssetFromCanonical(asset),
     {
       shouldScan: shouldScanTx,
       url: "internal",
