@@ -343,13 +343,18 @@ export const freighterApiMessageListener = (
             }),
           );
         }
-        const response = (signedTransaction: string, signerAddress: string) => {
+        const response = (
+          signedTransaction: string,
+          signerAddress: string,
+          signature: string,
+        ) => {
           if (signedTransaction) {
             if (!isDomainListedAllowed) {
               allowList.push(punycodedDomain);
               localStore.setItem(ALLOWLIST_ID, allowList.join());
             }
-            resolve({ signedTransaction, signerAddress });
+
+            resolve({ signedTransaction, signerAddress, signature });
           }
 
           resolve({
