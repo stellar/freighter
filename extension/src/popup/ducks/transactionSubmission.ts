@@ -711,6 +711,9 @@ const transactionSubmissionSlice = createSlice({
     resetSubmitStatus: (state) => {
       state.submitStatus = initialState.submitStatus;
     },
+    resetTokenPriceStatus: (state) => {
+      state.tokenPricesStatus = initialState.tokenPricesStatus;
+    },
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
     },
@@ -931,6 +934,7 @@ export const {
   resetAccountBalanceStatus,
   resetDestinationAmount,
   resetSubmitStatus,
+  resetTokenPriceStatus,
   saveDestination,
   saveFederationAddress,
   saveAmount,

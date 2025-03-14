@@ -53,13 +53,12 @@ import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsD
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
+import { AnimatedNumber } from "popup/components/AnimatedNumber";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { isMainnet } from "helpers/stellar";
 
 import "popup/metrics/authServices";
-
 import "./styles.scss";
-import { AnimatedNumber } from "popup/components/AnimatedNumber";
 
 export const defaultAccountBalances = {
   balances: null,
