@@ -21,10 +21,7 @@ import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal"
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 
 import "./styles.scss";
-import {
-  resetAccountBalanceStatus,
-  resetTokenPriceStatus,
-} from "popup/ducks/transactionSubmission";
+import { resetAccountBalanceStatus } from "popup/ducks/transactionSubmission";
 
 interface AccountHeaderProps {
   allAccounts: Account[];
@@ -173,7 +170,6 @@ export const AccountHeader = ({
                 onClick={() => {
                   dispatch(changeNetwork({ networkName: n.networkName }));
                   dispatch(resetAccountBalanceStatus());
-                  dispatch(resetTokenPriceStatus());
                 }}
               >
                 <NetworkIcon index={i} />

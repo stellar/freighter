@@ -68,13 +68,8 @@ export const defaultAccountBalances = {
 export const Account = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const {
-    accountBalances,
-    assetIcons,
-    accountBalanceStatus,
-    tokenPrices,
-    tokenPricesStatus,
-  } = useSelector(transactionSubmissionSelector);
+  const { accountBalances, assetIcons, accountBalanceStatus, tokenPrices } =
+    useSelector(transactionSubmissionSelector);
   const accountStatus = useSelector(accountStatusSelector);
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] =
     useState(false);
@@ -111,6 +106,7 @@ export const Account = () => {
       getAccountBalances({
         publicKey,
         networkDetails,
+        shouldGetTokenPrices: arePricesSupported,
       }),
     );
 
@@ -126,14 +122,6 @@ export const Account = () => {
     arePricesSupported,
     accountBalances.balances,
   ]);
-
-  // Run first one right away when we have balances
-  useEffect(() => {
-    if (!arePricesSupported || !balances) {
-      return;
-    }
-    dispatch(getTokenPrices({ balances, networkDetails }));
-  }, [balances, networkDetails, arePricesSupported, dispatch]);
 
   useEffect(() => {
     if (!arePricesSupported || !balances) {
@@ -238,11 +226,6 @@ export const Account = () => {
     return currentUsdBalance.plus(prev);
   }, new BigNumber(0));
 
-  const shouldShowTotalBalances =
-    arePricesSupported &&
-    tokenPricesStatus !== ActionStatus.IDLE &&
-    tokenPricesStatus !== ActionStatus.ERROR;
-
   return (
     <>
       <AccountHeader
@@ -277,7 +260,7 @@ export const Account = () => {
                 containerAddlClasses="AccountView__total-usd-balance-container"
                 valueAddlClasses="AccountView__total-usd-balance"
                 value={
-                  shouldShowTotalBalances
+                  arePricesSupported
                     ? `$${formatAmount(
                         roundUsdValue(totalBalanceUsd.toString()),
                       )}`

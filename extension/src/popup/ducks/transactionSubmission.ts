@@ -371,36 +371,54 @@ export const removeTokenId = createAsyncThunk<
 });
 
 export const getAccountBalances = createAsyncThunk<
-  AccountBalancesInterface,
+  {
+    balances: AccountBalancesInterface;
+    tokenPrices: ApiTokenPrices;
+  },
   {
     publicKey: string;
     networkDetails: NetworkDetails;
+    shouldGetTokenPrices?: boolean;
   },
   { rejectValue: ErrorMessage }
->("getAccountBalances", async ({ publicKey, networkDetails }, thunkApi) => {
-  try {
-    let balances;
-    const isMainnet = isMainnetHelper(networkDetails);
+>(
+  "getAccountBalances",
+  async (
+    { publicKey, networkDetails, shouldGetTokenPrices = false },
+    thunkApi,
+  ) => {
+    try {
+      let balances;
+      let tokenPrices = {};
+      const isMainnet = isMainnetHelper(networkDetails);
 
-    if (isCustomNetwork(networkDetails)) {
-      balances = await internalGetAccountBalancesStandalone({
-        publicKey,
-        networkDetails,
-        isMainnet,
-      });
-    } else {
-      balances = await internalgetAccountIndexerBalances(
-        publicKey,
-        networkDetails,
-      );
+      if (isCustomNetwork(networkDetails)) {
+        balances = await internalGetAccountBalancesStandalone({
+          publicKey,
+          networkDetails,
+          isMainnet,
+        });
+      } else {
+        balances = await internalgetAccountIndexerBalances(
+          publicKey,
+          networkDetails,
+        );
+        const assetIds = Object.keys(balances.balances || {});
+        if (assetIds.length && shouldGetTokenPrices) {
+          tokenPrices = await internalGetLiveAssetPrices(assetIds);
+        }
+      }
+
+      storeBalanceMetricData(publicKey, balances.isFunded || false);
+      return {
+        balances,
+        tokenPrices,
+      };
+    } catch (e) {
+      return thunkApi.rejectWithValue({ errorMessage: e as string });
     }
-
-    storeBalanceMetricData(publicKey, balances.isFunded || false);
-    return balances;
-  } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e as string });
-  }
-});
+  },
+);
 
 export const getTokenPrices = createAsyncThunk<
   ApiTokenPrices,
@@ -616,7 +634,6 @@ interface InitialState {
   submitStatus: ActionStatus;
   accountBalanceStatus: ActionStatus;
   destinationAccountBalanceStatus: ActionStatus;
-  tokenPricesStatus: ActionStatus;
   hardwareWalletData: HardwareWalletData;
   response:
     | Horizon.HorizonApi.TransactionResponse
@@ -645,7 +662,6 @@ export const initialState: InitialState = {
   submitStatus: ActionStatus.IDLE,
   accountBalanceStatus: ActionStatus.IDLE,
   destinationAccountBalanceStatus: ActionStatus.IDLE,
-  tokenPricesStatus: ActionStatus.IDLE,
   response: null,
   error: undefined,
   transactionData: {
@@ -710,9 +726,6 @@ const transactionSubmissionSlice = createSlice({
     },
     resetSubmitStatus: (state) => {
       state.submitStatus = initialState.submitStatus;
-    },
-    resetTokenPriceStatus: (state) => {
-      state.tokenPricesStatus = initialState.tokenPricesStatus;
     },
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
@@ -845,8 +858,12 @@ const transactionSubmissionSlice = createSlice({
       state.accountBalanceStatus = ActionStatus.ERROR;
     });
     builder.addCase(getAccountBalances.fulfilled, (state, action) => {
-      state.accountBalances = action.payload;
+      state.accountBalances = action.payload.balances;
       state.accountBalanceStatus = ActionStatus.SUCCESS;
+      const { shouldGetTokenPrices } = action.meta.arg;
+      if (shouldGetTokenPrices) {
+        state.tokenPrices = action.payload.tokenPrices;
+      }
     });
     builder.addCase(getDestinationBalances.fulfilled, (state, action) => {
       state.destinationBalances = action.payload;
@@ -914,17 +931,12 @@ const transactionSubmissionSlice = createSlice({
     builder.addCase(getMemoRequiredAccounts.fulfilled, (state, action) => {
       state.memoRequiredAccounts = action.payload;
     });
-    builder.addCase(getTokenPrices.pending, (state) => {
-      state.tokenPricesStatus = ActionStatus.PENDING;
-    });
     builder.addCase(getTokenPrices.rejected, (state, action) => {
       state.error = action.payload;
       state.tokenPrices = initialState.tokenPrices;
-      state.tokenPricesStatus = ActionStatus.ERROR;
     });
     builder.addCase(getTokenPrices.fulfilled, (state, action) => {
       state.tokenPrices = action.payload;
-      state.tokenPricesStatus = ActionStatus.SUCCESS;
     });
   },
 });
@@ -934,7 +946,6 @@ export const {
   resetAccountBalanceStatus,
   resetDestinationAmount,
   resetSubmitStatus,
-  resetTokenPriceStatus,
   saveDestination,
   saveFederationAddress,
   saveAmount,
