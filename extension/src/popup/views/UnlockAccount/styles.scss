@@ -5,5 +5,9 @@
     font-size: 12px;
     line-height: 1.5rem;
     color: var(--sds-clr-gray-11);
+
+    &__warning {
+      color: var(--sds-clr-red-08);
+    }
   }
 }

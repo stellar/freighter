@@ -42,26 +42,29 @@ import { MetricsData } from "helpers/metrics";
 
 export const createAccount = createAsyncThunk<
   { allAccounts: Account[]; publicKey: string; hasPrivateKey: boolean },
-  string,
+  { password: string; isOverwritingAccount?: boolean },
   { rejectValue: ErrorMessage }
->("auth/createAccount", async (password, thunkApi) => {
-  let res = {
-    allAccounts: [] as Account[],
-    publicKey: "",
-    hasPrivateKey: false,
-  };
+>(
+  "auth/createAccount",
+  async ({ password, isOverwritingAccount = false }, thunkApi) => {
+    let res = {
+      allAccounts: [] as Account[],
+      publicKey: "",
+      hasPrivateKey: false,
+    };
 
-  try {
-    res = await createAccountService(password);
-  } catch (e) {
-    const message = e instanceof Error ? e.message : JSON.stringify(e);
-    console.error("Failed when creating an account: ", message);
-    return thunkApi.rejectWithValue({
-      errorMessage: message,
-    });
-  }
-  return res;
-});
+    try {
+      res = await createAccountService({ password, isOverwritingAccount });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      console.error("Failed when creating an account: ", message);
+      return thunkApi.rejectWithValue({
+        errorMessage: message,
+      });
+    }
+    return res;
+  },
+);
 
 export const fundAccount = createAsyncThunk(
   "auth/fundAccount",
@@ -224,38 +227,50 @@ export const recoverAccount = createAsyncThunk<
     hasPrivateKey: boolean;
     publicKey: string;
     error: string;
+    isOverwritingAccount?: boolean;
   },
   {
     password: string;
     mnemonicPhrase: string;
+    isOverwritingAccount?: boolean;
   },
   { rejectValue: ErrorMessage }
->("auth/recoverAccount", async ({ password, mnemonicPhrase }, thunkApi) => {
-  let res = {
-    allAccounts: [] as Account[],
-    publicKey: "",
-    hasPrivateKey: false,
-    error: "",
-  };
+>(
+  "auth/recoverAccount",
+  async (
+    { password, mnemonicPhrase, isOverwritingAccount = false },
+    thunkApi,
+  ) => {
+    let res = {
+      allAccounts: [] as Account[],
+      publicKey: "",
+      hasPrivateKey: false,
+      error: "",
+    };
 
-  try {
-    res = await recoverAccountService(password, mnemonicPhrase);
-  } catch (e) {
-    const message = e instanceof Error ? e.message : JSON.stringify(e);
-    console.error("Failed when recovering an account: ", message);
-    return thunkApi.rejectWithValue({
-      errorMessage: message,
-    });
-  }
+    try {
+      res = await recoverAccountService({
+        password,
+        recoverMnemonic: mnemonicPhrase,
+        isOverwritingAccount,
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      console.error("Failed when recovering an account: ", message);
+      return thunkApi.rejectWithValue({
+        errorMessage: message,
+      });
+    }
 
-  if (!res.publicKey || res.error) {
-    return thunkApi.rejectWithValue({
-      errorMessage: res.error || "The phrase you entered is incorrect",
-    });
-  }
+    if (!res.publicKey || res.error) {
+      return thunkApi.rejectWithValue({
+        errorMessage: res.error || "The phrase you entered is incorrect",
+      });
+    }
 
-  return res;
-});
+    return res;
+  },
+);
 
 export const confirmMnemonicPhrase = createAsyncThunk<
   { applicationState: APPLICATION_STATE; isCorrectPhrase: boolean },

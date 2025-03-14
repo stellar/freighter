@@ -95,6 +95,7 @@ export interface Response {
   isHideDustEnabled: boolean;
   activePublicKey: string;
   isAccountMismatch: boolean;
+  isOverwritingAccount: boolean;
 }
 
 export interface MemoRequiredAccount {

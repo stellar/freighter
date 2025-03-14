@@ -11,6 +11,10 @@
     margin-bottom: #{pxToRem(32px)};
   }
 
+  &__notification {
+    margin-bottom: pxToRem(32px);
+  }
+
   &__form-rows {
     display: flex;
     flex-direction: column;
