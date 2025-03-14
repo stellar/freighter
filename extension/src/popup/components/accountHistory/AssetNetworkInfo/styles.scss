@@ -12,6 +12,8 @@
     img {
       height: var(--TransactionDetail--icon-dimension);
       width: var(--TransactionDetail--icon-dimension);
+      object-fit: cover;
+      border-radius: 50%;
     }
   }
 }
