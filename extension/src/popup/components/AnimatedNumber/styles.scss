@@ -1,11 +1,18 @@
 .animated-number-container {
   position: relative;
-  height: 32px;
-  width: 100%;
   overflow: hidden;
 }
 
 .animated-number {
-  position: absolute;
-  width: 100%;
+  position: relative;
+
+  .digit {
+    &.positive {
+      color: var(--sds-clr-green-09);
+    }
+
+    &.negative {
+      color: var(--sds-clr-red-09);
+    }
+  }
 }

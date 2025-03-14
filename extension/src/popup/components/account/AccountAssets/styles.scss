@@ -5,6 +5,7 @@ $loader-light-color: #444961;
   &__asset {
     align-items: center;
     display: flex;
+    justify-content: space-between;
     color: var(--sds-clr-gray-12);
     font-size: 1rem;
     line-height: 1.5rem;
@@ -105,7 +106,6 @@ $loader-light-color: #444961;
   }
 
   &__copy-left {
-    flex: 5;
     min-width: 0;
     display: flex;
     font-weight: var(--font-weight-medium);
@@ -135,7 +135,6 @@ $loader-light-color: #444961;
   }
 
   &__copy-right {
-    flex: 4;
     min-width: 0;
     font-weight: var(--font-weight-regular);
 

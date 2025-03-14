@@ -95,9 +95,9 @@ export const Account = () => {
 
   const { balances, isFunded, error } = accountBalances;
   const arePricesSupported = isMainnet(networkDetails);
-  // This ensures that the effect does not depend on dispatch, avoiding unnecessary re-renders.
+  // This ensures that the prices effect does not depend on dispatch, avoiding unnecessary re-renders.
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const hasFetchedRef = useRef(false); // Prevent re-triggering initial effect
+  const hasFetchedRef = useRef(false); // Prevent re-triggering balance effect due to prices effects
   useEffect(() => {
     // Prevent re-running on state updates
     if (hasFetchedRef.current) {
@@ -149,13 +149,12 @@ export const Account = () => {
     /* eslint-disable consistent-return */
     intervalRef.current = setInterval(() => {
       dispatch(getTokenPrices({ balances, networkDetails }));
-    }, 60000);
+    }, 30000);
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
-        // reset token prices status
       }
     };
   }, [arePricesSupported, dispatch, networkDetails, balances]);
