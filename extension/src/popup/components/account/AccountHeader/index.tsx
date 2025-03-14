@@ -19,9 +19,9 @@ import {
 import { AccountList } from "popup/components/account/AccountList";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
+import { resetAccountBalanceStatus } from "popup/ducks/transactionSubmission";
 
 import "./styles.scss";
-import { resetAccountBalanceStatus } from "popup/ducks/transactionSubmission";
 
 interface AccountHeaderProps {
   allAccounts: Account[];

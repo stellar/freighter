@@ -262,6 +262,21 @@ export const AccountAssets = ({
             ? formatTokenAmount(rb.total, rb.decimals)
             : rb.total.toFixed();
 
+        const getDeltaColor = (delta: BigNumber) => {
+          if (delta.isZero()) {
+            return "";
+          }
+
+          if (delta.isNegative()) {
+            return "negative";
+          }
+          if (delta.isPositive()) {
+            return "positive";
+          }
+
+          return "";
+        };
+
         return (
           <div
             data-testid="account-assets-item"
@@ -307,13 +322,9 @@ export const AccountAssets = ({
                 />
                 {assetPrice.percentagePriceChange24h ? (
                   <AnimatedNumber
-                    valueAddlClasses={`asset-value-delta ${
-                      new BigNumber(
-                        assetPrice.percentagePriceChange24h,
-                      ).isNegative()
-                        ? "negative"
-                        : "positive"
-                    }
+                    valueAddlClasses={`asset-value-delta ${getDeltaColor(
+                      new BigNumber(assetPrice.percentagePriceChange24h),
+                    )}
                     `}
                     value={`${formatAmount(
                       roundUsdValue(assetPrice.percentagePriceChange24h),

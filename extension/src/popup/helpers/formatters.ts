@@ -110,4 +110,4 @@ export const scrubPathGkey = (route: string, url: string) => {
 };
 
 export const roundUsdValue = (fullValue: string) =>
-  (Math.round(parseFloat(fullValue) * 100) / 100).toFixed(2);
+  (Math.ceil(parseFloat(fullValue) * 100) / 100).toFixed(2);

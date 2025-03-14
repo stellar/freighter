@@ -118,7 +118,7 @@ export const AnimatedNumber = ({
           <motion.span
             // eslint-disable-next-line react/no-array-index-key
             key={index}
-            initial={{ opacity: 0, y: 10 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
             className={classNames("digit", colorMap[index])}
