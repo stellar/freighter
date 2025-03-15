@@ -18,7 +18,13 @@ import { INDEXER_URL } from "@shared/constants/mercury";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { Response } from "@shared/api/types";
 
-import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
+import {
+  Wrapper,
+  mockBalances,
+  mockAccounts,
+  mockPrices,
+  TEST_CANONICAL,
+} from "../../__testHelpers__";
 import { Account } from "../Account";
 
 const mockHistoryOperations = {
@@ -76,6 +82,10 @@ jest.spyOn(global, "fetch").mockImplementation((url) => {
 jest
   .spyOn(ApiInternal, "getAccountIndexerBalances")
   .mockImplementation(() => Promise.resolve(mockBalances));
+
+jest
+  .spyOn(ApiInternal, "getLiveAssetPrices")
+  .mockImplementation(() => Promise.resolve(mockPrices));
 
 jest
   .spyOn(ExtensionMessaging, "sendMessageToBackground")
@@ -425,6 +435,7 @@ describe("Account view", () => {
       );
       await fireEvent.click(accountIdenticonNodes[2]);
     });
+
     await waitFor(async () => {
       expect(screen.getByTestId("account-view-account-name")).toHaveTextContent(
         "Account 2",
@@ -484,6 +495,43 @@ describe("Account view", () => {
       expect(assetNodes.length).toEqual(2);
       expect(assetNodes[1]).toHaveTextContent("LP");
       expect(assetNodes[1]).toHaveTextContent("0");
+    });
+  });
+  it.only("shows prices and deltas", async () => {
+    render(
+      <Wrapper
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      const assetNodes = screen.getAllByTestId("account-assets-item");
+      expect(assetNodes.length).toEqual(3);
+      expect(
+        screen.getByTestId(`asset-amount-${TEST_CANONICAL}`),
+      ).toHaveTextContent("$ 834,463.68");
+      expect(
+        screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
+      ).toHaveTextContent("3.98%");
+      expect(screen.getByTestId(`asset-amount-native`)).toHaveTextContent(
+        "$ 13.82",
+      );
+      expect(screen.getByTestId(`asset-price-delta-native`)).toHaveTextContent(
+        "1.10%",
+      );
     });
   });
 });

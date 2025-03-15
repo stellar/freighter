@@ -91,13 +91,8 @@ export const Account = () => {
   const arePricesSupported = isMainnet(networkDetails);
   // This ensures that the prices effect does not depend on dispatch, avoiding unnecessary re-renders.
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const hasFetchedRef = useRef(false); // Prevent re-triggering balance effect due to prices effects
+
   useEffect(() => {
-    // Prevent re-running on state updates
-    if (hasFetchedRef.current) {
-      return;
-    }
-    hasFetchedRef.current = true;
     // reset to avoid any residual data eg switching between send and swap or
     // previous stale sends
     setLoading(true);
@@ -120,7 +115,6 @@ export const Account = () => {
     isAccountFriendbotFunded,
     dispatch,
     arePricesSupported,
-    accountBalances.balances,
   ]);
 
   useEffect(() => {

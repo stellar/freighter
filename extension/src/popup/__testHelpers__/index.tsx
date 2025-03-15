@@ -22,6 +22,9 @@ import { reducer as tokenPaymentSimulation } from "popup/ducks/token-payment";
 export const TEST_PUBLIC_KEY =
   "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 
+export const TEST_CANONICAL =
+  "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ";
+
 const rootReducer = combineReducers({
   auth,
   settings,
@@ -74,9 +77,20 @@ export const Wrapper: React.FunctionComponent<any> = ({
   );
 };
 
+export const mockPrices = {
+  [TEST_CANONICAL]: {
+    currentPrice: "0.0008344636737229707",
+    percentagePriceChange24h: "3.975563218688548378",
+  },
+  native: {
+    currentPrice: "0.27633884304166495",
+    percentagePriceChange24h: "1.09899728516430811",
+  },
+};
+
 export const mockBalances = {
   balances: {
-    ["DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ"]: {
+    [TEST_CANONICAL]: {
       token: {
         code: "DT",
         issuer: {
@@ -118,7 +132,7 @@ export const mockBalances = {
 // balances with no blockaid spam data as we only do the scan on Mainnet
 export const mockTestnetBalances = {
   balances: {
-    ["DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ"]: {
+    [TEST_CANONICAL]: {
       token: {
         code: "DT",
         issuer: {

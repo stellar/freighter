@@ -311,7 +311,9 @@ export const AccountAssets = ({
                 <AnimatedNumber
                   valueAddlClasses="asset-usd-amount"
                   // eslint-disable-next-line @typescript-eslint/naming-convention
-                  valueAddlProperties={{ "data-testid": "asset-amount" }}
+                  valueAddlProperties={{
+                    "data-testid": `asset-amount-${canonicalAsset}`,
+                  }}
                   value={`$ ${formatAmount(
                     roundUsdValue(
                       new BigNumber(assetPrice.currentPrice)
@@ -322,8 +324,14 @@ export const AccountAssets = ({
                 />
                 {assetPrice.percentagePriceChange24h ? (
                   <AnimatedNumber
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    valueAddlProperties={{
+                      "data-testid": `asset-price-delta-${canonicalAsset}`,
+                    }}
                     valueAddlClasses={`asset-value-delta ${getDeltaColor(
-                      new BigNumber(assetPrice.percentagePriceChange24h),
+                      new BigNumber(
+                        roundUsdValue(assetPrice.percentagePriceChange24h),
+                      ),
                     )}
                     `}
                     value={`${formatAmount(
