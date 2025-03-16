@@ -14,7 +14,7 @@ import {
   loadRecentAddresses as internalLoadRecentAddresses,
   getAccountIndexerBalances as internalgetAccountIndexerBalances,
   getAccountBalancesStandalone as internalGetAccountBalancesStandalone,
-  getLiveAssetPrices as internalGetLiveAssetPrices,
+  getTokenPrices as internalGetTokenPrices,
   getAssetIcons as getAssetIconsService,
   getAssetDomains as getAssetDomainsService,
   getMemoRequiredAccounts as internalGetMemoRequiredAccounts,
@@ -405,7 +405,7 @@ export const getAccountBalances = createAsyncThunk<
         );
         const assetIds = Object.keys(balances.balances || {});
         if (assetIds.length && shouldGetTokenPrices) {
-          tokenPrices = await internalGetLiveAssetPrices(assetIds);
+          tokenPrices = await internalGetTokenPrices(assetIds);
         }
       }
 
@@ -436,7 +436,7 @@ export const getTokenPrices = createAsyncThunk<
     if (!assetIds.length) {
       return {};
     }
-    return await internalGetLiveAssetPrices(assetIds);
+    return await internalGetTokenPrices(assetIds);
   } catch (e) {
     return thunkApi.rejectWithValue({ errorMessage: e as string });
   }

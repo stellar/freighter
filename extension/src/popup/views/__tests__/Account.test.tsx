@@ -84,7 +84,7 @@ jest
   .mockImplementation(() => Promise.resolve(mockBalances));
 
 jest
-  .spyOn(ApiInternal, "getLiveAssetPrices")
+  .spyOn(ApiInternal, "getTokenPrices")
   .mockImplementation(() => Promise.resolve(mockPrices));
 
 jest
