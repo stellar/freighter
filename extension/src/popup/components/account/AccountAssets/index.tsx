@@ -301,7 +301,7 @@ export const AccountAssets = ({
               </div>
               <div className="asset-native-value">
                 <span className="asset-code">{code}</span>
-                <div className="asset-native-amount">
+                <div className="asset-native-amount" data-testid="asset-amount">
                   {formatAmount(amountVal)}
                 </div>
               </div>
@@ -310,8 +310,8 @@ export const AccountAssets = ({
               <div className="AccountAssets__copy-right">
                 <AnimatedNumber
                   valueAddlClasses="asset-usd-amount"
-                  // eslint-disable-next-line @typescript-eslint/naming-convention
                   valueAddlProperties={{
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     "data-testid": `asset-amount-${canonicalAsset}`,
                   }}
                   value={`$ ${formatAmount(
@@ -324,8 +324,8 @@ export const AccountAssets = ({
                 />
                 {assetPrice.percentagePriceChange24h ? (
                   <AnimatedNumber
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     valueAddlProperties={{
+                      // eslint-disable-next-line @typescript-eslint/naming-convention
                       "data-testid": `asset-price-delta-${canonicalAsset}`,
                     }}
                     valueAddlClasses={`asset-value-delta ${getDeltaColor(
