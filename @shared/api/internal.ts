@@ -494,7 +494,7 @@ export const getAccountIndexerBalances = async (
   };
 };
 
-export const getLiveAssetPrices = async (tokens: string[]) => {
+export const getTokenPrices = async (tokens: string[]) => {
   // NOTE: API does not accept LP IDs
   const filteredTokens = tokens.filter((tokenId) => !tokenId.includes(":lp"));
   const url = new URL(`${INDEXER_URL}/token-prices`);
