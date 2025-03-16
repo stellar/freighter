@@ -4,6 +4,8 @@ import classNames from "classnames";
 
 import "./styles.scss";
 
+const DURATION = 0.3;
+
 const convertToNumber = (value: string) => {
   const cleanedValue = value.replace(/[$,]/g, ""); // Remove dollar signs and commas
   return parseFloat(cleanedValue); // Convert the cleaned string to a number
@@ -101,7 +103,7 @@ export const AnimatedNumber = ({
           setColorMap({});
         }, 50);
       }
-    }, (0.3 * 1000) / 10); // Adjust timing to match duration
+    }, (DURATION * 1000) / 10); // Adjust timing to match duration
 
     prevValueRef.current = value;
     isFirstRender.current = false;
@@ -120,7 +122,7 @@ export const AnimatedNumber = ({
             key={index}
             initial={false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: DURATION }}
             className={classNames("digit", colorMap[index])}
           >
             {digit}

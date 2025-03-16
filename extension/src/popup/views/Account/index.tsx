@@ -258,7 +258,7 @@ export const Account = () => {
                     ? `$${formatAmount(
                         roundUsdValue(totalBalanceUsd.toString()),
                       )}`
-                    : "--"
+                    : ""
                 }
                 key="total-balance"
               />

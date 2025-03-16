@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import isEmpty from "lodash/isEmpty";
 import { Asset, Horizon } from "stellar-sdk";
+import BigNumber from "bignumber.js";
 
 import { ApiTokenPrices, AssetIcons, AssetType } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
@@ -18,10 +19,9 @@ import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import ImageMissingIcon from "popup/assets/image-missing.svg?react";
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
+import { AnimatedNumber } from "popup/components/AnimatedNumber";
 
 import "./styles.scss";
-import BigNumber from "bignumber.js";
-import { AnimatedNumber } from "popup/components/AnimatedNumber";
 
 const getIsXlm = (code: string) => code === "XLM";
 
