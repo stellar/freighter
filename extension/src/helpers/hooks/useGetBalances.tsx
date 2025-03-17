@@ -29,6 +29,7 @@ export const isGetBalancesError = (
   return false;
 };
 
+// TODO: should this handle soroban balances also
 export const findAssetBalance = (
   balances: AssetType[],
   asset: Asset | { issuer: string; code: string },

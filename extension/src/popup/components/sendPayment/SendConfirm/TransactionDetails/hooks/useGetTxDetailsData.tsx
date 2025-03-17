@@ -250,7 +250,7 @@ function useGetTxDetailsData(
         const {
           amount,
           destinationAmount,
-          destination,
+          destination: destinationParam,
           allowedSlippage,
           path,
           isPathPayment,
@@ -266,7 +266,7 @@ function useGetTxDetailsData(
             destAsset,
             amount,
             destinationAmount,
-            destination,
+            destination: destinationParam,
             allowedSlippage,
             path,
             isPathPayment,

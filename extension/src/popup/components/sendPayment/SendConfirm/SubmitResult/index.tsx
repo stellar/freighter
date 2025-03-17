@@ -39,6 +39,7 @@ import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { useGetAccountData } from "popup/views/Account/hooks/useGetAccountData";
 
 import "./styles.scss";
+import { findAssetBalance } from "helpers/hooks/useGetBalances";
 
 const SwapAssetsIcon = ({
   sourceCanon,
@@ -93,6 +94,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const dispatch: AppDispatch = useDispatch();
 
   const sourceAsset = getAssetFromCanonical(asset);
+  const destinationCanonical = getAssetFromCanonical(destinationAsset);
   const { recommendedFee } = useNetworkFees();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -112,16 +114,13 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     networkDetails.networkPassphrase,
   );
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
-  // TODO: asset filter helper
   const isSourceAssetSuspicious = isAssetSuspicious(
-    (accountData.data?.balances.balances as Balance[])?.find(
-      (balance) => balance.contractId === asset,
-    )?.blockaidData,
+    findAssetBalance(accountData.data!.balances.balances, sourceAsset)
+      ?.blockaidData,
   );
   const isDestAssetSuspicious = isAssetSuspicious(
-    (accountData.data?.balances.balances as Balance[])?.find(
-      (balance) => balance.contractId === destinationAsset,
-    )?.blockaidData,
+    findAssetBalance(accountData.data!.balances.balances, destinationCanonical)
+      ?.blockaidData,
   );
 
   const removeTrustline = async (assetCode: string, assetIssuer: string) => {

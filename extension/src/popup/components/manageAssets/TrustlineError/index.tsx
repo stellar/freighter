@@ -14,8 +14,10 @@ import { emitMetric } from "helpers/metrics";
 import { getResultCodes, RESULT_CODES } from "popup/helpers/parseTransaction";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { AccountBalances } from "helpers/hooks/useGetBalances";
-import { Balance } from "@shared/api/types";
+import {
+  AccountBalances,
+  findAssetBalance,
+} from "helpers/hooks/useGetBalances";
 
 import "./styles.scss";
 
@@ -171,12 +173,7 @@ export const TrustlineError = ({
 
         if ("line" in op) {
           const { code, issuer } = op.line as Asset;
-          const asset = `${code}:${issuer}`;
-          // TODO: get balance helper
-          const balance = (balances.balances as Balance[])?.find(
-            ({ contractId }) => contractId === asset,
-          );
-
+          const balance = findAssetBalance(balances.balances, { code, issuer });
           if (!balance) {
             return;
           }

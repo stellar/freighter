@@ -66,13 +66,13 @@ import { isContractId } from "popup/helpers/soroban";
 
 import { resetSimulation } from "popup/ducks/token-payment";
 import { RequestState } from "popup/views/Account/hooks/useGetAccountData";
+import { findAssetBalance } from "helpers/hooks/useGetBalances";
 import {
   computeDestMinWithSlippage,
   useGetTxDetailsData,
 } from "./hooks/useGetTxDetailsData";
 
 import "./styles.scss";
-import { findAssetBalance } from "helpers/hooks/useGetBalances";
 
 const TwoAssetCard = ({
   sourceAssetIcons,
@@ -184,7 +184,7 @@ export const TransactionDetails = ({
         }
       : {
           type: "classic" as const,
-          sourceAsset: sourceAsset,
+          sourceAsset,
           destAsset: getAssetFromCanonical(destinationAsset || "native"),
           amount,
           destinationAmount,

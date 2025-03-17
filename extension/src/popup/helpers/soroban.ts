@@ -13,18 +13,18 @@ import {
   walkInvocationTree,
 } from "stellar-sdk";
 
-import {
-  AccountBalancesInterface,
-  Balances,
-  HorizonOperation,
-  SorobanBalance,
-} from "@shared/api/types";
+import { HorizonOperation, SorobanBalance } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
   ArgsForTokenInvocation,
   SorobanTokenInterface,
   TokenInvocationArgs,
 } from "@shared/constants/soroban/token";
+import {
+  AccountBalances,
+  findAssetBalance,
+} from "helpers/hooks/useGetBalances";
+import { getAssetFromCanonical } from "helpers/stellar";
 
 export const SOROBAN_OPERATION_TYPES = [
   "invoke_host_function",
@@ -37,12 +37,13 @@ export const CLASSIC_ASSET_DECIMALS = 7;
 
 export const getAssetDecimals = (
   asset: string,
-  balances: AccountBalancesInterface,
+  balances: AccountBalances,
   isToken: boolean,
 ) => {
   if (isToken) {
-    const _balances = balances.balances || ({} as NonNullable<Balances>);
-    const balance = _balances[asset];
+    const _balances = balances.balances;
+    const canonical = getAssetFromCanonical(asset);
+    const balance = findAssetBalance(_balances, canonical);
 
     if (balance && "decimals" in balance) {
       return Number(balance.decimals);

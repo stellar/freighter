@@ -17,9 +17,19 @@ import { useIsSoroswapEnabled, useIsSwap } from "../../popup/helpers/useIsSwap";
 import { getAssetDomain } from "../../popup/helpers/getAssetDomain";
 import {
   AccountBalances,
+  findAssetBalance,
   isGetBalancesError,
   useGetBalances,
 } from "./useGetBalances";
+
+export const isGetAssetDomainsError = (
+  response: AssetDomains | Error,
+): response is Error => {
+  if (!("domains" in response)) {
+    return true;
+  }
+  return false;
+};
 
 interface AssetDomains {
   balances: AccountBalances;
@@ -53,7 +63,7 @@ export function useGetAssetDomains(
     options,
   );
 
-  const fetchData = async () => {
+  const fetchData = async (): Promise<AssetDomains | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const balances = await fetchBalances();
@@ -132,8 +142,6 @@ export function useGetAssetDomains(
 
       if (isSoroswapEnabled && isSwap && !assetSelect.isSource) {
         soroswapTokens.forEach((token) => {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          // const canonical = getCanonicalFromAsset(token.code, token.contract);
           const nativeContractDetails =
             getNativeContractDetails(networkDetails);
 
@@ -141,8 +149,10 @@ export function useGetAssetDomains(
           // This is designed to populate tokens available from Soroswap that the user does not already have
           if (
             balances &&
-            // TODO: how to remake this check?
-            // !balances[canonical] &&
+            !findAssetBalance(balances.balances, {
+              code: token.code,
+              issuer: token.contract,
+            }) &&
             token.contract !== nativeContractDetails.contract
           ) {
             domains.push({
@@ -161,7 +171,7 @@ export function useGetAssetDomains(
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
-      return error;
+      return new Error(JSON.stringify(error));
     }
   };
 

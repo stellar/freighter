@@ -20,7 +20,6 @@ import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap, useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
-import { LP_IDENTIFIER } from "popup/helpers/account";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
@@ -57,8 +56,9 @@ import { TX_SEND_MAX } from "popup/constants/transaction";
 import { BASE_RESERVE } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
-import { BalanceMap, SorobanBalance } from "@shared/api/types";
+import { SorobanBalance } from "@shared/api/types";
 import { RequestState } from "constants/request";
+import { findAssetBalance } from "helpers/hooks/useGetBalances";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
 
 import "../styles.scss";
@@ -144,6 +144,7 @@ export const SendAmount = ({
     {
       isMainnet: isMainnet(networkDetails),
       showHidden: false,
+      includeIcons: true,
     },
     destination,
   );
@@ -172,12 +173,14 @@ export const SendAmount = ({
       }
 
       let _availBalance = new BigNumber("0");
-      if (isToken) {
-        // TODO: balances is incorrectly typed and does not include SorobanBalance
-        const tokenBalance = sendAmountData.data?.userBalances.balances?.[
-          selectedAsset
-        ] as any as SorobanBalance;
-        return getTokenBalance(tokenBalance);
+      const selectedCanonical = getAssetFromCanonical(selectedAsset);
+      const selectedBalance = findAssetBalance(
+        sendAmountData.data!.userBalances.balances,
+        selectedCanonical,
+      );
+      if (isToken && selectedBalance) {
+        // TODO: fix AssetType to correctly
+        return getTokenBalance(selectedBalance as any as SorobanBalance);
       }
       if (sendAmountData.data?.userBalances!.balances) {
         // take base reserve into account for XLM payments
@@ -185,9 +188,7 @@ export const SendAmount = ({
           (2 + sendAmountData.data.userBalances.subentryCount) * BASE_RESERVE,
         );
 
-        const balance =
-          sendAmountData.data.userBalances.balances[selectedAsset]?.total ||
-          new BigNumber("0");
+        const balance = selectedBalance?.total || new BigNumber("0");
         if (selectedAsset === "native") {
           // needed for different wallet-sdk bignumber.js version
           const currentBal = new BigNumber(balance.toFixed());
@@ -223,30 +224,31 @@ export const SendAmount = ({
     // eslint-disable-next-line @typescript-eslint/naming-convention
     let isDestAssetScam = false;
 
+    const destinationBalance = findAssetBalance(
+      sendAmountData.data!.userBalances.balances,
+      getAssetFromCanonical(destinationAsset),
+    );
     if (values.destinationAsset) {
       dispatch(saveDestinationAsset(values.destinationAsset));
-      isDestAssetScam = isAssetSuspicious(
-        sendAmountData.data?.userBalances.balances?.[destinationAsset]
-          ?.blockaidData,
-      );
+      isDestAssetScam = isAssetSuspicious(destinationBalance?.blockaidData);
     }
     // check for scam asset
-    const isSourceAssetScam = isAssetSuspicious(
-      sendAmountData.data?.userBalances.balances?.[asset]?.blockaidData,
+    const assetBalance = findAssetBalance(
+      sendAmountData.data!.userBalances.balances,
+      getAssetFromCanonical(asset),
     );
+    const isSourceAssetScam = isAssetSuspicious(assetBalance?.blockaidData);
     if (isSourceAssetScam) {
       setShowBlockedDomainWarning(true);
       setSuspiciousAssetData({
         code: getAssetFromCanonical(values.asset).code,
         issuer: getAssetFromCanonical(values.asset).issuer,
-        // TODO: was assetDomain and assetIcons a map?
         domain: sendAmountData.data!.domains.find(
           (domain) => domain.code === values.asset,
         )!.domain,
         image: sendAmountData.data!.icons[values.asset]!,
         blockaidData:
-          sendAmountData.data!.userBalances.balances?.[asset].blockaidData ||
-          defaultBlockaidScanAssetResult,
+          assetBalance?.blockaidData || defaultBlockaidScanAssetResult,
       });
     } else if (isDestAssetScam) {
       setShowBlockedDomainWarning(true);
@@ -258,8 +260,7 @@ export const SendAmount = ({
         )!.domain,
         image: sendAmountData.data!.icons[values.destinationAsset]!,
         blockaidData:
-          sendAmountData.data!.userBalances.balances?.[destinationAsset]
-            ?.blockaidData || defaultBlockaidScanAssetResult,
+          destinationBalance?.blockaidData || defaultBlockaidScanAssetResult,
       });
     } else {
       navigateTo(next);
@@ -370,21 +371,16 @@ export const SendAmount = ({
         defaultDestAsset = Asset.native().toString();
       } else {
         // otherwise default to first non-native/classic side asset if exists
-        const nonXlmAssets = Object.keys(
-          sendAmountData.data?.userBalances!.balances || {},
-        ).filter(
+        const nonXlmAssets = sendAmountData.data?.userBalances!.balances.filter(
           (b) =>
-            b !== Asset.native().toString() &&
-            b.indexOf(LP_IDENTIFIER) === -1 &&
-            !(
-              "decimals" in
-              (sendAmountData.data?.userBalances!.balances ||
-                ({} as NonNullable<BalanceMap>))[b]
-            ),
+            !(b.token && b.token.code === "native") &&
+            !("liquidityPoolId" in b) &&
+            !("decimals" in b),
         );
-        defaultDestAsset = nonXlmAssets[0]
-          ? nonXlmAssets[0]
-          : Asset.native().toString();
+        defaultDestAsset =
+          nonXlmAssets && nonXlmAssets[0]
+            ? nonXlmAssets[0]
+            : Asset.native().toString();
       }
 
       dispatch(saveDestinationAsset(defaultDestAsset));
@@ -481,8 +477,7 @@ export const SendAmount = ({
         <ScamAssetWarning
           isSendWarning
           pillType="Transaction"
-          // TODO: Uses AccountBalanceInterface instead of AccountBalances
-          balances={[] as any}
+          balances={sendAmountData.data!.userBalances}
           assetIcons={sendAmountData.data!.icons}
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
@@ -637,8 +632,10 @@ export const SendAmount = ({
                         issuerKey={parsedSourceAsset.issuer}
                         icons={sendAmountData.data?.icons || {}}
                         isSuspicious={isAssetSuspicious(
-                          sendAmountData.data?.userBalances!.balances?.[asset]
-                            ?.blockaidData,
+                          findAssetBalance(
+                            sendAmountData.data!.userBalances.balances,
+                            parsedSourceAsset,
+                          )?.blockaidData,
                         )}
                       />
                     )}
@@ -652,8 +649,10 @@ export const SendAmount = ({
                           icon=""
                           icons={sendAmountData.data?.icons || {}}
                           isSuspicious={isAssetSuspicious(
-                            sendAmountData.data?.userBalances!.balances?.[asset]
-                              ?.blockaidData,
+                            findAssetBalance(
+                              sendAmountData.data!.userBalances.balances,
+                              parsedSourceAsset,
+                            )?.blockaidData,
                           )}
                         />
                         <PathPayAssetSelect
@@ -668,9 +667,12 @@ export const SendAmount = ({
                           icon={destinationIcon}
                           icons={sendAmountData.data!.icons}
                           isSuspicious={isAssetSuspicious(
-                            sendAmountData.data?.userBalances!.balances?.[
-                              formik.values.destinationAsset
-                            ]?.blockaidData,
+                            findAssetBalance(
+                              sendAmountData.data!.userBalances.balances,
+                              getAssetFromCanonical(
+                                formik.values.destinationAsset,
+                              ),
+                            )?.blockaidData,
                           )}
                         />
                       </>
