@@ -44,7 +44,7 @@ const mockFetch = jest.spyOn(global, "fetch").mockResolvedValue({
 });
 
 describe("AddFunds view", () => {
-  it("displays Coinbase onramp button and opens Coinbase's flow", async () => {
+  it("displays Coinbase onramp button and opens Coinbase's default flow", async () => {
     render(
       <Wrapper
         routes={[ROUTES.addFunds]}
@@ -67,9 +67,41 @@ describe("AddFunds view", () => {
 
     await waitFor(async () => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+        "Add funds",
+      );
+      const coinbaseButton = screen.getByTestId("add-coinbase-button");
+      await fireEvent.click(coinbaseButton);
+      expect(newTabSpy).toHaveBeenCalledWith({
+        url: `https://pay.coinbase.com/buy/select-asset?sessionToken=${token}&defaultExperience=buy`,
+      });
+    });
+  });
+  it("displays Coinbase onramp button and opens Coinbase's XLM flow", async () => {
+    render(
+      <Wrapper
+        routes={[`${ROUTES.addFunds}?isAddXlm=true`]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <AddFunds />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
         "Add XLM",
       );
-      const coinbaseButton = screen.getByTestId("add-xlm-coinbase-button");
+      const coinbaseButton = screen.getByTestId("add-coinbase-button");
       await fireEvent.click(coinbaseButton);
       expect(newTabSpy).toHaveBeenCalledWith({
         url: `https://pay.coinbase.com/buy/select-asset?sessionToken=${token}&defaultExperience=buy&defaultAsset=XLM`,

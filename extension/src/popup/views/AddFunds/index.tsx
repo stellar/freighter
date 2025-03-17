@@ -52,7 +52,11 @@ export const AddFunds = () => {
       <View.Content>
         <div className="AddFunds">
           <div className="AddFunds__content">
-            <div className="AddFunds__button" onClick={handleOnrampClick}>
+            <div
+              className="AddFunds__button"
+              onClick={handleOnrampClick}
+              data-testid="add-coinbase-button"
+            >
               <img
                 className="AddFunds__onrampLogo"
                 src={CoinbaseLogo}
