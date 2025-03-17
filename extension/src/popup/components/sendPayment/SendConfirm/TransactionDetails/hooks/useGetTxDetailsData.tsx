@@ -32,6 +32,7 @@ interface TxDetailsData {
   isDestAssetSuspicious: boolean;
   isSourceAssetSuspicious: boolean;
   balances: AccountBalances;
+  destinationBalances: AccountBalances;
   scanResult?: BlockAidScanTxResult | null;
   transactionXdr: string;
 }
@@ -175,6 +176,7 @@ const getBuiltTx = async (
 
 function useGetTxDetailsData(
   publicKey: string,
+  destination: string,
   networkDetails: NetworkDetails,
   destAsset: ReturnType<typeof getAssetFromCanonical>,
   sourceAsset: ReturnType<typeof getAssetFromCanonical>,
@@ -193,9 +195,14 @@ function useGetTxDetailsData(
     reducer<TxDetailsData, unknown>,
     initialState,
   );
-  // TODO: get destination balances
+
   const { fetchData: fetchBalances } = useGetBalances(
     publicKey,
+    networkDetails,
+    balanceOptions,
+  );
+  const { fetchData: fetchDestinationBalances } = useGetBalances(
+    destination,
     networkDetails,
     balanceOptions,
   );
@@ -205,9 +212,14 @@ function useGetTxDetailsData(
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const balancesResult = await fetchBalances();
+      const destBalancesResult = await fetchDestinationBalances();
 
       if (isGetBalancesError(balancesResult)) {
         throw new Error(balancesResult.message);
+      }
+
+      if (isGetBalancesError(destBalancesResult)) {
+        throw new Error(destBalancesResult.message);
       }
 
       const source = findAssetBalance(balancesResult.balances, sourceAsset);
@@ -228,6 +240,7 @@ function useGetTxDetailsData(
 
       const payload = {
         balances: balancesResult,
+        destinationBalances: destBalancesResult,
         destAssetIconUrl,
         isSourceAssetSuspicious: isAssetSuspicious(source.blockaidData),
         isDestAssetSuspicious: isAssetSuspicious(scannedDestAsset),
@@ -258,7 +271,7 @@ function useGetTxDetailsData(
             path,
             isPathPayment,
             isSwap,
-            isFunded: true, // TODO: destinationBalances.isFunded!
+            isFunded: destBalancesResult.isFunded!,
           },
           transactionFee,
           transactionTimeout,

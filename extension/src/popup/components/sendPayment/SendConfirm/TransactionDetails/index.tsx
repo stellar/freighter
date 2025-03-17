@@ -13,12 +13,7 @@ import {
   truncatedFedAddress,
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
-import {
-  AssetBalance,
-  AssetIcons,
-  ActionStatus,
-  Balance,
-} from "@shared/api/types";
+import { AssetBalance, AssetIcons, ActionStatus } from "@shared/api/types";
 import {
   defaultBlockaidScanAssetResult,
   isCustomNetwork,
@@ -77,6 +72,7 @@ import {
 } from "./hooks/useGetTxDetailsData";
 
 import "./styles.scss";
+import { findAssetBalance } from "helpers/hooks/useGetBalances";
 
 const TwoAssetCard = ({
   sourceAssetIcons,
@@ -179,6 +175,7 @@ export const TransactionDetails = ({
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isSwap = useIsSwap();
+  const sourceAsset = getAssetFromCanonical(asset);
   const scanParams =
     isToken || isSoroswap || isContractId(destination)
       ? {
@@ -187,7 +184,7 @@ export const TransactionDetails = ({
         }
       : {
           type: "classic" as const,
-          sourceAsset: getAssetFromCanonical(asset),
+          sourceAsset: sourceAsset,
           destAsset: getAssetFromCanonical(destinationAsset || "native"),
           amount,
           destinationAmount,
@@ -202,9 +199,10 @@ export const TransactionDetails = ({
         };
   const { state: txDetailsData, fetchData } = useGetTxDetailsData(
     publicKey,
+    destination,
     networkDetails,
     getAssetFromCanonical(destinationAsset || "native"),
-    getAssetFromCanonical(asset),
+    sourceAsset,
     {
       shouldScan: shouldScanTx,
       url: "internal",
@@ -221,7 +219,6 @@ export const TransactionDetails = ({
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
   const isHardwareWallet = !!hardwareWalletType;
 
-  const sourceAsset = getAssetFromCanonical(asset);
   const destAsset = getAssetFromCanonical(destinationAsset || "native");
 
   const _isMainnet = isMainnet(networkDetails);
@@ -445,8 +442,7 @@ export const TransactionDetails = ({
                 sourceAssetIcons={txDetailsData.data!.balances.icons!}
                 sourceCanon={asset}
                 sourceAmount={amount}
-                // TODO: get dest icons
-                destAssetIcons={txDetailsData.data!.balances.icons!}
+                destAssetIcons={txDetailsData.data!.destinationBalances.icons!}
                 destCanon={destinationAsset || "native"}
                 destAmount={destinationAmount}
                 isSourceAssetSuspicious={
@@ -568,16 +564,15 @@ export const TransactionDetails = ({
                 <FlaggedWarningMessage
                   isMemoRequired={isMemoRequired}
                   blockaidData={
-                    // TODO: helper to get asset & dest asset
                     (txDetailsData.data!.isSourceAssetSuspicious
-                      ? (
-                          txDetailsData.data!.balances.balances as Balance[]
-                        ).find((balance) => balance.token?.code === asset)
-                          ?.blockaidData
-                      : (
-                          txDetailsData.data!.balances.balances as Balance[]
-                        ).find((balance) => balance.token?.code === asset)
-                          ?.blockaidData) || defaultBlockaidScanAssetResult
+                      ? findAssetBalance(
+                          txDetailsData.data!.balances.balances,
+                          sourceAsset,
+                        )?.blockaidData
+                      : findAssetBalance(
+                          txDetailsData.data!.destinationBalances.balances,
+                          sourceAsset,
+                        )?.blockaidData) || defaultBlockaidScanAssetResult
                   }
                   isSuspicious={
                     txDetailsData.data!.isSourceAssetSuspicious ||

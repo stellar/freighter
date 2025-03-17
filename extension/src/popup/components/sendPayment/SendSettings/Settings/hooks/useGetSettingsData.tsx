@@ -130,7 +130,7 @@ const simulateTx = async ({
       }
 
       const minResourceFee = formatTokenAmount(
-        new BigNumber(response.simulationResponse.minResourceFee as string),
+        new BigNumber(response.simulationResponse.minResourceFee),
         CLASSIC_ASSET_DECIMALS,
       );
       return {
