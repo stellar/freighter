@@ -1,32 +1,30 @@
 import { Asset } from "stellar-sdk";
 import { captureException } from "@sentry/browser";
 
-import {
-  AssetToken,
-  AssetType,
-  Balance,
-  SorobanBalance,
-} from "@shared/api/types";
+import { AssetToken } from "@shared/api/types";
+import { AssetType, SorobanAsset } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { isContractId } from "./soroban";
 
-export function isSorobanBalance(
-  balance: AssetType,
-): balance is SorobanBalance {
-  return (balance as SorobanBalance).decimals !== undefined;
+export function isSorobanBalance(balance: AssetType): balance is SorobanAsset {
+  return (balance as SorobanAsset).decimals !== undefined;
 }
 
 export const getBalanceByIssuer = (issuer: string, balances: AssetType[]) =>
-  (balances as Balance[]).find((balance) => {
-    if (issuer === "native") {
+  balances.find((balance) => {
+    if ("token" in balance && "type" in balance.token) {
       return balance.token.type === "native";
     }
     if (isContractId(issuer)) {
-      return balance.contractId === issuer;
+      return "contractId" in balance && balance.contractId === issuer;
     }
 
     // G address issuer
-    return (balance.token as AssetToken).issuer.key === issuer;
+    return (
+      "token" in balance &&
+      "issuer" in balance.token &&
+      balance.token.issuer.key === issuer
+    );
   });
 
 /*
@@ -38,11 +36,12 @@ export const getBalanceByKey = (
   networkDetails: NetworkDetails,
 ) => {
   const key = balances.find((balance) => {
-    const matchesIssuer = contractId === balance.contractId;
+    const matchesIssuer =
+      "contractId" in balance && contractId === balance.contractId;
 
     try {
       // if xlm, check for a SAC match
-      if (balance.token && balance.token.code === "XLM") {
+      if ("token" in balance && balance.token.code === "XLM") {
         const matchesSac =
           Asset.native().contractId(networkDetails.networkPassphrase) ===
           contractId;
@@ -51,7 +50,7 @@ export const getBalanceByKey = (
 
       // if issuer is a G address, check for a SAC match
       if (
-        balance.token &&
+        "token" in balance &&
         "issuer" in balance.token &&
         !isContractId(balance.token.issuer.key)
       ) {
@@ -65,8 +64,10 @@ export const getBalanceByKey = (
       }
     } catch (e) {
       console.error(e);
+      const id =
+        "token" in balance ? balance.token.code : balance.liquidityPoolId;
       captureException(
-        `Error checking for SAC match with code ${balance.token?.code}. Error: ${e}`,
+        `Error checking for SAC match with id ${id}. Error: ${e}`,
       );
     }
     return matchesIssuer;

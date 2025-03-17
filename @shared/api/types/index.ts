@@ -2,11 +2,14 @@ import BigNumber from "bignumber.js";
 import { AssetType as SdkAssetType, Horizon } from "stellar-sdk";
 import Blockaid from "@blockaid/client";
 
-import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
-import { APPLICATION_STATE } from "../constants/applicationState";
-import { WalletType } from "../constants/hardwareWallet";
-import { NetworkDetails } from "../constants/stellar";
-import { AssetsLists, AssetsListItem } from "../constants/soroban/token";
+import {
+  SERVICE_TYPES,
+  EXTERNAL_SERVICE_TYPES,
+} from "../../constants/services";
+import { APPLICATION_STATE } from "../../constants/applicationState";
+import { WalletType } from "../../constants/hardwareWallet";
+import { NetworkDetails } from "../../constants/stellar";
+import { AssetsLists, AssetsListItem } from "../../constants/soroban/token";
 
 export enum ActionStatus {
   IDLE = "IDLE",
@@ -289,8 +292,6 @@ export interface SorobanBalance {
   decimals: number;
   token?: { code: string; issuer: { key: string } };
 }
-
-export type AssetType = NativeBalance | Balance | SorobanBalance;
 
 export type TokenBalances = SorobanBalance[];
 

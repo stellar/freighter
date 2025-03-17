@@ -10,8 +10,6 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import {
   AccountBalancesInterface,
   AssetIcons,
-  AssetType,
-  Balance,
   BalanceMap,
 } from "@shared/api/types";
 import { RequestState } from "constants/request";
@@ -19,6 +17,11 @@ import { initialState, reducer } from "helpers/request";
 import { storeBalanceMetricData } from "helpers/metrics";
 import { filterHiddenBalances, sortBalances } from "popup/helpers/account";
 import { isAsset } from "helpers/stellar";
+import {
+  AssetType,
+  LiquidityPoolShareAsset,
+  SorobanAsset,
+} from "@shared/api/types/account-balance";
 
 export const isGetBalancesError = (
   response: AccountBalances | Error,
@@ -29,34 +32,41 @@ export const isGetBalancesError = (
   return false;
 };
 
-// TODO: should this handle soroban balances also
 export const findAssetBalance = (
   balances: AssetType[],
   asset: Asset | { issuer: string; code: string },
 ) => {
   if (isAsset(asset) && asset.isNative()) {
-    return (balances as Balance[]).find(
-      (balance) => balance.token.type === "native",
-    );
+    return balances.find(
+      (balance) =>
+        "token" in balance &&
+        "type" in balance.token &&
+        balance.token.type === "native",
+    ) as Exclude<AssetType, SorobanAsset | LiquidityPoolShareAsset>;
   }
-  return (balances as Balance[]).find((balance) => {
-    // Token = NativeToken | AssetToken
+  return balances.find((balance) => {
     const balanceIssuer =
-      "issuer" in balance.token ? balance.token.issuer.key : "";
+      "token" in balance && "issuer" in balance.token
+        ? balance.token.issuer.key
+        : "";
     return balanceIssuer === asset.issuer;
-  });
+  }) as Exclude<AssetType, SorobanAsset | LiquidityPoolShareAsset>;
 };
 
 export const findAddressBalance = (balances: AssetType[], address: string) => {
   if (address === "native") {
-    return (balances as Balance[]).find(
-      (balance) => balance.token.type === "native",
+    return balances.find(
+      (balance) =>
+        "token" in balance &&
+        "type" in balance.token &&
+        balance.token.type === "native",
     );
   }
-  return (balances as Balance[]).find((balance) => {
-    // Token = NativeToken | AssetToken
+  return balances.find((balance) => {
     const balanceIssuer =
-      "issuer" in balance.token ? balance.token.issuer.key : "";
+      "token" in balance && "issuer" in balance.token
+        ? balance.token.issuer.key
+        : "";
     return balanceIssuer === address;
   });
 };

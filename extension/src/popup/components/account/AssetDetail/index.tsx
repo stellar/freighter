@@ -44,9 +44,14 @@ import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { Loading } from "popup/components/Loading";
 import { BlockaidAssetWarning } from "popup/components/WarningMessages";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
+import { getBalanceByIssuer } from "popup/helpers/balance";
+import {
+  AssetType,
+  LiquidityPoolShareAsset,
+  SorobanAsset,
+} from "@shared/api/types/account-balance";
 
 import "./styles.scss";
-import { getBalanceByIssuer } from "popup/helpers/balance";
 
 interface AssetDetailProps {
   assetOperations: HorizonOperation[];
@@ -76,8 +81,8 @@ export const AssetDetail = ({
   const selectedBalance = getBalanceByIssuer(
     canonical.issuer,
     accountBalances.balances,
-  );
-  const isSuspicious = isAssetSuspicious(selectedBalance!.blockaidData);
+  ) as Exclude<AssetType, LiquidityPoolShareAsset | SorobanAsset>;
+  const isSuspicious = isAssetSuspicious(selectedBalance.blockaidData);
 
   const assetIssuer = selectedBalance
     ? getIssuerFromBalance(selectedBalance)
@@ -240,8 +245,7 @@ export const AssetDetail = ({
             {isSuspicious && (
               <BlockaidAssetWarning
                 blockaidData={
-                  selectedBalance!.blockaidData ||
-                  defaultBlockaidScanAssetResult
+                  selectedBalance.blockaidData || defaultBlockaidScanAssetResult
                 }
               />
             )}

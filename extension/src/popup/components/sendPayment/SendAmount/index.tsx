@@ -373,7 +373,7 @@ export const SendAmount = ({
         // otherwise default to first non-native/classic side asset if exists
         const nonXlmAssets = sendAmountData.data?.userBalances!.balances.filter(
           (b) =>
-            !(b.token && b.token.code === "native") &&
+            !("token" in b && b.token.code === "native") &&
             !("liquidityPoolId" in b) &&
             !("decimals" in b),
         );

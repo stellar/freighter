@@ -1,7 +1,6 @@
 import { Horizon } from "stellar-sdk";
 import { BigNumber } from "bignumber.js";
 import {
-  AssetType,
   AssetVisibility,
   BalanceMap,
   Balances,
@@ -9,8 +8,8 @@ import {
   AssetKey,
   SorobanBalance,
   TokenBalances,
-  Balance,
 } from "@shared/api/types";
+import { AssetType } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
@@ -176,7 +175,7 @@ export const getApiStellarExpertUrl = (networkDetails: NetworkDetails) =>
   }`;
 
 interface GetAvailableBalance {
-  balance: Balance | undefined;
+  balance: AssetType;
   recommendedFee?: string;
   subentryCount: number;
 }
@@ -190,7 +189,11 @@ export const getAvailableBalance = ({
   if (!balance) {
     return availBalance;
   }
-  if (balance.token.type === "native") {
+  if (
+    "token" in balance &&
+    "type" in balance.token &&
+    balance.token.type === "native"
+  ) {
     // take base reserve into account for XLM payments
     const baseReserve = (2 + subentryCount) * 0.5;
 
@@ -211,7 +214,7 @@ export const getAvailableBalance = ({
 };
 
 export const getIssuerFromBalance = (balance: AssetType) => {
-  if (balance.token && "token" in balance && "issuer" in balance.token) {
+  if ("token" in balance && "issuer" in balance.token) {
     return balance.token.issuer.key.toString();
   }
 
