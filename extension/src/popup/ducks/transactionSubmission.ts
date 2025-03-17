@@ -6,6 +6,7 @@ import {
   xdr,
 } from "stellar-sdk";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { captureException } from "@sentry/browser";
 
 import {
   signFreighterTransaction as internalSignFreighterTransaction,
@@ -405,7 +406,12 @@ export const getAccountBalances = createAsyncThunk<
         );
         const assetIds = Object.keys(balances.balances || {});
         if (assetIds.length && shouldGetTokenPrices) {
-          tokenPrices = await internalGetTokenPrices(assetIds);
+          try {
+            tokenPrices = await internalGetTokenPrices(assetIds);
+          } catch (error) {
+            const _err = JSON.stringify(error);
+            captureException(`Failed to fetch token prices - ${_err}`);
+          }
         }
       }
 
