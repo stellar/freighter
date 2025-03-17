@@ -10,7 +10,7 @@ import {
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
-import { AddXlm } from "../AddXlm";
+import { AddFunds } from "../AddFunds";
 
 const token = "foo";
 
@@ -43,11 +43,11 @@ const mockFetch = jest.spyOn(global, "fetch").mockResolvedValue({
   ok: true,
 });
 
-describe("AddXlm view", () => {
+describe("AddFunds view", () => {
   it("displays Coinbase onramp button and opens Coinbase's flow", async () => {
     render(
       <Wrapper
-        routes={[ROUTES.addXlm]}
+        routes={[ROUTES.addFunds]}
         state={{
           auth: {
             error: null,
@@ -61,7 +61,7 @@ describe("AddXlm view", () => {
           },
         }}
       >
-        <AddXlm />
+        <AddFunds />
       </Wrapper>,
     );
 
