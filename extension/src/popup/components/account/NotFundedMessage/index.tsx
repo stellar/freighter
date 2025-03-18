@@ -57,7 +57,7 @@ export const NotFundedMessage = ({
         isFullWidth
         onClick={() =>
           isMainnet(networkDetails)
-            ? navigateTo(ROUTES.addXlm, navigate)
+            ? navigateTo(ROUTES.addFunds, navigate, "?isAddXlm=true")
             : navigateTo(ROUTES.viewPublicKey, navigate)
         }
       >
