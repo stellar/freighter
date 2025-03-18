@@ -10,7 +10,7 @@ import {
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
-import { AddXlm } from "../AddXlm";
+import { AddFunds } from "../AddFunds";
 
 const token = "foo";
 
@@ -43,11 +43,11 @@ const mockFetch = jest.spyOn(global, "fetch").mockResolvedValue({
   ok: true,
 });
 
-describe("AddXlm view", () => {
-  it("displays Coinbase onramp button and opens Coinbase's flow", async () => {
+describe("AddFunds view", () => {
+  it("displays Coinbase onramp button and opens Coinbase's default flow", async () => {
     render(
       <Wrapper
-        routes={[ROUTES.addXlm]}
+        routes={[ROUTES.addFunds]}
         state={{
           auth: {
             error: null,
@@ -61,7 +61,39 @@ describe("AddXlm view", () => {
           },
         }}
       >
-        <AddXlm />
+        <AddFunds />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
+        "Add funds",
+      );
+      const coinbaseButton = screen.getByTestId("add-coinbase-button");
+      await fireEvent.click(coinbaseButton);
+      expect(newTabSpy).toHaveBeenCalledWith({
+        url: `https://pay.coinbase.com/buy/select-asset?sessionToken=${token}&defaultExperience=buy`,
+      });
+    });
+  });
+  it("displays Coinbase onramp button and opens Coinbase's XLM flow", async () => {
+    render(
+      <Wrapper
+        routes={[`${ROUTES.addFunds}?isAddXlm=true`]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <AddFunds />
       </Wrapper>,
     );
 
@@ -69,7 +101,7 @@ describe("AddXlm view", () => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
         "Add XLM",
       );
-      const coinbaseButton = screen.getByTestId("add-xlm-coinbase-button");
+      const coinbaseButton = screen.getByTestId("add-coinbase-button");
       await fireEvent.click(coinbaseButton);
       expect(newTabSpy).toHaveBeenCalledWith({
         url: `https://pay.coinbase.com/buy/select-asset?sessionToken=${token}&defaultExperience=buy&defaultAsset=XLM`,
