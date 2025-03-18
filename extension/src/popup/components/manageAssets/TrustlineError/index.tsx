@@ -178,13 +178,17 @@ export const TrustlineError = ({
             return;
           }
 
-          setBuyingLiabilities(Number(balance.buyingLiabilities));
+          if ("buyingLiabilities" in balance) {
+            setBuyingLiabilities(Number(balance.buyingLiabilities));
+          }
 
-          setAssetBalance(
-            `${new BigNumber(balance.available).toString()} ${
-              balance?.token?.code
-            }`,
-          );
+          if ("available" in balance) {
+            setAssetBalance(
+              `${new BigNumber(balance.available).toString()} ${
+                balance?.token?.code
+              }`,
+            );
+          }
         }
       }
     }

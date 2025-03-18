@@ -50,7 +50,7 @@ export const findAssetBalance = (
         ? balance.token.issuer.key
         : "";
     return balanceIssuer === asset.issuer;
-  }) as Exclude<AssetType, SorobanAsset | LiquidityPoolShareAsset>;
+  }) as Exclude<AssetType, LiquidityPoolShareAsset>;
 };
 
 export const findAddressBalance = (balances: AssetType[], address: string) => {

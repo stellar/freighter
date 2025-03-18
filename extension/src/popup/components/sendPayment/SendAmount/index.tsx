@@ -55,8 +55,8 @@ import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 import { BASE_RESERVE } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
+import { isSorobanBalance } from "popup/helpers/balance";
 
-import { SorobanBalance } from "@shared/api/types";
 import { RequestState } from "constants/request";
 import { findAssetBalance } from "helpers/hooks/useGetBalances";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
@@ -178,9 +178,8 @@ export const SendAmount = ({
         sendAmountData.data!.userBalances.balances,
         selectedCanonical,
       );
-      if (isToken && selectedBalance) {
-        // TODO: fix AssetType to correctly
-        return getTokenBalance(selectedBalance as any as SorobanBalance);
+      if (isToken && selectedBalance && isSorobanBalance(selectedBalance)) {
+        return getTokenBalance(selectedBalance);
       }
       if (sendAmountData.data?.userBalances!.balances) {
         // take base reserve into account for XLM payments
@@ -230,14 +229,18 @@ export const SendAmount = ({
     );
     if (values.destinationAsset) {
       dispatch(saveDestinationAsset(values.destinationAsset));
-      isDestAssetScam = isAssetSuspicious(destinationBalance?.blockaidData);
+      isDestAssetScam =
+        "blockaidData" in destinationBalance &&
+        isAssetSuspicious(destinationBalance.blockaidData);
     }
     // check for scam asset
     const assetBalance = findAssetBalance(
       sendAmountData.data!.userBalances.balances,
       getAssetFromCanonical(asset),
     );
-    const isSourceAssetScam = isAssetSuspicious(assetBalance?.blockaidData);
+    const isSourceAssetScam =
+      "blockaidData" in assetBalance &&
+      isAssetSuspicious(assetBalance.blockaidData);
     if (isSourceAssetScam) {
       setShowBlockedDomainWarning(true);
       setSuspiciousAssetData({
@@ -260,7 +263,9 @@ export const SendAmount = ({
         )!.domain,
         image: sendAmountData.data!.icons[values.destinationAsset]!,
         blockaidData:
-          destinationBalance?.blockaidData || defaultBlockaidScanAssetResult,
+          "blockaidData" in destinationBalance
+            ? destinationBalance.blockaidData
+            : defaultBlockaidScanAssetResult,
       });
     } else {
       navigateTo(next);
@@ -471,6 +476,15 @@ export const SendAmount = ({
     return <Loading />;
   }
 
+  const sourceBalance = findAssetBalance(
+    sendAmountData.data!.userBalances.balances,
+    parsedSourceAsset,
+  );
+  const destBalance = findAssetBalance(
+    sendAmountData.data!.userBalances.balances,
+    getAssetFromCanonical(formik.values.destinationAsset),
+  );
+
   return (
     <>
       {showBlockedDomainWarning && (
@@ -631,12 +645,10 @@ export const SendAmount = ({
                         assetCode={parsedSourceAsset.code}
                         issuerKey={parsedSourceAsset.issuer}
                         icons={sendAmountData.data?.icons || {}}
-                        isSuspicious={isAssetSuspicious(
-                          findAssetBalance(
-                            sendAmountData.data!.userBalances.balances,
-                            parsedSourceAsset,
-                          )?.blockaidData,
-                        )}
+                        isSuspicious={
+                          "blockaidData" in sourceBalance &&
+                          isAssetSuspicious(sourceBalance.blockaidData)
+                        }
                       />
                     )}
                     {showSourceAndDestAsset && (
@@ -648,12 +660,10 @@ export const SendAmount = ({
                           balance={formik.values.amount}
                           icon=""
                           icons={sendAmountData.data?.icons || {}}
-                          isSuspicious={isAssetSuspicious(
-                            findAssetBalance(
-                              sendAmountData.data!.userBalances.balances,
-                              parsedSourceAsset,
-                            )?.blockaidData,
-                          )}
+                          isSuspicious={
+                            "blockaidData" in sourceBalance &&
+                            isAssetSuspicious(sourceBalance.blockaidData)
+                          }
                         />
                         <PathPayAssetSelect
                           source={false}
@@ -666,14 +676,10 @@ export const SendAmount = ({
                           }
                           icon={destinationIcon}
                           icons={sendAmountData.data!.icons}
-                          isSuspicious={isAssetSuspicious(
-                            findAssetBalance(
-                              sendAmountData.data!.userBalances.balances,
-                              getAssetFromCanonical(
-                                formik.values.destinationAsset,
-                              ),
-                            )?.blockaidData,
-                          )}
+                          isSuspicious={
+                            "blockaidData" in destBalance &&
+                            isAssetSuspicious(destBalance.blockaidData)
+                          }
                         />
                       </>
                     )}

@@ -6,9 +6,8 @@ import { AssetType, SorobanAsset } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { isContractId } from "./soroban";
 
-export function isSorobanBalance(balance: AssetType): balance is SorobanAsset {
-  return (balance as SorobanAsset).decimals !== undefined;
-}
+export const isSorobanBalance = (balance: AssetType): balance is SorobanAsset =>
+  "contractId" in balance;
 
 export const getBalanceByIssuer = (issuer: string, balances: AssetType[]) =>
   balances.find((balance) => {

@@ -69,6 +69,7 @@ import { RequestState } from "popup/views/Account/hooks/useGetAccountData";
 import { findAssetBalance } from "helpers/hooks/useGetBalances";
 import {
   computeDestMinWithSlippage,
+  TxDetailsData,
   useGetTxDetailsData,
 } from "./hooks/useGetTxDetailsData";
 
@@ -377,6 +378,25 @@ export const TransactionDetails = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const getBlockaidData = (
+    details: TxDetailsData | null,
+    source: ReturnType<typeof getAssetFromCanonical>,
+    dest: ReturnType<typeof getAssetFromCanonical>,
+  ) => {
+    const sourceBalance = findAssetBalance(details!.balances.balances, source);
+    const destBalance = findAssetBalance(
+      details!.destinationBalances.balances,
+      dest,
+    );
+    if (details!.isSourceAssetSuspicious && "blockaidData" in sourceBalance) {
+      return sourceBalance.blockaidData;
+    }
+    if (details!.isDestAssetSuspicious && "blockaidData" in destBalance) {
+      return destBalance.blockaidData;
+    }
+    return defaultBlockaidScanAssetResult;
+  };
+
   const isLoading =
     txDetailsData.state === RequestState.IDLE ||
     txDetailsData.state === RequestState.LOADING;
@@ -563,17 +583,11 @@ export const TransactionDetails = ({
               {submission.submitStatus === ActionStatus.IDLE && (
                 <FlaggedWarningMessage
                   isMemoRequired={isMemoRequired}
-                  blockaidData={
-                    (txDetailsData.data!.isSourceAssetSuspicious
-                      ? findAssetBalance(
-                          txDetailsData.data!.balances.balances,
-                          sourceAsset,
-                        )?.blockaidData
-                      : findAssetBalance(
-                          txDetailsData.data!.destinationBalances.balances,
-                          sourceAsset,
-                        )?.blockaidData) || defaultBlockaidScanAssetResult
-                  }
+                  blockaidData={getBlockaidData(
+                    txDetailsData.data,
+                    sourceAsset,
+                    destAsset,
+                  )}
                   isSuspicious={
                     txDetailsData.data!.isSourceAssetSuspicious ||
                     txDetailsData.data!.isDestAssetSuspicious

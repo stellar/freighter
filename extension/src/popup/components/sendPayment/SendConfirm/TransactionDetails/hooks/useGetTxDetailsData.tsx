@@ -27,7 +27,7 @@ import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
 
-interface TxDetailsData {
+export interface TxDetailsData {
   destAssetIconUrl: string;
   isDestAssetSuspicious: boolean;
   isSourceAssetSuspicious: boolean;
@@ -242,7 +242,8 @@ function useGetTxDetailsData(
         balances: balancesResult,
         destinationBalances: destBalancesResult,
         destAssetIconUrl,
-        isSourceAssetSuspicious: isAssetSuspicious(source.blockaidData),
+        isSourceAssetSuspicious:
+          "blockaidData" in source && isAssetSuspicious(source.blockaidData),
         isDestAssetSuspicious: isAssetSuspicious(scannedDestAsset),
       } as TxDetailsData;
 

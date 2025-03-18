@@ -114,14 +114,20 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     networkDetails.networkPassphrase,
   );
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
-  const isSourceAssetSuspicious = isAssetSuspicious(
-    findAssetBalance(accountData.data!.balances.balances, sourceAsset)
-      ?.blockaidData,
+  const sourceBalance = findAssetBalance(
+    accountData.data!.balances.balances,
+    sourceAsset,
   );
-  const isDestAssetSuspicious = isAssetSuspicious(
-    findAssetBalance(accountData.data!.balances.balances, destinationCanonical)
-      ?.blockaidData,
+  const destBalance = findAssetBalance(
+    accountData.data!.balances.balances,
+    destinationCanonical,
   );
+  const isSourceAssetSuspicious =
+    "blockaidData" in sourceBalance &&
+    isAssetSuspicious(sourceBalance.blockaidData);
+  const isDestAssetSuspicious =
+    "blockaidData" in destBalance &&
+    isAssetSuspicious(destBalance.blockaidData);
 
   const removeTrustline = async (assetCode: string, assetIssuer: string) => {
     const changeParams = { limit: "0" };
