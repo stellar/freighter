@@ -179,11 +179,11 @@ export const AssetDetail = ({
                 assetCode={canonical.code}
                 assetIssuer={assetIssuer}
                 assetType={
-                  // TODO: ASSET TYPE FIX
-                  (selectedBalance &&
-                    "token" in selectedBalance &&
-                    (selectedBalance?.token as AssetToken)!.type) ||
-                  ""
+                  selectedBalance &&
+                  "token" in selectedBalance &&
+                  "type" in selectedBalance.token
+                    ? selectedBalance.token.type
+                    : null
                 }
                 assetDomain={assetDomain}
                 contractId={
