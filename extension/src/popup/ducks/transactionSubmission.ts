@@ -407,7 +407,12 @@ export const getAccountBalances = createAsyncThunk<
         const assetIds = Object.keys(balances.balances || {});
         if (assetIds.length && shouldGetTokenPrices) {
           try {
-            tokenPrices = await internalGetTokenPrices(assetIds);
+            tokenPrices = await Promise.race<ApiTokenPrices>([
+              internalGetTokenPrices(assetIds),
+              new Promise<ApiTokenPrices>((resolve) =>
+                setTimeout(() => resolve({} as ApiTokenPrices), 3000),
+              ),
+            ]);
           } catch (error) {
             const _err = JSON.stringify(error);
             captureException(`Failed to fetch token prices - ${_err}`);
