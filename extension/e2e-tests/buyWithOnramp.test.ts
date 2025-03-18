@@ -20,7 +20,7 @@ test("should show add XLM page and open Coinbase", async ({
     screenshot: "add-xlm-page.png",
   });
 
-  await page.getByText("Buy with Coinbase").click();
+  await page.getByText("Buy XLM with Coinbase").click();
 
   const popup = await popupPromise;
 
@@ -42,11 +42,13 @@ test("should show Buy with Coinbase and open Coinbase", async ({
   });
   const popupPromise = page.context().waitForEvent("page");
   await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Buy with Coinbase").click();
+  await page.getByText("Add Funds").click();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "buy-with-coinbase.png",
   });
+
+  await page.getByText("Buy with Coinbase").click();
 
   const popup = await popupPromise;
 

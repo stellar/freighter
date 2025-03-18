@@ -3,6 +3,8 @@ import { captureException } from "@sentry/browser";
 
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { openTab } from "popup/helpers/navigate";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { RequestState, initialState, reducer } from "./fetchHookInterface";
 
 type SuccessReturnType = { token: string | null; error: string | null };
@@ -40,8 +42,8 @@ function useGetOnrampToken({ publicKey, asset }: UseGetOnrampTokenParams) {
       const token = state.data.token;
 
       setTokenError("");
-      captureException("Unable to fetch Coinbase session token");
       const coinbaseUrl = getCoinbaseUrl({ token, asset });
+      emitMetric(METRIC_NAMES.coinbaseOnrampOpened, { asset });
 
       openTab(coinbaseUrl);
     }

@@ -170,4 +170,6 @@ export const METRIC_NAMES = {
   blockaidDomainScan: "blockaid: scanned domain",
   blockaidTxScan: "blockaid: scanned transaction",
   blockaidAssetScan: "blockaid: scanned asset",
+
+  coinbaseOnrampOpened: "coinbase onramp: opened",
 };
