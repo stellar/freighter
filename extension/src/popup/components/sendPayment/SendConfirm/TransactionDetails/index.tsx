@@ -61,12 +61,12 @@ import {
 import { View } from "popup/basics/layout/View";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
+import { findAssetBalance } from "popup/helpers/balance";
 import { formatAmount } from "popup/helpers/formatters";
 import { isContractId } from "popup/helpers/soroban";
 
 import { resetSimulation } from "popup/ducks/token-payment";
 import { RequestState } from "popup/views/Account/hooks/useGetAccountData";
-import { findAssetBalance } from "helpers/hooks/useGetBalances";
 import {
   computeDestMinWithSlippage,
   TxDetailsData,

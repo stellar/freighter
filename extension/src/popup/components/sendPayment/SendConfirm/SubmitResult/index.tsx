@@ -34,12 +34,12 @@ import { TrustlineError } from "popup/components/manageAssets/TrustlineError";
 import IconFail from "popup/assets/icon-fail.svg";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { findAssetBalance } from "popup/helpers/balance";
 import { formatAmount } from "popup/helpers/formatters";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { useGetAccountData } from "popup/views/Account/hooks/useGetAccountData";
 
 import "./styles.scss";
-import { findAssetBalance } from "helpers/hooks/useGetBalances";
 
 const SwapAssetsIcon = ({
   sourceCanon,

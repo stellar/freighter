@@ -55,10 +55,9 @@ import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 import { BASE_RESERVE } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
-import { isSorobanBalance } from "popup/helpers/balance";
+import { isSorobanBalance, findAssetBalance } from "popup/helpers/balance";
 
 import { RequestState } from "constants/request";
-import { findAssetBalance } from "helpers/hooks/useGetBalances";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
 
 import "../styles.scss";

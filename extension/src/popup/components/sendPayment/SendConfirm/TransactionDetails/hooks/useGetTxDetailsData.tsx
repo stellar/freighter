@@ -13,7 +13,6 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { initialState, reducer } from "helpers/request";
 import {
   AccountBalances,
-  findAssetBalance,
   isGetBalancesError,
   useGetBalances,
 } from "helpers/hooks/useGetBalances";
@@ -25,6 +24,7 @@ import {
 import { BlockAidScanTxResult } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+import { findAssetBalance } from "popup/helpers/balance";
 import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
 
 export interface TxDetailsData {

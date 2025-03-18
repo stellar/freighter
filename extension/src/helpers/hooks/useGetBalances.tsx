@@ -1,5 +1,4 @@
 import { useReducer } from "react";
-import { Asset } from "stellar-sdk";
 
 import {
   getAccountBalances,
@@ -16,12 +15,7 @@ import { RequestState } from "constants/request";
 import { initialState, reducer } from "helpers/request";
 import { storeBalanceMetricData } from "helpers/metrics";
 import { filterHiddenBalances, sortBalances } from "popup/helpers/account";
-import { isAsset } from "helpers/stellar";
-import {
-  AssetType,
-  LiquidityPoolShareAsset,
-  SorobanAsset,
-} from "@shared/api/types/account-balance";
+import { AssetType } from "@shared/api/types/account-balance";
 
 export const isGetBalancesError = (
   response: AccountBalances | Error,
@@ -30,27 +24,6 @@ export const isGetBalancesError = (
     return true;
   }
   return false;
-};
-
-export const findAssetBalance = (
-  balances: AssetType[],
-  asset: Asset | { issuer: string; code: string },
-) => {
-  if (isAsset(asset) && asset.isNative()) {
-    return balances.find(
-      (balance) =>
-        "token" in balance &&
-        "type" in balance.token &&
-        balance.token.type === "native",
-    ) as Exclude<AssetType, SorobanAsset | LiquidityPoolShareAsset>;
-  }
-  return balances.find((balance) => {
-    const balanceIssuer =
-      "token" in balance && "issuer" in balance.token
-        ? balance.token.issuer.key
-        : "";
-    return balanceIssuer === asset.issuer;
-  }) as Exclude<AssetType, LiquidityPoolShareAsset>;
 };
 
 export const findAddressBalance = (balances: AssetType[], address: string) => {

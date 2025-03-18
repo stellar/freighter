@@ -1,13 +1,39 @@
 import { Asset } from "stellar-sdk";
 import { captureException } from "@sentry/browser";
 
+import { isAsset } from "helpers/stellar";
 import { AssetToken } from "@shared/api/types";
-import { AssetType, SorobanAsset } from "@shared/api/types/account-balance";
+import {
+  AssetType,
+  LiquidityPoolShareAsset,
+  SorobanAsset,
+} from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { isContractId } from "./soroban";
 
 export const isSorobanBalance = (balance: AssetType): balance is SorobanAsset =>
   "contractId" in balance;
+
+export const findAssetBalance = (
+  balances: AssetType[],
+  asset: Asset | { issuer: string; code: string },
+) => {
+  if (isAsset(asset) && asset.isNative()) {
+    return balances.find(
+      (balance) =>
+        "token" in balance &&
+        "type" in balance.token &&
+        balance.token.type === "native",
+    ) as Exclude<AssetType, SorobanAsset | LiquidityPoolShareAsset>;
+  }
+  return balances.find((balance) => {
+    const balanceIssuer =
+      "token" in balance && "issuer" in balance.token
+        ? balance.token.issuer.key
+        : "";
+    return balanceIssuer === asset.issuer;
+  }) as Exclude<AssetType, LiquidityPoolShareAsset>;
+};
 
 export const getBalanceByIssuer = (issuer: string, balances: AssetType[]) =>
   balances.find((balance) => {

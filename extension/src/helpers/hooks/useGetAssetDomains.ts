@@ -11,13 +11,13 @@ import {
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { getCanonicalFromAsset } from "helpers/stellar";
+import { findAssetBalance } from "popup/helpers/balance";
 import { isAssetSuspicious } from "../../popup/helpers/blockaid";
 import { getNativeContractDetails } from "../../popup/helpers/searchAsset";
 import { useIsSoroswapEnabled, useIsSwap } from "../../popup/helpers/useIsSwap";
 import { getAssetDomain } from "../../popup/helpers/getAssetDomain";
 import {
   AccountBalances,
-  findAssetBalance,
   isGetBalancesError,
   useGetBalances,
 } from "./useGetBalances";

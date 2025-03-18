@@ -11,13 +11,11 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 
 import { emitMetric } from "helpers/metrics";
+import { findAssetBalance } from "popup/helpers/balance";
 import { getResultCodes, RESULT_CODES } from "popup/helpers/parseTransaction";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import {
-  AccountBalances,
-  findAssetBalance,
-} from "helpers/hooks/useGetBalances";
+import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import "./styles.scss";
 

@@ -20,11 +20,9 @@ import {
   SorobanTokenInterface,
   TokenInvocationArgs,
 } from "@shared/constants/soroban/token";
-import {
-  AccountBalances,
-  findAssetBalance,
-} from "helpers/hooks/useGetBalances";
+import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getAssetFromCanonical } from "helpers/stellar";
+import { findAssetBalance } from "./balance";
 
 export const SOROBAN_OPERATION_TYPES = [
   "invoke_host_function",
