@@ -105,7 +105,10 @@ export const IntegrationTest = () => {
         return;
       }
 
-      res = await changeNetwork(NETWORK_NAMES.TESTNET);
+      res = await changeNetwork({
+        activePublicKey: testPublicKey,
+        networkName: NETWORK_NAMES.TESTNET,
+      });
       runAsserts("changeNetwork", () => {
         assertEq(res, TESTNET_NETWORK_DETAILS);
       });
@@ -116,29 +119,39 @@ export const IntegrationTest = () => {
         assertString(res.publicKey);
       });
 
-      await fundAccount(testPublicKey);
-
+      await fundAccount({
+        activePublicKey: testPublicKey,
+        publicKey: testPublicKey,
+      });
       runAsserts("fundAccount", () => {});
 
-      res = await addAccount(testPassword);
+      res = await addAccount({
+        activePublicKey: testPublicKey,
+        password: testPassword,
+      });
       runAsserts("addAccount", () => {
         assertArray(res.allAccounts);
         assertString(res.publicKey);
         assertBoolean(res.hasPrivateKey);
       });
 
-      res = await importAccount(testPassword, testSecretKey);
+      res = await importAccount({
+        activePublicKey: testPublicKey,
+        password: testPassword,
+        privateKey: testSecretKey,
+      });
       runAsserts("importAccount", () => {
         assertArray(res.allAccounts);
         assertString(res.publicKey);
         assertBoolean(res.hasPrivateKey);
       });
 
-      res = await importHardwareWallet(
-        testPublicKey,
-        WalletType.LEDGER,
-        "44'/148'/1'",
-      );
+      res = await importHardwareWallet({
+        activePublicKey: testPublicKey,
+        publicKey: testPublicKey,
+        hardwareWalletType: WalletType.LEDGER,
+        bipPath: "44'/148'/1'",
+      });
       runAsserts("importHardwareWallet", () => {
         assertArray(res.allAccounts);
         assertString(res.publicKey);
@@ -146,14 +159,20 @@ export const IntegrationTest = () => {
         assertBoolean(res.hasPrivateKey);
       });
 
-      res = await makeAccountActive(testPublicKey);
+      res = await makeAccountActive({
+        activePublicKey: testPublicKey,
+        publicKey: testPublicKey,
+      });
       runAsserts("makeAccountActive", () => {
         assertString(res.publicKey);
         assertString(res.bipPath);
         assertBoolean(res.hasPrivateKey);
       });
 
-      res = await updateAccountName("new-name");
+      res = await updateAccountName({
+        activePublicKey: testPublicKey,
+        accountName: "new-name",
+      });
       runAsserts("updateAccountName", () => {
         assertArray(res.allAccounts);
       });
@@ -202,10 +221,11 @@ export const IntegrationTest = () => {
         assertString(res.applicationState);
       });
 
-      res = await getAccountIndexerBalances(
-        testPublicKey,
-        TESTNET_NETWORK_DETAILS,
-      );
+      res = await getAccountIndexerBalances({
+        activePublicKey: testPublicKey,
+        publicKey: testPublicKey,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      });
       runAsserts("getAccountBalances", () => {
         assertEq(Object.keys(res.balances as object).length > 0, true);
         assertBoolean(res.isFunded as boolean);
@@ -229,6 +249,7 @@ export const IntegrationTest = () => {
       });
 
       res = await retryAssetIcon({
+        activePublicKey: testPublicKey,
         key: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
         code: "USDC",
         assetIcons: {},
@@ -258,11 +279,12 @@ export const IntegrationTest = () => {
 
       runAsserts("handleSignedHwPayload", () => {});
 
-      await signTransaction();
+      await signTransaction({ activePublicKey: testPublicKey });
 
       runAsserts("signTransaction", () => {});
 
       res = await signFreighterTransaction({
+        activePublicKey: testPublicKey,
         transactionXDR: testTxXDR,
         network: TESTNET_NETWORK_DETAILS.networkPassphrase,
       });
@@ -270,23 +292,27 @@ export const IntegrationTest = () => {
         assertString(res.signedTransaction);
       });
 
-      res = await addRecentAddress({ publicKey: testPublicKey });
+      res = await addRecentAddress({
+        activePublicKey: "G123",
+        publicKey: testPublicKey,
+      });
       runAsserts("addRecentAddress", () => {
         assertArray(res.recentAddresses);
       });
 
-      res = await loadRecentAddresses();
+      res = await loadRecentAddresses({ activePublicKey: testPublicKey });
       runAsserts("loadRecentAddresses", () => {
         assertArray(res.recentAddresses);
       });
 
-      res = await signOut();
+      res = await signOut({ activePublicKey: testPublicKey });
       runAsserts("signOut", () => {
         assertString(res.publicKey, true);
         assertString(res.applicationState);
       });
 
       res = await saveAllowList({
+        activePublicKey: testPublicKey,
         allowList: ["foo", "bar"],
       });
       runAsserts("saveAllowList", () => {
@@ -294,6 +320,7 @@ export const IntegrationTest = () => {
       });
 
       res = await saveSettings({
+        activePublicKey: testPublicKey,
         isDataSharingAllowed: true,
         isMemoValidationEnabled: true,
         isHideDustEnabled: true,
@@ -320,12 +347,18 @@ export const IntegrationTest = () => {
         assertEq(res.isNonSSLEnabled, true);
       });
 
-      res = await showBackupPhrase(testPassword);
+      res = await showBackupPhrase({
+        activePublicKey: "",
+        password: testPassword,
+      });
       runAsserts("showBackupPhrase", () => {
         assertEq(res.error, undefined);
       });
 
-      res = await addCustomNetwork(testCustomNetwork);
+      res = await addCustomNetwork({
+        activePublicKey: testPublicKey,
+        networkDetails: testCustomNetwork,
+      });
       const networksListLength = res.networksList.length;
       runAsserts("addCustomNetwork", () => {
         assertArray(res.networksList);
@@ -336,6 +369,7 @@ export const IntegrationTest = () => {
       });
 
       res = await editCustomNetwork({
+        activePublicKey: testPublicKey,
         networkDetails: {
           ...testCustomNetwork,
           networkName: `new network ${random}`,
@@ -351,13 +385,19 @@ export const IntegrationTest = () => {
         );
       });
 
-      res = await removeCustomNetwork(testCustomNetwork.networkName);
+      res = await removeCustomNetwork({
+        activePublicKey: testPublicKey,
+        networkName: testCustomNetwork.networkName,
+      });
       runAsserts("removeCustomNetwork", () => {
         assertArray(res.networksList);
         assertEq(res.networksList.length, networksListLength - 1);
       });
 
-      await changeNetwork(NETWORK_NAMES.PUBNET);
+      await changeNetwork({
+        activePublicKey: testPublicKey,
+        networkName: NETWORK_NAMES.PUBNET,
+      });
       res = await requestPublicKey();
       runAsserts("requestPublicKey", () => {
         assertString(res as string);
@@ -449,5 +489,6 @@ const assertArray = (val: any, allowEmpty: boolean = false) => {
 
 const resetDevData = () =>
   sendMessageToBackground({
+    activePublicKey: testPublicKey,
     type: SERVICE_TYPES.RESET_EXP_DATA,
   });

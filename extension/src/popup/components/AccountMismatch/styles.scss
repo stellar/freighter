@@ -1,0 +1,17 @@
+.AccountMismatch {
+  &__notification {
+    display: flex;
+    height: 100vh;
+    position: absolute;
+    width: 100vw;
+    z-index: 2;
+
+    &__content {
+      display: flex;
+      height: 100vh;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+}
