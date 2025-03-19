@@ -15,6 +15,7 @@ import {
   removeTokenId as internalRemoveTokenId,
   submitFreighterTransaction as internalSubmitFreighterTransaction,
   submitFreighterSorobanTransaction as internalSubmitFreighterSorobanTransaction,
+  loadRecentAddresses as internalLoadRecentAddresses,
 } from "@shared/api/internal";
 
 import {
@@ -37,38 +38,49 @@ import {
   getSoroswapTokens as getSoroswapTokensService,
 } from "popup/helpers/sorobanSwap";
 import { hardwareSign, hardwareSignAuth } from "popup/helpers/hardwareConnect";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { AppState } from "popup/App";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
   { transactionXDR: string; network: string },
-  { rejectValue: ErrorMessage }
->("signFreighterTransaction", async ({ transactionXDR, network }, thunkApi) => {
-  try {
-    return await internalSignFreighterTransaction({
-      transactionXDR,
-      network,
-    });
-  } catch (e) {
-    const message = e instanceof Error ? e.message : JSON.stringify(e);
-    return thunkApi.rejectWithValue({ errorMessage: message });
-  }
-});
+  { rejectValue: ErrorMessage; state: AppState }
+>(
+  "signFreighterTransaction",
+  async ({ transactionXDR, network }, { getState, rejectWithValue }) => {
+    const activePublicKey = publicKeySelector(getState());
+
+    try {
+      return await internalSignFreighterTransaction({
+        transactionXDR,
+        network,
+        activePublicKey,
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      return rejectWithValue({ errorMessage: message });
+    }
+  },
+);
 
 export const signFreighterSorobanTransaction = createAsyncThunk<
   { signedTransaction: string },
   { transactionXDR: string; network: string },
-  { rejectValue: ErrorMessage }
+  { rejectValue: ErrorMessage; state: AppState }
 >(
   "signFreighterSorobanTransaction",
-  async ({ transactionXDR, network }, thunkApi) => {
+  async ({ transactionXDR, network }, { getState, rejectWithValue }) => {
+    const activePublicKey = publicKeySelector(getState());
+
     try {
       return await internalSignFreighterSorobanTransaction({
         transactionXDR,
         network,
+        activePublicKey,
       });
     } catch (e) {
       const message = e instanceof Error ? e.message : JSON.stringify(e);
-      return thunkApi.rejectWithValue({ errorMessage: message });
+      return rejectWithValue({ errorMessage: message });
     }
   },
 );
@@ -82,6 +94,7 @@ export const submitFreighterTransaction = createAsyncThunk<
   },
   {
     rejectValue: ErrorMessage;
+    state: AppState;
   }
 >(
   "submitFreighterTransaction",
@@ -145,6 +158,7 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
   },
   {
     rejectValue: ErrorMessage;
+    state: AppState;
   }
 >(
   "submitFreighterSorobanTransaction",
@@ -270,13 +284,30 @@ export const signWithHardwareWallet = createAsyncThunk<
 export const addRecentAddress = createAsyncThunk<
   { recentAddresses: string[] },
   { publicKey: string },
-  { rejectValue: ErrorMessage }
->("addRecentAddress", async ({ publicKey }, thunkApi) => {
+  { rejectValue: ErrorMessage; state: AppState }
+>("addRecentAddress", async ({ publicKey }, { getState, rejectWithValue }) => {
+  const activePublicKey = publicKeySelector(getState());
+
   try {
-    return await internalAddRecentAddress({ publicKey });
+    return await internalAddRecentAddress({ activePublicKey, publicKey });
   } catch (e) {
     const message = e instanceof Error ? e.message : JSON.stringify(e);
-    return thunkApi.rejectWithValue({ errorMessage: message });
+    return rejectWithValue({ errorMessage: message });
+  }
+});
+
+export const loadRecentAddresses = createAsyncThunk<
+  { recentAddresses: string[] },
+  undefined,
+  { rejectValue: ErrorMessage; state: AppState }
+>("loadRecentAddresses", async (_, { getState, rejectWithValue }) => {
+  const activePublicKey = publicKeySelector(getState());
+
+  try {
+    return await internalLoadRecentAddresses({ activePublicKey });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : JSON.stringify(e);
+    return rejectWithValue({ errorMessage: message });
   }
 });
 
@@ -286,16 +317,20 @@ export const removeTokenId = createAsyncThunk<
     contractId: string;
     network: NETWORKS;
   },
-  { rejectValue: ErrorMessage }
-  // @ts-ignore
->("removeTokenId", async ({ contractId, network }, thunkApi) => {
-  try {
-    await internalRemoveTokenId({ contractId, network });
-  } catch (e) {
-    console.error(e);
-    thunkApi.rejectWithValue({ errorMessage: e as string });
-  }
-});
+  { rejectValue: ErrorMessage; state: AppState }
+>(
+  "removeTokenId",
+  async ({ contractId, network }, { getState, rejectWithValue }) => {
+    const activePublicKey = publicKeySelector(getState());
+
+    try {
+      await internalRemoveTokenId({ activePublicKey, contractId, network });
+    } catch (e) {
+      console.error(e);
+      rejectWithValue({ errorMessage: e as string });
+    }
+  },
+);
 
 export const getSoroswapTokens = createAsyncThunk<
   SoroswapToken[],
@@ -385,13 +420,15 @@ export const getBestSoroswapPath = createAsyncThunk<
 export const getMemoRequiredAccounts = createAsyncThunk<
   MemoRequiredAccount[],
   undefined,
-  { rejectValue: ErrorMessage }
->("getBlockedAccounts", async (_, thunkApi) => {
+  { rejectValue: ErrorMessage; state: AppState }
+>("getBlockedAccounts", async (_, { getState, rejectWithValue }) => {
+  const activePublicKey = publicKeySelector(getState());
+
   try {
-    const resp = await internalGetMemoRequiredAccounts();
+    const resp = await internalGetMemoRequiredAccounts({ activePublicKey });
     return resp.memoRequiredAccounts || [];
   } catch (e) {
-    return thunkApi.rejectWithValue({ errorMessage: e as string });
+    return rejectWithValue({ errorMessage: e as string });
   }
 });
 

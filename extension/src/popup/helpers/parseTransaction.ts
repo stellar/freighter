@@ -17,7 +17,9 @@ export const decodeMemo = (memo: any): { value: string; type: MemoType } => {
 
   return {
     value: _memo.value
-      ? buffer.Buffer.from(_memo.value).toString(decodeMethod)
+      ? // NOTE:
+        // Can also be an ArrayBufferLike but the memo type doesn't make it easy for buffer to accept it without narrowing.
+        buffer.Buffer.from(_memo.value as string).toString(decodeMethod)
       : "",
     type: _memo.type,
   };

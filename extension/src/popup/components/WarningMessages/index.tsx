@@ -7,7 +7,6 @@ import {
   Card,
   Icon,
   Loader,
-  Notification,
   Select,
   Textarea,
   Text,
@@ -84,6 +83,7 @@ import {
   reportTransactionWarning,
 } from "popup/helpers/blockaid";
 import { CopyValue } from "../CopyValue";
+import { Notification as NotificationV2 } from "../Notification";
 
 import "./styles.scss";
 
@@ -916,16 +916,35 @@ export const NewAssetWarning = ({
   );
 };
 
-export const UnverifiedTokenNotification = () => {
+export const WarningModal = (props: { description: string }) => {
   const { t } = useTranslation();
 
   return (
-    <Notification
-      title={t(
-        "This asset is not part of an asset list. Please, double-check the asset you’re interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
-      )}
-      variant="warning"
-    />
+    <div
+      className="WarningModal__box WarningModal__box--isWarning"
+      data-testid="WarningModal"
+    >
+      <div className="WarningModal__box__content">
+        <div className="Icon">
+          <img
+            className="WarningModal__box__icon"
+            src={IconWarning}
+            alt="icon warning"
+          />
+        </div>
+        <div className="WarningModal__alert">
+          <div className="WarningModal__description">
+            {t(props.description)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const UnverifiedTokenNotification = () => {
+  return (
+    <WarningModal description="Before you add this asset, please double-check its information and characteristics. This can help you identify fraudulent assets." />
   );
 };
 
@@ -936,6 +955,7 @@ export const TokenWarning = ({
   isVerifiedToken,
   verifiedLists = [],
   handleAddToken,
+  isCustomToken,
 }: {
   domain: string;
   code: string;
@@ -943,6 +963,7 @@ export const TokenWarning = ({
   isVerifiedToken: boolean;
   verifiedLists?: string[];
   handleAddToken: null | (() => Promise<void>);
+  isCustomToken: boolean;
 }) => {
   const { t } = useTranslation();
   const warningRef = useRef<HTMLDivElement>(null);
@@ -988,66 +1009,74 @@ export const TokenWarning = ({
       <div className="TokenWarning" data-testid="TokenWarning">
         <View.Content>
           <div className="TokenWarning__wrapper" ref={warningRef}>
-            <div className="TokenWarning__heading">
-              <div className="TokenWarning__icon">
-                <SorobanTokenIcon noMargin />
-              </div>
-              <div className="TokenWarning__code">{code}</div>
-              <div className="TokenWarning__domain">{domain}</div>
-              <div className="TokenWarning__description">
-                <div className="TokenWarning__description__icon">
-                  <Icon.User02 />
+            <div className="TokenWarning__body">
+              <div className="TokenWarning__heading">
+                <div className="TokenWarning__icon">
+                  <SorobanTokenIcon noMargin />
                 </div>
-                <div className="TokenWarning__description__text">
-                  {t("Add Asset Trustline")}
+                <div className="TokenWarning__code">{code}</div>
+                <div className="TokenWarning__domain">{domain}</div>
+                <div className="TokenWarning__description">
+                  <div className="TokenWarning__description__icon">
+                    <Icon.User02 />
+                  </div>
+                  <div
+                    className="TokenWarning__description__text"
+                    data-testid="DescriptionLabel"
+                  >
+                    {isCustomToken ? t("Add Asset") : t("Add Asset Trustline")}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div data-testid="token-warning-notification">
-              {isVerifiedToken ? (
-                <Notification
-                  title={`${t(
-                    "This asset is part of the asset lists",
-                  )} "${verifiedLists.join(", ")}."`}
-                  variant="primary"
-                >
-                  {t(
-                    "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
-                  )}
-                </Notification>
-              ) : (
-                <UnverifiedTokenNotification />
-              )}
-            </div>
+              <div data-testid="token-warning-notification">
+                {isVerifiedToken ? (
+                  <NotificationV2
+                    description={t(
+                      `This asset is part of the asset list(s): "${verifiedLists.join(", ")}". Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.`,
+                    )}
+                    type="info"
+                  />
+                ) : (
+                  <NotificationV2
+                    description={t(
+                      "This asset is not part of an asset list. Please, double-check the asset you’re interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
+                    )}
+                    type="warning"
+                  />
+                )}
+              </div>
 
-            <div className="TokenWarning__flags">
-              <div className="TokenWarning__flags__info">{t("Asset Info")}</div>
+              <div className="TokenWarning__flags">
+                <div className="TokenWarning__flags__info">
+                  {t("Asset Info")}
+                </div>
 
-              {isVerifiedToken ? null : (
+                {isVerifiedToken ? null : (
+                  <div className="TokenWarning__flag">
+                    <div className="TokenWarning__flag__icon">
+                      <img src={IconUnverified} alt="unverified icon" />
+                    </div>
+                    <div className="TokenWarning_flag__content">
+                      <div className="TokenWarning__flag__header TokenWarning__flag__icon--unverified">
+                        {t("Unverified asset")}
+                      </div>
+                      <div className="TokenWarning__flag__content">
+                        {t("Proceed with caution")}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="TokenWarning__flag">
                   <div className="TokenWarning__flag__icon">
-                    <img src={IconUnverified} alt="unverified icon" />
+                    <img src={IconNewAsset} alt="new asset icon" />
                   </div>
                   <div className="TokenWarning_flag__content">
-                    <div className="TokenWarning__flag__header TokenWarning__flag__icon--unverified">
-                      {t("Unverified asset")}
+                    <div className="TokenWarning__flag__header TokenWarning__flag__icon">
+                      {t("New asset")}
                     </div>
                     <div className="TokenWarning__flag__content">
-                      {t("Proceed with caution")}
+                      {t("This is a relatively new asset")}
                     </div>
-                  </div>
-                </div>
-              )}
-              <div className="TokenWarning__flag">
-                <div className="TokenWarning__flag__icon">
-                  <img src={IconNewAsset} alt="new asset icon" />
-                </div>
-                <div className="TokenWarning_flag__content">
-                  <div className="TokenWarning__flag__header TokenWarning__flag__icon">
-                    {t("New asset")}
-                  </div>
-                  <div className="TokenWarning__flag__content">
-                    {t("This is a relatively new asset")}
                   </div>
                 </div>
               </div>
@@ -1058,7 +1087,7 @@ export const TokenWarning = ({
                 <Button
                   size="md"
                   isFullWidth
-                  variant="secondary"
+                  variant="tertiary"
                   type="button"
                   onClick={closeOverlay}
                 >
@@ -1070,7 +1099,7 @@ export const TokenWarning = ({
                   isFullWidth
                   onClick={handleSubmit}
                   type="button"
-                  variant="primary"
+                  variant="secondary"
                   isLoading={
                     isSubmitting || submitStatus === ActionStatus.PENDING
                   }

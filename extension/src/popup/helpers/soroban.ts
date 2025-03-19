@@ -23,6 +23,7 @@ import {
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { findAssetBalance } from "./balance";
+import { getSdk } from "@shared/helpers/stellar";
 
 export const SOROBAN_OPERATION_TYPES = [
   "invoke_host_function",
@@ -549,4 +550,25 @@ export const getCreateContractArgs = (hostFn: xdr.HostFunction) => {
     executable: argsV2.executable(),
     constructorArgs: argsV2.constructorArgs(),
   };
+};
+
+export const isSacContract = (
+  name: string,
+  contractId: string,
+  networkPassphrase: string,
+) => {
+  const Sdk = getSdk(networkPassphrase);
+  if (name.includes(":")) {
+    try {
+      return (
+        new Sdk.Asset(...(name.split(":") as [string, string])).contractId(
+          networkPassphrase,
+        ) === contractId
+      );
+    } catch (error) {
+      return false;
+    }
+  }
+
+  return false;
 };

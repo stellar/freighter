@@ -149,9 +149,27 @@ export const emitMetric = async (name: string, body?: any) => {
     return;
   }
 
-  const metricsData: MetricsData = JSON.parse(
-    localStorage.getItem(METRICS_DATA) || "{}",
-  );
+  let metricsData: MetricsData;
+
+  try {
+    const storedData = localStorage.getItem(METRICS_DATA);
+    if (storedData) {
+      metricsData = JSON.parse(storedData);
+    } else {
+      throw new Error("No metrics data found in localStorage");
+    }
+  } catch {
+    // Fallback to default values if parsing fails or data is missing
+    metricsData = {
+      accountType: AccountType.FREIGHTER,
+      hwExists: false,
+      importedExists: false,
+      hwFunded: false,
+      importedFunded: false,
+      freighterFunded: false,
+      unfundedFreighterAccounts: [],
+    };
+  }
 
   cache.push({
     event_type: name,

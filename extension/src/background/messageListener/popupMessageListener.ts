@@ -127,7 +127,7 @@ import { STELLAR_EXPERT_MEMO_REQUIRED_ACCOUNTS_URL } from "background/constants/
 import {
   AssetsListKey,
   DEFAULT_ASSETS_LISTS,
-} from "@shared/constants/soroban/token";
+} from "@shared/constants/soroban/asset-list";
 import { getSdk } from "@shared/helpers/stellar";
 import { captureException } from "@sentry/browser";
 
@@ -2064,6 +2064,19 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { hiddenAssets };
   };
 
+  const getIsAccountMismatch = () => {
+    const { activePublicKey } = request;
+
+    if (!activePublicKey) {
+      return { isAccountMismatch: false };
+    }
+
+    const currentState = sessionStore.getState();
+    const publicKey = publicKeySelector(currentState);
+
+    return { isAccountMismatch: publicKey !== activePublicKey };
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -2119,7 +2132,18 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.MODIFY_ASSETS_LIST]: modifyAssetsList,
     [SERVICE_TYPES.CHANGE_ASSET_VISIBILITY]: changeAssetVisibility,
     [SERVICE_TYPES.GET_HIDDEN_ASSETS]: getHiddenAssets,
+    [SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH]: getIsAccountMismatch,
   };
 
+  const currentState = sessionStore.getState();
+  const publicKey = publicKeySelector(currentState);
+
+  if (
+    request.activePublicKey &&
+    request.activePublicKey !== publicKey &&
+    request.type !== SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH
+  ) {
+    return { error: "Public key does not match active public key" };
+  }
   return messageResponder[request.type]();
 };

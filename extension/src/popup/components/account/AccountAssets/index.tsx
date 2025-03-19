@@ -190,6 +190,7 @@ export const AccountAssets = ({
     }
     try {
       const res = await retryAssetIcon({
+        activePublicKey: null,
         key,
         code,
         assetIcons,

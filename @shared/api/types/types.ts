@@ -104,6 +104,8 @@ export interface Response {
     visibility: AssetVisibility;
   };
   hiddenAssets: Record<AssetKey, AssetVisibility>;
+  activePublicKey: string;
+  isAccountMismatch: boolean;
 }
 
 export interface MemoRequiredAccount {
