@@ -1,5 +1,6 @@
 import React from "react";
-import { Card } from "@stellar/design-system";
+import { Button, Card, Icon } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 // @ts-ignore
 import { generateMnemonic } from "stellar-hd-wallet";
 import random from "lodash/random";
@@ -52,17 +53,30 @@ interface MnemonicDisplayProps {
 export const MnemonicDisplay = ({
   mnemonicPhrase,
   isPopupView,
-}: MnemonicDisplayProps) => (
-  <div className="MnemonicDisplay">
-    <Card variant="primary">
-      <ol
-        onCopy={(e) => e.preventDefault()}
-        className={`MnemonicDisplay__ordered-list ${
-          isPopupView ? "MnemonicDisplay__ordered-list--popup-view" : ""
-        }`}
+}: MnemonicDisplayProps) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="MnemonicDisplay">
+      <Card variant="primary">
+        <ol
+          onCopy={(e) => e.preventDefault()}
+          className={`MnemonicDisplay__ordered-list ${
+            isPopupView ? "MnemonicDisplay__ordered-list--popup-view" : ""
+          }`}
+        >
+          {generateMnemonicPhraseDisplay({ mnemonicPhrase })}
+        </ol>
+      </Card>
+
+      <Button
+        size="md"
+        variant="tertiary"
+        icon={<Icon.Copy01 />}
+        iconPosition="left"
       >
-        {generateMnemonicPhraseDisplay({ mnemonicPhrase })}
-      </ol>
-    </Card>
-  </div>
-);
+        {t("Copy to clipboard")}
+      </Button>
+    </div>
+  );
+};

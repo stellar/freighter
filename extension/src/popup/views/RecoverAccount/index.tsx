@@ -47,6 +47,8 @@ interface PhraseInputProps {
   handleMnemonicInputChange: (value: string, index: number) => void;
   isTextShowing: boolean;
   isLongPhrase: boolean;
+  handlePaste: (e: React.ClipboardEvent<HTMLInputElement>) => void;
+  pastedValue?: string;
 }
 
 const PhraseInput = ({
@@ -55,12 +57,18 @@ const PhraseInput = ({
   handleMnemonicInputChange,
   isTextShowing,
   isLongPhrase,
+  handlePaste,
+  pastedValue = "",
 }: PhraseInputProps) => {
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState(pastedValue);
 
   useEffect(() => {
     setInputValue("");
   }, [isLongPhrase]);
+
+  useEffect(() => {
+    setInputValue(pastedValue);
+  }, [pastedValue]);
 
   return (
     <div key={phraseInput} className="RecoverAccount__phrase-input">
@@ -76,7 +84,7 @@ const PhraseInput = ({
           handleMnemonicInputChange(e.target.value, index);
           setInputValue(e.target.value);
         }}
-        onPaste={(e) => e.preventDefault()}
+        onPaste={handlePaste}
         type={isTextShowing ? "text" : "password"}
         value={inputValue}
       />
@@ -108,6 +116,7 @@ export const RecoverAccount = () => {
   const [phraseInputs, setPhraseInputs] = useState([] as string[]);
   const [mnemonicPhraseArr, setMnemonicPhraseArr] = useState([] as string[]);
   const [password, setPassword] = useState("");
+  const [pastedValues, setPastedValues] = useState<string[]>([]);
 
   const handleConfirm = (values: FormValues) => {
     setPassword(values.password);
@@ -153,6 +162,17 @@ export const RecoverAccount = () => {
     arr[i] = value;
 
     setMnemonicPhraseArr(arr);
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedData = e.clipboardData.getData("text/plain");
+    const pastedWords = pastedData.split(" ");
+
+    if (pastedWords.length) {
+      e.preventDefault();
+      setPastedValues(pastedWords);
+      setMnemonicPhraseArr(pastedWords);
+    }
   };
 
   return (
@@ -201,6 +221,8 @@ export const RecoverAccount = () => {
                                   isTextShowing={isTextShowing}
                                   isLongPhrase={isLongPhrase}
                                   index={i}
+                                  handlePaste={handlePaste}
+                                  pastedValue={pastedValues[i]}
                                 />
                               ))}
                             </div>
@@ -239,7 +261,6 @@ export const RecoverAccount = () => {
                               isFullWidth
                               disabled={
                                 !(
-                                  dirty &&
                                   isValid &&
                                   buildMnemonicPhrase(mnemonicPhraseArr).length
                                 )
