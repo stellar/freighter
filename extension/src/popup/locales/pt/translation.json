@@ -297,6 +297,7 @@
   "Minimum resource fee": "Minimum resource fee",
   "Multiple assets": "Multiple assets",
   "Multiple assets have a similar code, please check the domain before adding": "Multiple assets have a similar code, please check the domain before adding.",
+  "must be at least": "must be at least",
   "must be below": "must be below",
   "must be greater than": "must be greater than",
   "Name": "Name",
@@ -462,9 +463,9 @@
   "This asset has a balance": "This asset has a balance",
   "This asset has buying liabilities": "This asset has buying liabilities",
   "This asset is not part of an asset list": {
-    " Please, double-check the asset you're interacting with and proceed with care": {
+    " Please, double-check the asset you’re interacting with and proceed with care": {
       " Freighter uses asset lists to check assets you interact with": {
-        " You can define your own assets lists in Settings": "This asset is not part of an asset list. Please, double-check the asset you're interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
+        " You can define your own assets lists in Settings": "This asset is not part of an asset list. Please, double-check the asset you’re interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
       }
     }
   },
