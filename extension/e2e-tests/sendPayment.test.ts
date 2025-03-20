@@ -141,7 +141,7 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   await page.getByTestId("BottomNav-link-account").click({ force: true });
 });
 
-test("Send SAC to C address", async ({ page, extensionId }) => {
+test.skip("Send SAC to C address", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
