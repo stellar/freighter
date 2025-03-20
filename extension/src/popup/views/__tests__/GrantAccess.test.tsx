@@ -28,6 +28,18 @@ describe("Grant Access view", () => {
   });
 
   it("renders", async () => {
+    jest.spyOn(blockAidHelpers, "useScanSite").mockImplementation(() => {
+      return {
+        error: null,
+        isLoading: false,
+        data: {
+          is_malicious: false,
+        } as BlockAidScanSiteResult,
+        scanSite: (_url: string, _networkDetails: NetworkDetails) => {
+          return Promise.resolve();
+        },
+      };
+    });
     render(
       <Wrapper
         routes={[ROUTES.welcome]}
