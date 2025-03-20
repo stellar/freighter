@@ -1,3 +1,19 @@
+# Release notes - Wallets - FE-Freighter-5.29.0
+
+[FEATURE] Split assets by verification status (#1839)
+Update metrics.ts (#1813)
+Feature/account mismatch 3 (#1892)
+Use array index based identification in mnemonic phrase (#1883)
+[FIX] Add Asset Warnings (#1889)
+Fix signed msg api e2e test (#1903)
+Bump the all-actions group across 1 directory with 2 updates (#1900)
+Remove stellar-identicon-js dependency (#1904)
+[FEATURE] masks asset icons to make all assets uniform and circular (#1902)
+[FIX] Hardens validation for custom slippage input (#1901)
+Bump the major group across 4 directories with 25 updates (#1899)
+Masks asset images in asset detail view (#1915)
+Pin @types/react to stable version (#1922)
+
 # Release notes - Wallets - FE-Freighter-5.28.1
 
 Upgrades core dependencies #1865
@@ -148,11 +164,15 @@ Full Changelog: 5.18.5...5.19.1
 v5.19.0 was skipped due to a semantic versioning issue. v5.19.1 reflects the changes from release branch 5.19.0
 
 # Release notes - Wallets - FE-Freighter-5.18.5
+
 ## Story
+
 [FE] Toggle P21 SDK for Testnet
 
 # Release notes - Wallets - [FE] Freighter 5.18.4
+
 ## Bug
+
 Firefox create account flow bug
 
 Add parameter names from contract spec during signing
@@ -162,6 +182,7 @@ Long operations names overflow tx detail rows
 Fix Amplitude reporting on page load
 
 ## Story
+
 Migrate away from @stellar/wallet-sdk DataProvider
 
 Implement KeyManager with TS-Wallet-SDK
