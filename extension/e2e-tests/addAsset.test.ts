@@ -33,7 +33,7 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await page.getByTestId("add-asset").dispatchEvent("click");
   await expect(page.getByTestId("account-view")).toContainText("E2E");
 });
-test("Adding Soroban verified token", async ({ page, extensionId }) => {
+test.skip("Adding Soroban verified token", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
 

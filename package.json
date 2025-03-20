@@ -71,7 +71,7 @@
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@types/jest": "^29.5.14",
-    "@types/react": "^19.0.7",
+    "@types/react": "19.0.12",
     "@types/react-dom": "^19.0.3",
     "@types/styled-components": "5.1.4",
     "@typescript-eslint/eslint-plugin": "^8.20.0",
