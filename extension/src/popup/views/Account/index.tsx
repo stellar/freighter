@@ -93,6 +93,7 @@ export const Account = () => {
   const { balances, isFunded, error } = accountBalances;
   const arePricesSupported = isMainnet(networkDetails);
   // This ensures that the prices effect does not depend on dispatch, avoiding unnecessary re-renders.
+  // eslint-disable-next-line no-undef
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -105,10 +106,9 @@ export const Account = () => {
         publicKey,
         networkDetails,
         shouldGetTokenPrices: arePricesSupported,
-      })
+      }),
     );
 
-    /* eslint-disable consistent-return */
     return () => {
       dispatch(resetAccountBalanceStatus());
     };
@@ -130,7 +130,6 @@ export const Account = () => {
       clearInterval(intervalRef.current);
     }
 
-    /* eslint-disable consistent-return */
     intervalRef.current = setInterval(() => {
       dispatch(getTokenPrices({ balances, networkDetails }));
     }, 30000);
@@ -171,7 +170,7 @@ export const Account = () => {
             balances: sortedBalances,
             networkDetails,
             publicKey,
-          })
+          }),
         );
       } catch (e) {
         console.error(e);
@@ -218,7 +217,7 @@ export const Account = () => {
       ? tokenPrices[curr].currentPrice
       : "0";
     const currentUsdBalance = new BigNumber(currentPrice).multipliedBy(
-      currentAssetBalance
+      currentAssetBalance,
     );
     return currentUsdBalance.plus(prev);
   }, new BigNumber(0));
@@ -259,7 +258,7 @@ export const Account = () => {
                 value={
                   arePricesSupported
                     ? `$${formatAmount(
-                        roundUsdValue(totalBalanceUsd.toString())
+                        roundUsdValue(totalBalanceUsd.toString()),
                       )}`
                     : ""
                 }
@@ -311,7 +310,7 @@ export const Account = () => {
                 variant="primary"
               >
                 {t(
-                  "Some of your assets may not appear, but they are still safe on the network!"
+                  "Some of your assets may not appear, but they are still safe on the network!",
                 )}
               </Notification>
             </div>
@@ -333,7 +332,7 @@ export const Account = () => {
                 variant="primary"
               >
                 {t(
-                  "Note that you will need to reload this tab to load any account changes that happen outside this session. For your own safety, please close this window when you are done."
+                  "Note that you will need to reload this tab to load any account changes that happen outside this session. For your own safety, please close this window when you are done.",
                 )}
               </Notification>
             </div>

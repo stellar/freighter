@@ -61,49 +61,52 @@ export const AnimatedNumber = ({
 
     let frameIndex = 0;
     const maxFrames = Math.max(...transitions.map((t) => t.length), 1);
-    const interval = setInterval(() => {
-      setAnimatedDigits(() =>
-        newDigits.map((_, idx) => {
-          const transition = transitions[idx] || [newDigits[idx]]; // Ensure transition array exists
-          return transition[frameIndex] || transition.slice(-1)[0]; // Default to last value if out of bounds
-        }),
-      );
+    const interval = setInterval(
+      () => {
+        setAnimatedDigits(() =>
+          newDigits.map((_, idx) => {
+            const transition = transitions[idx] || [newDigits[idx]]; // Ensure transition array exists
+            return transition[frameIndex] || transition.slice(-1)[0]; // Default to last value if out of bounds
+          }),
+        );
 
-      // dont show color transition on first render
-      if (!isFirstRender.current) {
-        setColorMap((prevColorMap) => {
-          const prevNumeric = convertToNumber(prevValue || "0");
-          const newNumeric = convertToNumber(value || "0");
-          const newColorMap = { ...prevColorMap };
-          newDigits.forEach((digit, idx) => {
-            const prevDigit = prevValue[idx] || "0";
-            if (
-              !/\d/.test(digit) ||
-              prevDigit === digit ||
-              prevNumeric === 0.0
-            ) {
-              return; // Skip non-numeric characters or characters that didnt change
-            }
+        // dont show color transition on first render
+        if (!isFirstRender.current) {
+          setColorMap((prevColorMap) => {
+            const prevNumeric = convertToNumber(prevValue || "0");
+            const newNumeric = convertToNumber(value || "0");
+            const newColorMap = { ...prevColorMap };
+            newDigits.forEach((digit, idx) => {
+              const prevDigit = prevValue[idx] || "0";
+              if (
+                !/\d/.test(digit) ||
+                prevDigit === digit ||
+                prevNumeric === 0.0
+              ) {
+                return; // Skip non-numeric characters or characters that didnt change
+              }
 
-            if (newNumeric > prevNumeric) {
-              newColorMap[idx] = "positive";
-            } else if (newNumeric < prevNumeric) {
-              newColorMap[idx] = "negative";
-            }
+              if (newNumeric > prevNumeric) {
+                newColorMap[idx] = "positive";
+              } else if (newNumeric < prevNumeric) {
+                newColorMap[idx] = "negative";
+              }
+            });
+            return newColorMap;
           });
-          return newColorMap;
-        });
-      }
+        }
 
-      frameIndex += 1;
-      if (frameIndex >= maxFrames) {
-        clearInterval(interval);
-        // Reset colors back to white after transition completes
-        setTimeout(() => {
-          setColorMap({});
-        }, 50);
-      }
-    }, (DURATION * 1000) / 10); // Adjust timing to match duration
+        frameIndex += 1;
+        if (frameIndex >= maxFrames) {
+          clearInterval(interval);
+          // Reset colors back to white after transition completes
+          setTimeout(() => {
+            setColorMap({});
+          }, 50);
+        }
+      },
+      (DURATION * 1000) / 10,
+    ); // Adjust timing to match duration
 
     prevValueRef.current = value;
     isFirstRender.current = false;
@@ -118,7 +121,6 @@ export const AnimatedNumber = ({
       >
         {animatedDigits.map((digit, index) => (
           <motion.span
-            // eslint-disable-next-line react/no-array-index-key
             key={index}
             initial={false}
             animate={{ opacity: 1, y: 0 }}
