@@ -307,7 +307,7 @@ export const AccountAssets = ({
                 </div>
               </div>
             </div>
-            {assetPrice && (
+            {assetPrice ? (
               <div className="AccountAssets__copy-right">
                 <AnimatedNumber
                   valueAddlClasses="asset-usd-amount"
@@ -341,6 +341,8 @@ export const AccountAssets = ({
                   <div className="asset-value-delta">--</div>
                 )}
               </div>
+            ) : (
+              <div className="asset-value-delta">--</div>
             )}
           </div>
         );
