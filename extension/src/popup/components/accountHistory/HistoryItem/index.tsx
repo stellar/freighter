@@ -719,9 +719,9 @@ export const HistoryItem = ({
           </Badge>,
         );
       }
-
       setIsLoading(false);
     };
+
     try {
       buildHistoryItem();
     } catch (e) {
