@@ -5,11 +5,15 @@ import { isAsset } from "helpers/stellar";
 import { AssetToken } from "@shared/api/types";
 import {
   AssetType,
+  ClassicAsset,
   LiquidityPoolShareAsset,
   SorobanAsset,
 } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { isContractId } from "./soroban";
+
+export const isClassicBalance = (balance: AssetType): balance is ClassicAsset =>
+  "token" in balance && "issuer" in balance.token;
 
 export const isSorobanBalance = (balance: AssetType): balance is SorobanAsset =>
   "contractId" in balance;
@@ -37,7 +41,7 @@ export const findAssetBalance = (
 
 export const getBalanceByIssuer = (issuer: string, balances: AssetType[]) =>
   balances.find((balance) => {
-    if ("token" in balance && "type" in balance.token) {
+    if ("token" in balance && "type" in balance.token && !issuer) {
       return balance.token.type === "native";
     }
     if (isContractId(issuer)) {

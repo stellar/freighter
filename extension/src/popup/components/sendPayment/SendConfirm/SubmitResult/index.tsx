@@ -37,7 +37,11 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { findAssetBalance } from "popup/helpers/balance";
 import { formatAmount } from "popup/helpers/formatters";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
-import { useGetAccountData } from "popup/views/Account/hooks/useGetAccountData";
+import {
+  RequestState,
+  useGetAccountData,
+} from "popup/views/Account/hooks/useGetAccountData";
+import { Loading } from "popup/components/Loading";
 
 import "./styles.scss";
 
@@ -94,7 +98,9 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const dispatch: AppDispatch = useDispatch();
 
   const sourceAsset = getAssetFromCanonical(asset);
-  const destinationCanonical = getAssetFromCanonical(destinationAsset);
+  const destinationCanonical = getAssetFromCanonical(
+    destinationAsset || "native",
+  );
   const { recommendedFee } = useNetworkFees();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -108,26 +114,15 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       includeIcons: true,
     },
   );
+  const isLoading =
+    accountData.state === RequestState.IDLE ||
+    accountData.state === RequestState.LOADING;
 
   const server = stellarSdkServer(
     networkDetails.networkUrl,
     networkDetails.networkPassphrase,
   );
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
-  const sourceBalance = findAssetBalance(
-    accountData.data!.balances.balances,
-    sourceAsset,
-  );
-  const destBalance = findAssetBalance(
-    accountData.data!.balances.balances,
-    destinationCanonical,
-  );
-  const isSourceAssetSuspicious =
-    "blockaidData" in sourceBalance &&
-    isAssetSuspicious(sourceBalance.blockaidData);
-  const isDestAssetSuspicious =
-    "blockaidData" in destBalance &&
-    isAssetSuspicious(destBalance.blockaidData);
 
   const removeTrustline = async (assetCode: string, assetIssuer: string) => {
     const changeParams = { limit: "0" };
@@ -208,6 +203,25 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  const sourceBalance = findAssetBalance(
+    accountData.data!.balances.balances,
+    sourceAsset,
+  );
+  const destBalance = findAssetBalance(
+    accountData.data!.balances.balances,
+    destinationCanonical,
+  );
+  const isSourceAssetSuspicious =
+    "blockaidData" in sourceBalance &&
+    isAssetSuspicious(sourceBalance.blockaidData);
+  const isDestAssetSuspicious =
+    "blockaidData" in destBalance &&
+    isAssetSuspicious(destBalance.blockaidData);
 
   return (
     <React.Fragment>

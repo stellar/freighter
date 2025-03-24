@@ -198,6 +198,7 @@ export const TransactionDetails = ({
           transactionFee,
           transactionTimeout,
         };
+  // TODO: use this error state
   const { state: txDetailsData, fetchData } = useGetTxDetailsData(
     publicKey,
     destination,

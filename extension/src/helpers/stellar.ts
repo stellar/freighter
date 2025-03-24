@@ -88,7 +88,7 @@ export const getAssetFromCanonical = (canonical: string) => {
 
 export const getCanonicalFromAsset = (
   assetCode: string,
-  assetIssuer: string,
+  assetIssuer?: string,
 ) => {
   if (assetCode === "XLM" && !assetIssuer) {
     return "native";

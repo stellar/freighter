@@ -21,11 +21,16 @@ import {
   scanAsset,
   useScanTx,
 } from "popup/helpers/blockaid";
-import { BlockAidScanTxResult } from "@shared/api/types";
+import {
+  AccountBalancesInterface,
+  BlockAidScanTxResult,
+} from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { findAssetBalance } from "popup/helpers/balance";
 import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
+import { getAccountBalances, getAssetIcons } from "@shared/api/internal";
+import { sortBalances } from "popup/helpers/account";
 
 export interface TxDetailsData {
   destAssetIconUrl: string;
@@ -176,7 +181,7 @@ const getBuiltTx = async (
 
 function useGetTxDetailsData(
   publicKey: string,
-  destination: string,
+  destination: string | undefined,
   networkDetails: NetworkDetails,
   destAsset: ReturnType<typeof getAssetFromCanonical>,
   sourceAsset: ReturnType<typeof getAssetFromCanonical>,
@@ -201,25 +206,30 @@ function useGetTxDetailsData(
     networkDetails,
     balanceOptions,
   );
-  const { fetchData: fetchDestinationBalances } = useGetBalances(
-    destination,
-    networkDetails,
-    balanceOptions,
-  );
+
   const { scanTx } = useScanTx();
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const balancesResult = await fetchBalances();
-      const destBalancesResult = await fetchDestinationBalances();
+      const destBalancesResult = destination
+        ? await getAccountBalances(
+            destination,
+            networkDetails,
+            balanceOptions.isMainnet,
+          )
+        : ({} as AccountBalancesInterface);
+
+      const destIcons = destination
+        ? await getAssetIcons({
+            balances: destBalancesResult.balances,
+            networkDetails,
+          })
+        : {};
 
       if (isGetBalancesError(balancesResult)) {
         throw new Error(balancesResult.message);
-      }
-
-      if (isGetBalancesError(destBalancesResult)) {
-        throw new Error(destBalancesResult.message);
       }
 
       const source = findAssetBalance(balancesResult.balances, sourceAsset);
@@ -240,7 +250,11 @@ function useGetTxDetailsData(
 
       const payload = {
         balances: balancesResult,
-        destinationBalances: destBalancesResult,
+        destinationBalances: {
+          ...destBalancesResult,
+          icons: destIcons,
+          balances: sortBalances(destBalancesResult.balances),
+        },
         destAssetIconUrl,
         isSourceAssetSuspicious:
           "blockaidData" in source && isAssetSuspicious(source.blockaidData),

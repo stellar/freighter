@@ -16,7 +16,11 @@ import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
-import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  getCanonicalFromAsset,
+  isMainnet,
+} from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap, useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
@@ -56,6 +60,11 @@ import { TX_SEND_MAX } from "popup/constants/transaction";
 import { BASE_RESERVE } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import { isSorobanBalance, findAssetBalance } from "popup/helpers/balance";
+import {
+  AssetType,
+  ClassicAsset,
+  LiquidityPoolShareAsset,
+} from "@shared/api/types/account-balance";
 
 import { RequestState } from "constants/request";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
@@ -224,7 +233,7 @@ export const SendAmount = ({
 
     const destinationBalance = findAssetBalance(
       sendAmountData.data!.userBalances.balances,
-      getAssetFromCanonical(destinationAsset),
+      getAssetFromCanonical(destinationAsset || "native"),
     );
     if (values.destinationAsset) {
       dispatch(saveDestinationAsset(values.destinationAsset));
@@ -374,16 +383,20 @@ export const SendAmount = ({
       if (formik.values.asset !== Asset.native().toString()) {
         defaultDestAsset = Asset.native().toString();
       } else {
-        // otherwise default to first non-native/classic side asset if exists
+        // otherwise default to first classic side asset if exists
         const nonXlmAssets = sendAmountData.data?.userBalances!.balances.filter(
           (b) =>
-            !("token" in b && b.token.code === "native") &&
+            !("token" in b && b.token.code === "XLM") &&
             !("liquidityPoolId" in b) &&
             !("decimals" in b),
-        );
+        ) as Exclude<AssetType, LiquidityPoolShareAsset>[];
         defaultDestAsset =
           nonXlmAssets && nonXlmAssets[0]
-            ? nonXlmAssets[0]
+            ? getCanonicalFromAsset(
+                nonXlmAssets[0].token.code,
+                // casting here since this will be classic or native asset
+                (nonXlmAssets[0] as ClassicAsset).token.issuer?.key,
+              )
             : Asset.native().toString();
       }
 
@@ -481,7 +494,7 @@ export const SendAmount = ({
   );
   const destBalance = findAssetBalance(
     sendAmountData.data!.userBalances.balances,
-    getAssetFromCanonical(formik.values.destinationAsset),
+    getAssetFromCanonical(formik.values.destinationAsset || "native"),
   );
 
   return (
@@ -676,6 +689,7 @@ export const SendAmount = ({
                           icon={destinationIcon}
                           icons={sendAmountData.data!.icons}
                           isSuspicious={
+                            destBalance &&
                             "blockaidData" in destBalance &&
                             isAssetSuspicious(destBalance.blockaidData)
                           }
