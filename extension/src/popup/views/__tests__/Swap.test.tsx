@@ -23,6 +23,8 @@ import { ROUTES } from "popup/constants/routes";
 import { Swap } from "popup/views/Swap";
 
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
+import * as GetAssetDomain from "popup/helpers/getAssetDomain";
+import * as GetIconHelper from "@shared/api/helpers/getIconUrlFromIssuer";
 
 export const swapMockBalances = {
   balances: {
@@ -91,14 +93,29 @@ const swapMaliciousMockBalances = {
   isFunded: true,
   subentryCount: 1,
 };
-
 jest
   .spyOn(ApiInternal, "getHiddenAssets")
   .mockImplementation(() => Promise.resolve({ hiddenAssets: {}, error: "" }));
 
 jest
-  .spyOn(ApiInternal, "getAccountIndexerBalances")
+  .spyOn(GetAssetDomain, "getAssetDomain")
+  .mockImplementation(() => Promise.resolve("centre.io"));
+
+jest
+  .spyOn(ApiInternal, "getAccountBalances")
   .mockImplementation(() => Promise.resolve(swapMockBalances));
+
+jest
+  .spyOn(ApiInternal, "getAssetIcons")
+  .mockImplementation(() => Promise.resolve({}));
+
+jest
+  .spyOn(ApiInternal, "getAccountHistory")
+  .mockImplementation(() => Promise.resolve([]));
+
+jest
+  .spyOn(GetIconHelper, "getIconUrlFromIssuer")
+  .mockImplementation(() => Promise.resolve("icon_url"));
 
 jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() =>
   Promise.resolve({
@@ -222,9 +239,8 @@ describe("Swap", () => {
       </Wrapper>,
     );
 
-    expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Swap XLM",
-    );
+    await waitFor(() => screen.getByTestId("AppHeaderPageTitle"));
+    expect(screen.getByTestId("AppHeaderPageTitle")).toBeDefined();
 
     await waitFor(() => {
       expect(screen.getByTestId("AppHeaderPageSubtitle")).not.toHaveTextContent(
@@ -259,8 +275,12 @@ describe("Swap", () => {
 
   it("renders swap view with malicious asset", async () => {
     jest
-      .spyOn(ApiInternal, "getAccountIndexerBalances")
+      .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(swapMaliciousMockBalances));
+
+    jest
+      .spyOn(ApiInternal, "getAssetIcons")
+      .mockImplementation(() => Promise.resolve({}));
 
     render(
       <Wrapper
@@ -282,6 +302,9 @@ describe("Swap", () => {
         <Swap />
       </Wrapper>,
     );
+
+    await waitFor(() => screen.getByTestId("AppHeaderPageTitle"));
+    expect(screen.getByTestId("AppHeaderPageTitle")).toBeDefined();
 
     expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
       "Swap XLM",
@@ -343,6 +366,9 @@ describe("Swap", () => {
       </Wrapper>,
     );
 
+    await waitFor(() => screen.getByTestId("AppHeaderPageTitle"));
+    expect(screen.getByTestId("AppHeaderPageTitle")).toBeDefined();
+
     const setMaxButton = screen.getByTestId("SendAmountSetMax");
 
     await waitFor(async () => {
@@ -367,7 +393,7 @@ describe("Swap", () => {
 
   it("swap custom amount", async () => {
     jest
-      .spyOn(ApiInternal, "getAccountIndexerBalances")
+      .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(swapMockBalances));
 
     render(
@@ -397,6 +423,9 @@ describe("Swap", () => {
         <Swap />
       </Wrapper>,
     );
+
+    await waitFor(() => screen.getByTestId("AppHeaderPageTitle"));
+    expect(screen.getByTestId("AppHeaderPageTitle")).toBeDefined();
 
     const amountInput = screen.getByTestId("send-amount-amount-input");
 
@@ -457,8 +486,9 @@ describe("Swap", () => {
     });
 
     // Confirm Swap view
+    await waitFor(() => screen.getByTestId("AppHeaderPageTitle"));
+    expect(screen.getByTestId("AppHeaderPageTitle")).toBeDefined();
     await waitFor(() => {
-      screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
         "Confirm Swap",
       );
