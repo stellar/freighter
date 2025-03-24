@@ -211,7 +211,6 @@ export const Account = () => {
     return <Loading />;
   }
 
-  console.log(tokenPrices, accountBalances.balances);
   const totalBalanceUsd = Object.keys(tokenPrices).reduce((prev, curr) => {
     if (!accountBalances.balances![curr]) {
       return prev;
