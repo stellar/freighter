@@ -737,6 +737,7 @@ export const getAccountHistoryStandalone = async ({
       .order("desc")
       .join("transactions")
       .limit(TRANSACTIONS_LIMIT)
+      .includeFailed(true)
       .call();
 
     operations = operationsData.records || [];

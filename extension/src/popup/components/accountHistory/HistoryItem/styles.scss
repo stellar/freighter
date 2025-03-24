@@ -116,4 +116,8 @@
   &--create-account {
     color: var(--sds-clr-gray-09);
   }
+
+  &--failed {
+    color: var(--sds-clr-red-09);
+  }
 }

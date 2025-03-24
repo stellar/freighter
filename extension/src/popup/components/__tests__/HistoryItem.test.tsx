@@ -60,6 +60,7 @@ describe("HistoryItem", () => {
         isCreateExternalAccount: false,
         isPayment: false,
         isSwap: false,
+        transaction_successful: true,
       } as any,
       publicKey: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
       url: "example.com",
@@ -112,6 +113,7 @@ describe("HistoryItem", () => {
         isCreateExternalAccount: false,
         isPayment: false,
         isSwap: false,
+        transaction_successful: true,
       } as any,
       publicKey: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
       url: "example.com",
@@ -125,5 +127,51 @@ describe("HistoryItem", () => {
     expect(
       screen.getByTestId("history-item-amount-component"),
     ).toHaveTextContent("+10 XLM");
+  });
+  it("renders failed transactions with payment details", async () => {
+    const props = {
+      accountBalances: {
+        balances: {
+          native: {
+            token: {
+              code: "XLM",
+            },
+            decimals: 7,
+          },
+        } as any,
+        isFunded: true,
+        subentryCount: 0,
+      },
+      operation: {
+        account: "GCGORBD5DB4JDIKVIA536CJE3EWMWZ6KBUBWZWRQM7Y3NHFRCLOKYVAL",
+        amount: "10",
+        asset_code: "XLM",
+        created_at: Date.now(),
+        id: "op-id",
+        to: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+        from: "GCGORBD5DB4JDIKVIA536CJE3EWMWZ6KBUBWZWRQM7Y3NHFRCLOKYVAL",
+        starting_balance: "10",
+        type: "payment",
+        type_i: 1,
+        transaction_attr: {
+          operation_count: 1,
+        },
+        isCreateExternalAccount: false,
+        isPayment: true,
+        isSwap: false,
+        transaction_successful: false,
+      } as any,
+      publicKey: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+      url: "example.com",
+      networkDetails: TESTNET_NETWORK_DETAILS,
+      setDetailViewProps: () => null,
+      setIsDetailViewShowing: () => null,
+    };
+    render(<HistoryItem {...props} />);
+    await waitFor(() => screen.getByTestId("history-item"));
+    expect(screen.getByTestId("history-item")).toBeDefined();
+    expect(
+      screen.getByTestId("history-item-amount-component"),
+    ).toHaveTextContent("N/A");
   });
 });
