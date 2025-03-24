@@ -16,10 +16,9 @@ export class ErrorBoundary extends Component<
     return { hasError: true };
   }
 
-  // eslint-disable-next-line @typescript-eslint/member-ordering
   constructor(props: React.PropsWithChildren) {
     super(props);
-    // eslint-disable-next-line
+
     this.state = { hasError: false, errorString: "" };
   }
 

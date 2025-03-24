@@ -1,11 +1,15 @@
 import browser from "webextension-polyfill";
 
 import { ROUTES } from "popup/constants/routes";
-import { history } from "popup/constants/history";
+import { NavigateFunction } from "react-router-dom";
 
-export const navigateTo = (path: ROUTES, queryParams?: string) => {
+export const navigateTo = (
+  path: ROUTES,
+  navigate: NavigateFunction,
+  queryParams?: string
+) => {
   const pathname = queryParams ? `${path}${queryParams}` : path;
-  history.push({ pathname });
+  navigate(pathname);
 };
 
 /* Firefox will not let you use window.open to programatically open a tab. Use this instead */

@@ -1,6 +1,6 @@
 {
   "name": "@stellar/freighter-api",
-  "version": "3.1.0",
+  "version": "4.1.0",
   "license": "Apache-2.0",
   "author": "Stellar Development Foundation <hello@stellar.org>",
   "description": "Utility functions to interact with Freighter extension",
@@ -17,9 +17,9 @@
   "types": "build/@stellar/freighter-api/src/index.d.ts",
   "dependencies": {
     "buffer": "^6.0.3",
-    "semver": "^7.6.3"
+    "semver": "^7.7.1"
   },
   "devDependencies": {
-    "@lavamoat/allow-scripts": "^2.3.1"
+    "@lavamoat/allow-scripts": "^3.3.1"
   }
 }

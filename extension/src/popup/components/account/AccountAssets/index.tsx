@@ -97,7 +97,7 @@ export const AssetIcon = ({
   // Get icons for Soroban tokens
   if (_isSorobanToken && !icon) {
     const soroswapTokenDetail = soroswapTokens.find(
-      (token) => token.contract === issuerKey,
+      (token) => token.contract === issuerKey
     );
     // check to see if we have an icon from an external service, like Soroswap
     if (soroswapTokenDetail?.icon) {
@@ -193,6 +193,7 @@ export const AccountAssets = ({
     }
     try {
       const res = await retryAssetIcon({
+        activePublicKey: null,
         key,
         code,
         assetIcons,
@@ -318,8 +319,8 @@ export const AccountAssets = ({
                     roundUsdValue(
                       new BigNumber(assetPrice.currentPrice)
                         .multipliedBy(rb.total)
-                        .toString(),
-                    ),
+                        .toString()
+                    )
                   )}`}
                 />
                 {assetPrice.percentagePriceChange24h ? (
@@ -330,12 +331,12 @@ export const AccountAssets = ({
                     }}
                     valueAddlClasses={`asset-value-delta ${getDeltaColor(
                       new BigNumber(
-                        roundUsdValue(assetPrice.percentagePriceChange24h),
-                      ),
+                        roundUsdValue(assetPrice.percentagePriceChange24h)
+                      )
                     )}
                     `}
                     value={`${formatAmount(
-                      roundUsdValue(assetPrice.percentagePriceChange24h),
+                      roundUsdValue(assetPrice.percentagePriceChange24h)
                     )}%`}
                   />
                 ) : (

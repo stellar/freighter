@@ -17,13 +17,14 @@ export const decodeMemo = (memo: any): { value: string; type: MemoType } => {
 
   return {
     value: _memo.value
-      ? buffer.Buffer.from(_memo.value).toString(decodeMethod)
+      ? // NOTE:
+        // Can also be an ArrayBufferLike but the memo type doesn't make it easy for buffer to accept it without narrowing.
+        buffer.Buffer.from(_memo.value as string).toString(decodeMethod)
       : "",
     type: _memo.type,
   };
 };
 
-/*  eslint-disable camelcase  */
 export enum RESULT_CODES {
   tx_failed = "tx_failed",
   tx_insufficient_fee = "tx_insufficient_fee",
@@ -34,7 +35,6 @@ export enum RESULT_CODES {
   op_no_destination = "op_no_destination",
   op_no_trust = "op_no_trust",
 }
-/*  eslint-enable camelcase  */
 
 export const getResultCodes = (error: ErrorMessage | undefined) => {
   const txError = get(error, "response.extras.result_codes.transaction", "");

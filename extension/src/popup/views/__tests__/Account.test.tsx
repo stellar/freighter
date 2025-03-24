@@ -26,6 +26,7 @@ import {
   TEST_CANONICAL,
 } from "../../__testHelpers__";
 import { Account } from "../Account";
+import { ROUTES } from "popup/constants/routes";
 
 const mockHistoryOperations = {
   operations: [
@@ -150,7 +151,7 @@ jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
     applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: mockAccounts,
     bipPath: "foo",
-  }),
+  })
 );
 
 jest
@@ -160,7 +161,7 @@ jest
 jest
   .spyOn(ApiInternal, "makeAccountActive")
   .mockImplementation(() =>
-    Promise.resolve({ publicKey: "G2", hasPrivateKey: true, bipPath: "" }),
+    Promise.resolve({ publicKey: "G2", hasPrivateKey: true, bipPath: "" })
   );
 
 jest
@@ -175,7 +176,7 @@ jest.spyOn(ApiInternal, "getAssetIcons").mockImplementation(() =>
   Promise.resolve({
     "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM":
       "http://domain.com/icon.png",
-  }),
+  })
 );
 
 describe("Account view", () => {
@@ -186,6 +187,7 @@ describe("Account view", () => {
   it("renders", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -201,7 +203,7 @@ describe("Account view", () => {
         }}
       >
         <Account />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("account-view"));
@@ -211,6 +213,7 @@ describe("Account view", () => {
   it("loads accounts", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -225,7 +228,7 @@ describe("Account view", () => {
         }}
       >
         <Account />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("account-header"));
@@ -237,6 +240,7 @@ describe("Account view", () => {
   it("displays balances and scam notifications on Mainnet", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -251,17 +255,17 @@ describe("Account view", () => {
         }}
       >
         <Account />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(3);
       expect(
-        screen.getByTestId("AccountAssets__asset--loading-XLM"),
+        screen.getByTestId("AccountAssets__asset--loading-XLM")
       ).not.toContainElement(screen.getByTestId("ScamAssetIcon"));
       expect(
-        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+        screen.getByTestId("AccountAssets__asset--loading-USDC")
       ).toContainElement(screen.getByTestId("ScamAssetIcon"));
       expect(screen.getAllByText("USDC")).toBeDefined();
     });
@@ -276,6 +280,7 @@ describe("Account view", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -290,17 +295,17 @@ describe("Account view", () => {
         }}
       >
         <Account />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(2);
       expect(
-        screen.getByTestId("AccountAssets__asset--loading-XLM"),
+        screen.getByTestId("AccountAssets__asset--loading-XLM")
       ).not.toContainElement(screen.getByTestId("ScamAssetIcon"));
       expect(
-        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+        screen.getByTestId("AccountAssets__asset--loading-USDC")
       ).toContainElement(screen.getByTestId("ScamAssetIcon"));
       expect(screen.getAllByText("USDC")).toBeDefined();
     });
@@ -315,6 +320,7 @@ describe("Account view", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -329,17 +335,17 @@ describe("Account view", () => {
         }}
       >
         <Account />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(2);
       expect(
-        screen.getByTestId("AccountAssets__asset--loading-XLM"),
+        screen.getByTestId("AccountAssets__asset--loading-XLM")
       ).toBeDefined();
       expect(
-        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+        screen.getByTestId("AccountAssets__asset--loading-USDC")
       ).toBeDefined();
       expect(screen.getAllByText("USDC")).toBeDefined();
       expect(screen.queryByTestId("ScamAssetIcon")).toBeNull();
@@ -348,6 +354,7 @@ describe("Account view", () => {
   it("goes to account details", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -362,23 +369,24 @@ describe("Account view", () => {
         }}
       >
         <Account />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(async () => {
       await fireEvent.click(
-        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+        screen.getByTestId("AccountAssets__asset--loading-USDC")
       );
     });
     await waitFor(() => {
       expect(
-        screen.getByTestId("asset-detail-available-copy"),
+        screen.getByTestId("asset-detail-available-copy")
       ).toHaveTextContent("100 USDC");
     });
   });
   it("shows Blockaid warning in account details", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -393,17 +401,17 @@ describe("Account view", () => {
         }}
       >
         <Account />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(async () => {
       await fireEvent.click(
-        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+        screen.getByTestId("AccountAssets__asset--loading-USDC")
       );
     });
     await waitFor(() => {
       expect(
-        screen.getByTestId("asset-detail-available-copy"),
+        screen.getByTestId("asset-detail-available-copy")
       ).toHaveTextContent("100 USDC");
     });
     await waitFor(() => {
@@ -413,6 +421,7 @@ describe("Account view", () => {
   it("switches accounts", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -427,18 +436,18 @@ describe("Account view", () => {
         }}
       >
         <Account />
-      </Wrapper>,
+      </Wrapper>
     );
     await waitFor(async () => {
       const accountIdenticonNodes = screen.getAllByTestId(
-        "account-list-identicon-button",
+        "account-list-identicon-button"
       );
       await fireEvent.click(accountIdenticonNodes[2]);
     });
 
     await waitFor(async () => {
       expect(screen.getByTestId("account-view-account-name")).toHaveTextContent(
-        "Account 2",
+        "Account 2"
       );
     });
   });
@@ -474,6 +483,7 @@ describe("Account view", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -488,7 +498,7 @@ describe("Account view", () => {
         }}
       >
         <Account />
-      </Wrapper>,
+      </Wrapper>
     );
     await waitFor(() => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
@@ -514,23 +524,23 @@ describe("Account view", () => {
         }}
       >
         <Account />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(async () => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(3);
       expect(
-        screen.getByTestId(`asset-amount-${TEST_CANONICAL}`),
+        screen.getByTestId(`asset-amount-${TEST_CANONICAL}`)
       ).toHaveTextContent("$ 834,463.68");
       expect(
-        screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
+        screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`)
       ).toHaveTextContent("3.98%");
       expect(screen.getByTestId(`asset-amount-native`)).toHaveTextContent(
-        "$ 13.82",
+        "$ 13.82"
       );
       expect(screen.getByTestId(`asset-price-delta-native`)).toHaveTextContent(
-        "1.10%",
+        "1.10%"
       );
     });
   });

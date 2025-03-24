@@ -6,7 +6,6 @@ import {
   fireEvent,
   act,
 } from "@testing-library/react";
-import { createMemoryHistory } from "history";
 
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
@@ -19,14 +18,6 @@ import { Wrapper } from "../../__testHelpers__";
 
 const MNEMONIC = "dummy mnemonic";
 
-const mockHistoryGetter = jest.fn();
-
-jest.mock("popup/constants/history", () => ({
-  get history() {
-    return mockHistoryGetter();
-  },
-}));
-
 jest.mock("react-router-dom", () => {
   const ReactRouter = jest.requireActual("react-router-dom");
   return {
@@ -36,7 +27,7 @@ jest.mock("react-router-dom", () => {
 });
 jest.mock("@shared/api/internal", () => {
   const { APPLICATION_STATE } = jest.requireActual(
-    "@shared/constants/applicationState",
+    "@shared/constants/applicationState"
   );
   return {
     confirmMnemonicPhrase: () =>
@@ -53,11 +44,9 @@ describe.skip("MnemonicPhrase", () => {
   });
 
   it("renders", async () => {
-    const history = createMemoryHistory();
-    history.push(ROUTES.mnemonicPhrase);
     render(
       <Wrapper
-        history={history}
+        routes={[ROUTES.mnemonicPhrase]}
         state={{
           auth: {
             applicationState: ApplicationState.PASSWORD_CREATED,
@@ -70,7 +59,7 @@ describe.skip("MnemonicPhrase", () => {
         }}
       >
         <MnemonicPhrase mnemonicPhrase={MNEMONIC} />
-      </Wrapper>,
+      </Wrapper>
     );
     await waitFor(() => screen.getByTestId("display-mnemonic-phrase"));
     expect(screen.getByTestId("display-mnemonic-phrase")).toBeDefined();
@@ -78,13 +67,9 @@ describe.skip("MnemonicPhrase", () => {
 
   describe("basic flow", () => {
     it("works", async () => {
-      const history = createMemoryHistory();
-      history.push(ROUTES.mnemonicPhrase);
-      mockHistoryGetter.mockReturnValue(history);
-
       render(
         <Wrapper
-          history={history}
+          routes={[ROUTES.mnemonicPhrase]}
           state={{
             auth: {
               error: null,
@@ -98,7 +83,7 @@ describe.skip("MnemonicPhrase", () => {
           }}
         >
           <MnemonicPhrase mnemonicPhrase={MNEMONIC} />
-        </Wrapper>,
+        </Wrapper>
       );
 
       // Confirm mnemonic
@@ -107,10 +92,10 @@ describe.skip("MnemonicPhrase", () => {
         await waitFor(() => screen.getByTestId("ConfirmMnemonicPhrase"));
         // Click each word in the mnemonic
         MNEMONIC.split(" ").forEach((word) =>
-          fireEvent.click(screen.getByText(word)),
+          fireEvent.click(screen.getByText(word))
         );
         fireEvent.click(
-          screen.getByTestId("display-mnemonic-phrase-confirm-btn"),
+          screen.getByTestId("display-mnemonic-phrase-confirm-btn")
         );
       });
     });

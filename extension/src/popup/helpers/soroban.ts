@@ -25,6 +25,7 @@ import {
   SorobanTokenInterface,
   TokenInvocationArgs,
 } from "@shared/constants/soroban/token";
+import { getSdk } from "@shared/helpers/stellar";
 
 export const SOROBAN_OPERATION_TYPES = [
   "invoke_host_function",
@@ -38,7 +39,7 @@ export const CLASSIC_ASSET_DECIMALS = 7;
 export const getAssetDecimals = (
   asset: string,
   balances: AccountBalancesInterface,
-  isToken: boolean,
+  isToken: boolean
 ) => {
   if (isToken) {
     const _balances = balances.balances || ({} as NonNullable<Balances>);
@@ -55,7 +56,7 @@ export const getAssetDecimals = (
 export const getTokenBalance = (tokenBalance: SorobanBalance) =>
   formatTokenAmount(
     new BigNumber(tokenBalance.total),
-    Number(tokenBalance.decimals),
+    Number(tokenBalance.decimals)
   );
 
 // Adopted from https://github.com/ethers-io/ethers.js/blob/master/packages/bignumber/src.ts/fixednumber.ts#L27
@@ -120,7 +121,7 @@ export const addressToString = (address: xdr.ScAddress) => {
 
 export const getArgsForTokenInvocation = (
   fnName: string,
-  args: xdr.ScVal[],
+  args: xdr.ScVal[]
 ): ArgsForTokenInvocation => {
   let amount: bigint | number;
   let from = "";
@@ -147,7 +148,7 @@ const isSorobanOp = (operation: HorizonOperation) =>
   SOROBAN_OPERATION_TYPES.includes(operation.type);
 
 export const getTokenInvocationArgs = (
-  hostFn: Operation.InvokeHostFunction,
+  hostFn: Operation.InvokeHostFunction
 ): TokenInvocationArgs | null => {
   if (!hostFn?.func?.invokeContract) {
     return null;
@@ -162,7 +163,7 @@ export const getTokenInvocationArgs = (
   }
 
   const contractId = StrKey.encodeContract(
-    invokedContract.contractAddress().contractId(),
+    invokedContract.contractAddress().contractId()
   );
   const fnName = invokedContract.functionName().toString();
   const args = invokedContract.args();
@@ -191,7 +192,7 @@ export const getTokenInvocationArgs = (
 
 export const getAttrsFromSorobanHorizonOp = (
   operation: HorizonOperation,
-  networkDetails: NetworkDetails,
+  networkDetails: NetworkDetails
 ) => {
   if (!isSorobanOp(operation)) {
     return null;
@@ -210,7 +211,7 @@ export const getAttrsFromSorobanHorizonOp = (
 
   const txEnvelope = TransactionBuilder.fromXDR(
     _op.transaction_attr.envelope_xdr as string,
-    networkDetails.networkPassphrase,
+    networkDetails.networkPassphrase
   ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
 
   const invokeHostFn = txEnvelope.operations[0]; // only one op per tx in Soroban right now
@@ -275,8 +276,8 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
       if (!!exec.switch().value !== !!preimage.switch().value) {
         throw new Error(
           `creation function appears invalid: ${JSON.stringify(
-            inner,
-          )} (should be wasm+address or token+asset)`,
+            inner
+          )} (should be wasm+address or token+asset)`
         );
       }
 
@@ -304,7 +305,7 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
         case 1:
           output.args.type = "sac";
           output.args.asset = Asset.fromOperation(
-            preimage.fromAsset(),
+            preimage.fromAsset()
           ).toString();
           // create contract V2
           if (fn.switch().value === 2) {
@@ -322,7 +323,7 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
 
     default:
       throw new Error(
-        `unknown invocation type (${fn.switch()}): ${JSON.stringify(fn)}`,
+        `unknown invocation type (${fn.switch()}): ${JSON.stringify(fn)}`
       );
   }
 
@@ -390,7 +391,7 @@ export const scValByType = (scVal: xdr.ScVal) => {
       return JSON.stringify(
         scValToNative(scVal),
         (_, val) => (typeof val === "bigint" ? val.toString() : val),
-        2,
+        2
       );
     }
 
@@ -413,7 +414,7 @@ export const scValByType = (scVal: xdr.ScVal) => {
 };
 
 export function getInvocationDetails(
-  invocation: xdr.SorobanAuthorizedInvocation,
+  invocation: xdr.SorobanAuthorizedInvocation
 ) {
   const invocations = [] as InvocationArgs[];
 
@@ -453,11 +454,11 @@ export interface FnArgsCreateSac {
 type InvocationArgs = FnArgsInvoke | FnArgsCreateWasm | FnArgsCreateSac;
 
 const isInvocationArg = (
-  invocation: InvocationArgs | undefined,
+  invocation: InvocationArgs | undefined
 ): invocation is InvocationArgs => !!invocation;
 
 export function getInvocationArgs(
-  invocation: xdr.SorobanAuthorizedInvocation,
+  invocation: xdr.SorobanAuthorizedInvocation
 ): InvocationArgs | undefined {
   const fn = invocation.function();
 
@@ -466,7 +467,7 @@ export function getInvocationArgs(
     case 0: {
       const _invocation = fn.contractFn();
       const contractId = StrKey.encodeContract(
-        _invocation.contractAddress().contractId(),
+        _invocation.contractAddress().contractId()
       );
       const fnName = _invocation.functionName().toString();
       const args = _invocation.args();
@@ -550,4 +551,25 @@ export const getCreateContractArgs = (hostFn: xdr.HostFunction) => {
     executable: argsV2.executable(),
     constructorArgs: argsV2.constructorArgs(),
   };
+};
+
+export const isSacContract = (
+  name: string,
+  contractId: string,
+  networkPassphrase: string
+) => {
+  const Sdk = getSdk(networkPassphrase);
+  if (name.includes(":")) {
+    try {
+      return (
+        new Sdk.Asset(...(name.split(":") as [string, string])).contractId(
+          networkPassphrase
+        ) === contractId
+      );
+    } catch (error) {
+      return false;
+    }
+  }
+
+  return false;
 };

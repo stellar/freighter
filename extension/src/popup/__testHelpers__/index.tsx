@@ -1,12 +1,8 @@
 import React from "react";
 import { Provider } from "react-redux";
+import { MemoryRouter } from "react-router-dom";
 import BigNumber from "bignumber.js";
-import { createMemoryHistory } from "history";
-import {
-  configureStore,
-  combineReducers,
-  getDefaultMiddleware,
-} from "@reduxjs/toolkit";
+import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { Balances } from "@shared/api/types";
 
@@ -32,48 +28,38 @@ const rootReducer = combineReducers({
   tokenPaymentSimulation,
 });
 
-const { Router } = jest.requireActual("react-router-dom");
-
 const makeDummyStore = (state: any) =>
   configureStore({
     reducer: rootReducer,
     preloadedState: state,
-    middleware: [
-      ...getDefaultMiddleware({
-        serializableCheck: false,
-      }),
-    ],
+    middleware: (defaults) => defaults({ serializableCheck: false }),
   });
 
 export const Wrapper: React.FunctionComponent<any> = ({
   children,
   state,
-  history,
+  routes,
 }: {
   children: React.ReactNode;
   state: {};
-  history?: any;
+  routes?: string[];
 }) => {
-  const routerHistory = history || createMemoryHistory();
-
   return (
-    <>
-      <Router history={routerHistory}>
-        <Provider
-          store={makeDummyStore({
-            auth: {
-              allAccounts: ["G123"],
-              publicKey: "G123",
-              applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
-            },
-            transactionSubmission: transactionSubmissionInitialState,
-            ...state,
-          })}
-        >
-          {children}
-        </Provider>
-      </Router>
-    </>
+    <MemoryRouter initialEntries={routes || []}>
+      <Provider
+        store={makeDummyStore({
+          auth: {
+            allAccounts: ["G123"],
+            publicKey: "G123",
+            applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+          },
+          transactionSubmission: transactionSubmissionInitialState,
+          ...state,
+        })}
+      >
+        {children}
+      </Provider>
+    </MemoryRouter>
   );
 };
 

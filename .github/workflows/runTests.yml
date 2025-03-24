@@ -13,14 +13,16 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 21
+          node-version: 22
       - run: npm install -g yarn && yarn
       - run: npx playwright install --with-deps chromium
       - run: yarn setup
       - run: yarn build:freighter-api
       - run: yarn build:extension
       - run: yarn test:ci
-      - run: ${{ github.base_ref == 'master' && 'IS_INTEGRATION_MODE=true' || '' }} yarn test:e2e
+      - run:
+          ${{ github.base_ref == 'master' && 'IS_INTEGRATION_MODE=true' || '' }}
+          yarn test:e2e
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:

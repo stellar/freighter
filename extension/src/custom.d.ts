@@ -7,6 +7,4 @@ declare module "qrcode.react";
 
 declare module "react-identicons";
 
-declare module "stellar-identicon-js";
-
 declare module "@stellar-asset-lists/sdk";

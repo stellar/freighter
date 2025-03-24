@@ -3,13 +3,14 @@ import { Button, Input, Toggle, Notification } from "@stellar/design-system";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 
 import {
   DEFAULT_ASSETS_LISTS,
   AssetsListKey,
-} from "@shared/constants/soroban/token";
+  AssetListResponse,
+} from "@shared/constants/soroban/asset-list";
 import { ROUTES } from "popup/constants/routes";
 import { AppDispatch } from "popup/App";
 
@@ -19,9 +20,9 @@ import { View } from "popup/basics/layout/View";
 import { addAssetsList, modifyAssetsList } from "popup/ducks/settings";
 import { navigateTo } from "popup/helpers/navigate";
 import { schemaValidatedAssetList } from "popup/helpers/searchAsset";
+import { DeleteModal } from "../DeleteModal";
 
 import "./styles.scss";
-import { DeleteModal } from "../DeleteModal";
 
 interface ModifyAssetListProps {
   selectedNetwork: AssetsListKey;
@@ -38,9 +39,10 @@ export const ModifyAssetList = ({
 }: ModifyAssetListProps) => {
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
   const assetListUrl = params.get("asset-list-url");
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [fetchErrorString, setFetchErrorString] = useState("");
   const [submitErrorString, setSubmitErrorString] = useState("");
   const [assetListInfo, setAssetListInfo] = useState({} as AssetsListsData);
@@ -56,7 +58,7 @@ export const ModifyAssetList = ({
       /* Based on the query param, we're in EDIT mode. Prepopulate some information */
       const decodedAssetListUrl = decodeURIComponent(assetListUrl);
       const assetsListsSelection = assetsListsData.find(
-        ({ url }) => url === decodedAssetListUrl,
+        ({ url }) => url === decodedAssetListUrl
       );
       if (assetsListsSelection) {
         const { url, name, description, provider, isEnabled } =
@@ -72,7 +74,7 @@ export const ModifyAssetList = ({
 
         if (
           defaultAssetsList.find(
-            ({ url: defaultUrl }) => defaultUrl === decodedAssetListUrl,
+            ({ url: defaultUrl }) => defaultUrl === decodedAssetListUrl
           )
         ) {
           // this is a default network, disable some features
@@ -115,7 +117,7 @@ export const ModifyAssetList = ({
       return;
     }
 
-    const resJson = await res.json();
+    const resJson: AssetListResponse = await res.json();
 
     // check against the SEP-0042 schema
     const validatedList = await schemaValidatedAssetList(resJson);
@@ -128,13 +130,13 @@ export const ModifyAssetList = ({
 
     if (validatedList.errors?.length) {
       const errors = validatedList.errors.map(
-        ({ stack }: { stack: string }) => stack,
+        ({ stack }: { stack: string }) => stack
       );
 
       setFetchErrorString(
         `Fetched asset list does not conform to schema: ${JSON.stringify(
-          errors.join(" | "),
-        )}`,
+          errors.join(" | ")
+        )}`
       );
       setIsFetchingAssetList(false);
       return;
@@ -145,10 +147,10 @@ export const ModifyAssetList = ({
         network === "public" ? "Mainnet" : "Testnet";
       setFetchErrorString(
         `The entered asset list belongs to "${getNetworkName(
-          resJson.network as string,
+          resJson.network
         )}": Currently editing "${getNetworkName(
-          selectedNetwork.toLowerCase(),
-        )}" lists.`,
+          selectedNetwork.toLowerCase()
+        )}" lists.`
       );
       setIsFetchingAssetList(false);
       return;
@@ -169,7 +171,7 @@ export const ModifyAssetList = ({
 
   /* handle editing an exisiting asset list's "enabled" status */
   const handleIsEnabledChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
+    e: React.ChangeEvent<HTMLInputElement>
   ) => {
     setAssetListInfo({
       ...assetListInfo,
@@ -184,7 +186,7 @@ export const ModifyAssetList = ({
           },
           network: selectedNetwork,
           isDeleteAssetsList: false,
-        }),
+        })
       );
     }
   };
@@ -196,17 +198,17 @@ export const ModifyAssetList = ({
       isEnabled: assetListInfo.isEnabled,
     };
     const addAssetsListResp = await dispatch(
-      addAssetsList({ assetsList, network: selectedNetwork }),
+      addAssetsList({ assetsList, network: selectedNetwork })
     );
 
     if (addAssetsList.rejected.match(addAssetsListResp)) {
       setSubmitErrorString(
-        addAssetsListResp.payload?.errorMessage || "Unable to save asset list",
+        addAssetsListResp.payload?.errorMessage || "Unable to save asset list"
       );
     }
 
     if (addAssetsList.fulfilled.match(addAssetsListResp)) {
-      navigateTo(ROUTES.manageAssetsLists);
+      navigateTo(ROUTES.manageAssetsLists, navigate);
     }
   };
 
@@ -220,18 +222,18 @@ export const ModifyAssetList = ({
         },
         network: selectedNetwork,
         isDeleteAssetsList: true,
-      }),
+      })
     );
 
     if (modifyAssetsList.rejected.match(modifyAssetsListResp)) {
       setSubmitErrorString(
         modifyAssetsListResp.payload?.errorMessage ||
-          "Unable to delete asset list",
+          "Unable to delete asset list"
       );
     }
 
     if (modifyAssetsList.fulfilled.match(modifyAssetsListResp)) {
-      navigateTo(ROUTES.manageAssetsLists);
+      navigateTo(ROUTES.manageAssetsLists, navigate);
     }
   };
 

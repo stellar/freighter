@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { object as YupObject, number as YupNumber } from "yup";
@@ -22,6 +23,7 @@ const defaultSlippage = "1";
 export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { allowedSlippage } = useSelector(transactionDataSelector);
 
   let presetSlippage = "";
@@ -36,7 +38,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
     <React.Fragment>
       <SubviewHeader
         title="Allowed Slippage"
-        customBackAction={() => navigateTo(previous)}
+        customBackAction={() => navigateTo(previous, navigate)}
         customBackIcon={<Icon.XClose />}
         rightButton={
           <InfoTooltip
@@ -56,16 +58,21 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
         initialValues={{ presetSlippage, customSlippage }}
         onSubmit={(values) => {
           dispatch(
-            saveAllowedSlippage(values.customSlippage || values.presetSlippage),
+            saveAllowedSlippage(values.customSlippage || values.presetSlippage)
           );
-          navigateTo(previous);
+          navigateTo(previous, navigate);
         }}
         validationSchema={YupObject().shape({
-          customSlippage: YupNumber().max(10, `${t("must be below")} 10%`),
+          customSlippage: YupNumber()
+            .min(0, `${t("must be at least")} 0%`)
+            .max(10, `${t("must be below")} 10%`),
         })}
       >
         {({ setFieldValue, values, errors }) => (
-          <Form className="View__contentAndFooterWrapper">
+          <Form
+            className="View__contentAndFooterWrapper"
+            data-testid="slippage-form"
+          >
             <View.Content hasNoTopPadding>
               <div className="Slippage__cards">
                 <label className="Slippage--radio-label">
@@ -112,8 +119,11 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
                 <Field name="customSlippage">
                   {({ field }: FieldProps) => (
                     <Input
+                      data-testid="custom-slippage-input"
                       fieldSize="md"
                       id="custom-input"
+                      min={0}
+                      max={10}
                       placeholder={`${t("Custom")} %`}
                       type="number"
                       {...field}
@@ -126,7 +136,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
                   )}
                 </Field>
               </div>
-              {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+              {}
               <Link
                 isUnderline
                 variant="secondary"

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { BigNumber } from "bignumber.js";
 import { Store } from "redux";
 import * as StellarSdk from "stellar-sdk";
@@ -127,7 +126,7 @@ import { STELLAR_EXPERT_MEMO_REQUIRED_ACCOUNTS_URL } from "background/constants/
 import {
   AssetsListKey,
   DEFAULT_ASSETS_LISTS,
-} from "@shared/constants/soroban/token";
+} from "@shared/constants/soroban/asset-list";
 import { getSdk } from "@shared/helpers/stellar";
 import { captureException } from "@sentry/browser";
 
@@ -135,7 +134,6 @@ import { captureException } from "@sentry/browser";
 const numOfPublicKeysToCheck = 5;
 const sessionTimer = new SessionTimer();
 
-// eslint-disable-next-line
 export const responseQueue: Array<
   (message?: any, messageAddress?: any) => void
 > = [];
@@ -179,7 +177,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const _getNonHwKeyID = async () => {
     const keyIdList = await getKeyIdList();
     const nonHwKeyIds = keyIdList.filter(
-      (k: string) => k.indexOf(HW_PREFIX) === -1,
+      (k: string) => k.indexOf(HW_PREFIX) === -1
     );
     return nonHwKeyIds[0] || "";
   };
@@ -205,7 +203,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const keyIdListArr = await getKeyIdList();
     const accountName = `${hardwareWalletType} ${
       allAccounts.filter(
-        ({ hardwareWalletType: hwType }) => hwType !== hardwareWalletType,
+        ({ hardwareWalletType: hwType }) => hwType !== hardwareWalletType
       ).length + 1
     }`;
 
@@ -238,7 +236,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       logIn({
         publicKey,
         allAccounts,
-      }) as any,
+      }) as any
     );
   };
 
@@ -283,7 +281,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
             imported,
           },
         ],
-      }) as any,
+      }) as any
     );
 
     const keyMetadata = {
@@ -367,7 +365,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       logIn({
         publicKey,
         allAccounts: newAllAccounts,
-      }) as any,
+      }) as any
     );
 
     const keyMetadata = {
@@ -403,7 +401,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const _activatePublicKey = async ({ publicKey }: { publicKey: string }) => {
     const allAccounts = allAccountsSelector(sessionStore.getState());
     let publicKeyIndex = allAccounts.findIndex(
-      (account: Account) => account.publicKey === publicKey,
+      (account: Account) => account.publicKey === publicKey
     );
     publicKeyIndex = publicKeyIndex > -1 ? publicKeyIndex : 0;
 
@@ -466,7 +464,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     await localStore.setItem(
       APPLICATION_ID,
-      APPLICATION_STATE.PASSWORD_CREATED,
+      APPLICATION_STATE.PASSWORD_CREATED
     );
 
     const currentState = sessionStore.getState();
@@ -500,8 +498,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       } catch (e) {
         captureException(
           `Error logging in to all accounts in Add Account - ${JSON.stringify(
-            e,
-          )}`,
+            e
+          )}`
         );
         return { error: "Unable to login" };
       }
@@ -585,8 +583,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       } catch (e) {
         captureException(
           `Error logging in to all accounts in Import Account - ${JSON.stringify(
-            e,
-          )}`,
+            e
+          )}`
         );
         return { error: "Unable to login" };
       }
@@ -676,7 +674,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const keyId = (await localStore.getItem(KEY_ID)) || "";
 
     sessionStore.dispatch(
-      updateAllAccountsAccountName({ updatedAccountName: accountName }),
+      updateAllAccountsAccountName({ updatedAccountName: accountName })
     );
     await addAccountName({ keyId, accountName });
 
@@ -693,7 +691,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     if (
       savedNetworks.find(
         ({ networkName }: { networkName: string }) =>
-          networkName === networkDetails.networkName,
+          networkName === networkDetails.networkName
       )
     ) {
       return {
@@ -715,7 +713,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     const savedNetworks = await getSavedNetworks();
     const networkIndex = savedNetworks.findIndex(
-      ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
+      ({ networkName: savedNetworkName }) => savedNetworkName === networkName
     );
 
     savedNetworks.splice(networkIndex, 1);
@@ -736,7 +734,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const activeIndex =
       savedNetworks.findIndex(
         ({ networkName: savedNetworkName }) =>
-          savedNetworkName === activeNetworkDetails.networkName,
+          savedNetworkName === activeNetworkDetails.networkName
       ) || 0;
 
     savedNetworks.splice(networkIndex, 1, networkDetails);
@@ -762,7 +760,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const pubKey = publicKeySelector(currentState);
     const networkDetails =
       savedNetworks.find(
-        ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
+        ({ networkName: savedNetworkName }) => savedNetworkName === networkName
       ) || MAINNET_NETWORK_DETAILS;
 
     await localStore.setItem(NETWORK_ID, networkDetails);
@@ -891,7 +889,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       if (keyIdList.length) {
         /* Clear any existing account data while maintaining app settings */
 
-        // eslint-disable-next-line @typescript-eslint/prefer-for-of
         for (let i = 0; i < keyIdList.length; i += 1) {
           await localStore.remove(`stellarkeys:${keyIdList[i]}`);
         }
@@ -923,17 +920,16 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       await localStore.setItem(APPLICATION_ID, applicationState);
 
       // lets check first couple of accounts and pre-load them if funded on mainnet
-      // eslint-disable-next-line no-restricted-syntax
+
       for (let i = 1; i <= numOfPublicKeysToCheck; i += 1) {
         try {
           const publicKey = wallet.getPublicKey(i);
           const privateKey = wallet.getSecret(i);
 
-          // eslint-disable-next-line no-await-in-loop
           const resp = await fetch(
-            `${MAINNET_NETWORK_DETAILS.networkUrl}/accounts/${publicKey}`,
+            `${MAINNET_NETWORK_DETAILS.networkUrl}/accounts/${publicKey}`
           );
-          // eslint-disable-next-line no-await-in-loop
+
           const j = await resp.json();
           if (j.account_id) {
             const newKeyPair = {
@@ -941,19 +937,18 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
               privateKey,
             };
 
-            // eslint-disable-next-line no-await-in-loop
             await _storeAccount({
               password,
               keyPair: newKeyPair,
               mnemonicPhrase: recoverMnemonic,
               imported: true,
             });
-            // eslint-disable-next-line no-await-in-loop
+
             await localStore.setItem(KEY_DERIVATION_NUMBER_ID, String(i));
           }
         } catch (e) {
           captureException(
-            `Error preloading account: ${JSON.stringify(e)} - ${i}`,
+            `Error preloading account: ${JSON.stringify(e)} - ${i}`
           );
           // continue
         }
@@ -1019,7 +1014,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const unlockedAccounts = [] as Account[];
 
     // for loop to preserve order of accounts
-    // eslint-disable-next-line
+
     for (let i = 0; i < keyIdList.length; i++) {
       const keyId = keyIdList[i];
       let keyStore;
@@ -1036,7 +1031,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         hardwareWalletType = WalletType.LEDGER;
       } else {
         try {
-          // eslint-disable-next-line no-await-in-loop
           keyStore = await keyManager.loadKey(keyId, password);
         } catch (e) {
           console.error(e);
@@ -1098,7 +1092,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         logIn({
           publicKey: hwPublicKey || activePublicKey,
           allAccounts: await _getLocalStorageAccounts(password),
-        }) as any,
+        }) as any
       );
     }
 
@@ -1115,11 +1109,10 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     } catch (e) {
       await clearSession({ localStore, sessionStore });
       captureException(
-        `Error storing encrypted temporary data: ${JSON.stringify(e)}`,
+        `Error storing encrypted temporary data: ${JSON.stringify(e)}`
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < keyIdList.length; i += 1) {
       const currentKeyId = keyIdList[i];
 
@@ -1139,8 +1132,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         } catch (e) {
           captureException(
             `Error storing encrypted temporary data: ${JSON.stringify(
-              e,
-            )} - ${JSON.stringify(keyIdList)}: ${i}`,
+              e
+            )} - ${JSON.stringify(keyIdList)}: ${i}`
           );
         }
       }
@@ -1277,7 +1270,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       });
     } catch (e) {
       captureException(
-        `Sign transaction: No private key found: ${JSON.stringify(e)}`,
+        `Sign transaction: No private key found: ${JSON.stringify(e)}`
       );
     }
 
@@ -1362,7 +1355,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       });
     } catch (e) {
       captureException(
-        `Sign auth entry: No private key found: ${JSON.stringify(e)}`,
+        `Sign auth entry: No private key found: ${JSON.stringify(e)}`
       );
     }
 
@@ -1413,9 +1406,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       });
     } catch (e) {
       captureException(
-        `Sign freighter transaction: No private key found: ${JSON.stringify(
-          e,
-        )}`,
+        `Sign freighter transaction: No private key found: ${JSON.stringify(e)}`
       );
     }
 
@@ -1446,8 +1437,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     } catch (e) {
       captureException(
         `Sign freighter Soroban transaction: No private key found: ${JSON.stringify(
-          e,
-        )}`,
+          e
+        )}`
       );
     }
 
@@ -1555,7 +1546,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     await localStore.setItem(
       IS_EXPERIMENTAL_MODE_ID,
-      isExperimentalModeEnabled,
+      isExperimentalModeEnabled
     );
 
     return {
@@ -1653,7 +1644,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     try {
       const resp = await cachedFetch(
         STELLAR_EXPERT_MEMO_REQUIRED_ACCOUNTS_URL,
-        CACHED_MEMO_REQUIRED_ACCOUNTS_ID,
+        CACHED_MEMO_REQUIRED_ACCOUNTS_ID
       );
       const memoRequiredAccounts: MemoRequiredAccount[] =
         resp?._embedded?.records || [];
@@ -1740,7 +1731,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     const accountTokenIdList = tokenIdsByNetwork[keyId] || [];
     const updatedTokenIdList = accountTokenIdList.filter(
-      (id: string) => id !== contractId,
+      (id: string) => id !== contractId
     );
 
     await localStore.setItem(TOKEN_ID_LIST, {
@@ -1791,7 +1782,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const migratedMnemonicPhrase = generateMnemonic({ entropyBits: 128 });
 
     sessionStore.dispatch(
-      setMigratedMnemonicPhrase({ migratedMnemonicPhrase }),
+      setMigratedMnemonicPhrase({ migratedMnemonicPhrase })
     );
 
     return { mnemonicPhrase: migratedMnemonicPhrase };
@@ -1802,7 +1793,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       request;
 
     const migratedMnemonicPhrase = migratedMnemonicPhraseSelector(
-      sessionStore.getState(),
+      sessionStore.getState()
     );
     const migratedAccounts = [];
 
@@ -1817,7 +1808,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     // we expect all migrations to be done on MAINNET
     const server = stellarSdkServer(
       NETWORK_URLS.PUBLIC,
-      MAINNET_NETWORK_DETAILS.networkPassphrase,
+      MAINNET_NETWORK_DETAILS.networkPassphrase
     );
     const networkPassphrase = StellarSdk.Networks.PUBLIC;
 
@@ -1832,7 +1823,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       5. Start an account session with the destination account so the user can start signing tx's with their newly migrated account
     */
 
-    // eslint-disable-next-line
     for (let i = 0; i < balancesToMigrate.length; i += 1) {
       const {
         publicKey,
@@ -1849,10 +1839,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       const keyID = keyIdList[keyIdIndex];
 
-      // eslint-disable-next-line no-await-in-loop
       const store = await _unlockKeystore({ password, keyID });
 
-      // eslint-disable-next-line no-await-in-loop
       const sourceAccount = await server.loadAccount(publicKey);
 
       // create a new keystore and migrate while replacing the keyId in the list
@@ -1861,7 +1849,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         privateKey: newWallet.getSecret(keyIdIndex),
       };
 
-      // eslint-disable-next-line no-await-in-loop
       const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
         fee,
         networkPassphrase,
@@ -1883,7 +1870,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         StellarSdk.Operation.createAccount({
           destination: newKeyPair.publicKey,
           startingBalance,
-        }),
+        })
       );
 
       const sourceKeys = StellarSdk.Keypair.fromSecret(store.privateKey);
@@ -1896,7 +1883,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       }
 
       try {
-        // eslint-disable-next-line no-await-in-loop
         await submitTx({ server, tx: builtTransaction });
       } catch (e) {
         console.error(e);
@@ -1907,7 +1893,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       if (migratedAccount.isMigrated) {
         try {
           // now that the destination accounts are funded, we can add the trustline balances
-          // eslint-disable-next-line no-await-in-loop
+
           await migrateTrustlines({
             trustlineBalances,
             server,
@@ -1927,18 +1913,18 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       // if any of the preceding steps have failed, this will fail as well. Don't bother making the API call
       if (isMergeSelected && migratedAccount.isMigrated) {
         // since we're doing a merge, we can merge the old account into the new one, which will delete the old account
-        // eslint-disable-next-line no-await-in-loop
+
         const mergeTransaction = new StellarSdk.TransactionBuilder(
           sourceAccount,
           {
             fee,
             networkPassphrase,
-          },
+          }
         );
         mergeTransaction.addOperation(
           StellarSdk.Operation.accountMerge({
             destination: newKeyPair.publicKey,
-          }),
+          })
         );
 
         const builtMergeTransaction = mergeTransaction.setTimeout(180).build();
@@ -1950,7 +1936,6 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         }
 
         try {
-          // eslint-disable-next-line no-await-in-loop
           await submitTx({ server, tx: builtMergeTransaction });
         } catch (e) {
           console.error(e);
@@ -1960,7 +1945,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
       if (migratedAccount.isMigrated) {
         // replace the source account with the new one in `allAccounts` and store the keys
-        // eslint-disable-next-line no-await-in-loop
+
         await _replaceAccount({
           mnemonicPhrase: migratedMnemonicPhrase,
           password,
@@ -1974,7 +1959,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     }
 
     const successfullyMigratedAccts = migratedAccounts.filter(
-      ({ isMigrated }) => isMigrated,
+      ({ isMigrated }) => isMigrated
     );
 
     // if any of the accounts have been successfully migrated, go ahead and log in
@@ -2015,7 +2000,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     if (
       currentAssetsLists[network].some(
-        (list: { url: string }) => list.url === assetsList.url,
+        (list: { url: string }) => list.url === assetsList.url
       )
     ) {
       return {
@@ -2037,7 +2022,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const networkAssetsLists = currentAssetsLists[network];
 
     const index = networkAssetsLists.findIndex(
-      ({ url }: { url: string }) => url === assetsList.url,
+      ({ url }: { url: string }) => url === assetsList.url
     );
 
     if (
@@ -2057,6 +2042,19 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     await localStore.setItem(ASSETS_LISTS_ID, currentAssetsLists);
 
     return { assetsLists: await getAssetsLists() };
+  };
+
+  const getIsAccountMismatch = () => {
+    const { activePublicKey } = request;
+
+    if (!activePublicKey) {
+      return { isAccountMismatch: false };
+    }
+
+    const currentState = sessionStore.getState();
+    const publicKey = publicKeySelector(currentState);
+
+    return { isAccountMismatch: publicKey !== activePublicKey };
   };
 
   const messageResponder: MessageResponder = {
@@ -2112,9 +2110,18 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.MIGRATE_ACCOUNTS]: migrateAccounts,
     [SERVICE_TYPES.ADD_ASSETS_LIST]: addAssetsList,
     [SERVICE_TYPES.MODIFY_ASSETS_LIST]: modifyAssetsList,
+    [SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH]: getIsAccountMismatch,
   };
 
+  const currentState = sessionStore.getState();
+  const publicKey = publicKeySelector(currentState);
+
+  if (
+    request.activePublicKey &&
+    request.activePublicKey !== publicKey &&
+    request.type !== SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH
+  ) {
+    return { error: "Public key does not match active public key" };
+  }
   return messageResponder[request.type]();
 };
-
-/* eslint-enable @typescript-eslint/no-unsafe-argument */

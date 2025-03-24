@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import shuffle from "lodash/shuffle";
 import { Form, Formik, FormikHelpers, FormikValues } from "formik";
 import { useSelector, useDispatch } from "react-redux";
@@ -31,7 +32,8 @@ export const ConfirmMnemonicPhrase = ({
   isMigration?: boolean;
 }) => {
   const { t } = useTranslation();
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const [words, setWords] = useState([""]);
 
   useEffect(() => {
@@ -46,18 +48,18 @@ export const ConfirmMnemonicPhrase = ({
       // tag each word with an index because words can repeat
       [`${current}-${i}`]: false,
     }),
-    {},
+    {}
   );
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const authError = useSelector(authErrorSelector);
 
   const updatePhrase = (target: HTMLInputElement) => {
     if (target.checked) {
-      return setSelectedWords((prevState) => [...prevState, target.name]);
+      return setSelectedWords((prevState) => [...prevState, target.value]);
     }
     return setSelectedWords((prevState) => {
       const currentArr = [...prevState];
-      currentArr.splice(currentArr.indexOf(target.name), 1);
+      currentArr.splice(currentArr.indexOf(target.value), 1);
       return [...currentArr];
     });
   };
@@ -66,21 +68,25 @@ export const ConfirmMnemonicPhrase = ({
 
   const handleSubmit = async (
     _values: FormikValues,
-    formikHelpers: FormikHelpers<FormikValues>,
+    formikHelpers: FormikHelpers<FormikValues>
   ): Promise<void> => {
     if (isMigration) {
       const res = await dispatch(
-        confirmMigratedMnemonicPhrase(joinSelectedWords()),
+        confirmMigratedMnemonicPhrase(joinSelectedWords())
       );
       if (confirmMigratedMnemonicPhrase.fulfilled.match(res)) {
-        navigateTo(ROUTES.accountMigrationConfirmMigration);
+        setSelectedWords([]);
+        formikHelpers.resetForm();
+        navigateTo(ROUTES.accountMigrationConfirmMigration, navigate);
       }
     } else {
-      dispatch(confirmMnemonicPhrase(joinSelectedWords()));
+      const res = await dispatch(confirmMnemonicPhrase(joinSelectedWords()));
+      if (confirmMnemonicPhrase.fulfilled.match(res)) {
+        setSelectedWords([]);
+        formikHelpers.resetForm();
+        navigateTo(ROUTES.mnemonicPhraseConfirmed, navigate);
+      }
     }
-
-    setSelectedWords([]);
-    formikHelpers.resetForm();
   };
 
   const handleSkip = async () => {
@@ -101,7 +107,7 @@ export const ConfirmMnemonicPhrase = ({
           <>
             <Text as="p" size="md">
               {t(
-                "Please select each word in the same order you have them noted to confirm you got them right.",
+                "Please select each word in the same order you have them noted to confirm you got them right."
               )}
             </Text>
           </>
@@ -113,9 +119,10 @@ export const ConfirmMnemonicPhrase = ({
               <div className="ConfirmMnemonicPhrase__card-wrapper">
                 <Card variant="primary">
                   <div className="ConfirmMnemonicPhrase__word-bubble-wrapper">
-                    {wordStateArr.map(([wordKey]) => (
+                    {wordStateArr.map(([wordKey], i) => (
                       <CheckButton
-                        key={wordKey}
+                        wordIndex={`word-${i}`}
+                        key={i}
                         onChange={(e) => {
                           handleChange(e);
                           updatePhrase(e.target as HTMLInputElement);
@@ -132,7 +139,7 @@ export const ConfirmMnemonicPhrase = ({
                         word={convertToWord(wordKey)}
                         wordNumber={() => {
                           const wordIndex = selectedWords.findIndex(
-                            (selectedWord) => selectedWord === wordKey,
+                            (selectedWord) => selectedWord === wordKey
                           );
 
                           if (wordIndex > -1) {
@@ -171,7 +178,7 @@ export const ConfirmMnemonicPhrase = ({
                 </div>
                 <div>
                   {t(
-                    "You can access this later in the app, but we strongly recommend saving this in a safe place.",
+                    "You can access this later in the app, but we strongly recommend saving this in a safe place."
                   )}
                 </div>
               </div>

@@ -12,6 +12,7 @@ import { GrantAccess } from "../GrantAccess";
 import * as blockAidHelpers from "popup/helpers/blockaid";
 import { BlockAidScanSiteResult } from "@shared/api/types";
 import * as urlHelpers from "../../../helpers/urls";
+import { ROUTES } from "popup/constants/routes";
 
 jest.spyOn(urlHelpers, "parsedSearchParam").mockImplementation(() => {
   const original = jest.requireActual("../../../helpers/urls");
@@ -27,8 +28,21 @@ describe("Grant Access view", () => {
   });
 
   it("renders", async () => {
+    jest.spyOn(blockAidHelpers, "useScanSite").mockImplementation(() => {
+      return {
+        error: null,
+        isLoading: false,
+        data: {
+          is_malicious: false,
+        } as BlockAidScanSiteResult,
+        scanSite: (_url: string, _networkDetails: NetworkDetails) => {
+          return Promise.resolve();
+        },
+      };
+    });
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -44,7 +58,7 @@ describe("Grant Access view", () => {
         }}
       >
         <GrantAccess />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("grant-access-view"));
@@ -68,6 +82,7 @@ describe("Grant Access view", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -83,7 +98,7 @@ describe("Grant Access view", () => {
         }}
       >
         <GrantAccess />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("grant-access-view"));
@@ -107,6 +122,7 @@ describe("Grant Access view", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -122,7 +138,7 @@ describe("Grant Access view", () => {
         }}
       >
         <GrantAccess />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("grant-access-view"));
@@ -146,6 +162,7 @@ describe("Grant Access view", () => {
 
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -161,7 +178,7 @@ describe("Grant Access view", () => {
         }}
       >
         <GrantAccess />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("grant-access-view"));

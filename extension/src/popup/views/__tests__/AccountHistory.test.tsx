@@ -13,6 +13,7 @@ import {
   mockAccountHistory,
 } from "../../__testHelpers__";
 import { AccountHistory } from "../AccountHistory";
+import { ROUTES } from "popup/constants/routes";
 
 jest
   .spyOn(ApiInternal, "getAccountHistory")
@@ -22,6 +23,7 @@ describe("AccountHistory", () => {
   it("loads account history view with all transactions", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -37,7 +39,7 @@ describe("AccountHistory", () => {
         }}
       >
         <AccountHistory />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("AccountHistory"));
@@ -45,24 +47,25 @@ describe("AccountHistory", () => {
     const historyNodes = screen.getAllByTestId("history-item");
     expect(historyNodes.length).toEqual(4);
     const historyNodeAmounts = screen.getAllByTestId(
-      "history-item-amount-component",
+      "history-item-amount-component"
     );
     await waitFor(() =>
-      expect(historyNodeAmounts[0]).toHaveTextContent("+1 XLM"),
+      expect(historyNodeAmounts[0]).toHaveTextContent("+1 XLM")
     );
     await waitFor(() =>
-      expect(historyNodeAmounts[1]).toHaveTextContent("+0.1 XLM"),
+      expect(historyNodeAmounts[1]).toHaveTextContent("+0.1 XLM")
     );
     await waitFor(() =>
-      expect(historyNodeAmounts[2]).toHaveTextContent("+0.01 XLM"),
+      expect(historyNodeAmounts[2]).toHaveTextContent("+0.01 XLM")
     );
     await waitFor(() =>
-      expect(historyNodeAmounts[3]).toHaveTextContent("-0.1 XLM"),
+      expect(historyNodeAmounts[3]).toHaveTextContent("-0.1 XLM")
     );
   });
   it("hides dust transactions", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -78,7 +81,7 @@ describe("AccountHistory", () => {
         }}
       >
         <AccountHistory />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("AccountHistory"));
@@ -87,13 +90,13 @@ describe("AccountHistory", () => {
     expect(historyNodes.length).toEqual(2);
     await waitFor(() => screen.getAllByTestId("history-item"));
     const historyNodeAmounts = screen.getAllByTestId(
-      "history-item-amount-component",
+      "history-item-amount-component"
     );
     await waitFor(() =>
-      expect(historyNodeAmounts[0]).toHaveTextContent("+1 XLM"),
+      expect(historyNodeAmounts[0]).toHaveTextContent("+1 XLM")
     );
     await waitFor(() =>
-      expect(historyNodeAmounts[1]).toHaveTextContent("-0.1 XLM"),
+      expect(historyNodeAmounts[1]).toHaveTextContent("-0.1 XLM")
     );
   });
 });

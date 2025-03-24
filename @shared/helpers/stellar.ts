@@ -30,7 +30,7 @@ export const isCustomNetwork = (networkDetails: NetworkDetails) => {
 };
 
 export function getBalanceIdentifier(
-  balance: StellarSdk.Horizon.HorizonApi.BalanceLine,
+  balance: StellarSdk.Horizon.HorizonApi.BalanceLine
 ): string {
   if ("asset_issuer" in balance && !balance.asset_issuer) {
     return "native";
@@ -49,7 +49,6 @@ export function getBalanceIdentifier(
 }
 
 export const defaultBlockaidScanAssetResult: BlockAidScanAssetResult = {
-  /* eslint-disable @typescript-eslint/naming-convention */
   address: "",
   chain: "stellar",
   attack_types: {},
@@ -60,12 +59,11 @@ export const defaultBlockaidScanAssetResult: BlockAidScanAssetResult = {
   trading_limits: {},
   result_type: "Benign",
   features: [{ description: "", feature_id: "METADATA", type: "Benign" }],
-  /* eslint-enable @typescript-eslint/naming-convention */
 };
 
 export const makeDisplayableBalances = async (
   accountDetails: StellarSdk.Horizon.ServerApi.AccountRecord,
-  isMainnet: boolean,
+  isMainnet: boolean
 ) => {
   const { balances, subentry_count, num_sponsored, num_sponsoring } =
     accountDetails;
@@ -103,7 +101,7 @@ export const makeDisplayableBalances = async (
 
     if ("selling_liabilities" in balance) {
       sellingLiabilities = new BigNumber(
-        balance.selling_liabilities,
+        balance.selling_liabilities
       ).toString();
       available = total.minus(sellingLiabilities);
     }

@@ -27,7 +27,6 @@ export const generateMnemonicPhraseDisplay = ({
     const randomWord = randomWordArr[randomWordIndex];
 
     return (
-      // eslint-disable-next-line react/no-array-index-key
       <li className="MnemonicDisplay__list-item" key={`${word}-${i}`}>
         {randomNumber % 2 === 0 ? (
           <>

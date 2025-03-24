@@ -1,5 +1,6 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   Button,
   Heading,
@@ -29,10 +30,11 @@ import "./styles.scss";
 export const ConfirmMigration = () => {
   const { t } = useTranslation();
   const { recommendedFee } = useNetworkFees();
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch<AppDispatch>();
   const { balancesToMigrate, isMergeSelected } = useSelector(
-    transactionDataSelector,
+    transactionDataSelector
   );
+  const navigate = useNavigate();
 
   const handleCancel = () => {
     window.close();
@@ -44,11 +46,11 @@ export const ConfirmMigration = () => {
         balancesToMigrate,
         isMergeSelected,
         recommendedFee,
-      }),
+      })
     );
 
     if (migrateAccounts.fulfilled.match(migrateAccountsRes)) {
-      navigateTo(ROUTES.accountMigrationMigrationComplete);
+      navigateTo(ROUTES.accountMigrationMigrationComplete, navigate);
     }
   };
 
@@ -75,12 +77,12 @@ export const ConfirmMigration = () => {
                 <MigrationBody>
                   <MigrationParagraph>
                     {t(
-                      "As long as you have your old and new mnemonics phrase, you’ll still be able to control accounts related to your current backup phrase which were not merged. For that, you’ll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time).",
+                      "As long as you have your old and new mnemonics phrase, you’ll still be able to control accounts related to your current backup phrase which were not merged. For that, you’ll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time)."
                     )}
                   </MigrationParagraph>
                   <Notification title="Important" variant="warning">
                     {t(
-                      "One of your accounts is a signer for another account. Freighter won’t migrate signing settings. For your safety, Freighter won’t merge accounts with signature set up so you can still control it.",
+                      "One of your accounts is a signer for another account. Freighter won’t migrate signing settings. For your safety, Freighter won’t merge accounts with signature set up so you can still control it."
                     )}
                   </Notification>
                 </MigrationBody>

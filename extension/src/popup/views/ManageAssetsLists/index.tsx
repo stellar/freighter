@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Switch } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 import { NETWORKS } from "@shared/constants/stellar";
-import { AssetsListKey } from "@shared/constants/soroban/token";
+import { AssetsListKey } from "@shared/constants/soroban/asset-list";
 import { settingsSelector } from "popup/ducks/settings";
 import { PublicKeyRoute } from "popup/Router";
 
@@ -14,6 +14,7 @@ import { AssetLists } from "popup/components/manageAssetsLists/AssetLists";
 import { ModifyAssetList } from "popup/components/manageAssetsLists/ModifyAssetList";
 
 import "./styles.scss";
+import { getPathFromRoute } from "popup/helpers/route";
 
 export interface AssetsListsData {
   url: string;
@@ -31,7 +32,7 @@ export interface SortedAssetsListsData {
 export const ManageAssetsLists = () => {
   const [selectedNetwork, setSelectedNetwork] = useState("" as AssetsListKey);
   const [assetsListsData, setAssetsListsData] = useState(
-    [] as AssetsListsData[],
+    [] as AssetsListsData[]
   );
   const [sortedAssetsListsData, setSortedAssetsListsData] = useState({
     enabled: [],
@@ -52,7 +53,7 @@ export const ManageAssetsLists = () => {
       setIsLoading(true);
 
       // TODO: make these calls concurrent
-      // eslint-disable-next-line no-restricted-syntax
+
       for (const networkList of networkLists) {
         const { url = "", isEnabled } = networkList;
         try {
@@ -95,7 +96,7 @@ export const ManageAssetsLists = () => {
     setSelectedNetwork(
       networkDetails.network === NETWORKS.TESTNET
         ? NETWORKS.TESTNET
-        : NETWORKS.PUBLIC,
+        : NETWORKS.PUBLIC
     );
   }, [networkDetails]);
 
@@ -103,24 +104,39 @@ export const ManageAssetsLists = () => {
     setSelectedNetwork(e.target.value as AssetsListKey);
   };
 
+  const addNetworkPath = getPathFromRoute({
+    fullRoute: ROUTES.manageAssetsListsModifyAssetList,
+    basePath: "/manage-assets-lists/",
+  });
+
   return assetsLists ? (
     <>
-      <Switch>
-        <PublicKeyRoute exact path={ROUTES.manageAssetsLists}>
-          <AssetLists
-            sortedAssetsListsData={sortedAssetsListsData}
-            handleSelectChange={handleSelectChange}
-            selectedNetwork={selectedNetwork}
-            isLoading={isLoading}
-          />
-        </PublicKeyRoute>
-        <PublicKeyRoute exact path={ROUTES.manageAssetsListsModifyAssetList}>
-          <ModifyAssetList
-            assetsListsData={assetsListsData}
-            selectedNetwork={selectedNetwork}
-          />
-        </PublicKeyRoute>
-      </Switch>
+      <Routes>
+        <Route
+          index
+          element={
+            <PublicKeyRoute>
+              <AssetLists
+                sortedAssetsListsData={sortedAssetsListsData}
+                handleSelectChange={handleSelectChange}
+                selectedNetwork={selectedNetwork}
+                isLoading={isLoading}
+              />
+            </PublicKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={addNetworkPath}
+          element={
+            <PublicKeyRoute>
+              <ModifyAssetList
+                assetsListsData={assetsListsData}
+                selectedNetwork={selectedNetwork}
+              />
+            </PublicKeyRoute>
+          }
+        ></Route>
+      </Routes>
     </>
   ) : (
     <div>{t("Unable to parse assets lists")}</div>

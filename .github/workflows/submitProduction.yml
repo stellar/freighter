@@ -45,7 +45,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: yarn setup && yarn build:freighter-api && yarn build:extension:production --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{ secrets.SENTRY_KEY }}"
+      - run:
+          yarn setup && yarn build:freighter-api && yarn
+          build:extension:production --env AMPLITUDE_KEY="${{
+          secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{ secrets.SENTRY_KEY }}"
       - name: Install zip
         uses: montudor/action-zip@0852c26906e00f8a315c704958823928d8018b28 #v1.0.0
       - name: Commit files
@@ -56,7 +59,7 @@ jobs:
           git commit -m "docs(): bumping release to ${{ github.event.inputs.version }}"
           git tag ${{ github.event.inputs.version }}
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@5e914681df9dc83aa4e4905692ca88beb2f9e91f #v7.0.5
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e #v7.0.8
         with:
           title: Bump versions to ${{ github.event.inputs.version }}
       - name: Create GitHub Release
@@ -126,7 +129,11 @@ jobs:
           SLACK_CHANNEL: release
           SLACK_COLOR: "#391EDA"
           SLACK_ICON: https://github.com/stellar/freighter/blob/master/docs/static/images/logo.png?size=48
-          SLACK_MESSAGE: "https://github.com/stellar/freighter/releases/tag/${{ github.event.inputs.version }}"
-          SLACK_TITLE: Freighter v${{ github.event.inputs.version }} has been submitted to app stores for review!
+          SLACK_MESSAGE:
+            "https://github.com/stellar/freighter/releases/tag/${{
+            github.event.inputs.version }}"
+          SLACK_TITLE:
+            Freighter v${{ github.event.inputs.version }} has been submitted to
+            app stores for review!
           SLACK_USERNAME: Freighter Administrative Assistant
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}

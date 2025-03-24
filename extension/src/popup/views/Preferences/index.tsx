@@ -4,6 +4,7 @@ import { Field, Form, Formik } from "formik";
 import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { View } from "popup/basics/layout/View";
+import { AppDispatch } from "popup/App";
 
 import { saveSettings, settingsSelector } from "popup/ducks/settings";
 
@@ -14,7 +15,7 @@ import "./styles.scss";
 
 export const Preferences = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { isDataSharingAllowed, isMemoValidationEnabled, isHideDustEnabled } =
     useSelector(settingsSelector);
 
@@ -37,13 +38,12 @@ export const Preferences = () => {
       isHideDustEnabledValue,
     } = formValue;
 
-    // eslint-disable-next-line
     await dispatch(
       saveSettings({
         isMemoValidationEnabled: isValidatingMemoValue,
         isDataSharingAllowed: isDataSharingAllowedValue,
         isHideDustEnabled: isHideDustEnabledValue,
-      }),
+      })
     );
   };
 
@@ -90,7 +90,7 @@ export const Preferences = () => {
                     className="Preferences--label"
                   >
                     {t(
-                      "Allow Freighter to collect anonymous information about usage. Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts.",
+                      "Allow Freighter to collect anonymous information about usage. Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts."
                     )}
                   </label>
                   <Toggle

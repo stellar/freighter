@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Button, Select, Loader, Badge } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -6,7 +7,7 @@ import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { NETWORKS } from "@shared/constants/stellar";
-import { AssetsListKey } from "@shared/constants/soroban/token";
+import { AssetsListKey } from "@shared/constants/soroban/asset-list";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
@@ -51,6 +52,7 @@ export const AssetLists = ({
   isLoading,
 }: AssetListsProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   return (
     <>
@@ -115,7 +117,9 @@ export const AssetLists = ({
           size="md"
           isFullWidth
           variant="tertiary"
-          onClick={() => navigateTo(ROUTES.manageAssetsListsModifyAssetList)}
+          onClick={() =>
+            navigateTo(ROUTES.manageAssetsListsModifyAssetList, navigate)
+          }
         >
           {t("Add new list")}
         </Button>

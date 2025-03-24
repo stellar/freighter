@@ -22,15 +22,13 @@ export const Box: React.FC<BoxProps> = ({
   ...props
 }: BoxProps) => {
   const customStyle = {
-    // eslint-disable-next-line
     ...(gridCellWidth ? { "--Box-grid-cell-width": gridCellWidth } : {}),
-    // eslint-disable-next-line
+
     ...(gapHorizontal ? { "--Box-gap-horizontal": gapHorizontal } : {}),
-    // eslint-disable-next-line
+
     ...(gapVertical ? { "--Box-gap-vertical": gapVertical } : {}),
     ...(display === "grid"
       ? {
-          // eslint-disable-next-line
           "grid-template-columns": `repeat(auto-fit, ${
             gridCellWidth || "100%"
           })`,

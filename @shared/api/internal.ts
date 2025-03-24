@@ -11,7 +11,10 @@ import {
 } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 import { INDEXER_URL } from "@shared/constants/mercury";
-import { AssetsListItem, AssetsLists } from "@shared/constants/soroban/token";
+import {
+  AssetsListItem,
+  AssetsLists,
+} from "@shared/constants/soroban/asset-list";
 import {
   getBalance,
   getDecimals,
@@ -79,7 +82,7 @@ export const GetTxStatus: {
 };
 
 export const createAccount = async (
-  password: string,
+  password: string
 ): Promise<{
   publicKey: string;
   allAccounts: Array<Account>;
@@ -93,6 +96,7 @@ export const createAccount = async (
   try {
     ({ allAccounts, publicKey, hasPrivateKey, error } =
       await sendMessageToBackground({
+        activePublicKey: null,
         password,
         type: SERVICE_TYPES.CREATE_ACCOUNT,
       }));
@@ -107,9 +111,16 @@ export const createAccount = async (
   return { allAccounts, publicKey, hasPrivateKey };
 };
 
-export const fundAccount = async (publicKey: string): Promise<void> => {
+export const fundAccount = async ({
+  activePublicKey,
+  publicKey,
+}: {
+  activePublicKey: string;
+  publicKey: string;
+}): Promise<void> => {
   try {
     await sendMessageToBackground({
+      activePublicKey,
       publicKey,
       type: SERVICE_TYPES.FUND_ACCOUNT,
     });
@@ -118,9 +129,13 @@ export const fundAccount = async (publicKey: string): Promise<void> => {
   }
 };
 
-export const addAccount = async (
-  password: string = "",
-): Promise<{
+export const addAccount = async ({
+  activePublicKey,
+  password,
+}: {
+  activePublicKey: string;
+  password: string;
+}): Promise<{
   publicKey: string;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
@@ -133,6 +148,7 @@ export const addAccount = async (
   try {
     ({ allAccounts, error, publicKey, hasPrivateKey } =
       await sendMessageToBackground({
+        activePublicKey,
         password,
         type: SERVICE_TYPES.ADD_ACCOUNT,
       }));
@@ -147,10 +163,15 @@ export const addAccount = async (
   return { allAccounts, publicKey, hasPrivateKey };
 };
 
-export const importAccount = async (
-  password: string,
-  privateKey: string,
-): Promise<{
+export const importAccount = async ({
+  password,
+  privateKey,
+  activePublicKey,
+}: {
+  password: string;
+  privateKey: string;
+  activePublicKey: string;
+}): Promise<{
   publicKey: string;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
@@ -163,6 +184,7 @@ export const importAccount = async (
   try {
     ({ allAccounts, publicKey, error, hasPrivateKey } =
       await sendMessageToBackground({
+        activePublicKey,
         password,
         privateKey,
         type: SERVICE_TYPES.IMPORT_ACCOUNT,
@@ -179,11 +201,17 @@ export const importAccount = async (
   return { allAccounts, publicKey, hasPrivateKey };
 };
 
-export const importHardwareWallet = async (
-  publicKey: string,
-  hardwareWalletType: WalletType,
-  bipPath: string,
-) => {
+export const importHardwareWallet = async ({
+  activePublicKey,
+  publicKey,
+  hardwareWalletType,
+  bipPath,
+}: {
+  activePublicKey: string;
+  publicKey: string;
+  hardwareWalletType: WalletType;
+  bipPath: string;
+}) => {
   let _publicKey = "";
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
@@ -195,6 +223,7 @@ export const importHardwareWallet = async (
       hasPrivateKey,
       bipPath: _bipPath,
     } = await sendMessageToBackground({
+      activePublicKey,
       publicKey,
       hardwareWalletType,
       bipPath,
@@ -211,18 +240,28 @@ export const importHardwareWallet = async (
   };
 };
 
-export const makeAccountActive = (
-  publicKey: string,
-): Promise<{ publicKey: string; hasPrivateKey: boolean; bipPath: string }> =>
+export const makeAccountActive = ({
+  activePublicKey,
+  publicKey,
+}: {
+  activePublicKey: string;
+  publicKey: string;
+}): Promise<{ publicKey: string; hasPrivateKey: boolean; bipPath: string }> =>
   sendMessageToBackground({
+    activePublicKey,
     publicKey,
     type: SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE,
   });
 
-export const updateAccountName = (
-  accountName: string,
-): Promise<{ allAccounts: Array<Account> }> =>
+export const updateAccountName = ({
+  activePublicKey,
+  accountName,
+}: {
+  activePublicKey: string;
+  accountName: string;
+}): Promise<{ allAccounts: Array<Account> }> =>
   sendMessageToBackground({
+    activePublicKey,
     accountName,
     type: SERVICE_TYPES.UPDATE_ACCOUNT_NAME,
   });
@@ -236,6 +275,7 @@ export const loadAccount = (): Promise<{
   tokenIdList: string[];
 }> =>
   sendMessageToBackground({
+    activePublicKey: null,
     type: SERVICE_TYPES.LOAD_ACCOUNT,
   });
 
@@ -246,6 +286,7 @@ export const getMnemonicPhrase = async (): Promise<{
 
   try {
     response = await sendMessageToBackground({
+      activePublicKey: null,
       type: SERVICE_TYPES.GET_MNEMONIC_PHRASE,
     });
   } catch (e) {
@@ -261,6 +302,7 @@ export const getMigratedMnemonicPhrase = async (): Promise<{
 
   try {
     response = await sendMessageToBackground({
+      activePublicKey: null,
       type: SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE,
     });
   } catch (e) {
@@ -270,7 +312,7 @@ export const getMigratedMnemonicPhrase = async (): Promise<{
 };
 
 export const confirmMnemonicPhrase = async (
-  mnemonicPhraseToConfirm: string,
+  mnemonicPhraseToConfirm: string
 ): Promise<{
   isCorrectPhrase: boolean;
   applicationState: APPLICATION_STATE;
@@ -282,6 +324,7 @@ export const confirmMnemonicPhrase = async (
 
   try {
     response = await sendMessageToBackground({
+      activePublicKey: null,
       mnemonicPhraseToConfirm,
       type: SERVICE_TYPES.CONFIRM_MNEMONIC_PHRASE,
     });
@@ -292,7 +335,7 @@ export const confirmMnemonicPhrase = async (
 };
 
 export const confirmMigratedMnemonicPhrase = async (
-  mnemonicPhraseToConfirm: string,
+  mnemonicPhraseToConfirm: string
 ): Promise<{
   isCorrectPhrase: boolean;
 }> => {
@@ -302,6 +345,7 @@ export const confirmMigratedMnemonicPhrase = async (
 
   try {
     response = await sendMessageToBackground({
+      activePublicKey: null,
       mnemonicPhraseToConfirm,
       type: SERVICE_TYPES.CONFIRM_MIGRATED_MNEMONIC_PHRASE,
     });
@@ -313,7 +357,7 @@ export const confirmMigratedMnemonicPhrase = async (
 
 export const recoverAccount = async (
   password: string,
-  recoverMnemonic: string,
+  recoverMnemonic: string
 ): Promise<{
   publicKey: string;
   allAccounts: Array<Account>;
@@ -328,6 +372,7 @@ export const recoverAccount = async (
   try {
     ({ allAccounts, publicKey, hasPrivateKey, error } =
       await sendMessageToBackground({
+        activePublicKey: null,
         password,
         recoverMnemonic,
         type: SERVICE_TYPES.RECOVER_ACCOUNT,
@@ -340,7 +385,7 @@ export const recoverAccount = async (
 };
 
 export const confirmPassword = async (
-  password: string,
+  password: string
 ): Promise<{
   publicKey: string;
   hasPrivateKey: boolean;
@@ -357,6 +402,7 @@ export const confirmPassword = async (
   };
   try {
     response = await sendMessageToBackground({
+      activePublicKey: null,
       password,
       type: SERVICE_TYPES.CONFIRM_PASSWORD,
     });
@@ -399,6 +445,7 @@ export const getMigratableAccounts = async () => {
 
   try {
     ({ migratableAccounts } = await sendMessageToBackground({
+      activePublicKey: null,
       type: SERVICE_TYPES.GET_MIGRATABLE_ACCOUNTS,
     }));
   } catch (e) {
@@ -432,6 +479,7 @@ export const migrateAccounts = async ({
   try {
     ({ migratedAccounts, allAccounts, publicKey, hasPrivateKey, error } =
       await sendMessageToBackground({
+        activePublicKey: null,
         balancesToMigrate,
         isMergeSelected,
         recommendedFee,
@@ -444,11 +492,19 @@ export const migrateAccounts = async ({
   return { migratedAccounts, allAccounts, publicKey, hasPrivateKey, error };
 };
 
-export const getAccountIndexerBalances = async (
-  publicKey: string,
-  networkDetails: NetworkDetails,
-): Promise<AccountBalancesInterface> => {
-  const contractIds = await getTokenIds(networkDetails.network as NETWORKS);
+export const getAccountIndexerBalances = async ({
+  activePublicKey,
+  publicKey,
+  networkDetails,
+}: {
+  activePublicKey: string;
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}): Promise<AccountBalancesInterface> => {
+  const contractIds = await getTokenIds({
+    activePublicKey,
+    network: networkDetails.network as NETWORKS,
+  });
   const url = new URL(`${INDEXER_URL}/account-balances/${publicKey}`);
   url.searchParams.append("network", networkDetails.network);
   for (const id of contractIds) {
@@ -459,14 +515,14 @@ export const getAccountIndexerBalances = async (
   if (!response.ok) {
     const _err = JSON.stringify(data);
     captureException(
-      `Failed to fetch account balances - ${response.status}: ${response.statusText}`,
+      `Failed to fetch account balances - ${response.status}: ${response.statusText}`
     );
     throw new Error(_err);
   }
 
   if ("error" in data && (data?.error?.horizon || data?.error?.soroban)) {
     captureException(
-      `Failed to fetch account balances - ${response.status}: ${response.statusText}`,
+      `Failed to fetch account balances - ${response.status}: ${response.statusText}`
     );
   }
 
@@ -512,7 +568,7 @@ export const getTokenPrices = async (tokens: string[]) => {
   if (!response.ok) {
     const _err = JSON.stringify(parsedResponse);
     captureException(
-      `Failed to fetch token prices - ${response.status}: ${response.statusText}`,
+      `Failed to fetch token prices - ${response.status}: ${response.statusText}`
     );
     throw new Error(_err);
   }
@@ -530,7 +586,7 @@ export const getSorobanTokenBalance = async (
     decimals: TransactionBuilder;
     symbol: TransactionBuilder;
   },
-  balanceParams: xdr.ScVal[],
+  balanceParams: xdr.ScVal[]
 ) => {
   // Right now we can only have 1 operation per TX in Soroban
   // for now we need to do 4 tx simulations to show 1 user balance. :(
@@ -542,7 +598,7 @@ export const getSorobanTokenBalance = async (
     contractId,
     balanceParams,
     server,
-    txBuilders.balance,
+    txBuilders.balance
   );
 
   return {
@@ -554,10 +610,12 @@ export const getSorobanTokenBalance = async (
 };
 
 export const getAccountBalancesStandalone = async ({
+  activePublicKey,
   publicKey,
   networkDetails,
   isMainnet,
 }: {
+  activePublicKey: string;
   publicKey: string;
   networkDetails: NetworkDetails;
   isMainnet: boolean;
@@ -574,7 +632,7 @@ export const getAccountBalancesStandalone = async ({
 
     const displayableBalances = await makeDisplayableBalances(
       accountSummary,
-      isMainnet,
+      isMainnet
     );
     const sponsor = accountSummary.sponsor
       ? { sponsor: accountSummary.sponsor }
@@ -596,13 +654,12 @@ export const getAccountBalancesStandalone = async ({
     balances = resp.balances;
     subentryCount = resp.subentryCount;
 
-    // eslint-disable-next-line no-plusplus
     for (let i = 0; i < Object.keys(resp.balances).length; i++) {
       const k = Object.keys(resp.balances)[i];
       const v = resp.balances[k];
       if (v.liquidityPoolId) {
         const server = stellarSdkServer(networkUrl, networkPassphrase);
-        // eslint-disable-next-line no-await-in-loop
+
         const lp = await server
           .liquidityPools()
           .liquidityPoolId(v.liquidityPoolId)
@@ -625,7 +682,10 @@ export const getAccountBalancesStandalone = async ({
   }
 
   // Get token balances to combine with classic balances
-  const tokenIdList = await getTokenIds(network as NETWORKS);
+  const tokenIdList = await getTokenIds({
+    activePublicKey,
+    network: network as NETWORKS,
+  });
 
   const tokenBalances = {} as any;
 
@@ -636,7 +696,7 @@ export const getAccountBalancesStandalone = async ({
 
     const server = buildSorobanServer(
       networkDetails.sorobanRpcUrl,
-      networkDetails.networkPassphrase,
+      networkDetails.networkPassphrase
     );
 
     const params = [new Address(publicKey).toScVal()];
@@ -650,7 +710,6 @@ export const getAccountBalancesStandalone = async ({
         1 tx with an operation for each value.
       */
       try {
-        /* eslint-disable no-await-in-loop */
         const { balance, symbol, ...rest } = await getSorobanTokenBalance(
           server,
           tokenId,
@@ -660,9 +719,8 @@ export const getAccountBalancesStandalone = async ({
             decimals: await getNewTxBuilder(publicKey, networkDetails, server),
             symbol: await getNewTxBuilder(publicKey, networkDetails, server),
           },
-          params,
+          params
         );
-        /* eslint-enable no-await-in-loop */
 
         const total = new BigNumber(balance);
 
@@ -725,7 +783,7 @@ export const getIndexerAccountHistory = async ({
 }): Promise<Horizon.ServerApi.OperationRecord[]> => {
   try {
     const url = new URL(
-      `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}`,
+      `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}`
     );
     const response = await fetch(url.href);
 
@@ -751,12 +809,12 @@ export const getContractSpec = async ({
   if (isCustomNetwork(networkDetails)) {
     const data = await getContractSpecHelper(
       contractId,
-      networkDetails.networkUrl,
+      networkDetails.networkUrl
     );
     return data;
   }
   const url = new URL(
-    `${INDEXER_URL}/contract-spec/${contractId}?network=${networkDetails.network}`,
+    `${INDEXER_URL}/contract-spec/${contractId}?network=${networkDetails.network}`
   );
   const response = await fetch(url.href);
   const { data, error } = await response.json();
@@ -777,12 +835,12 @@ export const getIsTokenSpec = async ({
   if (isCustomNetwork(networkDetails)) {
     const data = await getIsTokenSpecHelper(
       contractId,
-      networkDetails.networkUrl,
+      networkDetails.networkUrl
     );
     return data;
   }
   const url = new URL(
-    `${INDEXER_URL}/token-spec/${contractId}?network=${networkDetails.network}`,
+    `${INDEXER_URL}/token-spec/${contractId}?network=${networkDetails.network}`
   );
   const response = await fetch(url.href);
   const { data, error } = await response.json();
@@ -795,7 +853,7 @@ export const getIsTokenSpec = async ({
 
 export const getAccountHistory = async (
   publicKey: string,
-  networkDetails: NetworkDetails,
+  networkDetails: NetworkDetails
 ) => {
   if (isCustomNetwork(networkDetails)) {
     return await getAccountHistoryStandalone({
@@ -834,22 +892,22 @@ export const getTokenDetails = async ({
       // You need one Tx Builder per call in Soroban right now
       const server = buildSorobanServer(
         networkDetails.sorobanRpcUrl,
-        networkDetails.networkPassphrase,
+        networkDetails.networkPassphrase
       );
       const name = await getName(
         contractId,
         server,
-        await getNewTxBuilder(publicKey, networkDetails, server),
+        await getNewTxBuilder(publicKey, networkDetails, server)
       );
       const symbol = await getSymbol(
         contractId,
         server,
-        await getNewTxBuilder(publicKey, networkDetails, server),
+        await getNewTxBuilder(publicKey, networkDetails, server)
       );
       const decimals = await getDecimals(
         contractId,
         server,
-        await getNewTxBuilder(publicKey, networkDetails, server),
+        await getNewTxBuilder(publicKey, networkDetails, server)
       );
 
       let balance;
@@ -858,7 +916,7 @@ export const getTokenDetails = async ({
           contractId,
           [new Address(publicKey).toScVal()],
           server,
-          await getNewTxBuilder(publicKey, networkDetails, server),
+          await getNewTxBuilder(publicKey, networkDetails, server)
         );
       }
 
@@ -873,7 +931,7 @@ export const getTokenDetails = async ({
     const response = await fetch(
       `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${
         networkDetails.network
-      }${shouldFetchBalance ? "&should_fetch_balance=true" : ""}`,
+      }${shouldFetchBalance ? "&should_fetch_balance=true" : ""}`
     );
     const data = await response.json();
     if (!response.ok) {
@@ -885,8 +943,8 @@ export const getTokenDetails = async ({
     console.error(error);
     captureException(
       `Failed to fetch token details - ${JSON.stringify(
-        error,
-      )} - ${contractId} - ${networkDetails.network}`,
+        error
+      )} - ${contractId} - ${networkDetails.network}`
     );
     return null;
   }
@@ -904,7 +962,7 @@ export const getAssetIcons = async ({
   if (balances) {
     let icon = "";
     const balanceValues = Object.values(balances);
-    // eslint-disable-next-line no-plusplus
+
     for (let i = 0; i < balanceValues.length; i++) {
       const { token } = balanceValues[i];
       if (token && "issuer" in token) {
@@ -912,7 +970,7 @@ export const getAssetIcons = async ({
           issuer: { key },
           code,
         } = token;
-        // eslint-disable-next-line no-await-in-loop
+
         icon = await getIconUrlFromIssuer({ key, code, networkDetails });
         assetIcons[`${code}:${key}`] = icon;
       }
@@ -926,15 +984,18 @@ export const retryAssetIcon = async ({
   code,
   assetIcons,
   networkDetails,
+  activePublicKey,
 }: {
   key: string;
   code: string;
   assetIcons: { [code: string]: string };
   networkDetails: NetworkDetails;
+  activePublicKey: string | null;
 }) => {
   const newAssetIcons = { ...assetIcons };
   try {
     await sendMessageToBackground({
+      activePublicKey,
       assetCanonical: `${code}:${key}`,
       iconUrl: null,
       type: SERVICE_TYPES.CACHE_ASSET_ICON,
@@ -958,7 +1019,7 @@ export const getAssetDomains = async ({
 
   if (balances) {
     const balanceValues = Object.values(balances);
-    // eslint-disable-next-line no-plusplus
+
     for (let i = 0; i < balanceValues.length; i++) {
       const { token } = balanceValues[i];
       if (token && "issuer" in token) {
@@ -966,7 +1027,7 @@ export const getAssetDomains = async ({
           issuer: { key },
           code,
         } = token;
-        // eslint-disable-next-line no-await-in-loop
+
         const domain = await getDomainFromIssuer({ key, code, networkDetails });
         assetDomains[`${code}:${key}`] = domain;
       }
@@ -978,6 +1039,7 @@ export const getAssetDomains = async ({
 export const rejectAccess = async (): Promise<void> => {
   try {
     await sendMessageToBackground({
+      activePublicKey: null,
       type: SERVICE_TYPES.REJECT_ACCESS,
     });
   } catch (e) {
@@ -988,6 +1050,7 @@ export const rejectAccess = async (): Promise<void> => {
 export const grantAccess = async (url: string): Promise<void> => {
   try {
     await sendMessageToBackground({
+      activePublicKey: null,
       url,
       type: SERVICE_TYPES.GRANT_ACCESS,
     });
@@ -1003,6 +1066,7 @@ export const handleSignedHwPayload = async ({
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
+      activePublicKey: null,
       signedPayload,
       type: SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD,
     });
@@ -1011,9 +1075,14 @@ export const handleSignedHwPayload = async ({
   }
 };
 
-export const addToken = async (): Promise<void> => {
+export const addToken = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}): Promise<void> => {
   try {
     await sendMessageToBackground({
+      activePublicKey,
       type: SERVICE_TYPES.ADD_TOKEN,
     });
   } catch (e) {
@@ -1021,9 +1090,14 @@ export const addToken = async (): Promise<void> => {
   }
 };
 
-export const signTransaction = async (): Promise<void> => {
+export const signTransaction = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}): Promise<void> => {
   try {
     await sendMessageToBackground({
+      activePublicKey,
       type: SERVICE_TYPES.SIGN_TRANSACTION,
     });
   } catch (e) {
@@ -1031,9 +1105,14 @@ export const signTransaction = async (): Promise<void> => {
   }
 };
 
-export const signBlob = async (): Promise<void> => {
+export const signBlob = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}): Promise<void> => {
   try {
     await sendMessageToBackground({
+      activePublicKey,
       type: SERVICE_TYPES.SIGN_BLOB,
     });
   } catch (e) {
@@ -1041,9 +1120,14 @@ export const signBlob = async (): Promise<void> => {
   }
 };
 
-export const signAuthEntry = async (): Promise<void> => {
+export const signAuthEntry = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}): Promise<void> => {
   try {
     await sendMessageToBackground({
+      activePublicKey,
       type: SERVICE_TYPES.SIGN_AUTH_ENTRY,
     });
   } catch (e) {
@@ -1054,13 +1138,16 @@ export const signAuthEntry = async (): Promise<void> => {
 export const signFreighterTransaction = async ({
   transactionXDR,
   network,
+  activePublicKey,
 }: {
   transactionXDR: string;
   network: string;
+  activePublicKey: string;
 }): Promise<{ signedTransaction: string }> => {
   const { signedTransaction, error } = await sendMessageToBackground({
     transactionXDR,
     network,
+    activePublicKey,
     type: SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION,
   });
 
@@ -1072,13 +1159,16 @@ export const signFreighterTransaction = async ({
 };
 
 export const signFreighterSorobanTransaction = async ({
+  activePublicKey,
   transactionXDR,
   network,
 }: {
+  activePublicKey: string;
   transactionXDR: string;
   network: string;
 }): Promise<{ signedTransaction: string }> => {
   const { signedTransaction, error } = await sendMessageToBackground({
+    activePublicKey,
     transactionXDR,
     network,
     type: SERVICE_TYPES.SIGN_FREIGHTER_SOROBAN_TRANSACTION,
@@ -1101,11 +1191,11 @@ export const submitFreighterTransaction = ({
   const Sdk = getSdk(networkDetails.networkPassphrase);
   const tx = Sdk.TransactionBuilder.fromXDR(
     signedXDR,
-    networkDetails.networkPassphrase,
+    networkDetails.networkPassphrase
   );
   const server = stellarSdkServer(
     networkDetails.networkUrl,
-    networkDetails.networkPassphrase,
+    networkDetails.networkPassphrase
   );
 
   return submitTx({ server, tx });
@@ -1123,7 +1213,7 @@ export const submitFreighterSorobanTransaction = async ({
   try {
     tx = Sdk.TransactionBuilder.fromXDR(
       signedXDR,
-      networkDetails.networkPassphrase,
+      networkDetails.networkPassphrase
     );
   } catch (e) {
     console.error(e);
@@ -1151,37 +1241,44 @@ export const submitFreighterSorobanTransaction = async ({
     // Poll this until the status is not "NOT_FOUND"
     while (txResponse.status === GetTxStatus.NotFound) {
       // See if the transaction is complete
-      // eslint-disable-next-line no-await-in-loop
+
       txResponse = await server.getTransaction(response.hash);
       // Wait a second
-      // eslint-disable-next-line no-await-in-loop
+
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
     return response;
-    // eslint-disable-next-line no-else-return
   } else {
     throw new Error(
-      `Unabled to submit transaction, status: ${response.status}`,
+      `Unabled to submit transaction, status: ${response.status}`
     );
   }
 };
 
 export const addRecentAddress = async ({
+  activePublicKey,
   publicKey,
 }: {
+  activePublicKey: string;
   publicKey: string;
 }): Promise<{ recentAddresses: Array<string> }> => {
   return await sendMessageToBackground({
+    activePublicKey,
     publicKey,
     type: SERVICE_TYPES.ADD_RECENT_ADDRESS,
   });
 };
 
-export const loadRecentAddresses = async (): Promise<{
+export const loadRecentAddresses = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}): Promise<{
   recentAddresses: Array<string>;
 }> => {
   return await sendMessageToBackground({
+    activePublicKey,
     type: SERVICE_TYPES.LOAD_RECENT_ADDRESSES,
   });
 };
@@ -1190,11 +1287,16 @@ export const loadLastUsedAccount = async (): Promise<{
   lastUsedAccount: string;
 }> => {
   return await sendMessageToBackground({
+    activePublicKey: null,
     type: SERVICE_TYPES.LOAD_LAST_USED_ACCOUNT,
   });
 };
 
-export const signOut = async (): Promise<{
+export const signOut = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}): Promise<{
   publicKey: string;
   applicationState: APPLICATION_STATE;
 }> => {
@@ -1204,6 +1306,7 @@ export const signOut = async (): Promise<{
   };
   try {
     response = await sendMessageToBackground({
+      activePublicKey,
       type: SERVICE_TYPES.SIGN_OUT,
     });
   } catch (e) {
@@ -1213,12 +1316,17 @@ export const signOut = async (): Promise<{
   return response;
 };
 
-export const showBackupPhrase = async (
-  password: string,
-): Promise<{ mnemonicPhrase: string; error: string }> => {
+export const showBackupPhrase = async ({
+  activePublicKey,
+  password,
+}: {
+  activePublicKey: string | null;
+  password: string;
+}): Promise<{ mnemonicPhrase: string; error: string }> => {
   let response = { mnemonicPhrase: "", error: "" };
   try {
     response = await sendMessageToBackground({
+      activePublicKey,
       password,
       type: SERVICE_TYPES.SHOW_BACKUP_PHRASE,
     });
@@ -1230,8 +1338,10 @@ export const showBackupPhrase = async (
 };
 
 export const saveAllowList = async ({
+  activePublicKey,
   allowList,
 }: {
+  activePublicKey: string;
   allowList: string[];
 }): Promise<{ allowList: string[] }> => {
   let response = {
@@ -1240,6 +1350,7 @@ export const saveAllowList = async ({
 
   try {
     response = await sendMessageToBackground({
+      activePublicKey,
       allowList,
       type: SERVICE_TYPES.SAVE_ALLOWLIST,
     });
@@ -1251,10 +1362,12 @@ export const saveAllowList = async ({
 };
 
 export const saveSettings = async ({
+  activePublicKey,
   isDataSharingAllowed,
   isMemoValidationEnabled,
   isHideDustEnabled,
 }: {
+  activePublicKey: string;
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isHideDustEnabled: boolean;
@@ -1276,6 +1389,7 @@ export const saveSettings = async ({
 
   try {
     response = await sendMessageToBackground({
+      activePublicKey,
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isHideDustEnabled,
@@ -1285,14 +1399,20 @@ export const saveSettings = async ({
     console.error(e);
   }
 
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
   return response;
 };
 
 export const saveExperimentalFeatures = async ({
+  activePublicKey,
   isExperimentalModeEnabled,
   isHashSigningEnabled,
   isNonSSLEnabled,
 }: {
+  activePublicKey: string;
   isExperimentalModeEnabled: boolean;
   isHashSigningEnabled: boolean;
   isNonSSLEnabled: boolean;
@@ -1309,6 +1429,7 @@ export const saveExperimentalFeatures = async ({
 
   try {
     response = await sendMessageToBackground({
+      activePublicKey,
       isExperimentalModeEnabled,
       isHashSigningEnabled,
       isNonSSLEnabled,
@@ -1321,14 +1442,20 @@ export const saveExperimentalFeatures = async ({
   return response;
 };
 
-export const changeNetwork = async (
-  networkName: string,
-): Promise<{ networkDetails: NetworkDetails; isRpcHealthy: boolean }> => {
+export const changeNetwork = async ({
+  activePublicKey,
+  networkName,
+}: {
+  activePublicKey: string;
+  networkName: string;
+}): Promise<{ networkDetails: NetworkDetails; isRpcHealthy: boolean }> => {
   let networkDetails = MAINNET_NETWORK_DETAILS;
   let isRpcHealthy = false;
+  let error = "";
 
   try {
-    ({ networkDetails, isRpcHealthy } = await sendMessageToBackground({
+    ({ networkDetails, isRpcHealthy, error } = await sendMessageToBackground({
+      activePublicKey,
       networkName,
       type: SERVICE_TYPES.CHANGE_NETWORK,
     }));
@@ -1336,12 +1463,20 @@ export const changeNetwork = async (
     console.error(e);
   }
 
+  if (error) {
+    throw new Error(error);
+  }
+
   return { networkDetails, isRpcHealthy };
 };
 
-export const addCustomNetwork = async (
-  networkDetails: NetworkDetails,
-): Promise<{
+export const addCustomNetwork = async ({
+  activePublicKey,
+  networkDetails,
+}: {
+  activePublicKey: string;
+  networkDetails: NetworkDetails;
+}): Promise<{
   networksList: NetworkDetails[];
 }> => {
   let response = {
@@ -1351,6 +1486,7 @@ export const addCustomNetwork = async (
 
   try {
     response = await sendMessageToBackground({
+      activePublicKey,
       networkDetails,
       type: SERVICE_TYPES.ADD_CUSTOM_NETWORK,
     });
@@ -1365,19 +1501,22 @@ export const addCustomNetwork = async (
   return response;
 };
 
-export const removeCustomNetwork = async (
-  networkName: string,
-): Promise<{
-  networkDetails: NetworkDetails;
-  networksList: NetworkDetails[];
-}> => {
+export const removeCustomNetwork = async ({
+  activePublicKey,
+  networkName,
+}: {
+  activePublicKey: string;
+  networkName: string;
+}) => {
   let response = {
     networkDetails: MAINNET_NETWORK_DETAILS,
     networksList: [] as NetworkDetails[],
+    error: "",
   };
 
   try {
     response = await sendMessageToBackground({
+      activePublicKey,
       networkName,
       type: SERVICE_TYPES.REMOVE_CUSTOM_NETWORK,
     });
@@ -1385,32 +1524,41 @@ export const removeCustomNetwork = async (
     console.error(e);
   }
 
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
   return response;
 };
 
 export const editCustomNetwork = async ({
+  activePublicKey,
   networkDetails,
   networkIndex,
 }: {
+  activePublicKey: string;
   networkDetails: NetworkDetails;
   networkIndex: number;
-}): Promise<{
-  networkDetails: NetworkDetails;
-  networksList: NetworkDetails[];
-}> => {
+}) => {
   let response = {
     networkDetails: MAINNET_NETWORK_DETAILS,
     networksList: [] as NetworkDetails[],
+    error: "",
   };
 
   try {
     response = await sendMessageToBackground({
+      activePublicKey,
       networkDetails,
       networkIndex,
       type: SERVICE_TYPES.EDIT_CUSTOM_NETWORK,
     });
   } catch (e) {
     console.error(e);
+  }
+
+  if (response.error) {
+    throw new Error(response.error);
   }
 
   return response;
@@ -1422,21 +1570,33 @@ export const loadSettings = (): Promise<
     ExperimentalFeatures & { assetsLists: AssetsLists }
 > =>
   sendMessageToBackground({
+    activePublicKey: null,
     type: SERVICE_TYPES.LOAD_SETTINGS,
   });
 
-export const getMemoRequiredAccounts = async () => {
+export const getMemoRequiredAccounts = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}) => {
   const resp = await sendMessageToBackground({
+    activePublicKey,
     type: SERVICE_TYPES.GET_MEMO_REQUIRED_ACCOUNTS,
   });
   return resp;
 };
 
-export const addTokenId = async (
-  publicKey: string,
-  tokenId: string,
-  network: Networks,
-): Promise<{
+export const addTokenId = async ({
+  activePublicKey,
+  publicKey,
+  tokenId,
+  network,
+}: {
+  activePublicKey: string;
+  publicKey: string;
+  tokenId: string;
+  network: Networks;
+}): Promise<{
   tokenIdList: string[];
 }> => {
   let error = "";
@@ -1444,6 +1604,7 @@ export const addTokenId = async (
 
   try {
     ({ tokenIdList, error } = await sendMessageToBackground({
+      activePublicKey,
       publicKey,
       tokenId,
       network,
@@ -1460,8 +1621,15 @@ export const addTokenId = async (
   return { tokenIdList };
 };
 
-export const getTokenIds = async (network: NETWORKS): Promise<string[]> => {
+export const getTokenIds = async ({
+  activePublicKey,
+  network,
+}: {
+  activePublicKey: string;
+  network: NETWORKS;
+}): Promise<string[]> => {
   const resp = await sendMessageToBackground({
+    activePublicKey,
     type: SERVICE_TYPES.GET_TOKEN_IDS,
     network,
   });
@@ -1469,9 +1637,11 @@ export const getTokenIds = async (network: NETWORKS): Promise<string[]> => {
 };
 
 export const removeTokenId = async ({
+  activePublicKey,
   contractId,
   network,
 }: {
+  activePublicKey: string;
   contractId: string;
   network: NETWORKS;
 }): Promise<string[]> => {
@@ -1479,14 +1649,17 @@ export const removeTokenId = async ({
     type: SERVICE_TYPES.REMOVE_TOKEN_ID,
     contractId,
     network,
+    activePublicKey,
   });
   return resp.tokenIdList;
 };
 
 export const addAssetsList = async ({
+  activePublicKey,
   assetsList,
   network,
 }: {
+  activePublicKey: string;
   assetsList: AssetsListItem;
   network: NETWORKS;
 }) => {
@@ -1499,16 +1672,19 @@ export const addAssetsList = async ({
     type: SERVICE_TYPES.ADD_ASSETS_LIST,
     assetsList,
     network,
+    activePublicKey,
   });
 
   return { assetsLists: response.assetsLists, error: response.error };
 };
 
 export const modifyAssetsList = async ({
+  activePublicKey,
   assetsList,
   network,
   isDeleteAssetsList,
 }: {
+  activePublicKey: string;
   assetsList: AssetsListItem;
   network: NETWORKS;
   isDeleteAssetsList: boolean;
@@ -1523,6 +1699,7 @@ export const modifyAssetsList = async ({
     assetsList,
     network,
     isDeleteAssetsList,
+    activePublicKey,
   });
 
   return { assetsLists: response.assetsLists, error: response.error };
@@ -1544,18 +1721,17 @@ export const simulateTokenTransfer = async (args: {
   const options = {
     method: "POST",
     headers: {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       address,
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       pub_key: publicKey,
       memo,
       params,
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       network_url: networkDetails.sorobanRpcUrl,
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       network_passphrase: networkDetails.networkPassphrase,
     }),
   };
@@ -1575,14 +1751,13 @@ export const simulateTransaction = async (args: {
   const options = {
     method: "POST",
     headers: {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       xdr,
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       network_url: networkDetails.sorobanRpcUrl,
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       network_passphrase: networkDetails.networkPassphrase,
     }),
   };
@@ -1591,5 +1766,30 @@ export const simulateTransaction = async (args: {
   return {
     ok: res.ok,
     response,
+  };
+};
+
+export const getIsAccountMismatch = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}) => {
+  let response = {
+    error: "",
+    isAccountMismatch: false,
+  };
+
+  response = await sendMessageToBackground({
+    type: SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH,
+    activePublicKey,
+  });
+
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
+  return {
+    isAccountMismatch: response.isAccountMismatch,
+    error: response.error,
   };
 };

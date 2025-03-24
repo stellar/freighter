@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
 import {
@@ -6,7 +7,6 @@ import {
   Card,
   Icon,
   Loader,
-  Notification,
   Select,
   Textarea,
   Text,
@@ -80,6 +80,7 @@ import {
   reportTransactionWarning,
 } from "popup/helpers/blockaid";
 import { CopyValue } from "../CopyValue";
+import { Notification as NotificationV2 } from "../Notification";
 
 import "./styles.scss";
 
@@ -169,7 +170,7 @@ export const WarningMessage = ({
           {t("Got it")}
         </Button>
       </div>,
-      document.querySelector("#modal-root")!,
+      document.querySelector("#modal-root")!
     )
   ) : (
     <div
@@ -199,13 +200,13 @@ export const MemoWarningMessage = ({
     >
       <p>
         {t(
-          "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign. Freighter automatically disabled the option to sign this transaction.",
+          "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign. Freighter automatically disabled the option to sign this transaction."
         )}
       </p>
 
       <p>
         {t(
-          "Check the destination account memo requirements and include it in the transaction.",
+          "Check the destination account memo requirements and include it in the transaction."
         )}
       </p>
     </WarningMessage>
@@ -241,12 +242,12 @@ export const FirstTimeWarningMessage = () => {
     >
       <p>
         {t(
-          "If you believe you have interacted with this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam.",
+          "If you believe you have interacted with this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam."
         )}
       </p>
       <p>
         {t(
-          "Double check the domain name. If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct.",
+          "Double check the domain name. If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct."
         )}
       </p>
     </WarningMessage>
@@ -266,7 +267,7 @@ export const BackupPhraseWarningMessage = () => {
 
         <p>
           {t(
-            "Keep your recovery phrase in a safe and secure place. Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
+            "Keep your recovery phrase in a safe and secure place. Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place."
           )}
         </p>
       </div>
@@ -476,7 +477,7 @@ const BlockaidByLine = ({
             setIsFeedbackActive={setIsFeedbackActive}
             address={address}
           />,
-          document.querySelector("#modal-root")!,
+          document.querySelector("#modal-root")!
         )}
     </div>
   );
@@ -510,7 +511,7 @@ export const BlockaidAssetWarning = ({
         <div>
           <div className="ScamAssetWarning__description">
             {t(
-              `This token was flagged as ${blockaidData.result_type} by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons`,
+              `This token was flagged as ${blockaidData.result_type} by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons`
             )}
             :
             <ul className="ScamAssetWarning__list">
@@ -535,7 +536,7 @@ export const ScamAssetWarning = ({
   issuer,
   image,
   onClose,
-  // eslint-disable-next-line
+
   onContinue = () => {},
   blockaidData,
 }: {
@@ -558,6 +559,8 @@ export const ScamAssetWarning = ({
   const { submitStatus } = useSelector(transactionSubmissionSelector);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+  const navigate = useNavigate();
+
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
 
   const closeOverlay = () => {
@@ -595,14 +598,13 @@ export const ScamAssetWarning = ({
       .addOperation(
         Operation.changeTrust({
           asset: new Asset(code, issuer),
-        }),
+        })
       )
       .setTimeout(180)
       .build()
       .toXDR();
 
     if (isHardwareWallet) {
-      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
     } else {
@@ -610,7 +612,7 @@ export const ScamAssetWarning = ({
         signFreighterTransaction({
           transactionXDR,
           network: networkDetails.networkPassphrase,
-        }),
+        })
       );
 
       if (signFreighterTransaction.fulfilled.match(res)) {
@@ -619,10 +621,10 @@ export const ScamAssetWarning = ({
             publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
-          }),
+          })
         );
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-          navigateTo(ROUTES.account);
+          navigateTo(ROUTES.account, navigate);
           emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
         } else {
           setIsTrustlineErrorShowing(true);
@@ -635,7 +637,7 @@ export const ScamAssetWarning = ({
   return isTrustlineErrorShowing ? (
     createPortal(
       <TrustlineError handleClose={() => closeOverlay()} />,
-      document.querySelector("#modal-root")!,
+      document.querySelector("#modal-root")!
     )
   ) : (
     <div
@@ -729,6 +731,8 @@ export const NewAssetWarning = ({
   const publicKey = useSelector(publicKeySelector);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+  const navigate = useNavigate();
+
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
 
   const { isRevocable, isInvalidDomain } = newAssetFlags;
@@ -737,7 +741,7 @@ export const NewAssetWarning = ({
     () => () => {
       setIsSubmitting(false);
     },
-    [],
+    []
   );
 
   // animate entry
@@ -778,7 +782,6 @@ export const NewAssetWarning = ({
     });
 
     if (isHardwareWallet) {
-      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
     } else {
@@ -786,7 +789,7 @@ export const NewAssetWarning = ({
         signFreighterTransaction({
           transactionXDR,
           network: networkDetails.networkPassphrase,
-        }),
+        })
       );
 
       if (signFreighterTransaction.fulfilled.match(res)) {
@@ -795,10 +798,10 @@ export const NewAssetWarning = ({
             publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
-          }),
+          })
         );
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-          navigateTo(ROUTES.account);
+          navigateTo(ROUTES.account, navigate);
           emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
         } else {
           setIsTrustlineErrorShowing(true);
@@ -811,7 +814,7 @@ export const NewAssetWarning = ({
   return isTrustlineErrorShowing ? (
     createPortal(
       <TrustlineError handleClose={() => closeOverlay()} />,
-      document.querySelector("#modal-root")!,
+      document.querySelector("#modal-root")!
     )
   ) : (
     <div className="NewAssetWarning" data-testid="NewAssetWarning">
@@ -825,7 +828,7 @@ export const NewAssetWarning = ({
           </div>
           <div className="NewAssetWarning__description">
             {t(
-              "Please double-check its information and characteristics. This can help you identify fraudulent assets.",
+              "Please double-check its information and characteristics. This can help you identify fraudulent assets."
             )}
           </div>
           <div className="NewAssetWarning__row">
@@ -849,7 +852,7 @@ export const NewAssetWarning = ({
                   </div>
                   <div className="NewAssetWarning__flag__description">
                     {t(
-                      "The asset creator can revoke your access to this asset at anytime",
+                      "The asset creator can revoke your access to this asset at anytime"
                     )}
                   </div>
                 </div>
@@ -867,7 +870,7 @@ export const NewAssetWarning = ({
                     </div>
                     <div className="NewAssetWarning__flag__description">
                       {t(
-                        "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description",
+                        "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description"
                       )}
                     </div>
                   </div>
@@ -903,16 +906,35 @@ export const NewAssetWarning = ({
   );
 };
 
-export const UnverifiedTokenNotification = () => {
+export const WarningModal = (props: { description: string }) => {
   const { t } = useTranslation();
 
   return (
-    <Notification
-      title={t(
-        "This asset is not part of an asset list. Please, double-check the asset you’re interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
-      )}
-      variant="warning"
-    />
+    <div
+      className="WarningModal__box WarningModal__box--isWarning"
+      data-testid="WarningModal"
+    >
+      <div className="WarningModal__box__content">
+        <div className="Icon">
+          <img
+            className="WarningModal__box__icon"
+            src={IconWarning}
+            alt="icon warning"
+          />
+        </div>
+        <div className="WarningModal__alert">
+          <div className="WarningModal__description">
+            {t(props.description)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const UnverifiedTokenNotification = () => {
+  return (
+    <WarningModal description="Before you add this asset, please double-check its information and characteristics. This can help you identify fraudulent assets." />
   );
 };
 
@@ -923,6 +945,7 @@ export const TokenWarning = ({
   isVerifiedToken,
   verifiedLists = [],
   handleAddToken,
+  isCustomToken,
 }: {
   domain: string;
   code: string;
@@ -930,6 +953,7 @@ export const TokenWarning = ({
   isVerifiedToken: boolean;
   verifiedLists?: string[];
   handleAddToken: null | (() => Promise<void>);
+  isCustomToken: boolean;
 }) => {
   const { t } = useTranslation();
   const warningRef = useRef<HTMLDivElement>(null);
@@ -975,66 +999,76 @@ export const TokenWarning = ({
       <div className="TokenWarning" data-testid="TokenWarning">
         <View.Content>
           <div className="TokenWarning__wrapper" ref={warningRef}>
-            <div className="TokenWarning__heading">
-              <div className="TokenWarning__icon">
-                <SorobanTokenIcon noMargin />
-              </div>
-              <div className="TokenWarning__code">{code}</div>
-              <div className="TokenWarning__domain">{domain}</div>
-              <div className="TokenWarning__description">
-                <div className="TokenWarning__description__icon">
-                  <Icon.User02 />
+            <div className="TokenWarning__body">
+              <div className="TokenWarning__heading">
+                <div className="TokenWarning__icon">
+                  <SorobanTokenIcon noMargin />
                 </div>
-                <div className="TokenWarning__description__text">
-                  {t("Add Asset Trustline")}
+                <div className="TokenWarning__code">{code}</div>
+                <div className="TokenWarning__domain">{domain}</div>
+                <div className="TokenWarning__description">
+                  <div className="TokenWarning__description__icon">
+                    <Icon.User02 />
+                  </div>
+                  <div
+                    className="TokenWarning__description__text"
+                    data-testid="DescriptionLabel"
+                  >
+                    {isCustomToken ? t("Add Asset") : t("Add Asset Trustline")}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div data-testid="token-warning-notification">
-              {isVerifiedToken ? (
-                <Notification
-                  title={`${t(
-                    "This asset is part of the asset lists",
-                  )} "${verifiedLists.join(", ")}."`}
-                  variant="primary"
-                >
-                  {t(
-                    "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
-                  )}
-                </Notification>
-              ) : (
-                <UnverifiedTokenNotification />
-              )}
-            </div>
+              <div data-testid="token-warning-notification">
+                {isVerifiedToken ? (
+                  <NotificationV2
+                    description={t(
+                      `This asset is part of the asset list(s): "${verifiedLists.join(
+                        ", "
+                      )}". Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.`
+                    )}
+                    type="info"
+                  />
+                ) : (
+                  <NotificationV2
+                    description={t(
+                      "This asset is not part of an asset list. Please, double-check the asset you’re interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
+                    )}
+                    type="warning"
+                  />
+                )}
+              </div>
 
-            <div className="TokenWarning__flags">
-              <div className="TokenWarning__flags__info">{t("Asset Info")}</div>
+              <div className="TokenWarning__flags">
+                <div className="TokenWarning__flags__info">
+                  {t("Asset Info")}
+                </div>
 
-              {isVerifiedToken ? null : (
+                {isVerifiedToken ? null : (
+                  <div className="TokenWarning__flag">
+                    <div className="TokenWarning__flag__icon">
+                      <img src={IconUnverified} alt="unverified icon" />
+                    </div>
+                    <div className="TokenWarning_flag__content">
+                      <div className="TokenWarning__flag__header TokenWarning__flag__icon--unverified">
+                        {t("Unverified asset")}
+                      </div>
+                      <div className="TokenWarning__flag__content">
+                        {t("Proceed with caution")}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="TokenWarning__flag">
                   <div className="TokenWarning__flag__icon">
-                    <img src={IconUnverified} alt="unverified icon" />
+                    <img src={IconNewAsset} alt="new asset icon" />
                   </div>
                   <div className="TokenWarning_flag__content">
-                    <div className="TokenWarning__flag__header TokenWarning__flag__icon--unverified">
-                      {t("Unverified asset")}
+                    <div className="TokenWarning__flag__header TokenWarning__flag__icon">
+                      {t("New asset")}
                     </div>
                     <div className="TokenWarning__flag__content">
-                      {t("Proceed with caution")}
+                      {t("This is a relatively new asset")}
                     </div>
-                  </div>
-                </div>
-              )}
-              <div className="TokenWarning__flag">
-                <div className="TokenWarning__flag__icon">
-                  <img src={IconNewAsset} alt="new asset icon" />
-                </div>
-                <div className="TokenWarning_flag__content">
-                  <div className="TokenWarning__flag__header TokenWarning__flag__icon">
-                    {t("New asset")}
-                  </div>
-                  <div className="TokenWarning__flag__content">
-                    {t("This is a relatively new asset")}
                   </div>
                 </div>
               </div>
@@ -1045,7 +1079,7 @@ export const TokenWarning = ({
                 <Button
                   size="md"
                   isFullWidth
-                  variant="secondary"
+                  variant="tertiary"
                   type="button"
                   onClick={closeOverlay}
                 >
@@ -1057,7 +1091,7 @@ export const TokenWarning = ({
                   isFullWidth
                   onClick={handleSubmit}
                   type="button"
-                  variant="primary"
+                  variant="secondary"
                   isLoading={
                     isSubmitting || submitStatus === ActionStatus.PENDING
                   }
@@ -1070,7 +1104,7 @@ export const TokenWarning = ({
         </View.Content>
       </div>
     </>,
-    document.querySelector("#modal-root")!,
+    document.querySelector("#modal-root")!
   );
 };
 
@@ -1093,7 +1127,7 @@ export const TransferWarning = ({
       <div className="TokenTransferWarning">
         <p>
           {t(
-            "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed.",
+            "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed."
           )}
         </p>
         {transfers.map((transfer, i) => (
@@ -1119,7 +1153,7 @@ export const InvokerAuthWarning = () => {
       <div className="InvokerAuthWarning">
         <p>
           {t(
-            "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction.",
+            "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction."
           )}
         </p>
       </div>
@@ -1141,7 +1175,6 @@ export const UnverifiedTokenTransferWarning = ({
       return;
     }
     const fetchVerifiedTokens = async () => {
-      // eslint-disable-next-line
       for (let j = 0; j < transfers.length; j += 1) {
         const c = transfers[j].contractId;
         const verifiedTokens = await getVerifiedTokens({
@@ -1166,7 +1199,7 @@ export const UnverifiedTokenTransferWarning = ({
       <div className="TokenTransferWarning">
         <p>
           {t(
-            `This asset is not part of any of your enabled asset lists (${networkDetails.network})`,
+            `This asset is not part of any of your enabled asset lists (${networkDetails.network})`
           )}
         </p>
       </div>
@@ -1186,7 +1219,7 @@ const WarningMessageTokenDetails = ({
 
   const [isLoadingTokenDetails, setLoadingTokenDetails] = React.useState(false);
   const [tokenDetails, setTokenDetails] = React.useState(
-    {} as Record<string, { name: string; symbol: string }>,
+    {} as Record<string, { name: string; symbol: string }>
   );
   React.useEffect(() => {
     async function _getTokenDetails() {
@@ -1211,7 +1244,7 @@ const WarningMessageTokenDetails = ({
         captureException(
           `Failed to fetch token details - ${JSON.stringify(error)} - ${
             transfer.contractId
-          } - ${networkDetails.network}`,
+          } - ${networkDetails.network}`
         );
         console.error(error);
       }
@@ -1224,7 +1257,7 @@ const WarningMessageTokenDetails = ({
   return (
     <div className="TokenDetails">
       <p className="FnName">TRANSFER #{index + 1}:</p>
-      {/* eslint-disable-next-line */}
+      {}
       {isLoadingTokenDetails ? (
         <div className="TokenDetails__loader">
           <Loader size="1rem" />
@@ -1514,7 +1547,7 @@ export const BlockaidWarningModal = ({
                 {t(
                   `${header} by Blockaid. Interacting with this ${
                     isAsset ? "token" : "transaction"
-                  } may result in loss of funds and is not recommended for the following reasons`,
+                  } may result in loss of funds and is not recommended for the following reasons`
                 )}
                 :
                 <ul className="ScamAssetWarning__list">
@@ -1544,7 +1577,7 @@ export const BlockaidWarningModal = ({
             </Card>
           </div>
         </div>,
-        document.querySelector("#modal-root")!,
+        document.querySelector("#modal-root")!
       )}
     </>
   ) : (

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
@@ -114,7 +115,7 @@ export const SendAmount = ({
   next: ROUTES;
 }) => {
   const { t } = useTranslation();
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const runAfterUpdate = useRunAfterUpdate();
 
@@ -140,6 +141,7 @@ export const SendAmount = ({
 
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
+  const navigate = useNavigate();
   const [loadingRate, setLoadingRate] = useState(false);
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] =
     useState(false);
@@ -165,7 +167,7 @@ export const SendAmount = ({
       if (accountBalances.balances) {
         // take base reserve into account for XLM payments
         const minBalance = new BigNumber(
-          (2 + accountBalances.subentryCount) * BASE_RESERVE,
+          (2 + accountBalances.subentryCount) * BASE_RESERVE
         );
 
         const balance =
@@ -193,11 +195,11 @@ export const SendAmount = ({
       accountBalances.subentryCount,
       recommendedFee,
       isToken,
-    ],
+    ]
   );
 
   const [availBalance, setAvailBalance] = useState(
-    calculateAvailBalance(asset),
+    calculateAvailBalance(asset)
   );
 
   const handleContinue = (values: {
@@ -207,18 +209,18 @@ export const SendAmount = ({
   }) => {
     dispatch(saveAmount(cleanAmount(values.amount)));
     dispatch(saveAsset(values.asset));
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     let isDestAssetScam = false;
 
     if (values.destinationAsset) {
       dispatch(saveDestinationAsset(values.destinationAsset));
       isDestAssetScam = isAssetSuspicious(
-        accountBalances.balances?.[destinationAsset]?.blockaidData,
+        accountBalances.balances?.[destinationAsset]?.blockaidData
       );
     }
     // check for scam asset
     const isSourceAssetScam = isAssetSuspicious(
-      accountBalances.balances?.[asset]?.blockaidData,
+      accountBalances.balances?.[asset]?.blockaidData
     );
     if (isSourceAssetScam) {
       setShowBlockedDomainWarning(true);
@@ -243,7 +245,7 @@ export const SendAmount = ({
           defaultBlockaidScanAssetResult,
       });
     } else {
-      navigateTo(next);
+      navigateTo(next, navigate);
     }
   };
 
@@ -271,7 +273,7 @@ export const SendAmount = ({
   const showSourceAndDestAsset = !!formik.values.destinationAsset;
   const parsedSourceAsset = getAssetFromCanonical(formik.values.asset);
   const parsedDestAsset = getAssetFromCanonical(
-    formik.values.destinationAsset || "native",
+    formik.values.destinationAsset || "native"
   );
 
   const db = useCallback(
@@ -289,7 +291,7 @@ export const SendAmount = ({
             destContract: getContract(formik.values.destinationAsset),
             networkDetails,
             publicKey,
-          }),
+          })
         );
       } else {
         await dispatch(
@@ -298,13 +300,13 @@ export const SendAmount = ({
             sourceAsset,
             destAsset,
             networkDetails,
-          }),
+          })
         );
       }
 
       setLoadingRate(false);
     }, 2000),
-    [],
+    []
   );
 
   useEffect(() => {
@@ -322,7 +324,7 @@ export const SendAmount = ({
     db(
       formik.values.amount || defaultSourceAmount,
       formik.values.asset,
-      formik.values.destinationAsset,
+      formik.values.destinationAsset
     );
   }, [
     db,
@@ -355,7 +357,7 @@ export const SendAmount = ({
             !(
               "decimals" in
               (accountBalances.balances || ({} as NonNullable<BalanceMap>))[b]
-            ),
+            )
         );
         defaultDestAsset = nonXlmAssets[0]
           ? nonXlmAssets[0]
@@ -397,7 +399,7 @@ export const SendAmount = ({
       shouldAccountDoesntExistWarning(
         destinationBalances.isFunded || false,
         asset,
-        formik.values.amount || "0",
+        formik.values.amount || "0"
       )
     ) {
       return <AccountDoesntExistWarning />;
@@ -423,12 +425,12 @@ export const SendAmount = ({
         <Notification
           variant="error"
           title={`${t(
-            "Entered amount is higher than the maximum send amount",
+            "Entered amount is higher than the maximum send amount"
           )} (
           ${formatAmountPreserveCursor(
             TX_SEND_MAX,
             formik.values.amount,
-            getAssetDecimals(asset, accountBalances, isToken),
+            getAssetDecimals(asset, accountBalances, isToken)
           )}
           )`}
         />
@@ -449,10 +451,10 @@ export const SendAmount = ({
             issuer={suspiciousAssetData.issuer}
             image={suspiciousAssetData.image}
             onClose={() => setShowBlockedDomainWarning(false)}
-            onContinue={() => navigateTo(next)}
+            onContinue={() => navigateTo(next, navigate)}
             blockaidData={suspiciousAssetData.blockaidData}
           />,
-          document.querySelector("#modal-root")!,
+          document.querySelector("#modal-root")!
         )}
       <React.Fragment>
         <SubviewHeader
@@ -480,11 +482,11 @@ export const SendAmount = ({
             </div>
           }
           hasBackButton={!isSwap}
-          customBackAction={() => navigateTo(previous)}
+          customBackAction={() => navigateTo(previous, navigate)}
           rightButton={
             isSwap ? null : (
               <button
-                onClick={() => navigateTo(ROUTES.sendPaymentType)}
+                onClick={() => navigateTo(ROUTES.sendPaymentType, navigate)}
                 className="SendAmount__icon-slider"
               >
                 <Icon.Expand01 />
@@ -527,7 +529,7 @@ export const SendAmount = ({
                     emitMetric(METRIC_NAMES.sendPaymentSetMax);
                     formik.setFieldValue(
                       "amount",
-                      calculateAvailBalance(formik.values.asset),
+                      calculateAvailBalance(formik.values.asset)
                     );
                   }}
                   data-testid="SendAmountSetMax"
@@ -554,7 +556,7 @@ export const SendAmount = ({
                           e.target.value,
                           formik.values.amount,
                           getAssetDecimals(asset, accountBalances, isToken),
-                          e.target.selectionStart || 1,
+                          e.target.selectionStart || 1
                         );
                       formik.setFieldValue("amount", newAmount);
                       dispatch(saveAmount(newAmount));
@@ -593,7 +595,7 @@ export const SendAmount = ({
                         assetCode={parsedSourceAsset.code}
                         issuerKey={parsedSourceAsset.issuer}
                         isSuspicious={isAssetSuspicious(
-                          accountBalances.balances?.[asset]?.blockaidData,
+                          accountBalances.balances?.[asset]?.blockaidData
                         )}
                       />
                     )}
@@ -606,7 +608,7 @@ export const SendAmount = ({
                           balance={formik.values.amount}
                           icon=""
                           isSuspicious={isAssetSuspicious(
-                            accountBalances.balances?.[asset]?.blockaidData,
+                            accountBalances.balances?.[asset]?.blockaidData
                           )}
                         />
                         <PathPayAssetSelect
@@ -622,7 +624,7 @@ export const SendAmount = ({
                           isSuspicious={isAssetSuspicious(
                             accountBalances.balances?.[
                               formik.values.destinationAsset
-                            ]?.blockaidData,
+                            ]?.blockaidData
                           )}
                         />
                       </>
@@ -635,7 +637,6 @@ export const SendAmount = ({
         </View.Content>
       </React.Fragment>
       <LoadingBackground
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
         onClick={() => {}}
         isActive={showBlockedDomainWarning}
       />

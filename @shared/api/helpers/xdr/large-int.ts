@@ -8,8 +8,6 @@ import {
 } from "./bigint-encoder";
 import { XdrNotImplementedDefinitionError, XdrWriterError } from "./errors";
 
-/* eslint-disable */
-
 /* tslint:disable */
 export class LargeInt extends XdrPrimitiveType {
   constructor(args) {
@@ -60,8 +58,8 @@ export class LargeInt extends XdrPrimitiveType {
     if (size === 64) return new this(reader.readBigUInt64BE());
     return new this(
       ...Array.from({ length: size / 64 }, () =>
-        reader.readBigUInt64BE(),
-      ).reverse(),
+        reader.readBigUInt64BE()
+      ).reverse()
     );
   }
 
@@ -123,7 +121,7 @@ export class LargeInt extends XdrPrimitiveType {
   static defineIntBoundaries() {
     const [min, max] = calculateBigIntBoundaries(
       this.prototype.size,
-      this.prototype.unsigned,
+      this.prototype.unsigned
     );
     this.MIN_VALUE = min;
     this.MAX_VALUE = max;

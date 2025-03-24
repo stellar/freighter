@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik } from "formik";
 import { Button, Icon, Link } from "@stellar/design-system";
@@ -14,9 +15,9 @@ import {
   saveDestinationAsset,
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
+import { InfoTooltip } from "popup/basics/InfoTooltip";
 
 import "./styles.scss";
-import { InfoTooltip } from "popup/basics/InfoTooltip";
 
 enum PAYMENT_TYPES {
   REGULAR = "REGULAR",
@@ -75,27 +76,28 @@ export const SendType = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { destinationAsset } = useSelector(transactionDataSelector);
+  const navigate = useNavigate();
 
   const submitForm = (values: { paymentType: string }) => {
     // path payment flag is a non empty string in redux destinationAsset
     dispatch(
       saveDestinationAsset(
-        values.paymentType === PAYMENT_TYPES.PATH_PAYMENT ? "native" : "",
-      ),
+        values.paymentType === PAYMENT_TYPES.PATH_PAYMENT ? "native" : ""
+      )
     );
     emitMetric(
       values.paymentType === PAYMENT_TYPES.PATH_PAYMENT
         ? METRIC_NAMES.sendPaymentTypePathPayment
-        : METRIC_NAMES.sendPaymentTypePayment,
+        : METRIC_NAMES.sendPaymentTypePayment
     );
-    navigateTo(ROUTES.sendPaymentAmount);
+    navigateTo(ROUTES.sendPaymentAmount, navigate);
   };
 
   return (
     <React.Fragment>
       <SubviewHeader
         title={t("Send Type")}
-        customBackAction={() => navigateTo(ROUTES.sendPaymentAmount)}
+        customBackAction={() => navigateTo(ROUTES.sendPaymentAmount, navigate)}
         customBackIcon={<Icon.XClose />}
       />
       <Formik
@@ -105,7 +107,6 @@ export const SendType = () => {
               ? PAYMENT_TYPES.REGULAR
               : PAYMENT_TYPES.PATH_PAYMENT,
         }}
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
         onSubmit={() => {}}
       >
         {({ values }) => (
@@ -120,7 +121,7 @@ export const SendType = () => {
                   tooltipDetails={
                     <span>
                       {t(
-                        "The destination account receives the same asset and amount sent",
+                        "The destination account receives the same asset and amount sent"
                       )}
                     </span>
                   }
@@ -134,7 +135,7 @@ export const SendType = () => {
                   tooltipDetails={
                     <span>
                       {t(
-                        "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
+                        "The destination account can receive a different asset, the received amount is defined by the available conversion rates"
                       )}{" "}
                       <Link
                         variant="secondary"

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import debounce from "lodash/debounce";
 import { Asset, StrKey, MuxedAccount, Federation } from "stellar-sdk";
@@ -48,7 +49,7 @@ const baseReserve = new BigNumber(1);
 export const shouldAccountDoesntExistWarning = (
   isFunded: boolean,
   assetID: string,
-  amount: string,
+  amount: string
 ) =>
   !isFunded &&
   (new BigNumber(amount).lt(baseReserve) ||
@@ -99,12 +100,13 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const { destination, federationAddress } = useSelector(
-    transactionDataSelector,
+    transactionDataSelector
   );
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { destinationBalances, destinationAccountBalanceStatus } = useSelector(
-    transactionSubmissionSelector,
+    transactionSubmissionSelector
   );
+  const navigate = useNavigate();
 
   const [recentAddresses, setRecentAddresses] = useState<string[]>([]);
   const [validatedAddress, setValidatedAddress] = useState("");
@@ -113,11 +115,11 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
 
   const handleContinue = (
     validatedDestination: string,
-    validatedFedAdress?: string,
+    validatedFedAdress?: string
   ) => {
     dispatch(saveDestination(validatedDestination));
     dispatch(saveFederationAddress(validatedFedAdress || ""));
-    navigateTo(ROUTES.sendPaymentAmount);
+    navigateTo(ROUTES.sendPaymentAmount, navigate);
   };
 
   const formik = useFormik({
@@ -177,7 +179,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       }
       setIsLoading(false);
     }, 2000),
-    [],
+    []
   );
 
   // load recent addresses
@@ -222,7 +224,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       getDestinationBalances({
         publicKey: address,
         networkDetails,
-      }),
+      })
     );
   }, [dispatch, validatedAddress, networkDetails]);
 
@@ -230,7 +232,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
     <React.Fragment>
       <SubviewHeader
         title="Send To"
-        customBackAction={() => navigateTo(previous)}
+        customBackAction={() => navigateTo(previous, navigate)}
       />
       <View.Content hasNoTopPadding>
         <FormRows>
@@ -268,7 +270,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                               // recentAddresses already validated so safe to dispatch
                               if (isFederationAddress(address)) {
                                 const fedResp = await Federation.Server.resolve(
-                                  address,
+                                  address
                                 );
                                 const publicKey = fedResp.account_id;
                                 setValidatedAddress(publicKey);

@@ -6,7 +6,7 @@ import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { NetworkDetails } from "../constants/stellar";
-import { AssetsLists, AssetsListItem } from "../constants/soroban/token";
+import { AssetsLists, AssetsListItem } from "../constants/soroban/asset-list";
 
 export enum ActionStatus {
   IDLE = "IDLE",
@@ -93,6 +93,8 @@ export interface Response {
   recommendedFee: string;
   isNonSSLEnabled: boolean;
   isHideDustEnabled: boolean;
+  activePublicKey: string;
+  isAccountMismatch: boolean;
 }
 
 export interface MemoRequiredAccount {
@@ -292,9 +294,7 @@ export type AssetType = AssetBalance | NativeBalance | TokenBalance;
 
 export type TokenBalances = SorobanBalance[];
 
-/* eslint-disable camelcase */
 export type HorizonOperation = Horizon.ServerApi.OperationRecord;
-/* eslint-enable camelcase */
 
 export interface AccountBalancesInterface {
   balances: Balances;

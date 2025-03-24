@@ -32,7 +32,7 @@ test("Create new wallet", async ({ page }) => {
     { page, screenshot: "recovery-page.png" },
     {
       mask: [page.locator(".MnemonicDisplay__list-item")],
-    },
+    }
   );
 
   const domWords = page.getByTestId("word");
@@ -52,11 +52,11 @@ test("Create new wallet", async ({ page }) => {
     { page, screenshot: "confirm-recovery-page.png" },
     {
       mask: [page.locator(".ConfirmMnemonicPhrase__word-bubble-wrapper")],
-    },
+    }
   );
 
   for (let i = 0; i < words.length; i++) {
-    await page.getByTestId(words[i]).check({ force: true });
+    await page.getByLabel(words[i]).check({ force: true });
   }
   await page.getByTestId("display-mnemonic-phrase-confirm-btn").click();
   await expect(page.getByText("You’re all set!")).toBeVisible();
@@ -76,7 +76,7 @@ test("Import 12 word wallet", async ({ page }) => {
   await page.getByText("Confirm").click();
 
   await expect(
-    page.getByText("Import wallet from recovery phrase"),
+    page.getByText("Import wallet from recovery phrase")
   ).toBeVisible();
 
   const TEST_WORDS = [
@@ -103,7 +103,7 @@ test("Import 12 word wallet", async ({ page }) => {
       page,
       screenshot: "wallet-import-12-word-phrase-page.png",
     },
-    { mask: [page.locator(".RecoverAccount__mnemonic-input")] },
+    { mask: [page.locator(".RecoverAccount__mnemonic-input")] }
   );
 
   await page.getByRole("button", { name: "Import" }).click();
@@ -125,7 +125,7 @@ test("Import 24 word wallet", async ({ page }) => {
   await page.getByText("Confirm").click();
 
   await expect(
-    page.getByText("Import wallet from recovery phrase"),
+    page.getByText("Import wallet from recovery phrase")
   ).toBeVisible();
   await page.locator(".RecoverAccount__phrase-toggle > label").click();
 
@@ -168,7 +168,7 @@ test("Import 24 word wallet", async ({ page }) => {
     },
     {
       mask: [page.locator(".RecoverAccount__mnemonic-wrapper")],
-    },
+    }
   );
 
   await page.getByRole("button", { name: "Import" }).click();
@@ -196,7 +196,7 @@ test("Import wallet with wrong password", async ({ page }) => {
         page.locator("#new-password-input"),
         page.locator("#confirm-password-input"),
       ],
-    },
+    }
   );
 });
 
@@ -217,7 +217,7 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
     { page, screenshot: "recovery-page.png" },
     {
       mask: [page.locator(".MnemonicDisplay__list-item")],
-    },
+    }
   );
 
   const domWords = page.getByTestId("word");
@@ -234,7 +234,7 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
   const shuffledWords = shuffle(words);
 
   for (let i = 0; i < shuffledWords.length; i++) {
-    await page.getByTestId(shuffledWords[i]).check({ force: true });
+    await page.getByLabel(shuffledWords[i]).check({ force: true });
   }
 
   await page.getByTestId("display-mnemonic-phrase-confirm-btn").click();
@@ -243,6 +243,6 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
     { page, screenshot: "incorrect-recovery-phrase-page.png" },
     {
       mask: [page.locator(".ConfirmMnemonicPhrase__word-bubble-wrapper")],
-    },
+    }
   );
 });

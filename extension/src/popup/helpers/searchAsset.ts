@@ -1,12 +1,17 @@
 import { captureException } from "@sentry/browser";
-import { validate } from "jsonschema";
+import { validate, ValidationError } from "jsonschema";
 import {
   MAINNET_NETWORK_DETAILS,
   NetworkDetails,
   NETWORKS,
   TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
-import { AssetsLists, AssetsListKey } from "@shared/constants/soroban/token";
+import {
+  AssetsLists,
+  AssetsListKey,
+  AssetListResponse,
+  AssetListReponseItem,
+} from "@shared/constants/soroban/asset-list";
 
 import { getApiStellarExpertUrl } from "popup/helpers/account";
 import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
@@ -22,7 +27,7 @@ export const searchAsset = async ({
 }) => {
   try {
     const res = await fetch(
-      `${getApiStellarExpertUrl(networkDetails)}/asset?search=${asset}`,
+      `${getApiStellarExpertUrl(networkDetails)}/asset?search=${asset}`
     );
     return await res.json();
   } catch (e) {
@@ -30,20 +35,25 @@ export const searchAsset = async ({
   }
 };
 
-export const schemaValidatedAssetList = async (assetListJson: any) => {
+export const schemaValidatedAssetList = async (
+  assetListJson: AssetListResponse
+): Promise<{
+  assets: AssetListReponseItem[];
+  errors: ValidationError[] | null;
+}> => {
   let schemaRes;
   try {
     schemaRes = await fetch(
-      "https://raw.githubusercontent.com/orbitlens/stellar-protocol/sep-0042-token-lists/contents/sep-0042/assetlist.schema.json",
+      "https://raw.githubusercontent.com/orbitlens/stellar-protocol/sep-0042-token-lists/contents/sep-0042/assetlist.schema.json"
     );
   } catch (err) {
     captureException("Error fetching SEP-0042 JSON schema");
-    return { assets: [] };
+    return { assets: [] as AssetListReponseItem[], errors: null };
   }
 
   if (!schemaRes.ok) {
     captureException("Unable to fetch SEP-0042 JSON schema");
-    return { assets: [] };
+    return { assets: [] as AssetListReponseItem[], errors: null };
   }
 
   const schemaResJson = await schemaRes?.json();
@@ -52,10 +62,13 @@ export const schemaValidatedAssetList = async (assetListJson: any) => {
   const validatedList = validate(assetListJson, schemaResJson);
 
   if (validatedList.errors.length) {
-    return { assets: [], errors: validatedList.errors };
+    return {
+      assets: [] as AssetListReponseItem[],
+      errors: validatedList.errors,
+    };
   }
 
-  return assetListJson;
+  return { assets: assetListJson.assets, errors: null };
 };
 
 export const getNativeContractDetails = (networkDetails: NetworkDetails) => {
@@ -84,17 +97,41 @@ export const getNativeContractDetails = (networkDetails: NetworkDetails) => {
   }
 };
 
-export interface TokenRecord {
-  code: string;
-  issuer: string;
-  contract: string;
-  org: string;
-  domain: string;
-  icon: string;
-  decimals: number;
-}
+export type VerifiedTokenRecord = AssetListReponseItem & {
+  verifiedLists: string[];
+};
 
-export type VerifiedTokenRecord = TokenRecord & { verifiedLists: string[] };
+export const getAssetLists = async ({
+  assetsListsDetails,
+  networkDetails,
+}: {
+  assetsListsDetails: AssetsLists;
+  networkDetails: NetworkDetails;
+}) => {
+  const network = networkDetails.network;
+  const assetsListsDetailsByNetwork =
+    assetsListsDetails[network as AssetsListKey];
+
+  const assetListsResponses = [] as AssetListResponse[];
+  for (const networkList of assetsListsDetailsByNetwork) {
+    const { url, isEnabled } = networkList;
+
+    if (isEnabled) {
+      const fetchAndParse = async (): Promise<AssetListResponse> => {
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error(res.statusText);
+        }
+        return res.json();
+      };
+
+      assetListsResponses.push(await fetchAndParse());
+    }
+  }
+
+  const settledResponses = await Promise.allSettled(assetListsResponses);
+  return settledResponses;
+};
 
 export const getVerifiedTokens = async ({
   networkDetails,
@@ -131,7 +168,7 @@ export const getVerifiedTokens = async ({
   if (contractId === nativeContract.contract) {
     return [{ ...nativeContract, verifiedLists: [] }];
   }
-  // eslint-disable-next-line no-restricted-syntax
+
   for (const networkList of networkLists) {
     const { url = "", isEnabled } = networkList;
 
@@ -151,28 +188,26 @@ export const getVerifiedTokens = async ({
     }
   }
 
-  const promiseRes = await Promise.allSettled(promiseArr);
+  const promiseRes = await Promise.allSettled<Promise<AssetListResponse>>(
+    promiseArr
+  );
 
   const verifiedTokens = [] as VerifiedTokenRecord[];
 
-  let verifiedToken = {} as TokenRecord;
+  let verifiedToken = {} as AssetListReponseItem;
   const verifiedLists: string[] = [];
 
-  // eslint-disable-next-line no-restricted-syntax
   for (const r of promiseRes) {
     if (r.status === "fulfilled") {
       // confirm that this list still adheres to the agreed upon schema
       const validatedList = await schemaValidatedAssetList(r.value);
-      const list = validatedList?.tokens
-        ? validatedList?.tokens
-        : validatedList?.assets;
+      const list = validatedList.assets;
       if (list) {
-        // eslint-disable-next-line no-restricted-syntax
         for (const record of list) {
           const regex = new RegExp(contractId, "i");
           if (record.contract && record.contract.match(regex)) {
             verifiedToken = record;
-            verifiedLists.push(r.value.name as string);
+            verifiedLists.push(r.value.name);
             break;
           }
         }
@@ -184,7 +219,7 @@ export const getVerifiedTokens = async ({
     verifiedTokens.push({
       ...verifiedToken,
       verifiedLists,
-    });
+    } as VerifiedTokenRecord);
   }
 
   if (setIsSearching) {

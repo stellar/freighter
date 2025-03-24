@@ -19,19 +19,22 @@ import {
   FormValues,
 } from "popup/components/accountCreator/PasswordForm";
 import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
+import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
 
 export const AccountCreator = () => {
   const publicKey = useSelector(publicKeySelector);
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
 
   const handleSubmit = async (values: FormValues) => {
-    // eslint-disable-next-line
     await dispatch(createAccount(values.password));
-    const res = await showBackupPhrase(values.password);
+    const res = await showBackupPhrase({
+      activePublicKey: null,
+      password: values.password,
+    });
 
     setMnemonicPhrase(res.mnemonicPhrase);
   };

@@ -12,6 +12,7 @@ import { DomainScanModalInfo } from "popup/components/ModalInfo";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { useScanSite } from "popup/helpers/blockaid";
+import { AppDispatch } from "popup/App";
 
 import "popup/metrics/access";
 import "./styles.scss";
@@ -19,7 +20,7 @@ import "./styles.scss";
 export const GrantAccess = () => {
   const { t } = useTranslation();
   const location = useLocation();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [isGranting, setIsGranting] = useState(false);
 
   const { url } = parsedSearchParam(location.search);
@@ -43,7 +44,7 @@ export const GrantAccess = () => {
 
   const grantAndClose = async () => {
     setIsGranting(true);
-    // eslint-disable-next-line
+
     await dispatch(grantAccess(url));
     window.close();
   };
@@ -64,7 +65,7 @@ export const GrantAccess = () => {
             isMalicious={isMalicious}
             scanStatus={data.status}
             subject={t(
-              `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,
+              `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`
             )}
           >
             <div

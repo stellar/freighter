@@ -1,14 +1,23 @@
 import throttle from "lodash/throttle";
-import { Middleware, AnyAction } from "redux";
+import { Action, Middleware } from "redux";
+import { captureException } from "@sentry/browser";
+import { PayloadAction } from "@reduxjs/toolkit";
+import { Location } from "react-router-dom";
 
 import { store } from "popup/App";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { AMPLITUDE_KEY } from "constants/env";
 import { settingsDataSharingSelector } from "popup/ducks/settings";
 import { AccountType } from "@shared/api/types";
-import { captureException } from "@sentry/browser";
 
-type MetricHandler<AppState> = (state: AppState, action: AnyAction) => void;
+type MetricsPayloadAction = PayloadAction<{
+  errorMessage?: string;
+  location?: Location;
+}>;
+type MetricHandler<AppState> = (
+  state: AppState,
+  action: MetricsPayloadAction
+) => void;
 const handlersLookup: { [key: string]: MetricHandler<any>[] } = {};
 
 /*
@@ -17,13 +26,14 @@ const handlersLookup: { [key: string]: MetricHandler<any>[] } = {};
  * of registered handlers and passes the current state and action. These are
  * intended for metrics emission, nothing else.
  */
-export function metricsMiddleware<State>(): Middleware<object, State> {
+export function metricsMiddleware<State>(): Middleware<Action, State> {
   return ({ getState }) =>
     (next) =>
-    (action: AnyAction) => {
+    (action: unknown) => {
       const state = getState();
-      (handlersLookup[action.type] || []).forEach((handler) =>
-        handler(state, action),
+      const _action = action as PayloadAction<{ errorMessage: string }>; // Redux Middleware type forces this unknown for some reason
+      (handlersLookup[_action.type] || []).forEach((handler) =>
+        handler(state, _action)
       );
       return next(action);
     };
@@ -40,7 +50,7 @@ export function metricsMiddleware<State>(): Middleware<object, State> {
  */
 export function registerHandler<State>(
   actionType: string | { type: string },
-  handler: (state: State, action: AnyAction) => void,
+  handler: (state: State, action: MetricsPayloadAction) => void
 ) {
   const type = typeof actionType === "string" ? actionType : actionType.type;
   if (handlersLookup[type]) {
@@ -51,7 +61,6 @@ export function registerHandler<State>(
 }
 
 interface Event {
-  /* eslint-disable camelcase */
   event_type: string;
   event_properties: { [key: string]: any };
   user_id: string;
@@ -60,7 +69,6 @@ interface Event {
   hw_connected: boolean;
   secret_key_account: boolean;
   secret_key_account_funded: boolean;
-  /* eslint-enable camelcase */
 }
 
 export interface MetricsData {
@@ -80,7 +88,6 @@ const uploadMetrics = throttle(async () => {
   const toUpload = cache;
   cache = [];
   if (!AMPLITUDE_KEY) {
-    // eslint-disable-next-line no-console
     console.log("Not uploading metrics", toUpload);
     return;
   }
@@ -89,11 +96,9 @@ const uploadMetrics = throttle(async () => {
     const amplitudeFetchRes = await fetch(METRICS_ENDPOINT, {
       method: "POST",
       headers: {
-        // eslint-disable-next-line
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        // eslint-disable-next-line
         api_key: AMPLITUDE_KEY,
         events: toUpload,
       }),
@@ -103,17 +108,17 @@ const uploadMetrics = throttle(async () => {
       const amplitudeFetchResJson = await amplitudeFetchRes.json();
       captureException(
         `Error uploading to Amplitude with error: ${JSON.stringify(
-          amplitudeFetchResJson,
+          amplitudeFetchResJson
         )} | cache size: ${toUpload.length} | cache contents: ${JSON.stringify(
-          toUpload,
-        )}`,
+          toUpload
+        )}`
       );
     }
   } catch (e) {
     captureException(
       `Amplitude fetch threw error: ${JSON.stringify(e)} | cache size: ${
         toUpload.length
-      } | cache contents: ${JSON.stringify(toUpload)}`,
+      } | cache contents: ${JSON.stringify(toUpload)}`
     );
   }
 }, 500);
@@ -143,12 +148,29 @@ export const emitMetric = async (name: string, body?: any) => {
     return;
   }
 
-  const metricsData: MetricsData = JSON.parse(
-    localStorage.getItem(METRICS_DATA) || "{}",
-  );
+  let metricsData: MetricsData;
+
+  try {
+    const storedData = localStorage.getItem(METRICS_DATA);
+    if (storedData) {
+      metricsData = JSON.parse(storedData);
+    } else {
+      throw new Error("No metrics data found in localStorage");
+    }
+  } catch {
+    // Fallback to default values if parsing fails or data is missing
+    metricsData = {
+      accountType: AccountType.FREIGHTER,
+      hwExists: false,
+      importedExists: false,
+      hwFunded: false,
+      importedFunded: false,
+      freighterFunded: false,
+      unfundedFreighterAccounts: [],
+    };
+  }
 
   cache.push({
-    /* eslint-disable */
     event_type: name,
     event_properties: body,
     user_id: getUserId(),
@@ -157,7 +179,6 @@ export const emitMetric = async (name: string, body?: any) => {
     hw_connected: metricsData.hwExists,
     secret_key_account: metricsData.importedExists,
     secret_key_account_funded: metricsData.importedFunded,
-    /* eslint-enable */
   });
   await uploadMetrics();
 };

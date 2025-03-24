@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Formik, Form } from "formik";
 import { object as YupObject } from "yup";
@@ -93,6 +94,7 @@ export const RecoverAccount = () => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
   const authError = useSelector(authErrorSelector);
+  const navigate = useNavigate();
   const publicKeyRef = useRef(publicKey);
   const RecoverAccountSchema = YupObject().shape({
     password: passwordValidator,
@@ -116,15 +118,15 @@ export const RecoverAccount = () => {
       recoverAccount({
         password,
         mnemonicPhrase: buildMnemonicPhrase(mnemonicPhraseArr),
-      }),
+      })
     );
   };
 
   useEffect(() => {
     if (publicKey && publicKey !== publicKeyRef.current) {
-      navigateTo(ROUTES.recoverAccountSuccess);
+      navigateTo(ROUTES.recoverAccountSuccess, navigate);
     }
-  }, [publicKey]);
+  }, [publicKey, navigate]);
 
   useEffect(() => {
     const phraseInputsArr: string[] = [];
@@ -134,7 +136,6 @@ export const RecoverAccount = () => {
     setTimeout(() => {
       PHRASE_LENGTH = isLongPhrase ? LONG_PHRASE : SHORT_PHRASE;
 
-      // eslint-disable-next-line no-plusplus
       for (let i = 1; i <= PHRASE_LENGTH; i++) {
         phraseInputsArr.push(`MnemonicPhrase-${i}`);
       }
@@ -175,7 +176,7 @@ export const RecoverAccount = () => {
                           <>
                             <Text as="p" size="md">
                               {t(
-                                "Enter your mnemonic phrase to restore your wallet",
+                                "Enter your mnemonic phrase to restore your wallet"
                               )}
                             </Text>
                           </>

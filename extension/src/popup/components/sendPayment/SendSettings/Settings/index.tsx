@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button, Loader } from "@stellar/design-system";
@@ -79,6 +80,8 @@ export const Settings = ({
   const { simulation } = useSelector(tokenSimulationSelector);
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
+  const navigate = useNavigate();
+
   const [isLoadingSimulation, setLoadingSimulation] = useState(true);
 
   const isSendSacToContract =
@@ -91,10 +94,10 @@ export const Settings = ({
 
     const assetFromCanonical = new Asset(
       getAssetFromCanonical(asset).code,
-      getAssetFromCanonical(asset).issuer,
+      getAssetFromCanonical(asset).issuer
     );
     const contractAddress = assetFromCanonical.contractId(
-      networkDetails.networkPassphrase,
+      networkDetails.networkPassphrase
     );
 
     return contractAddress;
@@ -107,7 +110,7 @@ export const Settings = ({
       }
       // use default transaction fee if unset
       const baseFee = new BigNumber(
-        transactionFee || recommendedFee || stroopToXlm(BASE_FEE),
+        transactionFee || recommendedFee || stroopToXlm(BASE_FEE)
       );
 
       if (isSoroswap) {
@@ -122,22 +125,22 @@ export const Settings = ({
             memo,
             transactionFee,
             path,
-          }),
+          })
         );
 
         if (simulateSwap.fulfilled.match(simulatedTx)) {
           dispatch(saveSimulation(simulatedTx.payload));
           const minResourceFee = formatTokenAmount(
             new BigNumber(
-              simulatedTx.payload.simulationTransaction.minResourceFee,
+              simulatedTx.payload.simulationTransaction.minResourceFee
             ),
-            CLASSIC_ASSET_DECIMALS,
+            CLASSIC_ASSET_DECIMALS
           );
           if (!transactionFee) {
             dispatch(
               saveTransactionFee(
-                baseFee.plus(new BigNumber(minResourceFee)).toString(),
-              ),
+                baseFee.plus(new BigNumber(minResourceFee)).toString()
+              )
             );
           }
         }
@@ -178,7 +181,7 @@ export const Settings = ({
             params,
             networkDetails,
             transactionFee,
-          }),
+          })
         );
 
         if (
@@ -187,16 +190,16 @@ export const Settings = ({
         ) {
           const minResourceFee = formatTokenAmount(
             new BigNumber(
-              simResponse.payload.simulationTransaction.minResourceFee,
+              simResponse.payload.simulationTransaction.minResourceFee
             ),
-            CLASSIC_ASSET_DECIMALS,
+            CLASSIC_ASSET_DECIMALS
           );
           dispatch(saveSimulation(simResponse.payload));
           dispatch(saveIsToken(true));
           dispatch(
             saveTransactionFee(
-              baseFee.plus(new BigNumber(minResourceFee)).toString(),
-            ),
+              baseFee.plus(new BigNumber(minResourceFee)).toString()
+            )
           );
         }
         setLoadingSimulation(false);
@@ -236,16 +239,21 @@ export const Settings = ({
   ]);
 
   const handleTxFeeNav = () =>
-    navigateTo(isSwap ? ROUTES.swapSettingsFee : ROUTES.sendPaymentSettingsFee);
+    navigateTo(
+      isSwap ? ROUTES.swapSettingsFee : ROUTES.sendPaymentSettingsFee,
+      navigate
+    );
 
   const handleSlippageNav = () =>
     navigateTo(
       isSwap ? ROUTES.swapSettingsSlippage : ROUTES.sendPaymentSettingsSlippage,
+      navigate
     );
 
   const handleTimeoutNav = () =>
     navigateTo(
       isSwap ? ROUTES.swapSettingsTimeout : ROUTES.sendPaymentSettingsTimeout,
+      navigate
     );
 
   // dont show memo for regular sends to Muxed, or for swaps
@@ -256,7 +264,7 @@ export const Settings = ({
     <React.Fragment>
       <SubviewHeader
         title={`${isSwap ? t("Swap") : t("Send")} ${t("Settings")}`}
-        customBackAction={() => navigateTo(previous)}
+        customBackAction={() => navigateTo(previous, navigate)}
       />
       {isLoadingSimulation && !recommendedFee ? (
         <div className="SendSettings__loadingWrapper">
@@ -293,7 +301,8 @@ export const Settings = ({
                       >
                         <span
                           className="SendSettings__row__title SendSettings__clickable"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
                             submitForm();
                             handleTxFeeNav();
                           }}
@@ -304,7 +313,8 @@ export const Settings = ({
                     </div>
                     <div
                       className="SendSettings__row__right SendSettings__clickable"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
                         submitForm();
                         handleTxFeeNav();
                       }}
@@ -324,7 +334,7 @@ export const Settings = ({
                         infoText={
                           <span>
                             {t(
-                              "Number of seconds that can pass before this transaction can no longer be accepted by the network",
+                              "Number of seconds that can pass before this transaction can no longer be accepted by the network"
                             )}{" "}
                           </span>
                         }
@@ -332,7 +342,8 @@ export const Settings = ({
                       >
                         <span
                           className="SendSettings__row__title SendSettings__clickable"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
                             submitForm();
                             handleTimeoutNav();
                           }}
@@ -343,7 +354,8 @@ export const Settings = ({
                     </div>
                     <div
                       className="SendSettings__row__right SendSettings__clickable"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
                         submitForm();
                         handleTimeoutNav();
                       }}
@@ -364,7 +376,7 @@ export const Settings = ({
                           infoText={
                             <span>
                               {t(
-                                "Allowed downward variation in the destination amount",
+                                "Allowed downward variation in the destination amount"
                               )}{" "}
                               <Link
                                 variant="secondary"
@@ -380,7 +392,8 @@ export const Settings = ({
                         >
                           <span
                             className="SendSettings__row__title SendSettings__clickable"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.preventDefault();
                               submitForm();
                               handleSlippageNav();
                             }}
@@ -391,7 +404,8 @@ export const Settings = ({
                       </div>
                       <div
                         className="SendSettings__row__right SendSettings__clickable"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.preventDefault();
                           submitForm();
                           handleSlippageNav();
                         }}
@@ -453,10 +467,10 @@ export const Settings = ({
                   disabled={!transactionFee}
                   size="md"
                   isFullWidth
-                  onClick={() => navigateTo(next)}
                   type="submit"
                   variant="secondary"
                   data-testid="send-settings-btn-continue"
+                  onClick={() => navigateTo(next, navigate)}
                 >
                   {t("Review")} {isSwap ? t("Swap") : t("Send")}
                 </Button>

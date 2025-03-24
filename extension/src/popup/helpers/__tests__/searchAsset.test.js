@@ -28,7 +28,7 @@ describe("searchAsset", () => {
 
   it("should getNativeContractDetails for Mainnet", () => {
     expect(
-      SearchAsset.getNativeContractDetails({ network: "PUBLIC" }),
+      SearchAsset.getNativeContractDetails({ network: "PUBLIC" })
     ).toStrictEqual({
       contract: "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
       issuer: "GDMTVHLWJTHSUDMZVVMXXH6VJHA2ZV3HNG5LYNAZ6RTWB7GISM6PGTUV",
@@ -41,7 +41,7 @@ describe("searchAsset", () => {
   });
   it("should getNativeContractDetails for Testnet", () => {
     expect(
-      SearchAsset.getNativeContractDetails({ network: "TESTNET" }),
+      SearchAsset.getNativeContractDetails({ network: "TESTNET" })
     ).toStrictEqual({
       contract: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
       issuer: "",
@@ -54,7 +54,7 @@ describe("searchAsset", () => {
   });
   it("should not getNativeContractDetails for non-Mainnet and non-Testnet", () => {
     expect(
-      SearchAsset.getNativeContractDetails({ network: "foo" }),
+      SearchAsset.getNativeContractDetails({ network: "foo" })
     ).toStrictEqual({
       code: "XLM",
       decimals: 7,
@@ -66,20 +66,24 @@ describe("searchAsset", () => {
     });
   });
   it("schemaValidatedAssetList should return list if valid", async () => {
-    const v = await SearchAsset.schemaValidatedAssetList(validAssetList);
-    expect(v).toStrictEqual(validAssetList);
+    const { assets } = await SearchAsset.schemaValidatedAssetList(
+      validAssetList
+    );
+    expect(assets).toStrictEqual(validAssetList.assets);
   });
   it("schemaValidatedAssetList should return empty list if schema fetch fails", async () => {
     jest.spyOn(global, "fetch").mockImplementation(() =>
       Promise.resolve({
         ok: false,
-      }),
+      })
     );
-    const v = await SearchAsset.schemaValidatedAssetList(validAssetList);
-    expect(v).toStrictEqual({ assets: [] });
+    const { assets } = await SearchAsset.schemaValidatedAssetList(
+      validAssetList
+    );
+    expect(assets).toStrictEqual([]);
   });
   it("schemaValidatedAssetList should return empty list and errors if validation fails", async () => {
-    const v = await SearchAsset.schemaValidatedAssetList({
+    const { assets, errors } = await SearchAsset.schemaValidatedAssetList({
       // incorrect key
       title: "PiyalBasu Top 50",
 
@@ -101,9 +105,9 @@ describe("searchAsset", () => {
         },
       ],
     });
-    expect(v.assets).toStrictEqual([]);
+    expect(assets).toStrictEqual([]);
 
     // error for missing `name` and error for additional key `title`
-    expect(v.errors).toHaveLength(2);
+    expect(errors).toHaveLength(2);
   });
 });

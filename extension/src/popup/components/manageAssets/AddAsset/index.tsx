@@ -1,22 +1,34 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { Formik, Form, Field, FieldProps } from "formik";
-import debounce from "lodash/debounce";
 import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
 import { Networks, StellarToml, StrKey } from "stellar-sdk";
-
+import { Formik, Form, Field, FieldProps } from "formik";
+import debounce from "lodash/debounce";
+import { useTranslation } from "react-i18next";
+import { getTokenDetails } from "@shared/api/internal";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+import { isSacContractExecutable } from "@shared/helpers/soroban/token";
 
 import { FormRows } from "popup/basics/Forms";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  settingsNetworkDetailsSelector,
+  settingsSelector,
+} from "popup/ducks/settings";
 import { isMainnet, isTestnet } from "helpers/stellar";
+import { getNativeContractDetails } from "popup/helpers/searchAsset";
+import {
+  getAssetListsForAsset,
+  splitVerifiedAssetCurrency,
+} from "popup/helpers/assetList";
 import { isContractId } from "popup/helpers/soroban";
-import { isAssetSuspicious, scanAssetBulk } from "popup/helpers/blockaid";
-import { useTokenLookup } from "popup/helpers/useTokenLookup";
-import { AssetNotifcation } from "popup/components/AssetNotification";
+import {
+  isAssetSuspicious,
+  scanAsset,
+  scanAssetBulk,
+} from "popup/helpers/blockaid";
+
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
+import { publicKeySelector } from "popup/ducks/accountServices";
 
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
@@ -38,32 +50,133 @@ interface AssetDomainToml {
 
 export const AddAsset = () => {
   const { t } = useTranslation();
+  const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
+  const [verifiedAssetRows, setVerifiedAssetRows] = useState(
+    [] as ManageAssetCurrency[]
+  );
+  const [unverifiedAssetRows, setUnverifiedAssetRows] = useState(
+    [] as ManageAssetCurrency[]
+  );
   const [isSearching, setIsSearching] = useState(false);
   const [hasNoResults, setHasNoResults] = useState(false);
   const [isVerifiedToken, setIsVerifiedToken] = useState(false);
   const [isVerificationInfoShowing, setIsVerificationInfoShowing] =
     useState(false);
   const [verifiedLists, setVerifiedLists] = useState([] as string[]);
+  const { assetsLists } = useSelector(settingsSelector);
 
   const ResultsRef = useRef<HTMLDivElement>(null);
   const isAllowListVerificationEnabled =
     isMainnet(networkDetails) || isTestnet(networkDetails);
 
-  const { handleTokenLookup } = useTokenLookup({
-    setAssetRows,
-    setIsSearching,
-    setIsVerifiedToken,
-    setIsVerificationInfoShowing,
-    setVerifiedLists,
-  });
+  const handleTokenLookup = async (contractId: string) => {
+    // clear the UI while we work through the flow
+    setIsSearching(true);
+    setIsVerifiedToken(false);
+    setIsVerificationInfoShowing(false);
+    setVerifiedAssetRows([]);
+    setUnverifiedAssetRows([]);
+
+    const nativeContractDetails = getNativeContractDetails(networkDetails);
+
+    // step around verification for native contract and unverifiable networks
+
+    if (nativeContractDetails.contract === contractId) {
+      // override our rules for verification for XLM
+      setIsVerificationInfoShowing(false);
+      setVerifiedAssetRows([
+        {
+          code: nativeContractDetails.code,
+          issuer: contractId,
+          domain: nativeContractDetails.domain,
+        },
+      ]);
+      setIsSearching(false);
+      return;
+    }
+
+    const tokenLookup = async () => {
+      // lookup contract
+      setIsVerifiedToken(false);
+      let tokenDetailsResponse;
+
+      try {
+        tokenDetailsResponse = await getTokenDetails({
+          contractId,
+          publicKey,
+          networkDetails,
+        });
+      } catch (e) {
+        setVerifiedAssetRows([]);
+        setUnverifiedAssetRows([]);
+      }
+
+      const isSacContract = await isSacContractExecutable(
+        contractId,
+        networkDetails
+      );
+
+      if (!tokenDetailsResponse) {
+        setVerifiedAssetRows([]);
+        setUnverifiedAssetRows([]);
+        return null;
+      }
+
+      const issuer = isSacContract
+        ? tokenDetailsResponse.name.split(":")[1] || ""
+        : contractId; // get the issuer name, if applicable ,
+      const scannedAsset = await scanAsset(
+        `${tokenDetailsResponse.symbol}-${issuer}`,
+        networkDetails
+      );
+      return {
+        code: tokenDetailsResponse.symbol,
+        contract: contractId,
+        issuer,
+        domain: "",
+        name: tokenDetailsResponse.name,
+        isSuspicious: isAssetSuspicious(scannedAsset),
+      } as ManageAssetCurrency;
+    };
+
+    if (isAllowListVerificationEnabled) {
+      // usual binary case of a token being verified or unverified
+      const token = await tokenLookup();
+      if (token) {
+        const { verifiedAssets, unverifiedAssets } =
+          await splitVerifiedAssetCurrency({
+            networkDetails,
+            assets: [token],
+            assetsListsDetails: assetsLists,
+          });
+        setVerifiedAssetRows(verifiedAssets);
+        setUnverifiedAssetRows(unverifiedAssets);
+
+        const assetListsForToken = await getAssetListsForAsset({
+          asset: token,
+          assetsListsDetails: assetsLists,
+          networkDetails,
+        });
+        setVerifiedLists(assetListsForToken);
+        if (assetListsForToken.length) {
+          setIsVerifiedToken(true);
+        }
+      }
+    } else {
+      // Futurenet token lookup
+      const token = await tokenLookup();
+      setUnverifiedAssetRows(token ? [token] : []);
+    }
+    setIsSearching(false);
+    setIsVerificationInfoShowing(isAllowListVerificationEnabled);
+  };
 
   const handleIssuerLookup = async (issuer: string) => {
     let assetDomainToml = {} as AssetDomainToml;
     const server = stellarSdkServer(
       networkDetails.networkUrl,
-      networkDetails.networkPassphrase,
+      networkDetails.networkPassphrase
     );
     const acct = await server.loadAccount(issuer);
     const homeDomain = acct.home_domain || "";
@@ -77,7 +190,8 @@ export const AddAsset = () => {
     }
 
     if (!assetDomainToml.CURRENCIES) {
-      setAssetRows([]);
+      setVerifiedAssetRows([]);
+      setUnverifiedAssetRows([]);
     } else {
       const { networkPassphrase } = networkDetails;
 
@@ -97,19 +211,30 @@ export const AddAsset = () => {
           assetsToScan.push(`${currency.code}-${currency.issuer}`);
         });
         const scannedAssets = await scanAssetBulk(assetsToScan, networkDetails);
-        const scannedAssetRows = assetRecords.map((record: AssetRecord) => ({
-          ...record,
-          isSuspicious: isAssetSuspicious(
-            scannedAssets.results[`${record.code}-${record.issuer}`],
-          ),
-        }));
+        const scannedAssetRows = assetRecords.map(
+          (record: AssetRecord) =>
+            ({
+              ...record,
+              isSuspicious: isAssetSuspicious(
+                scannedAssets.results[`${record.code}-${record.issuer}`]
+              ),
+            } as ManageAssetCurrency)
+        );
 
-        setAssetRows(scannedAssetRows);
+        const { verifiedAssets, unverifiedAssets } =
+          await splitVerifiedAssetCurrency({
+            networkDetails,
+            assets: scannedAssetRows,
+            assetsListsDetails: assetsLists,
+          });
+        setVerifiedAssetRows(verifiedAssets);
+        setUnverifiedAssetRows(unverifiedAssets);
         // no need for verification on classic assets
         setIsVerificationInfoShowing(false);
       } else {
         // otherwise, discount all found results
-        setAssetRows([]);
+        setVerifiedAssetRows([]);
+        setUnverifiedAssetRows([]);
       }
     }
     setIsSearching(false);
@@ -123,22 +248,24 @@ export const AddAsset = () => {
       } else if (StrKey.isValidEd25519PublicKey(contractId)) {
         await handleIssuerLookup(contractId);
       } else {
-        setAssetRows([]);
+        setVerifiedAssetRows([]);
+        setUnverifiedAssetRows([]);
       }
     }, 500),
-    [],
+    []
   );
 
   useEffect(() => {
-    setHasNoResults(!assetRows.length);
-  }, [assetRows]);
+    setHasNoResults(!verifiedAssetRows.length && !unverifiedAssetRows.length);
+  }, [verifiedAssetRows, unverifiedAssetRows]);
 
   useEffect(() => {
     setIsVerificationInfoShowing(isAllowListVerificationEnabled);
   }, [isAllowListVerificationEnabled]);
 
+  const hasAssets = verifiedAssetRows.length || unverifiedAssetRows.length;
+
   return (
-    // eslint-disable-next-line
     <Formik initialValues={initialValues} onSubmit={() => {}}>
       {({ dirty }) => (
         <Form
@@ -157,7 +284,7 @@ export const AddAsset = () => {
                       <SearchInput
                         id="asset"
                         placeholder={t(
-                          "Enter issuer public key or contract ID",
+                          "Enter issuer public key or contract ID"
                         )}
                         {...field}
                         data-testid="search-token-input"
@@ -166,7 +293,7 @@ export const AddAsset = () => {
                   </Field>
                   <SearchCopy>
                     {t(
-                      "Search issuer public key, classic assets, SAC assets, and TI assets",
+                      "Search issuer public key, classic assets, SAC assets, and TI assets"
                     )}
                   </SearchCopy>
                 </div>
@@ -174,14 +301,11 @@ export const AddAsset = () => {
                   isSearching={isSearching}
                   resultsRef={ResultsRef}
                 >
-                  {assetRows.length && isVerificationInfoShowing ? (
-                    <AssetNotifcation isVerified={isVerifiedToken} />
-                  ) : null}
-
-                  {assetRows.length ? (
+                  {hasAssets ? (
                     <ManageAssetRows
                       header={null}
-                      assetRows={assetRows}
+                      verifiedAssetRows={verifiedAssetRows}
+                      unverifiedAssetRows={unverifiedAssetRows}
                       isVerifiedToken={isVerifiedToken}
                       isVerificationInfoShowing={isVerificationInfoShowing}
                       verifiedLists={verifiedLists}
@@ -201,4 +325,3 @@ export const AddAsset = () => {
     </Formik>
   );
 };
-/* eslint-enable @typescript-eslint/no-unsafe-argument */

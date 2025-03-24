@@ -10,6 +10,7 @@ import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applica
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import { AccountCreator } from "../AccountCreator";
 import * as internalApi from "@shared/api/internal";
+import { ROUTES } from "popup/constants/routes";
 
 describe("Account Creator View", () => {
   afterAll(() => {
@@ -19,6 +20,7 @@ describe("Account Creator View", () => {
   it("renders", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -34,7 +36,7 @@ describe("Account Creator View", () => {
         }}
       >
         <AccountCreator />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("account-creator-view"));
@@ -44,6 +46,7 @@ describe("Account Creator View", () => {
   it("rejects mis-matches in passwords", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -59,13 +62,13 @@ describe("Account Creator View", () => {
         }}
       >
         <AccountCreator />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("account-creator-view"));
     const passwordField = screen.getByTestId("account-creator-password-input");
     const confirmPasswordField = screen.getByTestId(
-      "account-creator-confirm-password-input",
+      "account-creator-confirm-password-input"
     );
 
     await waitFor(async () => {
@@ -83,6 +86,7 @@ describe("Account Creator View", () => {
   it("rejects missing TOS confirmation", async () => {
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -98,7 +102,7 @@ describe("Account Creator View", () => {
         }}
       >
         <AccountCreator />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("account-creator-view"));
@@ -121,10 +125,11 @@ describe("Account Creator View", () => {
           publicKey: "",
           allAccounts: [],
           hasPrivateKey: false,
-        }),
+        })
       );
     render(
       <Wrapper
+        routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
@@ -140,13 +145,13 @@ describe("Account Creator View", () => {
         }}
       >
         <AccountCreator />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("account-creator-view"));
     const passwordField = screen.getByTestId("account-creator-password-input");
     const confirmPasswordField = screen.getByTestId(
-      "account-creator-confirm-password-input",
+      "account-creator-confirm-password-input"
     );
     const submitBtn = screen.getByTestId("account-creator-submit");
     const tosInput = screen.getByTestId("account-creator-termsOfUse-input");

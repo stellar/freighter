@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 // In order to allow that rule we need to refactor this to use the correct Horizon types and narrow operation types
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -144,10 +143,10 @@ export const HistoryItem = ({
   const [rowText, setRowText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [IconComponent, setIconComponent] = useState(
-    null as React.ReactElement | null,
+    null as React.ReactElement | null
   );
   const [AmountComponent, setAmountComponent] = useState(
-    null as React.ReactElement | null,
+    null as React.ReactElement | null
   );
 
   const renderIconComponent = () => {
@@ -164,7 +163,7 @@ export const HistoryItem = ({
 
   const renderIconPlaceholder = (
     tokenCode: string = "",
-    size: TextProps["size"] = "sm",
+    size: TextProps["size"] = "sm"
   ) => (
     <div className="HistoryItem__icon__bordered">
       <Text
@@ -189,13 +188,13 @@ export const HistoryItem = ({
         const _isRecipient = !isCreateExternalAccount;
         const paymentDifference = _isRecipient ? "+" : "-";
         const formattedAmount = `${paymentDifference}${formatAmount(
-          new BigNumber(startingBalance).toString(),
+          new BigNumber(startingBalance).toString()
         )} ${destAssetCode}`;
 
         setAmountComponent(
           <Badge variant={_isRecipient ? "success" : "primary"} size="md">
             {formattedAmount}
-          </Badge>,
+          </Badge>
         );
         setIconComponent(
           <div className="HistoryItem__icon__bordered">
@@ -206,14 +205,14 @@ export const HistoryItem = ({
               {/* When you've sent XLM to create external account */}
               {!_isRecipient && <Icon.ArrowUp />}
             </div>
-          </div>,
+          </div>
         );
         setRowText(translations("Create account"));
         setDateText(
           (_dateText) =>
             `${
               _isRecipient ? translations("Received") : translations("Sent")
-            } \u2022 ${date}`,
+            } \u2022 ${date}`
         );
         if (isCreateExternalAccount) {
           setTxDetails((_state) => ({
@@ -222,7 +221,6 @@ export const HistoryItem = ({
             isPayment: true,
             operation: {
               ...operation,
-              // eslint-disable-next-line
               asset_type: "native",
               to: account,
             } as any, // TODO: overloaded op type, native not valid
@@ -259,7 +257,7 @@ export const HistoryItem = ({
             <div className="HistoryItem__icon__small HistoryItem--add-trustline">
               <Icon.CheckCircle />
             </div>
-          </>,
+          </>
         );
         setRowText(translations("Add trustline"));
         setTxDetails((_state) => ({
@@ -269,12 +267,12 @@ export const HistoryItem = ({
         }));
       } else if (isSwap) {
         const formattedAmount = `${formatAmount(
-          new BigNumber(amount).toString(),
+          new BigNumber(amount).toString()
         )} ${destAssetCode}`;
         setAmountComponent(
           <Badge variant="primary" size="md">
             {formattedAmount}
-          </Badge>,
+          </Badge>
         );
         const destIcon =
           destAssetCode === "XLM"
@@ -323,13 +321,13 @@ export const HistoryItem = ({
             <div className="HistoryItem__icon__small HistoryItem--swap">
               <Icon.RefreshCcw03 />
             </div>
-          </>,
+          </>
         );
         setRowText(
           translations(`{{srcAssetCode}} for {{destAssetCode}}`, {
             srcAssetCode,
             destAssetCode,
-          }),
+          })
         );
         setDateText((_dateText) => `${translations("Swapped")} \u2022 ${date}`);
         setTxDetails((_state) => ({
@@ -339,7 +337,7 @@ export const HistoryItem = ({
             {
               srcAssetCode,
               destAssetCode,
-            },
+            }
           ),
           operationText: formattedAmount,
         }));
@@ -348,12 +346,12 @@ export const HistoryItem = ({
         const _isRecipient = to === publicKey && from !== publicKey;
         const paymentDifference = _isRecipient ? "+" : "-";
         const formattedAmount = `${paymentDifference}${formatAmount(
-          new BigNumber(amount).toString(),
+          new BigNumber(amount).toString()
         )} ${destAssetCode}`;
         setAmountComponent(
           <Badge variant={_isRecipient ? "success" : "primary"} size="md">
             {formattedAmount}
-          </Badge>,
+          </Badge>
         );
         const destIcon =
           destAssetCode === "XLM"
@@ -386,14 +384,14 @@ export const HistoryItem = ({
                 <Icon.Send03 />
               </div>
             )}
-          </>,
+          </>
         );
         setRowText(destAssetCode);
         setDateText(
           (_dateText) =>
             `${
               _isRecipient ? translations("Received") : translations("Sent")
-            } \u2022 ${date}`,
+            } \u2022 ${date}`
         );
         setTxDetails((_state) => ({
           ..._state,
@@ -420,7 +418,7 @@ export const HistoryItem = ({
           const tokenKey = getBalanceByKey(
             attrs.contractId,
             balances,
-            networkDetails,
+            networkDetails
           );
 
           const isReceiving = attrs.to === publicKey;
@@ -437,7 +435,7 @@ export const HistoryItem = ({
                   <Icon.Send03 />
                 </div>
               )}
-            </div>,
+            </div>
           );
 
           // Minter does not need to have tokens to mint, and
@@ -470,7 +468,7 @@ export const HistoryItem = ({
 
                 const formattedTokenAmount = formatTokenAmount(
                   new BigNumber(attrs.amount),
-                  _token.decimals,
+                  _token.decimals
                 );
 
                 const formattedAmount = `${
@@ -483,7 +481,7 @@ export const HistoryItem = ({
                     size="md"
                   >
                     {formattedAmount}
-                  </Badge>,
+                  </Badge>
                 );
                 setDateText(
                   (_dateText) =>
@@ -491,7 +489,7 @@ export const HistoryItem = ({
                       isReceiving
                         ? translations("Received")
                         : translations("Minted")
-                    } \u2022 ${date}`,
+                    } \u2022 ${date}`
                 );
                 setRowText(translations(capitalize(attrs.fnName)));
                 setTxDetails((_state) => ({
@@ -517,7 +515,7 @@ export const HistoryItem = ({
               setAmountComponent(
                 <Badge variant={isReceiving ? "success" : "primary"} size="md">
                   {`${isReceiving ? "+" : ""}${translations("Unknown")}`}
-                </Badge>,
+                </Badge>
               );
               setDateText(
                 (_dateText) =>
@@ -525,7 +523,7 @@ export const HistoryItem = ({
                     isReceiving
                       ? translations("Received")
                       : translations("Minted")
-                  } \u2022 ${date}`,
+                  } \u2022 ${date}`
               );
               setTxDetails((_state) => ({
                 ..._state,
@@ -546,7 +544,7 @@ export const HistoryItem = ({
             const { token, decimals } = balances[tokenKey] as TokenBalance;
             const formattedTokenAmount = formatTokenAmount(
               new BigNumber(attrs.amount),
-              decimals,
+              decimals
             );
             const formattedAmount = `${
               isReceiving ? "+" : ""
@@ -554,7 +552,7 @@ export const HistoryItem = ({
             setAmountComponent(
               <Badge variant={isReceiving ? "success" : "primary"} size="md">
                 {formattedAmount}
-              </Badge>,
+              </Badge>
             );
             setDateText(
               (_dateText) =>
@@ -562,7 +560,7 @@ export const HistoryItem = ({
                   isReceiving
                     ? translations("Received")
                     : translations("Minted")
-                } \u2022 ${date}`,
+                } \u2022 ${date}`
             );
             setRowText(translations(capitalize(attrs.fnName)));
             setTxDetails((_state) => ({
@@ -587,7 +585,7 @@ export const HistoryItem = ({
               <div className="HistoryItem__icon__small HistoryItem--sent">
                 <Icon.Send03 />
               </div>
-            </div>,
+            </div>
           );
           setIsLoading(true);
 
@@ -612,7 +610,7 @@ export const HistoryItem = ({
             const code = isNative ? "XLM" : symbol;
             const formattedTokenAmount = formatTokenAmount(
               new BigNumber(attrs.amount),
-              decimals,
+              decimals
             );
             const _isRecipient =
               attrs.to === publicKey && attrs.from !== publicKey;
@@ -621,7 +619,7 @@ export const HistoryItem = ({
             setAmountComponent(
               <Badge variant={_isRecipient ? "success" : "primary"} size="md">
                 {formattedAmount}
-              </Badge>,
+              </Badge>
             );
             setIconComponent(
               <>
@@ -650,14 +648,14 @@ export const HistoryItem = ({
                     <Icon.Send03 />
                   </div>
                 )}
-              </>,
+              </>
             );
             setRowText(code);
             setDateText(
               (_dateText) =>
                 `${
                   _isRecipient ? translations("Received") : translations("Sent")
-                } \u2022 ${date}`,
+                } \u2022 ${date}`
             );
             setTxDetails((_state) => ({
               ..._state,
@@ -768,4 +766,3 @@ export const HistoryItem = ({
     </div>
   );
 };
-/* eslint-enable @typescript-eslint/no-unsafe-argument */

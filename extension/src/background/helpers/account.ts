@@ -15,7 +15,7 @@ import {
   LAST_USED_ACCOUNT,
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
-import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 import { getSorobanRpcUrl } from "@shared/helpers/soroban/sorobanRpcUrl";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
@@ -37,7 +37,6 @@ export const getAccountNameList = async () => {
     ((await localStore.getItem(ACCOUNT_NAME_LIST_ID)) as string) ||
     encodeObject({});
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   return JSON.parse(decodeString(encodedaccountNameList));
 };
 
@@ -170,7 +169,7 @@ export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
   } else {
     try {
       const res = await fetch(
-        `${INDEXER_URL}/rpc-health?network=${networkDetails.network}`,
+        `${INDEXER_URL}/rpc-health?network=${networkDetails.network}`
       );
 
       if (!res.ok) {
@@ -179,7 +178,7 @@ export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
       rpcHealth = await res.json();
     } catch (e) {
       captureException(
-        `Failed to load rpc health for Soroban - ${JSON.stringify(e)}`,
+        `Failed to load rpc health for Soroban - ${JSON.stringify(e)}`
       );
       console.error(e);
     }
@@ -236,7 +235,6 @@ export const subscribeAccount = async (publicKey: string) => {
   try {
     const networkDetails = await getNetworkDetails();
 
-    /* eslint-disable @typescript-eslint/naming-convention */
     const options = {
       method: "POST",
       headers: {
@@ -247,7 +245,6 @@ export const subscribeAccount = async (publicKey: string) => {
         network: networkDetails.network,
       }),
     };
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     const res = await fetch(`${INDEXER_URL}/subscription/account`, options);
     const subsByKeyId = {
@@ -278,7 +275,6 @@ export const subscribeTokenBalance = async ({
   network: string;
 }) => {
   try {
-    /* eslint-disable @typescript-eslint/naming-convention */
     const options = {
       method: "POST",
       headers: {
@@ -290,11 +286,10 @@ export const subscribeTokenBalance = async ({
         network,
       }),
     };
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     const res = await fetch(
       `${INDEXER_URL}/subscription/token-balance`,
-      options,
+      options
     );
 
     if (!res.ok) {
@@ -317,7 +312,6 @@ export const subscribeTokenHistory = async ({
   network: string;
 }) => {
   try {
-    /* eslint-disable @typescript-eslint/naming-convention */
     const options = {
       method: "POST",
       headers: {
@@ -329,7 +323,6 @@ export const subscribeTokenHistory = async ({
         network,
       }),
     };
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     const res = await fetch(`${INDEXER_URL}/subscription/token`, options);
 
@@ -354,7 +347,6 @@ export const verifySorobanRpcUrls = async () => {
 
   const networksList: NetworkDetails[] = await getNetworksList();
 
-  // eslint-disable-next-line
   for (let i = 0; i < networksList.length; i += 1) {
     const networksListDetails = networksList[i];
 

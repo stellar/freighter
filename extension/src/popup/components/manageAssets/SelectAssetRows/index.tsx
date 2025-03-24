@@ -1,6 +1,6 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { AppDispatch } from "popup/App";
 import {
@@ -37,8 +37,8 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
     soroswapTokens,
     transactionData,
   } = useSelector(transactionSubmissionSelector);
-  const dispatch: AppDispatch = useDispatch();
-  const history = useHistory();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const isSoroswapEnabled = useIsSoroswapEnabled();
   const isSwap = useIsSwap();
 
@@ -91,12 +91,12 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
               const otherAsset = getAssetFromCanonical(
                 assetSelect.isSource
                   ? transactionData.destinationAsset
-                  : transactionData.asset,
+                  : transactionData.asset
               );
               isSoroswap =
                 !!soroswapTokens.find(({ contract }) => contract === issuer) ||
                 !!soroswapTokens.find(
-                  ({ contract }) => contract === otherAsset.issuer,
+                  ({ contract }) => contract === otherAsset.issuer
                 );
             }
 
@@ -109,11 +109,11 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
                   if (assetSelect.isSource) {
                     dispatch(saveAsset(canonical));
                     dispatch(saveIsToken(isContract));
-                    history.goBack();
+                    navigate(-1);
                   } else {
                     dispatch(saveDestinationAsset(canonical));
                     dispatch(saveDestinationIcon(icon));
-                    history.goBack();
+                    navigate(-1);
                   }
                   dispatch(saveIsSoroswap(isSoroswap));
                 }}
@@ -143,7 +143,7 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
                 )}
               </div>
             );
-          },
+          }
         )}
       </div>
     </div>

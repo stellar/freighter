@@ -8,11 +8,12 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { View } from "popup/basics/layout/View";
 import { RemoveButton } from "popup/basics/buttons/RemoveButton";
+import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
 
 export const ManageConnectedApps = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
   const { allowList } = useSelector(settingsSelector);
 
@@ -22,7 +23,7 @@ export const ManageConnectedApps = () => {
     dispatch(
       saveAllowList({
         allowList: allowListToSave,
-      }),
+      })
     );
   };
 
@@ -50,7 +51,7 @@ export const ManageConnectedApps = () => {
                           onClick={() => handleRemove(allowedDomain)}
                         />
                       </div>
-                    ),
+                    )
                 )}
               </div>
 

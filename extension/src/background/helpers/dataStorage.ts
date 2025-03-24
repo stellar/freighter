@@ -22,7 +22,7 @@ import {
   FUTURENET_NETWORK_DETAILS,
   SOROBAN_RPC_URLS,
 } from "@shared/constants/stellar";
-import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/token";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 import { dataStorageAccess, browserLocalStorage } from "./dataStorageAccess";
 
 // Session Storage Feature Flag - turn on when storage.session is supported
@@ -31,7 +31,7 @@ export const SESSION_STORAGE_ENABLED = true;
 export const normalizeMigratedData = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const localStorageEntries = Object.entries(
-    await browserLocalStorage.get(null),
+    await browserLocalStorage.get(null)
   );
 
   const applicationState = await localStore.getItem(APPLICATION_ID);
@@ -41,13 +41,12 @@ export const normalizeMigratedData = async () => {
     return;
   }
 
-  // eslint-disable-next-line
   for (let i = 0; i < localStorageEntries.length; i++) {
     const [key, value] = localStorageEntries[i];
     try {
       if (typeof value === "string") {
         const parsedValue = JSON.parse(value);
-        // eslint-disable-next-line no-await-in-loop
+
         await localStore.setItem(key, parsedValue);
       }
     } catch (e) {
@@ -197,7 +196,7 @@ export const migrateSorobanRpcUrlNetwork = async () => {
     // If a user has Futurenet selected by default, they will not have sorobanRpcUrl set
 
     const migratedNetwork: NetworkDetails = await localStore.getItem(
-      NETWORK_ID,
+      NETWORK_ID
     );
     if (
       migratedNetwork &&

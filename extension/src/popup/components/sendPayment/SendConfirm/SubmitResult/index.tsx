@@ -38,6 +38,7 @@ import { formatAmount } from "popup/helpers/formatters";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 
 import "./styles.scss";
+import { useNavigate } from "react-router-dom";
 
 const SwapAssetsIcon = ({
   sourceCanon,
@@ -92,6 +93,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const { t } = useTranslation();
   const isSwap = useIsSwap();
   const dispatch: AppDispatch = useDispatch();
+  const navigate = useNavigate();
 
   const sourceAsset = getAssetFromCanonical(asset);
   const { recommendedFee } = useNetworkFees();
@@ -101,14 +103,14 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
 
   const server = stellarSdkServer(
     networkDetails.networkUrl,
-    networkDetails.networkPassphrase,
+    networkDetails.networkPassphrase
   );
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
   const isSourceAssetSuspicious = isAssetSuspicious(
-    accountBalances.balances?.[asset]?.blockaidData,
+    accountBalances.balances?.[asset]?.blockaidData
   );
   const isDestAssetSuspicious = isAssetSuspicious(
-    accountBalances.balances?.[destinationAsset]?.blockaidData,
+    accountBalances.balances?.[destinationAsset]?.blockaidData
   );
 
   const removeTrustline = async (assetCode: string, assetIssuer: string) => {
@@ -123,7 +125,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
         Operation.changeTrust({
           asset: new Asset(assetCode, assetIssuer),
           ...changeParams,
-        }),
+        })
       )
       .setTimeout(180)
       .build()
@@ -137,7 +139,6 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     };
 
     if (isHardwareWallet) {
-      // eslint-disable-next-line
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       trackRemoveTrustline();
     } else {
@@ -147,13 +148,13 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
 
   const signAndSubmit = async (
     transactionXDR: string,
-    trackChangeTrustline: () => void,
+    trackChangeTrustline: () => void
   ) => {
     const res = await dispatch(
       signFreighterTransaction({
         transactionXDR,
         network: networkDetails.networkPassphrase,
-      }),
+      })
     );
 
     if (signFreighterTransaction.fulfilled.match(res)) {
@@ -162,12 +163,12 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
           publicKey,
           signedXDR: res.payload.signedTransaction,
           networkDetails,
-        }),
+        })
       );
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
         trackChangeTrustline();
-        navigateTo(ROUTES.account);
+        navigateTo(ROUTES.account, navigate);
       }
 
       if (submitFreighterTransaction.rejected.match(submitResp)) {
@@ -252,7 +253,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
           size="md"
           variant="secondary"
           onClick={() => {
-            navigateTo(ROUTES.account);
+            navigateTo(ROUTES.account, navigate);
           }}
         >
           {t("Done")}
@@ -261,7 +262,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       {isTrustlineErrorShowing
         ? createPortal(
             <TrustlineError />,
-            document.querySelector("#modal-root")!,
+            document.querySelector("#modal-root")!
           )
         : null}
     </React.Fragment>
@@ -279,6 +280,7 @@ export const SubmitFail = () => {
   const { error } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     emitMetric(METRIC_NAMES.sendPaymentError, { error });
@@ -308,7 +310,7 @@ export const SubmitFail = () => {
           <Notification variant="error" title={t("Network fees")}>
             <div>
               {t(
-                "Fees can vary depending on the network congestion. Please try using the suggested fee and try again.",
+                "Fees can vary depending on the network congestion. Please try using the suggested fee and try again."
               )}{" "}
               <Link
                 isUnderline
@@ -329,7 +331,7 @@ export const SubmitFail = () => {
           <Notification
             variant="error"
             title={t(
-              "Your account balance is not sufficient for this transaction. Please review the transaction and try again.",
+              "Your account balance is not sufficient for this transaction. Please review the transaction and try again."
             )}
           />
         );
@@ -358,18 +360,18 @@ export const SubmitFail = () => {
         break;
       case RESULT_CODES.op_no_trust:
         errorDetails.title = t(
-          "Destination account does not accept this asset",
+          "Destination account does not accept this asset"
         );
         errorDetails.errorBlock = (
           <Notification
             variant="error"
             title={t(
-              "The destination account does not accept the asset you’re sending",
+              "The destination account does not accept the asset you’re sending"
             )}
           >
             <div>
               {t(
-                "The destination account must opt to accept this asset before receiving it.",
+                "The destination account must opt to accept this asset before receiving it."
               )}{" "}
               <Link
                 isUnderline
@@ -409,7 +411,7 @@ export const SubmitFail = () => {
           <Notification variant="error" title={t("New account")}>
             <div>
               {t(
-                "To create a new account you need to send at least 1 XLM to it.",
+                "To create a new account you need to send at least 1 XLM to it."
               )}{" "}
               <Link
                 isUnderline
@@ -462,7 +464,7 @@ export const SubmitFail = () => {
           variant="tertiary"
           size="md"
           onClick={() => {
-            navigateTo(ROUTES.account);
+            navigateTo(ROUTES.account, navigate);
           }}
         >
           {t("Got it")}

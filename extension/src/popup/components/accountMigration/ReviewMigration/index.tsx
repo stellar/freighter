@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { Badge, Button, Checkbox, Loader } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
 import { getAccountInfo, getMigratableAccounts } from "@shared/api/internal";
@@ -24,6 +25,7 @@ import {
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 
 import { navigateTo } from "popup/helpers/navigate";
+import { AppDispatch } from "popup/App";
 
 import {
   MigrationHeader,
@@ -83,7 +85,7 @@ const isReadyToMigrate = ({
         recommendedFee,
         trustlineBalancesLength,
         isMergeSelected,
-      }) < new BigNumber(xlmBalance).minus(minBalance),
+      }) < new BigNumber(xlmBalance).minus(minBalance)
   );
 
 type AccountListItemRow = AccountToMigrate & { isReadyToMigrate: boolean };
@@ -99,7 +101,7 @@ const AccountListItems = ({
   const { recommendedFee } = useNetworkFees();
   const formik = useFormikContext<FormValues>();
   const [accountListItems, setAccountListItems] = useState(
-    [] as AccountListItemRow[],
+    [] as AccountListItemRow[]
   );
 
   const { isMergeSelected } = formik.values;
@@ -190,7 +192,7 @@ const AccountListItems = ({
                         recommendedFee,
                         trustlineBalancesLength: acct.trustlineBalances.length,
                         isMergeSelected,
-                      }).toString(),
+                      }).toString()
                     )
                     .toString()}
                 />
@@ -231,10 +233,11 @@ const AccountListItems = ({
 
 export const ReviewMigration = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [accountToMigrateList, setAccountToMigrateList] = useState(
-    [] as AccountToMigrate[],
+    [] as AccountToMigrate[]
   );
   const [isSubmitDisabled, setIsSubmitDisabled] = useState(false);
   const { recommendedFee } = useNetworkFees();
@@ -251,11 +254,9 @@ export const ReviewMigration = () => {
         return;
       }
 
-      // eslint-disable-next-line
       for (let i = 0; i < migratableAccounts.length; i++) {
         const publicKey = migratableAccounts[i].publicKey;
 
-        // eslint-disable-next-line no-await-in-loop
         const { account, isSigner } = await getAccountInfo({
           publicKey,
           networkDetails,
@@ -279,14 +280,14 @@ export const ReviewMigration = () => {
 
         if (account) {
           const minBalance = new BigNumber(
-            (2 + account.subentry_count) * BASE_RESERVE,
+            (2 + account.subentry_count) * BASE_RESERVE
           ).toString();
 
           const xlmBalance =
             account.balances[account.balances.length - 1].balance;
           const dataEntries = Object.keys(account.data_attr).length;
           const trustlineBalances = account.balances.filter(
-            ({ asset_type: assetType }) => assetType !== "native",
+            ({ asset_type: assetType }) => assetType !== "native"
           );
 
           acctItem = {
@@ -330,11 +331,11 @@ export const ReviewMigration = () => {
           trustlineBalances,
           keyIdIndex,
         });
-      },
+      }
     );
     dispatch(saveBalancesToMigrate(migratableBalances));
     dispatch(saveIsMergeSelected(values.isMergeSelected));
-    navigateTo(ROUTES.accountMigrationMnemonicPhrase);
+    navigateTo(ROUTES.accountMigrationMnemonicPhrase, navigate);
   };
 
   const initialValues: FormValues = {
@@ -378,7 +379,7 @@ export const ReviewMigration = () => {
                             text={`${t("Optional")}: `}
                           />
                           {t(
-                            "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts.)",
+                            "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts.)"
                           )}
                         </div>
                       }

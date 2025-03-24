@@ -9,9 +9,11 @@ import { View } from "popup/basics/layout/View";
 import LogoWelcome from "popup/assets/logo-freighter-welcome.svg";
 
 import "./styles.scss";
+import { useNavigate } from "react-router-dom";
 
 export const Welcome = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   return (
     <React.Fragment>
@@ -45,14 +47,14 @@ export const Welcome = () => {
             <Button
               size="lg"
               variant="secondary"
-              onClick={() => navigateTo(ROUTES.accountCreator)}
+              onClick={() => navigateTo(ROUTES.accountCreator, navigate)}
             >
               {t("Create new wallet")}
             </Button>
             <Button
               size="lg"
               variant="tertiary"
-              onClick={() => navigateTo(ROUTES.recoverAccount)}
+              onClick={() => navigateTo(ROUTES.recoverAccount, navigate)}
             >
               {t("Import wallet")}
             </Button>

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Notification, Button, Toggle, Loader } from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
 
@@ -17,6 +17,7 @@ import { View } from "popup/basics/layout/View";
 import IconExperimental from "popup/assets/icon-settings-experimental.svg";
 
 import "./styles.scss";
+import { AppDispatch } from "popup/App";
 
 interface AdvancedSettingFeatureParams {
   title: string;
@@ -61,8 +62,8 @@ const AdvancedSettingFeature = ({
 
 export const AdvancedSettings = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-  const history = useHistory();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const [isUnderstood, setIsUnderstood] = useState(false);
 
   const {
@@ -91,13 +92,12 @@ export const AdvancedSettings = () => {
       isNonSSLEnabledValue,
     } = formValue;
 
-    // eslint-disable-next-line
     await dispatch(
       saveExperimentalFeatures({
         isExperimentalModeEnabled: isExperimentalModeEnabledValue,
         isHashSigningEnabled: isHashSigningEnabledValue,
         isNonSSLEnabled: isNonSSLEnabledValue,
-      }),
+      })
     );
   };
 
@@ -120,7 +120,7 @@ export const AdvancedSettings = () => {
               isToggled={initialValues.isExperimentalModeEnabledValue}
               toggleId="isExperimentalModeEnabledValue"
               description={t(
-                "Use experimental API’s and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing.",
+                "Use experimental API’s and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing."
               )}
             />
             <AdvancedSettingFeature
@@ -131,7 +131,7 @@ export const AdvancedSettings = () => {
               description={
                 <>
                   {t(
-                    "This can be used to sign arbitrary transaction hashes without having to decode them first. Ledger will not display the transaction details in the device display prior to signing so make sure you only interact with applications you know and trust.",
+                    "This can be used to sign arbitrary transaction hashes without having to decode them first. Ledger will not display the transaction details in the device display prior to signing so make sure you only interact with applications you know and trust."
                   )}{" "}
                   <a
                     href="https://www.ledger.com/academy/enable-blind-signing-why-when-and-how-to-stay-safe/"
@@ -149,7 +149,7 @@ export const AdvancedSettings = () => {
               isToggled={initialValues.isNonSSLEnabledValue}
               toggleId="isNonSSLEnabledValue"
               description={t(
-                "Allow Freighter to connect to domains that do not have an SSL certificate on Mainnet. SSL certificates provide an encrypted network connection and also provide proof of ownership of the domain. Use caution when connecting to domains without an SSL certificate.",
+                "Allow Freighter to connect to domains that do not have an SSL certificate on Mainnet. SSL certificates provide an encrypted network connection and also provide proof of ownership of the domain. Use caution when connecting to domains without an SSL certificate."
               )}
             />
           </Form>
@@ -164,7 +164,7 @@ export const AdvancedSettings = () => {
           <Notification
             variant="warning"
             title={t(
-              "Advanced settings are not recommended for new or unexperienced users. Enabling these may impact the security of your wallets and result in loss of funds. Only utilize these features if you can understand and manage the potential security risks.",
+              "Advanced settings are not recommended for new or unexperienced users. Enabling these may impact the security of your wallets and result in loss of funds. Only utilize these features if you can understand and manage the potential security risks."
             )}
           />
           <div className="AdvancedSettings__understood-buttons">
@@ -180,7 +180,7 @@ export const AdvancedSettings = () => {
               size="md"
               variant="tertiary"
               isFullWidth
-              onClick={() => history.goBack()}
+              onClick={() => navigate(-1)}
             >
               {t("Go back")}
             </Button>

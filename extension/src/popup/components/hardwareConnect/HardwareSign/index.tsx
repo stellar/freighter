@@ -38,7 +38,7 @@ export const HardwareSign = ({
   walletType: ConfigurableWalletType;
   isSignSorobanAuthorization?: boolean;
 }) => {
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
   const [isDetecting, setIsDetecting] = useState(false);
   const { networkDetails, isHashSigningEnabled } =
@@ -89,7 +89,7 @@ export const HardwareSign = ({
           walletType,
           isHashSigningEnabled,
           isSignSorobanAuthorization,
-        }),
+        })
       );
       if (signWithHardwareWallet.fulfilled.match(res)) {
         if (shouldSubmit && !isSignSorobanAuthorization) {
@@ -98,7 +98,7 @@ export const HardwareSign = ({
               publicKey,
               signedXDR: res.payload as string,
               networkDetails,
-            }),
+            })
           );
           if (
             submitFreighterTransaction.fulfilled.match(submitResp) &&
@@ -115,7 +115,7 @@ export const HardwareSign = ({
       } else {
         setHardwareConnectSuccessful(false);
         setConnectError(
-          parseWalletError[walletType](res.payload?.errorMessage || ""),
+          parseWalletError[walletType](res.payload?.errorMessage || "")
         );
       }
       setHardwareWalletIsSigning(false);

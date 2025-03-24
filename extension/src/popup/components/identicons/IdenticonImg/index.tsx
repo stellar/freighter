@@ -1,5 +1,5 @@
 import React from "react";
-import createStellarIdenticon from "stellar-identicon-js";
+import createStellarIdenticon from "helpers/stellarIdenticon";
 
 import "./styles.scss";
 

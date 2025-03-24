@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Store } from "redux";
 import semver from "semver";
 import * as StellarSdk from "stellar-sdk";
@@ -81,7 +80,7 @@ const WINDOW_SETTINGS: WindowParams = {
 export const freighterApiMessageListener = (
   request: Request,
   sender: browser.Runtime.MessageSender,
-  sessionStore: Store,
+  sessionStore: Store
 ) => {
   const requestAccess = async () => {
     const publicKey = publicKeySelector(sessionStore.getState());
@@ -170,7 +169,7 @@ export const freighterApiMessageListener = (
 
       const popup = browser.windows.create({
         url: chrome.runtime.getURL(
-          `/index.html#/add-token?${encodedTokenInfo}`,
+          `/index.html#/add-token?${encodedTokenInfo}`
         ),
         ...WINDOW_SETTINGS,
       });
@@ -184,7 +183,7 @@ export const freighterApiMessageListener = (
           browser.windows.onRemoved.addListener(() =>
             resolve({
               apiError: FreighterApiDeclinedError,
-            }),
+            })
           );
         }
         const response = (success: boolean) => {
@@ -242,12 +241,12 @@ export const freighterApiMessageListener = (
 
       const transaction = Sdk.TransactionBuilder.fromXDR(
         transactionXdr,
-        networkPassphrase || Sdk.Networks[network as keyof typeof Sdk.Networks],
+        networkPassphrase || Sdk.Networks[network as keyof typeof Sdk.Networks]
       );
 
       const directoryLookupJson = await cachedFetch(
         STELLAR_EXPERT_MEMO_REQUIRED_ACCOUNTS_URL,
-        CACHED_MEMO_REQUIRED_ACCOUNTS_ID,
+        CACHED_MEMO_REQUIRED_ACCOUNTS_ID
       );
       const accountData = directoryLookupJson?._embedded?.records || [];
 
@@ -279,7 +278,7 @@ export const freighterApiMessageListener = (
                 /* if the user has opted out of validation, remove applicable tags */
                 if (!isValidatingMemo) {
                   collectedTags = collectedTags.filter(
-                    (tag) => tag !== TRANSACTION_WARNING.memoRequired,
+                    (tag) => tag !== TRANSACTION_WARNING.memoRequired
                   );
                 }
                 flaggedKeys[operation.destination] = {
@@ -287,14 +286,14 @@ export const freighterApiMessageListener = (
                   tags: collectedTags,
                 };
               }
-            },
+            }
           );
         });
       }
 
       const server = stellarSdkServer(
         networkUrl,
-        networkPassphrase || transaction.networkPassphrase,
+        networkPassphrase || transaction.networkPassphrase
       );
 
       try {
@@ -323,7 +322,7 @@ export const freighterApiMessageListener = (
 
       const popup = browser.windows.create({
         url: chrome.runtime.getURL(
-          `/index.html#/sign-transaction?${encodedBlob}`,
+          `/index.html#/sign-transaction?${encodedBlob}`
         ),
         ...WINDOW_SETTINGS,
       });
@@ -341,7 +340,7 @@ export const freighterApiMessageListener = (
               // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
               apiError: FreighterApiDeclinedError,
               error: FreighterApiDeclinedError.message,
-            }),
+            })
           );
         }
         const response = (signedTransaction: string, signerAddress: string) => {
@@ -414,7 +413,7 @@ export const freighterApiMessageListener = (
               // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
               apiError: FreighterApiDeclinedError,
               error: FreighterApiDeclinedError.message,
-            }),
+            })
           );
         }
 
@@ -480,7 +479,7 @@ export const freighterApiMessageListener = (
       const encodedAuthEntry = encodeObject(authEntry);
       const popup = browser.windows.create({
         url: chrome.runtime.getURL(
-          `/index.html#/sign-auth-entry?${encodedAuthEntry}`,
+          `/index.html#/sign-auth-entry?${encodedAuthEntry}`
         ),
         ...WINDOW_SETTINGS,
       });
@@ -498,7 +497,7 @@ export const freighterApiMessageListener = (
               // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
               apiError: FreighterApiDeclinedError,
               error: FreighterApiDeclinedError.message,
-            }),
+            })
           );
         }
         const response = (signedAuthEntry: string) => {
@@ -650,5 +649,3 @@ export const freighterApiMessageListener = (
 
   return messageResponder[request.type]();
 };
-
-/* eslint-enable @typescript-eslint/no-unsafe-argument */

@@ -36,7 +36,7 @@ interface ChooseAssetProps {
 export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   const { t } = useTranslation();
   const { assetIcons, assetSelect, soroswapTokens } = useSelector(
-    transactionSubmissionSelector,
+    transactionSubmissionSelector
   );
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -57,10 +57,9 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
 
       // TODO: cache home domain when getting asset icon
       // https://github.com/stellar/freighter/issues/410
-      // eslint-disable-next-line @typescript-eslint/prefer-for-of
+
       for (let i = 0; i < sortedBalances.length; i += 1) {
         if (sortedBalances[i].liquidityPoolId) {
-          // eslint-disable-next-line
           continue;
         }
 
@@ -77,7 +76,6 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
 
         // If we are in the swap flow and the asset has decimals (is a token), we skip it if Soroswap is not enabled
         if ("decimals" in sortedBalances[i] && isSwap && !isSoroswapEnabled) {
-          // eslint-disable-next-line
           continue;
         }
 
@@ -86,11 +84,10 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
 
           if (issuer.key) {
             try {
-              // eslint-disable-next-line no-await-in-loop
               domain = await getAssetDomain(
                 issuer.key,
                 networkDetails.networkUrl,
-                networkDetails.networkPassphrase,
+                networkDetails.networkPassphrase
               );
             } catch (e) {
               console.error(e);
@@ -119,7 +116,6 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
 
       if (isSoroswapEnabled && isSwap && !assetSelect.isSource) {
         soroswapTokens.forEach((token) => {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           const canonical = getCanonicalFromAsset(token.code, token.contract);
           const nativeContractDetails =
             getNativeContractDetails(networkDetails);
@@ -187,7 +183,11 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
                 ref={ManageAssetRowsWrapperRef}
               >
                 {isManagingAssets ? (
-                  <ManageAssetRows assetRows={assetRows} />
+                  <ManageAssetRows
+                    shouldSplitAssetsByVerificationStatus={false}
+                    verifiedAssetRows={assetRows}
+                    unverifiedAssetRows={[]}
+                  />
                 ) : (
                   <SelectAssetRows assetRows={assetRows} />
                 )}

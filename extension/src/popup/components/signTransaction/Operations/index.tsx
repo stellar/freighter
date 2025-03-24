@@ -61,7 +61,7 @@ const DestinationWarning = ({
 }) => {
   const flaggedTags = flaggedKeys[destination]?.tags || [];
   const isDestMemoRequired = flaggedTags.includes(
-    TRANSACTION_WARNING.memoRequired,
+    TRANSACTION_WARNING.memoRequired
   );
 
   return (
@@ -85,13 +85,12 @@ export const Operations = ({
   const { t } = useTranslation();
 
   const AuthorizationMapToDisplay: { [index: string]: string } = {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     "1": "Authorization Required",
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     "2": "Authorization Revocable",
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     "4": "Authorization Immutable",
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+
     "8": "Authorization Clawback Enabled",
   };
 
@@ -118,14 +117,14 @@ export const Operations = ({
         if (sendAsset) {
           await scanAsset(
             `${sendAsset.code}-${sendAsset.issuer}`,
-            networkDetails,
+            networkDetails
           );
         }
 
         if (destAsset) {
           await scanAsset(
             `${destAsset.code}-${destAsset.issuer}`,
-            networkDetails,
+            networkDetails
           );
         }
       };

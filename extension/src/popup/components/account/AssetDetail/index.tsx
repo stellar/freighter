@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { IconButton, Icon, Button } from "@stellar/design-system";
@@ -67,17 +68,18 @@ export const AssetDetail = ({
   setSelectedAsset,
   subentryCount,
 }: AssetDetailProps) => {
-  const dispatch: AppDispatch = useDispatch();
+  const dispatch: AppDispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const isNative = selectedAsset === "native";
 
   const canonical = getAssetFromCanonical(selectedAsset);
   const isSorobanAsset = canonical.issuer && isSorobanIssuer(canonical.issuer);
 
   const { accountBalances: balances } = useSelector(
-    transactionSubmissionSelector,
+    transactionSubmissionSelector
   );
   const isSuspicious = isAssetSuspicious(
-    balances.balances?.[selectedAsset]?.blockaidData,
+    balances.balances?.[selectedAsset]?.blockaidData
   );
 
   const balance = getRawBalance(accountBalances, selectedAsset)!;
@@ -87,7 +89,7 @@ export const AssetDetail = ({
     balance && "decimals" in balance
       ? formatTokenAmount(
           new BigNumber(balance.total || "0"),
-          Number(balance.decimals),
+          Number(balance.decimals)
         )
       : (balance && new BigNumber(balance?.total).toString()) || "0";
 
@@ -110,7 +112,7 @@ export const AssetDetail = ({
     setIsDetailViewShowing,
   };
   const [detailViewProps, setDetailViewProps] = useState(
-    defaultDetailViewProps,
+    defaultDetailViewProps
   );
 
   const { assetDomain, error: assetError } = useAssetDomain({
@@ -199,7 +201,7 @@ export const AssetDetail = ({
                       } else {
                         dispatch(saveIsToken(false));
                       }
-                      navigateTo(ROUTES.sendPayment);
+                      navigateTo(ROUTES.sendPayment, navigate);
                     }}
                   >
                     {t("SEND")}
@@ -210,7 +212,7 @@ export const AssetDetail = ({
                       variant="tertiary"
                       onClick={() => {
                         dispatch(saveAsset(selectedAsset));
-                        navigateTo(ROUTES.swap);
+                        navigateTo(ROUTES.swap, navigate);
                       }}
                     >
                       {t("SWAP")}
@@ -223,7 +225,7 @@ export const AssetDetail = ({
                   variant="tertiary"
                   onClick={() => {
                     dispatch(saveDestinationAsset(selectedAsset));
-                    navigateTo(ROUTES.swap);
+                    navigateTo(ROUTES.swap, navigate);
                   }}
                 >
                   {t("SWAP")}
@@ -298,7 +300,7 @@ export const AssetDetail = ({
                     {formatAmount(
                       new BigNumber(balanceAvailable)
                         .minus(new BigNumber(balance?.total))
-                        .toString(),
+                        .toString()
                     )}{" "}
                     {canonical.code}
                   </div>
@@ -311,7 +313,7 @@ export const AssetDetail = ({
             </div>
             <div className="AssetDetail__info-modal__footnote">
               {t(
-                "* All Stellar accounts must maintain a minimum balance of lumens.",
+                "* All Stellar accounts must maintain a minimum balance of lumens."
               )}{" "}
               <a
                 href="https://developers.stellar.org/docs/glossary/minimum-balance/"

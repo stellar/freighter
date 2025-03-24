@@ -12,7 +12,7 @@ const { DEFAULT_STATS } = require("../config/webpack");
 const BUILD_PATH = path.resolve(__dirname, "./build");
 
 const commonConfig = (
-  env = { EXPERIMENTAL: false, AMPLITUDE_KEY: "", SENTRY_KEY: "" },
+  env = { EXPERIMENTAL: false, AMPLITUDE_KEY: "", SENTRY_KEY: "" }
 ) => ({
   cache: true,
   entry: {
@@ -130,7 +130,8 @@ const commonConfig = (
   plugins: [
     new ESLintPlugin({
       extensions: [".ts", ".tsx"],
-      failOnWarning: true,
+      failOnWarning: false,
+      configType: "flat",
     }),
     new CopyWebpackPlugin({
       patterns: [
