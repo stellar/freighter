@@ -45,6 +45,10 @@ test("View failed transaction", async ({ page, extensionId }) => {
   await expect(page.getByTestId("history-item-amount-component")).toHaveText(
     "N/A",
   );
+  await expectPageToHaveScreenshot({
+    page,
+    screenshot: "failed-transaction-history-item.png",
+  });
   await page.getByText("Transaction failed").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText(
     "Transaction failed",

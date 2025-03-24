@@ -714,7 +714,7 @@ export const HistoryItem = ({
           headerTitle: translations("Transaction failed"),
         }));
         setAmountComponent(
-          <Badge variant="primary" size="md">
+          <Badge variant="tertiary" size="md">
             N/A
           </Badge>,
         );

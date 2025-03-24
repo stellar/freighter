@@ -118,6 +118,9 @@
   }
 
   &--failed {
-    color: var(--sds-clr-red-09);
+    color: var(--sds-clr-gray-01);
+    svg {
+      fill: var(--sds-clr-red-09);
+    }
   }
 }
