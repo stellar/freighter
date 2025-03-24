@@ -13,9 +13,11 @@ import "./styles.scss";
 export const NotFundedMessage = ({
   canUseFriendbot,
   publicKey,
+  reloadBalances,
 }: {
   canUseFriendbot: boolean;
   publicKey: string;
+  reloadBalances: () => Promise<unknown>;
 }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -23,7 +25,7 @@ export const NotFundedMessage = ({
   const handleFundAccount = async () => {
     // eslint-disable-next-line
     await dispatch(fundAccount(publicKey));
-    // TODO: Do we need to refetch account data here?
+    await reloadBalances();
   };
 
   return (

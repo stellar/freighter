@@ -210,6 +210,7 @@ export const Account = () => {
             <NotFundedMessage
               canUseFriendbot={!!networkDetails.friendbotUrl}
               publicKey={publicKey}
+              reloadBalances={fetchData}
             />
           </View.Footer>
         )}
