@@ -26,6 +26,7 @@ import {
   signFreighterTransaction,
   submitFreighterTransaction,
   transactionSubmissionSelector,
+  resetSubmission,
 } from "popup/ducks/transactionSubmission";
 import { FedOrGAddress } from "popup/basics/sendPayment/FedOrGAddress";
 import { View } from "popup/basics/layout/View";
@@ -292,6 +293,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
           size="md"
           variant="secondary"
           onClick={() => {
+            dispatch(resetSubmission());
             navigateTo(ROUTES.account);
           }}
         >

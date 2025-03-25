@@ -197,8 +197,6 @@ export const Settings = ({
     settingsData.state === RequestState.IDLE ||
     settingsData.state === RequestState.LOADING;
 
-  console.log(settingsData);
-
   return (
     <React.Fragment>
       <SubviewHeader
