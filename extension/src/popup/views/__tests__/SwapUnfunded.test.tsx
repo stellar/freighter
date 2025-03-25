@@ -93,8 +93,19 @@ jest.mock("stellar-sdk", () => {
 
 describe("Swap unfunded account", () => {
   jest
-    .spyOn(ApiInternal, "getAccountIndexerBalances")
+    .spyOn(ApiInternal, "getAccountBalances")
     .mockImplementation(() => Promise.resolve(swapMockBalances));
+
+  jest
+    .spyOn(ApiInternal, "getAssetIcons")
+    .mockImplementation(() => Promise.resolve({}));
+
+  jest.spyOn(ApiInternal, "getHiddenAssets").mockImplementation(() =>
+    Promise.resolve({
+      hiddenAssets: {},
+      error: "",
+    }),
+  );
 
   beforeEach(() => {
     jest.spyOn(global, "fetch").mockImplementation(() =>

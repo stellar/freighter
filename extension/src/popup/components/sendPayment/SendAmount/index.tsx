@@ -255,7 +255,8 @@ export const SendAmount = ({
         code: getAssetFromCanonical(values.asset).code,
         issuer: getAssetFromCanonical(values.asset).issuer,
         domain: sendAmountData.data!.domains.find(
-          (domain) => domain.code === values.asset,
+          (domain) =>
+            getCanonicalFromAsset(domain.code!, domain.issuer) === values.asset,
         )!.domain,
         image: sendAmountData.data!.icons[values.asset]!,
         blockaidData:
@@ -267,7 +268,9 @@ export const SendAmount = ({
         code: getAssetFromCanonical(values.destinationAsset).code,
         issuer: getAssetFromCanonical(values.destinationAsset).issuer,
         domain: sendAmountData.data!.domains.find(
-          (domain) => domain.code === values.destinationAsset,
+          (domain) =>
+            getCanonicalFromAsset(domain.code!, domain.issuer) ===
+            values.destinationAsset,
         )!.domain,
         image: sendAmountData.data!.icons[values.destinationAsset]!,
         blockaidData:
@@ -673,6 +676,7 @@ export const SendAmount = ({
                           icon=""
                           icons={sendAmountData.data?.icons || {}}
                           isSuspicious={
+                            sourceBalance &&
                             "blockaidData" in sourceBalance &&
                             isAssetSuspicious(sourceBalance.blockaidData)
                           }

@@ -129,7 +129,7 @@ export const Account = () => {
                 data-testid="account-options-dropdown"
               >
                 <AccountOptionsDropdown
-                  isFunded={!!accountData.data!.balances.isFunded}
+                  isFunded={!!accountData.data?.balances?.isFunded}
                 />
               </div>
             </div>
@@ -154,7 +154,7 @@ export const Account = () => {
               </Notification>
             </div>
           )}
-          {accountData.data!.balances.error?.horizon && (
+          {accountData.data?.balances?.error?.horizon && (
             <div className="AccountView__fetch-fail">
               <Notification
                 title={t("Horizon is temporarily experiencing issues")}
@@ -189,7 +189,7 @@ export const Account = () => {
             </div>
           )}
 
-          {accountData.data!.balances.isFunded && !hasError && (
+          {accountData.data?.balances?.isFunded && !hasError && (
             <div
               className="AccountView__assets-wrapper"
               data-testid="account-assets"
@@ -203,9 +203,9 @@ export const Account = () => {
           )}
         </div>
       </View.Content>
-      {!accountData.data!.balances.isFunded &&
+      {!accountData.data?.balances?.isFunded &&
         !hasError &&
-        !accountData.data.balances.error?.horizon && (
+        !accountData.data?.balances?.error?.horizon && (
           <View.Footer>
             <NotFundedMessage
               canUseFriendbot={!!networkDetails.friendbotUrl}
