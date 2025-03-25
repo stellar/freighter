@@ -44,7 +44,7 @@ export const migrateTrustlines = async ({
   }
 
   const trustlineRecipientAccount = await server.loadAccount(
-    newKeyPair.publicKey,
+    newKeyPair.publicKey
   );
   const txFee = new BigNumber(fee).times(trustlineBalances.length).toString();
 
@@ -74,7 +74,7 @@ export const migrateTrustlines = async ({
       changeTrustTx.addOperation(
         Operation.changeTrust({
           asset,
-        }),
+        })
       );
 
       if (new BigNumber(bal.balance).gt("0")) {
@@ -83,7 +83,7 @@ export const migrateTrustlines = async ({
             destination: newKeyPair.publicKey,
             asset,
             amount: bal.balance,
-          }),
+          })
         );
       }
 
@@ -93,7 +93,7 @@ export const migrateTrustlines = async ({
           Operation.changeTrust({
             asset,
             limit: "0",
-          }),
+          })
         );
       }
     }

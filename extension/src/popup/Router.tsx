@@ -277,7 +277,7 @@ const Layout = () => {
       (isSwap && location.pathname !== ROUTES.unlockAccount));
 
   const isAppLayout = NO_APP_LAYOUT_ROUTES.every(
-    (route) => route !== location.pathname,
+    (route) => route !== location.pathname
   );
 
   const isLoadingSettings =

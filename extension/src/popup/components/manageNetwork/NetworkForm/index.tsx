@@ -66,12 +66,12 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const { search } = useLocation();
 
   const networkIndex = Number(
-    new URLSearchParams(search).get(NETWORK_INDEX_SEARCH_PARAM),
+    new URLSearchParams(search).get(NETWORK_INDEX_SEARCH_PARAM)
   );
   const networkDetailsToEdit = networksList[networkIndex];
   const isCurrentNetworkActive = isActiveNetwork(
     networkDetailsToEdit,
-    networkDetails,
+    networkDetails
   );
   const isEditingDefaultNetworks =
     isEditing && (networkIndex === 0 || networkIndex === 1);
@@ -104,7 +104,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     const res = await dispatch(
       removeCustomNetwork({
         networkName: networkDetailsToEdit.networkName,
-      }),
+      })
     );
 
     if (removeCustomNetwork.fulfilled.match(res)) {
@@ -148,7 +148,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       editCustomNetwork({
         networkDetails: getCustomNetworkDetailsFromFormValues(values),
         networkIndex,
-      }),
+      })
     );
     if (editCustomNetwork.fulfilled.match(res)) {
       navigateTo(ROUTES.account, navigate);
@@ -166,7 +166,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
     const addCustomNetworkRes = await dispatch(
       addCustomNetwork({
         networkDetails: getCustomNetworkDetailsFromFormValues(values),
-      }),
+      })
     );
 
     const addCustomNetworkFulfilled =
@@ -179,7 +179,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
       const changeNetworkRes = await dispatch(
         changeNetwork({
           networkName: values.networkName,
-        }),
+        })
       );
       changeNetworkFulfilled = changeNetwork.fulfilled.match(changeNetworkRes);
     }
@@ -292,7 +292,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                       </div>
                       <div className="NetworkForm__modal__body">
                         {t(
-                          "Please select a different network before removing it.",
+                          "Please select a different network before removing it."
                         )}
                       </div>
                     </div>
@@ -309,7 +309,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                       </div>
                       <div className="NetworkForm__modal__body">
                         {t(
-                          "Are you sure you want to remove this network? You will have to re-add it if you want to use it again.",
+                          "Are you sure you want to remove this network? You will have to re-add it if you want to use it again."
                         )}
                       </div>
                     </div>
@@ -326,7 +326,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                       </div>
                       <div className="NetworkForm__modal__body">
                         {t(
-                          "Please check if the network information is correct and try again. Alternatively, this network may not be operational.",
+                          "Please check if the network information is correct and try again. Alternatively, this network may not be operational."
                         )}{" "}
                       </div>
                     </div>

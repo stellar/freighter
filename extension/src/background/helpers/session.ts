@@ -47,7 +47,7 @@ export const encryptHashString = ({ str, keyObject }: HashString) => {
       iv: keyObject.iv,
     },
     keyObject.key,
-    encodedStr,
+    encodedStr
   );
 };
 
@@ -66,7 +66,7 @@ export const decryptHashString = async ({
       iv: keyObject.iv,
     },
     keyObject.key,
-    hash,
+    hash
   );
 
   const textDecoder = new TextDecoder();
@@ -89,7 +89,7 @@ export const deriveKeyFromString = async (str: string) => {
     keyMaterial,
     HASH_KEY_ENCRYPTION_PARAMS,
     false,
-    ["deriveBits"],
+    ["deriveBits"]
   );
 
   const saltBuffer = encoder.encode(salt);
@@ -101,7 +101,7 @@ export const deriveKeyFromString = async (str: string) => {
   const derivation = await crypto.subtle.deriveBits(
     params,
     importedKey,
-    keyLength * 8,
+    keyLength * 8
   );
 
   const derivedKey = derivation.slice(0, keylen);
@@ -112,7 +112,7 @@ export const deriveKeyFromString = async (str: string) => {
     derivedKey,
     { name: TEMPORARY_STORE_ENCRYPTION_NAME },
     true,
-    ["encrypt", "decrypt"],
+    ["encrypt", "decrypt"]
   );
 
   return {
@@ -146,7 +146,7 @@ export const storeActiveHashKey = async ({
         // JSON Web Key is able to be stringified without encoding
         key: JSON.stringify(exportedKey),
       },
-    }),
+    })
   );
 };
 
@@ -171,7 +171,7 @@ export const getActiveHashKeyCryptoKey = async ({
         exportedHashKey,
         TEMPORARY_STORE_ENCRYPTION_NAME,
         true,
-        ["encrypt", "decrypt"],
+        ["encrypt", "decrypt"]
       );
 
       return {

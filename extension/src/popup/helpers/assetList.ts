@@ -57,7 +57,7 @@ export const splitVerifiedAssetCurrency = async ({
       notInVerifiedList.push(item);
       return [inVerifiedList, notInVerifiedList];
     },
-    [[], []],
+    [[], []]
   );
 
   return {
@@ -93,8 +93,8 @@ export const getAssetListsForAsset = async ({
     .filter(([_, items]) =>
       items.some(
         ({ issuer, contract }) =>
-          asset.issuer === issuer || asset.contract === contract,
-      ),
+          asset.issuer === issuer || asset.contract === contract
+      )
     )
     .map(([name]) => name);
 };

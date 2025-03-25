@@ -82,13 +82,13 @@ export const SendType = () => {
     // path payment flag is a non empty string in redux destinationAsset
     dispatch(
       saveDestinationAsset(
-        values.paymentType === PAYMENT_TYPES.PATH_PAYMENT ? "native" : "",
-      ),
+        values.paymentType === PAYMENT_TYPES.PATH_PAYMENT ? "native" : ""
+      )
     );
     emitMetric(
       values.paymentType === PAYMENT_TYPES.PATH_PAYMENT
         ? METRIC_NAMES.sendPaymentTypePathPayment
-        : METRIC_NAMES.sendPaymentTypePayment,
+        : METRIC_NAMES.sendPaymentTypePayment
     );
     navigateTo(ROUTES.sendPaymentAmount, navigate);
   };
@@ -121,7 +121,7 @@ export const SendType = () => {
                   tooltipDetails={
                     <span>
                       {t(
-                        "The destination account receives the same asset and amount sent",
+                        "The destination account receives the same asset and amount sent"
                       )}
                     </span>
                   }
@@ -135,7 +135,7 @@ export const SendType = () => {
                   tooltipDetails={
                     <span>
                       {t(
-                        "The destination account can receive a different asset, the received amount is defined by the available conversion rates",
+                        "The destination account can receive a different asset, the received amount is defined by the available conversion rates"
                       )}{" "}
                       <Link
                         variant="secondary"

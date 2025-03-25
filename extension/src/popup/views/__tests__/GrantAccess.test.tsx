@@ -58,7 +58,7 @@ describe("Grant Access view", () => {
         }}
       >
         <GrantAccess />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("grant-access-view"));
@@ -98,7 +98,7 @@ describe("Grant Access view", () => {
         }}
       >
         <GrantAccess />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("grant-access-view"));
@@ -138,7 +138,7 @@ describe("Grant Access view", () => {
         }}
       >
         <GrantAccess />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("grant-access-view"));
@@ -178,7 +178,7 @@ describe("Grant Access view", () => {
         }}
       >
         <GrantAccess />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("grant-access-view"));

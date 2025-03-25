@@ -39,7 +39,7 @@ describe("Slippage component", () => {
         }}
       >
         <SendSettingsSlippage previous={ROUTES.account} />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("slippage-form"));

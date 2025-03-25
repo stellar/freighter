@@ -59,7 +59,7 @@ export const AddToken = () => {
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const [assetIcon, setAssetIcon] = useState<string | undefined>(undefined);
   const [assetTomlName, setAssetTomlName] = useState<string | undefined>(
-    undefined,
+    undefined
   );
   const [isSearching, setIsSearching] = useState(true);
   const [isVerifiedToken, setIsVerifiedToken] = useState(false);
@@ -126,8 +126,8 @@ export const AddToken = () => {
     if (!isContractId(contractId)) {
       setErrorMessage(
         t(
-          "This is not a valid contract id. Please try again with a different value.",
-        ),
+          "This is not a valid contract id. Please try again with a different value."
+        )
       );
       return;
     }
@@ -144,7 +144,7 @@ export const AddToken = () => {
     const getBlockaidData = async () => {
       const scannedAsset = await scanAsset(
         `${assetCode}-${assetIssuer}`,
-        networkDetails,
+        networkDetails
       );
 
       // "Benign" | "Warning" | "Malicious" | "Spam"
@@ -195,7 +195,7 @@ export const AddToken = () => {
       try {
         const toml = await StellarToml.Resolver.resolve(assetDomain);
         const currency = toml?.CURRENCIES?.find(
-          ({ code, issuer }) => code === assetCode && issuer === assetIssuer,
+          ({ code, issuer }) => code === assetCode && issuer === assetIssuer
         );
         setAssetTomlName(currency?.name || "");
       } catch (e) {

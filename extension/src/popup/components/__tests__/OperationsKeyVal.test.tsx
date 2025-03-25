@@ -40,10 +40,10 @@ describe("Operations KeyVal", () => {
         new xdr.CreateContractArgs({
           contractIdPreimage:
             xdr.ContractIdPreimage.contractIdPreimageFromAsset(
-              xdr.Asset.assetTypeCreditAlphanum4(assetType),
+              xdr.Asset.assetTypeCreditAlphanum4(assetType)
             ),
           executable: xdr.ContractExecutable.contractExecutableStellarAsset(),
-        }),
+        })
       );
 
       const op = {
@@ -55,25 +55,25 @@ describe("Operations KeyVal", () => {
 
       const invocationTypeLabel = screen.getByText("Invocation Type");
       const invocationTypeValue = invocationTypeLabel.parentNode?.querySelector(
-        "[data-testid='OperationKeyVal__value']",
+        "[data-testid='OperationKeyVal__value']"
       );
       expect(invocationTypeValue).toHaveTextContent("Create Contract");
 
       const assetCodeLabel = screen.getByText("Asset Code");
       const assetCodeValue = assetCodeLabel.parentNode?.querySelector(
-        "[data-testid='OperationKeyVal__value']",
+        "[data-testid='OperationKeyVal__value']"
       );
       expect(assetCodeValue).toHaveTextContent(assetCode);
 
       const issuerLabel = screen.getByText("Issuer");
       const issuerValue = issuerLabel.parentNode?.querySelector(
-        "[data-testid='OperationKeyVal__value']",
+        "[data-testid='OperationKeyVal__value']"
       );
       expect(issuerValue).toHaveTextContent("GBTY…JZOFCopied");
 
       const execType = screen.getByText("Executable Type");
       const execTypeValue = execType.parentNode?.querySelector(
-        "[data-testid='OperationKeyVal__value']",
+        "[data-testid='OperationKeyVal__value']"
       );
       expect(execTypeValue).toHaveTextContent("contractExecutableStellarAsset");
     });
@@ -88,11 +88,11 @@ describe("Operations KeyVal", () => {
         new xdr.CreateContractArgsV2({
           contractIdPreimage:
             xdr.ContractIdPreimage.contractIdPreimageFromAsset(
-              xdr.Asset.assetTypeCreditAlphanum4(assetType),
+              xdr.Asset.assetTypeCreditAlphanum4(assetType)
             ),
           executable: xdr.ContractExecutable.contractExecutableStellarAsset(),
           constructorArgs: [new Address(TEST_PUBLIC_KEY).toScVal()],
-        }),
+        })
       );
 
       const op = {
@@ -119,31 +119,31 @@ describe("Operations KeyVal", () => {
           }}
         >
           <KeyValueInvokeHostFn op={op} />
-        </Wrapper>,
+        </Wrapper>
       );
       await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
 
       const invocationTypeLabel = screen.getByText("Invocation Type");
       const invocationTypeValue = invocationTypeLabel.parentNode?.querySelector(
-        "[data-testid='OperationKeyVal__value']",
+        "[data-testid='OperationKeyVal__value']"
       );
       expect(invocationTypeValue).toHaveTextContent("Create Contract");
 
       const assetCodeLabel = screen.getByText("Asset Code");
       const assetCodeValue = assetCodeLabel.parentNode?.querySelector(
-        "[data-testid='OperationKeyVal__value']",
+        "[data-testid='OperationKeyVal__value']"
       );
       expect(assetCodeValue).toHaveTextContent(assetCode);
 
       const issuerLabel = screen.getByText("Issuer");
       const issuerValue = issuerLabel.parentNode?.querySelector(
-        "[data-testid='OperationKeyVal__value']",
+        "[data-testid='OperationKeyVal__value']"
       );
       expect(issuerValue).toHaveTextContent("GBTY…JZOFCopied");
 
       const execType = screen.getByText("Executable Type");
       const execTypeValue = execType.parentNode?.querySelector(
-        "[data-testid='OperationKeyVal__value']",
+        "[data-testid='OperationKeyVal__value']"
       );
       expect(execTypeValue).toHaveTextContent("contractExecutableStellarAsset");
 

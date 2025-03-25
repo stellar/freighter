@@ -143,7 +143,7 @@ export const ViewPublicKey = () => {
               variant="tertiary"
               onClick={() => {
                 openTab(
-                  `https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/account/${publicKey}`,
+                  `https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/account/${publicKey}`
                 );
                 emitMetric(METRIC_NAMES.viewPublicKeyClickedStellarExpert);
               }}

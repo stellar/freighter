@@ -20,6 +20,7 @@ import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import ImageMissingIcon from "popup/assets/image-missing.svg?react";
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
+import { AnimatedNumber } from "popup/components/AnimatedNumber";
 
 import "./styles.scss";
 

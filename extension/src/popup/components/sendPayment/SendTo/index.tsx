@@ -48,7 +48,7 @@ const baseReserve = new BigNumber(1);
 export const shouldAccountDoesntExistWarning = (
   isFunded: boolean,
   assetID: string,
-  amount: string,
+  amount: string
 ) =>
   !isFunded &&
   (new BigNumber(amount).lt(baseReserve) ||
@@ -108,12 +108,12 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
       isMainnet: isMainnet(networkDetails),
       showHidden: true,
       includeIcons: false,
-    },
+    }
   );
 
   const handleContinue = (
     validatedDestination: string,
-    validatedFedAdress?: string,
+    validatedFedAdress?: string
   ) => {
     dispatch(saveDestination(validatedDestination));
     dispatch(saveDestinationAsset(""));
@@ -126,7 +126,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
     onSubmit: () => {
       handleContinue(
         sendDataState.data!.validatedAddress,
-        sendDataState.data!.fedAddress,
+        sendDataState.data!.fedAddress
       );
     },
     validateOnChange: false,
@@ -247,7 +247,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
                         />
                         <span>
                           {truncatedPublicKey(
-                            sendDataState.data!.validatedAddress,
+                            sendDataState.data!.validatedAddress
                           )}
                         </span>
                       </div>

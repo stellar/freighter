@@ -34,7 +34,7 @@ export const DisplayBackupPhrase = () => {
     emitMetric(
       isPhraseUnlocked
         ? METRIC_NAMES.viewDisplayBackupPhrase
-        : METRIC_NAMES.viewUnlockBackupPhrase,
+        : METRIC_NAMES.viewUnlockBackupPhrase
     );
   }, [isPhraseUnlocked]);
 
@@ -74,7 +74,7 @@ export const DisplayBackupPhrase = () => {
             <div>
               <p>
                 {t(
-                  "Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
+                  "Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place."
                 )}
               </p>
               <MnemonicDisplay mnemonicPhrase={mnemonicPhrase} isPopupView />

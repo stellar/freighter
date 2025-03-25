@@ -6,6 +6,7 @@ import {
   xdr,
 } from "stellar-sdk";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { captureException } from "@sentry/browser";
 
 import {
   signFreighterTransaction as internalSignFreighterTransaction,
@@ -23,6 +24,7 @@ import {
   MemoRequiredAccount,
   BalanceToMigrate,
   SoroswapToken,
+  ApiTokenPrices,
 } from "@shared/api/types";
 
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
@@ -473,6 +475,7 @@ interface InitialState {
     isSource: boolean;
   };
   memoRequiredAccounts: MemoRequiredAccount[];
+  tokenPrices: ApiTokenPrices;
 }
 
 export const initialState: InitialState = {
@@ -512,6 +515,7 @@ export const initialState: InitialState = {
     isSource: true,
   },
   memoRequiredAccounts: [],
+  tokenPrices: {},
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -689,6 +693,13 @@ const transactionSubmissionSlice = createSlice({
     });
     builder.addCase(getMemoRequiredAccounts.fulfilled, (state, action) => {
       state.memoRequiredAccounts = action.payload;
+    });
+    builder.addCase(getTokenPrices.rejected, (state, action) => {
+      state.error = action.payload;
+      state.tokenPrices = initialState.tokenPrices;
+    });
+    builder.addCase(getTokenPrices.fulfilled, (state, action) => {
+      state.tokenPrices = action.payload;
     });
   },
 });

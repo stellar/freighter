@@ -17,14 +17,14 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await page.getByText("Add manually").click({ force: true });
   await page.getByTestId("search-token-input").fill(TEST_TOKEN_ADDRESS);
   await expect(page.getByTestId("not-asset-on-list")).toHaveText(
-    "Not on your lists",
+    "Not on your lists"
   );
   await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E");
   await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");
   await page.getByTestId("ManageAssetRowButton").click({ force: true });
 
   await expect(page.getByTestId("token-warning-notification")).toHaveText(
-    "This asset is not part of an asset list. Please, double-check the asset you’re interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
+    "This asset is not part of an asset list. Please, double-check the asset you’re interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
   );
   await expectPageToHaveScreenshot({
     page,
@@ -51,7 +51,7 @@ test.skip("Adding Soroban verified token", async ({ page, extensionId }) => {
 
   await expect(page.getByTestId("token-warning-notification")).toHaveText(
     `This asset is part of the asset list(s): "StellarExpert Top 50". Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.
-    `,
+    `
   );
   await expectPageToHaveScreenshot({
     page,

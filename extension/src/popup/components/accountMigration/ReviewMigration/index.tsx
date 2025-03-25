@@ -85,7 +85,7 @@ const isReadyToMigrate = ({
         recommendedFee,
         trustlineBalancesLength,
         isMergeSelected,
-      }) < new BigNumber(xlmBalance).minus(minBalance),
+      }) < new BigNumber(xlmBalance).minus(minBalance)
   );
 
 type AccountListItemRow = AccountToMigrate & { isReadyToMigrate: boolean };
@@ -101,7 +101,7 @@ const AccountListItems = ({
   const { recommendedFee } = useNetworkFees();
   const formik = useFormikContext<FormValues>();
   const [accountListItems, setAccountListItems] = useState(
-    [] as AccountListItemRow[],
+    [] as AccountListItemRow[]
   );
 
   const { isMergeSelected } = formik.values;
@@ -192,7 +192,7 @@ const AccountListItems = ({
                         recommendedFee,
                         trustlineBalancesLength: acct.trustlineBalances.length,
                         isMergeSelected,
-                      }).toString(),
+                      }).toString()
                     )
                     .toString()}
                 />
@@ -237,7 +237,7 @@ export const ReviewMigration = () => {
   const navigate = useNavigate();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [accountToMigrateList, setAccountToMigrateList] = useState(
-    [] as AccountToMigrate[],
+    [] as AccountToMigrate[]
   );
   const [isSubmitDisabled, setIsSubmitDisabled] = useState(false);
   const { recommendedFee } = useNetworkFees();
@@ -280,14 +280,14 @@ export const ReviewMigration = () => {
 
         if (account) {
           const minBalance = new BigNumber(
-            (2 + account.subentry_count) * BASE_RESERVE,
+            (2 + account.subentry_count) * BASE_RESERVE
           ).toString();
 
           const xlmBalance =
             account.balances[account.balances.length - 1].balance;
           const dataEntries = Object.keys(account.data_attr).length;
           const trustlineBalances = account.balances.filter(
-            ({ asset_type: assetType }) => assetType !== "native",
+            ({ asset_type: assetType }) => assetType !== "native"
           );
 
           acctItem = {
@@ -331,7 +331,7 @@ export const ReviewMigration = () => {
           trustlineBalances,
           keyIdIndex,
         });
-      },
+      }
     );
     dispatch(saveBalancesToMigrate(migratableBalances));
     dispatch(saveIsMergeSelected(values.isMergeSelected));
@@ -379,7 +379,7 @@ export const ReviewMigration = () => {
                             text={`${t("Optional")}: `}
                           />
                           {t(
-                            "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts.)",
+                            "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts.)"
                           )}
                         </div>
                       }

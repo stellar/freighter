@@ -85,7 +85,7 @@ export const ImportAccount = () => {
                   title={t("Read before importing your key")}
                 >
                   {t(
-                    "Freighter can’t recover your imported secret key using your recovery phrase. Storing your secret key is your responsibility. Freighter will never ask for your secret key outside of the extension.",
+                    "Freighter can’t recover your imported secret key using your recovery phrase. Storing your secret key is your responsibility. Freighter will never ask for your secret key outside of the extension."
                   )}
                 </Notification>
               </div>
@@ -124,7 +124,7 @@ export const ImportAccount = () => {
                       autoComplete="off"
                       id="authorization-input"
                       label={t(
-                        "I’m aware Freighter can’t recover the imported  secret key",
+                        "I’m aware Freighter can’t recover the imported  secret key"
                       )}
                       {...field}
                     />

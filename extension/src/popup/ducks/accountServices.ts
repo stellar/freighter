@@ -74,7 +74,7 @@ export const fundAccount = createAsyncThunk(
       const message = e instanceof Error ? e.message : JSON.stringify(e);
       console.error("Failed when funding an account: ", message);
     }
-  },
+  }
 );
 
 export const addAccount = createAsyncThunk<
@@ -130,7 +130,7 @@ export const importAccount = createAsyncThunk<
       });
     }
     return res;
-  },
+  }
 );
 
 export const importHardwareWallet = createAsyncThunk<
@@ -146,7 +146,7 @@ export const importHardwareWallet = createAsyncThunk<
   "auth/importHardwareWallet",
   async (
     { publicKey, hardwareWalletType, bipPath },
-    { getState, rejectWithValue },
+    { getState, rejectWithValue }
   ) => {
     let res = {
       publicKey: "",
@@ -169,7 +169,7 @@ export const importHardwareWallet = createAsyncThunk<
       return rejectWithValue({ errorMessage: message });
     }
     return res;
-  },
+  }
 );
 
 export const makeAccountActive = createAsyncThunk<
@@ -192,7 +192,7 @@ export const makeAccountActive = createAsyncThunk<
     } catch (e) {
       return rejectWithValue({ errorMessage: e as string });
     }
-  },
+  }
 );
 
 export const updateAccountName = createAsyncThunk<
@@ -293,7 +293,7 @@ export const confirmMnemonicPhrase = createAsyncThunk<
     }
 
     return res;
-  },
+  }
 );
 
 export const confirmMigratedMnemonicPhrase = createAsyncThunk<
@@ -328,7 +328,7 @@ export const confirmMigratedMnemonicPhrase = createAsyncThunk<
     }
 
     return res;
-  },
+  }
 );
 
 export const confirmPassword = createAsyncThunk<
@@ -369,7 +369,7 @@ export const confirmPassword = createAsyncThunk<
 
 const storeAccountMetricsData = (publicKey: string, allAccounts: Account[]) => {
   const metricsData: MetricsData = JSON.parse(
-    localStorage.getItem(METRICS_DATA) || "{}",
+    localStorage.getItem(METRICS_DATA) || "{}"
   );
 
   let accountType = AccountType.FREIGHTER;
@@ -414,7 +414,7 @@ export const loadAccount = createAsyncThunk(
     }
 
     return res;
-  },
+  }
 );
 
 export const signOut = createAsyncThunk<
@@ -474,7 +474,7 @@ export const addTokenId = createAsyncThunk<
       });
     }
     return res;
-  },
+  }
 );
 
 export const migrateAccounts = createAsyncThunk<
@@ -517,7 +517,7 @@ export const migrateAccounts = createAsyncThunk<
     }
 
     return res;
-  },
+  }
 );
 
 export const getIsAccountMismatch = createAsyncThunk<
@@ -925,31 +925,31 @@ const { reducer } = authSlice;
 const authSelector = (state: { auth: InitialState }) => state.auth;
 export const hasPrivateKeySelector = createSelector(
   authSelector,
-  (auth: InitialState) => auth.hasPrivateKey,
+  (auth: InitialState) => auth.hasPrivateKey
 );
 export const allAccountsSelector = createSelector(
   authSelector,
-  (auth: InitialState) => auth.allAccounts,
+  (auth: InitialState) => auth.allAccounts
 );
 export const applicationStateSelector = createSelector(
   authSelector,
-  (auth: InitialState) => auth.applicationState,
+  (auth: InitialState) => auth.applicationState
 );
 export const authErrorSelector = createSelector(
   authSelector,
-  (auth: InitialState) => auth.error,
+  (auth: InitialState) => auth.error
 );
 export const publicKeySelector = createSelector(
   authSelector,
-  (auth: InitialState) => auth.publicKey || "",
+  (auth: InitialState) => auth.publicKey || ""
 );
 export const bipPathSelector = createSelector(
   authSelector,
-  (auth: InitialState) => auth.bipPath,
+  (auth: InitialState) => auth.bipPath
 );
 export const migratedAccountsSelector = createSelector(
   authSelector,
-  (auth: InitialState) => auth.migratedAccounts,
+  (auth: InitialState) => auth.migratedAccounts
 );
 
 export const accountNameSelector = createSelector(
@@ -957,11 +957,11 @@ export const accountNameSelector = createSelector(
   allAccountsSelector,
   (publicKey, allAccounts) => {
     const { name } = allAccounts.find(
-      ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
+      ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey
     ) || { publicKey: "", name: "" };
 
     return name;
-  },
+  }
 );
 
 export const hardwareWalletTypeSelector = createSelector(
@@ -969,20 +969,20 @@ export const hardwareWalletTypeSelector = createSelector(
   allAccountsSelector,
   (publicKey, allAccounts) => {
     const account = allAccounts.find(
-      ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
+      ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey
     ) || { hardwareWalletType: WalletType.NONE };
     return account.hardwareWalletType;
-  },
+  }
 );
 
 export const accountStatusSelector = createSelector(
   authSelector,
-  (auth: InitialState) => auth.accountStatus,
+  (auth: InitialState) => auth.accountStatus
 );
 
 export const isAccountMismatchSelector = createSelector(
   authSelector,
-  (auth: InitialState) => auth.isAccountMismatch,
+  (auth: InitialState) => auth.isAccountMismatch
 );
 
 export const { clearApiError, setConnectingWalletType, resetAccountStatus } = authSlice.actions;
