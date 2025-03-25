@@ -1,4 +1,5 @@
 import { useReducer } from "react";
+import { Networks } from "stellar-sdk";
 
 import {
   getAccountBalances,
@@ -16,6 +17,9 @@ import { initialState, reducer } from "helpers/request";
 import { storeBalanceMetricData } from "helpers/metrics";
 import { filterHiddenBalances, sortBalances } from "popup/helpers/account";
 import { AssetType } from "@shared/api/types/account-balance";
+import { isContractId } from "popup/helpers/soroban";
+import { getCanonicalFromAsset } from "helpers/stellar";
+import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 
 export const isGetBalancesError = (
   response: AccountBalances | Error,
@@ -26,7 +30,11 @@ export const isGetBalancesError = (
   return false;
 };
 
-export const findAddressBalance = (balances: AssetType[], address: string) => {
+export const findAddressBalance = (
+  balances: AssetType[],
+  address: string,
+  network: Networks,
+) => {
   if (address === "native") {
     return balances.find(
       (balance) =>
@@ -35,6 +43,24 @@ export const findAddressBalance = (balances: AssetType[], address: string) => {
         balance.token.type === "native",
     );
   }
+  if (isContractId(address)) {
+    // first check for contract ID match, then check for SAC match
+    return balances.find((balance) => {
+      if ("contractId" in balance) {
+        return address === balance.contractId;
+      }
+      if ("token" in balance && "issuer" in balance.token) {
+        const canonical = getCanonicalFromAsset(
+          balance.token.code,
+          balance.token.issuer.key,
+        );
+        const sacAddress = getAssetSacAddress(canonical, network);
+        return sacAddress === address;
+      }
+      return false;
+    });
+  }
+
   return balances.find((balance) => {
     const balanceIssuer =
       "token" in balance && "issuer" in balance.token

@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { Asset, BASE_FEE, SorobanRpc } from "stellar-sdk";
+import { Asset, BASE_FEE, Networks, SorobanRpc } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 import { useDispatch } from "react-redux";
 
@@ -207,7 +207,11 @@ function useGetSettingsData(
       const { address, amount, memo, params, transactionFee } =
         tokenPaymentParameters;
 
-      const assetBalance = findAddressBalance(balancesResult.balances, address);
+      const assetBalance = findAddressBalance(
+        balancesResult.balances,
+        address,
+        networkDetails.networkPassphrase as Networks,
+      );
       if (!assetBalance) {
         throw new Error("asset balance not found");
       }

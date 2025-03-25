@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StellarToml } from "stellar-sdk";
+import { Networks, StellarToml } from "stellar-sdk";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
 import { ActionStatus, BlockAidScanAssetResult } from "@shared/api/types";
@@ -19,6 +19,7 @@ import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { ROUTES } from "popup/constants/routes";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   resetSubmission,
   transactionSubmissionSelector,
@@ -90,6 +91,7 @@ export const ManageAssetRows = ({
   const dispatch: AppDispatch = useDispatch();
   const { accountBalanceStatus } = useSelector(tokensSelector);
   const walletType = useSelector(hardwareWalletTypeSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { recommendedFee } = useNetworkFees();
 
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] =
@@ -193,6 +195,7 @@ export const ManageAssetRows = ({
               const isTrustlineActive = findAddressBalance(
                 balances.balances,
                 issuer,
+                networkDetails.networkPassphrase as Networks,
               );
               const isActionPending =
                 submitStatus === ActionStatus.PENDING ||

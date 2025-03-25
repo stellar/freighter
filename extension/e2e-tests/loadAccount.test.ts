@@ -1,5 +1,5 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
-import { loginToTestAccount, loginAndFund } from "./helpers/login";
+import { loginToTestAccount } from "./helpers/login";
 
 test("Load accounts on standalone network", async ({ page, extensionId }) => {
   test.slow();
@@ -40,5 +40,5 @@ test("Switches account without password prompt", async ({
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Manage Assets").click({ force: true });
 
-  await expect(page.getByText("Manage assets")).toBeVisible();
+  await expect(page.getByText("Your assets")).toBeVisible();
 });

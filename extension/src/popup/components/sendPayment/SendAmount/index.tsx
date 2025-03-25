@@ -661,6 +661,7 @@ export const SendAmount = ({
                         issuerKey={parsedSourceAsset.issuer}
                         icons={sendAmountData.data?.icons || {}}
                         isSuspicious={
+                          sourceBalance &&
                           "blockaidData" in sourceBalance &&
                           isAssetSuspicious(sourceBalance.blockaidData)
                         }

@@ -31,6 +31,7 @@ import { findAssetBalance } from "popup/helpers/balance";
 import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
 import { getAccountBalances, getAssetIcons } from "@shared/api/internal";
 import { sortBalances } from "popup/helpers/account";
+import { isContractId } from "popup/helpers/soroban";
 
 export interface TxDetailsData {
   destAssetIconUrl: string;
@@ -213,20 +214,22 @@ function useGetTxDetailsData(
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const balancesResult = await fetchBalances();
-      const destBalancesResult = destination
-        ? await getAccountBalances(
-            destination,
-            networkDetails,
-            balanceOptions.isMainnet,
-          )
-        : ({} as AccountBalancesInterface);
+      const destBalancesResult =
+        destination && !isContractId(destination)
+          ? await getAccountBalances(
+              destination,
+              networkDetails,
+              balanceOptions.isMainnet,
+            )
+          : ({} as AccountBalancesInterface);
 
-      const destIcons = destination
-        ? await getAssetIcons({
-            balances: destBalancesResult.balances,
-            networkDetails,
-          })
-        : {};
+      const destIcons =
+        destination && !isContractId(destination)
+          ? await getAssetIcons({
+              balances: destBalancesResult.balances,
+              networkDetails,
+            })
+          : {};
 
       if (isGetBalancesError(balancesResult)) {
         throw new Error(balancesResult.message);
