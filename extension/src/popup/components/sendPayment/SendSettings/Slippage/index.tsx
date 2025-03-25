@@ -58,7 +58,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
         initialValues={{ presetSlippage, customSlippage }}
         onSubmit={(values) => {
           dispatch(
-            saveAllowedSlippage(values.customSlippage || values.presetSlippage),
+            saveAllowedSlippage(values.customSlippage || values.presetSlippage)
           );
           navigateTo(previous, navigate);
         }}

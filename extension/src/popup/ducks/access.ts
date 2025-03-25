@@ -15,7 +15,7 @@ export const grantAccess = createAsyncThunk("grantAccess", internalGrantAccess);
 
 export const rejectAccess = createAsyncThunk(
   "rejectAccess",
-  internalRejectAccess,
+  internalRejectAccess
 );
 
 export const signTransaction = createAsyncThunk(
@@ -23,7 +23,7 @@ export const signTransaction = createAsyncThunk(
   (_, { getState }) => {
     const activePublicKey = publicKeySelector(getState() as AppState);
     return internalSignTransaction({ activePublicKey });
-  },
+  }
 );
 
 export const signBlob = createAsyncThunk("signBlob", (_, { getState }) => {
@@ -42,18 +42,18 @@ export const addToken = createAsyncThunk("addToken", (_, { getState }) => {
 
 export const rejectToken = createAsyncThunk(
   "rejectToken",
-  internalRejectAccess,
+  internalRejectAccess
 );
 
 // Basically an alias for metrics purposes
 export const rejectTransaction = createAsyncThunk(
   "rejectTransaction",
-  internalRejectAccess,
+  internalRejectAccess
 );
 
 // Basically an alias for metrics purposes
 export const rejectBlob = createAsyncThunk("rejectBlob", internalRejectAccess);
 export const rejectAuthEntry = createAsyncThunk(
   "rejectAuthEntry",
-  internalRejectAccess,
+  internalRejectAccess
 );

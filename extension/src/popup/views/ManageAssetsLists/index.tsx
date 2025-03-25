@@ -32,7 +32,7 @@ export interface SortedAssetsListsData {
 export const ManageAssetsLists = () => {
   const [selectedNetwork, setSelectedNetwork] = useState("" as AssetsListKey);
   const [assetsListsData, setAssetsListsData] = useState(
-    [] as AssetsListsData[],
+    [] as AssetsListsData[]
   );
   const [sortedAssetsListsData, setSortedAssetsListsData] = useState({
     enabled: [],
@@ -96,7 +96,7 @@ export const ManageAssetsLists = () => {
     setSelectedNetwork(
       networkDetails.network === NETWORKS.TESTNET
         ? NETWORKS.TESTNET
-        : NETWORKS.PUBLIC,
+        : NETWORKS.PUBLIC
     );
   }, [networkDetails]);
 

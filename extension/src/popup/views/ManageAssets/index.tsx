@@ -15,7 +15,7 @@ import { getPathFromRoute } from "popup/helpers/route";
 
 export const ManageAssets = () => {
   const { accountBalances, destinationBalances, assetSelect } = useSelector(
-    transactionSubmissionSelector,
+    transactionSubmissionSelector
   );
 
   let balances;

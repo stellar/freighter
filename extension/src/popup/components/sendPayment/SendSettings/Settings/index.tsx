@@ -94,10 +94,10 @@ export const Settings = ({
 
     const assetFromCanonical = new Asset(
       getAssetFromCanonical(asset).code,
-      getAssetFromCanonical(asset).issuer,
+      getAssetFromCanonical(asset).issuer
     );
     const contractAddress = assetFromCanonical.contractId(
-      networkDetails.networkPassphrase,
+      networkDetails.networkPassphrase
     );
 
     return contractAddress;
@@ -110,7 +110,7 @@ export const Settings = ({
       }
       // use default transaction fee if unset
       const baseFee = new BigNumber(
-        transactionFee || recommendedFee || stroopToXlm(BASE_FEE),
+        transactionFee || recommendedFee || stroopToXlm(BASE_FEE)
       );
 
       if (isSoroswap) {
@@ -125,22 +125,22 @@ export const Settings = ({
             memo,
             transactionFee,
             path,
-          }),
+          })
         );
 
         if (simulateSwap.fulfilled.match(simulatedTx)) {
           dispatch(saveSimulation(simulatedTx.payload));
           const minResourceFee = formatTokenAmount(
             new BigNumber(
-              simulatedTx.payload.simulationTransaction.minResourceFee,
+              simulatedTx.payload.simulationTransaction.minResourceFee
             ),
-            CLASSIC_ASSET_DECIMALS,
+            CLASSIC_ASSET_DECIMALS
           );
           if (!transactionFee) {
             dispatch(
               saveTransactionFee(
-                baseFee.plus(new BigNumber(minResourceFee)).toString(),
-              ),
+                baseFee.plus(new BigNumber(minResourceFee)).toString()
+              )
             );
           }
         }
@@ -181,7 +181,7 @@ export const Settings = ({
             params,
             networkDetails,
             transactionFee,
-          }),
+          })
         );
 
         if (
@@ -190,16 +190,16 @@ export const Settings = ({
         ) {
           const minResourceFee = formatTokenAmount(
             new BigNumber(
-              simResponse.payload.simulationTransaction.minResourceFee,
+              simResponse.payload.simulationTransaction.minResourceFee
             ),
-            CLASSIC_ASSET_DECIMALS,
+            CLASSIC_ASSET_DECIMALS
           );
           dispatch(saveSimulation(simResponse.payload));
           dispatch(saveIsToken(true));
           dispatch(
             saveTransactionFee(
-              baseFee.plus(new BigNumber(minResourceFee)).toString(),
-            ),
+              baseFee.plus(new BigNumber(minResourceFee)).toString()
+            )
           );
         }
         setLoadingSimulation(false);
@@ -241,19 +241,19 @@ export const Settings = ({
   const handleTxFeeNav = () =>
     navigateTo(
       isSwap ? ROUTES.swapSettingsFee : ROUTES.sendPaymentSettingsFee,
-      navigate,
+      navigate
     );
 
   const handleSlippageNav = () =>
     navigateTo(
       isSwap ? ROUTES.swapSettingsSlippage : ROUTES.sendPaymentSettingsSlippage,
-      navigate,
+      navigate
     );
 
   const handleTimeoutNav = () =>
     navigateTo(
       isSwap ? ROUTES.swapSettingsTimeout : ROUTES.sendPaymentSettingsTimeout,
-      navigate,
+      navigate
     );
 
   // dont show memo for regular sends to Muxed, or for swaps
@@ -334,7 +334,7 @@ export const Settings = ({
                         infoText={
                           <span>
                             {t(
-                              "Number of seconds that can pass before this transaction can no longer be accepted by the network",
+                              "Number of seconds that can pass before this transaction can no longer be accepted by the network"
                             )}{" "}
                           </span>
                         }
@@ -376,7 +376,7 @@ export const Settings = ({
                           infoText={
                             <span>
                               {t(
-                                "Allowed downward variation in the destination amount",
+                                "Allowed downward variation in the destination amount"
                               )}{" "}
                               <Link
                                 variant="secondary"

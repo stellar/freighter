@@ -37,7 +37,7 @@ export const SendSettingsTxTimeout = ({ previous }: { previous: ROUTES }) => {
             infoText={
               <span>
                 {t(
-                  "Number of seconds that can pass before this transaction can no longer be accepted by the network",
+                  "Number of seconds that can pass before this transaction can no longer be accepted by the network"
                 )}{" "}
               </span>
             }
@@ -57,7 +57,7 @@ export const SendSettingsTxTimeout = ({ previous }: { previous: ROUTES }) => {
         validationSchema={YupObject().shape({
           transactionTimeout: YupNumber().min(
             0,
-            `${t("must be greater than")} 0`,
+            `${t("must be greater than")} 0`
           ),
         })}
       >

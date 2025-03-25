@@ -53,10 +53,10 @@ export const AddAsset = () => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [verifiedAssetRows, setVerifiedAssetRows] = useState(
-    [] as ManageAssetCurrency[],
+    [] as ManageAssetCurrency[]
   );
   const [unverifiedAssetRows, setUnverifiedAssetRows] = useState(
-    [] as ManageAssetCurrency[],
+    [] as ManageAssetCurrency[]
   );
   const [isSearching, setIsSearching] = useState(false);
   const [hasNoResults, setHasNoResults] = useState(false);
@@ -114,7 +114,7 @@ export const AddAsset = () => {
 
       const isSacContract = await isSacContractExecutable(
         contractId,
-        networkDetails,
+        networkDetails
       );
 
       if (!tokenDetailsResponse) {
@@ -128,7 +128,7 @@ export const AddAsset = () => {
         : contractId; // get the issuer name, if applicable ,
       const scannedAsset = await scanAsset(
         `${tokenDetailsResponse.symbol}-${issuer}`,
-        networkDetails,
+        networkDetails
       );
       return {
         code: tokenDetailsResponse.symbol,
@@ -176,7 +176,7 @@ export const AddAsset = () => {
     let assetDomainToml = {} as AssetDomainToml;
     const server = stellarSdkServer(
       networkDetails.networkUrl,
-      networkDetails.networkPassphrase,
+      networkDetails.networkPassphrase
     );
     const acct = await server.loadAccount(issuer);
     const homeDomain = acct.home_domain || "";
@@ -216,9 +216,9 @@ export const AddAsset = () => {
             ({
               ...record,
               isSuspicious: isAssetSuspicious(
-                scannedAssets.results[`${record.code}-${record.issuer}`],
+                scannedAssets.results[`${record.code}-${record.issuer}`]
               ),
-            }) as ManageAssetCurrency,
+            } as ManageAssetCurrency)
         );
 
         const { verifiedAssets, unverifiedAssets } =
@@ -252,7 +252,7 @@ export const AddAsset = () => {
         setUnverifiedAssetRows([]);
       }
     }, 500),
-    [],
+    []
   );
 
   useEffect(() => {
@@ -284,7 +284,7 @@ export const AddAsset = () => {
                       <SearchInput
                         id="asset"
                         placeholder={t(
-                          "Enter issuer public key or contract ID",
+                          "Enter issuer public key or contract ID"
                         )}
                         {...field}
                         data-testid="search-token-input"
@@ -293,7 +293,7 @@ export const AddAsset = () => {
                   </Field>
                   <SearchCopy>
                     {t(
-                      "Search issuer public key, classic assets, SAC assets, and TI assets",
+                      "Search issuer public key, classic assets, SAC assets, and TI assets"
                     )}
                   </SearchCopy>
                 </div>

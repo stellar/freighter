@@ -34,15 +34,15 @@ export const Swap = () => {
           getAccountBalances({
             publicKey,
             networkDetails,
-          }),
+          })
         );
 
         if (getAccountBalances.fulfilled.match(res)) {
           dispatch(
             getAssetIcons({
-              balances: res.payload.balances,
+              balances: res.payload.balances.balances,
               networkDetails,
-            }),
+            })
           );
         }
       }

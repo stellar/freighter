@@ -108,7 +108,7 @@ describe("SignTransactions", () => {
         json: async () => ({
           decimals: 7,
         }),
-      } as any),
+      } as any)
     );
   });
 
@@ -119,7 +119,7 @@ describe("SignTransactions", () => {
   it("renders", async () => {
     const transaction = TransactionBuilder.fromXDR(
       transactions.sorobanTransfer,
-      Networks.FUTURENET,
+      Networks.FUTURENET
     ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
@@ -150,7 +150,7 @@ describe("SignTransactions", () => {
         }}
       >
         <SignTransaction />
-      </Wrapper>,
+      </Wrapper>
     );
     await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.getByTestId("SignTransaction")).toBeDefined();
@@ -159,7 +159,7 @@ describe("SignTransactions", () => {
   it("shows non-https domain error on Mainnet", async () => {
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
-      Networks.PUBLIC,
+      Networks.PUBLIC
     ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
@@ -191,19 +191,19 @@ describe("SignTransactions", () => {
         }}
       >
         <SignTransaction />
-      </Wrapper>,
+      </Wrapper>
     );
     await waitFor(() => screen.getByTestId("WarningMessage"));
     expect(screen.queryByTestId("SignTransaction")).toBeNull();
     expect(screen.getByTestId("WarningMessage")).toHaveTextContent(
-      "WEBSITE CONNECTION IS NOT SECURE",
+      "WEBSITE CONNECTION IS NOT SECURE"
     );
   });
 
   it("does not show non-https domain error on Testnet", async () => {
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
-      Networks.TESTNET,
+      Networks.TESTNET
     ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
@@ -234,7 +234,7 @@ describe("SignTransactions", () => {
         }}
       >
         <SignTransaction />
-      </Wrapper>,
+      </Wrapper>
     );
     await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.queryByTestId("WarningMessage")).toBeNull();
@@ -243,7 +243,7 @@ describe("SignTransactions", () => {
   it("displays token payment parameters for Soroban token payment operations", async () => {
     const transaction = TransactionBuilder.fromXDR(
       transactions.sorobanTransfer,
-      Networks.FUTURENET,
+      Networks.FUTURENET
     ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
@@ -274,7 +274,7 @@ describe("SignTransactions", () => {
         }}
       >
         <SignTransaction />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(async () => {
@@ -289,16 +289,16 @@ describe("SignTransactions", () => {
 
     expect(
       opDetails.includes(
-        `Parameters${args?.from.toString()}Copied${args?.to.toString()}Copied${args?.amount.toString()}`,
-      ),
+        `Parameters${args?.from.toString()}Copied${args?.to.toString()}Copied${args?.amount.toString()}`
+      )
     ).toBeTruthy();
     expect(
       opDetails.includes(
         `Contract ID${Stellar.truncatedPublicKey(
           args?.contractId || "",
-          6,
-        )}Copied`,
-      ),
+          6
+        )}Copied`
+      )
     ).toBeTruthy();
     expect(opDetails.includes(`Function Name${args?.fnName}`)).toBeTruthy();
     expect(args?.amount === BigInt(5)).toBeTruthy();
@@ -307,7 +307,7 @@ describe("SignTransactions", () => {
   it("displays mint parameters for Soroban mint operations", async () => {
     const transaction = TransactionBuilder.fromXDR(
       transactions.sorobanMint,
-      Networks.FUTURENET,
+      Networks.FUTURENET
     ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
@@ -338,7 +338,7 @@ describe("SignTransactions", () => {
         }}
       >
         <SignTransaction />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(async () => {
@@ -353,16 +353,16 @@ describe("SignTransactions", () => {
 
     expect(
       opDetails.includes(
-        `Parameters${args?.to.toString()}Copied${args?.amount.toString()}`,
-      ),
+        `Parameters${args?.to.toString()}Copied${args?.amount.toString()}`
+      )
     ).toBeTruthy();
     expect(
       opDetails.includes(
         `Contract ID${Stellar.truncatedPublicKey(
           args?.contractId || "",
-          6,
-        )}Copied`,
-      ),
+          6
+        )}Copied`
+      )
     ).toBeTruthy();
     expect(opDetails.includes(`Function Name${args?.fnName}`)).toBeTruthy();
     expect(args?.amount === BigInt(5)).toBeTruthy();
@@ -371,7 +371,7 @@ describe("SignTransactions", () => {
   it("memo: doesn't render memo if there is no memo", async () => {
     const transaction = TransactionBuilder.fromXDR(
       MEMO_TXN_NO_MEMO,
-      Networks.TESTNET,
+      Networks.TESTNET
     ) as Transaction<Memo<MemoType>, Operation[]>;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
@@ -382,7 +382,7 @@ describe("SignTransactions", () => {
     render(
       <Wrapper routes={[ROUTES.signTransaction]} state={{}}>
         <SignTransaction />
-      </Wrapper>,
+      </Wrapper>
     );
 
     expect(screen.queryByTestId("MemoBlock")).toBeNull();
@@ -391,7 +391,7 @@ describe("SignTransactions", () => {
   it("memo: render memo text", async () => {
     const transaction = TransactionBuilder.fromXDR(
       MEMO_TXN_TEXT,
-      Networks.FUTURENET,
+      Networks.FUTURENET
     ) as Transaction<Memo<MemoType>, Operation[]>;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
@@ -417,19 +417,19 @@ describe("SignTransactions", () => {
         }}
       >
         <SignTransaction />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.getByTestId("MemoBlock")).toHaveTextContent(
-      "text memo (MEMO_TEXT)",
+      "text memo (MEMO_TEXT)"
     );
   });
 
   it("memo: render memo id", async () => {
     const transaction = TransactionBuilder.fromXDR(
       MEMO_TXN_ID,
-      Networks.TESTNET,
+      Networks.TESTNET
     ) as Transaction<Memo<MemoType>, Operation[]>;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
@@ -455,18 +455,18 @@ describe("SignTransactions", () => {
         }}
       >
         <SignTransaction />
-      </Wrapper>,
+      </Wrapper>
     );
     await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.getByTestId("MemoBlock")).toHaveTextContent(
-      "123456 (MEMO_ID)",
+      "123456 (MEMO_ID)"
     );
   });
 
   it("memo: render memo hash", async () => {
     const transaction = TransactionBuilder.fromXDR(
       MEMO_TXN_HASH,
-      Networks.TESTNET,
+      Networks.TESTNET
     ) as Transaction<Memo<MemoType>, Operation[]>;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
@@ -492,19 +492,19 @@ describe("SignTransactions", () => {
         }}
       >
         <SignTransaction />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.getByTestId("MemoBlock")).toHaveTextContent(
-      "e98869bba8bce08c10b78406202127f3888c25454cd37b02600862452751f526 (MEMO_HASH)",
+      "e98869bba8bce08c10b78406202127f3888c25454cd37b02600862452751f526 (MEMO_HASH)"
     );
   });
 
   it("memo: render memo return", async () => {
     const transaction = TransactionBuilder.fromXDR(
       MEMO_TXN_RETURN,
-      Networks.TESTNET,
+      Networks.TESTNET
     ) as Transaction<Memo<MemoType>, Operation[]>;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
@@ -530,12 +530,12 @@ describe("SignTransactions", () => {
         }}
       >
         <SignTransaction />
-      </Wrapper>,
+      </Wrapper>
     );
 
     await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.getByTestId("MemoBlock")).toHaveTextContent(
-      "e98869bba8bce08c10b78406202127f3888c25454cd37b02600862452751f526 (MEMO_RETURN)",
+      "e98869bba8bce08c10b78406202127f3888c25454cd37b02600862452751f526 (MEMO_RETURN)"
     );
   });
 
@@ -555,7 +555,7 @@ describe("SignTransactions", () => {
 
     const transaction = TransactionBuilder.fromXDR(
       OP_SOURCE_UNFUNDED,
-      Networks.TESTNET,
+      Networks.TESTNET
     ) as Transaction<Memo<MemoType>, Operation[]>;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
@@ -581,7 +581,7 @@ describe("SignTransactions", () => {
         }}
       >
         <SignTransaction />
-      </Wrapper>,
+      </Wrapper>
     );
     await waitFor(() => screen.getByTestId("InsufficientBalanceWarning"));
   });

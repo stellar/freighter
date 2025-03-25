@@ -80,7 +80,7 @@ export const SignTransaction = () => {
     useState(false);
 
   const { accountBalances, accountBalanceStatus } = useSelector(
-    transactionSubmissionSelector,
+    transactionSubmissionSelector
   );
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -107,7 +107,7 @@ export const SignTransaction = () => {
   // rebuild transaction to get Transaction prototypes
   const transaction = TransactionBuilder.fromXDR(
     transactionXdr,
-    _networkPassphrase as string,
+    _networkPassphrase as string
   );
 
   let isFeeBump = false;
@@ -143,12 +143,12 @@ export const SignTransaction = () => {
     rejectTransaction,
     signTransaction,
     transactionXdr,
-    accountToSign,
+    accountToSign
   );
 
   const flaggedKeyValues = Object.values(flaggedKeys);
   const isMemoRequired = flaggedKeyValues.some(
-    ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
+    ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo
   );
 
   const resolveFederatedAddress = useCallback(async (inputDest: string) => {
@@ -171,7 +171,7 @@ export const SignTransaction = () => {
       }
       if (isFederationAddress(_accountToSign)) {
         accountToSign = (await resolveFederatedAddress(
-          accountToSign!,
+          accountToSign!
         )) as string;
       }
     }
@@ -198,7 +198,7 @@ export const SignTransaction = () => {
         getAccountBalances({
           publicKey: currentAccount.publicKey,
           networkDetails,
-        }),
+        })
       );
     }
     return () => {
@@ -276,7 +276,7 @@ export const SignTransaction = () => {
               fee={_fee}
               memo={decodedMemo}
               operationNames={_tx.operations.map(
-                (op) => OPERATION_TYPES[op.type] || op.type,
+                (op) => OPERATION_TYPES[op.type] || op.type
               )}
             />
           );
@@ -315,7 +315,7 @@ export const SignTransaction = () => {
                 {t("The application is requesting a specific account")} (
                 {truncatedPublicKey(accountToSign)}),{" "}
                 {t(
-                  "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request.",
+                  "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request."
                 )}
               </Notification>
             </div>
@@ -333,7 +333,7 @@ export const SignTransaction = () => {
   const needsReviewAuth =
     !isFeeBump &&
     (transaction as Transaction<Memo<MemoType>, Operation[]>).operations.some(
-      (op) => op.type === "invokeHostFunction" && op.auth && op.auth.length,
+      (op) => op.type === "invokeHostFunction" && op.auth && op.auth.length
     );
 
   return isPasswordRequired ? (
@@ -394,7 +394,7 @@ export const SignTransaction = () => {
                             flaggedKeys,
                             isMemoRequired,
                             memo: decodedMemo,
-                          })}`,
+                          })}`
                         )
                       }
                     >
@@ -449,7 +449,7 @@ export const SignTransaction = () => {
                             flaggedKeys,
                             isMemoRequired,
                             memo: decodedMemo,
-                          })}`,
+                          })}`
                         )
                       }
                     >

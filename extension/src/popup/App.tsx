@@ -31,7 +31,7 @@ export const store = configureStore({
   middleware: (defaults) =>
     defaults({ serializableCheck: false }).concat(
       metricsMiddleware<AppState>(),
-      activePublicKeyMiddleware<AppState>(),
+      activePublicKeyMiddleware<AppState>()
     ),
 });
 

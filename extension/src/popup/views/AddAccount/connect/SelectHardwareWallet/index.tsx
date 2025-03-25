@@ -28,7 +28,7 @@ const WalletOption = ({
     navigateTo(
       ROUTES.connectWalletPlugin,
       navigate,
-      `?walletType=${walletType}`,
+      `?walletType=${walletType}`
     );
   };
 
@@ -61,7 +61,7 @@ export const SelectHardwareWallet = () => {
                   key={v}
                   walletType={v as ConfigurableWalletType}
                 />
-              ) : null,
+              ) : null
             )}
           </ul>
         </div>

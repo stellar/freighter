@@ -120,13 +120,13 @@ jest
 jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() =>
   Promise.resolve({
     signedTransaction: mockXDR,
-  }),
+  })
 );
 
 jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() =>
   Promise.resolve({
     signedTransaction: mockXDR,
-  }),
+  })
 );
 
 jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => ({
@@ -247,7 +247,7 @@ jest
   .spyOn(SorobanHelpers, "isContractId")
   .mockImplementation(
     (contractId) =>
-      contractId === verifiedToken || contractId === unverifiedToken,
+      contractId === verifiedToken || contractId === unverifiedToken
   );
 
 jest.mock("stellar-sdk", () => {
@@ -314,7 +314,7 @@ const publicKey = "GCXRLIZUQNZ3YYJDGX6Z445P7FG5WXT7UILBO5CFIYYM7Z7YTIOELC6O";
 const initView = async (
   rejectTxn: boolean = false,
   isMainnet: boolean = false,
-  balances = manageAssetsMockBalances,
+  balances = manageAssetsMockBalances
 ) => {
   const configuredNetworkDetails = isMainnet
     ? MAINNET_NETWORK_DETAILS
@@ -359,7 +359,7 @@ const initView = async (
       }}
     >
       <ManageAssets />
-    </Wrapper>,
+    </Wrapper>
   );
 
   await waitFor(() => {
@@ -377,7 +377,7 @@ describe.skip("Manage assets", () => {
       Promise.resolve({
         ok: true,
         json: async () => ({}),
-      } as any),
+      } as any)
     );
   });
 
@@ -386,7 +386,7 @@ describe.skip("Manage assets", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Your assets",
+        "Your assets"
       );
     });
 
@@ -394,17 +394,17 @@ describe.skip("Manage assets", () => {
 
     expect(addedTrustlines.length).toBe(2);
     expect(
-      within(addedTrustlines[0]).getByTestId("ManageAssetCode"),
+      within(addedTrustlines[0]).getByTestId("ManageAssetCode")
     ).toHaveTextContent("USDC");
     expect(
-      within(addedTrustlines[0]).getByTestId("ManageAssetDomain"),
+      within(addedTrustlines[0]).getByTestId("ManageAssetDomain")
     ).toHaveTextContent("circle.io");
 
     expect(
-      within(addedTrustlines[1]).getByTestId("ManageAssetCode"),
+      within(addedTrustlines[1]).getByTestId("ManageAssetCode")
     ).toHaveTextContent("SRT");
     expect(
-      within(addedTrustlines[1]).getByTestId("ManageAssetDomain"),
+      within(addedTrustlines[1]).getByTestId("ManageAssetDomain")
     ).toHaveTextContent("testanchor.stellar.org");
 
     expect(screen.getByTestId("ChooseAssetAddAssetButton")).toBeEnabled();
@@ -414,7 +414,7 @@ describe.skip("Manage assets", () => {
     await initView();
 
     expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Your assets",
+      "Your assets"
     );
 
     const addButton = screen.getByTestId("ChooseAssetAddAssetButton");
@@ -424,7 +424,7 @@ describe.skip("Manage assets", () => {
     await waitFor(() => {
       screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Choose Asset",
+        "Choose Asset"
       );
 
       const searchInput = screen.getByTestId("search-asset-input");
@@ -437,14 +437,14 @@ describe.skip("Manage assets", () => {
 
       expect(addedTrustlines.length).toBe(1);
       expect(
-        within(addedTrustlines[0]).getByTestId("ManageAssetCode"),
+        within(addedTrustlines[0]).getByTestId("ManageAssetCode")
       ).toHaveTextContent("NEW");
       expect(
-        within(addedTrustlines[0]).getByTestId("ManageAssetDomain"),
+        within(addedTrustlines[0]).getByTestId("ManageAssetDomain")
       ).toHaveTextContent("new.domain.com");
 
       const addAssetButton = within(addedTrustlines[0]).getByTestId(
-        "ManageAssetRowButton",
+        "ManageAssetRowButton"
       );
 
       expect(addAssetButton).toHaveTextContent("Add");
@@ -463,19 +463,19 @@ describe.skip("Manage assets", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Your assets",
+        "Your assets"
       );
     });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
     const ellipsisButton = screen.getByTestId(
-      "ManageAssetRowButton__ellipsis-SRT",
+      "ManageAssetRowButton__ellipsis-SRT"
     );
 
     await waitFor(async () => {
       fireEvent.click(ellipsisButton);
       const removeButton = within(addedTrustlines[1]).getByTestId(
-        "ManageAssetRowButton",
+        "ManageAssetRowButton"
       );
       expect(removeButton).toHaveTextContent("Remove asset");
       expect(removeButton).toBeEnabled();
@@ -499,26 +499,26 @@ describe.skip("Manage assets", () => {
             result_codes: { operations: ["op_invalid_limit"] },
           },
         }),
-      } as any),
+      } as any)
     );
 
     await initView(true);
 
     await waitFor(() => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Your assets",
+        "Your assets"
       );
     });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
     const ellipsisButton = screen.getByTestId(
-      "ManageAssetRowButton__ellipsis-SRT",
+      "ManageAssetRowButton__ellipsis-SRT"
     );
 
     await waitFor(async () => {
       fireEvent.click(ellipsisButton);
       const removeButton = within(addedTrustlines[1]).getByTestId(
-        "ManageAssetRowButton",
+        "ManageAssetRowButton"
       );
       expect(removeButton).toHaveTextContent("Remove asset");
       expect(removeButton).toBeEnabled();
@@ -528,7 +528,7 @@ describe.skip("Manage assets", () => {
     await waitFor(() => {
       screen.getByTestId("TrustlineError__error");
       expect(screen.getByTestId("TrustlineError__error")).toHaveTextContent(
-        "This asset has a balance",
+        "This asset has a balance"
       );
     });
   });
@@ -544,7 +544,7 @@ describe.skip("Manage assets", () => {
             result_codes: { operations: ["op_invalid_limit"] },
           },
         }),
-      } as any),
+      } as any)
     );
 
     await initView(true, false, {
@@ -582,19 +582,19 @@ describe.skip("Manage assets", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Your assets",
+        "Your assets"
       );
     });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
     const ellipsisButton = screen.getByTestId(
-      "ManageAssetRowButton__ellipsis-SRT",
+      "ManageAssetRowButton__ellipsis-SRT"
     );
 
     await waitFor(async () => {
       fireEvent.click(ellipsisButton);
       const removeButton = within(addedTrustlines[1]).getByTestId(
-        "ManageAssetRowButton",
+        "ManageAssetRowButton"
       );
       expect(removeButton).toHaveTextContent("Remove asset");
       expect(removeButton).toBeEnabled();
@@ -604,10 +604,10 @@ describe.skip("Manage assets", () => {
     await waitFor(() => {
       screen.getByTestId("TrustlineError__error");
       expect(screen.getByTestId("TrustlineError__error")).toHaveTextContent(
-        "This asset has buying liabilities",
+        "This asset has buying liabilities"
       );
       expect(screen.getByTestId("TrustlineError__body")).toHaveTextContent(
-        "You still have a buying liability of 1",
+        "You still have a buying liability of 1"
       );
     });
   });
@@ -623,7 +623,7 @@ describe.skip("Manage assets", () => {
             result_codes: { operations: ["op_invalid_limit"] },
           },
         }),
-      } as any),
+      } as any)
     );
 
     await initView(true, false, {
@@ -661,19 +661,19 @@ describe.skip("Manage assets", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Your assets",
+        "Your assets"
       );
     });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
     const ellipsisButton = screen.getByTestId(
-      "ManageAssetRowButton__ellipsis-SRT",
+      "ManageAssetRowButton__ellipsis-SRT"
     );
 
     await waitFor(async () => {
       fireEvent.click(ellipsisButton);
       const removeButton = within(addedTrustlines[1]).getByTestId(
-        "ManageAssetRowButton",
+        "ManageAssetRowButton"
       );
       expect(removeButton).toHaveTextContent("Remove asset");
       expect(removeButton).toBeEnabled();
@@ -683,10 +683,10 @@ describe.skip("Manage assets", () => {
     await waitFor(() => {
       screen.getByTestId("TrustlineError__error");
       expect(screen.getByTestId("TrustlineError__error")).toHaveTextContent(
-        "This asset has buying liabilities",
+        "This asset has buying liabilities"
       );
       expect(screen.getByTestId("TrustlineError__body")).toHaveTextContent(
-        "You still have a buying liability of 1",
+        "You still have a buying liability of 1"
       );
     });
   });
@@ -695,7 +695,7 @@ describe.skip("Manage assets", () => {
     await initView();
 
     expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Your assets",
+      "Your assets"
     );
 
     const addButton = screen.getByTestId("ChooseAssetAddAssetButton");
@@ -705,7 +705,7 @@ describe.skip("Manage assets", () => {
     await waitFor(() => {
       screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Choose Asset",
+        "Choose Asset"
       );
 
       const searchInput = screen.getByTestId("search-asset-input");
@@ -718,14 +718,14 @@ describe.skip("Manage assets", () => {
 
       expect(addedTrustlines.length).toBe(1);
       expect(
-        within(addedTrustlines[0]).getByTestId("ManageAssetCode"),
+        within(addedTrustlines[0]).getByTestId("ManageAssetCode")
       ).toHaveTextContent("BAD");
       expect(
-        within(addedTrustlines[0]).getByTestId("ManageAssetDomain"),
+        within(addedTrustlines[0]).getByTestId("ManageAssetDomain")
       ).toHaveTextContent("bad.domain.com");
 
       const addAssetButton = within(addedTrustlines[0]).getByTestId(
-        "ManageAssetRowButton",
+        "ManageAssetRowButton"
       );
 
       expect(addAssetButton).toHaveTextContent("Add");
@@ -736,11 +736,11 @@ describe.skip("Manage assets", () => {
     await waitFor(async () => {
       const warning = screen.getByTestId("NewAssetWarning");
       expect(screen.getByTestId("NewAssetWarningTitle")).toHaveTextContent(
-        "Before You Add This Asset",
+        "Before You Add This Asset"
       );
 
       const warningAddButton = within(warning).getByTestId(
-        "NewAssetWarningAddButton",
+        "NewAssetWarningAddButton"
       );
       expect(warningAddButton).toBeEnabled();
 
@@ -756,7 +756,7 @@ describe.skip("Manage assets", () => {
     await initView(true);
 
     expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Your assets",
+      "Your assets"
     );
 
     const addButton = screen.getByTestId("ChooseAssetAddAssetButton");
@@ -766,7 +766,7 @@ describe.skip("Manage assets", () => {
     await waitFor(() => {
       screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Choose Asset",
+        "Choose Asset"
       );
 
       const searchInput = screen.getByTestId("search-asset-input");
@@ -779,14 +779,14 @@ describe.skip("Manage assets", () => {
 
       expect(addedTrustlines.length).toBe(1);
       expect(
-        within(addedTrustlines[0]).getByTestId("ManageAssetCode"),
+        within(addedTrustlines[0]).getByTestId("ManageAssetCode")
       ).toHaveTextContent("BMAL");
       expect(
-        within(addedTrustlines[0]).getByTestId("ManageAssetDomain"),
+        within(addedTrustlines[0]).getByTestId("ManageAssetDomain")
       ).toHaveTextContent("bmal.domain.com");
 
       const addAssetButton = within(addedTrustlines[0]).getByTestId(
-        "ManageAssetRowButton",
+        "ManageAssetRowButton"
       );
 
       expect(addAssetButton).toHaveTextContent("Add");
@@ -797,11 +797,11 @@ describe.skip("Manage assets", () => {
     await waitFor(async () => {
       const warning = screen.getByTestId("ScamAssetWarning");
       expect(screen.getByTestId("ScamAssetWarning__box")).toHaveTextContent(
-        "This token was flagged as Malicious by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons:",
+        "This token was flagged as Malicious by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons:"
       );
 
       const addAssetButton = within(warning).getByTestId(
-        "ScamAsset__add-asset",
+        "ScamAsset__add-asset"
       );
       expect(addAssetButton).toBeEnabled();
 
@@ -818,7 +818,7 @@ describe.skip("Manage assets", () => {
     await initView(false, true);
 
     expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Your assets",
+      "Your assets"
     );
 
     const addTokenButton = screen.getByTestId("ChooseAssetAddAssetButton");
@@ -830,7 +830,7 @@ describe.skip("Manage assets", () => {
     await waitFor(() => {
       screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Add by address",
+        "Add by address"
       );
 
       const searchInput = screen.getByTestId("search-token-input");
@@ -845,11 +845,11 @@ describe.skip("Manage assets", () => {
 
       expect(addedTrustlines.length).toBe(1);
       expect(
-        within(addedTrustlines[0]).getByTestId("ManageAssetCode"),
+        within(addedTrustlines[0]).getByTestId("ManageAssetCode")
       ).toHaveTextContent("USDC");
 
       const addAssetButton = within(addedTrustlines[0]).getByTestId(
-        "ManageAssetRowButton",
+        "ManageAssetRowButton"
       );
 
       expect(addAssetButton).toHaveTextContent("Add");
@@ -870,7 +870,7 @@ describe.skip("Manage assets", () => {
     await waitFor(() => {
       screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Add by address",
+        "Add by address"
       );
 
       const searchInput = screen.getByTestId("search-token-input");
@@ -889,11 +889,11 @@ describe.skip("Manage assets", () => {
 
       expect(addedTrustlines.length).toBe(1);
       expect(
-        within(addedTrustlines[0]).getByTestId("ManageAssetCode"),
+        within(addedTrustlines[0]).getByTestId("ManageAssetCode")
       ).toHaveTextContent("foo");
 
       const addAssetButton = within(addedTrustlines[0]).getByTestId(
-        "ManageAssetRowButton",
+        "ManageAssetRowButton"
       );
 
       expect(addAssetButton).toHaveTextContent("Add");

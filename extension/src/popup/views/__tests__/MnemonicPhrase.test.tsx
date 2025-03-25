@@ -27,7 +27,7 @@ jest.mock("react-router-dom", () => {
 });
 jest.mock("@shared/api/internal", () => {
   const { APPLICATION_STATE } = jest.requireActual(
-    "@shared/constants/applicationState",
+    "@shared/constants/applicationState"
   );
   return {
     confirmMnemonicPhrase: () =>
@@ -59,7 +59,7 @@ describe.skip("MnemonicPhrase", () => {
         }}
       >
         <MnemonicPhrase mnemonicPhrase={MNEMONIC} />
-      </Wrapper>,
+      </Wrapper>
     );
     await waitFor(() => screen.getByTestId("display-mnemonic-phrase"));
     expect(screen.getByTestId("display-mnemonic-phrase")).toBeDefined();
@@ -83,7 +83,7 @@ describe.skip("MnemonicPhrase", () => {
           }}
         >
           <MnemonicPhrase mnemonicPhrase={MNEMONIC} />
-        </Wrapper>,
+        </Wrapper>
       );
 
       // Confirm mnemonic
@@ -92,10 +92,10 @@ describe.skip("MnemonicPhrase", () => {
         await waitFor(() => screen.getByTestId("ConfirmMnemonicPhrase"));
         // Click each word in the mnemonic
         MNEMONIC.split(" ").forEach((word) =>
-          fireEvent.click(screen.getByText(word)),
+          fireEvent.click(screen.getByText(word))
         );
         fireEvent.click(
-          screen.getByTestId("display-mnemonic-phrase-confirm-btn"),
+          screen.getByTestId("display-mnemonic-phrase-confirm-btn")
         );
       });
     });

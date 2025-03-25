@@ -118,14 +118,14 @@ export const ManageAssetRows = ({
     blockaidData: defaultBlockaidScanAssetResult,
   } as SuspiciousAssetData);
   const [handleAddToken, setHandleAddToken] = useState(
-    null as null | (() => () => Promise<void>),
+    null as null | (() => () => Promise<void>)
   );
 
   useEffect(
     () => () => {
       setAssetSubmitting("");
     },
-    [],
+    []
   );
 
   // watch submitStatus if used ledger to send transaction
@@ -158,7 +158,7 @@ export const ManageAssetRows = ({
               setShowBlockedDomainWarning(false);
             }}
           />,
-          document.querySelector("#modal-root")!,
+          document.querySelector("#modal-root")!
         )}
       {showNewAssetWarning && (
         <NewAssetWarning
@@ -246,7 +246,7 @@ export const ManageAssetRows = ({
       {showNewAssetWarning || showBlockedDomainWarning
         ? createPortal(
             <LoadingBackground onClick={() => {}} isActive isFullScreen />,
-            document.querySelector("#modal-root")!,
+            document.querySelector("#modal-root")!
           )
         : null}
     </>
@@ -305,7 +305,7 @@ const AssetRows = ({
             infoText={
               <span>
                 {t(
-                  "Freighter uses asset lists to verify assets before interactions.",
+                  "Freighter uses asset lists to verify assets before interactions."
                 )}
                 {t("You can define your own assets lists in Settings.")}
               </span>
@@ -336,7 +336,7 @@ const AssetRows = ({
             const isContract = isContractId(contract);
             const canonicalAsset = getCanonicalFromAsset(code, issuer);
             const isTrustlineActive = Object.keys(
-              accountBalances.balances,
+              accountBalances.balances
             ).some((balance) => balance === canonicalAsset);
             return (
               <div
@@ -357,14 +357,14 @@ const AssetRows = ({
                 })}
               </div>
             );
-          },
+          }
         )}
         {unverifiedAssetRows.length > 0 && (
           <InfoTooltip
             infoText={
               <span>
                 {t(
-                  "These assets are not on any of your lists. Proceed with caution before adding.",
+                  "These assets are not on any of your lists. Proceed with caution before adding."
                 )}
               </span>
             }
@@ -394,7 +394,7 @@ const AssetRows = ({
             const isContract = isContractId(contract);
             const canonicalAsset = getCanonicalFromAsset(code, issuer);
             const isTrustlineActive = Object.keys(
-              accountBalances.balances,
+              accountBalances.balances
             ).some((balance) => balance === canonicalAsset);
             return (
               <div
@@ -415,7 +415,7 @@ const AssetRows = ({
                 })}
               </div>
             );
-          },
+          }
         )}
       </>
     );
@@ -439,7 +439,7 @@ const AssetRows = ({
           const isContract = isContractId(contract);
           const canonicalAsset = getCanonicalFromAsset(code, issuer);
           const isTrustlineActive = Object.keys(accountBalances.balances).some(
-            (balance) => balance === canonicalAsset,
+            (balance) => balance === canonicalAsset
           );
           return (
             <div
@@ -460,7 +460,7 @@ const AssetRows = ({
               })}
             </div>
           );
-        },
+        }
       )}
     </>
   );
@@ -484,7 +484,7 @@ export const ManageAssetRow = ({
     !isSacContract(
       name,
       contractId,
-      networkDetails.networkPassphrase as Networks,
+      networkDetails.networkPassphrase as Networks
     )
       ? name
       : code;

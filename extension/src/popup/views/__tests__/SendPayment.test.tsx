@@ -136,7 +136,7 @@ describe.skip("SendPayment", () => {
         }}
       >
         <SendPayment />
-      </Wrapper>,
+      </Wrapper>
     );
     await waitFor(() => {
       expect(screen.getByTestId("send-to-view")).toBeDefined();
@@ -181,7 +181,7 @@ describe.skip("SendPayment", () => {
     await testPaymentFlow(
       "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
       true,
-      false,
+      false
     );
   });
 
@@ -219,7 +219,7 @@ describe.skip("SendPayment", () => {
     await testPaymentFlow(
       "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
       true,
-      true,
+      true
     );
   });
 
@@ -231,7 +231,7 @@ describe.skip("SendPayment", () => {
     await testPaymentFlow(
       "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
       false,
-      false,
+      false
     );
   });
 });
@@ -239,7 +239,7 @@ describe.skip("SendPayment", () => {
 const testPaymentFlow = async (
   asset: string,
   isMainnet: boolean,
-  hasSimError: boolean,
+  hasSimError: boolean
 ) => {
   render(
     <Wrapper
@@ -274,7 +274,7 @@ const testPaymentFlow = async (
       }}
     >
       <SendPayment />
-    </Wrapper>,
+    </Wrapper>
   );
 
   await waitFor(() => {
@@ -287,7 +287,7 @@ const testPaymentFlow = async (
       const continueBtn = screen.getByTestId("send-to-btn-continue");
       await fireEvent.click(continueBtn);
     },
-    { timeout: 3000 },
+    { timeout: 3000 }
   );
 
   await waitFor(async () => {
@@ -321,7 +321,7 @@ const testPaymentFlow = async (
 
   await waitFor(async () => {
     expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Send Settings",
+      "Send Settings"
     );
     const continueBtn = screen.getByTestId("send-settings-btn-continue");
     expect(continueBtn).toBeEnabled();
@@ -330,7 +330,7 @@ const testPaymentFlow = async (
 
   await waitFor(async () => {
     expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Confirm Send",
+      "Confirm Send"
     );
     if (
       asset ===
@@ -338,21 +338,21 @@ const testPaymentFlow = async (
       isMainnet
     ) {
       expect(
-        screen.getByTestId("BlockaidWarningModal__button__asset"),
+        screen.getByTestId("BlockaidWarningModal__button__asset")
       ).toBeDefined();
       expect(
-        screen.getByTestId("BlockaidWarningModal__button__tx"),
+        screen.getByTestId("BlockaidWarningModal__button__tx")
       ).toBeDefined();
 
       await fireEvent.click(screen.getByTestId("BlockaidByLine__arrow__tx"));
       expect(screen.getByTestId("BlockaidWarningModal__tx")).toBeDefined();
       if (hasSimError) {
         expect(
-          screen.getByTestId("BlockaidWarningModal__tx"),
+          screen.getByTestId("BlockaidWarningModal__tx")
         ).toHaveTextContent("Sim failed");
       } else {
         expect(
-          screen.getByTestId("BlockaidWarningModal__tx"),
+          screen.getByTestId("BlockaidWarningModal__tx")
         ).toHaveTextContent("foo");
       }
 
@@ -361,15 +361,15 @@ const testPaymentFlow = async (
       await fireEvent.click(screen.getByTestId("BlockaidByLine__arrow__asset"));
       expect(screen.getByTestId("BlockaidWarningModal__asset")).toBeDefined();
       expect(
-        screen.getByTestId("BlockaidWarningModal__asset"),
+        screen.getByTestId("BlockaidWarningModal__asset")
       ).toHaveTextContent("baz");
       await fireEvent.click(screen.getByTestId("BlockaidWarningModal__button"));
     } else {
       expect(
-        screen.queryByTestId("BlockaidWarningModal__button__asset"),
+        screen.queryByTestId("BlockaidWarningModal__button__asset")
       ).toBeNull();
       expect(
-        screen.queryByTestId("BlockaidWarningModal__button__tx"),
+        screen.queryByTestId("BlockaidWarningModal__button__tx")
       ).toBeNull();
     }
 

@@ -55,7 +55,7 @@ export const MnemonicPhrase = ({
               <>
                 <Text as="p" size="md">
                   {t(
-                    "Your recovery phrase gives you access to your account and is the only way to access it in a new browser. ",
+                    "Your recovery phrase gives you access to your account and is the only way to access it in a new browser. "
                   )}
                   <span className="MnemonicPhrase__modal__text--highlight">
                     {t("Keep it in a safe place.")}
@@ -63,7 +63,7 @@ export const MnemonicPhrase = ({
                 </Text>
                 <Text as="p" size="md">
                   {t(
-                    "For your security, we'll check if you got it right in the next step.",
+                    "For your security, we'll check if you got it right in the next step."
                   )}
                 </Text>
               </>
@@ -76,7 +76,7 @@ export const MnemonicPhrase = ({
                 </div>
                 <div className="MnemonicPhrase__modal__row__text">
                   {t(
-                    "Your recovery phrase gives you full access to your wallets and funds",
+                    "Your recovery phrase gives you full access to your wallets and funds"
                   )}
                 </div>
               </div>
@@ -86,7 +86,7 @@ export const MnemonicPhrase = ({
                 </div>
                 <div className="MnemonicPhrase__modal__row__text">
                   {t(
-                    "If you forget your password, you can use the recovery phrase to access your wallet",
+                    "If you forget your password, you can use the recovery phrase to access your wallet"
                   )}
                 </div>
               </div>
@@ -104,7 +104,7 @@ export const MnemonicPhrase = ({
                 </div>
                 <div className="MnemonicPhrase__modal__row__text">
                   {t(
-                    "No one from Stellar Development Foundation will ever ask for your recovery phrase",
+                    "No one from Stellar Development Foundation will ever ask for your recovery phrase"
                   )}
                 </div>
               </div>

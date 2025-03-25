@@ -44,13 +44,13 @@ export const initExtensionMessageListener = () => {
     }
     if (
       Object.values(EXTERNAL_SERVICE_TYPES).includes(
-        req.type as EXTERNAL_SERVICE_TYPES,
+        req.type as EXTERNAL_SERVICE_TYPES
       )
     ) {
       res = await freighterApiMessageListener(
         req as ExternalRequest,
         sender,
-        sessionStore,
+        sessionStore
       );
     }
 

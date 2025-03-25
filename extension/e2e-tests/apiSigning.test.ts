@@ -16,7 +16,7 @@ test("Sign Transaction", async ({ page, extensionId }) => {
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://docs.freighter.app/docs/playground/signTransaction",
+    "https://docs.freighter.app/docs/playground/signTransaction"
   );
   await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
   await pageTwo
@@ -32,29 +32,29 @@ test("Sign Transaction", async ({ page, extensionId }) => {
 
   await popup.getByTestId("Tab-Details").click();
   await expect(popup.getByTestId("OperationKeyVal__key").first()).toHaveText(
-    "Destination",
+    "Destination"
   );
   await expect(popup.getByTestId("OperationKeyVal__value").first()).toHaveText(
-    "GBTY…JZOF",
+    "GBTY…JZOF"
   );
 
   await expect(popup.getByTestId("OperationKeyVal__key").nth(1)).toHaveText(
-    "Asset Code",
+    "Asset Code"
   );
   await expect(popup.getByTestId("OperationKeyVal__value").nth(1)).toHaveText(
-    "XLM",
+    "XLM"
   );
   await expect(popup.getByTestId("OperationKeyVal__key").nth(2)).toHaveText(
-    "Amount",
+    "Amount"
   );
   await expect(popup.getByTestId("OperationKeyVal__value").nth(2)).toHaveText(
-    "5.0000000",
+    "5.0000000"
   );
   await popup.getByRole("button", { name: "Sign" }).click();
 
   await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(SIGNED_TX);
   await expect(pageTwo.getByRole("textbox").nth(4)).toHaveValue(
-    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY"
   );
 });
 
@@ -81,7 +81,7 @@ test("Sign Auth Entry", async ({ page, extensionId }) => {
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://docs.freighter.app/docs/playground/signAuthEntry",
+    "https://docs.freighter.app/docs/playground/signAuthEntry"
   );
   await pageTwo.getByRole("textbox").first().fill(AUTH_ENTRY_TO_SIGN);
   await pageTwo
@@ -97,7 +97,7 @@ test("Sign Auth Entry", async ({ page, extensionId }) => {
   await popup.getByRole("button", { name: "Approve" }).click();
 
   await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(
-    SIGNED_AUTH_ENTRY,
+    SIGNED_AUTH_ENTRY
   );
 });
 
@@ -131,6 +131,6 @@ test("Sign Message", async ({ page, extensionId }) => {
 
   await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(SIGNED_MSG);
   await expect(pageTwo.getByRole("textbox").nth(4)).toHaveValue(
-    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY"
   );
 });

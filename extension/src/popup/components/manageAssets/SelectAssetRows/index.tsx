@@ -91,12 +91,12 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
               const otherAsset = getAssetFromCanonical(
                 assetSelect.isSource
                   ? transactionData.destinationAsset
-                  : transactionData.asset,
+                  : transactionData.asset
               );
               isSoroswap =
                 !!soroswapTokens.find(({ contract }) => contract === issuer) ||
                 !!soroswapTokens.find(
-                  ({ contract }) => contract === otherAsset.issuer,
+                  ({ contract }) => contract === otherAsset.issuer
                 );
             }
 
@@ -143,7 +143,7 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
                 )}
               </div>
             );
-          },
+          }
         )}
       </div>
     </div>

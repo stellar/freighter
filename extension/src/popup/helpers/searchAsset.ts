@@ -27,7 +27,7 @@ export const searchAsset = async ({
 }) => {
   try {
     const res = await fetch(
-      `${getApiStellarExpertUrl(networkDetails)}/asset?search=${asset}`,
+      `${getApiStellarExpertUrl(networkDetails)}/asset?search=${asset}`
     );
     return await res.json();
   } catch (e) {
@@ -36,7 +36,7 @@ export const searchAsset = async ({
 };
 
 export const schemaValidatedAssetList = async (
-  assetListJson: AssetListResponse,
+  assetListJson: AssetListResponse
 ): Promise<{
   assets: AssetListReponseItem[];
   errors: ValidationError[] | null;
@@ -44,7 +44,7 @@ export const schemaValidatedAssetList = async (
   let schemaRes;
   try {
     schemaRes = await fetch(
-      "https://raw.githubusercontent.com/orbitlens/stellar-protocol/sep-0042-token-lists/contents/sep-0042/assetlist.schema.json",
+      "https://raw.githubusercontent.com/orbitlens/stellar-protocol/sep-0042-token-lists/contents/sep-0042/assetlist.schema.json"
     );
   } catch (err) {
     captureException("Error fetching SEP-0042 JSON schema");
@@ -188,8 +188,9 @@ export const getVerifiedTokens = async ({
     }
   }
 
-  const promiseRes =
-    await Promise.allSettled<Promise<AssetListResponse>>(promiseArr);
+  const promiseRes = await Promise.allSettled<Promise<AssetListResponse>>(
+    promiseArr
+  );
 
   const verifiedTokens = [] as VerifiedTokenRecord[];
 

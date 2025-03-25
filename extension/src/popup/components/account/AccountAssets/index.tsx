@@ -2,15 +2,16 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import isEmpty from "lodash/isEmpty";
 import { Asset, Horizon } from "stellar-sdk";
+import BigNumber from "bignumber.js";
 
-import { AssetIcons, AssetType } from "@shared/api/types";
+import { ApiTokenPrices, AssetIcons, AssetType } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
 import { formatTokenAmount } from "popup/helpers/soroban";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
-import { formatAmount } from "popup/helpers/formatters";
+import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -18,6 +19,7 @@ import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import ImageMissingIcon from "popup/assets/image-missing.svg?react";
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
+import { AnimatedNumber } from "popup/components/AnimatedNumber";
 
 import "./styles.scss";
 
@@ -160,12 +162,14 @@ export const AssetIcon = ({
 interface AccountAssetsProps {
   assetIcons: AssetIcons;
   sortedBalances: AssetType[];
+  assetPrices?: ApiTokenPrices;
   setSelectedAsset?: (selectedAsset: string) => void;
 }
 
 export const AccountAssets = ({
   assetIcons: inputAssetIcons,
   sortedBalances,
+  assetPrices,
   setSelectedAsset,
 }: AccountAssetsProps) => {
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
@@ -250,6 +254,7 @@ export const AccountAssets = ({
         }
 
         const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
+        const assetPrice = assetPrices ? assetPrices[canonicalAsset] : null;
 
         const isSuspicious = isAssetSuspicious(rb.blockaidData);
 
@@ -257,6 +262,21 @@ export const AccountAssets = ({
           rb.contractId && "decimals" in rb
             ? formatTokenAmount(rb.total, rb.decimals)
             : rb.total.toFixed();
+
+        const getDeltaColor = (delta: BigNumber) => {
+          if (delta.isZero()) {
+            return "";
+          }
+
+          if (delta.isNegative()) {
+            return "negative";
+          }
+          if (delta.isPositive()) {
+            return "positive";
+          }
+
+          return "";
+        };
 
         return (
           <div
@@ -270,21 +290,60 @@ export const AccountAssets = ({
             onClick={isLP ? () => null : () => handleClick(canonicalAsset)}
           >
             <div className="AccountAssets__copy-left">
-              <AssetIcon
-                assetIcons={assetIcons}
-                code={code}
-                issuerKey={issuer?.key}
-                retryAssetIconFetch={retryAssetIconFetch}
-                isLPShare={!!rb.liquidityPoolId}
-                isSuspicious={isSuspicious}
-              />
-              <span className="asset-code">{code}</span>
-            </div>
-            <div className="AccountAssets__copy-right">
-              <div className="asset-amount" data-testid="asset-amount">
-                {formatAmount(amountVal)}
+              <div className="asset-icon">
+                <AssetIcon
+                  assetIcons={assetIcons}
+                  code={code}
+                  issuerKey={issuer?.key}
+                  retryAssetIconFetch={retryAssetIconFetch}
+                  isLPShare={!!rb.liquidityPoolId}
+                  isSuspicious={isSuspicious}
+                />
+              </div>
+              <div className="asset-native-value">
+                <span className="asset-code">{code}</span>
+                <div className="asset-native-amount" data-testid="asset-amount">
+                  {formatAmount(amountVal)}
+                </div>
               </div>
             </div>
+            {assetPrice ? (
+              <div className="AccountAssets__copy-right">
+                <AnimatedNumber
+                  valueAddlClasses="asset-usd-amount"
+                  valueAddlProperties={{
+                    "data-testid": `asset-amount-${canonicalAsset}`,
+                  }}
+                  value={`$ ${formatAmount(
+                    roundUsdValue(
+                      new BigNumber(assetPrice.currentPrice)
+                        .multipliedBy(rb.total)
+                        .toString(),
+                    ),
+                  )}`}
+                />
+                {assetPrice.percentagePriceChange24h ? (
+                  <AnimatedNumber
+                    valueAddlProperties={{
+                      "data-testid": `asset-price-delta-${canonicalAsset}`,
+                    }}
+                    valueAddlClasses={`asset-value-delta ${getDeltaColor(
+                      new BigNumber(
+                        roundUsdValue(assetPrice.percentagePriceChange24h),
+                      ),
+                    )}
+                    `}
+                    value={`${formatAmount(
+                      roundUsdValue(assetPrice.percentagePriceChange24h),
+                    )}%`}
+                  />
+                ) : (
+                  <div className="asset-value-delta">--</div>
+                )}
+              </div>
+            ) : (
+              <div className="asset-value-delta">--</div>
+            )}
           </div>
         );
       })}

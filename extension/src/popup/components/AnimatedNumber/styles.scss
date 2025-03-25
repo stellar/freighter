@@ -1,0 +1,18 @@
+.animated-number-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.animated-number {
+  position: relative;
+
+  .digit {
+    &.positive {
+      color: var(--sds-clr-green-09);
+    }
+
+    &.negative {
+      color: var(--sds-clr-red-09);
+    }
+  }
+}

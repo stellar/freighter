@@ -169,7 +169,7 @@ export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
   } else {
     try {
       const res = await fetch(
-        `${INDEXER_URL}/rpc-health?network=${networkDetails.network}`,
+        `${INDEXER_URL}/rpc-health?network=${networkDetails.network}`
       );
 
       if (!res.ok) {
@@ -178,7 +178,7 @@ export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
       rpcHealth = await res.json();
     } catch (e) {
       captureException(
-        `Failed to load rpc health for Soroban - ${JSON.stringify(e)}`,
+        `Failed to load rpc health for Soroban - ${JSON.stringify(e)}`
       );
       console.error(e);
     }
@@ -289,7 +289,7 @@ export const subscribeTokenBalance = async ({
 
     const res = await fetch(
       `${INDEXER_URL}/subscription/token-balance`,
-      options,
+      options
     );
 
     if (!res.ok) {

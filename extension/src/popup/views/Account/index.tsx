@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import BigNumber from "bignumber.js";
 import {
   CopyText,
   Icon,
@@ -36,6 +37,7 @@ import {
   resetAccountBalanceStatus,
   getAccountBalances,
   getSoroswapTokens,
+  getTokenPrices,
 } from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -52,10 +54,12 @@ import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsD
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
+import { AnimatedNumber } from "popup/components/AnimatedNumber";
+import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+import { isMainnet } from "helpers/stellar";
 import { AppDispatch } from "popup/App";
 
 import "popup/metrics/authServices";
-
 import "./styles.scss";
 
 export const defaultAccountBalances = {
@@ -66,10 +70,9 @@ export const defaultAccountBalances = {
 export const Account = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
+  const { accountBalances, assetIcons, accountBalanceStatus, tokenPrices } =
+    useSelector(transactionSubmissionSelector);
   const navigate = useNavigate();
-  const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
-    transactionSubmissionSelector,
-  );
   const accountStatus = useSelector(accountStatusSelector);
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] =
     useState(false);
@@ -88,6 +91,10 @@ export const Account = () => {
   const isFullscreenModeEnabled = isFullscreenMode();
 
   const { balances, isFunded, error } = accountBalances;
+  const arePricesSupported = isMainnet(networkDetails);
+  // This ensures that the prices effect does not depend on dispatch, avoiding unnecessary re-renders.
+  // eslint-disable-next-line no-undef
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // reset to avoid any residual data eg switching between send and swap or
@@ -98,13 +105,42 @@ export const Account = () => {
       getAccountBalances({
         publicKey,
         networkDetails,
+        shouldGetTokenPrices: arePricesSupported,
       }),
     );
 
     return () => {
       dispatch(resetAccountBalanceStatus());
     };
-  }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
+  }, [
+    publicKey,
+    networkDetails,
+    isAccountFriendbotFunded,
+    dispatch,
+    arePricesSupported,
+  ]);
+
+  useEffect(() => {
+    if (!arePricesSupported || !balances) {
+      return;
+    }
+
+    // Clear any existing interval before setting a new one
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    intervalRef.current = setInterval(() => {
+      dispatch(getTokenPrices({ balances, networkDetails }));
+    }, 30000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [arePricesSupported, dispatch, networkDetails, balances]);
 
   useEffect(() => {
     if (!balances) {
@@ -175,6 +211,20 @@ export const Account = () => {
     return <Loading />;
   }
 
+  const totalBalanceUsd = Object.keys(tokenPrices).reduce((prev, curr) => {
+    if (!accountBalances.balances![curr]) {
+      return prev;
+    }
+    const currentAssetBalance = accountBalances.balances![curr].total;
+    const currentPrice = tokenPrices[curr]
+      ? tokenPrices[curr].currentPrice
+      : "0";
+    const currentUsdBalance = new BigNumber(currentPrice).multipliedBy(
+      currentAssetBalance,
+    );
+    return currentUsdBalance.plus(prev);
+  }, new BigNumber(0));
+
   return (
     <>
       <AccountHeader
@@ -187,22 +237,36 @@ export const Account = () => {
       <View.Content hasNoTopPadding>
         <div className="AccountView" data-testid="account-view">
           <div className="AccountView__account-actions">
-            <div className="AccountView__name-key-display">
-              <div
-                className="AccountView__account-name"
-                data-testid="account-view-account-name"
-              >
-                {currentAccountName}
-              </div>
-              <CopyText
-                textToCopy={publicKey}
-                tooltipPlacement="bottom"
-                doneLabel="Copied address"
-              >
-                <div className="AccountView__account-num">
-                  <Icon.Copy01 />
+            <div className="AccountView__account-details">
+              <div className="AccountView__name-key-display">
+                <div
+                  className="AccountView__account-name"
+                  data-testid="account-view-account-name"
+                >
+                  {currentAccountName}
                 </div>
-              </CopyText>
+                <CopyText
+                  textToCopy={publicKey}
+                  tooltipPlacement="bottom"
+                  doneLabel="Copied address"
+                >
+                  <div className="AccountView__account-num">
+                    <Icon.Copy01 />
+                  </div>
+                </CopyText>
+              </div>
+              <AnimatedNumber
+                containerAddlClasses="AccountView__total-usd-balance-container"
+                valueAddlClasses="AccountView__total-usd-balance"
+                value={
+                  arePricesSupported
+                    ? `$${formatAmount(
+                        roundUsdValue(totalBalanceUsd.toString()),
+                      )}`
+                    : ""
+                }
+                key="total-balance"
+              />
             </div>
             <div className="AccountView__send-receive-display">
               <div className="AccountView__send-receive-button">
@@ -284,6 +348,7 @@ export const Account = () => {
             >
               <AccountAssets
                 sortedBalances={sortedBalances}
+                assetPrices={tokenPrices}
                 assetIcons={assetIcons}
                 setSelectedAsset={setSelectedAsset}
               />

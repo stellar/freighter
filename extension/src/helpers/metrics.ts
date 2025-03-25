@@ -16,7 +16,7 @@ type MetricsPayloadAction = PayloadAction<{
 }>;
 type MetricHandler<AppState> = (
   state: AppState,
-  action: MetricsPayloadAction,
+  action: MetricsPayloadAction
 ) => void;
 const handlersLookup: { [key: string]: MetricHandler<any>[] } = {};
 
@@ -33,7 +33,7 @@ export function metricsMiddleware<State>(): Middleware<Action, State> {
       const state = getState();
       const _action = action as PayloadAction<{ errorMessage: string }>; // Redux Middleware type forces this unknown for some reason
       (handlersLookup[_action.type] || []).forEach((handler) =>
-        handler(state, _action),
+        handler(state, _action)
       );
       return next(action);
     };
@@ -50,7 +50,7 @@ export function metricsMiddleware<State>(): Middleware<Action, State> {
  */
 export function registerHandler<State>(
   actionType: string | { type: string },
-  handler: (state: State, action: MetricsPayloadAction) => void,
+  handler: (state: State, action: MetricsPayloadAction) => void
 ) {
   const type = typeof actionType === "string" ? actionType : actionType.type;
   if (handlersLookup[type]) {
@@ -108,17 +108,17 @@ const uploadMetrics = throttle(async () => {
       const amplitudeFetchResJson = await amplitudeFetchRes.json();
       captureException(
         `Error uploading to Amplitude with error: ${JSON.stringify(
-          amplitudeFetchResJson,
+          amplitudeFetchResJson
         )} | cache size: ${toUpload.length} | cache contents: ${JSON.stringify(
-          toUpload,
-        )}`,
+          toUpload
+        )}`
       );
     }
   } catch (e) {
     captureException(
       `Amplitude fetch threw error: ${JSON.stringify(e)} | cache size: ${
         toUpload.length
-      } | cache contents: ${JSON.stringify(toUpload)}`,
+      } | cache contents: ${JSON.stringify(toUpload)}`
     );
   }
 }, 500);

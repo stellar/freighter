@@ -36,7 +36,7 @@ interface ChooseAssetProps {
 export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
   const { t } = useTranslation();
   const { assetIcons, assetSelect, soroswapTokens } = useSelector(
-    transactionSubmissionSelector,
+    transactionSubmissionSelector
   );
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -87,7 +87,7 @@ export const ChooseAsset = ({ balances }: ChooseAssetProps) => {
               domain = await getAssetDomain(
                 issuer.key,
                 networkDetails.networkUrl,
-                networkDetails.networkPassphrase,
+                networkDetails.networkPassphrase
               );
             } catch (e) {
               console.error(e);
