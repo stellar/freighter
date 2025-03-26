@@ -65,7 +65,7 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
         validationSchema={YupObject().shape({
           transactionFee: YupNumber().min(
             0.00001,
-            `${t("must be greater than")} 0.00001`
+            `${t("must be greater than")} 0.00001`,
           ),
         })}
       >

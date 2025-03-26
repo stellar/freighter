@@ -114,8 +114,10 @@
     justify-content: space-around;
     position: absolute;
     top: calc(
-      var(--popup--height) - var(--continue-btn-height) -
-        var(--bottom-btn-margin) - 2.375rem
+      var(--popup--height) - var(--continue-btn-height) - var(
+          --bottom-btn-margin
+        ) -
+        2.375rem
     );
     width: calc(var(--popup--width) - 2 * var(--popup--side-padding));
 

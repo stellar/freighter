@@ -26,11 +26,11 @@ describe("Token Warning", () => {
           handleAddToken={() => Promise.resolve()}
           isCustomToken={true}
         />
-      </Wrapper>
+      </Wrapper>,
     );
     await waitFor(() => screen.getByTestId("TokenWarning"));
     expect(screen.getByTestId("DescriptionLabel")).toHaveTextContent(
-      "Add Asset"
+      "Add Asset",
     );
     expect(screen.getByTestId("add-asset")).toHaveTextContent("Add asset");
   });
@@ -53,11 +53,11 @@ describe("Token Warning", () => {
           handleAddToken={() => Promise.resolve()}
           isCustomToken={false}
         />
-      </Wrapper>
+      </Wrapper>,
     );
     await waitFor(() => screen.getByTestId("TokenWarning"));
     expect(screen.getByTestId("DescriptionLabel")).toHaveTextContent(
-      "Add Asset Trustline"
+      "Add Asset Trustline",
     );
     expect(screen.getByTestId("add-asset")).toHaveTextContent("Add asset");
   });

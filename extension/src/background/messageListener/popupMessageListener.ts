@@ -177,7 +177,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const _getNonHwKeyID = async () => {
     const keyIdList = await getKeyIdList();
     const nonHwKeyIds = keyIdList.filter(
-      (k: string) => k.indexOf(HW_PREFIX) === -1
+      (k: string) => k.indexOf(HW_PREFIX) === -1,
     );
     return nonHwKeyIds[0] || "";
   };
@@ -203,7 +203,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const keyIdListArr = await getKeyIdList();
     const accountName = `${hardwareWalletType} ${
       allAccounts.filter(
-        ({ hardwareWalletType: hwType }) => hwType !== hardwareWalletType
+        ({ hardwareWalletType: hwType }) => hwType !== hardwareWalletType,
       ).length + 1
     }`;
 
@@ -236,7 +236,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       logIn({
         publicKey,
         allAccounts,
-      }) as any
+      }) as any,
     );
   };
 
@@ -281,7 +281,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
             imported,
           },
         ],
-      }) as any
+      }) as any,
     );
 
     const keyMetadata = {
@@ -365,7 +365,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       logIn({
         publicKey,
         allAccounts: newAllAccounts,
-      }) as any
+      }) as any,
     );
 
     const keyMetadata = {
@@ -401,7 +401,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   const _activatePublicKey = async ({ publicKey }: { publicKey: string }) => {
     const allAccounts = allAccountsSelector(sessionStore.getState());
     let publicKeyIndex = allAccounts.findIndex(
-      (account: Account) => account.publicKey === publicKey
+      (account: Account) => account.publicKey === publicKey,
     );
     publicKeyIndex = publicKeyIndex > -1 ? publicKeyIndex : 0;
 
@@ -464,7 +464,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     await localStore.setItem(
       APPLICATION_ID,
-      APPLICATION_STATE.PASSWORD_CREATED
+      APPLICATION_STATE.PASSWORD_CREATED,
     );
 
     const currentState = sessionStore.getState();
@@ -498,8 +498,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       } catch (e) {
         captureException(
           `Error logging in to all accounts in Add Account - ${JSON.stringify(
-            e
-          )}`
+            e,
+          )}`,
         );
         return { error: "Unable to login" };
       }
@@ -583,8 +583,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       } catch (e) {
         captureException(
           `Error logging in to all accounts in Import Account - ${JSON.stringify(
-            e
-          )}`
+            e,
+          )}`,
         );
         return { error: "Unable to login" };
       }
@@ -674,7 +674,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const keyId = (await localStore.getItem(KEY_ID)) || "";
 
     sessionStore.dispatch(
-      updateAllAccountsAccountName({ updatedAccountName: accountName })
+      updateAllAccountsAccountName({ updatedAccountName: accountName }),
     );
     await addAccountName({ keyId, accountName });
 
@@ -691,7 +691,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     if (
       savedNetworks.find(
         ({ networkName }: { networkName: string }) =>
-          networkName === networkDetails.networkName
+          networkName === networkDetails.networkName,
       )
     ) {
       return {
@@ -713,7 +713,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     const savedNetworks = await getSavedNetworks();
     const networkIndex = savedNetworks.findIndex(
-      ({ networkName: savedNetworkName }) => savedNetworkName === networkName
+      ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
     );
 
     savedNetworks.splice(networkIndex, 1);
@@ -734,7 +734,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const activeIndex =
       savedNetworks.findIndex(
         ({ networkName: savedNetworkName }) =>
-          savedNetworkName === activeNetworkDetails.networkName
+          savedNetworkName === activeNetworkDetails.networkName,
       ) || 0;
 
     savedNetworks.splice(networkIndex, 1, networkDetails);
@@ -760,7 +760,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const pubKey = publicKeySelector(currentState);
     const networkDetails =
       savedNetworks.find(
-        ({ networkName: savedNetworkName }) => savedNetworkName === networkName
+        ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
       ) || MAINNET_NETWORK_DETAILS;
 
     await localStore.setItem(NETWORK_ID, networkDetails);
@@ -927,7 +927,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
           const privateKey = wallet.getSecret(i);
 
           const resp = await fetch(
-            `${MAINNET_NETWORK_DETAILS.networkUrl}/accounts/${publicKey}`
+            `${MAINNET_NETWORK_DETAILS.networkUrl}/accounts/${publicKey}`,
           );
 
           const j = await resp.json();
@@ -948,7 +948,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
           }
         } catch (e) {
           captureException(
-            `Error preloading account: ${JSON.stringify(e)} - ${i}`
+            `Error preloading account: ${JSON.stringify(e)} - ${i}`,
           );
           // continue
         }
@@ -1092,7 +1092,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         logIn({
           publicKey: hwPublicKey || activePublicKey,
           allAccounts: await _getLocalStorageAccounts(password),
-        }) as any
+        }) as any,
       );
     }
 
@@ -1109,7 +1109,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     } catch (e) {
       await clearSession({ localStore, sessionStore });
       captureException(
-        `Error storing encrypted temporary data: ${JSON.stringify(e)}`
+        `Error storing encrypted temporary data: ${JSON.stringify(e)}`,
       );
     }
 
@@ -1132,8 +1132,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         } catch (e) {
           captureException(
             `Error storing encrypted temporary data: ${JSON.stringify(
-              e
-            )} - ${JSON.stringify(keyIdList)}: ${i}`
+              e,
+            )} - ${JSON.stringify(keyIdList)}: ${i}`,
           );
         }
       }
@@ -1270,7 +1270,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       });
     } catch (e) {
       captureException(
-        `Sign transaction: No private key found: ${JSON.stringify(e)}`
+        `Sign transaction: No private key found: ${JSON.stringify(e)}`,
       );
     }
 
@@ -1355,7 +1355,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       });
     } catch (e) {
       captureException(
-        `Sign auth entry: No private key found: ${JSON.stringify(e)}`
+        `Sign auth entry: No private key found: ${JSON.stringify(e)}`,
       );
     }
 
@@ -1406,7 +1406,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       });
     } catch (e) {
       captureException(
-        `Sign freighter transaction: No private key found: ${JSON.stringify(e)}`
+        `Sign freighter transaction: No private key found: ${JSON.stringify(e)}`,
       );
     }
 
@@ -1437,8 +1437,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     } catch (e) {
       captureException(
         `Sign freighter Soroban transaction: No private key found: ${JSON.stringify(
-          e
-        )}`
+          e,
+        )}`,
       );
     }
 
@@ -1546,7 +1546,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     await localStore.setItem(
       IS_EXPERIMENTAL_MODE_ID,
-      isExperimentalModeEnabled
+      isExperimentalModeEnabled,
     );
 
     return {
@@ -1644,7 +1644,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     try {
       const resp = await cachedFetch(
         STELLAR_EXPERT_MEMO_REQUIRED_ACCOUNTS_URL,
-        CACHED_MEMO_REQUIRED_ACCOUNTS_ID
+        CACHED_MEMO_REQUIRED_ACCOUNTS_ID,
       );
       const memoRequiredAccounts: MemoRequiredAccount[] =
         resp?._embedded?.records || [];
@@ -1731,7 +1731,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     const accountTokenIdList = tokenIdsByNetwork[keyId] || [];
     const updatedTokenIdList = accountTokenIdList.filter(
-      (id: string) => id !== contractId
+      (id: string) => id !== contractId,
     );
 
     await localStore.setItem(TOKEN_ID_LIST, {
@@ -1782,7 +1782,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const migratedMnemonicPhrase = generateMnemonic({ entropyBits: 128 });
 
     sessionStore.dispatch(
-      setMigratedMnemonicPhrase({ migratedMnemonicPhrase })
+      setMigratedMnemonicPhrase({ migratedMnemonicPhrase }),
     );
 
     return { mnemonicPhrase: migratedMnemonicPhrase };
@@ -1793,7 +1793,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       request;
 
     const migratedMnemonicPhrase = migratedMnemonicPhraseSelector(
-      sessionStore.getState()
+      sessionStore.getState(),
     );
     const migratedAccounts = [];
 
@@ -1808,7 +1808,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     // we expect all migrations to be done on MAINNET
     const server = stellarSdkServer(
       NETWORK_URLS.PUBLIC,
-      MAINNET_NETWORK_DETAILS.networkPassphrase
+      MAINNET_NETWORK_DETAILS.networkPassphrase,
     );
     const networkPassphrase = StellarSdk.Networks.PUBLIC;
 
@@ -1870,7 +1870,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
         StellarSdk.Operation.createAccount({
           destination: newKeyPair.publicKey,
           startingBalance,
-        })
+        }),
       );
 
       const sourceKeys = StellarSdk.Keypair.fromSecret(store.privateKey);
@@ -1919,12 +1919,12 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
           {
             fee,
             networkPassphrase,
-          }
+          },
         );
         mergeTransaction.addOperation(
           StellarSdk.Operation.accountMerge({
             destination: newKeyPair.publicKey,
-          })
+          }),
         );
 
         const builtMergeTransaction = mergeTransaction.setTimeout(180).build();
@@ -1959,7 +1959,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     }
 
     const successfullyMigratedAccts = migratedAccounts.filter(
-      ({ isMigrated }) => isMigrated
+      ({ isMigrated }) => isMigrated,
     );
 
     // if any of the accounts have been successfully migrated, go ahead and log in
@@ -2000,7 +2000,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     if (
       currentAssetsLists[network].some(
-        (list: { url: string }) => list.url === assetsList.url
+        (list: { url: string }) => list.url === assetsList.url,
       )
     ) {
       return {
@@ -2022,7 +2022,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const networkAssetsLists = currentAssetsLists[network];
 
     const index = networkAssetsLists.findIndex(
-      ({ url }: { url: string }) => url === assetsList.url
+      ({ url }: { url: string }) => url === assetsList.url,
     );
 
     if (

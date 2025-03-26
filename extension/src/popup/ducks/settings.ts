@@ -82,7 +82,7 @@ const initialState = {
 };
 
 export const loadSettings = createAsyncThunk("settings/loadSettings", () =>
-  loadSettingsService()
+  loadSettingsService(),
 );
 
 export const saveAllowList = createAsyncThunk<
@@ -111,7 +111,7 @@ export const saveAllowList = createAsyncThunk<
     }
 
     return res;
-  }
+  },
 );
 
 export const saveSettings = createAsyncThunk<
@@ -126,7 +126,7 @@ export const saveSettings = createAsyncThunk<
   "settings/saveSettings",
   async (
     { isDataSharingAllowed, isMemoValidationEnabled, isHideDustEnabled },
-    { getState, rejectWithValue }
+    { getState, rejectWithValue },
   ) => {
     let res = {
       ...settingsInitialState,
@@ -154,7 +154,7 @@ export const saveSettings = createAsyncThunk<
     }
 
     return res;
-  }
+  },
 );
 
 export const saveExperimentalFeatures = createAsyncThunk<
@@ -169,7 +169,7 @@ export const saveExperimentalFeatures = createAsyncThunk<
   "settings/saveExperimentalFeaturss",
   async (
     { isExperimentalModeEnabled, isHashSigningEnabled, isNonSSLEnabled },
-    { getState, rejectWithValue }
+    { getState, rejectWithValue },
   ) => {
     let res = {
       ...experimentalFeaturesInitialState,
@@ -194,7 +194,7 @@ export const saveExperimentalFeatures = createAsyncThunk<
     }
 
     return res;
-  }
+  },
 );
 
 export const changeNetwork = createAsyncThunk<
@@ -227,7 +227,7 @@ export const addCustomNetwork = createAsyncThunk<
     }
 
     return res;
-  }
+  },
 );
 
 export const removeCustomNetwork = createAsyncThunk<
@@ -251,7 +251,7 @@ export const removeCustomNetwork = createAsyncThunk<
     }
 
     return res;
-  }
+  },
 );
 
 export const editCustomNetwork = createAsyncThunk<
@@ -280,7 +280,7 @@ export const editCustomNetwork = createAsyncThunk<
     }
 
     return res;
-  }
+  },
 );
 
 export const addAssetsList = createAsyncThunk<
@@ -305,7 +305,7 @@ export const addAssetsList = createAsyncThunk<
     }
 
     return res;
-  }
+  },
 );
 
 export const modifyAssetsList = createAsyncThunk<
@@ -320,7 +320,7 @@ export const modifyAssetsList = createAsyncThunk<
   "settings/modifyAssetsList",
   async (
     { assetsList, network, isDeleteAssetsList },
-    { getState, rejectWithValue }
+    { getState, rejectWithValue },
   ) => {
     const activePublicKey = publicKeySelector(getState());
 
@@ -338,7 +338,7 @@ export const modifyAssetsList = createAsyncThunk<
     }
 
     return res;
-  }
+  },
 );
 
 const settingsSlice = createSlice({
@@ -356,7 +356,7 @@ const settingsSlice = createSlice({
         state,
         action: PayloadAction<{
           allowList: string[];
-        }>
+        }>,
       ) => {
         const { allowList } = action?.payload || {
           networksList: initialState.allowList,
@@ -366,7 +366,7 @@ const settingsSlice = createSlice({
           ...state,
           allowList,
         };
-      }
+      },
     );
     builder.addCase(saveSettings.fulfilled, (state, action) => {
       const {
@@ -425,7 +425,7 @@ const settingsSlice = createSlice({
           Settings &
             IndexerSettings &
             ExperimentalFeatures & { assetsLists: AssetsLists }
-        >
+        >,
       ) => {
         const {
           allowList,
@@ -462,7 +462,7 @@ const settingsSlice = createSlice({
           isHideDustEnabled,
           settingsState: SettingsState.SUCCESS,
         };
-      }
+      },
     );
     builder.addCase(loadSettings.pending, (state) => ({
       ...state,
@@ -480,7 +480,7 @@ const settingsSlice = createSlice({
         action: PayloadAction<{
           networkDetails: NetworkDetails;
           isRpcHealthy: boolean;
-        }>
+        }>,
       ) => {
         const { networkDetails, isRpcHealthy } = action?.payload || {
           networkDetails: MAINNET_NETWORK_DETAILS,
@@ -493,7 +493,7 @@ const settingsSlice = createSlice({
           isRpcHealthy,
           settingsState: SettingsState.SUCCESS,
         };
-      }
+      },
     );
     builder.addCase(changeNetwork.pending, (state) => ({
       ...state,
@@ -509,7 +509,7 @@ const settingsSlice = createSlice({
         state,
         action: PayloadAction<{
           networksList: NetworkDetails[];
-        }>
+        }>,
       ) => {
         const { networksList } = action?.payload || {
           networksList: DEFAULT_NETWORKS,
@@ -519,7 +519,7 @@ const settingsSlice = createSlice({
           ...state,
           networksList,
         };
-      }
+      },
     );
     builder.addCase(addCustomNetwork.rejected, (state, action) => {
       const { errorMessage } = action.payload || { errorMessage: "" };
@@ -535,7 +535,7 @@ const settingsSlice = createSlice({
         state,
         action: PayloadAction<{
           networksList: NetworkDetails[];
-        }>
+        }>,
       ) => {
         const { networksList } = action?.payload || {
           networksList: DEFAULT_NETWORKS,
@@ -545,7 +545,7 @@ const settingsSlice = createSlice({
           ...state,
           networksList,
         };
-      }
+      },
     );
     builder.addCase(
       editCustomNetwork.fulfilled,
@@ -554,7 +554,7 @@ const settingsSlice = createSlice({
         action: PayloadAction<{
           networkDetails: NetworkDetails;
           networksList: NetworkDetails[];
-        }>
+        }>,
       ) => {
         const { networkDetails, networksList } = action?.payload || {
           networkDetails: MAINNET_NETWORK_DETAILS,
@@ -566,7 +566,7 @@ const settingsSlice = createSlice({
           networkDetails,
           networksList,
         };
-      }
+      },
     );
     builder.addCase(
       addAssetsList.fulfilled,
@@ -574,7 +574,7 @@ const settingsSlice = createSlice({
         state,
         action: PayloadAction<{
           assetsLists: AssetsLists;
-        }>
+        }>,
       ) => {
         const { assetsLists } = action?.payload || {
           assetsLists: initialState.assetsLists,
@@ -584,7 +584,7 @@ const settingsSlice = createSlice({
           ...state,
           assetsLists,
         };
-      }
+      },
     );
     builder.addCase(
       modifyAssetsList.fulfilled,
@@ -592,7 +592,7 @@ const settingsSlice = createSlice({
         state,
         action: PayloadAction<{
           assetsLists: AssetsLists;
-        }>
+        }>,
       ) => {
         const { assetsLists } = action?.payload || {
           assetsLists: initialState.assetsLists,
@@ -602,7 +602,7 @@ const settingsSlice = createSlice({
           ...state,
           assetsLists,
         };
-      }
+      },
     );
   },
 });
@@ -619,12 +619,12 @@ export const settingsSelector = (state: {
 
 export const settingsDataSharingSelector = createSelector(
   settingsSelector,
-  (settings) => settings.isDataSharingAllowed
+  (settings) => settings.isDataSharingAllowed,
 );
 
 export const settingsExperimentalModeSelector = createSelector(
   settingsSelector,
-  (settings) => settings.isExperimentalModeEnabled
+  (settings) => settings.isExperimentalModeEnabled,
 );
 
 export const settingsSorobanSupportedSelector = createSelector(
@@ -632,17 +632,17 @@ export const settingsSorobanSupportedSelector = createSelector(
   (settings) =>
     settings.networkDetails.network === MAINNET_NETWORK_DETAILS.network
       ? settings.isSorobanPublicEnabled && settings.isRpcHealthy
-      : settings.isRpcHealthy
+      : settings.isRpcHealthy,
 );
 
 export const settingsNetworkDetailsSelector = createSelector(
   settingsSelector,
-  (settings) => settings.networkDetails
+  (settings) => settings.networkDetails,
 );
 
 export const settingsNetworksListSelector = createSelector(
   settingsSelector,
-  (settings) => settings.networksList
+  (settings) => settings.networksList,
 );
 
 export const settingsPreferencesSelector = createSelector(
@@ -655,20 +655,20 @@ export const settingsPreferencesSelector = createSelector(
     isDataSharingAllowed,
     isMemoValidationEnabled,
     isExperimentalModeEnabled,
-  })
+  }),
 );
 
 export const settingsErrorSelector = createSelector(
   settingsSelector,
-  (settings) => settings.error
+  (settings) => settings.error,
 );
 
 export const settingsStateSelector = createSelector(
   settingsSelector,
-  (settings) => settings.settingsState
+  (settings) => settings.settingsState,
 );
 
 export const isNonSSLEnabledSelector = createSelector(
   settingsSelector,
-  (settings) => !isMainnet(settings.networkDetails) || settings.isNonSSLEnabled
+  (settings) => !isMainnet(settings.networkDetails) || settings.isNonSSLEnabled,
 );

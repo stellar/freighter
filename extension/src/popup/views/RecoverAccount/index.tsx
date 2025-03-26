@@ -118,7 +118,7 @@ export const RecoverAccount = () => {
       recoverAccount({
         password,
         mnemonicPhrase: buildMnemonicPhrase(mnemonicPhraseArr),
-      })
+      }),
     );
   };
 
@@ -176,7 +176,7 @@ export const RecoverAccount = () => {
                           <>
                             <Text as="p" size="md">
                               {t(
-                                "Enter your mnemonic phrase to restore your wallet"
+                                "Enter your mnemonic phrase to restore your wallet",
                               )}
                             </Text>
                           </>

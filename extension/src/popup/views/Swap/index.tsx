@@ -34,7 +34,7 @@ export const Swap = () => {
           getAccountBalances({
             publicKey,
             networkDetails,
-          })
+          }),
         );
 
         if (getAccountBalances.fulfilled.match(res)) {
@@ -42,7 +42,7 @@ export const Swap = () => {
             getAssetIcons({
               balances: res.payload.balances.balances,
               networkDetails,
-            })
+            }),
           );
         }
       }

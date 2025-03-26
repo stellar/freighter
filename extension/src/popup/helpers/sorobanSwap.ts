@@ -292,9 +292,8 @@ export const buildAndSimulateSoroswapTx = async ({
 
   if (isCustomNetwork(networkDetails)) {
     // Now we can simulate and see if we have any issues
-    const simulationTransaction = await sorobanServer.simulateTransaction(
-      builtTx,
-    );
+    const simulationTransaction =
+      await sorobanServer.simulateTransaction(builtTx);
 
     // If the simulation response is valid, we can prepare the transaction to be submitted to the network
     // This is the transaction the user will sign and then submit to complete the swap

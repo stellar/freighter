@@ -34,7 +34,7 @@ export const AddAccount = () => {
         navigateTo(ROUTES.account, navigate);
       }
     },
-    [dispatch, navigate]
+    [dispatch, navigate],
   );
 
   const handleEnterPassword = async (password: string) => {
@@ -43,7 +43,7 @@ export const AddAccount = () => {
 
   useEffect(
     () => () => dispatch(clearApiError()) as unknown as void,
-    [dispatch]
+    [dispatch],
   );
 
   // Ask for user password in case it's not saved in current session store

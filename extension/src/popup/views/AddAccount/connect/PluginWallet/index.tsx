@@ -18,7 +18,7 @@ export const PluginWallet = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const walletType = new URLSearchParams(location.search).get(
-    "walletType"
+    "walletType",
   ) as ConfigurableWalletType;
   const [bipPath, setBipPath] = useState(defaultStellarBipPath);
   const [useDefault, setUseDefault] = useState(true);
@@ -75,8 +75,8 @@ export const PluginWallet = () => {
               openTab(
                 newTabHref(
                   ROUTES.connectDevice,
-                  `bipPath=${bipPath}&walletType=${walletType}`
-                )
+                  `bipPath=${bipPath}&walletType=${walletType}`,
+                ),
               );
             }}
           >

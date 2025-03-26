@@ -74,7 +74,7 @@ export const ReviewAuth = () => {
 
   const transaction = TransactionBuilder.fromXDR(
     params.transactionXdr as string,
-    networkPassphrase
+    networkPassphrase,
   ) as Transaction;
 
   const isFeeBump = "innerTransaction" in transaction;
@@ -97,7 +97,7 @@ export const ReviewAuth = () => {
     rejectTransaction,
     signTransaction,
     params.transactionXdr as string,
-    params.accountToSign as string
+    params.accountToSign as string,
   );
 
   const isLastEntry = activeAuthEntryIndex + 1 === op.auth?.length;
@@ -286,7 +286,7 @@ const TransferSummary = ({
               <p>
                 {formatTokenAmount(
                   new BigNumber(transfer.amount),
-                  Number(tokenDetails.decimals)
+                  Number(tokenDetails.decimals),
                 )}{" "}
                 {symbol}
               </p>
@@ -328,7 +328,7 @@ const AuthDetail = ({
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [authTransfers, setAuthTransfers] = React.useState(
-    [] as TokenArgsDisplay[]
+    [] as TokenArgsDisplay[],
   );
   const [isCheckingTransfers, setCheckingTransfers] = React.useState(true);
 
@@ -345,7 +345,7 @@ const AuthDetail = ({
   const rootJsonDepKey = JSON.stringify(
     rootJson,
     (_, val) => (typeof val === "bigint" ? val.toString() : val),
-    2
+    2,
   );
   React.useEffect(() => {
     async function getIsToken() {
@@ -432,7 +432,7 @@ const AuthDetail = ({
           captureException(
             `Failed to fetch token details - ${JSON.stringify(error)} - ${
               transfer.contractId
-            } - ${networkDetails.network}`
+            } - ${networkDetails.network}`,
           );
           console.error(error);
         }
@@ -569,7 +569,7 @@ const SignTransaction = ({
               fee={tx.fee}
               memo={memo}
               operationNames={tx.operations.map(
-                (op) => OPERATION_TYPES[op.type] || op.type
+                (op) => OPERATION_TYPES[op.type] || op.type,
               )}
             />
           );

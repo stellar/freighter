@@ -17,7 +17,7 @@ test("Swap doesn't throw error when account is unfunded", async ({
 
   await page.getByTestId("BottomNav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
-    "Swap XLM"
+    "Swap XLM",
   );
 });
 test("Send doesn't throw error when account is unfunded", async ({
@@ -35,7 +35,7 @@ test("Send doesn't throw error when account is unfunded", async ({
   await page.getByText("Continue").click({ force: true });
 
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
-    "Send XLM"
+    "Send XLM",
   );
 });
 
@@ -91,7 +91,7 @@ test("Send XLM payments from multiple accounts to G Address", async ({
 
   await page.getByTestId("import-account-button").click();
   await expect(
-    page.getByText("Please enter a valid secret key/password combination")
+    page.getByText("Please enter a valid secret key/password combination"),
   ).toHaveCount(2);
   await page.locator("#password-input").fill(PASSWORD);
   await page.getByTestId("import-account-button").click();
@@ -115,7 +115,7 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
 
   await expect(page.getByText("Send Settings")).toBeVisible();
   await expect(page.getByTestId("SendSettingsTransactionFee")).toHaveText(
-    /[0-9]/
+    /[0-9]/,
   );
   await page.getByText("Review Send").click();
 
@@ -169,7 +169,7 @@ test.skip("Send SAC to C address", async ({ page, extensionId }) => {
   await page.getByTestId("BottomNav-link-swap").click({ force: true });
   await expect(page.getByText("Swap XLM")).toBeVisible();
   await expect(
-    page.getByTestId("AssetSelect").filter({ hasText: "USDC" })
+    page.getByTestId("AssetSelect").filter({ hasText: "USDC" }),
   ).toBeVisible({
     timeout: 20000,
   });
@@ -181,7 +181,7 @@ test.skip("Send SAC to C address", async ({ page, extensionId }) => {
 
   await expect(page.getByText("Swap Settings")).toBeVisible();
   await expect(page.getByTestId("SendSettingsTransactionFee")).toHaveText(
-    /[0-9]/
+    /[0-9]/,
   );
   await page.getByText("Review Swap").click({ force: true });
 

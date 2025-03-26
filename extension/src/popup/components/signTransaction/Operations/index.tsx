@@ -61,7 +61,7 @@ const DestinationWarning = ({
 }) => {
   const flaggedTags = flaggedKeys[destination]?.tags || [];
   const isDestMemoRequired = flaggedTags.includes(
-    TRANSACTION_WARNING.memoRequired
+    TRANSACTION_WARNING.memoRequired,
   );
 
   return (
@@ -117,14 +117,14 @@ export const Operations = ({
         if (sendAsset) {
           await scanAsset(
             `${sendAsset.code}-${sendAsset.issuer}`,
-            networkDetails
+            networkDetails,
           );
         }
 
         if (destAsset) {
           await scanAsset(
             `${destAsset.code}-${destAsset.issuer}`,
-            networkDetails
+            networkDetails,
           );
         }
       };
