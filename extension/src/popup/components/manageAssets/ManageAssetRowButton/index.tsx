@@ -95,7 +95,7 @@ export const ManageAssetRowButton = ({
   const ManageAssetRowDropdownRef = useRef<HTMLDivElement>(null);
   const server = stellarSdkServer(
     networkDetails.networkUrl,
-    networkDetails.networkPassphrase
+    networkDetails.networkPassphrase,
   );
 
   const { changeTrustline } = useChangeTrustline({
@@ -119,7 +119,7 @@ export const ManageAssetRowButton = ({
       issuer: "",
       domain: "",
       image: "",
-    }
+    },
   ) => {
     setAssetSubmitting(canonicalAsset);
     const resp = await checkForSuspiciousAsset({
@@ -132,7 +132,7 @@ export const ManageAssetRowButton = ({
 
     const scannedAsset = await scanAsset(
       `${assetRowData.code}-${assetRowData.issuer}`,
-      networkDetails
+      networkDetails,
     );
 
     if (isAssetSuspicious(scannedAsset) && !isTrustlineActive) {
@@ -152,7 +152,7 @@ export const ManageAssetRowButton = ({
       setAssetSubmitting("");
     } else {
       changeTrustline(!isTrustlineActive, () =>
-        Promise.resolve(navigateTo(ROUTES.account, navigate))
+        Promise.resolve(navigateTo(ROUTES.account, navigate)),
       );
     }
   };
@@ -164,7 +164,7 @@ export const ManageAssetRowButton = ({
       domain: "",
       image: "",
       contract: "",
-    }
+    },
   ) => {
     const contractId = assetRowData.contract;
     setAssetSubmitting(canonicalAsset || contractId);
@@ -177,7 +177,7 @@ export const ManageAssetRowButton = ({
               publicKey,
               tokenId: contractId,
               network: networkDetails.network as Networks,
-            })
+            }),
           );
 
           navigateTo(ROUTES.account, navigate);
@@ -206,7 +206,7 @@ export const ManageAssetRowButton = ({
             publicKey,
             tokenId: contractId,
             network: networkDetails.network as Networks,
-          })
+          }),
         );
         navigateTo(ROUTES.account, navigate);
       }
@@ -215,7 +215,7 @@ export const ManageAssetRowButton = ({
         removeTokenId({
           contractId,
           network: networkDetails.network as NETWORKS,
-        })
+        }),
       );
       navigateTo(ROUTES.account, navigate);
     }
@@ -244,7 +244,7 @@ export const ManageAssetRowButton = ({
             onClick={() => {
               if (!isLoading) {
                 setRowButtonShowing(
-                  rowButtonShowing === canonicalAsset ? "" : canonicalAsset
+                  rowButtonShowing === canonicalAsset ? "" : canonicalAsset,
                 );
               }
             }}
@@ -302,7 +302,7 @@ export const ManageAssetRowButton = ({
                   className="ManageAssetRowButton__dropdown__background"
                   onClick={handleBackgroundClick}
                 ></div>,
-                document.querySelector("#modal-root")!
+                document.querySelector("#modal-root")!,
               )}
             </div>
           ) : null}
@@ -337,7 +337,7 @@ export const ManageAssetRowButton = ({
                 dispatch(resetSubmitStatus());
               }}
             />,
-            document.querySelector("#modal-root")!
+            document.querySelector("#modal-root")!,
           )
         : null}
     </div>

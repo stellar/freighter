@@ -113,7 +113,7 @@ export const AccountOptionsDropdown = ({
               isClear
               isActive={isDropdownOpen}
             />,
-            document.querySelector("#modal-root")!
+            document.querySelector("#modal-root")!,
           )
         : null}
     </>

@@ -100,7 +100,7 @@ export const IntegrationTest = () => {
       res = await resetDevData();
       if (res.error) {
         console.error(
-          "extension must be built in experimental mode to run integration tests"
+          "extension must be built in experimental mode to run integration tests",
         );
         return;
       }
@@ -363,7 +363,7 @@ export const IntegrationTest = () => {
         assertArray(res.networksList);
         assertEq(
           res.networksList[networksListLength - 1].networkName,
-          testCustomNetwork.networkName
+          testCustomNetwork.networkName,
         );
       });
 
@@ -380,7 +380,7 @@ export const IntegrationTest = () => {
         assertArray(res.networksList);
         assertEq(
           res.networksList[networksListLength - 1].networkName,
-          `new network ${random}`
+          `new network ${random}`,
         );
       });
 
@@ -453,7 +453,7 @@ const assertEq = (have: any, want: any) => {
 const assertNumber = (val: any) => {
   if (Number.isNaN(val)) {
     console.error(
-      `[${val}]: incorrect type. Want Number but found ${typeof val}`
+      `[${val}]: incorrect type. Want Number but found ${typeof val}`,
     );
   }
 };
@@ -461,7 +461,7 @@ const assertNumber = (val: any) => {
 const assertBoolean = (val: any) => {
   if (!(typeof val === "boolean")) {
     console.error(
-      `[${val}]: incorrect type. Want Boolean but found ${typeof val}`
+      `[${val}]: incorrect type. Want Boolean but found ${typeof val}`,
     );
   }
 };
@@ -469,7 +469,7 @@ const assertBoolean = (val: any) => {
 const assertString = (val: any, allowEmpty: boolean = false) => {
   if (!(typeof val === "string") && !(val instanceof String)) {
     console.error(
-      `[${val}]: incorrect type. Want String but found ${typeof val}`
+      `[${val}]: incorrect type. Want String but found ${typeof val}`,
     );
   } else if (!allowEmpty && val.length === 0) {
     console.error(`[${val}]: found empty`);
@@ -479,7 +479,7 @@ const assertString = (val: any, allowEmpty: boolean = false) => {
 const assertArray = (val: any, allowEmpty: boolean = false) => {
   if (!Array.isArray(val)) {
     console.error(
-      `[${val}]: incorrect type. Want Array but found ${typeof val}`
+      `[${val}]: incorrect type. Want Array but found ${typeof val}`,
     );
   } else if (!allowEmpty && val.length === 0) {
     console.error(`[${val}]: found empty`);

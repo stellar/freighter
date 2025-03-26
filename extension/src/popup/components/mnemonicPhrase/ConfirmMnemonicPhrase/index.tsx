@@ -48,7 +48,7 @@ export const ConfirmMnemonicPhrase = ({
       // tag each word with an index because words can repeat
       [`${current}-${i}`]: false,
     }),
-    {}
+    {},
   );
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
   const authError = useSelector(authErrorSelector);
@@ -68,11 +68,11 @@ export const ConfirmMnemonicPhrase = ({
 
   const handleSubmit = async (
     _values: FormikValues,
-    formikHelpers: FormikHelpers<FormikValues>
+    formikHelpers: FormikHelpers<FormikValues>,
   ): Promise<void> => {
     if (isMigration) {
       const res = await dispatch(
-        confirmMigratedMnemonicPhrase(joinSelectedWords())
+        confirmMigratedMnemonicPhrase(joinSelectedWords()),
       );
       if (confirmMigratedMnemonicPhrase.fulfilled.match(res)) {
         setSelectedWords([]);
@@ -107,7 +107,7 @@ export const ConfirmMnemonicPhrase = ({
           <>
             <Text as="p" size="md">
               {t(
-                "Please select each word in the same order you have them noted to confirm you got them right."
+                "Please select each word in the same order you have them noted to confirm you got them right.",
               )}
             </Text>
           </>
@@ -139,7 +139,7 @@ export const ConfirmMnemonicPhrase = ({
                         word={convertToWord(wordKey)}
                         wordNumber={() => {
                           const wordIndex = selectedWords.findIndex(
-                            (selectedWord) => selectedWord === wordKey
+                            (selectedWord) => selectedWord === wordKey,
                           );
 
                           if (wordIndex > -1) {
@@ -178,7 +178,7 @@ export const ConfirmMnemonicPhrase = ({
                 </div>
                 <div>
                   {t(
-                    "You can access this later in the app, but we strongly recommend saving this in a safe place."
+                    "You can access this later in the app, but we strongly recommend saving this in a safe place.",
                   )}
                 </div>
               </div>

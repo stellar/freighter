@@ -55,7 +55,7 @@ const mockStorage = new MockStorage();
 jest
   .spyOn(DataStorageAccess, "dataStorageAccess")
   .mockImplementation(() =>
-    dataStorageAccess(mockStorage as Storage["StorageArea"])
+    dataStorageAccess(mockStorage as Storage["StorageArea"]),
   );
 
 describe("Storage migrations", () => {
@@ -67,10 +67,10 @@ describe("Storage migrations", () => {
     await DataStorage.migrateFriendBotUrlNetworkDetails();
     const stored = await mockStorage.get(NETWORKS_LIST_ID);
     const testnetDetails = stored[NETWORKS_LIST_ID].find(
-      (list: { network: NETWORKS }) => list.network === NETWORKS.TESTNET
+      (list: { network: NETWORKS }) => list.network === NETWORKS.TESTNET,
     );
     expect(testnetDetails.friendbotUrl).toEqual(
-      TESTNET_NETWORK_DETAILS.friendbotUrl
+      TESTNET_NETWORK_DETAILS.friendbotUrl,
     );
   });
   it("migrateSorobanRpcUrlNetworkDetails", async () => {
@@ -79,10 +79,10 @@ describe("Storage migrations", () => {
     await DataStorage.migrateSorobanRpcUrlNetworkDetails();
     const stored = await mockStorage.get(NETWORKS_LIST_ID);
     const futurenetDetails = stored[NETWORKS_LIST_ID].find(
-      (list: { network: NETWORKS }) => list.network === NETWORKS.FUTURENET
+      (list: { network: NETWORKS }) => list.network === NETWORKS.FUTURENET,
     );
     expect(futurenetDetails.sorobanRpcUrl).toEqual(
-      SOROBAN_RPC_URLS[NETWORKS.FUTURENET]
+      SOROBAN_RPC_URLS[NETWORKS.FUTURENET],
     );
   });
   it("migrateTokenIdList should migrate top level TOKEN_IDS(initially futurenet) to being keyed by networks", async () => {
@@ -122,10 +122,10 @@ describe("Storage migrations", () => {
     await DataStorage.migrateTestnetSorobanRpcUrlNetworkDetails();
     const stored = await mockStorage.get(NETWORKS_LIST_ID);
     const testnetDetails = stored[NETWORKS_LIST_ID].find(
-      (list: { network: NETWORKS }) => list.network === NETWORKS.TESTNET
+      (list: { network: NETWORKS }) => list.network === NETWORKS.TESTNET,
     );
     expect(testnetDetails.sorobanRpcUrl).toEqual(
-      TESTNET_NETWORK_DETAILS.sorobanRpcUrl
+      TESTNET_NETWORK_DETAILS.sorobanRpcUrl,
     );
   });
   it("migrateTestnetSorobanRpcUrlNetworkDetails should add soroban rpc URL for testnet in current network if it is testnet", async () => {
@@ -133,7 +133,7 @@ describe("Storage migrations", () => {
     await DataStorage.migrateTestnetSorobanRpcUrlNetworkDetails();
     const stored = await mockStorage.get(NETWORK_ID);
     expect(stored[NETWORK_ID].sorobanRpcUrl).toEqual(
-      TESTNET_NETWORK_DETAILS.sorobanRpcUrl
+      TESTNET_NETWORK_DETAILS.sorobanRpcUrl,
     );
   });
   it("migrateTestnetSorobanRpcUrlNetworkDetails should set version to 2.0", async () => {
@@ -169,14 +169,14 @@ describe("Storage migrations", () => {
     const storedCurrentNetwork = await mockStorage.get(NETWORK_ID);
     const storedNetworks = await mockStorage.get(NETWORKS_LIST_ID);
     const pubNetDetails = storedNetworks[NETWORKS_LIST_ID].find(
-      (list: { network: NETWORKS }) => list.network === NETWORKS.PUBLIC
+      (list: { network: NETWORKS }) => list.network === NETWORKS.PUBLIC,
     );
     expect(pubNetDetails.sorobanRpcUrl).toEqual(
-      MAINNET_NETWORK_DETAILS.sorobanRpcUrl
+      MAINNET_NETWORK_DETAILS.sorobanRpcUrl,
     );
     expect(storedVersion[STORAGE_VERSION]).toEqual("4.0.0");
     expect(storedCurrentNetwork[NETWORK_ID].sorobanRpcUrl).toEqual(
-      MAINNET_NETWORK_DETAILS.sorobanRpcUrl
+      MAINNET_NETWORK_DETAILS.sorobanRpcUrl,
     );
   });
   it("migrateMainnetSorobanRpcUrlNetworkDetails should not update networks list if version is > 4.0.0", async () => {
@@ -189,7 +189,7 @@ describe("Storage migrations", () => {
     await DataStorage.migrateMainnetSorobanRpcUrlNetworkDetails();
     const storedNetworks = await mockStorage.get(NETWORKS_LIST_ID);
     const pubNetDetails = storedNetworks[NETWORKS_LIST_ID].find(
-      (list: { network: NETWORKS }) => list.network === NETWORKS.PUBLIC
+      (list: { network: NETWORKS }) => list.network === NETWORKS.PUBLIC,
     );
     expect(pubNetDetails.sorobanRpcUrl).toBeUndefined();
   });
@@ -204,7 +204,7 @@ describe("Storage migrations", () => {
     const storedCurrentNetwork = await mockStorage.get(NETWORK_ID);
     const storedVersion = await mockStorage.get(STORAGE_VERSION);
     expect(storedCurrentNetwork[NETWORK_ID].sorobanRpcUrl).toEqual(
-      FUTURENET_NETWORK_DETAILS.sorobanRpcUrl
+      FUTURENET_NETWORK_DETAILS.sorobanRpcUrl,
     );
     expect(storedVersion[STORAGE_VERSION]).toEqual("4.0.1");
   });
