@@ -164,7 +164,7 @@ export const RecoverAccount = () => {
     setMnemonicPhraseArr(arr);
   };
 
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+  const handlePaste = async (e: React.ClipboardEvent<HTMLInputElement>) => {
     const pastedData = e.clipboardData.getData("text/plain");
     const pastedWords = pastedData.split(" ");
 
@@ -172,7 +172,7 @@ export const RecoverAccount = () => {
       e.preventDefault();
       setPastedValues(pastedWords);
       setMnemonicPhraseArr(pastedWords);
-      e.clipboardData.clearData();
+      await navigator.clipboard.writeText("");
     }
   };
 
