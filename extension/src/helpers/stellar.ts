@@ -1,13 +1,13 @@
 import BigNumber from "bignumber.js";
-import { Asset, Networks } from "stellar-sdk";
+import { Networks } from "stellar-sdk";
 import isEqual from "lodash/isEqual";
 
-import { isSorobanIssuer } from "popup/helpers/account";
 import {
   FUTURENET_NETWORK_DETAILS,
   NETWORK_URLS,
   NetworkDetails,
 } from "@shared/constants/stellar";
+export { getAssetFromCanonical } from "@shared/helpers/stellar";
 
 import { TransactionInfo } from "types/transactions";
 import { parsedSearchParam, getUrlHostname } from "./urls";
@@ -59,25 +59,6 @@ export const getTransactionInfo = (search: string) => {
     isDomainListedAllowed,
     flaggedKeys,
   };
-};
-
-export const getAssetFromCanonical = (canonical: string) => {
-  if (canonical === "native") {
-    return Asset.native();
-  }
-  if (canonical.includes(":")) {
-    const [code, issuer] = canonical.split(":");
-
-    if (isSorobanIssuer(issuer)) {
-      return {
-        code,
-        issuer,
-      };
-    }
-    return new Asset(code, issuer);
-  }
-
-  throw new Error(`invalid asset canonical id: ${canonical}`);
 };
 
 export const getCanonicalFromAsset = (

@@ -314,7 +314,7 @@ export const AccountAssets = ({
                   valueAddlProperties={{
                     "data-testid": `asset-amount-${canonicalAsset}`,
                   }}
-                  value={`$ ${formatAmount(
+                  value={`$${formatAmount(
                     roundUsdValue(
                       new BigNumber(assetPrice.currentPrice)
                         .multipliedBy(rb.total)

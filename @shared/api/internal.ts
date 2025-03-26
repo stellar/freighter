@@ -22,6 +22,7 @@ import {
   getSymbol,
 } from "@shared/helpers/soroban/token";
 import {
+  getAssetFromCanonical,
   getSdk,
   isCustomNetwork,
   makeDisplayableBalances,
@@ -33,6 +34,7 @@ import {
 import {
   getContractSpec as getContractSpecHelper,
   getIsTokenSpec as getIsTokenSpecHelper,
+  isContractId,
 } from "./helpers/soroban";
 import {
   Account,
@@ -82,7 +84,7 @@ export const GetTxStatus: {
 };
 
 export const createAccount = async (
-  password: string
+  password: string,
 ): Promise<{
   publicKey: string;
   allAccounts: Array<Account>;
@@ -312,7 +314,7 @@ export const getMigratedMnemonicPhrase = async (): Promise<{
 };
 
 export const confirmMnemonicPhrase = async (
-  mnemonicPhraseToConfirm: string
+  mnemonicPhraseToConfirm: string,
 ): Promise<{
   isCorrectPhrase: boolean;
   applicationState: APPLICATION_STATE;
@@ -335,7 +337,7 @@ export const confirmMnemonicPhrase = async (
 };
 
 export const confirmMigratedMnemonicPhrase = async (
-  mnemonicPhraseToConfirm: string
+  mnemonicPhraseToConfirm: string,
 ): Promise<{
   isCorrectPhrase: boolean;
 }> => {
@@ -357,7 +359,7 @@ export const confirmMigratedMnemonicPhrase = async (
 
 export const recoverAccount = async (
   password: string,
-  recoverMnemonic: string
+  recoverMnemonic: string,
 ): Promise<{
   publicKey: string;
   allAccounts: Array<Account>;
@@ -385,7 +387,7 @@ export const recoverAccount = async (
 };
 
 export const confirmPassword = async (
-  password: string
+  password: string,
 ): Promise<{
   publicKey: string;
   hasPrivateKey: boolean;
@@ -515,14 +517,14 @@ export const getAccountIndexerBalances = async ({
   if (!response.ok) {
     const _err = JSON.stringify(data);
     captureException(
-      `Failed to fetch account balances - ${response.status}: ${response.statusText}`
+      `Failed to fetch account balances - ${response.status}: ${response.statusText}`,
     );
     throw new Error(_err);
   }
 
   if ("error" in data && (data?.error?.horizon || data?.error?.soroban)) {
     captureException(
-      `Failed to fetch account balances - ${response.status}: ${response.statusText}`
+      `Failed to fetch account balances - ${response.status}: ${response.statusText}`,
     );
   }
 
@@ -551,8 +553,11 @@ export const getAccountIndexerBalances = async ({
 };
 
 export const getTokenPrices = async (tokens: string[]) => {
-  // NOTE: API does not accept LP IDs
-  const filteredTokens = tokens.filter((tokenId) => !tokenId.includes(":lp"));
+  // NOTE: API does not accept LP IDs or custom tokens
+  const filteredTokens = tokens.filter((tokenId) => {
+    const asset = getAssetFromCanonical(tokenId);
+    return !tokenId.includes(":lp") && !isContractId(asset.issuer);
+  });
   const url = new URL(`${INDEXER_URL}/token-prices`);
   const options = {
     method: "POST",
@@ -568,7 +573,7 @@ export const getTokenPrices = async (tokens: string[]) => {
   if (!response.ok) {
     const _err = JSON.stringify(parsedResponse);
     captureException(
-      `Failed to fetch token prices - ${response.status}: ${response.statusText}`
+      `Failed to fetch token prices - ${response.status}: ${response.statusText}`,
     );
     throw new Error(_err);
   }
@@ -586,7 +591,7 @@ export const getSorobanTokenBalance = async (
     decimals: TransactionBuilder;
     symbol: TransactionBuilder;
   },
-  balanceParams: xdr.ScVal[]
+  balanceParams: xdr.ScVal[],
 ) => {
   // Right now we can only have 1 operation per TX in Soroban
   // for now we need to do 4 tx simulations to show 1 user balance. :(
@@ -598,7 +603,7 @@ export const getSorobanTokenBalance = async (
     contractId,
     balanceParams,
     server,
-    txBuilders.balance
+    txBuilders.balance,
   );
 
   return {
@@ -632,7 +637,7 @@ export const getAccountBalancesStandalone = async ({
 
     const displayableBalances = await makeDisplayableBalances(
       accountSummary,
-      isMainnet
+      isMainnet,
     );
     const sponsor = accountSummary.sponsor
       ? { sponsor: accountSummary.sponsor }
@@ -696,7 +701,7 @@ export const getAccountBalancesStandalone = async ({
 
     const server = buildSorobanServer(
       networkDetails.sorobanRpcUrl,
-      networkDetails.networkPassphrase
+      networkDetails.networkPassphrase,
     );
 
     const params = [new Address(publicKey).toScVal()];
@@ -719,7 +724,7 @@ export const getAccountBalancesStandalone = async ({
             decimals: await getNewTxBuilder(publicKey, networkDetails, server),
             symbol: await getNewTxBuilder(publicKey, networkDetails, server),
           },
-          params
+          params,
         );
 
         const total = new BigNumber(balance);
@@ -783,7 +788,7 @@ export const getIndexerAccountHistory = async ({
 }): Promise<Horizon.ServerApi.OperationRecord[]> => {
   try {
     const url = new URL(
-      `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}`
+      `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}`,
     );
     const response = await fetch(url.href);
 
@@ -809,12 +814,12 @@ export const getContractSpec = async ({
   if (isCustomNetwork(networkDetails)) {
     const data = await getContractSpecHelper(
       contractId,
-      networkDetails.networkUrl
+      networkDetails.networkUrl,
     );
     return data;
   }
   const url = new URL(
-    `${INDEXER_URL}/contract-spec/${contractId}?network=${networkDetails.network}`
+    `${INDEXER_URL}/contract-spec/${contractId}?network=${networkDetails.network}`,
   );
   const response = await fetch(url.href);
   const { data, error } = await response.json();
@@ -835,12 +840,12 @@ export const getIsTokenSpec = async ({
   if (isCustomNetwork(networkDetails)) {
     const data = await getIsTokenSpecHelper(
       contractId,
-      networkDetails.networkUrl
+      networkDetails.networkUrl,
     );
     return data;
   }
   const url = new URL(
-    `${INDEXER_URL}/token-spec/${contractId}?network=${networkDetails.network}`
+    `${INDEXER_URL}/token-spec/${contractId}?network=${networkDetails.network}`,
   );
   const response = await fetch(url.href);
   const { data, error } = await response.json();
@@ -853,7 +858,7 @@ export const getIsTokenSpec = async ({
 
 export const getAccountHistory = async (
   publicKey: string,
-  networkDetails: NetworkDetails
+  networkDetails: NetworkDetails,
 ) => {
   if (isCustomNetwork(networkDetails)) {
     return await getAccountHistoryStandalone({
@@ -892,22 +897,22 @@ export const getTokenDetails = async ({
       // You need one Tx Builder per call in Soroban right now
       const server = buildSorobanServer(
         networkDetails.sorobanRpcUrl,
-        networkDetails.networkPassphrase
+        networkDetails.networkPassphrase,
       );
       const name = await getName(
         contractId,
         server,
-        await getNewTxBuilder(publicKey, networkDetails, server)
+        await getNewTxBuilder(publicKey, networkDetails, server),
       );
       const symbol = await getSymbol(
         contractId,
         server,
-        await getNewTxBuilder(publicKey, networkDetails, server)
+        await getNewTxBuilder(publicKey, networkDetails, server),
       );
       const decimals = await getDecimals(
         contractId,
         server,
-        await getNewTxBuilder(publicKey, networkDetails, server)
+        await getNewTxBuilder(publicKey, networkDetails, server),
       );
 
       let balance;
@@ -916,7 +921,7 @@ export const getTokenDetails = async ({
           contractId,
           [new Address(publicKey).toScVal()],
           server,
-          await getNewTxBuilder(publicKey, networkDetails, server)
+          await getNewTxBuilder(publicKey, networkDetails, server),
         );
       }
 
@@ -931,7 +936,7 @@ export const getTokenDetails = async ({
     const response = await fetch(
       `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${
         networkDetails.network
-      }${shouldFetchBalance ? "&should_fetch_balance=true" : ""}`
+      }${shouldFetchBalance ? "&should_fetch_balance=true" : ""}`,
     );
     const data = await response.json();
     if (!response.ok) {
@@ -943,8 +948,8 @@ export const getTokenDetails = async ({
     console.error(error);
     captureException(
       `Failed to fetch token details - ${JSON.stringify(
-        error
-      )} - ${contractId} - ${networkDetails.network}`
+        error,
+      )} - ${contractId} - ${networkDetails.network}`,
     );
     return null;
   }
@@ -1191,11 +1196,11 @@ export const submitFreighterTransaction = ({
   const Sdk = getSdk(networkDetails.networkPassphrase);
   const tx = Sdk.TransactionBuilder.fromXDR(
     signedXDR,
-    networkDetails.networkPassphrase
+    networkDetails.networkPassphrase,
   );
   const server = stellarSdkServer(
     networkDetails.networkUrl,
-    networkDetails.networkPassphrase
+    networkDetails.networkPassphrase,
   );
 
   return submitTx({ server, tx });
@@ -1213,7 +1218,7 @@ export const submitFreighterSorobanTransaction = async ({
   try {
     tx = Sdk.TransactionBuilder.fromXDR(
       signedXDR,
-      networkDetails.networkPassphrase
+      networkDetails.networkPassphrase,
     );
   } catch (e) {
     console.error(e);
@@ -1251,7 +1256,7 @@ export const submitFreighterSorobanTransaction = async ({
     return response;
   } else {
     throw new Error(
-      `Unabled to submit transaction, status: ${response.status}`
+      `Unabled to submit transaction, status: ${response.status}`,
     );
   }
 };

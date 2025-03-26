@@ -5,6 +5,7 @@ import {
   ScInt,
   SorobanRpc,
   contract,
+  StrKey,
 } from "stellar-sdk";
 import { XdrReader } from "@stellar/js-xdr";
 
@@ -577,4 +578,13 @@ const isTokenSpec = (spec: Record<string, any>) => {
 export const getIsTokenSpec = async (contractId: string, serverUrl: string) => {
   const spec = await getContractSpec(contractId, serverUrl);
   return isTokenSpec(spec);
+};
+
+export const isContractId = (contractId: string) => {
+  try {
+    StrKey.decodeContract(contractId);
+    return true;
+  } catch (error) {
+    return false;
+  }
 };
