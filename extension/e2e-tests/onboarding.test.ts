@@ -130,8 +130,9 @@ test("Import 12 word wallet by pasting", async ({ page, context }) => {
     page.getByText("Import wallet from recovery phrase"),
   ).toBeVisible();
 
-  await page.evaluate(() =>
-    navigator.clipboard.writeText(
+  await page.evaluate(() => {
+    console.log(navigator.clipboard);
+    return navigator.clipboard.writeText(
       [
         "have",
         "style",
@@ -146,11 +147,11 @@ test("Import 12 word wallet by pasting", async ({ page, context }) => {
         "seminar",
         "face",
       ].join(" "),
-    ),
-  );
+    );
+  });
 
   // paste text from clipboard
-  await page.locator(`#MnemonicPhrase-1`).press("Meta+v");
+  await page.locator("#MnemonicPhrase-1").press("Meta+v");
 
   await expectPageToHaveScreenshot(
     {
@@ -159,6 +160,12 @@ test("Import 12 word wallet by pasting", async ({ page, context }) => {
     },
     { mask: [page.locator(".RecoverAccount__mnemonic-input")] },
   );
+
+  // confirm the clipboard has been cleared
+  const clipboardData = await page.evaluate(() =>
+    navigator.clipboard.readText(),
+  );
+  expect(clipboardData).toBe("");
 
   await page.getByRole("button", { name: "Import" }).click();
 
@@ -281,7 +288,7 @@ test("Import 24 word wallet by pasting", async ({ page, context }) => {
   );
 
   // paste text from clipboard
-  await page.locator(`#MnemonicPhrase-1`).press("Meta+v");
+  await page.locator("#MnemonicPhrase-1").press("Meta+v");
 
   await expectPageToHaveScreenshot(
     {
@@ -290,6 +297,12 @@ test("Import 24 word wallet by pasting", async ({ page, context }) => {
     },
     { mask: [page.locator(".RecoverAccount__mnemonic-input")] },
   );
+
+  // confirm the clipboard has been cleared
+  const clipboardData = await page.evaluate(() =>
+    navigator.clipboard.readText(),
+  );
+  expect(clipboardData).toBe("");
 
   await page.getByRole("button", { name: "Import" }).click();
 
