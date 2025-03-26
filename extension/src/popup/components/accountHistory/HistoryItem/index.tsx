@@ -713,11 +713,7 @@ export const HistoryItem = ({
           ..._state,
           headerTitle: translations("Transaction failed"),
         }));
-        setAmountComponent(
-          <Badge variant="tertiary" size="md">
-            N/A
-          </Badge>,
-        );
+        setAmountComponent(null);
       }
       setIsLoading(false);
     };
@@ -775,7 +771,7 @@ export const HistoryItem = ({
                 weight="regular"
                 addlClassName="HistoryItem__description"
               >
-                {rowText}
+                <span data-testid="history-item-label">{rowText}</span>
                 <Text
                   as="div"
                   size="xs"
