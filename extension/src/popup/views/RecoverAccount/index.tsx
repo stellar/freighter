@@ -172,6 +172,7 @@ export const RecoverAccount = () => {
       e.preventDefault();
       setPastedValues(pastedWords);
       setMnemonicPhraseArr(pastedWords);
+      e.clipboardData.clearData();
     }
   };
 

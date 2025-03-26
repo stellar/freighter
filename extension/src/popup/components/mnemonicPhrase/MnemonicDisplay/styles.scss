@@ -1,9 +1,6 @@
 @use "../../../styles/utils.scss" as *;
 
 .MnemonicDisplay {
-  display: flex;
-  flex-direction: column;
-  gap: pxToRem(12);
   position: relative;
   text-align: center;
   margin-bottom: #{pxToRem(32px)};
