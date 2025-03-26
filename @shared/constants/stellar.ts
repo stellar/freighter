@@ -34,6 +34,7 @@ export interface NetworkDetails {
   network: string;
   networkName: string;
   networkUrl: string;
+  // TODO: Should be Networks
   networkPassphrase: string;
   friendbotUrl?: string;
   sorobanRpcUrl?: string;

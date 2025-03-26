@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { Asset } from "stellar-sdk";
+import { Asset, Networks } from "stellar-sdk";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
@@ -14,6 +14,7 @@ import {
   getAssetFromCanonical,
   isMainnet,
 } from "helpers/stellar";
+import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { FormRows } from "popup/basics/Forms";
@@ -62,15 +63,10 @@ function getAssetAddress(
     isContractId(destination) &&
     !isContractId(getAssetFromCanonical(asset).issuer)
   ) {
-    const assetFromCanonical = new Asset(
-      getAssetFromCanonical(asset).code,
-      getAssetFromCanonical(asset).issuer,
+    return getAssetSacAddress(
+      asset,
+      networkDetails.networkPassphrase as Networks,
     );
-    const contractAddress = assetFromCanonical.contractId(
-      networkDetails.networkPassphrase,
-    );
-
-    return contractAddress;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, issuer] = asset.split(":");

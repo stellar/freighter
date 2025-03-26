@@ -1,7 +1,7 @@
-import { Asset } from "stellar-sdk";
+import { Asset, Networks } from "stellar-sdk";
 import { captureException } from "@sentry/browser";
 
-import { isAsset } from "helpers/stellar";
+import { getCanonicalFromAsset, isAsset } from "helpers/stellar";
 import { AssetToken } from "@shared/api/types";
 import {
   AssetType,
@@ -10,6 +10,7 @@ import {
   SorobanAsset,
 } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import { isContractId } from "./soroban";
 
 export const isClassicBalance = (balance: AssetType): balance is ClassicAsset =>
@@ -84,10 +85,14 @@ export const getBalanceByKey = (
         !isContractId(balance.token.issuer.key)
       ) {
         const assetToken = balance.token as AssetToken;
-        const sacAddress = new Asset(
+        const canonicalName = getCanonicalFromAsset(
           balance.token.code,
           assetToken.issuer.key,
-        ).contractId(networkDetails.networkPassphrase);
+        );
+        const sacAddress = getAssetSacAddress(
+          canonicalName,
+          networkDetails.networkPassphrase as Networks,
+        );
         const matchesSac = contractId === sacAddress;
         return matchesSac;
       }
