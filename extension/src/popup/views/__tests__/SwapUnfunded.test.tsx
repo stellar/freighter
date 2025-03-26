@@ -7,7 +7,7 @@ import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
 } from "@shared/constants/stellar";
-import { Balances } from "@shared/api/types";
+import { Balances } from "@shared/api/types/backend-api";
 import { createMemoryHistory } from "history";
 
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";

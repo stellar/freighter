@@ -7,11 +7,11 @@ import {
   getHiddenAssets,
 } from "@shared/api/internal";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { AssetIcons } from "@shared/api/types";
 import {
   AccountBalancesInterface,
-  AssetIcons,
   BalanceMap,
-} from "@shared/api/types";
+} from "@shared/api/types/backend-api";
 import { RequestState } from "constants/request";
 import { initialState, reducer } from "helpers/request";
 import { storeBalanceMetricData } from "helpers/metrics";

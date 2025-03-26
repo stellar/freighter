@@ -21,10 +21,8 @@ import {
   scanAsset,
   useScanTx,
 } from "popup/helpers/blockaid";
-import {
-  AccountBalancesInterface,
-  BlockAidScanTxResult,
-} from "@shared/api/types";
+import { BlockAidScanTxResult } from "@shared/api/types";
+import { AccountBalancesInterface } from "@shared/api/types/backend-api";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { findAssetBalance } from "popup/helpers/balance";
@@ -54,7 +52,6 @@ interface ScanClassic {
   path: string[];
   isPathPayment: boolean;
   isSwap: boolean;
-  // isFunded: boolean; needs to come from dest balances
   transactionFee: string;
   transactionTimeout: number;
   memo?: string;

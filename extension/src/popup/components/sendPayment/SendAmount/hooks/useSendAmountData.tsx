@@ -2,7 +2,8 @@ import { useReducer } from "react";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { initialState, reducer } from "helpers/request";
-import { AccountBalancesInterface, AssetIcons } from "@shared/api/types";
+import { AssetIcons } from "@shared/api/types";
+import { AccountBalancesInterface } from "@shared/api/types/backend-api";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { isContractId } from "popup/helpers/soroban";
 import { AccountBalances } from "helpers/hooks/useGetBalances";

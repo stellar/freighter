@@ -50,7 +50,7 @@ import {
   NETWORK_URLS,
   FUTURENET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
-import { Balances } from "@shared/api/types";
+import { Balances } from "@shared/api/types/backend-api";
 import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
 import { SERVICE_TYPES, DEV_SERVER } from "@shared/constants/services";
 

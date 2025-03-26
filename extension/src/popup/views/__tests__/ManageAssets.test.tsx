@@ -15,7 +15,7 @@ import {
   DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
-import { Balances } from "@shared/api/types";
+import { Balances } from "@shared/api/types/backend-api";
 import { createMemoryHistory } from "history";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 

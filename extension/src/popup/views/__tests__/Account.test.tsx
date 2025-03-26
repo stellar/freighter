@@ -9,7 +9,7 @@ import {
   DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
-import { Balances } from "@shared/api/types";
+import { Balances } from "@shared/api/types/backend-api";
 import * as ApiInternal from "@shared/api/internal";
 import * as ExtensionMessaging from "@shared/api/helpers/extensionMessaging";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";

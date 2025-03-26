@@ -2,13 +2,12 @@ import { Horizon } from "stellar-sdk";
 import { BigNumber } from "bignumber.js";
 import {
   AssetVisibility,
-  BalanceMap,
-  Balances,
   HorizonOperation,
   AssetKey,
   SorobanBalance,
   TokenBalances,
 } from "@shared/api/types";
+import { Balances, BalanceMap } from "@shared/api/types/backend-api";
 import { AssetType } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";

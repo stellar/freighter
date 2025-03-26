@@ -2,11 +2,8 @@ import BigNumber from "bignumber.js";
 import * as StellarSdk from "stellar-sdk";
 import * as StellarSdkNext from "stellar-sdk-next";
 
-import {
-  BalanceMap,
-  AssetBalance,
-  BlockAidScanAssetResult,
-} from "@shared/api/types";
+import { AssetBalance, BlockAidScanAssetResult } from "@shared/api/types";
+import { BalanceMap } from "@shared/api/types/backend-api";
 import {
   BASE_RESERVE,
   BASE_RESERVE_MIN_COUNT,

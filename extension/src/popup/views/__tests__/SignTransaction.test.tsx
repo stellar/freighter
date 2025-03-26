@@ -17,7 +17,7 @@ import * as ApiInternal from "@shared/api/internal";
 
 import { SignTransaction } from "../SignTransaction";
 import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
-import { Balances } from "@shared/api/types";
+import { Balances } from "@shared/api/types/backend-api";
 
 jest.mock("stellar-identicon-js");
 jest.setTimeout(20000);

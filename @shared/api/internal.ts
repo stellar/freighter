@@ -36,9 +36,7 @@ import {
 } from "./helpers/soroban";
 import {
   Account,
-  AccountBalancesInterface,
   BalanceToMigrate,
-  Balances,
   MigratableAccount,
   MigratedAccount,
   Settings,
@@ -48,6 +46,7 @@ import {
   AssetKey,
   AssetVisibility,
 } from "./types";
+import { AccountBalancesInterface, Balances } from "./types/backend-api";
 import {
   MAINNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
