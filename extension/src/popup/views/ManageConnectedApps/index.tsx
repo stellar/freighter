@@ -23,7 +23,7 @@ export const ManageConnectedApps = () => {
     dispatch(
       saveAllowList({
         allowList: allowListToSave,
-      })
+      }),
     );
   };
 
@@ -51,7 +51,7 @@ export const ManageConnectedApps = () => {
                           onClick={() => handleRemove(allowedDomain)}
                         />
                       </div>
-                    )
+                    ),
                 )}
               </div>
 

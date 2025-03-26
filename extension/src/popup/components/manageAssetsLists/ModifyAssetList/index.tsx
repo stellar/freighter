@@ -58,7 +58,7 @@ export const ModifyAssetList = ({
       /* Based on the query param, we're in EDIT mode. Prepopulate some information */
       const decodedAssetListUrl = decodeURIComponent(assetListUrl);
       const assetsListsSelection = assetsListsData.find(
-        ({ url }) => url === decodedAssetListUrl
+        ({ url }) => url === decodedAssetListUrl,
       );
       if (assetsListsSelection) {
         const { url, name, description, provider, isEnabled } =
@@ -74,7 +74,7 @@ export const ModifyAssetList = ({
 
         if (
           defaultAssetsList.find(
-            ({ url: defaultUrl }) => defaultUrl === decodedAssetListUrl
+            ({ url: defaultUrl }) => defaultUrl === decodedAssetListUrl,
           )
         ) {
           // this is a default network, disable some features
@@ -130,13 +130,13 @@ export const ModifyAssetList = ({
 
     if (validatedList.errors?.length) {
       const errors = validatedList.errors.map(
-        ({ stack }: { stack: string }) => stack
+        ({ stack }: { stack: string }) => stack,
       );
 
       setFetchErrorString(
         `Fetched asset list does not conform to schema: ${JSON.stringify(
-          errors.join(" | ")
-        )}`
+          errors.join(" | "),
+        )}`,
       );
       setIsFetchingAssetList(false);
       return;
@@ -147,10 +147,10 @@ export const ModifyAssetList = ({
         network === "public" ? "Mainnet" : "Testnet";
       setFetchErrorString(
         `The entered asset list belongs to "${getNetworkName(
-          resJson.network
+          resJson.network,
         )}": Currently editing "${getNetworkName(
-          selectedNetwork.toLowerCase()
-        )}" lists.`
+          selectedNetwork.toLowerCase(),
+        )}" lists.`,
       );
       setIsFetchingAssetList(false);
       return;
@@ -171,7 +171,7 @@ export const ModifyAssetList = ({
 
   /* handle editing an exisiting asset list's "enabled" status */
   const handleIsEnabledChange = async (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     setAssetListInfo({
       ...assetListInfo,
@@ -186,7 +186,7 @@ export const ModifyAssetList = ({
           },
           network: selectedNetwork,
           isDeleteAssetsList: false,
-        })
+        }),
       );
     }
   };
@@ -198,12 +198,12 @@ export const ModifyAssetList = ({
       isEnabled: assetListInfo.isEnabled,
     };
     const addAssetsListResp = await dispatch(
-      addAssetsList({ assetsList, network: selectedNetwork })
+      addAssetsList({ assetsList, network: selectedNetwork }),
     );
 
     if (addAssetsList.rejected.match(addAssetsListResp)) {
       setSubmitErrorString(
-        addAssetsListResp.payload?.errorMessage || "Unable to save asset list"
+        addAssetsListResp.payload?.errorMessage || "Unable to save asset list",
       );
     }
 
@@ -222,13 +222,13 @@ export const ModifyAssetList = ({
         },
         network: selectedNetwork,
         isDeleteAssetsList: true,
-      })
+      }),
     );
 
     if (modifyAssetsList.rejected.match(modifyAssetsListResp)) {
       setSubmitErrorString(
         modifyAssetsListResp.payload?.errorMessage ||
-          "Unable to delete asset list"
+          "Unable to delete asset list",
       );
     }
 

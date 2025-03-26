@@ -6,7 +6,7 @@ import { NavigateFunction } from "react-router-dom";
 export const navigateTo = (
   path: ROUTES,
   navigate: NavigateFunction,
-  queryParams?: string
+  queryParams?: string,
 ) => {
   const pathname = queryParams ? `${path}${queryParams}` : path;
   navigate(pathname);

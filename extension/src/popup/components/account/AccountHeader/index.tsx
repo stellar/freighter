@@ -54,7 +54,7 @@ export const AccountHeader = ({
   }, [networksList]);
 
   const index = networksList.findIndex((n) =>
-    isActiveNetwork(n, networkDetails)
+    isActiveNetwork(n, networkDetails),
   );
 
   activeNetworkIndex.current = index;

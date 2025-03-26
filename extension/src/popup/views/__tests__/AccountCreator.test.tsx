@@ -36,7 +36,7 @@ describe("Account Creator View", () => {
         }}
       >
         <AccountCreator />
-      </Wrapper>
+      </Wrapper>,
     );
 
     await waitFor(() => screen.getByTestId("account-creator-view"));
@@ -62,13 +62,13 @@ describe("Account Creator View", () => {
         }}
       >
         <AccountCreator />
-      </Wrapper>
+      </Wrapper>,
     );
 
     await waitFor(() => screen.getByTestId("account-creator-view"));
     const passwordField = screen.getByTestId("account-creator-password-input");
     const confirmPasswordField = screen.getByTestId(
-      "account-creator-confirm-password-input"
+      "account-creator-confirm-password-input",
     );
 
     await waitFor(async () => {
@@ -102,7 +102,7 @@ describe("Account Creator View", () => {
         }}
       >
         <AccountCreator />
-      </Wrapper>
+      </Wrapper>,
     );
 
     await waitFor(() => screen.getByTestId("account-creator-view"));
@@ -125,7 +125,7 @@ describe("Account Creator View", () => {
           publicKey: "",
           allAccounts: [],
           hasPrivateKey: false,
-        })
+        }),
       );
     render(
       <Wrapper
@@ -145,13 +145,13 @@ describe("Account Creator View", () => {
         }}
       >
         <AccountCreator />
-      </Wrapper>
+      </Wrapper>,
     );
 
     await waitFor(() => screen.getByTestId("account-creator-view"));
     const passwordField = screen.getByTestId("account-creator-password-input");
     const confirmPasswordField = screen.getByTestId(
-      "account-creator-confirm-password-input"
+      "account-creator-confirm-password-input",
     );
     const submitBtn = screen.getByTestId("account-creator-submit");
     const tosInput = screen.getByTestId("account-creator-termsOfUse-input");

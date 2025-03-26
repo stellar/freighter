@@ -170,7 +170,7 @@ describe.skip("SendTokenPayment", () => {
       }}
     >
       <SendPayment />
-    </Wrapper>
+    </Wrapper>,
   );
 
   it("can send a payment using a Soroban token", async () => {
@@ -184,7 +184,7 @@ describe.skip("SendTokenPayment", () => {
         const continueBtn = screen.getByTestId("send-to-btn-continue");
         fireEvent.click(continueBtn);
       },
-      { timeout: 3000 }
+      { timeout: 3000 },
     );
 
     await waitFor(async () => {

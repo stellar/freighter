@@ -70,8 +70,13 @@ export const defaultAccountBalances = {
 export const Account = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const { accountBalances, assetIcons, accountBalanceStatus, tokenPrices } =
-    useSelector(transactionSubmissionSelector);
+  const {
+    accountBalances,
+    assetIcons,
+    accountBalanceStatus,
+    tokenPrices,
+    tokenPricesError,
+  } = useSelector(transactionSubmissionSelector);
   const navigate = useNavigate();
   const accountStatus = useSelector(accountStatusSelector);
   const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] =
@@ -259,7 +264,7 @@ export const Account = () => {
                 containerAddlClasses="AccountView__total-usd-balance-container"
                 valueAddlClasses="AccountView__total-usd-balance"
                 value={
-                  arePricesSupported
+                  arePricesSupported && !tokenPricesError
                     ? `$${formatAmount(
                         roundUsdValue(totalBalanceUsd.toString()),
                       )}`

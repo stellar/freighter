@@ -42,7 +42,7 @@ export const useChangeTrustline = ({
 }): {
   changeTrustline: (
     addTrustline: boolean,
-    successfulCallback?: () => Promise<void>
+    successfulCallback?: () => Promise<void>,
   ) => Promise<void>;
 } => {
   const dispatch: AppDispatch = useDispatch();
@@ -54,7 +54,7 @@ export const useChangeTrustline = ({
 
   const server = stellarSdkServer(
     networkDetails.networkUrl,
-    networkDetails.networkPassphrase
+    networkDetails.networkPassphrase,
   );
 
   const networkFees = useNetworkFees();
@@ -65,13 +65,13 @@ export const useChangeTrustline = ({
   const signAndSubmit = async (
     transactionXDR: string,
     trackChangeTrustline: () => void,
-    successfulCallback?: () => Promise<void>
+    successfulCallback?: () => Promise<void>,
   ) => {
     const res = await dispatch(
       signFreighterTransaction({
         transactionXDR,
         network: networkDetails.networkPassphrase,
-      })
+      }),
     );
 
     if (signFreighterTransaction.fulfilled.match(res)) {
@@ -80,7 +80,7 @@ export const useChangeTrustline = ({
           publicKey,
           signedXDR: res.payload.signedTransaction,
           networkDetails,
-        })
+        }),
       );
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
@@ -88,7 +88,7 @@ export const useChangeTrustline = ({
           getAccountBalances({
             publicKey,
             networkDetails,
-          })
+          }),
         );
         trackChangeTrustline();
         dispatch(resetSubmission());
@@ -108,7 +108,7 @@ export const useChangeTrustline = ({
 
   const changeTrustline = async (
     addTrustline: boolean, // false removes the trustline
-    successfulCallback?: () => Promise<void>
+    successfulCallback?: () => Promise<void>,
   ) => {
     setAssetSubmitting?.(canonicalAsset);
 
@@ -127,7 +127,7 @@ export const useChangeTrustline = ({
         addTrustline
           ? METRIC_NAMES.manageAssetAddAsset
           : METRIC_NAMES.manageAssetRemoveAsset,
-        { code: assetCode, issuer: assetIssuer }
+        { code: assetCode, issuer: assetIssuer },
       );
     };
 
@@ -139,7 +139,7 @@ export const useChangeTrustline = ({
       await signAndSubmit(
         transactionXDR,
         trackChangeTrustline,
-        successfulCallback
+        successfulCallback,
       );
     }
   };

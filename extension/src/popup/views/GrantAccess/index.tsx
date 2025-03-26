@@ -65,7 +65,7 @@ export const GrantAccess = () => {
             isMalicious={isMalicious}
             scanStatus={data.status}
             subject={t(
-              `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`
+              `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,
             )}
           >
             <div

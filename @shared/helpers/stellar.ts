@@ -30,7 +30,7 @@ export const isCustomNetwork = (networkDetails: NetworkDetails) => {
 };
 
 export function getBalanceIdentifier(
-  balance: StellarSdk.Horizon.HorizonApi.BalanceLine
+  balance: StellarSdk.Horizon.HorizonApi.BalanceLine,
 ): string {
   if ("asset_issuer" in balance && !balance.asset_issuer) {
     return "native";
@@ -63,7 +63,7 @@ export const defaultBlockaidScanAssetResult: BlockAidScanAssetResult = {
 
 export const makeDisplayableBalances = async (
   accountDetails: StellarSdk.Horizon.ServerApi.AccountRecord,
-  isMainnet: boolean
+  isMainnet: boolean,
 ) => {
   const { balances, subentry_count, num_sponsored, num_sponsoring } =
     accountDetails;
@@ -101,7 +101,7 @@ export const makeDisplayableBalances = async (
 
     if ("selling_liabilities" in balance) {
       sellingLiabilities = new BigNumber(
-        balance.selling_liabilities
+        balance.selling_liabilities,
       ).toString();
       available = total.minus(sellingLiabilities);
     }
@@ -173,4 +173,25 @@ export const makeDisplayableBalances = async (
   }
 
   return displayableBalances;
+};
+
+export const isSorobanIssuer = (issuer: string) => !issuer.startsWith("G");
+
+export const getAssetFromCanonical = (canonical: string) => {
+  if (canonical === "native") {
+    return StellarSdk.Asset.native();
+  }
+  if (canonical.includes(":")) {
+    const [code, issuer] = canonical.split(":");
+
+    if (isSorobanIssuer(issuer)) {
+      return {
+        code,
+        issuer,
+      };
+    }
+    return new StellarSdk.Asset(code, issuer);
+  }
+
+  throw new Error(`invalid asset canonical id: ${canonical}`);
 };

@@ -78,7 +78,7 @@ export const signFreighterTransaction = createAsyncThunk<
       const message = e instanceof Error ? e.message : JSON.stringify(e);
       return rejectWithValue({ errorMessage: message });
     }
-  }
+  },
 );
 
 export const signFreighterSorobanTransaction = createAsyncThunk<
@@ -100,7 +100,7 @@ export const signFreighterSorobanTransaction = createAsyncThunk<
       const message = e instanceof Error ? e.message : JSON.stringify(e);
       return rejectWithValue({ errorMessage: message });
     }
-  }
+  },
 );
 
 export const submitFreighterTransaction = createAsyncThunk<
@@ -166,7 +166,7 @@ export const submitFreighterTransaction = createAsyncThunk<
         });
       }
     }
-  }
+  },
 );
 
 export const submitFreighterSorobanTransaction = createAsyncThunk<
@@ -232,7 +232,7 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
         });
       }
     }
-  }
+  },
 );
 
 export const signWithHardwareWallet = createAsyncThunk<
@@ -259,7 +259,7 @@ export const signWithHardwareWallet = createAsyncThunk<
       isHashSigningEnabled,
       isSignSorobanAuthorization,
     },
-    thunkApi
+    thunkApi,
   ) => {
     if (isSignSorobanAuthorization) {
       try {
@@ -300,7 +300,7 @@ export const signWithHardwareWallet = createAsyncThunk<
       const message = e instanceof Error ? e.message : JSON.stringify(e);
       return thunkApi.rejectWithValue({ errorMessage: message });
     }
-  }
+  },
 );
 
 export const addRecentAddress = createAsyncThunk<
@@ -335,7 +335,7 @@ export const loadRecentAddresses = createAsyncThunk<
 
 const storeBalanceMetricData = (publicKey: string, accountFunded: boolean) => {
   const metricsData: MetricsData = JSON.parse(
-    localStorage.getItem(METRICS_DATA) || "{}"
+    localStorage.getItem(METRICS_DATA) || "{}",
   );
   const accountType = metricsData.accountType;
 
@@ -385,13 +385,14 @@ export const removeTokenId = createAsyncThunk<
       console.error(e);
       rejectWithValue({ errorMessage: e as string });
     }
-  }
+  },
 );
 
 export const getAccountBalances = createAsyncThunk<
   {
     balances: AccountBalancesInterface;
     tokenPrices: ApiTokenPrices;
+    tokenPricesError: Error | undefined;
   },
   {
     publicKey: string;
@@ -403,12 +404,13 @@ export const getAccountBalances = createAsyncThunk<
   "getAccountBalances",
   async (
     { publicKey, networkDetails, shouldGetTokenPrices = false },
-    { getState, rejectWithValue }
+    { getState, rejectWithValue },
   ) => {
     const activePublicKey = publicKeySelector(getState());
     try {
       let balances;
       let tokenPrices = {};
+      let tokenPricesError: Error | undefined;
       const isMainnet = isMainnetHelper(networkDetails);
 
       if (isCustomNetwork(networkDetails)) {
@@ -430,12 +432,13 @@ export const getAccountBalances = createAsyncThunk<
             tokenPrices = await Promise.race<ApiTokenPrices>([
               internalGetTokenPrices(assetIds),
               new Promise<ApiTokenPrices>((resolve) =>
-                setTimeout(() => resolve({} as ApiTokenPrices), 3000)
+                setTimeout(() => resolve({} as ApiTokenPrices), 3000),
               ),
             ]);
           } catch (error) {
             const _err = JSON.stringify(error);
             captureException(`Failed to fetch token prices - ${_err}`);
+            tokenPricesError = new Error(_err);
           }
         }
       }
@@ -444,11 +447,12 @@ export const getAccountBalances = createAsyncThunk<
       return {
         balances,
         tokenPrices,
+        tokenPricesError,
       };
     } catch (e) {
       return rejectWithValue({ errorMessage: e as string });
     }
-  }
+  },
 );
 
 export const getTokenPrices = createAsyncThunk<
@@ -463,6 +467,7 @@ export const getTokenPrices = createAsyncThunk<
     if (isCustomNetwork(networkDetails)) {
       return {};
     }
+
     const assetIds = Object.keys(balances || {});
     if (!assetIds.length) {
       return {};
@@ -502,7 +507,7 @@ export const getDestinationBalances = createAsyncThunk<
     } catch (e) {
       return rejectWithValue({ errorMessage: e as string });
     }
-  }
+  },
 );
 
 export const getAssetIcons = createAsyncThunk<
@@ -517,7 +522,7 @@ export const getAssetIcons = createAsyncThunk<
   }: {
     balances: Balances;
     networkDetails: NetworkDetails;
-  }) => getAssetIconsService({ balances, networkDetails })
+  }) => getAssetIconsService({ balances, networkDetails }),
 );
 
 export const getAssetDomains = createAsyncThunk<
@@ -532,7 +537,7 @@ export const getAssetDomains = createAsyncThunk<
   }: {
     balances: Balances;
     networkDetails: NetworkDetails;
-  }) => getAssetDomainsService({ balances, networkDetails })
+  }) => getAssetDomainsService({ balances, networkDetails }),
 );
 
 export const getSoroswapTokens = createAsyncThunk<
@@ -578,7 +583,7 @@ export const getBestPath = createAsyncThunk<
         errorMessage: message,
       });
     }
-  }
+  },
 );
 
 export const getBestSoroswapPath = createAsyncThunk<
@@ -601,7 +606,7 @@ export const getBestSoroswapPath = createAsyncThunk<
   "getBestSoroswapPath",
   async (
     { amount, sourceContract, destContract, networkDetails, publicKey },
-    thunkApi
+    thunkApi,
   ) => {
     try {
       return await soroswapGetBestPath({
@@ -617,7 +622,7 @@ export const getBestSoroswapPath = createAsyncThunk<
         errorMessage: message,
       });
     }
-  }
+  },
 );
 
 export const getMemoRequiredAccounts = createAsyncThunk<
@@ -683,6 +688,7 @@ interface InitialState {
     | SorobanRpc.Api.SendTransactionResponse
     | null;
   error: ErrorMessage | undefined;
+  tokenPricesError: Error | undefined;
   transactionData: TransactionData;
   transactionSimulation: {
     response: SorobanRpc.Api.SimulateTransactionSuccessResponse | null;
@@ -707,6 +713,7 @@ export const initialState: InitialState = {
   destinationAccountBalanceStatus: ActionStatus.IDLE,
   response: null,
   error: undefined,
+  tokenPricesError: undefined,
   transactionData: {
     amount: "0",
     asset: "native",
@@ -856,14 +863,14 @@ const transactionSubmissionSlice = createSlice({
       (state, action) => {
         state.submitStatus = ActionStatus.ERROR;
         state.error = action.payload;
-      }
+      },
     );
     builder.addCase(
       submitFreighterSorobanTransaction.fulfilled,
       (state, action) => {
         state.submitStatus = ActionStatus.SUCCESS;
         state.response = action.payload;
-      }
+      },
     );
     builder.addCase(signFreighterTransaction.pending, (state) => {
       state.submitStatus = ActionStatus.PENDING;
@@ -880,7 +887,7 @@ const transactionSubmissionSlice = createSlice({
       (state, action) => {
         state.submitStatus = ActionStatus.ERROR;
         state.error = action.payload;
-      }
+      },
     );
     builder.addCase(getBestPath.rejected, (state) => {
       state.transactionData.path = initialState.transactionData.path;
@@ -906,6 +913,9 @@ const transactionSubmissionSlice = createSlice({
       const { shouldGetTokenPrices } = action.meta.arg;
       if (shouldGetTokenPrices) {
         state.tokenPrices = action.payload.tokenPrices;
+      }
+      if (action.payload.tokenPricesError) {
+        state.tokenPricesError = action.payload.tokenPricesError;
       }
     });
     builder.addCase(getDestinationBalances.fulfilled, (state, action) => {
@@ -975,7 +985,7 @@ const transactionSubmissionSlice = createSlice({
       state.memoRequiredAccounts = action.payload;
     });
     builder.addCase(getTokenPrices.rejected, (state, action) => {
-      state.error = action.payload;
+      state.tokenPricesError = new Error(action.payload?.errorMessage);
       state.tokenPrices = initialState.tokenPrices;
     });
     builder.addCase(getTokenPrices.fulfilled, (state, action) => {

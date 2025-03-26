@@ -542,12 +542,12 @@ describe("Account view", () => {
       expect(assetNodes.length).toEqual(3);
       expect(
         screen.getByTestId(`asset-amount-${TEST_CANONICAL}`),
-      ).toHaveTextContent("$ 834,463.68");
+      ).toHaveTextContent("$834,463.68");
       expect(
         screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
       ).toHaveTextContent("3.98%");
       expect(screen.getByTestId(`asset-amount-native`)).toHaveTextContent(
-        "$ 13.82",
+        "$13.82",
       );
       expect(screen.getByTestId(`asset-price-delta-native`)).toHaveTextContent(
         "1.10%",

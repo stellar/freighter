@@ -184,7 +184,11 @@
     overflow: auto;
     background: var(--sds-clr-gray-01);
     background-repeat: no-repeat;
-    background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
+    background-size:
+      100% 40px,
+      100% 40px,
+      100% 14px,
+      100% 14px;
     background-attachment: local, local, scroll, scroll;
 
     // Hide scrollbar

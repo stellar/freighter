@@ -32,8 +32,8 @@ export const AccountMismatch = () => {
                 <Notification
                   title={t(
                     `Your session with the public key ${truncatedPublicKey(
-                      publicKey
-                    )} has ended. Please refresh the browser.`
+                      publicKey,
+                    )} has ended. Please refresh the browser.`,
                   )}
                   variant="warning"
                 />
@@ -44,7 +44,7 @@ export const AccountMismatch = () => {
         <LoadingBackground isActive isFullScreen isOpaque />,
       </>,
 
-      document.querySelector("#modal-root")!
+      document.querySelector("#modal-root")!,
     );
   }
 

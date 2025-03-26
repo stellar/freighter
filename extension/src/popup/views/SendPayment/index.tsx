@@ -37,7 +37,7 @@ export const SendPayment = () => {
           getAccountBalances({
             publicKey,
             networkDetails,
-          })
+          }),
         );
 
         if (getAccountBalances.fulfilled.match(res)) {
@@ -45,7 +45,7 @@ export const SendPayment = () => {
             getAssetIcons({
               balances: res.payload.balances.balances,
               networkDetails,
-            })
+            }),
           );
         }
       }

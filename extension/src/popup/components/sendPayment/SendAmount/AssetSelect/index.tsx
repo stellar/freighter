@@ -123,8 +123,8 @@ export const PathPayAssetSelect = ({
   const handleSelectAsset = () => {
     dispatch(
       saveAssetSelectType(
-        isSwap ? AssetSelectType.SWAP : AssetSelectType.PATH_PAY
-      )
+        isSwap ? AssetSelectType.SWAP : AssetSelectType.PATH_PAY,
+      ),
     );
     dispatch(saveAssetSelectSource(source));
     if (source) {

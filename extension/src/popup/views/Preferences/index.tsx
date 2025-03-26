@@ -43,7 +43,7 @@ export const Preferences = () => {
         isMemoValidationEnabled: isValidatingMemoValue,
         isDataSharingAllowed: isDataSharingAllowedValue,
         isHideDustEnabled: isHideDustEnabledValue,
-      })
+      }),
     );
   };
 
@@ -90,7 +90,7 @@ export const Preferences = () => {
                     className="Preferences--label"
                   >
                     {t(
-                      "Allow Freighter to collect anonymous information about usage. Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts."
+                      "Allow Freighter to collect anonymous information about usage. Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts.",
                     )}
                   </label>
                   <Toggle

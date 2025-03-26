@@ -38,12 +38,12 @@ export const MigrationStart = () => {
       <MigrationBody hasWarning>
         <MigrationParagraph>
           {t(
-            "At the end of this process, Freighter will only display accounts related to the new backup phrase. You’ll still be able to import your current backup phrase into Freighter and control current accounts as long as they were not merged into the new accounts."
+            "At the end of this process, Freighter will only display accounts related to the new backup phrase. You’ll still be able to import your current backup phrase into Freighter and control current accounts as long as they were not merged into the new accounts.",
           )}
         </MigrationParagraph>
         <Notification title="Important, Please Read" variant="warning">
           {t(
-            "Make sure you have your current 12 words backup phrase before continuing."
+            "Make sure you have your current 12 words backup phrase before continuing.",
           )}
         </Notification>
       </MigrationBody>
@@ -59,12 +59,12 @@ export const MigrationStart = () => {
       <MigrationBody>
         <MigrationParagraph>
           {t(
-            "In this process, Freighter will create a new backup phrase for you and migrate your lumens, trustlines, and assets to the new account."
+            "In this process, Freighter will create a new backup phrase for you and migrate your lumens, trustlines, and assets to the new account.",
           )}
         </MigrationParagraph>
         <MigrationParagraph>
           {t(
-            "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account. Merging is optional and will allow you to send your current account’s funding lumens to the new accounts."
+            "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account. Merging is optional and will allow you to send your current account’s funding lumens to the new accounts.",
           )}
         </MigrationParagraph>
       </MigrationBody>

@@ -152,7 +152,7 @@ const TwoAssetCard = ({
 
 const computeDestMinWithSlippage = (
   slippage: string,
-  destMin: string
+  destMin: string,
 ): BigNumber => {
   const mult = 1 - parseFloat(slippage) / 100;
   return new BigNumber(destMin).times(new BigNumber(mult));
@@ -169,13 +169,13 @@ const getOperation = (
   isPathPayment: boolean,
   isSwap: boolean,
   isFunded: boolean,
-  publicKey: string
+  publicKey: string,
 ) => {
   // path payment or swap
   if (isPathPayment || isSwap) {
     const destMin = computeDestMinWithSlippage(
       allowedSlippage,
-      destinationAmount
+      destinationAmount,
     );
     return Operation.pathPaymentStrictSend({
       sendAsset: sourceAsset as Asset,
@@ -219,7 +219,7 @@ const getBuiltTx = async (
   fee: string,
   transactionTimeout: number,
   networkDetails: NetworkDetails,
-  memo?: string
+  memo?: string,
 ) => {
   const {
     sourceAsset,
@@ -235,7 +235,7 @@ const getBuiltTx = async (
   } = opData;
   const server = stellarSdkServer(
     networkDetails.networkUrl,
-    networkDetails.networkPassphrase
+    networkDetails.networkPassphrase,
   );
   const sourceAccount: Account = await server.loadAccount(publicKey);
   const operation = getOperation(
@@ -249,7 +249,7 @@ const getBuiltTx = async (
     isPathPayment,
     isSwap,
     isFunded,
-    publicKey
+    publicKey,
   );
   const transaction = new TransactionBuilder(sourceAccount, {
     fee: xlmToStroop(fee).toFixed(),
@@ -326,11 +326,11 @@ export const TransactionDetails = ({
   const isMemoRequired =
     isValidatingMemo &&
     matchingBlockedTags.some(
-      (tag) => tag === TRANSACTION_WARNING.memoRequired && !memo
+      (tag) => tag === TRANSACTION_WARNING.memoRequired && !memo,
     );
 
   const isSourceAssetSuspicious = isAssetSuspicious(
-    accountBalances.balances?.[asset]?.blockaidData
+    accountBalances.balances?.[asset]?.blockaidData,
   );
 
   const isSubmitDisabled = isMemoRequired;
@@ -372,7 +372,7 @@ export const TransactionDetails = ({
         await scanTx(
           transactionSimulation.preparedTransaction,
           url,
-          networkDetails
+          networkDetails,
         );
       }
       setLoading(false);
@@ -396,7 +396,7 @@ export const TransactionDetails = ({
           transactionFee,
           transactionTimeout,
           networkDetails,
-          memo
+          memo,
         );
         const xdr = transaction.build().toXDR();
         setTransactionXdr(xdr);
@@ -418,7 +418,7 @@ export const TransactionDetails = ({
         signFreighterSorobanTransaction({
           transactionXDR: transactionSimulation.preparedTransaction!,
           network: networkDetails.networkPassphrase,
-        })
+        }),
       );
 
       if (
@@ -430,7 +430,7 @@ export const TransactionDetails = ({
             publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
-          })
+          }),
         );
 
         if (submitFreighterSorobanTransaction.fulfilled.match(submitResp)) {
@@ -444,7 +444,7 @@ export const TransactionDetails = ({
                 publicKey,
                 tokenId: destAsset.issuer,
                 network: networkDetails.network as Networks,
-              })
+              }),
             );
           }
         }
@@ -461,7 +461,7 @@ export const TransactionDetails = ({
           startHwSign({
             transactionXDR: transactionXdr,
             shouldSubmit: true,
-          })
+          }),
         );
         return;
       }
@@ -469,7 +469,7 @@ export const TransactionDetails = ({
         signFreighterTransaction({
           transactionXDR: transactionXdr,
           network: networkDetails.networkPassphrase,
-        })
+        }),
       );
 
       if (
@@ -481,13 +481,13 @@ export const TransactionDetails = ({
             publicKey,
             signedXDR: res.payload.signedTransaction,
             networkDetails,
-          })
+          }),
         );
 
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {
           if (!isSwap) {
             await dispatch(
-              addRecentAddress({ publicKey: federationAddress || destination })
+              addRecentAddress({ publicKey: federationAddress || destination }),
             );
           }
           if (isPathPayment) {
@@ -525,7 +525,7 @@ export const TransactionDetails = ({
         variant="tertiary"
         onClick={() =>
           openTab(
-            `${getStellarExpertUrl(networkDetails)}/tx/${transactionHash}`
+            `${getStellarExpertUrl(networkDetails)}/tx/${transactionHash}`,
           )
         }
       >
@@ -567,7 +567,7 @@ export const TransactionDetails = ({
           )}
           <SubviewHeader
             title={renderPageTitle(
-              submission.submitStatus === ActionStatus.SUCCESS
+              submission.submitStatus === ActionStatus.SUCCESS,
             )}
             customBackAction={goBack}
             customBackIcon={
@@ -684,7 +684,7 @@ export const TransactionDetails = ({
                 >
                   {computeDestMinWithSlippage(
                     allowedSlippage,
-                    destinationAmount
+                    destinationAmount,
                   ).toFixed()}{" "}
                   {destAsset.code}
                 </div>

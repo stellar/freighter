@@ -31,7 +31,7 @@ export const SESSION_STORAGE_ENABLED = true;
 export const normalizeMigratedData = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const localStorageEntries = Object.entries(
-    await browserLocalStorage.get(null)
+    await browserLocalStorage.get(null),
   );
 
   const applicationState = await localStore.getItem(APPLICATION_ID);
@@ -195,9 +195,8 @@ export const migrateSorobanRpcUrlNetwork = async () => {
     // but not the `network`, which is the current active network,
     // If a user has Futurenet selected by default, they will not have sorobanRpcUrl set
 
-    const migratedNetwork: NetworkDetails = await localStore.getItem(
-      NETWORK_ID
-    );
+    const migratedNetwork: NetworkDetails =
+      await localStore.getItem(NETWORK_ID);
     if (
       migratedNetwork &&
       migratedNetwork.network === NETWORKS.FUTURENET &&

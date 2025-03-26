@@ -9,6 +9,7 @@ import {
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
+export { isSorobanIssuer } from "@shared/helpers/stellar";
 
 import {
   getAssetFromCanonical,
@@ -21,7 +22,7 @@ export const LP_IDENTIFIER = ":lp";
 
 export const sortBalances = (
   balances: Balances,
-  sorobanBalances?: TokenBalances
+  sorobanBalances?: TokenBalances,
 ): AssetType[] => {
   const collection = [] as any[];
   const lpBalances = [] as any[];
@@ -52,13 +53,13 @@ export const getIsPayment = (type: Horizon.HorizonApi.OperationResponseType) =>
 
 export const getIsSupportedSorobanOp = (
   operation: HorizonOperation,
-  networkDetails: NetworkDetails
+  networkDetails: NetworkDetails,
 ) => {
   const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
   return (
     !!attrs &&
     Object.values(SorobanTokenInterface).includes(
-      attrs.fnName as SorobanTokenInterface
+      attrs.fnName as SorobanTokenInterface,
     )
   );
 };
@@ -68,7 +69,7 @@ export const getIsSwap = (operation: HorizonOperation) =>
 
 export const getIsDustPayment = (
   publicKey: string,
-  operation: HorizonOperation
+  operation: HorizonOperation,
 ) =>
   getIsPayment(operation.type) &&
   "asset_type" in operation &&
@@ -234,7 +235,7 @@ export const getIssuerFromBalance = (balance: AssetType) => {
 
 export const isNetworkUrlValid = (
   networkUrl: string,
-  isHttpAllowed: boolean
+  isHttpAllowed: boolean,
 ) => {
   let isValid = true;
 
@@ -250,7 +251,7 @@ export const isNetworkUrlValid = (
 export const displaySorobanId = (
   fullStr: string,
   strLen: number,
-  separator = "..."
+  separator = "...",
 ) => {
   if (fullStr.length <= strLen) {
     return fullStr;
@@ -267,5 +268,3 @@ export const displaySorobanId = (
     fullStr.substring(fullStr.length - backChars)
   );
 };
-
-export const isSorobanIssuer = (issuer: string) => !issuer.startsWith("G");
