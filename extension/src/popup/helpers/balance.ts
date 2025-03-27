@@ -29,7 +29,7 @@ export const findAssetBalance = (
         "token" in balance &&
         "type" in balance.token &&
         balance.token.type === "native",
-    ) as Exclude<AssetType, SorobanAsset | LiquidityPoolShareAsset>;
+    ) as Exclude<AssetType, SorobanAsset | LiquidityPoolShareAsset> | undefined;
   }
   return balances.find((balance) => {
     const balanceIssuer =
@@ -37,7 +37,7 @@ export const findAssetBalance = (
         ? balance.token.issuer.key
         : "";
     return balanceIssuer === asset.issuer;
-  }) as Exclude<AssetType, LiquidityPoolShareAsset>;
+  }) as Exclude<AssetType, LiquidityPoolShareAsset> | undefined;
 };
 
 export const getBalanceByIssuer = (issuer: string, balances: AssetType[]) =>
@@ -107,4 +107,44 @@ export const getBalanceByKey = (
     return matchesIssuer;
   });
   return key;
+};
+
+export const findAddressBalance = (
+  balances: AssetType[],
+  address: string,
+  network: Networks,
+) => {
+  if (address === "native") {
+    return balances.find(
+      (balance) =>
+        "token" in balance &&
+        "type" in balance.token &&
+        balance.token.type === "native",
+    );
+  }
+  if (isContractId(address)) {
+    // first check for contract ID match, then check for SAC match
+    return balances.find((balance) => {
+      if ("contractId" in balance) {
+        return address === balance.contractId;
+      }
+      if ("token" in balance && "issuer" in balance.token) {
+        const canonical = getCanonicalFromAsset(
+          balance.token.code,
+          balance.token.issuer.key,
+        );
+        const sacAddress = getAssetSacAddress(canonical, network);
+        return sacAddress === address;
+      }
+      return false;
+    });
+  }
+
+  return balances.find((balance) => {
+    const balanceIssuer =
+      "token" in balance && "issuer" in balance.token
+        ? balance.token.issuer.key
+        : "";
+    return balanceIssuer === address;
+  });
 };

@@ -8,7 +8,7 @@ import {
   isGetBalancesError,
   useGetBalances,
 } from "helpers/hooks/useGetBalances";
-import { useGetHistory } from "helpers/hooks/useGetHistory";
+import { isGetHistoryError, useGetHistory } from "helpers/hooks/useGetHistory";
 import { HistoryItemOperation } from "popup/components/accountHistory/HistoryItem";
 import {
   getIsDustPayment,
@@ -110,6 +110,10 @@ function useGetHistoryData(
 
       if (isGetBalancesError(balancesResult)) {
         throw new Error(balancesResult.message);
+      }
+
+      if (isGetHistoryError(history)) {
+        throw new Error(history.message);
       }
 
       const payload = {

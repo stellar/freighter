@@ -171,7 +171,7 @@ export function useGetAssetDomains(
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
-      return new Error(JSON.stringify(error));
+      throw new Error("Failed to fetch domains", { cause: error });
     }
   };
 

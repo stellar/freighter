@@ -20,6 +20,7 @@ import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { ROUTES } from "popup/constants/routes";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { findAddressBalance } from "popup/helpers/balance";
 import {
   resetSubmission,
   transactionSubmissionSelector,
@@ -34,10 +35,7 @@ import {
   TokenWarning,
 } from "popup/components/WarningMessages";
 
-import {
-  AccountBalances,
-  findAddressBalance,
-} from "helpers/hooks/useGetBalances";
+import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import { ManageAssetRowButton } from "../ManageAssetRowButton";
 

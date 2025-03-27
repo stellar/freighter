@@ -158,14 +158,9 @@ export const isSacContract = (
   contractId: string,
   network: Networks,
 ) => {
-  const Sdk = getSdk(network);
   if (name.includes(":")) {
     try {
-      return (
-        new Sdk.Asset(...(name.split(":") as [string, string])).contractId(
-          network,
-        ) === contractId
-      );
+      return getAssetSacAddress(name, network) === contractId;
     } catch (error) {
       return false;
     }
