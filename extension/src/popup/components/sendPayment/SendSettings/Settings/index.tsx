@@ -200,9 +200,11 @@ export const Settings = ({
         customBackAction={() => navigateTo(previous)}
       />
       {isLoading ? (
-        <div className="SendSettings__loadingWrapper">
-          <Loader size="2rem" />
-        </div>
+        <View.Content hasNoTopPadding>
+          <div className="SendSettings__loadingWrapper">
+            <Loader size="2rem" />
+          </div>
+        </View.Content>
       ) : (
         <Formik
           initialValues={{ memo }}

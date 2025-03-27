@@ -416,9 +416,11 @@ export const TransactionDetails = ({
         <HardwareSign walletType={hardwareWalletType} />
       )}
       {isLoading ? (
-        <div className="TransactionDetails__loader">
-          <Loader size="2rem" />
-        </div>
+        <View.Content hasNoTopPadding>
+          <div className="TransactionDetails__loader">
+            <Loader size="2rem" />
+          </div>
+        </View.Content>
       ) : (
         <React.Fragment>
           {submission.submitStatus === ActionStatus.PENDING && (
@@ -468,10 +470,12 @@ export const TransactionDetails = ({
 
             {(isPathPayment || isSwap) && (
               <TwoAssetCard
-                sourceAssetIcons={txDetailsData.data!.balances.icons!}
+                sourceAssetIcons={txDetailsData.data?.balances?.icons || {}}
                 sourceCanon={asset}
                 sourceAmount={amount}
-                destAssetIcons={txDetailsData.data!.destinationBalances.icons!}
+                destAssetIcons={
+                  txDetailsData.data?.destinationBalances?.icons || {}
+                }
                 destCanon={destinationAsset || "native"}
                 destAmount={destinationAmount}
                 isSourceAssetSuspicious={

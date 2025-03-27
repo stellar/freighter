@@ -65,7 +65,7 @@ function useGetSendAmountData(
           ...destinationBalances,
           balances: sortBalances(destinationBalances.balances),
         },
-        icons: userDomains.balances.icons!,
+        icons: userDomains.balances.icons || {},
         domains: userDomains.domains,
       };
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

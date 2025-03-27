@@ -196,7 +196,7 @@ export const Account = () => {
             >
               <AccountAssets
                 sortedBalances={accountData.data.balances.balances}
-                assetIcons={accountData.data.balances.icons!}
+                assetIcons={accountData.data.balances.icons || {}}
                 setSelectedAsset={setSelectedAsset}
               />
             </div>

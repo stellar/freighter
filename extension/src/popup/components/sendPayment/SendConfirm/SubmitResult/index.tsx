@@ -269,7 +269,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
               <SwapAssetsIcon
                 sourceCanon={asset}
                 destCanon={destinationAsset}
-                assetIcons={accountData.data!.balances.icons!}
+                assetIcons={accountData.data?.balances?.icons || {}}
                 isSourceSuspicious={isSourceAssetSuspicious}
                 isDestSuspicious={isDestAssetSuspicious}
               />

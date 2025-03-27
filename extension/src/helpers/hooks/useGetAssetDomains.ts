@@ -107,10 +107,11 @@ export function useGetAssetDomains(
             }
           }
 
+          const icons = balances.icons || {};
           domains.push({
             code,
             issuer: issuer.key,
-            image: balances.icons![getCanonicalFromAsset(code, issuer.key)],
+            image: icons[getCanonicalFromAsset(code, issuer.key)],
             domain,
             contract: contractId,
             isSuspicious: isAssetSuspicious(blockaidData),
