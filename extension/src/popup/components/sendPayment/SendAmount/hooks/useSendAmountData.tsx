@@ -1,14 +1,14 @@
 import { useReducer } from "react";
 
 import { NetworkDetails } from "@shared/constants/stellar";
-import { initialState, reducer } from "helpers/request";
+import { initialState, isError, reducer } from "helpers/request";
 import { AssetIcons } from "@shared/api/types";
 import { AccountBalancesInterface } from "@shared/api/types/backend-api";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { isContractId } from "popup/helpers/soroban";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import {
-  isGetAssetDomainsError,
+  AssetDomains,
   useGetAssetDomains,
 } from "helpers/hooks/useGetAssetDomains";
 import { getAccountBalances } from "@shared/api/internal";
@@ -55,7 +55,7 @@ function useGetSendAmountData(
             )
           : ({} as AccountBalancesInterface);
 
-      if (isGetAssetDomainsError(userDomains)) {
+      if (isError<AssetDomains>(userDomains)) {
         throw new Error(userDomains.message);
       }
 

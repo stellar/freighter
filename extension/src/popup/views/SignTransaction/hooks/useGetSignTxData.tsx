@@ -3,12 +3,8 @@ import { useReducer } from "react";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { BlockAidScanTxResult } from "@shared/api/types";
 
-import { initialState, reducer } from "helpers/request";
-import {
-  AccountBalances,
-  isGetBalancesError,
-  useGetBalances,
-} from "helpers/hooks/useGetBalances";
+import { initialState, isError, reducer } from "helpers/request";
+import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { useScanTx } from "popup/helpers/blockaid";
 
 interface SignTxData {
@@ -50,7 +46,7 @@ function useGetSignTxData(
         networkDetails,
       );
 
-      if (isGetBalancesError(balancesResult)) {
+      if (isError<AccountBalances>(balancesResult)) {
         throw new Error(balancesResult.message);
       }
       const payload = { balances: balancesResult, scanResult };

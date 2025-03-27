@@ -2,13 +2,9 @@ import { useReducer } from "react";
 import { Horizon } from "stellar-sdk";
 
 import { NetworkDetails } from "@shared/constants/stellar";
-import { initialState, reducer } from "helpers/request";
-import {
-  AccountBalances,
-  isGetBalancesError,
-  useGetBalances,
-} from "helpers/hooks/useGetBalances";
-import { isGetHistoryError, useGetHistory } from "helpers/hooks/useGetHistory";
+import { initialState, isError, reducer } from "helpers/request";
+import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
+import { HistoryResponse, useGetHistory } from "helpers/hooks/useGetHistory";
 import { HistoryItemOperation } from "popup/components/accountHistory/HistoryItem";
 import {
   getIsDustPayment,
@@ -108,11 +104,11 @@ function useGetHistoryData(
       const balancesResult = await fetchBalances();
       const history = await fetchHistory();
 
-      if (isGetBalancesError(balancesResult)) {
+      if (isError<AccountBalances>(balancesResult)) {
         throw new Error(balancesResult.message);
       }
 
-      if (isGetHistoryError(history)) {
+      if (isError<HistoryResponse>(history)) {
         throw new Error(history.message);
       }
 

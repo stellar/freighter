@@ -74,40 +74,42 @@ export const AccountHistory = () => {
   if (isLoaderShowing) {
     return <Loading />;
   }
+  const hasError = historyState.state === RequestState.ERROR;
 
   return (
     <>
       <View.AppHeader pageTitle={t("History")} />
       <View.Content hasNoTopPadding hasNoBottomPadding>
         <div className="AccountHistory" data-testid="AccountHistory">
-          {historyState.data!.history.map((section) => (
-            <div key={section.monthYear} className="AccountHistory__list">
-              <Text
-                as="div"
-                size="sm"
-                addlClassName="AccountHistory__section-header"
-              >
-                {getMonthLabel(Number(section.monthYear.split(":")[0]))}
-              </Text>
+          {!hasError &&
+            historyState.data.history.map((section) => (
+              <div key={section.monthYear} className="AccountHistory__list">
+                <Text
+                  as="div"
+                  size="sm"
+                  addlClassName="AccountHistory__section-header"
+                >
+                  {getMonthLabel(Number(section.monthYear.split(":")[0]))}
+                </Text>
 
-              <div className="AccountHistory__list">
-                {section.operations.map((operation: HistoryItemOperation) => (
-                  <HistoryItem
-                    key={operation.id}
-                    accountBalances={historyState.data!.balances}
-                    operation={operation}
-                    publicKey={publicKey}
-                    networkDetails={networkDetails}
-                    setDetailViewProps={setDetailViewProps}
-                    setIsDetailViewShowing={setIsDetailViewShowing}
-                  />
-                ))}
+                <div className="AccountHistory__list">
+                  {section.operations.map((operation: HistoryItemOperation) => (
+                    <HistoryItem
+                      key={operation.id}
+                      accountBalances={historyState.data.balances}
+                      operation={operation}
+                      publicKey={publicKey}
+                      networkDetails={networkDetails}
+                      setDetailViewProps={setDetailViewProps}
+                      setIsDetailViewShowing={setIsDetailViewShowing}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-          {historyState.data!.history.length < 1 && (
+            ))}
+          {hasError || historyState.data.history.length < 1 ? (
             <div>{t("No transactions to show")}</div>
-          )}
+          ) : null}
         </div>
       </View.Content>
     </>

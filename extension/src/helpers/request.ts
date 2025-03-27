@@ -1,5 +1,12 @@
 import { Action, IdleState, RequestState, State } from "constants/request";
 
+export const isError = <T>(response: T | Error): response is Error => {
+  if (response instanceof Error) {
+    return true;
+  }
+  return false;
+};
+
 export const initialState: IdleState = {
   state: RequestState.IDLE,
   data: null,

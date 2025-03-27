@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { Balance } from "@shared/api/types";
-import { initialState, reducer } from "helpers/request";
+import { initialState, isError, reducer } from "helpers/request";
 
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import {
@@ -16,22 +16,9 @@ import { isAssetSuspicious } from "../../popup/helpers/blockaid";
 import { getNativeContractDetails } from "../../popup/helpers/searchAsset";
 import { useIsSoroswapEnabled, useIsSwap } from "../../popup/helpers/useIsSwap";
 import { getAssetDomain } from "../../popup/helpers/getAssetDomain";
-import {
-  AccountBalances,
-  isGetBalancesError,
-  useGetBalances,
-} from "./useGetBalances";
+import { AccountBalances, useGetBalances } from "./useGetBalances";
 
-export const isGetAssetDomainsError = (
-  response: AssetDomains | Error,
-): response is Error => {
-  if (!("domains" in response)) {
-    return true;
-  }
-  return false;
-};
-
-interface AssetDomains {
+export interface AssetDomains {
   balances: AccountBalances;
   domains: ManageAssetCurrency[];
   isManagingAssets: boolean;
@@ -68,7 +55,7 @@ export function useGetAssetDomains(
     try {
       const balances = await fetchBalances();
 
-      if (isGetBalancesError(balances)) {
+      if (isError<AccountBalances>(balances)) {
         throw new Error(balances.message);
       }
 

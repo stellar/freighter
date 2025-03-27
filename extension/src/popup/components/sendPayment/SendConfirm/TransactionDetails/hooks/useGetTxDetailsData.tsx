@@ -10,12 +10,8 @@ import BigNumber from "bignumber.js";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 
-import { initialState, reducer } from "helpers/request";
-import {
-  AccountBalances,
-  isGetBalancesError,
-  useGetBalances,
-} from "helpers/hooks/useGetBalances";
+import { initialState, isError, reducer } from "helpers/request";
+import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import {
   isAssetSuspicious,
   scanAsset,
@@ -228,7 +224,7 @@ function useGetTxDetailsData(
             })
           : {};
 
-      if (isGetBalancesError(balancesResult)) {
+      if (isError<AccountBalances>(balancesResult)) {
         throw new Error(balancesResult.message);
       }
 

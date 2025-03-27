@@ -5,16 +5,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { ServerApi } from "stellar-sdk/lib/horizon";
 import { initialState, reducer } from "helpers/request";
 
-type HistoryResponse = ServerApi.OperationRecord[];
-
-export const isGetHistoryError = (
-  response: HistoryResponse | Error,
-): response is Error => {
-  if (!("balances" in response)) {
-    return true;
-  }
-  return false;
-};
+export type HistoryResponse = ServerApi.OperationRecord[];
 
 function useGetHistory(publicKey: string, networkDetails: NetworkDetails) {
   const [state, dispatch] = useReducer(

@@ -17,15 +17,6 @@ import { storeBalanceMetricData } from "helpers/metrics";
 import { filterHiddenBalances, sortBalances } from "popup/helpers/account";
 import { AssetType } from "@shared/api/types/account-balance";
 
-export const isGetBalancesError = (
-  response: AccountBalances | Error,
-): response is Error => {
-  if (!("balances" in response)) {
-    return true;
-  }
-  return false;
-};
-
 export interface AccountBalances {
   balances: AssetType[];
   isFunded: AccountBalancesInterface["isFunded"];
