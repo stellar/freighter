@@ -238,6 +238,7 @@ export const SendAmount = ({
     if (values.destinationAsset) {
       dispatch(saveDestinationAsset(values.destinationAsset));
       isDestAssetScam =
+        !!destinationBalance &&
         "blockaidData" in destinationBalance &&
         isAssetSuspicious(destinationBalance.blockaidData);
     }
@@ -247,6 +248,7 @@ export const SendAmount = ({
       getAssetFromCanonical(asset),
     );
     const isSourceAssetScam =
+      !!assetBalance &&
       "blockaidData" in assetBalance &&
       isAssetSuspicious(assetBalance.blockaidData);
     if (isSourceAssetScam) {
@@ -274,7 +276,7 @@ export const SendAmount = ({
         )!.domain,
         image: sendAmountData.data!.icons[values.destinationAsset]!,
         blockaidData:
-          "blockaidData" in destinationBalance
+          !!destinationBalance && "blockaidData" in destinationBalance
             ? destinationBalance.blockaidData
             : defaultBlockaidScanAssetResult,
       });
@@ -661,7 +663,7 @@ export const SendAmount = ({
                         issuerKey={parsedSourceAsset.issuer}
                         icons={sendAmountData.data?.icons || {}}
                         isSuspicious={
-                          sourceBalance &&
+                          !!sourceBalance &&
                           "blockaidData" in sourceBalance &&
                           isAssetSuspicious(sourceBalance.blockaidData)
                         }
@@ -677,7 +679,7 @@ export const SendAmount = ({
                           icon=""
                           icons={sendAmountData.data?.icons || {}}
                           isSuspicious={
-                            sourceBalance &&
+                            !!sourceBalance &&
                             "blockaidData" in sourceBalance &&
                             isAssetSuspicious(sourceBalance.blockaidData)
                           }
@@ -694,7 +696,7 @@ export const SendAmount = ({
                           icon={destinationIcon}
                           icons={sendAmountData.data!.icons}
                           isSuspicious={
-                            destBalance &&
+                            !!destBalance &&
                             "blockaidData" in destBalance &&
                             isAssetSuspicious(destBalance.blockaidData)
                           }

@@ -218,9 +218,11 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     destinationCanonical,
   );
   const isSourceAssetSuspicious =
+    !!sourceBalance &&
     "blockaidData" in sourceBalance &&
     isAssetSuspicious(sourceBalance.blockaidData);
   const isDestAssetSuspicious =
+    !!destBalance &&
     "blockaidData" in destBalance &&
     isAssetSuspicious(destBalance.blockaidData);
 

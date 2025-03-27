@@ -8,7 +8,7 @@ import {
   isGetBalancesError,
   useGetBalances,
 } from "helpers/hooks/useGetBalances";
-import { useGetHistory } from "helpers/hooks/useGetHistory";
+import { isGetHistoryError, useGetHistory } from "helpers/hooks/useGetHistory";
 import { AssetOperations, sortOperationsByAsset } from "popup/helpers/account";
 
 interface AccountData {
@@ -44,6 +44,10 @@ function useGetAccountData(
 
       if (isGetBalancesError(balancesResult)) {
         throw new Error(balancesResult.message);
+      }
+
+      if (isGetHistoryError(history)) {
+        throw new Error(history.message);
       }
 
       const payload = {

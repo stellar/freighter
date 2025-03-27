@@ -389,10 +389,18 @@ export const TransactionDetails = ({
       details!.destinationBalances.balances,
       dest,
     );
-    if (details!.isSourceAssetSuspicious && "blockaidData" in sourceBalance) {
+    if (
+      sourceBalance &&
+      details!.isSourceAssetSuspicious &&
+      "blockaidData" in sourceBalance
+    ) {
       return sourceBalance.blockaidData;
     }
-    if (details!.isDestAssetSuspicious && "blockaidData" in destBalance) {
+    if (
+      destBalance &&
+      details!.isDestAssetSuspicious &&
+      "blockaidData" in destBalance
+    ) {
       return destBalance.blockaidData;
     }
     return defaultBlockaidScanAssetResult;
