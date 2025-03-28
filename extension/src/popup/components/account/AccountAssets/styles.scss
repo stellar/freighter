@@ -150,6 +150,7 @@ $loader-light-color: #444961;
 
     .asset-value-delta {
       text-align: right;
+      float: right;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -161,7 +162,7 @@ $loader-light-color: #444961;
       }
 
       &.negative {
-        color: var(--sds-clr-red-09);
+        color: var(--sds-clr-gray-11);
       }
     }
   }

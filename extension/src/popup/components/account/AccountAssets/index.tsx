@@ -19,7 +19,6 @@ import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import ImageMissingIcon from "popup/assets/image-missing.svg?react";
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
-import { AnimatedNumber } from "popup/components/AnimatedNumber";
 
 import "./styles.scss";
 
@@ -309,34 +308,34 @@ export const AccountAssets = ({
             </div>
             {assetPrice ? (
               <div className="AccountAssets__copy-right">
-                <AnimatedNumber
-                  valueAddlClasses="asset-usd-amount"
-                  valueAddlProperties={{
-                    "data-testid": `asset-amount-${canonicalAsset}`,
-                  }}
-                  value={`$${formatAmount(
+                <div
+                  className="asset-usd-amount"
+                  data-testid={`asset-amount-${canonicalAsset}`}
+                >
+                  $
+                  {formatAmount(
                     roundUsdValue(
                       new BigNumber(assetPrice.currentPrice)
                         .multipliedBy(rb.total)
                         .toString(),
                     ),
-                  )}`}
-                />
+                  )}
+                </div>
                 {assetPrice.percentagePriceChange24h ? (
-                  <AnimatedNumber
-                    valueAddlProperties={{
-                      "data-testid": `asset-price-delta-${canonicalAsset}`,
-                    }}
-                    valueAddlClasses={`asset-value-delta ${getDeltaColor(
+                  <div
+                    data-testid={`asset-price-delta-${canonicalAsset}`}
+                    className={`asset-value-delta ${getDeltaColor(
                       new BigNumber(
                         roundUsdValue(assetPrice.percentagePriceChange24h),
                       ),
                     )}
                     `}
-                    value={`${formatAmount(
+                  >
+                    {formatAmount(
                       roundUsdValue(assetPrice.percentagePriceChange24h),
-                    )}%`}
-                  />
+                    )}
+                    %
+                  </div>
                 ) : (
                   <div className="asset-value-delta">--</div>
                 )}

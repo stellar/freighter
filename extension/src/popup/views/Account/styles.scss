@@ -8,12 +8,13 @@
   &__account-details {
     display: flex;
     flex-direction: column;
-  }
-  &__total-usd-balance-container {
-    width: 200px;
+    max-width: 60%;
   }
   &__total-usd-balance {
     font-size: 32px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
   &__account-actions {
     align-items: center;
