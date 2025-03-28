@@ -77,7 +77,6 @@ import {
   getIsExperimentalModeEnabled,
   getIsHashSigningEnabled,
   getIsHardwareWalletActive,
-  getIsRpcHealthy,
   getUserNotification,
   getSavedNetworks,
   getNetworkDetails,
@@ -766,7 +765,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     await localStore.setItem(NETWORK_ID, networkDetails);
     await subscribeAccount(pubKey);
 
-    const isRpcHealthy = await getIsRpcHealthy(networkDetails);
+    const isRpcHealthy = true;
 
     return { networkDetails, isRpcHealthy };
   };
@@ -1505,7 +1504,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     await localStore.setItem(IS_HIDE_DUST_ENABLED_ID, isHideDustEnabled);
 
     const networkDetails = await getNetworkDetails();
-    const isRpcHealthy = await getIsRpcHealthy(networkDetails);
+    const isRpcHealthy = true;
     const featureFlags = await getFeatureFlags();
 
     return {
@@ -1565,9 +1564,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
 
     const isDataSharingAllowed =
       (await localStore.getItem(DATA_SHARING_ID)) ?? true;
-    const networkDetails = await getNetworkDetails();
     const featureFlags = await getFeatureFlags();
-    const isRpcHealthy = await getIsRpcHealthy(networkDetails);
+    const isRpcHealthy = true;
     const userNotification = await getUserNotification();
     const isHashSigningEnabled = await getIsHashSigningEnabled();
     const assetsLists = await getAssetsLists();
