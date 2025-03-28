@@ -54,7 +54,6 @@ import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsD
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
-import { AnimatedNumber } from "popup/components/AnimatedNumber";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { isMainnet } from "helpers/stellar";
 import { AppDispatch } from "popup/App";
@@ -260,18 +259,16 @@ export const Account = () => {
                   </div>
                 </CopyText>
               </div>
-              <AnimatedNumber
-                containerAddlClasses="AccountView__total-usd-balance-container"
-                valueAddlClasses="AccountView__total-usd-balance"
-                value={
-                  arePricesSupported && !tokenPricesError
-                    ? `$${formatAmount(
-                        roundUsdValue(totalBalanceUsd.toString()),
-                      )}`
-                    : ""
-                }
+              <div
+                className="AccountView__total-usd-balance"
                 key="total-balance"
-              />
+              >
+                {arePricesSupported && !tokenPricesError
+                  ? `$${formatAmount(
+                      roundUsdValue(totalBalanceUsd.toString()),
+                    )}`
+                  : ""}
+              </div>
             </div>
             <div className="AccountView__send-receive-display">
               <div className="AccountView__send-receive-button">
