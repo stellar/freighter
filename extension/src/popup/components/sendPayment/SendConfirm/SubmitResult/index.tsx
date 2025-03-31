@@ -298,6 +298,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
           onClick={() => {
             dispatch(resetSubmission());
             navigateTo(ROUTES.account, navigate);
+            dispatch(resetSubmission());
           }}
         >
           {t("Done")}

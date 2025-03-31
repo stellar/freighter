@@ -281,6 +281,13 @@ export const AddAsset = () => {
   }, []);
 
   const hasAssets = verifiedAssetRows.length || unverifiedAssetRows.length;
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Formik initialValues={initialValues} onSubmit={() => {}}>

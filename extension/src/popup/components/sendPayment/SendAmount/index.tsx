@@ -507,7 +507,7 @@ export const SendAmount = ({
 
   return (
     <>
-      {showBlockedDomainWarning &&
+      {showBlockedDomainWarning && (
         createPortal(
           <ScamAssetWarning
             isSendWarning
@@ -523,7 +523,8 @@ export const SendAmount = ({
             blockaidData={suspiciousAssetData.blockaidData}
           />,
           document.querySelector("#modal-root")!,
-        )}
+        )
+      )}
       <React.Fragment>
         <SubviewHeader
           title={

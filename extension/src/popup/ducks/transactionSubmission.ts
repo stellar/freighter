@@ -15,7 +15,6 @@ import {
   removeTokenId as internalRemoveTokenId,
   submitFreighterTransaction as internalSubmitFreighterTransaction,
   submitFreighterSorobanTransaction as internalSubmitFreighterSorobanTransaction,
-  loadRecentAddresses as internalLoadRecentAddresses,
 } from "@shared/api/internal";
 
 import {
@@ -291,21 +290,6 @@ export const addRecentAddress = createAsyncThunk<
 
   try {
     return await internalAddRecentAddress({ activePublicKey, publicKey });
-  } catch (e) {
-    const message = e instanceof Error ? e.message : JSON.stringify(e);
-    return rejectWithValue({ errorMessage: message });
-  }
-});
-
-export const loadRecentAddresses = createAsyncThunk<
-  { recentAddresses: string[] },
-  undefined,
-  { rejectValue: ErrorMessage; state: AppState }
->("loadRecentAddresses", async (_, { getState, rejectWithValue }) => {
-  const activePublicKey = publicKeySelector(getState());
-
-  try {
-    return await internalLoadRecentAddresses({ activePublicKey });
   } catch (e) {
     const message = e instanceof Error ? e.message : JSON.stringify(e);
     return rejectWithValue({ errorMessage: message });

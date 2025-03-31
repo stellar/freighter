@@ -31,6 +31,7 @@ import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsD
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
+import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
 import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 

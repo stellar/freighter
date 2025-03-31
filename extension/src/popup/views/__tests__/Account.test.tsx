@@ -25,6 +25,7 @@ import {
   mockTestnetBalances,
   mockPrices,
   TEST_CANONICAL,
+  mockTestnetBalances,
 } from "../../__testHelpers__";
 import { Account } from "../Account";
 import { ROUTES } from "popup/constants/routes";
