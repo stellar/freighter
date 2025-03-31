@@ -1,40 +1,24 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
-import {
-  Account,
-  Asset,
-  Memo,
-  Operation,
-  TransactionBuilder,
-  Networks,
-} from "stellar-sdk";
+import { Networks } from "stellar-sdk";
 import { Card, Loader, Icon, Button, CopyText } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import {
   getAssetFromCanonical,
-  getCanonicalFromAsset,
   isMainnet,
   isMuxedAccount,
-  xlmToStroop,
   getConversionRate,
   truncatedFedAddress,
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
-import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetBalance, AssetIcons, ActionStatus } from "@shared/api/types";
-import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import {
   defaultBlockaidScanAssetResult,
   isCustomNetwork,
 } from "@shared/helpers/stellar";
-import {
-  isAssetSuspicious,
-  isTxSuspicious,
-  useScanAsset,
-  useScanTx,
-} from "popup/helpers/blockaid";
+import { isTxSuspicious } from "popup/helpers/blockaid";
 
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
@@ -77,10 +61,17 @@ import {
 import { View } from "popup/basics/layout/View";
 
 import { TRANSACTION_WARNING } from "constants/transaction";
+import { findAssetBalance } from "popup/helpers/balance";
 import { formatAmount } from "popup/helpers/formatters";
+import { isContractId } from "popup/helpers/soroban";
 
 import { resetSimulation } from "popup/ducks/token-payment";
-import { NetworkDetails } from "@shared/constants/stellar";
+import { RequestState } from "popup/views/Account/hooks/useGetAccountData";
+import {
+  computeDestMinWithSlippage,
+  TxDetailsData,
+  useGetTxDetailsData,
+} from "./hooks/useGetTxDetailsData";
 
 import "./styles.scss";
 
@@ -149,121 +140,6 @@ const TwoAssetCard = ({
   );
 };
 
-const computeDestMinWithSlippage = (
-  slippage: string,
-  destMin: string,
-): BigNumber => {
-  const mult = 1 - parseFloat(slippage) / 100;
-  return new BigNumber(destMin).times(new BigNumber(mult));
-};
-
-const getOperation = (
-  sourceAsset: Asset | { code: string; issuer: string },
-  destAsset: Asset | { code: string; issuer: string },
-  amount: string,
-  destinationAmount: string,
-  destination: string,
-  allowedSlippage: string,
-  path: string[],
-  isPathPayment: boolean,
-  isSwap: boolean,
-  isFunded: boolean,
-  publicKey: string,
-) => {
-  // path payment or swap
-  if (isPathPayment || isSwap) {
-    const destMin = computeDestMinWithSlippage(
-      allowedSlippage,
-      destinationAmount,
-    );
-    return Operation.pathPaymentStrictSend({
-      sendAsset: sourceAsset as Asset,
-      sendAmount: amount,
-      destination: isSwap ? publicKey : destination,
-      destAsset: destAsset as Asset,
-      destMin: destMin.toFixed(7),
-      path: path.map((p) => getAssetFromCanonical(p)) as Asset[],
-    });
-  }
-
-  // create account if unfunded and sending xlm
-  if (!isFunded && sourceAsset.code === Asset.native().code) {
-    return Operation.createAccount({
-      destination,
-      startingBalance: amount,
-    });
-  }
-  // regular payment
-  return Operation.payment({
-    destination,
-    asset: sourceAsset as Asset,
-    amount,
-  });
-};
-
-const getBuiltTx = async (
-  publicKey: string,
-  opData: {
-    sourceAsset: Asset | { code: string; issuer: string };
-    destAsset: Asset | { code: string; issuer: string };
-    amount: string;
-    destinationAmount: string;
-    destination: string;
-    allowedSlippage: string;
-    path: string[];
-    isPathPayment: boolean;
-    isSwap: boolean;
-    isFunded: boolean;
-  },
-  fee: string,
-  transactionTimeout: number,
-  networkDetails: NetworkDetails,
-  memo?: string,
-) => {
-  const {
-    sourceAsset,
-    destAsset,
-    amount,
-    destinationAmount,
-    destination,
-    allowedSlippage,
-    path,
-    isPathPayment,
-    isSwap,
-    isFunded,
-  } = opData;
-  const server = stellarSdkServer(
-    networkDetails.networkUrl,
-    networkDetails.networkPassphrase,
-  );
-  const sourceAccount: Account = await server.loadAccount(publicKey);
-  const operation = getOperation(
-    sourceAsset,
-    destAsset,
-    amount,
-    destinationAmount,
-    destination,
-    allowedSlippage,
-    path,
-    isPathPayment,
-    isSwap,
-    isFunded,
-    publicKey,
-  );
-  const transaction = new TransactionBuilder(sourceAccount, {
-    fee: xlmToStroop(fee).toFixed(),
-    networkPassphrase: networkDetails.networkPassphrase,
-  })
-    .addOperation(operation)
-    .setTimeout(transactionTimeout);
-
-  if (memo) {
-    transaction.addMemo(Memo.text(memo));
-  }
-
-  return transaction;
-};
-
 export const TransactionDetails = ({
   goBack,
   shouldScanTx,
@@ -274,8 +150,6 @@ export const TransactionDetails = ({
   const dispatch: AppDispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const {
-    accountBalances,
-    destinationBalances,
     transactionData: {
       destination,
       federationAddress,
@@ -291,7 +165,6 @@ export const TransactionDetails = ({
       isToken,
       isSoroswap,
     },
-    assetIcons,
     hardwareWalletData: { status: hwStatus },
     memoRequiredAccounts,
     transactionSimulation,
@@ -300,19 +173,54 @@ export const TransactionDetails = ({
   const transactionHash = submission.response?.hash;
   const isPathPayment = useSelector(isPathPaymentSelector);
   const { isMemoValidationEnabled } = useSelector(settingsSelector);
-  const isSwap = useIsSwap();
-  const { scanTx, data: scanResult, isLoading, setLoading } = useScanTx();
-
-  const { t } = useTranslation();
-
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const isSwap = useIsSwap();
+  const sourceAsset = getAssetFromCanonical(asset);
+  const scanParams =
+    isToken || isSoroswap || isContractId(destination)
+      ? {
+          type: "soroban" as const,
+          xdr: transactionSimulation.preparedTransaction!,
+        }
+      : {
+          type: "classic" as const,
+          sourceAsset,
+          destAsset: getAssetFromCanonical(destinationAsset || "native"),
+          amount,
+          destinationAmount,
+          destination,
+          allowedSlippage,
+          path,
+          isPathPayment,
+          isSwap,
+          memo,
+          transactionFee,
+          transactionTimeout,
+        };
+  // TODO: use this error state
+  const { state: txDetailsData, fetchData } = useGetTxDetailsData(
+    publicKey,
+    destination,
+    networkDetails,
+    getAssetFromCanonical(destinationAsset || "native"),
+    sourceAsset,
+    {
+      shouldScan: shouldScanTx,
+      url: "internal",
+      params: scanParams,
+    },
+    {
+      isMainnet: isMainnet(networkDetails),
+      showHidden: false,
+      includeIcons: true,
+    },
+  );
+
+  const { t } = useTranslation();
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
   const isHardwareWallet = !!hardwareWalletType;
-  const [destAssetIcons, setDestAssetIcons] = useState({} as AssetIcons);
-  const [transactionXdr, setTransactionXdr] = useState("");
 
-  const sourceAsset = getAssetFromCanonical(asset);
   const destAsset = getAssetFromCanonical(destinationAsset || "native");
 
   const _isMainnet = isMainnet(networkDetails);
@@ -327,88 +235,12 @@ export const TransactionDetails = ({
       (tag) => tag === TRANSACTION_WARNING.memoRequired && !memo,
     );
 
-  const isSourceAssetSuspicious = isAssetSuspicious(
-    accountBalances.balances?.[asset]?.blockaidData,
-  );
-
   const isSubmitDisabled = isMemoRequired;
 
-  const destAssetToScan = destinationAsset
-    ? `${destAsset.code}-${destAsset.issuer}`
-    : "";
-
-  const { scannedAsset: scannedDestAsset } = useScanAsset(destAssetToScan);
-  const isDestAssetSuspicious = isAssetSuspicious(scannedDestAsset);
-
-  // load destination asset icons
-  useEffect(() => {
-    (async () => {
-      const iconURL = await getIconUrlFromIssuer({
-        key: destAsset.issuer,
-        code: destAsset.code,
-        networkDetails,
-      });
-      setDestAssetIcons({
-        [getCanonicalFromAsset(destAsset.code, destAsset.issuer)]: iconURL,
-      });
-    })();
-  }, [destAsset.code, destAsset.issuer, networkDetails]);
-
+  // TODO: figure out which view actually needs this
   useEffect(() => {
     dispatch(getMemoRequiredAccounts());
   }, [dispatch]);
-
-  useEffect(() => {
-    const url = "internal"; // blockaid prefers a URL for this endpoint, but this does not originate from a URL
-    const scanSorobanTx = async () => {
-      setTransactionXdr(transactionSimulation.preparedTransaction!);
-      if (
-        shouldScanTx &&
-        submission.submitStatus === ActionStatus.IDLE &&
-        transactionSimulation.preparedTransaction
-      ) {
-        await scanTx(
-          transactionSimulation.preparedTransaction,
-          url,
-          networkDetails,
-        );
-      }
-      setLoading(false);
-    };
-    const scanClassicTx = async () => {
-      if (shouldScanTx) {
-        const transaction = await getBuiltTx(
-          publicKey,
-          {
-            sourceAsset,
-            destAsset,
-            amount,
-            destinationAmount,
-            destination,
-            allowedSlippage,
-            path,
-            isPathPayment,
-            isSwap,
-            isFunded: destinationBalances.isFunded!,
-          },
-          transactionFee,
-          transactionTimeout,
-          networkDetails,
-          memo,
-        );
-        const xdr = transaction.build().toXDR();
-        setTransactionXdr(xdr);
-        await scanTx(xdr, url, networkDetails);
-      }
-      setLoading(false);
-    };
-    if (isToken || isSoroswap) {
-      scanSorobanTx();
-      return;
-    }
-    scanClassicTx();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const handleSorobanTransaction = async () => {
     try {
@@ -457,7 +289,7 @@ export const TransactionDetails = ({
       if (isHardwareWallet) {
         dispatch(
           startHwSign({
-            transactionXDR: transactionXdr,
+            transactionXDR: txDetailsData.data?.transactionXdr,
             shouldSubmit: true,
           }),
         );
@@ -465,7 +297,7 @@ export const TransactionDetails = ({
       }
       const res = await dispatch(
         signFreighterTransaction({
-          transactionXDR: transactionXdr,
+          transactionXDR: txDetailsData.data!.transactionXdr,
           network: networkDetails.networkPassphrase,
         }),
       );
@@ -539,15 +371,56 @@ export const TransactionDetails = ({
     return isSwap ? t("Confirm Swap") : `${t("Confirm Send")}`;
   };
 
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const getBlockaidData = (
+    details: TxDetailsData | null,
+    source: ReturnType<typeof getAssetFromCanonical>,
+    dest: ReturnType<typeof getAssetFromCanonical>,
+  ) => {
+    const sourceBalance = findAssetBalance(details!.balances.balances, source);
+    const destBalance = findAssetBalance(
+      details!.destinationBalances.balances,
+      dest,
+    );
+    if (
+      sourceBalance &&
+      details!.isSourceAssetSuspicious &&
+      "blockaidData" in sourceBalance
+    ) {
+      return sourceBalance.blockaidData;
+    }
+    if (
+      destBalance &&
+      details!.isDestAssetSuspicious &&
+      "blockaidData" in destBalance
+    ) {
+      return destBalance.blockaidData;
+    }
+    return defaultBlockaidScanAssetResult;
+  };
+
+  const isLoading =
+    txDetailsData.state === RequestState.IDLE ||
+    txDetailsData.state === RequestState.LOADING;
+
   return (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
         <HardwareSign walletType={hardwareWalletType} />
       )}
       {isLoading ? (
-        <div className="TransactionDetails__loader">
-          <Loader size="2rem" />
-        </div>
+        <View.Content hasNoTopPadding>
+          <div className="TransactionDetails__loader">
+            <Loader size="2rem" />
+          </div>
+        </View.Content>
       ) : (
         <React.Fragment>
           {submission.submitStatus === ActionStatus.PENDING && (
@@ -579,7 +452,7 @@ export const TransactionDetails = ({
               <div className="TransactionDetails__cards">
                 <Card>
                   <AccountAssets
-                    assetIcons={assetIcons}
+                    assetIcons={txDetailsData.data?.balances?.icons || {}}
                     sortedBalances={[
                       {
                         token: {
@@ -597,14 +470,20 @@ export const TransactionDetails = ({
 
             {(isPathPayment || isSwap) && (
               <TwoAssetCard
-                sourceAssetIcons={assetIcons}
+                sourceAssetIcons={txDetailsData.data?.balances?.icons || {}}
                 sourceCanon={asset}
                 sourceAmount={amount}
-                destAssetIcons={destAssetIcons}
+                destAssetIcons={
+                  txDetailsData.data?.destinationBalances?.icons || {}
+                }
                 destCanon={destinationAsset || "native"}
                 destAmount={destinationAmount}
-                isSourceAssetSuspicious={isSourceAssetSuspicious}
-                isDestAssetSuspicious={isDestAssetSuspicious}
+                isSourceAssetSuspicious={
+                  txDetailsData.data!.isSourceAssetSuspicious
+                }
+                isDestAssetSuspicious={
+                  txDetailsData.data!.isDestAssetSuspicious
+                }
               />
             )}
 
@@ -695,12 +574,12 @@ export const TransactionDetails = ({
                   className="TransactionDetails__row__right--hasOverflow"
                   data-testid="TransactionDetailsXDR"
                 >
-                  <CopyText textToCopy={transactionXdr}>
+                  <CopyText textToCopy={txDetailsData.data!.transactionXdr}>
                     <>
                       <div className="TransactionDetails__row__copy">
                         <Icon.Copy01 />
                       </div>
-                      {`${transactionXdr.slice(0, 10)}…`}
+                      {`${txDetailsData.data!.transactionXdr.slice(0, 10)}…`}
                     </>
                   </CopyText>
                 </div>
@@ -708,20 +587,23 @@ export const TransactionDetails = ({
             ) : null}
 
             <div className="TransactionDetails__warnings">
-              {scanResult && (
-                <BlockaidTxScanLabel scanResult={scanResult} isPopup />
+              {txDetailsData.data!.scanResult && (
+                <BlockaidTxScanLabel
+                  scanResult={txDetailsData.data!.scanResult}
+                  isPopup
+                />
               )}
               {submission.submitStatus === ActionStatus.IDLE && (
                 <FlaggedWarningMessage
                   isMemoRequired={isMemoRequired}
-                  blockaidData={
-                    (isSourceAssetSuspicious
-                      ? accountBalances.balances?.[asset]?.blockaidData
-                      : accountBalances.balances?.[destinationAsset]
-                          ?.blockaidData) || defaultBlockaidScanAssetResult
-                  }
+                  blockaidData={getBlockaidData(
+                    txDetailsData.data,
+                    sourceAsset,
+                    destAsset,
+                  )}
                   isSuspicious={
-                    isSourceAssetSuspicious || isDestAssetSuspicious
+                    txDetailsData.data!.isSourceAssetSuspicious ||
+                    txDetailsData.data!.isDestAssetSuspicious
                   }
                 />
               )}
@@ -750,9 +632,10 @@ export const TransactionDetails = ({
                 <Button
                   size="md"
                   variant={
-                    isSourceAssetSuspicious ||
-                    isDestAssetSuspicious ||
-                    (scanResult && isTxSuspicious(scanResult))
+                    txDetailsData.data!.isSourceAssetSuspicious ||
+                    txDetailsData.data!.isDestAssetSuspicious ||
+                    (txDetailsData.data!.scanResult &&
+                      isTxSuspicious(txDetailsData.data!.scanResult))
                       ? "error"
                       : "primary"
                   }

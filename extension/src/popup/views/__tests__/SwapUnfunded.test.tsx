@@ -7,7 +7,7 @@ import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
 } from "@shared/constants/stellar";
-import { Balances } from "@shared/api/types";
+import { Balances } from "@shared/api/types/backend-api";
 import { createMemoryHistory } from "history";
 
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
@@ -93,8 +93,19 @@ jest.mock("stellar-sdk", () => {
 
 describe("Swap unfunded account", () => {
   jest
-    .spyOn(ApiInternal, "getAccountIndexerBalances")
+    .spyOn(ApiInternal, "getAccountBalances")
     .mockImplementation(() => Promise.resolve(swapMockBalances));
+
+  jest
+    .spyOn(ApiInternal, "getAssetIcons")
+    .mockImplementation(() => Promise.resolve({}));
+
+  jest.spyOn(ApiInternal, "getHiddenAssets").mockImplementation(() =>
+    Promise.resolve({
+      hiddenAssets: {},
+      error: "",
+    }),
+  );
 
   beforeEach(() => {
     jest.spyOn(global, "fetch").mockImplementation(() =>

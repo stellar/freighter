@@ -7,10 +7,10 @@ import { useTranslation } from "react-i18next";
 import { Account, Asset, Operation, TransactionBuilder } from "stellar-sdk";
 import { AppDispatch } from "popup/App";
 
-import { AssetIcons, ErrorMessage } from "@shared/api/types";
+import { AssetIcons, Balance, ErrorMessage } from "@shared/api/types";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
-import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
+import { getAssetFromCanonical, isMainnet, xlmToStroop } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { RESULT_CODES, getResultCodes } from "popup/helpers/parseTransaction";
 import { useIsSwap } from "popup/helpers/useIsSwap";
@@ -26,6 +26,7 @@ import {
   signFreighterTransaction,
   submitFreighterTransaction,
   transactionSubmissionSelector,
+  resetSubmission,
 } from "popup/ducks/transactionSubmission";
 import { FedOrGAddress } from "popup/basics/sendPayment/FedOrGAddress";
 import { View } from "popup/basics/layout/View";
@@ -34,8 +35,14 @@ import { TrustlineError } from "popup/components/manageAssets/TrustlineError";
 import IconFail from "popup/assets/icon-fail.svg";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { findAssetBalance } from "popup/helpers/balance";
 import { formatAmount } from "popup/helpers/formatters";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
+import {
+  RequestState,
+  useGetAccountData,
+} from "popup/views/Account/hooks/useGetAccountData";
+import { Loading } from "popup/components/Loading";
 
 import "./styles.scss";
 
@@ -78,7 +85,6 @@ const SwapAssetsIcon = ({
 
 export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const {
-    accountBalances,
     transactionData: {
       destination,
       federationAddress,
@@ -86,7 +92,6 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       asset,
       destinationAsset,
     },
-    assetIcons,
   } = useSelector(transactionSubmissionSelector);
 
   const { t } = useTranslation();
@@ -94,22 +99,31 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const dispatch: AppDispatch = useDispatch();
 
   const sourceAsset = getAssetFromCanonical(asset);
+  const destinationCanonical = getAssetFromCanonical(
+    destinationAsset || "native",
+  );
   const { recommendedFee } = useNetworkFees();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
+  const { state: accountData, fetchData } = useGetAccountData(
+    publicKey,
+    networkDetails,
+    {
+      isMainnet: isMainnet(networkDetails),
+      showHidden: false,
+      includeIcons: true,
+    },
+  );
+  const isLoading =
+    accountData.state === RequestState.IDLE ||
+    accountData.state === RequestState.LOADING;
 
   const server = stellarSdkServer(
     networkDetails.networkUrl,
     networkDetails.networkPassphrase,
   );
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
-  const isSourceAssetSuspicious = isAssetSuspicious(
-    accountBalances.balances?.[asset]?.blockaidData,
-  );
-  const isDestAssetSuspicious = isAssetSuspicious(
-    accountBalances.balances?.[destinationAsset]?.blockaidData,
-  );
 
   const removeTrustline = async (assetCode: string, assetIssuer: string) => {
     const changeParams = { limit: "0" };
@@ -177,11 +191,40 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   };
 
   // TODO: the remove trustline logic here does not work Soroban tokens. We should handle this case
+  const suggestRemoveTrustline = (
+    accountData.data?.balances.balances as Balance[]
+  )
+    ?.find((balance) => balance.contractId === asset)
+    ?.available?.isZero();
 
-  const suggestRemoveTrustline =
-    accountBalances.balances &&
-    accountBalances.balances[asset] &&
-    accountBalances.balances[asset].available?.isZero();
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  const sourceBalance = findAssetBalance(
+    accountData.data!.balances.balances,
+    sourceAsset,
+  );
+  const destBalance = findAssetBalance(
+    accountData.data!.balances.balances,
+    destinationCanonical,
+  );
+  const isSourceAssetSuspicious =
+    !!sourceBalance &&
+    "blockaidData" in sourceBalance &&
+    isAssetSuspicious(sourceBalance.blockaidData);
+  const isDestAssetSuspicious =
+    !!destBalance &&
+    "blockaidData" in destBalance &&
+    isAssetSuspicious(destBalance.blockaidData);
 
   return (
     <React.Fragment>
@@ -226,7 +269,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
               <SwapAssetsIcon
                 sourceCanon={asset}
                 destCanon={destinationAsset}
-                assetIcons={assetIcons}
+                assetIcons={accountData.data?.balances?.icons || {}}
                 isSourceSuspicious={isSourceAssetSuspicious}
                 isDestSuspicious={isDestAssetSuspicious}
               />
@@ -252,6 +295,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
           size="md"
           variant="secondary"
           onClick={() => {
+            dispatch(resetSubmission());
             navigateTo(ROUTES.account);
           }}
         >
@@ -260,7 +304,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       </View.Footer>
       {isTrustlineErrorShowing
         ? createPortal(
-            <TrustlineError />,
+            <TrustlineError balances={accountData.data!.balances} />,
             document.querySelector("#modal-root")!,
           )
         : null}

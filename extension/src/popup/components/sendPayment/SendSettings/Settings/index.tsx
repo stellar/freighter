@@ -1,10 +1,9 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { Asset, BASE_FEE } from "stellar-sdk";
-import BigNumber from "bignumber.js";
+import { Asset, Networks } from "stellar-sdk";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
@@ -13,8 +12,9 @@ import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import {
   isMuxedAccount,
   getAssetFromCanonical,
-  stroopToXlm,
+  isMainnet,
 } from "helpers/stellar";
+import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { FormRows } from "popup/basics/Forms";
@@ -23,30 +23,55 @@ import {
   saveMemo,
   transactionDataSelector,
   isPathPaymentSelector,
-  saveTransactionFee,
-  saveSimulation,
-  transactionSubmissionSelector,
-  saveIsToken,
 } from "popup/ducks/transactionSubmission";
-import {
-  simulateTokenPayment,
-  simulateSwap,
-  tokenSimulationSelector,
-} from "popup/ducks/token-payment";
+import { NetworkDetails } from "@shared/constants/stellar";
 
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import {
-  parseTokenAmount,
-  isContractId,
-  formatTokenAmount,
-  CLASSIC_ASSET_DECIMALS,
-} from "popup/helpers/soroban";
-import { Balances, TokenBalance } from "@shared/api/types";
+import { isContractId } from "popup/helpers/soroban";
 import { AppDispatch } from "popup/App";
 
+import { RequestState } from "constants/request";
+import { useGetSettingsData } from "./hooks/useGetSettingsData";
+
 import "../../styles.scss";
+
+function getSimulationMode(
+  isSoroswap: boolean,
+  isToken: boolean,
+  isSendSacToContract: boolean,
+) {
+  if (isSoroswap) {
+    return "Soroswap";
+  }
+  if (isToken || isSendSacToContract) {
+    return "TokenPayment";
+  }
+  return "ClassicPayment";
+}
+
+function getAssetAddress(
+  asset: string,
+  destination: string,
+  networkDetails: NetworkDetails,
+) {
+  if (asset === "native") {
+    return asset;
+  }
+  if (
+    isContractId(destination) &&
+    !isContractId(getAssetFromCanonical(asset).issuer)
+  ) {
+    return getAssetSacAddress(
+      asset,
+      networkDetails.networkPassphrase as Networks,
+    );
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_, issuer] = asset.split(":");
+  return issuer;
+}
 
 export const Settings = ({
   previous,
@@ -75,15 +100,17 @@ export const Settings = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
   const publicKey = useSelector(publicKeySelector);
-  const { accountBalances } = useSelector(transactionSubmissionSelector);
-  const { simulation } = useSelector(tokenSimulationSelector);
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
-  const [isLoadingSimulation, setLoadingSimulation] = useState(true);
 
   const isSendSacToContract =
     isContractId(destination) &&
     !isContractId(getAssetFromCanonical(asset).issuer);
+  const simulationMode = getSimulationMode(
+    isSoroswap,
+    isToken,
+    isSendSacToContract,
+  );
   const getSacContractAddress = useCallback(() => {
     if (asset === "native") {
       return getNativeContractDetails(networkDetails).contract;
@@ -100,140 +127,51 @@ export const Settings = ({
     return contractAddress;
   }, [asset, networkDetails]);
 
-  useEffect(() => {
-    async function simulateTx() {
-      if (!recommendedFee) {
-        return;
-      }
-      // use default transaction fee if unset
-      const baseFee = new BigNumber(
-        transactionFee || recommendedFee || stroopToXlm(BASE_FEE),
-      );
-
-      if (isSoroswap) {
-        const simulatedTx = await dispatch(
-          simulateSwap({
-            networkDetails,
-            publicKey,
-            amountIn: amount,
-            amountInDecimals: decimals || 0,
-            amountOut: destinationAmount,
-            amountOutDecimals: destinationDecimals || 0,
-            memo,
-            transactionFee,
-            path,
-          }),
-        );
-
-        if (simulateSwap.fulfilled.match(simulatedTx)) {
-          dispatch(saveSimulation(simulatedTx.payload));
-          const minResourceFee = formatTokenAmount(
-            new BigNumber(
-              simulatedTx.payload.simulationTransaction.minResourceFee,
-            ),
-            CLASSIC_ASSET_DECIMALS,
-          );
-          if (!transactionFee) {
-            dispatch(
-              saveTransactionFee(
-                baseFee.plus(new BigNumber(minResourceFee)).toString(),
-              ),
-            );
-          }
-        }
-        setLoadingSimulation(false);
-        return;
-      }
-
-      if (
-        (isToken || isSendSacToContract) &&
-        !simulation.simulationTransaction?.minResourceFee
-      ) {
-        const assetAddress = isSendSacToContract
-          ? getSacContractAddress()
-          : asset.split(":")[1];
-        const balances =
-          accountBalances.balances || ({} as NonNullable<Balances>);
-        const assetBalance = balances[asset] as TokenBalance;
-
-        if (!assetBalance) {
-          throw new Error("Asset Balance not available");
-        }
-
-        const parsedAmount = isSendSacToContract
-          ? parseTokenAmount(amount, CLASSIC_ASSET_DECIMALS)
-          : parseTokenAmount(amount, Number(assetBalance.decimals));
-
-        const params = {
-          publicKey,
-          destination,
-          amount: parsedAmount.toNumber(),
-        };
-
-        const simResponse = await dispatch(
-          simulateTokenPayment({
-            address: assetAddress,
-            publicKey,
-            memo,
-            params,
-            networkDetails,
-            transactionFee,
-          }),
-        );
-
-        if (
-          simulateTokenPayment.fulfilled.match(simResponse) &&
-          recommendedFee
-        ) {
-          const minResourceFee = formatTokenAmount(
-            new BigNumber(
-              simResponse.payload.simulationTransaction.minResourceFee,
-            ),
-            CLASSIC_ASSET_DECIMALS,
-          );
-          dispatch(saveSimulation(simResponse.payload));
-          dispatch(saveIsToken(true));
-          dispatch(
-            saveTransactionFee(
-              baseFee.plus(new BigNumber(minResourceFee)).toString(),
-            ),
-          );
-        }
-        setLoadingSimulation(false);
-        return;
-      }
-
-      if (!transactionFee) {
-        dispatch(saveTransactionFee(baseFee.toString()));
-      }
-      setLoadingSimulation(false);
-    }
-    async function setFee() {
-      setLoadingSimulation(true);
-      await simulateTx();
-    }
-    setFee();
-  }, [
-    dispatch,
-    recommendedFee,
-    transactionFee,
-    accountBalances.balances,
-    amount,
-    asset,
-    decimals,
-    destination,
-    destinationAmount,
-    destinationDecimals,
-    getSacContractAddress,
-    isSendSacToContract,
-    isSoroswap,
-    isToken,
-    memo,
-    networkDetails,
-    path,
+  const assetAddress = getAssetAddress(asset, destination, networkDetails);
+  // TODO: handle error state
+  const { state: settingsData, fetchData } = useGetSettingsData(
     publicKey,
-    simulation.simulationTransaction?.minResourceFee,
-  ]);
+    networkDetails,
+    simulationMode,
+    transactionFee || recommendedFee,
+    {
+      isMainnet: isMainnet(networkDetails),
+      showHidden: false,
+      includeIcons: true,
+    },
+    {
+      amountIn: amount,
+      amountInDecimals: decimals || 0,
+      amountOut: destinationAmount,
+      amountOutDecimals: destinationDecimals || 0,
+      memo,
+      transactionFee,
+      path,
+    },
+    {
+      address: assetAddress,
+      amount,
+      publicKey,
+      memo,
+      params: {
+        asset: isSendSacToContract
+          ? getSacContractAddress()
+          : asset.split(":")[1],
+        publicKey,
+        destination,
+      },
+      networkDetails,
+      transactionFee,
+    },
+  );
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleTxFeeNav = () =>
     navigateTo(isSwap ? ROUTES.swapSettingsFee : ROUTES.sendPaymentSettingsFee);
@@ -251,6 +189,9 @@ export const Settings = ({
   // dont show memo for regular sends to Muxed, or for swaps
   const showMemo = !isSwap && !isMuxedAccount(destination);
   const showSlippage = (isPathPayment || isSwap) && !isSoroswap;
+  const isLoading =
+    settingsData.state === RequestState.IDLE ||
+    settingsData.state === RequestState.LOADING;
 
   return (
     <React.Fragment>
@@ -258,10 +199,12 @@ export const Settings = ({
         title={`${isSwap ? t("Swap") : t("Send")} ${t("Settings")}`}
         customBackAction={() => navigateTo(previous)}
       />
-      {isLoadingSimulation && !recommendedFee ? (
-        <div className="SendSettings__loadingWrapper">
-          <Loader size="2rem" />
-        </div>
+      {isLoading ? (
+        <View.Content hasNoTopPadding>
+          <div className="SendSettings__loadingWrapper">
+            <Loader size="2rem" />
+          </div>
+        </View.Content>
       ) : (
         <Formik
           initialValues={{ memo }}
@@ -310,7 +253,7 @@ export const Settings = ({
                       }}
                     >
                       <span data-testid="SendSettingsTransactionFee">
-                        {transactionFee} XLM
+                        {settingsData.data?.recommendedFee} XLM
                       </span>
                       <div>
                         <Icon.ChevronRight />
@@ -450,7 +393,7 @@ export const Settings = ({
               </View.Content>
               <View.Footer>
                 <Button
-                  disabled={!transactionFee}
+                  disabled={!settingsData.data?.recommendedFee}
                   size="md"
                   isFullWidth
                   onClick={() => navigateTo(next)}

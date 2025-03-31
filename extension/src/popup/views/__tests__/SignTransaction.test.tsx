@@ -17,7 +17,7 @@ import * as ApiInternal from "@shared/api/internal";
 
 import { SignTransaction } from "../SignTransaction";
 import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
-import { Balances } from "@shared/api/types";
+import { Balances } from "@shared/api/types/backend-api";
 
 jest.mock("stellar-identicon-js");
 jest.setTimeout(20000);
@@ -27,8 +27,12 @@ jest
   .mockImplementation(() => Promise.resolve({ hiddenAssets: {}, error: "" }));
 
 jest
-  .spyOn(ApiInternal, "getAccountIndexerBalances")
+  .spyOn(ApiInternal, "getAccountBalances")
   .mockImplementation(() => Promise.resolve(mockBalances));
+
+jest
+  .spyOn(ApiInternal, "getAssetIcons")
+  .mockImplementation(() => Promise.resolve({}));
 
 const defaultSettingsState = {
   networkDetails: {
@@ -545,7 +549,7 @@ describe("SignTransactions", () => {
       } as any as Balances,
     };
     jest
-      .spyOn(ApiInternal, "getAccountIndexerBalances")
+      .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockBalancesEmpty));
 
     const transaction = TransactionBuilder.fromXDR(

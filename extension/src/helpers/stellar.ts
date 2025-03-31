@@ -61,6 +61,12 @@ export const getTransactionInfo = (search: string) => {
   };
 };
 
+export function isAsset(
+  value: Asset | { code: string; issuer: string },
+): value is Asset {
+  return (value as Asset).getIssuer !== undefined;
+}
+
 export const getAssetFromCanonical = (canonical: string) => {
   if (canonical === "native") {
     return Asset.native();
@@ -82,7 +88,7 @@ export const getAssetFromCanonical = (canonical: string) => {
 
 export const getCanonicalFromAsset = (
   assetCode: string,
-  assetIssuer: string,
+  assetIssuer?: string,
 ) => {
   if (assetCode === "XLM" && !assetIssuer) {
     return "native";

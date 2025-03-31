@@ -1,12 +1,6 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
-import {
-  login,
-  loginAndFund,
-  loginToTestAccount,
-  PASSWORD,
-} from "./helpers/login";
+import { login, loginAndFund, loginToTestAccount } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
-import { toBeVisible } from "@testing-library/jest-dom/matchers";
 
 test("Swap doesn't throw error when account is unfunded", async ({
   page,
@@ -249,7 +243,7 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   // add E2E token
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Manage Assets").click({ force: true });
-  await expect(page.getByText("Manage assets")).toBeVisible();
+  await expect(page.getByText("Your assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });
   await page.getByText("Add manually").click({ force: true });
   await page.getByTestId("search-token-input").fill(TEST_TOKEN_ADDRESS);

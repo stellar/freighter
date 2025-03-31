@@ -2,11 +2,14 @@ import BigNumber from "bignumber.js";
 import { AssetType as SdkAssetType, Horizon } from "stellar-sdk";
 import Blockaid from "@blockaid/client";
 
-import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
-import { APPLICATION_STATE } from "../constants/applicationState";
-import { WalletType } from "../constants/hardwareWallet";
-import { NetworkDetails } from "../constants/stellar";
-import { AssetsLists, AssetsListItem } from "../constants/soroban/token";
+import {
+  SERVICE_TYPES,
+  EXTERNAL_SERVICE_TYPES,
+} from "../../constants/services";
+import { APPLICATION_STATE } from "../../constants/applicationState";
+import { WalletType } from "../../constants/hardwareWallet";
+import { NetworkDetails } from "../../constants/stellar";
+import { AssetsLists, AssetsListItem } from "../../constants/soroban/token";
 
 export enum ActionStatus {
   IDLE = "IDLE",
@@ -274,13 +277,6 @@ export interface TokenBalance extends AssetBalance {
   total: BigNumber;
 }
 
-export interface BalanceMap {
-  [key: string]: AssetBalance | NativeBalance | TokenBalance;
-  native: NativeBalance;
-}
-
-export type Balances = BalanceMap | null;
-
 export interface SorobanBalance {
   contractId: string;
   total: BigNumber;
@@ -290,20 +286,9 @@ export interface SorobanBalance {
   token?: { code: string; issuer: { key: string } };
 }
 
-export type AssetType = AssetBalance | NativeBalance | TokenBalance;
-
 export type TokenBalances = SorobanBalance[];
 
-/* eslint-disable camelcase */
 export type HorizonOperation = Horizon.ServerApi.OperationRecord;
-/* eslint-enable camelcase */
-
-export interface AccountBalancesInterface {
-  balances: Balances;
-  isFunded: boolean | null;
-  subentryCount: number;
-  error?: { horizon: any; soroban: any };
-}
 
 export interface AccountHistoryInterface {
   operations: Array<HorizonOperation> | [];

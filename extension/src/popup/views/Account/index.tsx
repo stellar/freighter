@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import {
   CopyText,
   Icon,
@@ -8,9 +8,6 @@ import {
 } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { getAccountHistory } from "@shared/api/internal";
-import { ActionStatus, AssetType } from "@shared/api/types";
-
 import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
@@ -18,29 +15,15 @@ import {
 } from "popup/ducks/settings";
 import { View } from "popup/basics/layout/View";
 import {
-  accountStatusSelector,
   accountNameSelector,
   allAccountsSelector,
   publicKeySelector,
 } from "popup/ducks/accountServices";
-import {
-  getAssetIcons,
-  getAssetDomains,
-  transactionSubmissionSelector,
-  resetSubmission,
-  resetAccountBalanceStatus,
-  getAccountBalances,
-  getSoroswapTokens,
-} from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
-import {
-  AssetOperations,
-  sortBalances,
-  sortOperationsByAsset,
-} from "popup/helpers/account";
 import { navigateTo } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
-import { useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
+import { isMainnet } from "helpers/stellar";
+
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
 import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsDropdown";
@@ -48,119 +31,61 @@ import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 
+import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
+
 import "popup/metrics/authServices";
 import "./styles.scss";
 
 export const Account = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-  const { accountBalances, assetIcons, accountBalanceStatus } = useSelector(
-    transactionSubmissionSelector,
-  );
-  const accountStatus = useSelector(accountStatusSelector);
-  const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] =
-    useState(false);
-
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
-  const [sortedBalances, setSortedBalances] = useState([] as AssetType[]);
-  const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
-  const [selectedAsset, setSelectedAsset] = useState("");
-  const [isLoading, setLoading] = useState(true);
-  const isSoroswapEnabled = useIsSoroswapEnabled();
   const isFullscreenModeEnabled = isFullscreenMode();
-
-  const { balances, isFunded, error } = accountBalances;
+  const { state: accountData, fetchData } = useGetAccountData(
+    publicKey,
+    networkDetails,
+    {
+      isMainnet: isMainnet(networkDetails),
+      showHidden: false,
+      includeIcons: true,
+    },
+  );
+  const [selectedAsset, setSelectedAsset] = useState("");
 
   useEffect(() => {
-    // reset to avoid any residual data eg switching between send and swap or
-    // previous stale sends
-    setLoading(true);
-    dispatch(resetSubmission());
-    dispatch(
-      getAccountBalances({
-        publicKey,
-        networkDetails,
-      }),
-    );
-
-    return () => {
-      dispatch(resetAccountBalanceStatus());
+    const getData = async () => {
+      await fetchData();
     };
-  }, [publicKey, networkDetails, isAccountFriendbotFunded, dispatch]);
-
-  useEffect(() => {
-    if (!balances) {
-      return;
-    }
-
-    if (isSoroswapEnabled) {
-      dispatch(getSoroswapTokens());
-    }
-
-    setSortedBalances(sortBalances(balances));
-    dispatch(getAssetIcons({ balances, networkDetails }));
-    dispatch(getAssetDomains({ balances, networkDetails }));
-  }, [balances, networkDetails, dispatch, isSoroswapEnabled]);
-
-  useEffect(() => {
-    if (!balances) {
-      return;
-    }
-
-    const fetchAccountHistory = async () => {
-      try {
-        const operations = await getAccountHistory(publicKey, networkDetails);
-        setAssetOperations(
-          sortOperationsByAsset({
-            operations,
-            balances: sortedBalances,
-            networkDetails,
-            publicKey,
-          }),
-        );
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    fetchAccountHistory();
-  }, [publicKey, networkDetails, balances, sortedBalances]);
-
-  const hasError = accountBalanceStatus === ActionStatus.ERROR;
-
-  useEffect(() => {
-    if (
-      !(
-        accountBalanceStatus === ActionStatus.PENDING ||
-        accountBalanceStatus === ActionStatus.IDLE ||
-        accountStatus === ActionStatus.PENDING
-      )
-    ) {
-      setLoading(false);
-    }
-  }, [accountBalanceStatus, accountStatus]);
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [publicKey]);
 
   if (selectedAsset) {
     return (
       <AssetDetail
-        accountBalances={sortedBalances}
-        assetOperations={assetOperations[selectedAsset] || []}
+        accountBalances={accountData.data!.balances}
+        assetOperations={accountData.data!.operationsByAsset[selectedAsset]}
         networkDetails={networkDetails}
         publicKey={publicKey}
         selectedAsset={selectedAsset}
         setSelectedAsset={setSelectedAsset}
-        subentryCount={accountBalances.subentryCount}
+        subentryCount={accountData.data!.balances.subentryCount}
       />
     );
   }
 
-  if (isLoading) {
+  if (
+    accountData.state === RequestState.IDLE ||
+    accountData.state === RequestState.LOADING
+  ) {
     return <Loading />;
   }
+
+  const hasError = accountData.state === RequestState.ERROR;
 
   return (
     <>
@@ -168,7 +93,6 @@ export const Account = () => {
         allAccounts={allAccounts}
         currentAccountName={currentAccountName}
         publicKey={publicKey}
-        setLoading={setLoading}
       />
       <View.Content hasNoTopPadding>
         <div className="AccountView" data-testid="account-view">
@@ -204,7 +128,9 @@ export const Account = () => {
                 className="AccountView__send-receive-button"
                 data-testid="account-options-dropdown"
               >
-                <AccountOptionsDropdown isFunded={!!isFunded} />
+                <AccountOptionsDropdown
+                  isFunded={!!accountData.data?.balances?.isFunded}
+                />
               </div>
             </div>
           </div>
@@ -228,7 +154,7 @@ export const Account = () => {
               </Notification>
             </div>
           )}
-          {error?.horizon && (
+          {accountData.data?.balances?.error?.horizon && (
             <div className="AccountView__fetch-fail">
               <Notification
                 title={t("Horizon is temporarily experiencing issues")}
@@ -263,29 +189,31 @@ export const Account = () => {
             </div>
           )}
 
-          {isFunded && !hasError && (
+          {accountData.data?.balances?.isFunded && !hasError && (
             <div
               className="AccountView__assets-wrapper"
               data-testid="account-assets"
             >
               <AccountAssets
-                sortedBalances={sortedBalances}
-                assetIcons={assetIcons}
+                sortedBalances={accountData.data.balances.balances}
+                assetIcons={accountData.data.balances.icons || {}}
                 setSelectedAsset={setSelectedAsset}
               />
             </div>
           )}
         </div>
       </View.Content>
-      {!isFunded && !hasError && !error?.horizon && (
-        <View.Footer>
-          <NotFundedMessage
-            canUseFriendbot={!!networkDetails.friendbotUrl}
-            setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
-            publicKey={publicKey}
-          />
-        </View.Footer>
-      )}
+      {!accountData.data?.balances?.isFunded &&
+        !hasError &&
+        !accountData.data?.balances?.error?.horizon && (
+          <View.Footer>
+            <NotFundedMessage
+              canUseFriendbot={!!networkDetails.friendbotUrl}
+              publicKey={publicKey}
+              reloadBalances={fetchData}
+            />
+          </View.Footer>
+        )}
     </>
   );
 };

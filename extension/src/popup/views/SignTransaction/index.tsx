@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 import { Button, Icon, Notification } from "@stellar/design-system";
 import {
@@ -13,19 +13,13 @@ import {
   Operation,
 } from "stellar-sdk";
 
-import { ActionStatus } from "@shared/api/types";
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
 import {
   isNonSSLEnabledSelector,
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
 
-import {
-  ShowOverlayStatus,
-  getAccountBalances,
-  resetAccountBalanceStatus,
-  transactionSubmissionSelector,
-} from "popup/ducks/transactionSubmission";
+import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 
 import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 
@@ -34,6 +28,7 @@ import { emitMetric } from "helpers/metrics";
 import {
   getTransactionInfo,
   isFederationAddress,
+  isMainnet,
   isMuxedAccount,
   stroopToXlm,
   truncatedPublicKey,
@@ -41,7 +36,6 @@ import {
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { navigateTo } from "popup/helpers/navigate";
-import { useScanTx } from "popup/helpers/blockaid";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -59,9 +53,13 @@ import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { Loading } from "popup/components/Loading";
-
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Tabs } from "popup/components/Tabs";
+import { NativeAsset } from "@shared/api/types/account-balance";
+
+import { RequestState } from "constants/request";
+import { useGetSignTxData } from "./hooks/useGetSignTxData";
+
 import { Summary } from "./Preview/Summary";
 import { Details } from "./Preview/Details";
 import { Data } from "./Preview/Data";
@@ -71,24 +69,6 @@ import "./styles.scss";
 export const SignTransaction = () => {
   const location = useLocation();
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =
-    useState(false);
-
-  const { accountBalances, accountBalanceStatus } = useSelector(
-    transactionSubmissionSelector,
-  );
-  const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { networkName, networkPassphrase } = networkDetails;
-  const { scanTx, isLoading: isLoadingScan, data: scanResult } = useScanTx();
-  const flaggedMalicious =
-    scanResult?.validation &&
-    "result_type" in scanResult.validation &&
-    scanResult.validation.result_type === "Malicious";
-
   const tx = getTransactionInfo(location.search);
   const { url } = parsedSearchParam(location.search);
 
@@ -101,6 +81,52 @@ export const SignTransaction = () => {
     isHttpsDomain,
     flaggedKeys,
   } = tx;
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =
+    useState(false);
+  const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
+  const { networkName, networkPassphrase } = networkDetails;
+  let accountToSign = _accountToSign;
+  const {
+    allAccounts,
+    accountNotFound,
+    currentAccount,
+    isConfirming,
+    isPasswordRequired,
+    publicKey,
+    handleApprove,
+    hwStatus,
+    rejectAndClose,
+    setIsPasswordRequired,
+    verifyPasswordThenSign,
+    hardwareWalletType,
+  } = useSetupSigningFlow(
+    rejectTransaction,
+    signTransaction,
+    transactionXdr,
+    accountToSign,
+  );
+  const { state: scanTxState, fetchData } = useGetSignTxData(
+    publicKey,
+    networkDetails,
+    {
+      xdr: transactionXdr,
+      url,
+    },
+    {
+      isMainnet: isMainnet(networkDetails),
+      showHidden: false,
+      includeIcons: true,
+    },
+  );
+  const scanResult = scanTxState.data?.scanResult;
+  const flaggedMalicious =
+    scanResult?.validation &&
+    "result_type" in scanResult.validation &&
+    scanResult.validation.result_type === "Malicious";
 
   // rebuild transaction to get Transaction prototypes
   const transaction = TransactionBuilder.fromXDR(
@@ -122,27 +148,6 @@ export const SignTransaction = () => {
   const decodedMemo = decodeMemo(_memo);
 
   const memo = decodedMemo?.value;
-  let accountToSign = _accountToSign;
-
-  const {
-    allAccounts,
-    accountNotFound,
-    currentAccount,
-    isConfirming,
-    isPasswordRequired,
-    publicKey,
-    handleApprove,
-    hwStatus,
-    rejectAndClose,
-    setIsPasswordRequired,
-    verifyPasswordThenSign,
-    hardwareWalletType,
-  } = useSetupSigningFlow(
-    rejectTransaction,
-    signTransaction,
-    transactionXdr,
-    accountToSign,
-  );
 
   const flaggedKeyValues = Object.values(flaggedKeys);
   const isMemoRequired = flaggedKeyValues.some(
@@ -177,10 +182,10 @@ export const SignTransaction = () => {
   decodeAccountToSign();
 
   useEffect(() => {
-    const fetchData = async () => {
-      await scanTx(transactionXdr, url, networkDetails);
+    const getData = async () => {
+      await fetchData();
     };
-    fetchData();
+    getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -189,20 +194,6 @@ export const SignTransaction = () => {
       emitMetric(METRIC_NAMES.signTransactionMemoRequired);
     }
   }, [isMemoRequired]);
-
-  useEffect(() => {
-    if (currentAccount.publicKey) {
-      dispatch(
-        getAccountBalances({
-          publicKey: currentAccount.publicKey,
-          networkDetails,
-        }),
-      );
-    }
-    return () => {
-      dispatch(resetAccountBalanceStatus());
-    };
-  }, [currentAccount.publicKey, dispatch, networkDetails]);
 
   const isSubmitDisabled = isMemoRequired;
 
@@ -227,21 +218,21 @@ export const SignTransaction = () => {
     return <SSLWarningMessage url={domain} />;
   }
 
-  const hasLoadedBalances =
-    accountBalanceStatus !== ActionStatus.PENDING &&
-    accountBalanceStatus !== ActionStatus.IDLE;
+  const isLoading =
+    scanTxState.state === RequestState.IDLE ||
+    scanTxState.state === RequestState.LOADING;
 
-  if (!hasLoadedBalances || isLoadingScan) {
+  if (isLoading) {
     return <Loading />;
   }
 
-  const hasBalance =
-    hasLoadedBalances && accountBalanceStatus !== ActionStatus.ERROR;
-  const hasEnoughXlm =
-    accountBalances.balances?.native &&
-    accountBalances.balances?.native.available.gt(stroopToXlm(_fee as string));
+  const hasEnoughXlm = scanTxState.data?.balances.balances.some(
+    (balance) =>
+      "token" in balance &&
+      balance.token.code === "XLM" &&
+      (balance as NativeAsset).available.gt(stroopToXlm(_fee as string)),
+  );
   if (
-    hasBalance &&
     currentAccount.publicKey &&
     !hasEnoughXlm &&
     !hasAcceptedInsufficientFee

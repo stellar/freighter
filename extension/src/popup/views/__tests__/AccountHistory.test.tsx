@@ -11,12 +11,28 @@ import {
   Wrapper,
   mockAccounts,
   mockAccountHistory,
+  mockBalances,
 } from "../../__testHelpers__";
 import { AccountHistory } from "../AccountHistory";
 
 jest
   .spyOn(ApiInternal, "getAccountHistory")
   .mockImplementation(() => Promise.resolve(mockAccountHistory as any));
+
+jest
+  .spyOn(ApiInternal, "getAccountBalances")
+  .mockImplementation(() => Promise.resolve(mockBalances));
+
+jest.spyOn(ApiInternal, "getHiddenAssets").mockImplementation(() =>
+  Promise.resolve({
+    hiddenAssets: {},
+    error: "",
+  }),
+);
+
+jest
+  .spyOn(ApiInternal, "getAssetIcons")
+  .mockImplementation(() => Promise.resolve({}));
 
 describe("AccountHistory", () => {
   it("loads account history view with all transactions", async () => {
