@@ -23,6 +23,8 @@ import {
   mockBalances,
   mockAccounts,
   mockTestnetBalances,
+  mockPrices,
+  TEST_CANONICAL,
 } from "../../__testHelpers__";
 import { Account } from "../Account";
 import { ROUTES } from "popup/constants/routes";
@@ -86,6 +88,10 @@ jest
 jest
   .spyOn(ApiInternal, "getAccountBalances")
   .mockImplementation(() => Promise.resolve(mockBalances));
+
+jest
+  .spyOn(ApiInternal, "getTokenPrices")
+  .mockImplementation(() => Promise.resolve(mockPrices));
 
 jest
   .spyOn(ExtensionMessaging, "sendMessageToBackground")
@@ -458,6 +464,7 @@ describe("Account view", () => {
       );
       await fireEvent.click(accountIdenticonNodes[2]);
     });
+
     await waitFor(async () => {
       expect(screen.getByTestId("account-view-account-name")).toHaveTextContent(
         "Account 2",
@@ -519,6 +526,53 @@ describe("Account view", () => {
       expect(assetNodes.length).toEqual(2);
       expect(assetNodes[1]).toHaveTextContent("LP");
       expect(assetNodes[1]).toHaveTextContent("0");
+    });
+  });
+  it("shows prices and deltas", async () => {
+    // TODO: these mocks dont seem to reset, why?
+    jest
+      .spyOn(ApiInternal, "getAccountIndexerBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockImplementation(() => Promise.resolve(mockPrices));
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      const assetNodes = screen.getAllByTestId("account-assets-item");
+      expect(assetNodes.length).toEqual(3);
+      expect(
+        screen.getByTestId(`asset-amount-${TEST_CANONICAL}`),
+      ).toHaveTextContent("$834,463.68");
+      expect(
+        screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
+      ).toHaveTextContent("3.98%");
+      expect(screen.getByTestId(`asset-amount-native`)).toHaveTextContent(
+        "$13.82",
+      );
+      expect(screen.getByTestId(`asset-price-delta-native`)).toHaveTextContent(
+        "1.10%",
+      );
     });
   });
 });

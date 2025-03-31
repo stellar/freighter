@@ -31,7 +31,9 @@ export const AccountMismatch = () => {
               <div>
                 <Notification
                   title={t(
-                    `Your session with the public key ${truncatedPublicKey(publicKey)} has ended. Please refresh the browser.`,
+                    `Your session with the public key ${truncatedPublicKey(
+                      publicKey,
+                    )} has ended. Please refresh the browser.`,
                   )}
                   variant="warning"
                 />

@@ -234,7 +234,7 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
   const shuffledWords = shuffle(words);
 
   for (let i = 0; i < shuffledWords.length; i++) {
-    await page.getByLabel(shuffledWords[i] ).check({ force: true });
+    await page.getByLabel(shuffledWords[i]).check({ force: true });
   }
 
   await page.getByTestId("display-mnemonic-phrase-confirm-btn").click();

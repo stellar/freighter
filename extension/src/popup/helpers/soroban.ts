@@ -24,6 +24,7 @@ import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { findAssetBalance } from "./balance";
 import { getSdk } from "@shared/helpers/stellar";
+export { isContractId } from "@shared/api/helpers/soroban";
 
 export const SOROBAN_OPERATION_TYPES = [
   "invoke_host_function",
@@ -216,15 +217,6 @@ export const getAttrsFromSorobanHorizonOp = (
   const invokeHostFn = txEnvelope.operations[0]; // only one op per tx in Soroban right now
 
   return getTokenInvocationArgs(invokeHostFn);
-};
-
-export const isContractId = (contractId: string) => {
-  try {
-    StrKey.decodeContract(contractId);
-    return true;
-  } catch (error) {
-    return false;
-  }
 };
 
 export interface InvocationTree {

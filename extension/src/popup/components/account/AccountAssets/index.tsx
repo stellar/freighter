@@ -2,15 +2,16 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import isEmpty from "lodash/isEmpty";
 import { Asset, Horizon } from "stellar-sdk";
+import BigNumber from "bignumber.js";
 
-import { AssetIcons, Balance } from "@shared/api/types";
+import { ApiTokenPrices, AssetIcons, Balance } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
 import { formatTokenAmount } from "popup/helpers/soroban";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
-import { formatAmount } from "popup/helpers/formatters";
+import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -161,12 +162,14 @@ export const AssetIcon = ({
 interface AccountAssetsProps {
   assetIcons: AssetIcons;
   sortedBalances: AssetType[];
+  assetPrices?: ApiTokenPrices;
   setSelectedAsset?: (selectedAsset: string) => void;
 }
 
 export const AccountAssets = ({
   assetIcons: inputAssetIcons,
   sortedBalances,
+  assetPrices,
   setSelectedAsset,
 }: AccountAssetsProps) => {
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
@@ -254,6 +257,7 @@ export const AccountAssets = ({
         }
 
         const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
+        const assetPrice = assetPrices ? assetPrices[canonicalAsset] : null;
 
         const isSuspicious = isAssetSuspicious((rb as Balance).blockaidData);
 
@@ -261,6 +265,21 @@ export const AccountAssets = ({
           "contractId" in rb && "decimals" in rb
             ? formatTokenAmount(rb.total, rb.decimals)
             : rb.total.toFixed();
+
+        const getDeltaColor = (delta: BigNumber) => {
+          if (delta.isZero()) {
+            return "";
+          }
+
+          if (delta.isNegative()) {
+            return "negative";
+          }
+          if (delta.isPositive()) {
+            return "positive";
+          }
+
+          return "";
+        };
 
         return (
           <div
@@ -289,6 +308,43 @@ export const AccountAssets = ({
                 {formatAmount(amountVal)}
               </div>
             </div>
+            {assetPrice ? (
+              <div className="AccountAssets__copy-right">
+                <div
+                  className="asset-usd-amount"
+                  data-testid={`asset-amount-${canonicalAsset}`}
+                >
+                  $
+                  {formatAmount(
+                    roundUsdValue(
+                      new BigNumber(assetPrice.currentPrice)
+                        .multipliedBy(rb.total)
+                        .toString(),
+                    ),
+                  )}
+                </div>
+                {assetPrice.percentagePriceChange24h ? (
+                  <div
+                    data-testid={`asset-price-delta-${canonicalAsset}`}
+                    className={`asset-value-delta ${getDeltaColor(
+                      new BigNumber(
+                        roundUsdValue(assetPrice.percentagePriceChange24h),
+                      ),
+                    )}
+                    `}
+                  >
+                    {formatAmount(
+                      roundUsdValue(assetPrice.percentagePriceChange24h),
+                    )}
+                    %
+                  </div>
+                ) : (
+                  <div className="asset-value-delta">--</div>
+                )}
+              </div>
+            ) : (
+              <div className="asset-value-delta">--</div>
+            )}
           </div>
         );
       })}

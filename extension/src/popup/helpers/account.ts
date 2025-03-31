@@ -11,6 +11,7 @@ import { Balances, BalanceMap } from "@shared/api/types/backend-api";
 import { AssetType } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
+export { isSorobanIssuer } from "@shared/helpers/stellar";
 
 import {
   getAssetFromCanonical,
@@ -255,8 +256,6 @@ export const displaySorobanId = (
     fullStr.substring(fullStr.length - backChars)
   );
 };
-
-export const isSorobanIssuer = (issuer: string) => !issuer.startsWith("G");
 
 export const filterHiddenBalances = (
   balances: BalanceMap,

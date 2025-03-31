@@ -5,6 +5,17 @@
 }
 
 .AccountView {
+  &__account-details {
+    display: flex;
+    flex-direction: column;
+    max-width: 60%;
+  }
+  &__total-usd-balance {
+    font-size: 32px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
   &__account-actions {
     align-items: center;
     justify-content: space-between;
@@ -28,6 +39,7 @@
   &__send-receive-display {
     display: flex;
     justify-content: right;
+    align-self: end;
 
     > div {
       margin-left: 1rem;
@@ -54,7 +66,6 @@
 
   &__account-name {
     color: var(--sds-clr-gray-11);
-    width: 100%;
     font-weight: var(--font-weight-medium);
   }
 

@@ -179,3 +179,24 @@ export const xlmToStroop = (lumens: BigNumber | string): BigNumber => {
   // round to nearest stroop
   return new BigNumber(Math.round(Number(lumens) * 1e7));
 };
+
+export const isSorobanIssuer = (issuer: string) => !issuer.startsWith("G");
+
+export const getAssetFromCanonical = (canonical: string) => {
+  if (canonical === "native") {
+    return StellarSdk.Asset.native();
+  }
+  if (canonical.includes(":")) {
+    const [code, issuer] = canonical.split(":");
+
+    if (isSorobanIssuer(issuer)) {
+      return {
+        code,
+        issuer,
+      };
+    }
+    return new StellarSdk.Asset(code, issuer);
+  }
+
+  throw new Error(`invalid asset canonical id: ${canonical}`);
+};

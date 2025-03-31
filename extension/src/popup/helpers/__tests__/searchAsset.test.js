@@ -66,9 +66,8 @@ describe("searchAsset", () => {
     });
   });
   it("schemaValidatedAssetList should return list if valid", async () => {
-    const { assets } = await SearchAsset.schemaValidatedAssetList(
-      validAssetList,
-    );
+    const { assets } =
+      await SearchAsset.schemaValidatedAssetList(validAssetList);
     expect(assets).toStrictEqual(validAssetList.assets);
   });
   it("schemaValidatedAssetList should return empty list if schema fetch fails", async () => {
@@ -77,9 +76,8 @@ describe("searchAsset", () => {
         ok: false,
       }),
     );
-    const { assets } = await SearchAsset.schemaValidatedAssetList(
-      validAssetList,
-    );
+    const { assets } =
+      await SearchAsset.schemaValidatedAssetList(validAssetList);
     expect(assets).toStrictEqual([]);
   });
   it("schemaValidatedAssetList should return empty list and errors if validation fails", async () => {

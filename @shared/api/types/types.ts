@@ -334,3 +334,10 @@ export interface FreighterApiError {
   message: string;
   ext?: string[];
 }
+
+export interface ApiTokenPrices {
+  [key: string]: {
+    currentPrice: string;
+    percentagePriceChange24h?: string;
+  } | null;
+}

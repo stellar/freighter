@@ -88,6 +88,19 @@ export const Account = () => {
   }
 
   const hasError = accountData.state === RequestState.ERROR;
+  const totalBalanceUsd = Object.keys(tokenPrices).reduce((prev, curr) => {
+    if (!accountBalances.balances![curr]) {
+      return prev;
+    }
+    const currentAssetBalance = accountBalances.balances![curr].total;
+    const currentPrice = tokenPrices[curr]
+      ? tokenPrices[curr].currentPrice
+      : "0";
+    const currentUsdBalance = new BigNumber(currentPrice).multipliedBy(
+      currentAssetBalance,
+    );
+    return currentUsdBalance.plus(prev);
+  }, new BigNumber(0));
 
   return (
     <>
@@ -99,22 +112,34 @@ export const Account = () => {
       <View.Content hasNoTopPadding>
         <div className="AccountView" data-testid="account-view">
           <div className="AccountView__account-actions">
-            <div className="AccountView__name-key-display">
-              <div
-                className="AccountView__account-name"
-                data-testid="account-view-account-name"
-              >
-                {currentAccountName}
-              </div>
-              <CopyText
-                textToCopy={publicKey}
-                tooltipPlacement="bottom"
-                doneLabel="Copied address"
-              >
-                <div className="AccountView__account-num">
-                  <Icon.Copy01 />
+            <div className="AccountView__account-details">
+              <div className="AccountView__name-key-display">
+                <div
+                  className="AccountView__account-name"
+                  data-testid="account-view-account-name"
+                >
+                  {currentAccountName}
                 </div>
-              </CopyText>
+                <CopyText
+                  textToCopy={publicKey}
+                  tooltipPlacement="bottom"
+                  doneLabel="Copied address"
+                >
+                  <div className="AccountView__account-num">
+                    <Icon.Copy01 />
+                  </div>
+                </CopyText>
+              </div>
+              <div
+                className="AccountView__total-usd-balance"
+                key="total-balance"
+              >
+                {arePricesSupported && !tokenPricesError
+                  ? `$${formatAmount(
+                      roundUsdValue(totalBalanceUsd.toString()),
+                    )}`
+                  : ""}
+              </div>
             </div>
             <div className="AccountView__send-receive-display">
               <div className="AccountView__send-receive-button">
@@ -198,6 +223,7 @@ export const Account = () => {
             >
               <AccountAssets
                 sortedBalances={accountData.data.balances.balances}
+                assetPrices={tokenPrices}
                 assetIcons={accountData.data.balances.icons || {}}
                 setSelectedAsset={setSelectedAsset}
               />

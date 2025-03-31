@@ -24,6 +24,7 @@ import {
   transfer,
 } from "@shared/helpers/soroban/token";
 import {
+  getAssetFromCanonical,
   getSdk,
   isCustomNetwork,
   makeDisplayableBalances,
@@ -36,6 +37,7 @@ import {
 import {
   getContractSpec as getContractSpecHelper,
   getIsTokenSpec as getIsTokenSpecHelper,
+  isContractId,
 } from "./helpers/soroban";
 import {
   Account,
@@ -48,6 +50,7 @@ import {
   ExperimentalFeatures,
   AssetKey,
   AssetVisibility,
+  ApiTokenPrices,
 } from "./types";
 import { AccountBalancesInterface, Balances } from "./types/backend-api";
 import {
@@ -551,6 +554,35 @@ export const getAccountIndexerBalances = async ({
     ...data,
     balances: formattedBalances,
   };
+};
+
+export const getTokenPrices = async (tokens: string[]) => {
+  // NOTE: API does not accept LP IDs or custom tokens
+  const filteredTokens = tokens.filter((tokenId) => {
+    const asset = getAssetFromCanonical(tokenId);
+    return !tokenId.includes(":lp") && !isContractId(asset.issuer);
+  });
+  const url = new URL(`${INDEXER_URL}/token-prices`);
+  const options = {
+    method: "POST",
+    headers: {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ tokens: filteredTokens }),
+  };
+  const response = await fetch(url.href, options);
+  const parsedResponse = (await response.json()) as { data: ApiTokenPrices };
+
+  if (!response.ok) {
+    const _err = JSON.stringify(parsedResponse);
+    captureException(
+      `Failed to fetch token prices - ${response.status}: ${response.statusText}`,
+    );
+    throw new Error(_err);
+  }
+
+  return parsedResponse.data;
 };
 
 export const getSorobanTokenBalance = async (
