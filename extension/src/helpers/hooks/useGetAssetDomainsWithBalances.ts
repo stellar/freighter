@@ -24,7 +24,7 @@ export interface AssetDomains {
   isManagingAssets: boolean;
 }
 
-export function useGetAssetDomains(
+export function useGetAssetDomainsWithBalances(
   publicKey: string,
   networkDetails: NetworkDetails,
   options: {

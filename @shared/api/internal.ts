@@ -24,6 +24,7 @@ import {
   getSdk,
   isCustomNetwork,
   makeDisplayableBalances,
+  xlmToStroop,
 } from "@shared/helpers/stellar";
 import {
   buildSorobanServer,
@@ -32,7 +33,6 @@ import {
 import {
   getContractSpec as getContractSpecHelper,
   getIsTokenSpec as getIsTokenSpecHelper,
-  xlmToStroop,
 } from "./helpers/soroban";
 import {
   Account,

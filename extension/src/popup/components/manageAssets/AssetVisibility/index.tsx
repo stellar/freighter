@@ -14,7 +14,7 @@ import { isMainnet } from "helpers/stellar";
 import { publicKeySelector } from "popup/ducks/accountServices";
 
 import { RequestState } from "constants/request";
-import { useGetAssetDomains } from "helpers/hooks/useGetAssetDomains";
+import { useGetAssetDomainsWithBalances } from "helpers/hooks/useGetAssetDomainsWithBalances";
 import { resetSubmission } from "popup/ducks/transactionSubmission";
 
 import { ToggleAssetRows } from "../ToggleAssetRows";
@@ -30,7 +30,7 @@ export const AssetVisibility = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
-  const { state: domainState, fetchData } = useGetAssetDomains(
+  const { state: domainState, fetchData } = useGetAssetDomainsWithBalances(
     publicKey,
     networkDetails,
     {

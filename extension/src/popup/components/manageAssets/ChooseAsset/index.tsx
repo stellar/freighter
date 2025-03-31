@@ -14,7 +14,7 @@ import { View } from "popup/basics/layout/View";
 import { publicKeySelector } from "popup/ducks/accountServices";
 
 import { RequestState } from "constants/request";
-import { useGetAssetDomains } from "helpers/hooks/useGetAssetDomains";
+import { useGetAssetDomainsWithBalances } from "helpers/hooks/useGetAssetDomainsWithBalances";
 import { isMainnet } from "helpers/stellar";
 
 import { ManageAssetRows } from "../ManageAssetRows";
@@ -30,7 +30,7 @@ export const ChooseAsset = () => {
 
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
 
-  const { state: domainState, fetchData } = useGetAssetDomains(
+  const { state: domainState, fetchData } = useGetAssetDomainsWithBalances(
     publicKey,
     networkDetails,
     {

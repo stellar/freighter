@@ -9,8 +9,8 @@ import { isContractId } from "popup/helpers/soroban";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import {
   AssetDomains,
-  useGetAssetDomains,
-} from "helpers/hooks/useGetAssetDomains";
+  useGetAssetDomainsWithBalances,
+} from "helpers/hooks/useGetAssetDomainsWithBalances";
 import { getAccountBalances } from "@shared/api/internal";
 import { sortBalances } from "popup/helpers/account";
 
@@ -36,7 +36,7 @@ function useGetSendAmountData(
     initialState,
   );
 
-  const { fetchData: fetchAssetDomains } = useGetAssetDomains(
+  const { fetchData: fetchAssetDomains } = useGetAssetDomainsWithBalances(
     publicKey,
     networkDetails,
     options,

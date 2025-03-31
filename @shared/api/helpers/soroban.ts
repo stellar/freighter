@@ -7,7 +7,6 @@ import {
   contract,
 } from "stellar-sdk";
 import { XdrReader } from "@stellar/js-xdr";
-import BigNumber from "bignumber.js";
 
 export interface TokenArgsDisplay {
   contractId: string;
@@ -578,12 +577,4 @@ const isTokenSpec = (spec: Record<string, any>) => {
 export const getIsTokenSpec = async (contractId: string, serverUrl: string) => {
   const spec = await getContractSpec(contractId, serverUrl);
   return isTokenSpec(spec);
-};
-
-export const xlmToStroop = (lumens: BigNumber | string): BigNumber => {
-  if (lumens instanceof BigNumber) {
-    return lumens.times(1e7);
-  }
-  // round to nearest stroop
-  return new BigNumber(Math.round(Number(lumens) * 1e7));
 };
