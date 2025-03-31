@@ -35,7 +35,7 @@ export const AssetVisibility = () => {
     networkDetails,
     {
       isMainnet: isMainnet(networkDetails),
-      showHidden: false,
+      showHidden: true,
       includeIcons: true,
     },
   );
