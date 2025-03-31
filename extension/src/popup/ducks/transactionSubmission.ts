@@ -6,6 +6,7 @@ import {
   xdr,
 } from "stellar-sdk";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { captureException } from "@sentry/browser";
 
 import {
   signFreighterTransaction as internalSignFreighterTransaction,
@@ -14,6 +15,7 @@ import {
   loadRecentAddresses as internalLoadRecentAddresses,
   getAccountIndexerBalances as internalgetAccountIndexerBalances,
   getAccountBalancesStandalone as internalGetAccountBalancesStandalone,
+  getTokenPrices as internalGetTokenPrices,
   getAssetIcons as getAssetIconsService,
   getAssetDomains as getAssetDomainsService,
   getMemoRequiredAccounts as internalGetMemoRequiredAccounts,
@@ -33,6 +35,7 @@ import {
   MemoRequiredAccount,
   BalanceToMigrate,
   SoroswapToken,
+  ApiTokenPrices,
 } from "@shared/api/types";
 
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
@@ -386,20 +389,28 @@ export const removeTokenId = createAsyncThunk<
 );
 
 export const getAccountBalances = createAsyncThunk<
-  AccountBalancesInterface,
+  {
+    balances: AccountBalancesInterface;
+    tokenPrices: ApiTokenPrices;
+    tokenPricesError: Error | undefined;
+  },
   {
     publicKey: string;
     networkDetails: NetworkDetails;
+    shouldGetTokenPrices?: boolean;
   },
   { rejectValue: ErrorMessage; state: AppState }
 >(
   "getAccountBalances",
-  async ({ publicKey, networkDetails }, { getState, rejectWithValue }) => {
+  async (
+    { publicKey, networkDetails, shouldGetTokenPrices = false },
+    { getState, rejectWithValue },
+  ) => {
     const activePublicKey = publicKeySelector(getState());
-
     try {
       let balances;
-
+      let tokenPrices = {};
+      let tokenPricesError: Error | undefined;
       const isMainnet = isMainnetHelper(networkDetails);
 
       if (isCustomNetwork(networkDetails)) {
@@ -415,15 +426,57 @@ export const getAccountBalances = createAsyncThunk<
           publicKey,
           networkDetails,
         });
+        const assetIds = Object.keys(balances.balances || {});
+        if (assetIds.length && shouldGetTokenPrices) {
+          try {
+            tokenPrices = await Promise.race<ApiTokenPrices>([
+              internalGetTokenPrices(assetIds),
+              new Promise<ApiTokenPrices>((resolve) =>
+                setTimeout(() => resolve({} as ApiTokenPrices), 3000),
+              ),
+            ]);
+          } catch (error) {
+            const _err = JSON.stringify(error);
+            captureException(`Failed to fetch token prices - ${_err}`);
+            tokenPricesError = new Error(_err);
+          }
+        }
       }
 
       storeBalanceMetricData(publicKey, balances.isFunded || false);
-      return balances;
+      return {
+        balances,
+        tokenPrices,
+        tokenPricesError,
+      };
     } catch (e) {
       return rejectWithValue({ errorMessage: e as string });
     }
   },
 );
+
+export const getTokenPrices = createAsyncThunk<
+  ApiTokenPrices,
+  {
+    networkDetails: NetworkDetails;
+    balances: Balances;
+  },
+  { rejectValue: ErrorMessage }
+>("getTokenPrices", async ({ networkDetails, balances }, thunkApi) => {
+  try {
+    if (isCustomNetwork(networkDetails)) {
+      return {};
+    }
+
+    const assetIds = Object.keys(balances || {});
+    if (!assetIds.length) {
+      return {};
+    }
+    return await internalGetTokenPrices(assetIds);
+  } catch (e) {
+    return thunkApi.rejectWithValue({ errorMessage: e as string });
+  }
+});
 
 export const getDestinationBalances = createAsyncThunk<
   AccountBalancesInterface,
@@ -635,6 +688,7 @@ interface InitialState {
     | SorobanRpc.Api.SendTransactionResponse
     | null;
   error: ErrorMessage | undefined;
+  tokenPricesError: Error | undefined;
   transactionData: TransactionData;
   transactionSimulation: {
     response: SorobanRpc.Api.SimulateTransactionSuccessResponse | null;
@@ -650,6 +704,7 @@ interface InitialState {
     isSource: boolean;
   };
   memoRequiredAccounts: MemoRequiredAccount[];
+  tokenPrices: ApiTokenPrices;
 }
 
 export const initialState: InitialState = {
@@ -658,6 +713,7 @@ export const initialState: InitialState = {
   destinationAccountBalanceStatus: ActionStatus.IDLE,
   response: null,
   error: undefined,
+  tokenPricesError: undefined,
   transactionData: {
     amount: "0",
     asset: "native",
@@ -703,6 +759,7 @@ export const initialState: InitialState = {
     isSource: true,
   },
   memoRequiredAccounts: [],
+  tokenPrices: {},
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -851,8 +908,15 @@ const transactionSubmissionSlice = createSlice({
       state.accountBalanceStatus = ActionStatus.ERROR;
     });
     builder.addCase(getAccountBalances.fulfilled, (state, action) => {
-      state.accountBalances = action.payload;
+      state.accountBalances = action.payload.balances;
       state.accountBalanceStatus = ActionStatus.SUCCESS;
+      const { shouldGetTokenPrices } = action.meta.arg;
+      if (shouldGetTokenPrices) {
+        state.tokenPrices = action.payload.tokenPrices;
+      }
+      if (action.payload.tokenPricesError) {
+        state.tokenPricesError = action.payload.tokenPricesError;
+      }
     });
     builder.addCase(getDestinationBalances.fulfilled, (state, action) => {
       state.destinationBalances = action.payload;
@@ -919,6 +983,13 @@ const transactionSubmissionSlice = createSlice({
     });
     builder.addCase(getMemoRequiredAccounts.fulfilled, (state, action) => {
       state.memoRequiredAccounts = action.payload;
+    });
+    builder.addCase(getTokenPrices.rejected, (state, action) => {
+      state.tokenPricesError = new Error(action.payload?.errorMessage);
+      state.tokenPrices = initialState.tokenPrices;
+    });
+    builder.addCase(getTokenPrices.fulfilled, (state, action) => {
+      state.tokenPrices = action.payload;
     });
   },
 });

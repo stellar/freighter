@@ -4,7 +4,7 @@
 export function encodeBigIntFromBits(
   parts: any[],
   size: number,
-  unsigned: boolean,
+  unsigned: boolean
 ) {
   let result = BigInt(0);
   // check arguments length

@@ -62,9 +62,8 @@ export const simulateTokenPayment = createAsyncThunk<
           new XdrLargeInt("i128", params.amount).toI128(), // amount
         ];
         const transaction = transfer(address, transferParams, memo, builder);
-        const simulationTransaction = await server.simulateTransaction(
-          transaction,
-        );
+        const simulationTransaction =
+          await server.simulateTransaction(transaction);
 
         const preparedTransaction = SorobanRpc.assembleTransaction(
           transaction,

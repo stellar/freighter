@@ -57,9 +57,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: yarn setup && yarn build:freighter-api && yarn build:extension:production --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{ secrets.SENTRY_KEY }}"
+      - run:
+          yarn setup && yarn build:freighter-api && yarn
+          build:extension:production --env AMPLITUDE_KEY="${{
+          secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{ secrets.SENTRY_KEY }}"
       - name: Convert extension to Xcode project
-        run: xcrun safari-web-extension-converter ./extension/build --project-location $GYM_PROJECT --macos-only
+        run:
+          xcrun safari-web-extension-converter ./extension/build
+          --project-location $GYM_PROJECT --macos-only
       - name: Set up ruby env
         uses: ruby/setup-ruby@v1.222.0
         with:

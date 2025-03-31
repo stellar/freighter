@@ -9,6 +9,7 @@ import {
 } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
+export { isSorobanIssuer } from "@shared/helpers/stellar";
 
 import {
   getAssetFromCanonical,
@@ -267,5 +268,3 @@ export const displaySorobanId = (
     fullStr.substring(fullStr.length - backChars)
   );
 };
-
-export const isSorobanIssuer = (issuer: string) => !issuer.startsWith("G");

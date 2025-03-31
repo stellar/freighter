@@ -1022,7 +1022,9 @@ export const TokenWarning = ({
                 {isVerifiedToken ? (
                   <NotificationV2
                     description={t(
-                      `This asset is part of the asset list(s): "${verifiedLists.join(", ")}". Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.`,
+                      `This asset is part of the asset list(s): "${verifiedLists.join(
+                        ", ",
+                      )}". Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.`,
                     )}
                     type="info"
                   />

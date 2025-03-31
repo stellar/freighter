@@ -5,6 +5,7 @@ $loader-light-color: #444961;
   &__asset {
     align-items: center;
     display: flex;
+    justify-content: space-between;
     color: var(--sds-clr-gray-12);
     font-size: 1rem;
     line-height: 1.5rem;
@@ -107,11 +108,20 @@ $loader-light-color: #444961;
   }
 
   &__copy-left {
-    flex: 5;
     min-width: 0;
-    align-items: center;
     display: flex;
     font-weight: var(--font-weight-medium);
+
+    .asset-icon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .asset-native-value {
+      display: flex;
+      flex-direction: column;
+    }
 
     .asset-code {
       white-space: nowrap;
@@ -119,19 +129,41 @@ $loader-light-color: #444961;
       text-overflow: ellipsis;
       min-width: 0;
     }
+
+    .asset-native-amount {
+      font-size: var(--sds-fs-secondary);
+      color: var(--sds-clr-gray-11);
+    }
   }
 
   &__copy-right {
-    flex: 4;
     min-width: 0;
     font-weight: var(--font-weight-regular);
 
-    .asset-amount {
+    .asset-usd-amount {
       text-align: right;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       min-width: 0;
+    }
+
+    .asset-value-delta {
+      text-align: right;
+      float: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+      font-size: var(--sds-fs-secondary);
+
+      &.positive {
+        color: var(--sds-clr-green-09);
+      }
+
+      &.negative {
+        color: var(--sds-clr-gray-11);
+      }
     }
   }
 }

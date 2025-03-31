@@ -16,6 +16,7 @@ import {
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { Balances } from "@shared/api/types";
+import * as SorobanHelpers from "@shared/api/helpers/soroban";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
@@ -24,7 +25,6 @@ import * as AssetDomain from "popup/helpers/getAssetDomain";
 import * as CheckSuspiciousAsset from "popup/helpers/checkForSuspiciousAsset";
 import * as ManageAssetXDR from "popup/helpers/getManageAssetXDR";
 import * as SearchAsset from "popup/helpers/searchAsset";
-import * as SorobanHelpers from "popup/helpers/soroban";
 import * as BlockaidHelpers from "popup/helpers/blockaid";
 
 import {

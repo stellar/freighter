@@ -45,7 +45,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: yarn setup && yarn build:freighter-api && yarn build:extension:production --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{ secrets.SENTRY_KEY }}"
+      - run:
+          yarn setup && yarn build:freighter-api && yarn
+          build:extension:production --env AMPLITUDE_KEY="${{
+          secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{ secrets.SENTRY_KEY }}"
       - name: Install zip
         uses: montudor/action-zip@0852c26906e00f8a315c704958823928d8018b28 #v1.0.0
       - name: Commit files
@@ -126,7 +129,11 @@ jobs:
           SLACK_CHANNEL: release
           SLACK_COLOR: "#391EDA"
           SLACK_ICON: https://github.com/stellar/freighter/blob/master/docs/static/images/logo.png?size=48
-          SLACK_MESSAGE: "https://github.com/stellar/freighter/releases/tag/${{ github.event.inputs.version }}"
-          SLACK_TITLE: Freighter v${{ github.event.inputs.version }} has been submitted to app stores for review!
+          SLACK_MESSAGE:
+            "https://github.com/stellar/freighter/releases/tag/${{
+            github.event.inputs.version }}"
+          SLACK_TITLE:
+            Freighter v${{ github.event.inputs.version }} has been submitted to
+            app stores for review!
           SLACK_USERNAME: Freighter Administrative Assistant
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
