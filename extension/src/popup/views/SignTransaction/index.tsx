@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 import { Button, Icon, Notification } from "@stellar/design-system";
 import {
@@ -70,6 +70,7 @@ export const SignTransaction = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const tx = getTransactionInfo(location.search);
   const { url } = parsedSearchParam(location.search);
 

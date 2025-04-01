@@ -268,7 +268,6 @@ export const SearchAsset = () => {
       await fetchData();
     };
     getData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (isCustomNetwork(networkDetails)) {

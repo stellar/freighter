@@ -501,16 +501,14 @@ export const migrateAccounts = async ({
 };
 
 export const getAccountIndexerBalances = async ({
-  activePublicKey,
   publicKey,
   networkDetails,
 }: {
-  activePublicKey: string;
   publicKey: string;
   networkDetails: NetworkDetails;
 }): Promise<AccountBalancesInterface> => {
   const contractIds = await getTokenIds({
-    activePublicKey,
+    activePublicKey: publicKey,
     network: networkDetails.network as NETWORKS,
   });
   const url = new URL(`${INDEXER_URL}/account-balances/${publicKey}`);
@@ -621,12 +619,10 @@ export const getSorobanTokenBalance = async (
 };
 
 export const getAccountBalancesStandalone = async ({
-  activePublicKey,
   publicKey,
   networkDetails,
   isMainnet,
 }: {
-  activePublicKey: string;
   publicKey: string;
   networkDetails: NetworkDetails;
   isMainnet: boolean;
@@ -694,7 +690,7 @@ export const getAccountBalancesStandalone = async ({
 
   // Get token balances to combine with classic balances
   const tokenIdList = await getTokenIds({
-    activePublicKey,
+    activePublicKey: publicKey,
     network: network as NETWORKS,
   });
 
@@ -890,7 +886,7 @@ export const getAccountBalances = async (
       isMainnet,
     });
   }
-  return await getAccountIndexerBalances(publicKey, networkDetails);
+  return await getAccountIndexerBalances({ publicKey, networkDetails });
 };
 
 export const getTokenDetails = async ({
@@ -1907,7 +1903,11 @@ export const getIsAccountMismatch = async ({
   };
 };
 
-export const getHiddenAssets = async () => {
+export const getHiddenAssets = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}) => {
   let response = {
     error: "",
     hiddenAssets: {} as Record<AssetKey, AssetVisibility>,
@@ -1915,6 +1915,7 @@ export const getHiddenAssets = async () => {
 
   response = await sendMessageToBackground({
     type: SERVICE_TYPES.GET_HIDDEN_ASSETS,
+    activePublicKey,
   });
 
   return { hiddenAssets: response.hiddenAssets, error: response.error };
@@ -1923,9 +1924,11 @@ export const getHiddenAssets = async () => {
 export const changeAssetVisibility = async ({
   assetIssuer,
   assetVisibility,
+  activePublicKey,
 }: {
   assetIssuer: AssetKey;
   assetVisibility: AssetVisibility;
+  activePublicKey: string;
 }) => {
   let response = {
     error: "",
@@ -1938,6 +1941,7 @@ export const changeAssetVisibility = async ({
       issuer: assetIssuer,
       visibility: assetVisibility,
     },
+    activePublicKey,
   });
 
   return { hiddenAssets: response.hiddenAssets, error: response.error };

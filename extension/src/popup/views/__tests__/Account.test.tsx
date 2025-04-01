@@ -532,7 +532,7 @@ describe("Account view", () => {
   it("shows prices and deltas", async () => {
     // TODO: these mocks dont seem to reset, why?
     jest
-      .spyOn(ApiInternal, "getAccountIndexerBalances")
+      .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockBalances));
 
     jest

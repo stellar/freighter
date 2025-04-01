@@ -69,7 +69,6 @@ function getAssetAddress(
       networkDetails.networkPassphrase as Networks,
     );
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, issuer] = asset.split(":");
   return issuer;
 }
@@ -98,6 +97,7 @@ export const Settings = ({
     isSoroswap,
     path,
   } = useSelector(transactionDataSelector);
+  const navigate = useNavigate();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
   const publicKey = useSelector(publicKeySelector);

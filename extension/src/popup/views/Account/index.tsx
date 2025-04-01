@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import BigNumber from "bignumber.js";
 import {
   CopyText,
   Icon,
@@ -23,7 +24,7 @@ import {
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
-import { isMainnet } from "helpers/stellar";
+import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
 
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
@@ -37,6 +38,7 @@ import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
+import { getBalanceByIssuer } from "popup/helpers/balance";
 
 export const Account = () => {
   const { t } = useTranslation();
@@ -47,17 +49,18 @@ export const Account = () => {
   const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
+  const [selectedAsset, setSelectedAsset] = useState("");
   const isFullscreenModeEnabled = isFullscreenMode();
+  const isMainnetNetwork = isMainnet(networkDetails);
   const { state: accountData, fetchData } = useGetAccountData(
     publicKey,
     networkDetails,
     {
-      isMainnet: isMainnet(networkDetails),
+      isMainnet: isMainnetNetwork,
       showHidden: false,
       includeIcons: true,
     },
   );
-  const [selectedAsset, setSelectedAsset] = useState("");
 
   useEffect(() => {
     const getData = async () => {
@@ -89,11 +92,16 @@ export const Account = () => {
   }
 
   const hasError = accountData.state === RequestState.ERROR;
+
+  const tokenPrices = accountData.data?.tokenPrices || {};
   const totalBalanceUsd = Object.keys(tokenPrices).reduce((prev, curr) => {
-    if (!accountBalances.balances![curr]) {
+    const balances = accountData.data?.balances.balances!;
+    const asset = getAssetFromCanonical(curr);
+    const priceBalance = getBalanceByIssuer(asset.issuer, balances);
+    if (!priceBalance) {
       return prev;
     }
-    const currentAssetBalance = accountBalances.balances![curr].total;
+    const currentAssetBalance = priceBalance.total;
     const currentPrice = tokenPrices[curr]
       ? tokenPrices[curr].currentPrice
       : "0";
@@ -135,7 +143,7 @@ export const Account = () => {
                 className="AccountView__total-usd-balance"
                 key="total-balance"
               >
-                {arePricesSupported && !tokenPricesError
+                {isMainnetNetwork && !hasError
                   ? `$${formatAmount(
                       roundUsdValue(totalBalanceUsd.toString()),
                     )}`

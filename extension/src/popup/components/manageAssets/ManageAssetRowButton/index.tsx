@@ -18,12 +18,9 @@ import { useChangeTrustline } from "popup/helpers/useChangeTrustline";
 import { publicKeySelector, addTokenId } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
-  signFreighterTransaction,
-  submitFreighterTransaction,
   transactionSubmissionSelector,
   removeTokenId,
   resetSubmitStatus,
-  resetSubmission,
 } from "popup/ducks/transactionSubmission";
 import { ActionStatus } from "@shared/api/types";
 
@@ -115,83 +112,6 @@ export const ManageAssetRowButton = ({
     setRowButtonShowing("");
   };
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
-
-  const signAndSubmit = async (
-    transactionXDR: string,
-    trackChangeTrustline: () => void,
-    successfulCallback?: () => Promise<void>,
-  ) => {
-    const res = await dispatch(
-      signFreighterTransaction({
-        transactionXDR,
-        network: networkDetails.networkPassphrase,
-      }),
-    );
-
-    if (signFreighterTransaction.fulfilled.match(res)) {
-      const submitResp = await dispatch(
-        submitFreighterTransaction({
-          publicKey,
-          signedXDR: res.payload.signedTransaction,
-          networkDetails,
-        }),
-      );
-
-      if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-        trackChangeTrustline();
-        dispatch(resetSubmission());
-        if (successfulCallback) {
-          await successfulCallback();
-        }
-      }
-
-      if (submitFreighterTransaction.rejected.match(submitResp)) {
-        setIsTrustlineErrorShowing(true);
-      }
-
-      setAssetSubmitting("");
-      setRowButtonShowing("");
-    }
-  };
-
-  const changeTrustline = async (
-    addTrustline: boolean,
-    successfulCallback?: () => Promise<void>,
-  ) => {
-    setAssetSubmitting(canonicalAsset);
-
-    const transactionXDR: string = await getManageAssetXDR({
-      publicKey,
-      assetCode: code,
-      assetIssuer: issuer,
-      addTrustline,
-      server,
-      recommendedFee,
-      networkDetails,
-    });
-
-    const trackChangeTrustline = () => {
-      emitMetric(
-        addTrustline
-          ? METRIC_NAMES.manageAssetAddAsset
-          : METRIC_NAMES.manageAssetRemoveAsset,
-        { code, issuer },
-      );
-    };
-
-    if (isHardwareWallet) {
-      // eslint-disable-next-line
-      await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
-      setIsSigningWithHardwareWallet(true);
-      trackChangeTrustline();
-    } else {
-      await signAndSubmit(
-        transactionXDR,
-        trackChangeTrustline,
-        successfulCallback,
-      );
-    }
-  };
 
   const handleRowClick = async (
     assetRowData = {

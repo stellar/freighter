@@ -55,7 +55,9 @@ function useGetBalances(
       } as AccountBalances;
 
       if (!options.showHidden) {
-        const hiddenAssets = await getHiddenAssets();
+        const hiddenAssets = await getHiddenAssets({
+          activePublicKey: publicKey,
+        });
         payload.balances = sortBalances(
           filterHiddenBalances(
             data.balances as NonNullable<BalanceMap>,

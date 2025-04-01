@@ -62,11 +62,9 @@ export function useGetAssetDomainsWithBalances(
       const domains = [] as ManageAssetCurrency[];
       // TODO: cache home domain when getting asset icon
       // https://github.com/stellar/freighter/issues/410
-      // eslint-disable-next-line @typescript-eslint/prefer-for-of
       for (let i = 0; i < balances.balances.length; i += 1) {
         const balance = balances.balances[i];
         if ("liquidityPoolId" in balance && balance.liquidityPoolId) {
-          // eslint-disable-next-line
           continue;
         }
 
@@ -87,7 +85,6 @@ export function useGetAssetDomainsWithBalances(
           isSwap &&
           !isSoroswapEnabled
         ) {
-          // eslint-disable-next-line
           continue;
         }
 
@@ -96,7 +93,6 @@ export function useGetAssetDomainsWithBalances(
 
           if (issuer.key) {
             try {
-              // eslint-disable-next-line no-await-in-loop
               domain = await getAssetDomain(
                 issuer.key,
                 networkDetails.networkUrl,

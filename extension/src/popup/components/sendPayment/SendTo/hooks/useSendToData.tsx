@@ -42,6 +42,7 @@ const getAddressFromInput = async (userInput: string) => {
 };
 
 function useSendToData(
+  publicKey: string,
   networkDetails: NetworkDetails,
   balanceOptions: {
     isMainnet: boolean;
@@ -56,10 +57,11 @@ function useSendToData(
 
   const debouncedFetch = debounce(async (userInput: string) => {
     try {
-      const { validatedAddress, fedAddress } = await getAddressFromInput(
-        userInput,
-      );
-      const { recentAddresses } = await loadRecentAddresses();
+      const { validatedAddress, fedAddress } =
+        await getAddressFromInput(userInput);
+      const { recentAddresses } = await loadRecentAddresses({
+        activePublicKey: publicKey,
+      });
 
       const payload = {
         recentAddresses,

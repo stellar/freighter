@@ -430,7 +430,6 @@ export const SendAmount = ({
       await fetchData();
     };
     getData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getAmountFontSize = () => {
@@ -507,9 +506,11 @@ export const SendAmount = ({
 
   return (
     <>
-      {showBlockedDomainWarning && (
+      {showBlockedDomainWarning &&
         createPortal(
           <ScamAssetWarning
+            balances={sendAmountData.data!.userBalances}
+            assetIcons={sendAmountData.data?.icons || {}}
             isSendWarning
             pillType="Transaction"
             balances={sendAmountData.data!.userBalances}
@@ -523,8 +524,7 @@ export const SendAmount = ({
             blockaidData={suspiciousAssetData.blockaidData}
           />,
           document.querySelector("#modal-root")!,
-        )
-      )}
+        )}
       <React.Fragment>
         <SubviewHeader
           title={

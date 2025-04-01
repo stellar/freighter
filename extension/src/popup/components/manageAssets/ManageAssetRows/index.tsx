@@ -4,10 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import {
-  ActionStatus,
-  BlockAidScanAssetResult,
-} from "@shared/api/types";
+import { ActionStatus, BlockAidScanAssetResult } from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
 
@@ -24,6 +21,7 @@ import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { ROUTES } from "popup/constants/routes";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
+import { findAssetBalance } from "popup/helpers/balance";
 import {
   resetSubmission,
   transactionSubmissionSelector,
@@ -219,16 +217,15 @@ export const ManageAssetRows = ({
                   domain={domain}
                   name={name}
                   isSuspicious={isSuspicious}
-                  contractId={contract}
                 />
                 <ManageAssetRowButton
-                  balances={balances}
                   code={code}
                   contract={contract}
                   issuer={issuer}
                   image={image}
+                  balances={balances}
                   domain={domain}
-                  isTrustlineActive={isTrustlineActive}
+                  isTrustlineActive={!!isTrustlineActive}
                   isActionPending={isActionPending}
                   isContract={isContract}
                   isVerifiedToken={!!isVerifiedToken}
@@ -341,9 +338,10 @@ const AssetRows = ({
             }
             const isContract = isContractId(contract);
             const canonicalAsset = getCanonicalFromAsset(code, issuer);
-            const isTrustlineActive = Object.keys(
+            const isTrustlineActive = findAssetBalance(
               accountBalances.balances,
-            ).some((balance) => balance === canonicalAsset);
+              { code, issuer },
+            );
             return (
               <div
                 className="ManageAssetRows__row"
@@ -358,7 +356,7 @@ const AssetRows = ({
                   isContract,
                   issuer,
                   isSuspicious,
-                  isTrustlineActive,
+                  isTrustlineActive: isTrustlineActive !== undefined,
                   name,
                 })}
               </div>
@@ -399,9 +397,10 @@ const AssetRows = ({
             }
             const isContract = isContractId(contract);
             const canonicalAsset = getCanonicalFromAsset(code, issuer);
-            const isTrustlineActive = Object.keys(
+            const isTrustlineActive = findAssetBalance(
               accountBalances.balances,
-            ).some((balance) => balance === canonicalAsset);
+              { code, issuer },
+            );
             return (
               <div
                 className="ManageAssetRows__row"
@@ -416,7 +415,7 @@ const AssetRows = ({
                   isContract,
                   issuer,
                   isSuspicious,
-                  isTrustlineActive,
+                  isTrustlineActive: isTrustlineActive !== undefined,
                   name,
                 })}
               </div>
@@ -444,9 +443,10 @@ const AssetRows = ({
           }
           const isContract = isContractId(contract);
           const canonicalAsset = getCanonicalFromAsset(code, issuer);
-          const isTrustlineActive = Object.keys(accountBalances.balances).some(
-            (balance) => balance === canonicalAsset,
-          );
+          const isTrustlineActive = findAssetBalance(accountBalances.balances, {
+            code,
+            issuer,
+          });
           return (
             <div
               className="ManageAssetRows__row"
@@ -461,7 +461,7 @@ const AssetRows = ({
                 isContract,
                 issuer,
                 isSuspicious,
-                isTrustlineActive,
+                isTrustlineActive: isTrustlineActive !== undefined,
                 name,
               })}
             </div>

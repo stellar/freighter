@@ -222,7 +222,6 @@ export const IntegrationTest = () => {
       });
 
       res = await getAccountIndexerBalances({
-        activePublicKey: testPublicKey,
         publicKey: testPublicKey,
         networkDetails: TESTNET_NETWORK_DETAILS,
       });

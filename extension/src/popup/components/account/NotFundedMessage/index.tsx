@@ -26,7 +26,6 @@ export const NotFundedMessage = ({
   const navigate = useNavigate();
 
   const handleFundAccount = async () => {
-    // eslint-disable-next-line
     await dispatch(fundAccount({ publicKey }));
     await reloadBalances();
   };

@@ -14,23 +14,24 @@ import { isMainnet } from "helpers/stellar";
 import { publicKeySelector } from "popup/ducks/accountServices";
 
 import { RequestState } from "constants/request";
-import { useGetAssetDomainsWithBalances } from "helpers/hooks/useGetAssetDomainsWithBalances";
 import { resetSubmission } from "popup/ducks/transactionSubmission";
+import { useGetAssetData } from "./hooks/useGetAssetData";
 
 import { ToggleAssetRows } from "../ToggleAssetRows";
+import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
 
 export const AssetVisibility = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
-  const { state: domainState, fetchData } = useGetAssetDomainsWithBalances(
+  const { state: domainState, fetchData } = useGetAssetData(
     publicKey,
     networkDetails,
     {
@@ -75,7 +76,10 @@ export const AssetVisibility = () => {
               }`}
               ref={ManageAssetRowsWrapperRef}
             >
-              <ToggleAssetRows assetRows={domainState.data!.domains} />
+              <ToggleAssetRows
+                assetRows={domainState.data!.domains}
+                hiddenAssets={domainState.data!.hiddenAssets}
+              />
             </div>
           </div>
         )}

@@ -23,7 +23,6 @@ import {
   MemoRequiredAccount,
   BalanceToMigrate,
   SoroswapToken,
-  ApiTokenPrices,
 } from "@shared/api/types";
 
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
@@ -38,8 +37,8 @@ import {
   getSoroswapTokens as getSoroswapTokensService,
 } from "popup/helpers/sorobanSwap";
 import { hardwareSign, hardwareSignAuth } from "popup/helpers/hardwareConnect";
-import { publicKeySelector } from "popup/ducks/accountServices";
 import { AppState } from "popup/App";
+import { publicKeySelector } from "./accountServices";
 
 export const signFreighterTransaction = createAsyncThunk<
   { signedTransaction: string },
@@ -463,7 +462,6 @@ interface InitialState {
     | SorobanRpc.Api.SendTransactionResponse
     | null;
   error: ErrorMessage | undefined;
-  tokenPricesError: Error | undefined;
   transactionData: TransactionData;
   transactionSimulation: {
     response: SorobanRpc.Api.SimulateTransactionSuccessResponse | null;
@@ -475,14 +473,12 @@ interface InitialState {
     isSource: boolean;
   };
   memoRequiredAccounts: MemoRequiredAccount[];
-  tokenPrices: ApiTokenPrices;
 }
 
 export const initialState: InitialState = {
   submitStatus: ActionStatus.IDLE,
   response: null,
   error: undefined,
-  tokenPricesError: undefined,
   transactionData: {
     amount: "0",
     asset: "native",
@@ -516,7 +512,6 @@ export const initialState: InitialState = {
     isSource: true,
   },
   memoRequiredAccounts: [],
-  tokenPrices: {},
 };
 
 const transactionSubmissionSlice = createSlice({
@@ -691,6 +686,9 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.decimals = action.payload.amountInDecimals;
       state.transactionData.destinationDecimals =
         action.payload.amountOutDecimals;
+    });
+    builder.addCase(getMemoRequiredAccounts.fulfilled, (state, action) => {
+      state.memoRequiredAccounts = action.payload;
     });
   },
 });

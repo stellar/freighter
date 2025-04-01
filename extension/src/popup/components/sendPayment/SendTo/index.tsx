@@ -41,6 +41,7 @@ import { RequestState } from "constants/request";
 import { useSendToData } from "./hooks/useSendToData";
 
 import "../styles.scss";
+import { publicKeySelector } from "popup/ducks/accountServices";
 
 const baseReserve = new BigNumber(1);
 
@@ -99,11 +100,16 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
   const dispatch: AppDispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { state: sendDataState, fetchData } = useSendToData(networkDetails, {
-    isMainnet: isMainnet(networkDetails),
-    showHidden: true,
-    includeIcons: false,
-  });
+  const publicKey = useSelector(publicKeySelector);
+  const { state: sendDataState, fetchData } = useSendToData(
+    publicKey,
+    networkDetails,
+    {
+      isMainnet: isMainnet(networkDetails),
+      showHidden: true,
+      includeIcons: false,
+    },
+  );
 
   const handleContinue = (
     validatedDestination: string,

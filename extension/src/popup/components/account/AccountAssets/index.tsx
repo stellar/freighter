@@ -6,6 +6,7 @@ import BigNumber from "bignumber.js";
 
 import { ApiTokenPrices, AssetIcons, Balance } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
+import { AssetType } from "@shared/api/types/account-balance";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
@@ -301,11 +302,11 @@ export const AccountAssets = ({
                 isLPShare={"liquidityPoolId" in rb && !!rb.liquidityPoolId}
                 isSuspicious={isSuspicious}
               />
-              <span className="asset-code">{code}</span>
-            </div>
-            <div className="AccountAssets__copy-right">
-              <div className="asset-amount" data-testid="asset-amount">
-                {formatAmount(amountVal)}
+              <div className="asset-native-value">
+                <span className="asset-code">{code}</span>
+                <div className="asset-native-amount" data-testid="asset-amount">
+                  {formatAmount(amountVal)}
+                </div>
               </div>
             </div>
             {assetPrice ? (

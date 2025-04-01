@@ -200,3 +200,11 @@ export const getAssetFromCanonical = (canonical: string) => {
 
   throw new Error(`invalid asset canonical id: ${canonical}`);
 };
+
+export const xlmToStroop = (lumens: BigNumber | string): BigNumber => {
+  if (lumens instanceof BigNumber) {
+    return lumens.times(1e7);
+  }
+  // round to nearest stroop
+  return new BigNumber(Math.round(Number(lumens) * 1e7));
+};
