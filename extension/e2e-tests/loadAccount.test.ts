@@ -1,5 +1,5 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
-import { loginToTestAccount, loginAndFund } from "./helpers/login";
+import { loginToTestAccount } from "./helpers/login";
 
 test("Load accounts on standalone network", async ({ page, extensionId }) => {
   test.slow();

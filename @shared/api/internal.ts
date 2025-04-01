@@ -8,6 +8,7 @@ import {
   Transaction,
   TransactionBuilder,
   xdr,
+  XdrLargeInt,
 } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 import { INDEXER_URL } from "@shared/constants/mercury";
@@ -20,12 +21,14 @@ import {
   getDecimals,
   getName,
   getSymbol,
+  transfer,
 } from "@shared/helpers/soroban/token";
 import {
   getAssetFromCanonical,
   getSdk,
   isCustomNetwork,
   makeDisplayableBalances,
+  xlmToStroop,
 } from "@shared/helpers/stellar";
 import {
   buildSorobanServer,
@@ -38,17 +41,18 @@ import {
 } from "./helpers/soroban";
 import {
   Account,
-  AccountBalancesInterface,
   BalanceToMigrate,
-  Balances,
   MigratableAccount,
   MigratedAccount,
   Settings,
   IndexerSettings,
   SettingsState,
   ExperimentalFeatures,
+  IssuerKey,
+  AssetVisibility,
   ApiTokenPrices,
 } from "./types";
+import { AccountBalancesInterface, Balances } from "./types/backend-api";
 import {
   MAINNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
@@ -495,16 +499,14 @@ export const migrateAccounts = async ({
 };
 
 export const getAccountIndexerBalances = async ({
-  activePublicKey,
   publicKey,
   networkDetails,
 }: {
-  activePublicKey: string;
   publicKey: string;
   networkDetails: NetworkDetails;
 }): Promise<AccountBalancesInterface> => {
   const contractIds = await getTokenIds({
-    activePublicKey,
+    activePublicKey: publicKey,
     network: networkDetails.network as NETWORKS,
   });
   const url = new URL(`${INDEXER_URL}/account-balances/${publicKey}`);
@@ -615,12 +617,10 @@ export const getSorobanTokenBalance = async (
 };
 
 export const getAccountBalancesStandalone = async ({
-  activePublicKey,
   publicKey,
   networkDetails,
   isMainnet,
 }: {
-  activePublicKey: string;
   publicKey: string;
   networkDetails: NetworkDetails;
   isMainnet: boolean;
@@ -683,12 +683,12 @@ export const getAccountBalancesStandalone = async ({
       balances,
       isFunded: false,
       subentryCount,
-    };
+    } as AccountBalancesInterface;
   }
 
   // Get token balances to combine with classic balances
   const tokenIdList = await getTokenIds({
-    activePublicKey,
+    activePublicKey: publicKey,
     network: network as NETWORKS,
   });
 
@@ -746,7 +746,7 @@ export const getAccountBalancesStandalone = async ({
     balances: { ...balances, ...tokenBalances },
     isFunded,
     subentryCount,
-  };
+  } as AccountBalancesInterface;
 };
 
 export const getAccountHistoryStandalone = async ({
@@ -870,6 +870,21 @@ export const getAccountHistory = async (
     publicKey,
     networkDetails,
   });
+};
+
+export const getAccountBalances = async (
+  publicKey: string,
+  networkDetails: NetworkDetails,
+  isMainnet: boolean,
+) => {
+  if (isCustomNetwork(networkDetails)) {
+    return await getAccountBalancesStandalone({
+      publicKey,
+      networkDetails,
+      isMainnet,
+    });
+  }
+  return await getAccountIndexerBalances({ publicKey, networkDetails });
 };
 
 export const getTokenDetails = async ({
@@ -1390,6 +1405,7 @@ export const saveSettings = async ({
     isNonSSLEnabled: false,
     isHideDustEnabled: true,
     error: "",
+    hiddenAssets: {},
   };
 
   try {
@@ -1633,12 +1649,17 @@ export const getTokenIds = async ({
   activePublicKey: string;
   network: NETWORKS;
 }): Promise<string[]> => {
-  const resp = await sendMessageToBackground({
+  const { tokenIdList, error } = await sendMessageToBackground({
     activePublicKey,
     type: SERVICE_TYPES.GET_TOKEN_IDS,
     network,
   });
-  return resp.tokenIdList;
+
+  if (error) {
+    return [];
+  }
+
+  return tokenIdList;
 };
 
 export const removeTokenId = async ({
@@ -1721,8 +1742,58 @@ export const simulateTokenTransfer = async (args: {
   };
   networkDetails: NetworkDetails;
   transactionFee: string;
-}) => {
-  const { address, publicKey, memo, params, networkDetails } = args;
+}): Promise<{
+  ok: boolean;
+  response: {
+    preparedTransaction: string;
+    simulationResponse: SorobanRpc.Api.SimulateTransactionSuccessResponse;
+  };
+}> => {
+  const { address, publicKey, memo, params, networkDetails, transactionFee } =
+    args;
+
+  if (isCustomNetwork(networkDetails)) {
+    if (!networkDetails.sorobanRpcUrl) {
+      throw new SorobanRpcNotSupportedError();
+    }
+    const server = buildSorobanServer(
+      networkDetails.sorobanRpcUrl,
+      networkDetails.networkPassphrase,
+    );
+    const builder = await getNewTxBuilder(
+      publicKey,
+      networkDetails,
+      server,
+      xlmToStroop(transactionFee).toFixed(),
+    );
+
+    const transferParams = [
+      new Address(publicKey).toScVal(), // from
+      new Address(address).toScVal(), // to
+      new XdrLargeInt("i128", params.amount).toI128(), // amount
+    ];
+    const transaction = transfer(address, transferParams, memo, builder);
+    // TODO: type narrow instead of cast
+    const simulationResponse = (await server.simulateTransaction(
+      transaction,
+    )) as SorobanRpc.Api.SimulateTransactionSuccessResponse;
+
+    const preparedTransaction = SorobanRpc.assembleTransaction(
+      transaction,
+      simulationResponse,
+    )
+      .build()
+      .toXDR();
+
+    return {
+      ok: true,
+      response: {
+        simulationResponse,
+        preparedTransaction,
+      },
+    };
+  }
+
   const options = {
     method: "POST",
     headers: {
@@ -1797,4 +1868,48 @@ export const getIsAccountMismatch = async ({
     isAccountMismatch: response.isAccountMismatch,
     error: response.error,
   };
+};
+
+export const getHiddenAssets = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}) => {
+  let response = {
+    error: "",
+    hiddenAssets: {} as Record<IssuerKey, AssetVisibility>,
+  };
+
+  response = await sendMessageToBackground({
+    type: SERVICE_TYPES.GET_HIDDEN_ASSETS,
+    activePublicKey,
+  });
+
+  return { hiddenAssets: response.hiddenAssets, error: response.error };
+};
+
+export const changeAssetVisibility = async ({
+  assetIssuer,
+  assetVisibility,
+  activePublicKey,
+}: {
+  assetIssuer: IssuerKey;
+  assetVisibility: AssetVisibility;
+  activePublicKey: string;
+}) => {
+  let response = {
+    error: "",
+    hiddenAssets: {} as Record<IssuerKey, AssetVisibility>,
+  };
+
+  response = await sendMessageToBackground({
+    type: SERVICE_TYPES.CHANGE_ASSET_VISIBILITY,
+    assetVisibility: {
+      issuer: assetIssuer,
+      visibility: assetVisibility,
+    },
+    activePublicKey,
+  });
+
+  return { hiddenAssets: response.hiddenAssets, error: response.error };
 };

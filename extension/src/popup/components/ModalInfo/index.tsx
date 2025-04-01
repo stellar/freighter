@@ -2,12 +2,12 @@ import React from "react";
 import classNames from "classnames";
 import { Card, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { AssetIcon } from "popup/components/account/AccountAssets";
-import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import IconShieldPlus from "popup/assets/icon-shield-plus.svg";
+import { AssetIcons } from "@shared/api/types";
+
 import { BlockAidSiteScanLabel } from "../WarningMessages";
 
 import "./styles.scss";
@@ -55,6 +55,7 @@ interface ModalInfoProps {
   pillType: PillType;
   domain: string;
   asset: string;
+  assetIcons: AssetIcons;
   variant?: "default" | "malicious";
 }
 
@@ -67,11 +68,11 @@ export const ModalInfo = ({
   domain,
   asset,
   variant = "default",
+  assetIcons,
 }: ModalInfoProps) => {
   const cardClasses = classNames("ModalInfo--card", {
     Malicious: variant === "malicious",
   });
-  const { assetIcons } = useSelector(transactionSubmissionSelector);
 
   return (
     <div className={cardClasses}>

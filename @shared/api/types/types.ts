@@ -2,11 +2,17 @@ import BigNumber from "bignumber.js";
 import { AssetType as SdkAssetType, Horizon } from "stellar-sdk";
 import Blockaid from "@blockaid/client";
 
-import { SERVICE_TYPES, EXTERNAL_SERVICE_TYPES } from "../constants/services";
-import { APPLICATION_STATE } from "../constants/applicationState";
-import { WalletType } from "../constants/hardwareWallet";
-import { NetworkDetails } from "../constants/stellar";
-import { AssetsLists, AssetsListItem } from "../constants/soroban/asset-list";
+import {
+  SERVICE_TYPES,
+  EXTERNAL_SERVICE_TYPES,
+} from "../../constants/services";
+import { APPLICATION_STATE } from "../../constants/applicationState";
+import { WalletType } from "../../constants/hardwareWallet";
+import { NetworkDetails } from "../../constants/stellar";
+import {
+  AssetsLists,
+  AssetsListItem,
+} from "../../constants/soroban/asset-list";
 
 export enum ActionStatus {
   IDLE = "IDLE",
@@ -20,6 +26,9 @@ export interface UserInfo {
 }
 
 export type MigratableAccount = Account & { keyIdIndex: number };
+
+export type IssuerKey = string; // {assetCode}:{issuer/contract ID} issuer pub key for classic, contract ID for tokens
+export type AssetVisibility = "visible" | "hidden";
 
 export interface Response {
   error: string;
@@ -95,6 +104,11 @@ export interface Response {
   isHideDustEnabled: boolean;
   activePublicKey: string;
   isAccountMismatch: boolean;
+  assetVisibility: {
+    issuer: IssuerKey;
+    visibility: AssetVisibility;
+  };
+  hiddenAssets: Record<IssuerKey, AssetVisibility>;
 }
 
 export interface MemoRequiredAccount {
@@ -274,13 +288,6 @@ export interface TokenBalance extends AssetBalance {
   total: BigNumber;
 }
 
-export interface BalanceMap {
-  [key: string]: AssetBalance | NativeBalance | TokenBalance;
-  native: NativeBalance;
-}
-
-export type Balances = BalanceMap | null;
-
 export interface SorobanBalance {
   contractId: string;
   total: BigNumber;
@@ -290,18 +297,9 @@ export interface SorobanBalance {
   token?: { code: string; issuer: { key: string } };
 }
 
-export type AssetType = AssetBalance | NativeBalance | TokenBalance;
-
 export type TokenBalances = SorobanBalance[];
 
 export type HorizonOperation = Horizon.ServerApi.OperationRecord;
-
-export interface AccountBalancesInterface {
-  balances: Balances;
-  isFunded: boolean | null;
-  subentryCount: number;
-  error?: { horizon: any; soroban: any };
-}
 
 export interface AccountHistoryInterface {
   operations: Array<HorizonOperation> | [];

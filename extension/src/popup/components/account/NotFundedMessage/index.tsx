@@ -15,11 +15,11 @@ import "./styles.scss";
 export const NotFundedMessage = ({
   canUseFriendbot,
   publicKey,
-  setIsAccountFriendbotFunded,
+  reloadBalances,
 }: {
   canUseFriendbot: boolean;
   publicKey: string;
-  setIsAccountFriendbotFunded: (isAccountFriendbotFunded: boolean) => void;
+  reloadBalances: () => Promise<unknown>;
 }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
@@ -27,7 +27,7 @@ export const NotFundedMessage = ({
 
   const handleFundAccount = async () => {
     await dispatch(fundAccount({ publicKey }));
-    setIsAccountFriendbotFunded(true);
+    await reloadBalances();
   };
 
   return (

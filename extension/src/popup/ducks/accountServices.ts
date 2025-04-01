@@ -573,6 +573,9 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
+    resetAccountStatus: (state) => {
+      state.accountStatus = initialState.accountStatus;
+    },
     clearApiError(state) {
       state.error = "";
     },
@@ -982,6 +985,6 @@ export const isAccountMismatchSelector = createSelector(
   (auth: InitialState) => auth.isAccountMismatch,
 );
 
-export const { clearApiError, setConnectingWalletType } = authSlice.actions;
+export const { clearApiError, setConnectingWalletType, resetAccountStatus } = authSlice.actions;
 
 export { reducer };

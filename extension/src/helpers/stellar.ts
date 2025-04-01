@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Networks } from "stellar-sdk";
+import { Asset, Networks } from "stellar-sdk";
 import isEqual from "lodash/isEqual";
 
 import {
@@ -61,9 +61,15 @@ export const getTransactionInfo = (search: string) => {
   };
 };
 
+export function isAsset(
+  value: Asset | { code: string; issuer: string },
+): value is Asset {
+  return (value as Asset).getIssuer !== undefined;
+};
+
 export const getCanonicalFromAsset = (
   assetCode: string,
-  assetIssuer: string,
+  assetIssuer?: string,
 ) => {
   if (assetCode === "XLM" && !assetIssuer) {
     return "native";

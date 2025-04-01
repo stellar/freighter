@@ -9,7 +9,7 @@ import {
   DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
-import { Balances } from "@shared/api/types";
+import { Balances } from "@shared/api/types/backend-api";
 import * as ApiInternal from "@shared/api/internal";
 import * as ExtensionMessaging from "@shared/api/helpers/extensionMessaging";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
@@ -22,6 +22,7 @@ import {
   Wrapper,
   mockBalances,
   mockAccounts,
+  mockTestnetBalances,
   mockPrices,
   TEST_CANONICAL,
 } from "../../__testHelpers__";
@@ -81,7 +82,11 @@ jest.spyOn(global, "fetch").mockImplementation((url) => {
 });
 
 jest
-  .spyOn(ApiInternal, "getAccountIndexerBalances")
+  .spyOn(ApiInternal, "getHiddenAssets")
+  .mockImplementation(() => Promise.resolve({ hiddenAssets: {}, error: "" }));
+
+jest
+  .spyOn(ApiInternal, "getAccountBalances")
   .mockImplementation(() => Promise.resolve(mockBalances));
 
 jest
@@ -199,6 +204,7 @@ describe("Account view", () => {
           settings: {
             networkDetails: TESTNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
+            hiddenAssets: {},
           },
         }}
       >
@@ -237,6 +243,7 @@ describe("Account view", () => {
     expect(accountNodes.length).toEqual(3);
     expect(screen.getAllByText("Account 1")).toBeDefined();
   });
+
   it("displays balances and scam notifications on Mainnet", async () => {
     render(
       <Wrapper
@@ -270,6 +277,7 @@ describe("Account view", () => {
       expect(screen.getAllByText("USDC")).toBeDefined();
     });
   });
+
   it("displays balances and scam notifications on custom Mainnet network", async () => {
     const customMainnet = {
       network: "STANDALONE",
@@ -300,7 +308,7 @@ describe("Account view", () => {
 
     await waitFor(() => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
-      expect(assetNodes.length).toEqual(2);
+      expect(assetNodes.length).toEqual(3);
       expect(
         screen.getByTestId("AccountAssets__asset--loading-XLM"),
       ).not.toContainElement(screen.getByTestId("ScamAssetIcon"));
@@ -310,7 +318,12 @@ describe("Account view", () => {
       expect(screen.getAllByText("USDC")).toBeDefined();
     });
   });
+
   it("displays balances on custom TESTNET network without scam icons", async () => {
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockTestnetBalances));
+
     const customMainnet = {
       network: "STANDALONE",
       networkName: "Custom Network",
@@ -340,7 +353,7 @@ describe("Account view", () => {
 
     await waitFor(() => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
-      expect(assetNodes.length).toEqual(2);
+      expect(assetNodes.length).toEqual(3);
       expect(
         screen.getByTestId("AccountAssets__asset--loading-XLM"),
       ).toBeDefined();
@@ -351,6 +364,7 @@ describe("Account view", () => {
       expect(screen.queryByTestId("ScamAssetIcon")).toBeNull();
     });
   });
+
   it("goes to account details", async () => {
     render(
       <Wrapper
@@ -383,7 +397,12 @@ describe("Account view", () => {
       ).toHaveTextContent("100 USDC");
     });
   });
+
   it("shows Blockaid warning in account details", async () => {
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+
     render(
       <Wrapper
         routes={[ROUTES.welcome]}
@@ -418,6 +437,7 @@ describe("Account view", () => {
       expect(screen.getByTestId("ScamAssetWarning__box")).toBeDefined();
     });
   });
+
   it("switches accounts", async () => {
     render(
       <Wrapper
@@ -451,6 +471,7 @@ describe("Account view", () => {
       );
     });
   });
+
   it("loads LP shares", async () => {
     const mockLpBalance = {
       balances: {
@@ -478,7 +499,7 @@ describe("Account view", () => {
       subentryCount: 1,
     };
     jest
-      .spyOn(ApiInternal, "getAccountIndexerBalances")
+      .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockLpBalance));
 
     render(
@@ -510,7 +531,7 @@ describe("Account view", () => {
   it("shows prices and deltas", async () => {
     // TODO: these mocks dont seem to reset, why?
     jest
-      .spyOn(ApiInternal, "getAccountIndexerBalances")
+      .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockBalances));
 
     jest
