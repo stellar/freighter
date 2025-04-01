@@ -23,6 +23,9 @@ const getTokenPrices = async ({
         "issuer" in balance.token ? balance.token.issuer.key : undefined,
       ),
     );
+  if (!assetIds.length) {
+    return {};
+  }
   const tokenPrices = await internalGetTokenPrices(assetIds);
   return tokenPrices;
 };

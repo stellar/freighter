@@ -16,6 +16,7 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { RequestState } from "constants/request";
 import { useGetAssetDomainsWithBalances } from "helpers/hooks/useGetAssetDomainsWithBalances";
 import { isMainnet } from "helpers/stellar";
+import { useIsSwap } from "popup/helpers/useIsSwap";
 
 import { ManageAssetRows } from "../ManageAssetRows";
 import { SelectAssetRows } from "../SelectAssetRows";
@@ -28,6 +29,7 @@ export const ChooseAsset = () => {
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const isSwap = useIsSwap();
 
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
 
@@ -76,18 +78,20 @@ export const ChooseAsset = () => {
         }
         customBackAction={goBack}
         rightButton={
-          <Link
-            to={ROUTES.assetVisibility}
-            data-testid="ChooseAssetHideAssetBtn"
-          >
-            <Button
-              size="sm"
-              className="ChooseAsset__hide-btn"
-              variant="tertiary"
+          !isSwap ? (
+            <Link
+              to={ROUTES.assetVisibility}
+              data-testid="ChooseAssetHideAssetBtn"
             >
-              <Icon.Settings03 />
-            </Button>
-          </Link>
+              <Button
+                size="sm"
+                className="ChooseAsset__hide-btn"
+                variant="tertiary"
+              >
+                <Icon.Settings03 />
+              </Button>
+            </Link>
+          ) : undefined
         }
       />
       <View.Content hasNoTopPadding>

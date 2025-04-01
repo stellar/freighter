@@ -1,5 +1,10 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
-import { login, loginAndFund, loginToTestAccount } from "./helpers/login";
+import {
+  login,
+  loginAndFund,
+  loginToTestAccount,
+  PASSWORD,
+} from "./helpers/login";
 import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 import { sendXlmPayment } from "./helpers/sendPayment";
 

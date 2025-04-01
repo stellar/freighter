@@ -19,7 +19,7 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await expect(page.getByTestId("not-asset-on-list")).toHaveText(
     "Not on your lists",
   );
-  await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E Token");
+  await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E");
   await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");
   await page.getByTestId("ManageAssetRowButton").click({ force: true });
 

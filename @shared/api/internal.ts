@@ -1649,12 +1649,17 @@ export const getTokenIds = async ({
   activePublicKey: string;
   network: NETWORKS;
 }): Promise<string[]> => {
-  const resp = await sendMessageToBackground({
+  const { tokenIdList, error } = await sendMessageToBackground({
     activePublicKey,
     type: SERVICE_TYPES.GET_TOKEN_IDS,
     network,
   });
-  return resp.tokenIdList;
+
+  if (error) {
+    return [];
+  }
+
+  return tokenIdList;
 };
 
 export const removeTokenId = async ({
