@@ -14,12 +14,11 @@ export const logIn = createAsyncThunk<
   UiData,
   UiData,
   { rejectValue: ErrorMessage }
->("logIn", async ({ publicKey, mnemonicPhrase, allAccounts }, thunkApi) => {
+>("logIn", async ({ publicKey, allAccounts }, thunkApi) => {
   try {
     await internalSubscribeAccount(publicKey);
     return {
       publicKey,
-      mnemonicPhrase,
       allAccounts,
     };
   } catch (e) {
@@ -45,24 +44,32 @@ export const setActivePublicKey = createAsyncThunk<
   }
 });
 
-const initialState = {
+export type InitialState = UiData & AppData;
+
+export interface SessionState {
+  session: InitialState;
+}
+
+const initialState: InitialState = {
   publicKey: "",
-  privateKey: "",
-  mnemonicPhrase: "",
+  hashKey: {
+    iv: "",
+    key: "",
+  },
   allAccounts: [] as Account[],
   migratedMnemonicPhrase: "",
 };
 
 interface UiData {
   publicKey: string;
-  mnemonicPhrase?: string;
   allAccounts?: Account[];
   migratedMnemonicPhrase?: string;
 }
 
 interface AppData {
   privateKey?: string;
-  password: string;
+  hashKey?: { key: string; iv: string };
+  password?: string;
 }
 
 export const sessionSlice = createSlice({
@@ -71,13 +78,17 @@ export const sessionSlice = createSlice({
   reducers: {
     reset: () => initialState,
     logOut: () => initialState,
-    setActivePrivateKey: (state, action: { payload: AppData }) => {
-      const { privateKey = "", password = "" } = action.payload;
+    setActiveHashKey: (state, action: { payload: AppData }) => {
+      const {
+        hashKey = {
+          iv: "",
+          key: "",
+        },
+      } = action.payload;
 
       return {
         ...state,
-        privateKey,
-        password,
+        hashKey,
       };
     },
     setMigratedMnemonicPhrase: (
@@ -93,7 +104,10 @@ export const sessionSlice = createSlice({
     },
     timeoutAccountAccess: (state) => ({
       ...state,
-      privateKey: "",
+      hashKey: {
+        iv: "",
+        key: "",
+      },
       password: "",
     }),
     updateAllAccountsAccountName: (
@@ -101,6 +115,10 @@ export const sessionSlice = createSlice({
       action: { payload: { updatedAccountName: string } },
     ) => {
       const { updatedAccountName = "" } = action.payload;
+
+      if (!state.allAccounts) {
+        return state;
+      }
 
       const newAllAccounts = state.allAccounts.map((account) => {
         if (state.publicKey === account.publicKey) {
@@ -123,7 +141,6 @@ export const sessionSlice = createSlice({
   extraReducers: (builder) => {
     builder.addCase(logIn.fulfilled, (state, action) => {
       state.publicKey = action.payload.publicKey;
-      state.mnemonicPhrase = action.payload.mnemonicPhrase || "";
       state.allAccounts = action.payload.allAccounts || [];
     });
     builder.addCase(setActivePublicKey.fulfilled, (state, action) => {
@@ -140,7 +157,7 @@ export const {
   actions: {
     reset,
     logOut,
-    setActivePrivateKey,
+    setActiveHashKey,
     timeoutAccountAccess,
     updateAllAccountsAccountName,
     setMigratedMnemonicPhrase,
@@ -150,10 +167,6 @@ export const {
 export const publicKeySelector = createSelector(
   sessionSelector,
   (session) => session.publicKey,
-);
-export const mnemonicPhraseSelector = createSelector(
-  sessionSelector,
-  (session) => session.mnemonicPhrase,
 );
 export const migratedMnemonicPhraseSelector = createSelector(
   sessionSelector,
@@ -167,14 +180,10 @@ export const hasPrivateKeySelector = createSelector(
   sessionSelector,
   async (session) => {
     const isHardwareWalletActive = await getIsHardwareWalletActive();
-    return isHardwareWalletActive || !!session?.privateKey?.length;
+    return isHardwareWalletActive || !!session?.hashKey?.key;
   },
 );
-export const privateKeySelector = createSelector(
+export const hashKeySelector = createSelector(
   sessionSelector,
-  (session) => session.privateKey || "",
-);
-export const passwordSelector = createSelector(
-  sessionSelector,
-  (session) => session.password,
+  (session) => session.hashKey,
 );

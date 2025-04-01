@@ -91,14 +91,20 @@ export const createAccount = async (
   let publicKey = "";
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
+  let error = "";
 
   try {
-    ({ allAccounts, publicKey, hasPrivateKey } = await sendMessageToBackground({
-      password,
-      type: SERVICE_TYPES.CREATE_ACCOUNT,
-    }));
+    ({ allAccounts, publicKey, hasPrivateKey, error } =
+      await sendMessageToBackground({
+        password,
+        type: SERVICE_TYPES.CREATE_ACCOUNT,
+      }));
   } catch (e) {
     console.error(e);
+  }
+
+  if (error) {
+    throw new Error(error);
   }
 
   return { allAccounts, publicKey, hasPrivateKey };

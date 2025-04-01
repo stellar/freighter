@@ -142,6 +142,7 @@ export const ImportAccount = () => {
                 {t("Cancel")}
               </Button>
               <Button
+                data-testid="import-account-button"
                 size="md"
                 isFullWidth
                 variant="primary"
