@@ -14,7 +14,7 @@ import {
   truncatedFedAddress,
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
-import { AssetBalance, AssetIcons, ActionStatus } from "@shared/api/types";
+import { AssetIcons, ActionStatus } from "@shared/api/types";
 import {
   defaultBlockaidScanAssetResult,
   isCustomNetwork,
@@ -50,10 +50,7 @@ import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { FedOrGAddress } from "popup/basics/sendPayment/FedOrGAddress";
-import {
-  AccountAssets,
-  AssetIcon,
-} from "popup/components/account/AccountAssets";
+import { AssetIcon } from "popup/components/account/AccountAssets";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import {
   BlockaidTxScanLabel,
@@ -453,19 +450,26 @@ export const TransactionDetails = ({
             {!(isPathPayment || isSwap) && (
               <div className="TransactionDetails__cards">
                 <Card>
-                  <AccountAssets
-                    assetIcons={txDetailsData.data?.balances?.icons || {}}
-                    sortedBalances={[
-                      {
-                        token: {
-                          issuer: { key: sourceAsset.issuer },
-                          code: sourceAsset.code,
-                          type: "credit_alphanum4",
-                        },
-                        total: new BigNumber(amount),
-                      } as AssetBalance,
-                    ]}
-                  />
+                  <div className="TransactionDetails__send-asset">
+                    <div className="TransactionDetails__copy-left">
+                      <AssetIcon
+                        assetIcons={txDetailsData.data?.balances?.icons || {}}
+                        code={sourceAsset.code}
+                        issuerKey={sourceAsset.issuer}
+                        isLPShare={false}
+                      />
+                    </div>
+                    <div className="TransactionDetails__copy-right">
+                      <div className="send-asset-value">
+                        <div
+                          className="send-asset-amount"
+                          data-testid="asset-amount"
+                        >
+                          {formatAmount(amount)} <span>{sourceAsset.code}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </Card>
               </div>
             )}
