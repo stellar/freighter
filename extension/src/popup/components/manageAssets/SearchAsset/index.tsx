@@ -78,7 +78,6 @@ export const SearchAsset = () => {
   const [unverifiedAssetRows, setUnverifiedAssetRows] = useState(
     [] as ManageAssetCurrency[],
   );
-  const publicKey = useSelector(publicKeySelector);
 
   const [isSearching, setIsSearching] = useState(false);
   const [hasNoResults, setHasNoResults] = useState(false);
@@ -340,7 +339,6 @@ export const SearchAsset = () => {
                       }
                       verifiedAssetRows={verifiedAssetRows}
                       unverifiedAssetRows={unverifiedAssetRows}
-                      balances={state.data!}
                     />
                   ) : null}
                 </SearchResults>

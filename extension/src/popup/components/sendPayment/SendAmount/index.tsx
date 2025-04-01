@@ -509,12 +509,10 @@ export const SendAmount = ({
       {showBlockedDomainWarning &&
         createPortal(
           <ScamAssetWarning
-            balances={sendAmountData.data!.userBalances}
-            assetIcons={sendAmountData.data?.icons || {}}
             isSendWarning
             pillType="Transaction"
             balances={sendAmountData.data!.userBalances}
-            assetIcons={sendAmountData.data!.icons}
+            assetIcons={sendAmountData.data?.icons || {}}
             domain={suspiciousAssetData.domain}
             code={suspiciousAssetData.code}
             issuer={suspiciousAssetData.issuer}

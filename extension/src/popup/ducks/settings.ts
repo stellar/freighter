@@ -35,7 +35,7 @@ import {
   IndexerSettings,
   SettingsState,
   ExperimentalFeatures,
-  AssetKey,
+  IssuerKey,
   AssetVisibility,
 } from "@shared/api/types";
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -345,8 +345,8 @@ export const modifyAssetsList = createAsyncThunk<
 );
 
 export const changeAssetVisibility = createAsyncThunk<
-  { hiddenAssets: Record<AssetKey, AssetVisibility>; error: string },
-  { issuer: AssetKey; visibility: AssetVisibility },
+  { hiddenAssets: Record<IssuerKey, AssetVisibility>; error: string },
+  { issuer: IssuerKey; visibility: AssetVisibility },
   { rejectValue: ErrorMessage; state: AppState }
 >(
   "settings/changeAssetVisibility",

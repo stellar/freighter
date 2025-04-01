@@ -103,7 +103,6 @@ export const Settings = ({
   const publicKey = useSelector(publicKeySelector);
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
-  const navigate = useNavigate();
 
   const isSendSacToContract =
     isContractId(destination) &&

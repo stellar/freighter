@@ -48,11 +48,9 @@ import {
   IndexerSettings,
   SettingsState,
   ExperimentalFeatures,
-  AssetKey,
+  IssuerKey,
   AssetVisibility,
   ApiTokenPrices,
-  AssetKey,
-  AssetVisibility,
 } from "./types";
 import { AccountBalancesInterface, Balances } from "./types/backend-api";
 import {
@@ -1842,42 +1840,6 @@ export const simulateTransaction = async (args: {
   };
 };
 
-export const getHiddenAssets = async () => {
-  let response = {
-    error: "",
-    hiddenAssets: {} as Record<AssetKey, AssetVisibility>,
-  };
-
-  response = await sendMessageToBackground({
-    type: SERVICE_TYPES.GET_HIDDEN_ASSETS,
-  });
-
-  return { hiddenAssets: response.hiddenAssets, error: response.error };
-};
-
-export const changeAssetVisibility = async ({
-  assetIssuer,
-  assetVisibility,
-}: {
-  assetIssuer: AssetKey;
-  assetVisibility: AssetVisibility;
-}) => {
-  let response = {
-    error: "",
-    hiddenAssets: {} as Record<AssetKey, AssetVisibility>,
-  };
-
-  response = await sendMessageToBackground({
-    type: SERVICE_TYPES.CHANGE_ASSET_VISIBILITY,
-    assetVisibility: {
-      issuer: assetIssuer,
-      visibility: assetVisibility,
-    },
-  });
-
-  return { hiddenAssets: response.hiddenAssets, error: response.error };
-};
-
 export const getIsAccountMismatch = async ({
   activePublicKey,
 }: {
@@ -1910,7 +1872,7 @@ export const getHiddenAssets = async ({
 }) => {
   let response = {
     error: "",
-    hiddenAssets: {} as Record<AssetKey, AssetVisibility>,
+    hiddenAssets: {} as Record<IssuerKey, AssetVisibility>,
   };
 
   response = await sendMessageToBackground({
@@ -1926,13 +1888,13 @@ export const changeAssetVisibility = async ({
   assetVisibility,
   activePublicKey,
 }: {
-  assetIssuer: AssetKey;
+  assetIssuer: IssuerKey;
   assetVisibility: AssetVisibility;
   activePublicKey: string;
 }) => {
   let response = {
     error: "",
-    hiddenAssets: {} as Record<AssetKey, AssetVisibility>,
+    hiddenAssets: {} as Record<IssuerKey, AssetVisibility>,
   };
 
   response = await sendMessageToBackground({

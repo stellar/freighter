@@ -20,7 +20,6 @@ import { settingsSelector } from "popup/ducks/settings";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
 import { AssetIcons } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
-import { AssetIcons } from "@shared/api/types";
 
 import "./styles.scss";
 

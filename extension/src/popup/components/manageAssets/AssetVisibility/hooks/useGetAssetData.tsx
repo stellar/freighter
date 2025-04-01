@@ -5,7 +5,7 @@ import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { ManageAssetCurrency } from "../../ManageAssetRows";
-import { AssetKey, AssetVisibility } from "@shared/api/types";
+import { IssuerKey, AssetVisibility } from "@shared/api/types";
 import {
   AssetDomains,
   useGetAssetDomainsWithBalances,
@@ -16,7 +16,7 @@ interface AssetVisibilityData {
   balances: AccountBalances;
   domains: ManageAssetCurrency[];
   isManagingAssets: boolean;
-  hiddenAssets: Record<AssetKey, AssetVisibility>;
+  hiddenAssets: Record<IssuerKey, AssetVisibility>;
 }
 
 function useGetAssetData(

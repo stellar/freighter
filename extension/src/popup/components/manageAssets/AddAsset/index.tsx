@@ -277,7 +277,6 @@ export const AddAsset = () => {
       await fetchData();
     };
     getData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const hasAssets = verifiedAssetRows.length || unverifiedAssetRows.length;

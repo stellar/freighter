@@ -82,7 +82,6 @@ import {
   reportAssetWarning,
   reportTransactionWarning,
 } from "popup/helpers/blockaid";
-import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import { CopyValue } from "../CopyValue";
 import { Notification as NotificationV2 } from "../Notification";

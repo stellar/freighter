@@ -70,7 +70,6 @@ export const SignTransaction = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const tx = getTransactionInfo(location.search);
   const { url } = parsedSearchParam(location.search);
 
