@@ -16,7 +16,6 @@ import {
   editCustomNetwork as editCustomNetworkService,
   addAssetsList as addAssetsListService,
   modifyAssetsList as modifyAssetsListService,
-  changeAssetVisibility as changeAssetVisibilityService,
 } from "@shared/api/internal";
 import {
   NETWORKS,
@@ -35,8 +34,6 @@ import {
   IndexerSettings,
   SettingsState,
   ExperimentalFeatures,
-  IssuerKey,
-  AssetVisibility,
 } from "@shared/api/types";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { AppState } from "popup/App";
@@ -337,30 +334,6 @@ export const modifyAssetsList = createAsyncThunk<
     if (res.error) {
       return rejectWithValue({
         errorMessage: res.error || "Unable to modify asset list",
-      });
-    }
-
-    return res;
-  },
-);
-
-export const changeAssetVisibility = createAsyncThunk<
-  { hiddenAssets: Record<IssuerKey, AssetVisibility>; error: string },
-  { issuer: IssuerKey; visibility: AssetVisibility },
-  { rejectValue: ErrorMessage; state: AppState }
->(
-  "settings/changeAssetVisibility",
-  async ({ issuer, visibility }, thunkApi) => {
-    const activePublicKey = publicKeySelector(thunkApi.getState());
-    const res = await changeAssetVisibilityService({
-      assetIssuer: issuer,
-      assetVisibility: visibility,
-      activePublicKey,
-    });
-
-    if (res.error) {
-      return thunkApi.rejectWithValue({
-        errorMessage: res.error || "Unable to toggle asset visibility",
       });
     }
 

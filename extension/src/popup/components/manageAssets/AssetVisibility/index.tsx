@@ -31,15 +31,15 @@ export const AssetVisibility = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
-  const { state: domainState, fetchData } = useGetAssetData(
-    publicKey,
-    networkDetails,
-    {
-      isMainnet: isMainnet(networkDetails),
-      showHidden: true,
-      includeIcons: true,
-    },
-  );
+  const {
+    state: domainState,
+    fetchData,
+    changeAssetVisibility,
+  } = useGetAssetData(publicKey, networkDetails, {
+    isMainnet: isMainnet(networkDetails),
+    showHidden: true,
+    includeIcons: true,
+  });
 
   useEffect(() => {
     const getData = async () => {
@@ -79,6 +79,7 @@ export const AssetVisibility = () => {
               <ToggleAssetRows
                 assetRows={domainState.data!.domains}
                 hiddenAssets={domainState.data!.hiddenAssets}
+                changeAssetVisibility={changeAssetVisibility}
               />
             </div>
           </div>

@@ -1,6 +1,5 @@
 import React from "react";
 import { Toggle } from "@stellar/design-system";
-import { useDispatch } from "react-redux";
 
 import { AssetVisibility, IssuerKey } from "@shared/api/types";
 import {
@@ -9,34 +8,34 @@ import {
   truncateString,
 } from "helpers/stellar";
 import { AssetIcon } from "popup/components/account/AccountAssets";
-import { changeAssetVisibility } from "popup/ducks/settings";
 import { isAssetVisible } from "popup/helpers/settings";
+import { AssetVisibilityData } from "../AssetVisibility/hooks/useGetAssetData";
 import { AssetRowData, ManageAssetCurrency } from "../ManageAssetRows";
-import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
 
 interface ToggleAssetRowsProps {
   assetRows: ManageAssetCurrency[];
   hiddenAssets: Record<IssuerKey, AssetVisibility>;
+  changeAssetVisibility: ({
+    issuer,
+    visibility,
+  }: {
+    issuer: IssuerKey;
+    visibility: AssetVisibility;
+  }) => Promise<AssetVisibilityData>;
 }
 
 export const ToggleAssetRows = ({
   assetRows,
   hiddenAssets,
+  changeAssetVisibility,
 }: ToggleAssetRowsProps) => {
-  const dispatch = useDispatch<AppDispatch>();
-
-  const handleIsVisibleChange = (issuer: IssuerKey) => {
+  const handleIsVisibleChange = async (issuer: IssuerKey) => {
     const visibility = isAssetVisible(hiddenAssets, issuer)
       ? "hidden"
       : "visible";
-    dispatch(
-      changeAssetVisibility({
-        issuer,
-        visibility,
-      }),
-    );
+    await changeAssetVisibility({ issuer, visibility });
   };
 
   return (
@@ -75,7 +74,7 @@ export const ToggleAssetRows = ({
                     id={`isVisible-${canonicalAsset}`}
                     // @ts-ignore
                     onChange={(_e: React.ChangeEvent<HTMLInputElement>) =>
-                      handleIsVisibleChange(issuer)
+                      handleIsVisibleChange(canonicalAsset)
                     }
                   />
                 </div>

@@ -10,9 +10,12 @@ import {
   AssetDomains,
   useGetAssetDomainsWithBalances,
 } from "helpers/hooks/useGetAssetDomainsWithBalances";
-import { getHiddenAssets } from "@shared/api/internal";
+import {
+  getHiddenAssets,
+  changeAssetVisibility as internalChangeAssetVisibility,
+} from "@shared/api/internal";
 
-interface AssetVisibilityData {
+export interface AssetVisibilityData {
   balances: AccountBalances;
   domains: ManageAssetCurrency[];
   isManagingAssets: boolean;
@@ -64,9 +67,36 @@ function useGetAssetData(
     }
   };
 
+  const changeAssetVisibility = async ({
+    issuer,
+    visibility,
+  }: {
+    issuer: IssuerKey;
+    visibility: AssetVisibility;
+  }) => {
+    const { hiddenAssets, error } = await internalChangeAssetVisibility({
+      assetIssuer: issuer,
+      assetVisibility: visibility,
+      activePublicKey: publicKey,
+    });
+
+    if (error) {
+      throw new Error(error);
+    }
+
+    const payload = {
+      ...state.data,
+      hiddenAssets,
+    } as AssetVisibilityData;
+
+    dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+    return payload;
+  };
+
   return {
     state,
     fetchData,
+    changeAssetVisibility,
   };
 }
 
