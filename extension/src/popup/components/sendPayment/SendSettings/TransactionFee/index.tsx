@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import { Formik, Form, Field, FieldProps } from "formik";
@@ -7,9 +6,7 @@ import { object as YupObject, number as YupNumber } from "yup";
 import { Input, Icon, Link, Button } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { ROUTES } from "popup/constants/routes";
 import { FormRows } from "popup/basics/Forms";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { View } from "popup/basics/layout/View";
@@ -21,10 +18,9 @@ import {
 
 import "./styles.scss";
 
-export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
+export const SendSettingsFee = ({ goBack }: { goBack: () => void }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { transactionFee } = useSelector(transactionDataSelector);
   const { networkCongestion, recommendedFee } = useNetworkFees();
 
@@ -32,7 +28,7 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
     <React.Fragment>
       <SubviewHeader
         title="Transaction Fee"
-        customBackAction={() => navigateTo(previous, navigate)}
+        customBackAction={goBack}
         customBackIcon={<Icon.XClose />}
         rightButton={
           <InfoTooltip
@@ -60,7 +56,7 @@ export const SendSettingsFee = ({ previous }: { previous: ROUTES }) => {
         initialValues={{ transactionFee }}
         onSubmit={(values) => {
           dispatch(saveTransactionFee(String(values.transactionFee)));
-          navigateTo(previous, navigate);
+          goBack();
         }}
         validationSchema={YupObject().shape({
           transactionFee: YupNumber().min(

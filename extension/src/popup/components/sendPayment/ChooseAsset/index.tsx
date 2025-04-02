@@ -1,10 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
-import { Button, Icon, Loader } from "@stellar/design-system";
+import { Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { ROUTES } from "popup/constants/routes";
 import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
@@ -16,20 +14,15 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { RequestState } from "constants/request";
 import { useGetAssetDomainsWithBalances } from "helpers/hooks/useGetAssetDomainsWithBalances";
 import { isMainnet } from "helpers/stellar";
-import { useIsSwap } from "popup/helpers/useIsSwap";
-
-import { ManageAssetRows } from "../ManageAssetRows";
-import { SelectAssetRows } from "../SelectAssetRows";
+import { SelectAssetRows } from "popup/components/manageAssets/SelectAssetRows";
 
 import "./styles.scss";
 
-export const ChooseAsset = () => {
+export const ChooseAsset = ({ goBack }: { goBack: () => void }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const isSwap = useIsSwap();
 
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
 
@@ -65,35 +58,9 @@ export const ChooseAsset = () => {
     );
   }
 
-  const goBack = () => {
-    navigate(-1);
-  };
-
   return (
     <React.Fragment>
-      <SubviewHeader
-        title={t("Your assets")}
-        customBackIcon={
-          !domainState.data?.isManagingAssets ? <Icon.XClose /> : undefined
-        }
-        customBackAction={goBack}
-        rightButton={
-          !isSwap ? (
-            <Link
-              to={ROUTES.assetVisibility}
-              data-testid="ChooseAssetHideAssetBtn"
-            >
-              <Button
-                size="sm"
-                className="ChooseAsset__hide-btn"
-                variant="tertiary"
-              >
-                <Icon.Settings03 />
-              </Button>
-            </Link>
-          ) : undefined
-        }
-      />
+      <SubviewHeader title={t("Your assets")} customBackAction={goBack} />
       <View.Content hasNoTopPadding>
         <div className="ChooseAsset__wrapper" data-testid="ChooseAssetWrapper">
           {!domainState.data?.domains.length ? (
@@ -111,40 +78,15 @@ export const ChooseAsset = () => {
               }`}
               ref={ManageAssetRowsWrapperRef}
             >
-              {domainState.data.isManagingAssets ? (
-                <ManageAssetRows
-                  shouldSplitAssetsByVerificationStatus={false}
-                  verifiedAssetRows={domainState.data.domains}
-                  unverifiedAssetRows={[]}
-                  balances={domainState.data.balances}
-                />
-              ) : (
-                <SelectAssetRows
-                  assetRows={domainState.data.domains}
-                  balances={domainState.data.balances}
-                  onSelect={() => navigate(-1)}
-                />
-              )}
+              <SelectAssetRows
+                assetRows={domainState.data.domains}
+                balances={domainState.data.balances}
+                onSelect={goBack}
+              />
             </div>
           )}
         </div>
       </View.Content>
-      {domainState.data?.isManagingAssets && (
-        <View.Footer isInline allowWrap>
-          <div className="ChooseAsset__button">
-            <Link to={ROUTES.searchAsset}>
-              <Button
-                size="md"
-                isFullWidth
-                variant="tertiary"
-                data-testid="ChooseAssetAddAssetButton"
-              >
-                {t("Add an asset")}
-              </Button>
-            </Link>
-          </div>
-        </View.Footer>
-      )}
     </React.Fragment>
   );
 };
