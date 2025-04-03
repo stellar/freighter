@@ -115,6 +115,67 @@ test("Import 12 word wallet", async ({ page }) => {
   });
 });
 
+test("Import 12 word wallet by pasting", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+
+  await page.getByText("Import Wallet").click();
+  await expect(page.getByText("Create a Password")).toBeVisible();
+
+  await page.locator("#new-password-input").fill("My-password123");
+  await page.locator("#confirm-password-input").fill("My-password123");
+  await page.locator("#termsOfUse-input").check({ force: true });
+  await page.getByText("Confirm").click();
+
+  await expect(
+    page.getByText("Import wallet from recovery phrase"),
+  ).toBeVisible();
+
+  await page.evaluate(() => {
+    console.log(navigator.clipboard);
+    return navigator.clipboard.writeText(
+      [
+        "have",
+        "style",
+        "milk",
+        "flush",
+        "you",
+        "possible",
+        "thrive",
+        "dice",
+        "delay",
+        "police",
+        "seminar",
+        "face",
+      ].join(" "),
+    );
+  });
+
+  // paste text from clipboard
+  await page.locator("#MnemonicPhrase-1").press("Meta+v");
+
+  await expectPageToHaveScreenshot(
+    {
+      page,
+      screenshot: "wallet-import-12-word-phrase-page.png",
+    },
+    { mask: [page.locator(".RecoverAccount__mnemonic-input")] },
+  );
+
+  // confirm the clipboard has been cleared
+  const clipboardData = await page.evaluate(() =>
+    navigator.clipboard.readText(),
+  );
+  expect(clipboardData).toBe("");
+
+  await page.getByRole("button", { name: "Import" }).click();
+
+  await expect(page.getByText("You’re all set!")).toBeVisible();
+  await expectPageToHaveScreenshot({
+    page,
+    screenshot: "wallet-import-complete-page.png",
+  });
+});
+
 test("Import 24 word wallet", async ({ page }) => {
   await page.getByText("Import Wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
@@ -170,6 +231,78 @@ test("Import 24 word wallet", async ({ page }) => {
       mask: [page.locator(".RecoverAccount__mnemonic-wrapper")],
     },
   );
+
+  await page.getByRole("button", { name: "Import" }).click();
+
+  await expect(page.getByText("You’re all set!")).toBeVisible();
+  await expectPageToHaveScreenshot({
+    page,
+    screenshot: "wallet-import-complete-page.png",
+  });
+});
+
+test("Import 24 word wallet by pasting", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+
+  await page.getByText("Import Wallet").click();
+  await expect(page.getByText("Create a Password")).toBeVisible();
+
+  await page.locator("#new-password-input").fill("My-password123");
+  await page.locator("#confirm-password-input").fill("My-password123");
+  await page.locator("#termsOfUse-input").check({ force: true });
+  await page.getByText("Confirm").click();
+
+  await expect(
+    page.getByText("Import wallet from recovery phrase"),
+  ).toBeVisible();
+
+  await page.evaluate(() =>
+    navigator.clipboard.writeText(
+      [
+        "shrug",
+        "absent",
+        "sausage",
+        "later",
+        "salute",
+        "mesh",
+        "increase",
+        "flavor",
+        "pilot",
+        "patch",
+        "pole",
+        "twenty",
+        "chef",
+        "coffee",
+        "faint",
+        "apology",
+        "crucial",
+        "scene",
+        "attend",
+        "replace",
+        "wolf",
+        "error",
+        "swift",
+        "device",
+      ].join(" "),
+    ),
+  );
+
+  // paste text from clipboard
+  await page.locator("#MnemonicPhrase-1").press("Meta+v");
+
+  await expectPageToHaveScreenshot(
+    {
+      page,
+      screenshot: "wallet-import-12-word-phrase-page.png",
+    },
+    { mask: [page.locator(".RecoverAccount__mnemonic-input")] },
+  );
+
+  // confirm the clipboard has been cleared
+  const clipboardData = await page.evaluate(() =>
+    navigator.clipboard.readText(),
+  );
+  expect(clipboardData).toBe("");
 
   await page.getByRole("button", { name: "Import" }).click();
 
