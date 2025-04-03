@@ -43,7 +43,6 @@ export const SelectAssetRows = ({
   const dispatch = useDispatch<AppDispatch>();
   const isSoroswapEnabled = useIsSoroswapEnabled();
   const isSwap = useIsSwap();
-  // console.log(assetRows, balances);
 
   const getAccountBalance = (issuer: string) => {
     if (!balances) {

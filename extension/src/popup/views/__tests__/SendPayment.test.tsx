@@ -140,31 +140,31 @@ describe.skip("SendPayment", () => {
     jest.clearAllMocks();
   });
 
-  // it("renders", async () => {
-  //   render(
-  //     <Wrapper
-  //       routes={[ROUTES.sendPaymentTo]}
-  //       state={{
-  //         auth: {
-  //           error: null,
-  //           applicationState: ApplicationState.PASSWORD_CREATED,
-  //           publicKey,
-  //           allAccounts: mockAccounts,
-  //         },
-  //         settings: {
-  //           networkDetails: MAINNET_NETWORK_DETAILS,
-  //           networksList: DEFAULT_NETWORKS,
-  //         },
-  //         tokenPaymentSimulation: tokenPaymentActions.initialState,
-  //       }}
-  //     >
-  //       <SendPayment />
-  //     </Wrapper>,
-  //   );
-  //   await waitFor(() => {
-  //     expect(screen.getByTestId("send-to-view")).toBeDefined();
-  //   });
-  // });
+  it("renders", async () => {
+    render(
+      <Wrapper
+        routes={[ROUTES.sendPayment]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
+        }}
+      >
+        <SendPayment />
+      </Wrapper>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("send-to-view")).toBeDefined();
+    });
+  });
 
   it("sending native asset on Mainnet works", async () => {
     await testPaymentFlow("native", true, false);

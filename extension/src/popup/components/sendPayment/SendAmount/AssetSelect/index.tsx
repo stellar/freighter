@@ -131,7 +131,6 @@ export const PathPayAssetSelect = ({
     if (source) {
       dispatch(saveAmount("0"));
     }
-    // navigateTo(ROUTES.manageAssets, navigate, isSwap ? "?swap=true" : "");
     onSelectAsset();
   };
 
