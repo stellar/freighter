@@ -1,5 +1,7 @@
 import { shuffle } from "lodash";
+import { generateMnemonic } from "stellar-hd-wallet";
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
+import { loginToTestAccount } from "./helpers/login";
 
 test.beforeEach(async ({ page, extensionId }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
@@ -378,4 +380,134 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
       mask: [page.locator(".ConfirmMnemonicPhrase__word-bubble-wrapper")],
     },
   );
+});
+
+test("Logout and create new account", async ({ page, extensionId }) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId });
+
+  await page.getByTestId("AccountHeader__icon-btn").click();
+  const originalAccounts = page.getByTestId("account-list-item");
+  const originalAccountsCount = await originalAccounts.count();
+  // the test seed phrase should have multiple funded accounts
+  expect(originalAccountsCount).not.toBe(1);
+
+  await page.getByTestId("BottomNav-link-settings").click();
+  await page.getByText("Log Out").click();
+
+  await expect(
+    page.getByText(
+      "This will completely erase all existing account information.",
+    ),
+  ).toBeVisible();
+  await expectPageToHaveScreenshot({
+    page,
+    screenshot: "unlock-password-overwrite.png",
+  });
+
+  const newPagePromise = page.context().waitForEvent("page");
+
+  await page.getByText("Create a wallet").click();
+
+  const newPage = await newPagePromise;
+  await expect(
+    newPage.getByText(
+      "You are overwriting an existing account. You will permanently lose access to the account currently stored in Freighter.",
+    ),
+  ).toBeVisible();
+  await expectPageToHaveScreenshot({
+    page: newPage,
+    screenshot: "account-creator-overwrite.png",
+  });
+
+  await newPage.locator("#new-password-input").fill("My-password123");
+  await newPage.locator("#confirm-password-input").fill("My-password123");
+  await newPage.locator("#termsOfUse-input").check({ force: true });
+  await newPage.getByText("Confirm").click();
+
+  await newPage.getByText("Do this later").click();
+  await expect(newPage.getByText("You’re all set!")).toBeVisible();
+
+  await newPage.goto(`chrome-extension://${extensionId}/index.html#/account`);
+  await expect(newPage.getByTestId("network-selector-open")).toBeVisible({
+    timeout: 10000,
+  });
+  await newPage.getByTestId("AccountHeader__icon-btn").click();
+  const newAccounts = newPage.getByTestId("account-list-item");
+  await expect(newAccounts).toBeVisible();
+  const newAccountsCount = await newAccounts.count();
+  // the new seed phrase should only have one funded account; this confirms that the other accounts are no longer present
+  expect(newAccountsCount).toBe(1);
+});
+
+test("Logout and import new account", async ({ page, extensionId }) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId });
+
+  await page.getByTestId("AccountHeader__icon-btn").click();
+  const originalAccounts = page.getByTestId("account-list-item");
+  const originalAccountsCount = await originalAccounts.count();
+
+  // the test seed phrase should have multiple funded accounts
+  expect(originalAccountsCount).not.toBe(1);
+
+  await page.getByTestId("BottomNav-link-settings").click();
+  await page.getByText("Log Out").click();
+
+  await expect(
+    page.getByText(
+      "This will completely erase all existing account information.",
+    ),
+  ).toBeVisible();
+  await expectPageToHaveScreenshot({
+    page,
+    screenshot: "unlock-password-overwrite.png",
+  });
+
+  const newPagePromise = page.context().waitForEvent("page");
+
+  await page.getByText("Import using account seed phrase").click();
+
+  const newPage = await newPagePromise;
+  await expect(
+    newPage.getByText(
+      "You are overwriting an existing account. You will permanently lose access to the account currently stored in Freighter.",
+    ),
+  ).toBeVisible();
+  await expectPageToHaveScreenshot({
+    page: newPage,
+    screenshot: "account-creator-overwrite.png",
+  });
+
+  await newPage.locator("#new-password-input").fill("My-password123");
+  await newPage.locator("#confirm-password-input").fill("My-password123");
+  await newPage.locator("#termsOfUse-input").check({ force: true });
+  await newPage.getByText("Confirm").click();
+
+  await expect(
+    newPage.getByText("Import wallet from recovery phrase"),
+  ).toBeVisible();
+
+  const TEST_WORDS = generateMnemonic({ entropyBits: 128 }).split(" ");
+
+  for (let i = 1; i <= TEST_WORDS.length; i++) {
+    await newPage.locator(`#MnemonicPhrase-${i}`).fill(TEST_WORDS[i - 1]);
+  }
+
+  await newPage.getByRole("button", { name: "Import" }).click();
+
+  await expect(newPage.getByText("You’re all set!")).toBeVisible({
+    timeout: 20000,
+  });
+
+  await newPage.goto(`chrome-extension://${extensionId}/index.html#/account`);
+  await expect(newPage.getByTestId("network-selector-open")).toBeVisible({
+    timeout: 10000,
+  });
+  await newPage.getByTestId("AccountHeader__icon-btn").click();
+  const newAccounts = newPage.getByTestId("account-list-item");
+  await expect(newAccounts).toBeVisible();
+  const newAccountsCount = await newAccounts.count();
+  // the new seed phrase should only have one funded account; this confirms that the other accounts are no longer present
+  expect(newAccountsCount).toBe(1);
 });

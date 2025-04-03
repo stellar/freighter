@@ -431,8 +431,31 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { publicKey };
   };
 
+  /* 
+  The user has lost their password and they want to reimport an account.
+  Remove all references to the previous account in localStore so the user has a clean slate to start over.
+  */
+  const _removePreviousAccount = async () => {
+    await localStore.remove(ACCOUNT_NAME_LIST_ID);
+    await localStore.remove(APPLICATION_ID);
+    await localStore.remove(RECENT_ADDRESSES);
+    await localStore.remove(LAST_USED_ACCOUNT);
+    await localStore.remove(TOKEN_ID_LIST);
+
+    const keyIdList = await localStore.getItem(KEY_ID_LIST);
+
+    for (let i = 0; i < keyIdList.length; i += 1) {
+      const k = keyIdList[i];
+      await localStore.remove(`stellarkeys:${k}`);
+    }
+  };
+
   const createAccount = async () => {
-    const { password } = request;
+    const { password, isOverwritingAccount } = request;
+
+    if (isOverwritingAccount) {
+      await _removePreviousAccount();
+    }
 
     const mnemonicPhrase = generateMnemonic({ entropyBits: 128 });
     const wallet = fromMnemonic(mnemonicPhrase);
@@ -863,10 +886,14 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const recoverAccount = async () => {
-    const { password, recoverMnemonic } = request;
+    const { password, recoverMnemonic, isOverwritingAccount } = request;
     let wallet;
     let applicationState;
     let error = "";
+
+    if (isOverwritingAccount) {
+      await _removePreviousAccount();
+    }
 
     try {
       wallet = fromMnemonic(recoverMnemonic);

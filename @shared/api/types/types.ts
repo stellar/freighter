@@ -109,6 +109,7 @@ export interface Response {
     visibility: AssetVisibility;
   };
   hiddenAssets: Record<IssuerKey, AssetVisibility>;
+  isOverwritingAccount: boolean;
 }
 
 export interface MemoRequiredAccount {
