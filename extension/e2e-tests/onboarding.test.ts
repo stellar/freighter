@@ -1,7 +1,7 @@
 import { shuffle } from "lodash";
 import { generateMnemonic } from "stellar-hd-wallet";
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
-import { loginToTestAccount } from "./helpers/login";
+import { loginToTestAccount, PASSWORD } from "./helpers/login";
 
 test.beforeEach(async ({ page, extensionId }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
@@ -420,8 +420,8 @@ test("Logout and create new account", async ({ page, extensionId }) => {
     screenshot: "account-creator-overwrite.png",
   });
 
-  await newPage.locator("#new-password-input").fill("My-password123");
-  await newPage.locator("#confirm-password-input").fill("My-password123");
+  await newPage.locator("#new-password-input").fill(PASSWORD);
+  await newPage.locator("#confirm-password-input").fill(PASSWORD);
   await newPage.locator("#termsOfUse-input").check({ force: true });
   await newPage.getByText("Confirm").click();
 
@@ -438,6 +438,17 @@ test("Logout and create new account", async ({ page, extensionId }) => {
   const newAccountsCount = await newAccounts.count();
   // the new seed phrase should only have one funded account; this confirms that the other accounts are no longer present
   expect(newAccountsCount).toBe(1);
+  await newPage.locator(".LoadingBackground--active").click();
+
+  await newPage.getByTestId("BottomNav-link-settings").click();
+  await newPage.getByText("Log Out").click();
+
+  await newPage.locator("#password-input").fill(PASSWORD);
+  await newPage.getByText("Login").click();
+
+  await expect(newPage.getByTestId("account-view")).toBeVisible({
+    timeout: 30000,
+  });
 });
 
 test("Logout and import new account", async ({ page, extensionId }) => {
@@ -479,8 +490,8 @@ test("Logout and import new account", async ({ page, extensionId }) => {
     screenshot: "account-creator-overwrite.png",
   });
 
-  await newPage.locator("#new-password-input").fill("My-password123");
-  await newPage.locator("#confirm-password-input").fill("My-password123");
+  await newPage.locator("#new-password-input").fill(PASSWORD);
+  await newPage.locator("#confirm-password-input").fill(PASSWORD);
   await newPage.locator("#termsOfUse-input").check({ force: true });
   await newPage.getByText("Confirm").click();
 
@@ -510,4 +521,15 @@ test("Logout and import new account", async ({ page, extensionId }) => {
   const newAccountsCount = await newAccounts.count();
   // the new seed phrase should only have one funded account; this confirms that the other accounts are no longer present
   expect(newAccountsCount).toBe(1);
+  await newPage.locator(".LoadingBackground--active").click();
+
+  await newPage.getByTestId("BottomNav-link-settings").click();
+  await newPage.getByText("Log Out").click();
+
+  await newPage.locator("#password-input").fill(PASSWORD);
+  await newPage.getByText("Login").click();
+
+  await expect(newPage.getByTestId("account-view")).toBeVisible({
+    timeout: 30000,
+  });
 });
