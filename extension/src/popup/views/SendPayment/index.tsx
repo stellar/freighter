@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 
 import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/send-payment";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
 import { SendTo } from "popup/components/sendPayment/SendTo";
 import { SendAmount } from "popup/components/sendPayment/SendAmount";
@@ -28,6 +30,7 @@ export const SendPayment = () => {
         );
       }
       case STEPS.SET_PAYMENT_TIMEOUT: {
+        emitMetric(METRIC_NAMES.sendPaymentSettingsTimeout);
         return (
           <PublicKeyRoute>
             <SendSettingsTxTimeout
@@ -37,6 +40,7 @@ export const SendPayment = () => {
         );
       }
       case STEPS.PAYMENT_CONFIRM: {
+        emitMetric(METRIC_NAMES.sendPaymentConfirm);
         return (
           <VerifiedAccountRoute>
             <SendConfirm goBack={() => setActiveStep(STEPS.PAYMENT_SETTINGS)} />
@@ -44,6 +48,7 @@ export const SendPayment = () => {
         );
       }
       case STEPS.SET_PAYMENT_SLIPPAGE: {
+        emitMetric(METRIC_NAMES.sendPaymentSettingsSlippage);
         return (
           <PublicKeyRoute>
             <SendSettingsSlippage
@@ -53,6 +58,7 @@ export const SendPayment = () => {
         );
       }
       case STEPS.SET_PAYMENT_FEE: {
+        emitMetric(METRIC_NAMES.sendPaymentSettingsFee);
         return (
           <PublicKeyRoute>
             <SendSettingsFee
@@ -62,6 +68,7 @@ export const SendPayment = () => {
         );
       }
       case STEPS.PAYMENT_SETTINGS: {
+        emitMetric(METRIC_NAMES.sendPaymentSettings);
         return (
           <PublicKeyRoute>
             <SendSettings
@@ -79,6 +86,7 @@ export const SendPayment = () => {
         );
       }
       case STEPS.PAYMENT_TYPE: {
+        emitMetric(METRIC_NAMES.sendPaymentType);
         return (
           <PublicKeyRoute>
             <SendType setStep={setActiveStep} />
@@ -86,6 +94,7 @@ export const SendPayment = () => {
         );
       }
       case STEPS.AMOUNT: {
+        emitMetric(METRIC_NAMES.sendPaymentAmount);
         return (
           <PublicKeyRoute>
             <SendAmount
@@ -99,6 +108,7 @@ export const SendPayment = () => {
       }
       default:
       case STEPS.DESTINATION: {
+        emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
         return (
           <PublicKeyRoute>
             <SendTo
