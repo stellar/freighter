@@ -11,7 +11,7 @@ import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/Trans
 import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/Slippage";
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 import { SendSettingsTxTimeout } from "popup/components/sendPayment/SendSettings/TxTimeout";
-import { ChooseAsset } from "popup/components/sendPayment/ChooseAsset";
+import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 export const Swap = () => {
