@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
@@ -10,6 +10,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import {
   getAvailableBalance,
+  getIsDustPayment,
   getIsPayment,
   getIsSwap,
   getIssuerFromBalance,
@@ -38,6 +39,7 @@ import {
   saveDestinationAsset,
   saveIsToken,
 } from "popup/ducks/transactionSubmission";
+import { settingsSelector } from "popup/ducks/settings";
 import { AppDispatch } from "popup/App";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { formatAmount } from "popup/helpers/formatters";
@@ -75,6 +77,8 @@ export const AssetDetail = ({
 }: AssetDetailProps) => {
   const dispatch: AppDispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const { isHideDustEnabled } = useSelector(settingsSelector);
+
   const isNative = selectedAsset === "native";
 
   const canonical = getAssetFromCanonical(selectedAsset);
@@ -129,6 +133,16 @@ export const AssetDetail = ({
     return null;
   }
 
+  const sortedAssetOperations = assetOperations.filter((operation) => {
+    const isDustPayment = getIsDustPayment(publicKey, operation);
+
+    if (isDustPayment && isHideDustEnabled) {
+      return false;
+    }
+
+    return true;
+  });
+
   if (assetIssuer && !assetDomain && !assetError && !isSorobanAsset) {
     // if we have an asset issuer, wait until we have the asset domain before continuing
     return <Loading />;
@@ -161,7 +175,7 @@ export const AssetDetail = ({
         customBackAction={() => setSelectedAsset("")}
       />
       <View.Content>
-        <div className="AssetDetail__wrapper">
+        <div className="AssetDetail__wrapper" data-testid="AssetDetail">
           {selectedBalance && "name" in selectedBalance && (
             <span className="AssetDetail__token-name">
               {selectedBalance.name as string}
@@ -252,11 +266,10 @@ export const AssetDetail = ({
               />
             )}
           </div>
-
-          {assetOperations.length ? (
-            <div className="AssetDetail__list">
+          {sortedAssetOperations.length ? (
+            <div className="AssetDetail__list" data-testid="AssetDetail__list">
               <>
-                {assetOperations.map((operation) => {
+                {sortedAssetOperations.map((operation) => {
                   const historyItemOperation = {
                     ...operation,
                     isPayment: getIsPayment(operation.type),
@@ -277,7 +290,10 @@ export const AssetDetail = ({
               </>
             </div>
           ) : (
-            <div className="AssetDetail__empty">
+            <div
+              className="AssetDetail__empty"
+              data-testid="AssetDetail__empty"
+            >
               {t("No transactions to show")}
             </div>
           )}
