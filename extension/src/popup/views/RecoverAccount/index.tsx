@@ -13,6 +13,7 @@ import {
 } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { AppDispatch } from "popup/App";
 import {
   PasswordForm,
@@ -34,6 +35,7 @@ import {
   termsOfUse as termsofUseValidator,
 } from "popup/helpers/validators";
 import {
+  applicationStateSelector,
   authErrorSelector,
   publicKeySelector,
   recoverAccount,
@@ -101,6 +103,8 @@ const buildMnemonicPhrase = (mnemonicPhraseArr: string[]) =>
 export const RecoverAccount = () => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
+  const applicationState = useSelector(applicationStateSelector);
+
   const authError = useSelector(authErrorSelector);
   const navigate = useNavigate();
   const publicKeyRef = useRef(publicKey);
@@ -118,6 +122,9 @@ export const RecoverAccount = () => {
   const [password, setPassword] = useState("");
   const [pastedValues, setPastedValues] = useState<string[]>([]);
 
+  const isShowingOverwriteWarning =
+    applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
+
   const handleConfirm = (values: FormValues) => {
     setPassword(values.password);
   };
@@ -127,6 +134,7 @@ export const RecoverAccount = () => {
       recoverAccount({
         password,
         mnemonicPhrase: buildMnemonicPhrase(mnemonicPhraseArr),
+        isOverwritingAccount: isShowingOverwriteWarning,
       }),
     );
   };
@@ -290,6 +298,7 @@ export const RecoverAccount = () => {
                   touched={touched}
                   values={values}
                   handleSubmit={handleConfirm}
+                  isShowingOverwriteWarning={isShowingOverwriteWarning}
                 />
               )}
             </>
