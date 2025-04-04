@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import {
   CopyText,
@@ -10,13 +10,6 @@ import {
 } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { getAccountHistory } from "@shared/api/internal";
-import {
-  AccountBalancesInterface,
-  ActionStatus,
-  AssetType,
-} from "@shared/api/types";
-
 import {
   settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
@@ -24,30 +17,15 @@ import {
 } from "popup/ducks/settings";
 import { View } from "popup/basics/layout/View";
 import {
-  accountStatusSelector,
   accountNameSelector,
   allAccountsSelector,
   publicKeySelector,
 } from "popup/ducks/accountServices";
-import {
-  getAssetIcons,
-  getAssetDomains,
-  transactionSubmissionSelector,
-  resetSubmission,
-  resetAccountBalanceStatus,
-  getAccountBalances,
-  getSoroswapTokens,
-  getTokenPrices,
-} from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
-import {
-  AssetOperations,
-  sortBalances,
-  sortOperationsByAsset,
-} from "popup/helpers/account";
 import { navigateTo } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
-import { useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
+import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
+
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
 import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsDropdown";
@@ -55,171 +33,75 @@ import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
-import { isMainnet } from "helpers/stellar";
-import { AppDispatch } from "popup/App";
+
+import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
-
-export const defaultAccountBalances = {
-  balances: null,
-  isFunded: null,
-} as AccountBalancesInterface;
+import { getBalanceByIssuer } from "popup/helpers/balance";
 
 export const Account = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch<AppDispatch>();
-  const {
-    accountBalances,
-    assetIcons,
-    accountBalanceStatus,
-    tokenPrices,
-    tokenPricesError,
-  } = useSelector(transactionSubmissionSelector);
   const navigate = useNavigate();
-  const accountStatus = useSelector(accountStatusSelector);
-  const [isAccountFriendbotFunded, setIsAccountFriendbotFunded] =
-    useState(false);
-
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
-  const [sortedBalances, setSortedBalances] = useState([] as AssetType[]);
-  const [assetOperations, setAssetOperations] = useState({} as AssetOperations);
   const [selectedAsset, setSelectedAsset] = useState("");
-  const [isLoading, setLoading] = useState(true);
-  const isSoroswapEnabled = useIsSoroswapEnabled();
   const isFullscreenModeEnabled = isFullscreenMode();
-
-  const { balances, isFunded, error } = accountBalances;
-  const arePricesSupported = isMainnet(networkDetails);
-  // This ensures that the prices effect does not depend on dispatch, avoiding unnecessary re-renders.
-  // eslint-disable-next-line no-undef
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    // reset to avoid any residual data eg switching between send and swap or
-    // previous stale sends
-    setLoading(true);
-    dispatch(resetSubmission());
-    dispatch(
-      getAccountBalances({
-        publicKey,
-        networkDetails,
-        shouldGetTokenPrices: arePricesSupported,
-      }),
-    );
-
-    return () => {
-      dispatch(resetAccountBalanceStatus());
-    };
-  }, [
+  const isMainnetNetwork = isMainnet(networkDetails);
+  const { state: accountData, fetchData } = useGetAccountData(
     publicKey,
     networkDetails,
-    isAccountFriendbotFunded,
-    dispatch,
-    arePricesSupported,
-  ]);
+    {
+      isMainnet: isMainnetNetwork,
+      showHidden: false,
+      includeIcons: true,
+    },
+  );
 
   useEffect(() => {
-    if (!arePricesSupported || !balances) {
-      return;
-    }
-
-    // Clear any existing interval before setting a new one
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-
-    intervalRef.current = setInterval(() => {
-      dispatch(getTokenPrices({ balances, networkDetails }));
-    }, 30000);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+    const getData = async () => {
+      await fetchData();
     };
-  }, [arePricesSupported, dispatch, networkDetails, balances]);
-
-  useEffect(() => {
-    if (!balances) {
-      return;
-    }
-
-    if (isSoroswapEnabled) {
-      dispatch(getSoroswapTokens());
-    }
-
-    setSortedBalances(sortBalances(balances));
-    dispatch(getAssetIcons({ balances, networkDetails }));
-    dispatch(getAssetDomains({ balances, networkDetails }));
-  }, [balances, networkDetails, dispatch, isSoroswapEnabled]);
-
-  useEffect(() => {
-    if (!balances) {
-      return;
-    }
-
-    const fetchAccountHistory = async () => {
-      try {
-        const operations = await getAccountHistory(publicKey, networkDetails);
-        setAssetOperations(
-          sortOperationsByAsset({
-            operations,
-            balances: sortedBalances,
-            networkDetails,
-            publicKey,
-          }),
-        );
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    fetchAccountHistory();
-  }, [publicKey, networkDetails, balances, sortedBalances]);
-
-  const hasError = accountBalanceStatus === ActionStatus.ERROR;
-
-  useEffect(() => {
-    if (
-      !(
-        accountBalanceStatus === ActionStatus.PENDING ||
-        accountBalanceStatus === ActionStatus.IDLE ||
-        accountStatus === ActionStatus.PENDING
-      )
-    ) {
-      setLoading(false);
-    }
-  }, [accountBalanceStatus, accountStatus]);
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [publicKey]);
 
   if (selectedAsset) {
     return (
       <AssetDetail
-        accountBalances={sortedBalances}
-        assetOperations={assetOperations[selectedAsset] || []}
+        accountBalances={accountData.data!.balances}
+        assetOperations={accountData.data!.operationsByAsset[selectedAsset]}
         networkDetails={networkDetails}
         publicKey={publicKey}
         selectedAsset={selectedAsset}
         setSelectedAsset={setSelectedAsset}
-        subentryCount={accountBalances.subentryCount}
+        subentryCount={accountData.data!.balances.subentryCount}
       />
     );
   }
 
-  if (isLoading) {
+  if (
+    accountData.state === RequestState.IDLE ||
+    accountData.state === RequestState.LOADING
+  ) {
     return <Loading />;
   }
 
+  const hasError = accountData.state === RequestState.ERROR;
+
+  const tokenPrices = accountData.data?.tokenPrices || {};
   const totalBalanceUsd = Object.keys(tokenPrices).reduce((prev, curr) => {
-    if (!accountBalances.balances![curr]) {
+    const balances = accountData.data?.balances.balances!;
+    const asset = getAssetFromCanonical(curr);
+    const priceBalance = getBalanceByIssuer(asset.issuer, balances);
+    if (!priceBalance) {
       return prev;
     }
-    const currentAssetBalance = accountBalances.balances![curr].total;
+    const currentAssetBalance = priceBalance.total;
     const currentPrice = tokenPrices[curr]
       ? tokenPrices[curr].currentPrice
       : "0";
@@ -232,11 +114,9 @@ export const Account = () => {
   return (
     <>
       <AccountHeader
-        // accountDropDownRef={accountDropDownRef}
         allAccounts={allAccounts}
         currentAccountName={currentAccountName}
         publicKey={publicKey}
-        setLoading={setLoading}
       />
       <View.Content hasNoTopPadding>
         <div className="AccountView" data-testid="account-view">
@@ -263,7 +143,7 @@ export const Account = () => {
                 className="AccountView__total-usd-balance"
                 key="total-balance"
               >
-                {arePricesSupported && !tokenPricesError
+                {isMainnetNetwork && !hasError
                   ? `$${formatAmount(
                       roundUsdValue(totalBalanceUsd.toString()),
                     )}`
@@ -284,7 +164,9 @@ export const Account = () => {
                 className="AccountView__send-receive-button"
                 data-testid="account-options-dropdown"
               >
-                <AccountOptionsDropdown isFunded={!!isFunded} />
+                <AccountOptionsDropdown
+                  isFunded={!!accountData.data?.balances?.isFunded}
+                />
               </div>
             </div>
           </div>
@@ -308,7 +190,7 @@ export const Account = () => {
               </Notification>
             </div>
           )}
-          {error?.horizon && (
+          {accountData.data?.balances?.error?.horizon && (
             <div className="AccountView__fetch-fail">
               <Notification
                 title={t("Horizon is temporarily experiencing issues")}
@@ -343,30 +225,32 @@ export const Account = () => {
             </div>
           )}
 
-          {isFunded && !hasError && (
+          {accountData.data?.balances?.isFunded && !hasError && (
             <div
               className="AccountView__assets-wrapper"
               data-testid="account-assets"
             >
               <AccountAssets
-                sortedBalances={sortedBalances}
+                sortedBalances={accountData.data.balances.balances}
                 assetPrices={tokenPrices}
-                assetIcons={assetIcons}
+                assetIcons={accountData.data.balances.icons || {}}
                 setSelectedAsset={setSelectedAsset}
               />
             </div>
           )}
         </div>
       </View.Content>
-      {!isFunded && !hasError && !error?.horizon && (
-        <View.Footer>
-          <NotFundedMessage
-            canUseFriendbot={!!networkDetails.friendbotUrl}
-            setIsAccountFriendbotFunded={setIsAccountFriendbotFunded}
-            publicKey={publicKey}
-          />
-        </View.Footer>
-      )}
+      {!accountData.data?.balances?.isFunded &&
+        !hasError &&
+        !accountData.data?.balances?.error?.horizon && (
+          <View.Footer>
+            <NotFundedMessage
+              canUseFriendbot={!!networkDetails.friendbotUrl}
+              publicKey={publicKey}
+              reloadBalances={fetchData}
+            />
+          </View.Footer>
+        )}
     </>
   );
 };

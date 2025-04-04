@@ -9,6 +9,7 @@ import { METRICS_DATA } from "constants/localStorageTypes";
 import { AMPLITUDE_KEY } from "constants/env";
 import { settingsDataSharingSelector } from "popup/ducks/settings";
 import { AccountType } from "@shared/api/types";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 type MetricsPayloadAction = PayloadAction<{
   errorMessage?: string;
@@ -181,4 +182,41 @@ export const emitMetric = async (name: string, body?: any) => {
     secret_key_account_funded: metricsData.importedFunded,
   });
   await uploadMetrics();
+};
+
+export const storeBalanceMetricData = (
+  publicKey: string,
+  accountFunded: boolean,
+) => {
+  const metricsData: MetricsData = JSON.parse(
+    localStorage.getItem(METRICS_DATA) || "{}",
+  );
+  const accountType = metricsData.accountType;
+
+  if (accountFunded && accountType === AccountType.HW) {
+    metricsData.hwFunded = true;
+  }
+  if (accountFunded && accountType === AccountType.IMPORTED) {
+    metricsData.importedFunded = true;
+  }
+  if (accountType === AccountType.FREIGHTER) {
+    // check if we found a previously unfunded freighter account for metrics
+    const unfundedFreighterAccounts =
+      metricsData.unfundedFreighterAccounts || [];
+    const idx = unfundedFreighterAccounts.indexOf(publicKey);
+
+    if (accountFunded) {
+      metricsData.freighterFunded = true;
+      if (idx !== -1) {
+        emitMetric(METRIC_NAMES.freighterAccountFunded, { publicKey });
+        unfundedFreighterAccounts.splice(idx, 1);
+      }
+    }
+    if (!accountFunded && idx === -1) {
+      unfundedFreighterAccounts.push(publicKey);
+    }
+    metricsData.unfundedFreighterAccounts = unfundedFreighterAccounts;
+  }
+
+  localStorage.setItem(METRICS_DATA, JSON.stringify(metricsData));
 };

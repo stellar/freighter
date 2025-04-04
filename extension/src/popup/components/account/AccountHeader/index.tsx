@@ -19,7 +19,6 @@ import {
 import { AccountList } from "popup/components/account/AccountList";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
-import { resetAccountBalanceStatus } from "popup/ducks/transactionSubmission";
 
 import "./styles.scss";
 import { AppDispatch } from "popup/App";
@@ -28,14 +27,12 @@ interface AccountHeaderProps {
   allAccounts: Account[];
   currentAccountName: string;
   publicKey: string;
-  setLoading: (isLoading: boolean) => void;
 }
 
 export const AccountHeader = ({
   allAccounts,
   currentAccountName,
   publicKey,
-  setLoading,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
@@ -94,7 +91,6 @@ export const AccountHeader = ({
             allAccounts={allAccounts}
             publicKey={publicKey}
             setIsDropdownOpen={setIsDropdownOpen}
-            setLoading={setLoading}
           />
           <div className="AccountList__footer">
             <hr className="AccountHeader__list-divider" />
@@ -168,7 +164,6 @@ export const AccountHeader = ({
                 key={n.networkName}
                 onClick={() => {
                   dispatch(changeNetwork({ networkName: n.networkName }));
-                  dispatch(resetAccountBalanceStatus());
                 }}
               >
                 <NetworkIcon index={i} />

@@ -8,7 +8,9 @@ interface BackButtonProps {
   customBackAction?: () => void;
   customBackIcon?: React.ReactNode;
   hasBackCopy?: boolean;
-  customButtonComponent?: React.ReactElement<HTMLButtonElement>;
+  customButtonComponent?: React.ReactElement<
+    React.ButtonHTMLAttributes<HTMLButtonElement>
+  >;
 }
 
 export const BackButton = ({
@@ -29,7 +31,7 @@ export const BackButton = ({
 
   if (customButtonComponent) {
     const ClonedComponent = customButtonComponent;
-    return React.cloneElement(ClonedComponent, { onclick: handleClick });
+    return React.cloneElement(ClonedComponent, { onClick: handleClick });
   }
 
   return (

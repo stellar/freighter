@@ -28,19 +28,16 @@ import {
 import { formatAmount } from "popup/helpers/formatters";
 import { getBalanceByKey } from "popup/helpers/balance";
 
-import {
-  AccountBalancesInterface,
-  Balances,
-  HorizonOperation,
-  TokenBalance,
-} from "@shared/api/types";
+import { HorizonOperation, TokenBalance } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getTokenDetails } from "@shared/api/internal";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
+import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 
 import { TransactionDetailProps } from "../TransactionDetail";
+
 import "./styles.scss";
 
 function capitalize(str: string) {
@@ -66,7 +63,7 @@ export type HistoryItemOperation = HorizonOperation & {
 };
 
 interface HistoryItemProps {
-  accountBalances: AccountBalancesInterface;
+  accountBalances: AccountBalances;
   operation: HistoryItemOperation;
   publicKey: string;
   networkDetails: NetworkDetails;
@@ -412,12 +409,9 @@ export const HistoryItem = ({
             operationText: operationString,
           }));
         } else if (attrs.fnName === SorobanTokenInterface.mint) {
-          const balances =
-            accountBalances.balances || ({} as NonNullable<Balances>);
-
-          const tokenKey = getBalanceByKey(
+          const assetBalance = getBalanceByKey(
             attrs.contractId,
-            balances,
+            accountBalances.balances,
             networkDetails,
           );
 
@@ -441,7 +435,7 @@ export const HistoryItem = ({
           // Minter does not need to have tokens to mint, and
           // they are not neccessarily minted to themselves.
           // If user has minted to self, add token to their token list.
-          if (!tokenKey) {
+          if (!assetBalance) {
             setIsLoading(true);
 
             try {
@@ -541,7 +535,7 @@ export const HistoryItem = ({
               setIsLoading(false);
             }
           } else {
-            const { token, decimals } = balances[tokenKey] as TokenBalance;
+            const { token, decimals } = assetBalance as TokenBalance;
             const formattedTokenAmount = formatTokenAmount(
               new BigNumber(attrs.amount),
               decimals,

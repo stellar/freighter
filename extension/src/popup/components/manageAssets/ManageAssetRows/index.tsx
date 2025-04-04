@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Networks, StellarToml } from "stellar-sdk";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import {
-  AccountBalancesInterface,
-  ActionStatus,
-  BlockAidScanAssetResult,
-} from "@shared/api/types";
+import { ActionStatus, BlockAidScanAssetResult } from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
 
@@ -25,6 +21,7 @@ import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { ROUTES } from "popup/constants/routes";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
+import { findAssetBalance } from "popup/helpers/balance";
 import {
   resetSubmission,
   transactionSubmissionSelector,
@@ -40,6 +37,8 @@ import {
   TokenWarning,
 } from "popup/components/WarningMessages";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
+
+import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import { ManageAssetRowButton } from "../ManageAssetRowButton";
 
@@ -67,6 +66,7 @@ interface ManageAssetRowsProps {
   isVerifiedToken?: boolean;
   isVerificationInfoShowing?: boolean;
   verifiedLists?: string[];
+  balances: AccountBalances;
   shouldSplitAssetsByVerificationStatus?: boolean;
 }
 
@@ -87,10 +87,10 @@ export const ManageAssetRows = ({
   isVerifiedToken,
   isVerificationInfoShowing,
   verifiedLists,
+  balances,
   shouldSplitAssetsByVerificationStatus = true,
 }: ManageAssetRowsProps) => {
   const {
-    accountBalances,
     submitStatus,
     hardwareWalletData: { status: hwStatus },
   } = useSelector(transactionSubmissionSelector);
@@ -149,7 +149,9 @@ export const ManageAssetRows = ({
         createPortal(
           <ScamAssetWarning
             pillType="Trustline"
+            balances={balances}
             domain={suspiciousAssetData.domain}
+            assetIcons={balances.icons || {}}
             code={suspiciousAssetData.code}
             issuer={suspiciousAssetData.issuer}
             image={suspiciousAssetData.image}
@@ -162,6 +164,7 @@ export const ManageAssetRows = ({
         )}
       {showNewAssetWarning && (
         <NewAssetWarning
+          balances={balances}
           domain={suspiciousAssetData.domain}
           code={suspiciousAssetData.code}
           issuer={suspiciousAssetData.issuer}
@@ -189,7 +192,7 @@ export const ManageAssetRows = ({
         {header}
         <div className="ManageAssetRows__content">
           <AssetRows
-            accountBalances={accountBalances}
+            accountBalances={balances}
             verifiedAssetRows={verifiedAssetRows}
             unverifiedAssetRows={unverifiedAssetRows}
             shouldSplitAssetsByVerificationStatus={
@@ -214,15 +217,15 @@ export const ManageAssetRows = ({
                   domain={domain}
                   name={name}
                   isSuspicious={isSuspicious}
-                  contractId={contract}
                 />
                 <ManageAssetRowButton
                   code={code}
                   contract={contract}
                   issuer={issuer}
                   image={image}
+                  balances={balances}
                   domain={domain}
-                  isTrustlineActive={isTrustlineActive}
+                  isTrustlineActive={!!isTrustlineActive}
                   isActionPending={isActionPending}
                   isContract={isContract}
                   isVerifiedToken={!!isVerifiedToken}
@@ -253,7 +256,7 @@ export const ManageAssetRows = ({
   );
 };
 
-interface AssetRowData {
+export interface AssetRowData {
   code?: string;
   domain: string;
   image?: string;
@@ -270,7 +273,7 @@ const AssetRows = ({
   unverifiedAssetRows,
   verifiedAssetRows,
 }: {
-  accountBalances: AccountBalancesInterface;
+  accountBalances: AccountBalances;
   shouldSplitAssetsByVerificationStatus?: boolean;
   unverifiedAssetRows: ManageAssetCurrency[];
   verifiedAssetRows: ManageAssetCurrency[];
@@ -335,9 +338,10 @@ const AssetRows = ({
             }
             const isContract = isContractId(contract);
             const canonicalAsset = getCanonicalFromAsset(code, issuer);
-            const isTrustlineActive = Object.keys(
+            const isTrustlineActive = findAssetBalance(
               accountBalances.balances,
-            ).some((balance) => balance === canonicalAsset);
+              { code, issuer },
+            );
             return (
               <div
                 className="ManageAssetRows__row"
@@ -352,7 +356,7 @@ const AssetRows = ({
                   isContract,
                   issuer,
                   isSuspicious,
-                  isTrustlineActive,
+                  isTrustlineActive: isTrustlineActive !== undefined,
                   name,
                 })}
               </div>
@@ -393,9 +397,10 @@ const AssetRows = ({
             }
             const isContract = isContractId(contract);
             const canonicalAsset = getCanonicalFromAsset(code, issuer);
-            const isTrustlineActive = Object.keys(
+            const isTrustlineActive = findAssetBalance(
               accountBalances.balances,
-            ).some((balance) => balance === canonicalAsset);
+              { code, issuer },
+            );
             return (
               <div
                 className="ManageAssetRows__row"
@@ -410,7 +415,7 @@ const AssetRows = ({
                   isContract,
                   issuer,
                   isSuspicious,
-                  isTrustlineActive,
+                  isTrustlineActive: isTrustlineActive !== undefined,
                   name,
                 })}
               </div>
@@ -438,9 +443,10 @@ const AssetRows = ({
           }
           const isContract = isContractId(contract);
           const canonicalAsset = getCanonicalFromAsset(code, issuer);
-          const isTrustlineActive = Object.keys(accountBalances.balances).some(
-            (balance) => balance === canonicalAsset,
-          );
+          const isTrustlineActive = findAssetBalance(accountBalances.balances, {
+            code,
+            issuer,
+          });
           return (
             <div
               className="ManageAssetRows__row"
@@ -455,7 +461,7 @@ const AssetRows = ({
                 isContract,
                 issuer,
                 isSuspicious,
-                isTrustlineActive,
+                isTrustlineActive: isTrustlineActive !== undefined,
                 name,
               })}
             </div>

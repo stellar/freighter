@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import BigNumber from "bignumber.js";
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { Balances } from "@shared/api/types";
+import { Balances } from "@shared/api/types/backend-api";
 
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";

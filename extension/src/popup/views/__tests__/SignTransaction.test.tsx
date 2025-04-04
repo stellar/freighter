@@ -17,15 +17,23 @@ import * as ApiInternal from "@shared/api/internal";
 
 import { SignTransaction } from "../SignTransaction";
 import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
-import { Balances } from "@shared/api/types";
 import { ROUTES } from "popup/constants/routes";
+import { Balances } from "@shared/api/types/backend-api";
 
 jest.mock("helpers/stellarIdenticon");
 jest.setTimeout(20000);
 
 jest
-  .spyOn(ApiInternal, "getAccountIndexerBalances")
+  .spyOn(ApiInternal, "getHiddenAssets")
+  .mockImplementation(() => Promise.resolve({ hiddenAssets: {}, error: "" }));
+
+jest
+  .spyOn(ApiInternal, "getAccountBalances")
   .mockImplementation(() => Promise.resolve(mockBalances));
+
+jest
+  .spyOn(ApiInternal, "getAssetIcons")
+  .mockImplementation(() => Promise.resolve({}));
 
 const defaultSettingsState = {
   networkDetails: {
@@ -146,6 +154,7 @@ describe("SignTransactions", () => {
               ...defaultSettingsState.networkDetails,
               networkPassphrase: "Test SDF Future Network ; October 2022",
             },
+            hiddenAssets: {},
           },
         }}
       >
@@ -550,7 +559,7 @@ describe("SignTransactions", () => {
       } as any as Balances,
     };
     jest
-      .spyOn(ApiInternal, "getAccountIndexerBalances")
+      .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockBalancesEmpty));
 
     const transaction = TransactionBuilder.fromXDR(

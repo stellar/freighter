@@ -1,12 +1,14 @@
 import { Horizon } from "stellar-sdk";
 import { BigNumber } from "bignumber.js";
 import {
-  AssetType,
-  Balances,
+  AssetVisibility,
   HorizonOperation,
+  IssuerKey,
   SorobanBalance,
   TokenBalances,
 } from "@shared/api/types";
+import { Balances, BalanceMap } from "@shared/api/types/backend-api";
+import { AssetType } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 export { isSorobanIssuer } from "@shared/helpers/stellar";
@@ -17,6 +19,7 @@ import {
   isTestnet,
 } from "helpers/stellar";
 import { getAttrsFromSorobanHorizonOp } from "./soroban";
+import { isAssetVisible } from "./settings";
 
 export const LP_IDENTIFIER = ":lp";
 
@@ -172,61 +175,46 @@ export const getApiStellarExpertUrl = (networkDetails: NetworkDetails) =>
   }`;
 
 interface GetAvailableBalance {
-  accountBalances: AssetType[];
-  selectedAsset: string;
+  balance: AssetType;
   recommendedFee?: string;
   subentryCount: number;
 }
 
 export const getAvailableBalance = ({
-  accountBalances,
-  selectedAsset,
+  balance,
   recommendedFee,
   subentryCount,
 }: GetAvailableBalance) => {
   let availBalance = "0";
-  if (accountBalances.length) {
-    const balance = getRawBalance(accountBalances, selectedAsset);
-    if (!balance) {
-      return availBalance;
+  if (!balance) {
+    return availBalance;
+  }
+  if (
+    "token" in balance &&
+    "type" in balance.token &&
+    balance.token.type === "native"
+  ) {
+    // take base reserve into account for XLM payments
+    const baseReserve = (2 + subentryCount) * 0.5;
+
+    // needed for different wallet-sdk bignumber.js version
+    const currentBal = new BigNumber(balance.total.toFixed());
+    let newBalance = currentBal.minus(new BigNumber(baseReserve));
+
+    if (recommendedFee) {
+      newBalance = newBalance.minus(new BigNumber(Number(recommendedFee)));
     }
-    if (selectedAsset === "native") {
-      // take base reserve into account for XLM payments
-      const baseReserve = (2 + subentryCount) * 0.5;
 
-      // needed for different wallet-sdk bignumber.js version
-      const currentBal = new BigNumber(balance.total.toFixed());
-      let newBalance = currentBal.minus(new BigNumber(baseReserve));
-
-      if (recommendedFee) {
-        newBalance = newBalance.minus(new BigNumber(Number(recommendedFee)));
-      }
-
-      availBalance = newBalance.toFixed();
-    } else {
-      availBalance = balance.total.toFixed();
-    }
+    availBalance = newBalance.toFixed();
+  } else {
+    availBalance = balance.total.toFixed();
   }
 
   return availBalance;
 };
 
-export const getRawBalance = (accountBalances: AssetType[], asset: string) =>
-  accountBalances.find((balance) => {
-    if ("token" in balance) {
-      if (balance.token.type === "native") {
-        return asset === balance.token.type;
-      }
-
-      if ("issuer" in balance.token) {
-        return asset === `${balance.token.code}:${balance.token.issuer.key}`;
-      }
-    }
-    throw new Error("Asset type not supported");
-  });
-
 export const getIssuerFromBalance = (balance: AssetType) => {
-  if ("token" in balance && "issuer" in balance?.token) {
+  if ("token" in balance && "issuer" in balance.token) {
     return balance.token.issuer.key.toString();
   }
 
@@ -267,4 +255,25 @@ export const displaySorobanId = (
     separator +
     fullStr.substring(fullStr.length - backChars)
   );
+};
+
+export const filterHiddenBalances = (
+  balances: BalanceMap,
+  hiddenAssets: Record<IssuerKey, AssetVisibility>,
+) => {
+  const balanceKeys = Object.keys(balances);
+  const hiddenKeys = balanceKeys.filter((key) => {
+    if (key === "native") {
+      return false;
+    }
+    const [code, issuer] = key.split(":");
+    if (!issuer) {
+      return true;
+    }
+    return !isAssetVisible(hiddenAssets, getCanonicalFromAsset(code, issuer));
+  });
+
+  return Object.fromEntries(
+    Object.entries(balances).filter(([key]) => !hiddenKeys.includes(key)),
+  ) as BalanceMap;
 };

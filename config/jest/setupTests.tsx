@@ -36,6 +36,7 @@ process.env.INDEXER_URL = "http://localhost:3002/api/v1";
 jest.mock("helpers/metrics", () => ({
   registerHandler: () => {},
   emitMetric: () => {},
+  storeBalanceMetricData: () => {},
 }));
 
 jest.mock("react-i18next", () => ({

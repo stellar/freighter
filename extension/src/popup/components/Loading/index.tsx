@@ -6,7 +6,7 @@ import "./styles.scss";
 
 export const Loading = () => (
   <View.Content>
-    <div className="Loading">
+    <div className="Loading" data-testid="Loading">
       <Loader size="5rem" />
     </div>
   </View.Content>

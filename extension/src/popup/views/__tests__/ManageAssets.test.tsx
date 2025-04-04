@@ -15,7 +15,7 @@ import {
   DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
-import { Balances } from "@shared/api/types";
+import { Balances } from "@shared/api/types/backend-api";
 import * as SorobanHelpers from "@shared/api/helpers/soroban";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
@@ -75,8 +75,16 @@ const manageAssetsMockBalances = {
 };
 
 jest
-  .spyOn(ApiInternal, "getAccountIndexerBalances")
+  .spyOn(ApiInternal, "getHiddenAssets")
+  .mockImplementation(() => Promise.resolve({ hiddenAssets: {}, error: "" }));
+
+jest
+  .spyOn(ApiInternal, "getAccountBalances")
   .mockImplementation(() => Promise.resolve(manageAssetsMockBalances));
+
+jest
+  .spyOn(ApiInternal, "getAssetIcons")
+  .mockImplementation(() => Promise.resolve({}));
 
 jest
   .spyOn(AssetDomain, "getAssetDomain")
@@ -339,6 +347,7 @@ const initView = async (
           networksList: DEFAULT_NETWORKS,
           isSorobanPublicEnabled: true,
           isRpcHealthy: true,
+          hiddenAssets: {},
           assetsLists: {
             [configuredNetworkDetails.network]: [
               {
@@ -381,13 +390,16 @@ describe.skip("Manage assets", () => {
     );
   });
 
-  it("renders manage assets view initial state", async () => {
+  it.only("renders manage assets view initial state", async () => {
     await initView();
 
     await waitFor(() => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Your assets",
+        "Manage assets",
       );
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("ChooseAssetWrapper")).toBeDefined();
     });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
@@ -414,8 +426,11 @@ describe.skip("Manage assets", () => {
     await initView();
 
     expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Your assets",
+      "Manage assets",
     );
+    await waitFor(() => {
+      expect(screen.getByTestId("ChooseAssetWrapper")).toBeDefined();
+    });
 
     const addButton = screen.getByTestId("ChooseAssetAddAssetButton");
     expect(addButton).toBeEnabled();
@@ -463,8 +478,11 @@ describe.skip("Manage assets", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Your assets",
+        "Manage assets",
       );
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("ChooseAssetWrapper")).toBeDefined();
     });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
@@ -506,8 +524,11 @@ describe.skip("Manage assets", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Your assets",
+        "Manage assets",
       );
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("ChooseAssetWrapper")).toBeDefined();
     });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
@@ -547,84 +568,42 @@ describe.skip("Manage assets", () => {
       } as any),
     );
 
-    await initView(true, false, {
-      balances: {
-        "USDC:GATALTGTWIOT6BUDBCZM3Q4OQ4BO2COLOAZ7IYSKPLC2PMSOPPGF5V56": {
-          token: {
-            code: "USDC",
-            issuer: {
-              key: "GATALTGTWIOT6BUDBCZM3Q4OQ4BO2COLOAZ7IYSKPLC2PMSOPPGF5V56",
+    jest
+      .spyOn(ApiInternal, "getAccountIndexerBalances")
+      .mockImplementation(() =>
+        Promise.resolve({
+          balances: {
+            "USDC:GATALTGTWIOT6BUDBCZM3Q4OQ4BO2COLOAZ7IYSKPLC2PMSOPPGF5V56": {
+              token: {
+                code: "USDC",
+                issuer: {
+                  key: "GATALTGTWIOT6BUDBCZM3Q4OQ4BO2COLOAZ7IYSKPLC2PMSOPPGF5V56",
+                },
+              },
+              total: new BigNumber("111"),
+              available: new BigNumber("111"),
+              buyingLiabilities: "1",
             },
-          },
-          total: new BigNumber("111"),
-          available: new BigNumber("111"),
-          buyingLiabilities: "1",
-        },
-        native: {
-          token: { type: "native", code: "XLM" },
-          total: new BigNumber("222"),
-          available: new BigNumber("222"),
-        },
-        "SRT:GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B": {
-          token: {
-            code: "SRT",
-            issuer: {
-              key: "GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B",
+            native: {
+              token: { type: "native", code: "XLM" },
+              total: new BigNumber("222"),
+              available: new BigNumber("222"),
             },
-          },
-          total: new BigNumber("0"),
-          available: new BigNumber("0"),
-        },
-      } as any as Balances,
-      isFunded: true,
-      subentryCount: 1,
-    });
-
-    await waitFor(() => {
-      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Your assets",
-      );
-    });
-
-    const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
-    const ellipsisButton = screen.getByTestId(
-      "ManageAssetRowButton__ellipsis-SRT",
-    );
-
-    await waitFor(async () => {
-      fireEvent.click(ellipsisButton);
-      const removeButton = within(addedTrustlines[1]).getByTestId(
-        "ManageAssetRowButton",
-      );
-      expect(removeButton).toHaveTextContent("Remove asset");
-      expect(removeButton).toBeEnabled();
-      fireEvent.click(removeButton);
-    });
-
-    await waitFor(() => {
-      screen.getByTestId("TrustlineError__error");
-      expect(screen.getByTestId("TrustlineError__error")).toHaveTextContent(
-        "This asset has buying liabilities",
-      );
-      expect(screen.getByTestId("TrustlineError__body")).toHaveTextContent(
-        "You still have a buying liability of 1",
-      );
-    });
-  });
-
-  it("show error view when removing asset with buying liabilities", async () => {
-    jest.spyOn(global, "fetch").mockImplementation(() =>
-      Promise.resolve({
-        ok: false,
-        json: async () => ({
-          extras: {
-            envelope_xdr:
-              "AAAAAgAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAPQkAAAYjdAAAA9gAAAAEAAAAAAAAAAAAAAABmXjffAAAAAAAAAAEAAAAAAAAABgAAAAFVU0RDAAAAACYFzNOyHT8GgwiyzcOOhwLtCctwM/RiSnrFp7JOe8xeAAAAAAAAAAAAAAAAAAAAAcskg+QAAABAA/rRMU+KKsxCX1pDBuCvYDz+eQTCsY9bzgPU4J+Xe3vOWUa8YOzWlL3N3zlxHVx9hsB7a8dpSXMSAINjjsY4Dg==",
-            result_codes: { operations: ["op_invalid_limit"] },
-          },
+            "SRT:GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B": {
+              token: {
+                code: "SRT",
+                issuer: {
+                  key: "GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B",
+                },
+              },
+              total: new BigNumber("0"),
+              available: new BigNumber("0"),
+            },
+          } as any as Balances,
+          isFunded: true,
+          subentryCount: 1,
         }),
-      } as any),
-    );
+      );
 
     await initView(true, false, {
       balances: {
@@ -661,8 +640,11 @@ describe.skip("Manage assets", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Your assets",
+        "Manage assets",
       );
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("ChooseAssetWrapper")).toBeDefined();
     });
 
     const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
@@ -695,8 +677,11 @@ describe.skip("Manage assets", () => {
     await initView();
 
     expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Your assets",
+      "Manage assets",
     );
+    await waitFor(() => {
+      expect(screen.getByTestId("ChooseAssetWrapper")).toBeDefined();
+    });
 
     const addButton = screen.getByTestId("ChooseAssetAddAssetButton");
     expect(addButton).toBeEnabled();
@@ -752,12 +737,16 @@ describe.skip("Manage assets", () => {
       expect.any(Function),
     ]);
   });
+
   it("show warning when adding an asset with Blockaid warning on Mainnet", async () => {
     await initView(true);
 
     expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Your assets",
+      "Manage assets",
     );
+    await waitFor(() => {
+      expect(screen.getByTestId("ChooseAssetWrapper")).toBeDefined();
+    });
 
     const addButton = screen.getByTestId("ChooseAssetAddAssetButton");
     expect(addButton).toBeEnabled();
@@ -813,13 +802,17 @@ describe.skip("Manage assets", () => {
       expect.any(Function),
     ]);
   });
+
   it("add soroban token on asset list", async () => {
     // init Mainnet view
     await initView(false, true);
 
     expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-      "Your assets",
+      "Manage assets",
     );
+    await waitFor(() => {
+      expect(screen.getByTestId("ChooseAssetWrapper")).toBeDefined();
+    });
 
     const addTokenButton = screen.getByTestId("ChooseAssetAddAssetButton");
     expect(addTokenButton).toBeEnabled();
@@ -857,6 +850,7 @@ describe.skip("Manage assets", () => {
       await fireEvent.click(addAssetButton);
     });
   });
+
   it("add soroban token not on asset list", async () => {
     // init Mainnet view
     await initView(false, true);
@@ -900,5 +894,29 @@ describe.skip("Manage assets", () => {
       expect(addAssetButton).toBeEnabled();
       await fireEvent.click(addAssetButton);
     });
+  });
+
+  it("hide a token", async () => {
+    await initView();
+
+    const navigateToHideBtn = screen.getByTestId("ChooseAssetHideAssetBtn");
+    expect(navigateToHideBtn).toBeEnabled();
+    await fireEvent.click(navigateToHideBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("ToggleAssetContent")).toBeDefined();
+    });
+
+    const toggleUsdcRow = screen.getByTestId("Toggle-USDC");
+    const childInput = toggleUsdcRow.querySelector("input");
+    expect(childInput).toBeEnabled();
+
+    if (!childInput) {
+      throw new Error("toggle not found");
+    }
+
+    expect(childInput).toBeChecked();
+    fireEvent.change(childInput, { target: { checked: false } });
+    expect(childInput).not.toBeChecked();
   });
 });

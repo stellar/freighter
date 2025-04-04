@@ -23,6 +23,10 @@ import { isAssetSuspicious } from "popup/helpers/blockaid";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
+
+import { useGetBalances } from "helpers/hooks/useGetBalances";
+import { publicKeySelector } from "popup/ducks/accountServices";
+
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
 
@@ -65,6 +69,8 @@ const ResultsHeader = () => {
 export const SearchAsset = () => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
+
   const { assetsLists } = useSelector(settingsSelector);
   const [verifiedAssetRows, setVerifiedAssetRows] = useState(
     [] as ManageAssetCurrency[],
@@ -72,9 +78,16 @@ export const SearchAsset = () => {
   const [unverifiedAssetRows, setUnverifiedAssetRows] = useState(
     [] as ManageAssetCurrency[],
   );
+
   const [isSearching, setIsSearching] = useState(false);
   const [hasNoResults, setHasNoResults] = useState(false);
   const ResultsRef = useRef<HTMLDivElement>(null);
+  // TODO: use this loading state
+  const { state, fetchData } = useGetBalances(publicKey, networkDetails, {
+    isMainnet: isMainnet(networkDetails),
+    showHidden: true,
+    includeIcons: false,
+  });
 
   interface AssetRecord {
     asset: string;
@@ -249,6 +262,13 @@ export const SearchAsset = () => {
     processAssets();
   }, [verifiedAssetRows, unverifiedAssetRows, networkDetails]);
 
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+  }, []);
+
   if (isCustomNetwork(networkDetails)) {
     return <Navigate to={ROUTES.addAsset} />;
   }
@@ -310,6 +330,7 @@ export const SearchAsset = () => {
                 >
                   {verifiedAssetRows.length || unverifiedAssetRows.length ? (
                     <ManageAssetRows
+                      balances={state.data!}
                       header={
                         verifiedAssetRows.length > 1 ||
                         unverifiedAssetRows.length > 1 ? (

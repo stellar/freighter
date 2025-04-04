@@ -13,6 +13,7 @@ import {
 } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { AppDispatch } from "popup/App";
 import {
   PasswordForm,
@@ -34,6 +35,7 @@ import {
   termsOfUse as termsofUseValidator,
 } from "popup/helpers/validators";
 import {
+  applicationStateSelector,
   authErrorSelector,
   publicKeySelector,
   recoverAccount,
@@ -47,6 +49,8 @@ interface PhraseInputProps {
   handleMnemonicInputChange: (value: string, index: number) => void;
   isTextShowing: boolean;
   isLongPhrase: boolean;
+  handlePaste: (e: React.ClipboardEvent<HTMLInputElement>) => void;
+  pastedValue?: string;
 }
 
 const PhraseInput = ({
@@ -55,12 +59,18 @@ const PhraseInput = ({
   handleMnemonicInputChange,
   isTextShowing,
   isLongPhrase,
+  handlePaste,
+  pastedValue = "",
 }: PhraseInputProps) => {
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState(pastedValue);
 
   useEffect(() => {
     setInputValue("");
   }, [isLongPhrase]);
+
+  useEffect(() => {
+    setInputValue(pastedValue);
+  }, [pastedValue]);
 
   return (
     <div key={phraseInput} className="RecoverAccount__phrase-input">
@@ -76,7 +86,7 @@ const PhraseInput = ({
           handleMnemonicInputChange(e.target.value, index);
           setInputValue(e.target.value);
         }}
-        onPaste={(e) => e.preventDefault()}
+        onPaste={handlePaste}
         type={isTextShowing ? "text" : "password"}
         value={inputValue}
       />
@@ -93,6 +103,8 @@ const buildMnemonicPhrase = (mnemonicPhraseArr: string[]) =>
 export const RecoverAccount = () => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
+  const applicationState = useSelector(applicationStateSelector);
+
   const authError = useSelector(authErrorSelector);
   const navigate = useNavigate();
   const publicKeyRef = useRef(publicKey);
@@ -108,6 +120,10 @@ export const RecoverAccount = () => {
   const [phraseInputs, setPhraseInputs] = useState([] as string[]);
   const [mnemonicPhraseArr, setMnemonicPhraseArr] = useState([] as string[]);
   const [password, setPassword] = useState("");
+  const [pastedValues, setPastedValues] = useState<string[]>([]);
+
+  const isShowingOverwriteWarning =
+    applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
 
   const handleConfirm = (values: FormValues) => {
     setPassword(values.password);
@@ -118,6 +134,7 @@ export const RecoverAccount = () => {
       recoverAccount({
         password,
         mnemonicPhrase: buildMnemonicPhrase(mnemonicPhraseArr),
+        isOverwritingAccount: isShowingOverwriteWarning,
       }),
     );
   };
@@ -153,6 +170,18 @@ export const RecoverAccount = () => {
     arr[i] = value;
 
     setMnemonicPhraseArr(arr);
+  };
+
+  const handlePaste = async (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedData = e.clipboardData.getData("text/plain");
+    const pastedWords = pastedData.split(" ");
+
+    if (pastedWords.length) {
+      e.preventDefault();
+      setPastedValues(pastedWords);
+      setMnemonicPhraseArr(pastedWords);
+      await navigator.clipboard.writeText("");
+    }
   };
 
   return (
@@ -201,6 +230,8 @@ export const RecoverAccount = () => {
                                   isTextShowing={isTextShowing}
                                   isLongPhrase={isLongPhrase}
                                   index={i}
+                                  handlePaste={handlePaste}
+                                  pastedValue={pastedValues[i]}
                                 />
                               ))}
                             </div>
@@ -239,7 +270,6 @@ export const RecoverAccount = () => {
                               isFullWidth
                               disabled={
                                 !(
-                                  dirty &&
                                   isValid &&
                                   buildMnemonicPhrase(mnemonicPhraseArr).length
                                 )
@@ -268,6 +298,7 @@ export const RecoverAccount = () => {
                   touched={touched}
                   values={values}
                   handleSubmit={handleConfirm}
+                  isShowingOverwriteWarning={isShowingOverwriteWarning}
                 />
               )}
             </>

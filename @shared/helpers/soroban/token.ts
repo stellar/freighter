@@ -5,11 +5,12 @@ import {
   SorobanRpc,
   TimeoutInfinite,
   xdr,
+  Networks,
 } from "stellar-sdk";
 import { buildSorobanServer } from "@shared/helpers/soroban/server";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
-import { isCustomNetwork } from "@shared/helpers/stellar";
+import { getSdk, isCustomNetwork } from "@shared/helpers/stellar";
 import { simulateTx } from "./server";
 import { SorobanRpcNotSupportedError } from "../../constants/errors";
 
@@ -150,4 +151,30 @@ export const isSacContractExecutable = async (
     console.error(e);
     return false;
   }
+};
+
+export const isSacContract = (
+  name: string,
+  contractId: string,
+  network: Networks,
+) => {
+  if (name.includes(":")) {
+    try {
+      return getAssetSacAddress(name, network) === contractId;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  return false;
+};
+
+export const getAssetSacAddress = (
+  canonicalName: string,
+  network: Networks,
+) => {
+  const Sdk = getSdk(network);
+  return new Sdk.Asset(
+    ...(canonicalName.split(":") as [string, string]),
+  ).contractId(network);
 };

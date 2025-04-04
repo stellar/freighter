@@ -14,7 +14,6 @@ import {
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
-  getAccountBalances,
   resetSubmission,
   signFreighterTransaction,
   submitFreighterTransaction,
@@ -84,12 +83,6 @@ export const useChangeTrustline = ({
       );
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-        dispatch(
-          getAccountBalances({
-            publicKey,
-            networkDetails,
-          }),
-        );
         trackChangeTrustline();
         dispatch(resetSubmission());
         if (successfulCallback) {

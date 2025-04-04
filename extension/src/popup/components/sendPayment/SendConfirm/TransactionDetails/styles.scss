@@ -5,6 +5,43 @@
   flex-direction: column;
   text-align: center;
 
+  &__send-asset {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    color: var(--sds-clr-gray-12);
+    font-size: 1rem;
+    line-height: 1.5rem;
+
+    &__copy-left {
+      min-width: 0;
+      display: flex;
+      font-weight: var(--font-weight-medium);
+
+      .asset-icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+    }
+
+    &__copy-right {
+      .send-asset-value {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .send-asset-amount {
+        font-size: var(--sds-fs-secondary);
+        color: var(--sds-clr-gray-11);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+      }
+    }
+  }
+
   &__loader {
     width: 100%;
     height: 100%;

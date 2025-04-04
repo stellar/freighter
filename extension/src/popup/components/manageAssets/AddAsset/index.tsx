@@ -30,6 +30,8 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { publicKeySelector } from "popup/ducks/accountServices";
 
+import { useGetBalances } from "helpers/hooks/useGetBalances";
+
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
 
@@ -65,6 +67,13 @@ export const AddAsset = () => {
     useState(false);
   const [verifiedLists, setVerifiedLists] = useState([] as string[]);
   const { assetsLists } = useSelector(settingsSelector);
+
+  // TODO: use this loading state
+  const { state, fetchData } = useGetBalances(publicKey, networkDetails, {
+    isMainnet: isMainnet(networkDetails),
+    showHidden: true,
+    includeIcons: false,
+  });
 
   const ResultsRef = useRef<HTMLDivElement>(null);
   const isAllowListVerificationEnabled =
@@ -263,7 +272,20 @@ export const AddAsset = () => {
     setIsVerificationInfoShowing(isAllowListVerificationEnabled);
   }, [isAllowListVerificationEnabled]);
 
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+  }, []);
+
   const hasAssets = verifiedAssetRows.length || unverifiedAssetRows.length;
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+  }, []);
 
   return (
     <Formik initialValues={initialValues} onSubmit={() => {}}>
@@ -304,6 +326,7 @@ export const AddAsset = () => {
                   {hasAssets ? (
                     <ManageAssetRows
                       header={null}
+                      balances={state.data!}
                       verifiedAssetRows={verifiedAssetRows}
                       unverifiedAssetRows={unverifiedAssetRows}
                       isVerifiedToken={isVerifiedToken}

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
+import { ClassicAsset, NativeAsset } from "@shared/api/types/account-balance";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { CopyValue } from "popup/components/CopyValue";
@@ -13,7 +14,10 @@ import "./styles.scss";
 interface AssetNetworkInfoProps {
   assetIssuer: string;
   assetCode: string;
-  assetType: string;
+  assetType:
+    | NativeAsset["token"]["type"]
+    | ClassicAsset["token"]["type"]
+    | null;
   assetDomain: string;
   contractId?: string;
 }
