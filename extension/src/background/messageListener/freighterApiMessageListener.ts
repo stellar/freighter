@@ -28,20 +28,16 @@ import {
   getIsMainnet,
   getIsMemoValidationEnabled,
   getNetworkDetails,
+  getNetworksList,
+  getAllowListSegment,
+  setAllowListDomain,
 } from "background/helpers/account";
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
 import { cachedFetch } from "background/helpers/cachedFetch";
-import {
-  dataStorageAccess,
-  browserLocalStorage,
-} from "background/helpers/dataStorageAccess";
 import { publicKeySelector } from "background/ducks/session";
 
 import { POPUP_HEIGHT, POPUP_WIDTH } from "constants/dimensions";
-import {
-  ALLOWLIST_ID,
-  CACHED_MEMO_REQUIRED_ACCOUNTS_ID,
-} from "constants/localStorageTypes";
+import { CACHED_MEMO_REQUIRED_ACCOUNTS_ID } from "constants/localStorageTypes";
 import { TRANSACTION_WARNING } from "constants/transaction";
 
 import {
@@ -63,8 +59,6 @@ import {
   transactionQueue,
 } from "./popupMessageListener";
 
-const localStore = dataStorageAccess(browserLocalStorage);
-
 interface WindowParams {
   height: number;
   type: "popup";
@@ -77,6 +71,19 @@ const WINDOW_SETTINGS: WindowParams = {
   height: POPUP_HEIGHT + 32, // include browser frame height,
 };
 
+const getNetworkDetailsFromNetworkpassphrase = async (
+  networkPassphrase: string,
+) => {
+  const networksList = await getNetworksList();
+
+  const networkDetails = networksList.find(
+    (currentNetwork: NetworkDetails) =>
+      currentNetwork.networkPassphrase === networkPassphrase,
+  );
+
+  return networkDetails;
+};
+
 export const freighterApiMessageListener = (
   request: Request,
   sender: browser.Runtime.MessageSender,
@@ -87,7 +94,14 @@ export const freighterApiMessageListener = (
 
     const { tab, url: tabUrl = "" } = sender;
 
-    if ((await isSenderAllowed({ sender })) && publicKey) {
+    const networkDetails = await getNetworkDetails();
+
+    const allowListSegment = await getAllowListSegment({
+      publicKey,
+      networkDetails,
+    });
+
+    if (isSenderAllowed({ sender, allowListSegment }) && publicKey) {
       // okay, the requester checks out and we have public key, send it
       return { publicKey };
     }
@@ -123,8 +137,13 @@ export const freighterApiMessageListener = (
   const requestPublicKey = async () => {
     try {
       const publicKey = publicKeySelector(sessionStore.getState());
+      const networkDetails = await getNetworkDetails();
+      const allowListSegment = await getAllowListSegment({
+        publicKey,
+        networkDetails,
+      });
 
-      if ((await isSenderAllowed({ sender })) && publicKey) {
+      if (isSenderAllowed({ sender, allowListSegment }) && publicKey) {
         // okay, the requester checks out and we have public key, send it
         return { publicKey };
       }
@@ -143,6 +162,7 @@ export const freighterApiMessageListener = (
     try {
       const { contractId, networkPassphrase: reqNetworkPassphrase } =
         request as ExternalRequestToken;
+      const publicKey = publicKeySelector(sessionStore.getState());
 
       const networkPassphrase =
         reqNetworkPassphrase || MAINNET_NETWORK_DETAILS.networkPassphrase;
@@ -151,13 +171,22 @@ export const freighterApiMessageListener = (
       const domain = getUrlHostname(tabUrl);
       const punycodedDomain = getPunycodedDomain(domain);
 
-      const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
-      const allowList = allowListStr.split(",");
-      const isDomainListedAllowed = await isSenderAllowed({ sender });
+      const networkDetails = await getNetworkDetailsFromNetworkpassphrase(
+        networkPassphrase,
+      );
+
+      const allowListSegment = await getAllowListSegment({
+        publicKey,
+        networkDetails,
+      });
+      const isDomainListedAllowed = isSenderAllowed({
+        sender,
+        allowListSegment,
+      });
 
       const tokenInfo: TokenToAdd = {
         isDomainListedAllowed,
-        domain,
+        domain: punycodedDomain,
         tab,
         url: tabUrl,
         contractId,
@@ -189,8 +218,11 @@ export const freighterApiMessageListener = (
         const response = (success: boolean) => {
           if (success) {
             if (!isDomainListedAllowed) {
-              allowList.push(punycodedDomain);
-              localStore.setItem(ALLOWLIST_ID, allowList.join());
+              setAllowListDomain({
+                publicKey,
+                domain: punycodedDomain,
+                networkDetails,
+              });
             }
             resolve({
               contractId,
@@ -230,14 +262,21 @@ export const freighterApiMessageListener = (
       const { networkUrl, networkPassphrase: currentNetworkPassphrase } =
         await getNetworkDetails();
       const Sdk = getSdk(currentNetworkPassphrase);
+      const publicKey = publicKeySelector(sessionStore.getState());
 
       const { tab, url: tabUrl = "" } = sender;
       const domain = getUrlHostname(tabUrl);
       const punycodedDomain = getPunycodedDomain(domain);
 
-      const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
-      const allowList = allowListStr.split(",");
-      const isDomainListedAllowed = await isSenderAllowed({ sender });
+      const networkDetails = await getNetworkDetails();
+      const allowListSegment = await getAllowListSegment({
+        publicKey,
+        networkDetails,
+      });
+      const isDomainListedAllowed = isSenderAllowed({
+        sender,
+        allowListSegment,
+      });
 
       const transaction = Sdk.TransactionBuilder.fromXDR(
         transactionXdr,
@@ -346,8 +385,11 @@ export const freighterApiMessageListener = (
         const response = (signedTransaction: string, signerAddress: string) => {
           if (signedTransaction) {
             if (!isDomainListedAllowed) {
-              allowList.push(punycodedDomain);
-              localStore.setItem(ALLOWLIST_ID, allowList.join());
+              setAllowListDomain({
+                publicKey,
+                domain: punycodedDomain,
+                networkDetails,
+              });
             }
             resolve({ signedTransaction, signerAddress });
           }
@@ -375,17 +417,27 @@ export const freighterApiMessageListener = (
       const { apiVersion, blob, accountToSign, address, networkPassphrase } =
         request as ExternalRequestBlob;
 
+      const publicKey = publicKeySelector(sessionStore.getState());
+
       const { tab, url: tabUrl = "" } = sender;
       const domain = getUrlHostname(tabUrl);
       const punycodedDomain = getPunycodedDomain(domain);
 
-      const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
-      const allowList = allowListStr.split(",");
-      const isDomainListedAllowed = await isSenderAllowed({ sender });
+      const networkDetails = await getNetworkDetailsFromNetworkpassphrase(
+        networkPassphrase || MAINNET_NETWORK_DETAILS.networkPassphrase,
+      );
+      const allowListSegment = await getAllowListSegment({
+        publicKey,
+        networkDetails,
+      });
+      const isDomainListedAllowed = isSenderAllowed({
+        sender,
+        allowListSegment,
+      });
 
       const blobData: MessageToSign = {
         isDomainListedAllowed,
-        domain,
+        domain: punycodedDomain,
         tab,
         message: blob,
         url: tabUrl,
@@ -420,10 +472,12 @@ export const freighterApiMessageListener = (
         const response = (signedBlob: string, signerAddress: string) => {
           if (signedBlob) {
             if (!isDomainListedAllowed) {
-              allowList.push(punycodedDomain);
-              localStore.setItem(ALLOWLIST_ID, allowList.join());
+              setAllowListDomain({
+                publicKey,
+                domain: punycodedDomain,
+                networkDetails,
+              });
             }
-
             if (apiVersion && semver.gte(apiVersion, "4.0.0")) {
               resolve({
                 signedBlob: Buffer.from(signedBlob).toString("base64"),
@@ -460,17 +514,26 @@ export const freighterApiMessageListener = (
       const { tab, url: tabUrl = "" } = sender;
       const domain = getUrlHostname(tabUrl);
       const punycodedDomain = getPunycodedDomain(domain);
+      const publicKey = publicKeySelector(sessionStore.getState());
+      const networkDetails = await getNetworkDetailsFromNetworkpassphrase(
+        networkPassphrase || MAINNET_NETWORK_DETAILS.networkPassphrase,
+      );
 
-      const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
-      const allowList = allowListStr.split(",");
-      const isDomainListedAllowed = await isSenderAllowed({ sender });
+      const allowListSegment = await getAllowListSegment({
+        publicKey,
+        networkDetails,
+      });
+      const isDomainListedAllowed = isSenderAllowed({
+        sender,
+        allowListSegment,
+      });
 
       const authEntry: EntryToSign = {
         isDomainListedAllowed,
         entry: entryXdr,
         accountToSign: accountToSign || address,
         tab,
-        domain,
+        domain: punycodedDomain,
         url: tabUrl,
         networkPassphrase,
       };
@@ -503,8 +566,11 @@ export const freighterApiMessageListener = (
         const response = (signedAuthEntry: string) => {
           if (signedAuthEntry) {
             if (!isDomainListedAllowed) {
-              allowList.push(punycodedDomain);
-              localStore.setItem(ALLOWLIST_ID, allowList.join());
+              setAllowListDomain({
+                publicKey,
+                domain: punycodedDomain,
+                networkDetails,
+              });
             }
             resolve({ signedAuthEntry });
           }
@@ -566,7 +632,14 @@ export const freighterApiMessageListener = (
 
   const requestAllowedStatus = async () => {
     try {
-      const isAllowed = await isSenderAllowed({ sender });
+      const publicKey = publicKeySelector(sessionStore.getState());
+      const networkDetails = await getNetworkDetails();
+
+      const allowListSegment = await getAllowListSegment({
+        publicKey,
+        networkDetails,
+      });
+      const isAllowed = isSenderAllowed({ sender, allowListSegment });
 
       return { isAllowed };
     } catch (e) {
@@ -577,7 +650,14 @@ export const freighterApiMessageListener = (
   };
 
   const setAllowedStatus = async () => {
-    const isAllowed = await isSenderAllowed({ sender });
+    const publicKey = publicKeySelector(sessionStore.getState());
+    const networkDetails = await getNetworkDetails();
+    const allowListSegment = await getAllowListSegment({
+      publicKey,
+      networkDetails,
+    });
+
+    const isAllowed = isSenderAllowed({ sender, allowListSegment });
 
     const { tab, url: tabUrl = "" } = sender;
 
@@ -599,7 +679,14 @@ export const freighterApiMessageListener = (
       const response = async (url?: string) => {
         // queue it up, we'll let user confirm the url looks okay and then we'll say it's okay
         if (url === tabUrl) {
-          const isAllowedResponse = await isSenderAllowed({ sender });
+          const updatedAllAccountsllowListSegment = await getAllowListSegment({
+            publicKey,
+            networkDetails,
+          });
+          const isAllowedResponse = isSenderAllowed({
+            sender,
+            allowListSegment: updatedAllAccountsllowListSegment,
+          });
 
           resolve({ isAllowed: isAllowedResponse });
         }
@@ -617,7 +704,13 @@ export const freighterApiMessageListener = (
 
   const requestUserInfo = async () => {
     const publicKey = publicKeySelector(sessionStore.getState());
-    const isAllowed = await isSenderAllowed({ sender });
+    const networkDetails = await getNetworkDetails();
+    const allowListSegment = await getAllowListSegment({
+      publicKey,
+      networkDetails,
+    });
+
+    const isAllowed = isSenderAllowed({ sender, allowListSegment });
     const notAllowedUserInfo = {
       publicKey: "",
     };
