@@ -94,15 +94,13 @@ export const DEFAULT_ALLOW_LIST: AllowList = {
   [NETWORKS.FUTURENET]: {},
 };
 
-export const createAccount = async (
-  {
-    password,
-    isOverwritingAccount = false,
-  }: {
-    password: string;
-    isOverwritingAccount: boolean;
-  }
-): Promise<{
+export const createAccount = async ({
+  password,
+  isOverwritingAccount = false,
+}: {
+  password: string;
+  isOverwritingAccount: boolean;
+}): Promise<{
   publicKey: string;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
