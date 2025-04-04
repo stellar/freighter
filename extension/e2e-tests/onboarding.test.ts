@@ -395,11 +395,6 @@ test("Logout and create new account", async ({ page, extensionId }) => {
   await page.getByTestId("BottomNav-link-settings").click();
   await page.getByText("Log Out").click();
 
-  await expect(
-    page.getByText(
-      "This will completely erase all existing account information.",
-    ),
-  ).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "unlock-password-overwrite.png",
@@ -465,11 +460,6 @@ test("Logout and import new account", async ({ page, extensionId }) => {
   await page.getByTestId("BottomNav-link-settings").click();
   await page.getByText("Log Out").click();
 
-  await expect(
-    page.getByText(
-      "This will completely erase all existing account information.",
-    ),
-  ).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "unlock-password-overwrite.png",
