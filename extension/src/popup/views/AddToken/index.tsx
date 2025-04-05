@@ -29,7 +29,7 @@ import {
   WarningMessage,
   SSLWarningMessage,
   BlockaidAssetWarning,
-  FirstTimeWarningMessage,
+  DomainNotAllowedWarningMessage,
 } from "popup/components/WarningMessages";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { View } from "popup/basics/layout/View";
@@ -227,6 +227,10 @@ export const AddToken = () => {
     return <SSLWarningMessage url={url} />;
   }
 
+  if (!isDomainListedAllowed) {
+    return <DomainNotAllowedWarningMessage domain={params.domain} />;
+  }
+
   if (isPasswordRequired) {
     return (
       <VerifyAccount
@@ -322,8 +326,6 @@ export const AddToken = () => {
               </div>
             </div>
 
-            {!isDomainListedAllowed && <FirstTimeWarningMessage />}
-
             {assetCurrency && isVerificationInfoShowing && (
               <AssetNotifcation isVerified={isVerifiedToken} />
             )}
@@ -350,6 +352,7 @@ export const AddToken = () => {
                     {t("Symbol")}
                   </Text>
                   <Text
+                    data-testid="add-token-asset-code"
                     as="div"
                     size="xs"
                     addlClassName="AddToken__wrapper__info__row__right_label"
@@ -368,6 +371,7 @@ export const AddToken = () => {
                     {t("Name")}
                   </Text>
                   <Text
+                    data-testid="add-token-asset-name"
                     as="div"
                     size="xs"
                     addlClassName="AddToken__wrapper__info__row__right_label"
@@ -415,6 +419,7 @@ export const AddToken = () => {
                 {t("Cancel")}
               </Button>
               <Button
+                data-testid="add-token-approve"
                 disabled={!assetCurrency}
                 isFullWidth
                 size="md"

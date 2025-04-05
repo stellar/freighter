@@ -30,7 +30,6 @@ import {
   getNetworkDetails,
   getNetworksList,
   getAllowListSegment,
-  setAllowListDomain,
 } from "background/helpers/account";
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -171,15 +170,14 @@ export const freighterApiMessageListener = (
       const domain = getUrlHostname(tabUrl);
       const punycodedDomain = getPunycodedDomain(domain);
 
-      const networkDetails = await getNetworkDetailsFromNetworkpassphrase(
-        networkPassphrase,
-      );
+      const networkDetails =
+        await getNetworkDetailsFromNetworkpassphrase(networkPassphrase);
 
       const allowListSegment = await getAllowListSegment({
         publicKey,
         networkDetails,
       });
-      const isDomainListedAllowed = isSenderAllowed({
+      const isDomainListedAllowed = await isSenderAllowed({
         sender,
         allowListSegment,
       });
@@ -196,7 +194,7 @@ export const freighterApiMessageListener = (
       tokenQueue.push(tokenInfo);
       const encodedTokenInfo = encodeObject(tokenInfo);
 
-      const popup = browser.windows.create({
+      const popup = await browser.windows.create({
         url: chrome.runtime.getURL(
           `/index.html#/add-token?${encodedTokenInfo}`,
         ),
@@ -217,13 +215,6 @@ export const freighterApiMessageListener = (
         }
         const response = (success: boolean) => {
           if (success) {
-            if (!isDomainListedAllowed) {
-              setAllowListDomain({
-                publicKey,
-                domain: punycodedDomain,
-                networkDetails,
-              });
-            }
             resolve({
               contractId,
             });
@@ -265,8 +256,6 @@ export const freighterApiMessageListener = (
       const publicKey = publicKeySelector(sessionStore.getState());
 
       const { tab, url: tabUrl = "" } = sender;
-      const domain = getUrlHostname(tabUrl);
-      const punycodedDomain = getPunycodedDomain(domain);
 
       const networkDetails = await getNetworkDetails();
       const allowListSegment = await getAllowListSegment({
@@ -359,7 +348,7 @@ export const freighterApiMessageListener = (
       transactionQueue.push(transaction as StellarSdk.Transaction);
       const encodedBlob = encodeObject(transactionInfo);
 
-      const popup = browser.windows.create({
+      const popup = await browser.windows.create({
         url: chrome.runtime.getURL(
           `/index.html#/sign-transaction?${encodedBlob}`,
         ),
@@ -384,13 +373,6 @@ export const freighterApiMessageListener = (
         }
         const response = (signedTransaction: string, signerAddress: string) => {
           if (signedTransaction) {
-            if (!isDomainListedAllowed) {
-              setAllowListDomain({
-                publicKey,
-                domain: punycodedDomain,
-                networkDetails,
-              });
-            }
             resolve({ signedTransaction, signerAddress });
           }
 
@@ -447,7 +429,7 @@ export const freighterApiMessageListener = (
 
       blobQueue.push(blobData);
       const encodedBlob = encodeObject(blobData);
-      const popup = browser.windows.create({
+      const popup = await browser.windows.create({
         url: chrome.runtime.getURL(`/index.html#/sign-message?${encodedBlob}`),
         ...WINDOW_SETTINGS,
       });
@@ -471,13 +453,6 @@ export const freighterApiMessageListener = (
 
         const response = (signedBlob: string, signerAddress: string) => {
           if (signedBlob) {
-            if (!isDomainListedAllowed) {
-              setAllowListDomain({
-                publicKey,
-                domain: punycodedDomain,
-                networkDetails,
-              });
-            }
             if (apiVersion && semver.gte(apiVersion, "4.0.0")) {
               resolve({
                 signedBlob: Buffer.from(signedBlob).toString("base64"),
@@ -540,7 +515,7 @@ export const freighterApiMessageListener = (
 
       authEntryQueue.push(authEntry);
       const encodedAuthEntry = encodeObject(authEntry);
-      const popup = browser.windows.create({
+      const popup = await browser.windows.create({
         url: chrome.runtime.getURL(
           `/index.html#/sign-auth-entry?${encodedAuthEntry}`,
         ),
@@ -565,13 +540,6 @@ export const freighterApiMessageListener = (
         }
         const response = (signedAuthEntry: string) => {
           if (signedAuthEntry) {
-            if (!isDomainListedAllowed) {
-              setAllowListDomain({
-                publicKey,
-                domain: punycodedDomain,
-                networkDetails,
-              });
-            }
             resolve({ signedAuthEntry });
           }
 
