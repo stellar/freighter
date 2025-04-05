@@ -11,7 +11,7 @@ import { AccountList, OptionTag } from "popup/components/account/AccountList";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { SlideupModal } from "popup/components/SlideupModal";
 import {
-  FirstTimeWarningMessage,
+  DomainNotAllowedWarningMessage,
   WarningMessageVariant,
   WarningMessage,
   SSLWarningMessage,
@@ -89,6 +89,10 @@ export const SignAuthEntry = () => {
     return <SSLWarningMessage url={params.url} />;
   }
 
+  if (!params.isDomainListedAllowed) {
+    return <DomainNotAllowedWarningMessage domain={params.domain} />;
+  }
+
   return isPasswordRequired ? (
     <VerifyAccount
       isApproval
@@ -118,7 +122,6 @@ export const SignAuthEntry = () => {
               </p>
             </WarningMessage>
           ) : null}
-          {!params.isDomainListedAllowed ? <FirstTimeWarningMessage /> : null}
           <div className="SignAuthEntry__info">
             <Card variant="secondary">
               <PunycodedDomain domain={params.domain} isRow />

@@ -44,7 +44,7 @@ import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import {
   WarningMessageVariant,
   WarningMessage,
-  FirstTimeWarningMessage,
+  DomainNotAllowedWarningMessage,
   MemoWarningMessage,
   SSLWarningMessage,
   BlockaidTxScanLabel,
@@ -219,6 +219,10 @@ export const SignTransaction = () => {
     return <SSLWarningMessage url={domain} />;
   }
 
+  if (!isDomainListedAllowed) {
+    return <DomainNotAllowedWarningMessage domain={domain} />;
+  }
+
   const isLoading =
     scanTxState.state === RequestState.IDLE ||
     scanTxState.state === RequestState.LOADING;
@@ -311,9 +315,6 @@ export const SignTransaction = () => {
             </div>
           ) : null}
           <MemoWarningMessage isMemoRequired={isMemoRequired} />
-          {!isDomainListedAllowed && !isSubmitDisabled ? (
-            <FirstTimeWarningMessage />
-          ) : null}
           {renderTabBody()}
         </div>
       </div>
