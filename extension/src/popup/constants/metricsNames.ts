@@ -82,6 +82,7 @@ export const METRIC_NAMES = {
   viewAddNetwork: "loaded screen: add network",
   viewEditNetwork: "loaded screen: edit network",
   viewNetworkSettings: "loaded screen: network settings",
+  viewAddFunds: "loaded screen: add fund",
 
   manageAssetAddAsset: "manage asset: add asset",
   manageAssetAddToken: "manage asset: add token",
@@ -170,4 +171,6 @@ export const METRIC_NAMES = {
   blockaidDomainScan: "blockaid: scanned domain",
   blockaidTxScan: "blockaid: scanned transaction",
   blockaidAssetScan: "blockaid: scanned asset",
+
+  coinbaseOnrampOpened: "coinbase onramp: opened",
 };

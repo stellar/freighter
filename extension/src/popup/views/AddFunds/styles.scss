@@ -1,0 +1,67 @@
+@use "../../styles/utils.scss" as *;
+
+.AddFunds {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: pxToRem(12);
+  }
+
+  &__onrampLogo {
+    width: pxToRem(32);
+    height: pxToRem(32);
+  }
+
+  &__error {
+    color: var(--sds-clr-red-09);
+    font-size: pxToRem(12);
+    line-height: pxToRem(16);
+    margin-top: pxToRem(8);
+    text-align: center;
+  }
+
+  &__button {
+    background: var(--sds-clr-gray-03);
+    border-radius: pxToRem(6);
+    cursor: pointer;
+    display: flex;
+    font-size: pxToRem(14);
+    font-weight: var(--sds-fw-semi-bold);
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: pxToRem(12);
+    padding: pxToRem(12) pxToRem(16);
+
+    &__description {
+      color: var(--sds-clr-gray-11);
+    }
+
+    &__qr {
+      align-items: flex;
+      background: var(--sds-clr-mint-03);
+      border-radius: pxToRem(100);
+      display: flex;
+      height: pxToRem(32);
+      justify-content: center;
+      padding: pxToRem(6);
+      width: pxToRem(32);
+
+      svg {
+        height: pxToRem(20);
+        stroke: var(--sds-clr-mint-09);
+        width: pxToRem(20);
+      }
+    }
+  }
+
+  &__footer {
+    color: var(--sds-clr-gray-10);
+    text-align: center;
+  }
+}
