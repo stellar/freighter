@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
@@ -15,7 +14,6 @@ import {
 } from "popup/components/sendPayment/SendAmount/AssetSelect";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
-import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
 import {
@@ -23,7 +21,6 @@ import {
   getCanonicalFromAsset,
   isMainnet,
 } from "helpers/stellar";
-import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap, useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
@@ -123,11 +120,15 @@ const ConversionRate = ({
 const defaultSourceAmount = "1";
 
 export const SendAmount = ({
-  previous,
-  next,
+  goBack,
+  goToNext,
+  goToPaymentType,
+  goToChooseAsset,
 }: {
-  previous: ROUTES;
-  next: ROUTES;
+  goBack: () => void;
+  goToNext: () => void;
+  goToChooseAsset: () => void;
+  goToPaymentType?: () => void;
 }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
@@ -161,7 +162,6 @@ export const SendAmount = ({
 
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
-  const navigate = useNavigate();
   const [loadingRate, setLoadingRate] = useState(false);
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] =
     useState(false);
@@ -284,7 +284,7 @@ export const SendAmount = ({
             : defaultBlockaidScanAssetResult,
       });
     } else {
-      navigateTo(next, navigate);
+      goToNext();
     }
   };
 
@@ -518,7 +518,7 @@ export const SendAmount = ({
             issuer={suspiciousAssetData.issuer}
             image={suspiciousAssetData.image}
             onClose={() => setShowBlockedDomainWarning(false)}
-            onContinue={() => navigateTo(next, navigate)}
+            onContinue={goToNext}
             blockaidData={suspiciousAssetData.blockaidData}
           />,
           document.querySelector("#modal-root")!,
@@ -549,11 +549,16 @@ export const SendAmount = ({
             </div>
           }
           hasBackButton={!isSwap}
-          customBackAction={() => navigateTo(previous, navigate)}
+          customBackAction={() => {
+            // NOTE: resets base state for transaction data
+            dispatch(saveAsset("native"));
+            dispatch(saveAmount("0"));
+            goBack();
+          }}
           rightButton={
             isSwap ? null : (
               <button
-                onClick={() => navigateTo(ROUTES.sendPaymentType, navigate)}
+                onClick={goToPaymentType}
                 className="SendAmount__icon-slider"
               >
                 <Icon.Expand01 />
@@ -671,6 +676,10 @@ export const SendAmount = ({
                           "blockaidData" in sourceBalance &&
                           isAssetSuspicious(sourceBalance.blockaidData)
                         }
+                        onSelectAsset={() => {
+                          dispatch(saveAmount("0"));
+                          goToChooseAsset();
+                        }}
                       />
                     )}
                     {showSourceAndDestAsset && (
@@ -687,6 +696,10 @@ export const SendAmount = ({
                             "blockaidData" in sourceBalance &&
                             isAssetSuspicious(sourceBalance.blockaidData)
                           }
+                          onSelectAsset={() => {
+                            dispatch(saveAmount("0"));
+                            goToChooseAsset();
+                          }}
                         />
                         <PathPayAssetSelect
                           source={false}
@@ -704,6 +717,10 @@ export const SendAmount = ({
                             "blockaidData" in destBalance &&
                             isAssetSuspicious(destBalance.blockaidData)
                           }
+                          onSelectAsset={() => {
+                            dispatch(saveAmount("0"));
+                            goToChooseAsset();
+                          }}
                         />
                       </>
                     )}

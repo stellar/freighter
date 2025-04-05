@@ -1,114 +1,99 @@
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
+import { STEPS } from "popup/constants/swap";
 import { ROUTES } from "popup/constants/routes";
+import { emitMetric } from "helpers/metrics";
+import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
 import { SendAmount } from "popup/components/sendPayment/SendAmount";
 import { SendSettings } from "popup/components/sendPayment/SendSettings";
 import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/TransactionFee";
 import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/Slippage";
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 import { SendSettingsTxTimeout } from "popup/components/sendPayment/SendSettings/TxTimeout";
-import { getPathFromRoute } from "popup/helpers/route";
+import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 export const Swap = () => {
-  const swapBasePath = "/swap/";
-  const swapSettingsBasePath = "/swap/settings/";
-  const amountPath = getPathFromRoute({
-    fullRoute: ROUTES.swapAmount,
-    basePath: swapBasePath,
-  });
-  const settingsPath = getPathFromRoute({
-    fullRoute: ROUTES.swapSettings,
-    basePath: swapBasePath,
-  });
-  const settingsFeePath = getPathFromRoute({
-    fullRoute: ROUTES.swapSettingsFee,
-    basePath: swapSettingsBasePath,
-  });
-  const settingsSlippagePath = getPathFromRoute({
-    fullRoute: ROUTES.swapSettingsSlippage,
-    basePath: swapSettingsBasePath,
-  });
-  const settingsTimeoutPath = getPathFromRoute({
-    fullRoute: ROUTES.swapSettingsTimeout,
-    basePath: swapSettingsBasePath,
-  });
-  const swapConfirmPath = getPathFromRoute({
-    fullRoute: ROUTES.swapConfirm,
-    basePath: swapBasePath,
-  });
+  const navigate = useNavigate();
+  const [activeStep, setActiveStep] = React.useState(STEPS.AMOUNT);
 
-  return (
-    <Routes>
-      <Route
-        index
-        element={
+  const renderStep = (step: STEPS) => {
+    switch (step) {
+      case STEPS.SET_SWAP_TIMEOUT: {
+        emitMetric(METRIC_NAMES.swapSettingsTimeout);
+        return (
           <PublicKeyRoute>
-            <SendAmount previous={ROUTES.account} next={ROUTES.swapSettings} />
+            <SendSettingsTxTimeout
+              goBack={() => setActiveStep(STEPS.SWAP_SETTINGS)}
+            />
           </PublicKeyRoute>
-        }
-      ></Route>
-      <Route
-        path={amountPath}
-        element={
-          <PublicKeyRoute>
-            <SendAmount previous={ROUTES.account} next={ROUTES.swapSettings} />
-          </PublicKeyRoute>
-        }
-      ></Route>
-      <Route
-        path={`${settingsPath}/*`}
-        element={
-          <PublicKeyRoute>
-            <Routes>
-              <Route
-                index
-                element={
-                  <PublicKeyRoute>
-                    <SendSettings
-                      previous={ROUTES.swapAmount}
-                      next={ROUTES.swapConfirm}
-                    />
-                  </PublicKeyRoute>
-                }
-              ></Route>
-              <Route
-                path={settingsFeePath}
-                element={
-                  <PublicKeyRoute>
-                    <SendSettingsFee previous={ROUTES.swapSettings} />
-                  </PublicKeyRoute>
-                }
-              ></Route>
-              <Route
-                path={settingsSlippagePath}
-                element={
-                  <PublicKeyRoute>
-                    <SendSettingsSlippage previous={ROUTES.swapSettings} />
-                  </PublicKeyRoute>
-                }
-              ></Route>
-              <Route
-                path={settingsTimeoutPath}
-                element={
-                  <PublicKeyRoute>
-                    <SendSettingsTxTimeout previous={ROUTES.swapSettings} />
-                  </PublicKeyRoute>
-                }
-              ></Route>
-            </Routes>
-          </PublicKeyRoute>
-        }
-      ></Route>
-      <Route
-        path={swapConfirmPath}
-        element={
+        );
+      }
+      case STEPS.SWAP_CONFIRM: {
+        emitMetric(METRIC_NAMES.swapConfirm);
+        return (
           <VerifiedAccountRoute>
-            <SendConfirm previous={ROUTES.swapSettings} />
+            <SendConfirm goBack={() => setActiveStep(STEPS.SWAP_SETTINGS)} />
           </VerifiedAccountRoute>
-        }
-      ></Route>
-    </Routes>
-  );
+        );
+      }
+      case STEPS.SET_SWAP_SLIPPAGE: {
+        emitMetric(METRIC_NAMES.swapSettingsSlippage);
+        return (
+          <PublicKeyRoute>
+            <SendSettingsSlippage
+              goBack={() => setActiveStep(STEPS.SWAP_SETTINGS)}
+            />
+          </PublicKeyRoute>
+        );
+      }
+      case STEPS.SET_SWAP_FEE: {
+        emitMetric(METRIC_NAMES.swapSettingsFee);
+        return (
+          <PublicKeyRoute>
+            <SendSettingsFee
+              goBack={() => setActiveStep(STEPS.SWAP_SETTINGS)}
+            />
+          </PublicKeyRoute>
+        );
+      }
+      case STEPS.SWAP_SETTINGS: {
+        emitMetric(METRIC_NAMES.swapSettings);
+        return (
+          <PublicKeyRoute>
+            <SendSettings
+              goBack={() => setActiveStep(STEPS.AMOUNT)}
+              goToNext={() => setActiveStep(STEPS.SWAP_CONFIRM)}
+              goToFeeSetting={() => setActiveStep(STEPS.SET_SWAP_FEE)}
+              goToSlippageSetting={() => setActiveStep(STEPS.SET_SWAP_SLIPPAGE)}
+              goToTimeoutSetting={() => setActiveStep(STEPS.SET_SWAP_TIMEOUT)}
+            />
+          </PublicKeyRoute>
+        );
+      }
+      default:
+      case STEPS.AMOUNT: {
+        emitMetric(METRIC_NAMES.swapAmount);
+        return (
+          <PublicKeyRoute>
+            <SendAmount
+              goBack={() => navigate(ROUTES.account)}
+              goToNext={() => setActiveStep(STEPS.SWAP_SETTINGS)}
+              goToChooseAsset={() => setActiveStep(STEPS.CHOOSE_ASSETS)}
+            />
+          </PublicKeyRoute>
+        );
+      }
+      case STEPS.CHOOSE_ASSETS: {
+        return (
+          <PublicKeyRoute>
+            <ChooseAsset goBack={() => setActiveStep(STEPS.AMOUNT)} />
+          </PublicKeyRoute>
+        );
+      }
+    }
+  };
+
+  return renderStep(activeStep);
 };

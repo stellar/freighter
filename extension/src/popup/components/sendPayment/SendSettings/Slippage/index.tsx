@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { object as YupObject, number as YupNumber } from "yup";
@@ -10,8 +9,6 @@ import {
   transactionDataSelector,
   saveAllowedSlippage,
 } from "popup/ducks/transactionSubmission";
-import { navigateTo } from "popup/helpers/navigate";
-import { ROUTES } from "popup/constants/routes";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -20,10 +17,9 @@ import "./styles.scss";
 
 const defaultSlippage = "1";
 
-export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
+export const SendSettingsSlippage = ({ goBack }: { goBack: () => void }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { allowedSlippage } = useSelector(transactionDataSelector);
 
   let presetSlippage = "";
@@ -38,7 +34,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
     <React.Fragment>
       <SubviewHeader
         title="Allowed Slippage"
-        customBackAction={() => navigateTo(previous, navigate)}
+        customBackAction={goBack}
         customBackIcon={<Icon.XClose />}
         rightButton={
           <InfoTooltip
@@ -60,7 +56,7 @@ export const SendSettingsSlippage = ({ previous }: { previous: ROUTES }) => {
           dispatch(
             saveAllowedSlippage(values.customSlippage || values.presetSlippage),
           );
-          navigateTo(previous, navigate);
+          goBack();
         }}
         validationSchema={YupObject().shape({
           customSlippage: YupNumber()

@@ -143,7 +143,7 @@ describe.skip("SendPayment", () => {
   it("renders", async () => {
     render(
       <Wrapper
-        routes={[ROUTES.sendPaymentTo]}
+        routes={[ROUTES.sendPayment]}
         state={{
           auth: {
             error: null,
@@ -252,7 +252,7 @@ const testPaymentFlow = async (
 ) => {
   render(
     <Wrapper
-      routes={[ROUTES.sendPaymentTo]}
+      routes={[ROUTES.sendPayment]}
       state={{
         auth: {
           error: null,

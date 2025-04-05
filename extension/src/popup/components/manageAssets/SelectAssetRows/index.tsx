@@ -1,6 +1,5 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
 
 import { AppDispatch } from "popup/App";
 import {
@@ -30,16 +29,18 @@ import "./styles.scss";
 interface SelectAssetRowsProps {
   balances: AccountBalances;
   assetRows: ManageAssetCurrency[];
+  onSelect: () => unknown;
 }
 
-export const SelectAssetRows = ({ assetRows, balances }: SelectAssetRowsProps) => {
-  const {
-    assetSelect,
-    soroswapTokens,
-    transactionData,
-  } = useSelector(transactionSubmissionSelector);
+export const SelectAssetRows = ({
+  assetRows,
+  balances,
+  onSelect,
+}: SelectAssetRowsProps) => {
+  const { assetSelect, soroswapTokens, transactionData } = useSelector(
+    transactionSubmissionSelector,
+  );
   const dispatch = useDispatch<AppDispatch>();
-  const navigate = useNavigate();
   const isSoroswapEnabled = useIsSoroswapEnabled();
   const isSwap = useIsSwap();
 
@@ -110,11 +111,11 @@ export const SelectAssetRows = ({ assetRows, balances }: SelectAssetRowsProps) =
                   if (assetSelect.isSource) {
                     dispatch(saveAsset(canonical));
                     dispatch(saveIsToken(isContract));
-                    navigate(-1);
+                    onSelect();
                   } else {
                     dispatch(saveDestinationAsset(canonical));
                     dispatch(saveDestinationIcon(icon));
-                    navigate(-1);
+                    onSelect();
                   }
                   dispatch(saveIsSoroswap(isSoroswap));
                 }}
@@ -138,9 +139,7 @@ export const SelectAssetRows = ({ assetRows, balances }: SelectAssetRowsProps) =
                   <div>
                     {isContract
                       ? getTokenBalanceFromCanonical(issuer)
-                      : formatAmount(
-                          getAccountBalance(issuer || "native"),
-                        )}{" "}
+                      : formatAmount(getAccountBalance(issuer))}{" "}
                     {code}
                   </div>
                 )}

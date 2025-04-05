@@ -241,8 +241,6 @@ const SHOW_NAV_ROUTES = [
   ROUTES.settings,
   ROUTES.connectWallet,
   ROUTES.connectWalletPlugin,
-  ROUTES.swapSettings,
-  ROUTES.sendPaymentAmount,
 ];
 
 const NO_APP_LAYOUT_ROUTES = [

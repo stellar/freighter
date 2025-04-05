@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button, Icon, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -16,20 +16,23 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { RequestState } from "constants/request";
 import { useGetAssetDomainsWithBalances } from "helpers/hooks/useGetAssetDomainsWithBalances";
 import { isMainnet } from "helpers/stellar";
-import { useIsSwap } from "popup/helpers/useIsSwap";
 
 import { ManageAssetRows } from "../ManageAssetRows";
 import { SelectAssetRows } from "../SelectAssetRows";
 
 import "./styles.scss";
 
-export const ChooseAsset = () => {
+export const ChooseAsset = ({
+  goBack,
+  showHideAssets = false,
+}: {
+  goBack: () => void;
+  showHideAssets?: boolean;
+}) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const isSwap = useIsSwap();
 
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
 
@@ -65,10 +68,6 @@ export const ChooseAsset = () => {
     );
   }
 
-  const goBack = () => {
-    navigate(-1);
-  };
-
   return (
     <React.Fragment>
       <SubviewHeader
@@ -78,7 +77,7 @@ export const ChooseAsset = () => {
         }
         customBackAction={goBack}
         rightButton={
-          !isSwap ? (
+          showHideAssets ? (
             <Link
               to={ROUTES.assetVisibility}
               data-testid="ChooseAssetHideAssetBtn"
@@ -122,6 +121,7 @@ export const ChooseAsset = () => {
                 <SelectAssetRows
                   assetRows={domainState.data.domains}
                   balances={domainState.data.balances}
+                  onSelect={goBack}
                 />
               )}
             </div>

@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Asset, StrKey } from "stellar-sdk";
 import { useFormik } from "formik";
@@ -25,10 +24,8 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { FormRows } from "popup/basics/Forms";
 import { emitMetric } from "helpers/metrics";
-import { navigateTo } from "popup/helpers/navigate";
 import { isContractId } from "popup/helpers/soroban";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { ROUTES } from "popup/constants/routes";
 import { View } from "popup/basics/layout/View";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -36,12 +33,12 @@ import {
   saveDestinationAsset,
   saveFederationAddress,
 } from "popup/ducks/transactionSubmission";
+import { publicKeySelector } from "popup/ducks/accountServices";
 
 import { RequestState } from "constants/request";
 import { useSendToData } from "./hooks/useSendToData";
 
 import "../styles.scss";
-import { publicKeySelector } from "popup/ducks/accountServices";
 
 const baseReserve = new BigNumber(1);
 
@@ -95,10 +92,15 @@ const InvalidAddressWarning = () => {
   );
 };
 
-export const SendTo = ({ previous }: { previous: ROUTES }) => {
+export const SendTo = ({
+  goBack,
+  goToNext,
+}: {
+  goBack: () => void;
+  goToNext: () => void;
+}) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch<AppDispatch>();
-  const navigate = useNavigate();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
   const { state: sendDataState, fetchData } = useSendToData(
@@ -118,7 +120,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
     dispatch(saveDestination(validatedDestination));
     dispatch(saveDestinationAsset(""));
     dispatch(saveFederationAddress(validatedFedAdress || ""));
-    navigateTo(ROUTES.sendPaymentAmount, navigate);
+    goToNext();
   };
 
   const formik = useFormik({
@@ -169,10 +171,7 @@ export const SendTo = ({ previous }: { previous: ROUTES }) => {
 
   return (
     <React.Fragment>
-      <SubviewHeader
-        title="Send To"
-        customBackAction={() => navigateTo(previous, navigate)}
-      />
+      <SubviewHeader title="Send To" customBackAction={goBack} />
       <View.Content hasNoTopPadding>
         <FormRows>
           <Input

@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
 import { Icon } from "@stellar/design-system";
 
-import { ROUTES } from "popup/constants/routes";
-import { navigateTo } from "popup/helpers/navigate";
 import { isMainnet, isTestnet } from "helpers/stellar";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { UnverifiedTokenNotification } from "popup/components/WarningMessages";
@@ -28,15 +25,16 @@ export const AssetSelect = ({
   issuerKey,
   isSuspicious,
   icons,
+  onSelectAsset,
 }: {
   assetCode: string;
   issuerKey: string;
   isSuspicious: boolean;
   icons: AssetIcons;
+  onSelectAsset: () => unknown;
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { networkDetails, assetsLists } = useSelector(settingsSelector);
-  const navigate = useNavigate();
 
   const [isUnverifiedToken, setIsUnverifiedToken] = useState(false);
 
@@ -67,7 +65,7 @@ export const AssetSelect = ({
   const handleSelectAsset = () => {
     dispatch(saveAssetSelectType(AssetSelectType.REGULAR));
     dispatch(saveAssetSelectSource(true));
-    navigateTo(ROUTES.manageAssets, navigate);
+    onSelectAsset();
   };
 
   return (
@@ -109,6 +107,7 @@ export const PathPayAssetSelect = ({
   icon,
   icons,
   isSuspicious,
+  onSelectAsset,
 }: {
   source: boolean;
   assetCode: string;
@@ -117,10 +116,10 @@ export const PathPayAssetSelect = ({
   icon: string;
   isSuspicious: boolean;
   icons: AssetIcons;
+  onSelectAsset: () => unknown;
 }) => {
   const dispatch = useDispatch();
   const isSwap = useIsSwap();
-  const navigate = useNavigate();
 
   const handleSelectAsset = () => {
     dispatch(
@@ -132,7 +131,7 @@ export const PathPayAssetSelect = ({
     if (source) {
       dispatch(saveAmount("0"));
     }
-    navigateTo(ROUTES.manageAssets, navigate, isSwap ? "?swap=true" : "");
+    onSelectAsset();
   };
 
   const truncateLongAssetCode = (code: string) => {

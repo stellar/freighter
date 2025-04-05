@@ -38,7 +38,7 @@ describe("Slippage component", () => {
           },
         }}
       >
-        <SendSettingsSlippage previous={ROUTES.account} />
+        <SendSettingsSlippage goBack={() => undefined} />
       </Wrapper>,
     );
 
