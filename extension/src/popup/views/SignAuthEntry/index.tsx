@@ -29,6 +29,7 @@ import { VerifyAccount } from "popup/views/VerifyAccount";
 
 import { EntryToSign, parsedSearchParam } from "helpers/urls";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
+import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 
 import "./styles.scss";
 
@@ -46,7 +47,14 @@ export const SignAuthEntry = () => {
   );
 
   const params = parsedSearchParam(location.search) as EntryToSign;
-  const { accountToSign, networkPassphrase: entryNetworkPassphrase } = params;
+  const {
+    accountToSign,
+    networkPassphrase: entryNetworkPassphrase,
+    domain,
+  } = params;
+  const { isDomainListedAllowed } = useIsDomainListedAllowed({
+    domain,
+  });
 
   const {
     allAccounts,
@@ -89,10 +97,6 @@ export const SignAuthEntry = () => {
     return <SSLWarningMessage url={params.url} />;
   }
 
-  if (!params.isDomainListedAllowed) {
-    return <DomainNotAllowedWarningMessage domain={params.domain} />;
-  }
-
   return isPasswordRequired ? (
     <VerifyAccount
       isApproval
@@ -122,6 +126,9 @@ export const SignAuthEntry = () => {
               </p>
             </WarningMessage>
           ) : null}
+          {!isDomainListedAllowed && (
+            <DomainNotAllowedWarningMessage domain={domain} />
+          )}
           <div className="SignAuthEntry__info">
             <Card variant="secondary">
               <PunycodedDomain domain={params.domain} isRow />
@@ -191,6 +198,8 @@ export const SignAuthEntry = () => {
             {t("Reject")}
           </Button>
           <Button
+            data-testid="sign-auth-entry-approve-button"
+            disabled={!isDomainListedAllowed}
             isFullWidth
             size="md"
             variant="primary"

@@ -38,6 +38,7 @@ import { AssetNotifcation } from "popup/components/AssetNotification";
 import { useTokenLookup } from "popup/helpers/useTokenLookup";
 import { formatTokenAmount, isContractId } from "popup/helpers/soroban";
 import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
+import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 
 import "./styles.scss";
 
@@ -45,11 +46,15 @@ export const AddToken = () => {
   const location = useLocation();
   const params = parsedSearchParam(location.search) as TokenToAdd;
   const {
+    domain,
     url,
     contractId,
     networkPassphrase: entryNetworkPassphrase,
-    isDomainListedAllowed,
   } = params;
+
+  const { isDomainListedAllowed } = useIsDomainListedAllowed({
+    domain,
+  });
 
   const { t } = useTranslation();
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
@@ -227,10 +232,6 @@ export const AddToken = () => {
     return <SSLWarningMessage url={url} />;
   }
 
-  if (!isDomainListedAllowed) {
-    return <DomainNotAllowedWarningMessage domain={params.domain} />;
-  }
-
   if (isPasswordRequired) {
     return (
       <VerifyAccount
@@ -334,6 +335,10 @@ export const AddToken = () => {
               <BlockaidAssetWarning blockaidData={blockaidData} />
             )}
 
+            {!isDomainListedAllowed && (
+              <DomainNotAllowedWarningMessage domain={params.domain} />
+            )}
+
             <div className="AddToken__wrapper__info">
               <Text
                 as="div"
@@ -420,7 +425,7 @@ export const AddToken = () => {
               </Button>
               <Button
                 data-testid="add-token-approve"
-                disabled={!assetCurrency}
+                disabled={!assetCurrency || !isDomainListedAllowed}
                 isFullWidth
                 size="md"
                 variant="secondary"

@@ -239,7 +239,7 @@
   "Invalid mnemonic phrase": "Invalid mnemonic phrase",
   "INVALID STELLAR ADDRESS": "INVALID STELLAR ADDRESS",
   "Invocation Type": "Invocation Type",
-  "is currently not connected to Freighter": "is currently not connected to Freighter",
+  "is currently not connected to this Freighter account": "is currently not connected to this Freighter account",
   "is requesting approval to sign a message": "is requesting approval to sign a message",
   "is requesting approval to sign an authorization entry": "is requesting approval to sign an authorization entry",
   "Issuer": "Issuer",

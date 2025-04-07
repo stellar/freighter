@@ -28,7 +28,6 @@ import {
   getIsMainnet,
   getIsMemoValidationEnabled,
   getNetworkDetails,
-  getNetworksList,
   getAllowListSegment,
 } from "background/helpers/account";
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
@@ -68,19 +67,6 @@ const WINDOW_SETTINGS: WindowParams = {
   type: "popup",
   width: POPUP_WIDTH,
   height: POPUP_HEIGHT + 32, // include browser frame height,
-};
-
-const getNetworkDetailsFromNetworkpassphrase = async (
-  networkPassphrase: string,
-) => {
-  const networksList = await getNetworksList();
-
-  const networkDetails = networksList.find(
-    (currentNetwork: NetworkDetails) =>
-      currentNetwork.networkPassphrase === networkPassphrase,
-  );
-
-  return networkDetails;
 };
 
 export const freighterApiMessageListener = (
@@ -161,7 +147,6 @@ export const freighterApiMessageListener = (
     try {
       const { contractId, networkPassphrase: reqNetworkPassphrase } =
         request as ExternalRequestToken;
-      const publicKey = publicKeySelector(sessionStore.getState());
 
       const networkPassphrase =
         reqNetworkPassphrase || MAINNET_NETWORK_DETAILS.networkPassphrase;
@@ -170,20 +155,7 @@ export const freighterApiMessageListener = (
       const domain = getUrlHostname(tabUrl);
       const punycodedDomain = getPunycodedDomain(domain);
 
-      const networkDetails =
-        await getNetworkDetailsFromNetworkpassphrase(networkPassphrase);
-
-      const allowListSegment = await getAllowListSegment({
-        publicKey,
-        networkDetails,
-      });
-      const isDomainListedAllowed = await isSenderAllowed({
-        sender,
-        allowListSegment,
-      });
-
       const tokenInfo: TokenToAdd = {
-        isDomainListedAllowed,
         domain: punycodedDomain,
         tab,
         url: tabUrl,
@@ -253,19 +225,7 @@ export const freighterApiMessageListener = (
       const { networkUrl, networkPassphrase: currentNetworkPassphrase } =
         await getNetworkDetails();
       const Sdk = getSdk(currentNetworkPassphrase);
-      const publicKey = publicKeySelector(sessionStore.getState());
-
       const { tab, url: tabUrl = "" } = sender;
-
-      const networkDetails = await getNetworkDetails();
-      const allowListSegment = await getAllowListSegment({
-        publicKey,
-        networkDetails,
-      });
-      const isDomainListedAllowed = isSenderAllowed({
-        sender,
-        allowListSegment,
-      });
 
       const transaction = Sdk.TransactionBuilder.fromXDR(
         transactionXdr,
@@ -339,7 +299,6 @@ export const freighterApiMessageListener = (
         transaction,
         transactionXdr,
         tab,
-        isDomainListedAllowed,
         url: tabUrl,
         flaggedKeys,
         accountToSign: accountToSign || addressToSign,
@@ -399,26 +358,11 @@ export const freighterApiMessageListener = (
       const { apiVersion, blob, accountToSign, address, networkPassphrase } =
         request as ExternalRequestBlob;
 
-      const publicKey = publicKeySelector(sessionStore.getState());
-
       const { tab, url: tabUrl = "" } = sender;
       const domain = getUrlHostname(tabUrl);
       const punycodedDomain = getPunycodedDomain(domain);
 
-      const networkDetails = await getNetworkDetailsFromNetworkpassphrase(
-        networkPassphrase || MAINNET_NETWORK_DETAILS.networkPassphrase,
-      );
-      const allowListSegment = await getAllowListSegment({
-        publicKey,
-        networkDetails,
-      });
-      const isDomainListedAllowed = isSenderAllowed({
-        sender,
-        allowListSegment,
-      });
-
       const blobData: MessageToSign = {
-        isDomainListedAllowed,
         domain: punycodedDomain,
         tab,
         message: blob,
@@ -489,22 +433,8 @@ export const freighterApiMessageListener = (
       const { tab, url: tabUrl = "" } = sender;
       const domain = getUrlHostname(tabUrl);
       const punycodedDomain = getPunycodedDomain(domain);
-      const publicKey = publicKeySelector(sessionStore.getState());
-      const networkDetails = await getNetworkDetailsFromNetworkpassphrase(
-        networkPassphrase || MAINNET_NETWORK_DETAILS.networkPassphrase,
-      );
-
-      const allowListSegment = await getAllowListSegment({
-        publicKey,
-        networkDetails,
-      });
-      const isDomainListedAllowed = isSenderAllowed({
-        sender,
-        allowListSegment,
-      });
 
       const authEntry: EntryToSign = {
-        isDomainListedAllowed,
         entry: entryXdr,
         accountToSign: accountToSign || address,
         tab,

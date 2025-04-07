@@ -109,9 +109,10 @@ test("should not sign transaction when not allowed", async ({
 
   await expect(
     txPopup.getByText(
-      "docs.freighter.app is currently not connected to Freighter",
+      "docs.freighter.app is currently not connected to this Freighter account",
     ),
   ).toBeVisible();
+  await expect(txPopup.getByTestId("sign-transaction-sign")).toBeDisabled();
   await expectPageToHaveScreenshot({
     page: txPopup,
     screenshot: "domain-not-allowed.png",
@@ -177,9 +178,14 @@ test("should not sign auth entry when not allowed", async ({
 
   await expect(
     popup.getByText(
-      "docs.freighter.app is currently not connected to Freighter",
+      "docs.freighter.app is currently not connected to this Freighter account",
     ),
   ).toBeVisible();
+
+  await expect(
+    popup.getByTestId("sign-auth-entry-approve-button"),
+  ).toBeDisabled();
+
   await expectPageToHaveScreenshot({
     page: popup,
     screenshot: "domain-not-allowed.png",
@@ -242,9 +248,10 @@ test("should not sign message when not allowed", async ({
 
   await expect(
     popup.getByText(
-      "docs.freighter.app is currently not connected to Freighter",
+      "docs.freighter.app is currently not connected to this Freighter account",
     ),
   ).toBeVisible();
+  await expect(popup.getByTestId("sign-message-approve-button")).toBeDisabled();
   await expectPageToHaveScreenshot({
     page: popup,
     screenshot: "domain-not-allowed.png",
@@ -305,9 +312,10 @@ test("should not add token when not allowed", async ({ page, extensionId }) => {
 
   await expect(
     popup.getByText(
-      "docs.freighter.app is currently not connected to Freighter",
+      "docs.freighter.app is currently not connected to this Freighter account",
     ),
   ).toBeVisible();
+  await expect(popup.getByTestId("add-token-approve")).toBeDisabled();
   await expectPageToHaveScreenshot({
     page: popup,
     screenshot: "domain-not-allowed.png",

@@ -3,7 +3,6 @@ import browser from "webextension-polyfill";
 import { TransactionInfo } from "../types/transactions";
 
 export interface TokenToAdd {
-  isDomainListedAllowed: boolean;
   domain: string;
   tab?: browser.Tabs.Tab;
   url: string;
@@ -12,7 +11,6 @@ export interface TokenToAdd {
 }
 
 export interface MessageToSign {
-  isDomainListedAllowed: boolean;
   domain: string;
   tab?: browser.Tabs.Tab;
   message: string;
@@ -22,7 +20,6 @@ export interface MessageToSign {
 }
 
 export interface EntryToSign {
-  isDomainListedAllowed: boolean;
   domain: string;
   tab?: browser.Tabs.Tab;
   entry: string; // xdr.SorobanAuthorizationEntry
