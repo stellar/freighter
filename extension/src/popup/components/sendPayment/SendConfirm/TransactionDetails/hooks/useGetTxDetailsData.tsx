@@ -17,13 +17,21 @@ import {
   scanAsset,
   useScanTx,
 } from "popup/helpers/blockaid";
-import { BlockAidScanTxResult, SoroswapToken } from "@shared/api/types";
+import {
+  BlockAidScanTxResult,
+  MemoRequiredAccount,
+  SoroswapToken,
+} from "@shared/api/types";
 import { AccountBalancesInterface } from "@shared/api/types/backend-api";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { findAssetBalance } from "popup/helpers/balance";
 import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
-import { getAccountBalances, getAssetIcons } from "@shared/api/internal";
+import {
+  getAccountBalances,
+  getAssetIcons,
+  getMemoRequiredAccounts,
+} from "@shared/api/internal";
 import { sortBalances } from "popup/helpers/account";
 import { isContractId } from "popup/helpers/soroban";
 import { useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
@@ -38,6 +46,7 @@ export interface TxDetailsData {
   scanResult?: BlockAidScanTxResult | null;
   transactionXdr: string;
   soroswapTokens: SoroswapToken[];
+  memoRequiredAccounts: MemoRequiredAccount[];
 }
 
 interface ScanClassic {
@@ -211,6 +220,9 @@ function useGetTxDetailsData(
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
+      const { memoRequiredAccounts } = await getMemoRequiredAccounts({
+        activePublicKey: publicKey,
+      });
       const balancesResult = await fetchBalances();
       const destBalancesResult =
         destination && !isContractId(destination)
@@ -258,6 +270,7 @@ function useGetTxDetailsData(
       const payload = {
         balances: balancesResult,
         soroswapTokens: soroswapTokens.assets,
+        memoRequiredAccounts,
         destinationBalances: {
           ...destBalancesResult,
           icons: destIcons,

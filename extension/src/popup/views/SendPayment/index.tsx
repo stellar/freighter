@@ -216,7 +216,6 @@ export const SendPayment = () => {
               publicKey={publicKey}
               networkDetails={networkDetails}
               transactionData={transactionData}
-              memoRequiredAccounts={[]} // TODO
               transactionSimulation={settingsData.data?.simulationResponse}
             />
           </VerifiedAccountRoute>

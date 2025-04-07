@@ -12,7 +12,6 @@ import {
   truncatedFedAddress,
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
-import { MemoRequiredAccount } from "@shared/api/types";
 import {
   defaultBlockaidScanAssetResult,
   isCustomNetwork,
@@ -21,11 +20,7 @@ import { isTxSuspicious } from "popup/helpers/blockaid";
 
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
-import {
-  getMemoRequiredAccounts,
-  isPathPaymentSelector,
-  ShowOverlayStatus,
-} from "popup/ducks/transactionSubmission";
+import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 import {
   settingsNetworkDetailsSelector,
   settingsSelector,
@@ -67,7 +62,6 @@ import {
 import "./styles.scss";
 
 interface TransactionDetails {
-  memoRequiredAccounts: MemoRequiredAccount[];
   transactionSimulation: GetSettingsData["simulationResponse"];
   transactionData: TransactionData;
   goBack: () => void;
@@ -81,7 +75,6 @@ interface TransactionDetails {
 
 export const TransactionDetails = ({
   transactionData,
-  memoRequiredAccounts,
   transactionSimulation,
   goBack,
   shouldScanTx,
@@ -103,23 +96,25 @@ export const TransactionDetails = ({
     memo,
     federationAddress,
     transactionFee,
+    path,
+    transactionTimeout,
   } = transactionData;
 
   const [hwStatus, setHwStatus] = React.useState(ShowOverlayStatus.IDLE);
   const isToken = isContractId(asset);
-  const isSoroswap = false; // TODO: is source or dest is in soroswap tokens
 
-  const isPathPayment = useSelector(isPathPaymentSelector);
+  const isPathPayment = destinationAsset !== "";
   const { isMemoValidationEnabled } = useSelector(settingsSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isSwap = useIsSwap();
   const sourceAsset = getAssetFromCanonical(asset);
+  const isSoroswap = false; // TODO: is src or dest in soroswap tokens, need to move those up higher and take as props
   const scanParams =
     isToken || isSoroswap || isContractId(destination)
       ? {
           type: "soroban" as const,
-          xdr: transactionSimulation.preparedTransaction!,
+          xdr: transactionSimulation!.preparedTransaction,
         }
       : {
           type: "classic" as const,
@@ -162,22 +157,6 @@ export const TransactionDetails = ({
 
   const _isMainnet = isMainnet(networkDetails);
   const isValidatingMemo = isMemoValidationEnabled && _isMainnet;
-
-  const matchingBlockedTags = memoRequiredAccounts
-    .filter(({ address }) => address === destination)
-    .flatMap(({ tags }) => tags);
-  const isMemoRequired =
-    isValidatingMemo &&
-    matchingBlockedTags.some(
-      (tag) => tag === TRANSACTION_WARNING.memoRequired && !memo,
-    );
-
-  const isSubmitDisabled = isMemoRequired;
-
-  // TODO: figure out which view actually needs this
-  useEffect(() => {
-    dispatch(getMemoRequiredAccounts());
-  }, [dispatch]);
 
   const handleSend = async () => {
     if (isHardwareWallet) {
@@ -252,6 +231,17 @@ export const TransactionDetails = ({
   const isLoading =
     txDetailsData.state === RequestState.IDLE ||
     txDetailsData.state === RequestState.LOADING;
+
+  const matchingBlockedTags = txDetailsData
+    .data!.memoRequiredAccounts.filter(({ address }) => address === destination)
+    .flatMap(({ tags }) => tags);
+  const isMemoRequired =
+    isValidatingMemo &&
+    matchingBlockedTags.some(
+      (tag) => tag === TRANSACTION_WARNING.memoRequired && !memo,
+    );
+
+  const isSubmitDisabled = isMemoRequired;
 
   return (
     <>

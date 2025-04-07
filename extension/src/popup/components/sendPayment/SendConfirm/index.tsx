@@ -24,7 +24,6 @@ interface SendConfirm {
   networkDetails: NetworkDetails;
   goBack: () => void;
   transactionData: TransactionData;
-  memoRequiredAccounts: MemoRequiredAccount[];
   transactionSimulation: GetSettingsData["simulationResponse"];
 }
 
@@ -33,7 +32,6 @@ export const SendConfirm = ({
   publicKey,
   networkDetails,
   transactionData,
-  memoRequiredAccounts,
   transactionSimulation,
 }: SendConfirm) => {
   const navigate = useNavigate();
@@ -55,7 +53,6 @@ export const SendConfirm = ({
         <TransactionDetails
           shouldScanTx={false}
           transactionData={transactionData}
-          memoRequiredAccounts={memoRequiredAccounts}
           signedTransaction={signedTransaction.data?.signedTransaction!}
           transactionSimulation={transactionSimulation}
           signTx={signTx}
@@ -78,7 +75,6 @@ export const SendConfirm = ({
             shouldScanTx={true}
             goBack={goBack}
             transactionData={transactionData}
-            memoRequiredAccounts={memoRequiredAccounts}
             signedTransaction={signedTransaction.data?.signedTransaction!}
             transactionSimulation={transactionSimulation}
             signTx={signTx}
@@ -93,7 +89,6 @@ export const SendConfirm = ({
             shouldScanTx={false}
             goBack={goBack}
             transactionData={transactionData}
-            memoRequiredAccounts={memoRequiredAccounts}
             signedTransaction={signedTransaction.data?.signedTransaction!}
             transactionSimulation={transactionSimulation}
             signTx={signTx}
@@ -121,7 +116,6 @@ export const SendConfirm = ({
             shouldScanTx={false}
             goBack={goBack}
             transactionData={transactionData}
-            memoRequiredAccounts={memoRequiredAccounts}
             signedTransaction={signedTransaction.data?.signedTransaction!}
             transactionSimulation={transactionSimulation}
             signTx={signTx}
