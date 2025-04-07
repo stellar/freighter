@@ -1,4 +1,5 @@
 import * as extensionMessaging from "@shared/api/helpers/extensionMessaging";
+import * as ApiExternal from "@shared/api/external";
 
 import { signTransaction } from "../signTransaction";
 
@@ -9,6 +10,9 @@ describe("signTransaction", () => {
       signedTransaction: TEST_TRANSACTION,
       signerAddress: "baz",
     });
+    ApiExternal.requestAllowedStatus = jest.fn().mockImplementationOnce(() => ({
+      isAllowed: true,
+    }));
     const transaction = await signTransaction();
     expect(transaction).toEqual({
       signedTxXdr: TEST_TRANSACTION,
@@ -19,6 +23,9 @@ describe("signTransaction", () => {
     extensionMessaging.sendMessageToContentScript = jest
       .fn()
       .mockReturnValue({ apiError: "baz" });
+    ApiExternal.requestAllowedStatus = jest.fn().mockImplementationOnce(() => ({
+      isAllowed: true,
+    }));
     const transaction = await signTransaction();
 
     expect(transaction).toEqual({

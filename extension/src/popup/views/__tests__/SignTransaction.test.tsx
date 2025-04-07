@@ -224,6 +224,7 @@ describe("SignTransactions", () => {
         _operations: [op],
       },
       isHttpsDomain: false,
+      domain: "laboratory.stellar.org",
     }));
     render(
       <Wrapper
@@ -234,10 +235,16 @@ describe("SignTransactions", () => {
             publicKey: mockAccounts[0].publicKey,
           },
           settings: {
+            allowList: {
+              "Test Net": {
+                [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+              },
+            },
             isExperimentalModeEnabled: false,
             networkDetails: {
               ...defaultSettingsState.networkDetails,
               networkPassphrase: "Test SDF Network ; September 2015",
+              networkName: "Test Net",
             },
           },
         }}
