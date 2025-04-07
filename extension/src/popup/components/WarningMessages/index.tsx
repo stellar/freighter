@@ -246,7 +246,7 @@ export const DomainNotAllowedWarningMessage = ({
 
   return (
     <WarningMessage
-      variant={WarningMessageVariant.warning}
+      variant={WarningMessageVariant.highAlert}
       header={`${getPunycodedDomain(domain)} ${t("is currently not connected to this Freighter account")}`}
     >
       <p>

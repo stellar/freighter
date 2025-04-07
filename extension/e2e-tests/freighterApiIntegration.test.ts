@@ -115,7 +115,7 @@ test("should not sign transaction when not allowed", async ({
   await expect(txPopup.getByTestId("sign-transaction-sign")).toBeDisabled();
   await expectPageToHaveScreenshot({
     page: txPopup,
-    screenshot: "domain-not-allowed.png",
+    screenshot: "domain-not-allowed-sign-transaction.png",
   });
 });
 
@@ -188,7 +188,7 @@ test("should not sign auth entry when not allowed", async ({
 
   await expectPageToHaveScreenshot({
     page: popup,
-    screenshot: "domain-not-allowed.png",
+    screenshot: "domain-not-allowed-sign-auth-entry.png",
   });
 });
 
@@ -254,7 +254,7 @@ test("should not sign message when not allowed", async ({
   await expect(popup.getByTestId("sign-message-approve-button")).toBeDisabled();
   await expectPageToHaveScreenshot({
     page: popup,
-    screenshot: "domain-not-allowed.png",
+    screenshot: "domain-not-allowed-sign-message.png",
   });
 });
 
@@ -318,6 +318,6 @@ test("should not add token when not allowed", async ({ page, extensionId }) => {
   await expect(popup.getByTestId("add-token-approve")).toBeDisabled();
   await expectPageToHaveScreenshot({
     page: popup,
-    screenshot: "domain-not-allowed.png",
+    screenshot: "domain-not-allowed-add-token.png",
   });
 });
