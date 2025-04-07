@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { useSelector } from "react-redux";
 import { settingsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
