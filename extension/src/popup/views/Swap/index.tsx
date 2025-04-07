@@ -88,7 +88,10 @@ export const Swap = () => {
       case STEPS.CHOOSE_ASSETS: {
         return (
           <PublicKeyRoute>
-            <ChooseAsset goBack={() => setActiveStep(STEPS.AMOUNT)} />
+            <ChooseAsset
+              isManagingAssets={false}
+              goBack={() => setActiveStep(STEPS.AMOUNT)}
+            />
           </PublicKeyRoute>
         );
       }

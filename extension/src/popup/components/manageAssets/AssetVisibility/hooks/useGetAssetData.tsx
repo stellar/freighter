@@ -40,7 +40,13 @@ function useGetAssetData(
     initialState,
   );
   const { fetchData: fetchDomainsWithBalances } =
-    useGetAssetDomainsWithBalances(publicKey, networkDetails, options);
+    useGetAssetDomainsWithBalances(
+      publicKey,
+      networkDetails,
+      true,
+      true,
+      options,
+    );
 
   const { fetchData: getTokens } = useGetSoroswapTokens();
 

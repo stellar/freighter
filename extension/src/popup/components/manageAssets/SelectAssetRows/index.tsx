@@ -14,7 +14,7 @@ import "./styles.scss";
 interface SelectAssetRowsProps {
   balances: AccountBalances;
   assetRows: ManageAssetCurrency[];
-  onSelect: () => unknown;
+  onSelect: (canonical: string) => unknown;
   isPathPaymentDestAsset: boolean;
   soroswapTokens: SoroswapToken[];
 }
@@ -72,7 +72,7 @@ export const SelectAssetRows = ({
                 className="SelectAssetRows__row selectable"
                 data-testid={`Select-assets-row-${code}`}
                 key={canonical}
-                onClick={onSelect}
+                onClick={() => onSelect(canonical)}
               >
                 <AssetIcon
                   assetIcons={code !== "XLM" ? { [canonical]: image } : {}}

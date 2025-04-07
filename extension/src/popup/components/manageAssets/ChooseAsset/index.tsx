@@ -24,10 +24,16 @@ import "./styles.scss";
 
 export const ChooseAsset = ({
   goBack,
+  onSelectRow,
   showHideAssets = false,
+  isManagingAssets,
+  isPathPaymentDestAsset,
 }: {
   goBack: () => void;
+  onSelectRow: (canonical: string) => void;
   showHideAssets?: boolean;
+  isManagingAssets: boolean;
+  isPathPaymentDestAsset: boolean;
 }) => {
   const { t } = useTranslation();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
@@ -39,6 +45,8 @@ export const ChooseAsset = ({
   const { state: domainState, fetchData } = useGetAssetDomainsWithBalances(
     publicKey,
     networkDetails,
+    true,
+    isManagingAssets,
     {
       isMainnet: isMainnet(networkDetails),
       showHidden: false,
@@ -123,8 +131,8 @@ export const ChooseAsset = ({
                   assetRows={domainState.data.domains}
                   balances={domainState.data.balances}
                   soroswapTokens={domainState.data.soroswapTokens}
-                  onSelect={goBack} // TODO should also "select the asset"
-                  isPathPaymentDestAsset={false} // TODO
+                  onSelect={onSelectRow}
+                  isPathPaymentDestAsset={isPathPaymentDestAsset}
                 />
               )}
             </div>

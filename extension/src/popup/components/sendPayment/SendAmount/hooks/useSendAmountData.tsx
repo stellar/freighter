@@ -43,6 +43,8 @@ function useGetSendAmountData(
   const { fetchData: fetchAssetDomains } = useGetAssetDomainsWithBalances(
     publicKey,
     networkDetails,
+    true,
+    false,
     options,
   );
   const { fetchData: getTokens } = useGetSoroswapTokens();

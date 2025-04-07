@@ -181,7 +181,15 @@ export const SendPayment = () => {
       case STEPS.CHOOSE_ASSET: {
         return (
           <PublicKeyRoute>
-            <ChooseAsset goBack={() => setActiveStep(STEPS.AMOUNT)} />
+            <ChooseAsset
+              isManagingAssets={false}
+              isPathPaymentDestAsset={transactionData.destinationAsset !== ""}
+              onSelectRow={(asset: string) => {
+                setTxDataKey<string>("asset", asset);
+                setActiveStep(STEPS.AMOUNT);
+              }}
+              goBack={() => setActiveStep(STEPS.AMOUNT)}
+            />
           </PublicKeyRoute>
         );
       }

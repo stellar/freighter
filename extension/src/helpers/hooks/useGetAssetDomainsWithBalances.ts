@@ -1,15 +1,10 @@
 import { useReducer } from "react";
-import { useSelector } from "react-redux";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { Balance, SoroswapToken } from "@shared/api/types";
 import { initialState, isError, reducer } from "helpers/request";
 
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
-import {
-  AssetSelectType,
-  transactionSubmissionSelector,
-} from "popup/ducks/transactionSubmission";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { findAssetBalance } from "popup/helpers/balance";
 import { isAssetSuspicious } from "../../popup/helpers/blockaid";
@@ -29,6 +24,8 @@ export interface AssetDomains {
 export function useGetAssetDomainsWithBalances(
   publicKey: string,
   networkDetails: NetworkDetails,
+  isSource: boolean,
+  isManagingAssets: boolean,
   options: {
     isMainnet: boolean;
     showHidden: boolean;
@@ -37,8 +34,6 @@ export function useGetAssetDomainsWithBalances(
 ) {
   const isSwap = useIsSwap();
   const isSoroswapEnabled = useIsSoroswapEnabled();
-  const { assetSelect } = useSelector(transactionSubmissionSelector);
-  const isManagingAssets = assetSelect.type === AssetSelectType.MANAGE;
 
   const [state, dispatch] = useReducer(
     reducer<AssetDomains, unknown>,
@@ -132,7 +127,7 @@ export function useGetAssetDomainsWithBalances(
         }
       }
 
-      if (isSoroswapEnabled && isSwap && !assetSelect.isSource) {
+      if (isSoroswapEnabled && isSwap && !isSource) {
         soroswapTokens.assets.forEach((token) => {
           const nativeContractDetails =
             getNativeContractDetails(networkDetails);

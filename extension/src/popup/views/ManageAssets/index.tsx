@@ -33,7 +33,13 @@ export const ManageAssets = () => {
           index
           element={
             <PrivateKeyRoute>
-              <ChooseAsset goBack={() => navigate(-1)} showHideAssets />
+              <ChooseAsset
+                onSelectRow={() => navigate(-1)}
+                goBack={() => navigate(-1)}
+                isPathPaymentDestAsset={false}
+                isManagingAssets
+                showHideAssets
+              />
             </PrivateKeyRoute>
           }
         ></Route>
