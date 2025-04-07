@@ -8,7 +8,8 @@ import { HistoryResponse, useGetHistory } from "helpers/hooks/useGetHistory";
 import { AssetOperations, sortOperationsByAsset } from "popup/helpers/account";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { getTokenPrices as internalGetTokenPrices } from "@shared/api/internal";
-import { ApiTokenPrices } from "@shared/api/types";
+import { ApiTokenPrices, SoroswapToken } from "@shared/api/types";
+import { useGetSoroswapTokens } from "helpers/hooks/useGetSoroswapTokens";
 
 const getTokenPrices = async ({
   balances,
@@ -34,11 +35,13 @@ interface AccountData {
   balances: AccountBalances;
   operationsByAsset: AssetOperations;
   tokenPrices?: ApiTokenPrices;
+  soroswapTokens: SoroswapToken[];
 }
 
 function useGetAccountData(
   publicKey: string,
   networkDetails: NetworkDetails,
+  isSoroswapSupported: boolean,
   options: {
     isMainnet: boolean;
     showHidden: boolean;
@@ -54,6 +57,7 @@ function useGetAccountData(
     networkDetails,
     options,
   );
+  const { fetchData: getTokens } = useGetSoroswapTokens();
   const { fetchData: fetchHistory } = useGetHistory(publicKey, networkDetails);
 
   const fetchData = async () => {
@@ -61,6 +65,9 @@ function useGetAccountData(
     try {
       const balancesResult = await fetchBalances();
       const history = await fetchHistory();
+      const soroswapTokens = isSoroswapSupported
+        ? await getTokens()
+        : { assets: [] };
 
       if (isError<AccountBalances>(balancesResult)) {
         throw new Error(balancesResult.message);
@@ -68,6 +75,10 @@ function useGetAccountData(
 
       if (isError<HistoryResponse>(history)) {
         throw new Error(history.message);
+      }
+
+      if (isError<{ assets: SoroswapToken[] }>(soroswapTokens)) {
+        throw new Error(soroswapTokens.message);
       }
 
       const payload = {
@@ -78,6 +89,7 @@ function useGetAccountData(
           networkDetails,
           publicKey,
         }),
+        soroswapTokens: soroswapTokens.assets,
       } as AccountData;
 
       if (options.isMainnet) {

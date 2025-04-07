@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { createPortal } from "react-dom";
 import get from "lodash/get";
@@ -7,13 +8,18 @@ import { useTranslation } from "react-i18next";
 import { Account, Asset, Operation, TransactionBuilder } from "stellar-sdk";
 import { AppDispatch } from "popup/App";
 
-import { AssetIcons, Balance, ErrorMessage } from "@shared/api/types";
+import {
+  AssetIcons,
+  Balance,
+  ErrorMessage,
+  SoroswapToken,
+} from "@shared/api/types";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
 import { getAssetFromCanonical, isMainnet, xlmToStroop } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { RESULT_CODES, getResultCodes } from "popup/helpers/parseTransaction";
-import { useIsSwap } from "popup/helpers/useIsSwap";
+import { useIsSoroswapEnabled, useIsSwap } from "popup/helpers/useIsSwap";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -45,7 +51,6 @@ import {
 import { Loading } from "popup/components/Loading";
 
 import "./styles.scss";
-import { useNavigate } from "react-router-dom";
 
 const SwapAssetsIcon = ({
   sourceCanon,
@@ -53,12 +58,14 @@ const SwapAssetsIcon = ({
   assetIcons,
   isSourceSuspicious,
   isDestSuspicious,
+  soroswapTokens,
 }: {
   sourceCanon: string;
   destCanon: string;
   assetIcons: AssetIcons;
   isSourceSuspicious: boolean;
   isDestSuspicious: boolean;
+  soroswapTokens: SoroswapToken[];
 }) => {
   const source = getAssetFromCanonical(sourceCanon);
   const dest = getAssetFromCanonical(destCanon);
@@ -70,6 +77,7 @@ const SwapAssetsIcon = ({
         code={source.code}
         issuerKey={source.issuer}
         isSuspicious={isSourceSuspicious}
+        soroswapTokens={soroswapTokens}
       />
       <span data-testid="SubmitResultSource">{source.code}</span>
       <Icon.ArrowRight />
@@ -78,6 +86,7 @@ const SwapAssetsIcon = ({
         code={dest.code}
         issuerKey={dest.issuer}
         isSuspicious={isDestSuspicious}
+        soroswapTokens={soroswapTokens}
       />
       <span data-testid="SubmitResultDestination">{dest.code}</span>
     </div>
@@ -107,10 +116,12 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   const { recommendedFee } = useNetworkFees();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const isSoroswapSupported = useIsSoroswapEnabled();
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
   const { state: accountData, fetchData } = useGetAccountData(
     publicKey,
     networkDetails,
+    isSoroswapSupported,
     {
       isMainnet: isMainnet(networkDetails),
       showHidden: false,
@@ -273,6 +284,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
                 assetIcons={accountData.data?.balances?.icons || {}}
                 isSourceSuspicious={isSourceAssetSuspicious}
                 isDestSuspicious={isDestAssetSuspicious}
+                soroswapTokens={accountData.data?.soroswapTokens || []}
               />
             ) : (
               <FedOrGAddress

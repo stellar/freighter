@@ -5,7 +5,7 @@ import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { ManageAssetCurrency } from "../../ManageAssetRows";
-import { IssuerKey, AssetVisibility } from "@shared/api/types";
+import { IssuerKey, AssetVisibility, SoroswapToken } from "@shared/api/types";
 import {
   AssetDomains,
   useGetAssetDomainsWithBalances,
@@ -14,9 +14,12 @@ import {
   getHiddenAssets,
   changeAssetVisibility as internalChangeAssetVisibility,
 } from "@shared/api/internal";
+import { useGetSoroswapTokens } from "helpers/hooks/useGetSoroswapTokens";
+import { useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
 
 export interface AssetVisibilityData {
   balances: AccountBalances;
+  soroswapTokens: SoroswapToken[];
   domains: ManageAssetCurrency[];
   isManagingAssets: boolean;
   hiddenAssets: Record<IssuerKey, AssetVisibility>;
@@ -31,12 +34,15 @@ function useGetAssetData(
     includeIcons: boolean;
   },
 ) {
+  const isSoroswapSupported = useIsSoroswapEnabled();
   const [state, dispatch] = useReducer(
     reducer<AssetVisibilityData, unknown>,
     initialState,
   );
   const { fetchData: fetchDomainsWithBalances } =
     useGetAssetDomainsWithBalances(publicKey, networkDetails, options);
+
+  const { fetchData: getTokens } = useGetSoroswapTokens();
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -45,6 +51,13 @@ function useGetAssetData(
       const { hiddenAssets, error: hiddenAssetError } = await getHiddenAssets({
         activePublicKey: publicKey,
       });
+      const soroswapTokens = isSoroswapSupported
+        ? await getTokens()
+        : { assets: [] };
+
+      if (isError<{ assets: SoroswapToken[] }>(soroswapTokens)) {
+        throw new Error(soroswapTokens.message);
+      }
 
       if (isError<AssetDomains>(domainsResult)) {
         throw new Error(domainsResult.message);
@@ -57,6 +70,7 @@ function useGetAssetData(
       const payload = {
         ...domainsResult,
         hiddenAssets,
+        soroswapTokens: soroswapTokens.assets,
       } as AssetVisibilityData;
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

@@ -15,7 +15,7 @@ import { isContractId } from "popup/helpers/soroban";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { settingsSelector } from "popup/ducks/settings";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
-import { AssetIcons } from "@shared/api/types";
+import { AssetIcons, SoroswapToken } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
@@ -26,12 +26,14 @@ export const AssetSelect = ({
   isSuspicious,
   icons,
   onSelectAsset,
+  soroswapTokens,
 }: {
   assetCode: string;
   issuerKey: string;
   isSuspicious: boolean;
   icons: AssetIcons;
   onSelectAsset: () => unknown;
+  soroswapTokens: SoroswapToken[];
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { networkDetails, assetsLists } = useSelector(settingsSelector);
@@ -87,6 +89,7 @@ export const AssetSelect = ({
               code={assetCode}
               issuerKey={issuerKey}
               isSuspicious={isSuspicious}
+              soroswapTokens={soroswapTokens}
             />
             <span className="AssetSelect__medium-copy">{assetCode}</span>
           </div>
@@ -108,6 +111,7 @@ export const PathPayAssetSelect = ({
   icons,
   isSuspicious,
   onSelectAsset,
+  soroswapTokens,
 }: {
   source: boolean;
   assetCode: string;
@@ -117,6 +121,7 @@ export const PathPayAssetSelect = ({
   isSuspicious: boolean;
   icons: AssetIcons;
   onSelectAsset: () => unknown;
+  soroswapTokens: SoroswapToken[];
 }) => {
   const dispatch = useDispatch();
   const isSwap = useIsSwap();
@@ -161,6 +166,7 @@ export const PathPayAssetSelect = ({
             issuerKey={issuerKey}
             icon={icon}
             isSuspicious={isSuspicious}
+            soroswapTokens={soroswapTokens}
           />
           <span
             className="AssetSelect__medium-copy"

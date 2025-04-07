@@ -78,6 +78,7 @@ export const AssetVisibility = () => {
             >
               <ToggleAssetRows
                 assetRows={domainState.data!.domains}
+                soroswapTokens={domainState.data!.soroswapTokens}
                 hiddenAssets={domainState.data!.hiddenAssets}
                 changeAssetVisibility={changeAssetVisibility}
               />

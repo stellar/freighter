@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import IconShieldPlus from "popup/assets/icon-shield-plus.svg";
-import { AssetIcons } from "@shared/api/types";
+import { AssetIcons, SoroswapToken } from "@shared/api/types";
 
 import { BlockAidSiteScanLabel } from "../WarningMessages";
 
@@ -57,6 +57,7 @@ interface ModalInfoProps {
   asset: string;
   assetIcons: AssetIcons;
   variant?: "default" | "malicious";
+  soroswapTokens: SoroswapToken[];
 }
 
 export const ModalInfo = ({
@@ -69,6 +70,7 @@ export const ModalInfo = ({
   asset,
   variant = "default",
   assetIcons,
+  soroswapTokens,
 }: ModalInfoProps) => {
   const cardClasses = classNames("ModalInfo--card", {
     Malicious: variant === "malicious",
@@ -84,6 +86,7 @@ export const ModalInfo = ({
             code={code}
             issuerKey={issuer}
             isSuspicious={false}
+            soroswapTokens={soroswapTokens}
             isModal
           />
         </div>

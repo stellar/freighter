@@ -4,7 +4,12 @@ import isEmpty from "lodash/isEmpty";
 import { Asset, Horizon } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 
-import { ApiTokenPrices, AssetIcons, Balance } from "@shared/api/types";
+import {
+  ApiTokenPrices,
+  AssetIcons,
+  Balance,
+  SoroswapToken,
+} from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
 import { AssetType } from "@shared/api/types/account-balance";
 
@@ -16,7 +21,6 @@ import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import ImageMissingIcon from "popup/assets/image-missing.svg?react";
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
@@ -45,6 +49,7 @@ export const AssetIcon = ({
   icon,
   isSuspicious = false,
   isModal = false,
+  soroswapTokens,
 }: {
   assetIcons: AssetIcons;
   code: string;
@@ -55,6 +60,7 @@ export const AssetIcon = ({
   icon?: string;
   isSuspicious?: boolean;
   isModal?: boolean;
+  soroswapTokens: SoroswapToken[];
 }) => {
   /*
     We load asset icons in 2 ways:
@@ -72,8 +78,6 @@ export const AssetIcon = ({
 
   // For all non-XLM assets (assets where we need to fetch the icon from elsewhere), start by showing a loading state as there is work to do
   const [isLoading, setIsLoading] = useState(!isXlm);
-
-  const { soroswapTokens } = useSelector(transactionSubmissionSelector);
 
   const canonicalAsset = assetIcons[getCanonicalFromAsset(code, issuerKey)];
   let imgSrc = hasError ? ImageMissingIcon : canonicalAsset || "";
@@ -164,6 +168,7 @@ interface AccountAssetsProps {
   sortedBalances: AssetType[];
   assetPrices?: ApiTokenPrices;
   setSelectedAsset?: (selectedAsset: string) => void;
+  soroswapTokens: SoroswapToken[];
 }
 
 export const AccountAssets = ({
@@ -171,6 +176,7 @@ export const AccountAssets = ({
   sortedBalances,
   assetPrices,
   setSelectedAsset,
+  soroswapTokens,
 }: AccountAssetsProps) => {
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -300,6 +306,7 @@ export const AccountAssets = ({
                 retryAssetIconFetch={retryAssetIconFetch}
                 isLPShare={"liquidityPoolId" in rb && !!rb.liquidityPoolId}
                 isSuspicious={isSuspicious}
+                soroswapTokens={soroswapTokens}
               />
               <div className="asset-native-value">
                 <span className="asset-code">{code}</span>

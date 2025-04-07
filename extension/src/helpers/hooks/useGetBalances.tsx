@@ -6,19 +6,22 @@ import {
   getHiddenAssets,
 } from "@shared/api/internal";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { AssetIcons } from "@shared/api/types";
+import { AssetIcons, SoroswapToken } from "@shared/api/types";
 import {
   AccountBalancesInterface,
   BalanceMap,
 } from "@shared/api/types/backend-api";
 import { RequestState } from "constants/request";
-import { initialState, reducer } from "helpers/request";
+import { initialState, isError, reducer } from "helpers/request";
 import { storeBalanceMetricData } from "helpers/metrics";
 import { filterHiddenBalances, sortBalances } from "popup/helpers/account";
 import { AssetType } from "@shared/api/types/account-balance";
+import { useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
+import { useGetSoroswapTokens } from "./useGetSoroswapTokens";
 
 export interface AccountBalances {
   balances: AssetType[];
+  soroswapTokens: SoroswapToken[];
   isFunded: AccountBalancesInterface["isFunded"];
   subentryCount: AccountBalancesInterface["subentryCount"];
   error?: AccountBalancesInterface["error"];
@@ -34,10 +37,13 @@ function useGetBalances(
     includeIcons: boolean;
   },
 ) {
+  const isSoroswapSupported = useIsSoroswapEnabled();
   const [state, dispatch] = useReducer(
     reducer<AccountBalances, unknown>,
     initialState,
   );
+
+  const { fetchData: getTokens } = useGetSoroswapTokens();
 
   const fetchData = async (): Promise<AccountBalances | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -47,11 +53,18 @@ function useGetBalances(
         networkDetails,
         options.isMainnet,
       );
+      const soroswapTokens = isSoroswapSupported
+        ? await getTokens()
+        : { assets: [] };
+      if (isError<{ assets: SoroswapToken[] }>(soroswapTokens)) {
+        throw new Error(soroswapTokens.message);
+      }
 
       const payload = {
         isFunded: data.isFunded,
         subentryCount: data.subentryCount,
         error: data.error,
+        soroswapTokens: soroswapTokens.assets,
       } as AccountBalances;
 
       if (!options.showHidden) {

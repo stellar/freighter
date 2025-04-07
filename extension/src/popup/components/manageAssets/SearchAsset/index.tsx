@@ -331,6 +331,7 @@ export const SearchAsset = () => {
                   {verifiedAssetRows.length || unverifiedAssetRows.length ? (
                     <ManageAssetRows
                       balances={state.data!}
+                      soroswapTokens={state.data!.soroswapTokens}
                       header={
                         verifiedAssetRows.length > 1 ||
                         unverifiedAssetRows.length > 1 ? (

@@ -332,6 +332,7 @@ export const AddAsset = () => {
                       isVerifiedToken={isVerifiedToken}
                       isVerificationInfoShowing={isVerificationInfoShowing}
                       verifiedLists={verifiedLists}
+                      soroswapTokens={state.data!.soroswapTokens}
                     />
                   ) : null}
                   {hasNoResults && dirty && !isSearching ? (

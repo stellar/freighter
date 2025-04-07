@@ -11,11 +11,11 @@ import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
 import { SendTo } from "popup/components/sendPayment/SendTo";
 import { SendAmount } from "popup/components/sendPayment/SendAmount";
 import { SendType } from "popup/components/sendPayment/SendAmount/SendType";
-import { Settings } from "popup/components/sendPayment/SendSettings/Settings";
 import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/TransactionFee";
 import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/Slippage";
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 import { SendSettingsTxTimeout } from "popup/components/sendPayment/SendSettings/TxTimeout";
+import { SendSettings } from "popup/components/sendPayment/SendSettings";
 import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
 import { TransactionData } from "types/transactions";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -244,7 +244,7 @@ export const SendPayment = () => {
         emitMetric(METRIC_NAMES.sendPaymentSettings);
         return (
           <PublicKeyRoute>
-            <Settings
+            <SendSettings
               goBack={() => setActiveStep(STEPS.AMOUNT)}
               goToNext={() => setActiveStep(STEPS.PAYMENT_CONFIRM)}
               goToFeeSetting={() => setActiveStep(STEPS.SET_PAYMENT_FEE)}

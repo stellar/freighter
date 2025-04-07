@@ -2,7 +2,7 @@ import React from "react";
 import { Icon } from "@stellar/design-system";
 import BigNumber from "bignumber.js";
 
-import { AssetIcons } from "@shared/api/types";
+import { AssetIcons, SoroswapToken } from "@shared/api/types";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { formatAmount } from "popup/helpers/formatters";
 import { AssetIcon } from "../account/AccountAssets";
@@ -18,6 +18,7 @@ export const TwoAssetCard = ({
   destAmount,
   isSourceAssetSuspicious,
   isDestAssetSuspicious,
+  soroswapTokens,
 }: {
   sourceAssetIcons: AssetIcons;
   sourceCanon: string;
@@ -27,6 +28,7 @@ export const TwoAssetCard = ({
   destAmount: string;
   isSourceAssetSuspicious: boolean;
   isDestAssetSuspicious: boolean;
+  soroswapTokens: SoroswapToken[];
 }) => {
   const sourceAsset = getAssetFromCanonical(sourceCanon);
   const destAsset = getAssetFromCanonical(destCanon);
@@ -40,6 +42,7 @@ export const TwoAssetCard = ({
             code={sourceAsset.code}
             issuerKey={sourceAsset.issuer}
             isSuspicious={isSourceAssetSuspicious}
+            soroswapTokens={soroswapTokens}
           />
           {sourceAsset.code}
         </div>
@@ -60,6 +63,7 @@ export const TwoAssetCard = ({
             code={destAsset.code}
             issuerKey={destAsset.issuer}
             isSuspicious={isDestAssetSuspicious}
+            soroswapTokens={soroswapTokens}
           />
           {destAsset.code}
         </div>

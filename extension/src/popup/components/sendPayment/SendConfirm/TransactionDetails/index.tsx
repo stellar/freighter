@@ -12,7 +12,7 @@ import {
   truncatedFedAddress,
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
-import { ActionStatus, MemoRequiredAccount } from "@shared/api/types";
+import { MemoRequiredAccount } from "@shared/api/types";
 import {
   defaultBlockaidScanAssetResult,
   isCustomNetwork,
@@ -297,6 +297,9 @@ export const TransactionDetails = ({
                         code={sourceAsset.code}
                         issuerKey={sourceAsset.issuer}
                         isLPShare={false}
+                        soroswapTokens={
+                          txDetailsData.data?.soroswapTokens || []
+                        }
                       />
                     </div>
                     <div className="TransactionDetails__copy-right">
@@ -330,6 +333,7 @@ export const TransactionDetails = ({
                 isDestAssetSuspicious={
                   txDetailsData.data!.isDestAssetSuspicious
                 }
+                soroswapTokens={txDetailsData.data?.soroswapTokens || []}
               />
             )}
 
@@ -447,7 +451,7 @@ export const TransactionDetails = ({
                   scanResult={txDetailsData.data!.scanResult}
                 />
               )}
-              {submission.submitStatus === ActionStatus.IDLE && (
+              {submissionStatus === RequestState.IDLE && (
                 <FlaggedWarningMessage
                   isMemoRequired={isMemoRequired}
                   blockaidData={getBlockaidData(

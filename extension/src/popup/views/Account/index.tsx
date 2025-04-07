@@ -33,12 +33,13 @@ import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+import { getBalanceByIssuer } from "popup/helpers/balance";
+import { useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
 
 import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
-import { getBalanceByIssuer } from "popup/helpers/balance";
 
 export const Account = () => {
   const { t } = useTranslation();
@@ -52,9 +53,11 @@ export const Account = () => {
   const [selectedAsset, setSelectedAsset] = useState("");
   const isFullscreenModeEnabled = isFullscreenMode();
   const isMainnetNetwork = isMainnet(networkDetails);
+  const isSoroswapSupported = useIsSoroswapEnabled();
   const { state: accountData, fetchData } = useGetAccountData(
     publicKey,
     networkDetails,
+    isSoroswapSupported,
     {
       isMainnet: isMainnetNetwork,
       showHidden: false,
@@ -235,6 +238,7 @@ export const Account = () => {
                 assetPrices={tokenPrices}
                 assetIcons={accountData.data.balances.icons || {}}
                 setSelectedAsset={setSelectedAsset}
+                soroswapTokens={accountData.data.soroswapTokens}
               />
             </div>
           )}

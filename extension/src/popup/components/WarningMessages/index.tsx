@@ -30,6 +30,7 @@ import {
   AssetIcons,
   BlockAidScanAssetResult,
   BlockAidScanTxResult,
+  SoroswapToken,
 } from "@shared/api/types";
 import { getTokenDetails } from "@shared/api/internal";
 import { TokenArgsDisplay } from "@shared/api/helpers/soroban";
@@ -540,11 +541,11 @@ export const ScamAssetWarning = ({
   issuer,
   image,
   onClose,
-
   onContinue = () => {},
   blockaidData,
   assetIcons,
   balances,
+  soroswapTokens,
 }: {
   pillType: "Connection" | "Trustline" | "Transaction";
   isSendWarning?: boolean;
@@ -557,6 +558,7 @@ export const ScamAssetWarning = ({
   blockaidData: BlockAidScanAssetResult;
   assetIcons: AssetIcons;
   balances: AccountBalances;
+  soroswapTokens: SoroswapToken[];
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -664,6 +666,7 @@ export const ScamAssetWarning = ({
           variant={isAssetSuspicious(blockaidData) ? "malicious" : "default"}
           asset={code}
           pillType={pillType}
+          soroswapTokens={soroswapTokens}
         >
           <div className="ScamAssetWarning__wrapper" ref={warningRef}>
             <div>
@@ -725,6 +728,7 @@ export const NewAssetWarning = ({
   newAssetFlags,
   onClose,
   balances,
+  soroswapTokens,
 }: {
   domain: string;
   code: string;
@@ -733,6 +737,7 @@ export const NewAssetWarning = ({
   newAssetFlags: NewAssetFlags;
   onClose: () => void;
   balances: AccountBalances;
+  soroswapTokens: SoroswapToken[];
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -848,6 +853,7 @@ export const NewAssetWarning = ({
               issuer={issuer}
               image={image}
               domain={domain}
+              soroswapTokens={soroswapTokens}
             />
           </div>
           <hr className="NewAssetWarning__list-divider" />

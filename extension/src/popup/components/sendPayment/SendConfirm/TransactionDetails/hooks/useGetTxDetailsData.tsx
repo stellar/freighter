@@ -17,7 +17,7 @@ import {
   scanAsset,
   useScanTx,
 } from "popup/helpers/blockaid";
-import { BlockAidScanTxResult } from "@shared/api/types";
+import { BlockAidScanTxResult, SoroswapToken } from "@shared/api/types";
 import { AccountBalancesInterface } from "@shared/api/types/backend-api";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
@@ -26,6 +26,8 @@ import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
 import { getAccountBalances, getAssetIcons } from "@shared/api/internal";
 import { sortBalances } from "popup/helpers/account";
 import { isContractId } from "popup/helpers/soroban";
+import { useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
+import { useGetSoroswapTokens } from "helpers/hooks/useGetSoroswapTokens";
 
 export interface TxDetailsData {
   destAssetIconUrl: string;
@@ -35,6 +37,7 @@ export interface TxDetailsData {
   destinationBalances: AccountBalances;
   scanResult?: BlockAidScanTxResult | null;
   transactionXdr: string;
+  soroswapTokens: SoroswapToken[];
 }
 
 interface ScanClassic {
@@ -190,6 +193,7 @@ function useGetTxDetailsData(
     includeIcons: boolean;
   },
 ) {
+  const isSoroswapSupported = useIsSoroswapEnabled();
   const [state, dispatch] = useReducer(
     reducer<TxDetailsData, unknown>,
     initialState,
@@ -200,6 +204,7 @@ function useGetTxDetailsData(
     networkDetails,
     balanceOptions,
   );
+  const { fetchData: getTokens } = useGetSoroswapTokens();
 
   const { scanTx } = useScanTx();
 
@@ -215,6 +220,9 @@ function useGetTxDetailsData(
               balanceOptions.isMainnet,
             )
           : ({} as AccountBalancesInterface);
+      const soroswapTokens = isSoroswapSupported
+        ? await getTokens()
+        : { assets: [] };
 
       const destIcons =
         destination && !isContractId(destination)
@@ -226,6 +234,9 @@ function useGetTxDetailsData(
 
       if (isError<AccountBalances>(balancesResult)) {
         throw new Error(balancesResult.message);
+      }
+      if (isError<{ assets: SoroswapToken[] }>(soroswapTokens)) {
+        throw new Error(soroswapTokens.message);
       }
 
       const source = findAssetBalance(balancesResult.balances, sourceAsset);
@@ -246,6 +257,7 @@ function useGetTxDetailsData(
 
       const payload = {
         balances: balancesResult,
+        soroswapTokens: soroswapTokens.assets,
         destinationBalances: {
           ...destBalancesResult,
           icons: destIcons,

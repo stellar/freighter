@@ -4,7 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { ActionStatus, BlockAidScanAssetResult } from "@shared/api/types";
+import {
+  ActionStatus,
+  BlockAidScanAssetResult,
+  SoroswapToken,
+} from "@shared/api/types";
 
 import { AppDispatch } from "popup/App";
 
@@ -68,6 +72,7 @@ interface ManageAssetRowsProps {
   verifiedLists?: string[];
   balances: AccountBalances;
   shouldSplitAssetsByVerificationStatus?: boolean;
+  soroswapTokens: SoroswapToken[];
 }
 
 interface SuspiciousAssetData {
@@ -89,6 +94,7 @@ export const ManageAssetRows = ({
   verifiedLists,
   balances,
   shouldSplitAssetsByVerificationStatus = true,
+  soroswapTokens,
 }: ManageAssetRowsProps) => {
   const {
     submitStatus,
@@ -156,6 +162,7 @@ export const ManageAssetRows = ({
             issuer={suspiciousAssetData.issuer}
             image={suspiciousAssetData.image}
             blockaidData={suspiciousAssetData.blockaidData}
+            soroswapTokens={soroswapTokens}
             onClose={() => {
               setShowBlockedDomainWarning(false);
             }}
@@ -170,6 +177,7 @@ export const ManageAssetRows = ({
           issuer={suspiciousAssetData.issuer}
           image={suspiciousAssetData.image}
           newAssetFlags={newAssetFlags}
+          soroswapTokens={soroswapTokens}
           onClose={() => {
             setShowNewAssetWarning(false);
           }}
@@ -217,6 +225,7 @@ export const ManageAssetRows = ({
                   domain={domain}
                   name={name}
                   isSuspicious={isSuspicious}
+                  soroswapTokens={soroswapTokens}
                 />
                 <ManageAssetRowButton
                   code={code}
@@ -264,6 +273,7 @@ export interface AssetRowData {
   isSuspicious?: boolean;
   name?: string;
   contractId?: string;
+  soroswapTokens: SoroswapToken[];
 }
 
 const AssetRows = ({
@@ -480,6 +490,7 @@ export const ManageAssetRow = ({
   name,
   isSuspicious = false,
   contractId,
+  soroswapTokens,
 }: AssetRowData) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
@@ -504,6 +515,7 @@ export const ManageAssetRow = ({
         code={code}
         issuerKey={issuer}
         isSuspicious={isSuspicious}
+        soroswapTokens={soroswapTokens}
       />
       <div className="ManageAssetRows__row__info">
         <div className="ManageAssetRows__row__info__header">

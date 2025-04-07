@@ -1,28 +1,13 @@
 import React from "react";
-import { useDispatch, useSelector } from "react-redux";
 
-import { AppDispatch } from "popup/App";
-import {
-  transactionSubmissionSelector,
-  saveAsset,
-  saveDestinationAsset,
-  saveDestinationIcon,
-  saveIsToken,
-  AssetSelectType,
-  saveIsSoroswap,
-} from "popup/ducks/transactionSubmission";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
-import {
-  getCanonicalFromAsset,
-  formatDomain,
-  getAssetFromCanonical,
-} from "helpers/stellar";
+import { getCanonicalFromAsset, formatDomain } from "helpers/stellar";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getTokenBalance, isContractId } from "popup/helpers/soroban";
 import { isSorobanBalance, getBalanceByIssuer } from "popup/helpers/balance";
 import { formatAmount } from "popup/helpers/formatters";
-import { useIsSoroswapEnabled, useIsSwap } from "popup/helpers/useIsSwap";
+import { SoroswapToken } from "@shared/api/types";
 
 import "./styles.scss";
 
@@ -30,20 +15,17 @@ interface SelectAssetRowsProps {
   balances: AccountBalances;
   assetRows: ManageAssetCurrency[];
   onSelect: () => unknown;
+  isPathPaymentDestAsset: boolean;
+  soroswapTokens: SoroswapToken[];
 }
 
 export const SelectAssetRows = ({
   assetRows,
   balances,
   onSelect,
+  isPathPaymentDestAsset,
+  soroswapTokens,
 }: SelectAssetRowsProps) => {
-  const { assetSelect, soroswapTokens, transactionData } = useSelector(
-    transactionSubmissionSelector,
-  );
-  const dispatch = useDispatch<AppDispatch>();
-  const isSoroswapEnabled = useIsSoroswapEnabled();
-  const isSwap = useIsSwap();
-
   const getAccountBalance = (issuer: string) => {
     if (!balances) {
       return "";
@@ -67,9 +49,7 @@ export const SelectAssetRows = ({
   };
 
   // hide balances for path pay dest asset
-  const hideBalances =
-    assetSelect.type === AssetSelectType.PATH_PAY &&
-    assetSelect.isSource === false;
+  const hideBalances = isPathPaymentDestAsset;
 
   return (
     <div className="SelectAssetRows__scrollbar">
@@ -86,39 +66,13 @@ export const SelectAssetRows = ({
             const isScamAsset = isSuspicious || false;
             const isContract = isContractId(issuer);
             const canonical = getCanonicalFromAsset(code, issuer);
-            let isSoroswap = false;
-
-            if (isSoroswapEnabled && isSwap) {
-              // check if either asset is a Soroswap token
-              const otherAsset = getAssetFromCanonical(
-                assetSelect.isSource
-                  ? transactionData.destinationAsset
-                  : transactionData.asset,
-              );
-              isSoroswap =
-                !!soroswapTokens.find(({ contract }) => contract === issuer) ||
-                !!soroswapTokens.find(
-                  ({ contract }) => contract === otherAsset.issuer,
-                );
-            }
 
             return (
               <div
                 className="SelectAssetRows__row selectable"
                 data-testid={`Select-assets-row-${code}`}
                 key={canonical}
-                onClick={() => {
-                  if (assetSelect.isSource) {
-                    dispatch(saveAsset(canonical));
-                    dispatch(saveIsToken(isContract));
-                    onSelect();
-                  } else {
-                    dispatch(saveDestinationAsset(canonical));
-                    dispatch(saveDestinationIcon(icon));
-                    onSelect();
-                  }
-                  dispatch(saveIsSoroswap(isSoroswap));
-                }}
+                onClick={onSelect}
               >
                 <AssetIcon
                   assetIcons={code !== "XLM" ? { [canonical]: image } : {}}
@@ -126,6 +80,7 @@ export const SelectAssetRows = ({
                   issuerKey={issuer}
                   icon={icon}
                   isSuspicious={isScamAsset}
+                  soroswapTokens={soroswapTokens}
                 />
                 <div className="SelectAssetRows__row__info">
                   <div className="SelectAssetRows__row__info__header">

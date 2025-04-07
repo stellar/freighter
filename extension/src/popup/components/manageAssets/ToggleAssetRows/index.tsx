@@ -1,7 +1,7 @@
 import React from "react";
 import { Toggle } from "@stellar/design-system";
 
-import { AssetVisibility, IssuerKey } from "@shared/api/types";
+import { AssetVisibility, IssuerKey, SoroswapToken } from "@shared/api/types";
 import {
   formatDomain,
   getCanonicalFromAsset,
@@ -16,6 +16,7 @@ import "./styles.scss";
 
 interface ToggleAssetRowsProps {
   assetRows: ManageAssetCurrency[];
+  soroswapTokens: SoroswapToken[];
   hiddenAssets: Record<IssuerKey, AssetVisibility>;
   changeAssetVisibility: ({
     issuer,
@@ -30,6 +31,7 @@ export const ToggleAssetRows = ({
   assetRows,
   hiddenAssets,
   changeAssetVisibility,
+  soroswapTokens,
 }: ToggleAssetRowsProps) => {
   const handleIsVisibleChange = async (issuer: IssuerKey) => {
     const visibility = isAssetVisible(hiddenAssets, issuer)
@@ -68,6 +70,7 @@ export const ToggleAssetRows = ({
                     domain={domain}
                     name={name}
                     isSuspicious={isSuspicious}
+                    soroswapTokens={soroswapTokens}
                   />
                   <Toggle
                     checked={isAssetVisible(hiddenAssets, canonicalAsset)}
@@ -94,6 +97,7 @@ export const ToggleAssetRow = ({
   domain,
   name,
   isSuspicious = false,
+  soroswapTokens,
 }: AssetRowData) => {
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
   const assetCode = name || code;
@@ -107,6 +111,7 @@ export const ToggleAssetRow = ({
         code={code}
         issuerKey={issuer}
         isSuspicious={isSuspicious}
+        soroswapTokens={soroswapTokens}
       />
       <div className="ToggleAssetRows__row__info">
         <div className="ToggleAssetRows__row__info__header">

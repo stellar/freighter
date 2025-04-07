@@ -116,12 +116,15 @@ export const ChooseAsset = ({
                   verifiedAssetRows={domainState.data.domains}
                   unverifiedAssetRows={[]}
                   balances={domainState.data.balances}
+                  soroswapTokens={domainState.data.soroswapTokens}
                 />
               ) : (
                 <SelectAssetRows
                   assetRows={domainState.data.domains}
                   balances={domainState.data.balances}
-                  onSelect={goBack}
+                  soroswapTokens={domainState.data.soroswapTokens}
+                  onSelect={goBack} // TODO should also "select the asset"
+                  isPathPaymentDestAsset={false} // TODO
                 />
               )}
             </div>

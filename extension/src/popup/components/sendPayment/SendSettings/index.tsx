@@ -1,42 +1,54 @@
 import React from "react";
-import { useSelector } from "react-redux";
-
-import { ActionStatus } from "@shared/api/types";
-
-import { tokenSimulationStatusSelector } from "popup/ducks/token-payment";
 
 import { Settings } from "./Settings";
 import { SettingsFail } from "./SettingsFail";
+import { TransactionData } from "types/transactions";
+import { RequestState, State } from "constants/request";
+import { GetSettingsData } from "popup/views/SendPayment/hooks/useGetSettingsData";
 
+interface SendSettings {
+  goBack: () => void;
+  goToNext: () => void;
+  goToTimeoutSetting: () => void;
+  goToFeeSetting: () => void;
+  goToSlippageSetting: () => void;
+  transactionData: TransactionData;
+  settingsData: State<GetSettingsData, unknown>;
+  fetchData: () => Promise<GetSettingsData | Error>;
+  isPathPayment: boolean;
+  setMemo: (memo: string | undefined) => void;
+}
 export const SendSettings = ({
   goBack,
   goToNext,
   goToTimeoutSetting,
   goToFeeSetting,
   goToSlippageSetting,
-}: {
-  goBack: () => void;
-  goToNext: () => void;
-  goToTimeoutSetting: () => void;
-  goToFeeSetting: () => void;
-  goToSlippageSetting: () => void;
-}) => {
-  const simStatus = useSelector(tokenSimulationStatusSelector);
-
+  setMemo,
+  transactionData,
+  settingsData,
+  isPathPayment,
+  fetchData,
+}: SendSettings) => {
   const render = () => {
-    switch (simStatus) {
-      case ActionStatus.ERROR:
+    switch (settingsData.state) {
+      case RequestState.ERROR:
         return <SettingsFail />;
       default:
-      case ActionStatus.IDLE:
-      case ActionStatus.PENDING:
+      case RequestState.IDLE:
+      case RequestState.LOADING:
         return (
           <Settings
             goBack={goBack}
             goToNext={goToNext}
-            goToTimeoutSetting={goToTimeoutSetting}
             goToFeeSetting={goToFeeSetting}
             goToSlippageSetting={goToSlippageSetting}
+            goToTimeoutSetting={goToTimeoutSetting}
+            setMemo={setMemo}
+            transactionData={transactionData}
+            isPathPayment={isPathPayment}
+            settingsData={settingsData}
+            fetchData={fetchData}
           />
         );
     }

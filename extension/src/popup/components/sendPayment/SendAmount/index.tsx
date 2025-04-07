@@ -517,6 +517,7 @@ export const SendAmount = ({
             onClose={() => setShowBlockedDomainWarning(false)}
             onContinue={goToNext}
             blockaidData={suspiciousAssetData.blockaidData}
+            soroswapTokens={sendAmountData.data!.soroswapTokens}
           />,
           document.querySelector("#modal-root")!,
         )}
@@ -668,6 +669,7 @@ export const SendAmount = ({
                         assetCode={parsedSourceAsset.code}
                         issuerKey={parsedSourceAsset.issuer}
                         icons={sendAmountData.data?.icons || {}}
+                        soroswapTokens={sendAmountData.data!.soroswapTokens}
                         isSuspicious={
                           !!sourceBalance &&
                           "blockaidData" in sourceBalance &&
@@ -686,6 +688,7 @@ export const SendAmount = ({
                           assetCode={parsedSourceAsset.code}
                           issuerKey={parsedSourceAsset.issuer}
                           balance={formik.values.amount}
+                          soroswapTokens={sendAmountData.data!.soroswapTokens}
                           icon=""
                           icons={sendAmountData.data?.icons || {}}
                           isSuspicious={
@@ -707,6 +710,7 @@ export const SendAmount = ({
                               ? new BigNumber(destinationAmount).toFixed()
                               : "0"
                           }
+                          soroswapTokens={sendAmountData.data!.soroswapTokens}
                           icon={destinationIcon}
                           icons={sendAmountData.data!.icons}
                           isSuspicious={
