@@ -29,7 +29,7 @@ import {
   WarningMessage,
   SSLWarningMessage,
   BlockaidAssetWarning,
-  FirstTimeWarningMessage,
+  DomainNotAllowedWarningMessage,
 } from "popup/components/WarningMessages";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { View } from "popup/basics/layout/View";
@@ -38,6 +38,7 @@ import { AssetNotifcation } from "popup/components/AssetNotification";
 import { useTokenLookup } from "popup/helpers/useTokenLookup";
 import { formatTokenAmount, isContractId } from "popup/helpers/soroban";
 import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
+import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 
 import "./styles.scss";
 
@@ -45,11 +46,15 @@ export const AddToken = () => {
   const location = useLocation();
   const params = parsedSearchParam(location.search) as TokenToAdd;
   const {
+    domain,
     url,
     contractId,
     networkPassphrase: entryNetworkPassphrase,
-    isDomainListedAllowed,
   } = params;
+
+  const { isDomainListedAllowed } = useIsDomainListedAllowed({
+    domain,
+  });
 
   const { t } = useTranslation();
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
@@ -322,14 +327,16 @@ export const AddToken = () => {
               </div>
             </div>
 
-            {!isDomainListedAllowed && <FirstTimeWarningMessage />}
-
             {assetCurrency && isVerificationInfoShowing && (
               <AssetNotifcation isVerified={isVerifiedToken} />
             )}
 
             {blockaidData && (
               <BlockaidAssetWarning blockaidData={blockaidData} />
+            )}
+
+            {!isDomainListedAllowed && (
+              <DomainNotAllowedWarningMessage domain={params.domain} />
             )}
 
             <div className="AddToken__wrapper__info">
@@ -350,6 +357,7 @@ export const AddToken = () => {
                     {t("Symbol")}
                   </Text>
                   <Text
+                    data-testid="add-token-asset-code"
                     as="div"
                     size="xs"
                     addlClassName="AddToken__wrapper__info__row__right_label"
@@ -368,6 +376,7 @@ export const AddToken = () => {
                     {t("Name")}
                   </Text>
                   <Text
+                    data-testid="add-token-asset-name"
                     as="div"
                     size="xs"
                     addlClassName="AddToken__wrapper__info__row__right_label"
@@ -415,7 +424,8 @@ export const AddToken = () => {
                 {t("Cancel")}
               </Button>
               <Button
-                disabled={!assetCurrency}
+                data-testid="add-token-approve"
+                disabled={!assetCurrency || !isDomainListedAllowed}
                 isFullWidth
                 size="md"
                 variant="secondary"

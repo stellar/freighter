@@ -28,9 +28,7 @@ import {
   getIsMainnet,
   getIsMemoValidationEnabled,
   getNetworkDetails,
-  getNetworksList,
   getAllowListSegment,
-  setAllowListDomain,
 } from "background/helpers/account";
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -69,19 +67,6 @@ const WINDOW_SETTINGS: WindowParams = {
   type: "popup",
   width: POPUP_WIDTH,
   height: POPUP_HEIGHT + 32, // include browser frame height,
-};
-
-const getNetworkDetailsFromNetworkpassphrase = async (
-  networkPassphrase: string,
-) => {
-  const networksList = await getNetworksList();
-
-  const networkDetails = networksList.find(
-    (currentNetwork: NetworkDetails) =>
-      currentNetwork.networkPassphrase === networkPassphrase,
-  );
-
-  return networkDetails;
 };
 
 export const freighterApiMessageListener = (
@@ -162,7 +147,6 @@ export const freighterApiMessageListener = (
     try {
       const { contractId, networkPassphrase: reqNetworkPassphrase } =
         request as ExternalRequestToken;
-      const publicKey = publicKeySelector(sessionStore.getState());
 
       const networkPassphrase =
         reqNetworkPassphrase || MAINNET_NETWORK_DETAILS.networkPassphrase;
@@ -171,21 +155,7 @@ export const freighterApiMessageListener = (
       const domain = getUrlHostname(tabUrl);
       const punycodedDomain = getPunycodedDomain(domain);
 
-      const networkDetails = await getNetworkDetailsFromNetworkpassphrase(
-        networkPassphrase,
-      );
-
-      const allowListSegment = await getAllowListSegment({
-        publicKey,
-        networkDetails,
-      });
-      const isDomainListedAllowed = isSenderAllowed({
-        sender,
-        allowListSegment,
-      });
-
       const tokenInfo: TokenToAdd = {
-        isDomainListedAllowed,
         domain: punycodedDomain,
         tab,
         url: tabUrl,
@@ -196,7 +166,7 @@ export const freighterApiMessageListener = (
       tokenQueue.push(tokenInfo);
       const encodedTokenInfo = encodeObject(tokenInfo);
 
-      const popup = browser.windows.create({
+      const popup = await browser.windows.create({
         url: chrome.runtime.getURL(
           `/index.html#/add-token?${encodedTokenInfo}`,
         ),
@@ -217,13 +187,6 @@ export const freighterApiMessageListener = (
         }
         const response = (success: boolean) => {
           if (success) {
-            if (!isDomainListedAllowed) {
-              setAllowListDomain({
-                publicKey,
-                domain: punycodedDomain,
-                networkDetails,
-              });
-            }
             resolve({
               contractId,
             });
@@ -262,21 +225,7 @@ export const freighterApiMessageListener = (
       const { networkUrl, networkPassphrase: currentNetworkPassphrase } =
         await getNetworkDetails();
       const Sdk = getSdk(currentNetworkPassphrase);
-      const publicKey = publicKeySelector(sessionStore.getState());
-
       const { tab, url: tabUrl = "" } = sender;
-      const domain = getUrlHostname(tabUrl);
-      const punycodedDomain = getPunycodedDomain(domain);
-
-      const networkDetails = await getNetworkDetails();
-      const allowListSegment = await getAllowListSegment({
-        publicKey,
-        networkDetails,
-      });
-      const isDomainListedAllowed = isSenderAllowed({
-        sender,
-        allowListSegment,
-      });
 
       const transaction = Sdk.TransactionBuilder.fromXDR(
         transactionXdr,
@@ -350,7 +299,6 @@ export const freighterApiMessageListener = (
         transaction,
         transactionXdr,
         tab,
-        isDomainListedAllowed,
         url: tabUrl,
         flaggedKeys,
         accountToSign: accountToSign || addressToSign,
@@ -359,7 +307,7 @@ export const freighterApiMessageListener = (
       transactionQueue.push(transaction as StellarSdk.Transaction);
       const encodedBlob = encodeObject(transactionInfo);
 
-      const popup = browser.windows.create({
+      const popup = await browser.windows.create({
         url: chrome.runtime.getURL(
           `/index.html#/sign-transaction?${encodedBlob}`,
         ),
@@ -384,13 +332,6 @@ export const freighterApiMessageListener = (
         }
         const response = (signedTransaction: string, signerAddress: string) => {
           if (signedTransaction) {
-            if (!isDomainListedAllowed) {
-              setAllowListDomain({
-                publicKey,
-                domain: punycodedDomain,
-                networkDetails,
-              });
-            }
             resolve({ signedTransaction, signerAddress });
           }
 
@@ -417,26 +358,11 @@ export const freighterApiMessageListener = (
       const { apiVersion, blob, accountToSign, address, networkPassphrase } =
         request as ExternalRequestBlob;
 
-      const publicKey = publicKeySelector(sessionStore.getState());
-
       const { tab, url: tabUrl = "" } = sender;
       const domain = getUrlHostname(tabUrl);
       const punycodedDomain = getPunycodedDomain(domain);
 
-      const networkDetails = await getNetworkDetailsFromNetworkpassphrase(
-        networkPassphrase || MAINNET_NETWORK_DETAILS.networkPassphrase,
-      );
-      const allowListSegment = await getAllowListSegment({
-        publicKey,
-        networkDetails,
-      });
-      const isDomainListedAllowed = isSenderAllowed({
-        sender,
-        allowListSegment,
-      });
-
       const blobData: MessageToSign = {
-        isDomainListedAllowed,
         domain: punycodedDomain,
         tab,
         message: blob,
@@ -447,7 +373,7 @@ export const freighterApiMessageListener = (
 
       blobQueue.push(blobData);
       const encodedBlob = encodeObject(blobData);
-      const popup = browser.windows.create({
+      const popup = await browser.windows.create({
         url: chrome.runtime.getURL(`/index.html#/sign-message?${encodedBlob}`),
         ...WINDOW_SETTINGS,
       });
@@ -471,13 +397,6 @@ export const freighterApiMessageListener = (
 
         const response = (signedBlob: string, signerAddress: string) => {
           if (signedBlob) {
-            if (!isDomainListedAllowed) {
-              setAllowListDomain({
-                publicKey,
-                domain: punycodedDomain,
-                networkDetails,
-              });
-            }
             if (apiVersion && semver.gte(apiVersion, "4.0.0")) {
               resolve({
                 signedBlob: Buffer.from(signedBlob).toString("base64"),
@@ -514,22 +433,8 @@ export const freighterApiMessageListener = (
       const { tab, url: tabUrl = "" } = sender;
       const domain = getUrlHostname(tabUrl);
       const punycodedDomain = getPunycodedDomain(domain);
-      const publicKey = publicKeySelector(sessionStore.getState());
-      const networkDetails = await getNetworkDetailsFromNetworkpassphrase(
-        networkPassphrase || MAINNET_NETWORK_DETAILS.networkPassphrase,
-      );
-
-      const allowListSegment = await getAllowListSegment({
-        publicKey,
-        networkDetails,
-      });
-      const isDomainListedAllowed = isSenderAllowed({
-        sender,
-        allowListSegment,
-      });
 
       const authEntry: EntryToSign = {
-        isDomainListedAllowed,
         entry: entryXdr,
         accountToSign: accountToSign || address,
         tab,
@@ -540,7 +445,7 @@ export const freighterApiMessageListener = (
 
       authEntryQueue.push(authEntry);
       const encodedAuthEntry = encodeObject(authEntry);
-      const popup = browser.windows.create({
+      const popup = await browser.windows.create({
         url: chrome.runtime.getURL(
           `/index.html#/sign-auth-entry?${encodedAuthEntry}`,
         ),
@@ -565,13 +470,6 @@ export const freighterApiMessageListener = (
         }
         const response = (signedAuthEntry: string) => {
           if (signedAuthEntry) {
-            if (!isDomainListedAllowed) {
-              setAllowListDomain({
-                publicKey,
-                domain: punycodedDomain,
-                networkDetails,
-              });
-            }
             resolve({ signedAuthEntry });
           }
 

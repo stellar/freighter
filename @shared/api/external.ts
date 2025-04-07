@@ -138,6 +138,7 @@ export const submitMessage = async (
       blob,
       accountToSign,
       apiVersion: version,
+      networkPassphrase: opts?.networkPassphrase,
       type: EXTERNAL_SERVICE_TYPES.SUBMIT_BLOB,
     });
   } catch (e) {

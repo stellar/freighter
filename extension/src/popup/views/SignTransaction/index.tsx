@@ -35,6 +35,7 @@ import {
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
+import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -44,7 +45,7 @@ import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import {
   WarningMessageVariant,
   WarningMessage,
-  FirstTimeWarningMessage,
+  DomainNotAllowedWarningMessage,
   MemoWarningMessage,
   SSLWarningMessage,
   BlockaidTxScanLabel,
@@ -78,7 +79,6 @@ export const SignTransaction = () => {
     transaction: { _fee, _networkPassphrase },
     transactionXdr,
     domain,
-    isDomainListedAllowed,
     isHttpsDomain,
     flaggedKeys,
   } = tx;
@@ -88,6 +88,9 @@ export const SignTransaction = () => {
     useState(false);
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const { isDomainListedAllowed } = useIsDomainListedAllowed({
+    domain,
+  });
 
   const { networkName, networkPassphrase } = networkDetails;
   let accountToSign = _accountToSign;
@@ -311,9 +314,9 @@ export const SignTransaction = () => {
             </div>
           ) : null}
           <MemoWarningMessage isMemoRequired={isMemoRequired} />
-          {!isDomainListedAllowed && !isSubmitDisabled ? (
-            <FirstTimeWarningMessage />
-          ) : null}
+          {!isDomainListedAllowed && (
+            <DomainNotAllowedWarningMessage domain={domain} />
+          )}
           {renderTabBody()}
         </div>
       </div>
@@ -447,7 +450,8 @@ export const SignTransaction = () => {
                     </Button>
                   ) : (
                     <Button
-                      disabled={isSubmitDisabled}
+                      data-testid="sign-transaction-sign"
+                      disabled={isSubmitDisabled || !isDomainListedAllowed}
                       variant="secondary"
                       isFullWidth
                       size="md"

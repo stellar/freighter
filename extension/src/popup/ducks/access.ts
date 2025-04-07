@@ -28,16 +28,16 @@ export const signTransaction = createAsyncThunk(
 
 export const signBlob = createAsyncThunk("signBlob", (_, { getState }) => {
   const activePublicKey = publicKeySelector(getState() as AppState);
-  internalSignBlob({ activePublicKey });
+  return internalSignBlob({ activePublicKey });
 });
 export const signEntry = createAsyncThunk("signEntry", (_, { getState }) => {
   const activePublicKey = publicKeySelector(getState() as AppState);
-  internalSignAuthEntry({ activePublicKey });
+  return internalSignAuthEntry({ activePublicKey });
 });
 
 export const addToken = createAsyncThunk("addToken", (_, { getState }) => {
   const activePublicKey = publicKeySelector(getState() as AppState);
-  internalAddToken({ activePublicKey });
+  return internalAddToken({ activePublicKey });
 });
 
 export const rejectToken = createAsyncThunk(

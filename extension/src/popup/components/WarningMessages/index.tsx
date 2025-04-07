@@ -87,6 +87,7 @@ import { CopyValue } from "../CopyValue";
 import { Notification as NotificationV2 } from "../Notification";
 
 import "./styles.scss";
+import { getPunycodedDomain } from "helpers/urls";
 
 export enum WarningMessageVariant {
   default = "",
@@ -236,17 +237,21 @@ export const FlaggedWarningMessage = ({
   </>
 );
 
-export const FirstTimeWarningMessage = () => {
+export const DomainNotAllowedWarningMessage = ({
+  domain,
+}: {
+  domain: string;
+}) => {
   const { t } = useTranslation();
 
   return (
     <WarningMessage
-      header="First Time Interaction"
-      variant={WarningMessageVariant.warning}
+      variant={WarningMessageVariant.highAlert}
+      header={`${getPunycodedDomain(domain)} ${t("is currently not connected to this Freighter account")}`}
     >
       <p>
         {t(
-          "If you believe you have interacted with this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam.",
+          "If you believe you have connected to this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam.",
         )}
       </p>
       <p>
