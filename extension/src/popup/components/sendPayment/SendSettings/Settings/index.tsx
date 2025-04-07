@@ -1,12 +1,10 @@
 import React, { useCallback, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Asset, Networks } from "stellar-sdk";
 
-import { navigateTo } from "popup/helpers/navigate";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
@@ -16,7 +14,6 @@ import {
   isMainnet,
 } from "helpers/stellar";
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
-import { ROUTES } from "popup/constants/routes";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { FormRows } from "popup/basics/Forms";
 import { View } from "popup/basics/layout/View";
@@ -74,11 +71,17 @@ function getAssetAddress(
 }
 
 export const Settings = ({
-  previous,
-  next,
+  goBack,
+  goToNext,
+  goToTimeoutSetting,
+  goToFeeSetting,
+  goToSlippageSetting,
 }: {
-  previous: ROUTES;
-  next: ROUTES;
+  goBack: () => void;
+  goToNext: () => void;
+  goToTimeoutSetting: () => void;
+  goToFeeSetting: () => void;
+  goToSlippageSetting: () => void;
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -97,7 +100,6 @@ export const Settings = ({
     isSoroswap,
     path,
   } = useSelector(transactionDataSelector);
-  const navigate = useNavigate();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
   const publicKey = useSelector(publicKeySelector);
@@ -174,24 +176,6 @@ export const Settings = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleTxFeeNav = () =>
-    navigateTo(
-      isSwap ? ROUTES.swapSettingsFee : ROUTES.sendPaymentSettingsFee,
-      navigate,
-    );
-
-  const handleSlippageNav = () =>
-    navigateTo(
-      isSwap ? ROUTES.swapSettingsSlippage : ROUTES.sendPaymentSettingsSlippage,
-      navigate,
-    );
-
-  const handleTimeoutNav = () =>
-    navigateTo(
-      isSwap ? ROUTES.swapSettingsTimeout : ROUTES.sendPaymentSettingsTimeout,
-      navigate,
-    );
-
   // dont show memo for regular sends to Muxed, or for swaps
   const showMemo = !isSwap && !isMuxedAccount(destination);
   const showSlippage = (isPathPayment || isSwap) && !isSoroswap;
@@ -203,7 +187,7 @@ export const Settings = ({
     <React.Fragment>
       <SubviewHeader
         title={`${isSwap ? t("Swap") : t("Send")} ${t("Settings")}`}
-        customBackAction={() => navigateTo(previous, navigate)}
+        customBackAction={goBack}
       />
       {isLoading ? (
         <View.Content hasNoTopPadding>
@@ -245,7 +229,7 @@ export const Settings = ({
                           onClick={(e) => {
                             e.preventDefault();
                             submitForm();
-                            handleTxFeeNav();
+                            goToFeeSetting();
                           }}
                         >
                           {t("Transaction fee")}
@@ -257,7 +241,7 @@ export const Settings = ({
                       onClick={(e) => {
                         e.preventDefault();
                         submitForm();
-                        handleTxFeeNav();
+                        goToFeeSetting();
                       }}
                     >
                       <span data-testid="SendSettingsTransactionFee">
@@ -286,7 +270,7 @@ export const Settings = ({
                           onClick={(e) => {
                             e.preventDefault();
                             submitForm();
-                            handleTimeoutNav();
+                            goToTimeoutSetting();
                           }}
                         >
                           {t("Transaction timeout")}
@@ -298,7 +282,7 @@ export const Settings = ({
                       onClick={(e) => {
                         e.preventDefault();
                         submitForm();
-                        handleTimeoutNav();
+                        goToTimeoutSetting();
                       }}
                     >
                       <span data-testid="SendSettingsTransactionTimeout">
@@ -336,7 +320,7 @@ export const Settings = ({
                             onClick={(e) => {
                               e.preventDefault();
                               submitForm();
-                              handleSlippageNav();
+                              goToSlippageSetting();
                             }}
                           >
                             {t("Allowed slippage")}
@@ -348,7 +332,7 @@ export const Settings = ({
                         onClick={(e) => {
                           e.preventDefault();
                           submitForm();
-                          handleSlippageNav();
+                          goToSlippageSetting();
                         }}
                       >
                         <span data-testid="SendSettingsAllowedSlippage">
@@ -411,7 +395,7 @@ export const Settings = ({
                   type="submit"
                   variant="secondary"
                   data-testid="send-settings-btn-continue"
-                  onClick={() => navigateTo(next, navigate)}
+                  onClick={goToNext}
                 >
                   {t("Review")} {isSwap ? t("Swap") : t("Send")}
                 </Button>
