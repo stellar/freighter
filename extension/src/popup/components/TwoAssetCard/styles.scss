@@ -1,0 +1,52 @@
+.TwoAssetCard {
+  display: flex;
+  flex-direction: column;
+  border-radius: 0.5rem;
+  border: 1px solid var(--sds-clr-gray-06);
+  position: relative;
+  margin: 0 0 pxToRem(24px) 0;
+
+  &__row:first-child {
+    border-bottom: 1px solid var(--sds-clr-gray-01);
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1rem;
+    height: 4.25rem;
+
+    &__left {
+      display: flex;
+      align-items: center;
+      font-weight: var(--font-weight-medium);
+      color: var(--sds-clr-gray-12);
+    }
+
+    &__right {
+      font-weight: var(--font-weight-medium);
+      color: var(--sds-clr-gray-12);
+    }
+  }
+
+  &__arrow-icon {
+    position: absolute;
+    top: calc((100% - 2.5rem) / 2);
+    left: calc((100% - 2.5rem) / 2);
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid var(--sds-clr-gray-01);
+    border-radius: 2.5rem;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--sds-clr-gray-01);
+
+    svg {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+  }
+}

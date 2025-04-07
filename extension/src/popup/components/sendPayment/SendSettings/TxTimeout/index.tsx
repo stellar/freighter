@@ -1,5 +1,4 @@
 import React from "react";
-import { useDispatch, useSelector } from "react-redux";
 
 import { Formik, Form, Field, FieldProps } from "formik";
 import { object as YupObject, number as YupNumber } from "yup";
@@ -10,17 +9,21 @@ import { FormRows } from "popup/basics/Forms";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import {
-  saveTransactionTimeout,
-  transactionDataSelector,
-} from "popup/ducks/transactionSubmission";
 
 import "./styles.scss";
 
-export const SendSettingsTxTimeout = ({ goBack }: { goBack: () => void }) => {
+interface SendSettingsTxTimeout {
+  goBack: () => void;
+  transactionTimeout: number;
+  setTimeout: (timeout: number) => void;
+}
+
+export const SendSettingsTxTimeout = ({
+  goBack,
+  transactionTimeout,
+  setTimeout,
+}: SendSettingsTxTimeout) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-  const { transactionTimeout } = useSelector(transactionDataSelector);
 
   return (
     <React.Fragment>
@@ -47,7 +50,7 @@ export const SendSettingsTxTimeout = ({ goBack }: { goBack: () => void }) => {
       <Formik
         initialValues={{ transactionTimeout }}
         onSubmit={(values) => {
-          dispatch(saveTransactionTimeout(values.transactionTimeout));
+          setTimeout(values.transactionTimeout);
           goBack();
         }}
         validationSchema={YupObject().shape({

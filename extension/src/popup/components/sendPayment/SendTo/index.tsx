@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { Asset, StrKey } from "stellar-sdk";
 import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
@@ -19,7 +19,6 @@ import {
   truncatedPublicKey,
 } from "helpers/stellar";
 
-import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { FormRows } from "popup/basics/Forms";
@@ -28,11 +27,6 @@ import { isContractId } from "popup/helpers/soroban";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { View } from "popup/basics/layout/View";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import {
-  saveDestination,
-  saveDestinationAsset,
-  saveFederationAddress,
-} from "popup/ducks/transactionSubmission";
 import { publicKeySelector } from "popup/ducks/accountServices";
 
 import { RequestState } from "constants/request";
@@ -92,15 +86,20 @@ const InvalidAddressWarning = () => {
   );
 };
 
+interface SendToProps {
+  goBack: () => void;
+  goToNext: () => void;
+  setDestinationAddress: (destination: string) => void;
+  setFederationAddress: (federationAddress: string) => void;
+}
+
 export const SendTo = ({
   goBack,
   goToNext,
-}: {
-  goBack: () => void;
-  goToNext: () => void;
-}) => {
+  setDestinationAddress,
+  setFederationAddress,
+}: SendToProps) => {
   const { t } = useTranslation();
-  const dispatch: AppDispatch = useDispatch<AppDispatch>();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
   const { state: sendDataState, fetchData } = useSendToData(
@@ -117,9 +116,9 @@ export const SendTo = ({
     validatedDestination: string,
     validatedFedAdress?: string,
   ) => {
-    dispatch(saveDestination(validatedDestination));
-    dispatch(saveDestinationAsset(""));
-    dispatch(saveFederationAddress(validatedFedAdress || ""));
+    setDestinationAddress(validatedDestination);
+    // saveDestinationAsset("");
+    setFederationAddress(validatedFedAdress || "");
     goToNext();
   };
 

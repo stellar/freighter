@@ -22,7 +22,7 @@ import {
   isMainnet,
 } from "helpers/stellar";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { useIsSwap, useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
+import { useIsSwap } from "popup/helpers/useIsSwap";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
@@ -31,7 +31,7 @@ import {
   getTokenBalance,
   isContractId,
 } from "popup/helpers/soroban";
-import { getNativeContractDetails } from "popup/helpers/searchAsset";
+// import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -40,15 +40,6 @@ import {
   formatAmount,
   formatAmountPreserveCursor,
 } from "popup/helpers/formatters";
-import {
-  transactionSubmissionSelector,
-  saveAmount,
-  saveAsset,
-  saveDestinationAsset,
-  getBestPath,
-  getBestSoroswapPath,
-  getSoroswapTokens,
-} from "popup/ducks/transactionSubmission";
 import {
   AccountDoesntExistWarning,
   shouldAccountDoesntExistWarning,
@@ -64,6 +55,7 @@ import {
   ClassicAsset,
   LiquidityPoolShareAsset,
 } from "@shared/api/types/account-balance";
+import { TransactionData } from "types/transactions";
 
 import { RequestState } from "constants/request";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
@@ -119,26 +111,33 @@ const ConversionRate = ({
 // default so can find a path even if user has not given input
 const defaultSourceAmount = "1";
 
+interface SendAmountProps {
+  goBack: () => void;
+  goToNext: () => void;
+  goToChooseAsset: () => void;
+  goToPaymentType?: () => void;
+  transactionData: TransactionData;
+  setSendAssetCanonical: (sendCanonicalAddress: string) => void;
+  setDestinationAssetCanonical: (destCanonicalAddress: string) => void;
+  setSendAmount: (amount: string) => void;
+}
+
 export const SendAmount = ({
   goBack,
   goToNext,
   goToPaymentType,
   goToChooseAsset,
-}: {
-  goBack: () => void;
-  goToNext: () => void;
-  goToChooseAsset: () => void;
-  goToPaymentType?: () => void;
-}) => {
+  transactionData,
+  setSendAssetCanonical,
+  setDestinationAssetCanonical,
+  setSendAmount,
+}: SendAmountProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const runAfterUpdate = useRunAfterUpdate();
 
   const publicKey = useSelector(publicKeySelector);
-  const { transactionData, soroswapTokens } = useSelector(
-    transactionSubmissionSelector,
-  );
   const {
     amount,
     asset,
@@ -229,8 +228,8 @@ export const SendAmount = ({
     asset: string;
     destinationAsset: string;
   }) => {
-    dispatch(saveAmount(cleanAmount(values.amount)));
-    dispatch(saveAsset(values.asset));
+    setSendAmount(cleanAmount(values.amount));
+    setSendAssetCanonical(values.asset);
 
     let isDestAssetScam = false;
 
@@ -239,7 +238,7 @@ export const SendAmount = ({
       getAssetFromCanonical(destinationAsset || "native"),
     );
     if (values.destinationAsset) {
-      dispatch(saveDestinationAsset(values.destinationAsset));
+      setDestinationAssetCanonical(values.destinationAsset);
       isDestAssetScam =
         !!destinationBalance &&
         "blockaidData" in destinationBalance &&
@@ -320,35 +319,39 @@ export const SendAmount = ({
   );
 
   const db = useCallback(
-    debounce(async (formikAm, sourceAsset, destAsset) => {
-      if (isSoroswap) {
-        const getContract = (formAsset: string) =>
-          formAsset === "native"
-            ? getNativeContractDetails(networkDetails).contract
-            : formAsset.split(":")[1];
+    debounce(
+      async (/*formikAm, sourceAsset, destAsset*/) => {
+        if (isSoroswap) {
+          // const getContract = (formAsset: string) =>
+          //   formAsset === "native"
+          //     ? getNativeContractDetails(networkDetails).contract
+          //     : formAsset.split(":")[1];
+          // TODO: when do we actually need this path?
+          // await dispatch(
+          //   getBestSoroswapPath({
+          //     amount: formikAm,
+          //     sourceContract: getContract(formik.values.asset),
+          //     destContract: getContract(formik.values.destinationAsset),
+          //     networkDetails,
+          //     publicKey,
+          //   }),
+          // );
+        } else {
+          // TODO: when do we actually need this path?
+          // await dispatch(
+          //   getBestPath({
+          //     amount: formikAm,
+          //     sourceAsset,
+          //     destAsset,
+          //     networkDetails,
+          //   }),
+          // );
+        }
 
-        await dispatch(
-          getBestSoroswapPath({
-            amount: formikAm,
-            sourceContract: getContract(formik.values.asset),
-            destContract: getContract(formik.values.destinationAsset),
-            networkDetails,
-            publicKey,
-          }),
-        );
-      } else {
-        await dispatch(
-          getBestPath({
-            amount: formikAm,
-            sourceAsset,
-            destAsset,
-            networkDetails,
-          }),
-        );
-      }
-
-      setLoadingRate(false);
-    }, 2000),
+        setLoadingRate(false);
+      },
+      2000,
+    ),
     [],
   );
 
@@ -418,12 +421,6 @@ export const SendAmount = ({
     formik.values.asset,
     asset,
   ]);
-
-  useEffect(() => {
-    if (!soroswapTokens.length) {
-      dispatch(getSoroswapTokens());
-    }
-  }, [isSwap, useIsSoroswapEnabled]);
 
   useEffect(() => {
     const getData = async () => {
@@ -551,8 +548,8 @@ export const SendAmount = ({
           hasBackButton={!isSwap}
           customBackAction={() => {
             // NOTE: resets base state for transaction data
-            dispatch(saveAsset("native"));
-            dispatch(saveAmount("0"));
+            setSendAssetCanonical("native");
+            setSendAmount("0");
             goBack();
           }}
           rightButton={
@@ -635,7 +632,7 @@ export const SendAmount = ({
                           e.target.selectionStart || 1,
                         );
                       formik.setFieldValue("amount", newAmount);
-                      dispatch(saveAmount(newAmount));
+                      setSendAmount(newAmount);
                       runAfterUpdate(() => {
                         input.selectionStart = newCursor;
                         input.selectionEnd = newCursor;
@@ -677,7 +674,7 @@ export const SendAmount = ({
                           isAssetSuspicious(sourceBalance.blockaidData)
                         }
                         onSelectAsset={() => {
-                          dispatch(saveAmount("0"));
+                          setSendAmount("0");
                           goToChooseAsset();
                         }}
                       />
@@ -697,7 +694,7 @@ export const SendAmount = ({
                             isAssetSuspicious(sourceBalance.blockaidData)
                           }
                           onSelectAsset={() => {
-                            dispatch(saveAmount("0"));
+                            setSendAmount("0");
                             goToChooseAsset();
                           }}
                         />
@@ -718,7 +715,7 @@ export const SendAmount = ({
                             isAssetSuspicious(destBalance.blockaidData)
                           }
                           onSelectAsset={() => {
-                            dispatch(saveAmount("0"));
+                            setSendAmount("0");
                             goToChooseAsset();
                           }}
                         />

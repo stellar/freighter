@@ -1,51 +1,135 @@
 import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import { ActionStatus } from "@shared/api/types";
-
-import {
-  transactionSubmissionSelector,
-  resetSubmission,
-} from "popup/ducks/transactionSubmission";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
+import { TransactionData } from "types/transactions";
+import { useSignTx } from "helpers/hooks/useSignTx";
+import { useSubmitTx } from "helpers/hooks/useSubmitTx";
+import { NetworkDetails } from "@shared/constants/stellar";
+import { RequestState } from "constants/request";
+import { MemoRequiredAccount } from "@shared/api/types";
+import { GetSettingsData } from "popup/views/SendPayment/hooks/useGetSettingsData";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { getAssetFromCanonical } from "helpers/stellar";
 
 import { SubmitFail, SubmitSuccess } from "./SubmitResult";
 import { TransactionDetails } from "./TransactionDetails";
 
 import "../styles.scss";
 
-export const SendConfirm = ({ goBack }: { goBack: () => void }) => {
-  const dispatch = useDispatch();
-  const submission = useSelector(transactionSubmissionSelector);
+interface SendConfirm {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+  goBack: () => void;
+  transactionData: TransactionData;
+  memoRequiredAccounts: MemoRequiredAccount[];
+  transactionSimulation: GetSettingsData["simulationResponse"];
+}
+
+export const SendConfirm = ({
+  goBack,
+  publicKey,
+  networkDetails,
+  transactionData,
+  memoRequiredAccounts,
+  transactionSimulation,
+}: SendConfirm) => {
   const navigate = useNavigate();
+  const { asset, destinationAsset, allowedSlippage } = transactionData;
+  const sourceAsset = getAssetFromCanonical(asset);
+  const destAsset = getAssetFromCanonical(destinationAsset || "native");
+  const isPathPayment = destinationAsset !== "";
 
   const [isSendComplete, setIsSendComplete] = useState(false);
+  const { state: signedTransaction, signTx } = useSignTx(
+    publicKey,
+    networkDetails,
+  );
+  const { state: txResponse, submitTx } = useSubmitTx(networkDetails);
 
   const render = () => {
     if (isSendComplete) {
       return (
         <TransactionDetails
           shouldScanTx={false}
+          transactionData={transactionData}
+          memoRequiredAccounts={memoRequiredAccounts}
+          signedTransaction={signedTransaction.data?.signedTransaction!}
+          transactionSimulation={transactionSimulation}
+          signTx={signTx}
+          submitTx={submitTx}
+          submissionStatus={txResponse.state}
+          transactionHash={txResponse.data?.hash!}
           goBack={() => {
-            dispatch(resetSubmission());
             navigateTo(ROUTES.accountHistory, navigate);
           }}
         />
       );
     }
-    switch (submission.submitStatus) {
-      case ActionStatus.IDLE:
-        return <TransactionDetails shouldScanTx={true} goBack={goBack} />;
-      case ActionStatus.PENDING:
-        return <TransactionDetails shouldScanTx={false} goBack={goBack} />;
-      case ActionStatus.SUCCESS:
-        return <SubmitSuccess viewDetails={() => setIsSendComplete(true)} />;
-      case ActionStatus.ERROR:
+
+    switch (txResponse.state) {
+      case RequestState.ERROR:
         return <SubmitFail />;
+      case RequestState.IDLE:
+        return (
+          <TransactionDetails
+            shouldScanTx={true}
+            goBack={goBack}
+            transactionData={transactionData}
+            memoRequiredAccounts={memoRequiredAccounts}
+            signedTransaction={signedTransaction.data?.signedTransaction!}
+            transactionSimulation={transactionSimulation}
+            signTx={signTx}
+            submitTx={submitTx}
+            submissionStatus={txResponse.state}
+            transactionHash={""}
+          />
+        );
+      case RequestState.LOADING:
+        return (
+          <TransactionDetails
+            shouldScanTx={false}
+            goBack={goBack}
+            transactionData={transactionData}
+            memoRequiredAccounts={memoRequiredAccounts}
+            signedTransaction={signedTransaction.data?.signedTransaction!}
+            transactionSimulation={transactionSimulation}
+            signTx={signTx}
+            submitTx={submitTx}
+            submissionStatus={txResponse.state}
+            transactionHash={""}
+          />
+        );
+      case RequestState.SUCCESS:
+        if (isPathPayment) {
+          emitMetric(METRIC_NAMES.sendPaymentPathPaymentSuccess, {
+            sourceAsset,
+            destAsset,
+            allowedSlippage,
+          });
+        } else {
+          emitMetric(METRIC_NAMES.sendPaymentSuccess, {
+            sourceAsset: sourceAsset.code,
+          });
+        }
+        return <SubmitSuccess viewDetails={() => setIsSendComplete(true)} />;
       default:
-        return <TransactionDetails shouldScanTx={false} goBack={goBack} />;
+        return (
+          <TransactionDetails
+            shouldScanTx={false}
+            goBack={goBack}
+            transactionData={transactionData}
+            memoRequiredAccounts={memoRequiredAccounts}
+            signedTransaction={signedTransaction.data?.signedTransaction!}
+            transactionSimulation={transactionSimulation}
+            signTx={signTx}
+            submitTx={submitTx}
+            submissionStatus={RequestState.IDLE}
+            transactionHash={""}
+          />
+        );
     }
   };
 

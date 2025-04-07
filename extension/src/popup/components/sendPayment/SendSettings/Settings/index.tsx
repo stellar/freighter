@@ -1,73 +1,33 @@
-import React, { useCallback, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import React, { useEffect } from "react";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { Icon, Textarea, Link, Button, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { Asset, Networks } from "stellar-sdk";
 
-import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap } from "popup/helpers/useIsSwap";
-import { getNativeContractDetails } from "popup/helpers/searchAsset";
-import {
-  isMuxedAccount,
-  getAssetFromCanonical,
-  isMainnet,
-} from "helpers/stellar";
-import { getAssetSacAddress } from "@shared/helpers/soroban/token";
+import { isMuxedAccount } from "helpers/stellar";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { FormRows } from "popup/basics/Forms";
 import { View } from "popup/basics/layout/View";
-import {
-  saveMemo,
-  transactionDataSelector,
-  isPathPaymentSelector,
-} from "popup/ducks/transactionSubmission";
-import { NetworkDetails } from "@shared/constants/stellar";
 
 import { InfoTooltip } from "popup/basics/InfoTooltip";
-import { publicKeySelector } from "popup/ducks/accountServices";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { isContractId } from "popup/helpers/soroban";
-import { AppDispatch } from "popup/App";
 
-import { RequestState } from "constants/request";
-import { useGetSettingsData } from "./hooks/useGetSettingsData";
+import { RequestState, State } from "constants/request";
+import { TransactionData } from "types/transactions";
+import { GetSettingsData } from "popup/views/SendPayment/hooks/useGetSettingsData";
 
 import "../../styles.scss";
 
-function getSimulationMode(
-  isSoroswap: boolean,
-  isToken: boolean,
-  isSendSacToContract: boolean,
-) {
-  if (isSoroswap) {
-    return "Soroswap";
-  }
-  if (isToken || isSendSacToContract) {
-    return "TokenPayment";
-  }
-  return "ClassicPayment";
-}
-
-function getAssetAddress(
-  asset: string,
-  destination: string,
-  networkDetails: NetworkDetails,
-) {
-  if (asset === "native") {
-    return asset;
-  }
-  if (
-    isContractId(destination) &&
-    !isContractId(getAssetFromCanonical(asset).issuer)
-  ) {
-    return getAssetSacAddress(
-      asset,
-      networkDetails.networkPassphrase as Networks,
-    );
-  }
-  const [_, issuer] = asset.split(":");
-  return issuer;
+interface SettingsProps {
+  goBack: () => void;
+  goToNext: () => void;
+  goToTimeoutSetting: () => void;
+  goToFeeSetting: () => void;
+  goToSlippageSetting: () => void;
+  transactionData: TransactionData;
+  settingsData: State<GetSettingsData, unknown>;
+  fetchData: () => Promise<GetSettingsData | Error>;
+  isPathPayment: boolean;
+  setMemo: (memo: string | undefined) => void;
 }
 
 export const Settings = ({
@@ -76,97 +36,16 @@ export const Settings = ({
   goToTimeoutSetting,
   goToFeeSetting,
   goToSlippageSetting,
-}: {
-  goBack: () => void;
-  goToNext: () => void;
-  goToTimeoutSetting: () => void;
-  goToFeeSetting: () => void;
-  goToSlippageSetting: () => void;
-}) => {
+  transactionData,
+  isPathPayment,
+  setMemo,
+  fetchData,
+  settingsData,
+}: SettingsProps) => {
   const { t } = useTranslation();
-  const dispatch: AppDispatch = useDispatch();
-  const {
-    asset,
-    amount,
-    decimals,
-    destination,
-    destinationAmount,
-    destinationDecimals,
-    transactionFee,
-    transactionTimeout,
-    memo,
-    allowedSlippage,
-    isToken,
-    isSoroswap,
-    path,
-  } = useSelector(transactionDataSelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const isPathPayment = useSelector(isPathPaymentSelector);
-  const publicKey = useSelector(publicKeySelector);
+  const { destination, transactionTimeout, memo, allowedSlippage, isSoroswap } =
+    transactionData;
   const isSwap = useIsSwap();
-  const { recommendedFee } = useNetworkFees();
-
-  const isSendSacToContract =
-    isContractId(destination) &&
-    !isContractId(getAssetFromCanonical(asset).issuer);
-  const simulationMode = getSimulationMode(
-    isSoroswap,
-    isToken,
-    isSendSacToContract,
-  );
-  const getSacContractAddress = useCallback(() => {
-    if (asset === "native") {
-      return getNativeContractDetails(networkDetails).contract;
-    }
-
-    const assetFromCanonical = new Asset(
-      getAssetFromCanonical(asset).code,
-      getAssetFromCanonical(asset).issuer,
-    );
-    const contractAddress = assetFromCanonical.contractId(
-      networkDetails.networkPassphrase,
-    );
-
-    return contractAddress;
-  }, [asset, networkDetails]);
-
-  const assetAddress = getAssetAddress(asset, destination, networkDetails);
-  // TODO: handle error state
-  const { state: settingsData, fetchData } = useGetSettingsData(
-    publicKey,
-    networkDetails,
-    simulationMode,
-    transactionFee || recommendedFee,
-    {
-      isMainnet: isMainnet(networkDetails),
-      showHidden: false,
-      includeIcons: true,
-    },
-    {
-      amountIn: amount,
-      amountInDecimals: decimals || 0,
-      amountOut: destinationAmount,
-      amountOutDecimals: destinationDecimals || 0,
-      memo,
-      transactionFee,
-      path,
-    },
-    {
-      address: assetAddress,
-      amount,
-      publicKey,
-      memo,
-      params: {
-        asset: isSendSacToContract
-          ? getSacContractAddress()
-          : asset.split(":")[1],
-        publicKey,
-        destination,
-      },
-      networkDetails,
-      transactionFee,
-    },
-  );
 
   useEffect(() => {
     const getData = async () => {
@@ -199,7 +78,7 @@ export const Settings = ({
         <Formik
           initialValues={{ memo }}
           onSubmit={(values) => {
-            dispatch(saveMemo(values.memo));
+            setMemo(values.memo);
           }}
         >
           {({ submitForm }) => (

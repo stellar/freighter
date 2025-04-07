@@ -1,5 +1,4 @@
 import React from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik } from "formik";
 import { Button, Icon, Link } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -8,10 +7,6 @@ import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import {
-  saveDestinationAsset,
-  transactionDataSelector,
-} from "popup/ducks/transactionSubmission";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { STEPS } from "popup/constants/send-payment";
 
@@ -72,19 +67,19 @@ const RadioCheck = ({
 
 export const SendType = ({
   setStep,
+  destinationAsset,
+  setDestinationAsset,
 }: {
   setStep: React.Dispatch<React.SetStateAction<STEPS>>;
+  destinationAsset: string;
+  setDestinationAsset: (destination: string) => void;
 }) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-  const { destinationAsset } = useSelector(transactionDataSelector);
 
   const submitForm = (values: { paymentType: string }) => {
     // path payment flag is a non empty string in redux destinationAsset
-    dispatch(
-      saveDestinationAsset(
-        values.paymentType === PAYMENT_TYPES.PATH_PAYMENT ? "native" : "",
-      ),
+    setDestinationAsset(
+      values.paymentType === PAYMENT_TYPES.PATH_PAYMENT ? "native" : "",
     );
     emitMetric(
       values.paymentType === PAYMENT_TYPES.PATH_PAYMENT

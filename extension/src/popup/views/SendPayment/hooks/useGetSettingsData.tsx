@@ -23,7 +23,7 @@ import {
 
 type Mode = "Soroswap" | "TokenPayment" | "ClassicPayment";
 
-interface GetSettingsData {
+export interface GetSettingsData {
   simulationResponse?: {
     preparedTransaction: string;
     simulationTransaction: SorobanRpc.Api.SimulateTransactionSuccessResponse;

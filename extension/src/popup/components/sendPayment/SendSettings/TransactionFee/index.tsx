@@ -1,5 +1,4 @@
 import React from "react";
-import { useDispatch, useSelector } from "react-redux";
 
 import { Formik, Form, Field, FieldProps } from "formik";
 import { object as YupObject, number as YupNumber } from "yup";
@@ -11,17 +10,21 @@ import { FormRows } from "popup/basics/Forms";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import {
-  saveTransactionFee,
-  transactionDataSelector,
-} from "popup/ducks/transactionSubmission";
 
 import "./styles.scss";
 
-export const SendSettingsFee = ({ goBack }: { goBack: () => void }) => {
+interface SendSettingsFee {
+  goBack: () => void;
+  transactionFee: string;
+  setFee: (fee: string) => void;
+}
+
+export const SendSettingsFee = ({
+  goBack,
+  transactionFee,
+  setFee,
+}: SendSettingsFee) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-  const { transactionFee } = useSelector(transactionDataSelector);
   const { networkCongestion, recommendedFee } = useNetworkFees();
 
   return (
@@ -55,7 +58,7 @@ export const SendSettingsFee = ({ goBack }: { goBack: () => void }) => {
       <Formik
         initialValues={{ transactionFee }}
         onSubmit={(values) => {
-          dispatch(saveTransactionFee(String(values.transactionFee)));
+          setFee(String(values.transactionFee));
           goBack();
         }}
         validationSchema={YupObject().shape({

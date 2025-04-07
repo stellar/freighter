@@ -1,14 +1,9 @@
 import React from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik, FieldProps } from "formik";
 import { object as YupObject, number as YupNumber } from "yup";
 import { useTranslation } from "react-i18next";
 import { Input, Icon, Link, Card, Button } from "@stellar/design-system";
 
-import {
-  transactionDataSelector,
-  saveAllowedSlippage,
-} from "popup/ducks/transactionSubmission";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -17,10 +12,18 @@ import "./styles.scss";
 
 const defaultSlippage = "1";
 
-export const SendSettingsSlippage = ({ goBack }: { goBack: () => void }) => {
+interface SendSettingsSlippageProps {
+  allowedSlippage: string;
+  setSlippage: (slippage: string) => void;
+  goBack: () => void;
+}
+
+export const SendSettingsSlippage = ({
+  goBack,
+  allowedSlippage,
+  setSlippage,
+}: SendSettingsSlippageProps) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-  const { allowedSlippage } = useSelector(transactionDataSelector);
 
   let presetSlippage = "";
   let customSlippage = "";
@@ -53,9 +56,7 @@ export const SendSettingsSlippage = ({ goBack }: { goBack: () => void }) => {
       <Formik
         initialValues={{ presetSlippage, customSlippage }}
         onSubmit={(values) => {
-          dispatch(
-            saveAllowedSlippage(values.customSlippage || values.presetSlippage),
-          );
+          setSlippage(values.customSlippage || values.presetSlippage);
           goBack();
         }}
         validationSchema={YupObject().shape({

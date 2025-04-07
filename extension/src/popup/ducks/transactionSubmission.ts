@@ -38,6 +38,7 @@ import {
 } from "popup/helpers/sorobanSwap";
 import { hardwareSign, hardwareSignAuth } from "popup/helpers/hardwareConnect";
 import { AppState } from "popup/App";
+import { TransactionData } from "types/transactions";
 import { publicKeySelector } from "./accountServices";
 
 export const signFreighterTransaction = createAsyncThunk<
@@ -419,27 +420,6 @@ export const getMemoRequiredAccounts = createAsyncThunk<
 export enum ShowOverlayStatus {
   IDLE = "IDLE",
   IN_PROGRESS = "IN_PROGRESS",
-}
-
-interface TransactionData {
-  amount: string;
-  asset: string;
-  decimals?: number;
-  destination: string;
-  federationAddress: string;
-  transactionFee: string;
-  transactionTimeout: number;
-  memo?: string;
-  destinationAsset: string;
-  destinationDecimals?: number;
-  destinationAmount: string;
-  destinationIcon: string;
-  path: string[];
-  allowedSlippage: string;
-  isToken: boolean;
-  isMergeSelected: boolean;
-  balancesToMigrate: BalanceToMigrate[];
-  isSoroswap: boolean;
 }
 
 interface HardwareWalletData {

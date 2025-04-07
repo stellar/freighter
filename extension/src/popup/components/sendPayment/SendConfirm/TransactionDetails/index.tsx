@@ -1,8 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import BigNumber from "bignumber.js";
-import { Networks } from "stellar-sdk";
 import { Card, Loader, Icon, Button, CopyText } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -14,7 +12,7 @@ import {
   truncatedFedAddress,
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
-import { AssetIcons, ActionStatus } from "@shared/api/types";
+import { ActionStatus, MemoRequiredAccount } from "@shared/api/types";
 import {
   defaultBlockaidScanAssetResult,
   isCustomNetwork,
@@ -25,15 +23,8 @@ import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
 import {
   getMemoRequiredAccounts,
-  signFreighterTransaction,
-  signFreighterSorobanTransaction,
-  submitFreighterTransaction,
-  submitFreighterSorobanTransaction,
-  transactionSubmissionSelector,
-  addRecentAddress,
   isPathPaymentSelector,
   ShowOverlayStatus,
-  startHwSign,
 } from "popup/ducks/transactionSubmission";
 import {
   settingsNetworkDetailsSelector,
@@ -42,12 +33,9 @@ import {
 import {
   publicKeySelector,
   hardwareWalletTypeSelector,
-  addTokenId,
 } from "popup/ducks/accountServices";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { useIsSwap } from "popup/helpers/useIsSwap";
-import { emitMetric } from "helpers/metrics";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { FedOrGAddress } from "popup/basics/sendPayment/FedOrGAddress";
 import { AssetIcon } from "popup/components/account/AccountAssets";
@@ -65,6 +53,11 @@ import { isContractId } from "popup/helpers/soroban";
 
 import { resetSimulation } from "popup/ducks/token-payment";
 import { RequestState } from "popup/views/Account/hooks/useGetAccountData";
+import { TwoAssetCard } from "popup/components/TwoAssetCard";
+import { TransactionData } from "types/transactions";
+import { GetSettingsData } from "popup/views/SendPayment/hooks/useGetSettingsData";
+import { SignTxResponse } from "helpers/hooks/useSignTx";
+import { SubmitTxResponse } from "helpers/hooks/useSubmitTx";
 import {
   computeDestMinWithSlippage,
   TxDetailsData,
@@ -73,103 +66,49 @@ import {
 
 import "./styles.scss";
 
-const TwoAssetCard = ({
-  sourceAssetIcons,
-  sourceCanon,
-  sourceAmount,
-  destAssetIcons,
-  destCanon,
-  destAmount,
-  isSourceAssetSuspicious,
-  isDestAssetSuspicious,
-}: {
-  sourceAssetIcons: AssetIcons;
-  sourceCanon: string;
-  sourceAmount: string;
-  destAssetIcons: AssetIcons;
-  destCanon: string;
-  destAmount: string;
-  isSourceAssetSuspicious: boolean;
-  isDestAssetSuspicious: boolean;
-}) => {
-  const sourceAsset = getAssetFromCanonical(sourceCanon);
-  const destAsset = getAssetFromCanonical(destCanon);
-
-  return (
-    <div className="TwoAssetCard">
-      <div className="TwoAssetCard__row">
-        <div className="TwoAssetCard__row__left">
-          <AssetIcon
-            assetIcons={sourceAssetIcons}
-            code={sourceAsset.code}
-            issuerKey={sourceAsset.issuer}
-            isSuspicious={isSourceAssetSuspicious}
-          />
-          {sourceAsset.code}
-        </div>
-        <div
-          className="TwoAssetCard__row__right"
-          data-testid="TransactionDetailsAssetSource"
-        >
-          {formatAmount(sourceAmount)} {sourceAsset.code}
-        </div>
-      </div>
-      <div className="TwoAssetCard__arrow-icon">
-        <Icon.ArrowDown />
-      </div>
-      <div className="TwoAssetCard__row">
-        <div className="TwoAssetCard__row__left">
-          <AssetIcon
-            assetIcons={destAssetIcons}
-            code={destAsset.code}
-            issuerKey={destAsset.issuer}
-            isSuspicious={isDestAssetSuspicious}
-          />
-          {destAsset.code}
-        </div>
-        <div
-          className="TwoAssetCard__row__right"
-          data-testid="TransactionDetailsAssetDestination"
-        >
-          {formatAmount(new BigNumber(destAmount).toFixed())} {destAsset.code}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export const TransactionDetails = ({
-  goBack,
-  shouldScanTx,
-}: {
+interface TransactionDetails {
+  memoRequiredAccounts: MemoRequiredAccount[];
+  transactionSimulation: GetSettingsData["simulationResponse"];
+  transactionData: TransactionData;
   goBack: () => void;
   shouldScanTx: boolean;
-}) => {
+  signTx: (transactionXDR: string) => Promise<SignTxResponse | Error>;
+  submitTx: (signedXDR: string) => Promise<SubmitTxResponse | Error>;
+  signedTransaction: string;
+  submissionStatus: RequestState;
+  transactionHash: string;
+}
+
+export const TransactionDetails = ({
+  transactionData,
+  memoRequiredAccounts,
+  transactionSimulation,
+  goBack,
+  shouldScanTx,
+  signTx,
+  submitTx,
+  signedTransaction,
+  submissionStatus,
+  transactionHash,
+}: TransactionDetails) => {
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
-  const submission = useSelector(transactionSubmissionSelector);
   const {
-    transactionData: {
-      destination,
-      federationAddress,
-      amount,
-      asset,
-      memo,
-      transactionFee,
-      transactionTimeout,
-      allowedSlippage,
-      destinationAsset,
-      destinationAmount,
-      path,
-      isToken,
-      isSoroswap,
-    },
-    hardwareWalletData: { status: hwStatus },
-    memoRequiredAccounts,
-    transactionSimulation,
-  } = submission;
+    asset,
+    amount,
+    allowedSlippage,
+    destination,
+    destinationAsset,
+    destinationAmount,
+    memo,
+    federationAddress,
+    transactionFee,
+  } = transactionData;
 
-  const transactionHash = submission.response?.hash;
+  const [hwStatus, setHwStatus] = React.useState(ShowOverlayStatus.IDLE);
+  const isToken = isContractId(asset);
+  const isSoroswap = false; // TODO: is source or dest is in soroswap tokens
+
   const isPathPayment = useSelector(isPathPaymentSelector);
   const { isMemoValidationEnabled } = useSelector(settingsSelector);
   const publicKey = useSelector(publicKeySelector);
@@ -197,7 +136,6 @@ export const TransactionDetails = ({
           transactionFee,
           transactionTimeout,
         };
-  // TODO: use this error state
   const { state: txDetailsData, fetchData } = useGetTxDetailsData(
     publicKey,
     destination,
@@ -241,107 +179,13 @@ export const TransactionDetails = ({
     dispatch(getMemoRequiredAccounts());
   }, [dispatch]);
 
-  const handleSorobanTransaction = async () => {
-    try {
-      const res = await dispatch(
-        signFreighterSorobanTransaction({
-          transactionXDR: transactionSimulation.preparedTransaction!,
-          network: networkDetails.networkPassphrase,
-        }),
-      );
-
-      if (
-        signFreighterSorobanTransaction.fulfilled.match(res) &&
-        res.payload.signedTransaction
-      ) {
-        const submitResp = await dispatch(
-          submitFreighterSorobanTransaction({
-            publicKey,
-            signedXDR: res.payload.signedTransaction,
-            networkDetails,
-          }),
-        );
-
-        if (submitFreighterSorobanTransaction.fulfilled.match(submitResp)) {
-          emitMetric(METRIC_NAMES.sendPaymentSuccess, {
-            sourceAsset: sourceAsset.code,
-          });
-
-          if (isSoroswap && destAsset.issuer) {
-            await dispatch(
-              addTokenId({
-                publicKey,
-                tokenId: destAsset.issuer,
-                network: networkDetails.network as Networks,
-              }),
-            );
-          }
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handlePaymentTransaction = async () => {
-    try {
-      if (isHardwareWallet) {
-        dispatch(
-          startHwSign({
-            transactionXDR: txDetailsData.data?.transactionXdr,
-            shouldSubmit: true,
-          }),
-        );
-        return;
-      }
-      const res = await dispatch(
-        signFreighterTransaction({
-          transactionXDR: txDetailsData.data!.transactionXdr,
-          network: networkDetails.networkPassphrase,
-        }),
-      );
-
-      if (
-        signFreighterTransaction.fulfilled.match(res) &&
-        res.payload.signedTransaction
-      ) {
-        const submitResp = await dispatch(
-          submitFreighterTransaction({
-            publicKey,
-            signedXDR: res.payload.signedTransaction,
-            networkDetails,
-          }),
-        );
-
-        if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-          if (!isSwap) {
-            await dispatch(
-              addRecentAddress({ publicKey: federationAddress || destination }),
-            );
-          }
-          if (isPathPayment) {
-            emitMetric(METRIC_NAMES.sendPaymentPathPaymentSuccess, {
-              sourceAsset,
-              destAsset,
-              allowedSlippage,
-            });
-          } else {
-            emitMetric(METRIC_NAMES.sendPaymentSuccess, { sourceAsset });
-          }
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  // handles signing and submitting
   const handleSend = async () => {
-    if (isToken || isSoroswap) {
-      await handleSorobanTransaction();
-    } else {
-      await handlePaymentTransaction();
+    if (isHardwareWallet) {
+      setHwStatus(ShowOverlayStatus.IN_PROGRESS);
+      return;
     }
+    await signTx(txDetailsData.data?.transactionXdr!);
+    await submitTx(signedTransaction);
   };
 
   const showMemo = !isSwap && !isMuxedAccount(destination);
@@ -422,7 +266,7 @@ export const TransactionDetails = ({
         </View.Content>
       ) : (
         <React.Fragment>
-          {submission.submitStatus === ActionStatus.PENDING && (
+          {submissionStatus === RequestState.LOADING && (
             <div className="TransactionDetails__processing">
               <div className="TransactionDetails__processing__header">
                 <Loader />{" "}
@@ -436,14 +280,10 @@ export const TransactionDetails = ({
             </div>
           )}
           <SubviewHeader
-            title={renderPageTitle(
-              submission.submitStatus === ActionStatus.SUCCESS,
-            )}
+            title={renderPageTitle(submissionStatus === RequestState.SUCCESS)}
             customBackAction={goBack}
             customBackIcon={
-              submission.submitStatus === ActionStatus.SUCCESS ? (
-                <Icon.XClose />
-              ) : null
+              submissionStatus === RequestState.SUCCESS ? <Icon.XClose /> : null
             }
           />
           <View.Content hasNoTopPadding>
@@ -537,23 +377,32 @@ export const TransactionDetails = ({
                 {transactionFee} XLM
               </div>
             </div>
-            {transactionSimulation.response && (
+            {transactionSimulation && (
               <>
                 <div className="TransactionDetails__row">
                   <div>{t("Resource cost")} </div>
                   <div className="TransactionDetails__row__right">
                     <div className="TransactionDetails__row__right__item">
-                      {transactionSimulation.response.cost.cpuInsns} CPU
+                      {
+                        transactionSimulation.simulationTransaction.cost
+                          .cpuInsns
+                      }{" "}
+                      CPU
                     </div>
                     <div className="TransactionDetails__row__right__item">
-                      {transactionSimulation.response.cost.memBytes} Bytes
+                      {
+                        transactionSimulation.simulationTransaction.cost
+                          .memBytes
+                      }{" "}
+                      Bytes
                     </div>
                   </div>
                 </div>
                 <div className="TransactionDetails__row">
                   <div>{t("Minimum resource fee")} </div>
                   <div className="TransactionDetails__row__right">
-                    {transactionSimulation.response.minResourceFee} XLM
+                    {transactionSimulation.simulationTransaction.minResourceFee}{" "}
+                    XLM
                   </div>
                 </div>
               </>
@@ -573,7 +422,7 @@ export const TransactionDetails = ({
                 </div>
               </div>
             )}
-            {submission.submitStatus !== ActionStatus.SUCCESS ? (
+            {submissionStatus !== RequestState.SUCCESS ? (
               <div className="TransactionDetails__row">
                 <div>{t("XDR")} </div>
                 <div
@@ -616,11 +465,11 @@ export const TransactionDetails = ({
           </View.Content>
           <div className="TransactionDetails__bottom-wrapper__copy">
             {(isPathPayment || isSwap) &&
-              submission.submitStatus !== ActionStatus.SUCCESS &&
+              submissionStatus !== RequestState.SUCCESS &&
               t("The final amount is approximate and may change")}
           </div>
           <View.Footer isInline>
-            {submission.submitStatus === ActionStatus.SUCCESS ? (
+            {submissionStatus === RequestState.SUCCESS ? (
               <StellarExpertButton />
             ) : (
               <>

@@ -36,8 +36,8 @@ export const submitTx = async ({
 }: {
   server: Horizon.Server | HorizonNext.Server;
   tx: Transaction | FeeBumpTransaction;
-}): Promise<any> => {
-  let submittedTx;
+}): Promise<Horizon.HorizonApi.SubmitTransactionResponse> => {
+  let submittedTx: Horizon.HorizonApi.SubmitTransactionResponse;
 
   try {
     submittedTx = await server.submitTransaction(tx);
