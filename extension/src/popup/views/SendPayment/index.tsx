@@ -28,6 +28,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 
 import { useGetSettingsData } from "./hooks/useGetSettingsData";
+import { PathUpdate } from "popup/components/sendPayment/SendAmount/hooks/useGetBestRate";
 
 function getSimulationMode(
   isSoroswap: boolean,
@@ -305,6 +306,30 @@ export const SendPayment = () => {
               setSendAssetCanonical={(asset: string) =>
                 setTxDataKey<string>("asset", asset)
               }
+              setPath={(pathUpdate: PathUpdate) => {
+                setTxDataKey<string[]>("path", pathUpdate.path || []);
+                setTxDataKey<string>(
+                  "destinationAmount",
+                  pathUpdate.destinationAmount,
+                );
+                // Soroswap swap params
+                setTxDataKey<string | undefined>(
+                  "amountIn",
+                  pathUpdate.amountIn,
+                );
+                setTxDataKey<number | undefined>(
+                  "amountInDecimals",
+                  pathUpdate.amountInDecimals,
+                );
+                setTxDataKey<string | undefined>(
+                  "amountOutMin",
+                  pathUpdate.amountOutMin,
+                );
+                setTxDataKey<number | undefined>(
+                  "amountOutDecimals",
+                  pathUpdate.amountOutDecimals,
+                );
+              }}
             />
           </PublicKeyRoute>
         );

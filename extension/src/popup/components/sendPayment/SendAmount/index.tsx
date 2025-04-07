@@ -61,6 +61,8 @@ import { RequestState } from "constants/request";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
 
 import "../styles.scss";
+import { PathUpdate, useGetBestRate } from "./hooks/useGetBestRate";
+import { getNativeContractDetails } from "popup/helpers/searchAsset";
 
 enum AMOUNT_ERROR {
   TOO_HIGH = "amount too high",
@@ -119,6 +121,7 @@ interface SendAmountProps {
   transactionData: TransactionData;
   setSendAssetCanonical: (sendCanonicalAddress: string) => void;
   setDestinationAssetCanonical: (destCanonicalAddress: string) => void;
+  setPath: (pathUpdate: PathUpdate) => void;
   setSendAmount: (amount: string) => void;
 }
 
@@ -131,6 +134,7 @@ export const SendAmount = ({
   setSendAssetCanonical,
   setDestinationAssetCanonical,
   setSendAmount,
+  setPath,
 }: SendAmountProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
@@ -158,10 +162,14 @@ export const SendAmount = ({
     },
     destination,
   );
+  const {
+    state: bestRateState,
+    getBestPath,
+    getBestSoroswapPath,
+  } = useGetBestRate(setPath);
 
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
-  const [loadingRate, setLoadingRate] = useState(false);
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] =
     useState(false);
   const [suspiciousAssetData, setSuspiciousAssetData] = useState({
@@ -319,39 +327,28 @@ export const SendAmount = ({
   );
 
   const db = useCallback(
-    debounce(
-      async (/*formikAm, sourceAsset, destAsset*/) => {
-        if (isSoroswap) {
-          // const getContract = (formAsset: string) =>
-          //   formAsset === "native"
-          //     ? getNativeContractDetails(networkDetails).contract
-          //     : formAsset.split(":")[1];
-          // TODO: when do we actually need this path?
-          // await dispatch(
-          //   getBestSoroswapPath({
-          //     amount: formikAm,
-          //     sourceContract: getContract(formik.values.asset),
-          //     destContract: getContract(formik.values.destinationAsset),
-          //     networkDetails,
-          //     publicKey,
-          //   }),
-          // );
-        } else {
-          // TODO: when do we actually need this path?
-          // await dispatch(
-          //   getBestPath({
-          //     amount: formikAm,
-          //     sourceAsset,
-          //     destAsset,
-          //     networkDetails,
-          //   }),
-          // );
-        }
-
-        setLoadingRate(false);
-      },
-      2000,
-    ),
+    debounce(async (formikAm, sourceAsset, destAsset) => {
+      if (isSoroswap) {
+        const getContract = (formAsset: string) =>
+          formAsset === "native"
+            ? getNativeContractDetails(networkDetails).contract
+            : formAsset.split(":")[1];
+        getBestSoroswapPath({
+          amount: formikAm,
+          sourceContract: getContract(formik.values.asset),
+          destContract: getContract(formik.values.destinationAsset),
+          networkDetails,
+          publicKey,
+        });
+      } else {
+        getBestPath({
+          amount: formikAm,
+          sourceAsset,
+          destAsset,
+          networkDetails,
+        });
+      }
+    }, 2000),
     [],
   );
 
@@ -364,7 +361,6 @@ export const SendAmount = ({
     if (!formik.values.destinationAsset || Number(formik.values.amount) === 0) {
       return;
     }
-    setLoadingRate(true);
     // clear dest amount before re-calculating for UI
     db(
       formik.values.amount || defaultSourceAmount,
@@ -411,7 +407,8 @@ export const SendAmount = ({
             : Asset.native().toString();
       }
 
-      dispatch(saveDestinationAsset(defaultDestAsset));
+      // TODO, swap switch should set this before rendering
+      // dispatch(saveDestinationAsset(defaultDestAsset));
     }
   }, [
     isSwap,
@@ -570,7 +567,7 @@ export const SendAmount = ({
               <Button
                 size="md"
                 disabled={
-                  loadingRate ||
+                  bestRateState.state === RequestState.LOADING ||
                   formik.values.amount === "0" ||
                   !formik.isValid ||
                   // path payment, but path not found
@@ -647,7 +644,7 @@ export const SendAmount = ({
                   </div>
                   {showSourceAndDestAsset && formik.values.amount !== "0" && (
                     <ConversionRate
-                      loading={loadingRate}
+                      loading={bestRateState.state === RequestState.LOADING}
                       source={parsedSourceAsset.code}
                       sourceAmount={
                         cleanAmount(formik.values.amount) || defaultSourceAmount

@@ -82,7 +82,7 @@ function useGetSendAmountData(
         icons: userDomains.balances.icons || {},
         domains: userDomains.domains,
         soroswapTokens: soroswapTokens.assets,
-      };
+      } as SendAmountData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
