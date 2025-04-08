@@ -1,10 +1,4 @@
-import { captureException } from "@sentry/browser";
-import {
-  MAINNET_NETWORK_DETAILS,
-  NetworkDetails,
-  NETWORKS,
-  TESTNET_NETWORK_DETAILS,
-} from "@shared/constants/stellar";
+import { NetworkDetails, NETWORKS } from "@shared/constants/stellar";
 import {
   AssetsLists,
   AssetsListKey,
@@ -13,8 +7,10 @@ import {
 } from "@shared/constants/soroban/asset-list";
 
 import { getApiStellarExpertUrl } from "popup/helpers/account";
-import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
-import { schemaValidatedAssetList } from "@shared/api/helpers/getIconFromTokenLists";
+import {
+  getCombinedAssetListData,
+  schemaValidatedAssetList,
+} from "@shared/api/helpers/getIconFromTokenLists";
 
 export const searchAsset = async ({
   asset,
@@ -108,71 +104,31 @@ export const getVerifiedTokens = async ({
   setIsSearching?: (isSearching: boolean) => void;
   assetsLists: AssetsLists;
 }) => {
-  let network = networkDetails.network;
-
-  if (network === CUSTOM_NETWORK) {
-    if (
-      networkDetails.networkPassphrase ===
-      MAINNET_NETWORK_DETAILS.networkPassphrase
-    ) {
-      network = MAINNET_NETWORK_DETAILS.network;
-    }
-    if (
-      networkDetails.networkPassphrase ===
-      TESTNET_NETWORK_DETAILS.networkPassphrase
-    ) {
-      network = TESTNET_NETWORK_DETAILS.network;
-    }
-  }
-
-  const networkLists = assetsLists[network as AssetsListKey];
-  const promiseArr = [];
+  const assetListsData = await getCombinedAssetListData({
+    networkDetails,
+    assetsLists,
+  });
   const nativeContract = getNativeContractDetails(networkDetails);
 
   if (contractId === nativeContract.contract) {
     return [{ ...nativeContract, verifiedLists: [] }];
   }
 
-  for (const networkList of networkLists) {
-    const { url = "", isEnabled } = networkList;
-
-    if (isEnabled) {
-      const fetchAndParse = async () => {
-        let res;
-        try {
-          res = await fetch(url);
-        } catch (e) {
-          captureException(`Failed to load asset list: ${url}`);
-        }
-
-        return res?.json();
-      };
-
-      promiseArr.push(fetchAndParse());
-    }
-  }
-
-  const promiseRes =
-    await Promise.allSettled<Promise<AssetListResponse>>(promiseArr);
-
   const verifiedTokens = [] as VerifiedTokenRecord[];
-
   let verifiedToken = {} as AssetListReponseItem;
   const verifiedLists: string[] = [];
 
-  for (const r of promiseRes) {
-    if (r.status === "fulfilled") {
-      // confirm that this list still adheres to the agreed upon schema
-      const validatedList = await schemaValidatedAssetList(r.value);
-      const list = validatedList.assets;
-      if (list) {
-        for (const record of list) {
-          const regex = new RegExp(contractId, "i");
-          if (record.contract && record.contract.match(regex)) {
-            verifiedToken = record;
-            verifiedLists.push(r.value.name);
-            break;
-          }
+  for (const data of assetListsData) {
+    // confirm that this list still adheres to the agreed upon schema
+    const validatedList = await schemaValidatedAssetList(data);
+    const list = validatedList.assets;
+    if (list) {
+      for (const record of list) {
+        const regex = new RegExp(contractId, "i");
+        if (record.contract && record.contract.match(regex)) {
+          verifiedToken = record;
+          verifiedLists.push(data.name);
+          break;
         }
       }
     }

@@ -50,13 +50,11 @@ export const schemaValidatedAssetList = async (
   return { assets: assetListJson.assets, errors: null };
 };
 
-export const getIconFromTokenLists = async ({
+export const getCombinedAssetListData = async ({
   networkDetails,
-  contractId,
   assetsLists,
 }: {
   networkDetails: NetworkDetails;
-  contractId: string;
   assetsLists: AssetsLists;
 }) => {
   let network = networkDetails.network;
@@ -100,20 +98,40 @@ export const getIconFromTokenLists = async ({
   const promiseRes =
     await Promise.allSettled<Promise<AssetListResponse>>(promiseArr);
 
-  let verifiedToken = {} as AssetListReponseItem;
+  const assetListsData = [];
+  for (const p of promiseRes) {
+    if (p.status === "fulfilled") {
+      assetListsData.push(p.value);
+    }
+  }
+  return assetListsData;
+};
 
-  for (const r of promiseRes) {
-    if (r.status === "fulfilled") {
-      // confirm that this list still adheres to the agreed upon schema
-      const validatedList = await schemaValidatedAssetList(r.value);
-      const list = validatedList.assets;
-      if (list) {
-        for (const record of list) {
-          const regex = new RegExp(contractId, "i");
-          if (record.contract && record.contract.match(regex) && record.icon) {
-            verifiedToken = record;
-            break;
-          }
+export const getIconFromTokenLists = async ({
+  networkDetails,
+  contractId,
+  assetsLists,
+}: {
+  networkDetails: NetworkDetails;
+  contractId: string;
+  assetsLists: AssetsLists;
+}) => {
+  const assetListsData = await getCombinedAssetListData({
+    networkDetails,
+    assetsLists,
+  });
+
+  let verifiedToken = {} as AssetListReponseItem;
+  for (const data of assetListsData) {
+    // confirm that this list still adheres to the agreed upon schema
+    const validatedList = await schemaValidatedAssetList(data);
+    const list = validatedList.assets;
+    if (list) {
+      for (const record of list) {
+        const regex = new RegExp(contractId, "i");
+        if (record.contract && record.contract.match(regex) && record.icon) {
+          verifiedToken = record;
+          break;
         }
       }
     }
