@@ -1013,6 +1013,13 @@ export const getAssetIcons = async ({
         } = token;
 
         icon = await getIconUrlFromIssuer({ key, code, networkDetails });
+        if (!icon) {
+          icon = await getIconFromTokenLists({
+            networkDetails,
+            id: key,
+            assetsLists,
+          });
+        }
         assetIcons[`${code}:${key}`] = icon;
       }
 
@@ -1020,11 +1027,10 @@ export const getAssetIcons = async ({
         const { code } = token;
         icon = await getIconFromTokenLists({
           networkDetails,
-          contractId,
+          id: contractId,
           assetsLists,
         });
         assetIcons[`${code}:${contractId}`] = icon;
-        console.log(assetIcons);
       }
     }
   }

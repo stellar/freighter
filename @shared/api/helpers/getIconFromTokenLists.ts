@@ -13,6 +13,7 @@ import {
   TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
+import { isContractId } from "./soroban";
 
 export const schemaValidatedAssetList = async (
   assetListJson: AssetListResponse,
@@ -109,11 +110,11 @@ export const getCombinedAssetListData = async ({
 
 export const getIconFromTokenLists = async ({
   networkDetails,
-  contractId,
+  id,
   assetsLists,
 }: {
   networkDetails: NetworkDetails;
-  contractId: string;
+  id: string; // G or C address
   assetsLists: AssetsLists;
 }) => {
   const assetListsData = await getCombinedAssetListData({
@@ -123,13 +124,18 @@ export const getIconFromTokenLists = async ({
 
   let verifiedToken = {} as AssetListReponseItem;
   for (const data of assetListsData) {
-    // confirm that this list still adheres to the agreed upon schema
-    const validatedList = await schemaValidatedAssetList(data);
-    const list = validatedList.assets;
+    const list = data.assets;
     if (list) {
       for (const record of list) {
-        const regex = new RegExp(contractId, "i");
-        if (record.contract && record.contract.match(regex) && record.icon) {
+        if (isContractId(id)) {
+          const regex = new RegExp(id, "i");
+          if (record.contract && record.contract.match(regex) && record.icon) {
+            verifiedToken = record;
+            break;
+          }
+        }
+
+        if (record.issuer && record.issuer === id && record.icon) {
           verifiedToken = record;
           break;
         }

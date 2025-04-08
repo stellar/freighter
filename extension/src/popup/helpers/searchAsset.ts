@@ -7,10 +7,7 @@ import {
 } from "@shared/constants/soroban/asset-list";
 
 import { getApiStellarExpertUrl } from "popup/helpers/account";
-import {
-  getCombinedAssetListData,
-  schemaValidatedAssetList,
-} from "@shared/api/helpers/getIconFromTokenLists";
+import { getCombinedAssetListData } from "@shared/api/helpers/getIconFromTokenLists";
 
 export const searchAsset = async ({
   asset,
@@ -119,9 +116,7 @@ export const getVerifiedTokens = async ({
   const verifiedLists: string[] = [];
 
   for (const data of assetListsData) {
-    // confirm that this list still adheres to the agreed upon schema
-    const validatedList = await schemaValidatedAssetList(data);
-    const list = validatedList.assets;
+    const list = data.assets;
     if (list) {
       for (const record of list) {
         const regex = new RegExp(contractId, "i");
