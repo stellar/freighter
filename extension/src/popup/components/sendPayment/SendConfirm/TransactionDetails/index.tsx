@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Card, Loader, Icon, Button, CopyText } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { HorizonApi } from "stellar-sdk/lib/horizon";
 
 import {
   getAssetFromCanonical,
@@ -45,19 +46,19 @@ import { TRANSACTION_WARNING } from "constants/transaction";
 import { findAssetBalance } from "popup/helpers/balance";
 import { formatAmount } from "popup/helpers/formatters";
 import { isContractId } from "popup/helpers/soroban";
+import { WalletType } from "@shared/constants/hardwareWallet";
 
 import { resetSimulation } from "popup/ducks/token-payment";
 import { RequestState } from "popup/views/Account/hooks/useGetAccountData";
 import { TwoAssetCard } from "popup/components/TwoAssetCard";
 import { TransactionData } from "types/transactions";
 import { GetSettingsData } from "popup/views/SendPayment/hooks/useGetSettingsData";
-import { SignTxResponse } from "helpers/hooks/useSignTx";
-import { SubmitTxResponse } from "helpers/hooks/useSubmitTx";
 import {
   computeDestMinWithSlippage,
   TxDetailsData,
   useGetTxDetailsData,
 } from "./hooks/useGetTxDetailsData";
+import { SignTxResponse } from "./hooks/useSignAndSubmitTx";
 
 import "./styles.scss";
 
@@ -66,9 +67,17 @@ interface TransactionDetails {
   transactionData: TransactionData;
   goBack: () => void;
   shouldScanTx: boolean;
-  signTx: (transactionXDR: string) => Promise<SignTxResponse | Error>;
-  submitTx: (signedXDR: string) => Promise<SubmitTxResponse | Error>;
-  signedTransaction: string;
+  signAndSubmit: (transactionXDR: string) => Promise<SignTxResponse | Error>;
+  signAndSubmitHardware: (
+    transactionXDR: string,
+    walletType: WalletType.LEDGER,
+    bipPath: string,
+    isHashSigningEnabled: boolean,
+    isAuthEntry: boolean,
+    shouldSubmit: boolean,
+  ) => Promise<
+    HorizonApi.SubmitTransactionResponse | Buffer<ArrayBufferLike> | undefined
+  >;
   submissionStatus: RequestState;
   transactionHash: string;
 }
@@ -78,9 +87,8 @@ export const TransactionDetails = ({
   transactionSimulation,
   goBack,
   shouldScanTx,
-  signTx,
-  submitTx,
-  signedTransaction,
+  signAndSubmit,
+  signAndSubmitHardware,
   submissionStatus,
   transactionHash,
 }: TransactionDetails) => {
@@ -163,8 +171,7 @@ export const TransactionDetails = ({
       setHwStatus(ShowOverlayStatus.IN_PROGRESS);
       return;
     }
-    await signTx(txDetailsData.data?.transactionXdr!);
-    await submitTx(signedTransaction);
+    await signAndSubmit(txDetailsData.data?.transactionXdr!);
   };
 
   const showMemo = !isSwap && !isMuxedAccount(destination);

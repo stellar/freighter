@@ -1,14 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { HorizonApi } from "stellar-sdk/lib/horizon";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { TransactionData } from "types/transactions";
-import { useSignTx } from "helpers/hooks/useSignTx";
-import { useSubmitTx } from "helpers/hooks/useSubmitTx";
+import { useSignAndSubmit } from "./TransactionDetails/hooks/useSignAndSubmitTx";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { RequestState } from "constants/request";
-import { MemoRequiredAccount } from "@shared/api/types";
 import { GetSettingsData } from "popup/views/SendPayment/hooks/useGetSettingsData";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -41,11 +40,11 @@ export const SendConfirm = ({
   const isPathPayment = destinationAsset !== "";
 
   const [isSendComplete, setIsSendComplete] = useState(false);
-  const { state: signedTransaction, signTx } = useSignTx(
-    publicKey,
-    networkDetails,
-  );
-  const { state: txResponse, submitTx } = useSubmitTx(networkDetails);
+  const {
+    state: txResponse,
+    signAndSubmit,
+    signAndSubmitHardware,
+  } = useSignAndSubmit(publicKey, networkDetails);
 
   const render = () => {
     if (isSendComplete) {
@@ -53,12 +52,13 @@ export const SendConfirm = ({
         <TransactionDetails
           shouldScanTx={false}
           transactionData={transactionData}
-          signedTransaction={signedTransaction.data?.signedTransaction!}
           transactionSimulation={transactionSimulation}
-          signTx={signTx}
-          submitTx={submitTx}
+          signAndSubmit={signAndSubmit}
+          signAndSubmitHardware={signAndSubmitHardware}
           submissionStatus={txResponse.state}
-          transactionHash={txResponse.data?.hash!}
+          transactionHash={
+            (txResponse.data! as HorizonApi.SubmitTransactionResponse).hash
+          }
           goBack={() => {
             navigateTo(ROUTES.accountHistory, navigate);
           }}
@@ -75,10 +75,9 @@ export const SendConfirm = ({
             shouldScanTx={true}
             goBack={goBack}
             transactionData={transactionData}
-            signedTransaction={signedTransaction.data?.signedTransaction!}
             transactionSimulation={transactionSimulation}
-            signTx={signTx}
-            submitTx={submitTx}
+            signAndSubmit={signAndSubmit}
+            signAndSubmitHardware={signAndSubmitHardware}
             submissionStatus={txResponse.state}
             transactionHash={""}
           />
@@ -89,10 +88,9 @@ export const SendConfirm = ({
             shouldScanTx={false}
             goBack={goBack}
             transactionData={transactionData}
-            signedTransaction={signedTransaction.data?.signedTransaction!}
             transactionSimulation={transactionSimulation}
-            signTx={signTx}
-            submitTx={submitTx}
+            signAndSubmit={signAndSubmit}
+            signAndSubmitHardware={signAndSubmitHardware}
             submissionStatus={txResponse.state}
             transactionHash={""}
           />
@@ -116,10 +114,9 @@ export const SendConfirm = ({
             shouldScanTx={false}
             goBack={goBack}
             transactionData={transactionData}
-            signedTransaction={signedTransaction.data?.signedTransaction!}
             transactionSimulation={transactionSimulation}
-            signTx={signTx}
-            submitTx={submitTx}
+            signAndSubmit={signAndSubmit}
+            signAndSubmitHardware={signAndSubmitHardware}
             submissionStatus={RequestState.IDLE}
             transactionHash={""}
           />

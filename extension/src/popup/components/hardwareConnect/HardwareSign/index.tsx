@@ -10,13 +10,6 @@ import { POPUP_HEIGHT } from "constants/dimensions";
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { bipPathSelector } from "popup/ducks/accountServices";
-import {
-  signWithHardwareWallet,
-  submitFreighterTransaction,
-  transactionSubmissionSelector,
-  closeHwOverlay,
-  addRecentAddress,
-} from "popup/ducks/transactionSubmission";
 import { settingsSelector } from "popup/ducks/settings";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { WalletErrorBlock } from "popup/views/AddAccount/connect/DeviceConnect";
@@ -34,34 +27,29 @@ import "./styles.scss";
 export const HardwareSign = ({
   walletType,
   isSignSorobanAuthorization,
+  transactionXDR,
+  shouldSubmit,
+  destination,
+  onClose,
 }: {
   walletType: ConfigurableWalletType;
   isSignSorobanAuthorization?: boolean;
+  transactionXDR: string;
+  shouldSubmit: boolean;
+  destination: string;
+  onClose: () => void;
 }) => {
-  const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
-  const [isDetecting, setIsDetecting] = useState(false);
   const { networkDetails, isHashSigningEnabled } =
     useSelector(settingsSelector);
-  const {
-    hardwareWalletData: { transactionXDR, shouldSubmit },
-    transactionData: { destination },
-  } = useSelector(transactionSubmissionSelector);
   const bipPath = useSelector(bipPathSelector);
-  const [hardwareConnectSuccessful, setHardwareConnectSuccessful] =
-    useState(false);
-  const [hardwareWalletIsSigning, setHardwareWalletIsSigning] = useState(false);
-  const [connectError, setConnectError] = useState("");
-  const isSwap = useIsSwap();
   const [isDetectBtnDirty, setIsDetectBtnDirty] = useState(false);
 
   const closeOverlay = () => {
     if (hardwareConnectRef.current) {
       hardwareConnectRef.current.style.bottom = `-${POPUP_HEIGHT}px`;
     }
-    setTimeout(() => {
-      dispatch(closeHwOverlay());
-    }, 300);
+    onClose();
   };
 
   // animate entry
@@ -72,59 +60,7 @@ export const HardwareSign = ({
     }
   }, [hardwareConnectRef]);
 
-  const handleSign = async () => {
-    setIsDetecting(true);
-    setConnectError("");
-    try {
-      const publicKey = await getWalletPublicKey[walletType](bipPath);
-      setHardwareConnectSuccessful(true);
-      setHardwareWalletIsSigning(true);
-
-      const res = await dispatch(
-        signWithHardwareWallet({
-          transactionXDR,
-          networkPassphrase: networkDetails.networkPassphrase,
-          publicKey,
-          bipPath,
-          walletType,
-          isHashSigningEnabled,
-          isSignSorobanAuthorization,
-        }),
-      );
-      if (signWithHardwareWallet.fulfilled.match(res)) {
-        if (shouldSubmit && !isSignSorobanAuthorization) {
-          const submitResp = await dispatch(
-            submitFreighterTransaction({
-              publicKey,
-              signedXDR: res.payload as string,
-              networkDetails,
-            }),
-          );
-          if (
-            submitFreighterTransaction.fulfilled.match(submitResp) &&
-            !isSwap
-          ) {
-            dispatch(addRecentAddress({ publicKey: destination }));
-          }
-        } else {
-          // right now there are only two cases after signing,
-          // submitting to network or handling in background script
-          await handleSignedHwPayload({ signedPayload: res.payload });
-        }
-        closeOverlay();
-      } else {
-        setHardwareConnectSuccessful(false);
-        setConnectError(
-          parseWalletError[walletType](res.payload?.errorMessage || ""),
-        );
-      }
-      setHardwareWalletIsSigning(false);
-    } catch (e) {
-      setHardwareWalletIsSigning(false);
-      setConnectError(parseWalletError[walletType](e));
-    }
-    setIsDetecting(false);
-  };
+  const handleSign = async () => {};
 
   // let's check connection on initial load
   useEffect(() => {

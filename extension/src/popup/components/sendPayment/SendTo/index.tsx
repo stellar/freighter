@@ -117,7 +117,6 @@ export const SendTo = ({
     validatedFedAdress?: string,
   ) => {
     setDestinationAddress(validatedDestination);
-    // saveDestinationAsset("");
     setFederationAddress(validatedFedAdress || "");
     goToNext();
   };
