@@ -3,6 +3,8 @@ import { useSelector } from "react-redux";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { Balance } from "@shared/api/types";
+import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenLists";
+import { AssetsLists } from "@shared/constants/soroban/asset-list";
 import { initialState, isError, reducer } from "helpers/request";
 
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
@@ -13,10 +15,10 @@ import {
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { findAssetBalance } from "popup/helpers/balance";
 import { isAssetSuspicious } from "../../popup/helpers/blockaid";
-import { getNativeContractDetails } from "../../popup/helpers/searchAsset";
 import { useIsSoroswapEnabled, useIsSwap } from "../../popup/helpers/useIsSwap";
 import { getAssetDomain } from "../../popup/helpers/getAssetDomain";
 import { AccountBalances, useGetBalances } from "./useGetBalances";
+import { getNativeContractDetails } from "popup/helpers/searchAsset";
 
 export interface AssetDomains {
   balances: AccountBalances;
@@ -27,6 +29,7 @@ export interface AssetDomains {
 export function useGetAssetDomainsWithBalances(
   publicKey: string,
   networkDetails: NetworkDetails,
+  assetsLists: AssetsLists,
   options: {
     isMainnet: boolean;
     showHidden: boolean;
@@ -102,14 +105,28 @@ export function useGetAssetDomainsWithBalances(
               console.error(e);
             }
           }
-
+          let icon = undefined;
           const icons = balances.icons || {};
+          let image = icons[getCanonicalFromAsset(code, issuer.key)];
+          // some flows use image and others use icon
+          if (contractId) {
+            icon = await getIconFromTokenLists({
+              networkDetails,
+              contractId,
+              assetsLists,
+            });
+            if (!image) {
+              image = icon;
+            }
+          }
+
           domains.push({
             code,
             issuer: issuer.key,
-            image: icons[getCanonicalFromAsset(code, issuer.key)],
+            image,
             domain,
             contract: contractId,
+            icon,
             isSuspicious: isAssetSuspicious(blockaidData),
           });
           // include native asset for asset dropdown selection

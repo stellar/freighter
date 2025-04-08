@@ -95,7 +95,7 @@ export const AssetIcon = ({
   }
 
   // Get icons for Soroban tokens
-  if (_isSorobanToken && !icon) {
+  if (_isSorobanToken && !icon && !canonicalAsset) {
     const soroswapTokenDetail = soroswapTokens.find(
       (token) => token.contract === issuerKey,
     );

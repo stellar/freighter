@@ -6,6 +6,7 @@ import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
 import { getTokenDetails } from "@shared/api/internal";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenLists";
 import { isSacContractExecutable } from "@shared/helpers/soroban/token";
 
 import { FormRows } from "popup/basics/Forms";
@@ -139,6 +140,13 @@ export const AddAsset = () => {
         `${tokenDetailsResponse.symbol}-${issuer}`,
         networkDetails,
       );
+
+      const icon = await getIconFromTokenLists({
+        networkDetails,
+        contractId,
+        assetsLists,
+      });
+
       return {
         code: tokenDetailsResponse.symbol,
         contract: contractId,
@@ -146,6 +154,8 @@ export const AddAsset = () => {
         domain: "",
         name: tokenDetailsResponse.name,
         isSuspicious: isAssetSuspicious(scannedAsset),
+        icon,
+        image: icon,
       } as ManageAssetCurrency;
     };
 

@@ -504,6 +504,7 @@ export const ManageAssetRow = ({
         code={code}
         issuerKey={issuer}
         isSuspicious={isSuspicious}
+        icon={image}
       />
       <div className="ManageAssetRows__row__info">
         <div className="ManageAssetRows__row__info__header">
