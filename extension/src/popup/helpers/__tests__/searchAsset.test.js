@@ -1,4 +1,5 @@
 import * as SearchAsset from "../searchAsset";
+import { schemaValidatedAssetList } from "@shared/api/helpers/getIconFromTokenLists";
 
 const validAssetList = {
   name: "PiyalBasu Top 50",
@@ -66,8 +67,7 @@ describe("searchAsset", () => {
     });
   });
   it("schemaValidatedAssetList should return list if valid", async () => {
-    const { assets } =
-      await SearchAsset.schemaValidatedAssetList(validAssetList);
+    const { assets } = await schemaValidatedAssetList(validAssetList);
     expect(assets).toStrictEqual(validAssetList.assets);
   });
   it("schemaValidatedAssetList should return empty list if schema fetch fails", async () => {
@@ -76,12 +76,11 @@ describe("searchAsset", () => {
         ok: false,
       }),
     );
-    const { assets } =
-      await SearchAsset.schemaValidatedAssetList(validAssetList);
+    const { assets } = await schemaValidatedAssetList(validAssetList);
     expect(assets).toStrictEqual([]);
   });
   it("schemaValidatedAssetList should return empty list and errors if validation fails", async () => {
-    const { assets, errors } = await SearchAsset.schemaValidatedAssetList({
+    const { assets, errors } = await schemaValidatedAssetList({
       // incorrect key
       title: "PiyalBasu Top 50",
 
