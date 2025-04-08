@@ -1,5 +1,4 @@
 import { captureException } from "@sentry/browser";
-import { validate, ValidationError } from "jsonschema";
 import {
   MAINNET_NETWORK_DETAILS,
   NetworkDetails,
@@ -15,6 +14,7 @@ import {
 
 import { getApiStellarExpertUrl } from "popup/helpers/account";
 import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
+import { schemaValidatedAssetList } from "@shared/api/helpers/getIconFromTokenLists";
 
 export const searchAsset = async ({
   asset,
@@ -27,42 +27,6 @@ export const searchAsset = async ({
     `${getApiStellarExpertUrl(networkDetails)}/asset?search=${asset}`,
   );
   return res.json();
-};
-
-export const schemaValidatedAssetList = async (
-  assetListJson: AssetListResponse,
-): Promise<{
-  assets: AssetListReponseItem[];
-  errors: ValidationError[] | null;
-}> => {
-  let schemaRes;
-  try {
-    schemaRes = await fetch(
-      "https://raw.githubusercontent.com/orbitlens/stellar-protocol/sep-0042-token-lists/contents/sep-0042/assetlist.schema.json",
-    );
-  } catch (err) {
-    captureException("Error fetching SEP-0042 JSON schema");
-    return { assets: [] as AssetListReponseItem[], errors: null };
-  }
-
-  if (!schemaRes.ok) {
-    captureException("Unable to fetch SEP-0042 JSON schema");
-    return { assets: [] as AssetListReponseItem[], errors: null };
-  }
-
-  const schemaResJson = await schemaRes?.json();
-
-  // check against the SEP-0042 schema
-  const validatedList = validate(assetListJson, schemaResJson);
-
-  if (validatedList.errors.length) {
-    return {
-      assets: [] as AssetListReponseItem[],
-      errors: validatedList.errors,
-    };
-  }
-
-  return { assets: assetListJson.assets, errors: null };
 };
 
 export const getNativeContractDetails = (networkDetails: NetworkDetails) => {

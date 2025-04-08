@@ -5,8 +5,9 @@ import {
 } from "@shared/constants/soroban/asset-list";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
 
+import { schemaValidatedAssetList } from "@shared/api/helpers/getIconFromTokenLists";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
-import { getAssetLists, schemaValidatedAssetList } from "./searchAsset";
+import { getAssetLists } from "./searchAsset";
 
 export const splitVerifiedAssetCurrency = async ({
   networkDetails,

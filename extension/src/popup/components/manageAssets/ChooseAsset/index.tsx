@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { ROUTES } from "popup/constants/routes";
 import {
   settingsNetworkDetailsSelector,
+  settingsSelector,
   settingsSorobanSupportedSelector,
 } from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -33,12 +34,14 @@ export const ChooseAsset = ({
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const { assetsLists } = useSelector(settingsSelector);
 
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
 
   const { state: domainState, fetchData } = useGetAssetDomainsWithBalances(
     publicKey,
     networkDetails,
+    assetsLists,
     {
       isMainnet: isMainnet(networkDetails),
       showHidden: false,

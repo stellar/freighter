@@ -1,4 +1,5 @@
 import { useReducer } from "react";
+import { useSelector } from "react-redux";
 import {
   Account,
   Asset,
@@ -26,6 +27,7 @@ import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
 import { getAccountBalances, getAssetIcons } from "@shared/api/internal";
 import { sortBalances } from "popup/helpers/account";
 import { isContractId } from "popup/helpers/soroban";
+import { settingsSelector } from "popup/ducks/settings";
 
 export interface TxDetailsData {
   destAssetIconUrl: string;
@@ -200,6 +202,7 @@ function useGetTxDetailsData(
     networkDetails,
     balanceOptions,
   );
+  const { assetsLists } = useSelector(settingsSelector);
 
   const { scanTx } = useScanTx();
 
@@ -221,6 +224,7 @@ function useGetTxDetailsData(
           ? await getAssetIcons({
               balances: destBalancesResult.balances,
               networkDetails,
+              assetsLists,
             })
           : {};
 

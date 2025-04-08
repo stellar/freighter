@@ -1,4 +1,5 @@
 import { useReducer } from "react";
+import { useSelector } from "react-redux";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { RequestState } from "constants/request";
@@ -14,6 +15,7 @@ import {
   getHiddenAssets,
   changeAssetVisibility as internalChangeAssetVisibility,
 } from "@shared/api/internal";
+import { settingsSelector } from "popup/ducks/settings";
 
 export interface AssetVisibilityData {
   balances: AccountBalances;
@@ -35,8 +37,14 @@ function useGetAssetData(
     reducer<AssetVisibilityData, unknown>,
     initialState,
   );
+  const { assetsLists } = useSelector(settingsSelector);
   const { fetchData: fetchDomainsWithBalances } =
-    useGetAssetDomainsWithBalances(publicKey, networkDetails, options);
+    useGetAssetDomainsWithBalances(
+      publicKey,
+      networkDetails,
+      assetsLists,
+      options,
+    );
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });

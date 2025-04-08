@@ -68,6 +68,7 @@ import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
+import { getIconFromTokenLists } from "./helpers/getIconFromTokenLists";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -991,9 +992,11 @@ export const getTokenDetails = async ({
 export const getAssetIcons = async ({
   balances,
   networkDetails,
+  assetsLists,
 }: {
   balances: Balances;
   networkDetails: NetworkDetails;
+  assetsLists: AssetsLists;
 }) => {
   const assetIcons = {} as { [code: string]: string };
 
@@ -1002,7 +1005,7 @@ export const getAssetIcons = async ({
     const balanceValues = Object.values(balances);
 
     for (let i = 0; i < balanceValues.length; i++) {
-      const { token } = balanceValues[i];
+      const { token, contractId } = balanceValues[i];
       if (token && "issuer" in token) {
         const {
           issuer: { key },
@@ -1011,6 +1014,17 @@ export const getAssetIcons = async ({
 
         icon = await getIconUrlFromIssuer({ key, code, networkDetails });
         assetIcons[`${code}:${key}`] = icon;
+      }
+
+      if (contractId && !icon) {
+        const { code } = token;
+        icon = await getIconFromTokenLists({
+          networkDetails,
+          contractId,
+          assetsLists,
+        });
+        assetIcons[`${code}:${contractId}`] = icon;
+        console.log(assetIcons);
       }
     }
   }
