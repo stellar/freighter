@@ -3,8 +3,6 @@ import { useSelector } from "react-redux";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { Balance } from "@shared/api/types";
-import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenLists";
-import { AssetsLists } from "@shared/constants/soroban/asset-list";
 import { initialState, isError, reducer } from "helpers/request";
 
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
@@ -29,7 +27,6 @@ export interface AssetDomains {
 export function useGetAssetDomainsWithBalances(
   publicKey: string,
   networkDetails: NetworkDetails,
-  assetsLists: AssetsLists,
   options: {
     isMainnet: boolean;
     showHidden: boolean;
@@ -105,28 +102,14 @@ export function useGetAssetDomainsWithBalances(
               console.error(e);
             }
           }
-          let icon = undefined;
-          const icons = balances.icons || {};
-          let image = icons[getCanonicalFromAsset(code, issuer.key)];
-          // some flows use image and others use icon
-          if (contractId) {
-            icon = await getIconFromTokenLists({
-              networkDetails,
-              contractId,
-              assetsLists,
-            });
-            if (!image) {
-              image = icon;
-            }
-          }
 
+          const icons = balances.icons || {};
           domains.push({
             code,
             issuer: issuer.key,
-            image,
+            image: icons[getCanonicalFromAsset(code, issuer.key)],
             domain,
             contract: contractId,
-            icon,
             isSuspicious: isAssetSuspicious(blockaidData),
           });
           // include native asset for asset dropdown selection
