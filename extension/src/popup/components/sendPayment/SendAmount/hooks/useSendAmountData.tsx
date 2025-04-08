@@ -1,5 +1,4 @@
 import { useReducer } from "react";
-import { useSelector } from "react-redux";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { initialState, isError, reducer } from "helpers/request";
@@ -14,7 +13,6 @@ import {
 } from "helpers/hooks/useGetAssetDomainsWithBalances";
 import { getAccountBalances } from "@shared/api/internal";
 import { sortBalances } from "popup/helpers/account";
-import { settingsSelector } from "popup/ducks/settings";
 
 interface SendAmountData {
   userBalances: AccountBalances;
@@ -38,11 +36,9 @@ function useGetSendAmountData(
     initialState,
   );
 
-  const { assetsLists } = useSelector(settingsSelector);
   const { fetchData: fetchAssetDomains } = useGetAssetDomainsWithBalances(
     publicKey,
     networkDetails,
-    assetsLists,
     options,
   );
 
