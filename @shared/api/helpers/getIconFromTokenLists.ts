@@ -106,23 +106,11 @@ export const getIconFromTokenLists = async ({
     if (r.status === "fulfilled") {
       // confirm that this list still adheres to the agreed upon schema
       const validatedList = await schemaValidatedAssetList(r.value);
-      const list = validatedList.assets.concat([
-        {
-          code: "USDL",
-          issuer: "GDT6KO5UFR4EYONX2KGTCPQCZ2TYAYPQEPZIND24XPDBPDEZG7K5FCTC",
-          contract: "CB4PO24UJF7KFNUNQJISIRPO2KSULUWIOP4JT3S3KYW5UFXRQPZD34E4",
-          name: "Lift Dollar",
-          org: "Paxos",
-          domain: "https://www.paxos.com",
-          icon: "https://424565.fs1.hubspotusercontent-na1.net/hubfs/424565/USDL-Logo-T32x32.png",
-          decimals: 18,
-        },
-      ]);
+      const list = validatedList.assets;
       if (list) {
         for (const record of list) {
           const regex = new RegExp(contractId, "i");
           if (record.contract && record.contract.match(regex) && record.icon) {
-            console.log(record);
             verifiedToken = record;
             break;
           }
