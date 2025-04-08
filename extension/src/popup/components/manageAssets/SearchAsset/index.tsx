@@ -14,7 +14,6 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { isMainnet, isTestnet } from "helpers/stellar";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import { AssetNotifcation } from "popup/components/AssetNotification";
 import { View } from "popup/basics/layout/View";
 
 import { useGetBalances } from "helpers/hooks/useGetBalances";
@@ -152,15 +151,6 @@ export const SearchAsset = () => {
                   isSearching={tokenState.state === "LOADING"}
                   resultsRef={ResultsRef}
                 >
-                  {tokenState.data &&
-                  (tokenState.data.verifiedAssetRows.length ||
-                    tokenState.data.unverifiedAssetRows.length) &&
-                  tokenState.data.isVerificationInfoShowing ? (
-                    <AssetNotifcation
-                      isVerified={tokenState.data.isVerifiedToken}
-                    />
-                  ) : null}
-
                   {tokenState.data &&
                   (tokenState.data.verifiedAssetRows.length ||
                     tokenState.data.unverifiedAssetRows.length) ? (
