@@ -14,8 +14,7 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
     screenshot: "manage-assets-page.png",
   });
   await page.getByText("Add an asset").click({ force: true });
-  await page.getByText("Add manually").click({ force: true });
-  await page.getByTestId("search-token-input").fill(TEST_TOKEN_ADDRESS);
+  await page.getByTestId("search-asset-input").fill(TEST_TOKEN_ADDRESS);
   await expect(page.getByTestId("not-asset-on-list")).toHaveText(
     "Not on your lists",
   );
@@ -42,8 +41,7 @@ test.skip("Adding Soroban verified token", async ({ page, extensionId }) => {
 
   await expect(page.getByText("Your assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });
-  await page.getByText("Add manually").click({ force: true });
-  await page.getByTestId("search-token-input").fill(USDC_TOKEN_ADDRESS);
+  await page.getByTestId("search-asset-input").fill(USDC_TOKEN_ADDRESS);
   await expect(page.getByTestId("asset-on-list")).toHaveText("On your lists");
   await expect(page.getByTestId("ManageAssetCode")).toHaveText("USDC");
   await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");

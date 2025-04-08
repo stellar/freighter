@@ -170,6 +170,12 @@
     padding-top: 0 !important;
   }
 
+  &__inset--top-input {
+    // this is a variant of no-top-padding
+    // it provides a ltitle room for a top input's focus glow
+    padding-top: 4px !important;
+  }
+
   &__inset--no-bottom-padding {
     padding-bottom: 0 !important;
   }

@@ -113,6 +113,7 @@ interface ViewContentProps {
   alignment?: "center";
   contentFooter?: React.ReactNode;
   hasNoTopPadding?: boolean;
+  hasTopInput?: boolean;
   hasNoBottomPadding?: boolean;
 }
 
@@ -121,6 +122,7 @@ const ViewContent: React.FC<ViewContentProps> = ({
   alignment,
   contentFooter,
   hasNoTopPadding,
+  hasTopInput,
   hasNoBottomPadding,
   ...props
 }: ViewContentProps) => {
@@ -132,6 +134,7 @@ const ViewContent: React.FC<ViewContentProps> = ({
         alignment={alignment}
         hasVerticalBorder={isAppLayout}
         hasNoTopPadding={hasNoTopPadding}
+        hasTopInput={hasTopInput}
         hasNoBottomPadding={hasNoBottomPadding}
         hasScrollShadow
       >
@@ -218,6 +221,7 @@ interface ViewInsetProps {
   additionalClassName?: string;
   hasScrollShadow?: boolean;
   hasNoTopPadding?: boolean;
+  hasTopInput?: boolean;
   hasNoBottomPadding?: boolean;
 }
 
@@ -231,6 +235,7 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
   additionalClassName,
   hasScrollShadow,
   hasNoTopPadding,
+  hasTopInput,
   hasNoBottomPadding,
   ...props
 }: ViewInsetProps) => (
@@ -243,6 +248,7 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
       hasTopBorder ? "View__inset--top-border" : "",
       hasScrollShadow ? "View__inset--scroll-shadows" : "",
       hasNoTopPadding ? "View__inset--no-top-padding" : "",
+      hasTopInput ? "View__inset--top-input" : "",
       hasNoBottomPadding ? "View__inset--no-bottom-padding" : "",
     ])}${additionalClassName ? ` ${additionalClassName}` : ""}`}
     {...props}
