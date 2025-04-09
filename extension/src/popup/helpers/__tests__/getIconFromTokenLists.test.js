@@ -29,7 +29,7 @@ describe("getIconFromTokenLists", () => {
     });
     expect(icon).toEqual(EXPECTED_ICON_URL);
   });
-  it("should return undefined if an asset is on on the token list", async () => {
+  it("should return undefined if an asset is not on the token list", async () => {
     const icon = await getIconFromTokenLists({
       networkDetails: TESTNET_NETWORK_DETAILS,
       id: TEST_PUBLIC_KEY,
