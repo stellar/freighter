@@ -11,7 +11,7 @@ import {
   AssetsListKey,
   AssetListResponse,
 } from "@shared/constants/soroban/asset-list";
-import { schemaValidatedAssetList } from "@shared/api/helpers/getIconFromTokenLists";
+import { schemaValidatedAssetList } from "@shared/api/helpers/token-list";
 import { ROUTES } from "popup/constants/routes";
 import { AppDispatch } from "popup/App";
 

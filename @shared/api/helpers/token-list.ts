@@ -13,7 +13,6 @@ import {
   TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
-import { isContractId } from "./soroban";
 
 export const schemaValidatedAssetList = async (
   assetListJson: AssetListResponse,
@@ -106,42 +105,4 @@ export const getCombinedAssetListData = async ({
     }
   }
   return assetListsData;
-};
-
-export const getIconFromTokenLists = async ({
-  networkDetails,
-  id,
-  assetsLists,
-}: {
-  networkDetails: NetworkDetails;
-  id: string; // G or C address
-  assetsLists: AssetsLists;
-}) => {
-  const assetListsData = await getCombinedAssetListData({
-    networkDetails,
-    assetsLists,
-  });
-
-  let verifiedToken = {} as AssetListReponseItem;
-  for (const data of assetListsData) {
-    const list = data.assets;
-    if (list) {
-      for (const record of list) {
-        if (isContractId(id)) {
-          const regex = new RegExp(id, "i");
-          if (record.contract && record.contract.match(regex) && record.icon) {
-            verifiedToken = record;
-            break;
-          }
-        }
-
-        if (record.issuer && record.issuer === id && record.icon) {
-          verifiedToken = record;
-          break;
-        }
-      }
-    }
-  }
-
-  return verifiedToken.icon;
 };
