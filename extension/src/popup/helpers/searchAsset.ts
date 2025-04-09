@@ -7,7 +7,7 @@ import {
 } from "@shared/constants/soroban/asset-list";
 
 import { getApiStellarExpertUrl } from "popup/helpers/account";
-import { getCombinedAssetListData } from "@shared/api/helpers/getIconFromTokenLists";
+import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 
 export const searchAsset = async ({
   asset,

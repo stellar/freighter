@@ -68,7 +68,7 @@ import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
-import { getIconFromTokenLists } from "./helpers/getIconFromTokenLists";
+import { getIconFromTokenLists } from "./helpers/getIconFromTokenList";
 
 const TRANSACTIONS_LIMIT = 100;
 
