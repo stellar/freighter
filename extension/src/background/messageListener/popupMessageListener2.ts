@@ -17,8 +17,22 @@ import { SessionTimer } from "background/helpers/session";
 import { addAccount } from "./handlers/add-account";
 import { importAccount } from "./handlers/import-account";
 import { publicKeySelector } from "background/ducks/session";
+import { importHardwareWallet } from "./handlers/import-hardware-wallet";
+import { makeAccountActive } from "./handlers/make-account-active";
+import { updateAccountName } from "./handlers/update-account-name";
+import { addCustomNetwork } from "./handlers/add-custom-network";
+import { removeCustomNetwork } from "./handlers/remove-custom-network";
+import { editCustomNetwork } from "./handlers/edit-custom-network";
+import { changeNetwork } from "./handlers/change-network";
+import { loadAccount } from "./handlers/load-account";
+import { getMnemonicPhrase } from "./handlers/get-mnemonic-phrase";
+import { confirmMnemonicPhrase } from "./handlers/confirm-mnemonic-phrase";
+import { confirmMigratedMnemonicPhrase } from "./handlers/confirm-migrated-mnemonic-phrase";
+import { recoverAccount } from "./handlers/recover-account";
+import { showBackupPhrase } from "./handlers/show-backup-phrase";
 
 const sessionTimer = new SessionTimer();
+const numOfPublicKeysToCheck = 5;
 
 export const popupMessageListener = (
   request: ServiceMessageRequest,
@@ -72,6 +86,98 @@ export const popupMessageListener = (
         request,
         localStore,
         sessionStore,
+        keyManager,
+        sessionTimer,
+      });
+    }
+    case SERVICE_TYPES.IMPORT_HARDWARE_WALLET: {
+      return importHardwareWallet({
+        request,
+        localStore,
+        sessionStore,
+      });
+    }
+    case SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE: {
+      return makeAccountActive({
+        request,
+        localStore,
+        sessionStore,
+      });
+    }
+    case SERVICE_TYPES.UPDATE_ACCOUNT_NAME: {
+      return updateAccountName({
+        request,
+        localStore,
+        sessionStore,
+      });
+    }
+    case SERVICE_TYPES.ADD_CUSTOM_NETWORK: {
+      return addCustomNetwork({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.REMOVE_CUSTOM_NETWORK: {
+      return removeCustomNetwork({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.EDIT_CUSTOM_NETWORK: {
+      return editCustomNetwork({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.CHANGE_NETWORK: {
+      return changeNetwork({
+        request,
+        localStore,
+        sessionStore,
+      });
+    }
+    case SERVICE_TYPES.LOAD_ACCOUNT: {
+      return loadAccount({
+        localStore,
+        sessionStore,
+      });
+    }
+    case SERVICE_TYPES.GET_MNEMONIC_PHRASE: {
+      return getMnemonicPhrase({
+        request,
+        localStore,
+        sessionStore,
+        keyManager,
+      });
+    }
+    case SERVICE_TYPES.CONFIRM_MNEMONIC_PHRASE: {
+      return confirmMnemonicPhrase({
+        request,
+        localStore,
+        sessionStore,
+      });
+    }
+    case SERVICE_TYPES.CONFIRM_MIGRATED_MNEMONIC_PHRASE: {
+      return confirmMigratedMnemonicPhrase({
+        request,
+        sessionStore,
+      });
+    }
+    case SERVICE_TYPES.RECOVER_ACCOUNT: {
+      return recoverAccount({
+        request,
+        sessionStore,
+        localStore,
+        keyManager,
+        sessionTimer,
+        numOfPublicKeysToCheck,
+      });
+    }
+    case SERVICE_TYPES.SHOW_BACKUP_PHRASE: {
+      return showBackupPhrase({
+        request,
+        sessionStore,
+        localStore,
         keyManager,
         sessionTimer,
       });
