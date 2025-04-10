@@ -25,6 +25,7 @@ import {
 } from "@shared/helpers/soroban/token";
 import {
   getAssetFromCanonical,
+  getCanonicalFromAsset,
   getSdk,
   isCustomNetwork,
   makeDisplayableBalances,
@@ -1012,25 +1013,22 @@ export const getAssetIcons = async ({
           code,
         } = token;
 
+        let canonical = getCanonicalFromAsset(code, key);
         icon = await getIconUrlFromIssuer({ key, code, networkDetails });
         if (!icon) {
-          icon = await getIconFromTokenLists({
+          const tokenListIcon = await getIconFromTokenLists({
             networkDetails,
-            id: key,
+            issuerId: key,
+            contractId,
+            code,
             assetsLists,
           });
+          if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
+            icon = tokenListIcon.icon;
+            canonical = tokenListIcon.canonicalAsset;
+          }
         }
-        assetIcons[`${code}:${key}`] = icon;
-      }
-
-      if (contractId && !icon) {
-        const { code } = token;
-        icon = await getIconFromTokenLists({
-          networkDetails,
-          id: contractId,
-          assetsLists,
-        });
-        assetIcons[`${code}:${contractId}`] = icon;
+        assetIcons[canonical] = icon;
       }
     }
   }
