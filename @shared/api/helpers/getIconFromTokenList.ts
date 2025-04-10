@@ -3,16 +3,20 @@ import {
   AssetsLists,
 } from "@shared/constants/soroban/asset-list";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { isContractId } from "./soroban";
 import { getCombinedAssetListData } from "./token-list";
+import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 
 export const getIconFromTokenLists = async ({
   networkDetails,
-  id,
+  issuerId,
+  contractId,
+  code,
   assetsLists,
 }: {
   networkDetails: NetworkDetails;
-  id: string; // G or C address
+  issuerId?: string;
+  contractId?: string;
+  code: string;
   assetsLists: AssetsLists;
 }) => {
   const assetListsData = await getCombinedAssetListData({
@@ -21,25 +25,36 @@ export const getIconFromTokenLists = async ({
   });
 
   let verifiedToken = {} as AssetListReponseItem;
+  let canonicalAsset = undefined as string | undefined;
   for (const data of assetListsData) {
     const list = data.assets;
     if (list) {
       for (const record of list) {
-        if (isContractId(id)) {
-          const regex = new RegExp(id, "i");
+        if (contractId) {
+          const regex = new RegExp(contractId, "i");
           if (record.contract && record.contract.match(regex) && record.icon) {
             verifiedToken = record;
+            canonicalAsset = getCanonicalFromAsset(code, contractId);
             break;
           }
         }
 
-        if (record.issuer && record.issuer === id && record.icon) {
+        if (
+          issuerId &&
+          record.issuer &&
+          record.issuer === issuerId &&
+          record.icon
+        ) {
           verifiedToken = record;
+          canonicalAsset = getCanonicalFromAsset(code, issuerId);
           break;
         }
       }
     }
   }
 
-  return verifiedToken?.icon;
+  return {
+    icon: verifiedToken?.icon,
+    canonicalAsset,
+  };
 };

@@ -193,6 +193,19 @@ export const getAssetFromCanonical = (canonical: string) => {
   throw new Error(`invalid asset canonical id: ${canonical}`);
 };
 
+export const getCanonicalFromAsset = (
+  assetCode: string,
+  assetIssuer?: string,
+) => {
+  if (assetCode === "XLM" && !assetIssuer) {
+    return "native";
+  }
+  if (!assetIssuer) {
+    return assetCode;
+  }
+  return `${assetCode}:${assetIssuer}`;
+};
+
 export const xlmToStroop = (lumens: BigNumber | string): BigNumber => {
   if (lumens instanceof BigNumber) {
     return lumens.times(1e7);
