@@ -4,6 +4,7 @@
   cursor: pointer;
 
   &__row {
+    width: 100%;
     display: flex;
     flex: 1;
     flex-direction: row;
@@ -24,6 +25,13 @@
   &__amount {
     text-align: right;
     max-width: 45%;
+
+    .Badge {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+    }
   }
 
   &__icon {
