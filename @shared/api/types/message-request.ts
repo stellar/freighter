@@ -1,6 +1,47 @@
+import { Transaction } from "stellar-sdk";
+import browser from "webextension-polyfill";
+
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { NetworkDetails } from "@shared/constants/stellar";
+
+export interface TokenToAdd {
+  domain: string;
+  tab?: browser.Tabs.Tab;
+  url: string;
+  contractId: string;
+  networkPassphrase?: string;
+}
+
+export interface MessageToSign {
+  domain: string;
+  tab?: browser.Tabs.Tab;
+  message: string;
+  url: string;
+  accountToSign?: string;
+  networkPassphrase?: string;
+}
+
+export interface EntryToSign {
+  domain: string;
+  tab?: browser.Tabs.Tab;
+  entry: string; // xdr.SorobanAuthorizationEntry
+  url: string;
+  accountToSign?: string;
+  networkPassphrase?: string;
+}
+
+export type ResponseQueue = Array<
+  (message?: any, messageAddress?: any) => void
+>;
+
+export type TokenQueue = TokenToAdd[];
+
+export type TransactionQueue = Transaction[];
+
+export type BlobQueue = MessageToSign[];
+
+export type EntryQueue = EntryToSign[];
 
 export interface BaseMessage {
   activePublicKey: string;
@@ -97,6 +138,94 @@ export interface ShowBackupPhraseMessage extends BaseMessage {
   password: string;
 }
 
+export interface ConfirmPasswordMessage extends BaseMessage {
+  type: SERVICE_TYPES.CONFIRM_PASSWORD;
+  password: string;
+}
+
+export interface GrantAccessMessage extends BaseMessage {
+  type: SERVICE_TYPES.GRANT_ACCESS;
+  url: string;
+}
+
+export interface RejectAccessMessage extends BaseMessage {
+  type: SERVICE_TYPES.REJECT_ACCESS;
+}
+
+export interface HandleSignedHWPayloadMessage extends BaseMessage {
+  type: SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD;
+  signedPayload: string | Buffer<ArrayBufferLike>;
+}
+
+export interface AddTokenMessage extends BaseMessage {
+  type: SERVICE_TYPES.ADD_TOKEN;
+}
+
+export interface SignTransactionMessage extends BaseMessage {
+  type: SERVICE_TYPES.SIGN_TRANSACTION;
+}
+
+export interface SignBlobMessage extends BaseMessage {
+  type: SERVICE_TYPES.SIGN_BLOB;
+}
+
+export interface SignAuthEntryMessage extends BaseMessage {
+  type: SERVICE_TYPES.SIGN_AUTH_ENTRY;
+}
+
+export interface RejectTransactionMessage extends BaseMessage {
+  type: SERVICE_TYPES.REJECT_TRANSACTION;
+}
+
+export interface SignFreighterTransactionMessage extends BaseMessage {
+  type: SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION;
+  network: string;
+  transactionXDR: string;
+}
+
+export interface SignFreighterSorobanTransactionMessage extends BaseMessage {
+  type: SERVICE_TYPES.SIGN_FREIGHTER_SOROBAN_TRANSACTION;
+  network: string;
+  transactionXDR: string;
+}
+
+export interface AddRecentAddressMessage extends BaseMessage {
+  type: SERVICE_TYPES.ADD_RECENT_ADDRESS;
+  publicKey: string;
+}
+
+export interface LoadRecentAddressesMessage extends BaseMessage {
+  type: SERVICE_TYPES.LOAD_RECENT_ADDRESSES;
+}
+
+export interface LoadLastAccountUsedMessage extends BaseMessage {
+  type: SERVICE_TYPES.LOAD_LAST_USED_ACCOUNT;
+}
+
+export interface SignOutMessage extends BaseMessage {
+  type: SERVICE_TYPES.SIGN_OUT;
+}
+
+export interface SaveAllowListMessage extends BaseMessage {
+  type: SERVICE_TYPES.SAVE_ALLOWLIST;
+  networkName: string;
+  domain: string;
+}
+
+export interface SaveSettingsMessage extends BaseMessage {
+  type: SERVICE_TYPES.SAVE_SETTINGS;
+  isHideDustEnabled: boolean;
+  isMemoValidationEnabled: boolean;
+  isDataSharingAllowed: boolean;
+}
+
+export interface SaveExperimentalFeaturesMessage extends BaseMessage {
+  type: SERVICE_TYPES.SAVE_EXPERIMENTAL_FEATURES;
+  isExperimentalModeEnabled: boolean;
+  isHashSigningEnabled: boolean;
+  isNonSSLEnabled: boolean;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -114,4 +243,22 @@ export type ServiceMessageRequest =
   | ConfirmMnemonicPhraseMessage
   | ConfirmMigratedMnemonicPhraseMessage
   | RecoverAccountMessage
-  | ShowBackupPhraseMessage;
+  | ShowBackupPhraseMessage
+  | ConfirmPasswordMessage
+  | GrantAccessMessage
+  | RejectAccessMessage
+  | HandleSignedHWPayloadMessage
+  | AddTokenMessage
+  | SignTransactionMessage
+  | SignBlobMessage
+  | SignAuthEntryMessage
+  | RejectTransactionMessage
+  | SignFreighterTransactionMessage
+  | SignFreighterSorobanTransactionMessage
+  | AddRecentAddressMessage
+  | LoadRecentAddressesMessage
+  | LoadLastAccountUsedMessage
+  | SignOutMessage
+  | SaveAllowListMessage
+  | SaveSettingsMessage
+  | SaveExperimentalFeaturesMessage;

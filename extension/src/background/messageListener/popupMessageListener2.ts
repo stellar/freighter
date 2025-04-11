@@ -1,5 +1,9 @@
 import { Store } from "redux";
-import { ServiceMessageRequest } from "@shared/api/types/message-request";
+import {
+  ResponseQueue,
+  ServiceMessageRequest,
+  TransactionQueue,
+} from "@shared/api/types/message-request";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import {
   browserLocalStorage,
@@ -30,9 +34,37 @@ import { confirmMnemonicPhrase } from "./handlers/confirm-mnemonic-phrase";
 import { confirmMigratedMnemonicPhrase } from "./handlers/confirm-migrated-mnemonic-phrase";
 import { recoverAccount } from "./handlers/recover-account";
 import { showBackupPhrase } from "./handlers/show-backup-phrase";
+import { confirmPassword } from "./handlers/confirm-password";
+import { grantAccess } from "./handlers/grant-access";
+import { rejectAccess } from "./handlers/reject-access";
+import { handleSignedHwPayload } from "./handlers/handle-signed-hw-payload";
+import { EntryToSign, MessageToSign, TokenToAdd } from "helpers/urls";
+import { addToken } from "./handlers/add-token";
+import { signTransaction } from "./handlers/sign-transaction";
+import { signBlob } from "./handlers/sign-blob";
+import { signAuthEntry } from "./handlers/sign-auth-entry";
+import { rejectTransaction } from "./handlers/reject-transaction";
+import { signFreighterTransaction } from "./handlers/sign-freighter-transaction";
+import { addRecentAddress } from "./handlers/add-recent-address";
+import { loadRecentAddresses } from "./handlers/load-recent-addresses";
+import { loadLastUsedAccount } from "./handlers/load-last-account-used";
+import { signOut } from "./handlers/sign-out";
+import { saveAllowList } from "./handlers/save-allow-list";
+import { saveSettings } from "./handlers/save-settings";
+import { saveExperimentalFeatures } from "./handlers/save-experimental-features";
 
 const sessionTimer = new SessionTimer();
 const numOfPublicKeysToCheck = 5;
+
+export const responseQueue: ResponseQueue = [];
+
+export const transactionQueue: TransactionQueue = [];
+
+export const tokenQueue: TokenToAdd[] = [];
+
+export const blobQueue: MessageToSign[] = [];
+
+export const authEntryQueue: EntryToSign[] = [];
 
 export const popupMessageListener = (
   request: ServiceMessageRequest,
@@ -180,6 +212,125 @@ export const popupMessageListener = (
         localStore,
         keyManager,
         sessionTimer,
+      });
+    }
+    case SERVICE_TYPES.CONFIRM_PASSWORD: {
+      return confirmPassword({
+        request,
+        sessionStore,
+        localStore,
+        keyManager,
+        sessionTimer,
+      });
+    }
+    case SERVICE_TYPES.GRANT_ACCESS: {
+      return grantAccess({
+        request,
+        sessionStore,
+        responseQueue,
+      });
+    }
+    case SERVICE_TYPES.REJECT_ACCESS: {
+      return rejectAccess({
+        responseQueue,
+      });
+    }
+    case SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD: {
+      return handleSignedHwPayload({
+        request,
+        responseQueue,
+      });
+    }
+    case SERVICE_TYPES.ADD_TOKEN: {
+      return addToken({
+        localStore,
+        sessionStore,
+        tokenQueue,
+        responseQueue,
+      });
+    }
+    case SERVICE_TYPES.SIGN_TRANSACTION: {
+      return signTransaction({
+        localStore,
+        sessionStore,
+        responseQueue,
+        transactionQueue,
+      });
+    }
+    case SERVICE_TYPES.SIGN_BLOB: {
+      return signBlob({
+        localStore,
+        sessionStore,
+        responseQueue,
+        blobQueue,
+      });
+    }
+    case SERVICE_TYPES.SIGN_AUTH_ENTRY: {
+      return signAuthEntry({
+        localStore,
+        sessionStore,
+        responseQueue,
+        authEntryQueue,
+      });
+    }
+    case SERVICE_TYPES.REJECT_TRANSACTION: {
+      return rejectTransaction({
+        responseQueue,
+        transactionQueue,
+      });
+    }
+    case SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION: {
+      return signFreighterTransaction({
+        request,
+        localStore,
+        sessionStore,
+      });
+    }
+    case SERVICE_TYPES.SIGN_FREIGHTER_SOROBAN_TRANSACTION: {
+      return signFreighterTransaction({
+        request,
+        localStore,
+        sessionStore,
+      });
+    }
+    case SERVICE_TYPES.ADD_RECENT_ADDRESS: {
+      return addRecentAddress({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.LOAD_RECENT_ADDRESSES: {
+      return loadRecentAddresses({
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.LOAD_LAST_USED_ACCOUNT: {
+      return loadLastUsedAccount({
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.SIGN_OUT: {
+      return signOut({
+        localStore,
+        sessionStore,
+      });
+    }
+    case SERVICE_TYPES.SAVE_ALLOWLIST: {
+      return saveAllowList({
+        request,
+        sessionStore,
+      });
+    }
+    case SERVICE_TYPES.SAVE_SETTINGS: {
+      return saveSettings({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.SAVE_EXPERIMENTAL_FEATURES: {
+      return saveExperimentalFeatures({
+        request,
+        localStore,
       });
     }
     default:

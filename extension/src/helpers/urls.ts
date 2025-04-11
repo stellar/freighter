@@ -1,32 +1,11 @@
 import punycode from "punycode";
-import browser from "webextension-polyfill";
 import { TransactionInfo } from "../types/transactions";
 
-export interface TokenToAdd {
-  domain: string;
-  tab?: browser.Tabs.Tab;
-  url: string;
-  contractId: string;
-  networkPassphrase?: string;
-}
-
-export interface MessageToSign {
-  domain: string;
-  tab?: browser.Tabs.Tab;
-  message: string;
-  url: string;
-  accountToSign?: string;
-  networkPassphrase?: string;
-}
-
-export interface EntryToSign {
-  domain: string;
-  tab?: browser.Tabs.Tab;
-  entry: string; // xdr.SorobanAuthorizationEntry
-  url: string;
-  accountToSign?: string;
-  networkPassphrase?: string;
-}
+export type {
+  TokenToAdd,
+  MessageToSign,
+  EntryToSign,
+} from "@shared/api/types/message-request";
 
 export const encodeObject = (obj: object) =>
   btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
