@@ -1,11 +1,12 @@
 import punycode from "punycode";
 import { TransactionInfo } from "../types/transactions";
 
-export type {
+import {
   TokenToAdd,
   MessageToSign,
   EntryToSign,
 } from "@shared/api/types/message-request";
+export type { TokenToAdd, MessageToSign, EntryToSign };
 
 export const encodeObject = (obj: object) =>
   btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
@@ -22,7 +23,9 @@ export const parsedSearchParam = (
   param: string,
 ): TransactionInfo | TokenToAdd | MessageToSign | EntryToSign => {
   const decodedSearchParam = decodeString(param.replace("?", ""));
-  return decodedSearchParam ? JSON.parse(decodedSearchParam) : {};
+  return decodedSearchParam
+    ? JSON.parse(decodedSearchParam)
+    : ({} as TransactionInfo);
 };
 
 export const getUrlHostname = (url: string) => {

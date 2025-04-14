@@ -15,12 +15,14 @@ import {
   ScryptEncrypter,
 } from "@stellar/typescript-wallet-sdk-km";
 import { BrowserStorageConfigParams } from "@stellar/typescript-wallet-sdk-km/lib/Plugins/BrowserStorageFacade";
+import { SessionTimer } from "background/helpers/session";
+import { publicKeySelector } from "background/ducks/session";
+import { EntryToSign, MessageToSign, TokenToAdd } from "helpers/urls";
+
 import { fundAccount } from "./handlers/fund-account";
 import { createAccount } from "./handlers/create-account";
-import { SessionTimer } from "background/helpers/session";
 import { addAccount } from "./handlers/add-account";
 import { importAccount } from "./handlers/import-account";
-import { publicKeySelector } from "background/ducks/session";
 import { importHardwareWallet } from "./handlers/import-hardware-wallet";
 import { makeAccountActive } from "./handlers/make-account-active";
 import { updateAccountName } from "./handlers/update-account-name";
@@ -38,7 +40,6 @@ import { confirmPassword } from "./handlers/confirm-password";
 import { grantAccess } from "./handlers/grant-access";
 import { rejectAccess } from "./handlers/reject-access";
 import { handleSignedHwPayload } from "./handlers/handle-signed-hw-payload";
-import { EntryToSign, MessageToSign, TokenToAdd } from "helpers/urls";
 import { addToken } from "./handlers/add-token";
 import { signTransaction } from "./handlers/sign-transaction";
 import { signBlob } from "./handlers/sign-blob";
@@ -52,18 +53,32 @@ import { signOut } from "./handlers/sign-out";
 import { saveAllowList } from "./handlers/save-allow-list";
 import { saveSettings } from "./handlers/save-settings";
 import { saveExperimentalFeatures } from "./handlers/save-experimental-features";
+import { loadSettings } from "./handlers/load-settings";
+import { getCachedAssetIcon } from "./handlers/get-cached-asset-icons";
+import { cacheAssetIcon } from "./handlers/cache-asset-icon";
+import { getCachedAssetDomain } from "./handlers/get-cached-domain";
+import { cacheAssetDomain } from "./handlers/cache-asset-domain";
+import { getMemoRequiredAccounts } from "./handlers/get-memo-required-accounts";
+import { resetExperimentalData } from "./handlers/reset-experimental-data";
+import { addTokenId } from "./handlers/add-token-id";
+import { getTokenIds } from "./handlers/get-token-ids";
+import { removeTokenId } from "./handlers/remove-token-id";
+import { getMigratableAccounts } from "./handlers/get-migratable-accounts";
+import { getMigratedMnemonicPhrase } from "./handlers/get-migrated-mnemonic-phrase";
+import { migrateAccounts } from "./handlers/migrate-accounts";
+import { addAssetsList } from "./handlers/add-assets-list";
+import { modifyAssetsList } from "./handlers/modify-assets-list";
+import { getIsAccountMismatch } from "./handlers/get-is-account-mismatch";
+import { changeAssetVisibility } from "./handlers/change-asset-visibility";
+import { getHiddenAssets } from "./handlers/get-hidden-assets";
 
 const sessionTimer = new SessionTimer();
 const numOfPublicKeysToCheck = 5;
 
 export const responseQueue: ResponseQueue = [];
-
 export const transactionQueue: TransactionQueue = [];
-
 export const tokenQueue: TokenToAdd[] = [];
-
 export const blobQueue: MessageToSign[] = [];
-
 export const authEntryQueue: EntryToSign[] = [];
 
 export const popupMessageListener = (
@@ -330,6 +345,112 @@ export const popupMessageListener = (
     case SERVICE_TYPES.SAVE_EXPERIMENTAL_FEATURES: {
       return saveExperimentalFeatures({
         request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.LOAD_SETTINGS: {
+      return loadSettings({
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.GET_CACHED_ASSET_ICON: {
+      return getCachedAssetIcon({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.CACHE_ASSET_ICON: {
+      return cacheAssetIcon({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.GET_CACHED_ASSET_DOMAIN: {
+      return getCachedAssetDomain({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.CACHE_ASSET_DOMAIN: {
+      return cacheAssetDomain({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.GET_MEMO_REQUIRED_ACCOUNTS: {
+      return getMemoRequiredAccounts();
+    }
+    case SERVICE_TYPES.RESET_EXP_DATA: {
+      return resetExperimentalData({
+        localStore,
+        sessionStore,
+      });
+    }
+    case SERVICE_TYPES.ADD_TOKEN_ID: {
+      return addTokenId({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.GET_TOKEN_IDS: {
+      return getTokenIds({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.REMOVE_TOKEN_ID: {
+      return removeTokenId({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.GET_MIGRATABLE_ACCOUNTS: {
+      return getMigratableAccounts({
+        localStore,
+        sessionStore,
+        numOfPublicKeysToCheck,
+      });
+    }
+    case SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE: {
+      return getMigratedMnemonicPhrase({
+        sessionStore,
+      });
+    }
+    case SERVICE_TYPES.MIGRATE_ACCOUNTS: {
+      return migrateAccounts({
+        request,
+        localStore,
+        sessionStore,
+        keyManager,
+        sessionTimer,
+      });
+    }
+    case SERVICE_TYPES.ADD_ASSETS_LIST: {
+      return addAssetsList({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.MODIFY_ASSETS_LIST: {
+      return modifyAssetsList({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH: {
+      return getIsAccountMismatch({
+        request,
+        sessionStore,
+      });
+    }
+    case SERVICE_TYPES.CHANGE_ASSET_VISIBILITY: {
+      return changeAssetVisibility({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.GET_HIDDEN_ASSETS: {
+      return getHiddenAssets({
         localStore,
       });
     }

@@ -4,6 +4,8 @@ import browser from "webextension-polyfill";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { AssetVisibility, BalanceToMigrate, IssuerKey } from "./types";
+import { AssetsListItem } from "@shared/constants/soroban/asset-list";
 
 export interface TokenToAdd {
   domain: string;
@@ -45,6 +47,11 @@ export type EntryQueue = EntryToSign[];
 
 export interface BaseMessage {
   activePublicKey: string;
+}
+
+export interface KeyPair {
+  publicKey: string;
+  privateKey: string;
 }
 
 export interface FundAccountMessage extends BaseMessage {
@@ -226,6 +233,104 @@ export interface SaveExperimentalFeaturesMessage extends BaseMessage {
   isNonSSLEnabled: boolean;
 }
 
+export interface LoadSettingsMessage extends BaseMessage {
+  type: SERVICE_TYPES.LOAD_SETTINGS;
+}
+
+export interface GetCachedAssetIconMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_CACHED_ASSET_ICON;
+  assetCanonical: string;
+}
+
+export interface CacheAssetIconMessage extends BaseMessage {
+  type: SERVICE_TYPES.CACHE_ASSET_ICON;
+  assetCanonical: string;
+  iconUrl: string;
+}
+
+export interface GetCachedDomainMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_CACHED_ASSET_DOMAIN;
+  assetCanonical: string;
+}
+
+export interface CacheDomainMessage extends BaseMessage {
+  type: SERVICE_TYPES.CACHE_ASSET_DOMAIN;
+  assetCanonical: string;
+  assetDomain: string;
+}
+
+export interface GetMemoRequiredAccountsMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_MEMO_REQUIRED_ACCOUNTS;
+}
+
+export interface ResetExperimentalDataMessage extends BaseMessage {
+  type: SERVICE_TYPES.RESET_EXP_DATA;
+}
+
+export interface AddTokenIdMessage extends BaseMessage {
+  type: SERVICE_TYPES.ADD_TOKEN_ID;
+  tokenId: string;
+  network: string;
+  publicKey: string;
+}
+
+export interface GetTokenIdsMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_TOKEN_IDS;
+  network: string;
+}
+
+export interface RemoveTokenIdMessage extends BaseMessage {
+  type: SERVICE_TYPES.REMOVE_TOKEN_ID;
+  contractId: string;
+  network: string;
+}
+
+export interface GetMigratableAccountsMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_MIGRATABLE_ACCOUNTS;
+}
+
+export interface GetMigratedMnemonicPhraseMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_MIGRATED_MNEMONIC_PHRASE;
+}
+
+export interface MigrateAccountsMessage extends BaseMessage {
+  type: SERVICE_TYPES.MIGRATE_ACCOUNTS;
+  balancesToMigrate: BalanceToMigrate[];
+  isMergeSelected: boolean;
+  recommendedFee: string;
+  password: string;
+}
+
+export interface AddAssetsListMessage extends BaseMessage {
+  type: SERVICE_TYPES.ADD_ASSETS_LIST;
+  network: string;
+  assetsList: AssetsListItem;
+}
+
+export interface ModifyAssetsListMessage extends BaseMessage {
+  type: SERVICE_TYPES.MODIFY_ASSETS_LIST;
+  network: string;
+  assetsList: AssetsListItem;
+  isDeleteAssetsList: boolean;
+}
+
+export interface GetIsAccountMismatchMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH;
+  activePublicKey: string;
+}
+
+export interface ChangeAssetVisibilityMessage extends BaseMessage {
+  type: SERVICE_TYPES.CHANGE_ASSET_VISIBILITY;
+  assetVisibility: {
+    issuer: IssuerKey;
+    visibility: AssetVisibility;
+  };
+}
+
+export interface GetHiddenAssetsMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_HIDDEN_ASSETS;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -261,4 +366,22 @@ export type ServiceMessageRequest =
   | SignOutMessage
   | SaveAllowListMessage
   | SaveSettingsMessage
-  | SaveExperimentalFeaturesMessage;
+  | SaveExperimentalFeaturesMessage
+  | LoadSettingsMessage
+  | GetCachedAssetIconMessage
+  | CacheAssetIconMessage
+  | GetCachedDomainMessage
+  | CacheDomainMessage
+  | GetMemoRequiredAccountsMessage
+  | ResetExperimentalDataMessage
+  | AddTokenIdMessage
+  | GetTokenIdsMessage
+  | RemoveTokenIdMessage
+  | GetMigratableAccountsMessage
+  | GetMigratedMnemonicPhraseMessage
+  | MigrateAccountsMessage
+  | AddAssetsListMessage
+  | ModifyAssetsListMessage
+  | GetIsAccountMismatchMessage
+  | ChangeAssetVisibilityMessage
+  | GetHiddenAssetsMessage;
