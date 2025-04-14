@@ -35,12 +35,11 @@ export const AccountCreator = () => {
   const dispatch = useDispatch<AppDispatch>();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
-  const isOverwritingAccountParam = params.get("isOverwritingAccount");
-  const isOverwritingAccount = isOverwritingAccountParam === "true";
+  const isRestartingOnboardingParam = params.get("isRestartingOnboarding");
+  const isRestartingOnboarding = isRestartingOnboardingParam === "true";
 
   const isShowingOverwriteWarning =
-    applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED ||
-    isOverwritingAccount;
+    applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
 
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
 
@@ -48,7 +47,8 @@ export const AccountCreator = () => {
     await dispatch(
       createAccount({
         password: values.password,
-        isOverwritingAccount: isShowingOverwriteWarning,
+        isOverwritingAccount:
+          isShowingOverwriteWarning || isRestartingOnboarding,
       }),
     );
     const res = await showBackupPhrase({
@@ -89,6 +89,7 @@ export const AccountCreator = () => {
               touched={touched}
               values={values}
               isShowingOverwriteWarning={isShowingOverwriteWarning}
+              isShowingOnboardingWarning={isRestartingOnboarding}
             />
           )}
         </Formik>
