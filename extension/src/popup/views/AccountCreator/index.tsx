@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 
 import { Formik } from "formik";
 import { object as YupObject } from "yup";
@@ -32,6 +33,10 @@ export const AccountCreator = () => {
   const publicKey = useSelector(publicKeySelector);
   const applicationState = useSelector(applicationStateSelector);
   const dispatch = useDispatch<AppDispatch>();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const isRestartingOnboardingParam = params.get("isRestartingOnboarding");
+  const isRestartingOnboarding = isRestartingOnboardingParam === "true";
 
   const isShowingOverwriteWarning =
     applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
@@ -42,7 +47,8 @@ export const AccountCreator = () => {
     await dispatch(
       createAccount({
         password: values.password,
-        isOverwritingAccount: isShowingOverwriteWarning,
+        isOverwritingAccount:
+          isShowingOverwriteWarning || isRestartingOnboarding,
       }),
     );
     const res = await showBackupPhrase({
@@ -83,6 +89,7 @@ export const AccountCreator = () => {
               touched={touched}
               values={values}
               isShowingOverwriteWarning={isShowingOverwriteWarning}
+              isShowingOnboardingWarning={isRestartingOnboarding}
             />
           )}
         </Formik>

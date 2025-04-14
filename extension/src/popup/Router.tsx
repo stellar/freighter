@@ -213,7 +213,7 @@ const HomeRoute = () => {
       return <Navigate to={ROUTES.account} />;
     case APPLICATION_STATE.PASSWORD_CREATED:
     case APPLICATION_STATE.MNEMONIC_PHRASE_FAILED:
-      openTab(newTabHref(ROUTES.mnemonicPhrase));
+      openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
       return <Loading />;
     default:
       return <Welcome />;
