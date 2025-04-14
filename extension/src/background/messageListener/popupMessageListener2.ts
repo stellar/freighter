@@ -5,16 +5,8 @@ import {
   TransactionQueue,
 } from "@shared/api/types/message-request";
 import { SERVICE_TYPES } from "@shared/constants/services";
-import {
-  browserLocalStorage,
-  dataStorageAccess,
-} from "background/helpers/dataStorageAccess";
-import {
-  BrowserStorageKeyStore,
-  KeyManager,
-  ScryptEncrypter,
-} from "@stellar/typescript-wallet-sdk-km";
-import { BrowserStorageConfigParams } from "@stellar/typescript-wallet-sdk-km/lib/Plugins/BrowserStorageFacade";
+import { DataStorageAccess } from "background/helpers/dataStorageAccess";
+import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { SessionTimer } from "background/helpers/session";
 import { publicKeySelector } from "background/ducks/session";
 import { EntryToSign, MessageToSign, TokenToAdd } from "helpers/urls";
@@ -84,17 +76,9 @@ export const authEntryQueue: EntryToSign[] = [];
 export const popupMessageListener = (
   request: ServiceMessageRequest,
   sessionStore: Store,
+  localStore: DataStorageAccess,
+  keyManager: KeyManager,
 ) => {
-  const localStore = dataStorageAccess(browserLocalStorage);
-  const localKeyStore = new BrowserStorageKeyStore();
-  localKeyStore.configure({
-    storage: browserLocalStorage as BrowserStorageConfigParams["storage"],
-  });
-  const keyManager = new KeyManager({
-    keyStore: localKeyStore,
-  });
-  keyManager.registerEncrypter(ScryptEncrypter);
-
   const currentState = sessionStore.getState();
   const publicKey = publicKeySelector(currentState);
 
