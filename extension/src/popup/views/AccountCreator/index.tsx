@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 
 import { Formik } from "formik";
 import { object as YupObject } from "yup";
@@ -32,9 +33,14 @@ export const AccountCreator = () => {
   const publicKey = useSelector(publicKeySelector);
   const applicationState = useSelector(applicationStateSelector);
   const dispatch = useDispatch<AppDispatch>();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const isOverwritingAccountParam = params.get("isOverwritingAccount");
+  const isOverwritingAccount = isOverwritingAccountParam === "true";
 
   const isShowingOverwriteWarning =
-    applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
+    applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED ||
+    isOverwritingAccount;
 
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
 
