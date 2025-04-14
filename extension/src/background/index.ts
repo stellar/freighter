@@ -7,7 +7,7 @@ import {
 import { ExternalRequest, Response } from "@shared/api/types";
 import { buildStore } from "background/store";
 
-import { popupMessageListener } from "./messageListener/popupMessageListener2";
+import { popupMessageListener } from "./messageListener/popupMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
 import { SESSION_ALARM_NAME, clearSession } from "./helpers/session";
 import {
