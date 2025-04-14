@@ -423,7 +423,12 @@
   &__code,
   &__domain {
     display: flex;
+    font-size: pxToRem(14px);
     justify-content: center;
+  }
+
+  &__domain {
+    color: var(--sds-clr-gray-11);
   }
 
   &__description {
@@ -444,7 +449,7 @@
     }
 
     &__text {
-      color: var(--sds-clr-gray-12);
+      color: var(--sds-clr-gray-11);
       font-size: 0.75rem;
       line-height: 1.125rem;
     }
@@ -481,8 +486,14 @@
     &__icon--unverified {
       color: var(--sds-clr-amber-09);
     }
+
+    &__icon--invalid-format {
+      svg {
+        color: var(--sds-clr-gray-09);
+      }
+    }
     &__content {
-      color: var(--sds-clr-gray-12);
+      color: var(--sds-clr-gray-11);
       font-size: 0.875rem;
       line-height: 1.125rem;
     }
