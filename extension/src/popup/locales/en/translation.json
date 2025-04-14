@@ -1,5 +1,6 @@
 {
   "* All Stellar accounts must maintain a minimum balance of lumens": "* All Stellar accounts must maintain a minimum balance of lumens.",
+  "* payment methods may vary based on your location": "* payment methods may vary based on your location",
   "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign": {
     " Freighter automatically disabled the option to sign this transaction": "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign. Freighter automatically disabled the option to sign this transaction."
   },
@@ -22,6 +23,7 @@
   "Add by address": "Add by address",
   "Add custom network": "Add custom network",
   "Add Custom Network": "Add Custom Network",
+  "Add funds": "Add funds",
   "Add list": "Add list",
   "Add manually": "Add manually",
   "Add network": "Add network",
@@ -88,6 +90,7 @@
   "BUY": "BUY",
   "Buy Amount": "Buy Amount",
   "Buy with Coinbase": "Buy with Coinbase",
+  "Buy XLM with Coinbase": "Buy XLM with Coinbase",
   "Buying": "Buying",
   "by": "by",
   "Can’t find the asset you’re looking for? Add it manually": "Can’t find the asset you’re looking for? Add it manually",
@@ -402,9 +405,11 @@
   "SEND": "SEND",
   "Send Amount": "Send Amount",
   "Send at least 1 XLM to create account": "Send at least 1 XLM to create account.",
+  "Send funds to this account address": "Send funds to this account address",
   "Send Max": "Send Max",
   "Send Payment": "Send Payment",
   "Send Type": "Send Type",
+  "Send XLM to this account address": "Send XLM to this account address",
   "Sending to": "Sending to",
   "sent": "sent",
   "Sent": "Sent",
@@ -505,6 +510,7 @@
   "Transaction Request": "Transaction Request",
   "Transaction timeout": "Transaction timeout",
   "Transfer from another account": "Transfer from another account",
+  "Transfer from Coinbase, buy with debit and credit cards or bank transfer *": "Transfer from Coinbase, buy with debit and credit cards or bank transfer *",
   "trustlines": "trustlines",
   "Trustor": "Trustor",
   "Type": "Type",
@@ -552,6 +558,9 @@
   "You can define your own assets lists in Settings": "You can define your own assets lists in Settings.",
   "You must have a balance of": "You must have a balance of",
   "You must have a buying liability of": "You must have a buying liability of",
+  "You previously did not complete onboarding": {
+    " You will permanently lose access to the account you started to create in Freighter": "You previously did not complete onboarding. You will permanently lose access to the account you started to create in Freighter."
+  },
   "You still have a balance of": "You still have a balance of",
   "You still have a buying liability of": "You still have a buying liability of",
   "You’re all set!": "You’re all set!",
