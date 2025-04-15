@@ -8,7 +8,7 @@ import {
   mockKeyManager,
   mockStorageApi,
   MockBrowserAlarm,
-} from "./helpers";
+} from "../helpers/test-helpers";
 import {
   KEY_ID,
   KEY_ID_LIST,
