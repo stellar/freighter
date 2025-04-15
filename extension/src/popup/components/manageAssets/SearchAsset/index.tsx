@@ -109,8 +109,6 @@ export const SearchAsset = () => {
     return <Navigate to={ROUTES.addAsset} />;
   }
 
-  console.log(tokenState);
-
   return (
     <View>
       <SubviewHeader title={t("Choose Asset")} />

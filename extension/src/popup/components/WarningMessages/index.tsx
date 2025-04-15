@@ -34,7 +34,12 @@ import {
 import { getTokenDetails } from "@shared/api/internal";
 import { TokenArgsDisplay } from "@shared/api/helpers/soroban";
 
-import { xlmToStroop, isMainnet, isTestnet } from "helpers/stellar";
+import {
+  getCanonicalFromAsset,
+  xlmToStroop,
+  isMainnet,
+  isTestnet,
+} from "helpers/stellar";
 
 import { AppDispatch } from "popup/App";
 import {
@@ -47,11 +52,9 @@ import {
   settingsSelector,
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
+import { AssetIcon } from "popup/components/account/AccountAssets";
 import { ModalInfo } from "popup/components/ModalInfo";
-import {
-  ManageAssetRow,
-  NewAssetFlags,
-} from "popup/components/manageAssets/ManageAssetRows";
+import { NewAssetFlags } from "popup/components/manageAssets/ManageAssetRows";
 import { SorobanTokenIcon } from "popup/components/account/AccountAssets";
 import { TrustlineError } from "popup/components/manageAssets/TrustlineError";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
@@ -752,6 +755,7 @@ export const NewAssetWarning = ({
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
 
   const { isRevocable, isInvalidDomain } = newAssetFlags;
+  const canonicalAsset = getCanonicalFromAsset(code, issuer);
 
   useEffect(
     () => () => {
@@ -838,25 +842,28 @@ export const NewAssetWarning = ({
         <div className="TokenWarning__wrapper" ref={warningRef}>
           <div className="TokenWarning__body">
             <div className="TokenWarning__heading">
-              <ManageAssetRow
-                code={code}
-                issuer={issuer}
-                image={image}
-                domain={domain}
-              />
-            </div>
-            <div className="TokenWarning__description">
-              <div className="TokenWarning__description__icon">
-                <Icon.User02 />
+              <div className="TokenWarning__icon">
+                <AssetIcon
+                  assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
+                  code={code}
+                  issuerKey={issuer}
+                  isSuspicious={false}
+                />
               </div>
-              <div
-                className="TokenWarning__description__text"
-                data-testid="DescriptionLabel"
-              >
-                {t("Add Asset Trustline")}
+              <div className="TokenWarning__code">{code}</div>
+              <div className="TokenWarning__domain">{domain}</div>
+              <div className="TokenWarning__description">
+                <div className="TokenWarning__description__icon">
+                  <Icon.User02 />
+                </div>
+                <div
+                  className="TokenWarning__description__text"
+                  data-testid="DescriptionLabel"
+                >
+                  {t("Add Asset Trustline")}
+                </div>
               </div>
             </div>
-
             <div className="TokenWarning__flags">
               <div className="TokenWarning__flags__info">{t("Asset Info")}</div>
               {isRevocable && (

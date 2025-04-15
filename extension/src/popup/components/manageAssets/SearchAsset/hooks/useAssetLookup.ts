@@ -405,9 +405,6 @@ const useAssetLookup = ({
         assetsListsDetails: assetsLists,
       });
 
-    console.log(verifiedAssets);
-    console.log(unverifiedAssets);
-
     const payload = {
       verifiedAssetRows: verifiedAssets,
       unverifiedAssetRows: unverifiedAssets,
