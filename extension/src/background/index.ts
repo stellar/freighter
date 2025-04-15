@@ -9,7 +9,11 @@ import { buildStore } from "background/store";
 
 import { popupMessageListener } from "./messageListener/popupMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
-import { SESSION_ALARM_NAME, clearSession } from "./helpers/session";
+import {
+  SESSION_ALARM_NAME,
+  SessionTimer,
+  clearSession,
+} from "./helpers/session";
 import {
   migrateFriendBotUrlNetworkDetails,
   normalizeMigratedData,
@@ -27,6 +31,8 @@ import {
   ScryptEncrypter,
 } from "@stellar/typescript-wallet-sdk-km";
 import { BrowserStorageConfigParams } from "@stellar/typescript-wallet-sdk-km/lib/Plugins/BrowserStorageFacade";
+
+const sessionTimer = new SessionTimer();
 
 export const initContentScriptMessageListener = () => {
   browser?.runtime?.onMessage?.addListener((message) => {
@@ -61,6 +67,7 @@ export const initExtensionMessageListener = () => {
         sessionStore,
         localStore,
         keyManager,
+        sessionTimer,
       );
     }
     if (

@@ -37,15 +37,15 @@ export const loginToAllAccounts = async (
   keyManager: KeyManager,
   sessionTimer: SessionTimer,
 ) => {
-  const keyIdList = await getKeyIdList();
+  const keyIdList = await getKeyIdList({ localStore });
 
   // if active hw then use the first non-hw keyID to check password
   // with keyManager
   let keyID = (await localStore.getItem(KEY_ID)) || "";
   let hwPublicKey = "";
-  if (await getIsHardwareWalletActive()) {
+  if (await getIsHardwareWalletActive({ localStore })) {
     hwPublicKey = keyID.split(":")[1];
-    keyID = await getNonHwKeyID();
+    keyID = await getNonHwKeyID({ localStore });
   }
 
   // first make sure the password is correct to get active keystore, short circuit if not
@@ -74,7 +74,7 @@ export const loginToAllAccounts = async (
     await sessionStore.dispatch(
       logIn({
         publicKey: hwPublicKey || activePublicKey,
-        allAccounts: await getStoredAccounts(password, keyManager),
+        allAccounts: await getStoredAccounts(password, keyManager, localStore),
       }) as any,
     );
   }

@@ -23,7 +23,7 @@ import { unlockKeystore } from "../helpers/unlock-keystore";
 import { storeAccount } from "../helpers/store-account";
 import {
   allAccountsSelector,
-  hasPrivateKeySelector,
+  buildHasPrivateKeySelector,
   publicKeySelector,
 } from "background/ducks/session";
 
@@ -72,8 +72,8 @@ export const addAccount = async ({
     }
   }
 
-  const keyID = (await getIsHardwareWalletActive())
-    ? await getNonHwKeyID()
+  const keyID = (await getIsHardwareWalletActive({ localStore }))
+    ? await getNonHwKeyID({ localStore })
     : (await localStore.getItem(KEY_ID)) || "";
 
   // if the session is active, confirm that the password is correct and the hashkey properly unlocks
@@ -124,6 +124,7 @@ export const addAccount = async ({
   await localStore.setItem(KEY_DERIVATION_NUMBER_ID, keyId);
 
   const currentState = sessionStore.getState();
+  const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);
 
   return {
     publicKey: publicKeySelector(currentState),

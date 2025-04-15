@@ -7,7 +7,7 @@ import { removePreviousAccount } from "../helpers/remove-previous-account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import {
   allAccountsSelector,
-  hasPrivateKeySelector,
+  buildHasPrivateKeySelector,
   publicKeySelector,
   reset,
 } from "background/ducks/session";
@@ -66,7 +66,7 @@ export const recoverAccount = async ({
     // resets accounts list
     sessionStore.dispatch(reset());
 
-    const keyIdList = await getKeyIdList();
+    const keyIdList = await getKeyIdList({ localStore });
 
     if (keyIdList.length) {
       /* Clear any existing account data while maintaining app settings */
@@ -154,6 +154,7 @@ export const recoverAccount = async ({
   }
 
   const currentState = sessionStore.getState();
+  const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);
 
   return {
     allAccounts: allAccountsSelector(currentState),

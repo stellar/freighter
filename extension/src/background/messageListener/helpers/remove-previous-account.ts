@@ -24,7 +24,7 @@ export const removePreviousAccount = async ({
   await localStore.remove(LAST_USED_ACCOUNT);
   await localStore.remove(TOKEN_ID_LIST);
 
-  const keyIdList = await getKeyIdList();
+  const keyIdList = await getKeyIdList({ localStore });
 
   for (let i = 0; i < keyIdList.length; i += 1) {
     const k = keyIdList[i];

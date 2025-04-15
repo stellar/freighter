@@ -18,7 +18,7 @@ import { loginToAllAccounts } from "../helpers/login-all-accounts";
 import { SessionTimer } from "background/helpers/session";
 import {
   allAccountsSelector,
-  hasPrivateKeySelector,
+  buildHasPrivateKeySelector,
   publicKeySelector,
 } from "background/ducks/session";
 
@@ -40,7 +40,7 @@ export const confirmPassword = async ({
   <UnlockAccount /> calls this method to fill in any missing data */
 
   const { password } = request;
-  const keyIdList = await getKeyIdList();
+  const keyIdList = await getKeyIdList({ localStore });
 
   /* migration needed to v1.0.6-beta data model */
   if (!keyIdList.length) {
@@ -49,7 +49,7 @@ export const confirmPassword = async ({
       keyIdList.push(keyId);
       await localStore.setItem(KEY_ID_LIST, keyIdList);
       await localStore.setItem(KEY_DERIVATION_NUMBER_ID, "0");
-      await addAccountName({ keyId, accountName: "Account 1" });
+      await addAccountName({ keyId, accountName: "Account 1", localStore });
     }
   }
   /* end migration script */
@@ -66,6 +66,7 @@ export const confirmPassword = async ({
     return { error: "Incorrect password" };
   }
 
+  const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);
   return {
     publicKey: publicKeySelector(sessionStore.getState()),
     hasPrivateKey: await hasPrivateKeySelector(sessionStore.getState()),

@@ -16,7 +16,7 @@ import { storeAccount } from "../helpers/store-account";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   allAccountsSelector,
-  hasPrivateKeySelector,
+  buildHasPrivateKeySelector,
   publicKeySelector,
 } from "background/ducks/session";
 
@@ -75,6 +75,7 @@ export const createAccount = async ({
   const currentState = sessionStore.getState();
 
   sessionTimer.startSession();
+  const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);
 
   return {
     allAccounts: allAccountsSelector(currentState),

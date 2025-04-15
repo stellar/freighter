@@ -17,7 +17,7 @@ import { getIsHardwareWalletActive } from "background/helpers/account";
 import { storeAccount } from "../helpers/store-account";
 import {
   allAccountsSelector,
-  hasPrivateKeySelector,
+  buildHasPrivateKeySelector,
   publicKeySelector,
 } from "background/ducks/session";
 
@@ -67,8 +67,8 @@ export const importAccount = async ({
     }
   }
 
-  const keyID = (await getIsHardwareWalletActive())
-    ? await getNonHwKeyID()
+  const keyID = (await getIsHardwareWalletActive({ localStore }))
+    ? await getNonHwKeyID({ localStore })
     : (await localStore.getItem(KEY_ID)) || "";
   // if the session is active, confirm that the password is correct and the hashkey properly unlocks
   let activePrivateKey = "";
@@ -112,6 +112,7 @@ export const importAccount = async ({
   }
 
   const currentState = sessionStore.getState();
+  const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);
 
   return {
     publicKey: publicKeySelector(currentState),

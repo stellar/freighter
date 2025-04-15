@@ -33,7 +33,7 @@ export const storeHardwareWalletAccount = async ({
   let allAccounts = allAccountsSelector(sessionStore.getState());
 
   const keyId = `${HW_PREFIX}${publicKey}`;
-  const keyIdListArr = await getKeyIdList();
+  const keyIdListArr = await getKeyIdList({ localStore });
   const accountName = `${hardwareWalletType} ${
     allAccounts.filter(
       ({ hardwareWalletType: hwType }) => hwType !== hardwareWalletType,
@@ -51,6 +51,7 @@ export const storeHardwareWalletAccount = async ({
     await addAccountName({
       keyId,
       accountName,
+      localStore,
     });
     allAccounts = [
       ...allAccounts,

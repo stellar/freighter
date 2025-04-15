@@ -23,16 +23,24 @@ import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
 import {
   dataStorageAccess,
   browserLocalStorage,
+  DataStorageAccess,
 } from "background/helpers/dataStorageAccess";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { captureException } from "@sentry/browser";
 
 const localStore = dataStorageAccess(browserLocalStorage);
 
-export const getKeyIdList = async () =>
-  (await localStore.getItem(KEY_ID_LIST)) || [];
+export const getKeyIdList = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => (await localStore.getItem(KEY_ID_LIST)) || [];
 
-export const getAccountNameList = async () => {
+export const getAccountNameList = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => {
   const encodedaccountNameList =
     ((await localStore.getItem(ACCOUNT_NAME_LIST_ID)) as string) ||
     encodeObject({});
@@ -43,11 +51,13 @@ export const getAccountNameList = async () => {
 export const addAccountName = async ({
   keyId,
   accountName,
+  localStore,
 }: {
   keyId: string;
   accountName: string;
+  localStore: DataStorageAccess;
 }) => {
-  const accountNameList = (await getAccountNameList()) as Record<
+  const accountNameList = (await getAccountNameList({ localStore })) as Record<
     string,
     string
   >;
@@ -170,8 +180,11 @@ export const getIsHashSigningEnabled = async () =>
 // hardware wallet helpers
 export const HW_PREFIX = "hw:";
 
-export const getIsHardwareWalletActive = async () =>
-  ((await localStore.getItem(KEY_ID)) || "").indexOf(HW_PREFIX) > -1;
+export const getIsHardwareWalletActive = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => ((await localStore.getItem(KEY_ID)) || "").indexOf(HW_PREFIX) > -1;
 
 export const getBipPath = async () => {
   const keyId = ((await localStore.getItem(KEY_ID)) as string) || "";

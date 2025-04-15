@@ -24,7 +24,7 @@ export const activatePublicKey = async ({
   );
   publicKeyIndex = publicKeyIndex > -1 ? publicKeyIndex : 0;
 
-  const keyIdList = await getKeyIdList();
+  const keyIdList = await getKeyIdList({ localStore });
 
   const activeKeyId = keyIdList[publicKeyIndex];
 

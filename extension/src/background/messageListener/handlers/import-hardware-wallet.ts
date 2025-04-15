@@ -5,7 +5,7 @@ import { storeHardwareWalletAccount } from "../helpers/store-hardware-wallet";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import {
   allAccountsSelector,
-  hasPrivateKeySelector,
+  buildHasPrivateKeySelector,
   publicKeySelector,
 } from "background/ducks/session";
 import { getBipPath } from "background/helpers/account";
@@ -28,6 +28,7 @@ export const importHardwareWallet = async ({
     sessionStore,
     localStore,
   });
+  const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);
 
   return {
     publicKey: publicKeySelector(sessionStore.getState()),

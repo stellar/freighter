@@ -112,7 +112,7 @@ export const storeAccount = async ({
     hashKey: activeHashKey,
   });
 
-  const keyIdListArr = await getKeyIdList();
+  const keyIdListArr = await getKeyIdList({ localStore });
   keyIdListArr.push(keyStore.id);
 
   await localStore.setItem(KEY_ID_LIST, keyIdListArr);
@@ -120,5 +120,6 @@ export const storeAccount = async ({
   await addAccountName({
     keyId: keyStore.id,
     accountName,
+    localStore,
   });
 };

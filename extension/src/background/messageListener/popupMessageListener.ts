@@ -64,7 +64,6 @@ import { getIsAccountMismatch } from "./handlers/get-is-account-mismatch";
 import { changeAssetVisibility } from "./handlers/change-asset-visibility";
 import { getHiddenAssets } from "./handlers/get-hidden-assets";
 
-const sessionTimer = new SessionTimer();
 const numOfPublicKeysToCheck = 5;
 
 export const responseQueue: ResponseQueue = [];
@@ -78,6 +77,7 @@ export const popupMessageListener = (
   sessionStore: Store,
   localStore: DataStorageAccess,
   keyManager: KeyManager,
+  sessionTimer: SessionTimer,
 ) => {
   const currentState = sessionStore.getState();
   const publicKey = publicKeySelector(currentState);

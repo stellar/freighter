@@ -18,7 +18,7 @@ export const getMigratableAccounts = async ({
   sessionStore: Store;
   numOfPublicKeysToCheck: number;
 }) => {
-  const keyIdList = (await getKeyIdList()) as string[];
+  const keyIdList = (await getKeyIdList({ localStore })) as string[];
 
   const mnemonicPhrase = await getEncryptedTemporaryData({
     sessionStore,

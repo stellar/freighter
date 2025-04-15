@@ -16,7 +16,7 @@ export const clearAccount = async (store: DataStorageAccess) => {
   await store.remove(LAST_USED_ACCOUNT);
   await store.remove(TOKEN_ID_LIST);
 
-  const keyIdList = await getKeyIdList();
+  const keyIdList = await getKeyIdList({ localStore: store });
 
   for (let i = 0; i < keyIdList.length; i += 1) {
     const k = keyIdList[i];

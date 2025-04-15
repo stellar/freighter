@@ -9,6 +9,7 @@ import {
   getIsHardwareWalletActive,
   subscribeAccount as internalSubscribeAccount,
 } from "background/helpers/account";
+import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 
 export const logIn = createAsyncThunk<
   UiData,
@@ -176,13 +177,15 @@ export const allAccountsSelector = createSelector(
   sessionSelector,
   (session) => session.allAccounts || [],
 );
-export const hasPrivateKeySelector = createSelector(
-  sessionSelector,
-  async (session) => {
-    const isHardwareWalletActive = await getIsHardwareWalletActive();
+
+export const buildHasPrivateKeySelector = (localStore: DataStorageAccess) =>
+  createSelector(sessionSelector, async (session) => {
+    const isHardwareWalletActive = await getIsHardwareWalletActive({
+      localStore,
+    });
     return isHardwareWalletActive || !!session?.hashKey?.key;
-  },
-);
+  });
+
 export const hashKeySelector = createSelector(
   sessionSelector,
   (session) => session.hashKey,

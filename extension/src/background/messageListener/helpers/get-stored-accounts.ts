@@ -6,13 +6,15 @@ import {
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { Account } from "@shared/api/types";
+import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 
 export const getStoredAccounts = async (
   password: string,
   keyManager: KeyManager,
+  localStore: DataStorageAccess,
 ) => {
-  const keyIdList = await getKeyIdList();
-  const accountNameList = await getAccountNameList();
+  const keyIdList = await getKeyIdList({ localStore });
+  const accountNameList = await getAccountNameList({ localStore });
   const unlockedAccounts = [] as Account[];
 
   // for loop to preserve order of accounts

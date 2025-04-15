@@ -24,7 +24,7 @@ export const updateAccountName = async ({
   sessionStore.dispatch(
     updateAllAccountsAccountName({ updatedAccountName: accountName }),
   );
-  await addAccountName({ keyId, accountName });
+  await addAccountName({ keyId, accountName, localStore });
 
   return {
     allAccounts: allAccountsSelector(sessionStore.getState()),

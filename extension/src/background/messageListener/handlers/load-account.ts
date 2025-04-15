@@ -8,7 +8,7 @@ import {
 } from "constants/localStorageTypes";
 import {
   allAccountsSelector,
-  hasPrivateKeySelector,
+  buildHasPrivateKeySelector,
   publicKeySelector,
 } from "background/ducks/session";
 import { getBipPath } from "background/helpers/account";
@@ -37,6 +37,7 @@ export const loadAccount = async ({
   }
 
   const currentState = sessionStore.getState();
+  const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);
 
   return {
     hasPrivateKey: await hasPrivateKeySelector(currentState),

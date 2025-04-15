@@ -9,29 +9,29 @@ import { dataStorageAccess } from "background/helpers/dataStorageAccess";
 import { combineReducers } from "redux";
 import { configureStore } from "@reduxjs/toolkit";
 
-const store: Record<string, unknown> = {};
+const mockStore: Record<string, unknown> = {};
 const mockStorageApi = {
   get: jest.fn(async (keys) => {
     const result: Record<string, unknown> = {};
 
     if (keys === null || keys === undefined) {
-      return { ...store };
+      return { ...mockStore };
     }
 
     if (typeof keys === "string") {
-      if (keys in store) {
-        result[keys] = store[keys];
+      if (keys in mockStore) {
+        result[keys] = mockStore[keys];
       }
     } else if (Array.isArray(keys)) {
       for (const key of keys) {
-        if (key in store) {
-          result[key] = store[key];
+        if (key in mockStore) {
+          result[key] = mockStore[key];
         }
       }
     } else if (typeof keys === "object") {
       for (const key in keys) {
-        if (key in store) {
-          result[key] = store[key];
+        if (key in mockStore) {
+          result[key] = mockStore[key];
         } else {
           result[key] = keys[key];
         }
@@ -42,20 +42,19 @@ const mockStorageApi = {
   }),
 
   set: jest.fn(async (items) => {
-    console.log("SET", items);
-    Object.assign(store, items);
+    Object.assign(mockStore, items);
   }),
 
   remove: jest.fn(async (keys) => {
     const keyArray = Array.isArray(keys) ? keys : [keys];
     for (const key of keyArray) {
-      delete store[key];
+      delete mockStore[key];
     }
   }),
 
   clear: jest.fn(async () => {
-    for (const key in store) {
-      delete store[key];
+    for (const key in mockStore) {
+      delete mockStore[key];
     }
   }),
 
@@ -66,8 +65,8 @@ const mockStorageApi = {
     hasListener: jest.fn().mockReturnValue(false),
   } as any,
 };
-const dataStorage = dataStorageAccess(mockStorageApi);
-let sessionStore = configureStore({
+const mockDataStorage = dataStorageAccess(mockStorageApi);
+let mockSessionStore = configureStore({
   reducer: combineReducers({
     session: sessionSlice.reducer,
   }),
@@ -76,9 +75,39 @@ const localKeyStore = new BrowserStorageKeyStore();
 localKeyStore.configure({
   storage: mockStorageApi as BrowserStorageConfigParams["storage"],
 });
-const keyManager = new KeyManager({
+const mockKeyManager = new KeyManager({
   keyStore: localKeyStore,
 });
-keyManager.registerEncrypter(ScryptEncrypter);
+mockKeyManager.registerEncrypter(ScryptEncrypter);
 
-export { dataStorage, sessionStore, keyManager, mockStorageApi };
+const MOCK_TIMER_DURATION = 60 * 24;
+class MockBrowserAlarm {
+  duration = 1000 * 60 * MOCK_TIMER_DURATION;
+  runningTimeout: null | ReturnType<typeof setTimeout> = null;
+  callback: () => void;
+
+  constructor(callback: () => unknown, duration?: number) {
+    this.duration = duration || this.duration;
+    this.callback = callback;
+  }
+
+  startSession() {
+    this.duration = 1000 * 60 * MOCK_TIMER_DURATION;
+    if (this.runningTimeout) clearTimeout(this.runningTimeout);
+
+    this.runningTimeout = setTimeout(() => {
+      if (this.callback) {
+        this.callback();
+      }
+    }, this.duration);
+  }
+}
+
+export {
+  mockStore,
+  mockDataStorage,
+  mockSessionStore,
+  mockKeyManager,
+  mockStorageApi,
+  MockBrowserAlarm,
+};

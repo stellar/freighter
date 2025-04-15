@@ -22,8 +22,8 @@ export const getMnemonicPhrase = async ({
 }) => {
   const { password } = request;
 
-  const keyID = (await getIsHardwareWalletActive())
-    ? await getNonHwKeyID()
+  const keyID = (await getIsHardwareWalletActive({ localStore }))
+    ? await getNonHwKeyID({ localStore })
     : (await localStore.getItem(KEY_ID)) || "";
 
   let mnemonicPhrase = "";

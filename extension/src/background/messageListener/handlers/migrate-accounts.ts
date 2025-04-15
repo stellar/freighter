@@ -7,7 +7,7 @@ import BigNumber from "bignumber.js";
 import { MigrateAccountsMessage } from "@shared/api/types/message-request";
 import {
   allAccountsSelector,
-  hasPrivateKeySelector,
+  buildHasPrivateKeySelector,
   migratedMnemonicPhraseSelector,
   publicKeySelector,
 } from "background/ducks/session";
@@ -63,7 +63,7 @@ export const migrateAccounts = async ({
   }
 
   const newWallet = fromMnemonic(migratedMnemonicPhrase);
-  const keyIdList: string = await getKeyIdList();
+  const keyIdList: string = await getKeyIdList({ localStore });
   const fee = xlmToStroop(recommendedFee).toFixed();
 
   // we expect all migrations to be done on MAINNET
@@ -249,6 +249,7 @@ export const migrateAccounts = async ({
   }
 
   const currentState = sessionStore.getState();
+  const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);
 
   return {
     migratedAccounts,

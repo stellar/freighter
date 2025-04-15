@@ -71,7 +71,7 @@ export const replaceAccount = async ({
     console.error(e);
   }
 
-  const keyIdListArr = await getKeyIdList();
+  const keyIdListArr = await getKeyIdList({ localStore });
   keyIdListArr[indexToReplace] = keyStore.id;
 
   await localStore.setItem(KEY_ID_LIST, keyIdListArr);
@@ -79,5 +79,6 @@ export const replaceAccount = async ({
   await addAccountName({
     keyId: keyStore.id,
     accountName,
+    localStore,
   });
 };
