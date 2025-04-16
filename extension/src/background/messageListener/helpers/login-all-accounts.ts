@@ -75,6 +75,7 @@ export const loginToAllAccounts = async (
       logIn({
         publicKey: hwPublicKey || activePublicKey,
         allAccounts: await getStoredAccounts(password, keyManager, localStore),
+        localStore,
       }) as any,
     );
   }

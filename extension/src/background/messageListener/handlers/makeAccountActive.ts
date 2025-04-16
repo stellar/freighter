@@ -26,6 +26,6 @@ export const makeAccountActive = async ({
   return {
     publicKey: publicKeySelector(currentState),
     hasPrivateKey: await hasPrivateKeySelector(currentState),
-    bipPath: await getBipPath(),
+    bipPath: await getBipPath({ localStore }),
   };
 };

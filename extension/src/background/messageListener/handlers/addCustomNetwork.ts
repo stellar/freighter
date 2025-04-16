@@ -12,7 +12,7 @@ export const addCustomNetwork = async ({
   localStore: DataStorageAccess;
 }) => {
   const { networkDetails } = request;
-  const savedNetworks = await getSavedNetworks();
+  const savedNetworks = await getSavedNetworks({ localStore });
 
   // Network Name already used
   if (

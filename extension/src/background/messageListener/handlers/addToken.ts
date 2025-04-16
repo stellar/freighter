@@ -18,7 +18,7 @@ export const addToken = async ({
   responseQueue: ResponseQueue;
 }) => {
   const publicKey = publicKeySelector(sessionStore.getState());
-  const networkDetails = await getNetworkDetails();
+  const networkDetails = await getNetworkDetails({ localStore });
 
   if (publicKey.length) {
     const tokenInfo = tokenQueue.pop();

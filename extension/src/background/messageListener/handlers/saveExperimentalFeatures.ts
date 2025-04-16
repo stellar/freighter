@@ -32,12 +32,14 @@ export const saveExperimentalFeatures = async ({
   await localStore.setItem(IS_HASH_SIGNING_ENABLED_ID, isHashSigningEnabled);
   await localStore.setItem(IS_NON_SSL_ENABLED_ID, isNonSSLEnabled);
 
-  const currentIsExperimentalModeEnabled = await getIsExperimentalModeEnabled();
+  const currentIsExperimentalModeEnabled = await getIsExperimentalModeEnabled({
+    localStore,
+  });
 
   if (isExperimentalModeEnabled !== currentIsExperimentalModeEnabled) {
     /* Disable Mainnet access and automatically switch the user to Futurenet
       if user is enabling experimental mode and vice-versa */
-    const currentNetworksList = await getNetworksList();
+    const currentNetworksList = await getNetworksList({ localStore });
 
     const defaultNetworkDetails = isExperimentalModeEnabled
       ? FUTURENET_NETWORK_DETAILS
@@ -52,10 +54,12 @@ export const saveExperimentalFeatures = async ({
   await localStore.setItem(IS_EXPERIMENTAL_MODE_ID, isExperimentalModeEnabled);
 
   return {
-    isExperimentalModeEnabled: await getIsExperimentalModeEnabled(),
-    isHashSigningEnabled: await getIsHashSigningEnabled(),
-    isNonSSLEnabled: await getIsNonSSLEnabled(),
-    networkDetails: await getNetworkDetails(),
-    networksList: await getNetworksList(),
+    isExperimentalModeEnabled: await getIsExperimentalModeEnabled({
+      localStore,
+    }),
+    isHashSigningEnabled: await getIsHashSigningEnabled({ localStore }),
+    isNonSSLEnabled: await getIsNonSSLEnabled({ localStore }),
+    networkDetails: await getNetworkDetails({ localStore }),
+    networksList: await getNetworksList({ localStore }),
   };
 };

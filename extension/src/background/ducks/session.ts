@@ -13,11 +13,11 @@ import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 
 export const logIn = createAsyncThunk<
   UiData,
-  UiData,
+  UiData & { localStore: DataStorageAccess },
   { rejectValue: ErrorMessage }
->("logIn", async ({ publicKey, allAccounts }, thunkApi) => {
+>("logIn", async ({ publicKey, allAccounts, localStore }, thunkApi) => {
   try {
-    await internalSubscribeAccount(publicKey);
+    await internalSubscribeAccount({ publicKey, localStore });
     return {
       publicKey,
       allAccounts,
@@ -30,11 +30,11 @@ export const logIn = createAsyncThunk<
 
 export const setActivePublicKey = createAsyncThunk<
   UiData,
-  UiData,
+  UiData & { localStore: DataStorageAccess },
   { rejectValue: ErrorMessage }
->("setActivePublicKey", async ({ publicKey }, thunkApi) => {
+>("setActivePublicKey", async ({ publicKey, localStore }, thunkApi) => {
   try {
-    await internalSubscribeAccount(publicKey);
+    await internalSubscribeAccount({ publicKey, localStore });
     return {
       publicKey,
       privateKey: "",

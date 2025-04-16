@@ -30,5 +30,7 @@ export const activatePublicKey = async ({
 
   await localStore.setItem(KEY_ID, activeKeyId);
 
-  await sessionStore.dispatch(setActivePublicKey({ publicKey }) as any);
+  await sessionStore.dispatch(
+    setActivePublicKey({ publicKey, localStore }) as any,
+  );
 };

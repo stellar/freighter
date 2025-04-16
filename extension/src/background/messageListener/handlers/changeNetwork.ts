@@ -19,15 +19,15 @@ export const changeNetwork = async ({
   const { networkName } = request;
   const currentState = sessionStore.getState();
 
-  const savedNetworks = await getSavedNetworks();
-  const pubKey = publicKeySelector(currentState);
+  const savedNetworks = await getSavedNetworks({ localStore });
+  const publicKey = publicKeySelector(currentState);
   const networkDetails =
     savedNetworks.find(
       ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
     ) || MAINNET_NETWORK_DETAILS;
 
   await localStore.setItem(NETWORK_ID, networkDetails);
-  await subscribeAccount(pubKey);
+  await subscribeAccount({ publicKey, localStore });
 
   const isRpcHealthy = true;
 

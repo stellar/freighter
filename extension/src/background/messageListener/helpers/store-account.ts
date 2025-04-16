@@ -72,6 +72,7 @@ export const storeAccount = async ({
           imported,
         },
       ],
+      localStore,
     }) as any,
   );
 

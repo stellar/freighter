@@ -92,7 +92,7 @@ export const popupMessageListener = (
 
   switch (request.type) {
     case SERVICE_TYPES.FUND_ACCOUNT: {
-      return fundAccount({ request });
+      return fundAccount({ request, localStore });
     }
     case SERVICE_TYPES.CREATE_ACCOUNT: {
       return createAccount({
@@ -226,6 +226,7 @@ export const popupMessageListener = (
       return grantAccess({
         request,
         sessionStore,
+        localStore,
         responseQueue,
       });
     }
@@ -317,6 +318,7 @@ export const popupMessageListener = (
     case SERVICE_TYPES.SAVE_ALLOWLIST: {
       return saveAllowList({
         request,
+        localStore,
         sessionStore,
       });
     }

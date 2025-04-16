@@ -6,21 +6,24 @@ import {
   getAllowList,
   removeAllowListDomain,
 } from "background/helpers/account";
+import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 
 export const saveAllowList = async ({
   request,
   sessionStore,
+  localStore,
 }: {
   request: SaveAllowListMessage;
   sessionStore: Store;
+  localStore: DataStorageAccess;
 }) => {
   const { domain, networkName } = request;
 
   const publicKey = publicKeySelector(sessionStore.getState());
 
-  await removeAllowListDomain({ publicKey, networkName, domain });
+  await removeAllowListDomain({ publicKey, networkName, domain, localStore });
 
   return {
-    allowList: await getAllowList(),
+    allowList: await getAllowList({ localStore }),
   };
 };

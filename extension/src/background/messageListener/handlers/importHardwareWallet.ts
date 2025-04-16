@@ -34,6 +34,6 @@ export const importHardwareWallet = async ({
     publicKey: publicKeySelector(sessionStore.getState()),
     allAccounts: allAccountsSelector(sessionStore.getState()),
     hasPrivateKey: await hasPrivateKeySelector(sessionStore.getState()),
-    bipPath: await getBipPath(),
+    bipPath: await getBipPath({ localStore }),
   };
 };

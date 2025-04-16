@@ -1,14 +1,17 @@
 import { FundAccountMessage } from "@shared/api/types/message-request";
 import { getNetworkDetails } from "background/helpers/account";
+import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 
 export const fundAccount = async ({
   request,
+  localStore,
 }: {
   request: FundAccountMessage;
+  localStore: DataStorageAccess;
 }) => {
   const { publicKey } = request;
 
-  const { friendbotUrl } = await getNetworkDetails();
+  const { friendbotUrl } = await getNetworkDetails({ localStore });
 
   if (friendbotUrl) {
     try {

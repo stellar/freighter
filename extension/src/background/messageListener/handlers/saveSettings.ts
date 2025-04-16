@@ -29,19 +29,19 @@ export const saveSettings = async ({
   await localStore.setItem(IS_VALIDATING_MEMO_ID, isMemoValidationEnabled);
   await localStore.setItem(IS_HIDE_DUST_ENABLED_ID, isHideDustEnabled);
 
-  const networkDetails = await getNetworkDetails();
+  const networkDetails = await getNetworkDetails({ localStore });
   const isRpcHealthy = true;
   const featureFlags = await getFeatureFlags();
 
   return {
-    allowList: await getAllowList(),
+    allowList: await getAllowList({ localStore }),
     isDataSharingAllowed,
-    isMemoValidationEnabled: await getIsMemoValidationEnabled(),
+    isMemoValidationEnabled: await getIsMemoValidationEnabled({ localStore }),
     networkDetails,
-    networksList: await getNetworksList(),
+    networksList: await getNetworksList({ localStore }),
     isRpcHealthy,
     isSorobanPublicEnabled: featureFlags.useSorobanPublic,
-    isNonSSLEnabled: await getIsNonSSLEnabled(),
-    isHideDustEnabled: await getIsHideDustEnabled(),
+    isNonSSLEnabled: await getIsNonSSLEnabled({ localStore }),
+    isHideDustEnabled: await getIsHideDustEnabled({ localStore }),
   };
 };

@@ -70,6 +70,7 @@ export const storeHardwareWalletAccount = async ({
     logIn({
       publicKey,
       allAccounts,
+      localStore,
     }) as any,
   );
 };

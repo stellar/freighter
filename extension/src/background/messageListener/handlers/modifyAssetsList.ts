@@ -16,7 +16,7 @@ export const modifyAssetsList = async ({
 }) => {
   const { assetsList, network, isDeleteAssetsList } = request;
 
-  const currentAssetsLists = await getAssetsLists();
+  const currentAssetsLists = await getAssetsLists({ localStore });
   const networkAssetsLists = currentAssetsLists[network];
 
   const index = networkAssetsLists.findIndex(
@@ -39,5 +39,5 @@ export const modifyAssetsList = async ({
 
   await localStore.setItem(ASSETS_LISTS_ID, currentAssetsLists);
 
-  return { assetsLists: await getAssetsLists() };
+  return { assetsLists: await getAssetsLists({ localStore }) };
 };

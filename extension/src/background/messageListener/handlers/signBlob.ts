@@ -32,7 +32,7 @@ export const signBlob = async ({
     captureException(`Sign blob: No private key found: ${JSON.stringify(e)}`);
   }
 
-  const networkDetails = await getNetworkDetails();
+  const networkDetails = await getNetworkDetails({ localStore });
 
   const Sdk = getSdk(networkDetails.networkPassphrase);
 

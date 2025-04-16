@@ -72,6 +72,6 @@ export const confirmPassword = async ({
     hasPrivateKey: await hasPrivateKeySelector(sessionStore.getState()),
     applicationState: (await localStore.getItem(APPLICATION_ID)) || "",
     allAccounts: allAccountsSelector(sessionStore.getState()),
-    bipPath: await getBipPath(),
+    bipPath: await getBipPath({ localStore }),
   };
 };

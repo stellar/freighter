@@ -12,7 +12,7 @@ export const removeCustomNetwork = async ({
 }) => {
   const { networkName } = request;
 
-  const savedNetworks = await getSavedNetworks();
+  const savedNetworks = await getSavedNetworks({ localStore });
   const networkIndex = savedNetworks.findIndex(
     ({ networkName: savedNetworkName }) => savedNetworkName === networkName,
   );

@@ -13,7 +13,7 @@ export const editCustomNetwork = async ({
 }) => {
   const { networkDetails, networkIndex } = request;
 
-  const savedNetworks = await getSavedNetworks();
+  const savedNetworks = await getSavedNetworks({ localStore });
   const activeNetworkDetails =
     (await localStore.getItem(NETWORK_ID)) || MAINNET_NETWORK_DETAILS;
   const activeIndex =

@@ -44,7 +44,7 @@ export const loadAccount = async ({
     publicKey: publicKeySelector(currentState),
     applicationState: (await localStore.getItem(APPLICATION_ID)) || "",
     allAccounts: allAccountsSelector(currentState),
-    bipPath: await getBipPath(),
+    bipPath: await getBipPath({ localStore }),
     tokenIdList: (await localStore.getItem(TOKEN_ID_LIST)) || {},
   };
 };

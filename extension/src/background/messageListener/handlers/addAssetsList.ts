@@ -12,7 +12,7 @@ export const addAssetsList = async ({
 }) => {
   const { assetsList, network } = request;
 
-  const currentAssetsLists = await getAssetsLists();
+  const currentAssetsLists = await getAssetsLists({ localStore });
 
   if (
     currentAssetsLists[network].some(
@@ -28,5 +28,5 @@ export const addAssetsList = async ({
 
   await localStore.setItem(ASSETS_LISTS_ID, currentAssetsLists);
 
-  return { assetsLists: await getAssetsLists() };
+  return { assetsLists: await getAssetsLists({ localStore }) };
 };

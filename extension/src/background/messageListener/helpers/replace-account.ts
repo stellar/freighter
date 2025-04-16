@@ -49,6 +49,7 @@ export const replaceAccount = async ({
     logIn({
       publicKey,
       allAccounts: newAllAccounts,
+      localStore,
     }) as any,
   );
 

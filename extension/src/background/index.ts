@@ -79,6 +79,7 @@ export const initExtensionMessageListener = () => {
         req as ExternalRequest,
         sender,
         sessionStore,
+        localStore,
       );
     }
 

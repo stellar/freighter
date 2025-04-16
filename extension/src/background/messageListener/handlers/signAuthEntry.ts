@@ -34,7 +34,7 @@ export const signAuthEntry = async ({
     );
   }
 
-  const networkDetails = await getNetworkDetails();
+  const networkDetails = await getNetworkDetails({ localStore });
 
   const Sdk = getSdk(networkDetails.networkPassphrase);
 
