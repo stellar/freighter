@@ -1,5 +1,5 @@
 import { sessionSlice } from "background/ducks/session";
-import { popupMessageListener } from "../popupMessageListener";
+import { popupMessageListener } from "background/messageListener/popupMessageListener";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { CreateAccountMessage } from "@shared/api/types/message-request";
 import {
@@ -8,14 +8,14 @@ import {
   mockKeyManager,
   mockStorageApi,
   MockBrowserAlarm,
-} from "../helpers/test-helpers";
+} from "background/messageListener/helpers/test-helpers";
 import {
   KEY_ID,
   KEY_ID_LIST,
   APPLICATION_ID,
   TEMPORARY_STORE_ID,
 } from "constants/localStorageTypes";
-import { createAccount } from "../handlers/createAccount";
+import { createAccount } from "background/messageListener/handlers/createAccount";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 const testAlarm = new MockBrowserAlarm(() => console.log("Alarm fired"));
