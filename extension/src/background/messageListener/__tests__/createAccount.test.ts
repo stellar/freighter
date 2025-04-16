@@ -15,7 +15,7 @@ import {
   APPLICATION_ID,
   TEMPORARY_STORE_ID,
 } from "constants/localStorageTypes";
-import { createAccount } from "../handlers/create-account";
+import { createAccount } from "../handlers/createAccount";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 const testAlarm = new MockBrowserAlarm(() => console.log("Alarm fired"));
