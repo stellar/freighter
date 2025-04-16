@@ -16,9 +16,9 @@ can select any asset Coinbase offers. At checkout, you will find your Freighter
 address prefilled. Completing checkout will send the asset to your Freighter
 wallet.
 
-<img src={require('./assets/5.31.0/coinbase_account.png').default} alt="drawing"
+<img src={require('./assets/5.31.0/coinbase_account.png').default} alt="Account"
 width="300"/> <img
-src={require('./assets/5.31.0/coinbase_add_funds.png').default} alt="drawing"
+src={require('./assets/5.31.0/coinbase_add_funds.png').default} alt="Add funds"
 width="300"/>
 
 If your account is unfunded, you can simply click the `Add XLM` button on the
@@ -27,9 +27,9 @@ Account screen. This will take you to a screen where you can
 be preselected for you and your Freighter address will be prefilled as the
 destination.
 
-<img src={require('./assets/5.31.0/coinbase_account.png').default} alt="drawing"
+<img src={require('./assets/5.31.0/coinbase_account.png').default} alt="Account"
 width="300"/> <img src={require('./assets/5.31.0/coinbase_add_xlm.png').default}
-alt="drawing" width="300"/>
+alt="Add XLM" width="300"/>
 
 ## Hide Assets:
 
@@ -38,7 +38,7 @@ You can now choose to hide assets you own. Click the `...` dropdown and click
 top right corner wher you can toggle assets. This is useful if you have many
 assets but only want to see a few that you care about.
 
-<img src={require('./assets/5.31.0/hide_assets.png').default} alt="drawing"
+<img src={require('./assets/5.31.0/hide_assets.png').default} alt="Hide assets"
 width="300"/>
 
 ## Paste Mnemonic Phrase:
