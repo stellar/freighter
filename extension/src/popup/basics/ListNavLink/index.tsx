@@ -11,6 +11,7 @@ interface ListNavLinkProps {
   href: string | ROUTES;
   searchParams?: string;
   icon?: React.ReactNode;
+  isExternal?: boolean;
 }
 
 const renderListNavLinkIcon = (icon: React.ReactNode) => (
@@ -22,6 +23,7 @@ export const ListNavLink = ({
   href,
   searchParams = "",
   icon,
+  isExternal = false,
 }: ListNavLinkProps) => {
   const fullHref = `${href}${searchParams}`;
   return (
@@ -33,7 +35,12 @@ export const ListNavLink = ({
         </Link>
       ) : (
         <a rel="noreferrer" target="_blank" href={fullHref}>
-          {children} <Icon.ChevronRight className="ListNavLink__arrow" />
+          {children}{" "}
+          {isExternal ? (
+            <Icon.LinkExternal01 className="ListNavLink__arrow" />
+          ) : (
+            <Icon.ChevronRight className="ListNavLink__arrow" />
+          )}
         </a>
       )}
     </div>

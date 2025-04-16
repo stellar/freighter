@@ -17,6 +17,7 @@ const playgroundPaths = [
 const GUIDE_BASE_PATH = "guide";
 const introPaths = ["introduction", "gettingStarted"];
 const userGuidePaths = [
+  "whatsNew",
   "account",
   "advancedSettings",
   "addToken",
