@@ -317,8 +317,6 @@ const useAssetLookup = ({
         return;
       }
 
-      console.log(assetRows);
-
       // Only show records that have a domain and domains that don't have just whitespace
       // We omit these results as a safety precaution and to encourage asset issuers to add a domain to their asset
       assetRows = assetRows.filter(
