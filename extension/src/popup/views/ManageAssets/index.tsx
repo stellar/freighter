@@ -1,47 +1,24 @@
 import React from "react";
-import { useSelector } from "react-redux";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
 
-import {
-  transactionSubmissionSelector,
-  AssetSelectType,
-} from "popup/ducks/transactionSubmission";
 import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
 import { SearchAsset } from "popup/components/manageAssets/SearchAsset";
 import { AddAsset } from "popup/components/manageAssets/AddAsset";
+import { AssetVisibility } from "popup/components/manageAssets/AssetVisibility";
 import { PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 import { getPathFromRoute } from "popup/helpers/route";
 
 export const ManageAssets = () => {
-  const { accountBalances, destinationBalances, assetSelect } = useSelector(
-    transactionSubmissionSelector,
-  );
-
-  let balances;
-  // path payment destAsset is the only time we use recipient trustlines
-  if (
-    assetSelect.type === AssetSelectType.PATH_PAY &&
-    assetSelect.isSource === false
-  ) {
-    balances = destinationBalances.balances;
-  } else {
-    balances = accountBalances.balances;
-  }
-
-  if (!balances) {
-    return (
-      <Navigate
-        to={{
-          pathname: ROUTES.account,
-        }}
-      />
-    );
-  }
+  const navigate = useNavigate();
 
   const manageAssetsBasePath = "/manage-assets/";
   const searchAssetsPath = getPathFromRoute({
     fullRoute: ROUTES.searchAsset,
+    basePath: manageAssetsBasePath,
+  });
+  const assetVisibility = getPathFromRoute({
+    fullRoute: ROUTES.assetVisibility,
     basePath: manageAssetsBasePath,
   });
   const addAssetsPath = getPathFromRoute({
@@ -56,7 +33,7 @@ export const ManageAssets = () => {
           index
           element={
             <PrivateKeyRoute>
-              <ChooseAsset balances={balances} />
+              <ChooseAsset goBack={() => navigate(-1)} showHideAssets />
             </PrivateKeyRoute>
           }
         ></Route>
@@ -65,6 +42,14 @@ export const ManageAssets = () => {
           element={
             <PrivateKeyRoute>
               <SearchAsset />
+            </PrivateKeyRoute>
+          }
+        ></Route>
+        <Route
+          path={assetVisibility}
+          element={
+            <PrivateKeyRoute>
+              <AssetVisibility />
             </PrivateKeyRoute>
           }
         ></Route>

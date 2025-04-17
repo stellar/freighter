@@ -1,4 +1,5 @@
 import * as extensionMessaging from "@shared/api/helpers/extensionMessaging";
+import * as ApiExternal from "@shared/api/external";
 import { signMessage } from "../signMessage";
 
 describe("signMessage", () => {
@@ -7,6 +8,9 @@ describe("signMessage", () => {
     extensionMessaging.sendMessageToContentScript = jest
       .fn()
       .mockImplementationOnce(() => TEST_BLOB);
+    ApiExternal.requestAllowedStatus = jest.fn().mockImplementationOnce(() => ({
+      isAllowed: true,
+    }));
     const blob = await signMessage();
     expect(blob).toEqual({ signedMessage: "foo", signerAddress: "bar" });
   });
@@ -17,6 +21,9 @@ describe("signMessage", () => {
       .mockImplementationOnce(() => ({
         apiError: "error",
       }));
+    ApiExternal.requestAllowedStatus = jest.fn().mockImplementationOnce(() => ({
+      isAllowed: true,
+    }));
     const msg = await signMessage();
     expect(msg).toEqual({
       signedMessage: null,

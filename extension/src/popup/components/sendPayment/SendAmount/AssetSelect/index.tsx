@@ -1,15 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
 import { Icon } from "@stellar/design-system";
 
-import { ROUTES } from "popup/constants/routes";
-import { navigateTo } from "popup/helpers/navigate";
 import { isMainnet, isTestnet } from "helpers/stellar";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { UnverifiedTokenNotification } from "popup/components/WarningMessages";
 import {
-  transactionSubmissionSelector,
   saveAssetSelectSource,
   saveAssetSelectType,
   AssetSelectType,
@@ -19,6 +15,7 @@ import { isContractId } from "popup/helpers/soroban";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { settingsSelector } from "popup/ducks/settings";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
+import { AssetIcons } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
@@ -27,15 +24,17 @@ export const AssetSelect = ({
   assetCode,
   issuerKey,
   isSuspicious,
+  icons,
+  onSelectAsset,
 }: {
   assetCode: string;
   issuerKey: string;
   isSuspicious: boolean;
+  icons: AssetIcons;
+  onSelectAsset: () => unknown;
 }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { assetIcons } = useSelector(transactionSubmissionSelector);
   const { networkDetails, assetsLists } = useSelector(settingsSelector);
-  const navigate = useNavigate();
 
   const [isUnverifiedToken, setIsUnverifiedToken] = useState(false);
 
@@ -66,7 +65,7 @@ export const AssetSelect = ({
   const handleSelectAsset = () => {
     dispatch(saveAssetSelectType(AssetSelectType.REGULAR));
     dispatch(saveAssetSelectSource(true));
-    navigateTo(ROUTES.manageAssets, navigate);
+    onSelectAsset();
   };
 
   return (
@@ -84,7 +83,7 @@ export const AssetSelect = ({
         <div className="AssetSelect__content">
           <div className="AssetSelect__content__left">
             <AssetIcon
-              assetIcons={assetIcons}
+              assetIcons={icons}
               code={assetCode}
               issuerKey={issuerKey}
               isSuspicious={isSuspicious}
@@ -106,7 +105,9 @@ export const PathPayAssetSelect = ({
   issuerKey,
   balance,
   icon,
+  icons,
   isSuspicious,
+  onSelectAsset,
 }: {
   source: boolean;
   assetCode: string;
@@ -114,11 +115,11 @@ export const PathPayAssetSelect = ({
   balance: string;
   icon: string;
   isSuspicious: boolean;
+  icons: AssetIcons;
+  onSelectAsset: () => unknown;
 }) => {
   const dispatch = useDispatch();
-  const { assetIcons } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
-  const navigate = useNavigate();
 
   const handleSelectAsset = () => {
     dispatch(
@@ -130,7 +131,7 @@ export const PathPayAssetSelect = ({
     if (source) {
       dispatch(saveAmount("0"));
     }
-    navigateTo(ROUTES.manageAssets, navigate, isSwap ? "?swap=true" : "");
+    onSelectAsset();
   };
 
   const truncateLongAssetCode = (code: string) => {
@@ -155,7 +156,7 @@ export const PathPayAssetSelect = ({
             {source ? "From" : "To"}
           </span>
           <AssetIcon
-            assetIcons={assetIcons}
+            assetIcons={icons}
             code={assetCode}
             issuerKey={issuerKey}
             icon={icon}

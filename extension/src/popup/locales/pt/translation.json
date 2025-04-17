@@ -1,5 +1,6 @@
 {
   "* All Stellar accounts must maintain a minimum balance of lumens": "* All Stellar accounts must maintain a minimum balance of lumens.",
+  "* payment methods may vary based on your location": "* payment methods may vary based on your location",
   "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign": {
     " Freighter automatically disabled the option to sign this transaction": "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign. Freighter automatically disabled the option to sign this transaction."
   },
@@ -22,6 +23,7 @@
   "Add by address": "Add by address",
   "Add custom network": "Add custom network",
   "Add Custom Network": "Add Custom Network",
+  "Add funds": "Add funds",
   "Add list": "Add list",
   "Add manually": "Add manually",
   "Add network": "Add network",
@@ -85,13 +87,17 @@
   "Before we start with migration, please read": "Before we start with migration, please read",
   "Before You Add This Asset": "Before You Add This Asset",
   "Bump To": "Bump To",
+  "BUY": "BUY",
   "Buy Amount": "Buy Amount",
+  "Buy with Coinbase": "Buy with Coinbase",
+  "Buy XLM with Coinbase": "Buy XLM with Coinbase",
   "Buying": "Buying",
   "by": "by",
   "Can’t find the asset you’re looking for? Add it manually": "Can’t find the asset you’re looking for? Add it manually",
   "Cancel": "Cancel",
   "Check the destination account memo requirements and include it in the transaction": "Check the destination account memo requirements and include it in the transaction.",
   "Choose Asset": "Choose Asset",
+  "Choose your method": "Choose your method",
   "Clear Flags": "Clear Flags",
   "Close": "Close",
   "Confirm": "Confirm",
@@ -165,6 +171,9 @@
   "Entered amount is higher than your balance": "Entered amount is higher than your balance",
   "Error": "Error",
   "Error code": "Error code",
+  "Error fetching Coinbase token": {
+    " Please try again": "Error fetching Coinbase token. Please try again."
+  },
   "Executable Type": "Executable Type",
   "Executable Wasm Hash": "Executable Wasm Hash",
   "Expand view": "Expand view",
@@ -218,7 +227,7 @@
   "I understand, start migration": "I understand, start migration",
   "I’m aware Freighter can’t recover the imported  secret key": "I’m aware Freighter can’t recover the imported  secret key",
   "I’ve saved my phrase somewhere safe": "I’ve saved my phrase somewhere safe",
-  "If you believe you have interacted with this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam": "If you believe you have interacted with this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam.",
+  "If you believe you have connected to this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam": "If you believe you have connected to this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam.",
   "If you delete this list, you will have to re-add it manually": "If you delete this list, you will have to re-add it manually.",
   "If you forget your password, you can use the recovery phrase to access your wallet": "If you forget your password, you can use the recovery phrase to access your wallet",
   "Import": "Import",
@@ -235,11 +244,11 @@
   "Insufficient Fee": "Insufficient Fee",
   "INSUFFICIENT FUNDS FOR FEE": "INSUFFICIENT FUNDS FOR FEE",
   "invalid destination address": "invalid destination address",
-  "invalid federation address": "invalid federation address",
   "Invalid Format Asset": "Invalid Format Asset",
   "Invalid mnemonic phrase": "Invalid mnemonic phrase",
   "INVALID STELLAR ADDRESS": "INVALID STELLAR ADDRESS",
   "Invocation Type": "Invocation Type",
+  "is currently not connected to this Freighter account": "is currently not connected to this Freighter account",
   "is requesting approval to sign a message": "is requesting approval to sign a message",
   "is requesting approval to sign an authorization entry": "is requesting approval to sign an authorization entry",
   "Issuer": "Issuer",
@@ -266,6 +275,7 @@
   "Liquidity Pool ID": "Liquidity Pool ID",
   "Log Out": "Log Out",
   "Login": "Login",
+  "Lost your password? Want to replace your accounts?": "Lost your password? Want to replace your accounts?",
   "Low Threshold": "Low Threshold",
   "Make sure it is a funded Stellar account and try again": "Make sure it is a funded Stellar account and try again.",
   "Make sure you have your 12 word backup phrase": "Make sure you have your 12 word backup phrase",
@@ -395,9 +405,11 @@
   "SEND": "SEND",
   "Send Amount": "Send Amount",
   "Send at least 1 XLM to create account": "Send at least 1 XLM to create account.",
+  "Send funds to this account address": "Send funds to this account address",
   "Send Max": "Send Max",
   "Send Payment": "Send Payment",
   "Send Type": "Send Type",
+  "Send XLM to this account address": "Send XLM to this account address",
   "Sending to": "Sending to",
   "sent": "sent",
   "Sent": "Sent",
@@ -487,6 +499,7 @@
   "To access your wallet, click Freighter from your browser Extensions browser menu": "To access your wallet, click Freighter from your browser Extensions browser menu.",
   "To create a new account you need to send at least 1 XLM to it": "To create a new account you need to send at least 1 XLM to it.",
   "To start using this account, fund it with at least 1 XLM": "To start using this account, fund it with at least 1 XLM.",
+  "Toggle Assets": "Toggle Assets",
   "Token List URL": "Token List URL",
   "Total Available": "Total Available",
   "Total Balance": "Total Balance",
@@ -496,6 +509,8 @@
   "Transaction fee": "Transaction fee",
   "Transaction Request": "Transaction Request",
   "Transaction timeout": "Transaction timeout",
+  "Transfer from another account": "Transfer from another account",
+  "Transfer from Coinbase, buy with debit and credit cards or bank transfer *": "Transfer from Coinbase, buy with debit and credit cards or bank transfer *",
   "trustlines": "trustlines",
   "Trustor": "Trustor",
   "Type": "Type",
@@ -516,7 +531,6 @@
   "View on": "View on",
   "View options": "View options",
   "Wallet Address": "Wallet Address",
-  "Want to add another account?": "Want to add another account?",
   "wasm": "wasm",
   "WEBSITE CONNECTION IS NOT SECURE": "WEBSITE CONNECTION IS NOT SECURE",
   "Welcome back!": "Welcome back!",
@@ -534,6 +548,9 @@
   "You are interacting with data that may be using untested and changing schemas": {
     " Proceed at your own risk": "You are interacting with data that may be using untested and changing schemas. Proceed at your own risk."
   },
+  "You are overwriting an existing account": {
+    " You will permanently lose access to the account currently stored in Freighter": "You are overwriting an existing account. You will permanently lose access to the account currently stored in Freighter."
+  },
   "You can access this later in the app, but we strongly recommend saving this in a safe place": "You can access this later in the app, but we strongly recommend saving this in a safe place.",
   "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account": {
     " Merging is optional and will allow you to send your current account’s funding lumens to the new accounts": "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account. Merging is optional and will allow you to send your current account’s funding lumens to the new accounts."
@@ -541,6 +558,9 @@
   "You can define your own assets lists in Settings": "You can define your own assets lists in Settings.",
   "You must have a balance of": "You must have a balance of",
   "You must have a buying liability of": "You must have a buying liability of",
+  "You previously did not complete onboarding": {
+    " You will permanently lose access to the account you started to create in Freighter": "You previously did not complete onboarding. You will permanently lose access to the account you started to create in Freighter."
+  },
   "You still have a balance of": "You still have a balance of",
   "You still have a buying liability of": "You still have a buying liability of",
   "You’re all set!": "You’re all set!",

@@ -1,14 +1,11 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Field, Form, Formik } from "formik";
 import { Button, Icon, Link } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { ROUTES } from "popup/constants/routes";
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
@@ -16,6 +13,7 @@ import {
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
+import { STEPS } from "popup/constants/send-payment";
 
 import "./styles.scss";
 
@@ -72,11 +70,14 @@ const RadioCheck = ({
   </div>
 );
 
-export const SendType = () => {
+export const SendType = ({
+  setStep,
+}: {
+  setStep: React.Dispatch<React.SetStateAction<STEPS>>;
+}) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { destinationAsset } = useSelector(transactionDataSelector);
-  const navigate = useNavigate();
 
   const submitForm = (values: { paymentType: string }) => {
     // path payment flag is a non empty string in redux destinationAsset
@@ -90,14 +91,14 @@ export const SendType = () => {
         ? METRIC_NAMES.sendPaymentTypePathPayment
         : METRIC_NAMES.sendPaymentTypePayment,
     );
-    navigateTo(ROUTES.sendPaymentAmount, navigate);
+    setStep(STEPS.AMOUNT);
   };
 
   return (
     <React.Fragment>
       <SubviewHeader
         title={t("Send Type")}
-        customBackAction={() => navigateTo(ROUTES.sendPaymentAmount, navigate)}
+        customBackAction={() => setStep(STEPS.AMOUNT)}
         customBackIcon={<Icon.XClose />}
       />
       <Formik

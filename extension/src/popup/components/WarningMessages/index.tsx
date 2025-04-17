@@ -27,6 +27,7 @@ import { captureException } from "@sentry/browser";
 
 import {
   ActionStatus,
+  AssetIcons,
   BlockAidScanAssetResult,
   BlockAidScanTxResult,
 } from "@shared/api/types";
@@ -73,16 +74,20 @@ import IconShieldBlockaid from "popup/assets/icon-shield-blockaid.svg";
 import IconWarningBlockaid from "popup/assets/icon-warning-blockaid.svg";
 import IconWarningBlockaidYellow from "popup/assets/icon-warning-blockaid-yellow.svg";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
+import { AccountBalances } from "helpers/hooks/useGetBalances";
+
 import {
   isAssetSuspicious,
   isBlockaidWarning,
   reportAssetWarning,
   reportTransactionWarning,
 } from "popup/helpers/blockaid";
+
 import { CopyValue } from "../CopyValue";
 import { Notification as NotificationV2 } from "../Notification";
 
 import "./styles.scss";
+import { getPunycodedDomain } from "helpers/urls";
 
 export enum WarningMessageVariant {
   default = "",
@@ -232,17 +237,21 @@ export const FlaggedWarningMessage = ({
   </>
 );
 
-export const FirstTimeWarningMessage = () => {
+export const DomainNotAllowedWarningMessage = ({
+  domain,
+}: {
+  domain: string;
+}) => {
   const { t } = useTranslation();
 
   return (
     <WarningMessage
-      header="First Time Interaction"
-      variant={WarningMessageVariant.warning}
+      variant={WarningMessageVariant.highAlert}
+      header={`${getPunycodedDomain(domain)} ${t("is currently not connected to this Freighter account")}`}
     >
       <p>
         {t(
-          "If you believe you have interacted with this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam.",
+          "If you believe you have connected to this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam.",
         )}
       </p>
       <p>
@@ -539,6 +548,8 @@ export const ScamAssetWarning = ({
 
   onContinue = () => {},
   blockaidData,
+  assetIcons,
+  balances,
 }: {
   pillType: "Connection" | "Trustline" | "Transaction";
   isSendWarning?: boolean;
@@ -549,6 +560,8 @@ export const ScamAssetWarning = ({
   onClose: () => void;
   onContinue?: () => void;
   blockaidData: BlockAidScanAssetResult;
+  assetIcons: AssetIcons;
+  balances: AccountBalances;
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -636,7 +649,7 @@ export const ScamAssetWarning = ({
 
   return isTrustlineErrorShowing ? (
     createPortal(
-      <TrustlineError handleClose={() => closeOverlay()} />,
+      <TrustlineError handleClose={() => closeOverlay()} balances={balances} />,
       document.querySelector("#modal-root")!,
     )
   ) : (
@@ -652,6 +665,7 @@ export const ScamAssetWarning = ({
           issuer={issuer}
           domain={domain}
           image={image}
+          assetIcons={assetIcons}
           variant={isAssetSuspicious(blockaidData) ? "malicious" : "default"}
           asset={code}
           pillType={pillType}
@@ -715,6 +729,7 @@ export const NewAssetWarning = ({
   image,
   newAssetFlags,
   onClose,
+  balances,
 }: {
   domain: string;
   code: string;
@@ -722,6 +737,7 @@ export const NewAssetWarning = ({
   image: string;
   newAssetFlags: NewAssetFlags;
   onClose: () => void;
+  balances: AccountBalances;
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -813,7 +829,7 @@ export const NewAssetWarning = ({
 
   return isTrustlineErrorShowing ? (
     createPortal(
-      <TrustlineError handleClose={() => closeOverlay()} />,
+      <TrustlineError handleClose={() => closeOverlay()} balances={balances} />,
       document.querySelector("#modal-root")!,
     )
   ) : (

@@ -68,6 +68,7 @@ import { Swap } from "popup/views/Swap";
 import { ManageNetwork } from "popup/views/ManageNetwork";
 import { LeaveFeedback } from "popup/views/LeaveFeedback";
 import { AccountMigration } from "popup/views/AccountMigration";
+import { AddFunds } from "popup/views/AddFunds";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
@@ -212,7 +213,7 @@ const HomeRoute = () => {
       return <Navigate to={ROUTES.account} />;
     case APPLICATION_STATE.PASSWORD_CREATED:
     case APPLICATION_STATE.MNEMONIC_PHRASE_FAILED:
-      openTab(newTabHref(ROUTES.mnemonicPhrase));
+      openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
       return <Loading />;
     default:
       return <Welcome />;
@@ -241,8 +242,6 @@ const SHOW_NAV_ROUTES = [
   ROUTES.settings,
   ROUTES.connectWallet,
   ROUTES.connectWalletPlugin,
-  ROUTES.swapSettings,
-  ROUTES.sendPaymentAmount,
 ];
 
 const NO_APP_LAYOUT_ROUTES = [
@@ -572,6 +571,14 @@ export const Router = () => (
             </PublicKeyRoute>
           }
         ></Route>
+        <Route
+          path={ROUTES.addFunds}
+          element={
+            <PublicKeyRoute>
+              <AddFunds />
+            </PublicKeyRoute>
+          }
+        />
 
         {DEV_SERVER && (
           <>

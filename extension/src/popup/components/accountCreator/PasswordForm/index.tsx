@@ -8,6 +8,7 @@ import {
   Card,
   Heading,
   Icon,
+  Notification,
 } from "@stellar/design-system";
 import { Field, FieldProps, Form, FormikErrors, FormikTouched } from "formik";
 import { useTranslation } from "react-i18next";
@@ -35,6 +36,8 @@ interface PasswordFormProps {
   touched: FormikTouched<FormValues>;
   values: FormValues;
   handleSubmit?: (values: FormValues) => void;
+  isShowingOverwriteWarning: boolean;
+  isShowingOnboardingWarning?: boolean;
 }
 
 export const initialValues: FormValues = {
@@ -51,6 +54,8 @@ export const PasswordForm = ({
   touched,
   values,
   handleSubmit,
+  isShowingOverwriteWarning,
+  isShowingOnboardingWarning = false,
 }: PasswordFormProps) => {
   const authError = useSelector(authErrorSelector);
   const { t } = useTranslation();
@@ -65,6 +70,26 @@ export const PasswordForm = ({
           <div className="PasswordForm__subheading">
             {t("This will be used to unlock your wallet")}
           </div>
+          {isShowingOverwriteWarning && (
+            <div className="PasswordForm__notification">
+              <Notification
+                variant="error"
+                title={t(
+                  "You are overwriting an existing account. You will permanently lose access to the account currently stored in Freighter.",
+                )}
+              />
+            </div>
+          )}
+          {isShowingOnboardingWarning && (
+            <div className="PasswordForm__notification">
+              <Notification
+                variant="error"
+                title={t(
+                  "You previously did not complete onboarding. You will permanently lose access to the account you started to create in Freighter.",
+                )}
+              />
+            </div>
+          )}
           <Form>
             <OnboardingOneCol>
               <div className="PasswordForm__form-rows">

@@ -29,7 +29,6 @@ import {
 import { MessageResponder } from "background/types";
 
 import {
-  ALLOWLIST_ID,
   ACCOUNT_NAME_LIST_ID,
   APPLICATION_ID,
   ASSETS_LISTS_ID,
@@ -50,6 +49,7 @@ import {
   IS_HASH_SIGNING_ENABLED_ID,
   IS_NON_SSL_ENABLED_ID,
   IS_HIDE_DUST_ENABLED_ID,
+  HIDDEN_ASSETS,
   TEMPORARY_STORE_ID,
   TEMPORARY_STORE_EXTRA_ID,
 } from "constants/localStorageTypes";
@@ -72,6 +72,8 @@ import {
   addAccountName,
   getAccountNameList,
   getAllowList,
+  removeAllowListDomain,
+  setAllowListDomain,
   getKeyIdList,
   getIsMemoValidationEnabled,
   getIsExperimentalModeEnabled,
@@ -430,8 +432,33 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { publicKey };
   };
 
+  /* 
+  The user has lost their password and they want to reimport an account.
+  Remove all references to the previous account in localStore so the user has a clean slate to start over.
+  */
+  const _removePreviousAccount = async () => {
+    await localStore.remove(ACCOUNT_NAME_LIST_ID);
+    await localStore.remove(APPLICATION_ID);
+    await localStore.remove(RECENT_ADDRESSES);
+    await localStore.remove(LAST_USED_ACCOUNT);
+    await localStore.remove(TOKEN_ID_LIST);
+
+    const keyIdList = await getKeyIdList();
+
+    for (let i = 0; i < keyIdList.length; i += 1) {
+      const k = keyIdList[i];
+      await localStore.remove(`stellarkeys:${k}`);
+    }
+
+    await localStore.remove(KEY_ID_LIST);
+  };
+
   const createAccount = async () => {
-    const { password } = request;
+    const { password, isOverwritingAccount } = request;
+
+    if (isOverwritingAccount) {
+      await _removePreviousAccount();
+    }
 
     const mnemonicPhrase = generateMnemonic({ entropyBits: 128 });
     const wallet = fromMnemonic(mnemonicPhrase);
@@ -862,10 +889,14 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const recoverAccount = async () => {
-    const { password, recoverMnemonic } = request;
+    const { password, recoverMnemonic, isOverwritingAccount } = request;
     let wallet;
     let applicationState;
     let error = "";
+
+    if (isOverwritingAccount) {
+      await _removePreviousAccount();
+    }
 
     try {
       wallet = fromMnemonic(recoverMnemonic);
@@ -1191,15 +1222,18 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const { url = "" } = request;
     const sanitizedUrl = getUrlHostname(url);
     const punycodedDomain = getPunycodedDomain(sanitizedUrl);
+    const publicKey = publicKeySelector(sessionStore.getState());
+    const networkDetails = await getNetworkDetails();
 
     // TODO: right now we're just grabbing the last thing in the queue, but this should be smarter.
     // Maybe we need to search through responses to find a matching reponse :thinking_face
     const response = responseQueue.pop();
-    const allowListStr = (await localStore.getItem(ALLOWLIST_ID)) || "";
-    const allowList = allowListStr.split(",");
-    allowList.push(punycodedDomain);
 
-    await localStore.setItem(ALLOWLIST_ID, allowList.join());
+    await setAllowListDomain({
+      publicKey,
+      networkDetails,
+      domain: punycodedDomain,
+    });
 
     if (typeof response === "function") {
       return response(url);
@@ -1484,9 +1518,11 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
   };
 
   const saveAllowList = async () => {
-    const { allowList } = request;
+    const { domain, networkName } = request;
 
-    await localStore.setItem(ALLOWLIST_ID, allowList.join());
+    const publicKey = publicKeySelector(sessionStore.getState());
+
+    await removeAllowListDomain({ publicKey, networkName, domain });
 
     return {
       allowList: await getAllowList(),
@@ -1569,6 +1605,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     const assetsLists = await getAssetsLists();
     const isNonSSLEnabled = await getIsNonSSLEnabled();
     const isHideDustEnabled = await getIsHideDustEnabled();
+    const { hiddenAssets } = await getHiddenAssets();
 
     return {
       allowList: await getAllowList(),
@@ -1584,6 +1621,7 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
       assetsLists,
       isNonSSLEnabled,
       isHideDustEnabled,
+      hiddenAssets,
     };
   };
 
@@ -2055,6 +2093,21 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     return { isAccountMismatch: publicKey !== activePublicKey };
   };
 
+  const changeAssetVisibility = async () => {
+    const { assetVisibility } = request;
+
+    const { hiddenAssets } = await getHiddenAssets();
+    hiddenAssets[assetVisibility.issuer] = assetVisibility.visibility;
+
+    await localStore.setItem(HIDDEN_ASSETS, hiddenAssets);
+    return { hiddenAssets };
+  };
+
+  const getHiddenAssets = async () => {
+    const hiddenAssets = (await localStore.getItem(HIDDEN_ASSETS)) || {};
+    return { hiddenAssets };
+  };
+
   const messageResponder: MessageResponder = {
     [SERVICE_TYPES.CREATE_ACCOUNT]: createAccount,
     [SERVICE_TYPES.FUND_ACCOUNT]: fundAccount,
@@ -2108,6 +2161,8 @@ export const popupMessageListener = (request: Request, sessionStore: Store) => {
     [SERVICE_TYPES.MIGRATE_ACCOUNTS]: migrateAccounts,
     [SERVICE_TYPES.ADD_ASSETS_LIST]: addAssetsList,
     [SERVICE_TYPES.MODIFY_ASSETS_LIST]: modifyAssetsList,
+    [SERVICE_TYPES.CHANGE_ASSET_VISIBILITY]: changeAssetVisibility,
+    [SERVICE_TYPES.GET_HIDDEN_ASSETS]: getHiddenAssets,
     [SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH]: getIsAccountMismatch,
   };
 

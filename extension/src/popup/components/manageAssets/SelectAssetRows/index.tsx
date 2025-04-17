@@ -1,6 +1,5 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
 
 import { AppDispatch } from "popup/App";
 import {
@@ -19,47 +18,50 @@ import {
   formatDomain,
   getAssetFromCanonical,
 } from "helpers/stellar";
+import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getTokenBalance, isContractId } from "popup/helpers/soroban";
-import { Balance, Balances, SorobanBalance } from "@shared/api/types";
+import { isSorobanBalance, getBalanceByIssuer } from "popup/helpers/balance";
 import { formatAmount } from "popup/helpers/formatters";
 import { useIsSoroswapEnabled, useIsSwap } from "popup/helpers/useIsSwap";
 
 import "./styles.scss";
 
 interface SelectAssetRowsProps {
+  balances: AccountBalances;
   assetRows: ManageAssetCurrency[];
+  onSelect: () => unknown;
 }
 
-export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
-  const {
-    accountBalances: { balances = {} },
-    assetSelect,
-    soroswapTokens,
-    transactionData,
-  } = useSelector(transactionSubmissionSelector);
+export const SelectAssetRows = ({
+  assetRows,
+  balances,
+  onSelect,
+}: SelectAssetRowsProps) => {
+  const { assetSelect, soroswapTokens, transactionData } = useSelector(
+    transactionSubmissionSelector,
+  );
   const dispatch = useDispatch<AppDispatch>();
-  const navigate = useNavigate();
   const isSoroswapEnabled = useIsSoroswapEnabled();
   const isSwap = useIsSwap();
 
-  const getAccountBalance = (canonical: string) => {
+  const getAccountBalance = (issuer: string) => {
     if (!balances) {
       return "";
     }
-    const bal: Balance = balances[canonical as keyof Balances];
-    if (bal) {
-      return bal.total.toString();
+    const balance = getBalanceByIssuer(issuer, balances.balances);
+    if (balance) {
+      return balance.total.toString();
     }
     return "";
   };
 
-  const getTokenBalanceFromCanonical = (canonical: string) => {
+  const getTokenBalanceFromCanonical = (issuer: string) => {
     if (!balances) {
       return "";
     }
-    const bal: SorobanBalance = balances[canonical as keyof Balances];
-    if (bal) {
-      return getTokenBalance(bal);
+    const balance = getBalanceByIssuer(issuer, balances.balances);
+    if (balance && isSorobanBalance(balance)) {
+      return getTokenBalance(balance);
     }
     return "0";
   };
@@ -109,11 +111,11 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
                   if (assetSelect.isSource) {
                     dispatch(saveAsset(canonical));
                     dispatch(saveIsToken(isContract));
-                    navigate(-1);
+                    onSelect();
                   } else {
                     dispatch(saveDestinationAsset(canonical));
                     dispatch(saveDestinationIcon(icon));
-                    navigate(-1);
+                    onSelect();
                   }
                   dispatch(saveIsSoroswap(isSoroswap));
                 }}
@@ -136,8 +138,8 @@ export const SelectAssetRows = ({ assetRows }: SelectAssetRowsProps) => {
                 {!hideBalances && (
                   <div>
                     {isContract
-                      ? getTokenBalanceFromCanonical(canonical)
-                      : formatAmount(getAccountBalance(canonical))}{" "}
+                      ? getTokenBalanceFromCanonical(issuer)
+                      : formatAmount(getAccountBalance(issuer))}{" "}
                     {code}
                   </div>
                 )}

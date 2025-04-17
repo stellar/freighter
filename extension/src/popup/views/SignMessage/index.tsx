@@ -16,7 +16,7 @@ import {
 import {
   WarningMessageVariant,
   WarningMessage,
-  FirstTimeWarningMessage,
+  DomainNotAllowedWarningMessage,
   SSLWarningMessage,
 } from "popup/components/WarningMessages";
 import { View } from "popup/basics/layout/View";
@@ -30,6 +30,7 @@ import { VerifyAccount } from "popup/views/VerifyAccount";
 import { MessageToSign, parsedSearchParam } from "helpers/urls";
 import { truncatedPublicKey } from "helpers/stellar";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
+import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 
 import "./styles.scss";
 
@@ -50,10 +51,13 @@ export const SignMessage = () => {
   const {
     accountToSign,
     domain,
-    isDomainListedAllowed,
     url,
     networkPassphrase: blobNetworkPassphrase,
   } = message;
+
+  const { isDomainListedAllowed } = useIsDomainListedAllowed({
+    domain,
+  });
 
   const {
     allAccounts,
@@ -145,7 +149,9 @@ export const SignMessage = () => {
               )}
             </p>
           </WarningMessage>
-          {!isDomainListedAllowed ? <FirstTimeWarningMessage /> : null}
+          {!isDomainListedAllowed && (
+            <DomainNotAllowedWarningMessage domain={domain} />
+          )}
           <div className="SignMessage__info">
             <Card variant="secondary">
               <PunycodedDomain domain={domain} isRow />
@@ -206,6 +212,8 @@ export const SignMessage = () => {
             {t("Reject")}
           </Button>
           <Button
+            data-testid="sign-message-approve-button"
+            disabled={!isDomainListedAllowed}
             size="md"
             isFullWidth
             variant="primary"

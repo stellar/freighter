@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import debounce from "lodash/debounce";
 import { BigNumber } from "bignumber.js";
@@ -15,18 +14,23 @@ import {
 } from "popup/components/sendPayment/SendAmount/AssetSelect";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
-import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
-import { getAssetFromCanonical } from "helpers/stellar";
-import { navigateTo } from "popup/helpers/navigate";
+import {
+  getAssetFromCanonical,
+  getCanonicalFromAsset,
+  isMainnet,
+} from "helpers/stellar";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap, useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
-import { LP_IDENTIFIER } from "popup/helpers/account";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
-import { getAssetDecimals, getTokenBalance } from "popup/helpers/soroban";
+import {
+  getAssetDecimals,
+  getTokenBalance,
+  isContractId,
+} from "popup/helpers/soroban";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -42,7 +46,6 @@ import {
   saveAsset,
   saveDestinationAsset,
   getBestPath,
-  resetDestinationAmount,
   getBestSoroswapPath,
   getSoroswapTokens,
 } from "popup/ducks/transactionSubmission";
@@ -50,12 +53,21 @@ import {
   AccountDoesntExistWarning,
   shouldAccountDoesntExistWarning,
 } from "popup/components/sendPayment/SendTo";
+import { Loading } from "popup/components/Loading";
 import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 import { BASE_RESERVE } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
+import { isSorobanBalance, findAssetBalance } from "popup/helpers/balance";
+import {
+  AssetType,
+  ClassicAsset,
+  LiquidityPoolShareAsset,
+} from "@shared/api/types/account-balance";
 
-import { BalanceMap, SorobanBalance } from "@shared/api/types";
+import { RequestState } from "constants/request";
+import { useGetSendAmountData } from "./hooks/useSendAmountData";
+
 import "../styles.scss";
 
 enum AMOUNT_ERROR {
@@ -108,11 +120,15 @@ const ConversionRate = ({
 const defaultSourceAmount = "1";
 
 export const SendAmount = ({
-  previous,
-  next,
+  goBack,
+  goToNext,
+  goToPaymentType,
+  goToChooseAsset,
 }: {
-  previous: ROUTES;
-  next: ROUTES;
+  goBack: () => void;
+  goToNext: () => void;
+  goToChooseAsset: () => void;
+  goToPaymentType?: () => void;
 }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
@@ -120,28 +136,32 @@ export const SendAmount = ({
   const runAfterUpdate = useRunAfterUpdate();
 
   const publicKey = useSelector(publicKeySelector);
-  const {
-    accountBalances,
-    destinationBalances,
-    transactionData,
-    assetDomains,
-    assetIcons,
-    soroswapTokens,
-  } = useSelector(transactionSubmissionSelector);
-
+  const { transactionData, soroswapTokens } = useSelector(
+    transactionSubmissionSelector,
+  );
   const {
     amount,
     asset,
+    destination,
     destinationAmount,
     destinationAsset,
     isToken,
     destinationIcon,
     isSoroswap,
   } = transactionData;
+  const { state: sendAmountData, fetchData } = useGetSendAmountData(
+    publicKey,
+    networkDetails,
+    {
+      isMainnet: isMainnet(networkDetails),
+      showHidden: false,
+      includeIcons: true,
+    },
+    destination,
+  );
 
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
-  const navigate = useNavigate();
   const [loadingRate, setLoadingRate] = useState(false);
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] =
     useState(false);
@@ -152,26 +172,33 @@ export const SendAmount = ({
     image: "",
     blockaidData: defaultBlockaidScanAssetResult,
   });
+  const isLoading =
+    sendAmountData.state === RequestState.IDLE ||
+    sendAmountData.state === RequestState.LOADING;
 
   /* eslint-disable react-hooks/exhaustive-deps */
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
-      let _availBalance = new BigNumber("0");
-      if (isToken) {
-        // TODO: balances is incorrectly typed and does not include SorobanBalance
-        const tokenBalance = accountBalances?.balances?.[
-          selectedAsset
-        ] as any as SorobanBalance;
-        return getTokenBalance(tokenBalance);
+      if (isLoading) {
+        return "";
       }
-      if (accountBalances.balances) {
+
+      let _availBalance = new BigNumber("0");
+      const selectedCanonical = getAssetFromCanonical(selectedAsset);
+      const selectedBalance = findAssetBalance(
+        sendAmountData.data!.userBalances.balances,
+        selectedCanonical,
+      );
+      if (isToken && selectedBalance && isSorobanBalance(selectedBalance)) {
+        return getTokenBalance(selectedBalance);
+      }
+      if (sendAmountData.data?.userBalances!.balances) {
         // take base reserve into account for XLM payments
         const minBalance = new BigNumber(
-          (2 + accountBalances.subentryCount) * BASE_RESERVE,
+          (2 + sendAmountData.data.userBalances.subentryCount) * BASE_RESERVE,
         );
 
-        const balance =
-          accountBalances.balances[selectedAsset]?.total || new BigNumber("0");
+        const balance = selectedBalance?.total || new BigNumber("0");
         if (selectedAsset === "native") {
           // needed for different wallet-sdk bignumber.js version
           const currentBal = new BigNumber(balance.toFixed());
@@ -190,12 +217,7 @@ export const SendAmount = ({
 
       return _availBalance.toFixed().toString();
     },
-    [
-      accountBalances.balances,
-      accountBalances.subentryCount,
-      recommendedFee,
-      isToken,
-    ],
+    [sendAmountData.data?.userBalances, recommendedFee, isToken],
   );
 
   const [availBalance, setAvailBalance] = useState(
@@ -212,44 +234,65 @@ export const SendAmount = ({
 
     let isDestAssetScam = false;
 
+    const destinationBalance = findAssetBalance(
+      sendAmountData.data!.userBalances.balances,
+      getAssetFromCanonical(destinationAsset || "native"),
+    );
     if (values.destinationAsset) {
       dispatch(saveDestinationAsset(values.destinationAsset));
-      isDestAssetScam = isAssetSuspicious(
-        accountBalances.balances?.[destinationAsset]?.blockaidData,
-      );
+      isDestAssetScam =
+        !!destinationBalance &&
+        "blockaidData" in destinationBalance &&
+        isAssetSuspicious(destinationBalance.blockaidData);
     }
     // check for scam asset
-    const isSourceAssetScam = isAssetSuspicious(
-      accountBalances.balances?.[asset]?.blockaidData,
+    const assetBalance = findAssetBalance(
+      sendAmountData.data!.userBalances.balances,
+      getAssetFromCanonical(asset),
     );
+    const isSourceAssetScam =
+      !!assetBalance &&
+      "blockaidData" in assetBalance &&
+      isAssetSuspicious(assetBalance.blockaidData);
     if (isSourceAssetScam) {
       setShowBlockedDomainWarning(true);
       setSuspiciousAssetData({
         code: getAssetFromCanonical(values.asset).code,
         issuer: getAssetFromCanonical(values.asset).issuer,
-        domain: assetDomains[values.asset],
-        image: assetIcons[values.asset],
+        domain: sendAmountData.data!.domains.find(
+          (domain) =>
+            getCanonicalFromAsset(domain.code!, domain.issuer) === values.asset,
+        )!.domain,
+        image: sendAmountData.data!.icons[values.asset]!,
         blockaidData:
-          accountBalances.balances?.[asset]?.blockaidData ||
-          defaultBlockaidScanAssetResult,
+          assetBalance?.blockaidData || defaultBlockaidScanAssetResult,
       });
     } else if (isDestAssetScam) {
       setShowBlockedDomainWarning(true);
       setSuspiciousAssetData({
         code: getAssetFromCanonical(values.destinationAsset).code,
         issuer: getAssetFromCanonical(values.destinationAsset).issuer,
-        domain: assetDomains[values.destinationAsset],
-        image: assetIcons[values.destinationAsset],
+        domain: sendAmountData.data!.domains.find(
+          (domain) =>
+            getCanonicalFromAsset(domain.code!, domain.issuer) ===
+            values.destinationAsset,
+        )!.domain,
+        image: sendAmountData.data!.icons[values.destinationAsset]!,
         blockaidData:
-          accountBalances.balances?.[destinationAsset]?.blockaidData ||
-          defaultBlockaidScanAssetResult,
+          !!destinationBalance && "blockaidData" in destinationBalance
+            ? destinationBalance.blockaidData
+            : defaultBlockaidScanAssetResult,
       });
     } else {
-      navigateTo(next, navigate);
+      goToNext();
     }
   };
 
   const validate = (values: { amount: string }) => {
+    if (!availBalance) {
+      return {};
+    }
+
     const val = cleanAmount(values.amount);
     if (new BigNumber(val).gt(new BigNumber(availBalance))) {
       return { amount: AMOUNT_ERROR.TOO_HIGH };
@@ -320,7 +363,6 @@ export const SendAmount = ({
     }
     setLoadingRate(true);
     // clear dest amount before re-calculating for UI
-    dispatch(resetDestinationAmount());
     db(
       formik.values.amount || defaultSourceAmount,
       formik.values.asset,
@@ -349,19 +391,21 @@ export const SendAmount = ({
       if (formik.values.asset !== Asset.native().toString()) {
         defaultDestAsset = Asset.native().toString();
       } else {
-        // otherwise default to first non-native/classic side asset if exists
-        const nonXlmAssets = Object.keys(accountBalances.balances || {}).filter(
+        // otherwise default to first classic side asset if exists
+        const nonXlmAssets = sendAmountData.data?.userBalances!.balances.filter(
           (b) =>
-            b !== Asset.native().toString() &&
-            b.indexOf(LP_IDENTIFIER) === -1 &&
-            !(
-              "decimals" in
-              (accountBalances.balances || ({} as NonNullable<BalanceMap>))[b]
-            ),
-        );
-        defaultDestAsset = nonXlmAssets[0]
-          ? nonXlmAssets[0]
-          : Asset.native().toString();
+            !("token" in b && b.token.code === "XLM") &&
+            !("liquidityPoolId" in b) &&
+            !("decimals" in b),
+        ) as Exclude<AssetType, LiquidityPoolShareAsset>[];
+        defaultDestAsset =
+          nonXlmAssets && nonXlmAssets[0]
+            ? getCanonicalFromAsset(
+                nonXlmAssets[0].token.code,
+                // casting here since this will be classic or native asset
+                (nonXlmAssets[0] as ClassicAsset).token.issuer?.key,
+              )
+            : Asset.native().toString();
       }
 
       dispatch(saveDestinationAsset(defaultDestAsset));
@@ -370,7 +414,7 @@ export const SendAmount = ({
     isSwap,
     dispatch,
     destinationAsset,
-    accountBalances,
+    sendAmountData.data?.userBalances,
     formik.values.asset,
     asset,
   ]);
@@ -380,6 +424,13 @@ export const SendAmount = ({
       dispatch(getSoroswapTokens());
     }
   }, [isSwap, useIsSoroswapEnabled]);
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+  }, []);
 
   const getAmountFontSize = () => {
     const length = formik.values.amount.length;
@@ -395,9 +446,10 @@ export const SendAmount = ({
   const DecideWarning = () => {
     // unfunded destination
     if (
+      !isContractId(destination) &&
       !isSwap &&
       shouldAccountDoesntExistWarning(
-        destinationBalances.isFunded || false,
+        isSwap ? false : sendAmountData.data!.destinationBalances.isFunded!,
         asset,
         formik.values.amount || "0",
       )
@@ -430,7 +482,7 @@ export const SendAmount = ({
           ${formatAmountPreserveCursor(
             TX_SEND_MAX,
             formik.values.amount,
-            getAssetDecimals(asset, accountBalances, isToken),
+            getAssetDecimals(asset, sendAmountData.data!.userBalances, isToken),
           )}
           )`}
         />
@@ -439,6 +491,19 @@ export const SendAmount = ({
     return null;
   };
 
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  const sourceBalance = findAssetBalance(
+    sendAmountData.data!.userBalances.balances,
+    parsedSourceAsset,
+  );
+  const destBalance = findAssetBalance(
+    sendAmountData.data!.userBalances.balances,
+    getAssetFromCanonical(formik.values.destinationAsset || "native"),
+  );
+
   return (
     <>
       {showBlockedDomainWarning &&
@@ -446,12 +511,14 @@ export const SendAmount = ({
           <ScamAssetWarning
             isSendWarning
             pillType="Transaction"
+            balances={sendAmountData.data!.userBalances}
+            assetIcons={sendAmountData.data?.icons || {}}
             domain={suspiciousAssetData.domain}
             code={suspiciousAssetData.code}
             issuer={suspiciousAssetData.issuer}
             image={suspiciousAssetData.image}
             onClose={() => setShowBlockedDomainWarning(false)}
-            onContinue={() => navigateTo(next, navigate)}
+            onContinue={goToNext}
             blockaidData={suspiciousAssetData.blockaidData}
           />,
           document.querySelector("#modal-root")!,
@@ -482,11 +549,16 @@ export const SendAmount = ({
             </div>
           }
           hasBackButton={!isSwap}
-          customBackAction={() => navigateTo(previous, navigate)}
+          customBackAction={() => {
+            // NOTE: resets base state for transaction data
+            dispatch(saveAsset("native"));
+            dispatch(saveAmount("0"));
+            goBack();
+          }}
           rightButton={
             isSwap ? null : (
               <button
-                onClick={() => navigateTo(ROUTES.sendPaymentType, navigate)}
+                onClick={goToPaymentType}
                 className="SendAmount__icon-slider"
               >
                 <Icon.Expand01 />
@@ -555,7 +627,11 @@ export const SendAmount = ({
                         formatAmountPreserveCursor(
                           e.target.value,
                           formik.values.amount,
-                          getAssetDecimals(asset, accountBalances, isToken),
+                          getAssetDecimals(
+                            asset,
+                            sendAmountData.data!.userBalances,
+                            isToken,
+                          ),
                           e.target.selectionStart || 1,
                         );
                       formik.setFieldValue("amount", newAmount);
@@ -594,9 +670,16 @@ export const SendAmount = ({
                       <AssetSelect
                         assetCode={parsedSourceAsset.code}
                         issuerKey={parsedSourceAsset.issuer}
-                        isSuspicious={isAssetSuspicious(
-                          accountBalances.balances?.[asset]?.blockaidData,
-                        )}
+                        icons={sendAmountData.data?.icons || {}}
+                        isSuspicious={
+                          !!sourceBalance &&
+                          "blockaidData" in sourceBalance &&
+                          isAssetSuspicious(sourceBalance.blockaidData)
+                        }
+                        onSelectAsset={() => {
+                          dispatch(saveAmount("0"));
+                          goToChooseAsset();
+                        }}
                       />
                     )}
                     {showSourceAndDestAsset && (
@@ -607,9 +690,16 @@ export const SendAmount = ({
                           issuerKey={parsedSourceAsset.issuer}
                           balance={formik.values.amount}
                           icon=""
-                          isSuspicious={isAssetSuspicious(
-                            accountBalances.balances?.[asset]?.blockaidData,
-                          )}
+                          icons={sendAmountData.data?.icons || {}}
+                          isSuspicious={
+                            !!sourceBalance &&
+                            "blockaidData" in sourceBalance &&
+                            isAssetSuspicious(sourceBalance.blockaidData)
+                          }
+                          onSelectAsset={() => {
+                            dispatch(saveAmount("0"));
+                            goToChooseAsset();
+                          }}
                         />
                         <PathPayAssetSelect
                           source={false}
@@ -621,11 +711,16 @@ export const SendAmount = ({
                               : "0"
                           }
                           icon={destinationIcon}
-                          isSuspicious={isAssetSuspicious(
-                            accountBalances.balances?.[
-                              formik.values.destinationAsset
-                            ]?.blockaidData,
-                          )}
+                          icons={sendAmountData.data!.icons}
+                          isSuspicious={
+                            !!destBalance &&
+                            "blockaidData" in destBalance &&
+                            isAssetSuspicious(destBalance.blockaidData)
+                          }
+                          onSelectAsset={() => {
+                            dispatch(saveAmount("0"));
+                            goToChooseAsset();
+                          }}
                         />
                       </>
                     )}

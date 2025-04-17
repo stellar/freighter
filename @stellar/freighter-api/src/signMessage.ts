@@ -1,7 +1,11 @@
 import packageJson from "../package.json";
 import { Buffer } from "buffer";
 
-import { submitMessage } from "@shared/api/external";
+import {
+  requestAllowedStatus,
+  requestAccess,
+  submitMessage,
+} from "@shared/api/external";
 import { FreighterApiError } from "@shared/api/types";
 import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
@@ -25,9 +29,18 @@ export const signMessage = async (
   opts?: {
     networkPassphrase?: string;
     address?: string;
-  }
+  },
 ): Promise<SignMessageV3Response | SignMessageV4Response> => {
   if (isBrowser) {
+    const { isAllowed } = await requestAllowedStatus();
+    if (!isAllowed) {
+      const req = await requestAccess();
+
+      if (req.error) {
+        return { signedMessage: null, signerAddress: "", error: req.error };
+      }
+    }
+
     const req = await submitMessage(message, packageJson.version, opts);
 
     if (req.error) {

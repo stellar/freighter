@@ -41,25 +41,11 @@ const routeToEventName = {
   [ROUTES.debug]: METRIC_NAMES.viewDebug,
   [ROUTES.integrationTest]: METRIC_NAMES.viewIntegrationTest,
   [ROUTES.sendPayment]: METRIC_NAMES.viewSendPayment,
-  [ROUTES.sendPaymentTo]: METRIC_NAMES.sendPaymentTo,
-  [ROUTES.sendPaymentAmount]: METRIC_NAMES.sendPaymentAmount,
-  [ROUTES.sendPaymentType]: METRIC_NAMES.sendPaymentType,
-  [ROUTES.sendPaymentSettings]: METRIC_NAMES.sendPaymentSettings,
-  [ROUTES.sendPaymentSettingsFee]: METRIC_NAMES.sendPaymentSettingsFee,
-  [ROUTES.sendPaymentSettingsSlippage]:
-    METRIC_NAMES.sendPaymentSettingsSlippage,
-  [ROUTES.sendPaymentSettingsTimeout]: METRIC_NAMES.sendPaymentSettingsTimeout,
-  [ROUTES.sendPaymentConfirm]: METRIC_NAMES.sendPaymentConfirm,
   [ROUTES.manageAssets]: METRIC_NAMES.viewManageAssets,
   [ROUTES.searchAsset]: METRIC_NAMES.viewSearchAsset,
+  [ROUTES.assetVisibility]: METRIC_NAMES.viewAssetVisibility,
   [ROUTES.addAsset]: METRIC_NAMES.viewAddAsset,
   [ROUTES.swap]: METRIC_NAMES.viewSwap,
-  [ROUTES.swapAmount]: METRIC_NAMES.swapAmount,
-  [ROUTES.swapSettings]: METRIC_NAMES.swapSettings,
-  [ROUTES.swapSettingsFee]: METRIC_NAMES.swapSettingsFee,
-  [ROUTES.swapSettingsSlippage]: METRIC_NAMES.swapSettingsSlippage,
-  [ROUTES.swapSettingsTimeout]: METRIC_NAMES.swapSettingsTimeout,
-  [ROUTES.swapConfirm]: METRIC_NAMES.swapConfirm,
   [ROUTES.manageNetwork]: METRIC_NAMES.viewManageNetwork,
   [ROUTES.addNetwork]: METRIC_NAMES.viewAddNetwork,
   [ROUTES.editNetwork]: METRIC_NAMES.viewEditNetwork,
@@ -78,6 +64,7 @@ const routeToEventName = {
   [ROUTES.accountMigrationMigrationComplete]:
     METRIC_NAMES.viewAccountMigrationMigrationComplete,
   [ROUTES.advancedSettings]: METRIC_NAMES.viewAdvancedSettings,
+  [ROUTES.addFunds]: METRIC_NAMES.viewAddFunds,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {
