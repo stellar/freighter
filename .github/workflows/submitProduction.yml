@@ -79,15 +79,15 @@ jobs:
         with:
           cmd: build
           source: ./extension/build
-      # - name: Submit extension to Firefox
-      #   uses: kewisch/action-web-ext@fe10addf5d5e5ba6b78ffde720dd488a27d10e8c #v1
-      #   with:
-      #     cmd: sign
-      #     source: ${{ steps.web-ext-build.outputs.target }}
-      #     channel: listed
-      #     apiKey: ${{ secrets.AMO_SIGN_KEY }}
-      #     apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
-      #     timeout: 900000
+      - name: Submit extension to Firefox
+        uses: kewisch/action-web-ext@fe10addf5d5e5ba6b78ffde720dd488a27d10e8c #v1
+        with:
+          cmd: sign
+          source: ${{ steps.web-ext-build.outputs.target }}
+          channel: listed
+          apiKey: ${{ secrets.AMO_SIGN_KEY }}
+          apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
+          timeout: 900000
       - name: Remove scripts tag
         uses: restackio/update-json-file-action@f8ef1561cb15ba86a6367b547216375bc60e7f91 #v2.1
         with:
