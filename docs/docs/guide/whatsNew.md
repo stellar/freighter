@@ -58,6 +58,11 @@ For more information:
 - [Demonic vulnerability](https://www.halborn.com/disclosures/demonic-vulnerability)
 - [StilachiRAT vulnerability](https://www.microsoft.com/en-us/security/blog/2025/03/17/stilachirat-analysis-from-system-reconnaissance-to-cryptocurrency-theft/)
 
+<img src={require('./assets/5.31.0/recover_paste.png').default} alt="Paste
+recovery phrase" width="300" style={{verticalAlign: "top"}} /> <img
+src={require('./assets/5.31.0/recover_pasted.png').default} alt="Pasted recovery
+phrase" width="300"/>
+
 ## Security Improvements:
 
 We've made some changes to how users deal with connected apps in Freighter.
@@ -87,6 +92,9 @@ Going forward, when you connect to a dapp, only the active keypair on the
 currently selected network will be connected to the app. If you want to sign
 using another one of your Freighter accounts, they will need to go through the
 connection flow for that address.
+
+<img src={require('./assets/5.31.0/sign_unconnected.png').default} alt="Sign for
+unconnected apps" width="300"/>
 
 ## Additional bugfixes and stability fixes
 
