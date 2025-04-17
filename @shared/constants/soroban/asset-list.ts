@@ -42,6 +42,7 @@ export interface AssetListReponseItem {
   domain: string;
   icon: string;
   decimals: number;
+  name?: string;
 }
 
 export interface AssetListResponse {

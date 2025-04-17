@@ -13,10 +13,10 @@ import {
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { findAssetBalance } from "popup/helpers/balance";
 import { isAssetSuspicious } from "../../popup/helpers/blockaid";
-import { getNativeContractDetails } from "../../popup/helpers/searchAsset";
 import { useIsSoroswapEnabled, useIsSwap } from "../../popup/helpers/useIsSwap";
 import { getAssetDomain } from "../../popup/helpers/getAssetDomain";
 import { AccountBalances, useGetBalances } from "./useGetBalances";
+import { getNativeContractDetails } from "popup/helpers/searchAsset";
 
 export interface AssetDomains {
   balances: AccountBalances;

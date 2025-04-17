@@ -139,6 +139,7 @@ export const AddAsset = () => {
         `${tokenDetailsResponse.symbol}-${issuer}`,
         networkDetails,
       );
+
       return {
         code: tokenDetailsResponse.symbol,
         contract: contractId,
