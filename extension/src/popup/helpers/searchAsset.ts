@@ -19,20 +19,14 @@ import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
 export const searchAsset = async ({
   asset,
   networkDetails,
-  onError,
 }: {
   asset: any;
   networkDetails: NetworkDetails;
-  onError: (e: any) => void;
 }) => {
-  try {
-    const res = await fetch(
-      `${getApiStellarExpertUrl(networkDetails)}/asset?search=${asset}`,
-    );
-    return await res.json();
-  } catch (e) {
-    return onError(e);
-  }
+  const res = await fetch(
+    `${getApiStellarExpertUrl(networkDetails)}/asset?search=${asset}`,
+  );
+  return res.json();
 };
 
 export const schemaValidatedAssetList = async (

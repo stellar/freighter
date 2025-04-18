@@ -730,9 +730,3 @@ export const transactionDataSelector = (state: {
 export const isPathPaymentSelector = (state: {
   transactionSubmission: InitialState;
 }) => state.transactionSubmission.transactionData.destinationAsset !== "";
-
-export const tokensSelector = (state: {
-  accountBalanceStatus: ActionStatus;
-}) => ({
-  accountBalanceStatus: state.accountBalanceStatus,
-});
