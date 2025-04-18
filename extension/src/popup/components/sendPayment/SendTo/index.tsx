@@ -172,7 +172,7 @@ export const SendTo = ({
   return (
     <React.Fragment>
       <SubviewHeader title="Send To" customBackAction={goBack} />
-      <View.Content hasNoTopPadding>
+      <View.Content hasTopInput>
         <FormRows>
           <Input
             fieldSize="md"

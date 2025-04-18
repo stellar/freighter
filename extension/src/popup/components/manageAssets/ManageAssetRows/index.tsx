@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Networks, StellarToml } from "stellar-sdk";
+import { Networks } from "stellar-sdk";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
@@ -26,7 +26,6 @@ import {
   resetSubmission,
   transactionSubmissionSelector,
   ShowOverlayStatus,
-  tokensSelector,
 } from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { AssetIcon } from "popup/components/account/AccountAssets";
@@ -44,13 +43,17 @@ import { ManageAssetRowButton } from "../ManageAssetRowButton";
 
 import "./styles.scss";
 
-export type ManageAssetCurrency = StellarToml.Api.Currency & {
+export type ManageAssetCurrency = {
+  code?: string;
+  issuer?: string;
   domain: string;
   contract?: string;
   icon?: string;
   isSuspicious?: boolean;
   decimals?: number;
   balance?: string;
+  name?: string;
+  image?: string;
 };
 
 export interface NewAssetFlags {
@@ -96,7 +99,6 @@ export const ManageAssetRows = ({
   } = useSelector(transactionSubmissionSelector);
   const [assetSubmitting, setAssetSubmitting] = useState("");
   const dispatch = useDispatch<AppDispatch>();
-  const { accountBalanceStatus } = useSelector(tokensSelector);
   const walletType = useSelector(hardwareWalletTypeSelector);
   const { recommendedFee } = useNetworkFees();
   const navigate = useNavigate();
@@ -136,9 +138,7 @@ export const ManageAssetRows = ({
     }
   }, [submitStatus, dispatch, navigate]);
 
-  const isActionPending =
-    submitStatus === ActionStatus.PENDING ||
-    accountBalanceStatus === ActionStatus.PENDING;
+  const isActionPending = submitStatus === ActionStatus.PENDING;
 
   return (
     <>

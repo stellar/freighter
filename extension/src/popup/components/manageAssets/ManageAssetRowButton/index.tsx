@@ -219,6 +219,7 @@ export const ManageAssetRowButton = ({
       );
       navigateTo(ROUTES.account, navigate);
     }
+    setAssetSubmitting("");
   };
 
   useEffect(() => {

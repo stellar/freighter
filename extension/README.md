@@ -12,7 +12,7 @@ this by adding an `.env` file at the path `extension/.env`.
 Inside this file, you can configure a backend by setting a value for the global
 variable `INDEXER_URL`. For example, to connect to the production backend, in
 your `.env` file, you can add the line
-`INDEXER_URL=https://freighter-backend.stellar.org/api/v1`.
+`INDEXER_URL=https://freighter-backend-prd.stellar.org/api/v1`.
 
 To connect to a local instance of the backend, just swap out the value in
 `INDEXER_URL`.
