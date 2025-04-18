@@ -32,6 +32,8 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await page.getByTestId("add-asset").dispatchEvent("click");
   await expect(page.getByTestId("account-view")).toContainText("E2E");
 });
+
+// Skipping this test because on Testnet, stellar.expert's asset list is formatter incorrectly
 test.skip("Adding Soroban verified token", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
@@ -68,6 +70,27 @@ test.skip("Adding Soroban verified token", async ({ page, extensionId }) => {
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
+});
+test("Adding token on Futurenet", async ({ page, extensionId }) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId });
+
+  await page.getByTestId("BottomNav-link-settings").click();
+  await page.getByText("Security").click();
+  await page.getByText("Advanced Settings").click();
+  await page.getByText("I understand, continue").click();
+  await page.getByTestId("isExperimentalModeEnabledValue").click();
+  await expect(page.locator("#isExperimentalModeEnabledValue")).toBeChecked();
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("BottomNav-link-account").click();
+
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Manage Assets").click({ force: true });
+
+  await expect(page.getByText("Your assets")).toBeVisible();
+  await page.getByText("Add an asset").click({ force: true });
+  await expect(page.getByTestId("search-token-input")).toBeVisible();
 });
 test.afterAll(async ({ page, extensionId }) => {
   if (

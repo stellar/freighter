@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { Networks, StellarToml, StrKey } from "stellar-sdk";
 import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
@@ -67,6 +68,7 @@ export const AddAsset = () => {
     useState(false);
   const [verifiedLists, setVerifiedLists] = useState([] as string[]);
   const { assetsLists } = useSelector(settingsSelector);
+  const navigate = useNavigate();
 
   // TODO: use this loading state
   const { state, fetchData } = useGetBalances(publicKey, networkDetails, {
@@ -297,7 +299,10 @@ export const AddAsset = () => {
           }}
         >
           <View>
-            <SubviewHeader title={t("Add by address")} />
+            <SubviewHeader
+              title={t("Add by address")}
+              customBackAction={() => navigate(-2)}
+            />
             <View.Content hasNoTopPadding>
               <FormRows>
                 <div>
