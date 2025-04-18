@@ -56,6 +56,7 @@ import {
   tokenQueue,
   transactionQueue,
 } from "./popupMessageListener";
+import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 
 interface WindowParams {
   height: number;
@@ -73,17 +74,19 @@ export const freighterApiMessageListener = (
   request: Request,
   sender: browser.Runtime.MessageSender,
   sessionStore: Store,
+  localStore: DataStorageAccess,
 ) => {
   const requestAccess = async () => {
     const publicKey = publicKeySelector(sessionStore.getState());
 
     const { tab, url: tabUrl = "" } = sender;
 
-    const networkDetails = await getNetworkDetails();
+    const networkDetails = await getNetworkDetails({ localStore });
 
     const allowListSegment = await getAllowListSegment({
       publicKey,
       networkDetails,
+      localStore,
     });
 
     if (isSenderAllowed({ sender, allowListSegment }) && publicKey) {
@@ -122,10 +125,11 @@ export const freighterApiMessageListener = (
   const requestPublicKey = async () => {
     try {
       const publicKey = publicKeySelector(sessionStore.getState());
-      const networkDetails = await getNetworkDetails();
+      const networkDetails = await getNetworkDetails({ localStore });
       const allowListSegment = await getAllowListSegment({
         publicKey,
         networkDetails,
+        localStore,
       });
 
       if (isSenderAllowed({ sender, allowListSegment }) && publicKey) {
@@ -221,9 +225,9 @@ export const freighterApiMessageListener = (
           ? MAINNET_NETWORK_DETAILS.network
           : _network;
 
-      const isMainnet = await getIsMainnet();
+      const isMainnet = await getIsMainnet({ localStore });
       const { networkUrl, networkPassphrase: currentNetworkPassphrase } =
-        await getNetworkDetails();
+        await getNetworkDetails({ localStore });
       const Sdk = getSdk(currentNetworkPassphrase);
       const { tab, url: tabUrl = "" } = sender;
 
@@ -251,7 +255,7 @@ export const freighterApiMessageListener = (
       const flaggedKeys: FlaggedKeys = {};
 
       const isValidatingMemo =
-        (await getIsMemoValidationEnabled()) && isMainnet;
+        (await getIsMemoValidationEnabled({ localStore })) && isMainnet;
 
       if (isValidatingMemo) {
         _operations.forEach((operation: StellarSdk.Operation) => {
@@ -495,7 +499,7 @@ export const freighterApiMessageListener = (
     let network = "";
 
     try {
-      ({ network } = await getNetworkDetails());
+      ({ network } = await getNetworkDetails({ localStore }));
     } catch (error) {
       console.error(error);
       return { error };
@@ -514,7 +518,7 @@ export const freighterApiMessageListener = (
     } as NetworkDetails;
 
     try {
-      networkDetails = await getNetworkDetails();
+      networkDetails = await getNetworkDetails({ localStore });
     } catch (error) {
       console.error(error);
       return {
@@ -531,11 +535,12 @@ export const freighterApiMessageListener = (
   const requestAllowedStatus = async () => {
     try {
       const publicKey = publicKeySelector(sessionStore.getState());
-      const networkDetails = await getNetworkDetails();
+      const networkDetails = await getNetworkDetails({ localStore });
 
       const allowListSegment = await getAllowListSegment({
         publicKey,
         networkDetails,
+        localStore,
       });
       const isAllowed = isSenderAllowed({ sender, allowListSegment });
 
@@ -549,10 +554,11 @@ export const freighterApiMessageListener = (
 
   const setAllowedStatus = async () => {
     const publicKey = publicKeySelector(sessionStore.getState());
-    const networkDetails = await getNetworkDetails();
+    const networkDetails = await getNetworkDetails({ localStore });
     const allowListSegment = await getAllowListSegment({
       publicKey,
       networkDetails,
+      localStore,
     });
 
     const isAllowed = isSenderAllowed({ sender, allowListSegment });
@@ -580,6 +586,7 @@ export const freighterApiMessageListener = (
           const updatedAllAccountsllowListSegment = await getAllowListSegment({
             publicKey,
             networkDetails,
+            localStore,
           });
           const isAllowedResponse = isSenderAllowed({
             sender,
@@ -602,10 +609,11 @@ export const freighterApiMessageListener = (
 
   const requestUserInfo = async () => {
     const publicKey = publicKeySelector(sessionStore.getState());
-    const networkDetails = await getNetworkDetails();
+    const networkDetails = await getNetworkDetails({ localStore });
     const allowListSegment = await getAllowListSegment({
       publicKey,
       networkDetails,
+      localStore,
     });
 
     const isAllowed = isSenderAllowed({ sender, allowListSegment });
