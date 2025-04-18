@@ -3,6 +3,7 @@ import {
   AssetsLists,
   AssetListReponseItem,
 } from "@shared/constants/soroban/asset-list";
+import { getNativeContractDetails } from "popup/helpers/searchAsset";
 
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { getAssetLists, schemaValidatedAssetList } from "./searchAsset";
@@ -20,6 +21,7 @@ export const splitVerifiedAssetCurrency = async ({
     assetsListsDetails,
     networkDetails,
   });
+  const nativeContractDetails = getNativeContractDetails(networkDetails);
 
   const validatedAssets = [] as AssetListReponseItem[];
   for (const response of settledResponses) {
@@ -39,6 +41,8 @@ export const splitVerifiedAssetCurrency = async ({
       verifiedIds.add(validAsset.issuer);
     }
   }
+
+  verifiedIds.add(nativeContractDetails.contract);
 
   const [verifiedAssets, unverifiedAssets] = assets.reduce<
     [typeof assets, typeof assets]
