@@ -76,14 +76,22 @@ export const useScanTx = () => {
         setLoading(false);
         return null;
       }
+      const options = {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: encodeURIComponent(url),
+          tx_xdr: xdr,
+          network: networkDetails.network,
+        }),
+      };
+
       const response = await fetchJson<{
         data: BlockAidScanTxResult;
         error: string | null;
-      }>(
-        `${INDEXER_URL}/scan-tx?url=${encodeURIComponent(
-          url,
-        )}&tx_xdr=${encodeURIComponent(xdr)}&network=${networkDetails.network}`,
-      );
+      }>(`${INDEXER_URL}/scan-tx`, options);
 
       setData(response.data);
       emitMetric(METRIC_NAMES.blockaidTxScan, { response: response.data });
