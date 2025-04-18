@@ -6,7 +6,6 @@ import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
 
 import { Notification } from "@stellar/design-system";
-import { isCustomNetwork } from "@shared/helpers/stellar";
 
 import { FormRows } from "popup/basics/Forms";
 import { ROUTES } from "popup/constants/routes";
@@ -105,7 +104,7 @@ export const SearchAsset = () => {
     getData();
   }, [networkDetails]);
 
-  if (isCustomNetwork(networkDetails)) {
+  if (!isMainnet(networkDetails) && !isTestnet(networkDetails)) {
     return <Navigate to={ROUTES.addAsset} />;
   }
 
