@@ -93,7 +93,10 @@ export const TransactionDetail = ({
         title={headerTitle}
       />
       <View.Content>
-        <div className="TransactionDetail__content">
+        <div
+          className="TransactionDetail__content"
+          data-testid="transaction-detail"
+        >
           {isPayment ? (
             <div
               className={`TransactionDetail__header ${
