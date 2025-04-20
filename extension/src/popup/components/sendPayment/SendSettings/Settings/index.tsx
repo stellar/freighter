@@ -226,9 +226,9 @@ export const Settings = ({
                       >
                         <span
                           className="SendSettings__row__title SendSettings__clickable"
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.preventDefault();
-                            submitForm();
+                            await submitForm();
                             goToFeeSetting();
                           }}
                         >
@@ -238,9 +238,9 @@ export const Settings = ({
                     </div>
                     <div
                       className="SendSettings__row__right SendSettings__clickable"
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.preventDefault();
-                        submitForm();
+                        await submitForm();
                         goToFeeSetting();
                       }}
                     >
@@ -267,9 +267,9 @@ export const Settings = ({
                       >
                         <span
                           className="SendSettings__row__title SendSettings__clickable"
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.preventDefault();
-                            submitForm();
+                            await submitForm();
                             goToTimeoutSetting();
                           }}
                         >
@@ -279,9 +279,9 @@ export const Settings = ({
                     </div>
                     <div
                       className="SendSettings__row__right SendSettings__clickable"
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.preventDefault();
-                        submitForm();
+                        await submitForm();
                         goToTimeoutSetting();
                       }}
                     >
@@ -317,9 +317,9 @@ export const Settings = ({
                         >
                           <span
                             className="SendSettings__row__title SendSettings__clickable"
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.preventDefault();
-                              submitForm();
+                              await submitForm();
                               goToSlippageSetting();
                             }}
                           >
@@ -329,9 +329,9 @@ export const Settings = ({
                       </div>
                       <div
                         className="SendSettings__row__right SendSettings__clickable"
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.preventDefault();
-                          submitForm();
+                          await submitForm();
                           goToSlippageSetting();
                         }}
                       >
@@ -395,8 +395,8 @@ export const Settings = ({
                   type="submit"
                   variant="secondary"
                   data-testid="send-settings-btn-continue"
-                  onClick={() => {
-                    submitForm();
+                  onClick={async () => {
+                    await submitForm();
                     goToNext();
                   }}
                 >
