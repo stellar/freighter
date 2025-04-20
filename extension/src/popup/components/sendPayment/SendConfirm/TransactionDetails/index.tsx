@@ -509,7 +509,10 @@ export const TransactionDetails = ({
             {showMemo && (
               <div className="TransactionDetails__row">
                 <div>{t("Memo")}</div>
-                <div className="TransactionDetails__row__right">
+                <div
+                  className="TransactionDetails__row__right"
+                  data-testid="memo"
+                >
                   {memo || t("None")}
                 </div>
               </div>

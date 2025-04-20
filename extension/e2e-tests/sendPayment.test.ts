@@ -117,6 +117,7 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   await expect(page.getByTestId("SendSettingsTransactionFee")).toHaveText(
     /[0-9]/,
   );
+  await page.getByPlaceholder("Memo (optional)").fill("Test memo");
   await page.getByText("Review Send").click();
 
   await expect(page.getByText("Confirm Send")).toBeVisible({
@@ -136,6 +137,7 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
 
   await expect(page.getByText("Sent XLM")).toBeVisible();
   await expect(page.getByTestId("asset-amount")).toContainText("0.001");
+  await expect(page.getByTestId("memo")).toContainText("Test memo");
 
   await page.getByTestId("BackButton").click({ force: true });
   await page.getByTestId("BottomNav-link-account").click({ force: true });
