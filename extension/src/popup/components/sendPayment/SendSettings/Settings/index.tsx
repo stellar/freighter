@@ -395,7 +395,10 @@ export const Settings = ({
                   type="submit"
                   variant="secondary"
                   data-testid="send-settings-btn-continue"
-                  onClick={goToNext}
+                  onClick={() => {
+                    submitForm();
+                    goToNext();
+                  }}
                 >
                   {t("Review")} {isSwap ? t("Swap") : t("Send")}
                 </Button>
