@@ -98,6 +98,7 @@ export const HistoryItem = ({
     isCreateExternalAccount = false,
     isPayment = false,
     isSwap = false,
+    transaction_successful: transactionSuccessful,
   } = _op;
   let sourceAssetCode;
   let sourceAssetIssuer: string;
@@ -179,6 +180,8 @@ export const HistoryItem = ({
 
   useEffect(() => {
     const buildHistoryItem = async () => {
+      setIsLoading(true);
+
       if (type === Horizon.HorizonApi.OperationResponseType.createAccount) {
         // If you're not creating an external account then this means you're
         // receiving some XLM to create(fund) your own account
@@ -686,9 +689,34 @@ export const HistoryItem = ({
           operationText: operationString,
         }));
       }
+
+      if (transactionSuccessful === false) {
+        setRowText(translations("Transaction failed"));
+        setDateText((_dateText) => date);
+
+        setIconComponent(
+          <div className="HistoryItem__icon__bordered">
+            <Icon.Wallet03 />
+
+            <div className="HistoryItem__icon__small HistoryItem--failed">
+              <Icon.XCircle />
+            </div>
+          </div>,
+        );
+        setTxDetails((_state) => ({
+          ..._state,
+          headerTitle: translations("Transaction failed"),
+        }));
+        setAmountComponent(null);
+      }
+      setIsLoading(false);
     };
 
-    buildHistoryItem();
+    try {
+      buildHistoryItem();
+    } catch (e) {
+      setIsLoading(false);
+    }
   }, [
     account,
     amount,
@@ -737,7 +765,7 @@ export const HistoryItem = ({
                 weight="regular"
                 addlClassName="HistoryItem__description"
               >
-                {rowText}
+                <span data-testid="history-item-label">{rowText}</span>
                 <Text
                   as="div"
                   size="xs"
