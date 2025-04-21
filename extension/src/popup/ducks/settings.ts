@@ -352,6 +352,39 @@ const settingsSlice = createSlice({
     clearSettingsError(state) {
       state.error = "";
     },
+    saveSettings(state, action) {
+      const {
+        allowList,
+        isDataSharingAllowed,
+        networkDetails,
+        networksList,
+        isMemoValidationEnabled,
+        isExperimentalModeEnabled,
+        isHashSigningEnabled,
+        isSorobanPublicEnabled,
+        isRpcHealthy,
+        userNotification,
+        assetsLists,
+        isNonSSLEnabled,
+        isHideDustEnabled,
+      } = action?.payload || {
+        ...initialState,
+      };
+      state.allowList = allowList;
+      state.isDataSharingAllowed = isDataSharingAllowed;
+      state.networkDetails = networkDetails;
+      state.networksList = networksList;
+      state.isMemoValidationEnabled = isMemoValidationEnabled;
+      state.isExperimentalModeEnabled = isExperimentalModeEnabled;
+      state.isHashSigningEnabled = isHashSigningEnabled;
+      state.isSorobanPublicEnabled = isSorobanPublicEnabled;
+      state.isRpcHealthy = isRpcHealthy;
+      state.userNotification = userNotification;
+      state.assetsLists = assetsLists;
+      state.isNonSSLEnabled = isNonSSLEnabled;
+      state.isHideDustEnabled = isHideDustEnabled;
+      state.settingsState = SettingsState.SUCCESS;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(
@@ -614,6 +647,7 @@ const settingsSlice = createSlice({
 export const { reducer } = settingsSlice;
 
 export const { clearSettingsError } = settingsSlice.actions;
+export const saveSettingsAction = settingsSlice.actions.saveSettings;
 
 export const settingsSelector = (state: {
   settings: Settings &
