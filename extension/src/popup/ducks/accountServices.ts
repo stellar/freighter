@@ -597,6 +597,33 @@ const authSlice = createSlice({
     setConnectingWalletType(state, action) {
       state.connectingWalletType = action.payload;
     },
+    saveAccount(state, action) {
+      const {
+        hasPrivateKey,
+        publicKey,
+        applicationState,
+        allAccounts,
+        bipPath,
+        tokenIdList,
+      } = action.payload;
+      state.hasPrivateKey = hasPrivateKey;
+      state.publicKey = publicKey;
+      state.applicationState =
+        applicationState || APPLICATION_STATE.APPLICATION_STARTED;
+      state.allAccounts = allAccounts;
+      state.bipPath = bipPath;
+      state.tokenIdList = tokenIdList;
+    },
+    saveAccountError(state, action) {
+      const {
+        message = "An unknown error occurred when loading your account",
+      } = action.payload;
+      return {
+        ...state,
+        applicationState: APPLICATION_STATE.APPLICATION_ERROR,
+        error: message,
+      };
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(createAccount.fulfilled, (state, action) => {
@@ -1000,7 +1027,12 @@ export const isAccountMismatchSelector = createSelector(
   (auth: InitialState) => auth.isAccountMismatch,
 );
 
-export const { clearApiError, setConnectingWalletType, resetAccountStatus } =
-  authSlice.actions;
+export const {
+  clearApiError,
+  setConnectingWalletType,
+  resetAccountStatus,
+  saveAccount,
+  saveAccountError,
+} = authSlice.actions;
 
 export { reducer };
