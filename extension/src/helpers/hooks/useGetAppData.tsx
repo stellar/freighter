@@ -1,5 +1,6 @@
 import { useReducer } from "react";
 import { useDispatch } from "react-redux";
+import * as Sentry from "@sentry/browser";
 
 import { initialState, reducer } from "helpers/request";
 import { storeAccountMetricsData } from "helpers/metrics";
@@ -34,6 +35,7 @@ function useGetAppData() {
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
       reduxDispatch(saveAccountError(error));
+      Sentry.captureException(`Error loading app data: ${error}`);
       throw new Error("Failed to fetch app data", { cause: error });
     }
   };
