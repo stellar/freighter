@@ -63,7 +63,6 @@ export const SearchAsset = () => {
 
   const [hasNoResults, setHasNoResults] = useState(false);
   const ResultsRef = useRef<HTMLDivElement>(null);
-
   // TODO: use this loading state
   const { state, fetchData } = useGetBalances(publicKey, networkDetails, {
     isMainnet: isMainnet(networkDetails),
@@ -152,13 +151,13 @@ export const SearchAsset = () => {
                   (tokenState.data.verifiedAssetRows.length ||
                     tokenState.data.unverifiedAssetRows.length) ? (
                     <ManageAssetRows
+                      balances={state.data!}
                       header={
                         tokenState.data.verifiedAssetRows.length > 1 ||
                         tokenState.data.unverifiedAssetRows.length > 1 ? (
                           <ResultsHeader />
                         ) : null
                       }
-                      balances={state.data!}
                       verifiedAssetRows={tokenState.data.verifiedAssetRows}
                       unverifiedAssetRows={tokenState.data.unverifiedAssetRows}
                       isVerifiedToken={tokenState.data.isVerifiedToken}
