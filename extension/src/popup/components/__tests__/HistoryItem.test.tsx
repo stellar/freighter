@@ -170,8 +170,8 @@ describe("HistoryItem", () => {
     render(<HistoryItem {...props} />);
     await waitFor(() => screen.getByTestId("history-item"));
     expect(screen.getByTestId("history-item")).toBeDefined();
-    expect(
-      screen.getByTestId("history-item-amount-component"),
-    ).toHaveTextContent("N/A");
+    expect(screen.getByTestId("history-item-label")).toHaveTextContent(
+      "Transaction failed",
+    );
   });
 });
