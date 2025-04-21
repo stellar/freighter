@@ -25,6 +25,7 @@ import {
 } from "@shared/helpers/soroban/token";
 import {
   getAssetFromCanonical,
+  getCanonicalFromAsset,
   getSdk,
   isCustomNetwork,
   makeDisplayableBalances,
@@ -68,6 +69,7 @@ import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
+import { getIconFromTokenLists } from "./helpers/getIconFromTokenList";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -991,9 +993,11 @@ export const getTokenDetails = async ({
 export const getAssetIcons = async ({
   balances,
   networkDetails,
+  assetsLists,
 }: {
   balances: Balances;
   networkDetails: NetworkDetails;
+  assetsLists: AssetsLists;
 }) => {
   const assetIcons = {} as { [code: string]: string };
 
@@ -1002,15 +1006,29 @@ export const getAssetIcons = async ({
     const balanceValues = Object.values(balances);
 
     for (let i = 0; i < balanceValues.length; i++) {
-      const { token } = balanceValues[i];
+      const { token, contractId } = balanceValues[i];
       if (token && "issuer" in token) {
         const {
           issuer: { key },
           code,
         } = token;
 
+        let canonical = getCanonicalFromAsset(code, key);
         icon = await getIconUrlFromIssuer({ key, code, networkDetails });
-        assetIcons[`${code}:${key}`] = icon;
+        if (!icon) {
+          const tokenListIcon = await getIconFromTokenLists({
+            networkDetails,
+            issuerId: key,
+            contractId,
+            code,
+            assetsLists,
+          });
+          if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
+            icon = tokenListIcon.icon;
+            canonical = tokenListIcon.canonicalAsset;
+          }
+        }
+        assetIcons[canonical] = icon;
       }
     }
   }

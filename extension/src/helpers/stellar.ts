@@ -7,7 +7,10 @@ import {
   NETWORK_URLS,
   NetworkDetails,
 } from "@shared/constants/stellar";
-export { getAssetFromCanonical } from "@shared/helpers/stellar";
+export {
+  getAssetFromCanonical,
+  getCanonicalFromAsset,
+} from "@shared/helpers/stellar";
 
 import { TransactionInfo } from "types/transactions";
 import { parsedSearchParam, getUrlHostname } from "./urls";
@@ -64,19 +67,6 @@ export function isAsset(
 ): value is Asset {
   return (value as Asset).getIssuer !== undefined;
 }
-
-export const getCanonicalFromAsset = (
-  assetCode: string,
-  assetIssuer?: string,
-) => {
-  if (assetCode === "XLM" && !assetIssuer) {
-    return "native";
-  }
-  if (!assetIssuer) {
-    return assetCode;
-  }
-  return `${assetCode}:${assetIssuer}`;
-};
 
 export const stroopToXlm = (
   stroops: BigNumber | string | number,
