@@ -19,15 +19,10 @@ import {
   allAccountsSelector,
   applicationStateSelector,
   hasPrivateKeySelector,
-  loadAccount,
   publicKeySelector,
   authErrorSelector,
 } from "popup/ducks/accountServices";
-import {
-  loadSettings,
-  settingsNetworkDetailsSelector,
-  settingsStateSelector,
-} from "popup/ducks/settings";
+import { settingsStateSelector } from "popup/ducks/settings";
 import { navigate } from "popup/ducks/views";
 
 import { AppError } from "popup/components/AppError";
@@ -255,18 +250,10 @@ const NO_APP_LAYOUT_ROUTES = [
 ];
 
 const Layout = () => {
-  const dispatch = useDispatch<AppDispatch>();
   const location = useLocation();
   const isSwap = useIsSwap();
 
   const applicationState = useSelector(applicationStateSelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const settingsState = useSelector(settingsStateSelector);
-
-  useEffect(() => {
-    dispatch(loadAccount());
-    dispatch(loadSettings());
-  }, [dispatch]);
 
   const showNav =
     location.pathname &&
@@ -279,15 +266,9 @@ const Layout = () => {
     (route) => route !== location.pathname,
   );
 
-  const isLoadingSettings =
-    applicationState === APPLICATION_STATE.APPLICATION_LOADING ||
-    settingsState === SettingsState.LOADING ||
-    settingsState === SettingsState.IDLE ||
-    !networkDetails.network;
-
   return (
     <View isAppLayout={isAppLayout}>
-      {isLoadingSettings ? <Loading /> : <Outlet />}
+      <Outlet />
       {showNav && <BottomNav />}
     </View>
   );
