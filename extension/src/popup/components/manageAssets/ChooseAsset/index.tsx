@@ -5,17 +5,12 @@ import { Button, Icon, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
-import {
-  settingsNetworkDetailsSelector,
-  settingsSorobanSupportedSelector,
-} from "popup/ducks/settings";
+import { settingsSorobanSupportedSelector } from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
-import { publicKeySelector } from "popup/ducks/accountServices";
 
 import { RequestState } from "constants/request";
 import { useGetAssetDomainsWithBalances } from "helpers/hooks/useGetAssetDomainsWithBalances";
-import { isMainnet } from "helpers/stellar";
 
 import { ManageAssetRows } from "../ManageAssetRows";
 import { SelectAssetRows } from "../SelectAssetRows";
@@ -31,20 +26,13 @@ export const ChooseAsset = ({
 }) => {
   const { t } = useTranslation();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
-  const publicKey = useSelector(publicKeySelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
 
-  const { state: domainState, fetchData } = useGetAssetDomainsWithBalances(
-    publicKey,
-    networkDetails,
-    {
-      isMainnet: isMainnet(networkDetails),
-      showHidden: false,
-      includeIcons: true,
-    },
-  );
+  const { state: domainState, fetchData } = useGetAssetDomainsWithBalances({
+    showHidden: false,
+    includeIcons: true,
+  });
 
   const isLoading =
     domainState.state === RequestState.IDLE ||

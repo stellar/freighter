@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import { publicKeySelector } from "popup/ducks/accountServices";
 import {
   settingsNetworkDetailsSelector,
   settingsSelector,
@@ -21,7 +20,6 @@ import {
 } from "popup/components/accountHistory/TransactionDetail";
 import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
-import { isMainnet } from "helpers/stellar";
 import { RequestState } from "constants/request";
 import { useGetHistoryData } from "./hooks/useGetHistoryData";
 
@@ -29,14 +27,10 @@ import "./styles.scss";
 
 export const AccountHistory = () => {
   const { t } = useTranslation();
-  const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { isHideDustEnabled } = useSelector(settingsSelector);
   const { state: historyState, fetchData } = useGetHistoryData(
-    publicKey,
-    networkDetails,
     {
-      isMainnet: isMainnet(networkDetails),
       showHidden: false,
       includeIcons: true,
     },
@@ -98,7 +92,7 @@ export const AccountHistory = () => {
                       key={operation.id}
                       accountBalances={historyState.data.balances}
                       operation={operation}
-                      publicKey={publicKey}
+                      publicKey={historyState.data.publicKey}
                       networkDetails={networkDetails}
                       setDetailViewProps={setDetailViewProps}
                       setIsDetailViewShowing={setIsDetailViewShowing}

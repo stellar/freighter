@@ -150,7 +150,6 @@ export const SendAmount = ({
     isSoroswap,
   } = transactionData;
   const { state: sendAmountData, fetchData } = useGetSendAmountData(
-    publicKey,
     networkDetails,
     {
       isMainnet: isMainnet(networkDetails),

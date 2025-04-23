@@ -10,16 +10,13 @@ import { AppDispatch } from "popup/App";
 import { AssetIcons, Balance, ErrorMessage } from "@shared/api/types";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
-import { getAssetFromCanonical, isMainnet, xlmToStroop } from "helpers/stellar";
+import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
 import { navigateTo } from "popup/helpers/navigate";
 import { RESULT_CODES, getResultCodes } from "popup/helpers/parseTransaction";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { ROUTES } from "popup/constants/routes";
-import {
-  publicKeySelector,
-  hardwareWalletTypeSelector,
-} from "popup/ducks/accountServices";
+import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   startHwSign,
@@ -45,7 +42,7 @@ import {
 import { Loading } from "popup/components/Loading";
 
 import "./styles.scss";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 
 const SwapAssetsIcon = ({
   sourceCanon,
@@ -105,18 +102,12 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     destinationAsset || "native",
   );
   const { recommendedFee } = useNetworkFees();
-  const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
-  const { state: accountData, fetchData } = useGetAccountData(
-    publicKey,
-    networkDetails,
-    {
-      isMainnet: isMainnet(networkDetails),
-      showHidden: false,
-      includeIcons: true,
-    },
-  );
+  const { state: accountData, fetchData } = useGetAccountData({
+    showHidden: false,
+    includeIcons: true,
+  });
   const isLoading =
     accountData.state === RequestState.IDLE ||
     accountData.state === RequestState.LOADING;
@@ -127,7 +118,11 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   );
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
 
-  const removeTrustline = async (assetCode: string, assetIssuer: string) => {
+  const removeTrustline = async (
+    publicKey: string,
+    assetCode: string,
+    assetIssuer: string,
+  ) => {
     const changeParams = { limit: "0" };
     const sourceAccount: Account = await server.loadAccount(publicKey);
 
@@ -156,11 +151,12 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
       await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
       trackRemoveTrustline();
     } else {
-      await signAndSubmit(transactionXDR, trackRemoveTrustline);
+      await signAndSubmit(publicKey, transactionXDR, trackRemoveTrustline);
     }
   };
 
   const signAndSubmit = async (
+    publicKey: string,
     transactionXDR: string,
     trackChangeTrustline: () => void,
   ) => {
@@ -191,13 +187,6 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     }
   };
 
-  // TODO: the remove trustline logic here does not work Soroban tokens. We should handle this case
-  const suggestRemoveTrustline = (
-    accountData.data?.balances.balances as Balance[]
-  )
-    ?.find((balance) => balance.contractId === asset)
-    ?.available?.isZero();
-
   useEffect(() => {
     const getData = async () => {
       await fetchData();
@@ -209,6 +198,23 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   if (isLoading) {
     return <Loading />;
   }
+
+  if (accountData.data?.type === "needsReRoute") {
+    return (
+      <Navigate
+        to={`${accountData.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  // TODO: the remove trustline logic here does not work Soroban tokens. We should handle this case
+  const suggestRemoveTrustline = (
+    accountData.data?.balances.balances as Balance[]
+  )
+    ?.find((balance) => balance.contractId === asset)
+    ?.available?.isZero();
 
   const sourceBalance = findAssetBalance(
     accountData.data!.balances.balances,
@@ -227,6 +233,8 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     "blockaidData" in destBalance &&
     isAssetSuspicious(destBalance.blockaidData);
 
+  const resolvedData = accountData.data;
+
   return (
     <React.Fragment>
       <View.AppHeader
@@ -244,7 +252,11 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
                   </p>
                   <button
                     onClick={() =>
-                      removeTrustline(sourceAsset.code, sourceAsset.issuer)
+                      removeTrustline(
+                        resolvedData!.publicKey,
+                        sourceAsset.code,
+                        sourceAsset.issuer,
+                      )
                     }
                   >
                     Remove Trustline

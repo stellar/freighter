@@ -1,6 +1,5 @@
 import { useReducer } from "react";
 
-import { NetworkDetails } from "@shared/constants/stellar";
 import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
@@ -20,35 +19,31 @@ export interface AssetVisibilityData {
   domains: ManageAssetCurrency[];
   isManagingAssets: boolean;
   hiddenAssets: Record<IssuerKey, AssetVisibility>;
+  publicKey: string;
 }
 
-function useGetAssetData(
-  publicKey: string,
-  networkDetails: NetworkDetails,
-  options: {
-    isMainnet: boolean;
-    showHidden: boolean;
-    includeIcons: boolean;
-  },
-) {
+function useGetAssetData(options: {
+  showHidden: boolean;
+  includeIcons: boolean;
+}) {
   const [state, dispatch] = useReducer(
     reducer<AssetVisibilityData, unknown>,
     initialState,
   );
   const { fetchData: fetchDomainsWithBalances } =
-    useGetAssetDomainsWithBalances(publicKey, networkDetails, options);
+    useGetAssetDomainsWithBalances(options);
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const domainsResult = await fetchDomainsWithBalances();
-      const { hiddenAssets, error: hiddenAssetError } = await getHiddenAssets({
-        activePublicKey: publicKey,
-      });
-
       if (isError<AssetDomains>(domainsResult)) {
         throw new Error(domainsResult.message);
       }
+
+      const { hiddenAssets, error: hiddenAssetError } = await getHiddenAssets({
+        activePublicKey: domainsResult.publicKey,
+      });
 
       if (hiddenAssetError) {
         throw new Error(hiddenAssetError);
@@ -70,9 +65,11 @@ function useGetAssetData(
   const changeAssetVisibility = async ({
     issuer,
     visibility,
+    publicKey,
   }: {
     issuer: IssuerKey;
     visibility: AssetVisibility;
+    publicKey: string;
   }) => {
     const { hiddenAssets, error } = await internalChangeAssetVisibility({
       assetIssuer: issuer,

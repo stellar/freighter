@@ -22,7 +22,6 @@ interface SendAmountData {
 }
 
 function useGetSendAmountData(
-  publicKey: string,
   networkDetails: NetworkDetails,
   options: {
     isMainnet: boolean;
@@ -36,11 +35,8 @@ function useGetSendAmountData(
     initialState,
   );
 
-  const { fetchData: fetchAssetDomains } = useGetAssetDomainsWithBalances(
-    publicKey,
-    networkDetails,
-    options,
-  );
+  const { fetchData: fetchAssetDomains } =
+    useGetAssetDomainsWithBalances(options);
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });

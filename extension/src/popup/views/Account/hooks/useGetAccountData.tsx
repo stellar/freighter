@@ -1,14 +1,16 @@
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useState } from "react";
 
-import { NetworkDetails } from "@shared/constants/stellar";
 import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { HistoryResponse, useGetHistory } from "helpers/hooks/useGetHistory";
 import { AssetOperations, sortOperationsByAsset } from "popup/helpers/account";
-import { getCanonicalFromAsset } from "helpers/stellar";
+import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
 import { getTokenPrices as internalGetTokenPrices } from "@shared/api/internal";
 import { ApiTokenPrices } from "@shared/api/types";
+import { useGetAppData } from "helpers/hooks/useGetAppData";
+import { NetworkDetails } from "@shared/constants/stellar";
+import { ROUTES } from "popup/constants/routes";
 
 const getTokenPrices = async ({
   balances,
@@ -30,37 +32,61 @@ const getTokenPrices = async ({
   return tokenPrices;
 };
 
-interface AccountData {
+interface NeedsReRoute {
+  type: "needsReRoute";
+  routeTarget: ROUTES.unlockAccount | ROUTES.accountCreator;
+}
+
+interface ResolvedAccountData {
+  type: "resolved";
   balances: AccountBalances;
   operationsByAsset: AssetOperations;
   tokenPrices?: ApiTokenPrices;
+  networkDetails: NetworkDetails;
+  publicKey: string;
 }
 
-function useGetAccountData(
-  publicKey: string,
-  networkDetails: NetworkDetails,
-  options: {
-    isMainnet: boolean;
-    showHidden: boolean;
-    includeIcons: boolean;
-  },
-) {
+type AccountData = NeedsReRoute | ResolvedAccountData;
+
+function useGetAccountData(options: {
+  showHidden: boolean;
+  includeIcons: boolean;
+}) {
+  const [_isMainnet, setIsMainnet] = useState(false);
   const [state, dispatch] = useReducer(
     reducer<AccountData, unknown>,
     initialState,
   );
-  const { fetchData: fetchBalances } = useGetBalances(
-    publicKey,
-    networkDetails,
-    options,
-  );
-  const { fetchData: fetchHistory } = useGetHistory(publicKey, networkDetails);
+  const { fetchData: fetchAppData } = useGetAppData();
+  const { fetchData: fetchBalances } = useGetBalances(options);
+  const { fetchData: fetchHistory } = useGetHistory();
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const balancesResult = await fetchBalances();
-      const history = await fetchHistory();
+      const appData = await fetchAppData();
+      if (isError(appData)) {
+        throw new Error(appData.message);
+      }
+
+      if (!appData.account.publicKey) {
+        const payload = {
+          type: "needsReRoute",
+          routeTarget: ROUTES.unlockAccount,
+        } as NeedsReRoute;
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+        return payload;
+      }
+
+      const publicKey = appData.account.publicKey;
+      const networkDetails = appData.settings.networkDetails;
+      const isMainnetNetwork = isMainnet(networkDetails);
+      const balancesResult = await fetchBalances(
+        publicKey,
+        isMainnetNetwork,
+        networkDetails,
+      );
+      const history = await fetchHistory(publicKey, networkDetails);
 
       if (isError<AccountBalances>(balancesResult)) {
         throw new Error(balancesResult.message);
@@ -71,19 +97,23 @@ function useGetAccountData(
       }
 
       const payload = {
+        type: "resolved",
+        publicKey,
         balances: balancesResult,
+        networkDetails,
         operationsByAsset: sortOperationsByAsset({
           balances: balancesResult.balances,
           operations: history,
-          networkDetails,
+          networkDetails: networkDetails,
           publicKey,
         }),
-      } as AccountData;
+      } as ResolvedAccountData;
 
-      if (options.isMainnet) {
+      if (isMainnetNetwork) {
         payload.tokenPrices = await getTokenPrices({
           balances: balancesResult.balances,
         });
+        setIsMainnet(isMainnetNetwork);
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
@@ -95,13 +125,14 @@ function useGetAccountData(
   };
 
   useEffect(() => {
-    if (!options.isMainnet || !state.data?.balances) {
+    if (!state.data || state.data.type === "needsReRoute" || !_isMainnet) {
       return;
     }
+    const resolvedData = state.data;
 
     const interval = setInterval(async () => {
       const tokenPrices = await getTokenPrices({
-        balances: state.data.balances.balances,
+        balances: resolvedData.balances.balances,
       });
       const payload = {
         ...state.data,
@@ -109,9 +140,8 @@ function useGetAccountData(
       } as AccountData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
     }, 30000);
-
     return () => clearInterval(interval);
-  }, [options.isMainnet, state.data]);
+  }, [_isMainnet, state.data]);
 
   return {
     state,

@@ -6,13 +6,12 @@ import { Loader } from "@stellar/design-system";
 
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import {
-  settingsNetworkDetailsSelector,
-  settingsSorobanSupportedSelector,
-} from "popup/ducks/settings";
-import { isMainnet } from "helpers/stellar";
-import { publicKeySelector } from "popup/ducks/accountServices";
+import { settingsSorobanSupportedSelector } from "popup/ducks/settings";
 
+import {
+  AssetVisibility as AssetVisibilityType,
+  IssuerKey,
+} from "@shared/api/types";
 import { RequestState } from "constants/request";
 import { resetSubmission } from "popup/ducks/transactionSubmission";
 import { useGetAssetData } from "./hooks/useGetAssetData";
@@ -27,16 +26,13 @@ export const AssetVisibility = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
-  const publicKey = useSelector(publicKeySelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
   const {
     state: domainState,
     fetchData,
     changeAssetVisibility,
-  } = useGetAssetData(publicKey, networkDetails, {
-    isMainnet: isMainnet(networkDetails),
+  } = useGetAssetData({
     showHidden: true,
     includeIcons: true,
   });
@@ -79,7 +75,19 @@ export const AssetVisibility = () => {
               <ToggleAssetRows
                 assetRows={domainState.data!.domains}
                 hiddenAssets={domainState.data!.hiddenAssets}
-                changeAssetVisibility={changeAssetVisibility}
+                changeAssetVisibility={async ({
+                  issuer,
+                  visibility,
+                }: {
+                  issuer: IssuerKey;
+                  visibility: AssetVisibilityType;
+                }) => {
+                  return await changeAssetVisibility({
+                    issuer,
+                    visibility,
+                    publicKey: domainState.data!.publicKey,
+                  });
+                }}
               />
             </div>
           </div>

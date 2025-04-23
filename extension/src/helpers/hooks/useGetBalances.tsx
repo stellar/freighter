@@ -27,28 +27,27 @@ export interface AccountBalances {
   icons?: AssetIcons;
 }
 
-function useGetBalances(
-  publicKey: string,
-  networkDetails: NetworkDetails,
-  options: {
-    isMainnet: boolean;
-    showHidden: boolean;
-    includeIcons: boolean;
-  },
-) {
+function useGetBalances(options: {
+  showHidden: boolean;
+  includeIcons: boolean;
+}) {
   const [state, dispatch] = useReducer(
     reducer<AccountBalances, unknown>,
     initialState,
   );
   const { assetsLists } = useSelector(settingsSelector);
 
-  const fetchData = async (): Promise<AccountBalances | Error> => {
+  const fetchData = async (
+    publicKey: string,
+    isMainnet: boolean,
+    networkDetails: NetworkDetails,
+  ): Promise<AccountBalances | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const data = await getAccountBalances(
         publicKey,
         networkDetails,
-        options.isMainnet,
+        isMainnet,
       );
 
       const payload = {

@@ -10,29 +10,27 @@ import {
   AssetSelectType,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
-import { getCanonicalFromAsset } from "helpers/stellar";
+import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
 import { findAssetBalance } from "popup/helpers/balance";
 import { isAssetSuspicious } from "../../popup/helpers/blockaid";
 import { useIsSoroswapEnabled, useIsSwap } from "../../popup/helpers/useIsSwap";
 import { getAssetDomain } from "../../popup/helpers/getAssetDomain";
 import { AccountBalances, useGetBalances } from "./useGetBalances";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
+import { useGetAppData } from "./useGetAppData";
 
 export interface AssetDomains {
+  publicKey: string;
   balances: AccountBalances;
   domains: ManageAssetCurrency[];
   isManagingAssets: boolean;
+  networkDetails: NetworkDetails;
 }
 
-export function useGetAssetDomainsWithBalances(
-  publicKey: string,
-  networkDetails: NetworkDetails,
-  options: {
-    isMainnet: boolean;
-    showHidden: boolean;
-    includeIcons: boolean;
-  },
-) {
+export function useGetAssetDomainsWithBalances(options: {
+  showHidden: boolean;
+  includeIcons: boolean;
+}) {
   const isSwap = useIsSwap();
   const isSoroswapEnabled = useIsSoroswapEnabled();
   const { assetSelect, soroswapTokens } = useSelector(
@@ -44,16 +42,25 @@ export function useGetAssetDomainsWithBalances(
     reducer<AssetDomains, unknown>,
     initialState,
   );
-  const { fetchData: fetchBalances } = useGetBalances(
-    publicKey,
-    networkDetails,
-    options,
-  );
+  const { fetchData: fetchAppData } = useGetAppData();
+  const { fetchData: fetchBalances } = useGetBalances(options);
 
   const fetchData = async (): Promise<AssetDomains | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const balances = await fetchBalances();
+      const appData = await fetchAppData();
+      if (isError(appData)) {
+        throw new Error(appData.message);
+      }
+
+      const publicKey = appData.account.publicKey;
+      const networkDetails = appData.settings.networkDetails;
+      const isMainnetNetwork = isMainnet(networkDetails);
+      const balances = await fetchBalances(
+        publicKey,
+        isMainnetNetwork,
+        networkDetails,
+      );
 
       if (isError<AccountBalances>(balances)) {
         throw new Error(balances.message);
@@ -150,7 +157,13 @@ export function useGetAssetDomainsWithBalances(
         });
       }
 
-      const payload = { domains, isManagingAssets, balances };
+      const payload = {
+        domains,
+        isManagingAssets,
+        balances,
+        publicKey,
+        networkDetails,
+      };
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
