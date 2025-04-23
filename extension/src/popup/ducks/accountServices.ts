@@ -599,6 +599,9 @@ const authSlice = createSlice({
         error: message,
       };
     },
+    saveApplicationState(state, action) {
+      state.applicationState = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(createAccount.fulfilled, (state, action) => {
@@ -971,6 +974,7 @@ export const {
   resetAccountStatus,
   saveAccount,
   saveAccountError,
+  saveApplicationState,
 } = authSlice.actions;
 
 export { reducer };

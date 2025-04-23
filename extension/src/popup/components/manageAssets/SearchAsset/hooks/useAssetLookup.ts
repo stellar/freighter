@@ -23,11 +23,6 @@ import {
 } from "popup/ducks/settings";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 
-interface UseAssetLookupParams {
-  publicKey: string;
-  isAllowListVerificationEnabled: boolean;
-}
-
 interface AssetRecord {
   asset: string;
   domain?: string;
@@ -54,10 +49,7 @@ const DEFAULT_PAYLOAD: AssetLookupDetails = {
   blockaidScanResults: {},
 };
 
-const useAssetLookup = ({
-  publicKey,
-  isAllowListVerificationEnabled,
-}: UseAssetLookupParams) => {
+const useAssetLookup = () => {
   let isVerifiedToken = false;
   let isVerificationInfoShowing = false;
   let verifiedLists = [] as string[];
@@ -140,7 +132,11 @@ const useAssetLookup = ({
    * @param {string} contractId - The contract ID to look up.
    * @returns {Promise<ManageAssetCurrency[]>}
    */
-  const fetchTokenData = async (contractId: string) => {
+  const fetchTokenData = async (
+    publicKey: string,
+    contractId: string,
+    isAllowListVerificationEnabled: boolean,
+  ) => {
     let assetRows = [] as ManageAssetCurrency[];
 
     const nativeContractDetails = getNativeContractDetails(networkDetails);
@@ -275,9 +271,13 @@ const useAssetLookup = ({
   const fetchData = async ({
     asset,
     isBlockaidEnabled,
+    publicKey,
+    isAllowListVerificationEnabled,
   }: {
     asset: string;
     isBlockaidEnabled: boolean;
+    publicKey: string;
+    isAllowListVerificationEnabled: boolean;
   }) => {
     dispatch({ type: "FETCH_DATA_START" });
 
@@ -295,7 +295,11 @@ const useAssetLookup = ({
     if (isContractId(asset)) {
       // for custom tokens, try to go down the the custom token flow
       try {
-        assetRows = await fetchTokenData(asset);
+        assetRows = await fetchTokenData(
+          publicKey,
+          asset,
+          isAllowListVerificationEnabled,
+        );
       } catch (e) {
         captureException(
           `Failed to fetch token details - ${JSON.stringify(e)}`,

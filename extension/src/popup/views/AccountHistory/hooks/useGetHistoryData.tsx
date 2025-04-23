@@ -1,7 +1,6 @@
 import { useReducer } from "react";
 import { Horizon } from "stellar-sdk";
 
-import { NetworkDetails } from "@shared/constants/stellar";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { HistoryResponse, useGetHistory } from "helpers/hooks/useGetHistory";
@@ -11,6 +10,8 @@ import {
   getIsPayment,
   getIsSwap,
 } from "popup/helpers/account";
+import { useGetAppData } from "helpers/hooks/useGetAppData";
+import { isMainnet } from "helpers/stellar";
 
 export type HistorySection = {
   monthYear: string; // in format {month}:{year}
@@ -20,6 +21,7 @@ export type HistorySection = {
 interface HistoryData {
   balances: AccountBalances;
   history: HistorySection[];
+  publicKey: string;
 }
 
 const createHistorySections = (
@@ -76,10 +78,7 @@ const createHistorySections = (
   );
 
 function useGetHistoryData(
-  publicKey: string,
-  networkDetails: NetworkDetails,
   balanceOptions: {
-    isMainnet: boolean;
     showHidden: boolean;
     includeIcons: boolean;
   },
@@ -91,18 +90,27 @@ function useGetHistoryData(
     reducer<HistoryData, unknown>,
     initialState,
   );
-  const { fetchData: fetchBalances } = useGetBalances(
-    publicKey,
-    networkDetails,
-    balanceOptions,
-  );
-  const { fetchData: fetchHistory } = useGetHistory(publicKey, networkDetails);
+  const { fetchData: fetchAppData } = useGetAppData();
+  const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
+  const { fetchData: fetchHistory } = useGetHistory();
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const balancesResult = await fetchBalances();
-      const history = await fetchHistory();
+      const appData = await fetchAppData();
+      if (isError(appData)) {
+        throw new Error(appData.message);
+      }
+
+      const publicKey = appData.account.publicKey;
+      const networkDetails = appData.settings.networkDetails;
+      const isMainnetNetwork = isMainnet(networkDetails);
+      const balancesResult = await fetchBalances(
+        publicKey,
+        isMainnetNetwork,
+        networkDetails,
+      );
+      const history = await fetchHistory(publicKey, networkDetails);
 
       if (isError<AccountBalances>(balancesResult)) {
         throw new Error(balancesResult.message);
@@ -113,6 +121,7 @@ function useGetHistoryData(
       }
 
       const payload = {
+        publicKey,
         balances: balancesResult,
         history: createHistorySections(
           publicKey,

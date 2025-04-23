@@ -197,11 +197,7 @@ function useGetTxDetailsData(
     initialState,
   );
 
-  const { fetchData: fetchBalances } = useGetBalances(
-    publicKey,
-    networkDetails,
-    balanceOptions,
-  );
+  const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
   const { assetsLists } = useSelector(settingsSelector);
 
   const { scanTx } = useScanTx();
@@ -209,8 +205,12 @@ function useGetTxDetailsData(
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const balancesResult = await fetchBalances();
       let destinationAccount = await getBaseAccount(destination);
+      const balancesResult = await fetchBalances(
+        publicKey,
+        balanceOptions.isMainnet,
+        networkDetails,
+      );
       const destBalancesResult =
         destinationAccount && !isContractId(destinationAccount)
           ? await getAccountBalances(

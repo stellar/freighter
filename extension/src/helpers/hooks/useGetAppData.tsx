@@ -2,11 +2,16 @@ import { useReducer } from "react";
 import { useDispatch } from "react-redux";
 import * as Sentry from "@sentry/browser";
 
-import { initialState, reducer } from "helpers/request";
-import { storeAccountMetricsData } from "helpers/metrics";
+import { initialState, reducer } from "../request";
+import { storeAccountMetricsData } from "../metrics";
 import { loadAccount, loadSettings } from "@shared/api/internal";
-import { saveAccount, saveAccountError } from "popup/ducks/accountServices";
-import { saveSettingsAction } from "popup/ducks/settings";
+import {
+  saveAccount,
+  saveAccountError,
+  saveApplicationState,
+} from "../../popup/ducks/accountServices";
+import { saveSettingsAction } from "../../popup/ducks/settings";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 export interface AppData {
   account: Awaited<ReturnType<typeof loadAccount>>;
@@ -19,6 +24,7 @@ function useGetAppData() {
 
   const fetchData = async (): Promise<AppData | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
+    reduxDispatch(saveApplicationState(APPLICATION_STATE.APPLICATION_LOADING));
     try {
       const account = await loadAccount();
       const settings = await loadSettings();
@@ -26,6 +32,7 @@ function useGetAppData() {
       storeAccountMetricsData(account.publicKey, account.allAccounts);
       reduxDispatch(saveAccount(account));
       reduxDispatch(saveSettingsAction(settings));
+      reduxDispatch(saveApplicationState(account.applicationState));
       const payload = {
         account,
         settings,

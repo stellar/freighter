@@ -10,16 +10,14 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { POPUP_WIDTH } from "constants/dimensions";
+// import { POPUP_WIDTH } from "constants/dimensions";
 import { newTabHref } from "helpers/urls";
 import { openTab } from "popup/helpers/navigate";
 
 import { ROUTES } from "popup/constants/routes";
 import {
-  allAccountsSelector,
   applicationStateSelector,
   hasPrivateKeySelector,
-  publicKeySelector,
   authErrorSelector,
 } from "popup/ducks/accountServices";
 import { settingsStateSelector } from "popup/ducks/settings";
@@ -78,18 +76,7 @@ import { useIsSwap } from "./helpers/useIsSwap";
 import { AppDispatch } from "./App";
 
 export const PublicKeyRoute = ({ children }: { children: JSX.Element }) => {
-  const location = useLocation();
   const applicationState = useSelector(applicationStateSelector);
-  const publicKey = useSelector(publicKeySelector);
-  const error = useSelector(authErrorSelector);
-
-  if (applicationState === APPLICATION_STATE.APPLICATION_ERROR) {
-    return <AppError>{error}</AppError>;
-  }
-
-  if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
-    return null;
-  }
 
   if (applicationState === APPLICATION_STATE.APPLICATION_STARTED) {
     return (
@@ -97,15 +84,6 @@ export const PublicKeyRoute = ({ children }: { children: JSX.Element }) => {
         to={{
           pathname: "/",
         }}
-      />
-    );
-  }
-  if (!publicKey) {
-    return (
-      <Navigate
-        to={`${ROUTES.unlockAccount}${location.search}`}
-        state={{ from: location }}
-        replace
       />
     );
   }
@@ -174,34 +152,34 @@ export const VerifiedAccountRoute = ({
   return children;
 };
 
-const HomeRoute = () => {
-  const allAccounts = useSelector(allAccountsSelector);
+export const HomeRoute = () => {
   const applicationState = useSelector(applicationStateSelector);
-  const publicKey = useSelector(publicKeySelector);
   const error = useSelector(authErrorSelector);
+
+  // TODO This needs to fetch its own app data
 
   if (applicationState === APPLICATION_STATE.APPLICATION_ERROR) {
     return <AppError>{error}</AppError>;
   }
-  if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
-    return null;
-  }
+  // if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
+  //   return null;
+  // }
 
-  if (!publicKey || !allAccounts.length) {
-    if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
-      return <Navigate to={ROUTES.unlockAccount} />;
-    }
+  // if (!publicKey || !allAccounts.length) {
+  //   if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
+  //     return <Navigate to={ROUTES.unlockAccount} />;
+  //   }
 
-    /*
-    We want to launch the extension in a new tab for a user still in the onboarding process.
-    In this particular case, open the tab if we are in the "popup" view.
-    */
-    if (window.innerWidth === POPUP_WIDTH) {
-      openTab(newTabHref(ROUTES.welcome));
-      window.close();
-    }
-    return <Welcome />;
-  }
+  //   /*
+  //   We want to launch the extension in a new tab for a user still in the onboarding process.
+  //   In this particular case, open the tab if we are in the "popup" view.
+  //   */
+  //   if (window.innerWidth === POPUP_WIDTH) {
+  //     openTab(newTabHref(ROUTES.welcome));
+  //     window.close();
+  //   }
+  //   return <Welcome />;
+  // }
 
   switch (applicationState) {
     case APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED:
@@ -254,6 +232,7 @@ const Layout = () => {
   const isSwap = useIsSwap();
 
   const applicationState = useSelector(applicationStateSelector);
+  const error = useSelector(authErrorSelector);
 
   const showNav =
     location.pathname &&
@@ -261,10 +240,15 @@ const Layout = () => {
       applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) ||
       SHOW_NAV_ROUTES.some((route) => location.pathname === route) ||
       (isSwap && location.pathname !== ROUTES.unlockAccount));
+  console.log(location, applicationState, isSwap);
 
   const isAppLayout = NO_APP_LAYOUT_ROUTES.every(
     (route) => route !== location.pathname,
   );
+
+  if (applicationState === APPLICATION_STATE.APPLICATION_ERROR) {
+    return <AppError>{error}</AppError>;
+  }
 
   return (
     <View isAppLayout={isAppLayout}>
@@ -280,7 +264,7 @@ export const Router = () => (
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route
-          path={ROUTES.account}
+          index
           element={
             <PublicKeyRoute>
               <Account />
@@ -570,7 +554,7 @@ export const Router = () => (
             ></Route>
           </>
         )}
-        <Route index element={<HomeRoute />}></Route>
+        {/* <Route index element={<HomeRoute />}></Route> */}
       </Route>
     </Routes>
   </HashRouter>

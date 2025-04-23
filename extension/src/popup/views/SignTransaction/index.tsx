@@ -28,7 +28,6 @@ import { emitMetric } from "helpers/metrics";
 import {
   getTransactionInfo,
   isFederationAddress,
-  isMainnet,
   isMuxedAccount,
   stroopToXlm,
   truncatedPublicKey,
@@ -94,6 +93,7 @@ export const SignTransaction = () => {
 
   const { networkName, networkPassphrase } = networkDetails;
   let accountToSign = _accountToSign;
+  // TODO: PUBKEY
   const {
     allAccounts,
     accountNotFound,
@@ -114,14 +114,11 @@ export const SignTransaction = () => {
     accountToSign,
   );
   const { state: scanTxState, fetchData } = useGetSignTxData(
-    publicKey,
-    networkDetails,
     {
       xdr: transactionXdr,
       url,
     },
     {
-      isMainnet: isMainnet(networkDetails),
       showHidden: false,
       includeIcons: true,
     },

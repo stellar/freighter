@@ -1,8 +1,8 @@
 export enum ROUTES {
   debug = "/debug",
   integrationTest = "/integration-test",
-  welcome = "/",
-  account = "/account",
+  welcome = "/welcome",
+  account = "/",
   viewPublicKey = "/account/view-public-key",
   importAccount = "/account/import",
   connectWallet = "/account/connect",

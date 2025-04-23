@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
@@ -9,18 +8,18 @@ import { Notification } from "@stellar/design-system";
 
 import { FormRows } from "popup/basics/Forms";
 import { ROUTES } from "popup/constants/routes";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { isMainnet, isTestnet } from "helpers/stellar";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 
-import { useGetBalances } from "helpers/hooks/useGetBalances";
-import { publicKeySelector } from "popup/ducks/accountServices";
-
 import { ManageAssetRows } from "../ManageAssetRows";
 import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
 import { useAssetLookup } from "./hooks/useAssetLookup";
+import { useGetSearchData } from "./hooks/useSearchData";
+import { NetworkDetails } from "@shared/constants/stellar";
+import { RequestState } from "helpers/hooks/fetchHookInterface";
+import { Loading } from "popup/components/Loading";
 
 import "./styles.scss";
 
@@ -58,32 +57,35 @@ const ResultsHeader = () => {
 
 export const SearchAsset = () => {
   const { t } = useTranslation();
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const publicKey = useSelector(publicKeySelector);
 
   const [hasNoResults, setHasNoResults] = useState(false);
   const ResultsRef = useRef<HTMLDivElement>(null);
-  // TODO: use this loading state
-  const { state, fetchData } = useGetBalances(publicKey, networkDetails, {
-    isMainnet: isMainnet(networkDetails),
+
+  const { state, fetchData } = useGetSearchData({
     showHidden: true,
     includeIcons: false,
   });
 
-  const { state: tokenState, fetchData: fetchTokenData } = useAssetLookup({
-    publicKey,
-    isAllowListVerificationEnabled:
-      isMainnet(networkDetails) || isTestnet(networkDetails),
-  });
+  const { state: tokenState, fetchData: fetchTokenData } = useAssetLookup();
 
   /* eslint-disable react-hooks/exhaustive-deps */
   const handleSearch = useCallback(
-    debounce(async ({ target: { value: asset } }) => {
-      await fetchTokenData({
-        asset,
-        isBlockaidEnabled: isMainnet(networkDetails),
-      });
-    }, 500),
+    debounce(
+      async (
+        { target: { value: asset } },
+        publicKey: string,
+        isAllowListVerificationEnabled: boolean,
+        networkDetails: NetworkDetails,
+      ) => {
+        await fetchTokenData({
+          publicKey,
+          isAllowListVerificationEnabled,
+          asset,
+          isBlockaidEnabled: isMainnet(networkDetails),
+        });
+      },
+      500,
+    ),
     [],
   );
 
@@ -101,9 +103,32 @@ export const SearchAsset = () => {
     };
 
     getData();
-  }, [networkDetails]);
+  }, []);
 
-  if (!isMainnet(networkDetails) && !isTestnet(networkDetails)) {
+  if (
+    state.state === RequestState.IDLE ||
+    state.state === RequestState.LOADING
+  ) {
+    return <Loading />;
+  }
+
+  if (state.state === RequestState.ERROR) {
+    return (
+      <div className="SearchAsset__fetch-fail">
+        <Notification
+          variant="error"
+          title={t("Failed to fetch your account data.")}
+        >
+          {t("Your account data could not be fetched at this time.")}
+        </Notification>
+      </div>
+    );
+  }
+
+  if (
+    !isMainnet(state.data.networkDetails) &&
+    !isTestnet(state.data.networkDetails)
+  ) {
     return <Navigate to={ROUTES.addAsset} />;
   }
 
@@ -116,7 +141,12 @@ export const SearchAsset = () => {
           {({ dirty }) => (
             <Form
               onChange={(e) => {
-                handleSearch(e);
+                handleSearch(
+                  e,
+                  state.data.publicKey,
+                  state.data.isAllowListVerificationEnabled,
+                  state.data.networkDetails,
+                );
                 setHasNoResults(false);
               }}
             >
@@ -151,7 +181,7 @@ export const SearchAsset = () => {
                   (tokenState.data.verifiedAssetRows.length ||
                     tokenState.data.unverifiedAssetRows.length) ? (
                     <ManageAssetRows
-                      balances={state.data!}
+                      balances={state.data!.balances}
                       header={
                         tokenState.data.verifiedAssetRows.length > 1 ||
                         tokenState.data.unverifiedAssetRows.length > 1 ? (
