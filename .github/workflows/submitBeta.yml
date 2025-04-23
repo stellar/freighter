@@ -1,6 +1,6 @@
 name: Beta Deployment
 env:
-  INDEXER_URL: ${{ secrets.INDEXER_BETA_URL }}
+  INDEXER_URL: ${{ secrets.INDEXER_URL }}
 on:
   workflow_dispatch:
     inputs:
