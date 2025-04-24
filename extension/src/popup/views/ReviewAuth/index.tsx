@@ -114,11 +114,11 @@ export const ReviewAuth = () => {
     return <Loading />;
   }
 
+  const publicKey = reviewAuthState.data?.publicKey!;
   const {
     allAccounts,
     currentAccount,
     isConfirming,
-    publicKey,
     handleApprove,
     hardwareWalletType,
     hwStatus,

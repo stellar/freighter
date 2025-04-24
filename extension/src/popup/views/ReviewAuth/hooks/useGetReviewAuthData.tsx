@@ -8,6 +8,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 
 interface ReviewAuthData {
   networkDetails: NetworkDetails;
+  publicKey: string;
   signFlowState: ReturnType<typeof useSetupSigningFlow>;
 }
 
@@ -18,6 +19,20 @@ function useGetReviewAuthData(transactionXdr: string, accountToSign?: string) {
   );
 
   const { fetchData: fetchAppData } = useGetAppData();
+  const {
+    accountNotFound,
+    currentAccount,
+    isConfirming,
+    isPasswordRequired,
+    handleApprove,
+    hwStatus,
+    rejectAndClose,
+    isHardwareWallet,
+    setIsPasswordRequired,
+    verifyPasswordThenSign,
+    hardwareWalletType,
+    setAccountDetails,
+  } = useSetupSigningFlow(rejectTransaction, signTransaction, transactionXdr);
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -30,29 +45,11 @@ function useGetReviewAuthData(transactionXdr: string, accountToSign?: string) {
       const publicKey = appData.account.publicKey;
       const allAccounts = appData.account.allAccounts;
       const networkDetails = appData.settings.networkDetails;
-      const {
-        accountNotFound,
-        currentAccount,
-        isConfirming,
-        isPasswordRequired,
-        handleApprove,
-        hwStatus,
-        rejectAndClose,
-        isHardwareWallet,
-        setIsPasswordRequired,
-        verifyPasswordThenSign,
-        hardwareWalletType,
-      } = useSetupSigningFlow(
-        rejectTransaction,
-        signTransaction,
-        transactionXdr,
-        publicKey,
-        allAccounts,
-        accountToSign,
-      );
+      setAccountDetails({ publicKey, allAccounts, accountToSign });
 
       const payload = {
         networkDetails,
+        publicKey,
         signFlowState: {
           allAccounts,
           accountNotFound,
@@ -60,13 +57,13 @@ function useGetReviewAuthData(transactionXdr: string, accountToSign?: string) {
           isConfirming,
           isPasswordRequired,
           isHardwareWallet,
-          publicKey,
           handleApprove,
           hwStatus,
           rejectAndClose,
           setIsPasswordRequired,
           verifyPasswordThenSign,
           hardwareWalletType,
+          setAccountDetails,
         },
       };
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

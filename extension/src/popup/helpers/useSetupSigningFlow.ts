@@ -24,10 +24,11 @@ export function useSetupSigningFlow(
   reject: typeof rejectTransaction,
   signFn: typeof signTransaction,
   transactionXdr: string,
-  publicKey: string,
-  allAccounts: Account[],
-  accountToSign?: string,
 ) {
+  const [publicKey, setPublicKey] = useState<string | null>(null);
+  const [allAccounts, setAllAccounts] = useState<Account[]>([]);
+  const [accountToSign, setAccountToSign] = useState<string | null>(null);
+
   const [isConfirming, setIsConfirming] = useState(false);
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
   const [startedHwSign, setStartedHwSign] = useState(false);
@@ -38,8 +39,6 @@ export function useSetupSigningFlow(
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
 
-  // the public key the user had selected before starting this flow
-  const defaultPublicKey = useRef(publicKey);
   const allAccountsMap = useRef({} as { [key: string]: Account });
   const isHardwareWallet = !!hardwareWalletType;
   const {
@@ -85,6 +84,22 @@ export function useSetupSigningFlow(
     }
   };
 
+  const setAccountDetails = ({
+    publicKey,
+    allAccounts,
+    accountToSign,
+  }: {
+    publicKey: string;
+    allAccounts: Account[];
+    accountToSign?: string;
+  }) => {
+    setPublicKey(publicKey);
+    setAllAccounts(allAccounts);
+    if (accountToSign) {
+      setAccountToSign(accountToSign);
+    }
+  };
+
   useEffect(() => {
     if (startedHwSign && hwStatus === ShowOverlayStatus.IDLE) {
       window.close();
@@ -100,7 +115,7 @@ export function useSetupSigningFlow(
         // does the user have the `accountToSign` somewhere in the accounts list?
         if (account.publicKey === accountToSign) {
           // if the `accountToSign` is found, but it isn't active, make it active
-          if (defaultPublicKey.current !== account.publicKey) {
+          if (publicKey !== account.publicKey) {
             dispatch(makeAccountActive(account.publicKey));
           }
 
@@ -116,11 +131,13 @@ export function useSetupSigningFlow(
     if (!autoSelectedAccountDetails) {
       setAccountNotFound(true);
     }
-  }, [accountToSign, allAccounts, dispatch]);
+  }, [accountToSign, allAccounts, dispatch, publicKey]);
 
   useEffect(() => {
     // handle any changes to the current acct - whether by auto select or manual select
-    setCurrentAccount(allAccountsMap.current[publicKey] || ({} as Account));
+    if (publicKey) {
+      setCurrentAccount(allAccountsMap.current[publicKey] || ({} as Account));
+    }
   }, [allAccounts, publicKey]);
 
   // TODO: setup local state for: accountToSign, allAccounts
@@ -132,7 +149,6 @@ export function useSetupSigningFlow(
     currentAccount,
     handleApprove,
     isHardwareWallet,
-    publicKey,
     hwStatus,
     isConfirming,
     isPasswordRequired,
@@ -140,5 +156,6 @@ export function useSetupSigningFlow(
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
+    setAccountDetails,
   };
 }

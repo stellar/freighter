@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Card, Icon, Notification } from "@stellar/design-system";
-import { useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
@@ -18,7 +18,6 @@ import {
 } from "popup/components/WarningMessages";
 import { AuthEntry } from "popup/components/signAuthEntry/AuthEntry";
 import { View } from "popup/basics/layout/View";
-import { signEntry, rejectAuthEntry } from "popup/ducks/access";
 import {
   isNonSSLEnabledSelector,
   settingsExperimentalModeSelector,
@@ -27,11 +26,17 @@ import {
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 
-import { EntryToSign, parsedSearchParam } from "helpers/urls";
-import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
+import { EntryToSign, newTabHref, parsedSearchParam } from "helpers/urls";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 
 import "./styles.scss";
+import { useGetSignAuthEntryData } from "./hooks/useGetSignAuthEntryData";
+import { RequestState } from "constants/request";
+import { Loading } from "popup/components/Loading";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { openTab } from "popup/helpers/navigate";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { ROUTES } from "popup/constants/routes";
 
 export const SignAuthEntry = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -56,25 +61,68 @@ export const SignAuthEntry = () => {
     domain,
   });
 
+  const { state: signAuthEntryData, fetchData } = useGetSignAuthEntryData(
+    params.entry,
+    accountToSign,
+  );
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const isLoading =
+    signAuthEntryData.state === RequestState.IDLE ||
+    signAuthEntryData.state === RequestState.LOADING;
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  const hasError = signAuthEntryData.state === RequestState.ERROR;
+  if (signAuthEntryData.data?.type === AppDataType.REROUTE) {
+    if (signAuthEntryData.data.shouldOpenTab) {
+      openTab(newTabHref(signAuthEntryData.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${signAuthEntryData.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (
+    !hasError &&
+    signAuthEntryData.data.type === "resolved" &&
+    (signAuthEntryData.data.applicationState ===
+      APPLICATION_STATE.PASSWORD_CREATED ||
+      signAuthEntryData.data.applicationState ===
+        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
+  ) {
+    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
+    window.close();
+  }
+
+  const publicKey = signAuthEntryData.data?.publicKey!;
   const {
     allAccounts,
     accountNotFound,
     currentAccount,
     isConfirming,
     isPasswordRequired,
-    publicKey,
     handleApprove,
     hwStatus,
     rejectAndClose,
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-  } = useSetupSigningFlow(
-    rejectAuthEntry,
-    signEntry,
-    params.entry,
-    accountToSign,
-  );
+  } = signAuthEntryData.data?.signFlowState!;
 
   if (entryNetworkPassphrase && entryNetworkPassphrase !== networkPassphrase) {
     return (

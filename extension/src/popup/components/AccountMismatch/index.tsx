@@ -1,23 +1,71 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { Navigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import {
-  isAccountMismatchSelector,
-  publicKeySelector,
-} from "popup/ducks/accountServices";
+import { isAccountMismatchSelector } from "popup/ducks/accountServices";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { truncatedPublicKey } from "helpers/stellar";
 import { View } from "popup/basics/layout/View";
+import { useGetAccountMismatchData } from "./hooks/useGetAccountMismatchData";
+import { RequestState } from "constants/request";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { ROUTES } from "popup/constants/routes";
+import { Loading } from "../Loading";
 
 import "./styles.scss";
 
 export const AccountMismatch = () => {
   const { t } = useTranslation();
   const isAccountMismatch = useSelector(isAccountMismatchSelector);
-  const publicKey = useSelector(publicKeySelector);
+  const { state: accountData, fetchData } = useGetAccountMismatchData();
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (
+    accountData.state === RequestState.IDLE ||
+    accountData.state === RequestState.LOADING
+  ) {
+    return <Loading />;
+  }
+
+  const hasError = accountData.state === RequestState.ERROR;
+  if (accountData.data?.type === "re-route") {
+    if (accountData.data.shouldOpenTab) {
+      openTab(newTabHref(accountData.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${accountData.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (
+    !hasError &&
+    accountData.data.type === "resolved" &&
+    (accountData.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED ||
+      accountData.data.applicationState ===
+        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
+  ) {
+    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
+    window.close();
+  }
+
+  const publicKey = accountData.data?.publicKey!;
 
   if (isAccountMismatch) {
     return createPortal(

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 import { Button, Icon, Notification } from "@stellar/design-system";
@@ -22,7 +22,7 @@ import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 
 import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 
-import { encodeObject, parsedSearchParam } from "helpers/urls";
+import { encodeObject, newTabHref, parsedSearchParam } from "helpers/urls";
 import { emitMetric } from "helpers/metrics";
 import {
   getTransactionInfo,
@@ -33,7 +33,7 @@ import {
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
-import { navigateTo } from "popup/helpers/navigate";
+import { navigateTo, openTab } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -63,6 +63,8 @@ import { Details } from "./Preview/Details";
 import { Data } from "./Preview/Data";
 
 import "./styles.scss";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 export const SignTransaction = () => {
   const location = useLocation();
@@ -103,12 +105,6 @@ export const SignTransaction = () => {
     },
     accountToSign,
   );
-
-  const scanResult = scanTxState.data?.scanResult;
-  const flaggedMalicious =
-    scanResult?.validation &&
-    "result_type" in scanResult.validation &&
-    scanResult.validation.result_type === "Malicious";
 
   // rebuild transaction to get Transaction prototypes
   const transaction = TransactionBuilder.fromXDR(
@@ -179,6 +175,45 @@ export const SignTransaction = () => {
 
   const isSubmitDisabled = isMemoRequired;
 
+  if (
+    scanTxState.state === RequestState.IDLE ||
+    scanTxState.state === RequestState.LOADING
+  ) {
+    return <Loading />;
+  }
+
+  const hasError = scanTxState.state === RequestState.ERROR;
+  if (scanTxState.data?.type === AppDataType.REROUTE) {
+    if (scanTxState.data.shouldOpenTab) {
+      openTab(newTabHref(scanTxState.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${scanTxState.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (
+    !hasError &&
+    scanTxState.data.type === "resolved" &&
+    (scanTxState.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED ||
+      scanTxState.data.applicationState ===
+        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
+  ) {
+    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
+    window.close();
+  }
+
+  const scanResult = scanTxState.data?.scanResult;
+  const flaggedMalicious =
+    scanResult?.validation &&
+    "result_type" in scanResult.validation &&
+    scanResult.validation.result_type === "Malicious";
+
   if (_networkPassphrase !== networkPassphrase) {
     return (
       <WarningMessage
@@ -200,21 +235,13 @@ export const SignTransaction = () => {
     return <SSLWarningMessage url={domain} />;
   }
 
-  const isLoading =
-    scanTxState.state === RequestState.IDLE ||
-    scanTxState.state === RequestState.LOADING;
-
-  if (isLoading) {
-    return <Loading />;
-  }
-
+  const publicKey = scanTxState.data?.publicKey!;
   const {
     allAccounts,
     accountNotFound,
     currentAccount,
     isConfirming,
     isPasswordRequired,
-    publicKey,
     handleApprove,
     hwStatus,
     rejectAndClose,

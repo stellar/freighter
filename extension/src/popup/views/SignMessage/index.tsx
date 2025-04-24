@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Button, Card, Icon, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -26,7 +26,7 @@ import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { SlideupModal } from "popup/components/SlideupModal";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
-import { MessageToSign, parsedSearchParam } from "helpers/urls";
+import { MessageToSign, newTabHref, parsedSearchParam } from "helpers/urls";
 import { truncatedPublicKey } from "helpers/stellar";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 
@@ -34,6 +34,10 @@ import "./styles.scss";
 import { useGetSignMessageData } from "./hooks/useGetSignMessageData";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { openTab } from "popup/helpers/navigate";
+import { ROUTES } from "popup/constants/routes";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 export const SignMessage = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -81,13 +85,40 @@ export const SignMessage = () => {
     return <Loading />;
   }
 
+  const hasError = signMessageState.state === RequestState.ERROR;
+  if (signMessageState.data?.type === AppDataType.REROUTE) {
+    if (signMessageState.data.shouldOpenTab) {
+      openTab(newTabHref(signMessageState.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${signMessageState.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (
+    !hasError &&
+    signMessageState.data.type === "resolved" &&
+    (signMessageState.data.applicationState ===
+      APPLICATION_STATE.PASSWORD_CREATED ||
+      signMessageState.data.applicationState ===
+        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
+  ) {
+    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
+    window.close();
+  }
+
+  const publicKey = signMessageState.data?.publicKey!;
   const {
     allAccounts,
     accountNotFound,
     currentAccount,
     isConfirming,
     isPasswordRequired,
-    publicKey,
     handleApprove,
     hwStatus,
     isHardwareWallet,
