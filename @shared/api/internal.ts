@@ -809,7 +809,7 @@ export const getIndexerAccountHistory = async ({
 }): Promise<Horizon.ServerApi.OperationRecord[]> => {
   try {
     const url = new URL(
-      `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}`,
+      `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}&is_failed_included=true`,
     );
     const response = await fetch(url.href);
 
