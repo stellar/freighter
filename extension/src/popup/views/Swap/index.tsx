@@ -33,9 +33,9 @@ export const Swap = () => {
       case STEPS.SWAP_CONFIRM: {
         emitMetric(METRIC_NAMES.swapConfirm);
         return (
-          <PublicKeyRoute>
+          <VerifiedAccountRoute>
             <SendConfirm goBack={() => setActiveStep(STEPS.SWAP_SETTINGS)} />
-          </PublicKeyRoute>
+          </VerifiedAccountRoute>
         );
       }
       case STEPS.SET_SWAP_SLIPPAGE: {
