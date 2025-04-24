@@ -51,7 +51,6 @@ describe("getTransactionInfo", () => {
       url: "https://stellar.org",
       transaction: { _networkPassphrase: "foo" },
       transactionXdr: "",
-      isDomainListedAllowed: true,
       flaggedKeys: { test: { tags: [""] } },
       tab: {},
     });
@@ -66,7 +65,6 @@ describe("getTransactionInfo", () => {
       url: "http://stellar.org",
       transaction: { _networkPassphrase: "foo" },
       transactionXdr: "",
-      isDomainListedAllowed: true,
       flaggedKeys: { test: { tags: [""] } },
       tab: {},
     });

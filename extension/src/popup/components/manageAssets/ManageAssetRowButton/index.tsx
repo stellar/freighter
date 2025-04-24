@@ -30,6 +30,8 @@ import IconAdd from "popup/assets/icon-add.svg";
 import IconRemove from "popup/assets/icon-remove.svg";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
 
+import { AccountBalances } from "helpers/hooks/useGetBalances";
+
 import { TrustlineError } from "../TrustlineError";
 
 import "./styles.scss";
@@ -54,6 +56,7 @@ interface ManageAssetRowButtonProps {
   setShowUnverifiedWarning: (rowButtonShowing: boolean) => void;
   setHandleAddToken: (func: any) => void;
   recommendedFee: string;
+  balances: AccountBalances;
 }
 
 export const ManageAssetRowButton = ({
@@ -76,6 +79,7 @@ export const ManageAssetRowButton = ({
   setShowUnverifiedWarning,
   setHandleAddToken,
   recommendedFee,
+  balances,
 }: ManageAssetRowButtonProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
@@ -215,6 +219,7 @@ export const ManageAssetRowButton = ({
       );
       navigateTo(ROUTES.account, navigate);
     }
+    setAssetSubmitting("");
   };
 
   useEffect(() => {
@@ -327,6 +332,7 @@ export const ManageAssetRowButton = ({
       {isTrustlineErrorShowing
         ? createPortal(
             <TrustlineError
+              balances={balances}
               handleClose={() => {
                 setIsTrustlineErrorShowing(false);
                 dispatch(resetSubmitStatus());

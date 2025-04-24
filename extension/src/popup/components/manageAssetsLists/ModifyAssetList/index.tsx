@@ -11,6 +11,7 @@ import {
   AssetsListKey,
   AssetListResponse,
 } from "@shared/constants/soroban/asset-list";
+import { schemaValidatedAssetList } from "@shared/api/helpers/token-list";
 import { ROUTES } from "popup/constants/routes";
 import { AppDispatch } from "popup/App";
 
@@ -19,7 +20,6 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { addAssetsList, modifyAssetsList } from "popup/ducks/settings";
 import { navigateTo } from "popup/helpers/navigate";
-import { schemaValidatedAssetList } from "popup/helpers/searchAsset";
 import { DeleteModal } from "../DeleteModal";
 
 import "./styles.scss";

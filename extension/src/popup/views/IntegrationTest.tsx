@@ -50,9 +50,10 @@ import {
   NETWORK_URLS,
   FUTURENET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
-import { Balances } from "@shared/api/types";
+import { Balances } from "@shared/api/types/backend-api";
 import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
 import { SERVICE_TYPES, DEV_SERVER } from "@shared/constants/services";
+import { AssetsLists } from "@shared/constants/soroban/asset-list";
 
 const testPublicKey =
   "GAM7OKWGYLITNSTD6335XNCBT6S2MZRT7UWQVZJHF5BQVMNF3YIKJTWY";
@@ -113,7 +114,10 @@ export const IntegrationTest = () => {
         assertEq(res, TESTNET_NETWORK_DETAILS);
       });
 
-      res = await createAccount(testPassword);
+      res = await createAccount({
+        password: testPassword,
+        isOverwritingAccount: false,
+      });
       runAsserts("createAccount", () => {
         assertArray(res.allAccounts);
         assertString(res.publicKey);
@@ -203,7 +207,11 @@ export const IntegrationTest = () => {
 
       runAsserts("resetDevData", () => {});
 
-      res = await recoverAccount(testPassword, mnemonicPhrase);
+      res = await recoverAccount({
+        password: testPassword,
+        recoverMnemonic: mnemonicPhrase,
+        isOverwritingAccount: false,
+      });
 
       runAsserts("recoverAccount", () => {
         assertArray(res.allAccounts);
@@ -222,7 +230,6 @@ export const IntegrationTest = () => {
       });
 
       res = await getAccountIndexerBalances({
-        activePublicKey: testPublicKey,
         publicKey: testPublicKey,
         networkDetails: TESTNET_NETWORK_DETAILS,
       });
@@ -243,6 +250,7 @@ export const IntegrationTest = () => {
       res = await getAssetIcons({
         balances: testBalances,
         networkDetails: TESTNET_NETWORK_DETAILS,
+        assetsLists: {} as AssetsLists,
       });
       runAsserts("getAssetIcons", () => {
         assertEq(Object.keys(res as object).length > 0, true);
@@ -313,10 +321,11 @@ export const IntegrationTest = () => {
 
       res = await saveAllowList({
         activePublicKey: testPublicKey,
-        allowList: ["foo", "bar"],
+        domain: "foo",
+        networkName: "baz",
       });
       runAsserts("saveAllowList", () => {
-        assertEq(res.allowList, ["foo", "bar"]);
+        assertEq(res.allowList, { baz: { testPublicKey: ["foo"] } });
       });
 
       res = await saveSettings({

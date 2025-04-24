@@ -1,109 +1,9 @@
-import { Address, SorobanRpc, XdrLargeInt } from "stellar-sdk";
+import { SorobanRpc } from "stellar-sdk";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { ActionStatus, ErrorMessage } from "@shared/api/types";
-import { simulateTokenTransfer } from "@shared/api/internal";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { SorobanRpcNotSupportedError } from "@shared/constants/errors";
-import { transfer } from "@shared/helpers/soroban/token";
-import { isCustomNetwork } from "@shared/helpers/stellar";
-import { xlmToStroop } from "helpers/stellar";
 
-import {
-  buildSorobanServer,
-  getNewTxBuilder,
-} from "@shared/helpers/soroban/server";
 import { buildAndSimulateSoroswapTx } from "popup/helpers/sorobanSwap";
-
-export const simulateTokenPayment = createAsyncThunk<
-  {
-    preparedTransaction: string;
-    simulationTransaction: SorobanRpc.Api.SimulateTransactionSuccessResponse;
-  },
-  {
-    address: string;
-    publicKey: string;
-    memo?: string;
-    params: {
-      publicKey: string;
-      destination: string;
-      amount: number;
-    };
-    networkDetails: NetworkDetails;
-    transactionFee: string;
-  },
-  {
-    rejectValue: ErrorMessage;
-  }
->(
-  "simulateTokenPayment",
-  async (
-    { address, publicKey, memo, params, networkDetails, transactionFee },
-    thunkApi,
-  ) => {
-    try {
-      if (isCustomNetwork(networkDetails)) {
-        if (!networkDetails.sorobanRpcUrl) {
-          throw new SorobanRpcNotSupportedError();
-        }
-        const server = buildSorobanServer(
-          networkDetails.sorobanRpcUrl,
-          networkDetails.networkPassphrase,
-        );
-        const builder = await getNewTxBuilder(
-          publicKey,
-          networkDetails,
-          server,
-          xlmToStroop(transactionFee).toFixed(),
-        );
-
-        const transferParams = [
-          new Address(publicKey).toScVal(), // from
-          new Address(address).toScVal(), // to
-          new XdrLargeInt("i128", params.amount).toI128(), // amount
-        ];
-        const transaction = transfer(address, transferParams, memo, builder);
-        const simulationTransaction =
-          await server.simulateTransaction(transaction);
-
-        const preparedTransaction = SorobanRpc.assembleTransaction(
-          transaction,
-          simulationTransaction,
-        )
-          .build()
-          .toXDR();
-
-        return {
-          simulationTransaction,
-          preparedTransaction,
-        };
-      }
-      const { ok, response } = await simulateTokenTransfer({
-        address,
-        publicKey,
-        memo,
-        params,
-        networkDetails,
-        transactionFee,
-      });
-
-      if (!ok) {
-        return thunkApi.rejectWithValue({
-          errorMessage: response.message,
-        });
-      }
-
-      return {
-        preparedTransaction: response.preparedTransaction,
-        simulationTransaction: response.simulationResponse,
-      };
-    } catch (e) {
-      const message = e instanceof Error ? e.message : JSON.stringify(e);
-      return thunkApi.rejectWithValue({
-        errorMessage: message,
-      });
-    }
-  },
-);
 
 export const simulateSwap = createAsyncThunk<
   {
@@ -188,17 +88,6 @@ const tokenPaymentsSimulationSlice = createSlice({
     resetSimulation: () => initialState,
   },
   extraReducers: (builder) => {
-    builder.addCase(simulateTokenPayment.pending, (state) => {
-      state.simStatus = ActionStatus.PENDING;
-    });
-    builder.addCase(simulateTokenPayment.rejected, (state, action) => {
-      state.simStatus = ActionStatus.ERROR;
-      state.error = action.payload;
-    });
-    builder.addCase(simulateTokenPayment.fulfilled, (state, action) => {
-      state.simStatus = ActionStatus.SUCCESS;
-      state.simulation = action.payload;
-    });
     builder.addCase(simulateSwap.pending, (state) => {
       state.simStatus = ActionStatus.PENDING;
     });

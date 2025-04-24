@@ -1,10 +1,11 @@
-import React, { useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { Routes, Navigate, Route } from "react-router-dom";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
-import { AppDispatch } from "popup/App";
-import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
+import { STEPS } from "popup/constants/send-payment";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
 import { SendTo } from "popup/components/sendPayment/SendTo";
 import { SendAmount } from "popup/components/sendPayment/SendAmount";
 import { SendType } from "popup/components/sendPayment/SendAmount/SendType";
@@ -13,173 +14,112 @@ import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/Trans
 import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/Slippage";
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 import { SendSettingsTxTimeout } from "popup/components/sendPayment/SendSettings/TxTimeout";
-
-import {
-  getAccountBalances,
-  getAssetIcons,
-  transactionSubmissionSelector,
-} from "popup/ducks/transactionSubmission";
-import { publicKeySelector } from "popup/ducks/accountServices";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { getPathFromRoute } from "popup/helpers/route";
+import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
 
 export const SendPayment = () => {
-  const dispatch: AppDispatch = useDispatch<AppDispatch>();
-  const { accountBalances } = useSelector(transactionSubmissionSelector);
-  const publicKey = useSelector(publicKeySelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const navigate = useNavigate();
+  const [activeStep, setActiveStep] = React.useState(STEPS.DESTINATION);
 
-  // load needed send payment data here in case didn't go to home screen first
-  useEffect(() => {
-    (async () => {
-      if (!accountBalances.balances) {
-        const res = await dispatch(
-          getAccountBalances({
-            publicKey,
-            networkDetails,
-          }),
+  const renderStep = (step: STEPS) => {
+    switch (step) {
+      case STEPS.CHOOSE_ASSET: {
+        return (
+          <PublicKeyRoute>
+            <ChooseAsset goBack={() => setActiveStep(STEPS.AMOUNT)} />
+          </PublicKeyRoute>
         );
-
-        if (getAccountBalances.fulfilled.match(res)) {
-          dispatch(
-            getAssetIcons({
-              balances: res.payload.balances.balances,
-              networkDetails,
-            }),
-          );
-        }
       }
-    })();
-  }, [dispatch, publicKey, networkDetails, accountBalances]);
-
-  const sendPaymentBasePath = "/sendPayment/";
-  const sendPaymentSettingsBasePath = "/sendPayment/settings/";
-  const sendToPath = getPathFromRoute({
-    fullRoute: ROUTES.sendPaymentTo,
-    basePath: sendPaymentBasePath,
-  });
-  const sendAmountPath = getPathFromRoute({
-    fullRoute: ROUTES.sendPaymentAmount,
-    basePath: sendPaymentBasePath,
-  });
-  const sendTypePath = getPathFromRoute({
-    fullRoute: ROUTES.sendPaymentType,
-    basePath: sendPaymentBasePath,
-  });
-  const sendSettingsPath = getPathFromRoute({
-    fullRoute: ROUTES.sendPaymentSettings,
-    basePath: sendPaymentBasePath,
-  });
-  const settingsFeePath = getPathFromRoute({
-    fullRoute: ROUTES.sendPaymentSettingsFee,
-    basePath: sendPaymentSettingsBasePath,
-  });
-  const settingsSlippagePath = getPathFromRoute({
-    fullRoute: ROUTES.sendPaymentSettingsSlippage,
-    basePath: sendPaymentSettingsBasePath,
-  });
-  const settingsTimeoutPath = getPathFromRoute({
-    fullRoute: ROUTES.sendPaymentSettingsTimeout,
-    basePath: sendPaymentSettingsBasePath,
-  });
-  const settingsConfirmPath = getPathFromRoute({
-    fullRoute: ROUTES.sendPaymentConfirm,
-    basePath: sendPaymentBasePath,
-  });
-
-  return (
-    <Routes>
-      <Route
-        index
-        element={
+      case STEPS.SET_PAYMENT_TIMEOUT: {
+        emitMetric(METRIC_NAMES.sendPaymentSettingsTimeout);
+        return (
           <PublicKeyRoute>
-            <Navigate to={sendToPath} />
-          </PublicKeyRoute>
-        }
-      ></Route>
-      <Route
-        path={sendToPath}
-        element={
-          <PublicKeyRoute>
-            <SendTo previous={ROUTES.account} />
-          </PublicKeyRoute>
-        }
-      ></Route>
-      <Route
-        path={sendAmountPath}
-        element={
-          <PublicKeyRoute>
-            <SendAmount
-              previous={ROUTES.sendPaymentTo}
-              next={ROUTES.sendPaymentSettings}
+            <SendSettingsTxTimeout
+              goBack={() => setActiveStep(STEPS.PAYMENT_SETTINGS)}
             />
           </PublicKeyRoute>
-        }
-      ></Route>
-      <Route
-        path={sendTypePath}
-        element={
-          <PublicKeyRoute>
-            <SendType />
-          </PublicKeyRoute>
-        }
-      ></Route>
-      <Route
-        path={`${sendSettingsPath}/*`}
-        element={
-          <PublicKeyRoute>
-            <Routes>
-              <Route
-                index
-                element={
-                  <PublicKeyRoute>
-                    <SendSettings
-                      previous={ROUTES.sendPaymentAmount}
-                      next={ROUTES.sendPaymentConfirm}
-                    />
-                  </PublicKeyRoute>
-                }
-              ></Route>
-              <Route
-                path={settingsFeePath}
-                element={
-                  <PublicKeyRoute>
-                    <SendSettingsFee previous={ROUTES.sendPaymentSettings} />
-                  </PublicKeyRoute>
-                }
-              ></Route>
-              <Route
-                path={settingsSlippagePath}
-                element={
-                  <PublicKeyRoute>
-                    <SendSettingsSlippage
-                      previous={ROUTES.sendPaymentSettings}
-                    />
-                  </PublicKeyRoute>
-                }
-              ></Route>
-              <Route
-                path={settingsTimeoutPath}
-                element={
-                  <PublicKeyRoute>
-                    <SendSettingsTxTimeout
-                      previous={ROUTES.sendPaymentSettings}
-                    />
-                  </PublicKeyRoute>
-                }
-              ></Route>
-            </Routes>
-          </PublicKeyRoute>
-        }
-      ></Route>
-      <Route
-        path={settingsConfirmPath}
-        element={
+        );
+      }
+      case STEPS.PAYMENT_CONFIRM: {
+        emitMetric(METRIC_NAMES.sendPaymentConfirm);
+        return (
           <VerifiedAccountRoute>
-            <SendConfirm previous={ROUTES.sendPaymentSettings} />
+            <SendConfirm goBack={() => setActiveStep(STEPS.PAYMENT_SETTINGS)} />
           </VerifiedAccountRoute>
-        }
-      ></Route>
-    </Routes>
-  );
+        );
+      }
+      case STEPS.SET_PAYMENT_SLIPPAGE: {
+        emitMetric(METRIC_NAMES.sendPaymentSettingsSlippage);
+        return (
+          <PublicKeyRoute>
+            <SendSettingsSlippage
+              goBack={() => setActiveStep(STEPS.PAYMENT_SETTINGS)}
+            />
+          </PublicKeyRoute>
+        );
+      }
+      case STEPS.SET_PAYMENT_FEE: {
+        emitMetric(METRIC_NAMES.sendPaymentSettingsFee);
+        return (
+          <PublicKeyRoute>
+            <SendSettingsFee
+              goBack={() => setActiveStep(STEPS.PAYMENT_SETTINGS)}
+            />
+          </PublicKeyRoute>
+        );
+      }
+      case STEPS.PAYMENT_SETTINGS: {
+        emitMetric(METRIC_NAMES.sendPaymentSettings);
+        return (
+          <PublicKeyRoute>
+            <SendSettings
+              goBack={() => setActiveStep(STEPS.AMOUNT)}
+              goToNext={() => setActiveStep(STEPS.PAYMENT_CONFIRM)}
+              goToFeeSetting={() => setActiveStep(STEPS.SET_PAYMENT_FEE)}
+              goToSlippageSetting={() =>
+                setActiveStep(STEPS.SET_PAYMENT_SLIPPAGE)
+              }
+              goToTimeoutSetting={() =>
+                setActiveStep(STEPS.SET_PAYMENT_TIMEOUT)
+              }
+            />
+          </PublicKeyRoute>
+        );
+      }
+      case STEPS.PAYMENT_TYPE: {
+        emitMetric(METRIC_NAMES.sendPaymentType);
+        return (
+          <PublicKeyRoute>
+            <SendType setStep={setActiveStep} />
+          </PublicKeyRoute>
+        );
+      }
+      case STEPS.AMOUNT: {
+        emitMetric(METRIC_NAMES.sendPaymentAmount);
+        return (
+          <PublicKeyRoute>
+            <SendAmount
+              goBack={() => setActiveStep(STEPS.DESTINATION)}
+              goToNext={() => setActiveStep(STEPS.PAYMENT_SETTINGS)}
+              goToPaymentType={() => setActiveStep(STEPS.PAYMENT_TYPE)}
+              goToChooseAsset={() => setActiveStep(STEPS.CHOOSE_ASSET)}
+            />
+          </PublicKeyRoute>
+        );
+      }
+      default:
+      case STEPS.DESTINATION: {
+        emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
+        return (
+          <PublicKeyRoute>
+            <SendTo
+              goBack={() => navigate(ROUTES.account)}
+              goToNext={() => setActiveStep(STEPS.AMOUNT)}
+            />
+          </PublicKeyRoute>
+        );
+      }
+    }
+  };
+
+  return renderStep(activeStep);
 };

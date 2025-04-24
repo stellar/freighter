@@ -4,8 +4,9 @@ import isEmpty from "lodash/isEmpty";
 import { Asset, Horizon } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 
-import { ApiTokenPrices, AssetIcons, AssetType } from "@shared/api/types";
+import { ApiTokenPrices, AssetIcons, Balance } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
+import { AssetType } from "@shared/api/types/account-balance";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
@@ -93,8 +94,8 @@ export const AssetIcon = ({
     );
   }
 
-  // Get icons for Soroban tokens
-  if (_isSorobanToken && !icon) {
+  // Get icons for Soroban tokens which are not present in assetIcons list
+  if (_isSorobanToken && !icon && !canonicalAsset) {
     const soroswapTokenDetail = soroswapTokens.find(
       (token) => token.contract === issuerKey,
     );
@@ -237,28 +238,31 @@ export const AccountAssets = ({
           key: "",
         };
         let code = "";
-        if (rb.liquidityPoolId) {
+        if ("liquidityPoolId" in rb) {
           isLP = true;
-          code = getLPShareCode(rb.reserves as Horizon.HorizonApi.Reserve[]);
-        } else if (rb.contractId && "symbol" in rb) {
+          code = getLPShareCode(rb.reserves);
+        } else if ("contractId" in rb && "symbol" in rb) {
           issuer = {
             key: rb.contractId,
           };
           code = rb.symbol;
         } else {
-          if ("issuer" in rb.token && rb.token) {
+          if (rb.token && "issuer" in rb.token) {
             issuer = rb.token.issuer;
           }
-          code = rb.token.code;
+
+          if (rb.token && "code" in rb.token) {
+            code = rb.token.code;
+          }
         }
 
         const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
         const assetPrice = assetPrices ? assetPrices[canonicalAsset] : null;
 
-        const isSuspicious = isAssetSuspicious(rb.blockaidData);
+        const isSuspicious = isAssetSuspicious((rb as Balance).blockaidData);
 
         const amountVal =
-          rb.contractId && "decimals" in rb
+          "contractId" in rb && "decimals" in rb
             ? formatTokenAmount(rb.total, rb.decimals)
             : rb.total.toFixed();
 
@@ -289,16 +293,14 @@ export const AccountAssets = ({
             onClick={isLP ? () => null : () => handleClick(canonicalAsset)}
           >
             <div className="AccountAssets__copy-left">
-              <div className="asset-icon">
-                <AssetIcon
-                  assetIcons={assetIcons}
-                  code={code}
-                  issuerKey={issuer?.key}
-                  retryAssetIconFetch={retryAssetIconFetch}
-                  isLPShare={!!rb.liquidityPoolId}
-                  isSuspicious={isSuspicious}
-                />
-              </div>
+              <AssetIcon
+                assetIcons={assetIcons}
+                code={code}
+                issuerKey={issuer?.key}
+                retryAssetIconFetch={retryAssetIconFetch}
+                isLPShare={"liquidityPoolId" in rb && !!rb.liquidityPoolId}
+                isSuspicious={isSuspicious}
+              />
               <div className="asset-native-value">
                 <span className="asset-code">{code}</span>
                 <div className="asset-native-amount" data-testid="asset-amount">

@@ -1,5 +1,5 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
-import { loginToTestAccount, PASSWORD } from "./helpers/login";
+import { loginToTestAccount } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS, USDC_TOKEN_ADDRESS } from "./helpers/test-token";
 
 test("Adding unverified Soroban token", async ({ page, extensionId }) => {
@@ -7,19 +7,18 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await loginToTestAccount({ page, extensionId });
 
   await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Manage assets").click({ force: true });
+  await page.getByText("Manage Assets").click({ force: true });
   await expect(page.getByText("Your assets")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "manage-assets-page.png",
   });
   await page.getByText("Add an asset").click({ force: true });
-  await page.getByText("Add manually").click({ force: true });
-  await page.getByTestId("search-token-input").fill(TEST_TOKEN_ADDRESS);
+  await page.getByTestId("search-asset-input").fill(TEST_TOKEN_ADDRESS);
   await expect(page.getByTestId("not-asset-on-list")).toHaveText(
     "Not on your lists",
   );
-  await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E Token");
+  await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E");
   await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");
   await page.getByTestId("ManageAssetRowButton").click({ force: true });
 
@@ -33,6 +32,8 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await page.getByTestId("add-asset").dispatchEvent("click");
   await expect(page.getByTestId("account-view")).toContainText("E2E");
 });
+
+// Skipping this test because on Testnet, stellar.expert's asset list is formatter incorrectly
 test.skip("Adding Soroban verified token", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
@@ -42,8 +43,7 @@ test.skip("Adding Soroban verified token", async ({ page, extensionId }) => {
 
   await expect(page.getByText("Your assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });
-  await page.getByText("Add manually").click({ force: true });
-  await page.getByTestId("search-token-input").fill(USDC_TOKEN_ADDRESS);
+  await page.getByTestId("search-asset-input").fill(USDC_TOKEN_ADDRESS);
   await expect(page.getByTestId("asset-on-list")).toHaveText("On your lists");
   await expect(page.getByTestId("ManageAssetCode")).toHaveText("USDC");
   await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");
@@ -70,6 +70,27 @@ test.skip("Adding Soroban verified token", async ({ page, extensionId }) => {
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
+});
+test("Adding token on Futurenet", async ({ page, extensionId }) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId });
+
+  await page.getByTestId("BottomNav-link-settings").click();
+  await page.getByText("Security").click();
+  await page.getByText("Advanced Settings").click();
+  await page.getByText("I understand, continue").click();
+  await page.getByTestId("isExperimentalModeEnabledValue").click();
+  await expect(page.locator("#isExperimentalModeEnabledValue")).toBeChecked();
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("BottomNav-link-account").click();
+
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Manage Assets").click({ force: true });
+
+  await expect(page.getByText("Your assets")).toBeVisible();
+  await page.getByText("Add an asset").click({ force: true });
+  await expect(page.getByTestId("search-token-input")).toBeVisible();
 });
 test.afterAll(async ({ page, extensionId }) => {
   if (

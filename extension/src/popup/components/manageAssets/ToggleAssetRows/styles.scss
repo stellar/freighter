@@ -1,0 +1,69 @@
+@use "../../../styles/utils.scss" as *;
+
+.ToggleAssetRows {
+  &__empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+
+    .EmptyMessage {
+      display: flex;
+      align-items: center;
+      color: var(--sds-clr-gray-09);
+
+      svg {
+        margin-right: pxToRem(10px);
+        stroke: var(--sds-clr-gray-09);
+      }
+    }
+  }
+  &__scrollbar {
+    height: 100%;
+  }
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(24px);
+    justify-content: space-between;
+  }
+
+  &--scrolling {
+    padding-right: pxToRem(10px);
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    &:last-child {
+      padding-bottom: pxToRem(64px);
+    }
+
+    &__info {
+      color: var(--sds-clr-gray-12);
+      flex-grow: 1;
+      line-height: pxToRem(24px);
+      &__header {
+        display: flex;
+      }
+    }
+  }
+
+  &__icon {
+    width: pxToRem(32px);
+  }
+
+  &__bullet {
+    background: var(--color-purple-60);
+    height: pxToRem(24px);
+    width: pxToRem(24px);
+  }
+
+  &__domain {
+    color: var(--sds-clr-gray-09);
+    font-size: var(--sds-fs-secondary);
+    line-height: pxToRem(22px);
+  }
+}

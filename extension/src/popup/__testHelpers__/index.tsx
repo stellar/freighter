@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import BigNumber from "bignumber.js";
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { Balances } from "@shared/api/types";
+import { Balances } from "@shared/api/types/backend-api";
 
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
@@ -254,3 +254,24 @@ export const mockAccountHistory = [
     type_i: 1,
   },
 ];
+
+export const validAssetList = {
+  name: "PiyalBasu Top 50",
+  provider: "PiyalBasu",
+  description: "Test asset list schema",
+  version: "1.0",
+  network: "public",
+  feedback: "https://piyalbasu.org",
+  assets: [
+    {
+      code: "yXLM",
+      issuer: "GARDNV3Q7YGT4AKSDF25LT32YSCCW4EV22Y2TV3I2PU2MMXJTEDL5T55",
+      contract: "CBZVSNVB55ANF24QVJL2K5QCLOAB6XITGTGXYEAF6NPTXYKEJUYQOHFC",
+      name: "yXLM",
+      org: "Ultra Capital LLC dba Ultra Capital",
+      domain: "ultracapital.xyz",
+      icon: "https://ipfs.io/ipfs/bafkreihntcz2lpaxawmbhwidtuifladkgew6olwuly2dz5pewqillhhpay",
+      decimals: 7,
+    },
+  ],
+};

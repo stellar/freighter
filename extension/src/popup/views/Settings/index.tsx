@@ -82,12 +82,23 @@ export const Settings = () => {
                   href={ROUTES.leaveFeedback}
                   icon={<IconFeedback />}
                 >
-                  {t("Leave Feedback")}
+                  {t("Leave feedback")}
                 </ListNavLink>
               </div>
               <div className="Settings__row">
                 <ListNavLink href={ROUTES.about} icon={<IconAbout />}>
                   {t("About")}
+                </ListNavLink>
+              </div>
+              <div className="Settings__row">
+                <ListNavLink
+                  href="https://docs.freighter.app/docs/whatsNew"
+                  icon={
+                    <Icon.Announcement01 className="Settings__icon__whatsNew" />
+                  }
+                  isExternal
+                >
+                  {t("What’s new")}
                 </ListNavLink>
               </div>
               <div className="Settings__row">

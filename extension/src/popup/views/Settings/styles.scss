@@ -23,7 +23,8 @@
     width: 1.25rem;
     height: 1.25rem;
 
-    &__preferences {
+    &__preferences,
+    &__whatsNew {
       stroke: var(--sds-clr-gray-09);
     }
   }

@@ -45,7 +45,7 @@ export const TransactionDetail = ({
   externalUrl,
   setIsDetailViewShowing,
 }: Omit<TransactionDetailProps, "isCreateExternalAccount">) => {
-  // Why does transaction_attr not exist on Horizon types?
+  // TODO: Why does transaction_attr not exist on Horizon types?
   const _op = operation as any;
   const {
     asset_code: assetCode,
@@ -93,7 +93,10 @@ export const TransactionDetail = ({
         title={headerTitle}
       />
       <View.Content>
-        <div className="TransactionDetail__content">
+        <div
+          className="TransactionDetail__content"
+          data-testid="transaction-detail"
+        >
           {isPayment ? (
             <div
               className={`TransactionDetail__header ${

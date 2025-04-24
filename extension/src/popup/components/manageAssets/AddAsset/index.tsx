@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { Networks, StellarToml, StrKey } from "stellar-sdk";
 import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
@@ -29,6 +30,8 @@ import {
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { publicKeySelector } from "popup/ducks/accountServices";
+
+import { useGetBalances } from "helpers/hooks/useGetBalances";
 
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
@@ -65,6 +68,14 @@ export const AddAsset = () => {
     useState(false);
   const [verifiedLists, setVerifiedLists] = useState([] as string[]);
   const { assetsLists } = useSelector(settingsSelector);
+  const navigate = useNavigate();
+
+  // TODO: use this loading state
+  const { state, fetchData } = useGetBalances(publicKey, networkDetails, {
+    isMainnet: isMainnet(networkDetails),
+    showHidden: true,
+    includeIcons: false,
+  });
 
   const ResultsRef = useRef<HTMLDivElement>(null);
   const isAllowListVerificationEnabled =
@@ -130,6 +141,7 @@ export const AddAsset = () => {
         `${tokenDetailsResponse.symbol}-${issuer}`,
         networkDetails,
       );
+
       return {
         code: tokenDetailsResponse.symbol,
         contract: contractId,
@@ -263,7 +275,20 @@ export const AddAsset = () => {
     setIsVerificationInfoShowing(isAllowListVerificationEnabled);
   }, [isAllowListVerificationEnabled]);
 
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+  }, []);
+
   const hasAssets = verifiedAssetRows.length || unverifiedAssetRows.length;
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+  }, []);
 
   return (
     <Formik initialValues={initialValues} onSubmit={() => {}}>
@@ -275,7 +300,10 @@ export const AddAsset = () => {
           }}
         >
           <View>
-            <SubviewHeader title={t("Add by address")} />
+            <SubviewHeader
+              title={t("Add by address")}
+              customBackAction={() => navigate(-2)}
+            />
             <View.Content hasNoTopPadding>
               <FormRows>
                 <div>
@@ -304,6 +332,7 @@ export const AddAsset = () => {
                   {hasAssets ? (
                     <ManageAssetRows
                       header={null}
+                      balances={state.data!}
                       verifiedAssetRows={verifiedAssetRows}
                       unverifiedAssetRows={unverifiedAssetRows}
                       isVerifiedToken={isVerifiedToken}

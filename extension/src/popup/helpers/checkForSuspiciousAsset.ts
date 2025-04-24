@@ -31,7 +31,8 @@ export const checkForSuspiciousAsset = async ({
 
   if (domain) {
     try {
-      const resp = await StellarToml.Resolver.resolve(domain);
+      const domainWithoutProtocol = domain.replace(/https?:\/\//, "");
+      const resp = await StellarToml.Resolver.resolve(domainWithoutProtocol);
       let found = false;
       (resp?.CURRENCIES || []).forEach(
         (c: { code?: string; issuer?: string }) => {

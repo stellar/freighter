@@ -62,7 +62,7 @@ export const UnlockAccount = () => {
 
       <View.Footer customGap="0.5rem">
         <div className="UnlockAccount__footer-label">
-          {t("Want to add another account?")}
+          {t("Lost your password? Want to replace your accounts?")}
         </div>
 
         <Button

@@ -1,18 +1,20 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 import { NavButton, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { navigateTo, openTab } from "popup/helpers/navigate";
+import { isMainnet } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { newTabHref } from "helpers/urls";
 import {
   saveAssetSelectType,
   AssetSelectType,
 } from "popup/ducks/transactionSubmission";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { AppDispatch } from "popup/App";
@@ -27,6 +29,7 @@ const DropdownModal = ({ isFunded }: DropdownModalProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   return (
     <div className="AccountOptionsDropdown__modal">
@@ -41,6 +44,21 @@ const DropdownModal = ({ isFunded }: DropdownModalProps) => {
           <Icon.QrCode01 />
         </div>
       </div>
+
+      {isMainnet(networkDetails) && (
+        <div
+          className="AccountOptionsDropdown__modal__item"
+          onClick={() => navigateTo(ROUTES.addFunds, navigate)}
+        >
+          <div className="AccountOptionsDropdown__modal__item__title">
+            {t("Add funds")}
+          </div>
+          <div className="AccountOptionsDropdown__modal__item__icon">
+            <Icon.PlusCircle />
+          </div>
+        </div>
+      )}
+
       <div
         className="AccountOptionsDropdown__modal__item"
         onClick={() => navigateTo(ROUTES.manageConnectedApps, navigate)}

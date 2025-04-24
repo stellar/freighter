@@ -27,13 +27,19 @@ import { captureException } from "@sentry/browser";
 
 import {
   ActionStatus,
+  AssetIcons,
   BlockAidScanAssetResult,
   BlockAidScanTxResult,
 } from "@shared/api/types";
 import { getTokenDetails } from "@shared/api/internal";
 import { TokenArgsDisplay } from "@shared/api/helpers/soroban";
 
-import { xlmToStroop, isMainnet, isTestnet } from "helpers/stellar";
+import {
+  getCanonicalFromAsset,
+  xlmToStroop,
+  isMainnet,
+  isTestnet,
+} from "helpers/stellar";
 
 import { AppDispatch } from "popup/App";
 import {
@@ -46,11 +52,9 @@ import {
   settingsSelector,
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
+import { AssetIcon } from "popup/components/account/AccountAssets";
 import { ModalInfo } from "popup/components/ModalInfo";
-import {
-  ManageAssetRow,
-  NewAssetFlags,
-} from "popup/components/manageAssets/ManageAssetRows";
+import { NewAssetFlags } from "popup/components/manageAssets/ManageAssetRows";
 import { SorobanTokenIcon } from "popup/components/account/AccountAssets";
 import { TrustlineError } from "popup/components/manageAssets/TrustlineError";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
@@ -73,16 +77,20 @@ import IconShieldBlockaid from "popup/assets/icon-shield-blockaid.svg";
 import IconWarningBlockaid from "popup/assets/icon-warning-blockaid.svg";
 import IconWarningBlockaidYellow from "popup/assets/icon-warning-blockaid-yellow.svg";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
+import { AccountBalances } from "helpers/hooks/useGetBalances";
+
 import {
   isAssetSuspicious,
   isBlockaidWarning,
   reportAssetWarning,
   reportTransactionWarning,
 } from "popup/helpers/blockaid";
+
 import { CopyValue } from "../CopyValue";
 import { Notification as NotificationV2 } from "../Notification";
 
 import "./styles.scss";
+import { getPunycodedDomain } from "helpers/urls";
 
 export enum WarningMessageVariant {
   default = "",
@@ -232,17 +240,21 @@ export const FlaggedWarningMessage = ({
   </>
 );
 
-export const FirstTimeWarningMessage = () => {
+export const DomainNotAllowedWarningMessage = ({
+  domain,
+}: {
+  domain: string;
+}) => {
   const { t } = useTranslation();
 
   return (
     <WarningMessage
-      header="First Time Interaction"
-      variant={WarningMessageVariant.warning}
+      variant={WarningMessageVariant.highAlert}
+      header={`${getPunycodedDomain(domain)} ${t("is currently not connected to this Freighter account")}`}
     >
       <p>
         {t(
-          "If you believe you have interacted with this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam.",
+          "If you believe you have connected to this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam.",
         )}
       </p>
       <p>
@@ -539,6 +551,8 @@ export const ScamAssetWarning = ({
 
   onContinue = () => {},
   blockaidData,
+  assetIcons,
+  balances,
 }: {
   pillType: "Connection" | "Trustline" | "Transaction";
   isSendWarning?: boolean;
@@ -549,6 +563,8 @@ export const ScamAssetWarning = ({
   onClose: () => void;
   onContinue?: () => void;
   blockaidData: BlockAidScanAssetResult;
+  assetIcons: AssetIcons;
+  balances: AccountBalances;
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -636,7 +652,7 @@ export const ScamAssetWarning = ({
 
   return isTrustlineErrorShowing ? (
     createPortal(
-      <TrustlineError handleClose={() => closeOverlay()} />,
+      <TrustlineError handleClose={() => closeOverlay()} balances={balances} />,
       document.querySelector("#modal-root")!,
     )
   ) : (
@@ -652,6 +668,7 @@ export const ScamAssetWarning = ({
           issuer={issuer}
           domain={domain}
           image={image}
+          assetIcons={assetIcons}
           variant={isAssetSuspicious(blockaidData) ? "malicious" : "default"}
           asset={code}
           pillType={pillType}
@@ -715,6 +732,7 @@ export const NewAssetWarning = ({
   image,
   newAssetFlags,
   onClose,
+  balances,
 }: {
   domain: string;
   code: string;
@@ -722,6 +740,7 @@ export const NewAssetWarning = ({
   image: string;
   newAssetFlags: NewAssetFlags;
   onClose: () => void;
+  balances: AccountBalances;
 }) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -736,6 +755,7 @@ export const NewAssetWarning = ({
   const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
 
   const { isRevocable, isInvalidDomain } = newAssetFlags;
+  const canonicalAsset = getCanonicalFromAsset(code, issuer);
 
   useEffect(
     () => () => {
@@ -813,91 +833,112 @@ export const NewAssetWarning = ({
 
   return isTrustlineErrorShowing ? (
     createPortal(
-      <TrustlineError handleClose={() => closeOverlay()} />,
+      <TrustlineError handleClose={() => closeOverlay()} balances={balances} />,
       document.querySelector("#modal-root")!,
     )
   ) : (
-    <div className="NewAssetWarning" data-testid="NewAssetWarning">
+    <div className="TokenWarning" data-testid="NewAssetWarning">
       <View.Content>
-        <div className="NewAssetWarning__wrapper" ref={warningRef}>
-          <div
-            className="NewAssetWarning__header"
-            data-testid="NewAssetWarningTitle"
-          >
-            {t("Before You Add This Asset")}
-          </div>
-          <div className="NewAssetWarning__description">
-            {t(
-              "Please double-check its information and characteristics. This can help you identify fraudulent assets.",
-            )}
-          </div>
-          <div className="NewAssetWarning__row">
-            <ManageAssetRow
-              code={code}
-              issuer={issuer}
-              image={image}
-              domain={domain}
-            />
-          </div>
-          <hr className="NewAssetWarning__list-divider" />
-          <div className="NewAssetWarning__flags">
-            {isRevocable && (
-              <div className="NewAssetWarning__flag">
-                <div className="NewAssetWarning__flag__icon">
-                  <img src={IconShieldCross} alt="revocable" />
+        <div className="TokenWarning__wrapper" ref={warningRef}>
+          <div className="TokenWarning__body">
+            <div className="TokenWarning__heading">
+              <div className="TokenWarning__icon">
+                <AssetIcon
+                  assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
+                  code={code}
+                  issuerKey={issuer}
+                  isSuspicious={false}
+                />
+              </div>
+              <div className="TokenWarning__code">{code}</div>
+              <div className="TokenWarning__domain">{domain}</div>
+              <div className="TokenWarning__description">
+                <div className="TokenWarning__description__icon">
+                  <Icon.User02 />
                 </div>
-                <div className="NewAssetWarning__flag__content">
-                  <div className="NewAssetWarning__flag__header">
-                    {t("Revocable Asset")}
-                  </div>
-                  <div className="NewAssetWarning__flag__description">
-                    {t(
-                      "The asset creator can revoke your access to this asset at anytime",
-                    )}
-                  </div>
+                <div
+                  className="TokenWarning__description__text"
+                  data-testid="DescriptionLabel"
+                >
+                  {t("Add Asset Trustline")}
                 </div>
               </div>
-            )}
-            <div>
-              {isInvalidDomain && (
-                <div className="NewAssetWarning__flag">
-                  <div className="NewAssetWarning__flag__icon">
-                    <img src={IconWarning} alt="invalid domain" />
+            </div>
+            <div className="TokenWarning__flags">
+              <div className="TokenWarning__flags__info">{t("Asset Info")}</div>
+              {isRevocable && (
+                <div className="TokenWarning__flag">
+                  <div className="TokenWarning__flag__icon">
+                    <img src={IconShieldCross} alt="revocable" />
                   </div>
-                  <div className="NewAssetWarning__flag__content">
-                    <div className="NewAssetWarning__flag__header">
-                      {t("Invalid Format Asset")}
+                  <div className="TokenWarning_flag__content">
+                    <div className="TokenWarning__flag__header TokenWarning__flag__icon--unverified">
+                      {t("Revocable Asset")}
                     </div>
-                    <div className="NewAssetWarning__flag__description">
+                    <div className="TokenWarning__flag__content">
                       {t(
-                        "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description",
-                      )}
+                        "The asset creator can revoke your access to this asset at anytime",
+                      )}{" "}
                     </div>
                   </div>
                 </div>
               )}
-            </div>
-            <div className="NewAssetWarning__btns">
-              <Button
-                size="md"
-                isFullWidth
-                variant="secondary"
-                type="button"
-                onClick={closeOverlay}
-              >
-                {t("Cancel")}
-              </Button>
-              <Button
-                size="md"
-                isFullWidth
-                variant="primary"
-                onClick={handleSubmit}
-                type="button"
-                isLoading={isSubmitting}
-                data-testid="NewAssetWarningAddButton"
-              >
-                {t("Add asset")}
-              </Button>
+              <div>
+                {isInvalidDomain && (
+                  <div className="TokenWarning__flag">
+                    <div className="TokenWarning__flag__icon--invalid-format">
+                      <Icon.AlertTriangle />
+                    </div>
+                    <div className="TokenWarning_flag__content">
+                      <div className="TokenWarning__flag__header TokenWarning__flag__icon">
+                        {t("Invalid Format Asset")}
+                      </div>
+                      <div className="TokenWarning__flag__content">
+                        {t(
+                          "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description",
+                        )}{" "}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className="TokenWarning__flag">
+                  <div className="TokenWarning__flag__icon">
+                    <img src={IconNewAsset} alt="new asset icon" />
+                  </div>
+                  <div className="TokenWarning_flag__content">
+                    <div className="TokenWarning__flag__header TokenWarning__flag__icon">
+                      {t("New asset")}
+                    </div>
+                    <div className="TokenWarning__flag__content">
+                      {t("This is a relatively new asset")}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="TokenWarning__bottom-content">
+                <div className="ScamAssetWarning__btns">
+                  <Button
+                    size="md"
+                    isFullWidth
+                    variant="tertiary"
+                    type="button"
+                    onClick={closeOverlay}
+                  >
+                    {t("Cancel")}
+                  </Button>
+                  <Button
+                    size="md"
+                    isFullWidth
+                    variant="secondary"
+                    onClick={handleSubmit}
+                    type="button"
+                    isLoading={isSubmitting}
+                    data-testid="NewAssetWarningAddButton"
+                  >
+                    {t("Add asset")}
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

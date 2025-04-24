@@ -16,7 +16,7 @@ import { TransactionDetails } from "./TransactionDetails";
 
 import "../styles.scss";
 
-export const SendConfirm = ({ previous }: { previous: ROUTES }) => {
+export const SendConfirm = ({ goBack }: { goBack: () => void }) => {
   const dispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const navigate = useNavigate();
@@ -37,30 +37,15 @@ export const SendConfirm = ({ previous }: { previous: ROUTES }) => {
     }
     switch (submission.submitStatus) {
       case ActionStatus.IDLE:
-        return (
-          <TransactionDetails
-            shouldScanTx={true}
-            goBack={() => navigateTo(previous, navigate)}
-          />
-        );
+        return <TransactionDetails shouldScanTx={true} goBack={goBack} />;
       case ActionStatus.PENDING:
-        return (
-          <TransactionDetails
-            shouldScanTx={false}
-            goBack={() => navigateTo(previous, navigate)}
-          />
-        );
+        return <TransactionDetails shouldScanTx={false} goBack={goBack} />;
       case ActionStatus.SUCCESS:
         return <SubmitSuccess viewDetails={() => setIsSendComplete(true)} />;
       case ActionStatus.ERROR:
         return <SubmitFail />;
       default:
-        return (
-          <TransactionDetails
-            shouldScanTx={false}
-            goBack={() => navigateTo(previous, navigate)}
-          />
-        );
+        return <TransactionDetails shouldScanTx={false} goBack={goBack} />;
     }
   };
 

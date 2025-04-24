@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Networks } from "stellar-sdk";
+import { Asset, Networks } from "stellar-sdk";
 import isEqual from "lodash/isEqual";
 
 import {
@@ -7,7 +7,10 @@ import {
   NETWORK_URLS,
   NetworkDetails,
 } from "@shared/constants/stellar";
-export { getAssetFromCanonical } from "@shared/helpers/stellar";
+export {
+  getAssetFromCanonical,
+  getCanonicalFromAsset,
+} from "@shared/helpers/stellar";
 
 import { TransactionInfo } from "types/transactions";
 import { parsedSearchParam, getUrlHostname } from "./urls";
@@ -36,7 +39,6 @@ export const getTransactionInfo = (search: string) => {
     url,
     transaction,
     transactionXdr,
-    isDomainListedAllowed,
     flaggedKeys,
     tab: { title = "" },
   } = searchParams;
@@ -56,23 +58,15 @@ export const getTransactionInfo = (search: string) => {
     isHttpsDomain,
     operations: _operations,
     operationTypes,
-    isDomainListedAllowed,
     flaggedKeys,
   };
 };
 
-export const getCanonicalFromAsset = (
-  assetCode: string,
-  assetIssuer: string,
-) => {
-  if (assetCode === "XLM" && !assetIssuer) {
-    return "native";
-  }
-  if (!assetIssuer) {
-    return assetCode;
-  }
-  return `${assetCode}:${assetIssuer}`;
-};
+export function isAsset(
+  value: Asset | { code: string; issuer: string },
+): value is Asset {
+  return (value as Asset).getIssuer !== undefined;
+}
 
 export const stroopToXlm = (
   stroops: BigNumber | string | number,

@@ -22,9 +22,32 @@ import { SendPayment } from "popup/views/SendPayment";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
 import * as CheckSuspiciousAsset from "popup/helpers/checkForSuspiciousAsset";
 import * as tokenPaymentActions from "popup/ducks/token-payment";
+import * as GetIconHelper from "@shared/api/helpers/getIconUrlFromIssuer";
+import * as BlockAidHelpers from "popup/helpers/blockaid";
 
-jest.spyOn(ApiInternal, "getAccountIndexerBalances").mockImplementation(() => {
+jest.mock("lodash/debounce", () => jest.fn((fn) => fn));
+
+jest
+  .spyOn(GetIconHelper, "getIconUrlFromIssuer")
+  .mockImplementation(() => Promise.resolve("icon_url"));
+
+jest.spyOn(ApiInternal, "getAccountBalances").mockImplementation(() => {
   return Promise.resolve(mockBalances);
+});
+
+jest.spyOn(ApiInternal, "loadRecentAddresses").mockImplementation(() => {
+  return Promise.resolve({ recentAddresses: [] });
+});
+
+jest.spyOn(ApiInternal, "getHiddenAssets").mockImplementation(() => {
+  return Promise.resolve({
+    hiddenAssets: {},
+    error: "",
+  });
+});
+
+jest.spyOn(ApiInternal, "getAssetIcons").mockImplementation(() => {
+  return Promise.resolve({});
 });
 
 jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() => {
@@ -120,7 +143,7 @@ describe.skip("SendPayment", () => {
   it("renders", async () => {
     render(
       <Wrapper
-        routes={[ROUTES.sendPaymentTo]}
+        routes={[ROUTES.sendPayment]}
         state={{
           auth: {
             error: null,
@@ -148,36 +171,22 @@ describe.skip("SendPayment", () => {
   });
 
   it("sending non-native asset on Mainnet with Blockaid validation and asset warnings", async () => {
-    jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
-      const scanTxResult = {
-        simulation: {
-          status: "Success",
-        } as any,
-        validation: {
-          classification: "",
-          features: [
-            {
-              feature_id: "KNOWN_MALICIOUS",
-              type: "Malicious",
-              address: "baz",
-              description: "foo",
-            },
-          ] as any,
-          description: "foo",
-          reason: "",
-          result_type: "Malicious" as any,
-          status: "Success" as any,
-        },
-        request_id: "123",
-      };
-      return {
-        scanTx: () => Promise.resolve(null),
-        isLoading: false,
-        data: scanTxResult,
-        error: null,
-        setLoading: () => {},
-      };
-    });
+    jest.spyOn(BlockAidHelpers, "scanAsset").mockImplementation(() =>
+      Promise.resolve({
+        address: "",
+        chain: "stellar",
+        attack_types: {},
+        fees: {},
+        malicious_score: "0.5",
+        metadata: {},
+        financial_stats: {},
+        trading_limits: {},
+        result_type: "Malicious",
+        features: [
+          { description: "", feature_id: "KNOWN_MALICIOUS", type: "Malicious" },
+        ],
+      }),
+    );
     await testPaymentFlow(
       "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
       true,
@@ -243,7 +252,7 @@ const testPaymentFlow = async (
 ) => {
   render(
     <Wrapper
-      routes={[ROUTES.sendPaymentTo]}
+      routes={[ROUTES.sendPayment]}
       state={{
         auth: {
           error: null,
@@ -340,11 +349,7 @@ const testPaymentFlow = async (
       expect(
         screen.getByTestId("BlockaidWarningModal__button__asset"),
       ).toBeDefined();
-      expect(
-        screen.getByTestId("BlockaidWarningModal__button__tx"),
-      ).toBeDefined();
 
-      await fireEvent.click(screen.getByTestId("BlockaidByLine__arrow__tx"));
       expect(screen.getByTestId("BlockaidWarningModal__tx")).toBeDefined();
       if (hasSimError) {
         expect(
@@ -367,9 +372,6 @@ const testPaymentFlow = async (
     } else {
       expect(
         screen.queryByTestId("BlockaidWarningModal__button__asset"),
-      ).toBeNull();
-      expect(
-        screen.queryByTestId("BlockaidWarningModal__button__tx"),
       ).toBeNull();
     }
 

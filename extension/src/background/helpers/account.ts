@@ -20,19 +20,21 @@ import { getSorobanRpcUrl } from "@shared/helpers/soroban/sorobanRpcUrl";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
 import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
-import {
-  dataStorageAccess,
-  browserLocalStorage,
-} from "background/helpers/dataStorageAccess";
+import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { captureException } from "@sentry/browser";
 
-const localStore = dataStorageAccess(browserLocalStorage);
+export const getKeyIdList = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => (await localStore.getItem(KEY_ID_LIST)) || [];
 
-export const getKeyIdList = async () =>
-  (await localStore.getItem(KEY_ID_LIST)) || [];
-
-export const getAccountNameList = async () => {
+export const getAccountNameList = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => {
   const encodedaccountNameList =
     ((await localStore.getItem(ACCOUNT_NAME_LIST_ID)) as string) ||
     encodeObject({});
@@ -43,11 +45,13 @@ export const getAccountNameList = async () => {
 export const addAccountName = async ({
   keyId,
   accountName,
+  localStore,
 }: {
   keyId: string;
   accountName: string;
+  localStore: DataStorageAccess;
 }) => {
-  const accountNameList = (await getAccountNameList()) as Record<
+  const accountNameList = (await getAccountNameList({ localStore })) as Record<
     string,
     string
   >;
@@ -59,60 +63,176 @@ export const addAccountName = async ({
   await localStore.setItem(ACCOUNT_NAME_LIST_ID, encodedaccountNameList);
 };
 
-export const getIsMainnet = async () => {
-  const networkDetails = await getNetworkDetails();
+export const getIsMainnet = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => {
+  const networkDetails = await getNetworkDetails({ localStore });
 
   return isMainnet(networkDetails);
 };
 
-export const getIsTestnet = async () => {
-  const networkDetails = await getNetworkDetails();
+export const getIsTestnet = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => {
+  const networkDetails = await getNetworkDetails({ localStore });
 
   return isTestnet(networkDetails);
 };
 
-export const getIsFuturenet = async () => {
-  const networkDetails = await getNetworkDetails();
+export const getIsFuturenet = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => {
+  const networkDetails = await getNetworkDetails({ localStore });
 
   return isFuturenet(networkDetails);
 };
 
-export const getAllowList = async () => {
-  const allowList = (await localStore.getItem(ALLOWLIST_ID)) || "";
+export const getAllowList = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => {
+  const allowList = (await localStore.getItem(ALLOWLIST_ID)) || {};
 
-  if (allowList === "") {
-    // manually return an empty array as calling .split(",") will return [""]
-    return [];
-  }
-
-  return allowList.split(",");
+  return allowList;
 };
 
-export const getIsMemoValidationEnabled = async () =>
-  (await localStore.getItem(IS_VALIDATING_MEMO_ID)) ?? true;
+export const getAllowListSegment = async ({
+  publicKey,
+  networkDetails,
+  localStore,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+  localStore: DataStorageAccess;
+}) => {
+  const allowList = (await localStore.getItem(ALLOWLIST_ID)) || {};
+  const allowListByNetwork = allowList[networkDetails.networkName] || {};
+  const allowListByKey: string[] = allowListByNetwork[publicKey] || [];
 
-export const getIsExperimentalModeEnabled = async () =>
-  (await localStore.getItem(IS_EXPERIMENTAL_MODE_ID)) ?? false;
+  return allowListByKey;
+};
 
-export const getIsHashSigningEnabled = async () =>
-  (await localStore.getItem(IS_HASH_SIGNING_ENABLED_ID)) ?? false;
+export const setAllowListDomain = async ({
+  publicKey,
+  networkDetails,
+  domain,
+  localStore,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+  domain: string;
+  localStore: DataStorageAccess;
+}) => {
+  const allowList = (await localStore.getItem(ALLOWLIST_ID)) || {};
+  const allowListByNetwork = { ...allowList[networkDetails.networkName] };
+  const allowListPublicKeyArray: string[] = allowListByNetwork[publicKey] || [];
+
+  if (allowListPublicKeyArray.includes(domain)) {
+    return allowListPublicKeyArray;
+  }
+
+  allowListPublicKeyArray.push(domain);
+  await localStore.setItem(ALLOWLIST_ID, {
+    ...allowList,
+    [networkDetails.networkName]: {
+      ...allowListByNetwork,
+      [publicKey]: allowListPublicKeyArray,
+    },
+  });
+
+  return allowListPublicKeyArray;
+};
+
+export const removeAllowListDomain = async ({
+  publicKey,
+  networkName,
+  domain,
+  localStore,
+}: {
+  publicKey: string;
+  networkName: string;
+  domain: string;
+  localStore: DataStorageAccess;
+}) => {
+  const allowList = (await localStore.getItem(ALLOWLIST_ID)) || {};
+  const allowListByNetwork = { ...allowList[networkName] };
+  const allowListPublicKeyArray: string[] = allowListByNetwork[publicKey] || [];
+
+  if (!allowListPublicKeyArray.includes(domain)) {
+    return allowListPublicKeyArray;
+  }
+
+  const editedAllowList = allowListPublicKeyArray.filter(
+    (item) => item !== domain,
+  );
+
+  await localStore.setItem(ALLOWLIST_ID, {
+    ...allowList,
+    [networkName]: {
+      ...allowListByNetwork,
+      [publicKey]: editedAllowList,
+    },
+  });
+
+  return allowListPublicKeyArray;
+};
+
+export const getIsMemoValidationEnabled = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => (await localStore.getItem(IS_VALIDATING_MEMO_ID)) ?? true;
+
+export const getIsExperimentalModeEnabled = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => (await localStore.getItem(IS_EXPERIMENTAL_MODE_ID)) ?? false;
+
+export const getIsHashSigningEnabled = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => (await localStore.getItem(IS_HASH_SIGNING_ENABLED_ID)) ?? false;
 
 // hardware wallet helpers
 export const HW_PREFIX = "hw:";
 
-export const getIsHardwareWalletActive = async () =>
-  ((await localStore.getItem(KEY_ID)) || "").indexOf(HW_PREFIX) > -1;
+export const getIsHardwareWalletActive = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => ((await localStore.getItem(KEY_ID)) || "").indexOf(HW_PREFIX) > -1;
 
-export const getBipPath = async () => {
+export const getBipPath = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => {
   const keyId = ((await localStore.getItem(KEY_ID)) as string) || "";
   const hwData = (await localStore.getItem(keyId)) || {};
   return hwData.bipPath || "";
 };
 
-export const getSavedNetworks = async (): Promise<NetworkDetails[]> =>
+export const getSavedNetworks = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}): Promise<NetworkDetails[]> =>
   (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
-export const getNetworkDetails = async (): Promise<NetworkDetails> => {
+export const getNetworkDetails = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}): Promise<NetworkDetails> => {
   if (!(await localStore.getItem(NETWORK_ID))) {
     await localStore.setItem(NETWORK_ID, DEFAULT_NETWORKS[0]);
   }
@@ -123,7 +243,11 @@ export const getNetworkDetails = async (): Promise<NetworkDetails> => {
   return networkDetails;
 };
 
-export const getNetworksList = async () => {
+export const getNetworksList = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => {
   if (!(await localStore.getItem(NETWORKS_LIST_ID))) {
     await localStore.setItem(NETWORKS_LIST_ID, DEFAULT_NETWORKS);
   }
@@ -134,7 +258,11 @@ export const getNetworksList = async () => {
   return networksList;
 };
 
-export const getAssetsLists = async () => {
+export const getAssetsLists = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => {
   if (!(await localStore.getItem(ASSETS_LISTS_ID))) {
     await localStore.setItem(ASSETS_LISTS_ID, DEFAULT_ASSETS_LISTS);
   }
@@ -144,7 +272,11 @@ export const getAssetsLists = async () => {
   return assetLists;
 };
 
-export const getIsNonSSLEnabled = async () => {
+export const getIsNonSSLEnabled = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => {
   if (!(await localStore.getItem(IS_NON_SSL_ENABLED_ID))) {
     await localStore.setItem(IS_NON_SSL_ENABLED_ID, false);
   }
@@ -154,7 +286,11 @@ export const getIsNonSSLEnabled = async () => {
   return isNonSSLEnabled;
 };
 
-export const getIsHideDustEnabled = async () => {
+export const getIsHideDustEnabled = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => {
   const isHideDustEnabled =
     (await localStore.getItem(IS_HIDE_DUST_ENABLED_ID)) ?? true;
 
@@ -219,7 +355,13 @@ export const getFeatureFlags = async () => {
   return featureFlags;
 };
 
-export const subscribeAccount = async (publicKey: string) => {
+export const subscribeAccount = async ({
+  publicKey,
+  localStore,
+}: {
+  publicKey: string;
+  localStore: DataStorageAccess;
+}) => {
   // update last used account so we can use it to properly
   // display the identicon component on login screen
   await localStore.setItem(LAST_USED_ACCOUNT, publicKey);
@@ -233,7 +375,7 @@ export const subscribeAccount = async (publicKey: string) => {
   }
 
   try {
-    const networkDetails = await getNetworkDetails();
+    const networkDetails = await getNetworkDetails({ localStore });
 
     const options = {
       method: "POST",
@@ -336,8 +478,12 @@ export const subscribeTokenHistory = async ({
   }
 };
 
-export const verifySorobanRpcUrls = async () => {
-  const networkDetails = await getNetworkDetails();
+export const verifySorobanRpcUrls = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => {
+  const networkDetails = await getNetworkDetails({ localStore });
 
   if (!networkDetails.sorobanRpcUrl) {
     networkDetails.sorobanRpcUrl = getSorobanRpcUrl(networkDetails);
@@ -345,7 +491,7 @@ export const verifySorobanRpcUrls = async () => {
     await localStore.setItem(NETWORK_ID, networkDetails);
   }
 
-  const networksList: NetworkDetails[] = await getNetworksList();
+  const networksList: NetworkDetails[] = await getNetworksList({ localStore });
 
   for (let i = 0; i < networksList.length; i += 1) {
     const networksListDetails = networksList[i];
