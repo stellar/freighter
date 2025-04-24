@@ -1,15 +1,25 @@
 import { useReducer } from "react";
 
 import { initialState, isError, reducer } from "helpers/request";
-import { useGetAppData } from "helpers/hooks/useGetAppData";
+import {
+  AppDataType,
+  NeedsReRoute,
+  useGetAppData,
+} from "helpers/hooks/useGetAppData";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
-interface SignMessageData {
+interface ResolvedData {
+  type: AppDataType.RESOLVED;
   networkDetails: NetworkDetails;
+  publicKey: string;
   signFlowState: ReturnType<typeof useSetupSigningFlow>;
+  applicationState: APPLICATION_STATE;
 }
+
+type SignMessageData = ResolvedData | NeedsReRoute;
 
 function useGetSignMessageData(transactionXdr: string, accountToSign?: string) {
   const [state, dispatch] = useReducer(
@@ -18,6 +28,20 @@ function useGetSignMessageData(transactionXdr: string, accountToSign?: string) {
   );
 
   const { fetchData: fetchAppData } = useGetAppData();
+  const {
+    accountNotFound,
+    currentAccount,
+    isConfirming,
+    isPasswordRequired,
+    handleApprove,
+    hwStatus,
+    rejectAndClose,
+    isHardwareWallet,
+    setIsPasswordRequired,
+    verifyPasswordThenSign,
+    hardwareWalletType,
+    setAccountDetails,
+  } = useSetupSigningFlow(rejectTransaction, signTransaction, transactionXdr);
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -27,32 +51,21 @@ function useGetSignMessageData(transactionXdr: string, accountToSign?: string) {
         throw new Error(appData.message);
       }
 
+      if (appData.type === AppDataType.REROUTE) {
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload: appData });
+        return appData;
+      }
+
       const publicKey = appData.account.publicKey;
       const allAccounts = appData.account.allAccounts;
       const networkDetails = appData.settings.networkDetails;
-      const {
-        accountNotFound,
-        currentAccount,
-        isConfirming,
-        isPasswordRequired,
-        handleApprove,
-        hwStatus,
-        rejectAndClose,
-        isHardwareWallet,
-        setIsPasswordRequired,
-        verifyPasswordThenSign,
-        hardwareWalletType,
-      } = useSetupSigningFlow(
-        rejectTransaction,
-        signTransaction,
-        transactionXdr,
-        publicKey,
-        allAccounts,
-        accountToSign,
-      );
+      setAccountDetails({ publicKey, allAccounts, accountToSign });
 
       const payload = {
+        type: AppDataType.RESOLVED,
         networkDetails,
+        publicKey,
+        applicationState: appData.account.applicationState,
         signFlowState: {
           allAccounts,
           accountNotFound,
@@ -60,15 +73,15 @@ function useGetSignMessageData(transactionXdr: string, accountToSign?: string) {
           isConfirming,
           isPasswordRequired,
           isHardwareWallet,
-          publicKey,
           handleApprove,
           hwStatus,
           rejectAndClose,
           setIsPasswordRequired,
           verifyPasswordThenSign,
           hardwareWalletType,
+          setAccountDetails,
         },
-      };
+      } as ResolvedData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {

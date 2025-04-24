@@ -13,17 +13,25 @@ import {
 import { saveSettingsAction } from "../../popup/ducks/settings";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
+import { POPUP_WIDTH } from "constants/dimensions";
 
+export enum AppDataType {
+  REROUTE = "re-route",
+  RESOLVED = "resolved",
+}
 export interface NeedsReRoute {
-  type: "re-route";
+  type: AppDataType.REROUTE;
   routeTarget: ROUTES.unlockAccount | ROUTES.accountCreator;
   shouldOpenTab: boolean;
 }
 
-export interface AppData {
+interface ResolvedData {
+  type: AppDataType.RESOLVED;
   account: Awaited<ReturnType<typeof loadAccount>>;
   settings: Awaited<ReturnType<typeof loadSettings>>;
 }
+
+export type AppData = NeedsReRoute | ResolvedData;
 
 function useGetAppData() {
   const [state, dispatch] = useReducer(reducer<AppData, unknown>, initialState);
@@ -40,10 +48,28 @@ function useGetAppData() {
       reduxDispatch(saveAccount(account));
       reduxDispatch(saveSettingsAction(settings));
       reduxDispatch(saveApplicationState(account.applicationState));
+
+      if (
+        !account.publicKey ||
+        account.applicationState === APPLICATION_STATE.APPLICATION_STARTED
+      ) {
+        const hasOnboarded =
+          account.applicationState ===
+          APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
+        const payload = {
+          type: "re-route",
+          routeTarget: hasOnboarded ? ROUTES.unlockAccount : ROUTES.welcome,
+          shouldOpenTab: window.innerWidth === POPUP_WIDTH && !hasOnboarded,
+        } as NeedsReRoute;
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+        return payload;
+      }
+
       const payload = {
+        type: "resolved",
         account,
         settings,
-      };
+      } as ResolvedData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {

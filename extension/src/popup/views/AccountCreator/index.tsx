@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
+import { Navigate, useLocation } from "react-router-dom";
 
 import { Formik } from "formik";
 import { object as YupObject } from "yup";
@@ -12,11 +12,7 @@ import {
   confirmPassword as confirmPasswordValidator,
   termsOfUse as termsofUseValidator,
 } from "popup/helpers/validators";
-import {
-  createAccount,
-  publicKeySelector,
-  applicationStateSelector,
-} from "popup/ducks/accountServices";
+import { createAccount } from "popup/ducks/accountServices";
 import { View } from "popup/basics/layout/View";
 
 import {
@@ -26,20 +22,70 @@ import {
 } from "popup/components/accountCreator/PasswordForm";
 import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
 import { AppDispatch } from "popup/App";
+import { useGetAccountCreatorData } from "./hooks/useGetAccountCreatorData";
+import { RequestState } from "constants/request";
+import { Loading } from "popup/components/Loading";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { ROUTES } from "popup/constants/routes";
 
 import "./styles.scss";
 
 export const AccountCreator = () => {
-  const publicKey = useSelector(publicKeySelector);
-  const applicationState = useSelector(applicationStateSelector);
   const dispatch = useDispatch<AppDispatch>();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const isRestartingOnboardingParam = params.get("isRestartingOnboarding");
   const isRestartingOnboarding = isRestartingOnboardingParam === "true";
 
+  const { state: accountData, fetchData } = useGetAccountCreatorData();
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (
+    accountData.state === RequestState.IDLE ||
+    accountData.state === RequestState.LOADING
+  ) {
+    return <Loading />;
+  }
+
+  const hasError = accountData.state === RequestState.ERROR;
+  if (accountData.data?.type === "re-route") {
+    if (accountData.data.shouldOpenTab) {
+      openTab(newTabHref(accountData.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${accountData.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (
+    !hasError &&
+    accountData.data.type === "resolved" &&
+    (accountData.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED ||
+      accountData.data.applicationState ===
+        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
+  ) {
+    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
+    window.close();
+  }
+
+  const publicKey = accountData.data?.publicKey!;
+
   const isShowingOverwriteWarning =
-    applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
+    accountData.data!.applicationState ===
+    APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
 
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
 

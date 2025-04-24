@@ -1,49 +1,39 @@
 import { useReducer } from "react";
 
-import { BlockAidScanTxResult } from "@shared/api/types";
-import { initialState, isError, reducer } from "helpers/request";
-import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
-import { useScanTx } from "popup/helpers/blockaid";
+import { initialState, isError, reducer } from "../../../../helpers/request";
 import {
   AppDataType,
   NeedsReRoute,
   useGetAppData,
-} from "helpers/hooks/useGetAppData";
-import { isMainnet } from "helpers/stellar";
-import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
-import { rejectTransaction, signTransaction } from "popup/ducks/access";
+} from "../../../../helpers/hooks/useGetAppData";
+import { useSetupSigningFlow } from "../../../../popup/helpers/useSetupSigningFlow";
+import {
+  rejectTransaction,
+  signTransaction,
+} from "../../../../popup/ducks/access";
+import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 interface ResolvedData {
   type: AppDataType.RESOLVED;
-  scanResult: BlockAidScanTxResult | null;
-  balances: AccountBalances;
+  networkDetails: NetworkDetails;
   publicKey: string;
   signFlowState: ReturnType<typeof useSetupSigningFlow>;
   applicationState: APPLICATION_STATE;
 }
 
-type SignTxData = NeedsReRoute | ResolvedData;
+type SignAuthEntryData = ResolvedData | NeedsReRoute;
 
-function useGetSignTxData(
-  scanOptions: {
-    xdr: string;
-    url: string;
-  },
-  balanceOptions: {
-    showHidden: boolean;
-    includeIcons: boolean;
-  },
+function useGetSignAuthEntryData(
+  transactionXdr: string,
   accountToSign?: string,
 ) {
   const [state, dispatch] = useReducer(
-    reducer<SignTxData, unknown>,
+    reducer<SignAuthEntryData, unknown>,
     initialState,
   );
 
   const { fetchData: fetchAppData } = useGetAppData();
-  const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
-  const { scanTx } = useScanTx();
   const {
     accountNotFound,
     currentAccount,
@@ -57,7 +47,7 @@ function useGetSignTxData(
     verifyPasswordThenSign,
     hardwareWalletType,
     setAccountDetails,
-  } = useSetupSigningFlow(rejectTransaction, signTransaction, scanOptions.xdr);
+  } = useSetupSigningFlow(rejectTransaction, signTransaction, transactionXdr);
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -75,28 +65,11 @@ function useGetSignTxData(
       const publicKey = appData.account.publicKey;
       const allAccounts = appData.account.allAccounts;
       const networkDetails = appData.settings.networkDetails;
-      const isMainnetNetwork = isMainnet(networkDetails);
-      const balancesResult = await fetchBalances(
-        publicKey,
-        isMainnetNetwork,
-        networkDetails,
-      );
-      const scanResult = await scanTx(
-        scanOptions.xdr,
-        scanOptions.url,
-        networkDetails,
-      );
-
-      if (isError<AccountBalances>(balancesResult)) {
-        throw new Error(balancesResult.message);
-      }
-
       setAccountDetails({ publicKey, allAccounts, accountToSign });
 
       const payload = {
         type: AppDataType.RESOLVED,
-        balances: balancesResult,
-        scanResult,
+        networkDetails,
         publicKey,
         applicationState: appData.account.applicationState,
         signFlowState: {
@@ -129,4 +102,4 @@ function useGetSignTxData(
   };
 }
 
-export { useGetSignTxData };
+export { useGetSignAuthEntryData };

@@ -8,11 +8,13 @@ import { AssetOperations, sortOperationsByAsset } from "popup/helpers/account";
 import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
 import { getTokenPrices as internalGetTokenPrices } from "@shared/api/internal";
 import { ApiTokenPrices } from "@shared/api/types";
-import { NeedsReRoute, useGetAppData } from "helpers/hooks/useGetAppData";
+import {
+  AppDataType,
+  NeedsReRoute,
+  useGetAppData,
+} from "helpers/hooks/useGetAppData";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { ROUTES } from "popup/constants/routes";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { POPUP_WIDTH } from "constants/dimensions";
 
 const getTokenPrices = async ({
   balances,
@@ -35,7 +37,7 @@ const getTokenPrices = async ({
 };
 
 interface ResolvedAccountData {
-  type: "resolved";
+  type: AppDataType.RESOLVED;
   balances: AccountBalances;
   operationsByAsset: AssetOperations;
   tokenPrices?: ApiTokenPrices;
@@ -67,21 +69,9 @@ function useGetAccountData(options: {
         throw new Error(appData.message);
       }
 
-      if (
-        !appData.account.publicKey ||
-        appData.account.applicationState ===
-          APPLICATION_STATE.APPLICATION_STARTED
-      ) {
-        const hasOnboarded =
-          appData.account.applicationState ===
-          APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
-        const payload = {
-          type: "re-route",
-          routeTarget: hasOnboarded ? ROUTES.unlockAccount : ROUTES.welcome,
-          shouldOpenTab: window.innerWidth === POPUP_WIDTH && !hasOnboarded,
-        } as NeedsReRoute;
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-        return payload;
+      if (appData.type === AppDataType.REROUTE) {
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload: appData });
+        return appData;
       }
 
       const publicKey = appData.account.publicKey;
@@ -103,7 +93,7 @@ function useGetAccountData(options: {
       }
 
       const payload = {
-        type: "resolved",
+        type: AppDataType.RESOLVED,
         publicKey,
         applicationState: appData.account.applicationState,
         balances: balancesResult,
