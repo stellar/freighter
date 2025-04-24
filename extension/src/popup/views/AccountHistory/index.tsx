@@ -21,6 +21,12 @@ import {
 import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
 import { RequestState } from "constants/request";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { Navigate } from "react-router-dom";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { ROUTES } from "popup/constants/routes";
 import { useGetHistoryData } from "./hooks/useGetHistoryData";
 
 import "./styles.scss";
@@ -68,7 +74,36 @@ export const AccountHistory = () => {
   if (isLoaderShowing) {
     return <Loading />;
   }
+
   const hasError = historyState.state === RequestState.ERROR;
+  if (historyState.data?.type === AppDataType.REROUTE) {
+    if (historyState.data.shouldOpenTab) {
+      openTab(newTabHref(historyState.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${historyState.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (
+    !hasError &&
+    historyState.data.type === "resolved" &&
+    (historyState.data.applicationState ===
+      APPLICATION_STATE.PASSWORD_CREATED ||
+      historyState.data.applicationState ===
+        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
+  ) {
+    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
+    window.close();
+  }
+
+  const balances = historyState.data?.balances!;
+  const publicKey = historyState.data?.publicKey!;
 
   return (
     <>
@@ -90,9 +125,9 @@ export const AccountHistory = () => {
                   {section.operations.map((operation: HistoryItemOperation) => (
                     <HistoryItem
                       key={operation.id}
-                      accountBalances={historyState.data.balances}
+                      accountBalances={balances}
                       operation={operation}
-                      publicKey={historyState.data.publicKey}
+                      publicKey={publicKey}
                       networkDetails={networkDetails}
                       setDetailViewProps={setDetailViewProps}
                       setIsDetailViewShowing={setIsDetailViewShowing}

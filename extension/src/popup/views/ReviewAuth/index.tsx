@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 import BigNumber from "bignumber.js";
 import {
@@ -12,7 +12,7 @@ import {
 import { useSelector } from "react-redux";
 import { Button, Icon, Loader } from "@stellar/design-system";
 
-import { decodeString } from "helpers/urls";
+import { decodeString, newTabHref } from "helpers/urls";
 import { getIsTokenSpec, getTokenDetails } from "@shared/api/internal";
 import { TokenArgsDisplay } from "@shared/api/helpers/soroban";
 
@@ -58,6 +58,10 @@ import "./styles.scss";
 import { useGetReviewAuthData } from "./hooks/useGetReviewAuthData";
 import { Loading } from "popup/components/Loading";
 import { RequestState } from "constants/request";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { openTab } from "popup/helpers/navigate";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { ROUTES } from "popup/constants/routes";
 
 export const ReviewAuth = () => {
   const location = useLocation();
@@ -112,6 +116,33 @@ export const ReviewAuth = () => {
 
   if (isLoading) {
     return <Loading />;
+  }
+
+  const hasError = reviewAuthState.state === RequestState.ERROR;
+  if (reviewAuthState.data?.type === AppDataType.REROUTE) {
+    if (reviewAuthState.data.shouldOpenTab) {
+      openTab(newTabHref(reviewAuthState.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${reviewAuthState.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (
+    !hasError &&
+    reviewAuthState.data.type === "resolved" &&
+    (reviewAuthState.data.applicationState ===
+      APPLICATION_STATE.PASSWORD_CREATED ||
+      reviewAuthState.data.applicationState ===
+        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
+  ) {
+    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
+    window.close();
   }
 
   const publicKey = reviewAuthState.data?.publicKey!;
