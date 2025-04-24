@@ -33,9 +33,9 @@ export const Swap = () => {
       case STEPS.SWAP_CONFIRM: {
         emitMetric(METRIC_NAMES.swapConfirm);
         return (
-          <VerifiedAccountRoute>
+          <PublicKeyRoute>
             <SendConfirm goBack={() => setActiveStep(STEPS.SWAP_SETTINGS)} />
-          </VerifiedAccountRoute>
+          </PublicKeyRoute>
         );
       }
       case STEPS.SET_SWAP_SLIPPAGE: {
@@ -76,13 +76,13 @@ export const Swap = () => {
       case STEPS.AMOUNT: {
         emitMetric(METRIC_NAMES.swapAmount);
         return (
-          <PublicKeyRoute>
+          <VerifiedAccountRoute>
             <SendAmount
               goBack={() => navigate(ROUTES.account)}
               goToNext={() => setActiveStep(STEPS.SWAP_SETTINGS)}
               goToChooseAsset={() => setActiveStep(STEPS.CHOOSE_ASSETS)}
             />
-          </PublicKeyRoute>
+          </VerifiedAccountRoute>
         );
       }
       case STEPS.CHOOSE_ASSETS: {

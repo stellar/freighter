@@ -42,9 +42,9 @@ export const SendPayment = () => {
       case STEPS.PAYMENT_CONFIRM: {
         emitMetric(METRIC_NAMES.sendPaymentConfirm);
         return (
-          <VerifiedAccountRoute>
+          <PublicKeyRoute>
             <SendConfirm goBack={() => setActiveStep(STEPS.PAYMENT_SETTINGS)} />
-          </VerifiedAccountRoute>
+          </PublicKeyRoute>
         );
       }
       case STEPS.SET_PAYMENT_SLIPPAGE: {
@@ -110,12 +110,12 @@ export const SendPayment = () => {
       case STEPS.DESTINATION: {
         emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
         return (
-          <PublicKeyRoute>
+          <VerifiedAccountRoute>
             <SendTo
               goBack={() => navigate(ROUTES.account)}
               goToNext={() => setActiveStep(STEPS.AMOUNT)}
             />
-          </PublicKeyRoute>
+          </VerifiedAccountRoute>
         );
       }
     }
