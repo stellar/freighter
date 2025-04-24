@@ -10,19 +10,18 @@ import {
   getIsPayment,
   getIsSwap,
 } from "popup/helpers/account";
-import { useGetAppData } from "helpers/hooks/useGetAppData";
+import {
+  AppDataType,
+  NeedsReRoute,
+  useGetAppData,
+} from "helpers/hooks/useGetAppData";
 import { isMainnet } from "helpers/stellar";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 export type HistorySection = {
   monthYear: string; // in format {month}:{year}
   operations: HistoryItemOperation[];
 };
-
-interface HistoryData {
-  balances: AccountBalances;
-  history: HistorySection[];
-  publicKey: string;
-}
 
 const createHistorySections = (
   publicKey: string,
@@ -77,6 +76,16 @@ const createHistorySections = (
     [] as HistorySection[],
   );
 
+interface ResolvedData {
+  type: AppDataType.RESOLVED;
+  balances: AccountBalances;
+  history: HistorySection[];
+  publicKey: string;
+  applicationState: APPLICATION_STATE;
+}
+
+type HistoryData = ResolvedData | NeedsReRoute;
+
 function useGetHistoryData(
   balanceOptions: {
     showHidden: boolean;
@@ -102,6 +111,11 @@ function useGetHistoryData(
         throw new Error(appData.message);
       }
 
+      if (appData.type === AppDataType.REROUTE) {
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload: appData });
+        return appData;
+      }
+
       const publicKey = appData.account.publicKey;
       const networkDetails = appData.settings.networkDetails;
       const isMainnetNetwork = isMainnet(networkDetails);
@@ -121,14 +135,16 @@ function useGetHistoryData(
       }
 
       const payload = {
+        type: AppDataType.RESOLVED,
         publicKey,
         balances: balancesResult,
+        applicationState: appData.account.applicationState,
         history: createHistorySections(
           publicKey,
           history,
           historyOptions.isHideDustEnabled,
         ),
-      };
+      } as ResolvedData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
