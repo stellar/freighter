@@ -13,7 +13,6 @@ import {
   Operation,
 } from "stellar-sdk";
 
-import { signTransaction, rejectTransaction } from "popup/ducks/access";
 import {
   isNonSSLEnabledSelector,
   settingsNetworkDetailsSelector,
@@ -33,7 +32,6 @@ import {
   truncatedPublicKey,
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
-import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
@@ -93,26 +91,7 @@ export const SignTransaction = () => {
 
   const { networkName, networkPassphrase } = networkDetails;
   let accountToSign = _accountToSign;
-  // TODO: PUBKEY
-  const {
-    allAccounts,
-    accountNotFound,
-    currentAccount,
-    isConfirming,
-    isPasswordRequired,
-    publicKey,
-    handleApprove,
-    hwStatus,
-    rejectAndClose,
-    setIsPasswordRequired,
-    verifyPasswordThenSign,
-    hardwareWalletType,
-  } = useSetupSigningFlow(
-    rejectTransaction,
-    signTransaction,
-    transactionXdr,
-    accountToSign,
-  );
+
   const { state: scanTxState, fetchData } = useGetSignTxData(
     {
       xdr: transactionXdr,
@@ -122,7 +101,9 @@ export const SignTransaction = () => {
       showHidden: false,
       includeIcons: true,
     },
+    accountToSign,
   );
+
   const scanResult = scanTxState.data?.scanResult;
   const flaggedMalicious =
     scanResult?.validation &&
@@ -226,6 +207,21 @@ export const SignTransaction = () => {
   if (isLoading) {
     return <Loading />;
   }
+
+  const {
+    allAccounts,
+    accountNotFound,
+    currentAccount,
+    isConfirming,
+    isPasswordRequired,
+    publicKey,
+    handleApprove,
+    hwStatus,
+    rejectAndClose,
+    setIsPasswordRequired,
+    verifyPasswordThenSign,
+    hardwareWalletType,
+  } = scanTxState.data?.signFlowState!;
 
   const hasEnoughXlm = scanTxState.data?.balances.balances.some(
     (balance) =>

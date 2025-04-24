@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 import BigNumber from "bignumber.js";
@@ -18,7 +18,6 @@ import { TokenArgsDisplay } from "@shared/api/helpers/soroban";
 
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { signTransaction, rejectTransaction } from "popup/ducks/access";
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import StellarLogo from "popup/assets/stellar-logo.png";
@@ -37,7 +36,6 @@ import {
   getInvocationDetails,
 } from "popup/helpers/soroban";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
-import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { Tabs } from "popup/components/Tabs";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { AccountList } from "popup/components/account/AccountList";
@@ -57,6 +55,9 @@ import { Data } from "../SignTransaction/Preview/Data";
 import { VerifyAccount } from "../VerifyAccount";
 
 import "./styles.scss";
+import { useGetReviewAuthData } from "./hooks/useGetReviewAuthData";
+import { Loading } from "popup/components/Loading";
+import { RequestState } from "constants/request";
 
 export const ReviewAuth = () => {
   const location = useLocation();
@@ -81,6 +82,38 @@ export const ReviewAuth = () => {
   const op = transaction.operations[0] as Operation.InvokeHostFunction;
   const authCount = op.auth ? op.auth.length : 0;
 
+  const { state: reviewAuthState, fetchData } = useGetReviewAuthData(
+    params.transactionXdr as string,
+    params.accountToSign as string,
+  );
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const isLastEntry = activeAuthEntryIndex + 1 === op.auth?.length;
+  const reviewAuthEntry = () => {
+    emitMetric(METRIC_NAMES.reviewedAuthEntry);
+    setLoadingAuth(true);
+    if (isLastEntry) {
+      setHasConfirmedAuth(true);
+    } else {
+      setActiveAuthEntryIndex(activeAuthEntryIndex + 1);
+    }
+  };
+
+  const isLoading =
+    reviewAuthState.state === RequestState.IDLE ||
+    reviewAuthState.state === RequestState.LOADING;
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
   const {
     allAccounts,
     currentAccount,
@@ -93,23 +126,7 @@ export const ReviewAuth = () => {
     isPasswordRequired,
     setIsPasswordRequired,
     verifyPasswordThenSign,
-  } = useSetupSigningFlow(
-    rejectTransaction,
-    signTransaction,
-    params.transactionXdr as string,
-    params.accountToSign as string,
-  );
-
-  const isLastEntry = activeAuthEntryIndex + 1 === op.auth?.length;
-  const reviewAuthEntry = () => {
-    emitMetric(METRIC_NAMES.reviewedAuthEntry);
-    setLoadingAuth(true);
-    if (isLastEntry) {
-      setHasConfirmedAuth(true);
-    } else {
-      setActiveAuthEntryIndex(activeAuthEntryIndex + 1);
-    }
-  };
+  } = reviewAuthState.data?.signFlowState!;
 
   return isPasswordRequired ? (
     <VerifyAccount

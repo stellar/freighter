@@ -12,6 +12,13 @@ import {
 } from "../../popup/ducks/accountServices";
 import { saveSettingsAction } from "../../popup/ducks/settings";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { ROUTES } from "popup/constants/routes";
+
+export interface NeedsReRoute {
+  type: "re-route";
+  routeTarget: ROUTES.unlockAccount | ROUTES.accountCreator;
+  shouldOpenTab: boolean;
+}
 
 export interface AppData {
   account: Awaited<ReturnType<typeof loadAccount>>;

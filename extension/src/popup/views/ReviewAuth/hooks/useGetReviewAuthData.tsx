@@ -1,39 +1,23 @@
 import { useReducer } from "react";
 
-import { BlockAidScanTxResult } from "@shared/api/types";
 import { initialState, isError, reducer } from "helpers/request";
-import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
-import { useScanTx } from "popup/helpers/blockaid";
 import { useGetAppData } from "helpers/hooks/useGetAppData";
-import { isMainnet } from "helpers/stellar";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
+import { NetworkDetails } from "@shared/constants/stellar";
 
-interface SignTxData {
-  scanResult: BlockAidScanTxResult | null;
-  balances: AccountBalances;
+interface ReviewAuthData {
+  networkDetails: NetworkDetails;
   signFlowState: ReturnType<typeof useSetupSigningFlow>;
 }
 
-function useGetSignTxData(
-  scanOptions: {
-    xdr: string;
-    url: string;
-  },
-  balanceOptions: {
-    showHidden: boolean;
-    includeIcons: boolean;
-  },
-  accountToSign?: string,
-) {
+function useGetReviewAuthData(transactionXdr: string, accountToSign?: string) {
   const [state, dispatch] = useReducer(
-    reducer<SignTxData, unknown>,
+    reducer<ReviewAuthData, unknown>,
     initialState,
   );
 
   const { fetchData: fetchAppData } = useGetAppData();
-  const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
-  const { scanTx } = useScanTx();
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -46,17 +30,6 @@ function useGetSignTxData(
       const publicKey = appData.account.publicKey;
       const allAccounts = appData.account.allAccounts;
       const networkDetails = appData.settings.networkDetails;
-      const isMainnetNetwork = isMainnet(networkDetails);
-      const balancesResult = await fetchBalances(
-        publicKey,
-        isMainnetNetwork,
-        networkDetails,
-      );
-      const scanResult = await scanTx(
-        scanOptions.xdr,
-        scanOptions.url,
-        networkDetails,
-      );
       const {
         accountNotFound,
         currentAccount,
@@ -72,18 +45,14 @@ function useGetSignTxData(
       } = useSetupSigningFlow(
         rejectTransaction,
         signTransaction,
-        scanOptions.xdr,
+        transactionXdr,
         publicKey,
         allAccounts,
         accountToSign,
       );
 
-      if (isError<AccountBalances>(balancesResult)) {
-        throw new Error(balancesResult.message);
-      }
       const payload = {
-        balances: balancesResult,
-        scanResult,
+        networkDetails,
         signFlowState: {
           allAccounts,
           accountNotFound,
@@ -114,4 +83,4 @@ function useGetSignTxData(
   };
 }
 
-export { useGetSignTxData };
+export { useGetReviewAuthData };

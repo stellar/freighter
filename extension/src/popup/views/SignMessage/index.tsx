@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Button, Card, Icon, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { signBlob, rejectBlob } from "popup/ducks/access";
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 import { AccountList, OptionTag } from "popup/components/account/AccountList";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
@@ -29,10 +28,12 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { MessageToSign, parsedSearchParam } from "helpers/urls";
 import { truncatedPublicKey } from "helpers/stellar";
-import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 
 import "./styles.scss";
+import { useGetSignMessageData } from "./hooks/useGetSignMessageData";
+import { RequestState } from "constants/request";
+import { Loading } from "popup/components/Loading";
 
 export const SignMessage = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -59,6 +60,27 @@ export const SignMessage = () => {
     domain,
   });
 
+  const { state: signMessageState, fetchData } = useGetSignMessageData(
+    message.message,
+    accountToSign,
+  );
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const isLoading =
+    signMessageState.state === RequestState.IDLE ||
+    signMessageState.state === RequestState.LOADING;
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
   const {
     allAccounts,
     accountNotFound,
@@ -73,7 +95,7 @@ export const SignMessage = () => {
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-  } = useSetupSigningFlow(rejectBlob, signBlob, message.message, accountToSign);
+  } = signMessageState.data?.signFlowState!;
 
   if (isHardwareWallet) {
     return (

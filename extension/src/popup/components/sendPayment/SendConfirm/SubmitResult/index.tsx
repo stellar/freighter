@@ -11,7 +11,7 @@ import { AssetIcons, Balance, ErrorMessage } from "@shared/api/types";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
 import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
-import { navigateTo } from "popup/helpers/navigate";
+import { navigateTo, openTab } from "popup/helpers/navigate";
 import { RESULT_CODES, getResultCodes } from "popup/helpers/parseTransaction";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
@@ -43,6 +43,8 @@ import { Loading } from "popup/components/Loading";
 
 import "./styles.scss";
 import { Navigate, useNavigate } from "react-router-dom";
+import { newTabHref } from "helpers/urls";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 const SwapAssetsIcon = ({
   sourceCanon,
@@ -199,7 +201,13 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     return <Loading />;
   }
 
-  if (accountData.data?.type === "needsReRoute") {
+  const hasError = accountData.state === RequestState.ERROR;
+
+  if (accountData.data?.type === "re-route") {
+    if (accountData.data.shouldOpenTab) {
+      openTab(newTabHref(accountData.data.routeTarget));
+      window.close();
+    }
     return (
       <Navigate
         to={`${accountData.data.routeTarget}${location.search}`}
@@ -207,6 +215,17 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
         replace
       />
     );
+  }
+
+  if (
+    !hasError &&
+    accountData.data.type === "resolved" &&
+    (accountData.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED ||
+      accountData.data.applicationState ===
+        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
+  ) {
+    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
+    window.close();
   }
 
   // TODO: the remove trustline logic here does not work Soroban tokens. We should handle this case
