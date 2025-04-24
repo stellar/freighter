@@ -1,4 +1,4 @@
-import { Horizon } from "stellar-sdk";
+import { Federation, Horizon, MuxedAccount } from "stellar-sdk";
 import { BigNumber } from "bignumber.js";
 import {
   AssetVisibility,
@@ -16,6 +16,8 @@ export { isSorobanIssuer } from "@shared/helpers/stellar";
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
+  isFederationAddress,
+  isMuxedAccount,
   isTestnet,
 } from "helpers/stellar";
 import { getAttrsFromSorobanHorizonOp } from "./soroban";
@@ -276,4 +278,16 @@ export const filterHiddenBalances = (
   return Object.fromEntries(
     Object.entries(balances).filter(([key]) => !hiddenKeys.includes(key)),
   ) as BalanceMap;
+};
+
+export const getBaseAccount = async (address?: string) => {
+  if (address && isMuxedAccount(address)) {
+    const mAccount = MuxedAccount.fromAddress(address, "0");
+    return mAccount.baseAccount().accountId();
+  }
+  if (address && isFederationAddress(address)) {
+    const fedResp = await Federation.Server.resolve(address);
+    return fedResp.account_id;
+  }
+  return address;
 };

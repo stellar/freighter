@@ -12,7 +12,7 @@ import {
   useGetAssetDomainsWithBalances,
 } from "helpers/hooks/useGetAssetDomainsWithBalances";
 import { getAccountBalances } from "@shared/api/internal";
-import { sortBalances } from "popup/helpers/account";
+import { getBaseAccount, sortBalances } from "popup/helpers/account";
 
 interface SendAmountData {
   userBalances: AccountBalances;
@@ -29,7 +29,7 @@ function useGetSendAmountData(
     showHidden: boolean;
     includeIcons: boolean;
   },
-  destinationAddress?: string, // NOTE: can be a G or C address
+  destinationAddress?: string, // NOTE: can be a G/C/M address
 ) {
   const [state, dispatch] = useReducer(
     reducer<SendAmountData, unknown>,
@@ -46,10 +46,11 @@ function useGetSendAmountData(
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const userDomains = await fetchAssetDomains();
+      let destinationAccount = await getBaseAccount(destinationAddress);
       const destinationBalances =
-        destinationAddress && !isContractId(destinationAddress)
+        destinationAccount && !isContractId(destinationAccount)
           ? await getAccountBalances(
-              destinationAddress,
+              destinationAccount,
               networkDetails,
               options.isMainnet,
             )
