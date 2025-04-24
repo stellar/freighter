@@ -1,5 +1,6 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Asset } from "stellar-sdk";
 
 import { AppDispatch } from "popup/App";
 import {
@@ -20,7 +21,7 @@ import {
 } from "helpers/stellar";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getTokenBalance, isContractId } from "popup/helpers/soroban";
-import { isSorobanBalance, getBalanceByIssuer } from "popup/helpers/balance";
+import { isSorobanBalance, getBalanceByAsset } from "popup/helpers/balance";
 import { formatAmount } from "popup/helpers/formatters";
 import { useIsSoroswapEnabled, useIsSwap } from "popup/helpers/useIsSwap";
 
@@ -44,22 +45,26 @@ export const SelectAssetRows = ({
   const isSoroswapEnabled = useIsSoroswapEnabled();
   const isSwap = useIsSwap();
 
-  const getAccountBalance = (issuer: string) => {
+  const getAccountBalance = (
+    canonical: Asset | { code: string; issuer: string },
+  ) => {
     if (!balances) {
       return "";
     }
-    const balance = getBalanceByIssuer(issuer, balances.balances);
+    const balance = getBalanceByAsset(canonical, balances.balances);
     if (balance) {
       return balance.total.toString();
     }
     return "";
   };
 
-  const getTokenBalanceFromCanonical = (issuer: string) => {
+  const getTokenBalanceFromCanonical = (
+    canonical: Asset | { code: string; issuer: string },
+  ) => {
     if (!balances) {
       return "";
     }
-    const balance = getBalanceByIssuer(issuer, balances.balances);
+    const balance = getBalanceByAsset(canonical, balances.balances);
     if (balance && isSorobanBalance(balance)) {
       return getTokenBalance(balance);
     }
@@ -138,8 +143,8 @@ export const SelectAssetRows = ({
                 {!hideBalances && (
                   <div>
                     {isContract
-                      ? getTokenBalanceFromCanonical(issuer)
-                      : formatAmount(getAccountBalance(issuer))}{" "}
+                      ? getTokenBalanceFromCanonical({ code, issuer })
+                      : formatAmount(getAccountBalance({ code, issuer }))}{" "}
                     {code}
                   </div>
                 )}

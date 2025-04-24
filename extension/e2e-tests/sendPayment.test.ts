@@ -20,6 +20,163 @@ test("Swap doesn't throw error when account is unfunded", async ({
     "Swap XLM",
   );
 });
+test("Swap shows correct balances for assets", async ({
+  page,
+  extensionId,
+}) => {
+  await page.route("*/**/account-balances/*", async (route) => {
+    const json = {
+      balances: {
+        "FOO:GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5": {
+          token: {
+            type: "credit_alphanum12",
+            code: "FOO",
+            issuer: {
+              key: "GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5",
+            },
+          },
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          total: "100",
+          limit: "922337203685.4775807",
+          available: "100",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address:
+              "FOO-GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5",
+            metadata: {
+              external_links: {},
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {
+              top_holders: [],
+            },
+          },
+        },
+        "BAZ:GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5": {
+          token: {
+            type: "credit_alphanum12",
+            code: "BAZ",
+            issuer: {
+              key: "GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5",
+            },
+          },
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          total: "10",
+          limit: "922337203685.4775807",
+          available: "10",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address:
+              "BAZ-GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5",
+            metadata: {
+              external_links: {},
+            },
+            fees: {},
+            features: [
+              {
+                feature_id: "HIGH_REPUTATION_TOKEN",
+                type: "Benign",
+                description: "Token with verified high reputation",
+              },
+            ],
+            trading_limits: {},
+            financial_stats: {
+              top_holders: [],
+            },
+          },
+        },
+        native: {
+          token: {
+            type: "native",
+            code: "XLM",
+          },
+          total: "999",
+          available: "999",
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          minimumBalance: "8",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: "",
+            metadata: {
+              type: "",
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
+        },
+        "PBT:CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND": {
+          token: {
+            code: "PBT",
+            issuer: {
+              key: "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
+            },
+          },
+          contractId:
+            "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
+          symbol: "PBT",
+          decimals: 5,
+          total: "9899700",
+          available: "9899700",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address:
+              "PBT-CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
+            metadata: {
+              external_links: {},
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {
+              top_holders: [],
+            },
+          },
+        },
+      },
+      isFunded: true,
+      subentryCount: 14,
+      error: {
+        horizon: null,
+        soroban: null,
+      },
+    };
+    await route.fulfill({ json });
+  });
+  test.slow();
+  await login({ page, extensionId });
+
+  await page.getByTestId("BottomNav-link-swap").click();
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
+    "Swap XLM",
+  );
+  await page.getByText("From").click();
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
+    "Your assets",
+  );
+  await expect(page.getByText("100 FOO")).toBeVisible();
+  await expect(page.getByText("10 BAZ")).toBeVisible();
+  await expect(page.getByText("98.997 PBT")).toBeVisible();
+  await expect(page.getByText("999 XLM")).toBeVisible();
+});
 test("Send doesn't throw error when account is unfunded", async ({
   page,
   extensionId,
