@@ -34,7 +34,7 @@ community and added to the maintained asset lists.
 ## Failed Transaction in History
 
 Your history previously only included transactions that were successful and
-included in the ledger, we've updated our history data to include failed
+included in the ledger. We've updated our history data to include failed
 transactions in order to give users a better view of the actions they attempt to
 take.
 
