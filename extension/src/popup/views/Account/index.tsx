@@ -20,7 +20,7 @@ import {
   allAccountsSelector,
 } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
-import { navigateTo } from "popup/helpers/navigate";
+import { navigateTo, openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
 
@@ -33,6 +33,8 @@ import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
 import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { newTabHref } from "helpers/urls";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
@@ -68,7 +70,13 @@ export const Account = () => {
     return <Loading />;
   }
 
-  if (accountData.data?.type === "needsReRoute") {
+  const hasError = accountData.state === RequestState.ERROR;
+
+  if (accountData.data?.type === "re-route") {
+    if (accountData.data.shouldOpenTab) {
+      openTab(newTabHref(accountData.data.routeTarget));
+      window.close();
+    }
     return (
       <Navigate
         to={`${accountData.data.routeTarget}${location.search}`}
@@ -78,24 +86,33 @@ export const Account = () => {
     );
   }
 
-  if (selectedAsset) {
+  if (
+    !hasError &&
+    accountData.data.type === "resolved" &&
+    (accountData.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED ||
+      accountData.data.applicationState ===
+        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
+  ) {
+    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
+    window.close();
+  }
+
+  if (!hasError && selectedAsset && accountData.data.type === "resolved") {
     return (
       <AssetDetail
-        accountBalances={accountData.data!.balances}
-        assetOperations={accountData.data!.operationsByAsset[selectedAsset]}
-        networkDetails={accountData.data!.networkDetails}
-        publicKey={accountData.data!.publicKey}
+        accountBalances={accountData.data.balances}
+        assetOperations={accountData.data.operationsByAsset[selectedAsset]}
+        networkDetails={accountData.data.networkDetails}
+        publicKey={accountData.data.publicKey}
         selectedAsset={selectedAsset}
         setSelectedAsset={setSelectedAsset}
-        subentryCount={accountData.data!.balances.subentryCount}
+        subentryCount={accountData.data.balances.subentryCount}
       />
     );
   }
 
-  const hasError = accountData.state === RequestState.ERROR;
-
   const resolvedData = accountData.data;
-  const tokenPrices = accountData.data?.tokenPrices || {};
+  const tokenPrices = resolvedData?.tokenPrices || {};
   const totalBalanceUsd = Object.keys(tokenPrices).reduce((prev, curr) => {
     const balances = resolvedData?.balances.balances!;
     const asset = getAssetFromCanonical(curr);
@@ -112,14 +129,13 @@ export const Account = () => {
     );
     return currentUsdBalance.plus(prev);
   }, new BigNumber(0));
-  console.log(accountData);
 
   return (
     <>
       <AccountHeader
         allAccounts={allAccounts}
         currentAccountName={currentAccountName}
-        publicKey={accountData.data?.publicKey || ""}
+        publicKey={resolvedData?.publicKey || ""}
       />
       <View.Content hasNoTopPadding>
         <div className="AccountView" data-testid="account-view">
@@ -133,7 +149,7 @@ export const Account = () => {
                   {currentAccountName}
                 </div>
                 <CopyText
-                  textToCopy={accountData.data?.publicKey || ""}
+                  textToCopy={resolvedData?.publicKey || ""}
                   tooltipPlacement="bottom"
                   doneLabel="Copied address"
                 >
@@ -146,7 +162,7 @@ export const Account = () => {
                 className="AccountView__total-usd-balance"
                 key="total-balance"
               >
-                {isMainnet(accountData.data!.networkDetails) && !hasError
+                {isMainnet(resolvedData!.networkDetails) && !hasError
                   ? `$${formatAmount(
                       roundUsdValue(totalBalanceUsd.toString()),
                     )}`
@@ -168,7 +184,7 @@ export const Account = () => {
                 data-testid="account-options-dropdown"
               >
                 <AccountOptionsDropdown
-                  isFunded={!!accountData.data?.balances?.isFunded}
+                  isFunded={!!resolvedData?.balances?.isFunded}
                 />
               </div>
             </div>
@@ -193,7 +209,7 @@ export const Account = () => {
               </Notification>
             </div>
           )}
-          {accountData.data?.balances?.error?.horizon && (
+          {resolvedData?.balances?.error?.horizon && (
             <div className="AccountView__fetch-fail">
               <Notification
                 title={t("Horizon is temporarily experiencing issues")}
@@ -228,28 +244,28 @@ export const Account = () => {
             </div>
           )}
 
-          {accountData.data?.balances?.isFunded && !hasError && (
+          {resolvedData?.balances?.isFunded && !hasError && (
             <div
               className="AccountView__assets-wrapper"
               data-testid="account-assets"
             >
               <AccountAssets
-                sortedBalances={accountData.data.balances.balances}
+                sortedBalances={resolvedData.balances.balances}
                 assetPrices={tokenPrices}
-                assetIcons={accountData.data.balances.icons || {}}
+                assetIcons={resolvedData.balances.icons || {}}
                 setSelectedAsset={setSelectedAsset}
               />
             </div>
           )}
         </div>
       </View.Content>
-      {!accountData.data?.balances?.isFunded &&
+      {!resolvedData?.balances?.isFunded &&
         !hasError &&
-        !accountData.data?.balances?.error?.horizon && (
+        !resolvedData?.balances?.error?.horizon && (
           <View.Footer>
             <NotFundedMessage
-              canUseFriendbot={!!accountData.data!.networkDetails.friendbotUrl}
-              publicKey={accountData.data?.publicKey || ""}
+              canUseFriendbot={!!resolvedData!.networkDetails.friendbotUrl}
+              publicKey={resolvedData?.publicKey || ""}
               reloadBalances={fetchData}
             />
           </View.Footer>

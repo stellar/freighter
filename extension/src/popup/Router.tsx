@@ -10,9 +10,6 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-// import { POPUP_WIDTH } from "constants/dimensions";
-import { newTabHref } from "helpers/urls";
-import { openTab } from "popup/helpers/navigate";
 
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -24,7 +21,6 @@ import { settingsStateSelector } from "popup/ducks/settings";
 import { navigate } from "popup/ducks/views";
 
 import { AppError } from "popup/components/AppError";
-import { Loading } from "popup/components/Loading";
 
 import { Account } from "popup/views/Account";
 import { AccountHistory } from "popup/views/AccountHistory";
@@ -152,47 +148,6 @@ export const VerifiedAccountRoute = ({
   return children;
 };
 
-export const HomeRoute = () => {
-  const applicationState = useSelector(applicationStateSelector);
-  const error = useSelector(authErrorSelector);
-
-  // TODO This needs to fetch its own app data
-
-  if (applicationState === APPLICATION_STATE.APPLICATION_ERROR) {
-    return <AppError>{error}</AppError>;
-  }
-  // if (applicationState === APPLICATION_STATE.APPLICATION_LOADING) {
-  //   return null;
-  // }
-
-  // if (!publicKey || !allAccounts.length) {
-  //   if (applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) {
-  //     return <Navigate to={ROUTES.unlockAccount} />;
-  //   }
-
-  //   /*
-  //   We want to launch the extension in a new tab for a user still in the onboarding process.
-  //   In this particular case, open the tab if we are in the "popup" view.
-  //   */
-  //   if (window.innerWidth === POPUP_WIDTH) {
-  //     openTab(newTabHref(ROUTES.welcome));
-  //     window.close();
-  //   }
-  //   return <Welcome />;
-  // }
-
-  switch (applicationState) {
-    case APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED:
-      return <Navigate to={ROUTES.account} />;
-    case APPLICATION_STATE.PASSWORD_CREATED:
-    case APPLICATION_STATE.MNEMONIC_PHRASE_FAILED:
-      openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
-      return <Loading />;
-    default:
-      return <Welcome />;
-  }
-};
-
 // Broadcast to Redux when the route changes. We don't store location state, but
 // we do use the actions for metrics.
 const RouteListener = () => {
@@ -263,14 +218,7 @@ export const Router = () => (
     <RouteListener />
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route
-          index
-          element={
-            <PublicKeyRoute>
-              <Account />
-            </PublicKeyRoute>
-          }
-        ></Route>
+        <Route index element={<Account />}></Route>
         <Route
           path={ROUTES.accountHistory}
           element={
@@ -554,7 +502,7 @@ export const Router = () => (
             ></Route>
           </>
         )}
-        {/* <Route index element={<HomeRoute />}></Route> */}
+        <Route path={ROUTES.welcome} element={<Welcome />} />
       </Route>
     </Routes>
   </HashRouter>

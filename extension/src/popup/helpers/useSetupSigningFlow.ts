@@ -6,12 +6,10 @@ import { signTransaction, rejectTransaction } from "popup/ducks/access";
 import { Account } from "@shared/api/types";
 
 import {
-  allAccountsSelector,
   confirmPassword,
   hardwareWalletTypeSelector,
   hasPrivateKeySelector,
   makeAccountActive,
-  publicKeySelector,
 } from "popup/ducks/accountServices";
 
 import {
@@ -26,6 +24,8 @@ export function useSetupSigningFlow(
   reject: typeof rejectTransaction,
   signFn: typeof signTransaction,
   transactionXdr: string,
+  publicKey: string,
+  allAccounts: Account[],
   accountToSign?: string,
 ) {
   const [isConfirming, setIsConfirming] = useState(false);
@@ -35,10 +35,8 @@ export function useSetupSigningFlow(
   const [currentAccount, setCurrentAccount] = useState({} as Account);
 
   const dispatch: AppDispatch = useDispatch();
-  const allAccounts = useSelector(allAccountsSelector);
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
-  const publicKey = useSelector(publicKeySelector);
 
   // the public key the user had selected before starting this flow
   const defaultPublicKey = useRef(publicKey);
@@ -124,6 +122,9 @@ export function useSetupSigningFlow(
     // handle any changes to the current acct - whether by auto select or manual select
     setCurrentAccount(allAccountsMap.current[publicKey] || ({} as Account));
   }, [allAccounts, publicKey]);
+
+  // TODO: setup local state for: accountToSign, allAccounts
+  // setter for that state so we can call hook in other hook bodies
 
   return {
     allAccounts,

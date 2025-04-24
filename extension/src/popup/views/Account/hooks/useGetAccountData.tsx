@@ -8,9 +8,11 @@ import { AssetOperations, sortOperationsByAsset } from "popup/helpers/account";
 import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
 import { getTokenPrices as internalGetTokenPrices } from "@shared/api/internal";
 import { ApiTokenPrices } from "@shared/api/types";
-import { useGetAppData } from "helpers/hooks/useGetAppData";
+import { NeedsReRoute, useGetAppData } from "helpers/hooks/useGetAppData";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { ROUTES } from "popup/constants/routes";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { POPUP_WIDTH } from "constants/dimensions";
 
 const getTokenPrices = async ({
   balances,
@@ -32,11 +34,6 @@ const getTokenPrices = async ({
   return tokenPrices;
 };
 
-interface NeedsReRoute {
-  type: "needsReRoute";
-  routeTarget: ROUTES.unlockAccount | ROUTES.accountCreator;
-}
-
 interface ResolvedAccountData {
   type: "resolved";
   balances: AccountBalances;
@@ -44,6 +41,7 @@ interface ResolvedAccountData {
   tokenPrices?: ApiTokenPrices;
   networkDetails: NetworkDetails;
   publicKey: string;
+  applicationState: APPLICATION_STATE;
 }
 
 type AccountData = NeedsReRoute | ResolvedAccountData;
@@ -69,10 +67,18 @@ function useGetAccountData(options: {
         throw new Error(appData.message);
       }
 
-      if (!appData.account.publicKey) {
+      if (
+        !appData.account.publicKey ||
+        appData.account.applicationState ===
+          APPLICATION_STATE.APPLICATION_STARTED
+      ) {
+        const hasOnboarded =
+          appData.account.applicationState ===
+          APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
         const payload = {
-          type: "needsReRoute",
-          routeTarget: ROUTES.unlockAccount,
+          type: "re-route",
+          routeTarget: hasOnboarded ? ROUTES.unlockAccount : ROUTES.welcome,
+          shouldOpenTab: window.innerWidth === POPUP_WIDTH && !hasOnboarded,
         } as NeedsReRoute;
         dispatch({ type: "FETCH_DATA_SUCCESS", payload });
         return payload;
@@ -99,6 +105,7 @@ function useGetAccountData(options: {
       const payload = {
         type: "resolved",
         publicKey,
+        applicationState: appData.account.applicationState,
         balances: balancesResult,
         networkDetails,
         operationsByAsset: sortOperationsByAsset({
@@ -125,7 +132,7 @@ function useGetAccountData(options: {
   };
 
   useEffect(() => {
-    if (!state.data || state.data.type === "needsReRoute" || !_isMainnet) {
+    if (!state.data || state.data.type === "re-route" || !_isMainnet) {
       return;
     }
     const resolvedData = state.data;
