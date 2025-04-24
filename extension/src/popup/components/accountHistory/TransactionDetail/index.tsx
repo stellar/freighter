@@ -53,6 +53,7 @@ export const TransactionDetail = ({
     asset_type: assetType,
     from,
     to,
+    to_muxed,
     created_at: createdAt,
     transaction_attr: { fee_charged: feeCharged, memo },
   } = _op;
@@ -132,7 +133,7 @@ export const TransactionDetail = ({
                       <div>{t("To")}</div>
                       <div className="InfoRow__right">
                         <KeyIdenticon
-                          publicKey={to}
+                          publicKey={to_muxed || to}
                           customSize={identiconDimensions}
                         />
                       </div>

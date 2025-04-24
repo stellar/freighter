@@ -188,7 +188,6 @@ export const TransactionDetails = ({
           destAsset: getAssetFromCanonical(destinationAsset || "native"),
           amount,
           destinationAmount,
-          destination,
           allowedSlippage,
           path,
           isPathPayment,
@@ -497,7 +496,10 @@ export const TransactionDetails = ({
               <div className="TransactionDetails__row">
                 <div>{t("Sending to")} </div>
                 <div className="TransactionDetails__row__right">
-                  <div className="TransactionDetails__identicon">
+                  <div
+                    className="TransactionDetails__identicon"
+                    data-testid="to-field"
+                  >
                     <FedOrGAddress
                       fedAddress={truncatedFedAddress(federationAddress)}
                       gAddress={destination}

@@ -25,7 +25,7 @@ import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { findAssetBalance } from "popup/helpers/balance";
 import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
 import { getAccountBalances, getAssetIcons } from "@shared/api/internal";
-import { sortBalances } from "popup/helpers/account";
+import { getBaseAccount, sortBalances } from "popup/helpers/account";
 import { isContractId } from "popup/helpers/soroban";
 import { settingsSelector } from "popup/ducks/settings";
 
@@ -45,7 +45,6 @@ interface ScanClassic {
   destAsset: ReturnType<typeof getAssetFromCanonical>;
   amount: string;
   destinationAmount: string;
-  destination: string;
   allowedSlippage: string;
   path: string[];
   isPathPayment: boolean;
@@ -177,7 +176,7 @@ const getBuiltTx = async (
 
 function useGetTxDetailsData(
   publicKey: string,
-  destination: string | undefined,
+  destination: string,
   networkDetails: NetworkDetails,
   destAsset: ReturnType<typeof getAssetFromCanonical>,
   sourceAsset: ReturnType<typeof getAssetFromCanonical>,
@@ -210,17 +209,18 @@ function useGetTxDetailsData(
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const balancesResult = await fetchBalances();
+      let destinationAccount = await getBaseAccount(destination);
       const destBalancesResult =
-        destination && !isContractId(destination)
+        destinationAccount && !isContractId(destinationAccount)
           ? await getAccountBalances(
-              destination,
+              destinationAccount,
               networkDetails,
               balanceOptions.isMainnet,
             )
           : ({} as AccountBalancesInterface);
 
       const destIcons =
-        destination && !isContractId(destination)
+        destinationAccount && !isContractId(destinationAccount)
           ? await getAssetIcons({
               balances: destBalancesResult.balances,
               networkDetails,
@@ -265,7 +265,6 @@ function useGetTxDetailsData(
         const {
           amount,
           destinationAmount,
-          destination: destinationParam,
           allowedSlippage,
           path,
           isPathPayment,
@@ -281,7 +280,7 @@ function useGetTxDetailsData(
             destAsset,
             amount,
             destinationAmount,
-            destination: destinationParam,
+            destination,
             allowedSlippage,
             path,
             isPathPayment,

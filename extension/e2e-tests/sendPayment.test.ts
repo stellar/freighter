@@ -5,8 +5,9 @@ import {
   loginToTestAccount,
   PASSWORD,
 } from "./helpers/login";
-import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
+import { TEST_M_ADDRESS, TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 import { sendXlmPayment } from "./helpers/sendPayment";
+import { truncatedPublicKey } from "../src/helpers/stellar";
 
 test("Swap doesn't throw error when account is unfunded", async ({
   page,
@@ -138,6 +139,51 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   await expect(page.getByText("Sent XLM")).toBeVisible();
   await expect(page.getByTestId("asset-amount")).toContainText("0.001");
   await expect(page.getByTestId("memo")).toContainText("Test memo");
+
+  await page.getByTestId("BackButton").click({ force: true });
+  await page.getByTestId("BottomNav-link-account").click({ force: true });
+});
+
+test("Send XLM payment to M address", async ({ page, extensionId }) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId });
+
+  // send XLM to C address
+  await page.getByTitle("Send Payment").click({ force: true });
+  await expect(page.getByText("Send To")).toBeVisible();
+  await page.getByTestId("send-to-input").fill(TEST_M_ADDRESS);
+  await page.getByText("Continue").click({ force: true });
+
+  await expect(page.getByText("Send XLM")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill(".001");
+  await page.getByText("Continue").click({ force: true });
+
+  await expect(page.getByText("Send Settings")).toBeVisible();
+  await expect(page.getByTestId("SendSettingsTransactionFee")).toHaveText(
+    /[0-9]/,
+  );
+  await page.getByText("Review Send").click();
+
+  await expect(page.getByText("Confirm Send")).toBeVisible({
+    timeout: 200000,
+  });
+  await expectPageToHaveScreenshot({
+    page,
+    screenshot: "send-payment-confirm.png",
+  });
+  await page.getByTestId("transaction-details-btn-send").click();
+
+  await expect(page.getByText("Successfully sent")).toBeVisible({
+    timeout: 60000,
+  });
+
+  await page.getByText("Details").click({ force: true });
+
+  await expect(page.getByText("Sent XLM")).toBeVisible();
+  await expect(page.getByTestId("asset-amount")).toContainText("0.001");
+  await expect(page.getByTestId("to-field")).toContainText(
+    truncatedPublicKey(TEST_M_ADDRESS),
+  );
 
   await page.getByTestId("BackButton").click({ force: true });
   await page.getByTestId("BottomNav-link-account").click({ force: true });
