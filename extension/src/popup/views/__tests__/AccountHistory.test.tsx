@@ -6,6 +6,7 @@ import {
   DEFAULT_NETWORKS,
 } from "@shared/constants/stellar";
 import * as ApiInternal from "@shared/api/internal";
+import * as TokenListHelpers from "@shared/api/helpers/token-list";
 
 import {
   Wrapper,
@@ -34,6 +35,10 @@ jest.spyOn(ApiInternal, "getHiddenAssets").mockImplementation(() =>
 jest
   .spyOn(ApiInternal, "getAssetIcons")
   .mockImplementation(() => Promise.resolve({}));
+
+jest
+  .spyOn(TokenListHelpers, "getCombinedAssetListData")
+  .mockImplementation(() => Promise.resolve([]));
 
 describe("AccountHistory", () => {
   it("loads account history view with all transactions", async () => {

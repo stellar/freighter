@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { createPortal } from "react-dom";
 import get from "lodash/get";
@@ -45,7 +46,6 @@ import {
 import { Loading } from "popup/components/Loading";
 
 import "./styles.scss";
-import { useNavigate } from "react-router-dom";
 
 const SwapAssetsIcon = ({
   sourceCanon,
@@ -298,7 +298,6 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
           onClick={() => {
             dispatch(resetSubmission());
             navigateTo(ROUTES.account, navigate);
-            dispatch(resetSubmission());
           }}
         >
           {t("Done")}
@@ -326,6 +325,7 @@ export const SubmitFail = () => {
   const isSwap = useIsSwap();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     emitMetric(METRIC_NAMES.sendPaymentError, { error });
@@ -509,6 +509,7 @@ export const SubmitFail = () => {
           variant="tertiary"
           size="md"
           onClick={() => {
+            dispatch(resetSubmission());
             navigateTo(ROUTES.account, navigate);
           }}
         >

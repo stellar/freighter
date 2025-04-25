@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { Federation, MuxedAccount } from "stellar-sdk";
+import { Federation } from "stellar-sdk";
 import { FormikErrors } from "formik";
 import debounce from "lodash/debounce";
 
@@ -8,9 +8,9 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { initialState, reducer } from "helpers/request";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getAccountBalances, loadRecentAddresses } from "@shared/api/internal";
-import { isFederationAddress, isMuxedAccount } from "helpers/stellar";
+import { isFederationAddress } from "helpers/stellar";
 import { isContractId } from "popup/helpers/soroban";
-import { sortBalances } from "popup/helpers/account";
+import { getBaseAccount, sortBalances } from "popup/helpers/account";
 
 interface SendToData {
   recentAddresses: string[];
@@ -25,13 +25,6 @@ const getAddressFromInput = async (userInput: string) => {
     return {
       validatedAddress: fedResp.account_id,
       fedAddress: userInput,
-    };
-  }
-  if (isMuxedAccount(userInput)) {
-    const mAccount = MuxedAccount.fromAddress(userInput, "0");
-    return {
-      validatedAddress: mAccount.baseAccount().accountId(),
-      fedAddress: "",
     };
   }
 
@@ -63,15 +56,17 @@ function useSendToData(
         activePublicKey: publicKey,
       });
 
+      let destinationAccount = await getBaseAccount(validatedAddress);
+
       const payload = {
         recentAddresses,
         validatedAddress,
         fedAddress,
       } as SendToData;
 
-      if (validatedAddress && !isContractId(validatedAddress)) {
+      if (destinationAccount && !isContractId(destinationAccount)) {
         const data = await getAccountBalances(
-          validatedAddress,
+          destinationAccount,
           networkDetails,
           balanceOptions.isMainnet,
         );

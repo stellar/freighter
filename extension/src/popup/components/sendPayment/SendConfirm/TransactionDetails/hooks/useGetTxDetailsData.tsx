@@ -1,4 +1,5 @@
 import { useReducer } from "react";
+import { useSelector } from "react-redux";
 import {
   Account,
   Asset,
@@ -24,8 +25,10 @@ import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { findAssetBalance } from "popup/helpers/balance";
 import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
 import { getAccountBalances, getAssetIcons } from "@shared/api/internal";
-import { sortBalances } from "popup/helpers/account";
+import { getBaseAccount, sortBalances } from "popup/helpers/account";
 import { isContractId } from "popup/helpers/soroban";
+import { settingsSelector } from "popup/ducks/settings";
+import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 
 export interface TxDetailsData {
   destAssetIconUrl: string;
@@ -43,7 +46,6 @@ interface ScanClassic {
   destAsset: ReturnType<typeof getAssetFromCanonical>;
   amount: string;
   destinationAmount: string;
-  destination: string;
   allowedSlippage: string;
   path: string[];
   isPathPayment: boolean;
@@ -175,7 +177,7 @@ const getBuiltTx = async (
 
 function useGetTxDetailsData(
   publicKey: string,
-  destination: string | undefined,
+  destination: string,
   networkDetails: NetworkDetails,
   destAsset: ReturnType<typeof getAssetFromCanonical>,
   sourceAsset: ReturnType<typeof getAssetFromCanonical>,
@@ -200,6 +202,7 @@ function useGetTxDetailsData(
     networkDetails,
     balanceOptions,
   );
+  const { assetsLists } = useSelector(settingsSelector);
 
   const { scanTx } = useScanTx();
 
@@ -207,20 +210,27 @@ function useGetTxDetailsData(
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const balancesResult = await fetchBalances();
+      let destinationAccount = await getBaseAccount(destination);
       const destBalancesResult =
-        destination && !isContractId(destination)
+        destinationAccount && !isContractId(destinationAccount)
           ? await getAccountBalances(
-              destination,
+              destinationAccount,
               networkDetails,
               balanceOptions.isMainnet,
             )
           : ({} as AccountBalancesInterface);
 
+      const assetsListsData = await getCombinedAssetListData({
+        networkDetails,
+        assetsLists,
+      });
+
       const destIcons =
-        destination && !isContractId(destination)
+        destinationAccount && !isContractId(destinationAccount)
           ? await getAssetIcons({
               balances: destBalancesResult.balances,
               networkDetails,
+              assetsListsData,
             })
           : {};
 
@@ -261,7 +271,6 @@ function useGetTxDetailsData(
         const {
           amount,
           destinationAmount,
-          destination: destinationParam,
           allowedSlippage,
           path,
           isPathPayment,
@@ -277,7 +286,7 @@ function useGetTxDetailsData(
             destAsset,
             amount,
             destinationAmount,
-            destination: destinationParam,
+            destination,
             allowedSlippage,
             path,
             isPathPayment,

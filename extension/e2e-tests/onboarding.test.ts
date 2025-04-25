@@ -133,7 +133,6 @@ test("Import 12 word wallet by pasting", async ({ page, context }) => {
   ).toBeVisible();
 
   await page.evaluate(() => {
-    console.log(navigator.clipboard);
     return navigator.clipboard.writeText(
       [
         "have",

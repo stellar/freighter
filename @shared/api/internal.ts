@@ -13,6 +13,7 @@ import {
 import BigNumber from "bignumber.js";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import {
+  AssetListResponse,
   AssetsListItem,
   AssetsLists,
 } from "@shared/constants/soroban/asset-list";
@@ -25,6 +26,7 @@ import {
 } from "@shared/helpers/soroban/token";
 import {
   getAssetFromCanonical,
+  getCanonicalFromAsset,
   getSdk,
   isCustomNetwork,
   makeDisplayableBalances,
@@ -68,6 +70,7 @@ import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
+import { getIconFromTokenLists } from "./helpers/getIconFromTokenList";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -787,6 +790,7 @@ export const getAccountHistoryStandalone = async ({
       .order("desc")
       .join("transactions")
       .limit(TRANSACTIONS_LIMIT)
+      .includeFailed(true)
       .call();
 
     operations = operationsData.records || [];
@@ -806,7 +810,7 @@ export const getIndexerAccountHistory = async ({
 }): Promise<Horizon.ServerApi.OperationRecord[]> => {
   try {
     const url = new URL(
-      `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}`,
+      `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}&is_failed_included=true`,
     );
     const response = await fetch(url.href);
 
@@ -991,9 +995,11 @@ export const getTokenDetails = async ({
 export const getAssetIcons = async ({
   balances,
   networkDetails,
+  assetsListsData,
 }: {
   balances: Balances;
   networkDetails: NetworkDetails;
+  assetsListsData: AssetListResponse[];
 }) => {
   const assetIcons = {} as { [code: string]: string };
 
@@ -1002,15 +1008,29 @@ export const getAssetIcons = async ({
     const balanceValues = Object.values(balances);
 
     for (let i = 0; i < balanceValues.length; i++) {
-      const { token } = balanceValues[i];
+      const { token, contractId } = balanceValues[i];
       if (token && "issuer" in token) {
         const {
           issuer: { key },
           code,
         } = token;
 
+        let canonical = getCanonicalFromAsset(code, key);
         icon = await getIconUrlFromIssuer({ key, code, networkDetails });
-        assetIcons[`${code}:${key}`] = icon;
+        if (!icon) {
+          const tokenListIcon = await getIconFromTokenLists({
+            networkDetails,
+            issuerId: key,
+            contractId,
+            code,
+            assetsListsData,
+          });
+          if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
+            icon = tokenListIcon.icon;
+            canonical = tokenListIcon.canonicalAsset;
+          }
+        }
+        assetIcons[canonical] = icon;
       }
     }
   }

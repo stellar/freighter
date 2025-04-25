@@ -9,14 +9,15 @@ import {
   getIsHardwareWalletActive,
   subscribeAccount as internalSubscribeAccount,
 } from "background/helpers/account";
+import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 
 export const logIn = createAsyncThunk<
   UiData,
-  UiData,
+  UiData & { localStore: DataStorageAccess },
   { rejectValue: ErrorMessage }
->("logIn", async ({ publicKey, allAccounts }, thunkApi) => {
+>("logIn", async ({ publicKey, allAccounts, localStore }, thunkApi) => {
   try {
-    await internalSubscribeAccount(publicKey);
+    await internalSubscribeAccount({ publicKey, localStore });
     return {
       publicKey,
       allAccounts,
@@ -29,11 +30,11 @@ export const logIn = createAsyncThunk<
 
 export const setActivePublicKey = createAsyncThunk<
   UiData,
-  UiData,
+  UiData & { localStore: DataStorageAccess },
   { rejectValue: ErrorMessage }
->("setActivePublicKey", async ({ publicKey }, thunkApi) => {
+>("setActivePublicKey", async ({ publicKey, localStore }, thunkApi) => {
   try {
-    await internalSubscribeAccount(publicKey);
+    await internalSubscribeAccount({ publicKey, localStore });
     return {
       publicKey,
       privateKey: "",
@@ -176,13 +177,15 @@ export const allAccountsSelector = createSelector(
   sessionSelector,
   (session) => session.allAccounts || [],
 );
-export const hasPrivateKeySelector = createSelector(
-  sessionSelector,
-  async (session) => {
-    const isHardwareWalletActive = await getIsHardwareWalletActive();
+
+export const buildHasPrivateKeySelector = (localStore: DataStorageAccess) =>
+  createSelector(sessionSelector, async (session) => {
+    const isHardwareWalletActive = await getIsHardwareWalletActive({
+      localStore,
+    });
     return isHardwareWalletActive || !!session?.hashKey?.key;
-  },
-);
+  });
+
 export const hashKeySelector = createSelector(
   sessionSelector,
   (session) => session.hashKey,

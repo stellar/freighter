@@ -38,7 +38,7 @@ import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
-import { getBalanceByIssuer } from "popup/helpers/balance";
+import { getBalanceByAsset } from "popup/helpers/balance";
 
 export const Account = () => {
   const { t } = useTranslation();
@@ -97,7 +97,7 @@ export const Account = () => {
   const totalBalanceUsd = Object.keys(tokenPrices).reduce((prev, curr) => {
     const balances = accountData.data?.balances.balances!;
     const asset = getAssetFromCanonical(curr);
-    const priceBalance = getBalanceByIssuer(asset.issuer, balances);
+    const priceBalance = getBalanceByAsset(asset, balances);
     if (!priceBalance) {
       return prev;
     }

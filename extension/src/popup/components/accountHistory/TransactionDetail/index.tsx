@@ -53,6 +53,7 @@ export const TransactionDetail = ({
     asset_type: assetType,
     from,
     to,
+    to_muxed,
     created_at: createdAt,
     transaction_attr: { fee_charged: feeCharged, memo },
   } = _op;
@@ -93,7 +94,10 @@ export const TransactionDetail = ({
         title={headerTitle}
       />
       <View.Content>
-        <div className="TransactionDetail__content">
+        <div
+          className="TransactionDetail__content"
+          data-testid="transaction-detail"
+        >
           {isPayment ? (
             <div
               className={`TransactionDetail__header ${
@@ -129,7 +133,7 @@ export const TransactionDetail = ({
                       <div>{t("To")}</div>
                       <div className="InfoRow__right">
                         <KeyIdenticon
-                          publicKey={to}
+                          publicKey={to_muxed || to}
                           customSize={identiconDimensions}
                         />
                       </div>

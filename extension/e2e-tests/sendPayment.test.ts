@@ -5,8 +5,9 @@ import {
   loginToTestAccount,
   PASSWORD,
 } from "./helpers/login";
-import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
+import { TEST_M_ADDRESS, TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 import { sendXlmPayment } from "./helpers/sendPayment";
+import { truncatedPublicKey } from "../src/helpers/stellar";
 
 test("Swap doesn't throw error when account is unfunded", async ({
   page,
@@ -19,6 +20,163 @@ test("Swap doesn't throw error when account is unfunded", async ({
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
     "Swap XLM",
   );
+});
+test("Swap shows correct balances for assets", async ({
+  page,
+  extensionId,
+}) => {
+  await page.route("*/**/account-balances/*", async (route) => {
+    const json = {
+      balances: {
+        "FOO:GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5": {
+          token: {
+            type: "credit_alphanum12",
+            code: "FOO",
+            issuer: {
+              key: "GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5",
+            },
+          },
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          total: "100",
+          limit: "922337203685.4775807",
+          available: "100",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address:
+              "FOO-GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5",
+            metadata: {
+              external_links: {},
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {
+              top_holders: [],
+            },
+          },
+        },
+        "BAZ:GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5": {
+          token: {
+            type: "credit_alphanum12",
+            code: "BAZ",
+            issuer: {
+              key: "GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5",
+            },
+          },
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          total: "10",
+          limit: "922337203685.4775807",
+          available: "10",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address:
+              "BAZ-GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5",
+            metadata: {
+              external_links: {},
+            },
+            fees: {},
+            features: [
+              {
+                feature_id: "HIGH_REPUTATION_TOKEN",
+                type: "Benign",
+                description: "Token with verified high reputation",
+              },
+            ],
+            trading_limits: {},
+            financial_stats: {
+              top_holders: [],
+            },
+          },
+        },
+        native: {
+          token: {
+            type: "native",
+            code: "XLM",
+          },
+          total: "999",
+          available: "999",
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          minimumBalance: "8",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: "",
+            metadata: {
+              type: "",
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
+        },
+        "PBT:CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND": {
+          token: {
+            code: "PBT",
+            issuer: {
+              key: "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
+            },
+          },
+          contractId:
+            "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
+          symbol: "PBT",
+          decimals: 5,
+          total: "9899700",
+          available: "9899700",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address:
+              "PBT-CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
+            metadata: {
+              external_links: {},
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {
+              top_holders: [],
+            },
+          },
+        },
+      },
+      isFunded: true,
+      subentryCount: 14,
+      error: {
+        horizon: null,
+        soroban: null,
+      },
+    };
+    await route.fulfill({ json });
+  });
+  test.slow();
+  await login({ page, extensionId });
+
+  await page.getByTestId("BottomNav-link-swap").click();
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
+    "Swap XLM",
+  );
+  await page.getByText("From").click();
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
+    "Your assets",
+  );
+  await expect(page.getByText("100 FOO")).toBeVisible();
+  await expect(page.getByText("10 BAZ")).toBeVisible();
+  await expect(page.getByText("98.997 PBT")).toBeVisible();
+  await expect(page.getByText("999 XLM")).toBeVisible();
 });
 test("Send doesn't throw error when account is unfunded", async ({
   page,
@@ -143,6 +301,51 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   await page.getByTestId("BottomNav-link-account").click({ force: true });
 });
 
+test("Send XLM payment to M address", async ({ page, extensionId }) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId });
+
+  // send XLM to C address
+  await page.getByTitle("Send Payment").click({ force: true });
+  await expect(page.getByText("Send To")).toBeVisible();
+  await page.getByTestId("send-to-input").fill(TEST_M_ADDRESS);
+  await page.getByText("Continue").click({ force: true });
+
+  await expect(page.getByText("Send XLM")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill(".001");
+  await page.getByText("Continue").click({ force: true });
+
+  await expect(page.getByText("Send Settings")).toBeVisible();
+  await expect(page.getByTestId("SendSettingsTransactionFee")).toHaveText(
+    /[0-9]/,
+  );
+  await page.getByText("Review Send").click();
+
+  await expect(page.getByText("Confirm Send")).toBeVisible({
+    timeout: 200000,
+  });
+  await expectPageToHaveScreenshot({
+    page,
+    screenshot: "send-payment-confirm.png",
+  });
+  await page.getByTestId("transaction-details-btn-send").click();
+
+  await expect(page.getByText("Successfully sent")).toBeVisible({
+    timeout: 60000,
+  });
+
+  await page.getByText("Details").click({ force: true });
+
+  await expect(page.getByText("Sent XLM")).toBeVisible();
+  await expect(page.getByTestId("asset-amount")).toContainText("0.001");
+  await expect(page.getByTestId("to-field")).toContainText(
+    truncatedPublicKey(TEST_M_ADDRESS),
+  );
+
+  await page.getByTestId("BackButton").click({ force: true });
+  await page.getByTestId("BottomNav-link-account").click({ force: true });
+});
+
 test.skip("Send SAC to C address", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
@@ -246,8 +449,7 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   await page.getByText("Manage Assets").click({ force: true });
   await expect(page.getByText("Your assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });
-  await page.getByText("Add manually").click({ force: true });
-  await page.getByTestId("search-token-input").fill(TEST_TOKEN_ADDRESS);
+  await page.getByTestId("search-asset-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByTestId("ManageAssetRowButton").click({ force: true });
   await page.getByTestId("add-asset").dispatchEvent("click");
 

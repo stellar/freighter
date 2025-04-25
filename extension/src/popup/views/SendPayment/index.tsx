@@ -110,12 +110,12 @@ export const SendPayment = () => {
       case STEPS.DESTINATION: {
         emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
         return (
-          <PublicKeyRoute>
+          <VerifiedAccountRoute>
             <SendTo
               goBack={() => navigate(ROUTES.account)}
               goToNext={() => setActiveStep(STEPS.AMOUNT)}
             />
-          </PublicKeyRoute>
+          </VerifiedAccountRoute>
         );
       }
     }

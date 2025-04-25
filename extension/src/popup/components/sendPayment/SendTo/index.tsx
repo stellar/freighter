@@ -172,7 +172,7 @@ export const SendTo = ({
   return (
     <React.Fragment>
       <SubviewHeader title="Send To" customBackAction={goBack} />
-      <View.Content hasNoTopPadding>
+      <View.Content hasTopInput>
         <FormRows>
           <Input
             fieldSize="md"
@@ -190,6 +190,15 @@ export const SendTo = ({
             <div className="SendTo__loader">
               <Loader />
             </div>
+          ) : sendDataState.error ? (
+            <Notification
+              variant="error"
+              title={
+                sendDataState.error instanceof Error
+                  ? sendDataState.error.message
+                  : "Unknown error occured"
+              }
+            />
           ) : (
             <div>
               {formik.values.destination === "" ? (

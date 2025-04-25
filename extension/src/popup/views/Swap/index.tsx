@@ -76,13 +76,13 @@ export const Swap = () => {
       case STEPS.AMOUNT: {
         emitMetric(METRIC_NAMES.swapAmount);
         return (
-          <PublicKeyRoute>
+          <VerifiedAccountRoute>
             <SendAmount
               goBack={() => navigate(ROUTES.account)}
               goToNext={() => setActiveStep(STEPS.SWAP_SETTINGS)}
               goToChooseAsset={() => setActiveStep(STEPS.CHOOSE_ASSETS)}
             />
-          </PublicKeyRoute>
+          </VerifiedAccountRoute>
         );
       }
       case STEPS.CHOOSE_ASSETS: {

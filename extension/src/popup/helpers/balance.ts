@@ -36,12 +36,20 @@ export const findAssetBalance = (
       "token" in balance && "issuer" in balance.token
         ? balance.token.issuer.key
         : "";
-    return balanceIssuer === asset.issuer;
+    const balanceCode =
+      "token" in balance && "code" in balance.token ? balance.token.code : "";
+    return balanceIssuer === asset.issuer && balanceCode === asset.code;
   }) as Exclude<AssetType, LiquidityPoolShareAsset> | undefined;
 };
 
-export const getBalanceByIssuer = (issuer: string, balances: AssetType[]) =>
-  balances.find((balance) => {
+export const getBalanceByAsset = (
+  asset: Asset | { issuer: string; code: string },
+  balances: AssetType[],
+) => {
+  const code = asset.code;
+  const issuer = asset.issuer;
+
+  return balances.find((balance) => {
     if ("token" in balance && "type" in balance.token && !issuer) {
       return balance.token.type === "native";
     }
@@ -53,9 +61,11 @@ export const getBalanceByIssuer = (issuer: string, balances: AssetType[]) =>
     return (
       "token" in balance &&
       "issuer" in balance.token &&
-      balance.token.issuer.key === issuer
+      balance.token.issuer.key === issuer &&
+      balance.token.code === code
     );
   });
+};
 
 /*
   Attempts to match a balance to a related contract ID, expects a token or SAC contract ID.

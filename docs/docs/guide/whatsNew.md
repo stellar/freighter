@@ -4,6 +4,49 @@ title: What's New
 slug: /whatsNew
 ---
 
+## Release 5.32.0
+
+## Add Asset Unification
+
+The "Add Asset" flow is now unified so that users do not have to select "Add
+Manually" in order to add custom tokens. You can now use the single search bar
+in order to search for issuers, domains, and contract IDs when looking for an
+asset to add to your balances screen.
+
+<img src={require('./assets/5.32.0/asset-unification.png').default} alt="Add
+Assets" width="300"/>
+
+## Improved Support for Asset Icons
+
+Traditionally, you have only been able to see an asset's icon if it was
+correctly defined in
+[the asset's toml file](https://developers.stellar.org/docs/tokens/publishing-asset-info#sample-stellartoml)
+hosted on the asset's home domain.
+
+Custom tokens have no corresponding toml file or home domain which meant there
+was no support for displaying a custom token's asset icon. We've expanded icon
+support by including icons defined in any
+[SEP 42 Stellar Asset List](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0042.md)
+that is active in your wallet. This change will allow more asset icons to be
+available for Freighter assets and include custom tokens that are vetted by the
+community and added to the maintained asset lists.
+
+## Failed Transaction in History
+
+Your history previously only included transactions that were successful and
+included in the ledger. We've updated our history data to include failed
+transactions in order to give users a better view of the actions they attempt to
+take.
+
+<img src={require('./assets/5.32.0/failed-history-row.png').default} alt="Failed
+History Row" width="300"/> <img
+src={require('./assets/5.32.0/failed-history-item.png').default} alt="Failed
+History Item" width="300"/>
+
+## Additional bugfixes and stability fixes
+
+[Full changelog](https://github.com/stellar/freighter/releases/tag/5.32.0)
+
 ## Release 5.31.0
 
 ## Coinbase Onramp:

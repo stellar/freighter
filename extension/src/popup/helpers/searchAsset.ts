@@ -1,11 +1,4 @@
-import { captureException } from "@sentry/browser";
-import { validate, ValidationError } from "jsonschema";
-import {
-  MAINNET_NETWORK_DETAILS,
-  NetworkDetails,
-  NETWORKS,
-  TESTNET_NETWORK_DETAILS,
-} from "@shared/constants/stellar";
+import { NetworkDetails, NETWORKS } from "@shared/constants/stellar";
 import {
   AssetsLists,
   AssetsListKey,
@@ -14,61 +7,19 @@ import {
 } from "@shared/constants/soroban/asset-list";
 
 import { getApiStellarExpertUrl } from "popup/helpers/account";
-import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
+import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 
 export const searchAsset = async ({
   asset,
   networkDetails,
-  onError,
 }: {
   asset: any;
   networkDetails: NetworkDetails;
-  onError: (e: any) => void;
 }) => {
-  try {
-    const res = await fetch(
-      `${getApiStellarExpertUrl(networkDetails)}/asset?search=${asset}`,
-    );
-    return await res.json();
-  } catch (e) {
-    return onError(e);
-  }
-};
-
-export const schemaValidatedAssetList = async (
-  assetListJson: AssetListResponse,
-): Promise<{
-  assets: AssetListReponseItem[];
-  errors: ValidationError[] | null;
-}> => {
-  let schemaRes;
-  try {
-    schemaRes = await fetch(
-      "https://raw.githubusercontent.com/orbitlens/stellar-protocol/sep-0042-token-lists/contents/sep-0042/assetlist.schema.json",
-    );
-  } catch (err) {
-    captureException("Error fetching SEP-0042 JSON schema");
-    return { assets: [] as AssetListReponseItem[], errors: null };
-  }
-
-  if (!schemaRes.ok) {
-    captureException("Unable to fetch SEP-0042 JSON schema");
-    return { assets: [] as AssetListReponseItem[], errors: null };
-  }
-
-  const schemaResJson = await schemaRes?.json();
-
-  // check against the SEP-0042 schema
-  const validatedList = validate(assetListJson, schemaResJson);
-
-  if (validatedList.errors.length) {
-    return {
-      assets: [] as AssetListReponseItem[],
-      errors: validatedList.errors,
-    };
-  }
-
-  return { assets: assetListJson.assets, errors: null };
+  const res = await fetch(
+    `${getApiStellarExpertUrl(networkDetails)}/asset?search=${asset}`,
+  );
+  return res.json();
 };
 
 export const getNativeContractDetails = (networkDetails: NetworkDetails) => {
@@ -144,71 +95,29 @@ export const getVerifiedTokens = async ({
   setIsSearching?: (isSearching: boolean) => void;
   assetsLists: AssetsLists;
 }) => {
-  let network = networkDetails.network;
-
-  if (network === CUSTOM_NETWORK) {
-    if (
-      networkDetails.networkPassphrase ===
-      MAINNET_NETWORK_DETAILS.networkPassphrase
-    ) {
-      network = MAINNET_NETWORK_DETAILS.network;
-    }
-    if (
-      networkDetails.networkPassphrase ===
-      TESTNET_NETWORK_DETAILS.networkPassphrase
-    ) {
-      network = TESTNET_NETWORK_DETAILS.network;
-    }
-  }
-
-  const networkLists = assetsLists[network as AssetsListKey];
-  const promiseArr = [];
+  const assetListsData = await getCombinedAssetListData({
+    networkDetails,
+    assetsLists,
+  });
   const nativeContract = getNativeContractDetails(networkDetails);
 
   if (contractId === nativeContract.contract) {
     return [{ ...nativeContract, verifiedLists: [] }];
   }
 
-  for (const networkList of networkLists) {
-    const { url = "", isEnabled } = networkList;
-
-    if (isEnabled) {
-      const fetchAndParse = async () => {
-        let res;
-        try {
-          res = await fetch(url);
-        } catch (e) {
-          captureException(`Failed to load asset list: ${url}`);
-        }
-
-        return res?.json();
-      };
-
-      promiseArr.push(fetchAndParse());
-    }
-  }
-
-  const promiseRes =
-    await Promise.allSettled<Promise<AssetListResponse>>(promiseArr);
-
   const verifiedTokens = [] as VerifiedTokenRecord[];
-
   let verifiedToken = {} as AssetListReponseItem;
   const verifiedLists: string[] = [];
 
-  for (const r of promiseRes) {
-    if (r.status === "fulfilled") {
-      // confirm that this list still adheres to the agreed upon schema
-      const validatedList = await schemaValidatedAssetList(r.value);
-      const list = validatedList.assets;
-      if (list) {
-        for (const record of list) {
-          const regex = new RegExp(contractId, "i");
-          if (record.contract && record.contract.match(regex)) {
-            verifiedToken = record;
-            verifiedLists.push(r.value.name);
-            break;
-          }
+  for (const data of assetListsData) {
+    const list = data.assets;
+    if (list) {
+      for (const record of list) {
+        const regex = new RegExp(contractId, "i");
+        if (record.contract && record.contract.match(regex)) {
+          verifiedToken = record;
+          verifiedLists.push(data.name);
+          break;
         }
       }
     }

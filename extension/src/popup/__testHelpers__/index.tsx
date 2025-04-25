@@ -254,3 +254,24 @@ export const mockAccountHistory = [
     type_i: 1,
   },
 ];
+
+export const validAssetList = {
+  name: "PiyalBasu Top 50",
+  provider: "PiyalBasu",
+  description: "Test asset list schema",
+  version: "1.0",
+  network: "public",
+  feedback: "https://piyalbasu.org",
+  assets: [
+    {
+      code: "yXLM",
+      issuer: "GARDNV3Q7YGT4AKSDF25LT32YSCCW4EV22Y2TV3I2PU2MMXJTEDL5T55",
+      contract: "CBZVSNVB55ANF24QVJL2K5QCLOAB6XITGTGXYEAF6NPTXYKEJUYQOHFC",
+      name: "yXLM",
+      org: "Ultra Capital LLC dba Ultra Capital",
+      domain: "ultracapital.xyz",
+      icon: "https://ipfs.io/ipfs/bafkreihntcz2lpaxawmbhwidtuifladkgew6olwuly2dz5pewqillhhpay",
+      decimals: 7,
+    },
+  ],
+};

@@ -1,4 +1,5 @@
 import { useReducer } from "react";
+import { useSelector } from "react-redux";
 
 import {
   getAccountBalances,
@@ -16,6 +17,8 @@ import { initialState, reducer } from "helpers/request";
 import { storeBalanceMetricData } from "helpers/metrics";
 import { filterHiddenBalances, sortBalances } from "popup/helpers/account";
 import { AssetType } from "@shared/api/types/account-balance";
+import { settingsSelector } from "popup/ducks/settings";
+import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 
 export interface AccountBalances {
   balances: AssetType[];
@@ -38,6 +41,7 @@ function useGetBalances(
     reducer<AccountBalances, unknown>,
     initialState,
   );
+  const { assetsLists } = useSelector(settingsSelector);
 
   const fetchData = async (): Promise<AccountBalances | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -68,10 +72,16 @@ function useGetBalances(
         payload.balances = sortBalances(data.balances);
       }
 
+      const assetsListsData = await getCombinedAssetListData({
+        networkDetails,
+        assetsLists,
+      });
+
       if (options.includeIcons) {
         const icons = await getAssetIcons({
           balances: data.balances,
           networkDetails,
+          assetsListsData,
         });
         payload.icons = icons;
       }

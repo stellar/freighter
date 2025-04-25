@@ -38,30 +38,40 @@ jobs:
         with:
           file: ./extension/public/static/manifest/v2.json
           field: version_name
-          value: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}
+          value:
+            ${{ github.event.inputs.release }}-beta.${{
+            github.event.inputs.version }}
       - name: Update manifest-v3.json version_name
         uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
           file: ./extension/public/static/manifest/v3.json
           field: version_name
-          value: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}
+          value:
+            ${{ github.event.inputs.release }}-beta.${{
+            github.event.inputs.version }}
       - name: Update manifest-v2.json version for Chrome
         uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
           file: ./extension/public/static/manifest/v2.json
           field: version
-          value: ${{ github.event.inputs.release }}.${{ github.event.inputs.version }}
+          value:
+            ${{ github.event.inputs.release }}.${{ github.event.inputs.version
+            }}
       - name: Update manifest-v3.json version for Chrome
         uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
           file: ./extension/public/static/manifest/v3.json
           field: version
-          value: ${{ github.event.inputs.release }}.${{ github.event.inputs.version }}
+          value:
+            ${{ github.event.inputs.release }}.${{ github.event.inputs.version
+            }}
       - name: Build extension
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: yarn setup && yarn build:freighter-api && yarn build:extension:production
+      - run:
+          yarn setup && yarn build:freighter-api && yarn
+          build:extension:production
       - name: Use BETA icons
         run: |
           rm -rf ./extension/build/images
@@ -82,9 +92,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
-          tag_name: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}
-          release_name: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}
-          body: ${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}
+          tag_name:
+            ${{ github.event.inputs.release }}-beta.${{
+            github.event.inputs.version }}
+          release_name:
+            ${{ github.event.inputs.release }}-beta.${{
+            github.event.inputs.version }}
+          body:
+            ${{ github.event.inputs.release }}-beta.${{
+            github.event.inputs.version }}
           draft: false
           prerelease: true
       - name: Upload Release Asset
@@ -95,7 +111,9 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./extension/build/build.zip
-          asset_name: build-${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}.zip
+          asset_name:
+            build-${{ github.event.inputs.release }}-beta.${{
+            github.event.inputs.version }}.zip
           asset_content_type: application/zip
       # - name:
       - name: Submit extension to Chrome
@@ -109,13 +127,18 @@ jobs:
           publish: true
           publish-target: trustedTesters
       - name: Slack Notification
-        uses: rtCamp/action-slack-notify@c33737706dea87cd7784c687dadc9adf1be59990 #v2.3.2
+        uses: rtCamp/action-slack-notify@e31e87e03dd19038e411e38ae27cbad084a90661 #v2.3.3
         env:
           MSG_MINIMAL: true
           SLACK_CHANNEL: team-wallet-eng
           SLACK_COLOR: "#391EDA"
           SLACK_ICON: https://github.com/stellar/freighter/blob/master/docs/static/images/logo.png?size=48
-          SLACK_MESSAGE: "https://github.com/stellar/freighter/releases/tag/${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}"
-          SLACK_TITLE: Freighter v${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }} has been submitted for testing!
+          SLACK_MESSAGE:
+            "https://github.com/stellar/freighter/releases/tag/${{
+            github.event.inputs.release }}-beta.${{ github.event.inputs.version
+            }}"
+          SLACK_TITLE:
+            Freighter v${{ github.event.inputs.release }}-beta.${{
+            github.event.inputs.version }} has been submitted for testing!
           SLACK_USERNAME: Freighter Administrative Assistant
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
