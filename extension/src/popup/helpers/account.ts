@@ -85,6 +85,20 @@ export const getIsDustPayment = (
   "amount" in operation &&
   new BigNumber(operation.amount).lte(new BigNumber(0.1));
 
+export const getIsCreateClaimableBalanceSpam = (
+  operation: HorizonOperation,
+) => {
+  // transaction_attr does not exist in HorizonOperation type
+  const op = operation as any;
+  if (op.type === "create_claimable_balance") {
+    if (op?.transaction_attr?.operation_count > 10) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 interface SortOperationsByAsset {
   operations: HorizonOperation[];
   balances: AssetType[] | SorobanBalance[];

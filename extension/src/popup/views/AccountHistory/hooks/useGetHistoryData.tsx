@@ -6,6 +6,7 @@ import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { HistoryResponse, useGetHistory } from "helpers/hooks/useGetHistory";
 import { HistoryItemOperation } from "popup/components/accountHistory/HistoryItem";
 import {
+  getIsCreateClaimableBalanceSpam,
   getIsDustPayment,
   getIsPayment,
   getIsSwap,
@@ -49,6 +50,10 @@ const createHistorySections = (
       };
 
       if (isDustPayment && isHideDustEnabled) {
+        return sections;
+      }
+
+      if (getIsCreateClaimableBalanceSpam(operation)) {
         return sections;
       }
 
