@@ -20,7 +20,7 @@ describe("getIconFromTokenLists", () => {
       networkDetails: TESTNET_NETWORK_DETAILS,
       contractId: VERIFIED_TOKEN_CONTRACT,
       code: VERIFIED_TOKEN_CODE,
-      assetsLists: DEFAULT_ASSETS_LISTS,
+      assetsListsData: [validAssetList],
     });
     expect(icon).toEqual(EXPECTED_ICON_URL);
     expect(canonicalAsset).toEqual(
@@ -32,7 +32,7 @@ describe("getIconFromTokenLists", () => {
       networkDetails: TESTNET_NETWORK_DETAILS,
       issuerId: VERIFIED_TOKEN_ISSUER,
       code: VERIFIED_TOKEN_CODE,
-      assetsLists: DEFAULT_ASSETS_LISTS,
+      assetsListsData: [validAssetList],
     });
     expect(icon).toEqual(EXPECTED_ICON_URL);
     expect(canonicalAsset).toEqual(
@@ -44,7 +44,7 @@ describe("getIconFromTokenLists", () => {
       networkDetails: TESTNET_NETWORK_DETAILS,
       issuerId: TEST_PUBLIC_KEY,
       code: VERIFIED_TOKEN_CODE,
-      assetsLists: DEFAULT_ASSETS_LISTS,
+      assetsListsData: [validAssetList],
     });
     expect(icon).toBeUndefined();
     expect(canonicalAsset).toBeUndefined();
