@@ -52,7 +52,7 @@ import {
   WarningMessageVariant,
 } from "popup/components/WarningMessages";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
-import { getBalanceByIssuer } from "popup/helpers/balance";
+import { getBalanceByAsset } from "popup/helpers/balance";
 import {
   AssetType,
   LiquidityPoolShareAsset,
@@ -94,8 +94,8 @@ export const AssetDetail = ({
   const canonical = getAssetFromCanonical(selectedAsset);
   const isSorobanAsset = canonical.issuer && isSorobanIssuer(canonical.issuer);
 
-  const selectedBalance = getBalanceByIssuer(
-    canonical.issuer,
+  const selectedBalance = getBalanceByAsset(
+    canonical,
     accountBalances.balances,
   ) as Exclude<AssetType, LiquidityPoolShareAsset | SorobanAsset>;
   const isSuspicious = isAssetSuspicious(selectedBalance.blockaidData);
