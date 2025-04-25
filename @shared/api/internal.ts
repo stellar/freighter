@@ -13,6 +13,7 @@ import {
 import BigNumber from "bignumber.js";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import {
+  AssetListResponse,
   AssetsListItem,
   AssetsLists,
 } from "@shared/constants/soroban/asset-list";
@@ -994,11 +995,11 @@ export const getTokenDetails = async ({
 export const getAssetIcons = async ({
   balances,
   networkDetails,
-  assetsLists,
+  assetsListsData,
 }: {
   balances: Balances;
   networkDetails: NetworkDetails;
-  assetsLists: AssetsLists;
+  assetsListsData: AssetListResponse[];
 }) => {
   const assetIcons = {} as { [code: string]: string };
 
@@ -1022,7 +1023,7 @@ export const getAssetIcons = async ({
             issuerId: key,
             contractId,
             code,
-            assetsLists,
+            assetsListsData,
           });
           if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
             icon = tokenListIcon.icon;

@@ -53,7 +53,7 @@ import {
 import { Balances } from "@shared/api/types/backend-api";
 import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
 import { SERVICE_TYPES, DEV_SERVER } from "@shared/constants/services";
-import { AssetsLists } from "@shared/constants/soroban/asset-list";
+import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 
 const testPublicKey =
   "GAM7OKWGYLITNSTD6335XNCBT6S2MZRT7UWQVZJHF5BQVMNF3YIKJTWY";
@@ -250,7 +250,7 @@ export const IntegrationTest = () => {
       res = await getAssetIcons({
         balances: testBalances,
         networkDetails: TESTNET_NETWORK_DETAILS,
-        assetsLists: {} as AssetsLists,
+        assetsListsData: [] as AssetListResponse[],
       });
       runAsserts("getAssetIcons", () => {
         assertEq(Object.keys(res as object).length > 0, true);
