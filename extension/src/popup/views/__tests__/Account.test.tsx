@@ -17,6 +17,7 @@ import * as UseAssetDomain from "popup/helpers/useAssetDomain";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { Response } from "@shared/api/types";
+import * as TokenListHelpers from "@shared/api/helpers/token-list";
 
 import {
   Wrapper,
@@ -183,6 +184,10 @@ jest.spyOn(ApiInternal, "getAssetIcons").mockImplementation(() =>
       "http://domain.com/icon.png",
   }),
 );
+
+jest
+  .spyOn(TokenListHelpers, "getCombinedAssetListData")
+  .mockImplementation(() => Promise.resolve([]));
 
 describe("Account view", () => {
   afterAll(() => {

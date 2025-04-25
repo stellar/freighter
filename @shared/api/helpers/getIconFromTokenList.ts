@@ -1,32 +1,25 @@
 import {
   AssetListReponseItem,
-  AssetsLists,
+  AssetListResponse,
 } from "@shared/constants/soroban/asset-list";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { getCombinedAssetListData } from "./token-list";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 
 export const getIconFromTokenLists = async ({
-  networkDetails,
   issuerId,
   contractId,
   code,
-  assetsLists,
+  assetsListsData,
 }: {
   networkDetails: NetworkDetails;
   issuerId?: string;
   contractId?: string;
   code: string;
-  assetsLists: AssetsLists;
+  assetsListsData: AssetListResponse[];
 }) => {
-  const assetListsData = await getCombinedAssetListData({
-    networkDetails,
-    assetsLists,
-  });
-
   let verifiedToken = {} as AssetListReponseItem;
   let canonicalAsset = undefined as string | undefined;
-  for (const data of assetListsData) {
+  for (const data of assetsListsData) {
     const list = data.assets;
     if (list) {
       for (const record of list) {

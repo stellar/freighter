@@ -14,6 +14,7 @@ import {
 import * as Stellar from "helpers/stellar";
 import { getTokenInvocationArgs } from "popup/helpers/soroban";
 import * as ApiInternal from "@shared/api/internal";
+import * as TokenListHelpers from "@shared/api/helpers/token-list";
 
 import { SignTransaction } from "../SignTransaction";
 import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
@@ -34,6 +35,10 @@ jest
 jest
   .spyOn(ApiInternal, "getAssetIcons")
   .mockImplementation(() => Promise.resolve({}));
+
+jest
+  .spyOn(TokenListHelpers, "getCombinedAssetListData")
+  .mockImplementation(() => Promise.resolve([]));
 
 const defaultSettingsState = {
   networkDetails: {

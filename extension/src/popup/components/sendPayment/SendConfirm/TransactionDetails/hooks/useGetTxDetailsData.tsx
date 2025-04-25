@@ -28,6 +28,7 @@ import { getAccountBalances, getAssetIcons } from "@shared/api/internal";
 import { getBaseAccount, sortBalances } from "popup/helpers/account";
 import { isContractId } from "popup/helpers/soroban";
 import { settingsSelector } from "popup/ducks/settings";
+import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 
 export interface TxDetailsData {
   destAssetIconUrl: string;
@@ -219,12 +220,17 @@ function useGetTxDetailsData(
             )
           : ({} as AccountBalancesInterface);
 
+      const assetsListsData = await getCombinedAssetListData({
+        networkDetails,
+        assetsLists,
+      });
+
       const destIcons =
         destinationAccount && !isContractId(destinationAccount)
           ? await getAssetIcons({
               balances: destBalancesResult.balances,
               networkDetails,
-              assetsLists,
+              assetsListsData,
             })
           : {};
 
