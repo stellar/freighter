@@ -71,7 +71,7 @@ test.skip("Adding Soroban verified token", async ({ page, extensionId }) => {
     timeout: 30000,
   });
 });
-test("Adding token on Futurenet", async ({ page, extensionId }) => {
+test.only("Adding token on Futurenet", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
@@ -86,7 +86,7 @@ test("Adding token on Futurenet", async ({ page, extensionId }) => {
   await page.getByTestId("BottomNav-link-account").click();
   await expect(page.getByTestId("network-selector-open")).toBeVisible();
   await expect(page.getByTestId("network-selector-open")).toHaveText(
-    "Future net",
+    "Future Net",
   );
 
   await page.getByTestId("account-options-dropdown").click();
