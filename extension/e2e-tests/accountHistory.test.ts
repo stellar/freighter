@@ -149,6 +149,5 @@ test("Hide create claimable balance spam", async ({ page, extensionId }) => {
   await page.getByTestId("BottomNav-link-account-history").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("History");
   const historyItems = page.getByTestId("history-item");
-  console.log(historyItems);
   expect(historyItems).toHaveCount(2);
 });
