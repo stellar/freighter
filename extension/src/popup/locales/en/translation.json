@@ -25,7 +25,6 @@
   "Add Custom Network": "Add Custom Network",
   "Add funds": "Add funds",
   "Add list": "Add list",
-  "Add manually": "Add manually",
   "Add network": "Add network",
   "Add new list": "Add new list",
   "Add XLM": "Add XLM",
@@ -85,7 +84,6 @@
   "Balance ID": "Balance ID",
   "Balance Info": "Balance Info",
   "Before we start with migration, please read": "Before we start with migration, please read",
-  "Before You Add This Asset": "Before You Add This Asset",
   "Bump To": "Bump To",
   "BUY": "BUY",
   "Buy Amount": "Buy Amount",
@@ -93,7 +91,6 @@
   "Buy XLM with Coinbase": "Buy XLM with Coinbase",
   "Buying": "Buying",
   "by": "by",
-  "Can’t find the asset you’re looking for? Add it manually": "Can’t find the asset you’re looking for? Add it manually",
   "Cancel": "Cancel",
   "Check the destination account memo requirements and include it in the transaction": "Check the destination account memo requirements and include it in the transaction.",
   "Choose Asset": "Choose Asset",
@@ -267,7 +264,7 @@
   "Learn more about fees": "Learn more about fees",
   "Learn more about transaction fees": "Learn more about transaction fees",
   "Learn more about trustlines": "Learn more about trustlines",
-  "Leave Feedback": "Leave Feedback",
+  "Leave feedback": "Leave feedback",
   "Leave feedback about Blockaid warnings and messages": "Leave feedback about Blockaid warnings and messages",
   "Less common": "Less common",
   "Limit": "Limit",
@@ -356,9 +353,6 @@
   },
   "Please check the new rate and try again": "Please check the new rate and try again.",
   "Please don’t close this window": "Please don’t close this window",
-  "Please double-check its information and characteristics": {
-    " This can help you identify fraudulent assets": "Please double-check its information and characteristics. This can help you identify fraudulent assets."
-  },
   "Please note the following message": "Please note the following message",
   "Please select a different network before removing it": "Please select a different network before removing it.",
   "Please select each word in the same order you have them noted to confirm you got them right": "Please select each word in the same order you have them noted to confirm you got them right.",
@@ -515,10 +509,12 @@
   "Trustor": "Trustor",
   "Type": "Type",
   "Unable to connect to": "Unable to connect to",
+  "Unable to find your asset": {
+    " Please check the asset code or address": "Unable to find your asset. Please check the asset code or address."
+  },
   "Unable to migrate": "Unable to migrate",
   "Unable to parse assets lists": "Unable to parse assets lists",
   "Unable to scan site for malicious behavior": "Unable to scan site for malicious behavior",
-  "Unable to search for assets": "Unable to search for assets",
   "Unsupported signing method": "Unsupported signing method",
   "Unverified asset": "Unverified asset",
   "Use experimental API’s and connect to the Futurenet, a test network": {
@@ -535,6 +531,7 @@
   "WEBSITE CONNECTION IS NOT SECURE": "WEBSITE CONNECTION IS NOT SECURE",
   "Welcome back!": "Welcome back!",
   "Welcome to Freighter": "Welcome to Freighter",
+  "What’s new": "What’s new",
   "which is not available on Freighter": {
     " If you own this account, you can import it into Freighter to complete this request": "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request."
   },
