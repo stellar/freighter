@@ -132,11 +132,11 @@ test("Hide create claimable balance spam", async ({ page, extensionId }) => {
           "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
         transaction_attr: {
           operation_count: 100,
-          successful: true,
+          successful: false,
         },
         transaction_hash:
           "686601028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a5",
-        transaction_successful: true,
+        transaction_successful: false,
         type: "create_claimable_balance",
         type_i: 14,
       },
