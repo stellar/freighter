@@ -86,7 +86,7 @@ test("Adding token on Futurenet", async ({ page, extensionId }) => {
   await page.getByTestId("BottomNav-link-account").click();
   await expect(page.getByTestId("network-selector-open")).toBeVisible();
   await expect(page.getByTestId("network-selector-open")).toHaveText(
-    "Futurenet",
+    "Future net",
   );
 
   await page.getByTestId("account-options-dropdown").click();
