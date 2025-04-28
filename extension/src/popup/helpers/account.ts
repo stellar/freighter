@@ -90,7 +90,7 @@ export const getIsCreateClaimableBalanceSpam = (
   // transaction_attr does not exist in HorizonOperation type
   const op = operation as any;
   if (op.type === "create_claimable_balance") {
-    if (op?.transaction_attr?.operation_count > 10) {
+    if (op?.transaction_attr?.operation_count > 50) {
       return true;
     }
   }
