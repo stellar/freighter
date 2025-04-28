@@ -37,6 +37,7 @@ export const AccountCreator = () => {
   const params = new URLSearchParams(location.search);
   const isRestartingOnboardingParam = params.get("isRestartingOnboarding");
   const isRestartingOnboarding = isRestartingOnboardingParam === "true";
+  const [mnemonicPhrase, setMnemonicPhrase] = useState("");
 
   const { state: accountData, fetchData } = useGetAccountCreatorData();
 
@@ -81,13 +82,9 @@ export const AccountCreator = () => {
     window.close();
   }
 
-  const publicKey = accountData.data?.publicKey!;
-
   const isShowingOverwriteWarning =
     accountData.data!.applicationState ===
     APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
-
-  const [mnemonicPhrase, setMnemonicPhrase] = useState("");
 
   const handleSubmit = async (values: FormValues) => {
     await dispatch(
@@ -111,7 +108,7 @@ export const AccountCreator = () => {
     termsOfUse: termsofUseValidator,
   });
 
-  return mnemonicPhrase && publicKey ? (
+  return mnemonicPhrase ? (
     <MnemonicPhrase mnemonicPhrase={mnemonicPhrase} />
   ) : (
     <React.Fragment>

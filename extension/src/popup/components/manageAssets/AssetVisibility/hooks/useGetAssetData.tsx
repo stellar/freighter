@@ -13,14 +13,20 @@ import {
   getHiddenAssets,
   changeAssetVisibility as internalChangeAssetVisibility,
 } from "@shared/api/internal";
+import { AppDataType, NeedsReRoute } from "helpers/hooks/useGetAppData";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
-export interface AssetVisibilityData {
+export interface ResolvedAssetVisibilityData {
+  type: AppDataType.RESOLVED;
   balances: AccountBalances;
   domains: ManageAssetCurrency[];
   isManagingAssets: boolean;
   hiddenAssets: Record<IssuerKey, AssetVisibility>;
   publicKey: string;
+  applicationState: APPLICATION_STATE;
 }
+
+export type AssetVisibilityData = NeedsReRoute | ResolvedAssetVisibilityData;
 
 function useGetAssetData(options: {
   showHidden: boolean;
@@ -41,6 +47,11 @@ function useGetAssetData(options: {
         throw new Error(domainsResult.message);
       }
 
+      if (domainsResult.type === AppDataType.REROUTE) {
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload: domainsResult });
+        return domainsResult;
+      }
+
       const { hiddenAssets, error: hiddenAssetError } = await getHiddenAssets({
         activePublicKey: domainsResult.publicKey,
       });
@@ -52,7 +63,9 @@ function useGetAssetData(options: {
       const payload = {
         ...domainsResult,
         hiddenAssets,
-      } as AssetVisibilityData;
+        type: AppDataType.RESOLVED,
+        applicationState: domainsResult.applicationState,
+      } as ResolvedAssetVisibilityData;
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;

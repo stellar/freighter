@@ -22,6 +22,9 @@ import { RequestState } from "helpers/hooks/fetchHookInterface";
 import { Loading } from "popup/components/Loading";
 
 import "./styles.scss";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 interface FormValues {
   asset: string;
@@ -112,6 +115,31 @@ export const SearchAsset = () => {
     return <Loading />;
   }
 
+  const hasError = state.state === RequestState.ERROR;
+  if (state.data?.type === "re-route") {
+    if (state.data.shouldOpenTab) {
+      openTab(newTabHref(state.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${state.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (
+    !hasError &&
+    state.data.type === "resolved" &&
+    (state.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED ||
+      state.data.applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
+  ) {
+    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
+    window.close();
+  }
+
   if (state.state === RequestState.ERROR) {
     return (
       <div className="SearchAsset__fetch-fail">
@@ -132,6 +160,8 @@ export const SearchAsset = () => {
     return <Navigate to={ROUTES.addAsset} />;
   }
 
+  const data = state.data;
+
   return (
     <View>
       <SubviewHeader title={t("Choose Asset")} />
@@ -143,9 +173,9 @@ export const SearchAsset = () => {
               onChange={(e) => {
                 handleSearch(
                   e,
-                  state.data.publicKey,
-                  state.data.isAllowListVerificationEnabled,
-                  state.data.networkDetails,
+                  data.publicKey,
+                  data.isAllowListVerificationEnabled,
+                  data.networkDetails,
                 );
                 setHasNoResults(false);
               }}
@@ -181,7 +211,7 @@ export const SearchAsset = () => {
                   (tokenState.data.verifiedAssetRows.length ||
                     tokenState.data.unverifiedAssetRows.length) ? (
                     <ManageAssetRows
-                      balances={state.data!.balances}
+                      balances={data!.balances}
                       header={
                         tokenState.data.verifiedAssetRows.length > 1 ||
                         tokenState.data.unverifiedAssetRows.length > 1 ? (

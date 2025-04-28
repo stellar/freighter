@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { Networks, StellarToml, StrKey } from "stellar-sdk";
 import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
@@ -35,6 +35,10 @@ import { RequestState } from "helpers/hooks/fetchHookInterface";
 import { Loading } from "popup/components/Loading";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { Notification } from "@stellar/design-system";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { ROUTES } from "popup/constants/routes";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 interface FormValues {
   asset: string;
@@ -321,6 +325,31 @@ export const AddAsset = () => {
     );
   }
 
+  if (state.data?.type === "re-route") {
+    if (state.data.shouldOpenTab) {
+      openTab(newTabHref(state.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${state.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (
+    state.data.type === "resolved" &&
+    (state.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED ||
+      state.data.applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
+  ) {
+    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
+    window.close();
+  }
+
+  const data = state.data;
+
   return (
     <Formik initialValues={initialValues} onSubmit={() => {}}>
       {({ dirty }) => (
@@ -328,9 +357,9 @@ export const AddAsset = () => {
           onChange={(e) => {
             handleSearch(
               e,
-              state.data.publicKey,
-              state.data.networkDetails,
-              state.data.isAllowListVerificationEnabled,
+              data.publicKey,
+              data.networkDetails,
+              data.isAllowListVerificationEnabled,
             );
             setHasNoResults(false);
           }}
@@ -368,7 +397,7 @@ export const AddAsset = () => {
                   {hasAssets ? (
                     <ManageAssetRows
                       header={null}
-                      balances={state.data.balances}
+                      balances={data.balances}
                       verifiedAssetRows={verifiedAssetRows}
                       unverifiedAssetRows={unverifiedAssetRows}
                       isVerifiedToken={isVerifiedToken}

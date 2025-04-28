@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
@@ -20,6 +20,10 @@ import { ToggleAssetRows } from "../ToggleAssetRows";
 import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { ROUTES } from "popup/constants/routes";
 
 export const AssetVisibility = () => {
   const { t } = useTranslation();
@@ -54,6 +58,35 @@ export const AssetVisibility = () => {
     domainState.state === RequestState.IDLE ||
     domainState.state === RequestState.LOADING;
 
+  const hasError = domainState.state === RequestState.ERROR;
+  if (domainState.data?.type === "re-route") {
+    if (domainState.data.shouldOpenTab) {
+      openTab(newTabHref(domainState.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${domainState.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (
+    !isLoading &&
+    !hasError &&
+    domainState.data.type === "resolved" &&
+    (domainState.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED ||
+      domainState.data.applicationState ===
+        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
+  ) {
+    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
+    window.close();
+  }
+
+  const data = domainState.data;
+
   return (
     <View>
       <SubviewHeader customBackAction={goBack} title={t("Toggle Assets")} />
@@ -85,7 +118,7 @@ export const AssetVisibility = () => {
                   return await changeAssetVisibility({
                     issuer,
                     visibility,
-                    publicKey: domainState.data!.publicKey,
+                    publicKey: data!.publicKey,
                   });
                 }}
               />

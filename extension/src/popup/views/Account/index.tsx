@@ -13,11 +13,13 @@ import { useTranslation } from "react-i18next";
 import {
   settingsSorobanSupportedSelector,
   settingsSelector,
+  settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
 import { View } from "popup/basics/layout/View";
 import {
   accountNameSelector,
   allAccountsSelector,
+  publicKeySelector,
 } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo, openTab } from "popup/helpers/navigate";
@@ -47,7 +49,9 @@ export const Account = () => {
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
+  const storedPublicKey = useSelector(publicKeySelector);
   const allAccounts = useSelector(allAccountsSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [selectedAsset, setSelectedAsset] = useState("");
   const isFullscreenModeEnabled = isFullscreenMode();
   const { state: accountData, fetchData } = useGetAccountData({
@@ -61,7 +65,7 @@ export const Account = () => {
     };
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [networkDetails.networkName, storedPublicKey]);
 
   if (
     accountData.state === RequestState.IDLE ||

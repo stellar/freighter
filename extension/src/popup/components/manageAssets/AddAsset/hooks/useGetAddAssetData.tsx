@@ -7,15 +7,24 @@ import {
   useGetBalances,
 } from "../../../../../helpers/hooks/useGetBalances";
 import { isMainnet, isTestnet } from "../../../../../helpers/stellar";
-import { useGetAppData } from "../../../../../helpers/hooks/useGetAppData";
+import {
+  AppDataType,
+  NeedsReRoute,
+  useGetAppData,
+} from "../../../../../helpers/hooks/useGetAppData";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
-interface AddAssetData {
+interface ResolvedAddAssetData {
+  type: AppDataType.RESOLVED;
   balances: AccountBalances;
   networkDetails: NetworkDetails;
   publicKey: string;
   isAllowListVerificationEnabled: boolean;
+  applicationState: APPLICATION_STATE;
 }
+
+type AddAssetData = NeedsReRoute | ResolvedAddAssetData;
 
 function useGetAddAssetData(options: {
   showHidden: boolean;
@@ -36,6 +45,11 @@ function useGetAddAssetData(options: {
         throw new Error(appData.message);
       }
 
+      if (appData.type === AppDataType.REROUTE) {
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload: appData });
+        return appData;
+      }
+
       const publicKey = appData.account.publicKey;
       const networkDetails = appData.settings.networkDetails;
       const isMainnetNetwork = isMainnet(networkDetails);
@@ -52,11 +66,13 @@ function useGetAddAssetData(options: {
       }
 
       const payload = {
+        type: AppDataType.RESOLVED,
+        applicationState: appData.account.applicationState,
         publicKey,
         balances,
         networkDetails,
         isAllowListVerificationEnabled,
-      } as AddAssetData;
+      } as ResolvedAddAssetData;
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;

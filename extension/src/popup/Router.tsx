@@ -422,11 +422,7 @@ export const Router = () => (
         ></Route>
         <Route
           path={`${ROUTES.manageAssets}/*`}
-          element={
-            <PublicKeyRoute>
-              <ManageAssets />
-            </PublicKeyRoute>
-          }
+          element={<ManageAssets />}
         ></Route>
         <Route
           path={ROUTES.swap}

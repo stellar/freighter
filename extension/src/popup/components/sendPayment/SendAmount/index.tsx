@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
 import debounce from "lodash/debounce";
-import { BigNumber } from "bignumber.js";
+import BigNumber from "bignumber.js";
 import { useFormik } from "formik";
 import { Button, Icon, Loader, Notification } from "@stellar/design-system";
 import { Asset } from "stellar-sdk";
@@ -69,6 +69,12 @@ import { RequestState } from "constants/request";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
 
 import "../styles.scss";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { Navigate } from "react-router-dom";
+import { ROUTES } from "popup/constants/routes";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { AppDataType } from "helpers/hooks/useGetAppData";
 
 enum AMOUNT_ERROR {
   TOO_HIGH = "amount too high",
@@ -158,6 +164,9 @@ export const SendAmount = ({
     },
     destination,
   );
+  const isLoading =
+    sendAmountData.state === RequestState.IDLE ||
+    sendAmountData.state === RequestState.LOADING;
 
   const isSwap = useIsSwap();
   const { recommendedFee } = useNetworkFees();
@@ -171,30 +180,28 @@ export const SendAmount = ({
     image: "",
     blockaidData: defaultBlockaidScanAssetResult,
   });
-  const isLoading =
-    sendAmountData.state === RequestState.IDLE ||
-    sendAmountData.state === RequestState.LOADING;
 
   /* eslint-disable react-hooks/exhaustive-deps */
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
-      if (isLoading) {
+      if (isLoading || sendAmountData.data?.type === AppDataType.REROUTE) {
         return "";
       }
+      const userBalances = sendAmountData.data?.userBalances!;
 
       let _availBalance = new BigNumber("0");
       const selectedCanonical = getAssetFromCanonical(selectedAsset);
       const selectedBalance = findAssetBalance(
-        sendAmountData.data!.userBalances.balances,
+        userBalances?.balances,
         selectedCanonical,
       );
       if (isToken && selectedBalance && isSorobanBalance(selectedBalance)) {
         return getTokenBalance(selectedBalance);
       }
-      if (sendAmountData.data?.userBalances!.balances) {
+      if (userBalances && userBalances.subentryCount) {
         // take base reserve into account for XLM payments
         const minBalance = new BigNumber(
-          (2 + sendAmountData.data.userBalances.subentryCount) * BASE_RESERVE,
+          (2 + userBalances.subentryCount) * BASE_RESERVE,
         );
 
         const balance = selectedBalance?.total || new BigNumber("0");
@@ -216,7 +223,7 @@ export const SendAmount = ({
 
       return _availBalance.toFixed().toString();
     },
-    [sendAmountData.data?.userBalances, recommendedFee, isToken],
+    [sendAmountData.data, recommendedFee, isToken],
   );
 
   const [availBalance, setAvailBalance] = useState(
@@ -233,8 +240,15 @@ export const SendAmount = ({
 
     let isDestAssetScam = false;
 
+    if (sendAmountData.data?.type === AppDataType.REROUTE) {
+      return;
+    }
+    const userBalances = sendAmountData.data?.userBalances!;
+    const domains = sendAmountData.data?.domains!;
+    const icons = sendAmountData.data?.icons!;
+
     const destinationBalance = findAssetBalance(
-      sendAmountData.data!.userBalances.balances,
+      userBalances.balances,
       getAssetFromCanonical(destinationAsset || "native"),
     );
     if (values.destinationAsset) {
@@ -246,7 +260,7 @@ export const SendAmount = ({
     }
     // check for scam asset
     const assetBalance = findAssetBalance(
-      sendAmountData.data!.userBalances.balances,
+      userBalances.balances,
       getAssetFromCanonical(asset),
     );
     const isSourceAssetScam =
@@ -258,11 +272,11 @@ export const SendAmount = ({
       setSuspiciousAssetData({
         code: getAssetFromCanonical(values.asset).code,
         issuer: getAssetFromCanonical(values.asset).issuer,
-        domain: sendAmountData.data!.domains.find(
+        domain: domains.find(
           (domain) =>
             getCanonicalFromAsset(domain.code!, domain.issuer) === values.asset,
         )!.domain,
-        image: sendAmountData.data!.icons[values.asset]!,
+        image: icons[values.asset]!,
         blockaidData:
           assetBalance?.blockaidData || defaultBlockaidScanAssetResult,
       });
@@ -271,12 +285,12 @@ export const SendAmount = ({
       setSuspiciousAssetData({
         code: getAssetFromCanonical(values.destinationAsset).code,
         issuer: getAssetFromCanonical(values.destinationAsset).issuer,
-        domain: sendAmountData.data!.domains.find(
+        domain: domains.find(
           (domain) =>
             getCanonicalFromAsset(domain.code!, domain.issuer) ===
             values.destinationAsset,
         )!.domain,
-        image: sendAmountData.data!.icons[values.destinationAsset]!,
+        image: icons[values.destinationAsset]!,
         blockaidData:
           !!destinationBalance && "blockaidData" in destinationBalance
             ? destinationBalance.blockaidData
@@ -318,6 +332,78 @@ export const SendAmount = ({
     formik.values.destinationAsset || "native",
   );
 
+  useEffect(() => {
+    setAvailBalance(calculateAvailBalance(formik.values.asset));
+  }, [calculateAvailBalance, formik.values.asset]);
+
+  // for swaps we're loading and choosing the default destinationAsset here
+  // also, need to check if both source and destination are native
+  useEffect(() => {
+    if (
+      sendAmountData.data?.type === "resolved" &&
+      isSwap &&
+      (!destinationAsset ||
+        (destinationAsset === "native" && asset === "native"))
+    ) {
+      let defaultDestAsset;
+      const userBalances = sendAmountData.data.userBalances;
+
+      // if pre-chosen source asset (eg. from AssetDetails) not XLM, default dest asset to XLM
+      if (formik.values.asset !== Asset.native().toString()) {
+        defaultDestAsset = Asset.native().toString();
+      } else {
+        // otherwise default to first classic side asset if exists
+        const nonXlmAssets = userBalances.balances.filter(
+          (b) =>
+            !("token" in b && b.token.code === "XLM") &&
+            !("liquidityPoolId" in b) &&
+            !("decimals" in b),
+        ) as Exclude<AssetType, LiquidityPoolShareAsset>[];
+        defaultDestAsset =
+          nonXlmAssets && nonXlmAssets[0]
+            ? getCanonicalFromAsset(
+                nonXlmAssets[0].token.code,
+                // casting here since this will be classic or native asset
+                (nonXlmAssets[0] as ClassicAsset).token.issuer?.key,
+              )
+            : Asset.native().toString();
+      }
+
+      dispatch(saveDestinationAsset(defaultDestAsset));
+    }
+  }, [
+    isSwap,
+    dispatch,
+    destinationAsset,
+    sendAmountData.data,
+    formik.values.asset,
+    asset,
+  ]);
+
+  useEffect(() => {
+    if (!soroswapTokens.length) {
+      dispatch(getSoroswapTokens());
+    }
+  }, [isSwap, useIsSoroswapEnabled]);
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+  }, []);
+
+  const getAmountFontSize = () => {
+    const length = formik.values.amount.length;
+    if (length <= 9) {
+      return "";
+    }
+    if (length <= 15) {
+      return "med";
+    }
+    return "small";
+  };
+
   const db = useCallback(
     debounce(async (formikAm, sourceAsset, destAsset) => {
       if (isSoroswap) {
@@ -351,10 +437,6 @@ export const SendAmount = ({
     [],
   );
 
-  useEffect(() => {
-    setAvailBalance(calculateAvailBalance(formik.values.asset));
-  }, [calculateAvailBalance, formik.values.asset]);
-
   // on asset select get conversion rate
   useEffect(() => {
     if (!formik.values.destinationAsset || Number(formik.values.amount) === 0) {
@@ -376,71 +458,46 @@ export const SendAmount = ({
     dispatch,
   ]);
 
-  // for swaps we're loading and choosing the default destinationAsset here
-  // also, need to check if both source and destination are native
-  useEffect(() => {
-    if (
-      isSwap &&
-      (!destinationAsset ||
-        (destinationAsset === "native" && asset === "native"))
-    ) {
-      let defaultDestAsset;
+  if (isLoading) {
+    return <Loading />;
+  }
 
-      // if pre-chosen source asset (eg. from AssetDetails) not XLM, default dest asset to XLM
-      if (formik.values.asset !== Asset.native().toString()) {
-        defaultDestAsset = Asset.native().toString();
-      } else {
-        // otherwise default to first classic side asset if exists
-        const nonXlmAssets = sendAmountData.data?.userBalances!.balances.filter(
-          (b) =>
-            !("token" in b && b.token.code === "XLM") &&
-            !("liquidityPoolId" in b) &&
-            !("decimals" in b),
-        ) as Exclude<AssetType, LiquidityPoolShareAsset>[];
-        defaultDestAsset =
-          nonXlmAssets && nonXlmAssets[0]
-            ? getCanonicalFromAsset(
-                nonXlmAssets[0].token.code,
-                // casting here since this will be classic or native asset
-                (nonXlmAssets[0] as ClassicAsset).token.issuer?.key,
-              )
-            : Asset.native().toString();
-      }
-
-      dispatch(saveDestinationAsset(defaultDestAsset));
+  const hasError = sendAmountData.state === RequestState.ERROR;
+  if (sendAmountData.data?.type === "re-route") {
+    if (sendAmountData.data.shouldOpenTab) {
+      openTab(newTabHref(sendAmountData.data.routeTarget));
+      window.close();
     }
-  }, [
-    isSwap,
-    dispatch,
-    destinationAsset,
-    sendAmountData.data?.userBalances,
-    formik.values.asset,
-    asset,
-  ]);
+    return (
+      <Navigate
+        to={`${sendAmountData.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
 
-  useEffect(() => {
-    if (!soroswapTokens.length) {
-      dispatch(getSoroswapTokens());
-    }
-  }, [isSwap, useIsSoroswapEnabled]);
+  if (
+    !hasError &&
+    sendAmountData.data.type === "resolved" &&
+    (sendAmountData.data.applicationState ===
+      APPLICATION_STATE.PASSWORD_CREATED ||
+      sendAmountData.data.applicationState ===
+        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
+  ) {
+    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
+    window.close();
+  }
 
-  useEffect(() => {
-    const getData = async () => {
-      await fetchData();
-    };
-    getData();
-  }, []);
-
-  const getAmountFontSize = () => {
-    const length = formik.values.amount.length;
-    if (length <= 9) {
-      return "";
-    }
-    if (length <= 15) {
-      return "med";
-    }
-    return "small";
-  };
+  const sourceBalance = findAssetBalance(
+    sendAmountData.data!.userBalances.balances,
+    parsedSourceAsset,
+  );
+  const destBalance = findAssetBalance(
+    sendAmountData.data!.userBalances.balances,
+    getAssetFromCanonical(formik.values.destinationAsset || "native"),
+  );
+  const sendData = sendAmountData.data!;
 
   const DecideWarning = () => {
     // unfunded destination
@@ -448,7 +505,7 @@ export const SendAmount = ({
       !isContractId(destination) &&
       !isSwap &&
       shouldAccountDoesntExistWarning(
-        isSwap ? false : sendAmountData.data!.destinationBalances.isFunded!,
+        isSwap ? false : sendData.destinationBalances.isFunded!,
         asset,
         formik.values.amount || "0",
       )
@@ -481,7 +538,7 @@ export const SendAmount = ({
           ${formatAmountPreserveCursor(
             TX_SEND_MAX,
             formik.values.amount,
-            getAssetDecimals(asset, sendAmountData.data!.userBalances, isToken),
+            getAssetDecimals(asset, sendData.userBalances, isToken),
           )}
           )`}
         />
@@ -490,19 +547,6 @@ export const SendAmount = ({
     return null;
   };
 
-  if (isLoading) {
-    return <Loading />;
-  }
-
-  const sourceBalance = findAssetBalance(
-    sendAmountData.data!.userBalances.balances,
-    parsedSourceAsset,
-  );
-  const destBalance = findAssetBalance(
-    sendAmountData.data!.userBalances.balances,
-    getAssetFromCanonical(formik.values.destinationAsset || "native"),
-  );
-
   return (
     <>
       {showBlockedDomainWarning &&
@@ -510,7 +554,7 @@ export const SendAmount = ({
           <ScamAssetWarning
             isSendWarning
             pillType="Transaction"
-            balances={sendAmountData.data!.userBalances}
+            balances={sendData.userBalances}
             assetIcons={sendAmountData.data?.icons || {}}
             domain={suspiciousAssetData.domain}
             code={suspiciousAssetData.code}
@@ -628,7 +672,7 @@ export const SendAmount = ({
                           formik.values.amount,
                           getAssetDecimals(
                             asset,
-                            sendAmountData.data!.userBalances,
+                            sendData.userBalances,
                             isToken,
                           ),
                           e.target.selectionStart || 1,
