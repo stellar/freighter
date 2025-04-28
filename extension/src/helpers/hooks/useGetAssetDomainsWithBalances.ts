@@ -17,15 +17,20 @@ import { useIsSoroswapEnabled, useIsSwap } from "../../popup/helpers/useIsSwap";
 import { getAssetDomain } from "../../popup/helpers/getAssetDomain";
 import { AccountBalances, useGetBalances } from "./useGetBalances";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
-import { useGetAppData } from "./useGetAppData";
+import { AppDataType, NeedsReRoute, useGetAppData } from "./useGetAppData";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
-export interface AssetDomains {
+export interface ResolvedAssetDomains {
+  type: AppDataType.RESOLVED;
   publicKey: string;
   balances: AccountBalances;
   domains: ManageAssetCurrency[];
   isManagingAssets: boolean;
   networkDetails: NetworkDetails;
+  applicationState: APPLICATION_STATE;
 }
+
+export type AssetDomains = NeedsReRoute | ResolvedAssetDomains;
 
 export function useGetAssetDomainsWithBalances(options: {
   showHidden: boolean;
@@ -51,6 +56,11 @@ export function useGetAssetDomainsWithBalances(options: {
       const appData = await fetchAppData();
       if (isError(appData)) {
         throw new Error(appData.message);
+      }
+
+      if (appData.type === AppDataType.REROUTE) {
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload: appData });
+        return appData;
       }
 
       const publicKey = appData.account.publicKey;
@@ -158,12 +168,14 @@ export function useGetAssetDomainsWithBalances(options: {
       }
 
       const payload = {
+        type: AppDataType.RESOLVED,
         domains,
         isManagingAssets,
         balances,
         publicKey,
         networkDetails,
-      };
+        applicationState: appData.account.applicationState,
+      } as ResolvedAssetDomains;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {

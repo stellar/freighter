@@ -2,20 +2,29 @@ import { useReducer } from "react";
 
 import { RequestState } from "../../../../../constants/request";
 import { initialState, isError, reducer } from "../../../../../helpers/request";
-import { useGetAppData } from "../../../../../helpers/hooks/useGetAppData";
+import {
+  AppDataType,
+  NeedsReRoute,
+  useGetAppData,
+} from "../../../../../helpers/hooks/useGetAppData";
 import {
   AccountBalances,
   useGetBalances,
 } from "../../../../../helpers/hooks/useGetBalances";
 import { isMainnet, isTestnet } from "../../../../../helpers/stellar";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
-export interface SearchData {
+export interface ResolvedSearchData {
+  type: AppDataType.RESOLVED;
   publicKey: string;
   networkDetails: NetworkDetails;
   balances: AccountBalances;
   isAllowListVerificationEnabled: boolean;
+  applicationState: APPLICATION_STATE;
 }
+
+export type SearchData = NeedsReRoute | ResolvedSearchData;
 
 function useGetSearchData(options: {
   showHidden: boolean;
@@ -34,6 +43,11 @@ function useGetSearchData(options: {
       const appData = await fetchAppData();
       if (isError(appData)) {
         throw new Error(appData.message);
+      }
+
+      if (appData.type === AppDataType.REROUTE) {
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload: appData });
+        return appData;
       }
 
       const publicKey = appData.account.publicKey;
@@ -56,6 +70,7 @@ function useGetSearchData(options: {
         publicKey,
         isAllowListVerificationEnabled,
         networkDetails: appData.settings.networkDetails,
+        applicationState: appData.account.applicationState,
       } as SearchData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;

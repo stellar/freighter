@@ -13,13 +13,19 @@ import {
 } from "helpers/hooks/useGetAssetDomainsWithBalances";
 import { getAccountBalances } from "@shared/api/internal";
 import { sortBalances } from "popup/helpers/account";
+import { AppDataType, NeedsReRoute } from "helpers/hooks/useGetAppData";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
-interface SendAmountData {
+interface ResolvedSendAmountData {
+  type: AppDataType.RESOLVED;
   userBalances: AccountBalances;
   destinationBalances: AccountBalances;
   icons: AssetIcons;
   domains: ManageAssetCurrency[];
+  applicationState: APPLICATION_STATE;
 }
+
+type SendAmountData = NeedsReRoute | ResolvedSendAmountData;
 
 function useGetSendAmountData(
   networkDetails: NetworkDetails,
@@ -55,7 +61,14 @@ function useGetSendAmountData(
         throw new Error(userDomains.message);
       }
 
+      if (userDomains.type === AppDataType.REROUTE) {
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload: userDomains });
+        return userDomains;
+      }
+
       const payload = {
+        type: AppDataType.RESOLVED,
+        applicationState: userDomains.applicationState,
         userBalances: userDomains.balances,
         destinationBalances: {
           ...destinationBalances,
@@ -63,7 +76,7 @@ function useGetSendAmountData(
         },
         icons: userDomains.balances.icons || {},
         domains: userDomains.domains,
-      };
+      } as ResolvedSendAmountData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {

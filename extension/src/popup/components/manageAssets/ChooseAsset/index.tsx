@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { Button, Icon, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -16,6 +16,9 @@ import { ManageAssetRows } from "../ManageAssetRows";
 import { SelectAssetRows } from "../SelectAssetRows";
 
 import "./styles.scss";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 export const ChooseAsset = ({
   goBack,
@@ -54,6 +57,32 @@ export const ChooseAsset = ({
         </div>
       </View.Content>
     );
+  }
+
+  const hasError = domainState.state === RequestState.ERROR;
+  if (domainState.data?.type === "re-route") {
+    if (domainState.data.shouldOpenTab) {
+      openTab(newTabHref(domainState.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${domainState.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (
+    !hasError &&
+    domainState.data.type === "resolved" &&
+    (domainState.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED ||
+      domainState.data.applicationState ===
+        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
+  ) {
+    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
+    window.close();
   }
 
   return (

@@ -11,8 +11,8 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 interface ResolvedAccountData {
   type: AppDataType.RESOLVED;
-  networkDetails: NetworkDetails;
-  publicKey: string;
+  networkDetails?: NetworkDetails;
+  publicKey?: string;
   applicationState: APPLICATION_STATE;
 }
 
@@ -33,18 +33,20 @@ function useGetAccountCreatorData() {
         throw new Error(appData.message);
       }
 
-      if (appData.type === AppDataType.REROUTE) {
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload: appData });
-        return appData;
-      }
-
-      const publicKey = appData.account.publicKey;
-      const networkDetails = appData.settings.networkDetails;
+      const publicKey =
+        appData.type === AppDataType.REROUTE ? "" : appData.account.publicKey;
+      const networkDetails =
+        appData.type === AppDataType.REROUTE
+          ? ""
+          : appData.settings.networkDetails;
 
       const payload = {
         type: AppDataType.RESOLVED,
         publicKey,
-        applicationState: appData.account.applicationState,
+        applicationState:
+          appData.type === AppDataType.REROUTE
+            ? APPLICATION_STATE.APPLICATION_STARTED
+            : appData.account.applicationState,
         networkDetails,
       } as ResolvedAccountData;
 

@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { Navigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
@@ -18,6 +17,7 @@ import { ROUTES } from "popup/constants/routes";
 import { Loading } from "../Loading";
 
 import "./styles.scss";
+import { AppDataType } from "helpers/hooks/useGetAppData";
 
 export const AccountMismatch = () => {
   const { t } = useTranslation();
@@ -38,21 +38,7 @@ export const AccountMismatch = () => {
   ) {
     return <Loading />;
   }
-
   const hasError = accountData.state === RequestState.ERROR;
-  if (accountData.data?.type === "re-route") {
-    if (accountData.data.shouldOpenTab) {
-      openTab(newTabHref(accountData.data.routeTarget));
-      window.close();
-    }
-    return (
-      <Navigate
-        to={`${accountData.data.routeTarget}${location.search}`}
-        state={{ from: location }}
-        replace
-      />
-    );
-  }
 
   if (
     !hasError &&
@@ -65,9 +51,8 @@ export const AccountMismatch = () => {
     window.close();
   }
 
-  const publicKey = accountData.data?.publicKey!;
-
-  if (isAccountMismatch) {
+  if (isAccountMismatch && accountData.data?.type === AppDataType.RESOLVED) {
+    const publicKey = accountData.data?.publicKey!;
     return createPortal(
       <>
         <div
