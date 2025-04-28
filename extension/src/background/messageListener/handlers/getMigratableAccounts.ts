@@ -1,6 +1,5 @@
 import { Store } from "redux";
-// @ts-ignore
-import { fromMnemonic } from "stellar-hd-wallet";
+import StellarHdWallet from "stellar-hd-wallet";
 
 import { allAccountsSelector } from "background/ducks/session";
 import { getKeyIdList } from "background/helpers/account";
@@ -26,7 +25,7 @@ export const getMigratableAccounts = async ({
     keyName: TEMPORARY_STORE_EXTRA_ID,
   });
   const allAccounts = allAccountsSelector(sessionStore.getState());
-  const wallet = fromMnemonic(mnemonicPhrase);
+  const wallet = StellarHdWallet.fromMnemonic(mnemonicPhrase);
 
   const mnemonicPublicKeyArr: string[] = [];
 

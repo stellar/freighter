@@ -2,11 +2,10 @@ import { useReducer } from "react";
 
 import { getAccountHistory } from "@shared/api/internal";
 import { NetworkDetails } from "@shared/constants/stellar";
-// eslint-disable-next-line import/no-unresolved
-import { ServerApi } from "stellar-sdk/lib/horizon";
+import { Horizon } from "stellar-sdk";
 import { initialState, reducer } from "helpers/request";
 
-export type HistoryResponse = ServerApi.OperationRecord[];
+export type HistoryResponse = Horizon.ServerApi.OperationRecord[];
 
 function useGetHistory(publicKey: string, networkDetails: NetworkDetails) {
   const [state, dispatch] = useReducer(

@@ -1,6 +1,5 @@
 import { Store } from "redux";
-// @ts-ignore
-import { fromMnemonic } from "stellar-hd-wallet";
+import StellarHdWallet from "stellar-hd-wallet";
 
 import { RecoverAccountMessage } from "@shared/api/types/message-request";
 import { removePreviousAccount } from "../helpers/remove-previous-account";
@@ -51,7 +50,7 @@ export const recoverAccount = async ({
   }
 
   try {
-    wallet = fromMnemonic(recoverMnemonic);
+    wallet = StellarHdWallet.fromMnemonic(recoverMnemonic);
   } catch (e) {
     console.error(e);
     error = "Invalid mnemonic phrase";

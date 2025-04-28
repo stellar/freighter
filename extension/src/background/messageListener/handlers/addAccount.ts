@@ -1,6 +1,5 @@
 import { Store } from "redux";
-// @ts-ignore
-import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
+import StellarHdWallet from "stellar-hd-wallet";
 
 import { AddAccountMessage } from "@shared/api/types/message-request";
 import {
@@ -95,7 +94,7 @@ export const addAccount = async ({
     return { error: "Incorrect password" };
   }
 
-  const wallet = fromMnemonic(mnemonicPhrase);
+  const wallet = StellarHdWallet.fromMnemonic(mnemonicPhrase);
   const keyNumber =
     Number(await localStore.getItem(KEY_DERIVATION_NUMBER_ID)) + 1;
 

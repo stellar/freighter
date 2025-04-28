@@ -1,4 +1,4 @@
-import { generateMnemonic } from "stellar-hd-wallet";
+import StellarHdWallet from "stellar-hd-wallet";
 import { expect } from "../test-fixtures";
 
 export const PASSWORD = "My-password123";
@@ -18,7 +18,9 @@ export const login = async ({ page, extensionId }) => {
     page.getByText("Import wallet from recovery phrase"),
   ).toBeVisible();
 
-  const TEST_WORDS = generateMnemonic({ entropyBits: 128 }).split(" ");
+  const TEST_WORDS = StellarHdWallet.generateMnemonic({
+    entropyBits: 128,
+  }).split(" ");
 
   for (let i = 1; i <= TEST_WORDS.length; i++) {
     await page.locator(`#MnemonicPhrase-${i}`).fill(TEST_WORDS[i - 1]);

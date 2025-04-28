@@ -1,7 +1,6 @@
 import { Store } from "redux";
 import { captureException } from "@sentry/browser";
-// @ts-ignore
-import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
+import StellarHdWallet from "stellar-hd-wallet";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 
 import { CreateAccountMessage } from "@shared/api/types/message-request";
@@ -39,8 +38,8 @@ export const createAccount = async ({
     await clearAccount(localStore);
   }
 
-  const mnemonicPhrase = generateMnemonic({ entropyBits: 128 });
-  const wallet = fromMnemonic(mnemonicPhrase);
+  const mnemonicPhrase = StellarHdWallet.generateMnemonic({ entropyBits: 128 });
+  const wallet = StellarHdWallet.fromMnemonic(mnemonicPhrase);
 
   const KEY_DERIVATION_NUMBER = 0;
   const keyId = KEY_DERIVATION_NUMBER.toString();

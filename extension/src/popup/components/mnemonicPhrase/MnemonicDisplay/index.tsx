@@ -1,7 +1,6 @@
 import React from "react";
 import { Card } from "@stellar/design-system";
-// @ts-ignore
-import { generateMnemonic } from "stellar-hd-wallet";
+import StellarHdWallet from "stellar-hd-wallet";
 import random from "lodash/random";
 
 import "./styles.scss";
@@ -22,7 +21,7 @@ export const generateMnemonicPhraseDisplay = ({
     */
 
     const randomNumber = random(1, 10);
-    const randomWordArr = generateMnemonic().split(" ");
+    const randomWordArr = StellarHdWallet.generateMnemonic().split(" ");
     const randomWordIndex = random(0, randomWordArr.length - 1);
     const randomWord = randomWordArr[randomWordIndex];
 

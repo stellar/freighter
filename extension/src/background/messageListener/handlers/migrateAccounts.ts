@@ -1,6 +1,5 @@
 import { Store } from "redux";
-// @ts-ignore
-import { fromMnemonic } from "stellar-hd-wallet";
+import StellarHdWallet from "stellar-hd-wallet";
 import * as StellarSdk from "stellar-sdk";
 import BigNumber from "bignumber.js";
 
@@ -62,7 +61,7 @@ export const migrateAccounts = async ({
     return { error: "Authentication error" };
   }
 
-  const newWallet = fromMnemonic(migratedMnemonicPhrase);
+  const newWallet = StellarHdWallet.fromMnemonic(migratedMnemonicPhrase);
   const keyIdList: string = await getKeyIdList({ localStore });
   const fee = xlmToStroop(recommendedFee).toFixed();
 

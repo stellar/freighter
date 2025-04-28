@@ -1,5 +1,5 @@
 import { shuffle } from "lodash";
-import { generateMnemonic } from "stellar-hd-wallet";
+import StellarHdWallet from "stellar-hd-wallet";
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount, PASSWORD } from "./helpers/login";
 
@@ -488,7 +488,9 @@ test("Logout and import new account", async ({ page, extensionId }) => {
     newPage.getByText("Import wallet from recovery phrase"),
   ).toBeVisible();
 
-  const TEST_WORDS = generateMnemonic({ entropyBits: 128 }).split(" ");
+  const TEST_WORDS = StellarHdWallet.generateMnemonic({
+    entropyBits: 128,
+  }).split(" ");
 
   for (let i = 1; i <= TEST_WORDS.length; i++) {
     await newPage.locator(`#MnemonicPhrase-${i}`).fill(TEST_WORDS[i - 1]);
