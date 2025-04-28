@@ -8,7 +8,6 @@ import { ROUTES } from "popup/constants/routes";
 import { NETWORKS } from "@shared/constants/stellar";
 import { AssetsListKey } from "@shared/constants/soroban/asset-list";
 import { settingsSelector } from "popup/ducks/settings";
-import { PublicKeyRoute } from "popup/Router";
 
 import { AssetLists } from "popup/components/manageAssetsLists/AssetLists";
 import { ModifyAssetList } from "popup/components/manageAssetsLists/ModifyAssetList";
@@ -115,25 +114,21 @@ export const ManageAssetsLists = () => {
         <Route
           index
           element={
-            <PublicKeyRoute>
-              <AssetLists
-                sortedAssetsListsData={sortedAssetsListsData}
-                handleSelectChange={handleSelectChange}
-                selectedNetwork={selectedNetwork}
-                isLoading={isLoading}
-              />
-            </PublicKeyRoute>
+            <AssetLists
+              sortedAssetsListsData={sortedAssetsListsData}
+              handleSelectChange={handleSelectChange}
+              selectedNetwork={selectedNetwork}
+              isLoading={isLoading}
+            />
           }
         ></Route>
         <Route
           path={addNetworkPath}
           element={
-            <PublicKeyRoute>
-              <ModifyAssetList
-                assetsListsData={assetsListsData}
-                selectedNetwork={selectedNetwork}
-              />
-            </PublicKeyRoute>
+            <ModifyAssetList
+              assetsListsData={assetsListsData}
+              selectedNetwork={selectedNetwork}
+            />
           }
         ></Route>
       </Routes>
