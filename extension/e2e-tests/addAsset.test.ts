@@ -71,7 +71,7 @@ test.skip("Adding Soroban verified token", async ({ page, extensionId }) => {
     timeout: 30000,
   });
 });
-test.only("Adding token on Futurenet", async ({ page, extensionId }) => {
+test("Adding token on Futurenet", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
