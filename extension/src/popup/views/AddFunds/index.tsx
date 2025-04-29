@@ -1,5 +1,4 @@
 import React from "react";
-import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Icon, Text } from "@stellar/design-system";
@@ -7,7 +6,6 @@ import { Icon, Text } from "@stellar/design-system";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
-import { publicKeySelector } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
@@ -20,7 +18,6 @@ export const AddFunds = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { search } = useLocation();
-  const publicKey = useSelector(publicKeySelector);
 
   const params = new URLSearchParams(search);
   const isAddXlm = params.get("isAddXlm") === "true";
@@ -29,7 +26,7 @@ export const AddFunds = () => {
     isLoading: isTokenRequestLoading,
     fetchData,
     tokenError,
-  } = useGetOnrampToken({ publicKey, ...(isAddXlm ? { asset: "XLM" } : {}) });
+  } = useGetOnrampToken({ ...(isAddXlm ? { asset: "XLM" } : {}) });
 
   const handleOnrampClick = async () => {
     await fetchData();

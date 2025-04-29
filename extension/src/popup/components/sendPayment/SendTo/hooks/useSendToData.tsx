@@ -3,21 +3,36 @@ import { Federation, MuxedAccount } from "stellar-sdk";
 import { FormikErrors } from "formik";
 import debounce from "lodash/debounce";
 
-import { NetworkDetails } from "@shared/constants/stellar";
-
-import { initialState, reducer } from "helpers/request";
+import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getAccountBalances, loadRecentAddresses } from "@shared/api/internal";
-import { isFederationAddress, isMuxedAccount } from "helpers/stellar";
+import {
+  isFederationAddress,
+  isMainnet,
+  isMuxedAccount,
+} from "helpers/stellar";
 import { isContractId } from "popup/helpers/soroban";
 import { sortBalances } from "popup/helpers/account";
+import {
+  AppDataType,
+  NeedsReRoute,
+  useGetAppData,
+} from "helpers/hooks/useGetAppData";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { NetworkDetails } from "@shared/constants/stellar";
 
-interface SendToData {
+interface ResolvedSendToData {
+  type: AppDataType.RESOLVED;
   recentAddresses: string[];
   destinationBalances?: AccountBalances;
   validatedAddress: string;
   fedAddress: string;
+  applicationState: APPLICATION_STATE;
+  publicKey: string;
+  networkDetails: NetworkDetails;
 }
+
+type SendToData = NeedsReRoute | ResolvedSendToData;
 
 const getAddressFromInput = async (userInput: string) => {
   if (isFederationAddress(userInput)) {
@@ -41,72 +56,102 @@ const getAddressFromInput = async (userInput: string) => {
   };
 };
 
-function useSendToData(
-  publicKey: string,
-  networkDetails: NetworkDetails,
-  balanceOptions: {
-    isMainnet: boolean;
-    showHidden: boolean;
-    includeIcons: boolean;
-  },
-) {
+function useSendToData() {
   const [state, dispatch] = useReducer(
     reducer<SendToData, unknown>,
     initialState,
   );
+  const { fetchData: fetchAppData } = useGetAppData();
 
-  const debouncedFetch = debounce(async (userInput: string) => {
-    try {
-      const { validatedAddress, fedAddress } =
-        await getAddressFromInput(userInput);
-      const { recentAddresses } = await loadRecentAddresses({
-        activePublicKey: publicKey,
-      });
+  const debouncedFetch = debounce(
+    async (
+      userInput: string,
+      publicKey: string,
+      applicationState: APPLICATION_STATE,
+      networkDetails: NetworkDetails,
+      _isMainnet: boolean,
+    ) => {
+      try {
+        const { validatedAddress, fedAddress } =
+          await getAddressFromInput(userInput);
+        const { recentAddresses } = await loadRecentAddresses({
+          activePublicKey: publicKey,
+        });
 
-      const payload = {
-        recentAddresses,
-        validatedAddress,
-        fedAddress,
-      } as SendToData;
-
-      if (validatedAddress && !isContractId(validatedAddress)) {
-        const data = await getAccountBalances(
+        const payload = {
+          type: AppDataType.RESOLVED,
+          recentAddresses,
           validatedAddress,
+          fedAddress,
+          applicationState,
+          publicKey,
           networkDetails,
-          balanceOptions.isMainnet,
-        );
-        payload.destinationBalances = {
-          ...data,
-          balances: sortBalances(data.balances),
-        };
+        } as ResolvedSendToData;
+
+        if (validatedAddress && !isContractId(validatedAddress)) {
+          const data = await getAccountBalances(
+            validatedAddress,
+            networkDetails,
+            _isMainnet,
+          );
+          payload.destinationBalances = {
+            ...data,
+            balances: sortBalances(data.balances),
+          };
+        }
+
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+        return payload;
+      } catch (error) {
+        dispatch({ type: "FETCH_DATA_ERROR", payload: error });
+        return error;
       }
+    },
+    2000,
+  );
 
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-      return payload;
-    } catch (error) {
-      dispatch({ type: "FETCH_DATA_ERROR", payload: error });
-      return error;
-    }
-  }, 2000);
-
-  const fetchData = (
+  const fetchData = async (
     userInput: string,
     errors: FormikErrors<{
       destination: string;
     }>,
   ) => {
     dispatch({ type: "FETCH_DATA_START" });
+    const appData = await fetchAppData();
+    if (isError(appData)) {
+      throw new Error(appData.message);
+    }
+
+    if (appData.type === AppDataType.REROUTE) {
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload: appData });
+      return appData;
+    }
+
+    const { publicKey, applicationState } = appData.account;
+    const { networkDetails } = appData.settings;
+    const _isMainnet = isMainnet(networkDetails);
+
     if (Object.keys(errors).length !== 0) {
       const payload = {
+        type: AppDataType.RESOLVED,
         recentAddresses: [],
         validatedAddress: "",
         fedAddress: "",
-      };
+        applicationState,
+        publicKey,
+        networkDetails,
+      } as ResolvedSendToData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     }
 
-    return debouncedFetch(userInput);
+    return debouncedFetch(
+      userInput,
+      publicKey,
+      applicationState,
+      networkDetails,
+      _isMainnet,
+    );
   };
 
   return {

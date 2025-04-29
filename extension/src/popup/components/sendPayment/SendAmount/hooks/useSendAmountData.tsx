@@ -1,6 +1,5 @@
 import { useReducer } from "react";
 
-import { NetworkDetails } from "@shared/constants/stellar";
 import { initialState, isError, reducer } from "helpers/request";
 import { AssetIcons } from "@shared/api/types";
 import { AccountBalancesInterface } from "@shared/api/types/backend-api";
@@ -15,6 +14,8 @@ import { getAccountBalances } from "@shared/api/internal";
 import { sortBalances } from "popup/helpers/account";
 import { AppDataType, NeedsReRoute } from "helpers/hooks/useGetAppData";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { isMainnet } from "helpers/stellar";
+import { NetworkDetails } from "@shared/constants/stellar";
 
 interface ResolvedSendAmountData {
   type: AppDataType.RESOLVED;
@@ -23,14 +24,14 @@ interface ResolvedSendAmountData {
   icons: AssetIcons;
   domains: ManageAssetCurrency[];
   applicationState: APPLICATION_STATE;
+  publicKey: string;
+  networkDetails: NetworkDetails;
 }
 
 type SendAmountData = NeedsReRoute | ResolvedSendAmountData;
 
 function useGetSendAmountData(
-  networkDetails: NetworkDetails,
   options: {
-    isMainnet: boolean;
     showHidden: boolean;
     includeIcons: boolean;
   },
@@ -48,15 +49,6 @@ function useGetSendAmountData(
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const userDomains = await fetchAssetDomains();
-      const destinationBalances =
-        destinationAddress && !isContractId(destinationAddress)
-          ? await getAccountBalances(
-              destinationAddress,
-              networkDetails,
-              options.isMainnet,
-            )
-          : ({} as AccountBalancesInterface);
-
       if (isError<AssetDomains>(userDomains)) {
         throw new Error(userDomains.message);
       }
@@ -66,9 +58,21 @@ function useGetSendAmountData(
         return userDomains;
       }
 
+      const _isMainnet = isMainnet(userDomains.networkDetails);
+      const destinationBalances =
+        destinationAddress && !isContractId(destinationAddress)
+          ? await getAccountBalances(
+              destinationAddress,
+              userDomains.networkDetails,
+              _isMainnet,
+            )
+          : ({} as AccountBalancesInterface);
+
       const payload = {
         type: AppDataType.RESOLVED,
         applicationState: userDomains.applicationState,
+        publicKey: userDomains.publicKey,
+        networkDetails: userDomains.networkDetails,
         userBalances: userDomains.balances,
         destinationBalances: {
           ...destinationBalances,

@@ -49,43 +49,52 @@ const mockHistoryOperations = {
   ] as Horizon.ServerApi.PaymentOperationRecord[],
 };
 
-jest.spyOn(global, "fetch").mockImplementation((url: string) => {
-  if (
-    url ===
-    `${INDEXER_URL}/scan-asset-bulk?asset_ids=USDC-GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM`
-  ) {
-    return Promise.resolve({
-      json: async () => {
-        return {
-          data: {
-            results: {
-              "USDC-GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM": {
-                address: "",
-                chain: "stellar",
-                attack_types: {},
-                fees: {},
-                malicious_score: "1.0",
-                metadata: {},
-                financial_stats: {},
-                trading_limits: {},
-                result_type: "Malicious",
-                features: [
-                  { description: "", feature_id: "METADATA", type: "Benign" },
-                ],
+jest
+  .spyOn(global, "fetch")
+  .mockImplementation(
+    (url: string | URL | Request, _init?: RequestInit | undefined) => {
+      if (
+        url ===
+        `${INDEXER_URL}/scan-asset-bulk?asset_ids=USDC-GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM`
+      ) {
+        return Promise.resolve({
+          json: async () => {
+            return {
+              data: {
+                results: {
+                  "USDC-GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM":
+                    {
+                      address: "",
+                      chain: "stellar",
+                      attack_types: {},
+                      fees: {},
+                      malicious_score: "1.0",
+                      metadata: {},
+                      financial_stats: {},
+                      trading_limits: {},
+                      result_type: "Malicious",
+                      features: [
+                        {
+                          description: "",
+                          feature_id: "METADATA",
+                          type: "Benign",
+                        },
+                      ],
+                    },
+                },
               },
-            },
+            };
           },
-        };
-      },
-    } as any);
-  }
+        } as any);
+      }
 
-  return Promise.resolve({
-    json: async () => {
-      return [];
+      return Promise.resolve({
+        json: async () => {
+          return [];
+        },
+      } as any);
     },
-  } as any);
-});
+  );
 
 jest
   .spyOn(ApiInternal, "getHiddenAssets")

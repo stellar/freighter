@@ -16,11 +16,7 @@ import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
-import {
-  getAssetFromCanonical,
-  getCanonicalFromAsset,
-  isMainnet,
-} from "helpers/stellar";
+import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap, useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
@@ -33,8 +29,6 @@ import {
 } from "popup/helpers/soroban";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { publicKeySelector } from "popup/ducks/accountServices";
 import {
   cleanAmount,
   formatAmount,
@@ -138,10 +132,8 @@ export const SendAmount = ({
 }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const runAfterUpdate = useRunAfterUpdate();
 
-  const publicKey = useSelector(publicKeySelector);
   const { transactionData, soroswapTokens } = useSelector(
     transactionSubmissionSelector,
   );
@@ -156,9 +148,7 @@ export const SendAmount = ({
     isSoroswap,
   } = transactionData;
   const { state: sendAmountData, fetchData } = useGetSendAmountData(
-    networkDetails,
     {
-      isMainnet: isMainnet(networkDetails),
       showHidden: false,
       includeIcons: true,
     },
@@ -405,41 +395,49 @@ export const SendAmount = ({
   };
 
   const db = useCallback(
-    debounce(async (formikAm, sourceAsset, destAsset) => {
-      if (isSoroswap) {
-        const getContract = (formAsset: string) =>
-          formAsset === "native"
-            ? getNativeContractDetails(networkDetails).contract
-            : formAsset.split(":")[1];
+    debounce(
+      async (formikAm, sourceAsset, destAsset, publicKey, networkDetails) => {
+        if (isSoroswap) {
+          const getContract = (formAsset: string) =>
+            formAsset === "native"
+              ? getNativeContractDetails(networkDetails).contract
+              : formAsset.split(":")[1];
 
-        await dispatch(
-          getBestSoroswapPath({
-            amount: formikAm,
-            sourceContract: getContract(formik.values.asset),
-            destContract: getContract(formik.values.destinationAsset),
-            networkDetails,
-            publicKey,
-          }),
-        );
-      } else {
-        await dispatch(
-          getBestPath({
-            amount: formikAm,
-            sourceAsset,
-            destAsset,
-            networkDetails,
-          }),
-        );
-      }
+          await dispatch(
+            getBestSoroswapPath({
+              amount: formikAm,
+              sourceContract: getContract(formik.values.asset),
+              destContract: getContract(formik.values.destinationAsset),
+              networkDetails,
+              publicKey,
+            }),
+          );
+        } else {
+          await dispatch(
+            getBestPath({
+              amount: formikAm,
+              sourceAsset,
+              destAsset,
+              networkDetails,
+            }),
+          );
+        }
 
-      setLoadingRate(false);
-    }, 2000),
+        setLoadingRate(false);
+      },
+      2000,
+    ),
     [],
   );
 
   // on asset select get conversion rate
   useEffect(() => {
-    if (!formik.values.destinationAsset || Number(formik.values.amount) === 0) {
+    if (
+      !formik.values.destinationAsset ||
+      Number(formik.values.amount) === 0 ||
+      sendAmountData.state !== RequestState.SUCCESS ||
+      sendAmountData.data.type !== AppDataType.RESOLVED
+    ) {
       return;
     }
     setLoadingRate(true);
@@ -448,14 +446,16 @@ export const SendAmount = ({
       formik.values.amount || defaultSourceAmount,
       formik.values.asset,
       formik.values.destinationAsset,
+      sendAmountData.data.publicKey,
+      sendAmountData.data.networkDetails,
     );
   }, [
     db,
-    networkDetails,
     formik.values.asset,
     formik.values.destinationAsset,
     formik.values.amount,
     dispatch,
+    sendAmountData.state,
   ]);
 
   if (isLoading) {

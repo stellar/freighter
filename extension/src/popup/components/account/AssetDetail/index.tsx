@@ -139,7 +139,6 @@ export const AssetDetail = ({
     tokenError,
     clearTokenError,
   } = useGetOnrampToken({
-    publicKey,
     asset: onrampAsset,
   });
 

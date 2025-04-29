@@ -44,10 +44,12 @@ export const useScanSite = () => {
       setData(response.data);
       emitMetric(METRIC_NAMES.blockaidDomainScan, { response: response.data });
       setLoading(false);
+      return response.data;
     } catch (err) {
       setError("Failed to scan site");
       Sentry.captureException(err);
       setLoading(false);
+      return null;
     }
   };
 
