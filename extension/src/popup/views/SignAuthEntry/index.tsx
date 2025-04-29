@@ -196,7 +196,9 @@ export const SignAuthEntry = () => {
                     accountName={currentAccount.name}
                     active
                     publicKey={currentAccount.publicKey}
-                    setIsDropdownOpen={setIsDropdownOpen}
+                    onClickAccount={async () => {
+                      setIsDropdownOpen(!isDropdownOpen);
+                    }}
                   >
                     <OptionTag
                       hardwareWalletType={currentAccount.hardwareWalletType}
@@ -265,7 +267,9 @@ export const SignAuthEntry = () => {
             <AccountList
               allAccounts={allAccounts}
               publicKey={publicKey}
-              setIsDropdownOpen={setIsDropdownOpen}
+              onClickAccount={async () => {
+                setIsDropdownOpen(!isDropdownOpen);
+              }}
             />
           </div>
         </SlideupModal>

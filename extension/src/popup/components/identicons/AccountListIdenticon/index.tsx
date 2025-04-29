@@ -1,10 +1,6 @@
 import React from "react";
-import { useDispatch } from "react-redux";
 
 import { truncatedPublicKey } from "helpers/stellar";
-import { makeAccountActive } from "popup/ducks/accountServices";
-import { AppDispatch } from "popup/App";
-
 import { IdenticonImg } from "../IdenticonImg";
 
 import "./styles.scss";
@@ -15,27 +11,21 @@ interface KeyIdenticonProps {
   active?: boolean;
   publicKey: string;
   displayKey?: boolean;
-  setIsDropdownOpen?: (IsDropdownOpen: boolean) => void;
+  onClickAccount?: (publicKey: string) => Promise<void>;
 }
 
 export const AccountListIdenticon = ({
   children,
   accountName = "",
-  active = false,
   publicKey = "",
   displayKey = false,
-  setIsDropdownOpen,
+  onClickAccount,
 }: KeyIdenticonProps) => {
-  const dispatch = useDispatch<AppDispatch>();
   const shortPublicKey = truncatedPublicKey(publicKey);
 
   const handleMakeAccountActive = () => {
-    if (setIsDropdownOpen) {
-      setIsDropdownOpen(false);
-    }
-
-    if (!active) {
-      dispatch(makeAccountActive(publicKey));
+    if (onClickAccount) {
+      onClickAccount(publicKey);
     }
   };
 

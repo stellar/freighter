@@ -20,10 +20,7 @@ import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
 import { ROUTES } from "popup/constants/routes";
 import { Balances } from "@shared/api/types/backend-api";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import {
-  DEFAULT_NETWORKS,
-  TESTNET_NETWORK_DETAILS,
-} from "@shared/constants/stellar";
+import { DEFAULT_NETWORKS } from "@shared/constants/stellar";
 import { SettingsState } from "@shared/api/types";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 

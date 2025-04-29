@@ -266,7 +266,9 @@ export const ReviewAuth = () => {
             <AccountList
               allAccounts={allAccounts}
               publicKey={publicKey}
-              setIsDropdownOpen={setIsDropdownOpen}
+              onClickAccount={async () => {
+                setIsDropdownOpen(!isDropdownOpen);
+              }}
             />
           </div>
         </SlideupModal>
