@@ -171,8 +171,10 @@ export const AccountHeader = ({
               <div
                 className="AccountHeader__network-selector__row"
                 key={n.networkName}
-                onClick={() => {
-                  dispatch(changeNetwork({ networkName: n.networkName }));
+                onClick={async () => {
+                  await dispatch(changeNetwork({ networkName: n.networkName }));
+                  await onClickAccount();
+                  setIsNetworkSelectorOpen(false);
                 }}
               >
                 <NetworkIcon index={i} />

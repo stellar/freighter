@@ -968,6 +968,18 @@ export const isAccountMismatchSelector = createSelector(
   (auth: InitialState) => auth.isAccountMismatch,
 );
 
+export const accountSelector = createSelector(
+  authSelector,
+  (auth: InitialState) => ({
+    hasPrivateKey: auth.hasPrivateKey,
+    publicKey: auth.publicKey,
+    applicationState: auth.applicationState,
+    allAccounts: auth.allAccounts,
+    bipPath: auth.bipPath,
+    tokenIdList: auth.tokenIdList,
+  }),
+);
+
 export const {
   clearApiError,
   setConnectingWalletType,

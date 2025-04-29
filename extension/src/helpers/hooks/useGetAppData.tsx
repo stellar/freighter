@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import * as Sentry from "@sentry/browser";
 
 import { initialState, reducer } from "../request";
@@ -7,11 +7,15 @@ import { initialState, reducer } from "../request";
 // import { storeAccountMetricsData } from "../metrics";
 import { loadAccount, loadSettings } from "@shared/api/internal";
 import {
+  accountSelector,
   saveAccount,
   saveAccountError,
   saveApplicationState,
 } from "../../popup/ducks/accountServices";
-import { saveSettingsAction } from "../../popup/ducks/settings";
+import {
+  saveSettingsAction,
+  settingsSelector,
+} from "../../popup/ducks/settings";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
 import { POPUP_WIDTH } from "constants/dimensions";
@@ -37,11 +41,22 @@ export type AppData = NeedsReRoute | ResolvedData;
 function useGetAppData() {
   const [state, dispatch] = useReducer(reducer<AppData, unknown>, initialState);
   const reduxDispatch = useDispatch();
+  const currentAccount = useSelector(accountSelector);
+  const currentSettings = useSelector(settingsSelector);
 
-  const fetchData = async (): Promise<AppData | Error> => {
+  const fetchData = async (useCache = true): Promise<AppData | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     reduxDispatch(saveApplicationState(APPLICATION_STATE.APPLICATION_LOADING));
     try {
+      if (useCache && currentAccount.publicKey) {
+        const payload = {
+          type: "resolved",
+          account: currentAccount,
+          settings: currentSettings,
+        } as ResolvedData;
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+        return payload;
+      }
       const account = await loadAccount();
       const settings = await loadSettings();
 
