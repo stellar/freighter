@@ -22,17 +22,20 @@ import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 
 import "./styles.scss";
 import { AppDispatch } from "popup/App";
+import { makeAccountActive } from "popup/ducks/accountServices";
 
 interface AccountHeaderProps {
   allAccounts: Account[];
   currentAccountName: string;
   publicKey: string;
+  onClickAccount: () => Promise<void>;
 }
 
 export const AccountHeader = ({
   allAccounts,
   currentAccountName,
   publicKey,
+  onClickAccount,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
@@ -90,7 +93,13 @@ export const AccountHeader = ({
           <AccountList
             allAccounts={allAccounts}
             publicKey={publicKey}
-            setIsDropdownOpen={setIsDropdownOpen}
+            onClickAccount={async (clickedPublicKey: string) => {
+              if (publicKey !== clickedPublicKey) {
+                await dispatch(makeAccountActive(clickedPublicKey));
+              }
+              await onClickAccount();
+              setIsDropdownOpen(!isDropdownOpen);
+            }}
           />
           <div className="AccountList__footer">
             <hr className="AccountHeader__list-divider" />

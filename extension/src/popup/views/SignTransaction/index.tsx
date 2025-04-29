@@ -13,10 +13,7 @@ import {
   Operation,
 } from "stellar-sdk";
 
-import {
-  isNonSSLEnabledSelector,
-  settingsNetworkDetailsSelector,
-} from "popup/ducks/settings";
+import { isNonSSLEnabledSelector } from "popup/ducks/settings";
 
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 
@@ -495,7 +492,9 @@ export const SignTransaction = () => {
             <AccountList
               allAccounts={allAccounts}
               publicKey={publicKey}
-              setIsDropdownOpen={setIsDropdownOpen}
+              onClickAccount={async () => {
+                setIsDropdownOpen(!isDropdownOpen);
+              }}
             />
           </div>
         </SlideupModal>
