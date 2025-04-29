@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { createPortal } from "react-dom";
 import get from "lodash/get";
@@ -95,6 +95,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   } = useSelector(transactionSubmissionSelector);
 
   const { t } = useTranslation();
+  const location = useLocation();
   const isSwap = useIsSwap();
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();

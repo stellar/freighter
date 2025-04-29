@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
@@ -27,6 +27,7 @@ import { ROUTES } from "popup/constants/routes";
 
 export const AssetVisibility = () => {
   const { t } = useTranslation();
+  const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);

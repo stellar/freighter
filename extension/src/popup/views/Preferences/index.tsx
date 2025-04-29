@@ -17,12 +17,13 @@ import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
 
 export const Preferences = () => {
   const { t } = useTranslation();
+  const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
   const { state, fetchData } = useGetAppData();
 

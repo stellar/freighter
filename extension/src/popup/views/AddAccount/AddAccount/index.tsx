@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
@@ -21,6 +21,7 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 export const AddAccount = () => {
   const { t } = useTranslation();
+  const location = useLocation();
   const navigate = useNavigate();
   const dispatch: AppDispatch = useDispatch();
   const { state, fetchData } = useGetAppData();

@@ -65,7 +65,7 @@ import { useGetSendAmountData } from "./hooks/useSendAmountData";
 import "../styles.scss";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { ROUTES } from "popup/constants/routes";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -131,6 +131,7 @@ export const SendAmount = ({
   goToPaymentType?: () => void;
 }) => {
   const { t } = useTranslation();
+  const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
   const runAfterUpdate = useRunAfterUpdate();
 
