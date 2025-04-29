@@ -30,7 +30,7 @@ jest.spyOn(urlHelpers, "parsedSearchParam").mockImplementation(() => {
 jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
   Promise.resolve({
     hasPrivateKey: true,
-    publicKey: "G1",
+    publicKey: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: mockAccounts,
     bipPath: "bip-path",
@@ -77,7 +77,9 @@ describe("Grant Access view", () => {
           is_malicious: false,
         } as BlockAidScanSiteResult,
         scanSite: (_url: string, _networkDetails: NetworkDetails) => {
-          return Promise.resolve(null);
+          return Promise.resolve({
+            is_malicious: false,
+          } as BlockAidScanSiteResult);
         },
       };
     });
@@ -116,7 +118,9 @@ describe("Grant Access view", () => {
           is_malicious: false,
         } as BlockAidScanSiteResult,
         scanSite: (_url: string, _networkDetails: NetworkDetails) => {
-          return Promise.resolve(null);
+          return Promise.resolve({
+            is_malicious: false,
+          } as BlockAidScanSiteResult);
         },
       };
     });
@@ -156,7 +160,9 @@ describe("Grant Access view", () => {
           status: "miss",
         } as BlockAidScanSiteResult,
         scanSite: (_url: string, _networkDetails: NetworkDetails) => {
-          return Promise.resolve(null);
+          return Promise.resolve({
+            status: "miss",
+          } as BlockAidScanSiteResult);
         },
       };
     });
@@ -196,7 +202,10 @@ describe("Grant Access view", () => {
           is_malicious: true,
         } as BlockAidScanSiteResult,
         scanSite: (_url: string, _networkDetails: NetworkDetails) => {
-          return Promise.resolve(null);
+          return Promise.resolve({
+            status: "hit",
+            is_malicious: true,
+          } as BlockAidScanSiteResult);
         },
       };
     });
@@ -207,7 +216,7 @@ describe("Grant Access view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
             allAccounts: mockAccounts,

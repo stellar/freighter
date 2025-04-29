@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "popup/App";
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
@@ -33,7 +33,6 @@ export function useSetupSigningFlow(
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
   const [startedHwSign, setStartedHwSign] = useState(false);
   const [accountNotFound, setAccountNotFound] = useState(false);
-  const [currentAccount, setCurrentAccount] = useState({} as Account);
 
   const dispatch: AppDispatch = useDispatch();
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
@@ -133,15 +132,12 @@ export function useSetupSigningFlow(
     }
   }, [accountToSign, allAccounts, dispatch, publicKey]);
 
-  useEffect(() => {
-    // handle any changes to the current acct - whether by auto select or manual select
-    if (publicKey) {
-      setCurrentAccount(allAccountsMap.current[publicKey] || ({} as Account));
-    }
+  const currentAccount = useMemo(() => {
+    return (
+      allAccounts.find((a) => a.publicKey === publicKey) || ({} as Account)
+    );
   }, [allAccounts, publicKey]);
-
-  // TODO: setup local state for: accountToSign, allAccounts
-  // setter for that state so we can call hook in other hook bodies
+  console.log(currentAccount);
 
   return {
     allAccounts,
