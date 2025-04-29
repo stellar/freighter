@@ -38,42 +38,6 @@ jest.mock("@shared/api/internal", () => {
   };
 });
 
-jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
-  Promise.resolve({
-    hasPrivateKey: true,
-    publicKey: "G1",
-    applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
-    allAccounts: mockAccounts,
-    bipPath: "bip-path",
-    tokenIdList: [],
-  }),
-);
-
-jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
-  Promise.resolve({
-    networkDetails: TESTNET_NETWORK_DETAILS,
-    networksList: DEFAULT_NETWORKS,
-    hiddenAssets: {},
-    allowList: ApiInternal.DEFAULT_ALLOW_LIST,
-    error: "",
-    isDataSharingAllowed: false,
-    isMemoValidationEnabled: false,
-    isHideDustEnabled: true,
-    settingsState: SettingsState.SUCCESS,
-    isSorobanPublicEnabled: false,
-    isRpcHealthy: true,
-    userNotification: {
-      enabled: false,
-      message: "",
-    },
-    isExperimentalModeEnabled: false,
-    isHashSigningEnabled: false,
-    isNonSSLEnabled: false,
-    experimentalFeaturesState: SettingsState.SUCCESS,
-    assetsLists: DEFAULT_ASSETS_LISTS,
-  }),
-);
-
 describe.skip("MnemonicPhrase", () => {
   afterAll(() => {
     jest.clearAllMocks();

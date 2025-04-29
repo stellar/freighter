@@ -1,25 +1,24 @@
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useLocation } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { Navigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button, Loader } from "@stellar/design-system";
+import { Button, Loader, Notification } from "@stellar/design-system";
 
-import { getUrlHostname, parsedSearchParam } from "helpers/urls";
+import { getUrlHostname, newTabHref, parsedSearchParam } from "helpers/urls";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
-import { publicKeySelector } from "popup/ducks/accountServices";
 import { ButtonsContainer, ModalWrapper } from "popup/basics/Modal";
 import { DomainScanModalInfo } from "popup/components/ModalInfo";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
-import {
-  settingsNetworkDetailsSelector,
-  settingsNetworksListSelector,
-} from "popup/ducks/settings";
-import { useScanSite } from "popup/helpers/blockaid";
 import { AppDispatch } from "popup/App";
 
 import "popup/metrics/access";
 import "./styles.scss";
+import { RequestState } from "constants/request";
+import { openTab } from "popup/helpers/navigate";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { ROUTES } from "popup/constants/routes";
+import { useGetGrantAccessData } from "./hooks/useGetGrantAccessData";
 
 export const GrantAccess = () => {
   const { t } = useTranslation();
@@ -29,18 +28,64 @@ export const GrantAccess = () => {
 
   const { url } = parsedSearchParam(location.search);
   const domain = getUrlHostname(url);
-  const publicKey = useSelector(publicKeySelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const networksList = useSelector(settingsNetworksListSelector);
-  const { scanSite, isLoading, data } = useScanSite();
+  const { state, fetchData } = useGetGrantAccessData(url);
 
   useEffect(() => {
-    const fetchData = async () => {
-      await scanSite(url, networkDetails);
+    const getData = async () => {
+      await fetchData();
     };
-    fetchData();
+    getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (
+    state.state === RequestState.IDLE ||
+    state.state === RequestState.LOADING
+  ) {
+    return (
+      <div className="GrantAccess__loader">
+        <Loader size="5rem" />
+      </div>
+    );
+  }
+
+  if (state.state === RequestState.ERROR) {
+    return (
+      <div className="AddAsset__fetch-fail">
+        <Notification
+          variant="error"
+          title={t("Failed to fetch your account data.")}
+        >
+          {t("Your account data could not be fetched at this time.")}
+        </Notification>
+      </div>
+    );
+  }
+
+  if (state.data?.type === "re-route") {
+    if (state.data.shouldOpenTab) {
+      openTab(newTabHref(state.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${state.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (
+    state.data.type === "resolved" &&
+    (state.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED ||
+      state.data.applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
+  ) {
+    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
+    window.close();
+  }
+
+  const { publicKey, networkDetails, networksList } = state.data;
 
   const rejectAndClose = () => {
     dispatch(rejectAccess());
@@ -54,88 +99,81 @@ export const GrantAccess = () => {
     window.close();
   };
 
-  const isMalicious =
-    data && "is_malicious" in data ? data.is_malicious : false;
+  const isMalicious = state.data.status === "hit" && state.data.is_malicious;
 
   return (
     <>
       <ModalWrapper>
-        {isLoading ? (
-          <div className="GrantAccess__loader">
-            <Loader size="5rem" />
-          </div>
-        ) : (
-          <DomainScanModalInfo
-            domain={domain}
-            isMalicious={isMalicious}
-            scanStatus={data.status}
-            subject={t(
-              `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,
-            )}
+        <DomainScanModalInfo
+          domain={domain}
+          isMalicious={isMalicious}
+          scanStatus={state.data.status}
+          subject={t(
+            `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,
+          )}
+        >
+          <div
+            className="GrantAccess__SigningWith"
+            data-testid="grant-access-view"
           >
-            <div
-              className="GrantAccess__SigningWith"
-              data-testid="grant-access-view"
-            >
-              <h5>Connecting with</h5>
-              <div className="GrantAccess__network">
-                <NetworkIcon
-                  index={networksList.findIndex(
-                    ({ networkName: currNetworkName }) =>
-                      currNetworkName === networkDetails.networkName,
-                  )}
-                />
-                <span>{networkDetails.networkName}</span>
-              </div>
-              <div className="GrantAccess__PublicKey">
-                <KeyIdenticon publicKey={publicKey} />
-              </div>
+            <h5>Connecting with</h5>
+            <div className="GrantAccess__network">
+              <NetworkIcon
+                index={networksList.findIndex(
+                  ({ networkName: currNetworkName }) =>
+                    currNetworkName === networkDetails.networkName,
+                )}
+              />
+              <span>{networkDetails.networkName}</span>
             </div>
-            {isMalicious ? (
-              <ButtonsContainer>
-                <Button
-                  data-testid="grant-access-connect-anyway-button"
-                  size="md"
-                  isFullWidth
-                  variant="error"
-                  isLoading={isGranting}
-                  onClick={() => grantAndClose()}
-                >
-                  {t("Connect anyway")}
-                </Button>
-                <Button
-                  size="md"
-                  isFullWidth
-                  variant="tertiary"
-                  onClick={rejectAndClose}
-                >
-                  {t("Reject")}
-                </Button>
-              </ButtonsContainer>
-            ) : (
-              <ButtonsContainer>
-                <Button
-                  size="md"
-                  isFullWidth
-                  variant="tertiary"
-                  onClick={rejectAndClose}
-                >
-                  {t("Cancel")}
-                </Button>
-                <Button
-                  data-testid="grant-access-connect-button"
-                  size="md"
-                  isFullWidth
-                  variant="secondary"
-                  isLoading={isGranting}
-                  onClick={() => grantAndClose()}
-                >
-                  {t("Connect")}
-                </Button>
-              </ButtonsContainer>
-            )}
-          </DomainScanModalInfo>
-        )}
+            <div className="GrantAccess__PublicKey">
+              <KeyIdenticon publicKey={publicKey} />
+            </div>
+          </div>
+          {isMalicious ? (
+            <ButtonsContainer>
+              <Button
+                data-testid="grant-access-connect-anyway-button"
+                size="md"
+                isFullWidth
+                variant="error"
+                isLoading={isGranting}
+                onClick={() => grantAndClose()}
+              >
+                {t("Connect anyway")}
+              </Button>
+              <Button
+                size="md"
+                isFullWidth
+                variant="tertiary"
+                onClick={rejectAndClose}
+              >
+                {t("Reject")}
+              </Button>
+            </ButtonsContainer>
+          ) : (
+            <ButtonsContainer>
+              <Button
+                size="md"
+                isFullWidth
+                variant="tertiary"
+                onClick={rejectAndClose}
+              >
+                {t("Cancel")}
+              </Button>
+              <Button
+                data-testid="grant-access-connect-button"
+                size="md"
+                isFullWidth
+                variant="secondary"
+                isLoading={isGranting}
+                onClick={() => grantAndClose()}
+              >
+                {t("Connect")}
+              </Button>
+            </ButtonsContainer>
+          )}
+        </DomainScanModalInfo>
       </ModalWrapper>
     </>
   );

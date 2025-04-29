@@ -77,7 +77,7 @@ describe("Grant Access view", () => {
           is_malicious: false,
         } as BlockAidScanSiteResult,
         scanSite: (_url: string, _networkDetails: NetworkDetails) => {
-          return Promise.resolve();
+          return Promise.resolve(null);
         },
       };
     });
@@ -116,7 +116,7 @@ describe("Grant Access view", () => {
           is_malicious: false,
         } as BlockAidScanSiteResult,
         scanSite: (_url: string, _networkDetails: NetworkDetails) => {
-          return Promise.resolve();
+          return Promise.resolve(null);
         },
       };
     });
@@ -156,7 +156,7 @@ describe("Grant Access view", () => {
           status: "miss",
         } as BlockAidScanSiteResult,
         scanSite: (_url: string, _networkDetails: NetworkDetails) => {
-          return Promise.resolve();
+          return Promise.resolve(null);
         },
       };
     });
@@ -196,7 +196,7 @@ describe("Grant Access view", () => {
           is_malicious: true,
         } as BlockAidScanSiteResult,
         scanSite: (_url: string, _networkDetails: NetworkDetails) => {
-          return Promise.resolve();
+          return Promise.resolve(null);
         },
       };
     });

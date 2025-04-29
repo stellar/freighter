@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
-import { Button, Select } from "@stellar/design-system";
+import { Button, Notification, Select } from "@stellar/design-system";
 
 import { saveAllowList, settingsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -14,10 +14,19 @@ import { RemoveButton } from "popup/basics/buttons/RemoveButton";
 import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
+import { useGetAppData } from "helpers/hooks/useGetAppData";
+import { RequestState } from "constants/request";
+import { Loading } from "popup/components/Loading";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { Navigate, useLocation } from "react-router-dom";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { ROUTES } from "popup/constants/routes";
 
 export const ManageConnectedApps = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
+  const location = useLocation();
   const { allowList, networkDetails, networksList } =
     useSelector(settingsSelector);
   const publicKey = useSelector(publicKeySelector);
@@ -27,6 +36,8 @@ export const ManageConnectedApps = () => {
   const [selectedAllowlist, setSelectedAllowlist] = useState(
     allowList?.[networkDetails.networkName]?.[publicKey] || [],
   );
+
+  const { state, fetchData } = useGetAppData();
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedNetworkName(e.target.value);
@@ -58,6 +69,59 @@ export const ManageConnectedApps = () => {
     networkDetails,
     networksList,
   ]);
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (
+    state.state === RequestState.IDLE ||
+    state.state === RequestState.LOADING
+  ) {
+    return <Loading />;
+  }
+
+  if (state.state === RequestState.ERROR) {
+    return (
+      <div className="AddAsset__fetch-fail">
+        <Notification
+          variant="error"
+          title={t("Failed to fetch your account data.")}
+        >
+          {t("Your account data could not be fetched at this time.")}
+        </Notification>
+      </div>
+    );
+  }
+
+  if (state.data?.type === "re-route") {
+    if (state.data.shouldOpenTab) {
+      openTab(newTabHref(state.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${state.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (
+    state.data.type === "resolved" &&
+    (state.data.account.applicationState ===
+      APPLICATION_STATE.PASSWORD_CREATED ||
+      state.data.account.applicationState ===
+        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
+  ) {
+    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
+    window.close();
+  }
 
   return (
     <React.Fragment>
