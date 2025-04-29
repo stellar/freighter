@@ -14,6 +14,8 @@ import {
   initialState as transactionSubmissionInitialState,
 } from "popup/ducks/transactionSubmission";
 import { reducer as tokenPaymentSimulation } from "popup/ducks/token-payment";
+import { WalletType } from "@shared/constants/hardwareWallet";
+import { Account } from "@shared/api/types";
 
 export const TEST_PUBLIC_KEY =
   "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
@@ -161,24 +163,24 @@ export const mockTokenBalance = {
 
 export const mockAccounts = [
   {
-    hardwareWalletType: "",
+    hardwareWalletType: "" as WalletType,
     imported: false,
     name: "Account 1",
     publicKey: "G1",
   },
   {
-    hardwareWalletType: "",
+    hardwareWalletType: "" as WalletType,
     imported: true,
     name: "Account 2",
     publicKey: "G2",
   },
   {
-    hardwareWalletType: "Ledger",
+    hardwareWalletType: "Ledger" as WalletType,
     imported: true,
     name: "Ledger 1",
     publicKey: "L1",
   },
-];
+] as Account[];
 
 export const mockAccountHistory = [
   {

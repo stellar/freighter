@@ -1,7 +1,10 @@
 import React from "react";
 import { render, waitFor, screen } from "@testing-library/react";
 
-import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
+import {
+  APPLICATION_STATE,
+  APPLICATION_STATE as ApplicationState,
+} from "@shared/constants/applicationState";
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import {
   TESTNET_NETWORK_DETAILS,
@@ -10,9 +13,11 @@ import {
 } from "@shared/constants/stellar";
 import { GrantAccess } from "../GrantAccess";
 import * as blockAidHelpers from "popup/helpers/blockaid";
-import { BlockAidScanSiteResult } from "@shared/api/types";
+import { BlockAidScanSiteResult, SettingsState } from "@shared/api/types";
 import * as urlHelpers from "../../../helpers/urls";
 import { ROUTES } from "popup/constants/routes";
+import * as ApiInternal from "@shared/api/internal";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 
 jest.spyOn(urlHelpers, "parsedSearchParam").mockImplementation(() => {
   const original = jest.requireActual("../../../helpers/urls");
@@ -21,6 +26,42 @@ jest.spyOn(urlHelpers, "parsedSearchParam").mockImplementation(() => {
     url: "example.com",
   };
 });
+
+jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+  Promise.resolve({
+    hasPrivateKey: true,
+    publicKey: "G1",
+    applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    allAccounts: mockAccounts,
+    bipPath: "bip-path",
+    tokenIdList: [],
+  }),
+);
+
+jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+  Promise.resolve({
+    networkDetails: TESTNET_NETWORK_DETAILS,
+    networksList: DEFAULT_NETWORKS,
+    hiddenAssets: {},
+    allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+    error: "",
+    isDataSharingAllowed: false,
+    isMemoValidationEnabled: false,
+    isHideDustEnabled: true,
+    settingsState: SettingsState.SUCCESS,
+    isSorobanPublicEnabled: false,
+    isRpcHealthy: true,
+    userNotification: {
+      enabled: false,
+      message: "",
+    },
+    isExperimentalModeEnabled: false,
+    isHashSigningEnabled: false,
+    isNonSSLEnabled: false,
+    experimentalFeaturesState: SettingsState.SUCCESS,
+    assetsLists: DEFAULT_ASSETS_LISTS,
+  }),
+);
 
 describe("Grant Access view", () => {
   afterAll(() => {

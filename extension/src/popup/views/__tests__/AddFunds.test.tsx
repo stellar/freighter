@@ -6,11 +6,17 @@ import * as ApiInternal from "@shared/api/internal";
 import {
   DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
+  TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
-import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
+import {
+  APPLICATION_STATE,
+  APPLICATION_STATE as ApplicationState,
+} from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import { AddFunds } from "../AddFunds";
+import { SettingsState } from "@shared/api/types";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 
 const token = "foo";
 
@@ -20,15 +26,39 @@ jest.mock("webextension-polyfill", () => ({
   },
 }));
 
-// @ts-ignore
 jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
   Promise.resolve({
-    publicKey: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
-    tokenIdList: ["C1"],
-    hasPrivateKey: false,
-    applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+    hasPrivateKey: true,
+    publicKey: "G1",
+    applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: mockAccounts,
-    bipPath: "foo",
+    bipPath: "bip-path",
+    tokenIdList: [],
+  }),
+);
+
+jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+  Promise.resolve({
+    networkDetails: TESTNET_NETWORK_DETAILS,
+    networksList: DEFAULT_NETWORKS,
+    hiddenAssets: {},
+    allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+    error: "",
+    isDataSharingAllowed: false,
+    isMemoValidationEnabled: false,
+    isHideDustEnabled: true,
+    settingsState: SettingsState.SUCCESS,
+    isSorobanPublicEnabled: false,
+    isRpcHealthy: true,
+    userNotification: {
+      enabled: false,
+      message: "",
+    },
+    isExperimentalModeEnabled: false,
+    isHashSigningEnabled: false,
+    isNonSSLEnabled: false,
+    experimentalFeaturesState: SettingsState.SUCCESS,
+    assetsLists: DEFAULT_ASSETS_LISTS,
   }),
 );
 

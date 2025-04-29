@@ -19,6 +19,13 @@ import { SignTransaction } from "../SignTransaction";
 import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
 import { ROUTES } from "popup/constants/routes";
 import { Balances } from "@shared/api/types/backend-api";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import {
+  DEFAULT_NETWORKS,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
+import { SettingsState } from "@shared/api/types";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 
 jest.mock("helpers/stellarIdenticon");
 jest.setTimeout(20000);
@@ -34,6 +41,42 @@ jest
 jest
   .spyOn(ApiInternal, "getAssetIcons")
   .mockImplementation(() => Promise.resolve({}));
+
+jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+  Promise.resolve({
+    hasPrivateKey: true,
+    publicKey: "G1",
+    applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    allAccounts: mockAccounts,
+    bipPath: "bip-path",
+    tokenIdList: [],
+  }),
+);
+
+jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+  Promise.resolve({
+    networkDetails: TESTNET_NETWORK_DETAILS,
+    networksList: DEFAULT_NETWORKS,
+    hiddenAssets: {},
+    allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+    error: "",
+    isDataSharingAllowed: false,
+    isMemoValidationEnabled: false,
+    isHideDustEnabled: true,
+    settingsState: SettingsState.SUCCESS,
+    isSorobanPublicEnabled: false,
+    isRpcHealthy: true,
+    userNotification: {
+      enabled: false,
+      message: "",
+    },
+    isExperimentalModeEnabled: false,
+    isHashSigningEnabled: false,
+    isNonSSLEnabled: false,
+    experimentalFeaturesState: SettingsState.SUCCESS,
+    assetsLists: DEFAULT_ASSETS_LISTS,
+  }),
+);
 
 const defaultSettingsState = {
   networkDetails: {
