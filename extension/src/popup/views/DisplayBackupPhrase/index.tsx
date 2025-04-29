@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Button, Input, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Field, Form, Formik } from "formik";
@@ -27,6 +27,7 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 export const DisplayBackupPhrase = () => {
   const { t } = useTranslation();
+  const location = useLocation();
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState("");
   const [isPhraseUnlocked, setIsPhraseUnlocked] = useState(false);

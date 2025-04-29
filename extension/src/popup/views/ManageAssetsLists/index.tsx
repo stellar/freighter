@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 import { useTranslation } from "react-i18next";
 
@@ -34,6 +34,7 @@ export interface SortedAssetsListsData {
 }
 
 export const ManageAssetsLists = () => {
+  const location = useLocation();
   const [selectedNetwork, setSelectedNetwork] = useState("" as AssetsListKey);
   const [assetsListsData, setAssetsListsData] = useState(
     [] as AssetsListsData[],

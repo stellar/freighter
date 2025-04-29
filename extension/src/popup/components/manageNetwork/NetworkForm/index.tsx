@@ -56,6 +56,7 @@ export const NETWORK_INDEX_SEARCH_PARAM = "networkIndex";
 
 export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const { t } = useTranslation();
+  const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
   const settingsError = useSelector(settingsErrorSelector);
 

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button, Notification } from "@stellar/design-system";
 
@@ -27,6 +27,7 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 export const NetworkSettings = () => {
   const activeNetworkDetails = useSelector(settingsNetworkDetailsSelector);
   const { t } = useTranslation();
+  const location = useLocation();
   const navigate = useNavigate();
   const { state, fetchData } = useGetAppData();
 

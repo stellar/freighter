@@ -24,7 +24,7 @@ import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
 import { useGetHistoryData } from "./hooks/useGetHistoryData";
@@ -33,6 +33,7 @@ import "./styles.scss";
 
 export const AccountHistory = () => {
   const { t } = useTranslation();
+  const location = useLocation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { isHideDustEnabled } = useSelector(settingsSelector);
   const { state: historyState, fetchData } = useGetHistoryData(

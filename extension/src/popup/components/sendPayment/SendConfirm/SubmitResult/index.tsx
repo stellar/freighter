@@ -42,7 +42,7 @@ import {
 import { Loading } from "popup/components/Loading";
 
 import "./styles.scss";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { newTabHref } from "helpers/urls";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
@@ -95,6 +95,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
   } = useSelector(transactionSubmissionSelector);
 
   const { t } = useTranslation();
+  const location = useLocation();
   const isSwap = useIsSwap();
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();

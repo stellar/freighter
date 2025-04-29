@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Notification, Button, Toggle, Loader } from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
 
@@ -69,6 +69,7 @@ const AdvancedSettingFeature = ({
 
 export const AdvancedSettings = () => {
   const { t } = useTranslation();
+  const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const [isUnderstood, setIsUnderstood] = useState(false);

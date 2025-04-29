@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Networks, StellarToml, StrKey } from "stellar-sdk";
 import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
@@ -55,6 +55,7 @@ interface AssetDomainToml {
 
 export const AddAsset = () => {
   const { t } = useTranslation();
+  const location = useLocation();
   const [verifiedAssetRows, setVerifiedAssetRows] = useState(
     [] as ManageAssetCurrency[],
   );

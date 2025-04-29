@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button, Text, Icon, Notification } from "@stellar/design-system";
 
@@ -29,6 +29,7 @@ export const MnemonicPhrase = ({
   mnemonicPhrase = "",
 }: MnemonicPhraseProps) => {
   const { t } = useTranslation();
+  const location = useLocation();
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isModalShowing, setIsModalShowing] = useState(true);
   const dispatch = useDispatch<AppDispatch>();

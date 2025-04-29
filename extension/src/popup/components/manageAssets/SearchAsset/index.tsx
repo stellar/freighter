@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
@@ -60,6 +60,7 @@ const ResultsHeader = () => {
 
 export const SearchAsset = () => {
   const { t } = useTranslation();
+  const location = useLocation();
 
   const [hasNoResults, setHasNoResults] = useState(false);
   const ResultsRef = useRef<HTMLDivElement>(null);

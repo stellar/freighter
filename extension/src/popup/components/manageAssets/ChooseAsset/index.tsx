@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { Button, Icon, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -28,6 +28,7 @@ export const ChooseAsset = ({
   showHideAssets?: boolean;
 }) => {
   const { t } = useTranslation();
+  const location = useLocation();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
 
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
