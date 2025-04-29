@@ -13,6 +13,7 @@ import { isMainnet } from "helpers/stellar";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { NetworkDetails } from "@shared/constants/stellar";
 
 interface ResolvedData {
   type: AppDataType.RESOLVED;
@@ -21,6 +22,7 @@ interface ResolvedData {
   publicKey: string;
   signFlowState: ReturnType<typeof useSetupSigningFlow>;
   applicationState: APPLICATION_STATE;
+  networkDetails: NetworkDetails;
 }
 
 type SignTxData = NeedsReRoute | ResolvedData;
@@ -99,6 +101,7 @@ function useGetSignTxData(
         scanResult,
         publicKey,
         applicationState: appData.account.applicationState,
+        networkDetails: appData.settings.networkDetails,
         signFlowState: {
           allAccounts,
           accountNotFound,

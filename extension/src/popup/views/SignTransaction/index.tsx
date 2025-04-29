@@ -86,12 +86,10 @@ export const SignTransaction = () => {
   const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =
     useState(false);
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
   });
 
-  const { networkName, networkPassphrase } = networkDetails;
   let accountToSign = _accountToSign;
 
   const { state: scanTxState, fetchData } = useGetSignTxData(
@@ -208,6 +206,8 @@ export const SignTransaction = () => {
     window.close();
   }
 
+  const { networkName, networkPassphrase } = scanTxState.data?.networkDetails!;
+
   const scanResult = scanTxState.data?.scanResult;
   const flaggedMalicious =
     scanResult?.validation &&
@@ -256,6 +256,7 @@ export const SignTransaction = () => {
       balance.token.code === "XLM" &&
       (balance as NativeAsset).available.gt(stroopToXlm(_fee as string)),
   );
+
   if (
     currentAccount.publicKey &&
     !hasEnoughXlm &&

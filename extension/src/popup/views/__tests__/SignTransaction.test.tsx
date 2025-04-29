@@ -45,7 +45,7 @@ jest
 jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
   Promise.resolve({
     hasPrivateKey: true,
-    publicKey: "G1",
+    publicKey: mockAccounts[0].publicKey,
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: mockAccounts,
     bipPath: "bip-path",
@@ -55,7 +55,10 @@ jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
 
 jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
   Promise.resolve({
-    networkDetails: TESTNET_NETWORK_DETAILS,
+    networkDetails: {
+      ...defaultSettingsState.networkDetails,
+      networkPassphrase: "Test SDF Future Network ; October 2022",
+    },
     networksList: DEFAULT_NETWORKS,
     hiddenAssets: {},
     allowList: ApiInternal.DEFAULT_ALLOW_LIST,
@@ -209,6 +212,34 @@ describe("SignTransactions", () => {
   });
 
   it("shows non-https domain error on Mainnet", async () => {
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: {
+          ...defaultSettingsState.networkDetails,
+          networkPassphrase: "Public Global Stellar Network ; September 2015",
+        },
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+      }),
+    );
+
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
       Networks.PUBLIC,
@@ -253,6 +284,38 @@ describe("SignTransactions", () => {
   });
 
   it("does not show non-https domain error on Testnet", async () => {
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: {
+          ...defaultSettingsState.networkDetails,
+          networkPassphrase: "Test SDF Network ; September 2015",
+          networkName: "Test Net",
+        },
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: {
+          "Test Net": {
+            [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+          },
+        },
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+      }),
+    );
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
       Networks.TESTNET,
@@ -300,6 +363,33 @@ describe("SignTransactions", () => {
   });
 
   it("displays token payment parameters for Soroban token payment operations", async () => {
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: {
+          ...defaultSettingsState.networkDetails,
+          networkPassphrase: "Test SDF Future Network ; October 2022",
+        },
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+      }),
+    );
     const transaction = TransactionBuilder.fromXDR(
       transactions.sorobanTransfer,
       Networks.FUTURENET,
@@ -599,6 +689,47 @@ describe("SignTransactions", () => {
   });
 
   it("shows unfunded warning when signer has no XLM", async () => {
+    jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+      Promise.resolve({
+        hasPrivateKey: true,
+        publicKey: mockAccounts[0].publicKey,
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+        allAccounts: mockAccounts,
+        bipPath: "bip-path",
+        tokenIdList: [],
+      }),
+    );
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: {
+          ...defaultSettingsState.networkDetails,
+          networkPassphrase: "Test SDF Future Network ; October 2022",
+        },
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: {
+          "Future Net": {
+            [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+          },
+        },
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: true,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+      }),
+    );
     const mockBalancesEmpty = {
       ...mockBalances,
       balances: {

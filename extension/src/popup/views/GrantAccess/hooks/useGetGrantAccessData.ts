@@ -60,6 +60,7 @@ function useGetGrantAccessData(url: string) {
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
+      console.log(error);
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
       return error;
     }
