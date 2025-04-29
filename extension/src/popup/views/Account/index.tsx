@@ -13,7 +13,6 @@ import { useTranslation } from "react-i18next";
 import {
   settingsSorobanSupportedSelector,
   settingsSelector,
-  settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
 import { View } from "popup/basics/layout/View";
 import {
@@ -49,7 +48,6 @@ export const Account = () => {
   const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [selectedAsset, setSelectedAsset] = useState("");
   const isFullscreenModeEnabled = isFullscreenMode();
   const { state: accountData, fetchData } = useGetAccountData({
@@ -63,7 +61,7 @@ export const Account = () => {
     };
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [networkDetails.networkName]);
+  }, []);
 
   if (
     accountData.state === RequestState.IDLE ||
@@ -139,7 +137,7 @@ export const Account = () => {
         currentAccountName={currentAccountName}
         publicKey={resolvedData?.publicKey || ""}
         onClickAccount={async () => {
-          await fetchData();
+          await fetchData(false);
         }}
       />
       <View.Content hasNoTopPadding>

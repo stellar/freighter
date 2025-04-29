@@ -61,10 +61,10 @@ function useGetAccountData(options: {
   const { fetchData: fetchBalances } = useGetBalances(options);
   const { fetchData: fetchHistory } = useGetHistory();
 
-  const fetchData = async () => {
+  const fetchData = async (useAppDataCache = true) => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const appData = await fetchAppData();
+      const appData = await fetchAppData(useAppDataCache);
       if (isError(appData)) {
         throw new Error(appData.message);
       }
