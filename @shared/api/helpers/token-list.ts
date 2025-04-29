@@ -74,7 +74,7 @@ export const getCombinedAssetListData = async ({
     }
   }
 
-  const networkLists = assetsLists[network as AssetsListKey];
+  const networkLists = assetsLists[network as AssetsListKey] || [];
   const promiseArr = [];
   for (const networkList of networkLists) {
     const { url = "", isEnabled } = networkList;
