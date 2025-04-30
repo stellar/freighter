@@ -20,6 +20,7 @@ import * as UseAssetDomain from "popup/helpers/useAssetDomain";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { Response, SettingsState } from "@shared/api/types";
+import { accountNameSelector } from "popup/ducks/accountServices";
 
 import {
   Wrapper,
@@ -29,6 +30,7 @@ import {
   mockPrices,
   TEST_CANONICAL,
   TEST_PUBLIC_KEY,
+  mockSelector,
 } from "../../__testHelpers__";
 import { Account } from "../Account";
 import { ROUTES } from "popup/constants/routes";
@@ -166,12 +168,6 @@ jest
   .mockImplementation(() => Promise.resolve(["C1"]));
 
 jest
-  .spyOn(ApiInternal, "makeAccountActive")
-  .mockImplementation(() =>
-    Promise.resolve({ publicKey: "G2", hasPrivateKey: true, bipPath: "" }),
-  );
-
-jest
   .spyOn(ApiInternal, "getAccountHistory")
   .mockImplementation(() => Promise.resolve(mockHistoryOperations.operations));
 
@@ -229,6 +225,15 @@ jest.mock("helpers/metrics", () => ({
   emitMetric: jest.fn(),
   metricsMiddleware: jest.fn(),
 }));
+
+jest.mock("popup/ducks/accountServices", () => {
+  const actual = jest.requireActual("popup/ducks/accountServices");
+  return {
+    ...actual,
+    accountNameSelector: jest.fn(),
+    allAccountsSelector: actual.allAccountsSelector,
+  };
+});
 
 describe("Account view", () => {
   afterAll(() => {
@@ -485,6 +490,13 @@ describe("Account view", () => {
   });
 
   it("switches accounts", async () => {
+    mockSelector(accountNameSelector, () => "Account 1");
+
+    jest
+      .spyOn(ApiInternal, "makeAccountActive")
+      .mockImplementation(() =>
+        Promise.resolve({ publicKey: "G2", hasPrivateKey: true, bipPath: "" }),
+      );
     render(
       <Wrapper
         routes={[ROUTES.welcome]}
@@ -508,6 +520,7 @@ describe("Account view", () => {
       const accountIdenticonNodes = screen.getAllByTestId(
         "account-list-identicon-button",
       );
+      mockSelector(accountNameSelector, () => "Account 2");
       await fireEvent.click(accountIdenticonNodes[2]);
     });
 
