@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Button, Card, Icon, Notification } from "@stellar/design-system";
 import { Navigate, useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
 import { truncatedPublicKey } from "helpers/stellar";
@@ -37,12 +37,15 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
+import { makeAccountActive } from "popup/ducks/accountServices";
+import { AppDispatch } from "popup/App";
 
 export const SignAuthEntry = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const location = useLocation();
   const { t } = useTranslation();
+  const dispatch = useDispatch<AppDispatch>();
   const isExperimentalModeEnabled = useSelector(
     settingsExperimentalModeSelector,
   );
@@ -267,8 +270,12 @@ export const SignAuthEntry = () => {
             <AccountList
               allAccounts={allAccounts}
               publicKey={publicKey}
-              onClickAccount={async () => {
+              onClickAccount={async (clickedPublicKey: string) => {
                 setIsDropdownOpen(!isDropdownOpen);
+                if (clickedPublicKey !== publicKey) {
+                  await dispatch(makeAccountActive(clickedPublicKey));
+                  await fetchData();
+                }
               }}
             />
           </div>
