@@ -39,6 +39,7 @@ import { newTabHref } from "helpers/urls";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
+import { NetworkDetails } from "@shared/constants/stellar";
 
 export const Account = () => {
   const { t } = useTranslation();
@@ -57,7 +58,7 @@ export const Account = () => {
 
   useEffect(() => {
     const getData = async () => {
-      await fetchData();
+      await fetchData(false);
     };
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,8 +137,11 @@ export const Account = () => {
         allAccounts={allAccounts}
         currentAccountName={currentAccountName}
         publicKey={resolvedData?.publicKey || ""}
-        onClickAccount={async () => {
-          await fetchData(false);
+        onClickRow={async (updatedValues: {
+          publicKey?: string;
+          network?: NetworkDetails;
+        }) => {
+          await fetchData(false, updatedValues);
         }}
       />
       <View.Content hasNoTopPadding>

@@ -33,7 +33,6 @@ import {
 import { Account } from "../Account";
 import { ROUTES } from "popup/constants/routes";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
-// import * as Metrics from "helpers/metrics";
 
 const mockHistoryOperations = {
   operations: [
@@ -223,25 +222,27 @@ jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
   }),
 );
 
+jest.mock("helpers/metrics", () => ({
+  storeAccountMetricsData: jest.fn(),
+  registerHandler: jest.fn(),
+  storeBalanceMetricData: jest.fn(),
+  emitMetric: jest.fn(),
+  metricsMiddleware: jest.fn(),
+}));
+
 describe("Account view", () => {
   afterAll(() => {
     jest.clearAllMocks();
   });
 
   it("renders", async () => {
-    // TODO: export does not work?
-    // jest
-    //   .spyOn(Metrics, "storeAccountMetricsData")
-    //   .mockImplementation((
-    //     _publicKey: string,
-    //     _allAccounts: AccountType[]) => Promise.resolve());
     render(
       <Wrapper
         routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
             allAccounts: mockAccounts,
@@ -268,7 +269,7 @@ describe("Account view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -296,7 +297,7 @@ describe("Account view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -337,7 +338,7 @@ describe("Account view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -382,7 +383,7 @@ describe("Account view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -417,7 +418,7 @@ describe("Account view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -454,7 +455,7 @@ describe("Account view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -490,7 +491,7 @@ describe("Account view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -589,7 +590,7 @@ describe("Account view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -648,7 +649,7 @@ describe("Account view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
