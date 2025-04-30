@@ -81,7 +81,7 @@ describe("AddFunds view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -113,7 +113,7 @@ describe("AddFunds view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },

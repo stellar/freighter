@@ -21,7 +21,10 @@ import { Wrapper, mockBalances, mockAccounts } from "../../__testHelpers__";
 import { ROUTES } from "popup/constants/routes";
 import { Balances } from "@shared/api/types/backend-api";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { DEFAULT_NETWORKS } from "@shared/constants/stellar";
+import {
+  DEFAULT_NETWORKS,
+  FUTURENET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 import { SettingsState } from "@shared/api/types";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 
@@ -43,6 +46,50 @@ jest
 jest
   .spyOn(TokenListHelpers, "getCombinedAssetListData")
   .mockImplementation(() => Promise.resolve([]));
+
+jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+  Promise.resolve({
+    hasPrivateKey: true,
+    publicKey: mockAccounts[0].publicKey,
+    applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    allAccounts: mockAccounts,
+    bipPath: "bip-path",
+    tokenIdList: [],
+  }),
+);
+
+jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+  Promise.resolve({
+    networkDetails: FUTURENET_NETWORK_DETAILS,
+    networksList: DEFAULT_NETWORKS,
+    hiddenAssets: {},
+    allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+    error: "",
+    isDataSharingAllowed: false,
+    isMemoValidationEnabled: false,
+    isHideDustEnabled: true,
+    settingsState: SettingsState.SUCCESS,
+    isSorobanPublicEnabled: false,
+    isRpcHealthy: true,
+    userNotification: {
+      enabled: false,
+      message: "",
+    },
+    isExperimentalModeEnabled: false,
+    isHashSigningEnabled: false,
+    isNonSSLEnabled: false,
+    experimentalFeaturesState: SettingsState.SUCCESS,
+    assetsLists: DEFAULT_ASSETS_LISTS,
+  }),
+);
+
+jest.mock("helpers/metrics", () => ({
+  storeAccountMetricsData: jest.fn(),
+  registerHandler: jest.fn(),
+  storeBalanceMetricData: jest.fn(),
+  emitMetric: jest.fn(),
+  metricsMiddleware: jest.fn(),
+}));
 
 const defaultSettingsState = {
   networkDetails: {
@@ -170,8 +217,9 @@ describe("SignTransactions", () => {
         <SignTransaction />
       </Wrapper>,
     );
-    await waitFor(() => screen.getByTestId("SignTransaction"));
-    expect(screen.getByTestId("SignTransaction")).toBeDefined();
+    await waitFor(() =>
+      expect(screen.getByTestId("SignTransaction")).toBeInTheDocument(),
+    );
   });
 
   it("shows non-https domain error on Mainnet", async () => {

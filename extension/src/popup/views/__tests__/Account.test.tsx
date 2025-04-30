@@ -19,9 +19,9 @@ import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import * as UseAssetDomain from "popup/helpers/useAssetDomain";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { SERVICE_TYPES } from "@shared/constants/services";
-import * as TokenListHelpers from "@shared/api/helpers/token-list";
 import { Response, SettingsState } from "@shared/api/types";
 import { accountNameSelector } from "popup/ducks/accountServices";
+import * as TokenListHelpers from "@shared/api/helpers/token-list";
 
 import {
   Wrapper,
@@ -180,6 +180,42 @@ jest.spyOn(ApiInternal, "getAssetIcons").mockImplementation(() =>
   Promise.resolve({
     "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM":
       "http://domain.com/icon.png",
+  }),
+);
+
+jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+  Promise.resolve({
+    hasPrivateKey: true,
+    publicKey: TEST_PUBLIC_KEY,
+    applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    allAccounts: mockAccounts,
+    bipPath: "bip-path",
+    tokenIdList: [],
+  }),
+);
+
+jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+  Promise.resolve({
+    networkDetails: TESTNET_NETWORK_DETAILS,
+    networksList: DEFAULT_NETWORKS,
+    hiddenAssets: {},
+    allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+    error: "",
+    isDataSharingAllowed: false,
+    isMemoValidationEnabled: false,
+    isHideDustEnabled: true,
+    settingsState: SettingsState.SUCCESS,
+    isSorobanPublicEnabled: false,
+    isRpcHealthy: true,
+    userNotification: {
+      enabled: false,
+      message: "",
+    },
+    isExperimentalModeEnabled: false,
+    isHashSigningEnabled: false,
+    isNonSSLEnabled: false,
+    experimentalFeaturesState: SettingsState.SUCCESS,
+    assetsLists: DEFAULT_ASSETS_LISTS,
   }),
 );
 

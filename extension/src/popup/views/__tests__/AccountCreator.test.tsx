@@ -66,7 +66,7 @@ describe("Account Creator View", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
             allAccounts: mockAccounts,
@@ -92,7 +92,7 @@ describe("Account Creator View", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
             allAccounts: mockAccounts,
@@ -132,7 +132,7 @@ describe("Account Creator View", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
             allAccounts: mockAccounts,
@@ -175,7 +175,7 @@ describe("Account Creator View", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
             allAccounts: mockAccounts,
