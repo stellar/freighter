@@ -3,8 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import * as Sentry from "@sentry/browser";
 
 import { initialState, reducer } from "../request";
-// TODO: why does this not get imported in tests
-// import { storeAccountMetricsData } from "../metrics";
+import { storeAccountMetricsData } from "../metrics";
 import { loadAccount, loadSettings } from "@shared/api/internal";
 import {
   accountSelector,
@@ -60,7 +59,7 @@ function useGetAppData() {
       const account = await loadAccount();
       const settings = await loadSettings();
 
-      // storeAccountMetricsData(account.publicKey, account.allAccounts);
+      storeAccountMetricsData(account.publicKey, account.allAccounts);
       reduxDispatch(saveAccount(account));
       reduxDispatch(saveSettingsAction(settings));
       reduxDispatch(saveApplicationState(account.applicationState));

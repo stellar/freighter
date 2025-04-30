@@ -15,6 +15,10 @@ import {
 } from "helpers/hooks/useGetAppData";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "popup/App";
+import { makeAccountActive } from "popup/ducks/accountServices";
+import { changeNetwork } from "popup/ducks/settings";
 
 const getTokenPrices = async ({
   balances,
@@ -52,6 +56,7 @@ function useGetAccountData(options: {
   showHidden: boolean;
   includeIcons: boolean;
 }) {
+  const reduxDispatch = useDispatch<AppDispatch>();
   const [_isMainnet, setIsMainnet] = useState(false);
   const [state, dispatch] = useReducer(
     reducer<AccountData, unknown>,
@@ -61,9 +66,23 @@ function useGetAccountData(options: {
   const { fetchData: fetchBalances } = useGetBalances(options);
   const { fetchData: fetchHistory } = useGetHistory();
 
-  const fetchData = async (useAppDataCache = true) => {
+  const fetchData = async (
+    useAppDataCache = true,
+    updatedAppData?: {
+      publicKey?: string;
+      network?: NetworkDetails;
+    },
+  ) => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
+      if (updatedAppData && updatedAppData.publicKey) {
+        await reduxDispatch(makeAccountActive(updatedAppData.publicKey));
+      }
+
+      if (updatedAppData && updatedAppData.network) {
+        await reduxDispatch(changeNetwork(updatedAppData.network));
+      }
+
       const appData = await fetchAppData(useAppDataCache);
       if (isError(appData)) {
         throw new Error(appData.message);

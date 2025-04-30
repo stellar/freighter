@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
 import { Account } from "@shared/api/types";
@@ -12,7 +12,6 @@ import { View } from "popup/basics/layout/View";
 import { isActiveNetwork } from "helpers/stellar";
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 import {
-  changeNetwork,
   settingsNetworkDetailsSelector,
   settingsNetworksListSelector,
 } from "popup/ducks/settings";
@@ -21,24 +20,25 @@ import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal"
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 
 import "./styles.scss";
-import { AppDispatch } from "popup/App";
-import { makeAccountActive } from "popup/ducks/accountServices";
+import { NetworkDetails } from "@shared/constants/stellar";
 
 interface AccountHeaderProps {
   allAccounts: Account[];
   currentAccountName: string;
   publicKey: string;
-  onClickAccount: () => Promise<void>;
+  onClickRow: (updatedValues: {
+    publicKey?: string;
+    network?: NetworkDetails;
+  }) => Promise<void>;
 }
 
 export const AccountHeader = ({
   allAccounts,
   currentAccountName,
   publicKey,
-  onClickAccount,
+  onClickRow,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch<AppDispatch>();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -95,9 +95,8 @@ export const AccountHeader = ({
             publicKey={publicKey}
             onClickAccount={async (clickedPublicKey: string) => {
               if (publicKey !== clickedPublicKey) {
-                await dispatch(makeAccountActive(clickedPublicKey));
+                await onClickRow({ publicKey: clickedPublicKey });
               }
-              await onClickAccount();
               setIsDropdownOpen(!isDropdownOpen);
             }}
           />
@@ -172,8 +171,7 @@ export const AccountHeader = ({
                 className="AccountHeader__network-selector__row"
                 key={n.networkName}
                 onClick={async () => {
-                  await dispatch(changeNetwork({ networkName: n.networkName }));
-                  await onClickAccount();
+                  await onClickRow({ network: n });
                   setIsNetworkSelectorOpen(false);
                 }}
               >

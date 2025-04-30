@@ -67,9 +67,12 @@ function useGetSignTxData(
   } = useSetupSigningFlow(rejectTransaction, signTransaction, scanOptions.xdr);
   const [accountNotFound, setAccountNotFound] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = async (newPublicKey?: string) => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
+      if (newPublicKey) {
+        await reduxDispatch(makeAccountActive(newPublicKey));
+      }
       const appData = await fetchAppData(false);
       if (isError(appData)) {
         throw new Error(appData.message);
