@@ -77,7 +77,9 @@ function useGetSignAuthEntryData(
       const networkDetails = appData.settings.networkDetails;
 
       // handle auto selecting the right account based on `accountToSign`
-      let currentAccount = {} as Account;
+      let currentAccount = allAccounts.find(
+        (account) => account.publicKey === publicKey,
+      );
 
       allAccounts.forEach((account) => {
         if (accountToSign) {
