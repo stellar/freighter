@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useReducer, useState } from "react";
 
 import { initialState, isError, reducer } from "../../../../helpers/request";
 import {
@@ -13,12 +13,20 @@ import {
 } from "../../../../popup/ducks/access";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { makeAccountActive } from "popup/ducks/accountServices";
+import { useDispatch } from "react-redux";
+import { Account } from "@shared/api/types";
+import { AppDispatch } from "popup/App";
 
 interface ResolvedData {
   type: AppDataType.RESOLVED;
   networkDetails: NetworkDetails;
   publicKey: string;
-  signFlowState: ReturnType<typeof useSetupSigningFlow>;
+  signFlowState: ReturnType<typeof useSetupSigningFlow> & {
+    allAccounts: Account[];
+    accountNotFound: boolean;
+    currentAccount: Account;
+  };
   applicationState: APPLICATION_STATE;
 }
 
@@ -32,11 +40,10 @@ function useGetSignAuthEntryData(
     reducer<SignAuthEntryData, unknown>,
     initialState,
   );
+  const reduxDispatch = useDispatch<AppDispatch>();
 
   const { fetchData: fetchAppData } = useGetAppData();
   const {
-    accountNotFound,
-    currentAccount,
     isConfirming,
     isPasswordRequired,
     handleApprove,
@@ -46,8 +53,8 @@ function useGetSignAuthEntryData(
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-    setAccountDetails,
   } = useSetupSigningFlow(rejectTransaction, signTransaction, transactionXdr);
+  const [accountNotFound, setAccountNotFound] = useState(false);
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -65,7 +72,28 @@ function useGetSignAuthEntryData(
       const publicKey = appData.account.publicKey;
       const allAccounts = appData.account.allAccounts;
       const networkDetails = appData.settings.networkDetails;
-      setAccountDetails({ publicKey, allAccounts, accountToSign });
+
+      // handle auto selecting the right account based on `accountToSign`
+      let currentAccount = {} as Account;
+
+      allAccounts.forEach((account) => {
+        if (accountToSign) {
+          // does the user have the `accountToSign` somewhere in the accounts list?
+          if (account.publicKey === accountToSign) {
+            // if the `accountToSign` is found, but it isn't active, make it active
+            if (publicKey !== account.publicKey) {
+              reduxDispatch(makeAccountActive(account.publicKey));
+            }
+
+            // save the details of the `accountToSign`
+            currentAccount = account;
+          }
+        }
+      });
+
+      if (!currentAccount) {
+        setAccountNotFound(true);
+      }
 
       const payload = {
         type: AppDataType.RESOLVED,
@@ -85,7 +113,6 @@ function useGetSignAuthEntryData(
           setIsPasswordRequired,
           verifyPasswordThenSign,
           hardwareWalletType,
-          setAccountDetails,
         },
       } as ResolvedData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

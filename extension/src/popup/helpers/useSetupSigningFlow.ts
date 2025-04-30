@@ -1,15 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "popup/App";
 import { signTransaction, rejectTransaction } from "popup/ducks/access";
-
-import { Account } from "@shared/api/types";
 
 import {
   confirmPassword,
   hardwareWalletTypeSelector,
   hasPrivateKeySelector,
-  makeAccountActive,
 } from "popup/ducks/accountServices";
 
 import {
@@ -25,20 +22,14 @@ export function useSetupSigningFlow(
   signFn: typeof signTransaction,
   transactionXdr: string,
 ) {
-  const [publicKey, setPublicKey] = useState<string | null>(null);
-  const [allAccounts, setAllAccounts] = useState<Account[]>([]);
-  const [accountToSign, setAccountToSign] = useState<string | null>(null);
-
   const [isConfirming, setIsConfirming] = useState(false);
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
   const [startedHwSign, setStartedHwSign] = useState(false);
-  const [accountNotFound, setAccountNotFound] = useState(false);
 
   const dispatch: AppDispatch = useDispatch();
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
 
-  const allAccountsMap = useRef({} as { [key: string]: Account });
   const isHardwareWallet = !!hardwareWalletType;
   const {
     hardwareWalletData: { status: hwStatus },
@@ -83,66 +74,13 @@ export function useSetupSigningFlow(
     }
   };
 
-  const setAccountDetails = ({
-    publicKey,
-    allAccounts,
-    accountToSign,
-  }: {
-    publicKey: string;
-    allAccounts: Account[];
-    accountToSign?: string;
-  }) => {
-    setPublicKey(publicKey);
-    setAllAccounts(allAccounts);
-    if (accountToSign) {
-      setAccountToSign(accountToSign);
-    }
-  };
-
   useEffect(() => {
     if (startedHwSign && hwStatus === ShowOverlayStatus.IDLE) {
       window.close();
     }
   }, [startedHwSign, hwStatus]);
 
-  useEffect(() => {
-    // handle auto selecting the right account based on `accountToSign`
-    let autoSelectedAccountDetails;
-
-    allAccounts.forEach((account) => {
-      if (accountToSign) {
-        // does the user have the `accountToSign` somewhere in the accounts list?
-        if (account.publicKey === accountToSign) {
-          // if the `accountToSign` is found, but it isn't active, make it active
-          if (publicKey !== account.publicKey) {
-            dispatch(makeAccountActive(account.publicKey));
-          }
-
-          // save the details of the `accountToSign`
-          autoSelectedAccountDetails = account;
-        }
-      }
-
-      // create an object so we don't need to keep iterating over allAccounts when we switch accounts
-      allAccountsMap.current[account.publicKey] = account;
-    });
-
-    if (!autoSelectedAccountDetails) {
-      setAccountNotFound(true);
-    }
-  }, [accountToSign, allAccounts, dispatch, publicKey]);
-
-  const currentAccount = useMemo(() => {
-    return (
-      allAccounts.find((a) => a.publicKey === publicKey) || ({} as Account)
-    );
-  }, [allAccounts, publicKey]);
-  console.log(currentAccount);
-
   return {
-    allAccounts,
-    accountNotFound,
-    currentAccount,
     handleApprove,
     isHardwareWallet,
     hwStatus,
@@ -152,6 +90,5 @@ export function useSetupSigningFlow(
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-    setAccountDetails,
   };
 }

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 import { Button, Icon, Notification } from "@stellar/design-system";
 import {
@@ -62,10 +62,13 @@ import { Data } from "./Preview/Data";
 import "./styles.scss";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { makeAccountActive } from "popup/ducks/accountServices";
+import { AppDispatch } from "popup/App";
 
 export const SignTransaction = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
   const tx = getTransactionInfo(location.search);
   const { url } = parsedSearchParam(location.search);
@@ -492,8 +495,12 @@ export const SignTransaction = () => {
             <AccountList
               allAccounts={allAccounts}
               publicKey={publicKey}
-              onClickAccount={async () => {
+              onClickAccount={async (clickedPublicKey: string) => {
                 setIsDropdownOpen(!isDropdownOpen);
+                if (clickedPublicKey !== publicKey) {
+                  await dispatch(makeAccountActive(clickedPublicKey));
+                  await fetchData();
+                }
               }}
             />
           </div>
