@@ -277,3 +277,10 @@ export const validAssetList = {
     },
   ],
 };
+
+export const mockSelector = <T,>(
+  selector: unknown,
+  implementation: () => T,
+) => {
+  (selector as unknown as jest.Mock).mockImplementation(implementation);
+};
