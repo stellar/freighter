@@ -16,9 +16,9 @@ import "popup/metrics/access";
 import "./styles.scss";
 import { RequestState } from "constants/request";
 import { openTab } from "popup/helpers/navigate";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { ROUTES } from "popup/constants/routes";
 import { useGetGrantAccessData } from "./hooks/useGetGrantAccessData";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const GrantAccess = () => {
   const { t } = useTranslation();
@@ -62,7 +62,7 @@ export const GrantAccess = () => {
     );
   }
 
-  if (state.data?.type === "re-route") {
+  if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
       window.close();
@@ -76,14 +76,11 @@ export const GrantAccess = () => {
     );
   }
 
-  if (
-    state.data.type === "resolved" &&
-    (state.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED ||
-      state.data.applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
-  ) {
-    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
-    window.close();
-  }
+  reRouteOnboarding({
+    type: state.data.type,
+    applicationState: state.data.applicationState,
+    state: state.state,
+  });
 
   const { publicKey, networkDetails, networksList } = state.data;
 

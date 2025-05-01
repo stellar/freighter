@@ -25,11 +25,10 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { Navigate, useLocation } from "react-router-dom";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { ROUTES } from "popup/constants/routes";
 import { useGetHistoryData } from "./hooks/useGetHistoryData";
 
 import "./styles.scss";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const AccountHistory = () => {
   const { t } = useTranslation();
@@ -91,16 +90,12 @@ export const AccountHistory = () => {
     );
   }
 
-  if (
-    !hasError &&
-    historyState.data.type === "resolved" &&
-    (historyState.data.applicationState ===
-      APPLICATION_STATE.PASSWORD_CREATED ||
-      historyState.data.applicationState ===
-        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
-  ) {
-    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
-    window.close();
+  if (!hasError) {
+    reRouteOnboarding({
+      type: historyState.data.type,
+      applicationState: historyState.data.applicationState,
+      state: historyState.state,
+    });
   }
 
   const balances = historyState.data?.balances!;

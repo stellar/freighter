@@ -22,8 +22,8 @@ import { AppDispatch } from "popup/App";
 import "./styles.scss";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { ROUTES } from "popup/constants/routes";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const AssetVisibility = () => {
   const { t } = useTranslation();
@@ -60,7 +60,7 @@ export const AssetVisibility = () => {
     domainState.state === RequestState.LOADING;
 
   const hasError = domainState.state === RequestState.ERROR;
-  if (domainState.data?.type === "re-route") {
+  if (domainState.data?.type === AppDataType.REROUTE) {
     if (domainState.data.shouldOpenTab) {
       openTab(newTabHref(domainState.data.routeTarget));
       window.close();
@@ -74,16 +74,12 @@ export const AssetVisibility = () => {
     );
   }
 
-  if (
-    !isLoading &&
-    !hasError &&
-    domainState.data.type === "resolved" &&
-    (domainState.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED ||
-      domainState.data.applicationState ===
-        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
-  ) {
-    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
-    window.close();
+  if (!isLoading && !hasError) {
+    reRouteOnboarding({
+      type: domainState.data.type,
+      applicationState: domainState.data?.applicationState,
+      state: domainState.state,
+    });
   }
 
   const data = domainState.data;

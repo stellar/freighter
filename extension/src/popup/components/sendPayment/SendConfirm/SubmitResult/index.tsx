@@ -44,7 +44,8 @@ import { Loading } from "popup/components/Loading";
 
 import "./styles.scss";
 import { newTabHref } from "helpers/urls";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 const SwapAssetsIcon = ({
   sourceCanon,
@@ -204,7 +205,7 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
 
   const hasError = accountData.state === RequestState.ERROR;
 
-  if (accountData.data?.type === "re-route") {
+  if (accountData.data?.type === AppDataType.REROUTE) {
     if (accountData.data.shouldOpenTab) {
       openTab(newTabHref(accountData.data.routeTarget));
       window.close();
@@ -218,15 +219,12 @@ export const SubmitSuccess = ({ viewDetails }: { viewDetails: () => void }) => {
     );
   }
 
-  if (
-    !hasError &&
-    accountData.data.type === "resolved" &&
-    (accountData.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED ||
-      accountData.data.applicationState ===
-        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
-  ) {
-    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
-    window.close();
+  if (!hasError) {
+    reRouteOnboarding({
+      type: accountData.data.type,
+      applicationState: accountData.data.applicationState,
+      state: accountData.state,
+    });
   }
 
   // TODO: the remove trustline logic here does not work Soroban tokens. We should handle this case

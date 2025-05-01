@@ -18,11 +18,11 @@ import { View } from "popup/basics/layout/View";
 import { NETWORK_INDEX_SEARCH_PARAM } from "../NetworkForm";
 
 import "./styles.scss";
-import { useGetAppData } from "helpers/hooks/useGetAppData";
+import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { newTabHref } from "helpers/urls";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const NetworkSettings = () => {
   const activeNetworkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -59,7 +59,7 @@ export const NetworkSettings = () => {
     );
   }
 
-  if (state.data?.type === "re-route") {
+  if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
       window.close();
@@ -73,16 +73,11 @@ export const NetworkSettings = () => {
     );
   }
 
-  if (
-    state.data.type === "resolved" &&
-    (state.data.account.applicationState ===
-      APPLICATION_STATE.PASSWORD_CREATED ||
-      state.data.account.applicationState ===
-        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
-  ) {
-    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
-    window.close();
-  }
+  reRouteOnboarding({
+    type: state.data.type,
+    applicationState: state.data.account.applicationState,
+    state: state.state,
+  });
 
   const { networksList } = state.data.settings;
 

@@ -36,9 +36,8 @@ import "../styles.scss";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { Navigate, useLocation } from "react-router-dom";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { ROUTES } from "popup/constants/routes";
 import { AppDataType } from "helpers/hooks/useGetAppData";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 const baseReserve = new BigNumber(1);
 
@@ -166,7 +165,7 @@ export const SendTo = ({
     sendDataState.state === RequestState.IDLE ||
     sendDataState.state === RequestState.LOADING;
 
-  if (sendDataState.data?.type === "re-route") {
+  if (sendDataState.data?.type === AppDataType.REROUTE) {
     if (sendDataState.data.shouldOpenTab) {
       openTab(newTabHref(sendDataState.data.routeTarget));
       window.close();
@@ -180,17 +179,12 @@ export const SendTo = ({
     );
   }
 
-  if (
-    !hasError &&
-    !isLoading &&
-    sendDataState.data.type === "resolved" &&
-    (sendDataState.data.applicationState ===
-      APPLICATION_STATE.PASSWORD_CREATED ||
-      sendDataState.data.applicationState ===
-        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
-  ) {
-    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
-    window.close();
+  if (!hasError && !isLoading) {
+    reRouteOnboarding({
+      type: sendDataState.data.type,
+      applicationState: sendDataState.data.applicationState,
+      state: sendDataState.state,
+    });
   }
 
   return (

@@ -66,9 +66,8 @@ import "../styles.scss";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { Navigate, useLocation } from "react-router-dom";
-import { ROUTES } from "popup/constants/routes";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { AppDataType } from "helpers/hooks/useGetAppData";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 enum AMOUNT_ERROR {
   TOO_HIGH = "amount too high",
@@ -464,7 +463,7 @@ export const SendAmount = ({
   }
 
   const hasError = sendAmountData.state === RequestState.ERROR;
-  if (sendAmountData.data?.type === "re-route") {
+  if (sendAmountData.data?.type === AppDataType.REROUTE) {
     if (sendAmountData.data.shouldOpenTab) {
       openTab(newTabHref(sendAmountData.data.routeTarget));
       window.close();
@@ -478,16 +477,12 @@ export const SendAmount = ({
     );
   }
 
-  if (
-    !hasError &&
-    sendAmountData.data.type === "resolved" &&
-    (sendAmountData.data.applicationState ===
-      APPLICATION_STATE.PASSWORD_CREATED ||
-      sendAmountData.data.applicationState ===
-        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
-  ) {
-    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
-    window.close();
+  if (!hasError) {
+    reRouteOnboarding({
+      type: sendAmountData.data.type,
+      applicationState: sendAmountData.data.applicationState,
+      state: sendAmountData.state,
+    });
   }
 
   const sourceBalance = findAssetBalance(

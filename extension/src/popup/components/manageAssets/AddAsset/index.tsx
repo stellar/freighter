@@ -37,8 +37,8 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { Notification } from "@stellar/design-system";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
-import { ROUTES } from "popup/constants/routes";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 interface FormValues {
   asset: string;
@@ -326,7 +326,7 @@ export const AddAsset = () => {
     );
   }
 
-  if (state.data?.type === "re-route") {
+  if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
       window.close();
@@ -340,14 +340,11 @@ export const AddAsset = () => {
     );
   }
 
-  if (
-    state.data.type === "resolved" &&
-    (state.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED ||
-      state.data.applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
-  ) {
-    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
-    window.close();
-  }
+  reRouteOnboarding({
+    type: state.data.type,
+    applicationState: state.data?.applicationState,
+    state: state.state,
+  });
 
   const data = state.data;
 

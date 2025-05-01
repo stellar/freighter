@@ -19,8 +19,7 @@ import { Loading } from "popup/components/Loading";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { Navigate, useLocation } from "react-router-dom";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { ROUTES } from "popup/constants/routes";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const ManageConnectedApps = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -98,7 +97,7 @@ export const ManageConnectedApps = () => {
     );
   }
 
-  if (state.data?.type === "re-route") {
+  if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
       window.close();
@@ -112,16 +111,11 @@ export const ManageConnectedApps = () => {
     );
   }
 
-  if (
-    state.data.type === "resolved" &&
-    (state.data.account.applicationState ===
-      APPLICATION_STATE.PASSWORD_CREATED ||
-      state.data.account.applicationState ===
-        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
-  ) {
-    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
-    window.close();
-  }
+  reRouteOnboarding({
+    type: state.data.type,
+    applicationState: state.data.account.applicationState,
+    state: state.state,
+  });
 
   const { networksList } = state.data.settings;
 

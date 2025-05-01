@@ -61,9 +61,9 @@ import { Data } from "./Preview/Data";
 
 import "./styles.scss";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const SignTransaction = () => {
   const location = useLocation();
@@ -205,15 +205,12 @@ export const SignTransaction = () => {
     );
   }
 
-  if (
-    !hasError &&
-    scanTxState.data.type === "resolved" &&
-    (scanTxState.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED ||
-      scanTxState.data.applicationState ===
-        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
-  ) {
-    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
-    window.close();
+  if (!hasError) {
+    reRouteOnboarding({
+      type: scanTxState.data.type,
+      applicationState: scanTxState.data.applicationState,
+      state: scanTxState.state,
+    });
   }
 
   const { networkName, networkPassphrase } = scanTxState.data?.networkDetails!;

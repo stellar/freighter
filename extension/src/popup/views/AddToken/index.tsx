@@ -39,11 +39,10 @@ import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 
 import "./styles.scss";
-import { useGetAppData } from "helpers/hooks/useGetAppData";
+import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
 import { openTab } from "popup/helpers/navigate";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { ROUTES } from "popup/constants/routes";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const AddToken = () => {
   const location = useLocation();
@@ -266,7 +265,7 @@ export const AddToken = () => {
     );
   }
 
-  if (state.data?.type === "re-route") {
+  if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
       window.close();
@@ -280,16 +279,12 @@ export const AddToken = () => {
     );
   }
 
-  if (
-    state.data.type === "resolved" &&
-    (state.data.account.applicationState ===
-      APPLICATION_STATE.PASSWORD_CREATED ||
-      state.data.account.applicationState ===
-        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
-  ) {
-    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
-    window.close();
-  }
+  reRouteOnboarding({
+    type: state.data.type,
+    applicationState: state.data.account.applicationState,
+    state: state.state,
+  });
+
   const { networkPassphrase, networkName } = state.data.settings.networkDetails;
 
   if (entryNetworkPassphrase && entryNetworkPassphrase !== networkPassphrase) {

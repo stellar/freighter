@@ -24,7 +24,8 @@ import { Loading } from "popup/components/Loading";
 import "./styles.scss";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 interface FormValues {
   asset: string;
@@ -117,7 +118,7 @@ export const SearchAsset = () => {
   }
 
   const hasError = state.state === RequestState.ERROR;
-  if (state.data?.type === "re-route") {
+  if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
       window.close();
@@ -131,14 +132,12 @@ export const SearchAsset = () => {
     );
   }
 
-  if (
-    !hasError &&
-    state.data.type === "resolved" &&
-    (state.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED ||
-      state.data.applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
-  ) {
-    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
-    window.close();
+  if (!hasError) {
+    reRouteOnboarding({
+      type: state.data.type,
+      applicationState: state.data?.applicationState,
+      state: state.state,
+    });
   }
 
   if (state.state === RequestState.ERROR) {

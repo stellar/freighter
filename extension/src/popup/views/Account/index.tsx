@@ -33,13 +33,14 @@ import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
 import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { newTabHref } from "helpers/urls";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
 import { getBalanceByAsset } from "popup/helpers/balance";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { reRouteOnboarding } from "popup/helpers/route";
+import { AppDataType } from "helpers/hooks/useGetAppData";
 
 export const Account = () => {
   const { t } = useTranslation();
@@ -73,7 +74,7 @@ export const Account = () => {
 
   const hasError = accountData.state === RequestState.ERROR;
 
-  if (accountData.data?.type === "re-route") {
+  if (accountData.data?.type === AppDataType.REROUTE) {
     if (accountData.data.shouldOpenTab) {
       openTab(newTabHref(accountData.data.routeTarget));
       window.close();
@@ -87,18 +88,19 @@ export const Account = () => {
     );
   }
 
-  if (
-    !hasError &&
-    accountData.data.type === "resolved" &&
-    (accountData.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED ||
-      accountData.data.applicationState ===
-        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
-  ) {
-    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
-    window.close();
+  if (!hasError) {
+    reRouteOnboarding({
+      type: accountData.data.type,
+      applicationState: accountData.data?.applicationState,
+      state: accountData.state,
+    });
   }
 
-  if (!hasError && selectedAsset && accountData.data.type === "resolved") {
+  if (
+    !hasError &&
+    selectedAsset &&
+    accountData.data.type === AppDataType.RESOLVED
+  ) {
     return (
       <AssetDetail
         accountBalances={accountData.data.balances}

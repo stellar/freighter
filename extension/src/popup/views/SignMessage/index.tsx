@@ -36,10 +36,9 @@ import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
-import { ROUTES } from "popup/constants/routes";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const SignMessage = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -111,16 +110,12 @@ export const SignMessage = () => {
     );
   }
 
-  if (
-    !hasError &&
-    signMessageState.data.type === "resolved" &&
-    (signMessageState.data.applicationState ===
-      APPLICATION_STATE.PASSWORD_CREATED ||
-      signMessageState.data.applicationState ===
-        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
-  ) {
-    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
-    window.close();
+  if (!hasError) {
+    reRouteOnboarding({
+      type: signMessageState.data.type,
+      applicationState: signMessageState.data.applicationState,
+      state: signMessageState.state,
+    });
   }
 
   const publicKey = signMessageState.data?.publicKey!;

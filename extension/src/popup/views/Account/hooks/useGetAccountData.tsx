@@ -141,7 +141,7 @@ function useGetAccountData(options: {
   };
 
   useEffect(() => {
-    if (!state.data || state.data.type === "re-route" || !_isMainnet) {
+    if (!state.data || state.data.type === AppDataType.REROUTE || !_isMainnet) {
       return;
     }
     const resolvedData = state.data;

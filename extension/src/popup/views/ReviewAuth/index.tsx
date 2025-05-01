@@ -60,10 +60,9 @@ import { Loading } from "popup/components/Loading";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { ROUTES } from "popup/constants/routes";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const ReviewAuth = () => {
   const location = useLocation();
@@ -149,16 +148,12 @@ export const ReviewAuth = () => {
     );
   }
 
-  if (
-    !hasError &&
-    reviewAuthState.data.type === "resolved" &&
-    (reviewAuthState.data.applicationState ===
-      APPLICATION_STATE.PASSWORD_CREATED ||
-      reviewAuthState.data.applicationState ===
-        APPLICATION_STATE.MNEMONIC_PHRASE_FAILED)
-  ) {
-    openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
-    window.close();
+  if (!hasError) {
+    reRouteOnboarding({
+      type: reviewAuthState.data.type,
+      applicationState: reviewAuthState.data.applicationState,
+      state: reviewAuthState.state,
+    });
   }
 
   const publicKey = reviewAuthState.data?.publicKey!;
