@@ -11,7 +11,7 @@ import { reducer as settings } from "popup/ducks/settings";
 import { reducer as transactionSubmission } from "popup/ducks/transactionSubmission";
 import { reducer as tokenPaymentSimulation } from "popup/ducks/token-payment";
 import { ErrorTracking } from "popup/components/ErrorTracking";
-// import { AccountMismatch } from "popup/components/AccountMismatch";
+import { AccountMismatch } from "popup/components/AccountMismatch";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Router } from "./Router";
 
@@ -39,7 +39,7 @@ export type AppDispatch = typeof store.dispatch;
 export const App = () => (
   <ErrorBoundary>
     <Provider store={store}>
-      {/* <AccountMismatch /> */}
+      <AccountMismatch />
       <ErrorTracking />
       <Router />
     </Provider>

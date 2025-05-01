@@ -38,7 +38,7 @@ import { openTab } from "popup/helpers/navigate";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
-import { rejectTransaction, signTransaction } from "popup/ducks/access";
+import { rejectAuthEntry, signEntry } from "popup/ducks/access";
 
 export const SignAuthEntry = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -74,7 +74,7 @@ export const SignAuthEntry = () => {
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-  } = useSetupSigningFlow(rejectTransaction, signTransaction, params.entry);
+  } = useSetupSigningFlow(rejectAuthEntry, signEntry, params.entry);
 
   useEffect(() => {
     const getData = async () => {
