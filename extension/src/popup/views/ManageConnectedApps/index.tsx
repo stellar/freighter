@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch } from "react-redux";
 import { Button, Notification, Select } from "@stellar/design-system";
 
-import { saveAllowList, settingsSelector } from "popup/ducks/settings";
-import { publicKeySelector } from "popup/ducks/accountServices";
+import { saveAllowList } from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
@@ -14,7 +13,7 @@ import { RemoveButton } from "popup/basics/buttons/RemoveButton";
 import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
-import { useGetAppData } from "helpers/hooks/useGetAppData";
+import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { openTab } from "popup/helpers/navigate";
@@ -27,15 +26,8 @@ export const ManageConnectedApps = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
   const location = useLocation();
-  const { allowList, networkDetails, networksList } =
-    useSelector(settingsSelector);
-  const publicKey = useSelector(publicKeySelector);
-  const [selectedNetworkName, setSelectedNetworkName] = useState(
-    networkDetails.networkName,
-  );
-  const [selectedAllowlist, setSelectedAllowlist] = useState(
-    allowList?.[networkDetails.networkName]?.[publicKey] || [],
-  );
+  const [selectedNetworkName, setSelectedNetworkName] = useState("");
+  const [selectedAllowlist, setSelectedAllowlist] = useState<string[]>([]);
 
   const { state, fetchData } = useGetAppData();
 
@@ -60,19 +52,27 @@ export const ManageConnectedApps = () => {
   };
 
   useEffect(() => {
-    setSelectedAllowlist(allowList?.[selectedNetworkName]?.[publicKey] || []);
-  }, [
-    setSelectedAllowlist,
-    allowList,
-    publicKey,
-    selectedNetworkName,
-    networkDetails,
-    networksList,
-  ]);
+    if (
+      state.state === RequestState.SUCCESS &&
+      state.data.type === AppDataType.RESOLVED
+    ) {
+      const { publicKey } = state.data.account;
+      const { allowList, networkDetails } = state.data.settings;
+      setSelectedAllowlist(
+        allowList?.[selectedNetworkName || networkDetails.networkName]?.[
+          publicKey
+        ] || [],
+      );
+      if (!selectedNetworkName) {
+        setSelectedNetworkName(networkDetails.networkName);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setSelectedAllowlist, selectedNetworkName, state.state]);
 
   useEffect(() => {
     const getData = async () => {
-      await fetchData();
+      await fetchData(false);
     };
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -122,6 +122,9 @@ export const ManageConnectedApps = () => {
     openTab(newTabHref(ROUTES.accountCreator, "isRestartingOnboarding=true"));
     window.close();
   }
+
+  const { networksList } = state.data.settings;
+  console.log(selectedNetworkName);
 
   return (
     <React.Fragment>

@@ -206,7 +206,7 @@ test("Send XLM payments from multiple accounts to G Address", async ({
   await sendXlmPayment({ page });
 
   await page.getByTestId("BackButton").click();
-  await page.getByTestId("BottomNav-link").click();
+  await page.getByTestId("BottomNav-link-account").click();
   await page.getByTestId("AccountHeader__icon-btn").click();
   await page.getByText("Create a new Stellar address").click();
 
@@ -228,14 +228,14 @@ test("Send XLM payments from multiple accounts to G Address", async ({
   await sendXlmPayment({ page });
 
   await page.getByTestId("BackButton").click();
-  await page.getByTestId("BottomNav-link").click();
+  await page.getByTestId("BottomNav-link-account").click();
   await page.getByTestId("AccountHeader__icon-btn").click();
 
   await page.getByText("Account 1").click();
   await sendXlmPayment({ page });
 
   await page.getByTestId("BackButton").click();
-  await page.getByTestId("BottomNav-link").click();
+  await page.getByTestId("BottomNav-link-account").click();
   await page.getByTestId("AccountHeader__icon-btn").click();
   await page.getByText("Import a Stellar secret key").click();
 
@@ -298,7 +298,7 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   await expect(page.getByTestId("memo")).toContainText("Test memo");
 
   await page.getByTestId("BackButton").click({ force: true });
-  await page.getByTestId("BottomNav-link").click({ force: true });
+  await page.getByTestId("BottomNav-link-account").click({ force: true });
 });
 
 test("Send XLM payment to M address", async ({ page, extensionId }) => {
@@ -343,7 +343,7 @@ test("Send XLM payment to M address", async ({ page, extensionId }) => {
   );
 
   await page.getByTestId("BackButton").click({ force: true });
-  await page.getByTestId("BottomNav-link").click({ force: true });
+  await page.getByTestId("BottomNav-link-account").click({ force: true });
 });
 
 test.skip("Send SAC to C address", async ({ page, extensionId }) => {
@@ -427,7 +427,7 @@ test.skip("Send SAC to C address", async ({ page, extensionId }) => {
   await expect(page.getByText("Sent USDC")).toBeVisible();
 
   await page.getByTestId("BackButton").click({ force: true });
-  await page.getByTestId("BottomNav-link").click({ force: true });
+  await page.getByTestId("BottomNav-link-account").click({ force: true });
 
   // remove USDC
   await page.getByTestId("account-options-dropdown").click();
