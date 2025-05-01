@@ -175,6 +175,7 @@ export const SendAmount = ({
   /* eslint-disable react-hooks/exhaustive-deps */
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
+      console.log(sendAmountData);
       if (isLoading || sendAmountData.data?.type === AppDataType.REROUTE) {
         return "";
       }
@@ -189,7 +190,7 @@ export const SendAmount = ({
       if (isToken && selectedBalance && isSorobanBalance(selectedBalance)) {
         return getTokenBalance(selectedBalance);
       }
-      if (userBalances && userBalances.subentryCount) {
+      if (userBalances) {
         // take base reserve into account for XLM payments
         const minBalance = new BigNumber(
           (2 + userBalances.subentryCount) * BASE_RESERVE,
@@ -325,7 +326,7 @@ export const SendAmount = ({
 
   useEffect(() => {
     setAvailBalance(calculateAvailBalance(formik.values.asset));
-  }, [calculateAvailBalance, formik.values.asset]);
+  }, [calculateAvailBalance, formik.values.asset, sendAmountData.state]);
 
   // for swaps we're loading and choosing the default destinationAsset here
   // also, need to check if both source and destination are native
