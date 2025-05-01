@@ -83,7 +83,7 @@ test("Adding token on Futurenet", async ({ page, extensionId }) => {
   await expect(page.locator("#isExperimentalModeEnabledValue")).toBeChecked();
   await page.getByTestId("BackButton").click();
   await page.getByTestId("BackButton").click();
-  await page.getByTestId("BottomNav-link-account").click();
+  await page.getByTestId("BottomNav-link").click();
   await expect(page.getByTestId("network-selector-open")).toBeVisible();
   await expect(page.getByTestId("network-selector-open")).toHaveText(
     "Future Net",
