@@ -175,7 +175,6 @@ export const SendAmount = ({
   /* eslint-disable react-hooks/exhaustive-deps */
   const calculateAvailBalance = useCallback(
     (selectedAsset: string) => {
-      console.log(sendAmountData);
       if (isLoading || sendAmountData.data?.type === AppDataType.REROUTE) {
         return "";
       }

@@ -124,7 +124,6 @@ export const ManageConnectedApps = () => {
   }
 
   const { networksList } = state.data.settings;
-  console.log(selectedNetworkName);
 
   return (
     <React.Fragment>

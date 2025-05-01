@@ -128,7 +128,6 @@ export const RecoverAccount = () => {
   );
 
   useEffect(() => {
-    console.log(state, publicKeyRef);
     if (
       state.state === RequestState.SUCCESS &&
       state.data.account.publicKey &&
