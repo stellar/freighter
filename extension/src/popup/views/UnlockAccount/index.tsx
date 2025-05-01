@@ -81,7 +81,9 @@ export const UnlockAccount = () => {
           isFullWidth
           variant="tertiary"
           onClick={() => {
-            openTab(newTabHref(ROUTES.accountCreator));
+            openTab(
+              newTabHref(ROUTES.accountCreator, "isOverWritingAccount=true"),
+            );
           }}
         >
           {t("Create a wallet")}

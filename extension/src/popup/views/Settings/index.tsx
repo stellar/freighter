@@ -31,7 +31,7 @@ export const Settings = () => {
     e.preventDefault();
 
     await dispatch(signOut());
-    navigateTo(ROUTES.welcome, navigate);
+    navigateTo(ROUTES.account, navigate);
   };
 
   return (

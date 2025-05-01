@@ -6,17 +6,12 @@ import { Formik } from "formik";
 import { object as YupObject } from "yup";
 
 import { showBackupPhrase } from "@shared/api/internal";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   password as passwordValidator,
   confirmPassword as confirmPasswordValidator,
   termsOfUse as termsofUseValidator,
 } from "popup/helpers/validators";
-import {
-  createAccount,
-  publicKeySelector,
-  applicationStateSelector,
-} from "popup/ducks/accountServices";
+import { createAccount, publicKeySelector } from "popup/ducks/accountServices";
 import { View } from "popup/basics/layout/View";
 
 import {
@@ -31,15 +26,13 @@ import "./styles.scss";
 
 export const AccountCreator = () => {
   const publicKey = useSelector(publicKeySelector);
-  const applicationState = useSelector(applicationStateSelector);
   const dispatch = useDispatch<AppDispatch>();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const isRestartingOnboardingParam = params.get("isRestartingOnboarding");
+  const isOverWritingAccountParam = params.get("isOverWritingAccount");
   const isRestartingOnboarding = isRestartingOnboardingParam === "true";
-
-  const isShowingOverwriteWarning =
-    applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
+  const isOverWritingAccount = isOverWritingAccountParam === "true";
 
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
 
@@ -47,8 +40,7 @@ export const AccountCreator = () => {
     await dispatch(
       createAccount({
         password: values.password,
-        isOverwritingAccount:
-          isShowingOverwriteWarning || isRestartingOnboarding,
+        isOverwritingAccount: isOverWritingAccount || isRestartingOnboarding,
       }),
     );
     const res = await showBackupPhrase({
@@ -88,7 +80,7 @@ export const AccountCreator = () => {
               errors={errors}
               touched={touched}
               values={values}
-              isShowingOverwriteWarning={isShowingOverwriteWarning}
+              isShowingOverwriteWarning={isOverWritingAccount}
               isShowingOnboardingWarning={isRestartingOnboarding}
             />
           )}
