@@ -38,6 +38,8 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
+import { rejectTransaction, signTransaction } from "popup/ducks/access";
 
 export const SignMessage = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -64,10 +66,19 @@ export const SignMessage = () => {
     domain,
   });
 
-  const { state: signMessageState, fetchData } = useGetSignMessageData(
-    message.message,
-    accountToSign,
-  );
+  const { state: signMessageState, fetchData } =
+    useGetSignMessageData(accountToSign);
+  const {
+    isConfirming,
+    isPasswordRequired,
+    handleApprove,
+    hwStatus,
+    rejectAndClose,
+    isHardwareWallet,
+    setIsPasswordRequired,
+    verifyPasswordThenSign,
+    hardwareWalletType,
+  } = useSetupSigningFlow(rejectTransaction, signTransaction, message.message);
 
   useEffect(() => {
     const getData = async () => {
@@ -113,20 +124,8 @@ export const SignMessage = () => {
   }
 
   const publicKey = signMessageState.data?.publicKey!;
-  const {
-    allAccounts,
-    accountNotFound,
-    currentAccount,
-    isConfirming,
-    isPasswordRequired,
-    handleApprove,
-    hwStatus,
-    isHardwareWallet,
-    rejectAndClose,
-    setIsPasswordRequired,
-    verifyPasswordThenSign,
-    hardwareWalletType,
-  } = signMessageState.data?.signFlowState!;
+  const { allAccounts, accountNotFound, currentAccount } =
+    signMessageState.data?.signFlowState!;
 
   if (isHardwareWallet) {
     return (

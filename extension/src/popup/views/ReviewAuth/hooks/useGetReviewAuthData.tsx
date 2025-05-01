@@ -6,8 +6,6 @@ import {
   NeedsReRoute,
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
-import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
-import { rejectTransaction, signTransaction } from "popup/ducks/access";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { useDispatch } from "react-redux";
@@ -19,7 +17,7 @@ interface ResolvedData {
   type: AppDataType.RESOLVED;
   networkDetails: NetworkDetails;
   publicKey: string;
-  signFlowState: ReturnType<typeof useSetupSigningFlow> & {
+  signFlowState: {
     allAccounts: Account[];
     accountNotFound: boolean;
     currentAccount: Account;
@@ -29,7 +27,7 @@ interface ResolvedData {
 
 type ReviewAuthData = ResolvedData | NeedsReRoute;
 
-function useGetReviewAuthData(transactionXdr: string, accountToSign?: string) {
+function useGetReviewAuthData(accountToSign?: string) {
   const [state, dispatch] = useReducer(
     reducer<ReviewAuthData, unknown>,
     initialState,
@@ -37,17 +35,6 @@ function useGetReviewAuthData(transactionXdr: string, accountToSign?: string) {
   const reduxDispatch = useDispatch<AppDispatch>();
 
   const { fetchData: fetchAppData } = useGetAppData();
-  const {
-    isConfirming,
-    isPasswordRequired,
-    handleApprove,
-    hwStatus,
-    rejectAndClose,
-    isHardwareWallet,
-    setIsPasswordRequired,
-    verifyPasswordThenSign,
-    hardwareWalletType,
-  } = useSetupSigningFlow(rejectTransaction, signTransaction, transactionXdr);
   const [accountNotFound, setAccountNotFound] = useState(false);
 
   const fetchData = async () => {
@@ -100,15 +87,6 @@ function useGetReviewAuthData(transactionXdr: string, accountToSign?: string) {
           allAccounts,
           accountNotFound,
           currentAccount,
-          isConfirming,
-          isPasswordRequired,
-          isHardwareWallet,
-          handleApprove,
-          hwStatus,
-          rejectAndClose,
-          setIsPasswordRequired,
-          verifyPasswordThenSign,
-          hardwareWalletType,
         },
       } as ResolvedData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

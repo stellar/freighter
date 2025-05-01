@@ -37,6 +37,8 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
+import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
+import { rejectTransaction, signTransaction } from "popup/ducks/access";
 
 export const SignAuthEntry = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -61,10 +63,18 @@ export const SignAuthEntry = () => {
     domain,
   });
 
-  const { state: signAuthEntryData, fetchData } = useGetSignAuthEntryData(
-    params.entry,
-    accountToSign,
-  );
+  const { state: signAuthEntryData, fetchData } =
+    useGetSignAuthEntryData(accountToSign);
+  const {
+    isConfirming,
+    isPasswordRequired,
+    handleApprove,
+    hwStatus,
+    rejectAndClose,
+    setIsPasswordRequired,
+    verifyPasswordThenSign,
+    hardwareWalletType,
+  } = useSetupSigningFlow(rejectTransaction, signTransaction, params.entry);
 
   useEffect(() => {
     const getData = async () => {
@@ -110,19 +120,8 @@ export const SignAuthEntry = () => {
   }
 
   const publicKey = signAuthEntryData.data?.publicKey!;
-  const {
-    allAccounts,
-    accountNotFound,
-    currentAccount,
-    isConfirming,
-    isPasswordRequired,
-    handleApprove,
-    hwStatus,
-    rejectAndClose,
-    setIsPasswordRequired,
-    verifyPasswordThenSign,
-    hardwareWalletType,
-  } = signAuthEntryData.data?.signFlowState!;
+  const { allAccounts, accountNotFound, currentAccount } =
+    signAuthEntryData.data?.signFlowState!;
 
   if (entryNetworkPassphrase && entryNetworkPassphrase !== networkPassphrase) {
     return (

@@ -62,6 +62,8 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
+import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
+import { rejectTransaction, signTransaction } from "popup/ducks/access";
 
 export const ReviewAuth = () => {
   const location = useLocation();
@@ -87,8 +89,22 @@ export const ReviewAuth = () => {
   const authCount = op.auth ? op.auth.length : 0;
 
   const { state: reviewAuthState, fetchData } = useGetReviewAuthData(
-    params.transactionXdr as string,
     params.accountToSign as string,
+  );
+
+  const {
+    isConfirming,
+    isPasswordRequired,
+    handleApprove,
+    hwStatus,
+    rejectAndClose,
+    setIsPasswordRequired,
+    verifyPasswordThenSign,
+    hardwareWalletType,
+  } = useSetupSigningFlow(
+    rejectTransaction,
+    signTransaction,
+    params.transactionXdr,
   );
 
   useEffect(() => {
@@ -146,18 +162,7 @@ export const ReviewAuth = () => {
   }
 
   const publicKey = reviewAuthState.data?.publicKey!;
-  const {
-    allAccounts,
-    currentAccount,
-    isConfirming,
-    handleApprove,
-    hardwareWalletType,
-    hwStatus,
-    rejectAndClose,
-    isPasswordRequired,
-    setIsPasswordRequired,
-    verifyPasswordThenSign,
-  } = reviewAuthState.data?.signFlowState!;
+  const { allAccounts, currentAccount } = reviewAuthState.data?.signFlowState!;
 
   return isPasswordRequired ? (
     <VerifyAccount

@@ -62,6 +62,8 @@ import { Data } from "./Preview/Data";
 import "./styles.scss";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
+import { rejectTransaction, signTransaction } from "popup/ducks/access";
 
 export const SignTransaction = () => {
   const location = useLocation();
@@ -100,6 +102,17 @@ export const SignTransaction = () => {
     },
     accountToSign,
   );
+
+  const {
+    isConfirming,
+    isPasswordRequired,
+    handleApprove,
+    hwStatus,
+    rejectAndClose,
+    setIsPasswordRequired,
+    verifyPasswordThenSign,
+    hardwareWalletType,
+  } = useSetupSigningFlow(rejectTransaction, signTransaction, transactionXdr);
 
   // rebuild transaction to get Transaction prototypes
   const transaction = TransactionBuilder.fromXDR(
@@ -233,19 +246,8 @@ export const SignTransaction = () => {
   }
 
   const publicKey = scanTxState.data?.publicKey!;
-  const {
-    allAccounts,
-    accountNotFound,
-    currentAccount,
-    isConfirming,
-    isPasswordRequired,
-    handleApprove,
-    hwStatus,
-    rejectAndClose,
-    setIsPasswordRequired,
-    verifyPasswordThenSign,
-    hardwareWalletType,
-  } = scanTxState.data?.signFlowState!;
+  const { allAccounts, accountNotFound, currentAccount } =
+    scanTxState.data?.signFlowState!;
 
   const hasEnoughXlm = scanTxState.data?.balances.balances.some(
     (balance) =>

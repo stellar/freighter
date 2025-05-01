@@ -10,8 +10,6 @@ import {
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
 import { isMainnet } from "helpers/stellar";
-import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
-import { rejectTransaction, signTransaction } from "popup/ducks/access";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { makeAccountActive } from "popup/ducks/accountServices";
@@ -23,7 +21,7 @@ interface ResolvedData {
   scanResult: BlockAidScanTxResult | null;
   balances: AccountBalances;
   publicKey: string;
-  signFlowState: ReturnType<typeof useSetupSigningFlow> & {
+  signFlowState: {
     allAccounts: Account[];
     accountNotFound: boolean;
     currentAccount: Account;
@@ -54,17 +52,6 @@ function useGetSignTxData(
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
   const { scanTx } = useScanTx();
-  const {
-    isConfirming,
-    isPasswordRequired,
-    handleApprove,
-    hwStatus,
-    rejectAndClose,
-    isHardwareWallet,
-    setIsPasswordRequired,
-    verifyPasswordThenSign,
-    hardwareWalletType,
-  } = useSetupSigningFlow(rejectTransaction, signTransaction, scanOptions.xdr);
   const [accountNotFound, setAccountNotFound] = useState(false);
 
   const fetchData = async (newPublicKey?: string) => {
@@ -137,15 +124,6 @@ function useGetSignTxData(
           allAccounts,
           accountNotFound,
           currentAccount,
-          isConfirming,
-          isPasswordRequired,
-          isHardwareWallet,
-          handleApprove,
-          hwStatus,
-          rejectAndClose,
-          setIsPasswordRequired,
-          verifyPasswordThenSign,
-          hardwareWalletType,
         },
       } as ResolvedData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
