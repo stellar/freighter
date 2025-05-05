@@ -34,20 +34,23 @@ export const ManageConnectedApps = () => {
     setSelectedNetworkName(e.target.value);
   };
 
-  const handleRemove = (domainToRemove: string) => {
-    dispatch(
+  const handleRemove = async (domainToRemove: string) => {
+    await dispatch(
       saveAllowList({
         domain: domainToRemove,
         networkName: selectedNetworkName,
       }),
     );
+    await fetchData(false);
   };
 
-  const handleRemoveAll = () => {
-    for (let i = 0; i < selectedAllowlist.length; i += 1) {
-      const domain = selectedAllowlist[i];
-      dispatch(saveAllowList({ domain, networkName: selectedNetworkName }));
+  const handleRemoveAll = async () => {
+    for (const domain of selectedAllowlist) {
+      await dispatch(
+        saveAllowList({ domain, networkName: selectedNetworkName }),
+      );
     }
+    await fetchData(false);
   };
 
   useEffect(() => {
@@ -57,6 +60,7 @@ export const ManageConnectedApps = () => {
     ) {
       const { publicKey } = state.data.account;
       const { allowList, networkDetails } = state.data.settings;
+      console.log(allowList);
       setSelectedAllowlist(
         allowList?.[selectedNetworkName || networkDetails.networkName]?.[
           publicKey
