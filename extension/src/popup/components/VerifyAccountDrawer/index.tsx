@@ -15,7 +15,7 @@ interface VerifyAccountProps {
   setIsModalOpen: (isModalOpen: boolean) => void;
 }
 
-export const VerifyAccount = ({
+export const VerifyAccountDrawer = ({
   publicKey,
   isModalOpen,
   setIsModalOpen,

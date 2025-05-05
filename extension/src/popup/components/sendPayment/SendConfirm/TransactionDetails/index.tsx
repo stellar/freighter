@@ -70,9 +70,9 @@ import {
   TxDetailsData,
   useGetTxDetailsData,
 } from "./hooks/useGetTxDetailsData";
+import { VerifyAccountDrawer } from "popup/components/VerifyAccountDrawer";
 
 import "./styles.scss";
-import { VerifyAccount } from "popup/components/VerifyAccountDrawer";
 
 const TwoAssetCard = ({
   sourceAssetIcons,
@@ -672,7 +672,7 @@ export const TransactionDetails = ({
             )}
           </View.Footer>
           <div className="TransactionDetails__modal-wrapper">
-            <VerifyAccount
+            <VerifyAccountDrawer
               publicKey={publicKey}
               isModalOpen={isVerifyAccountModalOpen}
               setIsModalOpen={setIsVerifyAccountModalOpen}
