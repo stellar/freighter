@@ -3,4 +3,10 @@
   height: 80vh;
   margin-top: auto;
   margin-bottom: auto;
+
+  .View {
+    &__content {
+      border-radius: 1.5rem 1.5rem 0 0;
+    }
+  }
 }
