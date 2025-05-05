@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
@@ -72,6 +72,7 @@ import {
 } from "./hooks/useGetTxDetailsData";
 
 import "./styles.scss";
+import { VerifyAccount } from "popup/components/VerifyAccountDrawer";
 
 const TwoAssetCard = ({
   sourceAssetIcons,
@@ -147,6 +148,8 @@ export const TransactionDetails = ({
 }) => {
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
+  const [isVerifyAccountModalOpen, setIsVerifyAccountModalOpen] =
+    useState(false);
   const submission = useSelector(transactionSubmissionSelector);
   const {
     transactionData: {
@@ -408,6 +411,15 @@ export const TransactionDetails = ({
     txDetailsData.state === RequestState.IDLE ||
     txDetailsData.state === RequestState.LOADING;
 
+  useEffect(() => {
+    if (
+      txDetailsData.state === RequestState.SUCCESS &&
+      !txDetailsData.data.hasPrivateKey
+    ) {
+      setIsVerifyAccountModalOpen(true);
+    }
+  }, [txDetailsData]);
+
   return (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
@@ -618,12 +630,12 @@ export const TransactionDetails = ({
                 />
               )}
             </div>
+            <div className="TransactionDetails__bottom-wrapper__copy">
+              {(isPathPayment || isSwap) &&
+                submission.submitStatus !== ActionStatus.SUCCESS &&
+                t("The final amount is approximate and may change")}
+            </div>
           </View.Content>
-          <div className="TransactionDetails__bottom-wrapper__copy">
-            {(isPathPayment || isSwap) &&
-              submission.submitStatus !== ActionStatus.SUCCESS &&
-              t("The final amount is approximate and may change")}
-          </div>
           <View.Footer isInline>
             {submission.submitStatus === ActionStatus.SUCCESS ? (
               <StellarExpertButton />
@@ -659,6 +671,13 @@ export const TransactionDetails = ({
               </>
             )}
           </View.Footer>
+          <div className="TransactionDetails__modal-wrapper">
+            <VerifyAccount
+              publicKey={publicKey}
+              isModalOpen={isVerifyAccountModalOpen}
+              setIsModalOpen={setIsVerifyAccountModalOpen}
+            />
+          </div>
         </React.Fragment>
       )}
     </>
