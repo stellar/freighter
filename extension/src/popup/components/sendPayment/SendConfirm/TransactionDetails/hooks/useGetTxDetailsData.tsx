@@ -195,7 +195,6 @@ function useGetTxDetailsData(
   },
 ) {
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
-  console.log(hasPrivateKey);
   const [state, dispatch] = useReducer(
     reducer<TxDetailsData, unknown>,
     initialState,
@@ -259,7 +258,7 @@ function useGetTxDetailsData(
       );
 
       const payload = {
-        hasPrivateKey: false,
+        hasPrivateKey,
         balances: balancesResult,
         destinationBalances: {
           ...destBalancesResult,
