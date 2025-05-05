@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { STEPS } from "popup/constants/swap";
 import { ROUTES } from "popup/constants/routes";
 import { emitMetric } from "helpers/metrics";
-import { VerifiedAccountRoute } from "popup/Router";
 import { SendAmount } from "popup/components/sendPayment/SendAmount";
 import { SendSettings } from "popup/components/sendPayment/SendSettings";
 import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/TransactionFee";
@@ -31,9 +30,7 @@ export const Swap = () => {
       case STEPS.SWAP_CONFIRM: {
         emitMetric(METRIC_NAMES.swapConfirm);
         return (
-          <VerifiedAccountRoute>
-            <SendConfirm goBack={() => setActiveStep(STEPS.SWAP_SETTINGS)} />
-          </VerifiedAccountRoute>
+          <SendConfirm goBack={() => setActiveStep(STEPS.SWAP_SETTINGS)} />
         );
       }
       case STEPS.SET_SWAP_SLIPPAGE: {
@@ -66,13 +63,11 @@ export const Swap = () => {
       case STEPS.AMOUNT: {
         emitMetric(METRIC_NAMES.swapAmount);
         return (
-          <VerifiedAccountRoute>
-            <SendAmount
-              goBack={() => navigate(ROUTES.account)}
-              goToNext={() => setActiveStep(STEPS.SWAP_SETTINGS)}
-              goToChooseAsset={() => setActiveStep(STEPS.CHOOSE_ASSETS)}
-            />
-          </VerifiedAccountRoute>
+          <SendAmount
+            goBack={() => navigate(ROUTES.account)}
+            goToNext={() => setActiveStep(STEPS.SWAP_SETTINGS)}
+            goToChooseAsset={() => setActiveStep(STEPS.CHOOSE_ASSETS)}
+          />
         );
       }
       case STEPS.CHOOSE_ASSETS: {

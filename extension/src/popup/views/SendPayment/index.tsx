@@ -5,7 +5,6 @@ import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/send-payment";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { VerifiedAccountRoute } from "popup/Router";
 import { SendTo } from "popup/components/sendPayment/SendTo";
 import { SendAmount } from "popup/components/sendPayment/SendAmount";
 import { SendType } from "popup/components/sendPayment/SendAmount/SendType";
@@ -36,9 +35,7 @@ export const SendPayment = () => {
       case STEPS.PAYMENT_CONFIRM: {
         emitMetric(METRIC_NAMES.sendPaymentConfirm);
         return (
-          <VerifiedAccountRoute>
-            <SendConfirm goBack={() => setActiveStep(STEPS.PAYMENT_SETTINGS)} />
-          </VerifiedAccountRoute>
+          <SendConfirm goBack={() => setActiveStep(STEPS.PAYMENT_SETTINGS)} />
         );
       }
       case STEPS.SET_PAYMENT_SLIPPAGE: {
@@ -90,12 +87,10 @@ export const SendPayment = () => {
       case STEPS.DESTINATION: {
         emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
         return (
-          <VerifiedAccountRoute>
-            <SendTo
-              goBack={() => navigate(ROUTES.account)}
-              goToNext={() => setActiveStep(STEPS.AMOUNT)}
-            />
-          </VerifiedAccountRoute>
+          <SendTo
+            goBack={() => navigate(ROUTES.account)}
+            goToNext={() => setActiveStep(STEPS.AMOUNT)}
+          />
         );
       }
     }
