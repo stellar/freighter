@@ -20,12 +20,12 @@ import { useGetSearchData } from "./hooks/useSearchData";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { RequestState } from "helpers/hooks/fetchHookInterface";
 import { Loading } from "popup/components/Loading";
-
-import "./styles.scss";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
+
+import "./styles.scss";
 
 interface FormValues {
   asset: string;
@@ -87,6 +87,7 @@ export const SearchAsset = () => {
           isAllowListVerificationEnabled,
           asset,
           isBlockaidEnabled: isMainnet(networkDetails),
+          networkDetails,
         });
       },
       500,
