@@ -5,6 +5,7 @@ import { Networks, StellarToml, StrKey } from "stellar-sdk";
 import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
+import { Notification } from "@stellar/design-system";
 import { getTokenDetails } from "@shared/api/internal";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { isSacContractExecutable } from "@shared/helpers/soroban/token";
@@ -25,20 +26,19 @@ import {
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
+import { useGetAddAssetData } from "./hooks/useGetAddAssetData";
+import { RequestState } from "helpers/hooks/fetchHookInterface";
+import { Loading } from "popup/components/Loading";
+import { NetworkDetails } from "@shared/constants/stellar";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
 
 import "./styles.scss";
-import { useGetAddAssetData } from "./hooks/useGetAddAssetData";
-import { RequestState } from "helpers/hooks/fetchHookInterface";
-import { Loading } from "popup/components/Loading";
-import { NetworkDetails } from "@shared/constants/stellar";
-import { Notification } from "@stellar/design-system";
-import { openTab } from "popup/helpers/navigate";
-import { newTabHref } from "helpers/urls";
-import { AppDataType } from "helpers/hooks/useGetAppData";
-import { reRouteOnboarding } from "popup/helpers/route";
 
 interface FormValues {
   asset: string;
