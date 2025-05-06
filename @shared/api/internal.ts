@@ -996,10 +996,12 @@ export const getAssetIcons = async ({
   balances,
   networkDetails,
   assetsListsData,
+  cachedIcons,
 }: {
   balances: Balances;
   networkDetails: NetworkDetails;
   assetsListsData: AssetListResponse[];
+  cachedIcons: Record<string, string>;
 }) => {
   const assetIcons = {} as { [code: string]: string };
 
@@ -1016,6 +1018,12 @@ export const getAssetIcons = async ({
         } = token;
 
         let canonical = getCanonicalFromAsset(code, key);
+        const cachedIcon = cachedIcons[canonical];
+        if (cachedIcon) {
+          assetIcons[canonical] = cachedIcon;
+          continue;
+        }
+
         icon = await getIconUrlFromIssuer({ key, code, networkDetails });
         if (!icon) {
           const tokenListIcon = await getIconFromTokenLists({

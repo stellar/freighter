@@ -30,6 +30,7 @@ import { isContractId } from "popup/helpers/soroban";
 import { settingsSelector } from "popup/ducks/settings";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 import { hasPrivateKeySelector } from "popup/ducks/accountServices";
+import { iconsSelector } from "popup/ducks/balances";
 
 export interface TxDetailsData {
   destAssetIconUrl: string;
@@ -202,6 +203,7 @@ function useGetTxDetailsData(
 
   const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
   const { assetsLists } = useSelector(settingsSelector);
+  const cachedIcons = useSelector(iconsSelector);
 
   const { scanTx } = useScanTx();
 
@@ -234,6 +236,7 @@ function useGetTxDetailsData(
               balances: destBalancesResult.balances,
               networkDetails,
               assetsListsData,
+              cachedIcons,
             })
           : {};
 
