@@ -24,6 +24,7 @@ import {
   balancesSelector,
   iconsSelector,
   saveBalancesForAccount,
+  saveIconsForBalances,
 } from "popup/ducks/balances";
 
 export interface AccountBalances {
@@ -135,6 +136,7 @@ function useGetBalances(options: {
             cachedIcons,
           });
           payload.icons = icons;
+          reduxDispatch(saveIconsForBalances({ icons }));
         }
 
         reduxDispatch(
