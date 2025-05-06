@@ -48,7 +48,7 @@ function useGetSendAmountData(
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const userDomains = await fetchAssetDomains();
+      const userDomains = await fetchAssetDomains(true);
       let destinationAccount = await getBaseAccount(destinationAddress);
 
       if (isError<AssetDomains>(userDomains)) {

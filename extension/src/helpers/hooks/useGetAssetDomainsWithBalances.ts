@@ -32,7 +32,7 @@ export interface ResolvedAssetDomains {
 
 export type AssetDomains = NeedsReRoute | ResolvedAssetDomains;
 
-export function useGetAssetDomainsWithBalances(options: {
+export function useGetAssetDomainsWithBalances(getBalancesOptions: {
   showHidden: boolean;
   includeIcons: boolean;
 }) {
@@ -48,12 +48,12 @@ export function useGetAssetDomainsWithBalances(options: {
     initialState,
   );
   const { fetchData: fetchAppData } = useGetAppData();
-  const { fetchData: fetchBalances } = useGetBalances(options);
+  const { fetchData: fetchBalances } = useGetBalances(getBalancesOptions);
 
-  const fetchData = async (): Promise<AssetDomains | Error> => {
+  const fetchData = async (useCache = false): Promise<AssetDomains | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const appData = await fetchAppData();
+      const appData = await fetchAppData(useCache);
       if (isError(appData)) {
         throw new Error(appData.message);
       }
@@ -70,6 +70,7 @@ export function useGetAssetDomainsWithBalances(options: {
         publicKey,
         isMainnetNetwork,
         networkDetails,
+        useCache,
       );
 
       if (isError<AccountBalances>(balances)) {
