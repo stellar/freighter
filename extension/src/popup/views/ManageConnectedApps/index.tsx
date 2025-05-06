@@ -60,7 +60,7 @@ export const ManageConnectedApps = () => {
     ) {
       const { publicKey } = state.data.account;
       const { allowList, networkDetails } = state.data.settings;
-      console.log(allowList);
+
       setSelectedAllowlist(
         allowList?.[selectedNetworkName || networkDetails.networkName]?.[
           publicKey
