@@ -2,6 +2,7 @@ import React from "react";
 import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 import { Horizon } from "stellar-sdk";
 import BigNumber from "bignumber.js";
+import * as ReactRouterDom from "react-router-dom";
 
 import {
   APPLICATION_STATE,
@@ -22,6 +23,7 @@ import { SERVICE_TYPES } from "@shared/constants/services";
 import { Response, SettingsState } from "@shared/api/types";
 import { accountNameSelector } from "popup/ducks/accountServices";
 import * as TokenListHelpers from "@shared/api/helpers/token-list";
+import * as RouteHelpers from "popup/helpers/route";
 
 import {
   Wrapper,
@@ -36,6 +38,9 @@ import {
 import { Account } from "../Account";
 import { ROUTES } from "popup/constants/routes";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import * as AccountDataHooks from "../../views/Account/hooks/useGetAccountData";
+import { RequestState } from "helpers/hooks/fetchHookInterface";
 
 const mockHistoryOperations = {
   operations: [
@@ -628,6 +633,7 @@ describe("Account view", () => {
       expect(assetNodes[1]).toHaveTextContent("0");
     });
   });
+
   it("shows prices and deltas", async () => {
     jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
       Promise.resolve({
@@ -696,6 +702,141 @@ describe("Account view", () => {
       expect(screen.getByTestId(`asset-price-delta-native`)).toHaveTextContent(
         "1.10%",
       );
+    });
+  });
+
+  it("handles abandoned onboarding in password created step", async () => {
+    jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+      Promise.resolve({
+        hasPrivateKey: true,
+        publicKey: TEST_PUBLIC_KEY,
+        applicationState: APPLICATION_STATE.PASSWORD_CREATED,
+        allAccounts: mockAccounts,
+        bipPath: "bip-path",
+        tokenIdList: [],
+      }),
+    );
+
+    const mockReRoute = jest
+      .spyOn(RouteHelpers, "reRouteOnboarding")
+      .mockImplementation(jest.fn());
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "",
+            allAccounts: [],
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(mockReRoute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: AppDataType.RESOLVED,
+          applicationState: ApplicationState.PASSWORD_CREATED,
+        }),
+      );
+    });
+  });
+
+  it("handles abandoned onboarding in failed mnemonic phrase step", async () => {
+    jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+      Promise.resolve({
+        hasPrivateKey: true,
+        publicKey: TEST_PUBLIC_KEY,
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_FAILED,
+        allAccounts: mockAccounts,
+        bipPath: "bip-path",
+        tokenIdList: [],
+      }),
+    );
+
+    const mockReRoute = jest
+      .spyOn(RouteHelpers, "reRouteOnboarding")
+      .mockImplementation(jest.fn());
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_FAILED,
+            publicKey: "",
+            allAccounts: [],
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(mockReRoute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: AppDataType.RESOLVED,
+          applicationState: ApplicationState.MNEMONIC_PHRASE_FAILED,
+        }),
+      );
+    });
+  });
+
+  it("handles abandoned onboarding in application started phrase step", async () => {
+    jest.spyOn(AccountDataHooks, "useGetAccountData").mockReturnValue({
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          type: AppDataType.REROUTE,
+          shouldOpenTab: false,
+          routeTarget: ROUTES.welcome,
+        },
+        error: null,
+      },
+      fetchData: jest.fn(),
+    });
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.APPLICATION_STARTED,
+            publicKey: "",
+            allAccounts: [],
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <ReactRouterDom.Routes>
+          <ReactRouterDom.Route path={ROUTES.account} element={<Account />} />
+          <ReactRouterDom.Route
+            path={ROUTES.welcome}
+            element={<div data-testid="rerouted" />}
+          />
+        </ReactRouterDom.Routes>
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("rerouted")).toBeInTheDocument();
     });
   });
 });

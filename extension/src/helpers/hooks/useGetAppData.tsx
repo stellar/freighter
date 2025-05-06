@@ -25,7 +25,7 @@ export enum AppDataType {
 }
 export interface NeedsReRoute {
   type: AppDataType.REROUTE;
-  routeTarget: ROUTES.unlockAccount | ROUTES.accountCreator;
+  routeTarget: ROUTES.unlockAccount | ROUTES.welcome;
   shouldOpenTab: boolean;
 }
 

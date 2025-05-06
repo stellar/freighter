@@ -34,13 +34,13 @@ import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
 import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 import { newTabHref } from "helpers/urls";
-
-import "popup/metrics/authServices";
-import "./styles.scss";
 import { getBalanceByAsset } from "popup/helpers/balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
+
+import "popup/metrics/authServices";
+import "./styles.scss";
 
 export const Account = () => {
   const { t } = useTranslation();
