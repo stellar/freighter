@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 
@@ -21,6 +21,10 @@ import {
 } from "popup/components/accountCreator/PasswordForm";
 import { MnemonicPhrase } from "popup/views/MnemonicPhrase";
 import { AppDispatch } from "popup/App";
+import { RequestState } from "constants/request";
+import { Loading } from "popup/components/Loading";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { useGetAccountCreatorData } from "./hooks/useAccountCreatorData";
 
 import "./styles.scss";
 
@@ -30,9 +34,11 @@ export const AccountCreator = () => {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const isRestartingOnboardingParam = params.get("isRestartingOnboarding");
-  const isOverWritingAccountParam = params.get("isOverWritingAccount");
   const isRestartingOnboarding = isRestartingOnboardingParam === "true";
-  const isOverWritingAccount = isOverWritingAccountParam === "true";
+  const { state, fetchData } = useGetAccountCreatorData();
+  const isOverWritingAccount =
+    state.state === RequestState.SUCCESS &&
+    state.data.applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
 
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
 
@@ -56,6 +62,21 @@ export const AccountCreator = () => {
     confirmPassword: confirmPasswordValidator,
     termsOfUse: termsofUseValidator,
   });
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (
+    state.state === RequestState.IDLE ||
+    state.state === RequestState.LOADING
+  ) {
+    return <Loading />;
+  }
 
   return mnemonicPhrase && publicKey ? (
     <MnemonicPhrase mnemonicPhrase={mnemonicPhrase} />
