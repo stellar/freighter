@@ -17,15 +17,28 @@
     flex-direction: column;
   }
 
-  &__network-wrapper {
+  &__right-content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: pxToRem(12);
+  }
+
+  &__right-button {
     cursor: pointer;
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
-    justify-content: right;
+    height: pxToRem(32px);
+    justify-content: center;
     border: 1px solid var(--sds-clr-gray-06);
-    padding: pxToRem(2px) pxToRem(6px);
-    border-radius: pxToRem(6px);
+    border-radius: pxToRem(100px);
+    width: pxToRem(32px);
+
+    svg {
+      color: var(--sds-clr-gray-09);
+    }
   }
 
   &__network-copy {

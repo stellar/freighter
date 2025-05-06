@@ -604,6 +604,39 @@ export const getTokenPrices = async (tokens: string[]) => {
   return parsedResponse.data;
 };
 
+export const getDiscoverData = async () => {
+  const url = new URL(`${INDEXER_URL}/discover`);
+  const response = await fetch(url.href);
+  const parsedResponse = (await response.json()) as {
+    data: {
+      protocols: {
+        description: string;
+        icon_url: string;
+        name: string;
+        website_url: string;
+        tags: string[];
+        is_blacklisted: boolean;
+      }[];
+    };
+  };
+  if (!response.ok || !parsedResponse.data.protocols) {
+    const _err = JSON.stringify(parsedResponse);
+    captureException(
+      `Failed to fetch discover entries - ${response.status}: ${response.statusText}`,
+    );
+    throw new Error(_err);
+  }
+
+  return parsedResponse.data.protocols.map((entry) => ({
+    description: entry.description,
+    iconUrl: entry.icon_url,
+    name: entry.name,
+    websiteUrl: entry.website_url,
+    tags: entry.tags,
+    isBlacklisted: entry.is_blacklisted,
+  }));
+};
+
 export const getSorobanTokenBalance = async (
   server: SorobanRpc.Server,
   contractId: string,
@@ -1881,7 +1914,8 @@ export const simulateTransaction = async (args: {
     body: JSON.stringify({
       xdr,
 
-      network_url: networkDetails.sorobanRpcUrl,
+      network_url:
+        "https://rough-fragrant-bird.stellar-mainnet.quiknode.pro/980bd2f552c04a7a30ad4503caae3c354213623e",
 
       network_passphrase: networkDetails.networkPassphrase,
     }),

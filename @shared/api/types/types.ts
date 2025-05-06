@@ -351,3 +351,12 @@ export interface ApiTokenPrices {
     percentagePriceChange24h?: string;
   } | null;
 }
+
+export type DiscoverData = {
+  description: string;
+  iconUrl: string;
+  name: string;
+  websiteUrl: string;
+  tags: string[];
+  isBlacklisted: boolean;
+}[];

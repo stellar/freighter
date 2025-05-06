@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { Account } from "@shared/api/types";
 import { Icon } from "@stellar/design-system";
@@ -10,6 +10,7 @@ import { ROUTES } from "popup/constants/routes";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { isActiveNetwork } from "helpers/stellar";
+import { navigateTo } from "popup/helpers/navigate";
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 import {
   settingsNetworkDetailsSelector,
@@ -43,6 +44,7 @@ export const AccountHeader = ({
   const networksList = useSelector(settingsNetworksListSelector);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNetworkSelectorOpen, setIsNetworkSelectorOpen] = useState(false);
+  const navigate = useNavigate();
 
   const networksModalHeight = useRef(0);
   const activeNetworkIndex = useRef<number | null>(null);
@@ -76,14 +78,19 @@ export const AccountHeader = ({
         </div>
       }
       rightContent={
-        <div
-          className="AccountHeader__network-wrapper"
-          data-testid="network-selector-open"
-          onClick={() => setIsNetworkSelectorOpen(!isNetworkSelectorOpen)}
-        >
-          <NetworkIcon index={activeNetworkIndex.current} />
-          <div className="AccountHeader__network-copy">
-            {networkDetails.networkName}
+        <div className="AccountHeader__right-content">
+          <div
+            className="AccountHeader__right-button"
+            onClick={() => navigateTo(ROUTES.discover, navigate)}
+          >
+            <Icon.Compass03 />
+          </div>
+          <div
+            className="AccountHeader__right-button"
+            data-testid="network-selector-open"
+            onClick={() => setIsNetworkSelectorOpen(!isNetworkSelectorOpen)}
+          >
+            <Icon.Globe02 />
           </div>
         </div>
       }
