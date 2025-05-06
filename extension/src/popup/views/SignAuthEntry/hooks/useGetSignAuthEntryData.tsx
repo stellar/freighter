@@ -12,6 +12,7 @@ import { makeAccountActive } from "popup/ducks/accountServices";
 import { useDispatch } from "react-redux";
 import { Account } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
+import { signFlowAccountSelector } from "popup/helpers/account";
 
 interface ResolvedData {
   type: AppDataType.RESOLVED;
@@ -58,23 +59,12 @@ function useGetSignAuthEntryData(accountToSign?: string) {
       const networkDetails = appData.settings.networkDetails;
 
       // handle auto selecting the right account based on `accountToSign`
-      let currentAccount = allAccounts.find(
-        (account) => account.publicKey === publicKey,
-      );
-
-      allAccounts.forEach((account) => {
-        if (accountToSign) {
-          // does the user have the `accountToSign` somewhere in the accounts list?
-          if (account.publicKey === accountToSign) {
-            // if the `accountToSign` is found, but it isn't active, make it active
-            if (publicKey !== account.publicKey) {
-              reduxDispatch(makeAccountActive(account.publicKey));
-            }
-
-            // save the details of the `accountToSign`
-            currentAccount = account;
-          }
-        }
+      const currentAccount = signFlowAccountSelector({
+        allAccounts,
+        publicKey,
+        accountToSign,
+        setActiveAccount: (account: string) =>
+          reduxDispatch(makeAccountActive(account)),
       });
 
       if (!currentAccount) {
