@@ -605,7 +605,7 @@ export const getTokenPrices = async (tokens: string[]) => {
 };
 
 export const getDiscoverData = async () => {
-  const url = new URL(`${INDEXER_URL}/discover`);
+  const url = new URL(`${INDEXER_URL}/protocols`);
   const response = await fetch(url.href);
   const parsedResponse = (await response.json()) as {
     data: {
