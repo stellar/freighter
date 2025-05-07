@@ -795,6 +795,49 @@ describe("Account view", () => {
     });
   });
 
+  it("handles expired session unlock account routing", async () => {
+    jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+      Promise.resolve({
+        hasPrivateKey: true,
+        publicKey: "",
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+        allAccounts: mockAccounts,
+        bipPath: "bip-path",
+        tokenIdList: [],
+      }),
+    );
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "",
+            allAccounts: [],
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <ReactRouterDom.Routes>
+          <ReactRouterDom.Route path={ROUTES.account} element={<Account />} />
+          <ReactRouterDom.Route
+            path={ROUTES.unlockAccount}
+            element={<div data-testid="rerouted" />}
+          />
+        </ReactRouterDom.Routes>
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("rerouted")).toBeInTheDocument();
+    });
+  });
+
   it("handles abandoned onboarding in application started phrase step", async () => {
     jest.spyOn(AccountDataHooks, "useGetAccountData").mockReturnValue({
       state: {
@@ -829,49 +872,6 @@ describe("Account view", () => {
           <ReactRouterDom.Route path={ROUTES.account} element={<Account />} />
           <ReactRouterDom.Route
             path={ROUTES.welcome}
-            element={<div data-testid="rerouted" />}
-          />
-        </ReactRouterDom.Routes>
-      </Wrapper>,
-    );
-
-    await waitFor(() => {
-      expect(screen.getByTestId("rerouted")).toBeInTheDocument();
-    });
-  });
-
-  it("handles expired session unlock account routing", async () => {
-    jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
-      Promise.resolve({
-        hasPrivateKey: true,
-        publicKey: "",
-        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
-        allAccounts: mockAccounts,
-        bipPath: "bip-path",
-        tokenIdList: [],
-      }),
-    );
-
-    render(
-      <Wrapper
-        routes={[ROUTES.account]}
-        state={{
-          auth: {
-            error: null,
-            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
-            publicKey: "",
-            allAccounts: [],
-          },
-          settings: {
-            networkDetails: MAINNET_NETWORK_DETAILS,
-            networksList: DEFAULT_NETWORKS,
-          },
-        }}
-      >
-        <ReactRouterDom.Routes>
-          <ReactRouterDom.Route path={ROUTES.account} element={<Account />} />
-          <ReactRouterDom.Route
-            path={ROUTES.unlockAccount}
             element={<div data-testid="rerouted" />}
           />
         </ReactRouterDom.Routes>
