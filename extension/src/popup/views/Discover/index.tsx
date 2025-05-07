@@ -42,10 +42,14 @@ export const Discover = () => {
             {t("Popular Sites")}
           </Text>
         </div>
-        <div className="Discover__content">
+        <div className="Discover__content" data-testid="discover-content">
           {allowedDiscoverRows.length ? (
             allowedDiscoverRows.map((row) => (
-              <div className="Discover__row" key={row.name}>
+              <div
+                className="Discover__row"
+                key={row.name}
+                data-testid="discover-row"
+              >
                 <img
                   src={row.iconUrl}
                   alt={row.name}
@@ -66,6 +70,7 @@ export const Discover = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="Discover__row__button"
+                  data-testid="discover-row-button"
                 >
                   <Text as="div" size="sm" weight="semi-bold">
                     {t("Open")}
