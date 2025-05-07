@@ -17,7 +17,7 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "popup/App";
 import { signFlowAccountSelector } from "popup/helpers/account";
 
-interface ResolvedData {
+export interface ResolvedData {
   type: AppDataType.RESOLVED;
   scanResult: BlockAidScanTxResult | null;
   balances: AccountBalances;
