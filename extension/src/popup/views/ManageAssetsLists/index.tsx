@@ -1,20 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 import { NETWORKS } from "@shared/constants/stellar";
 import { AssetsListKey } from "@shared/constants/soroban/asset-list";
-import { settingsSelector } from "popup/ducks/settings";
-import { PublicKeyRoute } from "popup/Router";
 
 import { AssetLists } from "popup/components/manageAssetsLists/AssetLists";
 import { ModifyAssetList } from "popup/components/manageAssetsLists/ModifyAssetList";
 
 import "./styles.scss";
-import { getPathFromRoute } from "popup/helpers/route";
+import { getPathFromRoute, reRouteOnboarding } from "popup/helpers/route";
+import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
+import { RequestState } from "constants/request";
+import { Loading } from "popup/components/Loading";
+import { Notification } from "@stellar/design-system";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
 
 export interface AssetsListsData {
   url: string;
@@ -30,6 +33,7 @@ export interface SortedAssetsListsData {
 }
 
 export const ManageAssetsLists = () => {
+  const location = useLocation();
   const [selectedNetwork, setSelectedNetwork] = useState("" as AssetsListKey);
   const [assetsListsData, setAssetsListsData] = useState(
     [] as AssetsListsData[],
@@ -39,13 +43,18 @@ export const ManageAssetsLists = () => {
     disabled: [],
   } as SortedAssetsListsData);
   const [isLoading, setIsLoading] = useState(true);
-  const { assetsLists, networkDetails } = useSelector(settingsSelector);
   const { t } = useTranslation();
+  const { state, fetchData } = useGetAppData();
 
   useEffect(() => {
-    if (!selectedNetwork) {
+    if (
+      !selectedNetwork ||
+      state.state !== RequestState.SUCCESS ||
+      state.data.type !== AppDataType.RESOLVED
+    ) {
       return;
     }
+    const { assetsLists } = state.data.settings;
     const networkLists = assetsLists[selectedNetwork] || [];
     const listsArr: AssetsListsData[] = [];
 
@@ -72,7 +81,8 @@ export const ManageAssetsLists = () => {
     };
 
     fetchLists();
-  }, [selectedNetwork, assetsLists]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedNetwork, state.state]);
 
   useEffect(() => {
     if (assetsListsData.length) {
@@ -93,12 +103,69 @@ export const ManageAssetsLists = () => {
   }, [assetsListsData]);
 
   useEffect(() => {
-    setSelectedNetwork(
-      networkDetails.network === NETWORKS.TESTNET
-        ? NETWORKS.TESTNET
-        : NETWORKS.PUBLIC,
+    if (
+      state.state === RequestState.SUCCESS &&
+      state.data.type === AppDataType.RESOLVED
+    ) {
+      const { networkDetails } = state.data.settings;
+      setSelectedNetwork(
+        networkDetails.network === NETWORKS.TESTNET
+          ? NETWORKS.TESTNET
+          : NETWORKS.PUBLIC,
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.state]);
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (
+    state.state === RequestState.IDLE ||
+    state.state === RequestState.LOADING
+  ) {
+    return <Loading />;
+  }
+
+  if (state.state === RequestState.ERROR) {
+    return (
+      <div className="AddAsset__fetch-fail">
+        <Notification
+          variant="error"
+          title={t("Failed to fetch your account data.")}
+        >
+          {t("Your account data could not be fetched at this time.")}
+        </Notification>
+      </div>
     );
-  }, [networkDetails]);
+  }
+
+  if (state.data?.type === AppDataType.REROUTE) {
+    if (state.data.shouldOpenTab) {
+      openTab(newTabHref(state.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${state.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  reRouteOnboarding({
+    type: state.data.type,
+    applicationState: state.data.account.applicationState,
+    state: state.state,
+  });
+
+  const { assetsLists } = state.data.settings;
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedNetwork(e.target.value as AssetsListKey);
@@ -115,25 +182,21 @@ export const ManageAssetsLists = () => {
         <Route
           index
           element={
-            <PublicKeyRoute>
-              <AssetLists
-                sortedAssetsListsData={sortedAssetsListsData}
-                handleSelectChange={handleSelectChange}
-                selectedNetwork={selectedNetwork}
-                isLoading={isLoading}
-              />
-            </PublicKeyRoute>
+            <AssetLists
+              sortedAssetsListsData={sortedAssetsListsData}
+              handleSelectChange={handleSelectChange}
+              selectedNetwork={selectedNetwork}
+              isLoading={isLoading}
+            />
           }
         ></Route>
         <Route
           path={addNetworkPath}
           element={
-            <PublicKeyRoute>
-              <ModifyAssetList
-                assetsListsData={assetsListsData}
-                selectedNetwork={selectedNetwork}
-              />
-            </PublicKeyRoute>
+            <ModifyAssetList
+              assetsListsData={assetsListsData}
+              selectedNetwork={selectedNetwork}
+            />
           }
         ></Route>
       </Routes>

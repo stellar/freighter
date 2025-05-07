@@ -1,14 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Notification, Button, Toggle, Loader } from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
 
-import {
-  saveExperimentalFeatures,
-  settingsSelector,
-} from "popup/ducks/settings";
+import { saveExperimentalFeatures } from "popup/ducks/settings";
 import { SettingsState } from "@shared/api/types";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -18,6 +15,12 @@ import IconExperimental from "popup/assets/icon-settings-experimental.svg";
 
 import "./styles.scss";
 import { AppDispatch } from "popup/App";
+import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
+import { RequestState } from "constants/request";
+import { Loading } from "popup/components/Loading";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 interface AdvancedSettingFeatureParams {
   title: string;
@@ -65,16 +68,66 @@ const AdvancedSettingFeature = ({
 
 export const AdvancedSettings = () => {
   const { t } = useTranslation();
+  const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const [isUnderstood, setIsUnderstood] = useState(false);
+  const { state, fetchData } = useGetAppData();
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (
+    state.state === RequestState.IDLE ||
+    state.state === RequestState.LOADING
+  ) {
+    return <Loading />;
+  }
+
+  if (state.state === RequestState.ERROR) {
+    return (
+      <div className="AddAsset__fetch-fail">
+        <Notification
+          variant="error"
+          title={t("Failed to fetch your account data.")}
+        >
+          {t("Your account data could not be fetched at this time.")}
+        </Notification>
+      </div>
+    );
+  }
+
+  if (state.data?.type === AppDataType.REROUTE) {
+    if (state.data.shouldOpenTab) {
+      openTab(newTabHref(state.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${state.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  reRouteOnboarding({
+    type: state.data.type,
+    applicationState: state.data.account.applicationState,
+    state: state.state,
+  });
 
   const {
     isExperimentalModeEnabled,
     isHashSigningEnabled,
     experimentalFeaturesState,
     isNonSSLEnabled,
-  } = useSelector(settingsSelector);
+  } = state.data.settings;
 
   interface SettingValues {
     isExperimentalModeEnabledValue: boolean;

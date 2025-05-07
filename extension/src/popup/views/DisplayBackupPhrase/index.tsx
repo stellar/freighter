@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { Button, Input } from "@stellar/design-system";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Button, Input, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Field, Form, Formik } from "formik";
 
 import { showBackupPhrase } from "@shared/api/internal";
-import { publicKeySelector } from "popup/ducks/accountServices";
 
 import { ROUTES } from "popup/constants/routes";
-import { navigateTo } from "popup/helpers/navigate";
+import { navigateTo, openTab } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -21,14 +19,20 @@ import { View } from "popup/basics/layout/View";
 import { BackupPhraseWarningMessage } from "popup/components/WarningMessages";
 
 import "./styles.scss";
+import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
+import { RequestState } from "constants/request";
+import { Loading } from "popup/components/Loading";
+import { newTabHref } from "helpers/urls";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const DisplayBackupPhrase = () => {
   const { t } = useTranslation();
+  const location = useLocation();
   const navigate = useNavigate();
-  const publicKey = useSelector(publicKeySelector);
   const [errorMessage, setErrorMessage] = useState("");
   const [isPhraseUnlocked, setIsPhraseUnlocked] = useState(false);
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
+  const { state, fetchData } = useGetAppData();
 
   useEffect(() => {
     emitMetric(
@@ -37,6 +41,56 @@ export const DisplayBackupPhrase = () => {
         : METRIC_NAMES.viewUnlockBackupPhrase,
     );
   }, [isPhraseUnlocked]);
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (
+    state.state === RequestState.IDLE ||
+    state.state === RequestState.LOADING
+  ) {
+    return <Loading />;
+  }
+
+  if (state.state === RequestState.ERROR) {
+    return (
+      <div className="AddAsset__fetch-fail">
+        <Notification
+          variant="error"
+          title={t("Failed to fetch your account data.")}
+        >
+          {t("Your account data could not be fetched at this time.")}
+        </Notification>
+      </div>
+    );
+  }
+
+  if (state.data?.type === AppDataType.REROUTE) {
+    if (state.data.shouldOpenTab) {
+      openTab(newTabHref(state.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${state.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  reRouteOnboarding({
+    type: state.data.type,
+    applicationState: state.data.account.applicationState,
+    state: state.state,
+  });
+
+  const { publicKey } = state.data.account;
 
   interface FormValues {
     password: string;

@@ -4,25 +4,23 @@ import {
   Button,
   Icon,
   Loader,
+  Notification,
   Text,
 } from "@stellar/design-system";
 import BigNumber from "bignumber.js";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { StellarToml } from "stellar-sdk";
 
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
-import { parsedSearchParam, TokenToAdd } from "helpers/urls";
+import { newTabHref, parsedSearchParam, TokenToAdd } from "helpers/urls";
 
 import { rejectToken, addToken } from "popup/ducks/access";
-import {
-  isNonSSLEnabledSelector,
-  settingsNetworkDetailsSelector,
-} from "popup/ducks/settings";
+import { isNonSSLEnabledSelector } from "popup/ducks/settings";
 import { useSetupAddTokenFlow } from "popup/helpers/useSetupAddTokenFlow";
 import {
   WarningMessageVariant,
@@ -41,6 +39,10 @@ import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 
 import "./styles.scss";
+import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
+import { RequestState } from "constants/request";
+import { openTab } from "popup/helpers/navigate";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const AddToken = () => {
   const location = useLocation();
@@ -55,11 +57,10 @@ export const AddToken = () => {
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
   });
+  const { state, fetchData } = useGetAppData();
 
   const { t } = useTranslation();
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { networkName, networkPassphrase } = networkDetails;
 
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
   const [assetIcon, setAssetIcon] = useState<string | undefined>(undefined);
@@ -142,9 +143,16 @@ export const AddToken = () => {
   }, [contractId, handleTokenLookup]);
 
   useEffect(() => {
-    if (!assetCode || !assetIssuer || blockaidData) {
+    if (
+      !assetCode ||
+      !assetIssuer ||
+      blockaidData ||
+      state.state !== RequestState.SUCCESS ||
+      state.data.type !== "resolved"
+    ) {
       return;
     }
+    const { networkDetails } = state.data.settings;
 
     const getBlockaidData = async () => {
       const scannedAsset = await scanAsset(
@@ -161,12 +169,20 @@ export const AddToken = () => {
     };
 
     getBlockaidData();
-  }, [assetCode, assetIssuer, blockaidData, networkDetails]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assetCode, assetIssuer, blockaidData, state.state]);
 
   useEffect(() => {
-    if (!assetCode || !assetIssuer || assetIcon !== undefined) {
+    if (
+      !assetCode ||
+      !assetIssuer ||
+      assetIcon !== undefined ||
+      state.state !== RequestState.SUCCESS ||
+      state.data.type !== "resolved"
+    ) {
       return;
     }
+    const { networkDetails } = state.data.settings;
 
     const getAssetIcon = async () => {
       const iconUrl = await getIconUrlFromIssuer({
@@ -179,7 +195,8 @@ export const AddToken = () => {
     };
 
     getAssetIcon();
-  }, [assetCode, assetIssuer, assetIcon, networkDetails]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assetCode, assetIssuer, assetIcon, state.state]);
 
   useEffect(() => {
     if (assetCode && assetIssuer && !assetDomain) {
@@ -211,6 +228,64 @@ export const AddToken = () => {
 
     getAssetTomlName();
   }, [assetDomain, assetCode, assetIssuer, assetTomlName]);
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (
+    state.state === RequestState.IDLE ||
+    state.state === RequestState.LOADING
+  ) {
+    return (
+      <React.Fragment>
+        <View.Content>
+          <div className="AddToken__loader">
+            <Loader size="5rem" />
+          </div>
+        </View.Content>
+      </React.Fragment>
+    );
+  }
+
+  if (state.state === RequestState.ERROR) {
+    return (
+      <div className="AddAsset__fetch-fail">
+        <Notification
+          variant="error"
+          title={t("Failed to fetch your account data.")}
+        >
+          {t("Your account data could not be fetched at this time.")}
+        </Notification>
+      </div>
+    );
+  }
+
+  if (state.data?.type === AppDataType.REROUTE) {
+    if (state.data.shouldOpenTab) {
+      openTab(newTabHref(state.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${state.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  reRouteOnboarding({
+    type: state.data.type,
+    applicationState: state.data.account.applicationState,
+    state: state.state,
+  });
+
+  const { networkPassphrase, networkName } = state.data.settings.networkDetails;
 
   if (entryNetworkPassphrase && entryNetworkPassphrase !== networkPassphrase) {
     return (

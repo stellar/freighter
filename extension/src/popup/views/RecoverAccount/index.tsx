@@ -10,6 +10,7 @@ import {
   Button,
   Text,
   Toggle,
+  Notification,
 } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -34,14 +35,12 @@ import {
   confirmPassword as confirmPasswordValidator,
   termsOfUse as termsofUseValidator,
 } from "popup/helpers/validators";
-import {
-  applicationStateSelector,
-  authErrorSelector,
-  publicKeySelector,
-  recoverAccount,
-} from "popup/ducks/accountServices";
+import { authErrorSelector, recoverAccount } from "popup/ducks/accountServices";
 
 import "./styles.scss";
+import { RequestState } from "constants/request";
+import { Loading } from "popup/components/Loading";
+import { useRecoverAccountData } from "./hooks/useGetRecoverAccountData";
 
 interface PhraseInputProps {
   phraseInput: string;
@@ -102,12 +101,9 @@ const buildMnemonicPhrase = (mnemonicPhraseArr: string[]) =>
 
 export const RecoverAccount = () => {
   const { t } = useTranslation();
-  const publicKey = useSelector(publicKeySelector);
-  const applicationState = useSelector(applicationStateSelector);
 
   const authError = useSelector(authErrorSelector);
   const navigate = useNavigate();
-  const publicKeyRef = useRef(publicKey);
   const RecoverAccountSchema = YupObject().shape({
     password: passwordValidator,
     confirmPassword: confirmPasswordValidator,
@@ -121,29 +117,26 @@ export const RecoverAccount = () => {
   const [mnemonicPhraseArr, setMnemonicPhraseArr] = useState([] as string[]);
   const [password, setPassword] = useState("");
   const [pastedValues, setPastedValues] = useState<string[]>([]);
-
-  const isShowingOverwriteWarning =
-    applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
+  const { state, fetchData } = useRecoverAccountData();
 
   const handleConfirm = (values: FormValues) => {
     setPassword(values.password);
   };
 
-  const handleSubmit = async () => {
-    await dispatch(
-      recoverAccount({
-        password,
-        mnemonicPhrase: buildMnemonicPhrase(mnemonicPhraseArr),
-        isOverwritingAccount: isShowingOverwriteWarning,
-      }),
-    );
-  };
+  const publicKeyRef = useRef(
+    state.state === RequestState.SUCCESS && state.data.account.publicKey,
+  );
 
   useEffect(() => {
-    if (publicKey && publicKey !== publicKeyRef.current) {
+    if (
+      state.state === RequestState.SUCCESS &&
+      state.data.account.publicKey &&
+      state.data.account.publicKey !== publicKeyRef.current
+    ) {
       navigateTo(ROUTES.recoverAccountSuccess, navigate);
     }
-  }, [publicKey, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate, publicKeyRef, state.state]);
 
   useEffect(() => {
     const phraseInputsArr: string[] = [];
@@ -165,11 +158,55 @@ export const RecoverAccount = () => {
     }, 150);
   }, [isLongPhrase]);
 
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (
+    state.state === RequestState.IDLE ||
+    state.state === RequestState.LOADING
+  ) {
+    return <Loading />;
+  }
+
+  if (state.state === RequestState.ERROR) {
+    return (
+      <div className="AddAsset__fetch-fail">
+        <Notification
+          variant="error"
+          title={t("Failed to fetch your account data.")}
+        >
+          {t("Your account data could not be fetched at this time.")}
+        </Notification>
+      </div>
+    );
+  }
+
+  const { applicationState } = state.data.account;
+
+  const isShowingOverwriteWarning =
+    applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
+
   const handleMnemonicInputChange = (value: string, i: number) => {
     const arr = [...mnemonicPhraseArr];
     arr[i] = value;
 
     setMnemonicPhraseArr(arr);
+  };
+
+  const handleSubmit = async () => {
+    await dispatch(
+      recoverAccount({
+        password,
+        mnemonicPhrase: buildMnemonicPhrase(mnemonicPhraseArr),
+        isOverwritingAccount: isShowingOverwriteWarning,
+      }),
+    );
+    await fetchData();
   };
 
   const handlePaste = async (e: React.ClipboardEvent<HTMLInputElement>) => {

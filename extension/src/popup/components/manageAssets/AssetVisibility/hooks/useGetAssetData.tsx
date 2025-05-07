@@ -1,6 +1,5 @@
 import { useReducer } from "react";
 
-import { NetworkDetails } from "@shared/constants/stellar";
 import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
@@ -14,41 +13,48 @@ import {
   getHiddenAssets,
   changeAssetVisibility as internalChangeAssetVisibility,
 } from "@shared/api/internal";
+import { AppDataType, NeedsReRoute } from "helpers/hooks/useGetAppData";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
-export interface AssetVisibilityData {
+export interface ResolvedAssetVisibilityData {
+  type: AppDataType.RESOLVED;
   balances: AccountBalances;
   domains: ManageAssetCurrency[];
   isManagingAssets: boolean;
   hiddenAssets: Record<IssuerKey, AssetVisibility>;
+  publicKey: string;
+  applicationState: APPLICATION_STATE;
 }
 
-function useGetAssetData(
-  publicKey: string,
-  networkDetails: NetworkDetails,
-  options: {
-    isMainnet: boolean;
-    showHidden: boolean;
-    includeIcons: boolean;
-  },
-) {
+export type AssetVisibilityData = NeedsReRoute | ResolvedAssetVisibilityData;
+
+function useGetAssetData(options: {
+  showHidden: boolean;
+  includeIcons: boolean;
+}) {
   const [state, dispatch] = useReducer(
     reducer<AssetVisibilityData, unknown>,
     initialState,
   );
   const { fetchData: fetchDomainsWithBalances } =
-    useGetAssetDomainsWithBalances(publicKey, networkDetails, options);
+    useGetAssetDomainsWithBalances(options);
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const domainsResult = await fetchDomainsWithBalances();
-      const { hiddenAssets, error: hiddenAssetError } = await getHiddenAssets({
-        activePublicKey: publicKey,
-      });
-
       if (isError<AssetDomains>(domainsResult)) {
         throw new Error(domainsResult.message);
       }
+
+      if (domainsResult.type === AppDataType.REROUTE) {
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload: domainsResult });
+        return domainsResult;
+      }
+
+      const { hiddenAssets, error: hiddenAssetError } = await getHiddenAssets({
+        activePublicKey: domainsResult.publicKey,
+      });
 
       if (hiddenAssetError) {
         throw new Error(hiddenAssetError);
@@ -57,7 +63,9 @@ function useGetAssetData(
       const payload = {
         ...domainsResult,
         hiddenAssets,
-      } as AssetVisibilityData;
+        type: AppDataType.RESOLVED,
+        applicationState: domainsResult.applicationState,
+      } as ResolvedAssetVisibilityData;
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
@@ -70,9 +78,11 @@ function useGetAssetData(
   const changeAssetVisibility = async ({
     issuer,
     visibility,
+    publicKey,
   }: {
     issuer: IssuerKey;
     visibility: AssetVisibility;
+    publicKey: string;
   }) => {
     const { hiddenAssets, error } = await internalChangeAssetVisibility({
       assetIssuer: issuer,

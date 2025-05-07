@@ -1,26 +1,25 @@
 import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { Button, Icon, Loader } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
-import {
-  settingsNetworkDetailsSelector,
-  settingsSorobanSupportedSelector,
-} from "popup/ducks/settings";
+import { settingsSorobanSupportedSelector } from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
-import { publicKeySelector } from "popup/ducks/accountServices";
 
 import { RequestState } from "constants/request";
 import { useGetAssetDomainsWithBalances } from "helpers/hooks/useGetAssetDomainsWithBalances";
-import { isMainnet } from "helpers/stellar";
 
 import { ManageAssetRows } from "../ManageAssetRows";
 import { SelectAssetRows } from "../SelectAssetRows";
 
 import "./styles.scss";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const ChooseAsset = ({
   goBack,
@@ -30,21 +29,15 @@ export const ChooseAsset = ({
   showHideAssets?: boolean;
 }) => {
   const { t } = useTranslation();
+  const location = useLocation();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
-  const publicKey = useSelector(publicKeySelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
 
-  const { state: domainState, fetchData } = useGetAssetDomainsWithBalances(
-    publicKey,
-    networkDetails,
-    {
-      isMainnet: isMainnet(networkDetails),
-      showHidden: false,
-      includeIcons: true,
-    },
-  );
+  const { state: domainState, fetchData } = useGetAssetDomainsWithBalances({
+    showHidden: false,
+    includeIcons: true,
+  });
 
   const isLoading =
     domainState.state === RequestState.IDLE ||
@@ -66,6 +59,29 @@ export const ChooseAsset = ({
         </div>
       </View.Content>
     );
+  }
+
+  const hasError = domainState.state === RequestState.ERROR;
+  if (domainState.data?.type === AppDataType.REROUTE) {
+    if (domainState.data.shouldOpenTab) {
+      openTab(newTabHref(domainState.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${domainState.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (!hasError) {
+    reRouteOnboarding({
+      type: domainState.data.type,
+      applicationState: domainState.data?.applicationState,
+      state: domainState.state,
+    });
   }
 
   return (

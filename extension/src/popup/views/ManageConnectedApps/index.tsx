@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector, useDispatch } from "react-redux";
-import { Button, Select } from "@stellar/design-system";
+import { useDispatch } from "react-redux";
+import { Button, Notification, Select } from "@stellar/design-system";
 
-import { saveAllowList, settingsSelector } from "popup/ducks/settings";
-import { publicKeySelector } from "popup/ducks/accountServices";
+import { saveAllowList } from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
@@ -14,50 +13,115 @@ import { RemoveButton } from "popup/basics/buttons/RemoveButton";
 import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
+import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
+import { RequestState } from "constants/request";
+import { Loading } from "popup/components/Loading";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { Navigate, useLocation } from "react-router-dom";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const ManageConnectedApps = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
-  const { allowList, networkDetails, networksList } =
-    useSelector(settingsSelector);
-  const publicKey = useSelector(publicKeySelector);
-  const [selectedNetworkName, setSelectedNetworkName] = useState(
-    networkDetails.networkName,
-  );
-  const [selectedAllowlist, setSelectedAllowlist] = useState(
-    allowList?.[networkDetails.networkName]?.[publicKey] || [],
-  );
+  const location = useLocation();
+  const [selectedNetworkName, setSelectedNetworkName] = useState("");
+  const [selectedAllowlist, setSelectedAllowlist] = useState<string[]>([]);
+
+  const { state, fetchData } = useGetAppData();
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedNetworkName(e.target.value);
   };
 
-  const handleRemove = (domainToRemove: string) => {
-    dispatch(
+  const handleRemove = async (domainToRemove: string) => {
+    await dispatch(
       saveAllowList({
         domain: domainToRemove,
         networkName: selectedNetworkName,
       }),
     );
+    await fetchData(false);
   };
 
-  const handleRemoveAll = () => {
-    for (let i = 0; i < selectedAllowlist.length; i += 1) {
-      const domain = selectedAllowlist[i];
-      dispatch(saveAllowList({ domain, networkName: selectedNetworkName }));
+  const handleRemoveAll = async () => {
+    for (const domain of selectedAllowlist) {
+      await dispatch(
+        saveAllowList({ domain, networkName: selectedNetworkName }),
+      );
     }
+    await fetchData(false);
   };
 
   useEffect(() => {
-    setSelectedAllowlist(allowList?.[selectedNetworkName]?.[publicKey] || []);
-  }, [
-    setSelectedAllowlist,
-    allowList,
-    publicKey,
-    selectedNetworkName,
-    networkDetails,
-    networksList,
-  ]);
+    if (
+      state.state === RequestState.SUCCESS &&
+      state.data.type === AppDataType.RESOLVED
+    ) {
+      const { publicKey } = state.data.account;
+      const { allowList, networkDetails } = state.data.settings;
+
+      setSelectedAllowlist(
+        allowList?.[selectedNetworkName || networkDetails.networkName]?.[
+          publicKey
+        ] || [],
+      );
+      if (!selectedNetworkName) {
+        setSelectedNetworkName(networkDetails.networkName);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setSelectedAllowlist, selectedNetworkName, state.state]);
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData(false);
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (
+    state.state === RequestState.IDLE ||
+    state.state === RequestState.LOADING
+  ) {
+    return <Loading />;
+  }
+
+  if (state.state === RequestState.ERROR) {
+    return (
+      <div className="AddAsset__fetch-fail">
+        <Notification
+          variant="error"
+          title={t("Failed to fetch your account data.")}
+        >
+          {t("Your account data could not be fetched at this time.")}
+        </Notification>
+      </div>
+    );
+  }
+
+  if (state.data?.type === AppDataType.REROUTE) {
+    if (state.data.shouldOpenTab) {
+      openTab(newTabHref(state.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${state.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  reRouteOnboarding({
+    type: state.data.type,
+    applicationState: state.data.account.applicationState,
+    state: state.state,
+  });
+
+  const { networksList } = state.data.settings;
 
   return (
     <React.Fragment>
