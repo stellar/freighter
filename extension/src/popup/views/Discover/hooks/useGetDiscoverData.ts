@@ -1,4 +1,5 @@
 import { useReducer } from "react";
+import { captureException } from "@sentry/browser";
 
 import { RequestState } from "constants/request";
 import { initialState, reducer } from "helpers/request";
@@ -27,6 +28,7 @@ const useGetDiscoverData = () => {
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
+      captureException(`Error loading discover protocols - ${error}`);
       return error;
     }
   };

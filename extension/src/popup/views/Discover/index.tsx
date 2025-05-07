@@ -5,6 +5,7 @@ import { Icon, Text } from "@stellar/design-system";
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { Loading } from "popup/components/Loading";
+import { DiscoverData } from "@shared/api/types";
 
 import { RequestState, useGetDiscoverData } from "./hooks/useGetDiscoverData";
 import "./styles.scss";
@@ -23,13 +24,14 @@ export const Discover = () => {
   const { state, data } = discoverData;
   const isLoading =
     state === RequestState.IDLE || state === RequestState.LOADING;
-  const discoverRowsData = data?.discoverData || [];
-  const allowedDiscoverRows = discoverRowsData.filter(
-    (row) => !row.isBlacklisted,
-  );
+  let allowedDiscoverRows = [] as DiscoverData;
 
   if (isLoading) {
     return <Loading />;
+  }
+
+  if (state !== RequestState.ERROR) {
+    allowedDiscoverRows = data.discoverData.filter((row) => !row.isBlacklisted);
   }
 
   return (

@@ -609,17 +609,15 @@ export const getDiscoverData = async () => {
   const response = await fetch(url.href);
   const parsedResponse = (await response.json()) as {
     data: {
-      protocols: {
-        description: string;
-        icon_url: string;
-        name: string;
-        website_url: string;
-        tags: string[];
-        is_blacklisted: boolean;
-      }[];
-    };
+      description: string;
+      icon_url: string;
+      name: string;
+      website_url: string;
+      tags: string[];
+      is_blacklisted: boolean;
+    }[];
   };
-  if (!response.ok || !parsedResponse.data.protocols) {
+  if (!response.ok || !parsedResponse.data) {
     const _err = JSON.stringify(parsedResponse);
     captureException(
       `Failed to fetch discover entries - ${response.status}: ${response.statusText}`,
@@ -627,7 +625,7 @@ export const getDiscoverData = async () => {
     throw new Error(_err);
   }
 
-  return parsedResponse.data.protocols.map((entry) => ({
+  return parsedResponse.data.map((entry) => ({
     description: entry.description,
     iconUrl: entry.icon_url,
     name: entry.name,
