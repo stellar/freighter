@@ -29,6 +29,7 @@ import { getBaseAccount, sortBalances } from "popup/helpers/account";
 import { isContractId } from "popup/helpers/soroban";
 import { settingsSelector } from "popup/ducks/settings";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
+import { hasPrivateKeySelector } from "popup/ducks/accountServices";
 
 export interface TxDetailsData {
   destAssetIconUrl: string;
@@ -38,6 +39,7 @@ export interface TxDetailsData {
   destinationBalances: AccountBalances;
   scanResult?: BlockAidScanTxResult | null;
   transactionXdr: string;
+  hasPrivateKey: boolean;
 }
 
 interface ScanClassic {
@@ -192,6 +194,7 @@ function useGetTxDetailsData(
     includeIcons: boolean;
   },
 ) {
+  const hasPrivateKey = useSelector(hasPrivateKeySelector);
   const [state, dispatch] = useReducer(
     reducer<TxDetailsData, unknown>,
     initialState,
@@ -255,6 +258,7 @@ function useGetTxDetailsData(
       );
 
       const payload = {
+        hasPrivateKey,
         balances: balancesResult,
         destinationBalances: {
           ...destBalancesResult,
