@@ -1914,8 +1914,7 @@ export const simulateTransaction = async (args: {
     body: JSON.stringify({
       xdr,
 
-      network_url:
-        "https://rough-fragrant-bird.stellar-mainnet.quiknode.pro/980bd2f552c04a7a30ad4503caae3c354213623e",
+      network_url: networkDetails.sorobanRpcUrl,
 
       network_passphrase: networkDetails.networkPassphrase,
     }),
