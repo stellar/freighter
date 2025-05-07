@@ -142,6 +142,7 @@
   "digits after the decimal allowed": "digits after the decimal allowed",
   "Disabled": "Disabled",
   "Disconnect all": "Disconnect all",
+  "Discover": "Discover",
   "Do this later": "Do this later",
   "Done": "Done",
   "Double check the domain name": {
@@ -342,6 +343,7 @@
   },
   "One or more operations in this transaction failed": "One or more operations in this transaction failed.",
   "Only accounts ready for migration will be migrated": "Only accounts ready for migration will be migrated.",
+  "Open": "Open",
   "Operation": "Operation",
   "Operations": "Operations",
   "Optional": "Optional",
@@ -357,6 +359,7 @@
   "Please note the following message": "Please note the following message",
   "Please select a different network before removing it": "Please select a different network before removing it.",
   "Please select each word in the same order you have them noted to confirm you got them right": "Please select each word in the same order you have them noted to confirm you got them right.",
+  "Popular Sites": "Popular Sites",
   "powered by": "powered by",
   "Powered by ": "Powered by ",
   "Pre Auth Transaction": "Pre Auth Transaction",
@@ -464,6 +467,7 @@
       " You may enable connection to domains that do not use an SSL certificate in Settings &gt; Security &gt; Advanced Settings": "The website <1>{url}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate by default. You may enable connection to domains that do not use an SSL certificate in Settings &gt; Security &gt; Advanced Settings."
     }
   },
+  "There are no sites to display at this moment": "There are no sites to display at this moment.",
   "These assets are not on any of your lists": {
     " Proceed with caution before adding": "These assets are not on any of your lists. Proceed with caution before adding."
   },
