@@ -431,8 +431,13 @@ export const freighterApiMessageListener = (
 
   const submitAuthEntry = async () => {
     try {
-      const { entryXdr, accountToSign, address, networkPassphrase } =
-        request as ExternalRequestAuthEntry;
+      const {
+        apiVersion,
+        entryXdr,
+        accountToSign,
+        address,
+        networkPassphrase,
+      } = request as ExternalRequestAuthEntry;
 
       const { tab, url: tabUrl = "" } = sender;
       const domain = getUrlHostname(tabUrl);
@@ -474,6 +479,13 @@ export const freighterApiMessageListener = (
         }
         const response = (signedAuthEntry: string) => {
           if (signedAuthEntry) {
+            if (apiVersion && semver.gte(apiVersion, "4.2.0")) {
+              resolve({
+                signedAuthEntry:
+                  Buffer.from(signedAuthEntry).toString("base64"),
+              });
+              return;
+            }
             resolve({ signedAuthEntry });
           }
 

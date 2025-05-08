@@ -147,6 +147,7 @@ export interface ExternalRequestBlob extends ExternalRequestBase {
 }
 
 export interface ExternalRequestAuthEntry extends ExternalRequestBase {
+  apiVersion: string;
   entryXdr: string;
 }
 
