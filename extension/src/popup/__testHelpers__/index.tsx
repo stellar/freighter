@@ -32,7 +32,7 @@ const rootReducer = combineReducers({
   cache,
 });
 
-const makeDummyStore = (state: any) =>
+export const makeDummyStore = (state: any) =>
   configureStore({
     reducer: rootReducer,
     preloadedState: state,
