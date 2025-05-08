@@ -104,11 +104,11 @@ export const freighterApiMessageListener = (
     });
 
     return new Promise((resolve) => {
-      const response = (url?: string) => {
+      const response = (url?: string, publicKey?: string) => {
         // queue it up, we'll let user confirm the url looks okay and then we'll send publicKey
         // if we're good, of course
         if (url === tabUrl) {
-          resolve({ publicKey: publicKeySelector(sessionStore.getState()) });
+          resolve({ publicKey });
         }
 
         resolve({
