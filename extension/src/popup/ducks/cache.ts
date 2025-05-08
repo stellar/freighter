@@ -34,7 +34,7 @@ const initialState: InitialState = {
   tokenLists: [],
 };
 
-const balancesSlice = createSlice({
+const cacheSlice = createSlice({
   name: "balances",
   initialState,
   reducers: {
@@ -68,22 +68,22 @@ const balancesSlice = createSlice({
   },
 });
 
-export const balancesSelector = (state: { balances: InitialState }) =>
-  state.balances.balanceData;
-export const iconsSelector = (state: { balances: InitialState }) =>
-  state.balances.icons;
-export const homeDomainsSelector = (state: { balances: InitialState }) =>
-  state.balances.homeDomains;
-export const tokensListsSelector = (state: { balances: InitialState }) =>
-  state.balances.tokenLists;
+export const balancesSelector = (state: { cache: InitialState }) =>
+  state.cache.balanceData;
+export const iconsSelector = (state: { cache: InitialState }) =>
+  state.cache.icons;
+export const homeDomainsSelector = (state: { cache: InitialState }) =>
+  state.cache.homeDomains;
+export const tokensListsSelector = (state: { cache: InitialState }) =>
+  state.cache.tokenLists;
 export const selectBalancesByPublicKey = (publicKey: string) =>
   createSelector(balancesSelector, (balances) => balances[publicKey]);
 
-export const { reducer } = balancesSlice;
+export const { reducer } = cacheSlice;
 export const {
   clearAll,
   saveBalancesForAccount,
   saveIconsForBalances,
   saveDomainForIssuer,
   saveTokenLists,
-} = balancesSlice.actions;
+} = cacheSlice.actions;
