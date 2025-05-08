@@ -27,7 +27,7 @@ import {
   saveIconsForBalances,
   saveTokenLists,
   tokensListsSelector,
-} from "popup/ducks/balances";
+} from "popup/ducks/cache";
 
 export interface AccountBalances {
   balances: AssetType[];

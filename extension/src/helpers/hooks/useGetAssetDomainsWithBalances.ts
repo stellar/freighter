@@ -19,7 +19,7 @@ import { AccountBalances, useGetBalances } from "./useGetBalances";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import { AppDataType, NeedsReRoute, useGetAppData } from "./useGetAppData";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { homeDomainsSelector, saveDomainForIssuer } from "popup/ducks/balances";
+import { homeDomainsSelector, saveDomainForIssuer } from "popup/ducks/cache";
 import { AppDispatch } from "popup/App";
 
 export interface ResolvedAssetDomains {
