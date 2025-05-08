@@ -1,23 +1,32 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit";
 import { AccountBalancesInterface } from "@shared/api/types/backend-api";
 
+type AssetCode = string;
+type PublicKey = string;
+type IconUrl = string;
+type HomeDomain = string;
+
 interface SaveBalancesPayload {
-  publicKey: string;
+  publicKey: PublicKey;
   balances: AccountBalancesInterface;
 }
 
 interface SaveIconsPayload {
-  icons: Record<string, string>;
+  icons: Record<AssetCode, IconUrl>;
 }
 
+type SaveDomainPayload = Record<PublicKey, HomeDomain>;
+
 interface InitialState {
-  balanceData: Record<string, AccountBalancesInterface>;
-  icons: Record<string, string>;
+  balanceData: Record<PublicKey, AccountBalancesInterface>;
+  icons: Record<AssetCode, IconUrl>;
+  homeDomains: Record<PublicKey, HomeDomain>;
 }
 
 const initialState: InitialState = {
   balanceData: {},
   icons: {},
+  homeDomains: {},
 };
 
 const balancesSlice = createSlice({
@@ -27,6 +36,7 @@ const balancesSlice = createSlice({
     clearAll(state) {
       state.balanceData = {};
       state.icons = {};
+      state.homeDomains = {};
     },
     saveBalancesForAccount(state, action: { payload: SaveBalancesPayload }) {
       state.balanceData = {
@@ -40,6 +50,12 @@ const balancesSlice = createSlice({
         ...action.payload.icons,
       };
     },
+    saveDomainForIssuer(state, action: { payload: SaveDomainPayload }) {
+      state.homeDomains = {
+        ...state.homeDomains,
+        ...action.payload,
+      };
+    },
   },
 });
 
@@ -47,9 +63,15 @@ export const balancesSelector = (state: { balances: InitialState }) =>
   state.balances.balanceData;
 export const iconsSelector = (state: { balances: InitialState }) =>
   state.balances.icons;
+export const homeDomainsSelector = (state: { balances: InitialState }) =>
+  state.balances.homeDomains;
 export const selectBalancesByPublicKey = (publicKey: string) =>
   createSelector(balancesSelector, (balances) => balances[publicKey]);
 
 export const { reducer } = balancesSlice;
-export const { clearAll, saveBalancesForAccount, saveIconsForBalances } =
-  balancesSlice.actions;
+export const {
+  clearAll,
+  saveBalancesForAccount,
+  saveIconsForBalances,
+  saveDomainForIssuer,
+} = balancesSlice.actions;

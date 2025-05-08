@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { Balance } from "@shared/api/types";
@@ -19,6 +19,8 @@ import { AccountBalances, useGetBalances } from "./useGetBalances";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import { AppDataType, NeedsReRoute, useGetAppData } from "./useGetAppData";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { homeDomainsSelector, saveDomainForIssuer } from "popup/ducks/balances";
+import { AppDispatch } from "popup/App";
 
 export interface ResolvedAssetDomains {
   type: AppDataType.RESOLVED;
@@ -36,11 +38,13 @@ export function useGetAssetDomainsWithBalances(getBalancesOptions: {
   showHidden: boolean;
   includeIcons: boolean;
 }) {
+  const reduxDispatch = useDispatch<AppDispatch>();
   const isSwap = useIsSwap();
   const isSoroswapEnabled = useIsSoroswapEnabled();
   const { assetSelect, soroswapTokens } = useSelector(
     transactionSubmissionSelector,
   );
+  const homeDomains = useSelector(homeDomainsSelector);
   const isManagingAssets = assetSelect.type === AssetSelectType.MANAGE;
 
   const [state, dispatch] = useReducer(
@@ -109,15 +113,21 @@ export function useGetAssetDomainsWithBalances(getBalancesOptions: {
         if (code !== "XLM") {
           let domain = "";
 
-          if (issuer.key) {
-            try {
-              domain = await getAssetDomain(
-                issuer.key,
-                networkDetails.networkUrl,
-                networkDetails.networkPassphrase,
-              );
-            } catch (e) {
-              console.error(e);
+          const cachedHomeDomain = homeDomains[issuer.key];
+          if (useCache && cachedHomeDomain) {
+            domain = cachedHomeDomain;
+          } else {
+            if (issuer.key) {
+              try {
+                domain = await getAssetDomain(
+                  issuer.key,
+                  networkDetails.networkUrl,
+                  networkDetails.networkPassphrase,
+                );
+                reduxDispatch(saveDomainForIssuer({ [issuer.key]: domain }));
+              } catch (e) {
+                console.error(e);
+              }
             }
           }
 
