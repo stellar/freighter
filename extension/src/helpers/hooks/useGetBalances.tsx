@@ -25,6 +25,8 @@ import {
   iconsSelector,
   saveBalancesForAccount,
   saveIconsForBalances,
+  saveTokenLists,
+  tokensListsSelector,
 } from "popup/ducks/balances";
 
 export interface AccountBalances {
@@ -47,6 +49,7 @@ function useGetBalances(options: {
   const { assetsLists } = useSelector(settingsSelector);
   const cachedBalances = useSelector(balancesSelector);
   const cachedIcons = useSelector(iconsSelector);
+  const cachedTokenLists = useSelector(tokensListsSelector);
 
   const fetchData = async (
     publicKey: string,
@@ -79,10 +82,12 @@ function useGetBalances(options: {
         }
 
         if (options.includeIcons) {
-          const assetsListsData = await getCombinedAssetListData({
-            networkDetails,
-            assetsLists,
-          });
+          const assetsListsData = cachedTokenLists.length
+            ? cachedTokenLists
+            : await getCombinedAssetListData({
+                networkDetails,
+                assetsLists,
+              });
 
           const icons = await getAssetIcons({
             balances: cachedBalanceData.balances,
@@ -136,6 +141,7 @@ function useGetBalances(options: {
             cachedIcons,
           });
           payload.icons = icons;
+          reduxDispatch(saveTokenLists(assetsListsData));
           reduxDispatch(saveIconsForBalances({ icons }));
         }
 

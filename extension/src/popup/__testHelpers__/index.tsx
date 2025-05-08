@@ -8,6 +8,7 @@ import { Balances } from "@shared/api/types/backend-api";
 
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
+import { reducer as balances } from "popup/ducks/balances";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import {
   reducer as transactionSubmission,
@@ -28,6 +29,7 @@ const rootReducer = combineReducers({
   settings,
   transactionSubmission,
   tokenPaymentSimulation,
+  balances,
 });
 
 const makeDummyStore = (state: any) =>

@@ -4,9 +4,9 @@ import { FormikErrors } from "formik";
 import debounce from "lodash/debounce";
 
 import { initialState, isError, reducer } from "helpers/request";
-import { AccountBalances } from "helpers/hooks/useGetBalances";
-import { getAccountBalances, loadRecentAddresses } from "@shared/api/internal";
-import { getBaseAccount, sortBalances } from "popup/helpers/account";
+import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
+import { loadRecentAddresses } from "@shared/api/internal";
+import { getBaseAccount } from "popup/helpers/account";
 import { isFederationAddress, isMainnet } from "helpers/stellar";
 import { isContractId } from "popup/helpers/soroban";
 import {
@@ -51,6 +51,10 @@ function useSendToData() {
     initialState,
   );
   const { fetchData: fetchAppData } = useGetAppData();
+  const { fetchData: fetchBalances } = useGetBalances({
+    showHidden: true,
+    includeIcons: false,
+  });
 
   const debouncedFetch = debounce(
     async (
@@ -79,15 +83,17 @@ function useSendToData() {
 
         let destinationAccount = await getBaseAccount(validatedAddress);
         if (destinationAccount && !isContractId(destinationAccount)) {
-          const data = await getAccountBalances(
+          const destinationBalances = await fetchBalances(
             destinationAccount,
-            networkDetails,
             _isMainnet,
+            networkDetails,
+            true,
           );
-          payload.destinationBalances = {
-            ...data,
-            balances: sortBalances(data.balances),
-          };
+          if (isError<AccountBalances>(destinationBalances)) {
+            throw new Error(destinationBalances.message);
+          }
+
+          payload.destinationBalances = destinationBalances;
         }
 
         dispatch({ type: "FETCH_DATA_SUCCESS", payload });
@@ -107,7 +113,7 @@ function useSendToData() {
     }>,
   ) => {
     dispatch({ type: "FETCH_DATA_START" });
-    const appData = await fetchAppData();
+    const appData = await fetchAppData(true);
     if (isError(appData)) {
       throw new Error(appData.message);
     }

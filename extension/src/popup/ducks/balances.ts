@@ -1,5 +1,6 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit";
 import { AccountBalancesInterface } from "@shared/api/types/backend-api";
+import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 
 type AssetCode = string;
 type PublicKey = string;
@@ -17,16 +18,20 @@ interface SaveIconsPayload {
 
 type SaveDomainPayload = Record<PublicKey, HomeDomain>;
 
+type SaveTokenLists = AssetListResponse[];
+
 interface InitialState {
   balanceData: Record<PublicKey, AccountBalancesInterface>;
   icons: Record<AssetCode, IconUrl>;
   homeDomains: Record<PublicKey, HomeDomain>;
+  tokenLists: AssetListResponse[];
 }
 
 const initialState: InitialState = {
   balanceData: {},
   icons: {},
   homeDomains: {},
+  tokenLists: [],
 };
 
 const balancesSlice = createSlice({
@@ -37,6 +42,7 @@ const balancesSlice = createSlice({
       state.balanceData = {};
       state.icons = {};
       state.homeDomains = {};
+      state.tokenLists = [];
     },
     saveBalancesForAccount(state, action: { payload: SaveBalancesPayload }) {
       state.balanceData = {
@@ -56,6 +62,9 @@ const balancesSlice = createSlice({
         ...action.payload,
       };
     },
+    saveTokenLists(state, action: { payload: SaveTokenLists }) {
+      state.tokenLists = action.payload;
+    },
   },
 });
 
@@ -65,6 +74,8 @@ export const iconsSelector = (state: { balances: InitialState }) =>
   state.balances.icons;
 export const homeDomainsSelector = (state: { balances: InitialState }) =>
   state.balances.homeDomains;
+export const tokensListsSelector = (state: { balances: InitialState }) =>
+  state.balances.tokenLists;
 export const selectBalancesByPublicKey = (publicKey: string) =>
   createSelector(balancesSelector, (balances) => balances[publicKey]);
 
@@ -74,4 +85,5 @@ export const {
   saveBalancesForAccount,
   saveIconsForBalances,
   saveDomainForIssuer,
+  saveTokenLists,
 } = balancesSlice.actions;

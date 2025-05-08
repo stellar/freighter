@@ -1,5 +1,4 @@
 import { useReducer } from "react";
-import { useSelector } from "react-redux";
 import {
   Account,
   Asset,
@@ -19,17 +18,12 @@ import {
   useScanTx,
 } from "popup/helpers/blockaid";
 import { BlockAidScanTxResult } from "@shared/api/types";
-import { AccountBalancesInterface } from "@shared/api/types/backend-api";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { findAssetBalance } from "popup/helpers/balance";
 import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
-import { getAccountBalances, getAssetIcons } from "@shared/api/internal";
-import { getBaseAccount, sortBalances } from "popup/helpers/account";
+import { getBaseAccount } from "popup/helpers/account";
 import { isContractId } from "popup/helpers/soroban";
-import { settingsSelector } from "popup/ducks/settings";
-import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
-import { iconsSelector } from "popup/ducks/balances";
 
 export interface TxDetailsData {
   destAssetIconUrl: string;
@@ -199,8 +193,6 @@ function useGetTxDetailsData(
   );
 
   const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
-  const { assetsLists } = useSelector(settingsSelector);
-  const cachedIcons = useSelector(iconsSelector);
 
   const { scanTx } = useScanTx();
 
@@ -212,30 +204,22 @@ function useGetTxDetailsData(
         publicKey,
         balanceOptions.isMainnet,
         networkDetails,
+        true,
       );
-      const destBalancesResult =
-        destinationAccount && !isContractId(destinationAccount)
-          ? await getAccountBalances(
-              destinationAccount,
-              networkDetails,
-              balanceOptions.isMainnet,
-            )
-          : ({} as AccountBalancesInterface);
 
-      const assetsListsData = await getCombinedAssetListData({
-        networkDetails,
-        assetsLists,
-      });
-
-      const destIcons =
-        destinationAccount && !isContractId(destinationAccount)
-          ? await getAssetIcons({
-              balances: destBalancesResult.balances,
-              networkDetails,
-              assetsListsData,
-              cachedIcons,
-            })
-          : {};
+      let destBalancesResult = {} as AccountBalances;
+      if (destinationAccount && !isContractId(destinationAccount)) {
+        const balances = await fetchBalances(
+          destinationAccount,
+          balanceOptions.isMainnet,
+          networkDetails,
+          true,
+        );
+        if (isError<AccountBalances>(balances)) {
+          throw new Error(balances.message);
+        }
+        destBalancesResult = balances;
+      }
 
       if (isError<AccountBalances>(balancesResult)) {
         throw new Error(balancesResult.message);
@@ -259,11 +243,7 @@ function useGetTxDetailsData(
 
       const payload = {
         balances: balancesResult,
-        destinationBalances: {
-          ...destBalancesResult,
-          icons: destIcons,
-          balances: sortBalances(destBalancesResult.balances),
-        },
+        destinationBalances: destBalancesResult,
         destAssetIconUrl,
         isSourceAssetSuspicious:
           "blockaidData" in source && isAssetSuspicious(source.blockaidData),
