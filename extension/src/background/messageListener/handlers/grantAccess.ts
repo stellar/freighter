@@ -41,7 +41,7 @@ export const grantAccess = async ({
   });
 
   if (typeof response === "function") {
-    return response(url);
+    return response(url, publicKey);
   }
 
   return { error: "Access was denied" };
