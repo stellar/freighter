@@ -106,17 +106,29 @@ export const freighterApiMessageListener = (
     // otherwise, we need to confirm either url or password. Maybe both
     const encodeOrigin = encodeObject({ tab, url: tabUrl });
 
-    browser.windows.create({
+    const window = await browser.windows.create({
       url: chrome.runtime.getURL(`/index.html#/grant-access?${encodeOrigin}`),
       ...WINDOW_SETTINGS,
       width: 400,
     });
 
     return new Promise((resolve) => {
-      const response = (url?: string, publicKey?: string) => {
+      const response = async (url: string, publicKey?: string) => {
         // queue it up, we'll let user confirm the url looks okay and then we'll send publicKey
         // if we're good, of course
         if (url === tabUrl) {
+          /* 
+            This timeout is a bit of a hack to ensure the window doesn't close before the promise resolves.
+            Wrapping in a setTimeout queues up the wndows.remove action into the event loop, but allows the promise to resolve first.
+            This is really only an issue in e2e tests as the e2e window closes too quickly to register a click.
+          */
+          setTimeout(() => {
+            if (window.id) {
+              // ensure the window is closed to prevent collisions with other popups
+              browser.windows.remove(window.id);
+            }
+          }, 0);
+
           resolve({ publicKey });
         }
 
