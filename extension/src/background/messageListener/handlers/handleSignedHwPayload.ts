@@ -1,6 +1,7 @@
 import {
   HandleSignedHWPayloadMessage,
   ResponseQueue,
+  SignedHwPayloadResponse,
 } from "@shared/api/types/message-request";
 
 export const handleSignedHwPayload = ({
@@ -8,7 +9,7 @@ export const handleSignedHwPayload = ({
   responseQueue,
 }: {
   request: HandleSignedHWPayloadMessage;
-  responseQueue: ResponseQueue;
+  responseQueue: ResponseQueue<SignedHwPayloadResponse>;
 }) => {
   const { signedPayload } = request;
 

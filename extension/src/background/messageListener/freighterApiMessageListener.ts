@@ -10,6 +10,15 @@ import {
   ExternalRequestTx,
   ExternalRequest as Request,
 } from "@shared/api/types";
+import {
+  ResponseQueue,
+  SignTransactionResponse,
+  SignBlobResponse,
+  SignAuthEntryResponse,
+  AddTokenResponse,
+  RequestAccessResponse,
+  SetAllowedStatusResponse,
+} from "@shared/api/types/message-request";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import {
   FreighterApiInternalError,
@@ -118,7 +127,7 @@ export const freighterApiMessageListener = (
         });
       };
 
-      responseQueue.push(response);
+      (responseQueue as ResponseQueue<RequestAccessResponse>).push(response);
     });
   };
 
@@ -201,7 +210,7 @@ export const freighterApiMessageListener = (
           });
         };
 
-        responseQueue.push(response);
+        (responseQueue as ResponseQueue<AddTokenResponse>).push(response);
       });
     } catch (e) {
       return {
@@ -334,7 +343,10 @@ export const freighterApiMessageListener = (
             }),
           );
         }
-        const response = (signedTransaction: string, signerAddress: string) => {
+        const response = (
+          signedTransaction: string,
+          signerAddress?: string,
+        ) => {
           if (signedTransaction) {
             resolve({ signedTransaction, signerAddress });
           }
@@ -346,7 +358,9 @@ export const freighterApiMessageListener = (
           });
         };
 
-        responseQueue.push(response);
+        (responseQueue as ResponseQueue<SignTransactionResponse>).push(
+          response,
+        );
       });
     } catch (e) {
       return {
@@ -399,7 +413,10 @@ export const freighterApiMessageListener = (
           );
         }
 
-        const response = (signedBlob: string, signerAddress: string) => {
+        const response = (
+          signedBlob: SignBlobResponse,
+          signerAddress?: string,
+        ) => {
           if (signedBlob) {
             if (apiVersion && semver.gte(apiVersion, "4.0.0")) {
               resolve({
@@ -418,7 +435,7 @@ export const freighterApiMessageListener = (
           });
         };
 
-        responseQueue.push(response);
+        (responseQueue as ResponseQueue<SignBlobResponse>).push(response);
       });
     } catch (e) {
       return {
@@ -477,16 +494,20 @@ export const freighterApiMessageListener = (
             }),
           );
         }
-        const response = (signedAuthEntry: string) => {
+        const response = (
+          signedAuthEntry: SignAuthEntryResponse,
+          signerAddress?: string,
+        ) => {
           if (signedAuthEntry) {
             if (apiVersion && semver.gte(apiVersion, "4.2.0")) {
               resolve({
                 signedAuthEntry:
                   Buffer.from(signedAuthEntry).toString("base64"),
+                signerAddress,
               });
               return;
             }
-            resolve({ signedAuthEntry });
+            resolve({ signedAuthEntry, signerAddress });
           }
 
           resolve({
@@ -495,8 +516,7 @@ export const freighterApiMessageListener = (
             error: FreighterApiDeclinedError.message,
           });
         };
-
-        responseQueue.push(response);
+        (responseQueue as ResponseQueue<SignAuthEntryResponse>).push(response);
       });
     } catch (e) {
       return {
@@ -615,7 +635,7 @@ export const freighterApiMessageListener = (
         });
       };
 
-      responseQueue.push(response);
+      (responseQueue as ResponseQueue<SetAllowedStatusResponse>).push(response);
     });
   };
 

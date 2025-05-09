@@ -2,6 +2,7 @@ import { Store } from "redux";
 
 import {
   GrantAccessMessage,
+  RequestAccessResponse,
   ResponseQueue,
 } from "@shared/api/types/message-request";
 import { publicKeySelector } from "background/ducks/session";
@@ -20,7 +21,7 @@ export const grantAccess = async ({
 }: {
   request: GrantAccessMessage;
   sessionStore: Store;
-  responseQueue: ResponseQueue;
+  responseQueue: ResponseQueue<RequestAccessResponse>;
   localStore: DataStorageAccess;
 }) => {
   const { url = "" } = request;
