@@ -123,9 +123,8 @@ describe("useGetBalances (cached path)", () => {
       { wrapper: Wrapper(store) },
     );
 
-    let payload: any;
     await act(async () => {
-      payload = await result.current.fetchData(
+      await result.current.fetchData(
         publicKey,
         true,
         TESTNET_NETWORK_DETAILS,
