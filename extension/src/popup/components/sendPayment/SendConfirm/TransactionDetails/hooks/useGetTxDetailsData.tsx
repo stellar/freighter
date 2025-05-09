@@ -197,6 +197,13 @@ function useGetTxDetailsData(
   );
 
   const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
+  // tx details needs to show icons and filter hidden assets
+  // we can't call these APIs with foreign public keys due to the public key mismatch check at the message listener
+  // so we need another instance of this hook where we don't call those APIs
+  const { fetchData: fetchBalancesDest } = useGetBalances({
+    showHidden: true,
+    includeIcons: false,
+  });
 
   const { scanTx } = useScanTx();
 
@@ -213,7 +220,7 @@ function useGetTxDetailsData(
 
       let destBalancesResult = {} as AccountBalances;
       if (destinationAccount && !isContractId(destinationAccount)) {
-        const balances = await fetchBalances(
+        const balances = await fetchBalancesDest(
           destinationAccount,
           balanceOptions.isMainnet,
           networkDetails,

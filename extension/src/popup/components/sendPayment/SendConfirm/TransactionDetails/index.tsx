@@ -34,6 +34,7 @@ import {
   isPathPaymentSelector,
   ShowOverlayStatus,
   startHwSign,
+  resetSubmission,
 } from "popup/ducks/transactionSubmission";
 import {
   settingsNetworkDetailsSelector,
@@ -646,6 +647,7 @@ export const TransactionDetails = ({
                   variant="secondary"
                   onClick={() => {
                     dispatch(resetSimulation());
+                    dispatch(resetSubmission());
                     navigateTo(ROUTES.account, navigate);
                   }}
                 >
