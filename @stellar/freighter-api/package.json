@@ -20,6 +20,6 @@
     "semver": "7.7.1"
   },
   "devDependencies": {
-    "@lavamoat/allow-scripts": "3.3.2"
+    "@lavamoat/allow-scripts": "3.3.3"
   }
 }
