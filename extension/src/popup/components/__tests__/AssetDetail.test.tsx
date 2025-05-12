@@ -259,4 +259,73 @@ describe("AssetDetail", () => {
       "100 BAZ",
     );
   });
+  it("should display Send and Swap buttons", async () => {
+    const props = {
+      accountBalances: {
+        balances: [
+          {
+            available: new BigNumber(10),
+            token: { type: "native", code: "XLM" },
+            total: new BigNumber(10),
+          },
+          {
+            available: new BigNumber(10),
+            token: {
+              type: "credit_alphanum12",
+              code: "FOO",
+              issuer: {
+                key: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+              },
+            },
+            total: new BigNumber(10),
+          },
+          {
+            available: new BigNumber(100),
+            token: {
+              type: "credit_alphanum12",
+              code: "BAZ",
+              issuer: {
+                key: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+              },
+            },
+            blockAidData: {
+              result_type: "Benign",
+            },
+            total: new BigNumber(100),
+          },
+        ],
+      } as any,
+      assetOperations: [] as any,
+      publicKey: "G1",
+      url: "example.com",
+      networkDetails: TESTNET_NETWORK_DETAILS,
+      selectedAsset:
+        "BAZ:GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+      setSelectedAsset: () => null,
+      setIsDetailViewShowing: () => null,
+      subentryCount: 0,
+    };
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <AssetDetail {...props} />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("asset-detail-available-copy"));
+    expect(screen.getByTestId("asset-detail-send-button")).toBeVisible();
+    expect(screen.getByTestId("asset-detail-swap-button")).toBeVisible();
+  });
 });

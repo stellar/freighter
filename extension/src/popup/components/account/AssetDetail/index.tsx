@@ -242,65 +242,65 @@ export const AssetDetail = ({
               />
             </div>
           </div>
-          {isSuspicious ? null : (
-            <div className="AssetDetail__actions">
-              {selectedBalance?.total &&
-              new BigNumber(selectedBalance?.total).toNumber() > 0 ? (
-                <>
+          <div className="AssetDetail__actions">
+            {selectedBalance?.total &&
+            new BigNumber(selectedBalance?.total).toNumber() > 0 ? (
+              <>
+                <Button
+                  data-testid="asset-detail-send-button"
+                  size="md"
+                  variant="tertiary"
+                  onClick={() => {
+                    dispatch(saveAsset(selectedAsset));
+                    if (isContract) {
+                      dispatch(saveIsToken(true));
+                    } else {
+                      dispatch(saveIsToken(false));
+                    }
+                    navigateTo(ROUTES.sendPayment, navigate);
+                  }}
+                >
+                  {t("SEND")}
+                </Button>
+                {!isSorobanAsset && (
                   <Button
+                    data-testid="asset-detail-swap-button"
                     size="md"
                     variant="tertiary"
                     onClick={() => {
                       dispatch(saveAsset(selectedAsset));
-                      if (isContract) {
-                        dispatch(saveIsToken(true));
-                      } else {
-                        dispatch(saveIsToken(false));
-                      }
-                      navigateTo(ROUTES.sendPayment, navigate);
+                      navigateTo(ROUTES.swap, navigate);
                     }}
                   >
-                    {t("SEND")}
+                    {t("SWAP")}
                   </Button>
-                  {!isSorobanAsset && (
-                    <Button
-                      size="md"
-                      variant="tertiary"
-                      onClick={() => {
-                        dispatch(saveAsset(selectedAsset));
-                        navigateTo(ROUTES.swap, navigate);
-                      }}
-                    >
-                      {t("SWAP")}
-                    </Button>
-                  )}
-                  {isOnrampSupported && (
-                    <Button
-                      size="md"
-                      variant="tertiary"
-                      onClick={() => {
-                        handleOnrampClick();
-                      }}
-                      isLoading={isTokenRequestLoading}
-                    >
-                      {t("BUY")}
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <Button
-                  size="md"
-                  variant="tertiary"
-                  onClick={() => {
-                    dispatch(saveDestinationAsset(selectedAsset));
-                    navigateTo(ROUTES.swap, navigate);
-                  }}
-                >
-                  {t("SWAP")}
-                </Button>
-              )}
-            </div>
-          )}
+                )}
+                {isOnrampSupported && (
+                  <Button
+                    size="md"
+                    variant="tertiary"
+                    onClick={() => {
+                      handleOnrampClick();
+                    }}
+                    isLoading={isTokenRequestLoading}
+                  >
+                    {t("BUY")}
+                  </Button>
+                )}
+              </>
+            ) : (
+              <Button
+                size="md"
+                variant="tertiary"
+                onClick={() => {
+                  dispatch(saveDestinationAsset(selectedAsset));
+                  navigateTo(ROUTES.swap, navigate);
+                }}
+              >
+                {t("SWAP")}
+              </Button>
+            )}
+          </div>
           <div className="AssetDetail__scam-warning">
             {isSuspicious && (
               <BlockaidAssetWarning
