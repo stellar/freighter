@@ -6,6 +6,7 @@ import {
 import { FreighterApiError } from "@shared/api/types";
 import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
+import packageJson from "../package.json";
 
 export const signAuthEntry = async (
   entryXdr: string,
@@ -28,7 +29,7 @@ export const signAuthEntry = async (
       }
     }
 
-    const req = await submitAuthEntry(entryXdr, opts);
+    const req = await submitAuthEntry(entryXdr, packageJson.version, opts);
 
     if (req.error) {
       return { signedAuthEntry: null, signerAddress: "", error: req.error };

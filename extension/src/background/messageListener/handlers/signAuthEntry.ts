@@ -6,7 +6,11 @@ import { getEncryptedTemporaryData } from "background/helpers/session";
 import { KEY_ID } from "constants/localStorageTypes";
 import { getNetworkDetails } from "background/helpers/account";
 import { getSdk } from "@shared/helpers/stellar";
-import { EntryQueue, ResponseQueue } from "@shared/api/types/message-request";
+import {
+  EntryQueue,
+  ResponseQueue,
+  SignAuthEntryResponse,
+} from "@shared/api/types/message-request";
 
 export const signAuthEntry = async ({
   localStore,
@@ -17,7 +21,7 @@ export const signAuthEntry = async ({
   localStore: DataStorageAccess;
   sessionStore: Store;
   authEntryQueue: EntryQueue;
-  responseQueue: ResponseQueue;
+  responseQueue: ResponseQueue<SignAuthEntryResponse>;
 }) => {
   const keyId = (await localStore.getItem(KEY_ID)) || "";
   let privateKey = "";

@@ -33,8 +33,18 @@ export interface EntryToSign {
   networkPassphrase?: string;
 }
 
-export type ResponseQueue = Array<
-  (message?: any, messageAddress?: any) => void
+export type RequestAccessResponse = string;
+export type SignAuthEntryResponse = Buffer | null;
+export type SignTransactionResponse = string;
+export type SignBlobResponse = Buffer | null;
+export type AddTokenResponse = boolean;
+export type SetAllowedStatusResponse = string;
+export type SignedHwPayloadResponse = string | Buffer<ArrayBufferLike>;
+export type RejectAccessResponse = undefined;
+export type RejectTransactionResponse = undefined;
+
+export type ResponseQueue<T> = Array<
+  (message: T, messageAddress?: string) => void
 >;
 
 export type TokenQueue = TokenToAdd[];
