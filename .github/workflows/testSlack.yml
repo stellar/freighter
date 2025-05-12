@@ -1,0 +1,19 @@
+name: test Slack notify action
+on:
+  workflow_dispatch:
+jobs:
+  bump-version:
+    name: Checkout code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@07cbdbfd6c6190970778d8f98f11d073b2932aae #v2.3.3
+        env:
+          MSG_MINIMAL: true
+          SLACK_CHANNEL: team-wallet-eng
+          SLACK_COLOR: "#70E1C8"
+          SLACK_ICON: https://github.com/stellar/freighter/blob/master/docs/static/images/logo.png?size=48
+          SLACK_MESSAGE: "test msg"
+          SLACK_TITLE: "Testing Slack notify action"
+          SLACK_USERNAME: Freighter Administrative Assistant
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
