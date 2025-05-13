@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import {
   getAccountBalances,
@@ -19,6 +19,36 @@ import { filterHiddenBalances, sortBalances } from "popup/helpers/account";
 import { AssetType } from "@shared/api/types/account-balance";
 import { settingsSelector } from "popup/ducks/settings";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
+import { AppDispatch } from "popup/App";
+import {
+  balancesSelector,
+  iconsSelector,
+  saveBalancesForAccount,
+  saveIconsForBalances,
+  saveTokenLists,
+  tokensListsSelector,
+} from "popup/ducks/cache";
+
+const formatBalances = async ({
+  publicKey,
+  balances,
+  showHidden,
+}: {
+  publicKey: string;
+  balances: NonNullable<BalanceMap>;
+  showHidden: boolean;
+}) => {
+  if (!showHidden) {
+    const hiddenAssets = await getHiddenAssets({
+      activePublicKey: publicKey,
+    });
+    return sortBalances(
+      filterHiddenBalances(balances, hiddenAssets.hiddenAssets),
+    );
+  } else {
+    return sortBalances(balances);
+  }
+};
 
 export interface AccountBalances {
   balances: AssetType[];
@@ -32,60 +62,69 @@ function useGetBalances(options: {
   showHidden: boolean;
   includeIcons: boolean;
 }) {
+  const reduxDispatch = useDispatch<AppDispatch>();
   const [state, dispatch] = useReducer(
     reducer<AccountBalances, unknown>,
     initialState,
   );
   const { assetsLists } = useSelector(settingsSelector);
+  const cachedBalances = useSelector(balancesSelector);
+  const cachedIcons = useSelector(iconsSelector);
+  const cachedTokenLists = useSelector(tokensListsSelector);
 
   const fetchData = async (
     publicKey: string,
     isMainnet: boolean,
     networkDetails: NetworkDetails,
+    useCache = false,
   ): Promise<AccountBalances | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const data = await getAccountBalances(
-        publicKey,
-        networkDetails,
-        isMainnet,
-      );
+      const cachedBalanceData = cachedBalances[publicKey];
+      const accountBalances =
+        useCache && cachedBalanceData
+          ? cachedBalanceData
+          : await getAccountBalances(publicKey, networkDetails, isMainnet);
 
       const payload = {
-        isFunded: data.isFunded,
-        subentryCount: data.subentryCount,
-        error: data.error,
+        isFunded: accountBalances.isFunded,
+        subentryCount: accountBalances.subentryCount,
+        error: accountBalances.error,
+        balances: await formatBalances({
+          publicKey,
+          balances: accountBalances.balances as NonNullable<BalanceMap>,
+          showHidden: options.showHidden,
+        }),
       } as AccountBalances;
 
-      if (!options.showHidden) {
-        const hiddenAssets = await getHiddenAssets({
-          activePublicKey: publicKey,
-        });
-        payload.balances = sortBalances(
-          filterHiddenBalances(
-            data.balances as NonNullable<BalanceMap>,
-            hiddenAssets.hiddenAssets,
-          ),
-        );
-      } else {
-        payload.balances = sortBalances(data.balances);
-      }
-
-      const assetsListsData = await getCombinedAssetListData({
-        networkDetails,
-        assetsLists,
-      });
-
       if (options.includeIcons) {
+        const assetsListsData =
+          useCache && cachedTokenLists.length
+            ? cachedTokenLists
+            : await getCombinedAssetListData({
+                networkDetails,
+                assetsLists,
+              });
+
         const icons = await getAssetIcons({
-          balances: data.balances,
+          balances: accountBalances.balances,
           networkDetails,
           assetsListsData,
+          cachedIcons,
         });
         payload.icons = icons;
+        reduxDispatch(saveTokenLists(assetsListsData));
+        reduxDispatch(saveIconsForBalances({ icons }));
       }
+
+      reduxDispatch(
+        saveBalancesForAccount({
+          publicKey,
+          balances: accountBalances,
+        }),
+      );
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-      storeBalanceMetricData(publicKey, data.isFunded || false);
+      storeBalanceMetricData(publicKey, accountBalances.isFunded || false);
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });

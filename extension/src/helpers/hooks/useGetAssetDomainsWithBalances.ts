@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { Balance } from "@shared/api/types";
@@ -19,6 +19,8 @@ import { AccountBalances, useGetBalances } from "./useGetBalances";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import { AppDataType, NeedsReRoute, useGetAppData } from "./useGetAppData";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { homeDomainsSelector, saveDomainForIssuer } from "popup/ducks/cache";
+import { AppDispatch } from "popup/App";
 
 export interface ResolvedAssetDomains {
   type: AppDataType.RESOLVED;
@@ -32,15 +34,17 @@ export interface ResolvedAssetDomains {
 
 export type AssetDomains = NeedsReRoute | ResolvedAssetDomains;
 
-export function useGetAssetDomainsWithBalances(options: {
+export function useGetAssetDomainsWithBalances(getBalancesOptions: {
   showHidden: boolean;
   includeIcons: boolean;
 }) {
+  const reduxDispatch = useDispatch<AppDispatch>();
   const isSwap = useIsSwap();
   const isSoroswapEnabled = useIsSoroswapEnabled();
   const { assetSelect, soroswapTokens } = useSelector(
     transactionSubmissionSelector,
   );
+  const homeDomains = useSelector(homeDomainsSelector);
   const isManagingAssets = assetSelect.type === AssetSelectType.MANAGE;
 
   const [state, dispatch] = useReducer(
@@ -48,12 +52,12 @@ export function useGetAssetDomainsWithBalances(options: {
     initialState,
   );
   const { fetchData: fetchAppData } = useGetAppData();
-  const { fetchData: fetchBalances } = useGetBalances(options);
+  const { fetchData: fetchBalances } = useGetBalances(getBalancesOptions);
 
-  const fetchData = async (): Promise<AssetDomains | Error> => {
+  const fetchData = async (useCache = false): Promise<AssetDomains | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const appData = await fetchAppData();
+      const appData = await fetchAppData(useCache);
       if (isError(appData)) {
         throw new Error(appData.message);
       }
@@ -70,6 +74,7 @@ export function useGetAssetDomainsWithBalances(options: {
         publicKey,
         isMainnetNetwork,
         networkDetails,
+        useCache,
       );
 
       if (isError<AccountBalances>(balances)) {
@@ -108,15 +113,21 @@ export function useGetAssetDomainsWithBalances(options: {
         if (code !== "XLM") {
           let domain = "";
 
-          if (issuer.key) {
-            try {
-              domain = await getAssetDomain(
-                issuer.key,
-                networkDetails.networkUrl,
-                networkDetails.networkPassphrase,
-              );
-            } catch (e) {
-              console.error(e);
+          const cachedHomeDomain = homeDomains[issuer.key];
+          if (useCache && cachedHomeDomain) {
+            domain = cachedHomeDomain;
+          } else {
+            if (issuer.key) {
+              try {
+                domain = await getAssetDomain(
+                  issuer.key,
+                  networkDetails.networkUrl,
+                  networkDetails.networkPassphrase,
+                );
+                reduxDispatch(saveDomainForIssuer({ [issuer.key]: domain }));
+              } catch (e) {
+                console.error(e);
+              }
             }
           }
 

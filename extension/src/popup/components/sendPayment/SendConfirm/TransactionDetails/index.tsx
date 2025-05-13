@@ -34,6 +34,7 @@ import {
   isPathPaymentSelector,
   ShowOverlayStatus,
   startHwSign,
+  resetSubmission,
 } from "popup/ducks/transactionSubmission";
 import {
   settingsNetworkDetailsSelector,
@@ -385,11 +386,9 @@ export const TransactionDetails = ({
     source: ReturnType<typeof getAssetFromCanonical>,
     dest: ReturnType<typeof getAssetFromCanonical>,
   ) => {
+    const destBalances = details!.destinationBalances.balances || [];
     const sourceBalance = findAssetBalance(details!.balances.balances, source);
-    const destBalance = findAssetBalance(
-      details!.destinationBalances.balances,
-      dest,
-    );
+    const destBalance = findAssetBalance(destBalances, dest);
     if (
       sourceBalance &&
       details!.isSourceAssetSuspicious &&
@@ -646,6 +645,7 @@ export const TransactionDetails = ({
                   variant="secondary"
                   onClick={() => {
                     dispatch(resetSimulation());
+                    dispatch(resetSubmission());
                     navigateTo(ROUTES.account, navigate);
                   }}
                 >
