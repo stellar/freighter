@@ -91,6 +91,7 @@
   "Buy XLM with Coinbase": "Buy XLM with Coinbase",
   "Buying": "Buying",
   "by": "by",
+  "By using these services, you act at your own risk, and Freighter or Stellar Development Foundation (SDF) bears no liability for any resulting losses or damages": "By using these services, you act at your own risk, and Freighter or Stellar Development Foundation (SDF) bears no liability for any resulting losses or damages.",
   "Cancel": "Cancel",
   "Check the destination account memo requirements and include it in the transaction": "Check the destination account memo requirements and include it in the transaction.",
   "Choose Asset": "Choose Asset",
@@ -126,6 +127,7 @@
   "Create New Address": "Create New Address",
   "Create new wallet": "Create new wallet",
   "Custom": "Custom",
+  "Dapps": "Dapps",
   "data entries": "data entries",
   "Date": "Date",
   "Delete": "Delete",
@@ -198,6 +200,9 @@
     " It’s a safer alternative to copying and pasting private keys for use with web apps": "Freighter is a non-custodial wallet extension that enables you to sign Stellar transactions via your browser. It’s a safer alternative to copying and pasting private keys for use with web apps."
   },
   "Freighter is set to": "Freighter is set to",
+  "Freighter provides access to third-party dApps, protocols, and tokens for informational purposes only": {
+    " Freighter does not endorse any listed items": "Freighter provides access to third-party dApps, protocols, and tokens for informational purposes only. Freighter does not endorse any listed items."
+  },
   "Freighter uses asset lists to check assets you interact with": {
     " You can define your own assets lists in Settings": "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
   },
@@ -359,7 +364,6 @@
   "Please note the following message": "Please note the following message",
   "Please select a different network before removing it": "Please select a different network before removing it.",
   "Please select each word in the same order you have them noted to confirm you got them right": "Please select each word in the same order you have them noted to confirm you got them right.",
-  "Popular Sites": "Popular Sites",
   "powered by": "powered by",
   "Powered by ": "Powered by ",
   "Pre Auth Transaction": "Pre Auth Transaction",
