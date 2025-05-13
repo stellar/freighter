@@ -52,4 +52,19 @@
       }
     }
   }
+
+  &__footer {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8);
+    border-radius: pxToRem(16);
+    background-color: var(--sds-clr-gray-02);
+    padding: pxToRem(16);
+
+    &__copy {
+      color: var(--sds-clr-gray-11);
+      font-size: pxToRem(10);
+      line-height: pxToRem(14);
+    }
+  }
 }

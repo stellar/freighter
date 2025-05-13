@@ -41,7 +41,7 @@ export const Discover = () => {
         <div className="Discover__eyebrow">
           <Icon.Stars03 />
           <Text as="div" size="sm" weight="medium">
-            {t("Popular Sites")}
+            {t("Dapps")}
           </Text>
         </div>
         <div className="Discover__content" data-testid="discover-content">
@@ -90,6 +90,20 @@ export const Discover = () => {
               </Text>
             </div>
           )}
+          {allowedDiscoverRows.length ? (
+            <div className="Discover__footer">
+              <div className="Discover__footer__copy">
+                {t(
+                  "Freighter provides access to third-party dApps, protocols, and tokens for informational purposes only. Freighter does not endorse any listed items.",
+                )}
+              </div>
+              <div className="Discover__footer__copy">
+                {t(
+                  "By using these services, you act at your own risk, and Freighter or Stellar Development Foundation (SDF) bears no liability for any resulting losses or damages.",
+                )}
+              </div>
+            </div>
+          ) : null}
         </div>
       </View.Content>
     </>
