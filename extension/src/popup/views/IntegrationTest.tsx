@@ -303,7 +303,7 @@ export const IntegrationTest = () => {
 
       res = await addRecentAddress({
         activePublicKey: "G123",
-        publicKey: testPublicKey,
+        address: testPublicKey,
       });
       runAsserts("addRecentAddress", () => {
         assertArray(res.recentAddresses);

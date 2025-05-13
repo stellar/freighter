@@ -127,7 +127,7 @@ function useSendToData() {
     const { networkDetails } = appData.settings;
     const _isMainnet = isMainnet(networkDetails);
 
-    if (Object.keys(errors).length !== 0) {
+    if (Object.keys(errors).length !== 0 && userInput) {
       const payload = {
         type: AppDataType.RESOLVED,
         recentAddresses: [],

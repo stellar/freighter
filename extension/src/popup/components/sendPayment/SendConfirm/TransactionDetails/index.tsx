@@ -266,9 +266,10 @@ export const TransactionDetails = ({
         );
 
         if (submitFreighterSorobanTransaction.fulfilled.match(submitResp)) {
-          emitMetric(METRIC_NAMES.sendPaymentSuccess, {
-            sourceAsset: sourceAsset.code,
-          });
+          addRecentAddress({ address: destination }),
+            emitMetric(METRIC_NAMES.sendPaymentSuccess, {
+              sourceAsset: sourceAsset.code,
+            });
 
           if (isSoroswap && destAsset.issuer) {
             await dispatch(
@@ -319,7 +320,7 @@ export const TransactionDetails = ({
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {
           if (!isSwap) {
             await dispatch(
-              addRecentAddress({ publicKey: federationAddress || destination }),
+              addRecentAddress({ address: federationAddress || destination }),
             );
           }
           if (isPathPayment) {
