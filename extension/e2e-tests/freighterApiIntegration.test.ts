@@ -321,7 +321,10 @@ test("should not add token when not allowed", async ({ page, extensionId }) => {
     screenshot: "domain-not-allowed-add-token.png",
   });
 });
-test("should get public key when logged out", async ({ page, extensionId }) => {
+test.only("should get public key when logged out", async ({
+  page,
+  extensionId,
+}) => {
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("BottomNav-link-settings").click();
   await page.getByText("Log Out").click();
