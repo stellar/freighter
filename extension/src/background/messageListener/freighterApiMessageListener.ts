@@ -127,7 +127,7 @@ export const freighterApiMessageListener = (
               // ensure the window is closed to prevent collisions with other popups
               browser.windows.remove(window.id);
             }
-          }, 0);
+          }, 50);
 
           resolve({ publicKey });
         }
