@@ -289,16 +289,20 @@ export const AssetDetail = ({
                 )}
               </>
             ) : (
-              <Button
-                size="md"
-                variant="tertiary"
-                onClick={() => {
-                  dispatch(saveDestinationAsset(selectedAsset));
-                  navigateTo(ROUTES.swap, navigate);
-                }}
-              >
-                {t("SWAP")}
-              </Button>
+              <>
+                {!isSorobanAsset && (
+                  <Button
+                    size="md"
+                    variant="tertiary"
+                    onClick={() => {
+                      dispatch(saveDestinationAsset(selectedAsset));
+                      navigateTo(ROUTES.swap, navigate);
+                    }}
+                  >
+                    {t("SWAP")}
+                  </Button>
+                )}
+              </>
             )}
           </div>
           <div className="AssetDetail__scam-warning">
