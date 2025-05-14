@@ -30,11 +30,21 @@
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
-    height: pxToRem(32px);
     justify-content: center;
     border: 1px solid var(--sds-clr-gray-06);
     border-radius: pxToRem(100px);
-    width: pxToRem(32px);
+    height: pxToRem(32);
+    width: pxToRem(32);
+
+    &--with-label {
+      padding: pxToRem(6) pxToRem(10);
+      height: auto;
+      width: auto;
+      display: flex;
+      gap: pxToRem(4);
+      font-size: pxToRem(14);
+      font-weight: var(--sds-fw-semi-bold);
+    }
 
     svg {
       color: var(--sds-clr-gray-09);

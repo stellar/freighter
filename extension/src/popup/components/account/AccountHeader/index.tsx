@@ -80,10 +80,10 @@ export const AccountHeader = ({
       rightContent={
         <div className="AccountHeader__right-content">
           <div
-            className="AccountHeader__right-button"
+            className="AccountHeader__right-button AccountHeader__right-button--with-label"
             onClick={() => navigateTo(ROUTES.discover, navigate)}
           >
-            <Icon.Compass03 />
+            <Icon.Compass03 /> {t("Discover")}
           </div>
           <div
             className="AccountHeader__right-button"
