@@ -292,6 +292,7 @@ export const AssetDetail = ({
               <>
                 {!isSorobanAsset && (
                   <Button
+                    data-testid="asset-detail-swap-button"
                     size="md"
                     variant="tertiary"
                     onClick={() => {
