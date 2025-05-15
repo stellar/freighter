@@ -104,7 +104,7 @@ export const HardwareSign = ({
             submitFreighterTransaction.fulfilled.match(submitResp) &&
             !isSwap
           ) {
-            dispatch(addRecentAddress({ publicKey: destination }));
+            dispatch(addRecentAddress({ address: destination }));
           }
         } else {
           // right now there are only two cases after signing,

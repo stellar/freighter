@@ -1324,14 +1324,14 @@ export const submitFreighterSorobanTransaction = async ({
 
 export const addRecentAddress = async ({
   activePublicKey,
-  publicKey,
+  address,
 }: {
   activePublicKey: string;
-  publicKey: string;
+  address: string;
 }): Promise<{ recentAddresses: Array<string> }> => {
   return await sendMessageToBackground({
     activePublicKey,
-    publicKey,
+    address,
     type: SERVICE_TYPES.ADD_RECENT_ADDRESS,
   });
 };

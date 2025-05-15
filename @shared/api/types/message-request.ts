@@ -208,7 +208,7 @@ export interface SignFreighterSorobanTransactionMessage extends BaseMessage {
 
 export interface AddRecentAddressMessage extends BaseMessage {
   type: SERVICE_TYPES.ADD_RECENT_ADDRESS;
-  publicKey: string;
+  address: string;
 }
 
 export interface LoadRecentAddressesMessage extends BaseMessage {
