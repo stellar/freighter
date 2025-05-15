@@ -3,7 +3,7 @@ import {
   Memo,
   MemoType,
   Operation,
-  SorobanRpc,
+  rpc as SorobanRpc,
   scValToNative,
   BASE_FEE,
 } from "stellar-sdk";
@@ -29,7 +29,7 @@ export const buildSorobanServer = (
 ) => {
   const Sdk = getSdk(networkPassphrase);
 
-  return new Sdk.SorobanRpc.Server(serverUrl, {
+  return new Sdk.rpc.Server(serverUrl, {
     allowHttp: serverUrl.startsWith("http://"),
   });
 };

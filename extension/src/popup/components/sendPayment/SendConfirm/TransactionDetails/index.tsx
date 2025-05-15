@@ -548,10 +548,28 @@ export const TransactionDetails = ({
                   <div>{t("Resource cost")} </div>
                   <div className="TransactionDetails__row__right">
                     <div className="TransactionDetails__row__right__item">
-                      {transactionSimulation.response.cost.cpuInsns} CPU
+                      {
+                        // @ts-ignore
+                        transactionSimulation.response?.transactionData?._data
+                          ?._attributes?.resources?._attributes?.instructions
+                      }{" "}
+                      CPU{" "}
                     </div>
                     <div className="TransactionDetails__row__right__item">
-                      {transactionSimulation.response.cost.memBytes} Bytes
+                      {
+                        // @ts-ignore
+                        transactionSimulation.response?.transactionData?._data
+                          ?._attributes?.resources?._attributes?.readBytes
+                      }{" "}
+                      Read Bytes
+                    </div>
+                    <div className="TransactionDetails__row__right__item">
+                      {
+                        // @ts-ignore
+                        transactionSimulation.response?.transactionData?._data
+                          ?._attributes?.resources?._attributes?.writeBytes
+                      }{" "}
+                      Write Bytes
                     </div>
                   </div>
                 </div>

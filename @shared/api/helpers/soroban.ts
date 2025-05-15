@@ -3,7 +3,7 @@ import {
   scValToBigInt,
   xdr,
   ScInt,
-  SorobanRpc,
+  rpc as SorobanRpc,
   contract,
   StrKey,
 } from "stellar-sdk";

@@ -15833,24 +15833,24 @@ stellar-hd-wallet@0.0.10:
     lodash "^4.17.11"
     stellar-base "^0.13.1"
 
-"stellar-sdk-next@yarn:@stellar/stellar-sdk@13.0.0-beta.1":
-  version "13.0.0-beta.1"
-  resolved "https://registry.yarnpkg.com/@stellar/stellar-sdk/-/stellar-sdk-13.0.0-beta.1.tgz#9a995575b806bea3a383b2d9fe4b1fde065caeb4"
-  integrity sha512-yJN2HzibhZFJsdLRU83bkUwb9dq1sZRRiQptTJyunVv0hQsF+tTldrP3hHst3LROv/2GWTn20tmAqnp0hkzOhg==
+"stellar-sdk-next@yarn:@stellar/stellar-sdk@13.3.0":
+  version "13.3.0"
+  resolved "https://registry.yarnpkg.com/@stellar/stellar-sdk/-/stellar-sdk-13.3.0.tgz#72bf3eea4797de053aaebb889bf4de342d0b6b54"
+  integrity sha512-8+GHcZLp+mdin8gSjcgfb/Lb6sSMYRX6Nf/0LcSJxvjLQR0XHpjGzOiRbYb2jSXo51EnA6kAV5j+4Pzh5OUKUg==
   dependencies:
-    "@stellar/stellar-base" "13.0.0-beta.1"
-    axios "^1.7.7"
-    bignumber.js "^9.1.2"
+    "@stellar/stellar-base" "^13.1.0"
+    axios "^1.8.4"
+    bignumber.js "^9.3.0"
     eventsource "^2.0.2"
-    feaxios "^0.0.20"
+    feaxios "^0.0.23"
     randombytes "^2.1.0"
     toml "^3.0.0"
     urijs "^1.19.1"
 
-"stellar-sdk@yarn:@stellar/stellar-sdk@13.0.0-beta.1":
+"stellar-sdk@yarn:@stellar/stellar-sdk@13.3.0":
   version "13.3.0"
-  resolved "https://registry.yarnpkg.com/stellar-sdk/-/stellar-sdk-13.3.0.tgz#848714d469e2288b9d5645ac3518d7f3eee79fd2"
-  integrity sha512-jAA3+U7oAUueldoS4kuEhcym+DigElWq9isPxt7tjMrE7kTJ2vvY29waavUb2FSfQIWwGbuwAJTYddy2BeyJsw==
+  resolved "https://registry.yarnpkg.com/@stellar/stellar-sdk/-/stellar-sdk-13.3.0.tgz#72bf3eea4797de053aaebb889bf4de342d0b6b54"
+  integrity sha512-8+GHcZLp+mdin8gSjcgfb/Lb6sSMYRX6Nf/0LcSJxvjLQR0XHpjGzOiRbYb2jSXo51EnA6kAV5j+4Pzh5OUKUg==
   dependencies:
     "@stellar/stellar-base" "^13.1.0"
     axios "^1.8.4"

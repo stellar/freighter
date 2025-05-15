@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { Asset, BASE_FEE, Networks, SorobanRpc } from "stellar-sdk";
+import { Asset, BASE_FEE, Networks, rpc as SorobanRpc } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 import { useDispatch } from "react-redux";
 
@@ -252,9 +252,10 @@ function useGetSettingsData(
       } as GetSettingsData;
       // some flows still use transaction details from the store
       const simulationResponse =
-        simResponse.payload && "simulationTransaction" in simResponse.payload
-          ? simResponse.payload?.simulationTransaction
+        simResponse.payload && "simulationResponse" in simResponse.payload
+          ? simResponse.payload?.simulationResponse
           : "";
+
       reduxDispatch(saveTransactionFee(payload.recommendedFee));
       reduxDispatch(
         saveSimulation({
