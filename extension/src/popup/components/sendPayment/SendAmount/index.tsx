@@ -585,9 +585,9 @@ export const SendAmount = ({
           subtitle={
             <div className="SendAmount__subtitle">
               <InfoTooltip
-                infoText={
-                  "Your available balance accounts for the base reserve requirement and the recommended network fee. This number may be lower than your total balance."
-                }
+                infoText={t(
+                  "Your available balance accounts for the base reserve requirement and the recommended network fee. This number may be lower than your total balance.",
+                )}
                 placement="bottom-start"
               >
                 {`${formatAmount(availBalance)} ${parsedSourceAsset.code} ${t("available")}`}
