@@ -35,6 +35,11 @@ import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
+import { mapHistoryItemData } from "popup/helpers/history/mappers";
+import {
+  isChangeTrustOperation,
+  isCreateAccountOperation,
+} from "popup/helpers/history/helpers";
 
 import { TransactionDetailProps } from "../TransactionDetail";
 
@@ -179,8 +184,28 @@ export const HistoryItem = ({
   const translations = useCallback(t, []);
 
   useEffect(() => {
+    const map = async () => {
+      const historyItemData = await mapHistoryItemData(
+        operation,
+        networkDetails,
+        // themeColors,
+      );
+
+      console.log("historyItemData", historyItemData);
+    };
+
+    map();
+  }, []);
+
+  useEffect(() => {
     const buildHistoryItem = async () => {
       setIsLoading(true);
+
+      const historyItemData = await mapHistoryItemData(
+        operation,
+        networkDetails,
+        // themeColors,
+      );
 
       if (type === Horizon.HorizonApi.OperationResponseType.createAccount) {
         // If you're not creating an external account then this means you're
@@ -233,9 +258,7 @@ export const HistoryItem = ({
             operationText: operationString,
           }));
         }
-      } else if (
-        type === Horizon.HorizonApi.OperationResponseType.changeTrust
-      ) {
+      } else if (isChangeTrustOperation(type)) {
         const destIcon = await getIconUrlFromIssuer({
           key: assetIssuer || "",
           code: destAssetCode || "",
@@ -259,11 +282,11 @@ export const HistoryItem = ({
             </div>
           </>,
         );
-        setRowText(translations("Add trustline"));
+        setRowText(historyItemData.actionText);
         setTxDetails((_state) => ({
           ..._state,
-          headerTitle: translations("Add trustline"),
-          operationText: operationString,
+          headerTitle: historyItemData.actionText,
+          operationText: historyItemData.operationString,
         }));
       } else if (isSwap) {
         const formattedAmount = `${formatAmount(
@@ -686,7 +709,7 @@ export const HistoryItem = ({
         setTxDetails((_state) => ({
           ..._state,
           headerTitle: translations("Transaction"),
-          operationText: operationString,
+          operationText: historyItemData.operationString,
         }));
       }
 
