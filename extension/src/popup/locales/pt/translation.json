@@ -91,6 +91,7 @@
   "Buy XLM with Coinbase": "Buy XLM with Coinbase",
   "Buying": "Buying",
   "by": "by",
+  "By using these services, you act at your own risk, and Freighter or Stellar Development Foundation (SDF) bears no liability for any resulting losses or damages": "By using these services, you act at your own risk, and Freighter or Stellar Development Foundation (SDF) bears no liability for any resulting losses or damages.",
   "Cancel": "Cancel",
   "Check the destination account memo requirements and include it in the transaction": "Check the destination account memo requirements and include it in the transaction.",
   "Choose Asset": "Choose Asset",
@@ -126,6 +127,7 @@
   "Create New Address": "Create New Address",
   "Create new wallet": "Create new wallet",
   "Custom": "Custom",
+  "Dapps": "Dapps",
   "data entries": "data entries",
   "Date": "Date",
   "Delete": "Delete",
@@ -142,6 +144,7 @@
   "digits after the decimal allowed": "digits after the decimal allowed",
   "Disabled": "Disabled",
   "Disconnect all": "Disconnect all",
+  "Discover": "Discover",
   "Do this later": "Do this later",
   "Done": "Done",
   "Double check the domain name": {
@@ -197,6 +200,9 @@
     " It’s a safer alternative to copying and pasting private keys for use with web apps": "Freighter is a non-custodial wallet extension that enables you to sign Stellar transactions via your browser. It’s a safer alternative to copying and pasting private keys for use with web apps."
   },
   "Freighter is set to": "Freighter is set to",
+  "Freighter provides access to third-party dApps, protocols, and tokens for informational purposes only": {
+    " Freighter does not endorse any listed items": "Freighter provides access to third-party dApps, protocols, and tokens for informational purposes only. Freighter does not endorse any listed items."
+  },
   "Freighter uses asset lists to check assets you interact with": {
     " You can define your own assets lists in Settings": "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
   },
@@ -342,6 +348,7 @@
   },
   "One or more operations in this transaction failed": "One or more operations in this transaction failed.",
   "Only accounts ready for migration will be migrated": "Only accounts ready for migration will be migrated.",
+  "Open": "Open",
   "Operation": "Operation",
   "Operations": "Operations",
   "Optional": "Optional",
@@ -464,6 +471,7 @@
       " You may enable connection to domains that do not use an SSL certificate in Settings &gt; Security &gt; Advanced Settings": "The website <1>{url}</1> does not use an SSL certificate. For additional safety Freighter only works with websites that provide an SSL certificate by default. You may enable connection to domains that do not use an SSL certificate in Settings &gt; Security &gt; Advanced Settings."
     }
   },
+  "There are no sites to display at this moment": "There are no sites to display at this moment.",
   "These assets are not on any of your lists": {
     " Proceed with caution before adding": "These assets are not on any of your lists. Proceed with caution before adding."
   },

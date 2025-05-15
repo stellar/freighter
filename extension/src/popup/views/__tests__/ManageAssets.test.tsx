@@ -431,7 +431,7 @@ describe.skip("Manage assets", () => {
     );
   });
 
-  it.only("renders manage assets view initial state", async () => {
+  it("renders manage assets view initial state", async () => {
     await initView();
 
     await waitFor(() => {

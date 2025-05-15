@@ -58,6 +58,7 @@ import { ManageNetwork } from "popup/views/ManageNetwork";
 import { LeaveFeedback } from "popup/views/LeaveFeedback";
 import { AccountMigration } from "popup/views/AccountMigration";
 import { AddFunds } from "popup/views/AddFunds";
+import { Discover } from "popup/views/Discover";
 
 import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
@@ -276,6 +277,7 @@ export const Router = () => (
           element={<AdvancedSettings />}
         ></Route>
         <Route path={ROUTES.addFunds} element={<AddFunds />} />
+        <Route path={ROUTES.discover} element={<Discover />} />
 
         {DEV_SERVER && (
           <>

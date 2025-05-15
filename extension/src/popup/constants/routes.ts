@@ -51,4 +51,6 @@ export enum ROUTES {
   accountMigrationMnemonicPhrase = "/account-migration/mnemonic-phrase",
   accountMigrationConfirmMigration = "/account-migration/confirm-migration",
   accountMigrationMigrationComplete = "/account-migration/migration-complete",
+
+  discover = "/discover",
 }
