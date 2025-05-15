@@ -159,6 +159,7 @@ export const submitMessage = async (
 
 export const submitAuthEntry = async (
   entryXdr: string,
+  version: string,
   opts?: {
     address?: string;
     networkPassphrase?: string;
@@ -175,6 +176,7 @@ export const submitAuthEntry = async (
     response = await sendMessageToContentScript({
       entryXdr,
       accountToSign,
+      apiVersion: version,
       networkPassphrase: opts?.networkPassphrase,
       type: EXTERNAL_SERVICE_TYPES.SUBMIT_AUTH_ENTRY,
     });

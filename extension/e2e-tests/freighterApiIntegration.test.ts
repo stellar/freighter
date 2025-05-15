@@ -321,3 +321,30 @@ test("should not add token when not allowed", async ({ page, extensionId }) => {
     screenshot: "domain-not-allowed-add-token.png",
   });
 });
+test("should get public key when logged out", async ({ page, extensionId }) => {
+  await loginToTestAccount({ page, extensionId });
+  await page.getByTestId("BottomNav-link-settings").click();
+  await page.getByText("Log Out").click();
+  await expect(page.getByText("Welcome back!")).toBeVisible();
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/requestAccess",
+  );
+  await pageTwo.getByText("Request Access").click();
+
+  const popup = await popupPromise;
+  await expect(popup.getByText("Welcome back!")).toBeVisible();
+  await popup.locator("#password-input").fill("My-password123");
+  await popup.getByText("Login").click();
+  await expect(popup.getByText("Connection Request")).toBeVisible();
+  await popup.getByTestId("grant-access-connect-button").click();
+
+  await expect(pageTwo.getByRole("textbox").first()).toHaveValue(
+    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+  );
+});

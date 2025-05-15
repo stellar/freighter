@@ -422,7 +422,7 @@ test("Logout and create new account", async ({ page, extensionId }) => {
   await newPage.getByText("Do this later").click();
   await expect(newPage.getByText("You’re all set!")).toBeVisible();
 
-  await newPage.goto(`chrome-extension://${extensionId}/index.html#/account`);
+  await newPage.goto(`chrome-extension://${extensionId}/index.html#/`);
   await expect(newPage.getByTestId("network-selector-open")).toBeVisible({
     timeout: 10000,
   });
@@ -500,7 +500,7 @@ test("Logout and import new account", async ({ page, extensionId }) => {
     timeout: 20000,
   });
 
-  await newPage.goto(`chrome-extension://${extensionId}/index.html#/account`);
+  await newPage.goto(`chrome-extension://${extensionId}/index.html#/`);
   await expect(newPage.getByTestId("network-selector-open")).toBeVisible({
     timeout: 10000,
   });

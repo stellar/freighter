@@ -1,35 +1,36 @@
-import React from "react";
-import { Toggle } from "@stellar/design-system";
+import React, { useEffect } from "react";
+import { Notification, Toggle } from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { View } from "popup/basics/layout/View";
 import { AppDispatch } from "popup/App";
 
-import { saveSettings, settingsSelector } from "popup/ducks/settings";
+import { saveSettings } from "popup/ducks/settings";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AutoSaveFields } from "popup/components/AutoSave";
 
 import "./styles.scss";
+import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
+import { RequestState } from "constants/request";
+import { Loading } from "popup/components/Loading";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { Navigate, useLocation } from "react-router-dom";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const Preferences = () => {
   const { t } = useTranslation();
+  const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
-  const { isDataSharingAllowed, isMemoValidationEnabled, isHideDustEnabled } =
-    useSelector(settingsSelector);
+  const { state, fetchData } = useGetAppData();
 
   interface SettingValues {
     isValidatingMemoValue: boolean;
     isDataSharingAllowedValue: boolean;
     isHideDustEnabledValue: boolean;
   }
-
-  const initialValues: SettingValues = {
-    isValidatingMemoValue: isMemoValidationEnabled,
-    isDataSharingAllowedValue: isDataSharingAllowed,
-    isHideDustEnabledValue: isHideDustEnabled,
-  };
 
   const handleSubmit = async (formValue: SettingValues) => {
     const {
@@ -45,6 +46,63 @@ export const Preferences = () => {
         isHideDustEnabled: isHideDustEnabledValue,
       }),
     );
+  };
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (
+    state.state === RequestState.IDLE ||
+    state.state === RequestState.LOADING
+  ) {
+    return <Loading />;
+  }
+
+  if (state.state === RequestState.ERROR) {
+    return (
+      <div className="AddAsset__fetch-fail">
+        <Notification
+          variant="error"
+          title={t("Failed to fetch your account data.")}
+        >
+          {t("Your account data could not be fetched at this time.")}
+        </Notification>
+      </div>
+    );
+  }
+
+  if (state.data?.type === AppDataType.REROUTE) {
+    if (state.data.shouldOpenTab) {
+      openTab(newTabHref(state.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${state.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  reRouteOnboarding({
+    type: state.data.type,
+    applicationState: state.data.account.applicationState,
+    state: state.state,
+  });
+
+  const { isMemoValidationEnabled, isDataSharingAllowed, isHideDustEnabled } =
+    state.data.settings;
+
+  const initialValues: SettingValues = {
+    isValidatingMemoValue: isMemoValidationEnabled,
+    isDataSharingAllowedValue: isDataSharingAllowed,
+    isHideDustEnabledValue: isHideDustEnabled,
   };
 
   return (

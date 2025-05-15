@@ -8,12 +8,15 @@ import { Balances } from "@shared/api/types/backend-api";
 
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
+import { reducer as cache } from "popup/ducks/cache";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import {
   reducer as transactionSubmission,
   initialState as transactionSubmissionInitialState,
 } from "popup/ducks/transactionSubmission";
 import { reducer as tokenPaymentSimulation } from "popup/ducks/token-payment";
+import { WalletType } from "@shared/constants/hardwareWallet";
+import { Account } from "@shared/api/types";
 
 export const TEST_PUBLIC_KEY =
   "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
@@ -26,9 +29,10 @@ const rootReducer = combineReducers({
   settings,
   transactionSubmission,
   tokenPaymentSimulation,
+  cache,
 });
 
-const makeDummyStore = (state: any) =>
+export const makeDummyStore = (state: any) =>
   configureStore({
     reducer: rootReducer,
     preloadedState: state,
@@ -161,24 +165,24 @@ export const mockTokenBalance = {
 
 export const mockAccounts = [
   {
-    hardwareWalletType: "",
+    hardwareWalletType: "" as WalletType,
     imported: false,
     name: "Account 1",
     publicKey: "G1",
   },
   {
-    hardwareWalletType: "",
+    hardwareWalletType: "" as WalletType,
     imported: true,
     name: "Account 2",
     publicKey: "G2",
   },
   {
-    hardwareWalletType: "Ledger",
+    hardwareWalletType: "Ledger" as WalletType,
     imported: true,
     name: "Ledger 1",
     publicKey: "L1",
   },
-];
+] as Account[];
 
 export const mockAccountHistory = [
   {
@@ -274,4 +278,11 @@ export const validAssetList = {
       decimals: 7,
     },
   ],
+};
+
+export const mockSelector = <T,>(
+  selector: unknown,
+  implementation: () => T,
+) => {
+  (selector as unknown as jest.Mock).mockImplementation(implementation);
 };

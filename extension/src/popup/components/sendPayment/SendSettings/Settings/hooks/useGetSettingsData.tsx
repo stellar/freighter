@@ -184,17 +184,17 @@ function useGetSettingsData(
     initialState,
   );
 
-  const { fetchData: fetchBalances } = useGetBalances(
-    publicKey,
-    networkDetails,
-    balanceOptions,
-  );
+  const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
   const reduxDispatch = useDispatch();
 
   const fetchData = async (): Promise<GetSettingsData | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const balancesResult = await fetchBalances();
+      const balancesResult = await fetchBalances(
+        publicKey,
+        balanceOptions.isMainnet,
+        networkDetails,
+      );
 
       if (isError<AccountBalances>(balancesResult)) {
         throw new Error(balancesResult.message);

@@ -8,7 +8,7 @@ import { store } from "popup/App";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { AMPLITUDE_KEY } from "constants/env";
 import { settingsDataSharingSelector } from "popup/ducks/settings";
-import { AccountType } from "@shared/api/types";
+import { Account, AccountType } from "@shared/api/types";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 type MetricsPayloadAction = PayloadAction<{
@@ -218,5 +218,35 @@ export const storeBalanceMetricData = (
     metricsData.unfundedFreighterAccounts = unfundedFreighterAccounts;
   }
 
+  localStorage.setItem(METRICS_DATA, JSON.stringify(metricsData));
+};
+
+export const storeAccountMetricsData = (
+  publicKey: string,
+  allAccounts: Account[],
+) => {
+  const metricsData: MetricsData = JSON.parse(
+    localStorage.getItem(METRICS_DATA) || "{}",
+  );
+
+  let accountType = AccountType.FREIGHTER;
+  allAccounts.forEach((acc: Account) => {
+    if (acc.hardwareWalletType) {
+      metricsData.hwExists = true;
+    } else if (acc.imported) {
+      metricsData.importedExists = true;
+    }
+
+    if (acc.publicKey === publicKey) {
+      if (acc.hardwareWalletType) {
+        accountType = AccountType.HW;
+      } else if (acc.imported) {
+        accountType = AccountType.IMPORTED;
+      } else {
+        accountType = AccountType.FREIGHTER;
+      }
+    }
+  });
+  metricsData.accountType = accountType;
   localStorage.setItem(METRICS_DATA, JSON.stringify(metricsData));
 };

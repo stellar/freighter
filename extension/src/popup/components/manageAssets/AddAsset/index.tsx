@@ -1,20 +1,17 @@
 import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Networks, StellarToml, StrKey } from "stellar-sdk";
 import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
+import { Notification } from "@stellar/design-system";
 import { getTokenDetails } from "@shared/api/internal";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { isSacContractExecutable } from "@shared/helpers/soroban/token";
 
 import { FormRows } from "popup/basics/Forms";
-import {
-  settingsNetworkDetailsSelector,
-  settingsSelector,
-} from "popup/ducks/settings";
-import { isMainnet, isTestnet } from "helpers/stellar";
+import { settingsSelector } from "popup/ducks/settings";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import {
   getAssetListsForAsset,
@@ -29,9 +26,14 @@ import {
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
-import { publicKeySelector } from "popup/ducks/accountServices";
-
-import { useGetBalances } from "helpers/hooks/useGetBalances";
+import { useGetAddAssetData } from "./hooks/useGetAddAssetData";
+import { RequestState } from "helpers/hooks/fetchHookInterface";
+import { Loading } from "popup/components/Loading";
+import { NetworkDetails } from "@shared/constants/stellar";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 import { ManageAssetRows, ManageAssetCurrency } from "../ManageAssetRows";
 import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
@@ -53,8 +55,7 @@ interface AssetDomainToml {
 
 export const AddAsset = () => {
   const { t } = useTranslation();
-  const publicKey = useSelector(publicKeySelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const location = useLocation();
   const [verifiedAssetRows, setVerifiedAssetRows] = useState(
     [] as ManageAssetCurrency[],
   );
@@ -70,18 +71,24 @@ export const AddAsset = () => {
   const { assetsLists } = useSelector(settingsSelector);
   const navigate = useNavigate();
 
-  // TODO: use this loading state
-  const { state, fetchData } = useGetBalances(publicKey, networkDetails, {
-    isMainnet: isMainnet(networkDetails),
+  const { state, fetchData } = useGetAddAssetData({
     showHidden: true,
     includeIcons: false,
   });
 
   const ResultsRef = useRef<HTMLDivElement>(null);
-  const isAllowListVerificationEnabled =
-    isMainnet(networkDetails) || isTestnet(networkDetails);
 
-  const handleTokenLookup = async (contractId: string) => {
+  const handleTokenLookup = async ({
+    contractId,
+    networkDetails,
+    publicKey,
+    isAllowListVerificationEnabled,
+  }: {
+    contractId: string;
+    networkDetails: NetworkDetails;
+    publicKey: string;
+    isAllowListVerificationEnabled: boolean;
+  }) => {
     // clear the UI while we work through the flow
     setIsSearching(true);
     setIsVerifiedToken(false);
@@ -184,7 +191,13 @@ export const AddAsset = () => {
     setIsVerificationInfoShowing(isAllowListVerificationEnabled);
   };
 
-  const handleIssuerLookup = async (issuer: string) => {
+  const handleIssuerLookup = async ({
+    issuer,
+    networkDetails,
+  }: {
+    issuer: string;
+    networkDetails: NetworkDetails;
+  }) => {
     let assetDomainToml = {} as AssetDomainToml;
     const server = stellarSdkServer(
       networkDetails.networkUrl,
@@ -254,26 +267,35 @@ export const AddAsset = () => {
 
   /* eslint-disable react-hooks/exhaustive-deps */
   const handleSearch = useCallback(
-    debounce(async ({ target: { value: contractId } }) => {
-      if (isContractId(contractId)) {
-        await handleTokenLookup(contractId);
-      } else if (StrKey.isValidEd25519PublicKey(contractId)) {
-        await handleIssuerLookup(contractId);
-      } else {
-        setVerifiedAssetRows([]);
-        setUnverifiedAssetRows([]);
-      }
-    }, 500),
+    debounce(
+      async (
+        { target: { value: contractId } },
+        publicKey: string,
+        networkDetails: NetworkDetails,
+        isAllowListVerificationEnabled: boolean,
+      ) => {
+        if (isContractId(contractId)) {
+          await handleTokenLookup({
+            contractId,
+            publicKey,
+            networkDetails,
+            isAllowListVerificationEnabled,
+          });
+        } else if (StrKey.isValidEd25519PublicKey(contractId)) {
+          await handleIssuerLookup({ issuer: contractId, networkDetails });
+        } else {
+          setVerifiedAssetRows([]);
+          setUnverifiedAssetRows([]);
+        }
+      },
+      500,
+    ),
     [],
   );
 
   useEffect(() => {
     setHasNoResults(!verifiedAssetRows.length && !unverifiedAssetRows.length);
   }, [verifiedAssetRows, unverifiedAssetRows]);
-
-  useEffect(() => {
-    setIsVerificationInfoShowing(isAllowListVerificationEnabled);
-  }, [isAllowListVerificationEnabled]);
 
   useEffect(() => {
     const getData = async () => {
@@ -283,19 +305,60 @@ export const AddAsset = () => {
   }, []);
 
   const hasAssets = verifiedAssetRows.length || unverifiedAssetRows.length;
-  useEffect(() => {
-    const getData = async () => {
-      await fetchData();
-    };
-    getData();
-  }, []);
+
+  if (
+    state.state === RequestState.IDLE ||
+    state.state === RequestState.LOADING
+  ) {
+    return <Loading />;
+  }
+
+  if (state.state === RequestState.ERROR) {
+    return (
+      <div className="AddAsset__fetch-fail">
+        <Notification
+          variant="error"
+          title={t("Failed to fetch your account data.")}
+        >
+          {t("Your account data could not be fetched at this time.")}
+        </Notification>
+      </div>
+    );
+  }
+
+  if (state.data?.type === AppDataType.REROUTE) {
+    if (state.data.shouldOpenTab) {
+      openTab(newTabHref(state.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${state.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  reRouteOnboarding({
+    type: state.data.type,
+    applicationState: state.data?.applicationState,
+    state: state.state,
+  });
+
+  const data = state.data;
 
   return (
     <Formik initialValues={initialValues} onSubmit={() => {}}>
       {({ dirty }) => (
         <Form
           onChange={(e) => {
-            handleSearch(e);
+            handleSearch(
+              e,
+              data.publicKey,
+              data.networkDetails,
+              data.isAllowListVerificationEnabled,
+            );
             setHasNoResults(false);
           }}
         >
@@ -332,7 +395,7 @@ export const AddAsset = () => {
                   {hasAssets ? (
                     <ManageAssetRows
                       header={null}
-                      balances={state.data!}
+                      balances={data.balances}
                       verifiedAssetRows={verifiedAssetRows}
                       unverifiedAssetRows={unverifiedAssetRows}
                       isVerifiedToken={isVerifiedToken}

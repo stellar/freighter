@@ -9,7 +9,6 @@ import {
   saveAllowList as saveAllowListService,
   saveSettings as saveSettingsService,
   saveExperimentalFeatures as saveExperimentalFeaturesService,
-  loadSettings as loadSettingsService,
   changeNetwork as changeNetworkService,
   addCustomNetwork as addCustomNetworkService,
   removeCustomNetwork as removeCustomNetworkService,
@@ -82,10 +81,6 @@ const initialState = {
   ...experimentalFeaturesInitialState,
   assetsLists: DEFAULT_ASSETS_LISTS,
 };
-
-export const loadSettings = createAsyncThunk("settings/loadSettings", () =>
-  loadSettingsService(),
-);
 
 export const saveAllowList = createAsyncThunk<
   { allowList: AllowList },
@@ -352,6 +347,39 @@ const settingsSlice = createSlice({
     clearSettingsError(state) {
       state.error = "";
     },
+    saveSettings(state, action) {
+      const {
+        allowList,
+        isDataSharingAllowed,
+        networkDetails,
+        networksList,
+        isMemoValidationEnabled,
+        isExperimentalModeEnabled,
+        isHashSigningEnabled,
+        isSorobanPublicEnabled,
+        isRpcHealthy,
+        userNotification,
+        assetsLists,
+        isNonSSLEnabled,
+        isHideDustEnabled,
+      } = action?.payload || {
+        ...initialState,
+      };
+      state.allowList = allowList;
+      state.isDataSharingAllowed = isDataSharingAllowed;
+      state.networkDetails = networkDetails;
+      state.networksList = networksList;
+      state.isMemoValidationEnabled = isMemoValidationEnabled;
+      state.isExperimentalModeEnabled = isExperimentalModeEnabled;
+      state.isHashSigningEnabled = isHashSigningEnabled;
+      state.isSorobanPublicEnabled = isSorobanPublicEnabled;
+      state.isRpcHealthy = isRpcHealthy;
+      state.userNotification = userNotification;
+      state.assetsLists = assetsLists;
+      state.isNonSSLEnabled = isNonSSLEnabled;
+      state.isHideDustEnabled = isHideDustEnabled;
+      state.settingsState = SettingsState.SUCCESS;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(
@@ -421,62 +449,6 @@ const settingsSlice = createSlice({
         experimentalFeaturesState: SettingsState.SUCCESS,
       };
     });
-    builder.addCase(
-      loadSettings.fulfilled,
-      (
-        state,
-        action: PayloadAction<
-          Settings &
-            IndexerSettings &
-            ExperimentalFeatures & { assetsLists: AssetsLists }
-        >,
-      ) => {
-        const {
-          allowList,
-          isDataSharingAllowed,
-          networkDetails,
-          networksList,
-          isMemoValidationEnabled,
-          isExperimentalModeEnabled,
-          isHashSigningEnabled,
-          isSorobanPublicEnabled,
-          isRpcHealthy,
-          userNotification,
-          assetsLists,
-          isNonSSLEnabled,
-          isHideDustEnabled,
-        } = action?.payload || {
-          ...initialState,
-        };
-
-        return {
-          ...state,
-          allowList,
-          isDataSharingAllowed,
-          networkDetails,
-          networksList,
-          isMemoValidationEnabled,
-          isExperimentalModeEnabled,
-          isHashSigningEnabled,
-          isSorobanPublicEnabled,
-          isRpcHealthy,
-          userNotification,
-          assetsLists,
-          isNonSSLEnabled,
-          isHideDustEnabled,
-          settingsState: SettingsState.SUCCESS,
-        };
-      },
-    );
-    builder.addCase(loadSettings.pending, (state) => ({
-      ...state,
-      indexerState: SettingsState.LOADING,
-    }));
-    builder.addCase(loadSettings.rejected, (state) => ({
-      ...state,
-      indexerState: SettingsState.ERROR,
-      isRpcHealthy: false,
-    }));
     builder.addCase(
       changeNetwork.fulfilled,
       (
@@ -614,6 +586,7 @@ const settingsSlice = createSlice({
 export const { reducer } = settingsSlice;
 
 export const { clearSettingsError } = settingsSlice.actions;
+export const saveSettingsAction = settingsSlice.actions.saveSettings;
 
 export const settingsSelector = (state: {
   settings: Settings &

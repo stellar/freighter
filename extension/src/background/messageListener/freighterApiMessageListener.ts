@@ -10,6 +10,15 @@ import {
   ExternalRequestTx,
   ExternalRequest as Request,
 } from "@shared/api/types";
+import {
+  ResponseQueue,
+  SignTransactionResponse,
+  SignBlobResponse,
+  SignAuthEntryResponse,
+  AddTokenResponse,
+  RequestAccessResponse,
+  SetAllowedStatusResponse,
+} from "@shared/api/types/message-request";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import {
   FreighterApiInternalError,
@@ -97,18 +106,30 @@ export const freighterApiMessageListener = (
     // otherwise, we need to confirm either url or password. Maybe both
     const encodeOrigin = encodeObject({ tab, url: tabUrl });
 
-    browser.windows.create({
+    const window = await browser.windows.create({
       url: chrome.runtime.getURL(`/index.html#/grant-access?${encodeOrigin}`),
       ...WINDOW_SETTINGS,
       width: 400,
     });
 
     return new Promise((resolve) => {
-      const response = (url?: string) => {
+      const response = async (url: string, publicKey?: string) => {
         // queue it up, we'll let user confirm the url looks okay and then we'll send publicKey
         // if we're good, of course
         if (url === tabUrl) {
-          resolve({ publicKey: publicKeySelector(sessionStore.getState()) });
+          /* 
+            This timeout is a bit of a hack to ensure the window doesn't close before the promise resolves.
+            Wrapping in a setTimeout queues up the wndows.remove action into the event loop, but allows the promise to resolve first.
+            This is really only an issue in e2e tests as the e2e window closes too quickly to register a click.
+          */
+          setTimeout(() => {
+            if (window.id) {
+              // ensure the window is closed to prevent collisions with other popups
+              browser.windows.remove(window.id);
+            }
+          }, 50);
+
+          resolve({ publicKey });
         }
 
         resolve({
@@ -118,7 +139,7 @@ export const freighterApiMessageListener = (
         });
       };
 
-      responseQueue.push(response);
+      (responseQueue as ResponseQueue<RequestAccessResponse>).push(response);
     });
   };
 
@@ -201,7 +222,7 @@ export const freighterApiMessageListener = (
           });
         };
 
-        responseQueue.push(response);
+        (responseQueue as ResponseQueue<AddTokenResponse>).push(response);
       });
     } catch (e) {
       return {
@@ -334,7 +355,10 @@ export const freighterApiMessageListener = (
             }),
           );
         }
-        const response = (signedTransaction: string, signerAddress: string) => {
+        const response = (
+          signedTransaction: string,
+          signerAddress?: string,
+        ) => {
           if (signedTransaction) {
             resolve({ signedTransaction, signerAddress });
           }
@@ -346,7 +370,9 @@ export const freighterApiMessageListener = (
           });
         };
 
-        responseQueue.push(response);
+        (responseQueue as ResponseQueue<SignTransactionResponse>).push(
+          response,
+        );
       });
     } catch (e) {
       return {
@@ -399,7 +425,10 @@ export const freighterApiMessageListener = (
           );
         }
 
-        const response = (signedBlob: string, signerAddress: string) => {
+        const response = (
+          signedBlob: SignBlobResponse,
+          signerAddress?: string,
+        ) => {
           if (signedBlob) {
             if (apiVersion && semver.gte(apiVersion, "4.0.0")) {
               resolve({
@@ -418,7 +447,7 @@ export const freighterApiMessageListener = (
           });
         };
 
-        responseQueue.push(response);
+        (responseQueue as ResponseQueue<SignBlobResponse>).push(response);
       });
     } catch (e) {
       return {
@@ -431,8 +460,13 @@ export const freighterApiMessageListener = (
 
   const submitAuthEntry = async () => {
     try {
-      const { entryXdr, accountToSign, address, networkPassphrase } =
-        request as ExternalRequestAuthEntry;
+      const {
+        apiVersion,
+        entryXdr,
+        accountToSign,
+        address,
+        networkPassphrase,
+      } = request as ExternalRequestAuthEntry;
 
       const { tab, url: tabUrl = "" } = sender;
       const domain = getUrlHostname(tabUrl);
@@ -472,9 +506,20 @@ export const freighterApiMessageListener = (
             }),
           );
         }
-        const response = (signedAuthEntry: string) => {
+        const response = (
+          signedAuthEntry: SignAuthEntryResponse,
+          signerAddress?: string,
+        ) => {
           if (signedAuthEntry) {
-            resolve({ signedAuthEntry });
+            if (apiVersion && semver.gte(apiVersion, "4.2.0")) {
+              resolve({
+                signedAuthEntry:
+                  Buffer.from(signedAuthEntry).toString("base64"),
+                signerAddress,
+              });
+              return;
+            }
+            resolve({ signedAuthEntry, signerAddress });
           }
 
           resolve({
@@ -483,8 +528,7 @@ export const freighterApiMessageListener = (
             error: FreighterApiDeclinedError.message,
           });
         };
-
-        responseQueue.push(response);
+        (responseQueue as ResponseQueue<SignAuthEntryResponse>).push(response);
       });
     } catch (e) {
       return {
@@ -603,7 +647,7 @@ export const freighterApiMessageListener = (
         });
       };
 
-      responseQueue.push(response);
+      (responseQueue as ResponseQueue<SetAllowedStatusResponse>).push(response);
     });
   };
 

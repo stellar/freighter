@@ -2,8 +2,12 @@ import React from "react";
 import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 import { Horizon } from "stellar-sdk";
 import BigNumber from "bignumber.js";
+import * as ReactRouterDom from "react-router-dom";
 
-import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
+import {
+  APPLICATION_STATE,
+  APPLICATION_STATE as ApplicationState,
+} from "@shared/constants/applicationState";
 import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
@@ -16,8 +20,10 @@ import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import * as UseAssetDomain from "popup/helpers/useAssetDomain";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { SERVICE_TYPES } from "@shared/constants/services";
-import { Response } from "@shared/api/types";
+import { Response, SettingsState } from "@shared/api/types";
+import { accountNameSelector } from "popup/ducks/accountServices";
 import * as TokenListHelpers from "@shared/api/helpers/token-list";
+import * as RouteHelpers from "popup/helpers/route";
 
 import {
   Wrapper,
@@ -26,9 +32,15 @@ import {
   mockTestnetBalances,
   mockPrices,
   TEST_CANONICAL,
+  TEST_PUBLIC_KEY,
+  mockSelector,
 } from "../../__testHelpers__";
 import { Account } from "../Account";
 import { ROUTES } from "popup/constants/routes";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import * as AccountDataHooks from "../../views/Account/hooks/useGetAccountData";
+import { RequestState } from "helpers/hooks/fetchHookInterface";
 
 const mockHistoryOperations = {
   operations: [
@@ -44,43 +56,52 @@ const mockHistoryOperations = {
   ] as Horizon.ServerApi.PaymentOperationRecord[],
 };
 
-jest.spyOn(global, "fetch").mockImplementation((url) => {
-  if (
-    url ===
-    `${INDEXER_URL}/scan-asset-bulk?asset_ids=USDC-GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM`
-  ) {
-    return Promise.resolve({
-      json: async () => {
-        return {
-          data: {
-            results: {
-              "USDC-GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM": {
-                address: "",
-                chain: "stellar",
-                attack_types: {},
-                fees: {},
-                malicious_score: "1.0",
-                metadata: {},
-                financial_stats: {},
-                trading_limits: {},
-                result_type: "Malicious",
-                features: [
-                  { description: "", feature_id: "METADATA", type: "Benign" },
-                ],
+jest
+  .spyOn(global, "fetch")
+  .mockImplementation(
+    (url: string | URL | Request, _init?: RequestInit | undefined) => {
+      if (
+        url ===
+        `${INDEXER_URL}/scan-asset-bulk?asset_ids=USDC-GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM`
+      ) {
+        return Promise.resolve({
+          json: async () => {
+            return {
+              data: {
+                results: {
+                  "USDC-GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM":
+                    {
+                      address: "",
+                      chain: "stellar",
+                      attack_types: {},
+                      fees: {},
+                      malicious_score: "1.0",
+                      metadata: {},
+                      financial_stats: {},
+                      trading_limits: {},
+                      result_type: "Malicious",
+                      features: [
+                        {
+                          description: "",
+                          feature_id: "METADATA",
+                          type: "Benign",
+                        },
+                      ],
+                    },
+                },
               },
-            },
+            };
           },
-        };
-      },
-    } as any);
-  }
+        } as any);
+      }
 
-  return Promise.resolve({
-    json: async () => {
-      return [];
+      return Promise.resolve({
+        json: async () => {
+          return [];
+        },
+      } as any);
     },
-  } as any);
-});
+  );
 
 jest
   .spyOn(ApiInternal, "getHiddenAssets")
@@ -148,27 +169,9 @@ jest.mock("stellar-sdk", () => {
   };
 });
 
-// @ts-ignore
-jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
-  Promise.resolve({
-    publicKey: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
-    tokenIdList: ["C1"],
-    hasPrivateKey: false,
-    applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
-    allAccounts: mockAccounts,
-    bipPath: "foo",
-  }),
-);
-
 jest
   .spyOn(ApiInternal, "getTokenIds")
   .mockImplementation(() => Promise.resolve(["C1"]));
-
-jest
-  .spyOn(ApiInternal, "makeAccountActive")
-  .mockImplementation(() =>
-    Promise.resolve({ publicKey: "G2", hasPrivateKey: true, bipPath: "" }),
-  );
 
 jest
   .spyOn(ApiInternal, "getAccountHistory")
@@ -185,9 +188,62 @@ jest.spyOn(ApiInternal, "getAssetIcons").mockImplementation(() =>
   }),
 );
 
+jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+  Promise.resolve({
+    hasPrivateKey: true,
+    publicKey: TEST_PUBLIC_KEY,
+    applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    allAccounts: mockAccounts,
+    bipPath: "bip-path",
+    tokenIdList: [],
+  }),
+);
+
+jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+  Promise.resolve({
+    networkDetails: TESTNET_NETWORK_DETAILS,
+    networksList: DEFAULT_NETWORKS,
+    hiddenAssets: {},
+    allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+    error: "",
+    isDataSharingAllowed: false,
+    isMemoValidationEnabled: false,
+    isHideDustEnabled: true,
+    settingsState: SettingsState.SUCCESS,
+    isSorobanPublicEnabled: false,
+    isRpcHealthy: true,
+    userNotification: {
+      enabled: false,
+      message: "",
+    },
+    isExperimentalModeEnabled: false,
+    isHashSigningEnabled: false,
+    isNonSSLEnabled: false,
+    experimentalFeaturesState: SettingsState.SUCCESS,
+    assetsLists: DEFAULT_ASSETS_LISTS,
+  }),
+);
+
 jest
   .spyOn(TokenListHelpers, "getCombinedAssetListData")
   .mockImplementation(() => Promise.resolve([]));
+
+jest.mock("helpers/metrics", () => ({
+  storeAccountMetricsData: jest.fn(),
+  registerHandler: jest.fn(),
+  storeBalanceMetricData: jest.fn(),
+  emitMetric: jest.fn(),
+  metricsMiddleware: jest.fn(),
+}));
+
+jest.mock("popup/ducks/accountServices", () => {
+  const actual = jest.requireActual("popup/ducks/accountServices");
+  return {
+    ...actual,
+    accountNameSelector: jest.fn(),
+    allAccountsSelector: actual.allAccountsSelector,
+  };
+});
 
 describe("Account view", () => {
   afterAll(() => {
@@ -201,7 +257,7 @@ describe("Account view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
             allAccounts: mockAccounts,
@@ -228,7 +284,7 @@ describe("Account view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -256,7 +312,7 @@ describe("Account view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -297,7 +353,7 @@ describe("Account view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -342,7 +398,7 @@ describe("Account view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -377,7 +433,7 @@ describe("Account view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -414,7 +470,7 @@ describe("Account view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -444,13 +500,20 @@ describe("Account view", () => {
   });
 
   it("switches accounts", async () => {
+    mockSelector(accountNameSelector, () => "Account 1");
+
+    jest
+      .spyOn(ApiInternal, "makeAccountActive")
+      .mockImplementation(() =>
+        Promise.resolve({ publicKey: "G2", hasPrivateKey: true, bipPath: "" }),
+      );
     render(
       <Wrapper
         routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -467,6 +530,7 @@ describe("Account view", () => {
       const accountIdenticonNodes = screen.getAllByTestId(
         "account-list-identicon-button",
       );
+      mockSelector(accountNameSelector, () => "Account 2");
       await fireEvent.click(accountIdenticonNodes[2]);
     });
 
@@ -507,13 +571,49 @@ describe("Account view", () => {
       .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockLpBalance));
 
+    jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+      Promise.resolve({
+        hasPrivateKey: true,
+        publicKey: TEST_PUBLIC_KEY,
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+        allAccounts: mockAccounts,
+        bipPath: "bip-path",
+        tokenIdList: [],
+      }),
+    );
+
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: TESTNET_NETWORK_DETAILS,
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+      }),
+    );
+
     render(
       <Wrapper
         routes={[ROUTES.welcome]}
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -533,8 +633,32 @@ describe("Account view", () => {
       expect(assetNodes[1]).toHaveTextContent("0");
     });
   });
+
   it("shows prices and deltas", async () => {
-    // TODO: these mocks dont seem to reset, why?
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+      }),
+    );
     jest
       .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockBalances));
@@ -549,7 +673,7 @@ describe("Account view", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },
@@ -578,6 +702,184 @@ describe("Account view", () => {
       expect(screen.getByTestId(`asset-price-delta-native`)).toHaveTextContent(
         "1.10%",
       );
+    });
+  });
+
+  it("handles abandoned onboarding in password created step", async () => {
+    jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+      Promise.resolve({
+        hasPrivateKey: true,
+        publicKey: TEST_PUBLIC_KEY,
+        applicationState: APPLICATION_STATE.PASSWORD_CREATED,
+        allAccounts: mockAccounts,
+        bipPath: "bip-path",
+        tokenIdList: [],
+      }),
+    );
+
+    const mockReRoute = jest
+      .spyOn(RouteHelpers, "reRouteOnboarding")
+      .mockImplementation(jest.fn());
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "",
+            allAccounts: [],
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(mockReRoute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: AppDataType.RESOLVED,
+          applicationState: ApplicationState.PASSWORD_CREATED,
+        }),
+      );
+    });
+  });
+
+  it("handles abandoned onboarding in failed mnemonic phrase step", async () => {
+    jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+      Promise.resolve({
+        hasPrivateKey: true,
+        publicKey: TEST_PUBLIC_KEY,
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_FAILED,
+        allAccounts: mockAccounts,
+        bipPath: "bip-path",
+        tokenIdList: [],
+      }),
+    );
+
+    const mockReRoute = jest
+      .spyOn(RouteHelpers, "reRouteOnboarding")
+      .mockImplementation(jest.fn());
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_FAILED,
+            publicKey: "",
+            allAccounts: [],
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(mockReRoute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: AppDataType.RESOLVED,
+          applicationState: ApplicationState.MNEMONIC_PHRASE_FAILED,
+        }),
+      );
+    });
+  });
+
+  it("handles expired session unlock account routing", async () => {
+    jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+      Promise.resolve({
+        hasPrivateKey: true,
+        publicKey: "",
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+        allAccounts: mockAccounts,
+        bipPath: "bip-path",
+        tokenIdList: [],
+      }),
+    );
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "",
+            allAccounts: [],
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <ReactRouterDom.Routes>
+          <ReactRouterDom.Route path={ROUTES.account} element={<Account />} />
+          <ReactRouterDom.Route
+            path={ROUTES.unlockAccount}
+            element={<div data-testid="rerouted" />}
+          />
+        </ReactRouterDom.Routes>
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("rerouted")).toBeInTheDocument();
+    });
+  });
+
+  it("handles abandoned onboarding in application started phrase step", async () => {
+    jest.spyOn(AccountDataHooks, "useGetAccountData").mockReturnValue({
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          type: AppDataType.REROUTE,
+          shouldOpenTab: false,
+          routeTarget: ROUTES.welcome,
+        },
+        error: null,
+      },
+      fetchData: jest.fn(),
+    });
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.APPLICATION_STARTED,
+            publicKey: "",
+            allAccounts: [],
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <ReactRouterDom.Routes>
+          <ReactRouterDom.Route path={ROUTES.account} element={<Account />} />
+          <ReactRouterDom.Route
+            path={ROUTES.welcome}
+            element={<div data-testid="rerouted" />}
+          />
+        </ReactRouterDom.Routes>
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("rerouted")).toBeInTheDocument();
     });
   });
 });

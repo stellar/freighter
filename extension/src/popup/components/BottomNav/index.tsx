@@ -13,17 +13,23 @@ interface NavLinkProps {
   children: React.ReactNode;
 }
 
-const BottomNavLink = ({ children, to }: NavLinkProps) => (
-  <NavLink
-    to={to}
-    className={({ isActive }) =>
-      isActive ? "BottomNav__link BottomNav__link--active" : "BottomNav__link"
-    }
-    data-testid={`BottomNav-link-${to.replace("/", "")}`}
-  >
-    <div className="BottomNav__link__icon">{children}</div>
-  </NavLink>
-);
+const BottomNavLink = ({ children, to }: NavLinkProps) => {
+  const dataTestId =
+    to === "/"
+      ? "BottomNav-link-account"
+      : `BottomNav-link-${to.replace("/", "")}`;
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        isActive ? "BottomNav__link BottomNav__link--active" : "BottomNav__link"
+      }
+      data-testid={dataTestId}
+    >
+      <div className="BottomNav__link__icon">{children}</div>
+    </NavLink>
+  );
+};
 
 export const BottomNav = () => {
   const { t } = useTranslation();

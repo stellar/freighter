@@ -1,7 +1,6 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
 
-import { PublicKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 
 import { NetworkForm } from "popup/components/manageNetwork/NetworkForm";
@@ -26,28 +25,10 @@ export const ManageNetwork = () => {
     <Routes>
       <Route
         path={addNetworkPath}
-        element={
-          <PublicKeyRoute>
-            <NetworkForm isEditing={false} />
-          </PublicKeyRoute>
-        }
+        element={<NetworkForm isEditing={false} />}
       ></Route>
-      <Route
-        path={networkSettingsPath}
-        element={
-          <PublicKeyRoute>
-            <NetworkSettings />
-          </PublicKeyRoute>
-        }
-      ></Route>
-      <Route
-        path={editNetworkPath}
-        element={
-          <PublicKeyRoute>
-            <NetworkForm isEditing />
-          </PublicKeyRoute>
-        }
-      ></Route>
+      <Route path={networkSettingsPath} element={<NetworkSettings />}></Route>
+      <Route path={editNetworkPath} element={<NetworkForm isEditing />}></Route>
     </Routes>
   );
 };

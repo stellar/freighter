@@ -20,6 +20,7 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { addAssetsList, modifyAssetsList } from "popup/ducks/settings";
 import { navigateTo } from "popup/helpers/navigate";
+import { saveTokenLists } from "popup/ducks/cache";
 import { DeleteModal } from "../DeleteModal";
 
 import "./styles.scss";
@@ -233,6 +234,7 @@ export const ModifyAssetList = ({
     }
 
     if (modifyAssetsList.fulfilled.match(modifyAssetsListResp)) {
+      dispatch(saveTokenLists([]));
       navigateTo(ROUTES.manageAssetsLists, navigate);
     }
   };

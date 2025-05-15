@@ -30,7 +30,7 @@ export const login = async ({ page, extensionId }) => {
     timeout: 20000,
   });
 
-  await page.goto(`chrome-extension://${extensionId}/index.html#/account`);
+  await page.goto(`chrome-extension://${extensionId}/index.html#/`);
   await expect(page.getByTestId("network-selector-open")).toBeVisible({
     timeout: 10000,
   });
@@ -88,7 +88,7 @@ export const loginToTestAccount = async ({ page, extensionId }) => {
     timeout: 20000,
   });
 
-  await page.goto(`chrome-extension://${extensionId}/index.html#/account`);
+  await page.goto(`chrome-extension://${extensionId}/index.html#/`);
   await expect(page.getByTestId("network-selector-open")).toBeVisible({
     timeout: 50000,
   });

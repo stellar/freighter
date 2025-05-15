@@ -1,6 +1,7 @@
 import { Federation, Horizon, MuxedAccount } from "stellar-sdk";
 import { BigNumber } from "bignumber.js";
 import {
+  Account,
   AssetVisibility,
   HorizonOperation,
   IssuerKey,
@@ -290,4 +291,36 @@ export const getBaseAccount = async (address?: string) => {
     return fedResp.account_id;
   }
   return address;
+};
+
+export const signFlowAccountSelector = ({
+  allAccounts,
+  publicKey,
+  accountToSign,
+  setActiveAccount,
+}: {
+  allAccounts: Account[];
+  publicKey: string;
+  accountToSign: string | undefined;
+  setActiveAccount: (publicKey: string) => void;
+}) => {
+  let currentAccount = allAccounts.find(
+    (account) => account.publicKey === publicKey,
+  );
+
+  allAccounts.forEach((account) => {
+    if (accountToSign) {
+      // does the user have the `accountToSign` somewhere in the accounts list?
+      if (account.publicKey === accountToSign) {
+        // if the `accountToSign` is found, but it isn't active, make it active
+        if (publicKey !== account.publicKey) {
+          setActiveAccount(account.publicKey);
+        }
+
+        // save the details of the `accountToSign`
+        currentAccount = account;
+      }
+    }
+  });
+  return currentAccount;
 };

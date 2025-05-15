@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
@@ -34,6 +34,7 @@ import {
   isPathPaymentSelector,
   ShowOverlayStatus,
   startHwSign,
+  resetSubmission,
 } from "popup/ducks/transactionSubmission";
 import {
   settingsNetworkDetailsSelector,
@@ -70,6 +71,7 @@ import {
   TxDetailsData,
   useGetTxDetailsData,
 } from "./hooks/useGetTxDetailsData";
+import { VerifyAccountDrawer } from "popup/components/VerifyAccountDrawer";
 
 import "./styles.scss";
 
@@ -147,6 +149,8 @@ export const TransactionDetails = ({
 }) => {
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
+  const [isVerifyAccountModalOpen, setIsVerifyAccountModalOpen] =
+    useState(false);
   const submission = useSelector(transactionSubmissionSelector);
   const {
     transactionData: {
@@ -262,9 +266,10 @@ export const TransactionDetails = ({
         );
 
         if (submitFreighterSorobanTransaction.fulfilled.match(submitResp)) {
-          emitMetric(METRIC_NAMES.sendPaymentSuccess, {
-            sourceAsset: sourceAsset.code,
-          });
+          addRecentAddress({ address: destination }),
+            emitMetric(METRIC_NAMES.sendPaymentSuccess, {
+              sourceAsset: sourceAsset.code,
+            });
 
           if (isSoroswap && destAsset.issuer) {
             await dispatch(
@@ -315,7 +320,7 @@ export const TransactionDetails = ({
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {
           if (!isSwap) {
             await dispatch(
-              addRecentAddress({ publicKey: federationAddress || destination }),
+              addRecentAddress({ address: federationAddress || destination }),
             );
           }
           if (isPathPayment) {
@@ -382,11 +387,9 @@ export const TransactionDetails = ({
     source: ReturnType<typeof getAssetFromCanonical>,
     dest: ReturnType<typeof getAssetFromCanonical>,
   ) => {
+    const destBalances = details!.destinationBalances.balances || [];
     const sourceBalance = findAssetBalance(details!.balances.balances, source);
-    const destBalance = findAssetBalance(
-      details!.destinationBalances.balances,
-      dest,
-    );
+    const destBalance = findAssetBalance(destBalances, dest);
     if (
       sourceBalance &&
       details!.isSourceAssetSuspicious &&
@@ -407,6 +410,15 @@ export const TransactionDetails = ({
   const isLoading =
     txDetailsData.state === RequestState.IDLE ||
     txDetailsData.state === RequestState.LOADING;
+
+  useEffect(() => {
+    if (
+      txDetailsData.state === RequestState.SUCCESS &&
+      !txDetailsData.data.hasPrivateKey
+    ) {
+      setIsVerifyAccountModalOpen(true);
+    }
+  }, [txDetailsData]);
 
   return (
     <>
@@ -618,12 +630,12 @@ export const TransactionDetails = ({
                 />
               )}
             </div>
+            <div className="TransactionDetails__bottom-wrapper__copy">
+              {(isPathPayment || isSwap) &&
+                submission.submitStatus !== ActionStatus.SUCCESS &&
+                t("The final amount is approximate and may change")}
+            </div>
           </View.Content>
-          <div className="TransactionDetails__bottom-wrapper__copy">
-            {(isPathPayment || isSwap) &&
-              submission.submitStatus !== ActionStatus.SUCCESS &&
-              t("The final amount is approximate and may change")}
-          </div>
           <View.Footer isInline>
             {submission.submitStatus === ActionStatus.SUCCESS ? (
               <StellarExpertButton />
@@ -634,6 +646,7 @@ export const TransactionDetails = ({
                   variant="secondary"
                   onClick={() => {
                     dispatch(resetSimulation());
+                    dispatch(resetSubmission());
                     navigateTo(ROUTES.account, navigate);
                   }}
                 >
@@ -659,6 +672,13 @@ export const TransactionDetails = ({
               </>
             )}
           </View.Footer>
+          <div className="TransactionDetails__modal-wrapper">
+            <VerifyAccountDrawer
+              publicKey={publicKey}
+              isModalOpen={isVerifyAccountModalOpen}
+              setIsModalOpen={setIsVerifyAccountModalOpen}
+            />
+          </div>
         </React.Fragment>
       )}
     </>
