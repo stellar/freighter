@@ -68,6 +68,7 @@ import { newTabHref } from "helpers/urls";
 import { Navigate, useLocation } from "react-router-dom";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
+import { InfoTooltip } from "popup/basics/InfoTooltip";
 
 enum AMOUNT_ERROR {
   TOO_HIGH = "amount too high",
@@ -583,8 +584,14 @@ export const SendAmount = ({
           }
           subtitle={
             <div className="SendAmount__subtitle">
-              <span>{formatAmount(availBalance)}</span>{" "}
-              <span>{parsedSourceAsset.code}</span> {t("available")}
+              <InfoTooltip
+                infoText={
+                  "Your available balance accounts for the base reserve requirement and the recommended network fee. This number may be lower than your total balance."
+                }
+                placement="bottom-start"
+              >
+                {`${formatAmount(availBalance)} ${parsedSourceAsset.code} ${t("available")}`}
+              </InfoTooltip>
             </div>
           }
           hasBackButton={!isSwap}
