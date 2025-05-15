@@ -1,7 +1,7 @@
 import React from "react";
 import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SorobanRpc } from "stellar-sdk";
+import { rpc as SorobanRpc } from "stellar-sdk";
 
 import {
   TESTNET_NETWORK_DETAILS,

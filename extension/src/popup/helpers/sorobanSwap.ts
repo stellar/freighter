@@ -297,14 +297,12 @@ export const buildAndSimulateSoroswapTx = async ({
 
     // If the simulation response is valid, we can prepare the transaction to be submitted to the network
     // This is the transaction the user will sign and then submit to complete the swap
-    const preparedTransaction = Sdk.SorobanRpc.assembleTransaction(
-      builtTx,
-      simulationTransaction,
-    )
+    const preparedTransaction = Sdk.rpc
+      .assembleTransaction(builtTx, simulationTransaction)
       .build()
       .toXDR();
 
-    if (Sdk.SorobanRpc.Api.isSimulationError(simulationTransaction)) {
+    if (Sdk.rpc.Api.isSimulationError(simulationTransaction)) {
       throw new Error(simulationTransaction.error);
     }
 

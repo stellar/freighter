@@ -2,7 +2,7 @@ import {
   Contract,
   TransactionBuilder,
   Memo,
-  SorobanRpc,
+  rpc as SorobanRpc,
   TimeoutInfinite,
   xdr,
   Networks,

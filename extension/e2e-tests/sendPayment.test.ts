@@ -283,7 +283,7 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   });
   await expectPageToHaveScreenshot({
     page,
-    screenshot: "send-payment-confirm.png",
+    screenshot: "send-payment-confirm-soroban.png",
   });
   await page.getByTestId("transaction-details-btn-send").click();
 

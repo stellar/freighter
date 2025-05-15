@@ -1,7 +1,7 @@
 import {
   Horizon,
   Keypair,
-  SorobanRpc,
+  rpc as SorobanRpc,
   TransactionBuilder,
   xdr,
 } from "stellar-sdk";

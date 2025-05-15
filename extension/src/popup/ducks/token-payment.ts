@@ -1,4 +1,4 @@
-import { SorobanRpc } from "stellar-sdk";
+import { rpc as SorobanRpc } from "stellar-sdk";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { ActionStatus, ErrorMessage } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";

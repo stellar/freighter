@@ -35,7 +35,7 @@ import { BrowserStorageConfigParams } from "@stellar/typescript-wallet-sdk-km/li
 const sessionTimer = new SessionTimer();
 
 export const initContentScriptMessageListener = () => {
-  browser?.runtime?.onMessage?.addListener((message) => {
+  browser?.runtime?.onMessage?.addListener((message: any) => {
     if (message === "runContentScript") {
       browser.tabs.executeScript({
         file: "contentScript.min.js",
@@ -46,45 +46,47 @@ export const initContentScriptMessageListener = () => {
 };
 
 export const initExtensionMessageListener = () => {
-  browser?.runtime?.onMessage?.addListener(async (request, sender) => {
-    const sessionStore = await buildStore();
-    const localStore = dataStorageAccess(browserLocalStorage);
-    const localKeyStore = new BrowserStorageKeyStore();
-    localKeyStore.configure({
-      storage: browserLocalStorage as BrowserStorageConfigParams["storage"],
-    });
-    const keyManager = new KeyManager({
-      keyStore: localKeyStore,
-    });
-    keyManager.registerEncrypter(ScryptEncrypter);
-    // todo this is kinda ugly
-    const req = request as ExternalRequest | Response;
-    let res;
+  browser?.runtime?.onMessage?.addListener(
+    async (request: any, sender: browser.Runtime.MessageSender) => {
+      const sessionStore = await buildStore();
+      const localStore = dataStorageAccess(browserLocalStorage);
+      const localKeyStore = new BrowserStorageKeyStore();
+      localKeyStore.configure({
+        storage: browserLocalStorage as BrowserStorageConfigParams["storage"],
+      });
+      const keyManager = new KeyManager({
+        keyStore: localKeyStore,
+      });
+      keyManager.registerEncrypter(ScryptEncrypter);
+      // todo this is kinda ugly
+      const req = request as ExternalRequest | Response;
+      let res;
 
-    if (Object.values(SERVICE_TYPES).includes(req.type as SERVICE_TYPES)) {
-      res = await popupMessageListener(
-        req as ServiceMessageRequest,
-        sessionStore,
-        localStore,
-        keyManager,
-        sessionTimer,
-      );
-    }
-    if (
-      Object.values(EXTERNAL_SERVICE_TYPES).includes(
-        req.type as EXTERNAL_SERVICE_TYPES,
-      )
-    ) {
-      res = await freighterApiMessageListener(
-        req as ExternalRequest,
-        sender,
-        sessionStore,
-        localStore,
-      );
-    }
+      if (Object.values(SERVICE_TYPES).includes(req.type as SERVICE_TYPES)) {
+        res = await popupMessageListener(
+          req as ServiceMessageRequest,
+          sessionStore,
+          localStore,
+          keyManager,
+          sessionTimer,
+        );
+      }
+      if (
+        Object.values(EXTERNAL_SERVICE_TYPES).includes(
+          req.type as EXTERNAL_SERVICE_TYPES,
+        )
+      ) {
+        res = await freighterApiMessageListener(
+          req as ExternalRequest,
+          sender,
+          sessionStore,
+          localStore,
+        );
+      }
 
-    return res;
-  });
+      return res;
+    },
+  );
 };
 
 export const initInstalledListener = () => {
