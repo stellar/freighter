@@ -18,7 +18,7 @@ export const LeaveFeedback = () => {
         <ListNavLinkWrapper>
           <ListNavLink
             icon={<Icon.Link01 />}
-            href="https://discord.com/channels/897514728459468821/1019346446014759013"
+            href="https://discord.gg/zcdNVJUYqN"
           >
             {t("Join community Discord")}
           </ListNavLink>
