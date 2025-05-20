@@ -51,16 +51,29 @@ export const formatTransactionDate = (createdAt: string): string =>
 /**
  * Creates operation description string
  */
-export const createOperationString = (
-  type: string,
-  operationCount: number,
-): string => {
+export const createOperationString = (type: string, operation: any): string => {
+  const {
+    transaction_attr: { operation_count: operationCount } = {
+      operation_count: 1,
+    },
+  } = operation;
   const operationType = camelCase(type) as keyof typeof OPERATION_TYPES;
   const opTypeStr = OPERATION_TYPES[operationType] || "Transaction";
 
   return `${opTypeStr}${
     operationCount > 1 ? ` + ${operationCount - 1} ops` : ""
   }`;
+};
+
+/**
+ * Gets icon component for history items
+ */
+export const getIconString = (iconString?: string) => {
+  if (iconString) {
+    return iconString;
+  }
+
+  return "User01";
 };
 
 /**

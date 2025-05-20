@@ -5,15 +5,20 @@
 //     isChangeTrustOperation,
 //     isSorobanInvokeHostFunction,
 //   } from "components/screens/HistoryScreen/helpers";
-import { formatTransactionDate, isChangeTrustOperation } from "../helpers";
+import {
+  formatTransactionDate,
+  isChangeTrustOperation,
+  isCreateAccountOperation,
+} from "../helpers";
 //   import { mapChangeTrustHistoryItem } from "components/screens/HistoryScreen/mappers/changeTrust";
 import { mapChangeTrustHistoryItem } from "./changeTrust";
 
-//   import { mapCreateAccountHistoryItem } from "components/screens/HistoryScreen/mappers/createAccount";
+// import { mapCreateAccountHistoryItem } from "components/screens/HistoryScreen/mappers/createAccount";
+import { mapCreateAccountHistoryItem } from "./createAccount";
 //   import { createDefaultHistoryItemData } from "components/screens/HistoryScreen/mappers/default";
 import { createDefaultHistoryItemData } from "./default";
 //   import { mapFailedTransactionHistoryItem } from "components/screens/HistoryScreen/mappers/failed";
-//   import { mapPaymentHistoryItem } from "components/screens/HistoryScreen/mappers/payment";
+import { mapPaymentHistoryItem } from "./payment";
 //   import { mapSorobanHistoryItem } from "components/screens/HistoryScreen/mappers/soroban";
 //   import { mapSwapHistoryItem } from "components/screens/HistoryScreen/mappers/swap";
 //   import { HistoryItemData } from "components/screens/HistoryScreen/types";
@@ -26,28 +31,27 @@ import { NetworkDetails } from "@shared/constants/stellar";
 //   import { getStellarExpertUrl } from "helpers/stellarExpert";
 import { getStellarExpertUrl } from "popup/helpers/account";
 
-//   import { ThemeColors } from "hooks/useColors";
-
 /**
  * Main mapper function to convert operation data into history item data
  */
-export const mapHistoryItemData = async (
-  operation: any,
-  // accountBalances: BalanceMap,
-  // publicKey: string,
-  networkDetails: NetworkDetails,
-  // network: NETWORKS,
-  // themeColors: ThemeColors,
-): Promise<HistoryItemData> => {
+export const mapHistoryItemData = async ({
+  operation,
+  publicKey,
+  networkDetails,
+}: {
+  operation: any;
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}): Promise<HistoryItemData> => {
   const {
     created_at: createdAt,
     transaction_attr: { fee_charged: fee },
     //   transaction_successful: transactionSuccessful,
     type,
     //   type_i: typeI,
-    //   isPayment = false,
+    isPayment = false,
     //   isSwap = false,
-    //   isCreateExternalAccount = false,
+    isCreateExternalAccount = false,
   } = operation;
 
   // Format date for display
@@ -68,16 +72,16 @@ export const mapHistoryItemData = async (
   // }
 
   // Handle create account
-  // if (isCreateAccountOperation(type)) {
-  //   return mapCreateAccountHistoryItem({
-  //     operation,
-  //     stellarExpertUrl,
-  //     date,
-  //     fee,
-  //     themeColors,
-  //     isCreateExternalAccount,
-  //   });
-  // }
+  if (isCreateAccountOperation(type)) {
+    return mapCreateAccountHistoryItem({
+      operation,
+      stellarExpertUrl,
+      date,
+      fee,
+      // themeColors,
+      isCreateExternalAccount,
+    });
+  }
 
   // Handle change trust
   if (isChangeTrustOperation(type)) {
@@ -103,16 +107,15 @@ export const mapHistoryItemData = async (
   // }
 
   // Handle payment
-  // if (isPayment) {
-  //   return mapPaymentHistoryItem(
-  //     operation,
-  //     publicKey,
-  //     stellarExpertUrl,
-  //     date,
-  //     fee,
-  //     themeColors,
-  //   );
-  // }
+  if (isPayment) {
+    return mapPaymentHistoryItem(
+      operation,
+      publicKey,
+      stellarExpertUrl,
+      date,
+      fee,
+    );
+  }
 
   // Handle Soroban invoke host function
   // if (isSorobanInvokeHostFunction(typeI)) {

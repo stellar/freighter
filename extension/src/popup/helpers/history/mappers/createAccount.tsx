@@ -1,38 +1,20 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// import TransactionDetailsContent from "components/screens/HistoryScreen/TransactionDetailsContent";
-// import {
-//   TransactionDetails,
-//   TransactionType,
-//   TransactionStatus,
-//   HistoryItemData,
-// } from "components/screens/HistoryScreen/types";
+import BigNumber from "bignumber.js";
 import {
   TransactionDetails,
   TransactionType,
   TransactionStatus,
   HistoryItemData,
 } from "../types";
-// import Avatar, { AvatarSizes } from "components/sds/Avatar";
-// import Icon from "components/sds/Icon";
-// import { Text } from "components/sds/Typography";
-// import { formatAssetAmount } from "helpers/formatAmount";
-// import { formatAssetAmount } from "helpers/formatAmount";
-import { formatAmount } from "popup/helpers/formatters";
+import { createOperationString, getIconString } from "../helpers";
 
-// import { truncatePublicKey } from "helpers/stellar";
-// import { ThemeColors } from "hooks/useColors";
+import { formatAmount } from "popup/helpers/formatters";
 import { t } from "i18next";
-import React from "react";
-// import { View } from "react-native";
 
 interface CreateAccountHistoryItemData {
   operation: any;
   stellarExpertUrl: string;
   date: string;
   fee: string;
-  //   themeColors: ThemeColors;
   isCreateExternalAccount: boolean;
 }
 
@@ -44,35 +26,26 @@ export const mapCreateAccountHistoryItem = ({
   stellarExpertUrl,
   date,
   fee,
-  //   themeColors,
   isCreateExternalAccount,
 }: CreateAccountHistoryItemData): HistoryItemData => {
   const { account, starting_balance: startingBalance } = operation;
   const isRecipient = !isCreateExternalAccount;
   const paymentDifference = isRecipient ? "+" : "-";
   const formattedAmount = `${paymentDifference}${formatAmount(
-    startingBalance,
-  )} "XLM"`;
+    new BigNumber(startingBalance).toString(),
+  )} XLM`;
 
-  //   const ActionIconComponent = isRecipient ? (
-  //     <Icon.PlusCircle size={16} color={themeColors.foreground.primary} />
-  //   ) : (
-  //     <Icon.ArrowCircleUp size={16} color={themeColors.foreground.primary} />
-  //   );
-
-  const ActionIconComponent = isRecipient ? (
-    <>plusCircle</>
-  ) : (
-    <>ArrowCircleUp</>
-  );
+  const iconString = getIconString();
+  const actionIconString = isRecipient ? "PlusCircle" : "ArrowCircleUp";
 
   const transactionDetails: TransactionDetails = {
     operation,
-    transactionTitle: t("history.transactionHistory.createAccount"),
+    transactionTitle: t("Create account"),
     transactionType: TransactionType.CREATE_ACCOUNT,
     fee,
     status: TransactionStatus.SUCCESS,
-    ActionIconComponent,
+    iconString,
+    actionIconString,
     externalUrl: `${stellarExpertUrl}/op/${operation.id}`,
     createAccountDetails: {
       isCreatingExternalAccount: isCreateExternalAccount,
@@ -83,15 +56,17 @@ export const mapCreateAccountHistoryItem = ({
 
   return {
     transactionDetails,
-    rowText: t("history.transactionHistory.createAccount"),
+    rowText: t("Create account"),
     dateText: date,
     amountText: formattedAmount,
-    actionText: isRecipient
-      ? t("history.transactionHistory.received")
-      : t("history.transactionHistory.sent"),
-    ActionIconComponent,
+    actionText: isRecipient ? t("Received") : t("Sent"),
+    iconString,
+    actionIconString,
     transactionStatus: TransactionStatus.SUCCESS,
     isAddingFunds: isRecipient,
-    operationString: "",
+    operationString: createOperationString(
+      TransactionType.CREATE_ACCOUNT,
+      operation,
+    ),
   };
 };

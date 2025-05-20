@@ -1,4 +1,3 @@
-import React from "react";
 import { Horizon } from "@stellar/stellar-sdk";
 // import { SorobanTokenInterface } from "helpers/soroban";
 
@@ -79,9 +78,8 @@ export interface TransactionDetails {
   externalUrl: string;
   fee: string;
   status: TransactionStatus;
-  //   IconComponent: React.ReactNode;
-  //   iconComponent: string | null;
-  ActionIconComponent: React.ReactNode | string;
+  iconString: string | null;
+  actionIconString: string;
   createAccountDetails?: CreateAccountDetailsType;
   swapDetails?: SwapDetailsType;
   paymentDetails?: PaymentDetailsType;
@@ -93,9 +91,10 @@ export interface HistoryItemData {
   transactionDetails: TransactionDetails;
   rowText: string;
   actionText: string;
-  ActionIconComponent: React.ReactElement | null | string;
+  iconString: string | null;
+  actionIconString: string;
   dateText: string | null;
-  amountText: string | null;
+  amountText: string;
   //   IconComponent: React.ReactElement | null;
   //   iconComponent: string | null;
   transactionStatus: TransactionStatus;
