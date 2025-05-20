@@ -467,10 +467,10 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
 
   await expect(page.getByText("Send Settings")).toBeVisible();
   await expect(page.getByText("Review Send")).toBeEnabled();
-  await page.getByText("Review Send").click({ force: true });
+  await page.getByText("Review Send").click();
 
   await expect(page.getByText("Confirm Send")).toBeVisible();
-  await page.getByTestId("transaction-details-btn-send").click({ force: true });
+  await page.getByTestId("transaction-details-btn-send").click();
 
   await expect(page.getByText("Successfully sent")).toBeVisible({
     timeout: 600000,
