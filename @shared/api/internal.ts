@@ -11,7 +11,7 @@ import {
   XdrLargeInt,
 } from "stellar-sdk";
 import BigNumber from "bignumber.js";
-import { INDEXER_URL } from "@shared/constants/mercury";
+import { INDEXER_URL, INDEXER_V2_URL } from "@shared/constants/mercury";
 import {
   AssetListResponse,
   AssetsListItem,
@@ -605,9 +605,7 @@ export const getTokenPrices = async (tokens: string[]) => {
 };
 
 export const getDiscoverData = async () => {
-  const url = new URL(
-    "https://freighter-backend-v2-stg.stellar.org/api/v1/protocols",
-  );
+  const url = new URL(`${INDEXER_V2_URL}/protocols`);
   const response = await fetch(url.href);
   const parsedResponse = (await response.json()) as {
     data: {
