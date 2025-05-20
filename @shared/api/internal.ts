@@ -605,18 +605,23 @@ export const getTokenPrices = async (tokens: string[]) => {
 };
 
 export const getDiscoverData = async () => {
-  const url = new URL(`${INDEXER_URL}/protocols`);
+  const url = new URL(
+    "https://freighter-backend-v2-stg.stellar.org/api/v1/protocols",
+  );
   const response = await fetch(url.href);
   const parsedResponse = (await response.json()) as {
     data: {
-      description: string;
-      icon_url: string;
-      name: string;
-      website_url: string;
-      tags: string[];
-      is_blacklisted: boolean;
-    }[];
+      protocols: {
+        description: string;
+        icon_url: string;
+        name: string;
+        website_url: string;
+        tags: string[];
+        is_blacklisted: boolean;
+      }[];
+    };
   };
+
   if (!response.ok || !parsedResponse.data) {
     const _err = JSON.stringify(parsedResponse);
     captureException(
@@ -625,7 +630,7 @@ export const getDiscoverData = async () => {
     throw new Error(_err);
   }
 
-  return parsedResponse.data.map((entry) => ({
+  return parsedResponse.data.protocols.map((entry) => ({
     description: entry.description,
     iconUrl: entry.icon_url,
     name: entry.name,
