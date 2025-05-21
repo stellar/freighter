@@ -3,7 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import { Networks } from "stellar-sdk";
-import { Card, Loader, Icon, Button, CopyText } from "@stellar/design-system";
+import {
+  Card,
+  Loader,
+  Icon,
+  Button,
+  CopyText,
+  Notification,
+} from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -420,6 +427,24 @@ export const TransactionDetails = ({
     }
   }, [txDetailsData]);
 
+  if (txDetailsData.state === RequestState.ERROR) {
+    return (
+      <div className="TransactionDetails__error">
+        <Notification
+          variant="error"
+          title={t("Failed to fetch your transaction details")}
+        >
+          {t(
+            "We had an issue retrieving your transaction details. Please try again.",
+          )}
+        </Notification>
+        <Button size="md" variant="secondary" onClick={goBack}>
+          {t("Back")}
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
@@ -464,7 +489,7 @@ export const TransactionDetails = ({
                   <div className="TransactionDetails__send-asset">
                     <div className="TransactionDetails__copy-left">
                       <AssetIcon
-                        assetIcons={txDetailsData.data?.balances?.icons || {}}
+                        assetIcons={txDetailsData.data.balances.icons || {}}
                         code={sourceAsset.code}
                         issuerKey={sourceAsset.issuer}
                         isLPShare={false}
@@ -487,20 +512,18 @@ export const TransactionDetails = ({
 
             {(isPathPayment || isSwap) && (
               <TwoAssetCard
-                sourceAssetIcons={txDetailsData.data?.balances?.icons || {}}
+                sourceAssetIcons={txDetailsData.data.balances.icons || {}}
                 sourceCanon={asset}
                 sourceAmount={amount}
                 destAssetIcons={
-                  txDetailsData.data?.destinationBalances?.icons || {}
+                  txDetailsData.data.destinationBalances.icons || {}
                 }
                 destCanon={destinationAsset || "native"}
                 destAmount={destinationAmount}
                 isSourceAssetSuspicious={
-                  txDetailsData.data!.isSourceAssetSuspicious
+                  txDetailsData.data.isSourceAssetSuspicious
                 }
-                isDestAssetSuspicious={
-                  txDetailsData.data!.isDestAssetSuspicious
-                }
+                isDestAssetSuspicious={txDetailsData.data.isDestAssetSuspicious}
               />
             )}
 
@@ -597,12 +620,12 @@ export const TransactionDetails = ({
                   className="TransactionDetails__row__right--hasOverflow"
                   data-testid="TransactionDetailsXDR"
                 >
-                  <CopyText textToCopy={txDetailsData.data!.transactionXdr}>
+                  <CopyText textToCopy={txDetailsData.data.transactionXdr}>
                     <>
                       <div className="TransactionDetails__row__copy">
                         <Icon.Copy01 />
                       </div>
-                      {`${txDetailsData.data!.transactionXdr.slice(0, 10)}…`}
+                      {`${txDetailsData.data.transactionXdr.slice(0, 10)}…`}
                     </>
                   </CopyText>
                 </div>
@@ -610,9 +633,9 @@ export const TransactionDetails = ({
             ) : null}
 
             <div className="TransactionDetails__warnings">
-              {txDetailsData.data!.scanResult && (
+              {txDetailsData.data.scanResult && (
                 <BlockaidTxScanLabel
-                  scanResult={txDetailsData.data!.scanResult}
+                  scanResult={txDetailsData.data.scanResult}
                 />
               )}
               {submission.submitStatus === ActionStatus.IDLE && (
@@ -624,8 +647,8 @@ export const TransactionDetails = ({
                     destAsset,
                   )}
                   isSuspicious={
-                    txDetailsData.data!.isSourceAssetSuspicious ||
-                    txDetailsData.data!.isDestAssetSuspicious
+                    txDetailsData.data.isSourceAssetSuspicious ||
+                    txDetailsData.data.isDestAssetSuspicious
                   }
                 />
               )}
@@ -655,10 +678,10 @@ export const TransactionDetails = ({
                 <Button
                   size="md"
                   variant={
-                    txDetailsData.data!.isSourceAssetSuspicious ||
-                    txDetailsData.data!.isDestAssetSuspicious ||
-                    (txDetailsData.data!.scanResult &&
-                      isTxSuspicious(txDetailsData.data!.scanResult))
+                    txDetailsData.data.isSourceAssetSuspicious ||
+                    txDetailsData.data.isDestAssetSuspicious ||
+                    (txDetailsData.data.scanResult &&
+                      isTxSuspicious(txDetailsData.data.scanResult))
                       ? "error"
                       : "primary"
                   }

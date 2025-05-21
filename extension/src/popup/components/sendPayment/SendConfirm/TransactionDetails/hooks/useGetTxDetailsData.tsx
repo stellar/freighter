@@ -26,6 +26,7 @@ import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
 import { getBaseAccount } from "popup/helpers/account";
 import { isContractId } from "popup/helpers/soroban";
 import { hasPrivateKeySelector } from "popup/ducks/accountServices";
+import { captureException } from "@sentry/browser";
 
 export interface TxDetailsData {
   destAssetIconUrl: string;
@@ -311,6 +312,7 @@ function useGetTxDetailsData(
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
+      captureException(error);
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
       return error;
     }
