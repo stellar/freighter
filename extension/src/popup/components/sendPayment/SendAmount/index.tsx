@@ -588,7 +588,7 @@ export const SendAmount = ({
                 infoText={t(
                   "Your available balance accounts for the base reserve requirement and the recommended network fee. This number may be lower than your total balance.",
                 )}
-                placement="bottom-start"
+                placement="bottom-end"
               >
                 {`${formatAmount(availBalance)} ${parsedSourceAsset.code} ${t("available")}`}
               </InfoTooltip>
