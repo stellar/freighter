@@ -206,15 +206,10 @@ export const HistoryItem = ({
       });
 
       const IconComponent =
-        Icon[
-          historyItemData.transactionDetails.iconString as keyof typeof Icon
-        ];
+        Icon[historyItemData.iconString as keyof typeof Icon];
 
       const ActionIconComponent =
-        Icon[
-          historyItemData.transactionDetails
-            .actionIconString as keyof typeof Icon
-        ];
+        Icon[historyItemData.actionIconString as keyof typeof Icon];
 
       if (isCreateAccountOperation(type)) {
         // If you're not creating an external account then this means you're
