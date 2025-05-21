@@ -1,1 +1,0 @@
-export { mapHistoryItemData } from "./mappers";
