@@ -37,7 +37,7 @@
 
     &__button {
       border-radius: 100px;
-      border: 1px solid var(--sds-clr-gray-11);
+      border: 1px solid var(--sds-clr-gray-06);
       color: var(--sds-clr-gray-12);
       display: flex;
       gap: pxToRem(4);
@@ -48,7 +48,7 @@
       &__icon {
         height: pxToRem(14);
         width: pxToRem(14);
-        color: var(--sds-clr-gray-11);
+        color: var(--sds-clr-gray-09);
       }
     }
   }
