@@ -10,7 +10,7 @@ slug: /whatsNew
 
 You can now find dapps to connect your Freighter wallet to from the `Discover`
 screen. Here, you'll find dapps that provide different services, like lending,
-DEX's, and bridging.
+DEX, and bridging.
 
 To access, simply click the `Discover` button on the home screen.
 
@@ -25,9 +25,9 @@ Screen" width="300"/>
 
 ## Filtering claimable balances
 
-Many users on have reported their Stellar accounts receive a good deal of
-claimable balance "spam" in their account history - claimable balances they have
-no intention of claiming. These often present themselves as a transaction
+Many users have reported their Stellar accounts receive a good deal of claimable
+balance "spam" in their account history - claimable balances they have no
+intention of claiming. These often present themselves as a transaction
 containing many `create claimable balance` operations.
 
 <img src={require('./assets/5.33.0/create-claimable-spam.png').default}
@@ -35,7 +35,7 @@ alt="Create Claimable Balance Spam" width="300"/>
 
 To filter out this noise and provided a better experience for users, Freighter
 now automatically hides these types of transactions for you. If you do want to
-engage with one of these, they still exist on your account. You can find them by
+engage with any of these, they still exist on your account. You can find them by
 visiting a block explorer like [stellar.expert](https://stellar.expert).
 
 ## Additional bugfixes and stability fixes
