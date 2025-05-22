@@ -5,7 +5,6 @@ import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
 import { SearchAsset } from "popup/components/manageAssets/SearchAsset";
 import { AddAsset } from "popup/components/manageAssets/AddAsset";
 import { AssetVisibility } from "popup/components/manageAssets/AssetVisibility";
-import { PrivateKeyRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 import { getPathFromRoute } from "popup/helpers/route";
 
@@ -31,36 +30,11 @@ export const ManageAssets = () => {
       <Routes>
         <Route
           index
-          element={
-            <PrivateKeyRoute>
-              <ChooseAsset goBack={() => navigate(-1)} showHideAssets />
-            </PrivateKeyRoute>
-          }
+          element={<ChooseAsset goBack={() => navigate(-1)} showHideAssets />}
         ></Route>
-        <Route
-          path={searchAssetsPath}
-          element={
-            <PrivateKeyRoute>
-              <SearchAsset />
-            </PrivateKeyRoute>
-          }
-        ></Route>
-        <Route
-          path={assetVisibility}
-          element={
-            <PrivateKeyRoute>
-              <AssetVisibility />
-            </PrivateKeyRoute>
-          }
-        ></Route>
-        <Route
-          path={addAssetsPath}
-          element={
-            <PrivateKeyRoute>
-              <AddAsset />
-            </PrivateKeyRoute>
-          }
-        ></Route>
+        <Route path={searchAssetsPath} element={<SearchAsset />}></Route>
+        <Route path={assetVisibility} element={<AssetVisibility />}></Route>
+        <Route path={addAssetsPath} element={<AddAsset />}></Route>
       </Routes>
     </>
   );

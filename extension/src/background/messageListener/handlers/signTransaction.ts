@@ -9,6 +9,7 @@ import { getSdk } from "@shared/helpers/stellar";
 import {
   ResponseQueue,
   TransactionQueue,
+  SignTransactionResponse,
 } from "@shared/api/types/message-request";
 
 export const signTransaction = async ({
@@ -20,7 +21,7 @@ export const signTransaction = async ({
   localStore: DataStorageAccess;
   sessionStore: Store;
   transactionQueue: TransactionQueue;
-  responseQueue: ResponseQueue;
+  responseQueue: ResponseQueue<SignTransactionResponse>;
 }) => {
   const keyId = (await localStore.getItem(KEY_ID)) || "";
   let privateKey = "";
@@ -44,7 +45,7 @@ export const signTransaction = async ({
   if (privateKey.length) {
     const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
 
-    let response;
+    let response = "";
 
     const transactionToSign = transactionQueue.pop();
 

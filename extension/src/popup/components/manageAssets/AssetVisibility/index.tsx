@@ -1,18 +1,17 @@
 import React, { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Loader } from "@stellar/design-system";
 
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import {
-  settingsNetworkDetailsSelector,
-  settingsSorobanSupportedSelector,
-} from "popup/ducks/settings";
-import { isMainnet } from "helpers/stellar";
-import { publicKeySelector } from "popup/ducks/accountServices";
+import { settingsSorobanSupportedSelector } from "popup/ducks/settings";
 
+import {
+  AssetVisibility as AssetVisibilityType,
+  IssuerKey,
+} from "@shared/api/types";
 import { RequestState } from "constants/request";
 import { resetSubmission } from "popup/ducks/transactionSubmission";
 import { useGetAssetData } from "./hooks/useGetAssetData";
@@ -21,22 +20,24 @@ import { ToggleAssetRows } from "../ToggleAssetRows";
 import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const AssetVisibility = () => {
   const { t } = useTranslation();
+  const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
-  const publicKey = useSelector(publicKeySelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
   const {
     state: domainState,
     fetchData,
     changeAssetVisibility,
-  } = useGetAssetData(publicKey, networkDetails, {
-    isMainnet: isMainnet(networkDetails),
+  } = useGetAssetData({
     showHidden: true,
     includeIcons: true,
   });
@@ -57,6 +58,31 @@ export const AssetVisibility = () => {
   const isLoading =
     domainState.state === RequestState.IDLE ||
     domainState.state === RequestState.LOADING;
+
+  const hasError = domainState.state === RequestState.ERROR;
+  if (domainState.data?.type === AppDataType.REROUTE) {
+    if (domainState.data.shouldOpenTab) {
+      openTab(newTabHref(domainState.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${domainState.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (!isLoading && !hasError) {
+    reRouteOnboarding({
+      type: domainState.data.type,
+      applicationState: domainState.data?.applicationState,
+      state: domainState.state,
+    });
+  }
+
+  const data = domainState.data;
 
   return (
     <View>
@@ -79,7 +105,19 @@ export const AssetVisibility = () => {
               <ToggleAssetRows
                 assetRows={domainState.data!.domains}
                 hiddenAssets={domainState.data!.hiddenAssets}
-                changeAssetVisibility={changeAssetVisibility}
+                changeAssetVisibility={async ({
+                  issuer,
+                  visibility,
+                }: {
+                  issuer: IssuerKey;
+                  visibility: AssetVisibilityType;
+                }) => {
+                  return await changeAssetVisibility({
+                    issuer,
+                    visibility,
+                    publicKey: data!.publicKey,
+                  });
+                }}
               />
             </div>
           </div>

@@ -1,6 +1,9 @@
 import React from "react";
 import { render, waitFor, screen } from "@testing-library/react";
-import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
+import {
+  APPLICATION_STATE,
+  APPLICATION_STATE as ApplicationState,
+} from "@shared/constants/applicationState";
 import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
@@ -16,6 +19,44 @@ import {
 } from "../../__testHelpers__";
 import { AccountHistory } from "../AccountHistory";
 import { ROUTES } from "popup/constants/routes";
+import { SettingsState } from "@shared/api/types";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
+
+jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+  Promise.resolve({
+    hasPrivateKey: true,
+    publicKey: "G1",
+    applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    allAccounts: mockAccounts,
+    bipPath: "bip-path",
+    tokenIdList: [],
+  }),
+);
+
+jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+  Promise.resolve({
+    networkDetails: TESTNET_NETWORK_DETAILS,
+    networksList: DEFAULT_NETWORKS,
+    hiddenAssets: {},
+    allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+    error: "",
+    isDataSharingAllowed: false,
+    isMemoValidationEnabled: false,
+    isHideDustEnabled: true,
+    settingsState: SettingsState.SUCCESS,
+    isSorobanPublicEnabled: false,
+    isRpcHealthy: true,
+    userNotification: {
+      enabled: false,
+      message: "",
+    },
+    isExperimentalModeEnabled: false,
+    isHashSigningEnabled: false,
+    isNonSSLEnabled: false,
+    experimentalFeaturesState: SettingsState.SUCCESS,
+    assetsLists: DEFAULT_ASSETS_LISTS,
+  }),
+);
 
 jest
   .spyOn(ApiInternal, "getAccountHistory")
@@ -48,7 +89,7 @@ describe("AccountHistory", () => {
         state={{
           auth: {
             error: null,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
             allAccounts: mockAccounts,
           },

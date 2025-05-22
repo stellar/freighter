@@ -19,16 +19,14 @@ import {
   useScanTx,
 } from "popup/helpers/blockaid";
 import { BlockAidScanTxResult } from "@shared/api/types";
-import { AccountBalancesInterface } from "@shared/api/types/backend-api";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { findAssetBalance } from "popup/helpers/balance";
 import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
-import { getAccountBalances, getAssetIcons } from "@shared/api/internal";
-import { getBaseAccount, sortBalances } from "popup/helpers/account";
+import { getBaseAccount } from "popup/helpers/account";
 import { isContractId } from "popup/helpers/soroban";
-import { settingsSelector } from "popup/ducks/settings";
-import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
+import { hasPrivateKeySelector } from "popup/ducks/accountServices";
+import { captureException } from "@sentry/browser";
 
 export interface TxDetailsData {
   destAssetIconUrl: string;
@@ -38,6 +36,7 @@ export interface TxDetailsData {
   destinationBalances: AccountBalances;
   scanResult?: BlockAidScanTxResult | null;
   transactionXdr: string;
+  hasPrivateKey: boolean;
 }
 
 interface ScanClassic {
@@ -192,47 +191,47 @@ function useGetTxDetailsData(
     includeIcons: boolean;
   },
 ) {
+  const hasPrivateKey = useSelector(hasPrivateKeySelector);
   const [state, dispatch] = useReducer(
     reducer<TxDetailsData, unknown>,
     initialState,
   );
 
-  const { fetchData: fetchBalances } = useGetBalances(
-    publicKey,
-    networkDetails,
-    balanceOptions,
-  );
-  const { assetsLists } = useSelector(settingsSelector);
+  const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
+  // tx details needs to show icons and filter hidden assets
+  // we can't call these APIs with foreign public keys due to the public key mismatch check at the message listener
+  // so we need another instance of this hook where we don't call those APIs
+  const { fetchData: fetchBalancesDest } = useGetBalances({
+    showHidden: true,
+    includeIcons: false,
+  });
 
   const { scanTx } = useScanTx();
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const balancesResult = await fetchBalances();
       let destinationAccount = await getBaseAccount(destination);
-      const destBalancesResult =
-        destinationAccount && !isContractId(destinationAccount)
-          ? await getAccountBalances(
-              destinationAccount,
-              networkDetails,
-              balanceOptions.isMainnet,
-            )
-          : ({} as AccountBalancesInterface);
-
-      const assetsListsData = await getCombinedAssetListData({
+      const balancesResult = await fetchBalances(
+        publicKey,
+        balanceOptions.isMainnet,
         networkDetails,
-        assetsLists,
-      });
+        true,
+      );
 
-      const destIcons =
-        destinationAccount && !isContractId(destinationAccount)
-          ? await getAssetIcons({
-              balances: destBalancesResult.balances,
-              networkDetails,
-              assetsListsData,
-            })
-          : {};
+      let destBalancesResult = {} as AccountBalances;
+      if (destinationAccount && !isContractId(destinationAccount)) {
+        const balances = await fetchBalancesDest(
+          destinationAccount,
+          balanceOptions.isMainnet,
+          networkDetails,
+          true,
+        );
+        if (isError<AccountBalances>(balances)) {
+          throw new Error(balances.message);
+        }
+        destBalancesResult = balances;
+      }
 
       if (isError<AccountBalances>(balancesResult)) {
         throw new Error(balancesResult.message);
@@ -255,12 +254,9 @@ function useGetTxDetailsData(
       );
 
       const payload = {
+        hasPrivateKey,
         balances: balancesResult,
-        destinationBalances: {
-          ...destBalancesResult,
-          icons: destIcons,
-          balances: sortBalances(destBalancesResult.balances),
-        },
+        destinationBalances: destBalancesResult,
         destAssetIconUrl,
         isSourceAssetSuspicious:
           "blockaidData" in source && isAssetSuspicious(source.blockaidData),
@@ -316,6 +312,7 @@ function useGetTxDetailsData(
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
+      captureException(error);
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
       return error;
     }

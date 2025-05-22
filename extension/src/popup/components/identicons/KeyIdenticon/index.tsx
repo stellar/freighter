@@ -73,7 +73,11 @@ export const KeyIdenticon = ({
           </span>
         </CopyText>
       ) : (
-        <span {...props} className="KeyIdenticon--key">
+        <span
+          {...props}
+          className="KeyIdenticon--key"
+          data-testid="KeyIdenticonKey"
+        >
           {truncateString(publicKey, keyTruncationAmount)}
         </span>
       )}

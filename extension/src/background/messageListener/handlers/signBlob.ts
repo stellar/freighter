@@ -6,7 +6,11 @@ import { KEY_ID } from "constants/localStorageTypes";
 import { captureException } from "@sentry/browser";
 import { getNetworkDetails } from "background/helpers/account";
 import { getSdk } from "@shared/helpers/stellar";
-import { BlobQueue, ResponseQueue } from "@shared/api/types/message-request";
+import {
+  BlobQueue,
+  ResponseQueue,
+  SignBlobResponse,
+} from "@shared/api/types/message-request";
 
 export const signBlob = async ({
   localStore,
@@ -17,7 +21,7 @@ export const signBlob = async ({
   localStore: DataStorageAccess;
   sessionStore: Store;
   blobQueue: BlobQueue;
-  responseQueue: ResponseQueue;
+  responseQueue: ResponseQueue<SignBlobResponse>;
 }) => {
   const keyId = (await localStore.getItem(KEY_ID)) || "";
   let privateKey = "";

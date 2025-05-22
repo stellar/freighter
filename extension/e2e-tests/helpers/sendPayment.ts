@@ -1,6 +1,8 @@
+import test from "@playwright/test";
 import { expect, expectPageToHaveScreenshot } from "../test-fixtures";
 
 export const sendXlmPayment = async ({ page }) => {
+  test.setTimeout(180_000);
   await page.getByTitle("Send Payment").click({ force: true });
 
   await expect(page.getByText("Send To")).toBeVisible();
@@ -38,7 +40,7 @@ export const sendXlmPayment = async ({ page }) => {
       mask: [page.locator("[data-testid='SendSettingsTransactionFee']")],
     },
   );
-  await page.getByText("Review Send").click({ force: true });
+  await page.getByText("Review Send").click();
 
   await expect(page.getByText("Confirm Send")).toBeVisible();
   await expect(page.getByText("XDR")).toBeVisible();
@@ -46,7 +48,7 @@ export const sendXlmPayment = async ({ page }) => {
     page,
     screenshot: "send-payment-confirm.png",
   });
-  await page.getByTestId("transaction-details-btn-send").click({ force: true });
+  await page.getByTestId("transaction-details-btn-send").click();
 
   await expect(page.getByText("Successfully sent")).toBeVisible({
     timeout: 60000,

@@ -17,13 +17,18 @@ import {
 } from "@shared/constants/stellar";
 import BigNumber from "bignumber.js";
 
-import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
+import {
+  APPLICATION_STATE,
+  APPLICATION_STATE as ApplicationState,
+} from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
 import { Swap } from "popup/views/Swap";
 
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import * as GetAssetDomain from "popup/helpers/getAssetDomain";
 import * as GetIconHelper from "@shared/api/helpers/getIconUrlFromIssuer";
+import { SettingsState } from "@shared/api/types";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 
 export const swapMockBalances = {
   balances: {
@@ -137,6 +142,42 @@ jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
     error: null,
   };
 });
+
+jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+  Promise.resolve({
+    hasPrivateKey: true,
+    publicKey: "G1",
+    applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    allAccounts: mockAccounts,
+    bipPath: "bip-path",
+    tokenIdList: [],
+  }),
+);
+
+jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+  Promise.resolve({
+    networkDetails: TESTNET_NETWORK_DETAILS,
+    networksList: DEFAULT_NETWORKS,
+    hiddenAssets: {},
+    allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+    error: "",
+    isDataSharingAllowed: false,
+    isMemoValidationEnabled: false,
+    isHideDustEnabled: true,
+    settingsState: SettingsState.SUCCESS,
+    isSorobanPublicEnabled: false,
+    isRpcHealthy: true,
+    userNotification: {
+      enabled: false,
+      message: "",
+    },
+    isExperimentalModeEnabled: false,
+    isHashSigningEnabled: false,
+    isNonSSLEnabled: false,
+    experimentalFeaturesState: SettingsState.SUCCESS,
+    assetsLists: DEFAULT_ASSETS_LISTS,
+  }),
+);
 
 jest.mock("popup/helpers/horizonGetBestPath", () => ({
   get horizonGetBestPath() {

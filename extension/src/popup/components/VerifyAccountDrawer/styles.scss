@@ -1,0 +1,14 @@
+@use "../../styles/utils.scss" as *;
+
+.VerifyAccount {
+  display: flex;
+  height: 80vh;
+  margin-top: auto;
+  margin-bottom: auto;
+
+  .View {
+    &__content {
+      border-radius: pxToRem(24px) pxToRem(24px) 0 0;
+    }
+  }
+}

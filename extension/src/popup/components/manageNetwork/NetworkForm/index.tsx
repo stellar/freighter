@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Button, Checkbox, Input } from "@stellar/design-system";
+import { Button, Checkbox, Input, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Field, FieldProps, Form, Formik } from "formik";
 import { object as YupObject, string as YupString } from "yup";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Navigate } from "react-router-dom";
 
 import { NETWORKS } from "@shared/constants/stellar";
 import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
@@ -14,7 +14,7 @@ import { PillButton } from "popup/basics/buttons/PillButton";
 import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
 
-import { navigateTo } from "popup/helpers/navigate";
+import { navigateTo, openTab } from "popup/helpers/navigate";
 import { isNetworkUrlValid as isNetworkUrlValidHelper } from "popup/helpers/account";
 import { isActiveNetwork } from "helpers/stellar";
 
@@ -25,8 +25,6 @@ import {
   editCustomNetwork,
   removeCustomNetwork,
   settingsErrorSelector,
-  settingsNetworkDetailsSelector,
-  settingsNetworksListSelector,
 } from "popup/ducks/settings";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -34,6 +32,11 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { NetworkModal } from "../NetworkModal";
 
 import "./styles.scss";
+import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
+import { RequestState } from "constants/request";
+import { Loading } from "popup/components/Loading";
+import { newTabHref } from "helpers/urls";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 interface FormValues {
   networkName: string;
@@ -53,9 +56,8 @@ export const NETWORK_INDEX_SEARCH_PARAM = "networkIndex";
 
 export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const { t } = useTranslation();
+  const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const networksList = useSelector(settingsNetworksListSelector);
   const settingsError = useSelector(settingsErrorSelector);
 
   const [isNetworkInUse, setIsNetworkInUse] = useState(false);
@@ -64,6 +66,57 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   const [invalidUrl, setInvalidUrl] = useState("");
   const navigate = useNavigate();
   const { search } = useLocation();
+  const { state, fetchData } = useGetAppData();
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (
+    state.state === RequestState.IDLE ||
+    state.state === RequestState.LOADING
+  ) {
+    return <Loading />;
+  }
+
+  if (state.state === RequestState.ERROR) {
+    return (
+      <div className="AddAsset__fetch-fail">
+        <Notification
+          variant="error"
+          title={t("Failed to fetch your account data.")}
+        >
+          {t("Your account data could not be fetched at this time.")}
+        </Notification>
+      </div>
+    );
+  }
+
+  if (state.data?.type === AppDataType.REROUTE) {
+    if (state.data.shouldOpenTab) {
+      openTab(newTabHref(state.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${state.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  reRouteOnboarding({
+    type: state.data.type,
+    applicationState: state.data.account.applicationState,
+    state: state.state,
+  });
+
+  const { networksList, networkDetails } = state.data.settings;
 
   const networkIndex = Number(
     new URLSearchParams(search).get(NETWORK_INDEX_SEARCH_PARAM),

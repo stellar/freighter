@@ -3,6 +3,15 @@ import {
   ResponseQueue,
   ServiceMessageRequest,
   TransactionQueue,
+  SignTransactionResponse,
+  SignBlobResponse,
+  SignAuthEntryResponse,
+  AddTokenResponse,
+  RequestAccessResponse,
+  SetAllowedStatusResponse,
+  RejectAccessResponse,
+  RejectTransactionResponse,
+  SignedHwPayloadResponse,
 } from "@shared/api/types/message-request";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
@@ -66,7 +75,17 @@ import { getHiddenAssets } from "./handlers/getHiddenAssets";
 
 const numOfPublicKeysToCheck = 5;
 
-export const responseQueue: ResponseQueue = [];
+export const responseQueue: ResponseQueue<
+  | RequestAccessResponse
+  | SignTransactionResponse
+  | SignBlobResponse
+  | SignAuthEntryResponse
+  | AddTokenResponse
+  | SetAllowedStatusResponse
+  | RejectAccessResponse
+  | RejectTransactionResponse
+  | SignedHwPayloadResponse
+> = [];
 export const transactionQueue: TransactionQueue = [];
 export const tokenQueue: TokenToAdd[] = [];
 export const blobQueue: MessageToSign[] = [];

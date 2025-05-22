@@ -8,13 +8,16 @@ import { initialState, reducer } from "helpers/request";
 
 export type HistoryResponse = ServerApi.OperationRecord[];
 
-function useGetHistory(publicKey: string, networkDetails: NetworkDetails) {
+function useGetHistory() {
   const [state, dispatch] = useReducer(
     reducer<HistoryResponse, unknown>,
     initialState,
   );
 
-  const fetchData = async (): Promise<HistoryResponse | Error> => {
+  const fetchData = async (
+    publicKey: string,
+    networkDetails: NetworkDetails,
+  ): Promise<HistoryResponse | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const data = await getAccountHistory(publicKey, networkDetails);

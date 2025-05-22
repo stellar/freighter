@@ -28,7 +28,7 @@ interface AccountListItemProps {
   accountName: string;
   isSelected: boolean;
   accountPublicKey: string;
-  setIsDropdownOpen: (isDropdownOpen: boolean) => void;
+  onClickAccount: (clickedPublicKey: string) => Promise<void>;
   imported: boolean;
   hardwareWalletType?: WalletType;
 }
@@ -37,7 +37,7 @@ export const AccountListItem = ({
   accountName,
   isSelected,
   accountPublicKey,
-  setIsDropdownOpen,
+  onClickAccount,
   imported,
   hardwareWalletType = WalletType.NONE,
 }: AccountListItemProps) => (
@@ -51,7 +51,7 @@ export const AccountListItem = ({
       accountName={accountName}
       active={isSelected}
       publicKey={accountPublicKey}
-      setIsDropdownOpen={setIsDropdownOpen}
+      onClickAccount={onClickAccount}
     >
       <OptionTag imported={imported} hardwareWalletType={hardwareWalletType} />
     </AccountListIdenticon>
@@ -64,13 +64,13 @@ export const AccountListItem = ({
 interface AccounsListProps {
   allAccounts: Account[];
   publicKey: string;
-  setIsDropdownOpen: (isDropdownOpen: boolean) => void;
+  onClickAccount: (clickedPublicKey: string) => Promise<void>;
 }
 
 export const AccountList = ({
   allAccounts,
   publicKey,
-  setIsDropdownOpen,
+  onClickAccount,
 }: AccounsListProps) => (
   <div className="AccountList__accountsWrapper View__inset--scroll-shadows">
     {allAccounts.map(
@@ -87,7 +87,7 @@ export const AccountList = ({
             accountName={accountName}
             isSelected={isSelected}
             accountPublicKey={accountPublicKey}
-            setIsDropdownOpen={setIsDropdownOpen}
+            onClickAccount={onClickAccount}
             imported={imported}
             hardwareWalletType={hardwareWalletType}
             key={`${accountPublicKey}-${accountName}`}

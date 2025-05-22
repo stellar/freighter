@@ -11,7 +11,7 @@ import {
   XdrLargeInt,
 } from "stellar-sdk";
 import BigNumber from "bignumber.js";
-import { INDEXER_URL } from "@shared/constants/mercury";
+import { INDEXER_URL, INDEXER_V2_URL } from "@shared/constants/mercury";
 import {
   AssetListResponse,
   AssetsListItem,
@@ -604,6 +604,40 @@ export const getTokenPrices = async (tokens: string[]) => {
   return parsedResponse.data;
 };
 
+export const getDiscoverData = async () => {
+  const url = new URL(`${INDEXER_V2_URL}/protocols`);
+  const response = await fetch(url.href);
+  const parsedResponse = (await response.json()) as {
+    data: {
+      protocols: {
+        description: string;
+        icon_url: string;
+        name: string;
+        website_url: string;
+        tags: string[];
+        is_blacklisted: boolean;
+      }[];
+    };
+  };
+
+  if (!response.ok || !parsedResponse.data) {
+    const _err = JSON.stringify(parsedResponse);
+    captureException(
+      `Failed to fetch discover entries - ${response.status}: ${response.statusText}`,
+    );
+    throw new Error(_err);
+  }
+
+  return parsedResponse.data.protocols.map((entry) => ({
+    description: entry.description,
+    iconUrl: entry.icon_url,
+    name: entry.name,
+    websiteUrl: entry.website_url,
+    tags: entry.tags,
+    isBlacklisted: entry.is_blacklisted,
+  }));
+};
+
 export const getSorobanTokenBalance = async (
   server: SorobanRpc.Server,
   contractId: string,
@@ -996,10 +1030,12 @@ export const getAssetIcons = async ({
   balances,
   networkDetails,
   assetsListsData,
+  cachedIcons,
 }: {
   balances: Balances;
   networkDetails: NetworkDetails;
   assetsListsData: AssetListResponse[];
+  cachedIcons: Record<string, string>;
 }) => {
   const assetIcons = {} as { [code: string]: string };
 
@@ -1016,6 +1052,12 @@ export const getAssetIcons = async ({
         } = token;
 
         let canonical = getCanonicalFromAsset(code, key);
+        const cachedIcon = cachedIcons[canonical];
+        if (cachedIcon) {
+          assetIcons[canonical] = cachedIcon;
+          continue;
+        }
+
         icon = await getIconUrlFromIssuer({ key, code, networkDetails });
         if (!icon) {
           const tokenListIcon = await getIconFromTokenLists({
@@ -1316,14 +1358,14 @@ export const submitFreighterSorobanTransaction = async ({
 
 export const addRecentAddress = async ({
   activePublicKey,
-  publicKey,
+  address,
 }: {
   activePublicKey: string;
-  publicKey: string;
+  address: string;
 }): Promise<{ recentAddresses: Array<string> }> => {
   return await sendMessageToBackground({
     activePublicKey,
-    publicKey,
+    address,
     type: SERVICE_TYPES.ADD_RECENT_ADDRESS,
   });
 };

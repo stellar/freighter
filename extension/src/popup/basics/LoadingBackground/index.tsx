@@ -18,6 +18,7 @@ export const LoadingBackground = ({
   onClick,
 }: LoadingBackgroundProps) => (
   <div
+    data-testid="LoadingBackground"
     onClick={onClick}
     className={`LoadingBackground ${
       isActive ? "LoadingBackground--active" : ""

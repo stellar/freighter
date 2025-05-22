@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch } from "react-redux";
 import { Asset, StrKey } from "stellar-sdk";
 import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
@@ -13,11 +13,7 @@ import {
 } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import {
-  isFederationAddress,
-  isMainnet,
-  truncatedPublicKey,
-} from "helpers/stellar";
+import { isFederationAddress, truncatedPublicKey } from "helpers/stellar";
 
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -27,16 +23,20 @@ import { emitMetric } from "helpers/metrics";
 import { isContractId } from "popup/helpers/soroban";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { View } from "popup/basics/layout/View";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   saveDestination,
   saveDestinationAsset,
   saveFederationAddress,
 } from "popup/ducks/transactionSubmission";
-import { publicKeySelector } from "popup/ducks/accountServices";
 
 import { RequestState } from "constants/request";
-import { useSendToData } from "./hooks/useSendToData";
+import { useSendToData, getAddressFromInput } from "./hooks/useSendToData";
+
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { Navigate, useLocation } from "react-router-dom";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 import "../styles.scss";
 
@@ -100,18 +100,9 @@ export const SendTo = ({
   goToNext: () => void;
 }) => {
   const { t } = useTranslation();
+  const location = useLocation();
   const dispatch: AppDispatch = useDispatch<AppDispatch>();
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const publicKey = useSelector(publicKeySelector);
-  const { state: sendDataState, fetchData } = useSendToData(
-    publicKey,
-    networkDetails,
-    {
-      isMainnet: isMainnet(networkDetails),
-      showHidden: true,
-      includeIcons: false,
-    },
-  );
+  const { state: sendDataState, fetchData } = useSendToData();
 
   const handleContinue = (
     validatedDestination: string,
@@ -126,10 +117,15 @@ export const SendTo = ({
   const formik = useFormik({
     initialValues: { destination: "" },
     onSubmit: () => {
-      handleContinue(
-        sendDataState.data!.validatedAddress,
-        sendDataState.data!.fedAddress,
-      );
+      if (
+        sendDataState.state === RequestState.SUCCESS &&
+        sendDataState.data.type == AppDataType.RESOLVED
+      ) {
+        handleContinue(
+          sendDataState.data!.validatedAddress,
+          sendDataState.data!.fedAddress,
+        );
+      }
     },
     validateOnChange: false,
     validate: (values) => {
@@ -165,9 +161,32 @@ export const SendTo = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formik.values.destination]);
 
+  const hasError = sendDataState.state === RequestState.ERROR;
   const isLoading =
     sendDataState.state === RequestState.IDLE ||
     sendDataState.state === RequestState.LOADING;
+
+  if (sendDataState.data?.type === AppDataType.REROUTE) {
+    if (sendDataState.data.shouldOpenTab) {
+      openTab(newTabHref(sendDataState.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${sendDataState.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (!hasError && !isLoading) {
+    reRouteOnboarding({
+      type: sendDataState.data.type,
+      applicationState: sendDataState.data.applicationState,
+      state: sendDataState.state,
+    });
+  }
 
   return (
     <React.Fragment>
@@ -211,10 +230,16 @@ export const SendTo = ({
                       {sendDataState.data!.recentAddresses.map((address) => (
                         <li key={address}>
                           <button
+                            data-testid="recent-address-button"
                             onClick={async () => {
+                              const addressFromInput =
+                                await getAddressFromInput(address);
                               emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
                               await fetchData(address, {});
-                              handleContinue(address);
+                              handleContinue(
+                                addressFromInput.validatedAddress,
+                                addressFromInput.fedAddress,
+                              );
                             }}
                             className="SendTo__subheading-identicon"
                           >
@@ -249,7 +274,10 @@ export const SendTo = ({
                         </>
                       )}
                       <div className="SendTo__subheading">Address</div>
-                      <div className="SendTo__subheading-identicon">
+                      <div
+                        className="SendTo__subheading-identicon"
+                        data-testid="send-to-identicon"
+                      >
                         <IdenticonImg
                           publicKey={sendDataState.data!.validatedAddress}
                         />

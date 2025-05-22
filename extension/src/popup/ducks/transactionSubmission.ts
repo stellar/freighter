@@ -282,13 +282,13 @@ export const signWithHardwareWallet = createAsyncThunk<
 
 export const addRecentAddress = createAsyncThunk<
   { recentAddresses: string[] },
-  { publicKey: string },
+  { address: string },
   { rejectValue: ErrorMessage; state: AppState }
->("addRecentAddress", async ({ publicKey }, { getState, rejectWithValue }) => {
+>("addRecentAddress", async ({ address }, { getState, rejectWithValue }) => {
   const activePublicKey = publicKeySelector(getState());
 
   try {
-    return await internalAddRecentAddress({ activePublicKey, publicKey });
+    return await internalAddRecentAddress({ activePublicKey, address });
   } catch (e) {
     const message = e instanceof Error ? e.message : JSON.stringify(e);
     return rejectWithValue({ errorMessage: message });

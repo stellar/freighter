@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Navigate, useLocation } from "react-router-dom";
 import { captureException } from "@sentry/browser";
 import BigNumber from "bignumber.js";
 import {
@@ -12,13 +12,12 @@ import {
 import { useSelector } from "react-redux";
 import { Button, Icon, Loader } from "@stellar/design-system";
 
-import { decodeString } from "helpers/urls";
+import { decodeString, newTabHref } from "helpers/urls";
 import { getIsTokenSpec, getTokenDetails } from "@shared/api/internal";
 import { TokenArgsDisplay } from "@shared/api/helpers/soroban";
 
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { signTransaction, rejectTransaction } from "popup/ducks/access";
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import StellarLogo from "popup/assets/stellar-logo.png";
@@ -37,7 +36,6 @@ import {
   getInvocationDetails,
 } from "popup/helpers/soroban";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
-import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { Tabs } from "popup/components/Tabs";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { AccountList } from "popup/components/account/AccountList";
@@ -57,6 +55,14 @@ import { Data } from "../SignTransaction/Preview/Data";
 import { VerifyAccount } from "../VerifyAccount";
 
 import "./styles.scss";
+import { useGetReviewAuthData } from "./hooks/useGetReviewAuthData";
+import { Loading } from "popup/components/Loading";
+import { RequestState } from "constants/request";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { openTab } from "popup/helpers/navigate";
+import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
+import { rejectTransaction, signTransaction } from "popup/ducks/access";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const ReviewAuth = () => {
   const location = useLocation();
@@ -81,24 +87,32 @@ export const ReviewAuth = () => {
   const op = transaction.operations[0] as Operation.InvokeHostFunction;
   const authCount = op.auth ? op.auth.length : 0;
 
+  const { state: reviewAuthState, fetchData } = useGetReviewAuthData(
+    params.accountToSign as string,
+  );
+
   const {
-    allAccounts,
-    currentAccount,
     isConfirming,
-    publicKey,
+    isPasswordRequired,
     handleApprove,
-    hardwareWalletType,
     hwStatus,
     rejectAndClose,
-    isPasswordRequired,
     setIsPasswordRequired,
     verifyPasswordThenSign,
+    hardwareWalletType,
   } = useSetupSigningFlow(
     rejectTransaction,
     signTransaction,
-    params.transactionXdr as string,
-    params.accountToSign as string,
+    params.transactionXdr,
   );
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const isLastEntry = activeAuthEntryIndex + 1 === op.auth?.length;
   const reviewAuthEntry = () => {
@@ -110,6 +124,40 @@ export const ReviewAuth = () => {
       setActiveAuthEntryIndex(activeAuthEntryIndex + 1);
     }
   };
+
+  const isLoading =
+    reviewAuthState.state === RequestState.IDLE ||
+    reviewAuthState.state === RequestState.LOADING;
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  const hasError = reviewAuthState.state === RequestState.ERROR;
+  if (reviewAuthState.data?.type === AppDataType.REROUTE) {
+    if (reviewAuthState.data.shouldOpenTab) {
+      openTab(newTabHref(reviewAuthState.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${reviewAuthState.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (!hasError) {
+    reRouteOnboarding({
+      type: reviewAuthState.data.type,
+      applicationState: reviewAuthState.data.applicationState,
+      state: reviewAuthState.state,
+    });
+  }
+
+  const publicKey = reviewAuthState.data?.publicKey!;
+  const { allAccounts, currentAccount } = reviewAuthState.data?.signFlowState!;
 
   return isPasswordRequired ? (
     <VerifyAccount
@@ -218,7 +266,9 @@ export const ReviewAuth = () => {
             <AccountList
               allAccounts={allAccounts}
               publicKey={publicKey}
-              setIsDropdownOpen={setIsDropdownOpen}
+              onClickAccount={async () => {
+                setIsDropdownOpen(!isDropdownOpen);
+              }}
             />
           </div>
         </SlideupModal>

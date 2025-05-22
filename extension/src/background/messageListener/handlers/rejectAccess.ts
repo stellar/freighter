@@ -1,12 +1,15 @@
-import { ResponseQueue } from "@shared/api/types/message-request";
+import {
+  ResponseQueue,
+  RejectAccessResponse,
+} from "@shared/api/types/message-request";
 
 export const rejectAccess = ({
   responseQueue,
 }: {
-  responseQueue: ResponseQueue;
+  responseQueue: ResponseQueue<RejectAccessResponse>;
 }) => {
   const response = responseQueue.pop();
   if (response) {
-    response();
+    response(undefined);
   }
 };
