@@ -33,7 +33,7 @@ containing many `create claimable balance` operations.
 <img src={require('./assets/5.33.0/create-claimable-spam.png').default}
 alt="Create Claimable Balance Spam" width="300"/>
 
-To filter out this noise and provided a better experience for users, Freighter
+To filter out this noise and provide a better experience for users, Freighter
 now automatically hides these types of transactions for you. If you do want to
 engage with any of these, they still exist on your account. You can find them by
 visiting a block explorer like [stellar.expert](https://stellar.expert).
