@@ -1,7 +1,7 @@
 name: Run Tests
 env:
   INDEXER_URL: ${{ secrets.INDEXER_URL }}
-  INDEXER_V2_URL: ${{ secrets.INDEXER_BETA_URL }}
+  INDEXER_V2_URL: ${{ secrets.INDEXER_V2_URL }}
 on: [pull_request]
 concurrency:
   group: ${{ github.workflow }}

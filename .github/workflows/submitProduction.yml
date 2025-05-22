@@ -1,6 +1,7 @@
 name: Production Deployment
 env:
   INDEXER_URL: ${{ secrets.INDEXER_URL }}
+  INDEXER_V2_URL: ${{ secrets.INDEXER_V2_URL }}
   HUSKY: 0
 on:
   workflow_dispatch:
