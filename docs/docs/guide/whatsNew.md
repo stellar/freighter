@@ -10,7 +10,7 @@ slug: /whatsNew
 
 You can now find dapps to connect your Freighter wallet to from the `Discover`
 screen. Here, you'll find dapps that provide different services, like lending,
-DEX, and bridging.
+DEXs, and bridging.
 
 To access, simply click the `Discover` button on the home screen.
 
