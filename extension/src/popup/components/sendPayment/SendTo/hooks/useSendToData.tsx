@@ -30,7 +30,7 @@ interface ResolvedSendToData {
 
 type SendToData = NeedsReRoute | ResolvedSendToData;
 
-const getAddressFromInput = async (userInput: string) => {
+export const getAddressFromInput = async (userInput: string) => {
   if (isFederationAddress(userInput)) {
     const fedResp = await Federation.Server.resolve(userInput);
     return {

@@ -30,14 +30,15 @@ import {
 } from "popup/ducks/transactionSubmission";
 
 import { RequestState } from "constants/request";
-import { useSendToData } from "./hooks/useSendToData";
+import { useSendToData, getAddressFromInput } from "./hooks/useSendToData";
 
-import "../styles.scss";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { Navigate, useLocation } from "react-router-dom";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
+
+import "../styles.scss";
 
 const baseReserve = new BigNumber(1);
 
@@ -229,10 +230,16 @@ export const SendTo = ({
                       {sendDataState.data!.recentAddresses.map((address) => (
                         <li key={address}>
                           <button
+                            data-testid="recent-address-button"
                             onClick={async () => {
+                              const addressFromInput =
+                                await getAddressFromInput(address);
                               emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
                               await fetchData(address, {});
-                              handleContinue(address);
+                              handleContinue(
+                                addressFromInput.validatedAddress,
+                                addressFromInput.fedAddress,
+                              );
                             }}
                             className="SendTo__subheading-identicon"
                           >
@@ -267,7 +274,10 @@ export const SendTo = ({
                         </>
                       )}
                       <div className="SendTo__subheading">Address</div>
-                      <div className="SendTo__subheading-identicon">
+                      <div
+                        className="SendTo__subheading-identicon"
+                        data-testid="send-to-identicon"
+                      >
                         <IdenticonImg
                           publicKey={sendDataState.data!.validatedAddress}
                         />

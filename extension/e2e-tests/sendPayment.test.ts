@@ -197,6 +197,71 @@ test("Send doesn't throw error when account is unfunded", async ({
   );
 });
 
+test("Send XLM payments to recent federated addresses", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId });
+  await page.getByTitle("Send Payment").click({ force: true });
+
+  await expect(page.getByText("Send To")).toBeVisible();
+
+  await page.getByTestId("send-to-input").fill("freighter.pb*lobstr.co");
+  await expect(page.getByTestId("send-to-identicon")).toBeVisible();
+  await page.getByText("Continue").click({ force: true });
+
+  await expect(page.getByText("Send XLM")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill("1");
+  await page.getByText("Continue").click({ force: true });
+
+  await expect(page.getByText("Send Settings")).toBeVisible();
+  await expect(page.getByTestId("SendSettingsTransactionFee")).toHaveText(
+    /[0-9]/,
+  );
+  // 100 XLM is the default, so likely a sign the fee was not set properly from Horizon
+  await expect(
+    page.getByTestId("SendSettingsTransactionFee"),
+  ).not.toContainText("100 XLM");
+  await page.getByText("Review Send").click();
+
+  await expect(page.getByText("Confirm Send")).toBeVisible();
+  await expect(page.getByText("XDR")).toBeVisible();
+  await page.getByTestId("transaction-details-btn-send").click();
+
+  await expect(page.getByText("Successfully sent")).toBeVisible({
+    timeout: 60000,
+  });
+
+  await page.getByText("Done").click();
+
+  await page.getByTitle("Send Payment").click();
+
+  await expect(page.getByText("Send To")).toBeVisible();
+  await expect(page.getByText("RECENT")).toBeVisible();
+  await page.getByTestId("recent-address-button").click();
+  await page.getByText("Continue").click({ force: true });
+
+  await expect(page.getByText("Send XLM")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill("1");
+  await page.getByText("Continue").click({ force: true });
+
+  await expect(page.getByText("Send Settings")).toBeVisible();
+  await expect(page.getByTestId("SendSettingsTransactionFee")).toHaveText(
+    /[0-9]/,
+  );
+  // 100 XLM is the default, so likely a sign the fee was not set properly from Horizon
+  await expect(
+    page.getByTestId("SendSettingsTransactionFee"),
+  ).not.toContainText("100 XLM");
+  await page.getByText("Review Send").click();
+  await expect(page.getByText("Confirm Send")).toBeVisible();
+  await page.getByTestId("transaction-details-btn-send").click();
+  await expect(page.getByText("Successfully sent")).toBeVisible({
+    timeout: 60000,
+  });
+});
+
 test("Send XLM payments from multiple accounts to G Address", async ({
   page,
   extensionId,
