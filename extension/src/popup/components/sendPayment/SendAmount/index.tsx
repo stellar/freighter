@@ -586,7 +586,7 @@ export const SendAmount = ({
             <div className="SendAmount__subtitle">
               <InfoTooltip
                 infoText={t(
-                  "Your available balance accounts for the base reserve requirement and the recommended network fee. This number may be lower than your total balance.",
+                  "The amount of XLM not reserved or needed for fees. This number may be lower than your total balance.",
                 )}
                 placement="bottom-end"
               >
