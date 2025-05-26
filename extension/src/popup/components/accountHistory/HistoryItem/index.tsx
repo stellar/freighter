@@ -1,5 +1,4 @@
 // In order to allow that rule we need to refactor this to use the correct Horizon types and narrow operation types
-
 import React, { useState, useEffect, useCallback } from "react";
 import { captureException } from "@sentry/browser";
 import camelCase from "lodash/camelCase";
@@ -13,7 +12,6 @@ import {
 } from "@stellar/design-system";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { Horizon } from "stellar-sdk";
 
 import { OPERATION_TYPES } from "constants/transaction";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
@@ -35,6 +33,11 @@ import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
+import {
+  mapHistoryItemData,
+  isChangeTrustOperation,
+  isCreateAccountOperation,
+} from "shared-lib-poc";
 
 import { TransactionDetailProps } from "../TransactionDetail";
 
@@ -179,63 +182,84 @@ export const HistoryItem = ({
   const translations = useCallback(t, []);
 
   useEffect(() => {
+    const map = async () => {
+      const historyItemData = await mapHistoryItemData({
+        operation,
+        publicKey,
+        networkDetails,
+      });
+
+      console.log("historyItemData", historyItemData);
+    };
+
+    map();
+  }, []);
+
+  useEffect(() => {
     const buildHistoryItem = async () => {
       setIsLoading(true);
 
-      if (type === Horizon.HorizonApi.OperationResponseType.createAccount) {
+      const historyItemData = await mapHistoryItemData({
+        operation,
+        publicKey,
+        networkDetails,
+      });
+
+      const IconComponent =
+        Icon[historyItemData.iconString as keyof typeof Icon];
+
+      const ActionIconComponent =
+        Icon[historyItemData.actionIconString as keyof typeof Icon];
+
+      if (isCreateAccountOperation(type)) {
         // If you're not creating an external account then this means you're
         // receiving some XLM to create(fund) your own account
-        const _isRecipient = !isCreateExternalAccount;
-        const paymentDifference = _isRecipient ? "+" : "-";
-        const formattedAmount = `${paymentDifference}${formatAmount(
-          new BigNumber(startingBalance).toString(),
-        )} ${destAssetCode}`;
+        const _isRecipient =
+          !historyItemData.transactionDetails.createAccountDetails
+            ?.isCreatingExternalAccount;
 
         setAmountComponent(
           <Badge variant={_isRecipient ? "success" : "primary"} size="md">
-            {formattedAmount}
+            {historyItemData.amountText || ""}
           </Badge>,
         );
         setIconComponent(
           <div className="HistoryItem__icon__bordered">
-            <Icon.User01 />
+            <IconComponent />
             <div className="HistoryItem__icon__small HistoryItem--create-account">
-              {/* When you've received XLM to create your own account */}
-              {_isRecipient && <Icon.Plus />}
-              {/* When you've sent XLM to create external account */}
-              {!_isRecipient && <Icon.ArrowUp />}
+              <ActionIconComponent />
             </div>
           </div>,
         );
-        setRowText(translations("Create account"));
+        setRowText(historyItemData.rowText);
         setDateText(
           (_dateText) =>
-            `${
-              _isRecipient ? translations("Received") : translations("Sent")
-            } \u2022 ${date}`,
+            `${historyItemData.actionText} \u2022 ${historyItemData.dateText}`,
         );
-        if (isCreateExternalAccount) {
+        if (
+          historyItemData.transactionDetails.createAccountDetails
+            ?.isCreatingExternalAccount
+        ) {
           setTxDetails((_state) => ({
             ..._state,
-            headerTitle: translations("Create account"),
+            headerTitle: historyItemData.rowText,
             isPayment: true,
             operation: {
-              ...operation,
+              ...historyItemData.transactionDetails.operation,
               asset_type: "native",
-              to: account,
+              to: historyItemData.transactionDetails.createAccountDetails
+                ?.accountPublicKey,
             } as any, // TODO: overloaded op type, native not valid
-            operationText: formattedAmount,
+            operationText: historyItemData.amountText,
           }));
         } else {
           setTxDetails((_state) => ({
             ..._state,
-            headerTitle: translations("Create account"),
-            operationText: operationString,
+            headerTitle: historyItemData.rowText,
+            operationText: historyItemData.amountText,
           }));
         }
-      } else if (
-        type === Horizon.HorizonApi.OperationResponseType.changeTrust
-      ) {
+      } else if (isChangeTrustOperation(type)) {
         const destIcon = await getIconUrlFromIssuer({
           key: assetIssuer || "",
           code: destAssetCode || "",
@@ -255,15 +279,15 @@ export const HistoryItem = ({
             )}
             {!destIcon && renderIconPlaceholder(destAssetCode)}
             <div className="HistoryItem__icon__small HistoryItem--add-trustline">
-              <Icon.CheckCircle />
+              <ActionIconComponent />
             </div>
           </>,
         );
-        setRowText(translations("Add trustline"));
+        setRowText(historyItemData.actionText);
         setTxDetails((_state) => ({
           ..._state,
-          headerTitle: translations("Add trustline"),
-          operationText: operationString,
+          headerTitle: historyItemData.actionText,
+          operationText: historyItemData.operationString,
         }));
       } else if (isSwap) {
         const formattedAmount = `${formatAmount(
@@ -344,13 +368,10 @@ export const HistoryItem = ({
       } else if (isPayment) {
         // default to Sent if a payment to self
         const _isRecipient = to === publicKey && from !== publicKey;
-        const paymentDifference = _isRecipient ? "+" : "-";
-        const formattedAmount = `${paymentDifference}${formatAmount(
-          new BigNumber(amount).toString(),
-        )} ${destAssetCode}`;
+
         setAmountComponent(
           <Badge variant={_isRecipient ? "success" : "primary"} size="md">
-            {formattedAmount}
+            {historyItemData.amountText || ""}
           </Badge>,
         );
         const destIcon =
@@ -376,12 +397,12 @@ export const HistoryItem = ({
             {!destIcon && renderIconPlaceholder(destAssetCode)}
             {_isRecipient && (
               <div className="HistoryItem__icon__small HistoryItem--received">
-                <Icon.ArrowDown />
+                <ActionIconComponent />
               </div>
             )}
             {!_isRecipient && (
               <div className="HistoryItem__icon__small HistoryItem--sent">
-                <Icon.Send03 />
+                <ActionIconComponent />
               </div>
             )}
           </>,
@@ -389,17 +410,13 @@ export const HistoryItem = ({
         setRowText(destAssetCode);
         setDateText(
           (_dateText) =>
-            `${
-              _isRecipient ? translations("Received") : translations("Sent")
-            } \u2022 ${date}`,
+            `${historyItemData.actionText} \u2022 ${historyItemData.dateText}`,
         );
         setTxDetails((_state) => ({
           ..._state,
           isRecipient: _isRecipient,
-          headerTitle: `${
-            _isRecipient ? translations("Received") : translations("Sent")
-          } ${destAssetCode}`,
-          operationText: formattedAmount,
+          headerTitle: historyItemData.rowText,
+          operationText: historyItemData.amountText,
         }));
       } else if (isInvokeHostFn) {
         const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
@@ -686,7 +703,7 @@ export const HistoryItem = ({
         setTxDetails((_state) => ({
           ..._state,
           headerTitle: translations("Transaction"),
-          operationText: operationString,
+          operationText: historyItemData.operationString,
         }));
       }
 
