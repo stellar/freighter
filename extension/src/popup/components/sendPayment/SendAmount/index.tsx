@@ -583,16 +583,18 @@ export const SendAmount = ({
             </span>
           }
           subtitle={
-            <div className="SendAmount__subtitle">
-              <InfoTooltip
-                infoText={t(
-                  "The amount of XLM not reserved or needed for fees. This number may be lower than your total balance.",
-                )}
-                placement="bottom-end"
-              >
-                {`${formatAmount(availBalance)} ${parsedSourceAsset.code} ${t("available")}`}
-              </InfoTooltip>
-            </div>
+            asset === "native" ? (
+              <div className="SendAmount__subtitle">
+                <InfoTooltip
+                  infoText={t(
+                    "The amount of XLM not reserved or needed for fees. This number may be lower than your total balance.",
+                  )}
+                  placement="bottom-end"
+                >
+                  {`${formatAmount(availBalance)} ${parsedSourceAsset.code} ${t("available")}`}
+                </InfoTooltip>
+              </div>
+            ) : null
           }
           hasBackButton={!isSwap}
           customBackAction={() => {
