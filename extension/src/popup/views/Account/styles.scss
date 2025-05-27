@@ -23,19 +23,6 @@
     flex-direction: row;
   }
 
-  &__name-key-display {
-    align-items: center;
-    display: flex;
-    flex-direction: row;
-    gap: pxToRem(8px);
-    font-size: pxToRem(14px);
-    line-height: pxToRem(20px);
-
-    .Tooltip {
-      padding: 0.125rem 0.375rem;
-    }
-  }
-
   &__send-receive-display {
     display: flex;
     justify-content: right;
@@ -44,29 +31,6 @@
     > div {
       margin-left: 1rem;
     }
-  }
-
-  &__send-receive-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    button {
-      width: 2.5rem;
-      height: 2.5rem;
-
-      svg {
-        stroke: var(--sds-clr-base-01);
-        width: 1rem;
-        height: 1rem;
-        stroke: var(--sds-clr-gray-12);
-      }
-    }
-  }
-
-  &__account-name {
-    color: var(--sds-clr-gray-11);
-    font-weight: var(--font-weight-medium);
   }
 
   &__account-num {

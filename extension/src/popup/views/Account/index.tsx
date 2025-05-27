@@ -26,7 +26,6 @@ import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
 
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountHeader } from "popup/components/account/AccountHeader";
-import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsDropdown";
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
@@ -132,6 +131,10 @@ export const Account = () => {
     );
     return currentUsdBalance.plus(prev);
   }, new BigNumber(0));
+  const roundedTotlalBalanceUsd =
+    !hasError && isMainnet(resolvedData!.networkDetails)
+      ? `$${formatAmount(roundUsdValue(totalBalanceUsd.toString()))}`
+      : "";
 
   return (
     <>
@@ -145,6 +148,8 @@ export const Account = () => {
         }) => {
           await fetchData(false, updatedValues);
         }}
+        roundedTotlalBalanceUsd={roundedTotlalBalanceUsd}
+        isFunded={!!resolvedData?.balances?.isFunded}
       />
       <View.Content hasNoTopPadding>
         <div className="AccountView" data-testid="account-view">
@@ -167,19 +172,6 @@ export const Account = () => {
                   </div>
                 </CopyText>
               </div>
-              <div
-                data-testid="account-view-total-balance"
-                className="AccountView__total-usd-balance"
-                key="total-balance"
-              >
-                {!hasError &&
-                isMainnet(resolvedData!.networkDetails) &&
-                resolvedData?.tokenPrices !== null
-                  ? `$${formatAmount(
-                      roundUsdValue(totalBalanceUsd.toString()),
-                    )}`
-                  : ""}
-              </div>
             </div>
             <div className="AccountView__send-receive-display">
               <div className="AccountView__send-receive-button">
@@ -189,14 +181,6 @@ export const Account = () => {
                   id="nav-btn-send"
                   icon={<Icon.Send01 />}
                   onClick={() => navigateTo(ROUTES.sendPayment, navigate)}
-                />
-              </div>
-              <div
-                className="AccountView__send-receive-button"
-                data-testid="account-options-dropdown"
-              >
-                <AccountOptionsDropdown
-                  isFunded={!!resolvedData?.balances?.isFunded}
                 />
               </div>
             </div>
