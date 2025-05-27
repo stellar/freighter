@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import {
@@ -11,7 +11,6 @@ import {
 import { useTranslation } from "react-i18next";
 
 import {
-  settingsNetworkDetailsSelector,
   settingsSorobanSupportedSelector,
   settingsSelector,
 } from "popup/ducks/settings";
@@ -19,10 +18,9 @@ import { View } from "popup/basics/layout/View";
 import {
   accountNameSelector,
   allAccountsSelector,
-  publicKeySelector,
 } from "popup/ducks/accountServices";
 import { ROUTES } from "popup/constants/routes";
-import { navigateTo } from "popup/helpers/navigate";
+import { navigateTo, openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
 
@@ -35,54 +33,37 @@ import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
 import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
+import { newTabHref } from "helpers/urls";
+import { getBalanceByAsset } from "popup/helpers/balance";
+import { NetworkDetails } from "@shared/constants/stellar";
+import { reRouteOnboarding } from "popup/helpers/route";
+import { AppDataType } from "helpers/hooks/useGetAppData";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
-import { getBalanceByAsset } from "popup/helpers/balance";
 
 export const Account = () => {
   const { t } = useTranslation();
+  const location = useLocation();
   const navigate = useNavigate();
-  const publicKey = useSelector(publicKeySelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const allAccounts = useSelector(allAccountsSelector);
   const [selectedAsset, setSelectedAsset] = useState("");
   const isFullscreenModeEnabled = isFullscreenMode();
-  const isMainnetNetwork = isMainnet(networkDetails);
-  const { state: accountData, fetchData } = useGetAccountData(
-    publicKey,
-    networkDetails,
-    {
-      isMainnet: isMainnetNetwork,
-      showHidden: false,
-      includeIcons: true,
-    },
-  );
+  const { state: accountData, fetchData } = useGetAccountData({
+    showHidden: false,
+    includeIcons: true,
+  });
 
   useEffect(() => {
     const getData = async () => {
-      await fetchData();
+      await fetchData(false);
     };
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [publicKey]);
-
-  if (selectedAsset) {
-    return (
-      <AssetDetail
-        accountBalances={accountData.data!.balances}
-        assetOperations={accountData.data!.operationsByAsset[selectedAsset]}
-        networkDetails={networkDetails}
-        publicKey={publicKey}
-        selectedAsset={selectedAsset}
-        setSelectedAsset={setSelectedAsset}
-        subentryCount={accountData.data!.balances.subentryCount}
-      />
-    );
-  }
+  }, []);
 
   if (
     accountData.state === RequestState.IDLE ||
@@ -93,9 +74,50 @@ export const Account = () => {
 
   const hasError = accountData.state === RequestState.ERROR;
 
-  const tokenPrices = accountData.data?.tokenPrices || {};
+  if (accountData.data?.type === AppDataType.REROUTE) {
+    if (accountData.data.shouldOpenTab) {
+      openTab(newTabHref(accountData.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${accountData.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (!hasError) {
+    reRouteOnboarding({
+      type: accountData.data.type,
+      applicationState: accountData.data?.applicationState,
+      state: accountData.state,
+    });
+  }
+
+  if (
+    !hasError &&
+    selectedAsset &&
+    accountData.data.type === AppDataType.RESOLVED
+  ) {
+    return (
+      <AssetDetail
+        accountBalances={accountData.data.balances}
+        assetOperations={accountData.data.operationsByAsset[selectedAsset]}
+        networkDetails={accountData.data.networkDetails}
+        publicKey={accountData.data.publicKey}
+        selectedAsset={selectedAsset}
+        setSelectedAsset={setSelectedAsset}
+        subentryCount={accountData.data.balances.subentryCount}
+      />
+    );
+  }
+
+  const resolvedData = accountData.data;
+  const tokenPrices = resolvedData?.tokenPrices || {};
   const totalBalanceUsd = Object.keys(tokenPrices).reduce((prev, curr) => {
-    const balances = accountData.data?.balances.balances!;
+    const balances = resolvedData?.balances.balances!;
     const asset = getAssetFromCanonical(curr);
     const priceBalance = getBalanceByAsset(asset, balances);
     if (!priceBalance) {
@@ -116,7 +138,13 @@ export const Account = () => {
       <AccountHeader
         allAccounts={allAccounts}
         currentAccountName={currentAccountName}
-        publicKey={publicKey}
+        publicKey={resolvedData?.publicKey || ""}
+        onClickRow={async (updatedValues: {
+          publicKey?: string;
+          network?: NetworkDetails;
+        }) => {
+          await fetchData(false, updatedValues);
+        }}
       />
       <View.Content hasNoTopPadding>
         <div className="AccountView" data-testid="account-view">
@@ -130,7 +158,7 @@ export const Account = () => {
                   {currentAccountName}
                 </div>
                 <CopyText
-                  textToCopy={publicKey}
+                  textToCopy={resolvedData?.publicKey || ""}
                   tooltipPlacement="bottom"
                   doneLabel="Copied address"
                 >
@@ -143,7 +171,7 @@ export const Account = () => {
                 className="AccountView__total-usd-balance"
                 key="total-balance"
               >
-                {isMainnetNetwork && !hasError
+                {!hasError && isMainnet(resolvedData!.networkDetails)
                   ? `$${formatAmount(
                       roundUsdValue(totalBalanceUsd.toString()),
                     )}`
@@ -165,7 +193,7 @@ export const Account = () => {
                 data-testid="account-options-dropdown"
               >
                 <AccountOptionsDropdown
-                  isFunded={!!accountData.data?.balances?.isFunded}
+                  isFunded={!!resolvedData?.balances?.isFunded}
                 />
               </div>
             </div>
@@ -190,7 +218,7 @@ export const Account = () => {
               </Notification>
             </div>
           )}
-          {accountData.data?.balances?.error?.horizon && (
+          {resolvedData?.balances?.error?.horizon && (
             <div className="AccountView__fetch-fail">
               <Notification
                 title={t("Horizon is temporarily experiencing issues")}
@@ -225,28 +253,28 @@ export const Account = () => {
             </div>
           )}
 
-          {accountData.data?.balances?.isFunded && !hasError && (
+          {resolvedData?.balances?.isFunded && !hasError && (
             <div
               className="AccountView__assets-wrapper"
               data-testid="account-assets"
             >
               <AccountAssets
-                sortedBalances={accountData.data.balances.balances}
+                sortedBalances={resolvedData.balances.balances}
                 assetPrices={tokenPrices}
-                assetIcons={accountData.data.balances.icons || {}}
+                assetIcons={resolvedData.balances.icons || {}}
                 setSelectedAsset={setSelectedAsset}
               />
             </div>
           )}
         </div>
       </View.Content>
-      {!accountData.data?.balances?.isFunded &&
+      {!resolvedData?.balances?.isFunded &&
         !hasError &&
-        !accountData.data?.balances?.error?.horizon && (
+        !resolvedData?.balances?.error?.horizon && (
           <View.Footer>
             <NotFundedMessage
-              canUseFriendbot={!!networkDetails.friendbotUrl}
-              publicKey={publicKey}
+              canUseFriendbot={!!resolvedData!.networkDetails.friendbotUrl}
+              publicKey={resolvedData?.publicKey || ""}
               reloadBalances={fetchData}
             />
           </View.Footer>

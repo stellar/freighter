@@ -32,9 +32,11 @@ export const UnlockAccount = () => {
   const dispatch = useDispatch<AppDispatch>();
 
   const handleSubmit = async (password: string) => {
-    await dispatch(confirmPassword(password));
-    // skip this location in history, we won't need to come back here after unlocking account
-    navigate(`${destination}${queryParams}`, { replace: true });
+    const res = await dispatch(confirmPassword(password));
+    if (confirmPassword.fulfilled.match(res) && res.payload.publicKey) {
+      // skip this location in history, we won't need to come back here after unlocking account
+      navigate(`${destination}${queryParams}`, { replace: true });
+    }
   };
 
   useEffect(() => {

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Card, Icon, Notification } from "@stellar/design-system";
-import { useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
@@ -18,7 +18,6 @@ import {
 } from "popup/components/WarningMessages";
 import { AuthEntry } from "popup/components/signAuthEntry/AuthEntry";
 import { View } from "popup/basics/layout/View";
-import { signEntry, rejectAuthEntry } from "popup/ducks/access";
 import {
   isNonSSLEnabledSelector,
   settingsExperimentalModeSelector,
@@ -27,11 +26,18 @@ import {
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 
-import { EntryToSign, parsedSearchParam } from "helpers/urls";
-import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
+import { EntryToSign, newTabHref, parsedSearchParam } from "helpers/urls";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 
 import "./styles.scss";
+import { useGetSignAuthEntryData } from "./hooks/useGetSignAuthEntryData";
+import { RequestState } from "constants/request";
+import { Loading } from "popup/components/Loading";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { openTab } from "popup/helpers/navigate";
+import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
+import { rejectAuthEntry, signEntry } from "popup/ducks/access";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const SignAuthEntry = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -56,25 +62,61 @@ export const SignAuthEntry = () => {
     domain,
   });
 
+  const { state: signAuthEntryData, fetchData } =
+    useGetSignAuthEntryData(accountToSign);
   const {
-    allAccounts,
-    accountNotFound,
-    currentAccount,
     isConfirming,
     isPasswordRequired,
-    publicKey,
     handleApprove,
     hwStatus,
     rejectAndClose,
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-  } = useSetupSigningFlow(
-    rejectAuthEntry,
-    signEntry,
-    params.entry,
-    accountToSign,
-  );
+  } = useSetupSigningFlow(rejectAuthEntry, signEntry, params.entry);
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const isLoading =
+    signAuthEntryData.state === RequestState.IDLE ||
+    signAuthEntryData.state === RequestState.LOADING;
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  const hasError = signAuthEntryData.state === RequestState.ERROR;
+  if (signAuthEntryData.data?.type === AppDataType.REROUTE) {
+    if (signAuthEntryData.data.shouldOpenTab) {
+      openTab(newTabHref(signAuthEntryData.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${signAuthEntryData.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (!hasError) {
+    reRouteOnboarding({
+      type: signAuthEntryData.data.type,
+      applicationState: signAuthEntryData.data.applicationState,
+      state: signAuthEntryData.state,
+    });
+  }
+
+  const publicKey = signAuthEntryData.data?.publicKey!;
+  const { allAccounts, accountNotFound, currentAccount } =
+    signAuthEntryData.data?.signFlowState!;
 
   if (entryNetworkPassphrase && entryNetworkPassphrase !== networkPassphrase) {
     return (
@@ -148,7 +190,9 @@ export const SignAuthEntry = () => {
                     accountName={currentAccount.name}
                     active
                     publicKey={currentAccount.publicKey}
-                    setIsDropdownOpen={setIsDropdownOpen}
+                    onClickAccount={async () => {
+                      setIsDropdownOpen(!isDropdownOpen);
+                    }}
                   >
                     <OptionTag
                       hardwareWalletType={currentAccount.hardwareWalletType}
@@ -217,7 +261,12 @@ export const SignAuthEntry = () => {
             <AccountList
               allAccounts={allAccounts}
               publicKey={publicKey}
-              setIsDropdownOpen={setIsDropdownOpen}
+              onClickAccount={async (clickedPublicKey: string) => {
+                setIsDropdownOpen(!isDropdownOpen);
+                if (clickedPublicKey !== publicKey) {
+                  await fetchData(clickedPublicKey);
+                }
+              }}
             />
           </div>
         </SlideupModal>

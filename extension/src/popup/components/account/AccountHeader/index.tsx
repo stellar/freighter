@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
 
 import { Account } from "@shared/api/types";
 import { Icon } from "@stellar/design-system";
@@ -10,9 +10,9 @@ import { ROUTES } from "popup/constants/routes";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { isActiveNetwork } from "helpers/stellar";
+import { navigateTo } from "popup/helpers/navigate";
 import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
 import {
-  changeNetwork,
   settingsNetworkDetailsSelector,
   settingsNetworksListSelector,
 } from "popup/ducks/settings";
@@ -21,25 +21,30 @@ import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal"
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 
 import "./styles.scss";
-import { AppDispatch } from "popup/App";
+import { NetworkDetails } from "@shared/constants/stellar";
 
 interface AccountHeaderProps {
   allAccounts: Account[];
   currentAccountName: string;
   publicKey: string;
+  onClickRow: (updatedValues: {
+    publicKey?: string;
+    network?: NetworkDetails;
+  }) => Promise<void>;
 }
 
 export const AccountHeader = ({
   allAccounts,
   currentAccountName,
   publicKey,
+  onClickRow,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch<AppDispatch>();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNetworkSelectorOpen, setIsNetworkSelectorOpen] = useState(false);
+  const navigate = useNavigate();
 
   const networksModalHeight = useRef(0);
   const activeNetworkIndex = useRef<number | null>(null);
@@ -73,14 +78,19 @@ export const AccountHeader = ({
         </div>
       }
       rightContent={
-        <div
-          className="AccountHeader__network-wrapper"
-          data-testid="network-selector-open"
-          onClick={() => setIsNetworkSelectorOpen(!isNetworkSelectorOpen)}
-        >
-          <NetworkIcon index={activeNetworkIndex.current} />
-          <div className="AccountHeader__network-copy">
-            {networkDetails.networkName}
+        <div className="AccountHeader__right-content">
+          <div
+            className="AccountHeader__right-button AccountHeader__right-button--with-label"
+            onClick={() => navigateTo(ROUTES.discover, navigate)}
+          >
+            <Icon.Compass03 /> {t("Discover")}
+          </div>
+          <div
+            className="AccountHeader__right-button"
+            data-testid="network-selector-open"
+            onClick={() => setIsNetworkSelectorOpen(!isNetworkSelectorOpen)}
+          >
+            <Icon.Globe02 />
           </div>
         </div>
       }
@@ -90,7 +100,12 @@ export const AccountHeader = ({
           <AccountList
             allAccounts={allAccounts}
             publicKey={publicKey}
-            setIsDropdownOpen={setIsDropdownOpen}
+            onClickAccount={async (clickedPublicKey: string) => {
+              if (publicKey !== clickedPublicKey) {
+                await onClickRow({ publicKey: clickedPublicKey });
+              }
+              setIsDropdownOpen(!isDropdownOpen);
+            }}
           />
           <div className="AccountList__footer">
             <hr className="AccountHeader__list-divider" />
@@ -162,8 +177,9 @@ export const AccountHeader = ({
               <div
                 className="AccountHeader__network-selector__row"
                 key={n.networkName}
-                onClick={() => {
-                  dispatch(changeNetwork({ networkName: n.networkName }));
+                onClick={async () => {
+                  await onClickRow({ network: n });
+                  setIsNetworkSelectorOpen(false);
                 }}
               >
                 <NetworkIcon index={i} />

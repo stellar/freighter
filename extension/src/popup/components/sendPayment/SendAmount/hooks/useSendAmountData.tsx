@@ -1,31 +1,35 @@
 import { useReducer } from "react";
 
-import { NetworkDetails } from "@shared/constants/stellar";
 import { initialState, isError, reducer } from "helpers/request";
 import { AssetIcons } from "@shared/api/types";
-import { AccountBalancesInterface } from "@shared/api/types/backend-api";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { isContractId } from "popup/helpers/soroban";
-import { AccountBalances } from "helpers/hooks/useGetBalances";
+import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import {
   AssetDomains,
   useGetAssetDomainsWithBalances,
 } from "helpers/hooks/useGetAssetDomainsWithBalances";
-import { getAccountBalances } from "@shared/api/internal";
-import { getBaseAccount, sortBalances } from "popup/helpers/account";
+import { getBaseAccount } from "popup/helpers/account";
+import { AppDataType, NeedsReRoute } from "helpers/hooks/useGetAppData";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { isMainnet } from "helpers/stellar";
+import { NetworkDetails } from "@shared/constants/stellar";
 
-interface SendAmountData {
+interface ResolvedSendAmountData {
+  type: AppDataType.RESOLVED;
   userBalances: AccountBalances;
   destinationBalances: AccountBalances;
   icons: AssetIcons;
   domains: ManageAssetCurrency[];
+  applicationState: APPLICATION_STATE;
+  publicKey: string;
+  networkDetails: NetworkDetails;
 }
 
+type SendAmountData = NeedsReRoute | ResolvedSendAmountData;
+
 function useGetSendAmountData(
-  publicKey: string,
-  networkDetails: NetworkDetails,
   options: {
-    isMainnet: boolean;
     showHidden: boolean;
     includeIcons: boolean;
   },
@@ -35,40 +39,54 @@ function useGetSendAmountData(
     reducer<SendAmountData, unknown>,
     initialState,
   );
+  const { fetchData: fetchBalances } = useGetBalances({
+    showHidden: true,
+    includeIcons: false,
+  });
 
-  const { fetchData: fetchAssetDomains } = useGetAssetDomainsWithBalances(
-    publicKey,
-    networkDetails,
-    options,
-  );
+  const { fetchData: fetchAssetDomains } =
+    useGetAssetDomainsWithBalances(options);
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const userDomains = await fetchAssetDomains();
+      const userDomains = await fetchAssetDomains(true);
       let destinationAccount = await getBaseAccount(destinationAddress);
-      const destinationBalances =
-        destinationAccount && !isContractId(destinationAccount)
-          ? await getAccountBalances(
-              destinationAccount,
-              networkDetails,
-              options.isMainnet,
-            )
-          : ({} as AccountBalancesInterface);
 
       if (isError<AssetDomains>(userDomains)) {
         throw new Error(userDomains.message);
       }
 
+      if (userDomains.type === AppDataType.REROUTE) {
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload: userDomains });
+        return userDomains;
+      }
+
+      const _isMainnet = isMainnet(userDomains.networkDetails);
+      let destinationBalances = {} as AccountBalances;
+      if (destinationAccount && !isContractId(destinationAccount)) {
+        const balances = await fetchBalances(
+          destinationAccount,
+          _isMainnet,
+          userDomains.networkDetails,
+          true,
+        );
+        if (isError<AccountBalances>(balances)) {
+          throw new Error(balances.message);
+        }
+        destinationBalances = balances;
+      }
+
       const payload = {
+        type: AppDataType.RESOLVED,
+        applicationState: userDomains.applicationState,
+        publicKey: userDomains.publicKey,
+        networkDetails: userDomains.networkDetails,
         userBalances: userDomains.balances,
-        destinationBalances: {
-          ...destinationBalances,
-          balances: sortBalances(destinationBalances.balances),
-        },
+        destinationBalances,
         icons: userDomains.balances.icons || {},
         domains: userDomains.domains,
-      };
+      } as ResolvedSendAmountData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {

@@ -1,7 +1,7 @@
 name: Beta Deployment
 env:
   INDEXER_URL: ${{ secrets.INDEXER_URL }}
-  INDEXER_V2_URL: ${{ secrets.INDEXER_BETA_URL }}
+  INDEXER_V2_URL: ${{ secrets.INDEXER_V2_BETA_URL }}
 on:
   workflow_dispatch:
     inputs:
@@ -18,6 +18,16 @@ jobs:
     name: Bump Package Version and Submit Extension
     runs-on: ubuntu-latest
     steps:
+      - if: ${{ env.INDEXER_URL == '' }}
+        run: |
+          echo "Missing INDEXER_URL"
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
+      - if: ${{ env.INDEXER_V2_URL == '' }}
+        run: |
+          echo "Missing INDEXER_V2_URL"
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
       - name: Checkout code
         uses: actions/checkout@v4
         with:

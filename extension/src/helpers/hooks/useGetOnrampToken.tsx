@@ -6,6 +6,8 @@ import { openTab } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { RequestState, initialState, reducer } from "./fetchHookInterface";
+import { AppDataType, useGetAppData } from "./useGetAppData";
+import { isError } from "helpers/request";
 
 type SuccessReturnType = { token: string | null; error: string | null };
 
@@ -21,16 +23,16 @@ const getCoinbaseUrl = ({ token, asset }: GetCoinBaseUrlParams) => {
 };
 
 interface UseGetOnrampTokenParams {
-  publicKey: string;
   asset?: string;
 }
 
-function useGetOnrampToken({ publicKey, asset }: UseGetOnrampTokenParams) {
+function useGetOnrampToken({ asset }: UseGetOnrampTokenParams) {
   const [state, dispatch] = useReducer(
     reducer<SuccessReturnType>,
     initialState,
   );
   const [tokenError, setTokenError] = useState("");
+  const { fetchData: fetchAppData } = useGetAppData();
 
   useEffect(() => {
     if (state.state === RequestState.ERROR) {
@@ -52,6 +54,12 @@ function useGetOnrampToken({ publicKey, asset }: UseGetOnrampTokenParams) {
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
+      const appData = await fetchAppData();
+      if (isError(appData)) {
+        throw new Error(appData.message);
+      }
+      const publicKey =
+        appData.type === AppDataType.RESOLVED ? appData.account.publicKey : "";
       const options = {
         method: "POST",
         headers: {

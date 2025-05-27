@@ -3,7 +3,6 @@ import {
   createSelector,
   createSlice,
 } from "@reduxjs/toolkit";
-import * as Sentry from "@sentry/browser";
 import { Networks } from "stellar-sdk";
 
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
@@ -19,7 +18,6 @@ import {
   createAccount as createAccountService,
   fundAccount as fundAccountService,
   recoverAccount as recoverAccountService,
-  loadAccount as loadAccountService,
   confirmPassword as confirmPasswordService,
   signOut as signOutService,
   addTokenId as addTokenIdService,
@@ -409,29 +407,6 @@ const storeAccountMetricsData = (publicKey: string, allAccounts: Account[]) => {
   localStorage.setItem(METRICS_DATA, JSON.stringify(metricsData));
 };
 
-export const loadAccount = createAsyncThunk(
-  "auth/loadAccount",
-  async (_arg, thunkApi) => {
-    let res;
-    let error;
-    try {
-      res = await loadAccountService();
-      storeAccountMetricsData(res.publicKey, res.allAccounts);
-      return res;
-    } catch (e) {
-      console.error(e);
-      error = e;
-      Sentry.captureException(`Error loading account: ${error}`);
-    }
-
-    if (!res) {
-      return thunkApi.rejectWithValue({ errorMessage: error });
-    }
-
-    return res;
-  },
-);
-
 export const signOut = createAsyncThunk<
   APPLICATION_STATE,
   undefined,
@@ -596,6 +571,36 @@ const authSlice = createSlice({
     },
     setConnectingWalletType(state, action) {
       state.connectingWalletType = action.payload;
+    },
+    saveAccount(state, action) {
+      const {
+        hasPrivateKey,
+        publicKey,
+        applicationState,
+        allAccounts,
+        bipPath,
+        tokenIdList,
+      } = action.payload;
+      state.hasPrivateKey = hasPrivateKey;
+      state.publicKey = publicKey;
+      state.applicationState =
+        applicationState || APPLICATION_STATE.APPLICATION_STARTED;
+      state.allAccounts = allAccounts;
+      state.bipPath = bipPath;
+      state.tokenIdList = tokenIdList;
+    },
+    saveAccountError(state, action) {
+      const {
+        message = "An unknown error occurred when loading your account",
+      } = action.payload;
+      return {
+        ...state,
+        applicationState: APPLICATION_STATE.APPLICATION_ERROR,
+        error: message,
+      };
+    },
+    saveApplicationState(state, action) {
+      state.applicationState = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -789,43 +794,6 @@ const authSlice = createSlice({
         error: errorMessage,
       };
     });
-    builder.addCase(loadAccount.fulfilled, (state, action) => {
-      const {
-        hasPrivateKey,
-        publicKey,
-        applicationState,
-        allAccounts,
-        bipPath,
-        tokenIdList,
-      } = action.payload || {
-        hasPrivateKey: false,
-        publicKey: "",
-        applicationState: APPLICATION_STATE.APPLICATION_STARTED,
-        allAccounts: [],
-        bipPath: "",
-        tokenIdList: [],
-      };
-      return {
-        ...state,
-        hasPrivateKey,
-        applicationState:
-          applicationState || APPLICATION_STATE.APPLICATION_STARTED,
-        publicKey,
-        allAccounts,
-        bipPath,
-        tokenIdList,
-      };
-    });
-    builder.addCase(loadAccount.rejected, (state, action) => {
-      const {
-        message = "An unknown error occurred when loading your account",
-      } = action.error;
-      return {
-        ...state,
-        applicationState: APPLICATION_STATE.APPLICATION_ERROR,
-        error: message,
-      };
-    });
     builder.addCase(confirmPassword.rejected, (state, action) => {
       const { errorMessage } = action.payload || { errorMessage: "" };
 
@@ -1000,7 +968,25 @@ export const isAccountMismatchSelector = createSelector(
   (auth: InitialState) => auth.isAccountMismatch,
 );
 
-export const { clearApiError, setConnectingWalletType, resetAccountStatus } =
-  authSlice.actions;
+export const accountSelector = createSelector(
+  authSelector,
+  (auth: InitialState) => ({
+    hasPrivateKey: auth.hasPrivateKey,
+    publicKey: auth.publicKey,
+    applicationState: auth.applicationState,
+    allAccounts: auth.allAccounts,
+    bipPath: auth.bipPath,
+    tokenIdList: auth.tokenIdList,
+  }),
+);
+
+export const {
+  clearApiError,
+  setConnectingWalletType,
+  resetAccountStatus,
+  saveAccount,
+  saveAccountError,
+  saveApplicationState,
+} = authSlice.actions;
 
 export { reducer };

@@ -1,7 +1,7 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
 
-import { PublicKeyRoute, VerifiedAccountRoute } from "popup/Router";
+import { VerifiedAccountRoute } from "popup/Router";
 import { ROUTES } from "popup/constants/routes";
 import { View } from "popup/basics/layout/View";
 
@@ -40,21 +40,17 @@ export const AccountMigration = () => {
           <Route
             index
             element={
-              <PublicKeyRoute>
-                <div className="AccountMigration">
-                  <MigrationStart />
-                </div>
-              </PublicKeyRoute>
+              <div className="AccountMigration">
+                <MigrationStart />
+              </div>
             }
           ></Route>
           <Route
             path={reviewPath}
             element={
-              <PublicKeyRoute>
-                <div className="AccountMigration">
-                  <ReviewMigration />
-                </div>
-              </PublicKeyRoute>
+              <div className="AccountMigration">
+                <ReviewMigration />
+              </div>
             }
           ></Route>
           <Route
@@ -78,11 +74,9 @@ export const AccountMigration = () => {
           <Route
             path={migrationCompletePath}
             element={
-              <PublicKeyRoute>
-                <div className="AccountMigration">
-                  <MigrationComplete />
-                </div>
-              </PublicKeyRoute>
+              <div className="AccountMigration">
+                <MigrationComplete />
+              </div>
             }
           ></Route>
         </Routes>

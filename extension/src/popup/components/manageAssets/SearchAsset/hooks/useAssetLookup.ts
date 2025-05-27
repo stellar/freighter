@@ -17,16 +17,9 @@ import { isContractId } from "popup/helpers/soroban";
 import { initialState, reducer } from "helpers/request";
 import { RequestState } from "constants/request";
 import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
-import {
-  settingsNetworkDetailsSelector,
-  settingsSelector,
-} from "popup/ducks/settings";
+import { settingsSelector } from "popup/ducks/settings";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
-
-interface UseAssetLookupParams {
-  publicKey: string;
-  isAllowListVerificationEnabled: boolean;
-}
+import { NetworkDetails } from "@shared/constants/stellar";
 
 interface AssetRecord {
   asset: string;
@@ -54,16 +47,12 @@ const DEFAULT_PAYLOAD: AssetLookupDetails = {
   blockaidScanResults: {},
 };
 
-const useAssetLookup = ({
-  publicKey,
-  isAllowListVerificationEnabled,
-}: UseAssetLookupParams) => {
+const useAssetLookup = () => {
   let isVerifiedToken = false;
   let isVerificationInfoShowing = false;
   let verifiedLists = [] as string[];
 
   const { assetsLists } = useSelector(settingsSelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const MAX_ASSETS_TO_SCAN = 10;
 
   const [state, dispatch] = useReducer(
@@ -140,7 +129,12 @@ const useAssetLookup = ({
    * @param {string} contractId - The contract ID to look up.
    * @returns {Promise<ManageAssetCurrency[]>}
    */
-  const fetchTokenData = async (contractId: string) => {
+  const fetchTokenData = async (
+    publicKey: string,
+    contractId: string,
+    isAllowListVerificationEnabled: boolean,
+    networkDetails: NetworkDetails,
+  ) => {
     let assetRows = [] as ManageAssetCurrency[];
 
     const nativeContractDetails = getNativeContractDetails(networkDetails);
@@ -246,8 +240,10 @@ const useAssetLookup = ({
    */
   const fetchStellarExpertData = async ({
     asset,
+    networkDetails,
   }: {
     asset: string;
+    networkDetails: NetworkDetails;
   }): Promise<ManageAssetCurrency[]> => {
     const resJson = await searchAsset({
       asset,
@@ -275,9 +271,15 @@ const useAssetLookup = ({
   const fetchData = async ({
     asset,
     isBlockaidEnabled,
+    publicKey,
+    isAllowListVerificationEnabled,
+    networkDetails,
   }: {
     asset: string;
     isBlockaidEnabled: boolean;
+    publicKey: string;
+    isAllowListVerificationEnabled: boolean;
+    networkDetails: NetworkDetails;
   }) => {
     dispatch({ type: "FETCH_DATA_START" });
 
@@ -295,7 +297,12 @@ const useAssetLookup = ({
     if (isContractId(asset)) {
       // for custom tokens, try to go down the the custom token flow
       try {
-        assetRows = await fetchTokenData(asset);
+        assetRows = await fetchTokenData(
+          publicKey,
+          asset,
+          isAllowListVerificationEnabled,
+          networkDetails,
+        );
       } catch (e) {
         captureException(
           `Failed to fetch token details - ${JSON.stringify(e)}`,
@@ -307,7 +314,7 @@ const useAssetLookup = ({
     } else {
       // otherwise, try to use stellar.expert to search for a classic asset
       try {
-        assetRows = await fetchStellarExpertData({ asset });
+        assetRows = await fetchStellarExpertData({ asset, networkDetails });
       } catch (error) {
         captureException(
           `Failed to fetch StellarExpert data - ${JSON.stringify(error)}`,

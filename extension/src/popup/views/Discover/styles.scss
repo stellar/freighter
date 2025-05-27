@@ -1,0 +1,70 @@
+@use "../../styles/utils.scss" as *;
+
+.Discover {
+  &__eyebrow {
+    align-items: center;
+    color: var(--sds-clr-gray-11);
+    display: flex;
+    gap: pxToRem(8);
+    margin-bottom: pxToRem(16);
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(24);
+  }
+
+  &__row {
+    display: flex;
+    gap: pxToRem(12);
+    align-items: center;
+
+    &__icon {
+      height: pxToRem(32);
+      width: pxToRem(32);
+    }
+
+    &__label {
+      display: flex;
+      flex-direction: column;
+      flex: 1 0 0;
+
+      &__subtitle {
+        color: var(--sds-clr-gray-11);
+      }
+    }
+
+    &__button {
+      border-radius: 100px;
+      border: 1px solid var(--sds-clr-gray-06);
+      color: var(--sds-clr-gray-12);
+      display: flex;
+      gap: pxToRem(4);
+      padding: pxToRem(6) pxToRem(10);
+      justify-content: center;
+      align-items: center;
+
+      &__icon {
+        height: pxToRem(14);
+        width: pxToRem(14);
+        color: var(--sds-clr-gray-09);
+      }
+    }
+  }
+
+  &__footer {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8);
+    border-radius: pxToRem(16);
+    background-color: var(--sds-clr-gray-02);
+    padding: pxToRem(16);
+
+    &__copy {
+      color: var(--sds-clr-gray-11);
+      font-size: pxToRem(10);
+      line-height: pxToRem(14);
+    }
+  }
+}

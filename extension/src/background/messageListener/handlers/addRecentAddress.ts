@@ -9,11 +9,11 @@ export const addRecentAddress = async ({
   request: AddRecentAddressMessage;
   localStore: DataStorageAccess;
 }) => {
-  const { publicKey } = request;
+  const { address } = request;
   const storedData = (await localStore.getItem(RECENT_ADDRESSES)) || [];
   const recentAddresses = storedData;
-  if (recentAddresses.indexOf(publicKey) === -1) {
-    recentAddresses.push(publicKey);
+  if (recentAddresses.indexOf(address) === -1) {
+    recentAddresses.push(address);
   }
   await localStore.setItem(RECENT_ADDRESSES, recentAddresses);
 

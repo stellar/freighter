@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import React from "react";
 import { configureStore } from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
 import { Provider } from "react-redux";
@@ -10,7 +10,7 @@ import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
 import { reducer as transactionSubmission } from "popup/ducks/transactionSubmission";
 import { reducer as tokenPaymentSimulation } from "popup/ducks/token-payment";
-import { Loading } from "popup/components/Loading";
+import { reducer as cache } from "popup/ducks/cache";
 import { ErrorTracking } from "popup/components/ErrorTracking";
 import { AccountMismatch } from "popup/components/AccountMismatch";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -23,6 +23,7 @@ const rootReducer = combineReducers({
   settings,
   transactionSubmission,
   tokenPaymentSimulation,
+  cache,
 });
 export type AppState = ReturnType<typeof rootReducer>;
 export const store = configureStore({
@@ -42,15 +43,7 @@ export const App = () => (
     <Provider store={store}>
       <AccountMismatch />
       <ErrorTracking />
-      <Suspense
-        fallback={
-          <div className="RouterLoading">
-            <Loading />
-          </div>
-        }
-      >
-        <Router />
-      </Suspense>
+      <Router />
     </Provider>
   </ErrorBoundary>
 );

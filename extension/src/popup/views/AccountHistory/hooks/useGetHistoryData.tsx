@@ -1,26 +1,28 @@
 import { useReducer } from "react";
 import { Horizon } from "stellar-sdk";
 
-import { NetworkDetails } from "@shared/constants/stellar";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { HistoryResponse, useGetHistory } from "helpers/hooks/useGetHistory";
 import { HistoryItemOperation } from "popup/components/accountHistory/HistoryItem";
 import {
+  getIsCreateClaimableBalanceSpam,
   getIsDustPayment,
   getIsPayment,
   getIsSwap,
 } from "popup/helpers/account";
+import {
+  AppDataType,
+  NeedsReRoute,
+  useGetAppData,
+} from "helpers/hooks/useGetAppData";
+import { isMainnet } from "helpers/stellar";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 export type HistorySection = {
   monthYear: string; // in format {month}:{year}
   operations: HistoryItemOperation[];
 };
-
-interface HistoryData {
-  balances: AccountBalances;
-  history: HistorySection[];
-}
 
 const createHistorySections = (
   publicKey: string,
@@ -51,6 +53,10 @@ const createHistorySections = (
         return sections;
       }
 
+      if (getIsCreateClaimableBalanceSpam(operation)) {
+        return sections;
+      }
+
       const date = new Date(operation.created_at);
       const month = date.getMonth();
       const year = date.getFullYear();
@@ -75,11 +81,18 @@ const createHistorySections = (
     [] as HistorySection[],
   );
 
+interface ResolvedData {
+  type: AppDataType.RESOLVED;
+  balances: AccountBalances;
+  history: HistorySection[];
+  publicKey: string;
+  applicationState: APPLICATION_STATE;
+}
+
+type HistoryData = ResolvedData | NeedsReRoute;
+
 function useGetHistoryData(
-  publicKey: string,
-  networkDetails: NetworkDetails,
   balanceOptions: {
-    isMainnet: boolean;
     showHidden: boolean;
     includeIcons: boolean;
   },
@@ -91,18 +104,32 @@ function useGetHistoryData(
     reducer<HistoryData, unknown>,
     initialState,
   );
-  const { fetchData: fetchBalances } = useGetBalances(
-    publicKey,
-    networkDetails,
-    balanceOptions,
-  );
-  const { fetchData: fetchHistory } = useGetHistory(publicKey, networkDetails);
+  const { fetchData: fetchAppData } = useGetAppData();
+  const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
+  const { fetchData: fetchHistory } = useGetHistory();
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const balancesResult = await fetchBalances();
-      const history = await fetchHistory();
+      const appData = await fetchAppData();
+      if (isError(appData)) {
+        throw new Error(appData.message);
+      }
+
+      if (appData.type === AppDataType.REROUTE) {
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload: appData });
+        return appData;
+      }
+
+      const publicKey = appData.account.publicKey;
+      const networkDetails = appData.settings.networkDetails;
+      const isMainnetNetwork = isMainnet(networkDetails);
+      const balancesResult = await fetchBalances(
+        publicKey,
+        isMainnetNetwork,
+        networkDetails,
+      );
+      const history = await fetchHistory(publicKey, networkDetails);
 
       if (isError<AccountBalances>(balancesResult)) {
         throw new Error(balancesResult.message);
@@ -113,13 +140,16 @@ function useGetHistoryData(
       }
 
       const payload = {
+        type: AppDataType.RESOLVED,
+        publicKey,
         balances: balancesResult,
+        applicationState: appData.account.applicationState,
         history: createHistorySections(
           publicKey,
           history,
           historyOptions.isHideDustEnabled,
         ),
-      };
+      } as ResolvedData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {

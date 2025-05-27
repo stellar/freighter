@@ -27,6 +27,28 @@ test("Load accounts on standalone network", async ({ page, extensionId }) => {
   });
   await expect(page.getByTestId("account-assets")).toContainText("XLM");
 });
+
+test("Switches account and fetches correct balances", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId });
+  await expect(page.getByTestId("account-assets")).toContainText("XLM");
+  const account1XlmBalance = await page
+    .getByTestId("asset-amount")
+    .textContent();
+
+  await page.getByTestId("AccountHeader__icon-btn").click();
+  await page.getByText("Account 2").click();
+
+  const account2XlmBalance = await page
+    .getByTestId("asset-amount")
+    .textContent();
+
+  await expect(account1XlmBalance).not.toEqual(account2XlmBalance);
+});
+
 test("Switches account without password prompt", async ({
   page,
   extensionId,

@@ -4,6 +4,44 @@ title: What's New
 slug: /whatsNew
 ---
 
+## Release 5.33.0
+
+## Discover
+
+You can now find dapps to connect your Freighter wallet to from the `Discover`
+screen. Here, you'll find dapps that provide different services, like lending,
+DEXs, and bridging.
+
+To access, simply click the `Discover` button on the home screen.
+
+<img src={require('./assets/5.33.0/discover-button.png').default} alt="Discover
+Button" width="300"/>
+
+From here, you can click the `Open` button next to any protocol to navigate to
+the dapp.
+
+<img src={require('./assets/5.33.0/discover-screen.png').default} alt="Discover
+Screen" width="300"/>
+
+## Filtering claimable balances
+
+Many users have reported their Stellar accounts receive a good deal of claimable
+balance "spam" in their account history - claimable balances they have no
+intention of claiming. These often present themselves as a transaction
+containing many `create claimable balance` operations.
+
+<img src={require('./assets/5.33.0/create-claimable-spam.png').default}
+alt="Create Claimable Balance Spam" width="300"/>
+
+To filter out this noise and provide a better experience for users, Freighter
+now automatically hides these types of transactions for you. If you do want to
+engage with any of these, they still exist on your account. You can find them by
+visiting a block explorer like [stellar.expert](https://stellar.expert).
+
+## Additional bugfixes and stability fixes
+
+[Full changelog](https://github.com/stellar/freighter/releases/tag/5.33.0)
+
 ## Release 5.32.0
 
 ## Add Asset Unification

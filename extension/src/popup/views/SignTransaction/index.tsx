@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 import { Button, Icon, Notification } from "@stellar/design-system";
@@ -13,30 +13,24 @@ import {
   Operation,
 } from "stellar-sdk";
 
-import { signTransaction, rejectTransaction } from "popup/ducks/access";
-import {
-  isNonSSLEnabledSelector,
-  settingsNetworkDetailsSelector,
-} from "popup/ducks/settings";
+import { isNonSSLEnabledSelector } from "popup/ducks/settings";
 
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 
 import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 
-import { encodeObject, parsedSearchParam } from "helpers/urls";
+import { encodeObject, newTabHref, parsedSearchParam } from "helpers/urls";
 import { emitMetric } from "helpers/metrics";
 import {
   getTransactionInfo,
   isFederationAddress,
-  isMainnet,
   isMuxedAccount,
   stroopToXlm,
   truncatedPublicKey,
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
-import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
-import { navigateTo } from "popup/helpers/navigate";
+import { navigateTo, openTab } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -66,6 +60,10 @@ import { Details } from "./Preview/Details";
 import { Data } from "./Preview/Data";
 
 import "./styles.scss";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
+import { rejectTransaction, signTransaction } from "popup/ducks/access";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const SignTransaction = () => {
   const location = useLocation();
@@ -87,50 +85,34 @@ export const SignTransaction = () => {
   const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =
     useState(false);
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
   });
 
-  const { networkName, networkPassphrase } = networkDetails;
   let accountToSign = _accountToSign;
+
+  const { state: scanTxState, fetchData } = useGetSignTxData(
+    {
+      xdr: transactionXdr,
+      url,
+    },
+    {
+      showHidden: false,
+      includeIcons: true,
+    },
+    accountToSign,
+  );
+
   const {
-    allAccounts,
-    accountNotFound,
-    currentAccount,
     isConfirming,
     isPasswordRequired,
-    publicKey,
     handleApprove,
     hwStatus,
     rejectAndClose,
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-  } = useSetupSigningFlow(
-    rejectTransaction,
-    signTransaction,
-    transactionXdr,
-    accountToSign,
-  );
-  const { state: scanTxState, fetchData } = useGetSignTxData(
-    publicKey,
-    networkDetails,
-    {
-      xdr: transactionXdr,
-      url,
-    },
-    {
-      isMainnet: isMainnet(networkDetails),
-      showHidden: false,
-      includeIcons: true,
-    },
-  );
-  const scanResult = scanTxState.data?.scanResult;
-  const flaggedMalicious =
-    scanResult?.validation &&
-    "result_type" in scanResult.validation &&
-    scanResult.validation.result_type === "Malicious";
+  } = useSetupSigningFlow(rejectTransaction, signTransaction, transactionXdr);
 
   // rebuild transaction to get Transaction prototypes
   const transaction = TransactionBuilder.fromXDR(
@@ -201,6 +183,44 @@ export const SignTransaction = () => {
 
   const isSubmitDisabled = isMemoRequired;
 
+  if (
+    scanTxState.state === RequestState.IDLE ||
+    scanTxState.state === RequestState.LOADING
+  ) {
+    return <Loading />;
+  }
+
+  const hasError = scanTxState.state === RequestState.ERROR;
+  if (scanTxState.data?.type === AppDataType.REROUTE) {
+    if (scanTxState.data.shouldOpenTab) {
+      openTab(newTabHref(scanTxState.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${scanTxState.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (!hasError) {
+    reRouteOnboarding({
+      type: scanTxState.data.type,
+      applicationState: scanTxState.data.applicationState,
+      state: scanTxState.state,
+    });
+  }
+
+  const { networkName, networkPassphrase } = scanTxState.data?.networkDetails!;
+
+  const scanResult = scanTxState.data?.scanResult;
+  const flaggedMalicious =
+    scanResult?.validation &&
+    "result_type" in scanResult.validation &&
+    scanResult.validation.result_type === "Malicious";
+
   if (_networkPassphrase !== networkPassphrase) {
     return (
       <WarningMessage
@@ -222,13 +242,9 @@ export const SignTransaction = () => {
     return <SSLWarningMessage url={domain} />;
   }
 
-  const isLoading =
-    scanTxState.state === RequestState.IDLE ||
-    scanTxState.state === RequestState.LOADING;
-
-  if (isLoading) {
-    return <Loading />;
-  }
+  const publicKey = scanTxState.data?.publicKey!;
+  const { allAccounts, accountNotFound, currentAccount } =
+    scanTxState.data?.signFlowState!;
 
   const hasEnoughXlm = scanTxState.data?.balances.balances.some(
     (balance) =>
@@ -236,6 +252,7 @@ export const SignTransaction = () => {
       balance.token.code === "XLM" &&
       (balance as NativeAsset).available.gt(stroopToXlm(_fee as string)),
   );
+
   if (
     currentAccount.publicKey &&
     !hasEnoughXlm &&
@@ -474,7 +491,12 @@ export const SignTransaction = () => {
             <AccountList
               allAccounts={allAccounts}
               publicKey={publicKey}
-              setIsDropdownOpen={setIsDropdownOpen}
+              onClickAccount={async (clickedPublicKey: string) => {
+                setIsDropdownOpen(!isDropdownOpen);
+                if (clickedPublicKey !== publicKey) {
+                  await fetchData(clickedPublicKey);
+                }
+              }}
             />
           </div>
         </SlideupModal>

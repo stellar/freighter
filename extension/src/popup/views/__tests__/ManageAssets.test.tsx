@@ -19,7 +19,10 @@ import { Balances } from "@shared/api/types/backend-api";
 import * as SorobanHelpers from "@shared/api/helpers/soroban";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
-import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
+import {
+  APPLICATION_STATE,
+  APPLICATION_STATE as ApplicationState,
+} from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
 import * as AssetDomain from "popup/helpers/getAssetDomain";
 import * as CheckSuspiciousAsset from "popup/helpers/checkForSuspiciousAsset";
@@ -34,6 +37,8 @@ import {
 
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import { ManageAssets } from "../ManageAssets";
+import { SettingsState } from "@shared/api/types";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 
 const mockXDR =
   "AAAAAgAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAGQAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAAAAAAAAAvrwgAAAAAAAAAABHUtNEwAAAEBY/jSiXJNsA2NpiXrOi6Ll6RiIY7v8QZEEZviM8HmmzeI4FBP9wGZm7YMorQue+DK9KI5BEXDt3hi0VOA9gD8A";
@@ -310,6 +315,42 @@ jest.spyOn(BlockaidHelpers, "scanAsset").mockImplementation((address) => {
   });
 });
 
+jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+  Promise.resolve({
+    hasPrivateKey: true,
+    publicKey: "G1",
+    applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    allAccounts: mockAccounts,
+    bipPath: "bip-path",
+    tokenIdList: [],
+  }),
+);
+
+jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+  Promise.resolve({
+    networkDetails: TESTNET_NETWORK_DETAILS,
+    networksList: DEFAULT_NETWORKS,
+    hiddenAssets: {},
+    allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+    error: "",
+    isDataSharingAllowed: false,
+    isMemoValidationEnabled: false,
+    isHideDustEnabled: true,
+    settingsState: SettingsState.SUCCESS,
+    isSorobanPublicEnabled: false,
+    isRpcHealthy: true,
+    userNotification: {
+      enabled: false,
+      message: "",
+    },
+    isExperimentalModeEnabled: false,
+    isHashSigningEnabled: false,
+    isNonSSLEnabled: false,
+    experimentalFeaturesState: SettingsState.SUCCESS,
+    assetsLists: DEFAULT_ASSETS_LISTS,
+  }),
+);
+
 const mockNavigateTo = jest.fn();
 jest.mock("popup/helpers/navigate", () => {
   return {
@@ -390,7 +431,7 @@ describe.skip("Manage assets", () => {
     );
   });
 
-  it.only("renders manage assets view initial state", async () => {
+  it("renders manage assets view initial state", async () => {
     await initView();
 
     await waitFor(() => {

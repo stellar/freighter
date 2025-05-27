@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { Balance } from "@shared/api/types";
@@ -10,50 +10,72 @@ import {
   AssetSelectType,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
-import { getCanonicalFromAsset } from "helpers/stellar";
+import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
 import { findAssetBalance } from "popup/helpers/balance";
 import { isAssetSuspicious } from "../../popup/helpers/blockaid";
 import { useIsSoroswapEnabled, useIsSwap } from "../../popup/helpers/useIsSwap";
 import { getAssetDomain } from "../../popup/helpers/getAssetDomain";
 import { AccountBalances, useGetBalances } from "./useGetBalances";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
+import { AppDataType, NeedsReRoute, useGetAppData } from "./useGetAppData";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { homeDomainsSelector, saveDomainForIssuer } from "popup/ducks/cache";
+import { AppDispatch } from "popup/App";
 
-export interface AssetDomains {
+export interface ResolvedAssetDomains {
+  type: AppDataType.RESOLVED;
+  publicKey: string;
   balances: AccountBalances;
   domains: ManageAssetCurrency[];
   isManagingAssets: boolean;
+  networkDetails: NetworkDetails;
+  applicationState: APPLICATION_STATE;
 }
 
-export function useGetAssetDomainsWithBalances(
-  publicKey: string,
-  networkDetails: NetworkDetails,
-  options: {
-    isMainnet: boolean;
-    showHidden: boolean;
-    includeIcons: boolean;
-  },
-) {
+export type AssetDomains = NeedsReRoute | ResolvedAssetDomains;
+
+export function useGetAssetDomainsWithBalances(getBalancesOptions: {
+  showHidden: boolean;
+  includeIcons: boolean;
+}) {
+  const reduxDispatch = useDispatch<AppDispatch>();
   const isSwap = useIsSwap();
   const isSoroswapEnabled = useIsSoroswapEnabled();
   const { assetSelect, soroswapTokens } = useSelector(
     transactionSubmissionSelector,
   );
+  const homeDomains = useSelector(homeDomainsSelector);
   const isManagingAssets = assetSelect.type === AssetSelectType.MANAGE;
 
   const [state, dispatch] = useReducer(
     reducer<AssetDomains, unknown>,
     initialState,
   );
-  const { fetchData: fetchBalances } = useGetBalances(
-    publicKey,
-    networkDetails,
-    options,
-  );
+  const { fetchData: fetchAppData } = useGetAppData();
+  const { fetchData: fetchBalances } = useGetBalances(getBalancesOptions);
 
-  const fetchData = async (): Promise<AssetDomains | Error> => {
+  const fetchData = async (useCache = false): Promise<AssetDomains | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const balances = await fetchBalances();
+      const appData = await fetchAppData(useCache);
+      if (isError(appData)) {
+        throw new Error(appData.message);
+      }
+
+      if (appData.type === AppDataType.REROUTE) {
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload: appData });
+        return appData;
+      }
+
+      const publicKey = appData.account.publicKey;
+      const networkDetails = appData.settings.networkDetails;
+      const isMainnetNetwork = isMainnet(networkDetails);
+      const balances = await fetchBalances(
+        publicKey,
+        isMainnetNetwork,
+        networkDetails,
+        useCache,
+      );
 
       if (isError<AccountBalances>(balances)) {
         throw new Error(balances.message);
@@ -91,15 +113,21 @@ export function useGetAssetDomainsWithBalances(
         if (code !== "XLM") {
           let domain = "";
 
-          if (issuer.key) {
-            try {
-              domain = await getAssetDomain(
-                issuer.key,
-                networkDetails.networkUrl,
-                networkDetails.networkPassphrase,
-              );
-            } catch (e) {
-              console.error(e);
+          const cachedHomeDomain = homeDomains[issuer.key];
+          if (useCache && cachedHomeDomain) {
+            domain = cachedHomeDomain;
+          } else {
+            if (issuer.key) {
+              try {
+                domain = await getAssetDomain(
+                  issuer.key,
+                  networkDetails.networkUrl,
+                  networkDetails.networkPassphrase,
+                );
+                reduxDispatch(saveDomainForIssuer({ [issuer.key]: domain }));
+              } catch (e) {
+                console.error(e);
+              }
             }
           }
 
@@ -150,7 +178,15 @@ export function useGetAssetDomainsWithBalances(
         });
       }
 
-      const payload = { domains, isManagingAssets, balances };
+      const payload = {
+        type: AppDataType.RESOLVED,
+        domains,
+        isManagingAssets,
+        balances,
+        publicKey,
+        networkDetails,
+        applicationState: appData.account.applicationState,
+      } as ResolvedAssetDomains;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {

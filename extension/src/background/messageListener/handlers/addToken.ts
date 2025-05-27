@@ -1,6 +1,10 @@
 import { Store } from "redux";
 
-import { ResponseQueue, TokenQueue } from "@shared/api/types/message-request";
+import {
+  AddTokenResponse,
+  ResponseQueue,
+  TokenQueue,
+} from "@shared/api/types/message-request";
 import { publicKeySelector } from "background/ducks/session";
 import { getNetworkDetails } from "background/helpers/account";
 import { addTokenWithContractId } from "../helpers/add-token-contract-id";
@@ -15,7 +19,7 @@ export const addToken = async ({
   localStore: DataStorageAccess;
   sessionStore: Store;
   tokenQueue: TokenQueue;
-  responseQueue: ResponseQueue;
+  responseQueue: ResponseQueue<AddTokenResponse>;
 }) => {
   const publicKey = publicKeySelector(sessionStore.getState());
   const networkDetails = await getNetworkDetails({ localStore });

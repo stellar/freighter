@@ -251,6 +251,7 @@ export const IntegrationTest = () => {
         balances: testBalances,
         networkDetails: TESTNET_NETWORK_DETAILS,
         assetsListsData: [] as AssetListResponse[],
+        cachedIcons: {},
       });
       runAsserts("getAssetIcons", () => {
         assertEq(Object.keys(res as object).length > 0, true);
@@ -302,7 +303,7 @@ export const IntegrationTest = () => {
 
       res = await addRecentAddress({
         activePublicKey: "G123",
-        publicKey: testPublicKey,
+        address: testPublicKey,
       });
       runAsserts("addRecentAddress", () => {
         assertArray(res.recentAddresses);

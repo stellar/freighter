@@ -5,6 +5,19 @@
   flex-direction: column;
   text-align: center;
 
+  &__error {
+    flex: 1;
+    padding: var(--View-inset-padding-top);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  &__modal-wrapper {
+    display: flex;
+    flex-direction: column;
+  }
+
   &__send-asset {
     align-items: center;
     display: flex;

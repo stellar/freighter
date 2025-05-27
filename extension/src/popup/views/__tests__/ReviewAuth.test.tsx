@@ -6,6 +6,13 @@ import * as ApiInternal from "@shared/api/internal";
 
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import { ROUTES } from "popup/constants/routes";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import {
+  DEFAULT_NETWORKS,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
+import { SettingsState } from "@shared/api/types";
+import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 
 const defaultSettingsState = {
   networkDetails: {
@@ -17,6 +24,42 @@ const defaultSettingsState = {
     networkPassphrase: "foo",
   },
 };
+
+jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
+  Promise.resolve({
+    hasPrivateKey: true,
+    publicKey: "G1",
+    applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    allAccounts: mockAccounts,
+    bipPath: "bip-path",
+    tokenIdList: [],
+  }),
+);
+
+jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+  Promise.resolve({
+    networkDetails: TESTNET_NETWORK_DETAILS,
+    networksList: DEFAULT_NETWORKS,
+    hiddenAssets: {},
+    allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+    error: "",
+    isDataSharingAllowed: false,
+    isMemoValidationEnabled: false,
+    isHideDustEnabled: true,
+    settingsState: SettingsState.SUCCESS,
+    isSorobanPublicEnabled: false,
+    isRpcHealthy: true,
+    userNotification: {
+      enabled: false,
+      message: "",
+    },
+    isExperimentalModeEnabled: false,
+    isHashSigningEnabled: false,
+    isNonSSLEnabled: false,
+    experimentalFeaturesState: SettingsState.SUCCESS,
+    assetsLists: DEFAULT_ASSETS_LISTS,
+  }),
+);
 
 it("renders mint token invocation", async () => {
   jest.spyOn(helpersUrls, "decodeString").mockImplementation(() =>

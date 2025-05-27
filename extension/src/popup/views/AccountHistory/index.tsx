@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import { publicKeySelector } from "popup/ducks/accountServices";
 import {
   settingsNetworkDetailsSelector,
   settingsSelector,
@@ -21,22 +20,23 @@ import {
 } from "popup/components/accountHistory/TransactionDetail";
 import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
-import { isMainnet } from "helpers/stellar";
 import { RequestState } from "constants/request";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { Navigate, useLocation } from "react-router-dom";
 import { useGetHistoryData } from "./hooks/useGetHistoryData";
 
 import "./styles.scss";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 export const AccountHistory = () => {
   const { t } = useTranslation();
-  const publicKey = useSelector(publicKeySelector);
+  const location = useLocation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { isHideDustEnabled } = useSelector(settingsSelector);
   const { state: historyState, fetchData } = useGetHistoryData(
-    publicKey,
-    networkDetails,
     {
-      isMainnet: isMainnet(networkDetails),
       showHidden: false,
       includeIcons: true,
     },
@@ -74,7 +74,32 @@ export const AccountHistory = () => {
   if (isLoaderShowing) {
     return <Loading />;
   }
+
   const hasError = historyState.state === RequestState.ERROR;
+  if (historyState.data?.type === AppDataType.REROUTE) {
+    if (historyState.data.shouldOpenTab) {
+      openTab(newTabHref(historyState.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${historyState.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (!hasError) {
+    reRouteOnboarding({
+      type: historyState.data.type,
+      applicationState: historyState.data.applicationState,
+      state: historyState.state,
+    });
+  }
+
+  const balances = historyState.data?.balances!;
+  const publicKey = historyState.data?.publicKey!;
 
   return (
     <>
@@ -96,7 +121,7 @@ export const AccountHistory = () => {
                   {section.operations.map((operation: HistoryItemOperation) => (
                     <HistoryItem
                       key={operation.id}
-                      accountBalances={historyState.data.balances}
+                      accountBalances={balances}
                       operation={operation}
                       publicKey={publicKey}
                       networkDetails={networkDetails}
