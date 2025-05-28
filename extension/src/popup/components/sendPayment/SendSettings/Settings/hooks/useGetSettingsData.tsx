@@ -194,6 +194,7 @@ function useGetSettingsData(
         publicKey,
         balanceOptions.isMainnet,
         networkDetails,
+        true,
       );
 
       if (isError<AccountBalances>(balancesResult)) {
