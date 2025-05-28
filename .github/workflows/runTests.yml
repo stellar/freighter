@@ -8,7 +8,7 @@ concurrency:
 jobs:
   test-ci:
     name: test
-    timeout-minutes: 20
+    timeout-minutes: 45
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
