@@ -141,13 +141,30 @@ function useSendToData() {
       return payload;
     }
 
-    return debouncedFetch(
-      userInput,
-      publicKey,
+    if (userInput) {
+      return debouncedFetch(
+        userInput,
+        publicKey,
+        applicationState,
+        networkDetails,
+        _isMainnet,
+      );
+    }
+    const { recentAddresses } = await loadRecentAddresses({
+      activePublicKey: publicKey,
+    });
+
+    const payload = {
+      type: AppDataType.RESOLVED,
+      recentAddresses,
+      validatedAddress: "",
+      fedAddress: "",
       applicationState,
+      publicKey,
       networkDetails,
-      _isMainnet,
-    );
+    } as ResolvedSendToData;
+    dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+    return payload;
   };
 
   return {
