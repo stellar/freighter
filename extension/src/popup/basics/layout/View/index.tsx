@@ -38,6 +38,7 @@ interface ViewAppHeaderProps {
   hasBackButton?: boolean;
   customBackAction?: () => void;
   customBackIcon?: React.ReactNode;
+  isAccountHeader?: boolean;
   children?: React.ReactNode;
 }
 
@@ -51,10 +52,11 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
   customBackAction,
   customBackIcon,
   children,
+  isAccountHeader = false,
   ...props
 }: ViewAppHeaderProps) => (
   <div className="View__header" {...props}>
-    <ViewInset isInline hasVerticalBorder>
+    <ViewInset isInline isAccountHeader={isAccountHeader} hasVerticalBorder>
       {/* Left */}
       <div className="View__header__box View__header__box--left">
         {hasBackButton ? (
@@ -223,6 +225,7 @@ interface ViewInsetProps {
   hasNoTopPadding?: boolean;
   hasTopInput?: boolean;
   hasNoBottomPadding?: boolean;
+  isAccountHeader?: boolean;
 }
 
 export const ViewInset: React.FC<ViewInsetProps> = ({
@@ -237,6 +240,7 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
   hasNoTopPadding,
   hasTopInput,
   hasNoBottomPadding,
+  isAccountHeader,
   ...props
 }: ViewInsetProps) => (
   <div
@@ -250,6 +254,7 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
       hasNoTopPadding ? "View__inset--no-top-padding" : "",
       hasTopInput ? "View__inset--top-input" : "",
       hasNoBottomPadding ? "View__inset--no-bottom-padding" : "",
+      isAccountHeader ? "View__inset--account-header" : "",
     ])}${additionalClassName ? ` ${additionalClassName}` : ""}`}
     {...props}
   >

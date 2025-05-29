@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, NavLink } from "react-router-dom";
+import { createPortal } from "react-dom";
 
 import { Account } from "@shared/api/types";
-import { Icon } from "@stellar/design-system";
+import { Icon, Text, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
@@ -19,7 +20,7 @@ import {
 import { AccountList } from "popup/components/account/AccountList";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
-import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsDropdown";
+// import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsDropdown";
 
 import "./styles.scss";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -49,6 +50,7 @@ export const AccountHeader = ({
   const networksList = useSelector(settingsNetworksListSelector);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNetworkSelectorOpen, setIsNetworkSelectorOpen] = useState(false);
+  const [isAccountOptionsOpen, setIsAccountOptionsOpen] = useState(false);
   const navigate = useNavigate();
 
   const networksModalHeight = useRef(0);
@@ -66,9 +68,13 @@ export const AccountHeader = ({
 
   activeNetworkIndex.current = index;
 
+  const isBackgroundActive =
+    isDropdownOpen || isNetworkSelectorOpen || isAccountOptionsOpen;
+
   return (
     <>
       <View.AppHeader
+        isAccountHeader
         leftContent={
           <div
             className="AccountHeader__icon-btn"
@@ -79,7 +85,14 @@ export const AccountHeader = ({
                 className="AccountHeader__dropdown"
                 data-testid="account-options-dropdown"
               >
-                <AccountOptionsDropdown isFunded={isFunded} />
+                {/* <AccountOptionsDropdown isFunded={isFunded} /> */}
+                <NavButton
+                  showBorder
+                  title={t("View options")}
+                  id="nav-btn-qr"
+                  icon={<Icon.DotsHorizontal />}
+                  onClick={() => setIsAccountOptionsOpen(!isAccountOptionsOpen)}
+                />
               </div>
               <div
                 className="AccountHeader__right-button"
@@ -99,9 +112,8 @@ export const AccountHeader = ({
             <Icon.Compass03 /> {t("Discover")}
           </div>
         }
-      ></View.AppHeader>
-      <View.AppHeader
-        centerContent={
+      >
+        <View.Inset hasVerticalBorder>
           <div
             className="AccountHeader__account-info"
             data-testid="account-header"
@@ -125,10 +137,52 @@ export const AccountHeader = ({
                 </div>
               </div>
               <div
-                className="AccountView__total-usd-balance"
+                className="AccountHeader__total-usd-balance"
                 key="total-balance"
               >
                 {roundedTotlalBalanceUsd}
+              </div>
+              <div className="AccountHeader__actions">
+                <NavLink to={ROUTES.addFunds}>
+                  <div className="AccountHeader__actions__column">
+                    <div className="AccountHeader__actions__btn">
+                      <Icon.Plus />
+                    </div>
+                    <Text as="div" size="xs" weight="medium">
+                      {t("Buy")}
+                    </Text>
+                  </div>
+                </NavLink>
+                <NavLink to={ROUTES.sendPayment}>
+                  <div className="AccountHeader__actions__column">
+                    <div className="AccountHeader__actions__btn">
+                      <Icon.ArrowUp />
+                    </div>
+                    <Text as="div" size="xs" weight="medium">
+                      {t("Send")}
+                    </Text>
+                  </div>
+                </NavLink>
+                <NavLink to={ROUTES.swap}>
+                  <div className="AccountHeader__actions__column">
+                    <div className="AccountHeader__actions__btn">
+                      <Icon.RefreshCcw05 />
+                    </div>
+                    <Text as="div" size="xs" weight="medium">
+                      {t("Swap")}
+                    </Text>
+                  </div>
+                </NavLink>
+                <NavLink to={ROUTES.accountHistory}>
+                  <div className="AccountHeader__actions__column">
+                    <div className="AccountHeader__actions__btn">
+                      <Icon.ClockRewind />
+                    </div>
+                    <Text as="div" size="xs" weight="medium">
+                      {t("History")}
+                    </Text>
+                  </div>
+                </NavLink>
               </div>
               <AccountHeaderModal isDropdownOpen={isDropdownOpen}>
                 <ul className="AccountHeader__account-dropdown">
@@ -269,17 +323,102 @@ export const AccountHeader = ({
                   </div>
                 </>
               </AccountHeaderModal>
-              <LoadingBackground
-                onClick={() => {
-                  setIsDropdownOpen(false);
-                  setIsNetworkSelectorOpen(false);
-                }}
-                isActive={isDropdownOpen || isNetworkSelectorOpen}
-              />
+              <AccountHeaderModal isDropdownOpen={isAccountOptionsOpen}>
+                <>
+                  {isFunded && (
+                    <div
+                      className="AccountHeader__options__item"
+                      onClick={() => {
+                        // dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
+                        navigateTo(ROUTES.manageAssets, navigate);
+                      }}
+                    >
+                      <Text as="div" size="sm" weight="medium">
+                        {t("Manage assets")}
+                      </Text>
+                      <div className="AccountHeader__options__item__icon">
+                        <Icon.Coins03 />
+                      </div>
+                    </div>
+                  )}
+                  <div
+                    className="AccountHeader__options__item"
+                    onClick={() => navigateTo(ROUTES.viewPublicKey, navigate)}
+                  >
+                    <Text as="div" size="sm" weight="medium">
+                      {t("Account details")}
+                    </Text>
+                    <div className="AccountHeader__options__item__icon">
+                      <Icon.QrCode01 />
+                    </div>
+                  </div>
+                  <div
+                    className="AccountHeader__options__item"
+                    onClick={() => navigateTo(ROUTES.settings, navigate)}
+                  >
+                    <Text as="div" size="sm" weight="medium">
+                      {t("Settings")}
+                    </Text>
+                    <div className="AccountHeader__options__item__icon">
+                      <Icon.Settings01 />
+                    </div>
+                  </div>
+                  <hr className="AccountHeader__list-divider" />
+                  <div
+                    className="AccountHeader__options__item"
+                    onClick={() => navigateTo(ROUTES.settings, navigate)}
+                  >
+                    <Text as="div" size="sm" weight="medium">
+                      {t("Lock Freighter")}
+                    </Text>
+                    <div className="AccountHeader__options__item__icon">
+                      <Icon.Lock01 />
+                    </div>
+                  </div>
+                  <div
+                    className="AccountHeader__options__item"
+                    onClick={() => navigateTo(ROUTES.settings, navigate)}
+                  >
+                    <Text as="div" size="sm" weight="medium">
+                      {t("Fullscreen mode")}
+                    </Text>
+                    <div className="AccountHeader__options__item__icon">
+                      <Icon.Expand05 />
+                    </div>
+                  </div>
+
+                  <div
+                    className="AccountHeader__options__item"
+                    onClick={() => navigateTo(ROUTES.leaveFeedback, navigate)}
+                  >
+                    <Text as="div" size="sm" weight="medium">
+                      {t("Share feedback")}
+                    </Text>
+                    <div className="AccountHeader__options__item__icon">
+                      <Icon.MessageDotsCircle />
+                    </div>
+                  </div>
+                </>
+              </AccountHeaderModal>
+
+              {isBackgroundActive
+                ? createPortal(
+                    <LoadingBackground
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        setIsNetworkSelectorOpen(false);
+                      }}
+                      isActive={isBackgroundActive}
+                      isFullScreen
+                      isClear
+                    />,
+                    document.querySelector("#modal-root")!,
+                  )
+                : null}
             </div>
           </div>
-        }
-      ></View.AppHeader>
+        </View.Inset>
+      </View.AppHeader>
     </>
   );
 };

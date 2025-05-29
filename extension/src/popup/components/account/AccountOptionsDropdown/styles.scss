@@ -10,12 +10,17 @@
     flex-direction: column;
     gap: #{pxToRem(4px)};
     line-height: #{pxToRem(20px)};
-    padding: #{pxToRem(4px)};
+    overflow: hidden;
+    // padding: #{pxToRem(4px)};
     width: #{pxToRem(180px)};
     position: absolute;
-    right: #{pxToRem(24px)};
-    top: #{pxToRem(56px)};
+    left: #{pxToRem(24px)};
+    top: #{pxToRem(64px)};
+    transition: max-height var(--dropdown-animation);
     z-index: calc(var(--z-index-tooltip) + 1);
+
+    // default max-height on page load
+    max-height: 0;
 
     &__item {
       cursor: pointer;

@@ -107,11 +107,14 @@
   }
 
   &__account-dropdown {
+    border: 1px solid var(--sds-clr-gray-06);
+    border-radius: pxToRem(6px);
     padding: 0;
     display: flex;
     flex-direction: column;
     max-height: calc(100vh - 1.5rem);
     overflow: hidden;
+    width: pxToRem(310px);
 
     li::before {
       content: none !important;
@@ -199,6 +202,28 @@
     }
   }
 
+  &__options {
+    &__item {
+      align-items: center;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      padding: #{pxToRem(6px)} #{pxToRem(8px)};
+
+      &__icon {
+        display: flex;
+
+        svg {
+          stroke: var(--sds-clr-gray-09);
+        }
+      }
+
+      &:hover {
+        background: var(--sds-clr-gray-04);
+      }
+    }
+  }
+
   &__img-cube-icon {
     width: 0.875rem;
     height: 1rem;
@@ -211,5 +236,47 @@
     border-radius: 1rem;
     margin-top: 0;
     margin-bottom: pxToRem(12px);
+  }
+
+  &__total-usd-balance {
+    display: flex;
+    font-size: pxToRem(32);
+    justify-content: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  &__actions {
+    display: flex;
+    margin-top: pxToRem(8px);
+    gap: pxToRem(12px);
+
+    &__column {
+      align-items: center;
+      color: var(--sds-clr-gray-11);
+      display: flex;
+      flex-direction: column;
+      gap: pxToRem(4px);
+      justify-content: center;
+    }
+
+    &__btn {
+      padding: pxToRem(12);
+      border-radius: pxToRem(100px);
+      background: var(--sds-clr-gray-03);
+      border: 1px solid var(--sds-clr-gray-06);
+      color: var(--sds-clr-base-01);
+      display: flex;
+      width: pxToRem(40);
+      height: pxToRem(40);
+      justify-content: center;
+      align-items: center;
+
+      svg {
+        width: pxToRem(12px);
+        height: pxToRem(12px);
+      }
+    }
   }
 }

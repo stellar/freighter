@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -23,16 +23,17 @@ import "./styles.scss";
 
 interface DropdownModalProps {
   isFunded: boolean;
+  ref: React.RefObject<HTMLDivElement | null>;
 }
 
-const DropdownModal = ({ isFunded }: DropdownModalProps) => {
+const DropdownModal = ({ isFunded, ref }: DropdownModalProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   return (
-    <div className="AccountOptionsDropdown__modal">
+    <div className="AccountOptionsDropdown__modal" ref={ref}>
       <div
         className="AccountOptionsDropdown__modal__item"
         onClick={() => navigateTo(ROUTES.viewPublicKey, navigate)}
@@ -111,6 +112,15 @@ export const AccountOptionsDropdown = ({
 }: AccountOptionsDropdownProps) => {
   const { t } = useTranslation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (dropdownRef.current != null) {
+      dropdownRef.current.style.maxHeight = isDropdownOpen
+        ? `calc(100vh - 1rem)`
+        : "0";
+    }
+  }, [isDropdownOpen]);
 
   return (
     <>
@@ -121,7 +131,8 @@ export const AccountOptionsDropdown = ({
         icon={<Icon.DotsHorizontal />}
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
       />
-      {isDropdownOpen && <DropdownModal isFunded={isFunded} />}
+      <DropdownModal ref={dropdownRef} isFunded={isFunded} />
+
       {isDropdownOpen
         ? createPortal(
             <LoadingBackground

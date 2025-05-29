@@ -10,12 +10,6 @@
     flex-direction: column;
     max-width: 60%;
   }
-  &__total-usd-balance {
-    font-size: 32px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
   &__account-actions {
     align-items: center;
     justify-content: space-between;
