@@ -50,7 +50,7 @@ export const AccountHeader = ({
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
   const [isNetworkSelectorOpen, setIsNetworkSelectorOpen] = useState(false);
   const [isAccountOptionsOpen, setIsAccountOptionsOpen] = useState(false);
   const navigate = useNavigate();
@@ -72,7 +72,7 @@ export const AccountHeader = ({
   activeNetworkIndex.current = index;
 
   const isBackgroundActive =
-    isDropdownOpen || isNetworkSelectorOpen || isAccountOptionsOpen;
+    isAccountDropdownOpen || isNetworkSelectorOpen || isAccountOptionsOpen;
 
   const signOutAndClose = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,7 +142,9 @@ export const AccountHeader = ({
                 </div>
                 <div className="AccountHeader__account-dropdown-btn">
                   <Icon.ChevronDown
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    onClick={() =>
+                      setIsAccountDropdownOpen(!isAccountDropdownOpen)
+                    }
                   />
                 </div>
               </div>
@@ -194,7 +196,7 @@ export const AccountHeader = ({
                   </div>
                 </NavLink>
               </div>
-              <AccountHeaderModal isDropdownOpen={isDropdownOpen}>
+              <AccountHeaderModal isDropdownOpen={isAccountDropdownOpen}>
                 <ul className="AccountHeader__account-dropdown">
                   <AccountList
                     allAccounts={allAccounts}
@@ -203,7 +205,7 @@ export const AccountHeader = ({
                       if (publicKey !== clickedPublicKey) {
                         await onClickRow({ publicKey: clickedPublicKey });
                       }
-                      setIsDropdownOpen(!isDropdownOpen);
+                      setIsAccountDropdownOpen(!isAccountDropdownOpen);
                     }}
                   />
                   <div className="AccountList__footer">
@@ -415,8 +417,9 @@ export const AccountHeader = ({
                 ? createPortal(
                     <LoadingBackground
                       onClick={() => {
-                        setIsDropdownOpen(false);
+                        setIsAccountDropdownOpen(false);
                         setIsNetworkSelectorOpen(false);
+                        setIsAccountOptionsOpen(false);
                       }}
                       isActive={isBackgroundActive}
                       isFullScreen
