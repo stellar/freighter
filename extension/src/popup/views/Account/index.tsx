@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
-import {
-  CopyText,
-  Icon,
-  NavButton,
-  Notification,
-} from "@stellar/design-system";
+import { Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -19,8 +14,7 @@ import {
   accountNameSelector,
   allAccountsSelector,
 } from "popup/ducks/accountServices";
-import { ROUTES } from "popup/constants/routes";
-import { navigateTo, openTab } from "popup/helpers/navigate";
+import { openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
 
@@ -44,7 +38,6 @@ import "./styles.scss";
 export const Account = () => {
   const { t } = useTranslation();
   const location = useLocation();
-  const navigate = useNavigate();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
@@ -153,38 +146,6 @@ export const Account = () => {
       />
       <View.Content hasNoTopPadding>
         <div className="AccountView" data-testid="account-view">
-          <div className="AccountView__account-actions">
-            <div className="AccountView__account-details">
-              <div className="AccountView__name-key-display">
-                <div
-                  className="AccountView__account-name"
-                  data-testid="account-view-account-name"
-                >
-                  {currentAccountName}
-                </div>
-                <CopyText
-                  textToCopy={resolvedData?.publicKey || ""}
-                  tooltipPlacement="bottom"
-                  doneLabel="Copied address"
-                >
-                  <div className="AccountView__account-num">
-                    <Icon.Copy01 />
-                  </div>
-                </CopyText>
-              </div>
-            </div>
-            <div className="AccountView__send-receive-display">
-              <div className="AccountView__send-receive-button">
-                <NavButton
-                  showBorder
-                  title={t("Send Payment")}
-                  id="nav-btn-send"
-                  icon={<Icon.Send01 />}
-                  onClick={() => navigateTo(ROUTES.sendPayment, navigate)}
-                />
-              </div>
-            </div>
-          </div>
           {hasError && (
             <div className="AccountView__fetch-fail">
               <Notification

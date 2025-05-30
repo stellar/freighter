@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate, NavLink } from "react-router-dom";
 import { createPortal } from "react-dom";
 
@@ -7,20 +7,22 @@ import { Account } from "@shared/api/types";
 import { Icon, Text, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
+import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { isActiveNetwork } from "helpers/stellar";
-import { navigateTo } from "popup/helpers/navigate";
+import { navigateTo, openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import {
   settingsNetworkDetailsSelector,
   settingsNetworksListSelector,
 } from "popup/ducks/settings";
+import { signOut } from "popup/ducks/accountServices";
 import { AccountList } from "popup/components/account/AccountList";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
-// import { AccountOptionsDropdown } from "popup/components/account/AccountOptionsDropdown";
 
 import "./styles.scss";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -52,6 +54,7 @@ export const AccountHeader = ({
   const [isNetworkSelectorOpen, setIsNetworkSelectorOpen] = useState(false);
   const [isAccountOptionsOpen, setIsAccountOptionsOpen] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
 
   const networksModalHeight = useRef(0);
   const activeNetworkIndex = useRef<number | null>(null);
@@ -70,6 +73,13 @@ export const AccountHeader = ({
 
   const isBackgroundActive =
     isDropdownOpen || isNetworkSelectorOpen || isAccountOptionsOpen;
+
+  const signOutAndClose = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    await dispatch(signOut());
+    navigateTo(ROUTES.unlockAccount, navigate);
+  };
 
   return (
     <>
@@ -366,7 +376,7 @@ export const AccountHeader = ({
                   <hr className="AccountHeader__list-divider" />
                   <div
                     className="AccountHeader__options__item"
-                    onClick={() => navigateTo(ROUTES.settings, navigate)}
+                    onClick={(e) => signOutAndClose(e)}
                   >
                     <Text as="div" size="sm" weight="medium">
                       {t("Lock Freighter")}
@@ -377,7 +387,7 @@ export const AccountHeader = ({
                   </div>
                   <div
                     className="AccountHeader__options__item"
-                    onClick={() => navigateTo(ROUTES.settings, navigate)}
+                    onClick={() => openTab(newTabHref(ROUTES.account))}
                   >
                     <Text as="div" size="sm" weight="medium">
                       {t("Fullscreen mode")}
