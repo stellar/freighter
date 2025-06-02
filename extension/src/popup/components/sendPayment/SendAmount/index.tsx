@@ -594,7 +594,7 @@ export const SendAmount = ({
               </InfoTooltip>
             </div>
           }
-          hasBackButton={!isSwap}
+          hasBackButton
           customBackAction={() => {
             // NOTE: resets base state for transaction data
             dispatch(saveAsset("native"));
