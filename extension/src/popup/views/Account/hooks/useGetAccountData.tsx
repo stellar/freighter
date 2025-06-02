@@ -44,7 +44,7 @@ interface ResolvedAccountData {
   type: AppDataType.RESOLVED;
   balances: AccountBalances;
   operationsByAsset: AssetOperations;
-  tokenPrices?: ApiTokenPrices;
+  tokenPrices?: ApiTokenPrices | null;
   networkDetails: NetworkDetails;
   publicKey: string;
   applicationState: APPLICATION_STATE;
@@ -126,10 +126,14 @@ function useGetAccountData(options: {
       } as ResolvedAccountData;
 
       if (isMainnetNetwork) {
-        payload.tokenPrices = await getTokenPrices({
-          balances: balancesResult.balances,
-        });
-        setIsMainnet(isMainnetNetwork);
+        try {
+          payload.tokenPrices = await getTokenPrices({
+            balances: balancesResult.balances,
+          });
+          setIsMainnet(isMainnetNetwork);
+        } catch (e) {
+          payload.tokenPrices = null;
+        }
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

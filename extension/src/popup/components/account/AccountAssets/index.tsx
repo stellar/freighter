@@ -339,11 +339,21 @@ export const AccountAssets = ({
                     %
                   </div>
                 ) : (
-                  <div className="asset-value-delta">--</div>
+                  <div
+                    data-testid={`asset-price-delta-${canonicalAsset}`}
+                    className="asset-value-delta"
+                  >
+                    --
+                  </div>
                 )}
               </div>
             ) : (
-              <div className="asset-value-delta">--</div>
+              <div
+                data-testid={`asset-price-delta-${canonicalAsset}`}
+                className="asset-value-delta"
+              >
+                --
+              </div>
             )}
           </div>
         );
