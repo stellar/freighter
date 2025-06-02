@@ -8,10 +8,6 @@
   height: 5rem;
 
   &__icon-btn {
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-
     &__left {
       display: flex;
       gap: pxToRem(12px);
@@ -70,6 +66,7 @@
   &__network-selector {
     display: flex;
     flex-direction: column;
+    gap: pxToRem(4px);
     margin: 0 0 pxToRem(12px) 0;
 
     &__row {
@@ -77,11 +74,10 @@
       display: flex;
       flex-flow: row nowrap;
       align-items: center;
-      padding: pxToRem(12px) pxToRem(24px);
+      width: 100%;
     }
 
     &__check {
-      color: var(--sds-clr-lilac-09);
       flex-grow: 2;
       display: flex;
       justify-content: flex-end;
@@ -104,6 +100,12 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+  }
+
+  &__account-dropdown-modal {
+    left: 50%;
+    transform: translate(-50%, 0);
+    top: pxToRem(24);
   }
 
   &__account-dropdown {
@@ -202,6 +204,10 @@
   }
 
   &__options {
+    left: pxToRem(24px);
+    top: pxToRem(64px);
+    width: pxToRem(180);
+
     &__item {
       align-items: center;
       border-radius: pxToRem(4);
@@ -222,6 +228,12 @@
         background: var(--sds-clr-gray-04);
       }
     }
+  }
+
+  &__networks {
+    width: pxToRem(180);
+    top: pxToRem(64px);
+    left: pxToRem(64px);
   }
 
   &__img-cube-icon {

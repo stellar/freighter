@@ -5,11 +5,15 @@ import "./styles.scss";
 interface AccountHeaderModalProps {
   children: React.ReactElement;
   isDropdownOpen: boolean;
+  icon: React.ReactNode;
+  className?: string;
 }
 
 export const AccountHeaderModal = ({
   children,
   isDropdownOpen,
+  icon,
+  className,
 }: AccountHeaderModalProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -22,8 +26,14 @@ export const AccountHeaderModal = ({
   }, [isDropdownOpen]);
 
   return (
-    <div ref={dropdownRef} className="AccountHeaderModal">
-      <div className="AccountHeaderModal__content">{children}</div>
-    </div>
+    <>
+      {icon}
+      <div
+        ref={dropdownRef}
+        className={`AccountHeaderModal ${className || ""}`}
+      >
+        <div className="AccountHeaderModal__content">{children}</div>
+      </div>
+    </>
   );
 };

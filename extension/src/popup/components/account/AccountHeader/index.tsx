@@ -86,30 +86,166 @@ export const AccountHeader = ({
       <View.AppHeader
         isAccountHeader
         leftContent={
-          <div
-            className="AccountHeader__icon-btn"
-            data-testid="AccountHeader__icon-btn"
-          >
+          <div data-testid="AccountHeader__icon-btn">
             <div className="AccountHeader__icon-btn__left">
               <div
                 className="AccountHeader__dropdown"
                 data-testid="account-options-dropdown"
               >
-                {/* <AccountOptionsDropdown isFunded={isFunded} /> */}
-                <NavButton
-                  showBorder
-                  title={t("View options")}
-                  id="nav-btn-qr"
-                  icon={<Icon.DotsHorizontal />}
-                  onClick={() => setIsAccountOptionsOpen(!isAccountOptionsOpen)}
-                />
+                <AccountHeaderModal
+                  className="AccountHeader__options"
+                  isDropdownOpen={isAccountOptionsOpen}
+                  icon={
+                    <NavButton
+                      showBorder
+                      title={t("View options")}
+                      id="nav-btn-qr"
+                      icon={<Icon.DotsHorizontal />}
+                      onClick={() =>
+                        setIsAccountOptionsOpen(!isAccountOptionsOpen)
+                      }
+                    />
+                  }
+                >
+                  <>
+                    {isFunded && (
+                      <div
+                        className="AccountHeader__options__item"
+                        onClick={() => {
+                          // dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
+                          navigateTo(ROUTES.manageAssets, navigate);
+                        }}
+                      >
+                        <Text as="div" size="sm" weight="medium">
+                          {t("Manage assets")}
+                        </Text>
+                        <div className="AccountHeader__options__item__icon">
+                          <Icon.Coins03 />
+                        </div>
+                      </div>
+                    )}
+                    <div
+                      className="AccountHeader__options__item"
+                      onClick={() => navigateTo(ROUTES.viewPublicKey, navigate)}
+                    >
+                      <Text as="div" size="sm" weight="medium">
+                        {t("Account details")}
+                      </Text>
+                      <div className="AccountHeader__options__item__icon">
+                        <Icon.QrCode01 />
+                      </div>
+                    </div>
+                    <div
+                      className="AccountHeader__options__item"
+                      onClick={() => navigateTo(ROUTES.settings, navigate)}
+                    >
+                      <Text as="div" size="sm" weight="medium">
+                        {t("Settings")}
+                      </Text>
+                      <div className="AccountHeader__options__item__icon">
+                        <Icon.Settings01 />
+                      </div>
+                    </div>
+                    <hr className="AccountHeader__list-divider" />
+                    <div
+                      className="AccountHeader__options__item"
+                      onClick={(e) => signOutAndClose(e)}
+                    >
+                      <Text as="div" size="sm" weight="medium">
+                        {t("Lock Freighter")}
+                      </Text>
+                      <div className="AccountHeader__options__item__icon">
+                        <Icon.Lock01 />
+                      </div>
+                    </div>
+                    <div
+                      className="AccountHeader__options__item"
+                      onClick={() => openTab(newTabHref(ROUTES.account))}
+                    >
+                      <Text as="div" size="sm" weight="medium">
+                        {t("Fullscreen mode")}
+                      </Text>
+                      <div className="AccountHeader__options__item__icon">
+                        <Icon.Expand05 />
+                      </div>
+                    </div>
+
+                    <div
+                      className="AccountHeader__options__item"
+                      onClick={() => navigateTo(ROUTES.leaveFeedback, navigate)}
+                    >
+                      <Text as="div" size="sm" weight="medium">
+                        {t("Share feedback")}
+                      </Text>
+                      <div className="AccountHeader__options__item__icon">
+                        <Icon.MessageDotsCircle />
+                      </div>
+                    </div>
+                  </>
+                </AccountHeaderModal>
               </div>
+
               <div
-                className="AccountHeader__right-button"
+                className="AccountHeader__dropdown"
                 data-testid="network-selector-open"
-                onClick={() => setIsNetworkSelectorOpen(!isNetworkSelectorOpen)}
               >
-                <Icon.Globe02 />
+                <AccountHeaderModal
+                  className="AccountHeader__networks"
+                  isDropdownOpen={isNetworkSelectorOpen}
+                  icon={
+                    <NavButton
+                      showBorder
+                      title={t("View options")}
+                      id="nav-btn-qr"
+                      icon={<Icon.Globe02 />}
+                      onClick={() =>
+                        setIsNetworkSelectorOpen(!isNetworkSelectorOpen)
+                      }
+                    />
+                  }
+                >
+                  <>
+                    <div className="AccountHeader__network-selector">
+                      {networksList.map((n, i) => (
+                        <div className="AccountHeader__options__item">
+                          <div
+                            className="AccountHeader__network-selector__row"
+                            key={n.networkName}
+                            onClick={async () => {
+                              await onClickRow({ network: n });
+                              setIsNetworkSelectorOpen(false);
+                            }}
+                          >
+                            <NetworkIcon index={i} />
+                            <div className="AccountHeader__network-copy">
+                              {n.networkName}
+                            </div>
+                            {isActiveNetwork(n, networkDetails) ? (
+                              <div className="AccountHeader__network-selector__check">
+                                <Icon.Check />
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <hr className="AccountHeader__list-divider" />
+                    <div
+                      className="AccountHeader__options__item"
+                      onClick={() =>
+                        navigateTo(ROUTES.manageConnectedApps, navigate)
+                      }
+                    >
+                      <Text as="div" size="sm" weight="medium">
+                        {t("Connected apps")}
+                      </Text>
+                      <div className="AccountHeader__options__item__icon">
+                        <Icon.Link04 />
+                      </div>
+                    </div>
+                  </>
+                </AccountHeaderModal>
               </div>
             </div>
           </div>
@@ -141,11 +277,91 @@ export const AccountHeader = ({
                   {currentAccountName}
                 </div>
                 <div className="AccountHeader__account-dropdown-btn">
-                  <Icon.ChevronDown
-                    onClick={() =>
-                      setIsAccountDropdownOpen(!isAccountDropdownOpen)
+                  <AccountHeaderModal
+                    isDropdownOpen={isAccountDropdownOpen}
+                    icon={
+                      <Icon.ChevronDown
+                        onClick={() =>
+                          setIsAccountDropdownOpen(!isAccountDropdownOpen)
+                        }
+                      />
                     }
-                  />
+                    className="AccountHeader__account-dropdown-modal"
+                  >
+                    <ul className="AccountHeader__account-dropdown">
+                      <AccountList
+                        allAccounts={allAccounts}
+                        publicKey={publicKey}
+                        onClickAccount={async (clickedPublicKey: string) => {
+                          if (publicKey !== clickedPublicKey) {
+                            await onClickRow({ publicKey: clickedPublicKey });
+                          }
+                          setIsAccountDropdownOpen(!isAccountDropdownOpen);
+                        }}
+                      />
+                      <div className="AccountList__footer">
+                        <hr className="AccountHeader__list-divider" />
+                        <li className="AccountHeader__account-list-item">
+                          <Link
+                            className="AccountHeader__account-list-item__link"
+                            to={ROUTES.addAccount}
+                            state={{
+                              header: t("Create a new Stellar address"),
+                              cta: t("Add address"),
+                            }}
+                          >
+                            <div className="AccountHeader__account-list-item__row">
+                              <div className="AccountHeader__account-list-item__icon">
+                                <Icon.PlusCircle />
+                              </div>
+                              <span className="AccountHeader__account-list-item__link-copy">
+                                {t("Create a new Stellar address")}
+                              </span>
+                            </div>
+                            <span className="AccountHeader__account-list-item__arrow">
+                              <Icon.ChevronRight />
+                            </span>
+                          </Link>
+                        </li>
+                        <li className="AccountHeader__account-list-item">
+                          <Link
+                            className="AccountHeader__account-list-item__link"
+                            to={ROUTES.importAccount}
+                          >
+                            <div className="AccountHeader__account-list-item__row">
+                              <div className="AccountHeader__account-list-item__icon">
+                                <Icon.Key01 />
+                              </div>
+                              <span className="AccountHeader__account-list-item__link-copy">
+                                {t("Import a Stellar secret key")}
+                              </span>
+                            </div>
+                            <span className="AccountHeader__account-list-item__arrow">
+                              <Icon.ChevronRight />
+                            </span>
+                          </Link>
+                        </li>
+                        <li className="AccountHeader__account-list-item">
+                          <Link
+                            className="AccountHeader__account-list-item__link"
+                            to={ROUTES.connectWallet}
+                          >
+                            <div className="AccountHeader__account-list-item__row">
+                              <div className="AccountHeader__account-list-item__icon">
+                                <Icon.ShieldPlus />
+                              </div>
+                              <span className="AccountHeader__account-list-item__link-copy">
+                                Connect a hardware wallet
+                              </span>
+                            </div>
+                            <span className="AccountHeader__account-list-item__arrow">
+                              <Icon.ChevronRight />
+                            </span>
+                          </Link>
+                        </li>
+                      </div>
+                    </ul>
+                  </AccountHeaderModal>
                 </div>
               </div>
               <div
@@ -196,222 +412,6 @@ export const AccountHeader = ({
                   </div>
                 </NavLink>
               </div>
-              <AccountHeaderModal isDropdownOpen={isAccountDropdownOpen}>
-                <ul className="AccountHeader__account-dropdown">
-                  <AccountList
-                    allAccounts={allAccounts}
-                    publicKey={publicKey}
-                    onClickAccount={async (clickedPublicKey: string) => {
-                      if (publicKey !== clickedPublicKey) {
-                        await onClickRow({ publicKey: clickedPublicKey });
-                      }
-                      setIsAccountDropdownOpen(!isAccountDropdownOpen);
-                    }}
-                  />
-                  <div className="AccountList__footer">
-                    <hr className="AccountHeader__list-divider" />
-                    <li className="AccountHeader__account-list-item">
-                      <Link
-                        className="AccountHeader__account-list-item__link"
-                        to={ROUTES.addAccount}
-                        state={{
-                          header: t("Create a new Stellar address"),
-                          cta: t("Add address"),
-                        }}
-                      >
-                        <div className="AccountHeader__account-list-item__row">
-                          <div className="AccountHeader__account-list-item__icon">
-                            <Icon.PlusCircle />
-                          </div>
-                          <span className="AccountHeader__account-list-item__link-copy">
-                            {t("Create a new Stellar address")}
-                          </span>
-                        </div>
-                        <span className="AccountHeader__account-list-item__arrow">
-                          <Icon.ChevronRight />
-                        </span>
-                      </Link>
-                    </li>
-                    <li className="AccountHeader__account-list-item">
-                      <Link
-                        className="AccountHeader__account-list-item__link"
-                        to={ROUTES.importAccount}
-                      >
-                        <div className="AccountHeader__account-list-item__row">
-                          <div className="AccountHeader__account-list-item__icon">
-                            <Icon.Key01 />
-                          </div>
-                          <span className="AccountHeader__account-list-item__link-copy">
-                            {t("Import a Stellar secret key")}
-                          </span>
-                        </div>
-                        <span className="AccountHeader__account-list-item__arrow">
-                          <Icon.ChevronRight />
-                        </span>
-                      </Link>
-                    </li>
-                    <li className="AccountHeader__account-list-item">
-                      <Link
-                        className="AccountHeader__account-list-item__link"
-                        to={ROUTES.connectWallet}
-                      >
-                        <div className="AccountHeader__account-list-item__row">
-                          <div className="AccountHeader__account-list-item__icon">
-                            <Icon.ShieldPlus />
-                          </div>
-                          <span className="AccountHeader__account-list-item__link-copy">
-                            Connect a hardware wallet
-                          </span>
-                        </div>
-                        <span className="AccountHeader__account-list-item__arrow">
-                          <Icon.ChevronRight />
-                        </span>
-                      </Link>
-                    </li>
-                  </div>
-                </ul>
-              </AccountHeaderModal>
-              <AccountHeaderModal isDropdownOpen={isNetworkSelectorOpen}>
-                <>
-                  <div className="AccountHeader__network-selector">
-                    {networksList.map((n, i) => (
-                      <div
-                        className="AccountHeader__network-selector__row"
-                        key={n.networkName}
-                        onClick={async () => {
-                          await onClickRow({ network: n });
-                          setIsNetworkSelectorOpen(false);
-                        }}
-                      >
-                        <NetworkIcon index={i} />
-                        <div className="AccountHeader__network-copy">
-                          {n.networkName}
-                        </div>
-                        {isActiveNetwork(n, networkDetails) ? (
-                          <div className="AccountHeader__network-selector__check">
-                            <Icon.Check />
-                          </div>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-
-                  <hr className="AccountHeader__list-divider" />
-                  <div className="AccountHeader__account-list-item">
-                    <Link
-                      className="AccountHeader__account-list-item__link"
-                      to={ROUTES.addNetwork}
-                    >
-                      <div className="AccountHeader__account-list-item__row">
-                        <div className="AccountHeader__account-list-item__icon">
-                          <Icon.BookmarkAdd />
-                        </div>
-                        <span className="AccountHeader__account-list-item__link-copy">
-                          {t("Add custom network")}
-                        </span>
-                      </div>
-                      <span className="AccountHeader__account-list-item__arrow">
-                        <Icon.ChevronRight />
-                      </span>
-                    </Link>
-                  </div>
-                  <div className="AccountHeader__account-list-item">
-                    <Link
-                      className="AccountHeader__account-list-item__link"
-                      to={ROUTES.networkSettings}
-                    >
-                      <div className="AccountHeader__account-list-item__row">
-                        <div className="AccountHeader__account-list-item__icon">
-                          <Icon.Settings01 />
-                        </div>
-                        <span className="AccountHeader__account-list-item__link-copy">
-                          {t("Manage network settings")}
-                        </span>
-                      </div>
-                      <span className="AccountHeader__account-list-item__arrow">
-                        <Icon.ChevronRight />
-                      </span>
-                    </Link>
-                  </div>
-                </>
-              </AccountHeaderModal>
-              <AccountHeaderModal isDropdownOpen={isAccountOptionsOpen}>
-                <>
-                  {isFunded && (
-                    <div
-                      className="AccountHeader__options__item"
-                      onClick={() => {
-                        // dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
-                        navigateTo(ROUTES.manageAssets, navigate);
-                      }}
-                    >
-                      <Text as="div" size="sm" weight="medium">
-                        {t("Manage assets")}
-                      </Text>
-                      <div className="AccountHeader__options__item__icon">
-                        <Icon.Coins03 />
-                      </div>
-                    </div>
-                  )}
-                  <div
-                    className="AccountHeader__options__item"
-                    onClick={() => navigateTo(ROUTES.viewPublicKey, navigate)}
-                  >
-                    <Text as="div" size="sm" weight="medium">
-                      {t("Account details")}
-                    </Text>
-                    <div className="AccountHeader__options__item__icon">
-                      <Icon.QrCode01 />
-                    </div>
-                  </div>
-                  <div
-                    className="AccountHeader__options__item"
-                    onClick={() => navigateTo(ROUTES.settings, navigate)}
-                  >
-                    <Text as="div" size="sm" weight="medium">
-                      {t("Settings")}
-                    </Text>
-                    <div className="AccountHeader__options__item__icon">
-                      <Icon.Settings01 />
-                    </div>
-                  </div>
-                  <hr className="AccountHeader__list-divider" />
-                  <div
-                    className="AccountHeader__options__item"
-                    onClick={(e) => signOutAndClose(e)}
-                  >
-                    <Text as="div" size="sm" weight="medium">
-                      {t("Lock Freighter")}
-                    </Text>
-                    <div className="AccountHeader__options__item__icon">
-                      <Icon.Lock01 />
-                    </div>
-                  </div>
-                  <div
-                    className="AccountHeader__options__item"
-                    onClick={() => openTab(newTabHref(ROUTES.account))}
-                  >
-                    <Text as="div" size="sm" weight="medium">
-                      {t("Fullscreen mode")}
-                    </Text>
-                    <div className="AccountHeader__options__item__icon">
-                      <Icon.Expand05 />
-                    </div>
-                  </div>
-
-                  <div
-                    className="AccountHeader__options__item"
-                    onClick={() => navigateTo(ROUTES.leaveFeedback, navigate)}
-                  >
-                    <Text as="div" size="sm" weight="medium">
-                      {t("Share feedback")}
-                    </Text>
-                    <div className="AccountHeader__options__item__icon">
-                      <Icon.MessageDotsCircle />
-                    </div>
-                  </div>
-                </>
-              </AccountHeaderModal>
 
               {isBackgroundActive
                 ? createPortal(
