@@ -201,7 +201,7 @@ test("Send doesn't throw error when creating muxed account", async ({
   extensionId,
 }) => {
   test.slow();
-  await login({ page, extensionId });
+  await loginAndFund({ page, extensionId });
   await page.getByTitle("Send Payment").click({ force: true });
 
   await expect(page.getByText("Send To")).toBeVisible();
@@ -210,7 +210,7 @@ test("Send doesn't throw error when creating muxed account", async ({
     .fill(
       "MAUPPMNJUS76SG5NA6UXVCSO5HYVAJT422LBISV6LMCX37OIEPDJGAAAAAAAAAAAAF54C",
     );
-  expect(
+  await expect(
     page.getByText("The destination account doesn’t exist."),
   ).toBeVisible();
   await page.getByText("Continue").click();
@@ -219,6 +219,8 @@ test("Send doesn't throw error when creating muxed account", async ({
     "Send XLM",
   );
   await page.getByTestId("send-amount-amount-input").fill("1");
+  await page.getByText("Continue").click({ force: true });
+  await expect(page.getByText("Send Settings")).toBeVisible();
   await page.getByText("Review Send").click();
   await expect(page.getByText("Confirm Send")).toBeVisible({
     timeout: 200000,
