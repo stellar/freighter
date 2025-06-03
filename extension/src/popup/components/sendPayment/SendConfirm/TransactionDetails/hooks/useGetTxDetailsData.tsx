@@ -6,6 +6,7 @@ import {
   Memo,
   Operation,
   TransactionBuilder,
+  extractBaseAddress,
 } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 
@@ -22,7 +23,11 @@ import { BlockAidScanTxResult } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { findAssetBalance } from "popup/helpers/balance";
-import { getAssetFromCanonical, xlmToStroop } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  xlmToStroop,
+  isMuxedAccount,
+} from "helpers/stellar";
 import { getBaseAccount } from "popup/helpers/account";
 import { isContractId } from "popup/helpers/soroban";
 import { hasPrivateKeySelector } from "popup/ducks/accountServices";
@@ -98,8 +103,13 @@ const getOperation = (
 
   // create account if unfunded and sending xlm
   if (!isFunded && sourceAsset.code === Asset.native().code) {
+    let createAccountDestination = destination;
+    if (isMuxedAccount(destination)) {
+      // encode muxed account to address
+      createAccountDestination = extractBaseAddress(destination);
+    }
     return Operation.createAccount({
-      destination,
+      destination: createAccountDestination,
       startingBalance: amount,
     });
   }
