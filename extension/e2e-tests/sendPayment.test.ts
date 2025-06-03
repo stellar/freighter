@@ -253,6 +253,7 @@ test("Send XLM payments to recent federated addresses", async ({
   await expect(
     page.getByTestId("SendSettingsTransactionFee"),
   ).not.toContainText("100 XLM");
+  await expect(page.getByText("Review Send")).toBeEnabled();
   await page.getByText("Review Send").click();
 
   await expect(page.getByText("Confirm Send")).toBeVisible();
