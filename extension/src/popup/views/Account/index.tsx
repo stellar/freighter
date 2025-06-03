@@ -168,10 +168,13 @@ export const Account = () => {
                 </CopyText>
               </div>
               <div
+                data-testid="account-view-total-balance"
                 className="AccountView__total-usd-balance"
                 key="total-balance"
               >
-                {!hasError && isMainnet(resolvedData!.networkDetails)
+                {!hasError &&
+                isMainnet(resolvedData!.networkDetails) &&
+                resolvedData?.tokenPrices !== null
                   ? `$${formatAmount(
                       roundUsdValue(totalBalanceUsd.toString()),
                     )}`

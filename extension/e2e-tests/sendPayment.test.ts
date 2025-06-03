@@ -196,6 +196,36 @@ test("Send doesn't throw error when account is unfunded", async ({
     "Send XLM",
   );
 });
+test("Send doesn't throw error when creating muxed account", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await loginAndFund({ page, extensionId });
+  await page.getByTitle("Send Payment").click({ force: true });
+
+  await expect(page.getByText("Send To")).toBeVisible();
+  await page
+    .getByTestId("send-to-input")
+    .fill(
+      "MAUPPMNJUS76SG5NA6UXVCSO5HYVAJT422LBISV6LMCX37OIEPDJGAAAAAAAAAAAAF54C",
+    );
+  await expect(
+    page.getByText("The destination account doesn’t exist."),
+  ).toBeVisible();
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
+    "Send XLM",
+  );
+  await page.getByTestId("send-amount-amount-input").fill("1");
+  await page.getByText("Continue").click({ force: true });
+  await expect(page.getByText("Send Settings")).toBeVisible();
+  await page.getByText("Review Send").click();
+  await expect(page.getByText("Confirm Send")).toBeVisible({
+    timeout: 200000,
+  });
+});
 
 test("Send XLM payments to recent federated addresses", async ({
   page,
@@ -223,6 +253,7 @@ test("Send XLM payments to recent federated addresses", async ({
   await expect(
     page.getByTestId("SendSettingsTransactionFee"),
   ).not.toContainText("100 XLM");
+  await expect(page.getByText("Review Send")).toBeEnabled();
   await page.getByText("Review Send").click();
 
   await expect(page.getByText("Confirm Send")).toBeVisible();
