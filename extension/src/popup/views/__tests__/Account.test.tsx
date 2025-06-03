@@ -705,6 +705,77 @@ describe("Account view", () => {
     });
   });
 
+  it("hides prices and deltas on token price failure", async () => {
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+      }),
+    );
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+
+    jest.spyOn(ApiInternal, "getTokenPrices").mockImplementation(() => {
+      throw new Error("Failed to fetch prices");
+    });
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      const assetNodes = screen.getAllByTestId("account-assets-item");
+      expect(assetNodes.length).toEqual(3);
+      expect(
+        screen.queryByTestId(`asset-amount-${TEST_CANONICAL}`),
+      ).not.toBeInTheDocument();
+      expect(screen.getByTestId("asset-price-delta-native")).toHaveTextContent(
+        "--",
+      );
+      expect(
+        screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
+      ).toHaveTextContent("--");
+      expect(
+        screen.queryByTestId("account-view-total-balance"),
+      ).toBeEmptyDOMElement();
+    });
+  });
+
   it("handles abandoned onboarding in password created step", async () => {
     jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
       Promise.resolve({
