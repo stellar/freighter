@@ -10,35 +10,6 @@
     flex-direction: column;
     max-width: 60%;
   }
-  &__account-actions {
-    align-items: center;
-    justify-content: space-between;
-    display: flex;
-    flex-direction: row;
-  }
-
-  &__send-receive-display {
-    display: flex;
-    justify-content: right;
-    align-self: end;
-
-    > div {
-      margin-left: 1rem;
-    }
-  }
-
-  &__account-num {
-    align-items: center;
-    color: var(--sds-clr-gray-09);
-    gap: 0.5rem;
-    display: flex;
-    margin-top: pxToRem(4px);
-    width: 100%;
-
-    svg {
-      width: 1rem;
-    }
-  }
 
   &__assets-wrapper {
     .AccountAssets__asset {
