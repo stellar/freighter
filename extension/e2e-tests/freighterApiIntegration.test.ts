@@ -192,7 +192,7 @@ test("should not sign auth entry when not allowed", async ({
   });
 });
 
-test.skip("should sign message when allowed", async ({ page, extensionId }) => {
+test("should sign message when allowed", async ({ page, extensionId }) => {
   await loginToTestAccount({ page, extensionId });
   await allowDapp({ page });
 
