@@ -37,7 +37,7 @@ import { Loading } from "popup/components/Loading";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
-import { rejectTransaction, signTransaction } from "popup/ducks/access";
+import { rejectTransaction, signBlob } from "popup/ducks/access";
 import { reRouteOnboarding } from "popup/helpers/route";
 
 export const SignMessage = () => {
@@ -77,7 +77,7 @@ export const SignMessage = () => {
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-  } = useSetupSigningFlow(rejectTransaction, signTransaction, message.message);
+  } = useSetupSigningFlow(rejectTransaction, signBlob, message.message);
 
   useEffect(() => {
     const getData = async () => {
