@@ -26,12 +26,14 @@ export const AssetSelect = ({
   isSuspicious,
   icons,
   onSelectAsset,
+  balance,
 }: {
   assetCode: string;
   issuerKey: string;
   isSuspicious: boolean;
   icons: AssetIcons;
   onSelectAsset: () => unknown;
+  balance: React.ReactNode;
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { networkDetails, assetsLists } = useSelector(settingsSelector);
@@ -62,10 +64,13 @@ export const AssetSelect = ({
     fetchVerifiedTokens();
   }, [issuerKey, networkDetails, assetsLists]);
 
-  const handleSelectAsset = () => {
-    dispatch(saveAssetSelectType(AssetSelectType.REGULAR));
-    dispatch(saveAssetSelectSource(true));
-    onSelectAsset();
+  const handleSelectAsset = (e: any) => {
+    console.log(e);
+    if (e.target.parentNode.className !== "InfoTooltip__button") {
+      dispatch(saveAssetSelectType(AssetSelectType.REGULAR));
+      dispatch(saveAssetSelectSource(true));
+      onSelectAsset();
+    }
   };
 
   return (
@@ -88,7 +93,12 @@ export const AssetSelect = ({
               issuerKey={issuerKey}
               isSuspicious={isSuspicious}
             />
-            <span className="AssetSelect__medium-copy">{assetCode}</span>
+            <div className="AssetSelect__content__rows">
+              <div className="AssetSelect__medium-copy">
+                {assetCode === "XLM" ? "Stellar Lumens" : assetCode}
+              </div>
+              {balance}
+            </div>
           </div>
           <div className="AssetSelect__content__right">
             <Icon.ChevronDown />

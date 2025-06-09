@@ -16,7 +16,12 @@ import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
-import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  getCanonicalFromAsset,
+  isFederationAddress,
+  truncatedPublicKey,
+} from "helpers/stellar";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { useIsSwap, useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
@@ -69,6 +74,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
+import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 
 enum AMOUNT_ERROR {
   TOO_HIGH = "amount too high",
@@ -141,13 +147,15 @@ export const SendAmount = ({
   const {
     amount,
     asset,
-    destination,
     destinationAmount,
     destinationAsset,
     isToken,
     destinationIcon,
     isSoroswap,
   } = transactionData;
+  const destination =
+    "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
+
   const { state: sendAmountData, fetchData } = useGetSendAmountData(
     {
       showHidden: false,
@@ -485,11 +493,11 @@ export const SendAmount = ({
       state: sendAmountData.state,
     });
   }
-
   const sourceBalance = findAssetBalance(
     sendAmountData.data!.userBalances.balances,
     parsedSourceAsset,
   );
+
   const destBalance = findAssetBalance(
     sendAmountData.data!.userBalances.balances,
     getAssetFromCanonical(formik.values.destinationAsset || "native"),
@@ -544,6 +552,30 @@ export const SendAmount = ({
     return null;
   };
 
+  const AvailableBalance = () => {
+    const availbalanceString = `${formatAmount(availBalance)} ${parsedSourceAsset.code}`;
+    return (
+      <>
+        <div className="SendAmount__subtitle">
+          {asset === "native" ? (
+            <div>
+              <InfoTooltip
+                infoText={t(
+                  "The amount of XLM not reserved or needed for fees. This number may be lower than your total balance.",
+                )}
+                placement="left-start"
+              >
+                {availbalanceString}
+              </InfoTooltip>
+            </div>
+          ) : (
+            <>{availbalanceString}</>
+          )}
+        </div>
+      </>
+    );
+  };
+
   return (
     <>
       {showBlockedDomainWarning &&
@@ -567,7 +599,7 @@ export const SendAmount = ({
         <SubviewHeader
           title={
             <span>
-              {isSwap ? "Swap" : "Send"} {parsedSourceAsset.code}{" "}
+              {isSwap ? "Swap" : "Send"} {t("To")}
               {isSoroswap ? (
                 <span>
                   on{" "}
@@ -583,18 +615,30 @@ export const SendAmount = ({
             </span>
           }
           subtitle={
-            asset === "native" ? (
-              <div className="SendAmount__subtitle">
-                <InfoTooltip
-                  infoText={t(
-                    "The amount of XLM not reserved or needed for fees. This number may be lower than your total balance.",
-                  )}
-                  placement="bottom-end"
-                >
-                  {`${formatAmount(availBalance)} ${parsedSourceAsset.code} ${t("available")}`}
-                </InfoTooltip>
+            <>
+              <div className="SendAmount__identicon">
+                <div className="SendAmount__identicon__img">
+                  <IdenticonImg publicKey={destination} />
+                </div>
+                <div>
+                  {isFederationAddress(destination)
+                    ? destination
+                    : truncatedPublicKey(destination)}
+                </div>
               </div>
-            ) : null
+              {/* {asset === "native" ? (
+                <div className="SendAmount__subtitle">
+                  <InfoTooltip
+                    infoText={t(
+                      "The amount of XLM not reserved or needed for fees. This number may be lower than your total balance.",
+                    )}
+                    placement="bottom-end"
+                  >
+                    {`${formatAmount(availBalance)} ${parsedSourceAsset.code} ${t("available")}`}
+                  </InfoTooltip>
+                </div>
+              ) : null} */}
+            </>
           }
           hasBackButton={!isSwap}
           customBackAction={() => {
@@ -641,23 +685,6 @@ export const SendAmount = ({
         >
           <div className="SendAmount">
             <div className="SendAmount__content">
-              <div className="SendAmount__btn-set-max">
-                <Button
-                  size="md"
-                  variant="tertiary"
-                  onClick={() => {
-                    emitMetric(METRIC_NAMES.sendPaymentSetMax);
-                    formik.setFieldValue(
-                      "amount",
-                      calculateAvailBalance(formik.values.asset),
-                    );
-                  }}
-                  data-testid="SendAmountSetMax"
-                >
-                  {t("SET MAX")}
-                </Button>
-              </div>
-
               <form>
                 <div className="SendAmount__simplebar__content">
                   <input
@@ -692,8 +719,21 @@ export const SendAmount = ({
                     autoFocus
                     autoComplete="off"
                   />
-                  <div className="SendAmount__input-amount__asset-copy">
-                    {parsedSourceAsset.code}
+                  <div className="SendAmount__btn-set-max">
+                    <Button
+                      size="md"
+                      variant="tertiary"
+                      onClick={() => {
+                        emitMetric(METRIC_NAMES.sendPaymentSetMax);
+                        formik.setFieldValue(
+                          "amount",
+                          calculateAvailBalance(formik.values.asset),
+                        );
+                      }}
+                      data-testid="SendAmountSetMax"
+                    >
+                      {t("Set Max")}
+                    </Button>
                   </div>
                   {showSourceAndDestAsset && formik.values.amount !== "0" && (
                     <ConversionRate
@@ -728,6 +768,7 @@ export const SendAmount = ({
                           dispatch(saveAmount("0"));
                           goToChooseAsset();
                         }}
+                        balance={<AvailableBalance />}
                       />
                     )}
                     {showSourceAndDestAsset && (

@@ -139,6 +139,13 @@ export const SendTo = ({
     },
   });
 
+  const handlePaste = async (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    const text = await navigator.clipboard.readText();
+    formik.setFieldValue("destination", text, true);
+  };
+
   const isValidPublicKey = (publicKey: string) => {
     if (StrKey.isValidMed25519PublicKey(publicKey)) {
       return true;
@@ -193,16 +200,29 @@ export const SendTo = ({
       <SubviewHeader title="Send To" customBackAction={goBack} />
       <View.Content hasTopInput>
         <FormRows>
-          <Input
-            fieldSize="md"
-            autoComplete="off"
-            id="destination-input"
-            name="destination"
-            placeholder={t("Recipient Stellar address")}
-            onChange={formik.handleChange}
-            value={formik.values.destination}
-            data-testid="send-to-input"
-          />
+          <div className="SendTo__input">
+            <Input
+              fieldSize="md"
+              autoComplete="off"
+              id="destination-input"
+              name="destination"
+              placeholder={t("Enter wallet address")}
+              onChange={formik.handleChange}
+              value={formik.values.destination}
+              data-testid="send-to-input"
+              rightElement={
+                <Button
+                  size="md"
+                  variant="tertiary"
+                  icon={<Icon.Clipboard />}
+                  iconPosition="left"
+                  onClick={handlePaste}
+                >
+                  {t("Paste")}
+                </Button>
+              }
+            />
+          </div>
         </FormRows>
         <div className="SendTo__address-wrapper" data-testid="send-to-view">
           {isLoading ? (
@@ -223,7 +243,7 @@ export const SendTo = ({
               {formik.values.destination === "" ? (
                 <>
                   {sendDataState.data!.recentAddresses.length > 0 && (
-                    <div className="SendTo__subheading">{t("RECENT")}</div>
+                    <div className="SendTo__subheading">{t("Recent")}</div>
                   )}
                   <div className="SendTo__simplebar">
                     <ul className="SendTo__recent-accts-ul">

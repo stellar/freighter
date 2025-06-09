@@ -17,7 +17,7 @@ import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
 
 export const SendPayment = () => {
   const navigate = useNavigate();
-  const [activeStep, setActiveStep] = React.useState(STEPS.DESTINATION);
+  const [activeStep, setActiveStep] = React.useState(STEPS.AMOUNT);
 
   const renderStep = (step: STEPS) => {
     switch (step) {
