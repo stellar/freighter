@@ -33,11 +33,16 @@ type SendToData = NeedsReRoute | ResolvedSendToData;
 
 export const getAddressFromInput = async (userInput: string) => {
   if (isFederationAddress(userInput)) {
-    const fedResp = await Federation.Server.resolve(userInput);
-    return {
-      validatedAddress: fedResp.account_id,
-      fedAddress: userInput,
-    };
+    try {
+      const fedResp = await Federation.Server.resolve(userInput);
+      return {
+        validatedAddress: fedResp.account_id,
+        fedAddress: userInput,
+      };
+    } catch (error) {
+      Sentry.captureException(`Failed to fetch toml for ${userInput}`);
+      throw new Error("Failed to resolve federated address.");
+    }
   }
 
   return {

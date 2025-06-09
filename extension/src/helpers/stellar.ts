@@ -102,6 +102,21 @@ export const isMuxedAccount = (publicKey: string) => publicKey.startsWith("M");
 
 export const isFederationAddress = (address: string) => address.includes("*");
 
+export const isValidDomain = (input: string) => {
+  // eslint-disable-next-line no-useless-escape
+  const domainRegex = /^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6}$/i;
+  if (domainRegex.test(input)) {
+    return true;
+  } else {
+    return false;
+  }
+};
+
+export const isValidFederatedDomain = (input: string) => {
+  const [_, domain] = input.split("*");
+  return isFederationAddress(input) && isValidDomain(domain);
+};
+
 export const isMainnet = (networkDetails: NetworkDetails) => {
   const { networkPassphrase } = networkDetails;
 

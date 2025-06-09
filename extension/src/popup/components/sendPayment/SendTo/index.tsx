@@ -13,7 +13,11 @@ import {
 } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { isFederationAddress, truncatedPublicKey } from "helpers/stellar";
+import {
+  isFederationAddress,
+  isValidFederatedDomain,
+  truncatedPublicKey,
+} from "helpers/stellar";
 
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -143,7 +147,7 @@ export const SendTo = ({
     if (StrKey.isValidMed25519PublicKey(publicKey)) {
       return true;
     }
-    if (isFederationAddress(publicKey)) {
+    if (isValidFederatedDomain(publicKey)) {
       return true;
     }
     if (StrKey.isValidEd25519PublicKey(publicKey)) {
