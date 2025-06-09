@@ -119,47 +119,41 @@ function useSendToData() {
     }>,
   ) => {
     dispatch({ type: "FETCH_DATA_START" });
-    try {
-      const appData = await fetchAppData(true);
-      if (isError(appData)) {
-        throw new Error(appData.message);
-      }
-
-      if (appData.type === AppDataType.REROUTE) {
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload: appData });
-        return appData;
-      }
-
-      const { publicKey, applicationState } = appData.account;
-      const { networkDetails } = appData.settings;
-      const _isMainnet = isMainnet(networkDetails);
-
-      if (Object.keys(errors).length !== 0 && userInput) {
-        const payload = {
-          type: AppDataType.RESOLVED,
-          recentAddresses: [],
-          validatedAddress: "",
-          fedAddress: "",
-          applicationState,
-          publicKey,
-          networkDetails,
-        } as ResolvedSendToData;
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-        return payload;
-      }
-
-      return debouncedFetch(
-        userInput,
-        publicKey,
-        applicationState,
-        networkDetails,
-        _isMainnet,
-      );
-    } catch (error) {
-      dispatch({ type: "FETCH_DATA_ERROR", payload: error });
-      Sentry.captureException(`Error send-to data: ${error}`);
-      return error;
+    const appData = await fetchAppData(true);
+    if (isError(appData)) {
+      throw new Error(appData.message);
     }
+
+    if (appData.type === AppDataType.REROUTE) {
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload: appData });
+      return appData;
+    }
+
+    const { publicKey, applicationState } = appData.account;
+    const { networkDetails } = appData.settings;
+    const _isMainnet = isMainnet(networkDetails);
+
+    if (Object.keys(errors).length !== 0 && userInput) {
+      const payload = {
+        type: AppDataType.RESOLVED,
+        recentAddresses: [],
+        validatedAddress: "",
+        fedAddress: "",
+        applicationState,
+        publicKey,
+        networkDetails,
+      } as ResolvedSendToData;
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      return payload;
+    }
+
+    return debouncedFetch(
+      userInput,
+      publicKey,
+      applicationState,
+      networkDetails,
+      _isMainnet,
+    );
   };
 
   return {
