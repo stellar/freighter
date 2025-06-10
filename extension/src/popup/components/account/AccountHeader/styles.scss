@@ -129,6 +129,7 @@
   &__account-info {
     display: flex;
     justify-content: space-around;
+    padding-bottom: pxToRem(12px);
 
     &__details {
       display: flex;
@@ -285,8 +286,8 @@
       align-items: center;
 
       svg {
-        width: pxToRem(12px);
-        height: pxToRem(12px);
+        width: pxToRem(16px);
+        height: pxToRem(16px);
       }
     }
   }
