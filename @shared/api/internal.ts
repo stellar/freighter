@@ -55,7 +55,11 @@ import {
   AssetVisibility,
   ApiTokenPrices,
 } from "./types";
-import { AccountBalancesInterface, Balances } from "./types/backend-api";
+import {
+  AccountBalancesInterface,
+  BalanceMap,
+  Balances,
+} from "./types/backend-api";
 import {
   MAINNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
@@ -682,7 +686,7 @@ export const getAccountBalancesStandalone = async ({
 }) => {
   const { network, networkUrl, networkPassphrase } = networkDetails;
 
-  let balances = null;
+  let balances = {} as BalanceMap;
   let isFunded = null;
   let subentryCount = 0;
 
