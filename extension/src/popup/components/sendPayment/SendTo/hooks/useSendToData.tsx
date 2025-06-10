@@ -2,6 +2,7 @@ import { useReducer } from "react";
 import { Federation } from "stellar-sdk";
 import { FormikErrors } from "formik";
 import debounce from "lodash/debounce";
+import * as Sentry from "@sentry/browser";
 
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
@@ -32,11 +33,16 @@ type SendToData = NeedsReRoute | ResolvedSendToData;
 
 export const getAddressFromInput = async (userInput: string) => {
   if (isFederationAddress(userInput)) {
-    const fedResp = await Federation.Server.resolve(userInput);
-    return {
-      validatedAddress: fedResp.account_id,
-      fedAddress: userInput,
-    };
+    try {
+      const fedResp = await Federation.Server.resolve(userInput);
+      return {
+        validatedAddress: fedResp.account_id,
+        fedAddress: userInput,
+      };
+    } catch (error) {
+      Sentry.captureException(`Failed to fetch toml for ${userInput}`);
+      throw new Error("Failed to resolve federated address.");
+    }
   }
 
   return {
@@ -141,13 +147,30 @@ function useSendToData() {
       return payload;
     }
 
-    return debouncedFetch(
-      userInput,
-      publicKey,
+    if (userInput) {
+      return debouncedFetch(
+        userInput,
+        publicKey,
+        applicationState,
+        networkDetails,
+        _isMainnet,
+      );
+    }
+    const { recentAddresses } = await loadRecentAddresses({
+      activePublicKey: publicKey,
+    });
+
+    const payload = {
+      type: AppDataType.RESOLVED,
+      recentAddresses,
+      validatedAddress: "",
+      fedAddress: "",
       applicationState,
+      publicKey,
       networkDetails,
-      _isMainnet,
-    );
+    } as ResolvedSendToData;
+    dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+    return payload;
   };
 
   return {

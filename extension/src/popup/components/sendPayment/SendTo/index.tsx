@@ -13,7 +13,11 @@ import {
 } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { isFederationAddress, truncatedPublicKey } from "helpers/stellar";
+import {
+  isFederationAddress,
+  isValidFederatedDomain,
+  truncatedPublicKey,
+} from "helpers/stellar";
 
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -122,8 +126,8 @@ export const SendTo = ({
         sendDataState.data.type == AppDataType.RESOLVED
       ) {
         handleContinue(
-          sendDataState.data!.validatedAddress,
-          sendDataState.data!.fedAddress,
+          sendDataState.data.validatedAddress,
+          sendDataState.data.fedAddress,
         );
       }
     },
@@ -143,7 +147,7 @@ export const SendTo = ({
     if (StrKey.isValidMed25519PublicKey(publicKey)) {
       return true;
     }
-    if (isFederationAddress(publicKey)) {
+    if (isValidFederatedDomain(publicKey)) {
       return true;
     }
     if (StrKey.isValidEd25519PublicKey(publicKey)) {
@@ -209,7 +213,8 @@ export const SendTo = ({
             <div className="SendTo__loader">
               <Loader />
             </div>
-          ) : sendDataState.error ? (
+          ) : sendDataState.error ||
+            sendDataState.state === RequestState.ERROR ? (
             <Notification
               variant="error"
               title={
@@ -222,12 +227,12 @@ export const SendTo = ({
             <div>
               {formik.values.destination === "" ? (
                 <>
-                  {sendDataState.data!.recentAddresses.length > 0 && (
+                  {sendDataState.data.recentAddresses.length > 0 && (
                     <div className="SendTo__subheading">{t("RECENT")}</div>
                   )}
                   <div className="SendTo__simplebar">
                     <ul className="SendTo__recent-accts-ul">
-                      {sendDataState.data!.recentAddresses.map((address) => (
+                      {sendDataState.data.recentAddresses.map((address) => (
                         <li key={address}>
                           <button
                             data-testid="recent-address-button"
@@ -259,8 +264,8 @@ export const SendTo = ({
                 <div>
                   {formik.isValid ? (
                     <>
-                      {sendDataState.data!.destinationBalances &&
-                        !sendDataState.data!.destinationBalances.isFunded && (
+                      {sendDataState.data.destinationBalances &&
+                        !sendDataState.data.destinationBalances.isFunded && (
                           <AccountDoesntExistWarning />
                         )}
                       {isFederationAddress(formik.values.destination) && (
@@ -279,11 +284,11 @@ export const SendTo = ({
                         data-testid="send-to-identicon"
                       >
                         <IdenticonImg
-                          publicKey={sendDataState.data!.validatedAddress}
+                          publicKey={sendDataState.data.validatedAddress}
                         />
                         <span>
                           {truncatedPublicKey(
-                            sendDataState.data!.validatedAddress,
+                            sendDataState.data.validatedAddress,
                           )}
                         </span>
                       </div>

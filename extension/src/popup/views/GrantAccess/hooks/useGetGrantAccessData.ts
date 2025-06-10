@@ -10,6 +10,7 @@ import { useScanSite } from "../../../../popup/helpers/blockaid";
 import { BlockAidScanSiteResult } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 
 type ResolvedGrantAccessData = BlockAidScanSiteResult & {
   type: AppDataType.RESOLVED;
@@ -44,7 +45,7 @@ function useGetGrantAccessData(url: string) {
 
       const scanData = await scanSite(url, appData.settings.networkDetails);
 
-      if (!scanData) {
+      if (!scanData && !isCustomNetwork(appData.settings.networkDetails)) {
         throw new Error("Unable to scan site");
       }
 
