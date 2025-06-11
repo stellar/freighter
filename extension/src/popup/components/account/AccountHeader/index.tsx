@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useNavigate, NavLink } from "react-router-dom";
+import { useNavigate, NavLink } from "react-router-dom";
 import { createPortal } from "react-dom";
 
 import { Account } from "@shared/api/types";
@@ -20,12 +20,12 @@ import {
   settingsNetworksListSelector,
 } from "popup/ducks/settings";
 import { signOut } from "popup/ducks/accountServices";
-import { AccountList } from "popup/components/account/AccountList";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
+import { NetworkDetails } from "@shared/constants/stellar";
+import { Wallets } from "popup/views/Wallets";
 
 import "./styles.scss";
-import { NetworkDetails } from "@shared/constants/stellar";
 
 interface AccountHeaderProps {
   allAccounts: Account[];
@@ -266,7 +266,10 @@ export const AccountHeader = ({
           >
             <div className="AccountHeader__account-info__details">
               <div className="AccountHeader__name-key-display">
-                <div className="AccountHeader__identicon">
+                <div
+                  className="AccountHeader__identicon"
+                  onClick={() => setIsAccountDropdownOpen(true)}
+                >
                   <IdenticonImg publicKey={publicKey} />
                 </div>
 
@@ -275,93 +278,6 @@ export const AccountHeader = ({
                   data-testid="account-view-account-name"
                 >
                   {currentAccountName}
-                </div>
-                <div className="AccountHeader__account-dropdown-btn">
-                  <AccountHeaderModal
-                    isDropdownOpen={isAccountDropdownOpen}
-                    icon={
-                      <Icon.ChevronDown
-                        onClick={() =>
-                          setIsAccountDropdownOpen(!isAccountDropdownOpen)
-                        }
-                      />
-                    }
-                    className="AccountHeader__account-dropdown-modal"
-                  >
-                    <ul className="AccountHeader__account-dropdown">
-                      <AccountList
-                        allAccounts={allAccounts}
-                        publicKey={publicKey}
-                        onClickAccount={async (clickedPublicKey: string) => {
-                          if (publicKey !== clickedPublicKey) {
-                            await onClickRow({ publicKey: clickedPublicKey });
-                          }
-                          setIsAccountDropdownOpen(!isAccountDropdownOpen);
-                        }}
-                      />
-                      <div className="AccountList__footer">
-                        <hr className="AccountHeader__list-divider" />
-                        <li className="AccountHeader__account-list-item">
-                          <Link
-                            className="AccountHeader__account-list-item__link"
-                            to={ROUTES.addAccount}
-                            state={{
-                              header: t("Create a new Stellar address"),
-                              cta: t("Add address"),
-                            }}
-                          >
-                            <div className="AccountHeader__account-list-item__row">
-                              <div className="AccountHeader__account-list-item__icon">
-                                <Icon.PlusCircle />
-                              </div>
-                              <span className="AccountHeader__account-list-item__link-copy">
-                                {t("Create a new Stellar address")}
-                              </span>
-                            </div>
-                            <span className="AccountHeader__account-list-item__arrow">
-                              <Icon.ChevronRight />
-                            </span>
-                          </Link>
-                        </li>
-                        <li className="AccountHeader__account-list-item">
-                          <Link
-                            className="AccountHeader__account-list-item__link"
-                            to={ROUTES.importAccount}
-                          >
-                            <div className="AccountHeader__account-list-item__row">
-                              <div className="AccountHeader__account-list-item__icon">
-                                <Icon.Key01 />
-                              </div>
-                              <span className="AccountHeader__account-list-item__link-copy">
-                                {t("Import a Stellar secret key")}
-                              </span>
-                            </div>
-                            <span className="AccountHeader__account-list-item__arrow">
-                              <Icon.ChevronRight />
-                            </span>
-                          </Link>
-                        </li>
-                        <li className="AccountHeader__account-list-item">
-                          <Link
-                            className="AccountHeader__account-list-item__link"
-                            to={ROUTES.connectWallet}
-                          >
-                            <div className="AccountHeader__account-list-item__row">
-                              <div className="AccountHeader__account-list-item__icon">
-                                <Icon.ShieldPlus />
-                              </div>
-                              <span className="AccountHeader__account-list-item__link-copy">
-                                Connect a hardware wallet
-                              </span>
-                            </div>
-                            <span className="AccountHeader__account-list-item__arrow">
-                              <Icon.ChevronRight />
-                            </span>
-                          </Link>
-                        </li>
-                      </div>
-                    </ul>
-                  </AccountHeaderModal>
                 </div>
               </div>
               <div
@@ -426,6 +342,18 @@ export const AccountHeader = ({
                       isClear
                     />,
                     document.querySelector("#modal-root")!,
+                  )
+                : null}
+              {isAccountDropdownOpen
+                ? createPortal(
+                    <div className="AccountHeader__wallets">
+                      <Wallets
+                        activePublicKey={publicKey}
+                        allAccounts={allAccounts}
+                        close={() => setIsAccountDropdownOpen(false)}
+                      />
+                    </div>,
+                    document.querySelector(".View")!,
                   )
                 : null}
             </div>
