@@ -1,0 +1,91 @@
+@use "../../styles/utils.scss" as *;
+
+.WalletRow {
+  display: flex;
+  width: 100%;
+  margin-bottom: #{pxToRem(24px)};
+
+  &__identicon {
+    width: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .identicon-wrapper {
+      background: var(--color-white);
+      border-radius: 2rem;
+      height: 2.5rem;
+      width: 2.5rem;
+      margin: 0.125rem;
+      padding: 0.5rem;
+      border-style: solid;
+      border-width: 1.5px;
+      border-color: var(--sds-clr-gray-03);
+    }
+  }
+
+  &__options {
+    width: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  &__options-actions {
+    display: flex;
+    position: absolute;
+    background: var(--sds-clr-gray-03);
+    border-radius: 6px;
+    margin-top: -2rem;
+    padding: 0.25rem;
+    right: 2rem;
+    width: 10.75rem;
+    z-index: var(--z-index--banner);
+
+    &__row {
+      padding: 0.375rem 0.5rem;
+      width: 100%;
+
+      .CopyText__content,
+      .CopyText {
+        width: 100%;
+      }
+
+      .action-copy {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+      }
+    }
+
+    &__label {
+      font-size: 0.875rem;
+      font-weight: var(--font-weight-medium);
+    }
+
+    &__background {
+      height: 100vh;
+      position: absolute;
+      width: 100vw;
+    }
+  }
+
+  &__details {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding-left: #{pxToRem(12px)};
+
+    .detail-name {
+      margin: 0 !important; // sds override
+    }
+
+    .detail-short-key {
+      margin: 0;
+      line-height: 1rem;
+      color: var(--sds-clr-gray-11) !important; // sds override
+      font-size: #{pxToRem(12px)};
+    }
+  }
+}

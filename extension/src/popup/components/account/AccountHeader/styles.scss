@@ -7,6 +7,17 @@
   align-items: center;
   height: 5rem;
 
+  &__wallets {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    min-width: var(--popup--width);
+    width: 100%;
+    background: var(--sds-clr-gray-01);
+    z-index: var(--z-index-modal);
+  }
+
   &__icon-btn {
     &__left {
       display: flex;
@@ -92,14 +103,6 @@
   &__account-name {
     color: var(--sds-clr-gray-11);
     font-weight: var(--font-weight-medium);
-  }
-
-  &__account-dropdown-btn {
-    color: var(--sds-clr-gray-09);
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
   }
 
   &__account-dropdown-modal {
