@@ -119,7 +119,9 @@ export const ViewPublicKey = () => {
   const handleSubmit = async (values: FormValue) => {
     const { accountName: newAccountName } = values;
     if (accountName !== newAccountName) {
-      await dispatch(updateAccountName(newAccountName));
+      await dispatch(
+        updateAccountName({ accountName: newAccountName, publicKey }),
+      );
       emitMetric(METRIC_NAMES.viewPublicKeyAccountRenamed);
     }
     setIsEditingName(false);

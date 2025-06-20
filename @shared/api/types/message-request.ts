@@ -101,6 +101,7 @@ export interface MakeAccountActiveMessage extends BaseMessage {
 export interface UpdateAccountNameMessage extends BaseMessage {
   type: SERVICE_TYPES.UPDATE_ACCOUNT_NAME;
   accountName: string;
+  publicKey: string;
 }
 
 export interface AddCustomNetworkMessage extends BaseMessage {

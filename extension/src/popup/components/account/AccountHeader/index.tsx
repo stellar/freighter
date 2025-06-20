@@ -350,6 +350,7 @@ export const AccountHeader = ({
                       <Wallets
                         activePublicKey={publicKey}
                         allAccounts={allAccounts}
+                        onSelectAccount={onClickRow}
                         close={() => setIsAccountDropdownOpen(false)}
                       />
                     </div>,
