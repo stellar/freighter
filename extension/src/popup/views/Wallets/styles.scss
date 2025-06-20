@@ -11,6 +11,7 @@
     justify-content: center;
     align-items: center;
     position: relative;
+    cursor: pointer;
 
     .identicon-wrapper {
       background: var(--color-white);
@@ -100,6 +101,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
+    cursor: pointer;
     padding-left: #{pxToRem(12px)};
 
     .detail-name {
@@ -121,8 +123,18 @@
   top: 30%;
 }
 
+.AddWalletWrapper {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--sds-clr-gray-01);
+  z-index: var(--z-index--banner);
+}
+
 .RenameWallet {
-  z-index: 9999999;
+  z-index: var(--z-index--banner);
   position: relative;
 
   &__short-address {
@@ -139,6 +151,52 @@
     }
     button:not(:first-child) {
       margin-left: #{pxToRem(10px)};
+    }
+  }
+}
+
+.AddWallet {
+  display: flex;
+  flex-direction: column;
+
+  &__row {
+    background-color: var(--sds-clr-gray-03);
+    border-radius: 6px;
+    margin-bottom: #{pxToRem(12px)};
+    padding: #{pxToRem(12px)} #{pxToRem(16px)};
+    cursor: pointer;
+
+    &__icon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border-width: 1px;
+      padding: #{pxToRem(8px)};
+      margin-bottom: #{pxToRem(24px)};
+
+      &.lime {
+        background-color: var(--sds-clr-lime-06);
+        border-color: var(--sds-clr-lime-09);
+      }
+
+      &.purple {
+        background-color: var(--sds-clr-pink-06);
+        border-color: var(--sds-clr-pink-09);
+      }
+
+      &.blue {
+        background-color: var(--sds-clr-navy-06);
+        border-color: var(--sds-clr-navy-09);
+      }
+    }
+
+    &__description {
+      color: var(--sds-clr-gray-11);
+      font-weight: var(--font-weight-medium);
+      margin-bottom: #{pxToRem(8px)};
     }
   }
 }

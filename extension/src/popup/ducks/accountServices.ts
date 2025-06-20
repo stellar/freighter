@@ -198,12 +198,12 @@ export const makeAccountActive = createAsyncThunk<
 
 export const updateAccountName = createAsyncThunk<
   { allAccounts: Account[] },
-  string,
+  { accountName: string; publicKey: string },
   { rejectValue: ErrorMessage; state: AppState }
->("auth/updateAccountName", (accountName: string, { getState }) => {
+>("auth/updateAccountName", ({ accountName, publicKey }, { getState }) => {
   const activePublicKey = publicKeySelector(getState());
 
-  return updateAccountNameService({ activePublicKey, accountName });
+  return updateAccountNameService({ activePublicKey, accountName, publicKey });
 });
 
 export const loadLastUsedAccount = createAsyncThunk<

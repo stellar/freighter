@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { Button, Card, CopyText, Icon, Input } from "@stellar/design-system";
 import classNames from "classnames";
 import { Field, FieldProps, Form, Formik } from "formik";
@@ -11,32 +11,93 @@ import { Account } from "@shared/api/types";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
-import {
-  accountNameSelector,
-  updateAccountName,
-} from "popup/ducks/accountServices";
+import { updateAccountName } from "popup/ducks/accountServices";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
 import { truncatedPublicKey } from "helpers/stellar";
 import { getColorPubKey } from "helpers/stellarIdenticon";
-
-import "./styles.scss";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
+import { NetworkDetails } from "@shared/constants/stellar";
+
+import "./styles.scss";
+
+interface AddWalletProps {
+  onBack: () => void;
+}
+
+const AddWallet = ({ onBack }: AddWalletProps) => {
+  const actions = [
+    {
+      icon: <Icon.Activity stroke="#99D52A" />,
+      color: "lime",
+      title: "Create a new wallet",
+      description: "Create a wallet from your seed phrase.",
+    },
+    {
+      icon: <Icon.Activity stroke="#D6409F" />,
+      color: "purple",
+      title: "Import a Stellar secret key",
+      description: "Add a wallet using a secret key.",
+    },
+    {
+      icon: <Icon.ShieldPlus stroke="#3E63DD" />,
+      color: "blue",
+      title: "Connect a hardware wallet",
+      description: "Add a wallet from a hardware wallet.",
+    },
+  ];
+  return (
+    <>
+      <SubviewHeader
+        title="Add another wallet"
+        customBackAction={onBack}
+        customBackIcon={<Icon.ArrowLeft />}
+      />
+      <View.Content hasNoTopPadding>
+        <div className="AddWallet">
+          {actions.map((action) => {
+            const iconClasses = classNames(
+              "AddWallet__row__icon",
+              action.color,
+            );
+            return (
+              <div key={action.title} className="AddWallet__row">
+                <div className={iconClasses}>{action.icon}</div>
+                <div className="AddWallet__row__title">{action.title}</div>
+                <div className="AddWallet__row__description">
+                  {action.description}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </View.Content>
+    </>
+  );
+};
 
 interface FormValue {
   accountName: string;
 }
 
 interface RenameWalletProps {
+  allAccounts: Account[];
   publicKey: string;
   onClose: () => void;
 }
 
-const RenameWallet = ({ publicKey, onClose }: RenameWalletProps) => {
+const RenameWallet = ({
+  allAccounts,
+  publicKey,
+  onClose,
+}: RenameWalletProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const accountName = useSelector(accountNameSelector);
+  const account = allAccounts.find(
+    (account) => account.publicKey === publicKey,
+  )!;
+  const accountName = account.name;
   const shortPublicKey = truncatedPublicKey(publicKey);
   const initialValues: FormValue = {
     accountName,
@@ -44,7 +105,9 @@ const RenameWallet = ({ publicKey, onClose }: RenameWalletProps) => {
   const handleSubmit = async (values: FormValue) => {
     const { accountName: newAccountName } = values;
     if (accountName !== newAccountName) {
-      await dispatch(updateAccountName(newAccountName));
+      await dispatch(
+        updateAccountName({ accountName: newAccountName, publicKey }),
+      );
       emitMetric(METRIC_NAMES.viewPublicKeyAccountRenamed);
       onClose();
     }
@@ -126,6 +189,7 @@ const WalletRow = ({
   accountName,
   isSelected,
   publicKey,
+  onClick,
   setOptionsOpen,
 }: WalletRowProps) => {
   const shortPublicKey = truncatedPublicKey(publicKey);
@@ -137,7 +201,7 @@ const WalletRow = ({
   const borderColor = isSelected ? isSelectedColor : "#232323";
   return (
     <div className="WalletRow">
-      <div className="WalletRow__identicon">
+      <div className="WalletRow__identicon" onClick={() => onClick(publicKey)}>
         <div
           className={identiconWrapperStyles}
           style={{ borderColor: borderColor }}
@@ -153,7 +217,7 @@ const WalletRow = ({
           </div>
         ) : null}
       </div>
-      <div className="WalletRow__details">
+      <div className="WalletRow__details" onClick={() => onClick(publicKey)}>
         <p className="detail-name">{accountName}</p>
         <p className="detail-short-key">{shortPublicKey}</p>
       </div>
@@ -170,17 +234,23 @@ const WalletRow = ({
 interface WalletsProps {
   activePublicKey: string;
   allAccounts: Account[];
+  onSelectAccount: (updatedValues: {
+    publicKey?: string;
+    network?: NetworkDetails;
+  }) => Promise<void>;
   close: () => void;
 }
 
 export const Wallets = ({
   activePublicKey,
   allAccounts,
+  onSelectAccount,
   close,
 }: WalletsProps) => {
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
   const [isEditingName, setIsEditingName] = React.useState("");
+  const [isAddingWallet, setIsAddingWallet] = React.useState(false);
   const [activeOptionsPublicKey, setActiveOptionsPublicKey] =
     React.useState("");
 
@@ -217,7 +287,7 @@ export const Wallets = ({
             variant="secondary"
             iconPosition="left"
             icon={<Icon.PlusCircle />}
-            onClick={() => {}}
+            onClick={() => setIsAddingWallet(true)}
           >
             {t("Add a wallet")}
           </Button>
@@ -235,7 +305,10 @@ export const Wallets = ({
                     accountName={name}
                     publicKey={publicKey}
                     isSelected={isSelected}
-                    onClick={(publicKey) => console.log(publicKey)}
+                    onClick={(publicKey) => {
+                      onSelectAccount({ publicKey });
+                      close();
+                    }}
                     setOptionsOpen={setActiveOptionsPublicKey}
                   />
                   {activeOptionsPublicKey === publicKey ? (
@@ -279,6 +352,7 @@ export const Wallets = ({
         <>
           <div className="RenameWalletWrapper">
             <RenameWallet
+              allAccounts={allAccounts}
               publicKey={isEditingName}
               onClose={() => setIsEditingName("")}
             />
@@ -288,6 +362,11 @@ export const Wallets = ({
             isActive={isEditingName.length > 0}
           />
         </>
+      ) : null}
+      {isAddingWallet ? (
+        <div className="AddWalletWrapper">
+          <AddWallet onBack={() => setIsAddingWallet(false)} />
+        </div>
       ) : null}
     </React.Fragment>
   );
