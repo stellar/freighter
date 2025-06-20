@@ -10,6 +10,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
 
     .identicon-wrapper {
       background: var(--color-white);
@@ -21,6 +22,23 @@
       border-style: solid;
       border-width: 1.5px;
       border-color: var(--sds-clr-gray-03);
+
+      &.is-selected {
+        border-width: 2px;
+      }
+    }
+
+    &__selected-check {
+      width: 12px;
+      height: 12px;
+      position: absolute;
+      bottom: 4px;
+      left: 5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2px;
+      border-radius: 50%;
     }
   }
 
@@ -29,10 +47,12 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    cursor: pointer;
   }
 
   &__options-actions {
     display: flex;
+    flex-direction: column;
     position: absolute;
     background: var(--sds-clr-gray-03);
     border-radius: 6px;
@@ -45,6 +65,11 @@
     &__row {
       padding: 0.375rem 0.5rem;
       width: 100%;
+      border-radius: 6px;
+
+      &:hover {
+        background-color: var(--sds-clr-gray-05);
+      }
 
       .CopyText__content,
       .CopyText {
@@ -86,6 +111,34 @@
       line-height: 1rem;
       color: var(--sds-clr-gray-11) !important; // sds override
       font-size: #{pxToRem(12px)};
+    }
+  }
+}
+
+.RenameWalletWrapper {
+  position: absolute;
+  width: 100%;
+  top: 30%;
+}
+
+.RenameWallet {
+  z-index: 9999999;
+  position: relative;
+
+  &__short-address {
+    font-size: 14px;
+    color: var(--sds-clr-gray-10);
+    margin: #{pxToRem(12px)} 0 #{pxToRem(18px)} 0;
+  }
+
+  &__actions {
+    display: flex;
+
+    button {
+      flex: 1;
+    }
+    button:not(:first-child) {
+      margin-left: #{pxToRem(10px)};
     }
   }
 }

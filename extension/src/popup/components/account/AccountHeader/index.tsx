@@ -265,11 +265,11 @@ export const AccountHeader = ({
             data-testid="account-header"
           >
             <div className="AccountHeader__account-info__details">
-              <div className="AccountHeader__name-key-display">
-                <div
-                  className="AccountHeader__identicon"
-                  onClick={() => setIsAccountDropdownOpen(true)}
-                >
+              <div
+                className="AccountHeader__name-key-display"
+                onClick={() => setIsAccountDropdownOpen(true)}
+              >
+                <div className="AccountHeader__identicon">
                   <IdenticonImg publicKey={publicKey} />
                 </div>
 

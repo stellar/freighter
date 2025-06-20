@@ -150,6 +150,7 @@
     gap: pxToRem(2px);
     font-size: pxToRem(14px);
     line-height: pxToRem(20px);
+    cursor: pointer;
 
     .Tooltip {
       padding: 0.125rem 0.375rem;
@@ -160,14 +161,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: pxToRem(16);
-    height: pxToRem(16);
+    width: pxToRem(24);
+    height: pxToRem(24);
     border: 1px solid var(--sds-clr-gray-06);
     border-radius: pxToRem(100);
 
     img {
-      width: pxToRem(8);
-      height: pxToRem(8);
+      width: pxToRem(12);
+      height: pxToRem(12);
     }
   }
 
