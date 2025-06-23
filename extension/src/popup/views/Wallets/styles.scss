@@ -109,7 +109,14 @@
     }
 
     .detail-short-key {
-      margin: 0;
+      margin: 0 !important; // sds override
+      line-height: 1rem;
+      color: var(--sds-clr-gray-11) !important; // sds override
+      font-size: #{pxToRem(12px)};
+    }
+
+    .detail-indentifier {
+      margin: 0 !important; // sds override
       line-height: 1rem;
       color: var(--sds-clr-gray-11) !important; // sds override
       font-size: #{pxToRem(12px)};
@@ -193,10 +200,15 @@
       }
     }
 
+    &__title {
+      color: var(--sds-clr-white);
+    }
+
     &__description {
       color: var(--sds-clr-gray-11);
       font-weight: var(--font-weight-medium);
       margin-bottom: #{pxToRem(8px)};
+      margin-top: #{pxToRem(6px)};
     }
   }
 }

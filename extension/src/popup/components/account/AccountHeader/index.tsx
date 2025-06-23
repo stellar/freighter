@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, NavLink } from "react-router-dom";
 import { createPortal } from "react-dom";
 
-import { Account } from "@shared/api/types";
 import { Icon, Text, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -23,12 +22,10 @@ import { signOut } from "popup/ducks/accountServices";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { Wallets } from "popup/views/Wallets";
 
 import "./styles.scss";
 
 interface AccountHeaderProps {
-  allAccounts: Account[];
   currentAccountName: string;
   publicKey: string;
   onClickRow: (updatedValues: {
@@ -40,7 +37,6 @@ interface AccountHeaderProps {
 }
 
 export const AccountHeader = ({
-  allAccounts,
   currentAccountName,
   publicKey,
   onClickRow,
@@ -50,7 +46,6 @@ export const AccountHeader = ({
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
-  const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
   const [isNetworkSelectorOpen, setIsNetworkSelectorOpen] = useState(false);
   const [isAccountOptionsOpen, setIsAccountOptionsOpen] = useState(false);
   const navigate = useNavigate();
@@ -71,8 +66,7 @@ export const AccountHeader = ({
 
   activeNetworkIndex.current = index;
 
-  const isBackgroundActive =
-    isAccountDropdownOpen || isNetworkSelectorOpen || isAccountOptionsOpen;
+  const isBackgroundActive = isNetworkSelectorOpen || isAccountOptionsOpen;
 
   const signOutAndClose = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -265,21 +259,20 @@ export const AccountHeader = ({
             data-testid="account-header"
           >
             <div className="AccountHeader__account-info__details">
-              <div
-                className="AccountHeader__name-key-display"
-                onClick={() => setIsAccountDropdownOpen(true)}
-              >
-                <div className="AccountHeader__identicon">
-                  <IdenticonImg publicKey={publicKey} />
-                </div>
+              <NavLink to={ROUTES.wallets}>
+                <div className="AccountHeader__name-key-display">
+                  <div className="AccountHeader__identicon">
+                    <IdenticonImg publicKey={publicKey} />
+                  </div>
 
-                <div
-                  className="AccountHeader__account-name"
-                  data-testid="account-view-account-name"
-                >
-                  {currentAccountName}
+                  <div
+                    className="AccountHeader__account-name"
+                    data-testid="account-view-account-name"
+                  >
+                    {currentAccountName}
+                  </div>
                 </div>
-              </div>
+              </NavLink>
               <div
                 className="AccountHeader__total-usd-balance"
                 key="total-balance"
@@ -333,7 +326,6 @@ export const AccountHeader = ({
                 ? createPortal(
                     <LoadingBackground
                       onClick={() => {
-                        setIsAccountDropdownOpen(false);
                         setIsNetworkSelectorOpen(false);
                         setIsAccountOptionsOpen(false);
                       }}
@@ -342,19 +334,6 @@ export const AccountHeader = ({
                       isClear
                     />,
                     document.querySelector("#modal-root")!,
-                  )
-                : null}
-              {isAccountDropdownOpen
-                ? createPortal(
-                    <div className="AccountHeader__wallets">
-                      <Wallets
-                        activePublicKey={publicKey}
-                        allAccounts={allAccounts}
-                        onSelectAccount={onClickRow}
-                        close={() => setIsAccountDropdownOpen(false)}
-                      />
-                    </div>,
-                    document.querySelector(".View")!,
                   )
                 : null}
             </div>
