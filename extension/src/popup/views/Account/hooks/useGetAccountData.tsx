@@ -20,7 +20,7 @@ import { AppDispatch } from "popup/App";
 import { makeAccountActive } from "popup/ducks/accountServices";
 import { changeNetwork } from "popup/ducks/settings";
 
-const getTokenPrices = async ({
+export const getTokenPrices = async ({
   balances,
 }: {
   balances: AccountBalances["balances"];

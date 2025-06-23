@@ -174,4 +174,5 @@ export const METRIC_NAMES = {
   blockaidAssetScan: "blockaid: scanned asset",
 
   coinbaseOnrampOpened: "coinbase onramp: opened",
+  wallets: "loaded screen: wallets",
 };

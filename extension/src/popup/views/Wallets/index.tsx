@@ -1,26 +1,45 @@
 import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { Button, Card, CopyText, Icon, Input } from "@stellar/design-system";
+import { Link, Navigate, useNavigate } from "react-router-dom";
+import {
+  Button,
+  Card,
+  CopyText,
+  Icon,
+  Input,
+  Notification,
+} from "@stellar/design-system";
 import classNames from "classnames";
 import { Field, FieldProps, Form, Formik } from "formik";
 import { object as YupObject, string as YupString } from "yup";
 
 import { AppDispatch } from "popup/App";
+import { ROUTES } from "popup/constants/routes";
 import { Account } from "@shared/api/types";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
-import { updateAccountName } from "popup/ducks/accountServices";
+import {
+  makeAccountActive,
+  updateAccountName,
+} from "popup/ducks/accountServices";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
 import { truncatedPublicKey } from "helpers/stellar";
 import { getColorPubKey } from "helpers/stellarIdenticon";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
-import { NetworkDetails } from "@shared/constants/stellar";
+import { useGetWalletsData } from "./hooks/useGetWalletsData";
+import { RequestState } from "constants/request";
+import { Loading } from "popup/components/Loading";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { newTabHref } from "helpers/urls";
+import { navigateTo, openTab } from "popup/helpers/navigate";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 import "./styles.scss";
+import { WalletType } from "@shared/constants/hardwareWallet";
 
 interface AddWalletProps {
   onBack: () => void;
@@ -33,18 +52,21 @@ const AddWallet = ({ onBack }: AddWalletProps) => {
       color: "lime",
       title: "Create a new wallet",
       description: "Create a wallet from your seed phrase.",
+      link: ROUTES.addAccount,
     },
     {
       icon: <Icon.Activity stroke="#D6409F" />,
       color: "purple",
       title: "Import a Stellar secret key",
       description: "Add a wallet using a secret key.",
+      link: ROUTES.importAccount,
     },
     {
       icon: <Icon.ShieldPlus stroke="#3E63DD" />,
       color: "blue",
       title: "Connect a hardware wallet",
       description: "Add a wallet from a hardware wallet.",
+      link: ROUTES.connectWallet,
     },
   ];
   return (
@@ -63,11 +85,13 @@ const AddWallet = ({ onBack }: AddWalletProps) => {
             );
             return (
               <div key={action.title} className="AddWallet__row">
-                <div className={iconClasses}>{action.icon}</div>
-                <div className="AddWallet__row__title">{action.title}</div>
-                <div className="AddWallet__row__description">
-                  {action.description}
-                </div>
+                <Link className="AddWallet__row-link" to={action.link}>
+                  <div className={iconClasses}>{action.icon}</div>
+                  <div className="AddWallet__row__title">{action.title}</div>
+                  <div className="AddWallet__row__description">
+                    {action.description}
+                  </div>
+                </Link>
               </div>
             );
           })}
@@ -179,6 +203,9 @@ const RenameWallet = ({
 
 interface WalletRowProps {
   accountName: string;
+  accountValue: string;
+  isImported: boolean;
+  hardwareWalletType?: WalletType;
   isSelected: boolean;
   publicKey: string;
   onClick: (publicKey: string) => unknown;
@@ -187,6 +214,9 @@ interface WalletRowProps {
 
 const WalletRow = ({
   accountName,
+  accountValue,
+  isImported,
+  hardwareWalletType,
   isSelected,
   publicKey,
   onClick,
@@ -199,6 +229,10 @@ const WalletRow = ({
   const selectedBorderColorRgb = getColorPubKey(publicKey);
   const isSelectedColor = `rgb(${selectedBorderColorRgb.r} ${selectedBorderColorRgb.g} ${selectedBorderColorRgb.b} / 100%`;
   const borderColor = isSelected ? isSelectedColor : "#232323";
+  const subTitle = accountValue
+    ? `${shortPublicKey} - ${accountValue}`
+    : shortPublicKey;
+  const walletIdentifier = hardwareWalletType || isImported ? "Imported" : "";
   return (
     <div className="WalletRow">
       <div className="WalletRow__identicon" onClick={() => onClick(publicKey)}>
@@ -219,7 +253,8 @@ const WalletRow = ({
       </div>
       <div className="WalletRow__details" onClick={() => onClick(publicKey)}>
         <p className="detail-name">{accountName}</p>
-        <p className="detail-short-key">{shortPublicKey}</p>
+        <p className="detail-short-key">{subTitle}</p>
+        <p className="detail-short-key">{walletIdentifier}</p>
       </div>
       <div
         className="WalletRow__options"
@@ -231,28 +266,24 @@ const WalletRow = ({
   );
 };
 
-interface WalletsProps {
-  activePublicKey: string;
-  allAccounts: Account[];
-  onSelectAccount: (updatedValues: {
-    publicKey?: string;
-    network?: NetworkDetails;
-  }) => Promise<void>;
-  close: () => void;
-}
-
-export const Wallets = ({
-  activePublicKey,
-  allAccounts,
-  onSelectAccount,
-  close,
-}: WalletsProps) => {
+export const Wallets = () => {
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const [isEditingName, setIsEditingName] = React.useState("");
   const [isAddingWallet, setIsAddingWallet] = React.useState(false);
   const [activeOptionsPublicKey, setActiveOptionsPublicKey] =
     React.useState("");
+  const { state: dataState, fetchData } = useGetWalletsData();
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -270,11 +301,61 @@ export const Wallets = ({
     };
   }, [activeOptionsRef]);
 
+  if (
+    dataState.state === RequestState.IDLE ||
+    dataState.state === RequestState.LOADING
+  ) {
+    return <Loading />;
+  }
+
+  const hasError = dataState.state === RequestState.ERROR;
+
+  if (dataState.data?.type === AppDataType.REROUTE) {
+    if (dataState.data.shouldOpenTab) {
+      openTab(newTabHref(dataState.data.routeTarget));
+      window.close();
+    }
+    return (
+      <Navigate
+        to={`${dataState.data.routeTarget}${location.search}`}
+        state={{ from: location }}
+        replace
+      />
+    );
+  }
+
+  if (!hasError) {
+    reRouteOnboarding({
+      type: dataState.data.type,
+      applicationState: dataState.data?.applicationState,
+      state: dataState.state,
+    });
+  }
+
+  if (hasError) {
+    return (
+      <div className="Wallets__fail">
+        <Notification
+          variant="error"
+          title={t("Failed to fetch your wallets.")}
+        >
+          {t("Your wallets could not be fetched at this time.")}
+        </Notification>
+      </div>
+    );
+  }
+
+  const {
+    allAccounts,
+    publicKey: activePublicKey,
+    accountValue,
+  } = dataState.data;
+
   return (
     <React.Fragment>
       <SubviewHeader
         title="Wallets"
-        customBackAction={close}
+        customBackAction={() => navigateTo(ROUTES.account, navigate)}
         customBackIcon={<Icon.XClose />}
       />
       <View.Content
@@ -297,17 +378,20 @@ export const Wallets = ({
           {allAccounts.map(
             ({ publicKey, name, imported, hardwareWalletType }) => {
               const isSelected = activePublicKey === publicKey;
-              console.log(imported, hardwareWalletType);
+              const totalValueUsd = accountValue ? accountValue[publicKey] : "";
 
               return (
                 <>
                   <WalletRow
                     accountName={name}
+                    accountValue={totalValueUsd}
+                    isImported={imported}
+                    hardwareWalletType={hardwareWalletType}
                     publicKey={publicKey}
                     isSelected={isSelected}
-                    onClick={(publicKey) => {
-                      onSelectAccount({ publicKey });
-                      close();
+                    onClick={async (publicKey) => {
+                      await dispatch(makeAccountActive(publicKey));
+                      navigateTo(ROUTES.account, navigate);
                     }}
                     setOptionsOpen={setActiveOptionsPublicKey}
                   />
