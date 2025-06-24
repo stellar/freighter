@@ -105,8 +105,10 @@ export const Account = () => {
   const tokenPrices = resolvedData?.tokenPrices || {};
   const balances = resolvedData?.balances.balances!;
   const totalBalanceUsd = getTotalUsd(tokenPrices, balances);
-  const roundedTotlalBalanceUsd =
-    !hasError && isMainnet(resolvedData!.networkDetails)
+  const roundedTotalBalanceUsd =
+    !hasError &&
+    isMainnet(resolvedData!.networkDetails) &&
+    resolvedData?.tokenPrices
       ? `$${formatAmount(roundUsdValue(totalBalanceUsd.toString()))}`
       : "";
 
@@ -121,7 +123,7 @@ export const Account = () => {
         }) => {
           await fetchData(false, updatedValues);
         }}
-        roundedTotlalBalanceUsd={roundedTotlalBalanceUsd}
+        roundedTotalBalanceUsd={roundedTotalBalanceUsd}
         isFunded={!!resolvedData?.balances?.isFunded}
       />
       <View.Content hasNoTopPadding>

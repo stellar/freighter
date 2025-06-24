@@ -109,12 +109,14 @@ interface RenameWalletProps {
   allAccounts: Account[];
   publicKey: string;
   onClose: () => void;
+  onSubmit: () => void;
 }
 
 const RenameWallet = ({
   allAccounts,
   publicKey,
   onClose,
+  onSubmit,
 }: RenameWalletProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
@@ -133,6 +135,7 @@ const RenameWallet = ({
         updateAccountName({ accountName: newAccountName, publicKey }),
       );
       emitMetric(METRIC_NAMES.viewPublicKeyAccountRenamed);
+      onSubmit();
       onClose();
     }
   };
@@ -235,7 +238,11 @@ const WalletRow = ({
   const walletIdentifier = hardwareWalletType || isImported ? "Imported" : "";
   return (
     <div className="WalletRow">
-      <div className="WalletRow__identicon" onClick={() => onClick(publicKey)}>
+      <div
+        className="WalletRow__identicon"
+        onClick={() => onClick(publicKey)}
+        data-testid="wallet-row-select"
+      >
         <div
           className={identiconWrapperStyles}
           style={{ borderColor: borderColor }}
@@ -438,6 +445,7 @@ export const Wallets = () => {
             <RenameWallet
               allAccounts={allAccounts}
               publicKey={isEditingName}
+              onSubmit={fetchData}
               onClose={() => setIsEditingName("")}
             />
           </div>

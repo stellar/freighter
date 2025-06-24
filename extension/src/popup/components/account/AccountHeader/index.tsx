@@ -32,7 +32,7 @@ interface AccountHeaderProps {
     publicKey?: string;
     network?: NetworkDetails;
   }) => Promise<void>;
-  roundedTotlalBalanceUsd: string;
+  roundedTotalBalanceUsd: string;
   isFunded: boolean;
 }
 
@@ -40,7 +40,7 @@ export const AccountHeader = ({
   currentAccountName,
   publicKey,
   onClickRow,
-  roundedTotlalBalanceUsd,
+  roundedTotalBalanceUsd,
   isFunded,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
@@ -275,9 +275,10 @@ export const AccountHeader = ({
               </NavLink>
               <div
                 className="AccountHeader__total-usd-balance"
+                data-testid="account-view-total-balance"
                 key="total-balance"
               >
-                {roundedTotlalBalanceUsd}
+                {roundedTotalBalanceUsd}
               </div>
               <div className="AccountHeader__actions">
                 <NavLink to={ROUTES.addFunds}>
