@@ -5,7 +5,7 @@ test("View Account History", async ({ page, extensionId }) => {
   test.slow();
   await loginAndFund({ page, extensionId });
 
-  await page.getByTestId("BottomNav-link-account-history").click();
+  await page.getByTestId("nav-link-account-history").click();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "account-history.png",
@@ -41,7 +41,7 @@ test("View failed transaction", async ({ page, extensionId }) => {
 
   test.slow();
   await loginAndFund({ page, extensionId });
-  await page.getByTestId("BottomNav-link-account-history").click();
+  await page.getByTestId("nav-link-account-history").click();
   await expect(page.getByTestId("history-item-amount-component")).toHaveText(
     "",
   );
@@ -146,7 +146,7 @@ test("Hide create claimable balance spam", async ({ page, extensionId }) => {
 
   test.slow();
   await loginAndFund({ page, extensionId });
-  await page.getByTestId("BottomNav-link-account-history").click();
+  await page.getByTestId("nav-link-account-history").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("History");
   const historyItems = page.getByTestId("history-item");
   expect(historyItems).toHaveCount(2);

@@ -376,6 +376,7 @@ export const Wallets = () => {
             iconPosition="left"
             icon={<Icon.PlusCircle />}
             onClick={() => setIsAddingWallet(true)}
+            data-testid="add-wallet"
           >
             {t("Add a wallet")}
           </Button>

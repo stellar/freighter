@@ -391,7 +391,8 @@ test("Logout and create new account", async ({ page, extensionId }) => {
   // the test seed phrase should have multiple funded accounts
   expect(originalAccountsCount).not.toBe(1);
 
-  await page.getByTestId("BottomNav-link-settings").click();
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Settings").click();
   await page.getByText("Log Out").click();
 
   await expectPageToHaveScreenshot({
@@ -434,7 +435,8 @@ test("Logout and create new account", async ({ page, extensionId }) => {
   expect(newAccountsCount).toBe(1);
   await newPage.locator(".LoadingBackground--active").click();
 
-  await newPage.getByTestId("BottomNav-link-settings").click();
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Settings").click();
   await newPage.getByText("Log Out").click();
 
   await newPage.locator("#password-input").fill(PASSWORD);
@@ -456,7 +458,8 @@ test("Logout and import new account", async ({ page, extensionId }) => {
   // the test seed phrase should have multiple funded accounts
   expect(originalAccountsCount).not.toBe(1);
 
-  await page.getByTestId("BottomNav-link-settings").click();
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Settings").click();
   await page.getByText("Log Out").click();
 
   await expectPageToHaveScreenshot({
@@ -512,7 +515,8 @@ test("Logout and import new account", async ({ page, extensionId }) => {
   expect(newAccountsCount).toBe(1);
   await newPage.locator(".LoadingBackground--active").click();
 
-  await newPage.getByTestId("BottomNav-link-settings").click();
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Settings").click();
   await newPage.getByText("Log Out").click();
 
   await newPage.locator("#password-input").fill(PASSWORD);

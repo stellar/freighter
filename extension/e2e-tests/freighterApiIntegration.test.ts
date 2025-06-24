@@ -323,7 +323,8 @@ test("should not add token when not allowed", async ({ page, extensionId }) => {
 });
 test("should get public key when logged out", async ({ page, extensionId }) => {
   await loginToTestAccount({ page, extensionId });
-  await page.getByTestId("BottomNav-link-settings").click();
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Settings").click();
   await page.getByText("Log Out").click();
   await expect(page.getByText("Welcome back!")).toBeVisible();
 

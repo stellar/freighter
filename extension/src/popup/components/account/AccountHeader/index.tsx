@@ -281,7 +281,7 @@ export const AccountHeader = ({
                 {roundedTotalBalanceUsd}
               </div>
               <div className="AccountHeader__actions">
-                <NavLink to={ROUTES.addFunds}>
+                <NavLink to={ROUTES.addFunds} data-testid="nav-link-buy">
                   <div className="AccountHeader__actions__column">
                     <div className="AccountHeader__actions__btn">
                       <Icon.Plus />
@@ -291,7 +291,7 @@ export const AccountHeader = ({
                     </Text>
                   </div>
                 </NavLink>
-                <NavLink to={ROUTES.sendPayment}>
+                <NavLink to={ROUTES.sendPayment} data-testid="nav-link-send">
                   <div className="AccountHeader__actions__column">
                     <div className="AccountHeader__actions__btn">
                       <Icon.ArrowUp />
@@ -301,7 +301,7 @@ export const AccountHeader = ({
                     </Text>
                   </div>
                 </NavLink>
-                <NavLink to={ROUTES.swap}>
+                <NavLink to={ROUTES.swap} data-testid="nav-link-swap">
                   <div className="AccountHeader__actions__column">
                     <div className="AccountHeader__actions__btn">
                       <Icon.RefreshCcw05 />
@@ -311,7 +311,10 @@ export const AccountHeader = ({
                     </Text>
                   </div>
                 </NavLink>
-                <NavLink to={ROUTES.accountHistory}>
+                <NavLink
+                  to={ROUTES.accountHistory}
+                  data-testid="nav-link-account-history"
+                >
                   <div className="AccountHeader__actions__column">
                     <div className="AccountHeader__actions__btn">
                       <Icon.ClockRewind />
