@@ -5,6 +5,34 @@
     position: relative;
   }
 
+  &__network-icon {
+    img {
+      width: 40px;
+      height: auto;
+    }
+  }
+
+  &__title {
+    margin-top: pxToRem(10px);
+    color: var(--sds-clr-gray-09);
+  }
+
+  &__price {
+    margin-top: pxToRem(10px);
+    font-size: pxToRem(24px);
+  }
+
+  &__delta {
+    margin-top: pxToRem(4px);
+    &.positive {
+      color: var(--sds-clr-green-09);
+    }
+
+    &.negative {
+      color: var(--sds-clr-gray-11);
+    }
+  }
+
   &__list {
     display: flex;
     flex-direction: column;
@@ -54,10 +82,7 @@
       display: flex;
       font-size: 2rem;
       font-weight: var(--font-weight-medium);
-      justify-content: center;
       line-height: 150%;
-      margin: -0.25rem 0 0.5rem 0;
-      text-align: center;
 
       &--isSuspicious {
         color: var(--color-red-70);

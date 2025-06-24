@@ -110,6 +110,7 @@ export const Account = () => {
         selectedAsset={selectedAsset}
         setSelectedAsset={setSelectedAsset}
         subentryCount={accountData.data.balances.subentryCount}
+        tokenPrices={accountData.data.tokenPrices}
       />
     );
   }

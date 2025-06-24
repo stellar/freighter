@@ -345,11 +345,13 @@ export interface FreighterApiError {
   ext?: string[];
 }
 
+export interface ApiTokenPrice {
+  currentPrice: string;
+  percentagePriceChange24h?: string;
+}
+
 export interface ApiTokenPrices {
-  [key: string]: {
-    currentPrice: string;
-    percentagePriceChange24h?: string;
-  } | null;
+  [key: string]: ApiTokenPrice | null;
 }
 
 export type DiscoverData = {

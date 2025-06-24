@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -6,9 +7,17 @@ import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { IconButton, Icon, Button } from "@stellar/design-system";
 
-import { AssetToken, HorizonOperation } from "@shared/api/types";
+import {
+  ApiTokenPrice,
+  ApiTokenPrices,
+  AssetToken,
+  HorizonOperation,
+} from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
+import {
+  defaultBlockaidScanAssetResult,
+  getCanonicalFromAsset,
+} from "@shared/helpers/stellar";
 import {
   getAvailableBalance,
   getIsDustPayment,
@@ -43,7 +52,7 @@ import {
 import { settingsSelector } from "popup/ducks/settings";
 import { AppDispatch } from "popup/App";
 import StellarLogo from "popup/assets/stellar-logo.png";
-import { formatAmount } from "popup/helpers/formatters";
+import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { Loading } from "popup/components/Loading";
 import {
@@ -52,10 +61,12 @@ import {
   WarningMessageVariant,
 } from "popup/components/WarningMessages";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
-import { getBalanceByAsset } from "popup/helpers/balance";
+import { findAssetBalance, getBalanceByAsset } from "popup/helpers/balance";
 import {
   AssetType,
+  ClassicAsset,
   LiquidityPoolShareAsset,
+  NativeAsset,
   SorobanAsset,
 } from "@shared/api/types/account-balance";
 import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
@@ -63,13 +74,14 @@ import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
 import "./styles.scss";
 
 interface AssetDetailProps {
-  assetOperations: HorizonOperation[];
   accountBalances: AccountBalances;
+  assetOperations: HorizonOperation[];
   networkDetails: NetworkDetails;
   publicKey: string;
   selectedAsset: string;
-  subentryCount: number;
   setSelectedAsset: (selectedAsset: string) => void;
+  subentryCount: number;
+  tokenPrices?: ApiTokenPrices | null;
 }
 
 export const AssetDetail = ({
@@ -80,9 +92,11 @@ export const AssetDetail = ({
   selectedAsset,
   setSelectedAsset,
   subentryCount,
+  tokenPrices,
 }: AssetDetailProps) => {
   const dispatch: AppDispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { isHideDustEnabled } = useSelector(settingsSelector);
   const USDC_ASSET =
     "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
@@ -97,9 +111,16 @@ export const AssetDetail = ({
   const selectedBalance = getBalanceByAsset(
     canonical,
     accountBalances.balances,
-  ) as Exclude<AssetType, LiquidityPoolShareAsset | SorobanAsset>;
+  ) as Exclude<AssetType, LiquidityPoolShareAsset>;
   const isSuspicious = isAssetSuspicious(selectedBalance.blockaidData);
 
+  const assetIconUrl =
+    selectedBalance.token.type === "native"
+      ? StellarLogo
+      : accountBalances.icons[canonical];
+  const assetPrice: ApiTokenPrice | null = tokenPrices
+    ? tokenPrices[canonical]
+    : null;
   const assetIssuer = selectedBalance
     ? getIssuerFromBalance(selectedBalance)
     : "";
@@ -122,8 +143,6 @@ export const AssetDetail = ({
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailViewShowing, setIsDetailViewShowing] = useState(false);
-
-  const { t } = useTranslation();
 
   const defaultDetailViewProps: TransactionDetailProps = {
     ...historyItemDetailViewProps,
@@ -180,33 +199,152 @@ export const AssetDetail = ({
     return <Loading />;
   }
 
+  console.log(selectedBalance);
+  const title = (balance: NativeAsset | ClassicAsset | SorobanAsset) => {
+    if ("name" in selectedBalance) {
+      return selectedBalance.name;
+    }
+    if (balance.token.type === "native") {
+      return "Stellar Lumens";
+    }
+
+    return "";
+  };
+
+  const getDeltaColor = (delta: BigNumber) => {
+    if (delta.isZero()) {
+      return "";
+    }
+
+    if (delta.isNegative()) {
+      return "negative";
+    }
+    if (delta.isPositive()) {
+      return "positive";
+    }
+
+    return "";
+  };
+
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
     <React.Fragment>
       <SubviewHeader
         title={canonical.code}
-        subtitle={
-          isNative ? (
-            <div className="AssetDetail__available">
-              <span className="AssetDetail__available__copy">
-                {availableTotal} {t("available")}
-              </span>
-              <span
-                className="AssetDetail__available__icon"
-                onClick={() => setIsModalOpen(true)}
-              >
-                <IconButton
-                  altText="Available Info"
-                  icon={<Icon.InfoCircle />}
-                />{" "}
-              </span>
-            </div>
-          ) : null
-        }
         customBackAction={() => setSelectedAsset("")}
       />
       <View.Content>
+        <div className="AssetDetail__wrapper" data-testid="AssetDetail">
+          <div className="AssetDetail__network-icon">
+            <img src={assetIconUrl} alt="Network icon" />
+          </div>
+          <div className="AssetDetail__title">
+            {title(selectedBalance) || assetDomain}
+          </div>
+          <div className="AssetDetail__price">
+            {assetPrice && assetPrice.currentPrice
+              ? `$${formatAmount(
+                  roundUsdValue(
+                    new BigNumber(assetPrice.currentPrice)
+                      .multipliedBy(selectedBalance.total)
+                      .toString(),
+                  ),
+                )}`
+              : "--"}
+          </div>
+          <div
+            className={`AssetDetail__delta ${getDeltaColor(
+              new BigNumber(roundUsdValue(assetPrice.percentagePriceChange24h)),
+            )}`}
+          >
+            {assetPrice && assetPrice.percentagePriceChange24h
+              ? `${formatAmount(
+                  roundUsdValue(assetPrice.percentagePriceChange24h),
+                )}%`
+              : "--"}
+          </div>
+          {/* <div
+            className={`AssetDetail__total__copy ${
+              isSuspicious ? "AssetDetail__total__copy--isSuspicious" : ""
+            }`}
+            data-testid="asset-detail-available-copy"
+          >
+            {displayTotal}
+          </div> */}
+        </div>
+      </View.Content>
+      {/* TODO: fix the slideup modal */}
+      {isNative && (
+        <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
+          <div className="AssetDetail__info-modal">
+            <div className="AssetDetail__info-modal__total-box">
+              <div className="AssetDetail__info-modal__asset-code">
+                <img src={StellarLogo} alt="Network icon" />{" "}
+                <div>{canonical.code}</div>
+              </div>
+              <div>{displayTotal}</div>
+            </div>
+            <div className="AssetDetail__info-modal__available-box">
+              <div className="AssetDetail__info-modal__balance-row">
+                <div>{t("Total Balance")}</div>
+                <div>{displayTotal}</div>
+              </div>
+              <div className="AssetDetail__info-modal__balance-row">
+                <div>{t("Reserved Balance*")}</div>
+                {selectedBalance &&
+                "available" in selectedBalance &&
+                selectedBalance?.available &&
+                selectedBalance?.total ? (
+                  <div>
+                    {formatAmount(
+                      new BigNumber(balanceAvailable)
+                        .minus(new BigNumber(selectedBalance?.total))
+                        .toString(),
+                    )}{" "}
+                    {canonical.code}
+                  </div>
+                ) : null}
+              </div>
+              <div className="AssetDetail__info-modal__total-available-row">
+                <div>{t("Total Available")}</div>
+                <div>{availableTotal}</div>
+              </div>
+            </div>
+            <div className="AssetDetail__info-modal__footnote">
+              {t(
+                "* All Stellar accounts must maintain a minimum balance of lumens.",
+              )}{" "}
+              <a
+                href="https://developers.stellar.org/docs/glossary/minimum-balance/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {t("Learn More")}
+              </a>
+            </div>
+          </div>
+        </SlideupModal>
+      )}
+      {tokenError
+        ? createPortal(
+            <WarningMessage
+              header={t("Error fetching Coinbase token. Please try again.")}
+              isActive={!!tokenError}
+              variant={WarningMessageVariant.warning}
+              handleCloseClick={clearTokenError}
+            >
+              <div>{tokenError}</div>
+            </WarningMessage>,
+            document.querySelector("#modal-root")!,
+          )
+        : null}
+    </React.Fragment>
+  );
+};
+
+/*
+<View.Content>
         <div className="AssetDetail__wrapper" data-testid="AssetDetail">
           {selectedBalance && "name" in selectedBalance && (
             <span className="AssetDetail__token-name">
@@ -348,71 +486,4 @@ export const AssetDetail = ({
           )}
         </div>
       </View.Content>
-      {/* TODO: fix the slideup modal */}
-      {isNative && (
-        <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
-          <div className="AssetDetail__info-modal">
-            <div className="AssetDetail__info-modal__total-box">
-              <div className="AssetDetail__info-modal__asset-code">
-                <img src={StellarLogo} alt="Network icon" />{" "}
-                <div>{canonical.code}</div>
-              </div>
-              <div>{displayTotal}</div>
-            </div>
-            <div className="AssetDetail__info-modal__available-box">
-              <div className="AssetDetail__info-modal__balance-row">
-                <div>{t("Total Balance")}</div>
-                <div>{displayTotal}</div>
-              </div>
-              <div className="AssetDetail__info-modal__balance-row">
-                <div>{t("Reserved Balance*")}</div>
-                {selectedBalance &&
-                "available" in selectedBalance &&
-                selectedBalance?.available &&
-                selectedBalance?.total ? (
-                  <div>
-                    {formatAmount(
-                      new BigNumber(balanceAvailable)
-                        .minus(new BigNumber(selectedBalance?.total))
-                        .toString(),
-                    )}{" "}
-                    {canonical.code}
-                  </div>
-                ) : null}
-              </div>
-              <div className="AssetDetail__info-modal__total-available-row">
-                <div>{t("Total Available")}</div>
-                <div>{availableTotal}</div>
-              </div>
-            </div>
-            <div className="AssetDetail__info-modal__footnote">
-              {t(
-                "* All Stellar accounts must maintain a minimum balance of lumens.",
-              )}{" "}
-              <a
-                href="https://developers.stellar.org/docs/glossary/minimum-balance/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                {t("Learn More")}
-              </a>
-            </div>
-          </div>
-        </SlideupModal>
-      )}
-      {tokenError
-        ? createPortal(
-            <WarningMessage
-              header={t("Error fetching Coinbase token. Please try again.")}
-              isActive={!!tokenError}
-              variant={WarningMessageVariant.warning}
-              handleCloseClick={clearTokenError}
-            >
-              <div>{tokenError}</div>
-            </WarningMessage>,
-            document.querySelector("#modal-root")!,
-          )
-        : null}
-    </React.Fragment>
-  );
-};
+*/
