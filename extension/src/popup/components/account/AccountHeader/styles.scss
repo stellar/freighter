@@ -103,6 +103,7 @@
   &__account-name {
     color: var(--sds-clr-gray-11);
     font-weight: var(--font-weight-medium);
+    margin: 0 pxToRem(4px);
   }
 
   &__account-dropdown-modal {

@@ -271,6 +271,7 @@ export const AccountHeader = ({
                   >
                     {currentAccountName}
                   </div>
+                  <Icon.ChevronDown />
                 </div>
               </NavLink>
               <div
