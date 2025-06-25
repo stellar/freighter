@@ -246,32 +246,77 @@ export const AssetDetail = ({
             {assetPrice && assetPrice.currentPrice
               ? `$${formatAmount(
                   roundUsdValue(
-                    new BigNumber(assetPrice.currentPrice)
-                      .multipliedBy(selectedBalance.total)
-                      .toString(),
+                    new BigNumber(assetPrice.currentPrice).toString(),
                   ),
                 )}`
-              : "--"}
+              : null}
           </div>
-          <div
-            className={`AssetDetail__delta ${getDeltaColor(
-              new BigNumber(roundUsdValue(assetPrice.percentagePriceChange24h)),
-            )}`}
-          >
-            {assetPrice && assetPrice.percentagePriceChange24h
-              ? `${formatAmount(
+          {assetPrice && assetPrice.percentagePriceChange24h ? (
+            <div
+              className={`AssetDetail__delta ${getDeltaColor(
+                new BigNumber(
                   roundUsdValue(assetPrice.percentagePriceChange24h),
-                )}%`
-              : "--"}
+                ),
+              )}`}
+            >
+              {formatAmount(roundUsdValue(assetPrice.percentagePriceChange24h))}
+              %
+            </div>
+          ) : null}
+          <div className="AssetDetail__balance-info">
+            <div
+              className="AssetDetail__balance"
+              data-testid="asset-detail-available-copy"
+            >
+              <div className="AssetDetail__balance-label">Balance</div>
+              <div>{displayTotal}</div>
+            </div>
+            <div className="AssetDetail__balance-value">
+              <div className="AssetDetail__balance-label">Value</div>
+              <div>
+                {assetPrice && assetPrice.currentPrice
+                  ? `$${formatAmount(
+                      roundUsdValue(
+                        new BigNumber(assetPrice.currentPrice)
+                          .multipliedBy(selectedBalance.total)
+                          .toString(),
+                      ),
+                    )}`
+                  : "--"}
+              </div>
+            </div>
           </div>
-          {/* <div
-            className={`AssetDetail__total__copy ${
-              isSuspicious ? "AssetDetail__total__copy--isSuspicious" : ""
-            }`}
-            data-testid="asset-detail-available-copy"
-          >
-            {displayTotal}
-          </div> */}
+          {sortedAssetOperations.length ? (
+            <div className="AssetDetail__list" data-testid="AssetDetail__list">
+              <>
+                {sortedAssetOperations.map((operation) => {
+                  const historyItemOperation = {
+                    ...operation,
+                    isPayment: getIsPayment(operation.type),
+                    isSwap: getIsSwap(operation),
+                  } as any; // TODO: isPayment/isSwap overload op type
+                  return (
+                    <HistoryItem
+                      key={operation.id}
+                      accountBalances={accountBalances}
+                      operation={historyItemOperation}
+                      publicKey={publicKey}
+                      networkDetails={networkDetails}
+                      setDetailViewProps={setDetailViewProps}
+                      setIsDetailViewShowing={setIsDetailViewShowing}
+                    />
+                  );
+                })}
+              </>
+            </div>
+          ) : (
+            <div
+              className="AssetDetail__empty"
+              data-testid="AssetDetail__empty"
+            >
+              {t("No transactions to show")}
+            </div>
+          )}
         </div>
       </View.Content>
       {/* TODO: fix the slideup modal */}
