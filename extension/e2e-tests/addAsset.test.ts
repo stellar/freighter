@@ -7,7 +7,7 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await loginToTestAccount({ page, extensionId });
 
   await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Manage Assets").click({ force: true });
+  await page.getByText("Manage assets").click({ force: true });
   await expect(page.getByText("Your assets")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
@@ -75,7 +75,8 @@ test("Adding token on Futurenet", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
-  await page.getByTestId("BottomNav-link-settings").click();
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Settings").click();
   await page.getByText("Security").click();
   await page.getByText("Advanced Settings").click();
   await page.getByText("I understand, continue").click();
@@ -83,14 +84,13 @@ test("Adding token on Futurenet", async ({ page, extensionId }) => {
   await expect(page.locator("#isExperimentalModeEnabledValue")).toBeChecked();
   await page.getByTestId("BackButton").click();
   await page.getByTestId("BackButton").click();
-  await page.getByTestId("BottomNav-link-account").click();
-  await expect(page.getByTestId("network-selector-open")).toBeVisible();
-  await page.getByTestId("network-selector-open").click();
-  await expect(page.getByText("Future Net")).toBeVisible();
-  await page.getByTestId("LoadingBackground").click();
+  await page.getByTestId("BackButton").click();
 
+  await expect(page.getByTestId("account-options-dropdown")).toBeVisible();
   await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Manage Assets").click({ force: true });
+
+  await expect(page.getByText("Manage assets")).toBeVisible();
+  await page.getByText("Manage assets").click({ force: true });
 
   await expect(page.getByText("Your assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });
@@ -107,7 +107,7 @@ test.afterAll(async ({ page, extensionId }) => {
     await loginToTestAccount({ page, extensionId });
 
     await page.getByTestId("account-options-dropdown").click();
-    await page.getByText("Manage Assets").click({ force: true });
+    await page.getByText("Manage assets").click({ force: true });
 
     await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
     await page.getByText("Remove asset").click();

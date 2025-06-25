@@ -41,8 +41,7 @@ test("should show Buy with Coinbase and open Coinbase", async ({
     timeout: 30000,
   });
   const popupPromise = page.context().waitForEvent("page");
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Add Funds").click();
+  await page.getByTestId("nav-link-buy").click();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "buy-with-coinbase.png",
@@ -68,7 +67,7 @@ test("should show Buy button on XLM Asset Detail", async ({
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
-  await page.getByTestId("AccountHeader__icon-btn").click();
+  await page.getByTestId("account-view-account-name").click();
   await page.getByText("Account 2").click();
   const popupPromise = page.context().waitForEvent("page");
   await page.getByTestId("AccountAssets__asset--loading-XLM").click();
