@@ -11,6 +11,7 @@ import {
 import { NetworkDetails } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import {
+  displaySorobanId,
   getAvailableBalance,
   getIsDustPayment,
   getIsPayment,
@@ -41,6 +42,7 @@ import { Loading } from "popup/components/Loading";
 import { BlockaidAssetWarning } from "popup/components/WarningMessages";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getBalanceByAsset, getPriceDeltaColor } from "popup/helpers/balance";
+import { CopyValue } from "popup/components/CopyValue";
 import {
   AssetType,
   ClassicAsset,
@@ -151,11 +153,11 @@ export const AssetDetail = ({
   }
 
   const title = (balance: NativeAsset | ClassicAsset | SorobanAsset) => {
-    if ("name" in selectedBalance) {
-      return selectedBalance.name;
-    }
     if ("type" in balance.token && balance.token.type === "native") {
       return "Stellar Lumens";
+    }
+    if ("symbol" in balance) {
+      return balance.symbol;
     }
 
     return "";
@@ -172,11 +174,21 @@ export const AssetDetail = ({
       <View.Content>
         <div className="AssetDetail__wrapper" data-testid="AssetDetail">
           <div className="AssetDetail__network-icon">
-            <img src={assetIconUrl} alt="Network icon" />
+            {assetIconUrl ? (
+              <img src={assetIconUrl} alt="Network icon" />
+            ) : null}
           </div>
           <div className="AssetDetail__title">
             {title(selectedBalance) || assetDomain}
           </div>
+          {"contractId" in selectedBalance ? (
+            <div className="AssetDetail__subtitle">
+              <CopyValue
+                value={selectedBalance.contractId}
+                displayValue={displaySorobanId(selectedBalance.contractId, 28)}
+              />
+            </div>
+          ) : null}
           <div className="AssetDetail__price">
             {assetPrice && assetPrice.currentPrice
               ? `$${formatAmount(

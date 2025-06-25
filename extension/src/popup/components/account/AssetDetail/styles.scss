@@ -40,6 +40,11 @@
     color: var(--sds-clr-gray-09);
   }
 
+  &__subtitle {
+    margin-top: pxToRem(12px);
+    font-size: pxToRem(12px);
+  }
+
   &__price {
     margin-top: pxToRem(10px);
     font-size: pxToRem(24px);
