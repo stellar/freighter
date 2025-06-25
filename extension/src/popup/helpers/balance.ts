@@ -1,5 +1,6 @@
 import { Asset, Networks } from "stellar-sdk";
 import { captureException } from "@sentry/browser";
+import BigNumber from "bignumber.js";
 
 import { getCanonicalFromAsset, isAsset } from "helpers/stellar";
 import { AssetToken } from "@shared/api/types";
@@ -157,4 +158,19 @@ export const findAddressBalance = (
         : "";
     return balanceIssuer === address;
   });
+};
+
+export const getPriceDeltaColor = (delta: BigNumber) => {
+  if (delta.isZero()) {
+    return "";
+  }
+
+  if (delta.isNegative()) {
+    return "negative";
+  }
+  if (delta.isPositive()) {
+    return "positive";
+  }
+
+  return "";
 };

@@ -40,7 +40,7 @@ import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { Loading } from "popup/components/Loading";
 import { BlockaidAssetWarning } from "popup/components/WarningMessages";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
-import { getBalanceByAsset } from "popup/helpers/balance";
+import { getBalanceByAsset, getPriceDeltaColor } from "popup/helpers/balance";
 import {
   AssetType,
   ClassicAsset,
@@ -161,21 +161,6 @@ export const AssetDetail = ({
     return "";
   };
 
-  const getDeltaColor = (delta: BigNumber) => {
-    if (delta.isZero()) {
-      return "";
-    }
-
-    if (delta.isNegative()) {
-      return "negative";
-    }
-    if (delta.isPositive()) {
-      return "positive";
-    }
-
-    return "";
-  };
-
   return isDetailViewShowing ? (
     <TransactionDetail {...detailViewProps} />
   ) : (
@@ -203,7 +188,7 @@ export const AssetDetail = ({
           </div>
           {assetPrice && assetPrice.percentagePriceChange24h ? (
             <div
-              className={`AssetDetail__delta ${getDeltaColor(
+              className={`AssetDetail__delta ${getPriceDeltaColor(
                 new BigNumber(
                   roundUsdValue(assetPrice.percentagePriceChange24h),
                 ),
