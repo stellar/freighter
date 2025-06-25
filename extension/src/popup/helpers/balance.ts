@@ -164,6 +164,20 @@ export const findAddressBalance = (
   });
 };
 
+export const getPriceDeltaColor = (delta: BigNumber) => {
+  if (delta.isZero()) {
+    return "";
+  }
+
+  if (delta.isNegative()) {
+    return "negative";
+  }
+  if (delta.isPositive()) {
+    return "positive";
+  }
+  return "";
+};
+
 export const getTotalUsd = (prices: ApiTokenPrices, balances: AssetType[]) => {
   return Object.keys(prices).reduce((prev, curr) => {
     const asset = getAssetFromCanonical(curr);
