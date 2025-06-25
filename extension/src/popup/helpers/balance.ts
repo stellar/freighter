@@ -2,8 +2,12 @@ import { Asset, Networks } from "stellar-sdk";
 import { captureException } from "@sentry/browser";
 import BigNumber from "bignumber.js";
 
-import { getCanonicalFromAsset, isAsset } from "helpers/stellar";
-import { AssetToken } from "@shared/api/types";
+import {
+  getAssetFromCanonical,
+  getCanonicalFromAsset,
+  isAsset,
+} from "helpers/stellar";
+import { ApiTokenPrices, AssetToken } from "@shared/api/types";
 import {
   AssetType,
   ClassicAsset,
@@ -171,6 +175,21 @@ export const getPriceDeltaColor = (delta: BigNumber) => {
   if (delta.isPositive()) {
     return "positive";
   }
-
   return "";
+};
+
+export const getTotalUsd = (prices: ApiTokenPrices, balances: AssetType[]) => {
+  return Object.keys(prices).reduce((prev, curr) => {
+    const asset = getAssetFromCanonical(curr);
+    const priceBalance = getBalanceByAsset(asset, balances);
+    if (!priceBalance) {
+      return prev;
+    }
+    const currentAssetBalance = priceBalance.total;
+    const currentPrice = prices[curr] ? prices[curr].currentPrice : "0";
+    const currentUsdBalance = new BigNumber(currentPrice).multipliedBy(
+      currentAssetBalance,
+    );
+    return currentUsdBalance.plus(prev);
+  }, new BigNumber(0));
 };

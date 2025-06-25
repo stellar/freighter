@@ -7,7 +7,8 @@ test("Login shows error state on bad password", async ({
 }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
-  await page.getByTestId("BottomNav-link-settings").click();
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Settings").click();
   await page.getByText("Log Out").click();
   await expect(page.getByText("Welcome back!")).toBeVisible();
   await page.locator("#password-input").fill("wrong");

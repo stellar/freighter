@@ -22,7 +22,7 @@
     "@shared/api": "1.0.0",
     "@shared/constants": "1.0.0",
     "@shared/helpers": "1.0.0",
-    "@stellar/design-system": "3.0.0",
+    "@stellar/design-system": "3.1.1",
     "@stellar/typescript-wallet-sdk-km": "1.9.0",
     "@testing-library/react": "16.3.0",
     "@testing-library/user-event": "14.6.1",
