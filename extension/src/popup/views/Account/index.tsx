@@ -39,7 +39,11 @@ export const Account = () => {
   const currentAccountName = useSelector(accountNameSelector);
   const [selectedAsset, setSelectedAsset] = useState("");
   const isFullscreenModeEnabled = isFullscreenMode();
-  const { state: accountData, fetchData } = useGetAccountData({
+  const {
+    state: accountData,
+    fetchData,
+    refreshAppData,
+  } = useGetAccountData({
     showHidden: false,
     includeIcons: true,
   });
@@ -113,11 +117,17 @@ export const Account = () => {
       ? `$${formatAmount(roundUsdValue(totalBalanceUsd.toString()))}`
       : "";
 
+  const activeAllowList =
+    resolvedData?.allowList[resolvedData?.networkDetails.networkName][
+      resolvedData?.publicKey
+    ] || [];
   return (
     <>
       <AccountHeader
+        allowList={activeAllowList}
         currentAccountName={currentAccountName}
         publicKey={resolvedData?.publicKey || ""}
+        onAllowListRemove={refreshAppData}
         onClickRow={async (updatedValues: {
           publicKey?: string;
           network?: NetworkDetails;
