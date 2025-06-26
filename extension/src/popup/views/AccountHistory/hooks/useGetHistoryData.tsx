@@ -18,6 +18,7 @@ import {
 } from "helpers/hooks/useGetAppData";
 import { isMainnet } from "helpers/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { HorizonOperation } from "@shared/api/types";
 
 export type HistorySection = {
   monthYear: string; // in format {month}:{year}
@@ -26,14 +27,11 @@ export type HistorySection = {
 
 const createHistorySections = (
   publicKey: string,
-  operations: Horizon.ServerApi.OperationRecord[],
+  operations: HorizonOperation[],
   isHideDustEnabled: boolean,
 ) =>
   operations.reduce(
-    (
-      sections: HistorySection[],
-      operation: Horizon.ServerApi.OperationRecord,
-    ) => {
+    (sections: HistorySection[], operation: HorizonOperation) => {
       const isPayment = getIsPayment(operation.type);
       const isSwap = getIsSwap(operation);
       const isCreateExternalAccount =

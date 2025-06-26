@@ -45,8 +45,6 @@ export const TransactionDetail = ({
   externalUrl,
   setIsDetailViewShowing,
 }: Omit<TransactionDetailProps, "isCreateExternalAccount">) => {
-  // TODO: Why does transaction_attr not exist on Horizon types?
-  const _op = operation as any;
   const {
     asset_code: assetCode,
     asset_issuer: assetIssuer,
@@ -56,7 +54,7 @@ export const TransactionDetail = ({
     to_muxed,
     created_at: createdAt,
     transaction_attr: { fee_charged: feeCharged, memo },
-  } = _op;
+  } = operation;
   const createdAtDateInstance = new Date(Date.parse(createdAt as string));
   const createdAtLocalStrArr = createdAtDateInstance
     .toLocaleString()
@@ -107,7 +105,7 @@ export const TransactionDetail = ({
               {operationText}
               <AssetNetworkInfo
                 assetCode={assetCode || ""}
-                assetType={assetType}
+                assetType={assetType || ""}
                 assetIssuer={assetIssuer || ""}
                 assetDomain={assetDomain}
               />
@@ -118,7 +116,7 @@ export const TransactionDetail = ({
             <div className="TransactionDetail__info__row">
               {isPayment && !isSwap ? (
                 <>
-                  {isRecipient ? (
+                  {isRecipient && from ? (
                     <>
                       <div>{t("From")}</div>
                       <div className="InfoRow__right">
@@ -132,10 +130,12 @@ export const TransactionDetail = ({
                     <>
                       <div>{t("To")}</div>
                       <div className="InfoRow__right">
-                        <KeyIdenticon
-                          publicKey={to_muxed || to}
-                          customSize={identiconDimensions}
-                        />
+                        {to_muxed || to ? (
+                          <KeyIdenticon
+                            publicKey={(to_muxed || to)!}
+                            customSize={identiconDimensions}
+                          />
+                        ) : null}
                       </div>
                     </>
                   )}

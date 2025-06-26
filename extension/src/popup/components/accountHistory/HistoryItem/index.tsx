@@ -119,8 +119,6 @@ export const HistoryItem = ({
   setIsDetailViewShowing,
 }: HistoryItemProps) => {
   const { t } = useTranslation();
-  // Why does Horizon type not include transaction_attr?
-  const _op = operation as any;
   const {
     account,
     amount,
@@ -138,7 +136,7 @@ export const HistoryItem = ({
     isPayment = false,
     isSwap = false,
     transaction_successful: transactionSuccessful,
-  } = _op;
+  } = operation;
   let sourceAssetCode;
   let sourceAssetIssuer: string;
   if ("source_asset_code" in operation) {
@@ -164,7 +162,7 @@ export const HistoryItem = ({
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
   const transactionDetailPropsBase: TransactionDetailProps = {
-    operation: _op,
+    operation,
     isCreateExternalAccount,
     isRecipient: false,
     isPayment,
@@ -295,23 +293,23 @@ export const HistoryItem = ({
           </>,
         );
         setRowText(
-          _op.limit === "0.0000000"
+          operation.limit === "0.0000000"
             ? translations("Remove trustline")
             : translations("Add trustline"),
         );
-        setAction(_op.limit === "0.0000000" ? "Removed" : "Added");
+        setAction(operation.limit === "0.0000000" ? "Removed" : "Added");
         setTxDetails((_state) => ({
           ..._state,
           headerTitle:
-            _op.limit === "0.0000000"
+            operation.limit === "0.0000000"
               ? translations("Remove trustline")
               : translations("Add trustline"),
           operationText: operationString,
         }));
-        setActionIcon(_op.limit === "0.0000000" ? "remove" : "add");
+        setActionIcon(operation.limit === "0.0000000" ? "remove" : "add");
       } else if (isSwap) {
         const formattedAmount = `${formatAmount(
-          new BigNumber(amount).toString(),
+          new BigNumber(amount!).toString(),
         )} ${destAssetCode}`;
         setAmountComponent(
           <div className="HistoryItem__action-detail credit">
@@ -389,7 +387,7 @@ export const HistoryItem = ({
         const _isRecipient = to === publicKey && from !== publicKey;
         const paymentDifference = _isRecipient ? "+" : "-";
         const formattedAmount = `${paymentDifference}${formatAmount(
-          new BigNumber(amount).toString(),
+          new BigNumber(amount!).toString(),
         )} ${destAssetCode}`;
         setAmountComponent(
           <div

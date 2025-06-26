@@ -154,6 +154,7 @@
   }
 
   &__action-detail {
+    font-size: pxToRem(14px);
     &.credit {
       color: var(--sds-clr-green-11);
     }

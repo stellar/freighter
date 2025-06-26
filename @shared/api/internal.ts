@@ -54,6 +54,7 @@ import {
   IssuerKey,
   AssetVisibility,
   ApiTokenPrices,
+  HorizonOperation,
 } from "./types";
 import {
   AccountBalancesInterface,
@@ -814,10 +815,10 @@ export const getAccountHistoryStandalone = async ({
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
-}): Promise<Horizon.ServerApi.OperationRecord[]> => {
+}): Promise<HorizonOperation[]> => {
   const { networkUrl, networkPassphrase } = networkDetails;
 
-  let operations = [] as Horizon.ServerApi.OperationRecord[];
+  let operations = [] as HorizonOperation[];
 
   try {
     const server = stellarSdkServer(networkUrl, networkPassphrase);
@@ -831,7 +832,7 @@ export const getAccountHistoryStandalone = async ({
       .includeFailed(true)
       .call();
 
-    operations = operationsData.records || [];
+    operations = (operationsData.records as HorizonOperation[]) || [];
   } catch (e) {
     console.error(e);
   }
@@ -845,7 +846,7 @@ export const getIndexerAccountHistory = async ({
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
-}): Promise<Horizon.ServerApi.OperationRecord[]> => {
+}): Promise<HorizonOperation[]> => {
   try {
     const url = new URL(
       `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}&is_failed_included=true`,

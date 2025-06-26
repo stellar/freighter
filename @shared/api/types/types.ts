@@ -307,7 +307,24 @@ export interface SorobanBalance {
 
 export type TokenBalances = SorobanBalance[];
 
-export type HorizonOperation = Horizon.ServerApi.OperationRecord;
+export type HorizonOperation = Horizon.ServerApi.OperationRecord & {
+  account: string;
+  amount?: string;
+  starting_balance?: string;
+  asset_code?: string;
+  asset_issuer?: string;
+  asset_type?: string;
+  transaction_attr: Horizon.ServerApi.TransactionRecord & {
+    contractId?: string;
+    fnName: string;
+    args: {
+      [key: string]: any;
+    };
+  };
+  to_muxed?: string;
+  to?: string;
+  from?: string;
+};
 
 export interface AccountHistoryInterface {
   operations: Array<HorizonOperation> | [];
