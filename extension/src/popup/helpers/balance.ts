@@ -166,7 +166,7 @@ export const findAddressBalance = (
 
 export const getPriceDeltaColor = (delta: BigNumber) => {
   if (delta.isZero()) {
-    return "";
+    return "negative";
   }
 
   if (delta.isNegative()) {
