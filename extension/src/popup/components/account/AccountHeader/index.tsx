@@ -287,7 +287,7 @@ export const AccountHeader = ({
                     <div className="AccountHeader__actions__btn">
                       <Icon.Plus />
                     </div>
-                    <Text as="div" size="xs" weight="medium">
+                    <Text as="div" size="sm" weight="medium">
                       {t("Buy")}
                     </Text>
                   </div>
@@ -297,7 +297,7 @@ export const AccountHeader = ({
                     <div className="AccountHeader__actions__btn">
                       <Icon.ArrowUp />
                     </div>
-                    <Text as="div" size="xs" weight="medium">
+                    <Text as="div" size="sm" weight="medium">
                       {t("Send")}
                     </Text>
                   </div>
@@ -307,7 +307,7 @@ export const AccountHeader = ({
                     <div className="AccountHeader__actions__btn">
                       <Icon.RefreshCcw05 />
                     </div>
-                    <Text as="div" size="xs" weight="medium">
+                    <Text as="div" size="sm" weight="medium">
                       {t("Swap")}
                     </Text>
                   </div>
@@ -320,7 +320,7 @@ export const AccountHeader = ({
                     <div className="AccountHeader__actions__btn">
                       <Icon.ClockRewind />
                     </div>
-                    <Text as="div" size="xs" weight="medium">
+                    <Text as="div" size="sm" weight="medium">
                       {t("History")}
                     </Text>
                   </div>
