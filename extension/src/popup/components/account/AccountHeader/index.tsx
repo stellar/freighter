@@ -242,6 +242,7 @@ export const AccountHeader = ({
                           <button
                             className="allow-list-remove"
                             onClick={async () => {
+                              setIsNetworkSelectorOpen(false);
                               await dispatch(
                                 saveAllowList({
                                   domain: allowedDomain,
