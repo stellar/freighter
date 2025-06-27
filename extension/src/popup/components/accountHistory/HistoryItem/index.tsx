@@ -95,6 +95,7 @@ export const historyItemDetailViewProps: TransactionDetailProps = {
   operationText: "",
   transactionSuccessful: false,
   txHash: "",
+  icon: <Icon.User01 />,
 };
 
 export type HistoryItemOperation = HorizonOperation & {
@@ -176,6 +177,7 @@ export const HistoryItem = ({
     operationText: "",
     transactionSuccessful,
     txHash,
+    icon: <Icon.User01 />,
   };
 
   const [txDetails, setTxDetails] = useState(transactionDetailPropsBase);
@@ -279,9 +281,6 @@ export const HistoryItem = ({
           code: destAssetCode || "",
           networkDetails,
         });
-        setAmountComponent(
-          <div className="HistoryItem__action-detail debit">--</div>,
-        );
         setIconComponent(
           <>
             {destIcon && (
@@ -449,9 +448,6 @@ export const HistoryItem = ({
             operationText: operationString,
           }));
           setActionIcon(() => "contractInteraction");
-          setAmountComponent(
-            <div className="HistoryItem__action-detail debit">--</div>,
-          );
         } else if (attrs.fnName === SorobanTokenInterface.mint) {
           setActionIcon(() => "contractInteraction");
           const assetBalance = getBalanceByKey(
@@ -706,9 +702,6 @@ export const HistoryItem = ({
             operationText: operationString,
           }));
           setActionIcon(() => "contractInteraction");
-          setAmountComponent(
-            <div className="HistoryItem__action-detail debit">--</div>,
-          );
         }
       } else {
         setRowText(operationString);
@@ -718,9 +711,6 @@ export const HistoryItem = ({
           operationText: operationString,
         }));
         setActionIcon(() => "genericAction");
-        setAmountComponent(
-          <div className="HistoryItem__action-detail debit">--</div>,
-        );
       }
 
       if (transactionSuccessful === false) {
@@ -737,9 +727,6 @@ export const HistoryItem = ({
           ..._state,
           headerTitle: translations("Transaction failed"),
         }));
-        setAmountComponent(
-          <div className="HistoryItem__action-detail debit">--</div>,
-        );
       }
       setIsLoading(false);
     };

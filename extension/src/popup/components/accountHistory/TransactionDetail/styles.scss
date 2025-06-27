@@ -66,3 +66,22 @@
     }
   }
 }
+
+.TransactionDetailModal {
+  height: 200px;
+  width: 100%;
+
+  padding: pxToRem(12px) pxToRem(16px);
+
+  &__title-row {
+    display: flex;
+  }
+
+  &__icon {
+    flex: 1;
+  }
+
+  &__title {
+    flex: 8;
+  }
+}

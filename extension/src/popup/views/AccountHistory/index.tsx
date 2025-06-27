@@ -1,7 +1,8 @@
-import { Text } from "@stellar/design-system";
 import React, { useEffect, useState } from "react";
+import { Navigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+import { Text } from "@stellar/design-system";
 
 import {
   settingsNetworkDetailsSelector,
@@ -15,7 +16,8 @@ import {
   HistoryItemOperation,
 } from "popup/components/accountHistory/HistoryItem";
 import {
-  TransactionDetail,
+  // TransactionDetail,
+  TransactionDetail2,
   TransactionDetailProps,
 } from "popup/components/accountHistory/TransactionDetail";
 import { Loading } from "popup/components/Loading";
@@ -24,11 +26,10 @@ import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
-import { Navigate, useLocation } from "react-router-dom";
+import { reRouteOnboarding } from "popup/helpers/route";
 import { useGetHistoryData } from "./hooks/useGetHistoryData";
 
 import "./styles.scss";
-import { reRouteOnboarding } from "popup/helpers/route";
 
 export const AccountHistory = () => {
   const { t } = useTranslation();
@@ -66,10 +67,6 @@ export const AccountHistory = () => {
   const isLoaderShowing =
     historyState.state === RequestState.IDLE ||
     historyState.state === RequestState.LOADING;
-
-  if (isDetailViewShowing) {
-    return <TransactionDetail {...detailViewProps} />;
-  }
 
   if (isLoaderShowing) {
     return <Loading />;
@@ -137,6 +134,13 @@ export const AccountHistory = () => {
           ) : null}
         </div>
       </View.Content>
+      <TransactionDetail2
+        icon={detailViewProps.icon}
+        operationText={detailViewProps.headerTitle}
+        isModalOpen={isDetailViewShowing}
+        setIsModalOpen={setIsDetailViewShowing}
+      />
+      ;
     </>
   );
 };

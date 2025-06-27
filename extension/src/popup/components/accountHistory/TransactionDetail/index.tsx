@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Button, CopyText, Icon } from "@stellar/design-system";
@@ -15,6 +15,7 @@ import { stroopToXlm } from "helpers/stellar";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { useScanAsset } from "popup/helpers/blockaid";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { SlideupModal } from "popup/components/SlideupModal";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -35,6 +36,7 @@ export interface TransactionDetailProps {
   operationText: string;
   transactionSuccessful: boolean;
   txHash: string;
+  icon: ReactNode;
 }
 
 export const TransactionDetail = ({
@@ -202,5 +204,36 @@ export const TransactionDetail = ({
         ) : null}
       </View.Footer>
     </React.Fragment>
+  );
+};
+
+export const TransactionDetail2 = ({
+  // externalUrl,
+  // isPayment,
+  // isRecipient,
+  // isSwap,
+  // onBack,
+  // operation,
+  operationText,
+  icon,
+  // transactionSuccessful,
+  // txHash,
+  isModalOpen,
+  setIsModalOpen,
+}: {
+  operationText: string;
+  icon: ReactNode;
+  isModalOpen: boolean;
+  setIsModalOpen: (isOpen: boolean) => void;
+}) => {
+  return (
+    <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
+      <div className="TransactionDetailModal">
+        <div className="TransactionDetailModal__title-row">
+          <div className="TransactionDetailModal__icon">{icon}</div>
+          <div className="TransactionDetailModal__title">{operationText}</div>
+        </div>
+      </div>
+    </SlideupModal>
   );
 };
