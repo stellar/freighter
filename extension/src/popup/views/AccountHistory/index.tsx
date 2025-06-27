@@ -49,7 +49,7 @@ export const AccountHistory = () => {
 
   const defaultDetailViewProps: TransactionDetailProps = {
     ...historyItemDetailViewProps,
-    setIsDetailViewShowing,
+    onBack: () => setIsDetailViewShowing(false),
   };
   const [detailViewProps, setDetailViewProps] = useState(
     defaultDetailViewProps,

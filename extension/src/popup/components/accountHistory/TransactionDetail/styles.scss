@@ -29,24 +29,38 @@
     flex-direction: column;
     gap: 0.75rem;
     height: 9.75rem;
-    padding-top: 1.5rem;
 
     &__row {
       color: rgba(255, 255, 255, 0.6);
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
+      margin-bottom: 0.75rem;
 
       div:nth-child(2) {
-        color: var(--color-white);
+        color: var(--sds-clr-white);
+        word-break: break-all;
       }
 
       &:empty {
         display: none;
       }
 
-      .InfoRow {
-        &__right {
-          width: 50%;
+      div.InfoRow {
+        &__title {
+          display: flex;
+          align-items: center;
+          color: var(--sds-clr-gray-11);
+          margin-bottom: 0.25rem;
+
+          svg {
+            margin-left: 0.35rem;
+          }
+        }
+        &__success {
+          color: var(--sds-clr-green-11);
+        }
+        &__failed {
+          color: var(--sds-clr-red-11);
         }
       }
     }

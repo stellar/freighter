@@ -84,15 +84,17 @@ function capitalize(str: string) {
 }
 
 export const historyItemDetailViewProps: TransactionDetailProps = {
-  operation: {} as HorizonOperation,
+  externalUrl: "",
   headerTitle: "",
   isCreateExternalAccount: false,
   isPayment: false,
   isRecipient: false,
   isSwap: false,
+  onBack: () => null,
+  operation: {} as HorizonOperation,
   operationText: "",
-  externalUrl: "",
-  setIsDetailViewShowing: () => null,
+  transactionSuccessful: false,
+  txHash: "",
 };
 
 export type HistoryItemOperation = HorizonOperation & {
@@ -136,6 +138,7 @@ export const HistoryItem = ({
     isPayment = false,
     isSwap = false,
     transaction_successful: transactionSuccessful,
+    transaction_hash: txHash,
   } = operation;
   let sourceAssetCode;
   let sourceAssetIssuer: string;
@@ -162,15 +165,17 @@ export const HistoryItem = ({
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
   const transactionDetailPropsBase: TransactionDetailProps = {
-    operation,
-    isCreateExternalAccount,
-    isRecipient: false,
-    isPayment,
-    isSwap,
-    headerTitle: "",
-    operationText: "",
     externalUrl: `${stellarExpertUrl}/op/${id}`,
-    setIsDetailViewShowing,
+    headerTitle: "",
+    isCreateExternalAccount,
+    isPayment,
+    isRecipient: false,
+    isSwap,
+    onBack: () => setIsDetailViewShowing(false),
+    operation,
+    operationText: "",
+    transactionSuccessful,
+    txHash,
   };
 
   const [txDetails, setTxDetails] = useState(transactionDetailPropsBase);

@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Button } from "@stellar/design-system";
+import { Button, CopyText, Icon } from "@stellar/design-system";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -24,26 +24,29 @@ import { isCustomNetwork } from "@shared/helpers/stellar";
 import "./styles.scss";
 
 export interface TransactionDetailProps {
-  operation: HorizonOperation;
+  externalUrl: string;
   headerTitle: string;
   isCreateExternalAccount: boolean;
-  isRecipient: boolean;
   isPayment: boolean;
+  isRecipient: boolean;
   isSwap: boolean;
+  onBack: () => void;
+  operation: HorizonOperation;
   operationText: string;
-  externalUrl: string;
-  setIsDetailViewShowing: (isDetailViewShoing: boolean) => void;
+  transactionSuccessful: boolean;
+  txHash: string;
 }
 
 export const TransactionDetail = ({
-  operation,
-  headerTitle,
+  externalUrl,
   isPayment,
   isRecipient,
   isSwap,
+  onBack,
+  operation,
   operationText,
-  externalUrl,
-  setIsDetailViewShowing,
+  transactionSuccessful,
+  txHash,
 }: Omit<TransactionDetailProps, "isCreateExternalAccount">) => {
   const {
     asset_code: assetCode,
@@ -87,10 +90,7 @@ export const TransactionDetail = ({
     <Loading />
   ) : (
     <React.Fragment>
-      <SubviewHeader
-        customBackAction={() => setIsDetailViewShowing(false)}
-        title={headerTitle}
-      />
+      <SubviewHeader customBackAction={onBack} title="Transaction" />
       <View.Content>
         <div
           className="TransactionDetail__content"
@@ -143,27 +143,42 @@ export const TransactionDetail = ({
               ) : (
                 !isSwap && (
                   <>
-                    <div>{t("Action")}</div>
-                    <div className="InfoRow__right">{operationText}</div>
+                    <div className="InfoRow__title">{t("Action")}</div>
+                    <div>{operationText}</div>
                   </>
                 )
               )}
             </div>
             <div className="TransactionDetail__info__row">
-              <div>{t("Date")}</div>
-              <div className="InfoRow__right">
-                {createdAtTime} &bull; {createdAtDateStr}
+              <div className="InfoRow__title">{t("Status")}</div>
+              <div
+                className={`InfoRow__${transactionSuccessful ? "success" : "failed"}`}
+              >
+                {transactionSuccessful ? "Success" : "Failed"}
               </div>
             </div>
             <div className="TransactionDetail__info__row">
-              <div>{t("Memo")}</div>
-              <div className="InfoRow__right">{memo || `None`}</div>
+              <div className="InfoRow__title">{t("Date")}</div>
+              <div>
+                {createdAtDateStr} &bull; {createdAtTime}
+              </div>
+            </div>
+            <CopyText textToCopy={txHash} doneLabel="hash copied">
+              <div className="TransactionDetail__info__row">
+                <div className="InfoRow__title">
+                  {t("Transaction")}
+                  <Icon.Copy01 />
+                </div>
+                <div>{txHash}</div>
+              </div>
+            </CopyText>
+            <div className="TransactionDetail__info__row">
+              <div className="InfoRow__title">{t("Transaction fee")}</div>
+              <div>{stroopToXlm(feeCharged as string).toString()} XLM</div>
             </div>
             <div className="TransactionDetail__info__row">
-              <div>{t("Transaction fee")}</div>
-              <div className="InfoRow__right">
-                {stroopToXlm(feeCharged as string).toString()} XLM
-              </div>
+              <div className="InfoRow__title">{t("Memo")}</div>
+              <div>{memo || `None`}</div>
             </div>
           </div>
         </div>
@@ -174,10 +189,13 @@ export const TransactionDetail = ({
             size="md"
             variant="secondary"
             isFullWidth
+            isRounded
             onClick={() => {
               emitMetric(METRIC_NAMES.historyOpenItem);
               openTab(externalUrl);
             }}
+            icon={<Icon.LinkExternal01 />}
+            iconPosition="right"
           >
             {t("View on")} stellar.expert
           </Button>
