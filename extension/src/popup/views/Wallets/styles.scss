@@ -56,7 +56,8 @@
     display: flex;
     flex-direction: column;
     position: absolute;
-    background: var(--sds-clr-gray-03);
+    background-color: var(--sds-clr-gray-01);
+    border: 1px solid var(--sds-clr-gray-06);
     border-radius: 6px;
     margin-top: -2rem;
     padding: 0.25rem;
@@ -82,6 +83,10 @@
         width: 100%;
         display: flex;
         justify-content: space-between;
+
+        svg {
+          color: var(--sds-clr-gray-09);
+        }
       }
     }
 

@@ -14,7 +14,9 @@ import { isActiveNetwork } from "helpers/stellar";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
+import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import {
+  saveAllowList,
   settingsNetworkDetailsSelector,
   settingsNetworksListSelector,
 } from "popup/ducks/settings";
@@ -26,22 +28,26 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import "./styles.scss";
 
 interface AccountHeaderProps {
+  allowList: string[];
   currentAccountName: string;
-  publicKey: string;
+  isFunded: boolean;
+  onAllowListRemove: () => void;
   onClickRow: (updatedValues: {
     publicKey?: string;
     network?: NetworkDetails;
   }) => Promise<void>;
+  publicKey: string;
   roundedTotalBalanceUsd: string;
-  isFunded: boolean;
 }
 
 export const AccountHeader = ({
+  allowList,
   currentAccountName,
-  publicKey,
-  onClickRow,
-  roundedTotalBalanceUsd,
   isFunded,
+  onAllowListRemove,
+  onClickRow,
+  publicKey,
+  roundedTotalBalanceUsd,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -223,6 +229,34 @@ export const AccountHeader = ({
                         </div>
                       ))}
                     </div>
+                    {allowList.length ? (
+                      <hr className="AccountHeader__list-divider" />
+                    ) : null}
+                    <div className="AccountHeader__allow-list">
+                      {allowList.map((allowedDomain) => (
+                        <div
+                          key={allowedDomain}
+                          className="AccountHeader__allow-list-item"
+                        >
+                          <PunycodedDomain domain={allowedDomain} isRow />
+                          <button
+                            className="allow-list-remove"
+                            onClick={async () => {
+                              setIsNetworkSelectorOpen(false);
+                              await dispatch(
+                                saveAllowList({
+                                  domain: allowedDomain,
+                                  networkName: networkDetails.networkName,
+                                }),
+                              );
+                              onAllowListRemove();
+                            }}
+                          >
+                            <Icon.MinusCircle />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
 
                     <hr className="AccountHeader__list-divider" />
                     <div
@@ -287,7 +321,7 @@ export const AccountHeader = ({
                     <div className="AccountHeader__actions__btn">
                       <Icon.Plus />
                     </div>
-                    <Text as="div" size="xs" weight="medium">
+                    <Text as="div" size="sm" weight="medium">
                       {t("Buy")}
                     </Text>
                   </div>
@@ -297,7 +331,7 @@ export const AccountHeader = ({
                     <div className="AccountHeader__actions__btn">
                       <Icon.ArrowUp />
                     </div>
-                    <Text as="div" size="xs" weight="medium">
+                    <Text as="div" size="sm" weight="medium">
                       {t("Send")}
                     </Text>
                   </div>
@@ -307,7 +341,7 @@ export const AccountHeader = ({
                     <div className="AccountHeader__actions__btn">
                       <Icon.RefreshCcw05 />
                     </div>
-                    <Text as="div" size="xs" weight="medium">
+                    <Text as="div" size="sm" weight="medium">
                       {t("Swap")}
                     </Text>
                   </div>
@@ -320,7 +354,7 @@ export const AccountHeader = ({
                     <div className="AccountHeader__actions__btn">
                       <Icon.ClockRewind />
                     </div>
-                    <Text as="div" size="xs" weight="medium">
+                    <Text as="div" size="sm" weight="medium">
                       {t("History")}
                     </Text>
                   </div>
