@@ -10,15 +10,10 @@ import {
 } from "popup/ducks/settings";
 import { getMonthLabel } from "popup/helpers/getMonthLabel";
 
-import {
-  historyItemDetailViewProps,
-  HistoryItem,
-  HistoryItemOperation,
-} from "popup/components/accountHistory/HistoryItem";
+import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
 import {
   // TransactionDetail,
   TransactionDetail2,
-  TransactionDetailProps,
 } from "popup/components/accountHistory/TransactionDetail";
 import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
@@ -46,15 +41,9 @@ export const AccountHistory = () => {
     },
   );
 
-  const [isDetailViewShowing, setIsDetailViewShowing] = useState(false);
-
-  const defaultDetailViewProps: TransactionDetailProps = {
-    ...historyItemDetailViewProps,
-    onBack: () => setIsDetailViewShowing(false),
-  };
-  const [detailViewProps, setDetailViewProps] = useState(
-    defaultDetailViewProps,
-  );
+  const [activeHistoryDetail, setActiveHistoryDetailId] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     const getData = async () => {
@@ -97,6 +86,14 @@ export const AccountHistory = () => {
 
   const balances = historyState.data?.balances!;
   const publicKey = historyState.data?.publicKey!;
+  const activeOperation =
+    activeHistoryDetail && !hasError
+      ? historyState.data.history
+          .flat()
+          .map((section) => section.operations)
+          .flat()
+          .find((op) => op.id === activeHistoryDetail)
+      : undefined;
 
   return (
     <>
@@ -115,15 +112,14 @@ export const AccountHistory = () => {
                 </Text>
 
                 <div className="AccountHistory__list">
-                  {section.operations.map((operation: HistoryItemOperation) => (
+                  {section.operations.map((operation) => (
                     <HistoryItem
                       key={operation.id}
                       accountBalances={balances}
                       operation={operation}
                       publicKey={publicKey}
                       networkDetails={networkDetails}
-                      setDetailViewProps={setDetailViewProps}
-                      setIsDetailViewShowing={setIsDetailViewShowing}
+                      setActiveHistoryDetailId={setActiveHistoryDetailId}
                     />
                   ))}
                 </div>
@@ -135,10 +131,10 @@ export const AccountHistory = () => {
         </div>
       </View.Content>
       <TransactionDetail2
-        icon={detailViewProps.icon}
-        operationText={detailViewProps.headerTitle}
-        isModalOpen={isDetailViewShowing}
-        setIsModalOpen={setIsDetailViewShowing}
+        activeOperation={activeOperation}
+        isModalOpen={activeHistoryDetail !== null}
+        setIsModalOpen={() => setActiveHistoryDetailId(null)}
+        networkDetails={networkDetails}
       />
       ;
     </>

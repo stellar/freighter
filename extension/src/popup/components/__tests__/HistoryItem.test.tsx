@@ -66,8 +66,7 @@ describe("HistoryItem", () => {
       publicKey: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
       url: "example.com",
       networkDetails: TESTNET_NETWORK_DETAILS,
-      setDetailViewProps: () => null,
-      setIsDetailViewShowing: () => null,
+      setActiveHistoryDetailId: () => null,
     };
     render(<HistoryItem {...props} />);
     await waitFor(() => screen.getByTestId("history-item"));
@@ -119,8 +118,7 @@ describe("HistoryItem", () => {
       publicKey: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
       url: "example.com",
       networkDetails: TESTNET_NETWORK_DETAILS,
-      setDetailViewProps: () => null,
-      setIsDetailViewShowing: () => null,
+      setActiveHistoryDetailId: () => null,
     };
     render(<HistoryItem {...props} />);
     await waitFor(() => screen.getByTestId("history-item"));
@@ -165,8 +163,7 @@ describe("HistoryItem", () => {
       publicKey: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
       url: "example.com",
       networkDetails: TESTNET_NETWORK_DETAILS,
-      setDetailViewProps: () => null,
-      setIsDetailViewShowing: () => null,
+      setActiveHistoryDetailId: () => null,
     };
     render(<HistoryItem {...props} />);
     await waitFor(() => screen.getByTestId("history-item"));

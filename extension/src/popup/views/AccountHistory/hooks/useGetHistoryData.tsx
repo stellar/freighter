@@ -1,4 +1,4 @@
-import React, { useReducer } from "react";
+import React, { ReactNode, useReducer } from "react";
 import { Horizon } from "stellar-sdk";
 import { camelCase } from "lodash";
 import BigNumber from "bignumber.js";
@@ -28,15 +28,23 @@ import {
 } from "helpers/hooks/useGetAppData";
 import { isMainnet } from "helpers/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { HorizonOperation } from "@shared/api/types";
+import { HorizonOperation, TokenBalance } from "@shared/api/types";
 import { OPERATION_TYPES } from "constants/transaction";
 import { formatAmount } from "popup/helpers/formatters";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { NetworkDetails } from "@shared/constants/stellar";
+import {
+  formatTokenAmount,
+  getAttrsFromSorobanHorizonOp,
+} from "popup/helpers/soroban";
+import { SorobanTokenInterface } from "@shared/constants/soroban/token";
+import { getBalanceByKey } from "popup/helpers/balance";
+import { AssetType } from "@shared/api/types/account-balance";
+import { getTokenDetails } from "@shared/api/internal";
 
 export type HistorySection = {
   monthYear: string; // in format {month}:{year}
-  operations: HistoryItemOperation[];
+  operations: OperationDataRow[];
 };
 
 const renderIconPlaceholder = (
@@ -117,13 +125,61 @@ export const getPaymentIcon = ({
   );
 };
 
+export const getTransferIcons = ({
+  isNative,
+  isReceiving,
+}: {
+  isNative: boolean;
+  isReceiving: boolean;
+}) => (
+  <>
+    {isNative && (
+      <AssetSds
+        size="lg"
+        variant="single"
+        sourceOne={{
+          altText: "Stellar token logo",
+          image: StellarLogo,
+        }}
+      />
+    )}
+    {!isNative && (
+      <div className="HistoryItem__icon__bordered">
+        <Icon.User01 />
+      </div>
+    )}
+    {isReceiving && (
+      <div className="HistoryItem__icon__small HistoryItem--received">
+        <Icon.ArrowDown />
+      </div>
+    )}
+    {!isReceiving && (
+      <div className="HistoryItem__icon__small HistoryItem--sent">
+        <Icon.Send03 />
+      </div>
+    )}
+  </>
+);
+
 export const getRowIconByType = (iconType: string) => {
   switch (iconType) {
     case "fail": {
-      return <Icon.Wallet03 />;
+      return (
+        <div className="HistoryItem__icon__bordered">
+          <Icon.Wallet03 />
+
+          <div className="HistoryItem__icon__small HistoryItem--failed">
+            <Icon.XCircle />
+          </div>
+        </div>
+      );
     }
     case "generic": {
-      return <Icon.User01 />;
+      return (
+        <div className="HistoryItem__icon__bordered">
+          <Icon.User01 />
+        </div>
+      );
     }
 
     default:
@@ -163,24 +219,42 @@ export const getActionIconByType = (iconType: string) => {
   }
 };
 
+function capitalize(str: string) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+export interface OperationDataRow {
+  action: string | null;
+  actionIcon: string;
+  amount: string | null;
+  date: string;
+  id: string;
+  metadata: {
+    [key: string]: any;
+  };
+  rowIcon: ReactNode;
+  rowText: ReactNode;
+}
+
 export const getRowDataByOpType = async (
   publicKey: string,
+  balances: AssetType[],
   operation: HistoryItemOperation,
   networkDetails: NetworkDetails,
-) => {
+): Promise<OperationDataRow> => {
   const {
     // account,
     amount,
     asset_code: assetCode,
     asset_issuer: assetIssuer,
     created_at: createdAt,
-    // id,
+    id,
     to,
     from,
     starting_balance: startingBalance,
     type,
     type_i: typeI,
-    transaction_attr: { operation_count: operationCount },
+    transaction_attr: { operation_count: operationCount, fee_charged, memo },
     isCreateExternalAccount = false,
     isPayment = false,
     isSwap = false,
@@ -201,13 +275,24 @@ export const getRowDataByOpType = async (
     operationCount > 1 ? ` + ${operationCount - 1} ops` : ""
   }`;
 
-  if (transactionSuccessful) {
+  const baseMetadata = {
+    feeCharged: fee_charged,
+    memo,
+    type,
+    isDustPayment: operation.isDustPayment,
+  };
+
+  if (transactionSuccessful == false) {
     return {
       action: "Failed",
       actionIcon: "failed",
       amount: null,
       date,
-      rowIcon: "fail",
+      id,
+      metadata: {
+        ...baseMetadata,
+      },
+      rowIcon: getRowIconByType("fail"),
       rowText: "Transaction Failed",
     };
   }
@@ -218,11 +303,16 @@ export const getRowDataByOpType = async (
     "source_asset_issuer" in operation ? operation.source_asset_issuer : "";
   const srcAssetCode = sourceAssetCode || "XLM";
   const destAssetCode = assetCode || "XLM";
+  const srcAmount =
+    "source_amount" in operation ? operation.source_amount : null;
 
   if (isSwap) {
     const formattedAmount = `${formatAmount(
       new BigNumber(amount!).toString(),
     )} ${destAssetCode}`;
+    const formattedSrcAmount = srcAmount
+      ? `${formatAmount(new BigNumber(srcAmount).toString())} ${srcAssetCode}`
+      : null;
 
     const destIcon =
       destAssetCode === "XLM"
@@ -246,14 +336,24 @@ export const getRowDataByOpType = async (
       actionIcon: "swap",
       amount: formattedAmount,
       date,
+      id,
       metadata: {
-        destAssetCode,
+        ...baseMetadata,
+        destMinAmount: destAssetCode,
         destIcon,
+        formattedSrcAmount,
         sourceIcon,
         srcAssetCode,
+        isSwap,
       },
-      rowIcon: null,
-      rowText: null,
+      rowIcon: getSwapIcons({ destIcon, srcAssetCode, sourceIcon }),
+      rowText: (
+        <div className="HistoryItem__description__swap-label">
+          <span>{srcAssetCode}</span>
+          <Icon.ArrowRight className="swap-label-direction" />
+          <span>{destAssetCode}</span>
+        </div>
+      ),
     };
   }
 
@@ -278,16 +378,110 @@ export const getRowDataByOpType = async (
       actionIcon: isReceiving ? "received" : "sent",
       amount: formattedAmount,
       date,
-      rowIcon: null,
+      id,
+      rowIcon: getPaymentIcon({ destAssetCode, destIcon }),
       metadata: {
+        ...baseMetadata,
         destIcon,
+        isPayment,
       },
       rowText: destAssetCode,
     };
   }
 
   if (isInvokeHostFn) {
-    //
+    const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
+    const genericEntry = {
+      action: null,
+      actionIcon: "contractInteraction",
+      amount: null,
+      date,
+      id,
+      metadata: {
+        ...baseMetadata,
+      },
+      rowIcon: getRowIconByType("generic"),
+      rowText: "Transaction",
+    };
+
+    if (!attrs) {
+      return genericEntry;
+    }
+
+    if (attrs.fnName === SorobanTokenInterface.mint) {
+      const isReceiving = attrs.to === publicKey;
+      const assetBalance = getBalanceByKey(
+        attrs.contractId,
+        balances,
+        networkDetails,
+      );
+
+      if (!assetBalance) {
+        return genericEntry;
+      }
+
+      const { token, decimals } = assetBalance as TokenBalance;
+      const formattedTokenAmount = formatTokenAmount(
+        new BigNumber(attrs.amount),
+        decimals,
+      );
+      const formattedAmount = `${
+        isReceiving ? "+" : ""
+      }${formattedTokenAmount} ${token.code}`;
+
+      return {
+        action: isReceiving ? "Received" : "Minted",
+        actionIcon: isReceiving ? "received" : "generic",
+        amount: formattedAmount,
+        date,
+        id,
+        metadata: {
+          ...baseMetadata,
+        },
+        rowIcon: getRowIconByType("generic"),
+        rowText: capitalize(attrs.fnName),
+      };
+    }
+
+    if (attrs.fnName === SorobanTokenInterface.transfer) {
+      try {
+        const tokenDetailsResponse = await getTokenDetails({
+          contractId: attrs.contractId,
+          publicKey,
+          networkDetails,
+        });
+
+        if (!tokenDetailsResponse) {
+          return genericEntry;
+        }
+
+        const { symbol, decimals } = tokenDetailsResponse!;
+        const isNative = symbol === "native";
+        const code = isNative ? "XLM" : symbol;
+        const formattedTokenAmount = formatTokenAmount(
+          new BigNumber(attrs.amount),
+          decimals,
+        );
+        const isReceiving = attrs.to === publicKey && attrs.from !== publicKey;
+        const paymentDifference = isReceiving ? "+" : "-";
+        const formattedAmount = `${paymentDifference}${formattedTokenAmount} ${code}`;
+
+        return {
+          action: isReceiving ? "Received" : "Sent",
+          actionIcon: isReceiving ? "received" : "sent",
+          amount: formattedAmount,
+          date,
+          id,
+          metadata: {
+            ...baseMetadata,
+          },
+          rowIcon: getTransferIcons({ isNative, isReceiving }),
+          rowText: code,
+        };
+      } catch (error) {
+        return genericEntry;
+      }
+    }
   }
 
   switch (operation.type) {
@@ -305,7 +499,21 @@ export const getRowDataByOpType = async (
         actionIcon: isReceiving ? "received" : "sent",
         amount: formattedAmount,
         date,
-        rowIcon: "generic",
+        id,
+        metadata: {
+          ...baseMetadata,
+        },
+        rowIcon: (
+          <div className="HistoryItem__icon__bordered">
+            <Icon.User01 />
+            <div className="HistoryItem__icon__small HistoryItem--create-account">
+              {/* When you've received XLM to create your own account */}
+              {isReceiving && <Icon.Plus />}
+              {/* When you've sent XLM to create external account */}
+              {!isReceiving && <Icon.ArrowUp />}
+            </div>
+          </div>
+        ),
         rowText: "Create Account",
       };
     }
@@ -316,15 +524,16 @@ export const getRowDataByOpType = async (
         code: destAssetCode || "",
         networkDetails,
       });
-      const formattedAmount = `${formatAmount(
-        new BigNumber(amount!).toString(),
-      )} ${destAssetCode}`;
 
       return {
         action: operation.limit === "0.0000000" ? "Removed" : "Added",
         actionIcon: operation.limit === "0.0000000" ? "remove" : "add",
-        amount: formattedAmount,
+        amount: null,
         date,
+        id,
+        metadata: {
+          ...baseMetadata,
+        },
         rowIcon: destIcon ? (
           <AssetSds
             size="lg"
@@ -350,20 +559,31 @@ export const getRowDataByOpType = async (
         actionIcon: "generic",
         amount: null,
         date,
-        rowIcon: "generic",
+        id,
+        metadata: {
+          ...baseMetadata,
+        },
+        rowIcon: getRowIconByType("generic"),
         rowText: operationString,
       };
     }
   }
 };
 
-const createHistorySections = (
+const createHistorySections = async (
   publicKey: string,
   operations: HorizonOperation[],
+  balances: AssetType[],
+  networkDetails: NetworkDetails,
   isHideDustEnabled: boolean,
 ) =>
-  operations.reduce(
-    (sections: HistorySection[], operation: HorizonOperation) => {
+  await operations.reduce(
+    async (
+      sectionsPromise: Promise<HistorySection[]>,
+      operation: HorizonOperation,
+    ) => {
+      const sections = await sectionsPromise;
+
       const isPayment = getIsPayment(operation.type);
       const isSwap = getIsSwap(operation);
       const isCreateExternalAccount =
@@ -376,8 +596,16 @@ const createHistorySections = (
         ...operation,
         isPayment,
         isSwap,
+        isDustPayment,
         isCreateExternalAccount,
       };
+
+      const rowData = await getRowDataByOpType(
+        publicKey,
+        balances,
+        parsedOperation,
+        networkDetails,
+      );
 
       if (isDustPayment && isHideDustEnabled) {
         return sections;
@@ -396,19 +624,19 @@ const createHistorySections = (
 
       // if we have no sections yet, let's create the first one
       if (!lastSection) {
-        return [{ monthYear, operations: [parsedOperation] }];
+        return [{ monthYear, operations: [rowData] }];
       }
 
       // if element belongs to this section let's add it right away
       if (lastSection.monthYear === monthYear) {
-        lastSection.operations.push(parsedOperation);
+        lastSection.operations.push(rowData);
         return sections;
       }
 
       // otherwise let's add a new section at the bottom of the array
-      return [...sections, { monthYear, operations: [parsedOperation] }];
+      return [...sections, { monthYear, operations: [rowData] }];
     },
-    [] as HistorySection[],
+    Promise.resolve([] as HistorySection[]),
   );
 
 interface ResolvedData {
@@ -474,9 +702,11 @@ function useGetHistoryData(
         publicKey,
         balances: balancesResult,
         applicationState: appData.account.applicationState,
-        history: createHistorySections(
+        history: await createHistorySections(
           publicKey,
           history,
+          balancesResult.balances,
+          networkDetails,
           historyOptions.isHideDustEnabled,
         ),
       } as ResolvedData;

@@ -1,7 +1,7 @@
 import React, { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Button, CopyText, Icon } from "@stellar/design-system";
+import { Asset, Button, CopyText, Icon, Text } from "@stellar/design-system";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -21,6 +21,13 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { HorizonOperation } from "@shared/api/types";
 import { isCustomNetwork } from "@shared/helpers/stellar";
+import {
+  getActionIconByType,
+  getSwapIcons,
+  OperationDataRow,
+} from "popup/views/AccountHistory/hooks/useGetHistoryData";
+import { NetworkDetails } from "@shared/constants/stellar";
+import { getStellarExpertUrl } from "popup/helpers/account";
 
 import "./styles.scss";
 
@@ -208,31 +215,152 @@ export const TransactionDetail = ({
 };
 
 export const TransactionDetail2 = ({
-  // externalUrl,
-  // isPayment,
-  // isRecipient,
-  // isSwap,
-  // onBack,
-  // operation,
-  operationText,
-  icon,
-  // transactionSuccessful,
-  // txHash,
+  activeOperation,
   isModalOpen,
   setIsModalOpen,
+  networkDetails,
 }: {
-  operationText: string;
-  icon: ReactNode;
+  activeOperation?: OperationDataRow;
   isModalOpen: boolean;
   setIsModalOpen: (isOpen: boolean) => void;
+  networkDetails: NetworkDetails;
 }) => {
+  const { t } = useTranslation();
+  if (!activeOperation) {
+    return <></>;
+  }
+
+  const stellarExpertUrl = getStellarExpertUrl(networkDetails);
+  const { feeCharged, memo } = activeOperation.metadata;
+  const renderBody = (activeOperation: OperationDataRow) => {
+    if (activeOperation.metadata.isSwap) {
+      const { destIcon, formattedSrcAmount, srcAssetCode, sourceIcon } =
+        activeOperation.metadata;
+      return (
+        <>
+          <div className="TransactionDetailModal__title-row">
+            <div className="TransactionDetailModal__icon">
+              {getSwapIcons({ destIcon, srcAssetCode, sourceIcon })}
+            </div>
+            <div className="TransactionDetailModal__title-details">
+              <div className="TransactionDetailModal__title swap">
+                {`${activeOperation.action} `}
+                {activeOperation.rowText}
+              </div>
+              <Text
+                as="div"
+                size="xs"
+                weight="regular"
+                addlClassName="TransactionDetailModal__subtitle"
+              >
+                <>
+                  {getActionIconByType(activeOperation.actionIcon)}
+                  <div className="TransactionDetailModal__subtitle-date">
+                    {activeOperation.date}
+                  </div>
+                </>
+              </Text>
+            </div>
+          </div>
+          <div className="TransactionDetailModal__body swap">
+            <div className="Swap__src">
+              <div className="Swap__src__amount">{formattedSrcAmount}</div>
+              <div className="Swap__src__icon">
+                <Asset
+                  size="lg"
+                  variant="single"
+                  sourceOne={{
+                    altText: "Swap source",
+                    image: sourceIcon,
+                  }}
+                />
+              </div>
+            </div>
+            <div className="Swap__direction">
+              <Icon.ChevronDownDouble />
+            </div>
+            <div className="Swap__dst">
+              <div className="Swap__dst__amount">{activeOperation.amount}</div>
+              <div className="Swap__dst__icon">
+                <Asset
+                  size="lg"
+                  variant="single"
+                  sourceOne={{
+                    altText: "Swap destination",
+                    image: destIcon,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    switch (activeOperation.metadata.type) {
+      default: {
+        return (
+          <>
+            <div className="TransactionDetailModal__title-row">
+              <div className="TransactionDetailModal__icon">
+                {activeOperation.rowIcon}
+              </div>
+              <div className="TransactionDetailModal__title">
+                {activeOperation.rowText}
+              </div>
+            </div>
+          </>
+        );
+      }
+    }
+  };
   return (
     <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
       <div className="TransactionDetailModal">
-        <div className="TransactionDetailModal__title-row">
-          <div className="TransactionDetailModal__icon">{icon}</div>
-          <div className="TransactionDetailModal__title">{operationText}</div>
+        {renderBody(activeOperation)}
+        <div className="TransactionDetailModal__metadata">
+          <div className="Metadata">
+            <div className="Metadata__label">
+              <Icon.ClockCheck />
+              Status
+            </div>
+            <div className="Metadata__value">Success</div>
+          </div>
+          <div className="Metadata">
+            <div className="Metadata__label">
+              <Icon.Route />
+              Fee
+            </div>
+            <div className="Metadata__value">
+              {stroopToXlm(feeCharged as string).toString()} XLM
+            </div>
+          </div>
+          {memo && (
+            <div className="Metadata">
+              <div className="Metadata__label">
+                <Icon.Route />
+                Memo
+              </div>
+              <div className="Metadata__value">{memo}</div>
+            </div>
+          )}
         </div>
+        {!isCustomNetwork(networkDetails) ? (
+          <Button
+            size="md"
+            variant="secondary"
+            isFullWidth
+            isRounded
+            onClick={() => {
+              emitMetric(METRIC_NAMES.historyOpenItem);
+              openTab(`${stellarExpertUrl}/op/${activeOperation.metadata.id}`);
+            }}
+            icon={<Icon.LinkExternal01 />}
+            iconPosition="right"
+          >
+            {t("View on")} stellar.expert
+          </Button>
+        ) : null}
       </div>
     </SlideupModal>
   );
