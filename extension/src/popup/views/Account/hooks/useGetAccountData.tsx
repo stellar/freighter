@@ -7,7 +7,7 @@ import { HistoryResponse, useGetHistory } from "helpers/hooks/useGetHistory";
 import { AssetOperations, sortOperationsByAsset } from "popup/helpers/account";
 import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
 import { getTokenPrices as internalGetTokenPrices } from "@shared/api/internal";
-import { ApiTokenPrices } from "@shared/api/types";
+import { AllowList, ApiTokenPrices } from "@shared/api/types";
 import {
   AppDataType,
   NeedsReRoute,
@@ -41,6 +41,7 @@ export const getTokenPrices = async ({
 };
 
 interface ResolvedAccountData {
+  allowList: AllowList;
   type: AppDataType.RESOLVED;
   balances: AccountBalances;
   operationsByAsset: AssetOperations;
@@ -95,6 +96,7 @@ function useGetAccountData(options: {
 
       const publicKey = appData.account.publicKey;
       const networkDetails = appData.settings.networkDetails;
+      const allowList = appData.settings.allowList;
       const isMainnetNetwork = isMainnet(networkDetails);
       const balancesResult = await fetchBalances(
         publicKey,
@@ -113,6 +115,7 @@ function useGetAccountData(options: {
 
       const payload = {
         type: AppDataType.RESOLVED,
+        allowList,
         publicKey,
         applicationState: appData.account.applicationState,
         balances: balancesResult,
@@ -144,6 +147,36 @@ function useGetAccountData(options: {
     }
   };
 
+  const refreshAppData = async () => {
+    try {
+      const appData = await fetchAppData(false);
+      if (isError(appData)) {
+        throw new Error(appData.message);
+      }
+
+      if (appData.type === AppDataType.REROUTE) {
+        return appData;
+      }
+
+      const publicKey = appData.account.publicKey;
+      const networkDetails = appData.settings.networkDetails;
+      const allowList = appData.settings.allowList;
+      const applicationState = appData.account.applicationState;
+
+      const payload = {
+        ...state.data,
+        allowList,
+        publicKey,
+        networkDetails,
+        applicationState,
+      } as ResolvedAccountData;
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      return payload;
+    } catch (error) {
+      return error;
+    }
+  };
+
   useEffect(() => {
     if (!state.data || state.data.type === AppDataType.REROUTE || !_isMainnet) {
       return;
@@ -166,6 +199,7 @@ function useGetAccountData(options: {
   return {
     state,
     fetchData,
+    refreshAppData,
   };
 }
 

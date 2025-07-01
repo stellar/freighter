@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
+import { CopyText, Icon, Link } from "@stellar/design-system";
 
 import { ApiTokenPrice, ApiTokenPrices } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
+import IconEllipsis from "popup/assets/icon-ellipsis.svg";
 import {
   displaySorobanId,
   getAvailableBalance,
@@ -14,10 +16,10 @@ import {
 } from "popup/helpers/account";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { formatTokenAmount } from "popup/helpers/soroban";
-import { getAssetFromCanonical } from "helpers/stellar";
+import { getAssetFromCanonical, isMainnet, isTestnet } from "helpers/stellar";
 
 import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
-import { TransactionDetail2 } from "popup/components/accountHistory/TransactionDetail";
+import { TransactionDetail } from "popup/components/accountHistory/TransactionDetail";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
@@ -28,7 +30,12 @@ import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { Loading } from "popup/components/Loading";
 import { BlockaidAssetWarning } from "popup/components/WarningMessages";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
-import { getBalanceByAsset, getPriceDeltaColor } from "popup/helpers/balance";
+import {
+  getBalanceByAsset,
+  getPriceDeltaColor,
+  isNativeBalance,
+  isSorobanBalance,
+} from "popup/helpers/balance";
 import { CopyValue } from "popup/components/CopyValue";
 import {
   AssetType,
@@ -64,7 +71,25 @@ export const AssetDetail = ({
 }: AssetDetailProps) => {
   const { t } = useTranslation();
   const { isHideDustEnabled } = useSelector(settingsSelector);
+  const [optionsOpen, setOptionsOpen] = React.useState(false);
+  const activeOptionsRef = useRef<HTMLDivElement>(null);
   const isNative = selectedAsset === "native";
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        activeOptionsRef.current &&
+        !activeOptionsRef.current.contains(event.target as Node)
+      ) {
+        setOptionsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [activeOptionsRef]);
 
   const canonical = getAssetFromCanonical(selectedAsset);
   const isSorobanAsset = canonical.issuer && isSorobanIssuer(canonical.issuer);
@@ -145,12 +170,18 @@ export const AssetDetail = ({
     return "";
   };
 
+  const isStellarExpertSupported =
+    isMainnet(networkDetails) || isTestnet(networkDetails);
+  const stellarExpertAssetLinkSlug = isSorobanBalance(selectedBalance)
+    ? `contract/${selectedBalance.contractId}`
+    : `asset/${selectedAsset.replace(":", "-")}`;
+
   return activeAssetId ? (
     <SlideupModal
       isModalOpen={activeOperation !== null}
       setIsModalOpen={() => setActiveAssetId(null)}
     >
-      <TransactionDetail2
+      <TransactionDetail
         activeOperation={activeOperation}
         networkDetails={networkDetails}
       />
@@ -160,6 +191,62 @@ export const AssetDetail = ({
       <SubviewHeader
         title={canonical.code}
         customBackAction={() => setSelectedAsset("")}
+        rightButton={
+          !isStellarExpertSupported &&
+          isNativeBalance(selectedBalance) ? null : (
+            <>
+              <div
+                className="AssetDetail__options"
+                onClick={() => setOptionsOpen(true)}
+              >
+                <img src={IconEllipsis} alt="asset options" />
+              </div>
+              {optionsOpen ? (
+                <div
+                  className="AssetDetail__options-actions"
+                  ref={activeOptionsRef}
+                >
+                  {!isNativeBalance(selectedBalance) ? (
+                    <div className="AssetDetail__options-actions__row">
+                      <CopyText
+                        textToCopy={
+                          isSorobanBalance(selectedBalance)
+                            ? selectedBalance.contractId
+                            : selectedBalance.token.issuer.key
+                        }
+                      >
+                        <div className="action">
+                          <div className="AssetDetail__options-actions__label">
+                            Copy address
+                          </div>
+                          <Icon.Copy01 />
+                        </div>
+                      </CopyText>
+                    </div>
+                  ) : null}
+                  {isStellarExpertSupported ? (
+                    <div className="AssetDetail__options-actions__row">
+                      <Link
+                        className="action link"
+                        variant="secondary"
+                        rel="noreferrer"
+                        target="_blank"
+                        href={`https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/${stellarExpertAssetLinkSlug}`}
+                      >
+                        <>
+                          <div className="AssetDetail__options-actions__label">
+                            Stellar.expert
+                          </div>
+                          <Icon.LinkExternal01 />
+                        </>
+                      </Link>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </>
+          )
+        }
       />
       <View.Content>
         <div className="AssetDetail__wrapper" data-testid="AssetDetail">

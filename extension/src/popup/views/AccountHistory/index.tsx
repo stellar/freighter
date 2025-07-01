@@ -13,7 +13,7 @@ import { getMonthLabel } from "popup/helpers/getMonthLabel";
 import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
 import {
   // TransactionDetail,
-  TransactionDetail2,
+  TransactionDetail,
 } from "popup/components/accountHistory/TransactionDetail";
 import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
@@ -135,7 +135,7 @@ export const AccountHistory = () => {
         isModalOpen={activeHistoryDetail !== null}
         setIsModalOpen={() => setActiveHistoryDetailId(null)}
       >
-        <TransactionDetail2
+        <TransactionDetail
           activeOperation={activeOperation}
           networkDetails={networkDetails}
         />

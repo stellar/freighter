@@ -874,6 +874,7 @@ describe("Account view", () => {
         error: null,
       },
       fetchData: jest.fn(),
+      refreshAppData: jest.fn(),
     });
 
     render(

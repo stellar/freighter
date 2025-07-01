@@ -25,22 +25,6 @@
     }
   }
 
-  &__dropdown {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    button {
-      width: pxToRem(32);
-      height: pxToRem(32);
-
-      svg {
-        width: pxToRem(12);
-        height: pxToRem(12);
-      }
-    }
-  }
-
   &__right-button {
     cursor: pointer;
     display: flex;
@@ -293,6 +277,72 @@
       svg {
         width: pxToRem(16px);
         height: pxToRem(16px);
+      }
+    }
+  }
+
+  &__allow-list-item {
+    display: flex;
+    justify-content: space-between;
+    border-radius: pxToRem(4);
+
+    &:hover {
+      background: var(--sds-clr-gray-04);
+    }
+
+    .PunycodedDomain {
+      flex: 7;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      &__domain {
+        font-size: 0.875rem;
+        line-height: 1.375rem;
+      }
+
+      &__favicon {
+        width: 24px;
+        height: 24px;
+      }
+
+      &__favicon-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: visible;
+      }
+    }
+
+    .allow-list-remove {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: none;
+      color: var(--sds-clr-red-09);
+      border: none;
+      cursor: pointer;
+
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+
+  &__dropdown {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    button {
+      width: pxToRem(32);
+      height: pxToRem(32);
+
+      svg {
+        width: pxToRem(12);
+        height: pxToRem(12);
       }
     }
   }
