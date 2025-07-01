@@ -4,20 +4,13 @@ import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { CopyText, Icon, Link } from "@stellar/design-system";
 
-import {
-  ApiTokenPrice,
-  ApiTokenPrices,
-  HorizonOperation,
-} from "@shared/api/types";
+import { ApiTokenPrice, ApiTokenPrices } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
 import {
   displaySorobanId,
   getAvailableBalance,
-  getIsDustPayment,
-  getIsPayment,
-  getIsSwap,
   getIssuerFromBalance,
   isSorobanIssuer,
 } from "popup/helpers/account";
@@ -25,14 +18,8 @@ import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { formatTokenAmount } from "popup/helpers/soroban";
 import { getAssetFromCanonical, isMainnet, isTestnet } from "helpers/stellar";
 
-import {
-  historyItemDetailViewProps,
-  HistoryItem,
-} from "popup/components/accountHistory/HistoryItem";
-import {
-  TransactionDetail,
-  TransactionDetailProps,
-} from "popup/components/accountHistory/TransactionDetail";
+import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
+import { TransactionDetail } from "popup/components/accountHistory/TransactionDetail";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
@@ -57,12 +44,13 @@ import {
   NativeAsset,
   SorobanAsset,
 } from "@shared/api/types/account-balance";
+import { OperationDataRow } from "popup/views/AccountHistory/hooks/useGetHistoryData";
 
 import "./styles.scss";
 
 interface AssetDetailProps {
+  assetOperations: OperationDataRow[];
   accountBalances: AccountBalances;
-  assetOperations: HorizonOperation[];
   networkDetails: NetworkDetails;
   publicKey: string;
   selectedAsset: string;
@@ -144,15 +132,7 @@ export const AssetDetail = ({
   const displayTotal = `${formatAmount(total)} ${canonical.code}`;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDetailViewShowing, setIsDetailViewShowing] = useState(false);
-
-  const defaultDetailViewProps: TransactionDetailProps = {
-    ...historyItemDetailViewProps,
-    setIsDetailViewShowing,
-  };
-  const [detailViewProps, setDetailViewProps] = useState(
-    defaultDetailViewProps,
-  );
+  const [activeAssetId, setActiveAssetId] = useState<string | null>(null);
 
   const { assetDomain, error: assetError } = useAssetDomain({
     assetIssuer,
@@ -163,9 +143,7 @@ export const AssetDetail = ({
   }
 
   const sortedAssetOperations = assetOperations.filter((operation) => {
-    const isDustPayment = getIsDustPayment(publicKey, operation);
-
-    if (isDustPayment && isHideDustEnabled) {
+    if (operation.metadata.isDustPayment && isHideDustEnabled) {
       return false;
     }
 
@@ -176,6 +154,10 @@ export const AssetDetail = ({
     // if we have an asset issuer, wait until we have the asset domain before continuing
     return <Loading />;
   }
+
+  const activeOperation = sortedAssetOperations.find(
+    (op) => op.id === activeAssetId,
+  );
 
   const title = (balance: NativeAsset | ClassicAsset | SorobanAsset) => {
     if ("type" in balance.token && balance.token.type === "native") {
@@ -194,8 +176,16 @@ export const AssetDetail = ({
     ? `contract/${selectedBalance.contractId}`
     : `asset/${selectedAsset.replace(":", "-")}`;
 
-  return isDetailViewShowing ? (
-    <TransactionDetail {...detailViewProps} />
+  return activeAssetId ? (
+    <SlideupModal
+      isModalOpen={activeOperation !== null}
+      setIsModalOpen={() => setActiveAssetId(null)}
+    >
+      <TransactionDetail
+        activeOperation={activeOperation}
+        networkDetails={networkDetails}
+      />
+    </SlideupModal>
   ) : (
     <React.Fragment>
       <SubviewHeader
@@ -334,24 +324,18 @@ export const AssetDetail = ({
           {sortedAssetOperations.length ? (
             <div className="AssetDetail__list" data-testid="AssetDetail__list">
               <>
-                {sortedAssetOperations.map((operation) => {
-                  const historyItemOperation = {
-                    ...operation,
-                    isPayment: getIsPayment(operation.type),
-                    isSwap: getIsSwap(operation),
-                  } as any; // TODO: isPayment/isSwap overload op type
-                  return (
-                    <HistoryItem
-                      key={operation.id}
-                      accountBalances={accountBalances}
-                      operation={historyItemOperation}
-                      publicKey={publicKey}
-                      networkDetails={networkDetails}
-                      setDetailViewProps={setDetailViewProps}
-                      setIsDetailViewShowing={setIsDetailViewShowing}
-                    />
-                  );
-                })}
+                {sortedAssetOperations.map((operation) => (
+                  <HistoryItem
+                    key={operation.id}
+                    accountBalances={accountBalances}
+                    operation={operation}
+                    publicKey={publicKey}
+                    networkDetails={networkDetails}
+                    setActiveHistoryDetailId={() =>
+                      setActiveAssetId(operation.id)
+                    }
+                  />
+                ))}
               </>
             </div>
           ) : (

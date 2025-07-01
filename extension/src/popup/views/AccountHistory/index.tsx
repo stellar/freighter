@@ -1,7 +1,8 @@
-import { Text } from "@stellar/design-system";
 import React, { useEffect, useState } from "react";
+import { Navigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+import { Text } from "@stellar/design-system";
 
 import {
   settingsNetworkDetailsSelector,
@@ -9,14 +10,10 @@ import {
 } from "popup/ducks/settings";
 import { getMonthLabel } from "popup/helpers/getMonthLabel";
 
+import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
 import {
-  historyItemDetailViewProps,
-  HistoryItem,
-  HistoryItemOperation,
-} from "popup/components/accountHistory/HistoryItem";
-import {
+  // TransactionDetail,
   TransactionDetail,
-  TransactionDetailProps,
 } from "popup/components/accountHistory/TransactionDetail";
 import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
@@ -24,11 +21,11 @@ import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
-import { Navigate, useLocation } from "react-router-dom";
+import { reRouteOnboarding } from "popup/helpers/route";
 import { useGetHistoryData } from "./hooks/useGetHistoryData";
 
 import "./styles.scss";
-import { reRouteOnboarding } from "popup/helpers/route";
+import { SlideupModal } from "popup/components/SlideupModal";
 
 export const AccountHistory = () => {
   const { t } = useTranslation();
@@ -45,15 +42,9 @@ export const AccountHistory = () => {
     },
   );
 
-  const [isDetailViewShowing, setIsDetailViewShowing] = useState(false);
-
-  const defaultDetailViewProps: TransactionDetailProps = {
-    ...historyItemDetailViewProps,
-    setIsDetailViewShowing,
-  };
-  const [detailViewProps, setDetailViewProps] = useState(
-    defaultDetailViewProps,
-  );
+  const [activeHistoryDetail, setActiveHistoryDetailId] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     const getData = async () => {
@@ -66,10 +57,6 @@ export const AccountHistory = () => {
   const isLoaderShowing =
     historyState.state === RequestState.IDLE ||
     historyState.state === RequestState.LOADING;
-
-  if (isDetailViewShowing) {
-    return <TransactionDetail {...detailViewProps} />;
-  }
 
   if (isLoaderShowing) {
     return <Loading />;
@@ -100,6 +87,14 @@ export const AccountHistory = () => {
 
   const balances = historyState.data?.balances!;
   const publicKey = historyState.data?.publicKey!;
+  const activeOperation =
+    activeHistoryDetail && !hasError
+      ? historyState.data.history
+          .flat()
+          .map((section) => section.operations)
+          .flat()
+          .find((op) => op.id === activeHistoryDetail)
+      : undefined;
 
   return (
     <>
@@ -118,15 +113,14 @@ export const AccountHistory = () => {
                 </Text>
 
                 <div className="AccountHistory__list">
-                  {section.operations.map((operation: HistoryItemOperation) => (
+                  {section.operations.map((operation) => (
                     <HistoryItem
                       key={operation.id}
                       accountBalances={balances}
                       operation={operation}
                       publicKey={publicKey}
                       networkDetails={networkDetails}
-                      setDetailViewProps={setDetailViewProps}
-                      setIsDetailViewShowing={setIsDetailViewShowing}
+                      setActiveHistoryDetailId={setActiveHistoryDetailId}
                     />
                   ))}
                 </div>
@@ -137,6 +131,15 @@ export const AccountHistory = () => {
           ) : null}
         </div>
       </View.Content>
+      <SlideupModal
+        isModalOpen={activeHistoryDetail !== null}
+        setIsModalOpen={() => setActiveHistoryDetailId(null)}
+      >
+        <TransactionDetail
+          activeOperation={activeOperation}
+          networkDetails={networkDetails}
+        />
+      </SlideupModal>
     </>
   );
 };

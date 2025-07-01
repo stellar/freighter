@@ -7,7 +7,7 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await loginToTestAccount({ page, extensionId });
 
   await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Manage assets").click({ force: true });
+  await page.getByText("Manage assets").click();
   await expect(page.getByText("Your assets")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
