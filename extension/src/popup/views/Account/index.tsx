@@ -118,9 +118,10 @@ export const Account = () => {
       : "";
 
   const activeAllowList =
-    resolvedData?.allowList[resolvedData?.networkDetails.networkName][
+    resolvedData?.allowList?.[resolvedData?.networkDetails?.networkName]?.[
       resolvedData?.publicKey
-    ] || [];
+    ] ?? [];
+
   return (
     <>
       <AccountHeader
