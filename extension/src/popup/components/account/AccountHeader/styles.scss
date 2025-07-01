@@ -296,6 +296,11 @@
       overflow: hidden;
       text-overflow: ellipsis;
 
+      &__domain {
+        font-size: 0.875rem;
+        line-height: 1.375rem;
+      }
+
       &__favicon {
         width: 24px;
         height: 24px;

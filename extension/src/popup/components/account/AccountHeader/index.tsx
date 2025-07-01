@@ -81,6 +81,8 @@ export const AccountHeader = ({
     navigateTo(ROUTES.unlockAccount, navigate);
   };
 
+  const latestConnection = allowList.at(-1);
+
   return (
     <>
       <View.AppHeader
@@ -232,20 +234,24 @@ export const AccountHeader = ({
                     {allowList.length ? (
                       <hr className="AccountHeader__list-divider" />
                     ) : null}
-                    <div className="AccountHeader__allow-list">
-                      {allowList.map((allowedDomain) => (
+                    {latestConnection && (
+                      <div className="AccountHeader__allow-list">
                         <div
-                          key={allowedDomain}
+                          key={latestConnection}
                           className="AccountHeader__allow-list-item"
                         >
-                          <PunycodedDomain domain={allowedDomain} isRow />
+                          <PunycodedDomain
+                            title="Connected"
+                            domain={latestConnection}
+                            isRow
+                          />
                           <button
                             className="allow-list-remove"
                             onClick={async () => {
                               setIsNetworkSelectorOpen(false);
                               await dispatch(
                                 saveAllowList({
-                                  domain: allowedDomain,
+                                  domain: latestConnection,
                                   networkName: networkDetails.networkName,
                                 }),
                               );
@@ -255,9 +261,8 @@ export const AccountHeader = ({
                             <Icon.MinusCircle />
                           </button>
                         </div>
-                      ))}
-                    </div>
-
+                      </div>
+                    )}
                     <hr className="AccountHeader__list-divider" />
                     <div
                       className="AccountHeader__options__item"
