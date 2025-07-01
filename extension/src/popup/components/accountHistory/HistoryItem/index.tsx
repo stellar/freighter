@@ -104,7 +104,7 @@ export const HistoryItem = ({
             </Text>
           </div>
           <div
-            className="HistoryItem__amount"
+            className={`HistoryItem__amount ${operation.amount?.startsWith("+") ? "credit" : "debit"}`}
             data-testid="history-item-amount-component"
           >
             {operation.amount}

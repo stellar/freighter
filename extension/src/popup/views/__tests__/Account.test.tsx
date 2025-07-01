@@ -51,6 +51,7 @@ const mockHistoryOperations = {
       asset_code: "code",
       from: "G1",
       to: "G2",
+      transaction_attr: { operation_count: 1, fee_charged: "" },
     },
   ] as HorizonOperation[],
 };

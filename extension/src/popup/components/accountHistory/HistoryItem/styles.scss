@@ -41,6 +41,10 @@
       text-overflow: ellipsis;
       display: block;
     }
+
+    &.credit {
+      color: var(--sds-clr-green-11);
+    }
   }
 
   &__icon {

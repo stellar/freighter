@@ -25,6 +25,7 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import { useGetHistoryData } from "./hooks/useGetHistoryData";
 
 import "./styles.scss";
+import { SlideupModal } from "popup/components/SlideupModal";
 
 export const AccountHistory = () => {
   const { t } = useTranslation();
@@ -130,13 +131,15 @@ export const AccountHistory = () => {
           ) : null}
         </div>
       </View.Content>
-      <TransactionDetail2
-        activeOperation={activeOperation}
+      <SlideupModal
         isModalOpen={activeHistoryDetail !== null}
         setIsModalOpen={() => setActiveHistoryDetailId(null)}
-        networkDetails={networkDetails}
-      />
-      ;
+      >
+        <TransactionDetail2
+          activeOperation={activeOperation}
+          networkDetails={networkDetails}
+        />
+      </SlideupModal>
     </>
   );
 };

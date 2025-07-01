@@ -168,12 +168,15 @@ export const AssetDetail = ({
   );
 
   return activeAssetId ? (
-    <TransactionDetail2
-      activeOperation={activeOperation}
-      isModalOpen={activeAssetId !== null}
+    <SlideupModal
+      isModalOpen={activeOperation !== null}
       setIsModalOpen={() => setActiveAssetId(null)}
-      networkDetails={networkDetails}
-    />
+    >
+      <TransactionDetail2
+        activeOperation={activeOperation}
+        networkDetails={networkDetails}
+      />
+    </SlideupModal>
   ) : (
     <React.Fragment>
       <SubviewHeader

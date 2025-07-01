@@ -26,9 +26,9 @@ import {
   NeedsReRoute,
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
-import { isMainnet } from "helpers/stellar";
+import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { HorizonOperation, TokenBalance } from "@shared/api/types";
+import { AssetIcons, HorizonOperation, TokenBalance } from "@shared/api/types";
 import { OPERATION_TYPES } from "constants/transaction";
 import { formatAmount } from "popup/helpers/formatters";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
@@ -109,7 +109,7 @@ export const getPaymentIcon = ({
   destIcon,
 }: {
   destAssetCode: string;
-  destIcon: string;
+  destIcon?: string;
 }) => {
   return destIcon ? (
     <AssetSds
@@ -241,9 +241,10 @@ export const getRowDataByOpType = async (
   balances: AssetType[],
   operation: HistoryItemOperation,
   networkDetails: NetworkDetails,
+  icons: AssetIcons,
 ): Promise<OperationDataRow> => {
   const {
-    // account,
+    account,
     amount,
     asset_code: assetCode,
     asset_issuer: assetIssuer,
@@ -259,7 +260,6 @@ export const getRowDataByOpType = async (
     isPayment = false,
     isSwap = false,
     transaction_successful: transactionSuccessful,
-    // transaction_hash: txHash,
   } = operation;
   const isInvokeHostFn = typeI === 24;
 
@@ -276,6 +276,7 @@ export const getRowDataByOpType = async (
   }`;
 
   const baseMetadata = {
+    createdAt,
     feeCharged: fee_charged,
     memo,
     type,
@@ -291,6 +292,7 @@ export const getRowDataByOpType = async (
       id,
       metadata: {
         ...baseMetadata,
+        transactionFailed: true,
       },
       rowIcon: getRowIconByType("fail"),
       rowText: "Transaction Failed",
@@ -361,9 +363,10 @@ export const getRowDataByOpType = async (
     // default to Sent if a payment to self
     const isReceiving = to === publicKey && from !== publicKey;
     const paymentDifference = isReceiving ? "+" : "-";
-    const formattedAmount = `${paymentDifference}${formatAmount(
+    const nonLabelAmount = `${formatAmount(
       new BigNumber(amount!).toString(),
     )} ${destAssetCode}`;
+    const formattedAmount = `${paymentDifference}${nonLabelAmount}`;
     const destIcon =
       destAssetCode === "XLM"
         ? StellarLogo
@@ -382,8 +385,12 @@ export const getRowDataByOpType = async (
       rowIcon: getPaymentIcon({ destAssetCode, destIcon }),
       metadata: {
         ...baseMetadata,
+        destAssetCode,
         destIcon,
         isPayment,
+        isReceiving,
+        nonLabelAmount,
+        to,
       },
       rowText: destAssetCode,
     };
@@ -391,21 +398,22 @@ export const getRowDataByOpType = async (
 
   if (isInvokeHostFn) {
     const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
-    const genericEntry = {
-      action: null,
+    const genericInvocation = {
+      action: "Interacted",
       actionIcon: "contractInteraction",
       amount: null,
       date,
       id,
       metadata: {
         ...baseMetadata,
+        isInvokeHostFn,
       },
       rowIcon: getRowIconByType("generic"),
-      rowText: "Transaction",
+      rowText: "Contract Function",
     };
 
     if (!attrs) {
-      return genericEntry;
+      return genericInvocation;
     }
 
     if (attrs.fnName === SorobanTokenInterface.mint) {
@@ -417,7 +425,7 @@ export const getRowDataByOpType = async (
       );
 
       if (!assetBalance) {
-        return genericEntry;
+        return genericInvocation;
       }
 
       const { token, decimals } = assetBalance as TokenBalance;
@@ -437,6 +445,8 @@ export const getRowDataByOpType = async (
         id,
         metadata: {
           ...baseMetadata,
+          isTokenMint: true,
+          isInvokeHostFn,
         },
         rowIcon: getRowIconByType("generic"),
         rowText: capitalize(attrs.fnName),
@@ -452,7 +462,7 @@ export const getRowDataByOpType = async (
         });
 
         if (!tokenDetailsResponse) {
-          return genericEntry;
+          return genericInvocation;
         }
 
         const { symbol, decimals } = tokenDetailsResponse!;
@@ -474,14 +484,21 @@ export const getRowDataByOpType = async (
           id,
           metadata: {
             ...baseMetadata,
+            destAssetCode: code,
+            isInvokeHostFn,
+            isTokenTransfer: true,
+            nonLabelAmount: formattedTokenAmount,
+            to: attrs.to,
           },
           rowIcon: getTransferIcons({ isNative, isReceiving }),
           rowText: code,
         };
       } catch (error) {
-        return genericEntry;
+        return genericInvocation;
       }
     }
+
+    return genericInvocation;
   }
 
   switch (operation.type) {
@@ -490,9 +507,10 @@ export const getRowDataByOpType = async (
       // receiving some XLM to create(fund) your own account
       const isReceiving = !isCreateExternalAccount;
       const paymentDifference = isReceiving ? "+" : "-";
-      const formattedAmount = `${paymentDifference}${formatAmount(
+      const nonLabelAmount = formatAmount(
         new BigNumber(startingBalance!).toString(),
-      )} ${destAssetCode}`;
+      );
+      const formattedAmount = `${paymentDifference}${nonLabelAmount} ${destAssetCode}`;
 
       return {
         action: `${isReceiving ? "Received" : "Sent"}`,
@@ -502,6 +520,9 @@ export const getRowDataByOpType = async (
         id,
         metadata: {
           ...baseMetadata,
+          isReceiving,
+          nonLabelAmount,
+          to: account,
         },
         rowIcon: (
           <div className="HistoryItem__icon__bordered">
@@ -519,12 +540,12 @@ export const getRowDataByOpType = async (
     }
 
     case Horizon.HorizonApi.OperationResponseType.changeTrust: {
-      const destIcon = await getIconUrlFromIssuer({
-        key: assetIssuer || "",
-        code: destAssetCode || "",
-        networkDetails,
-      });
-
+      const destIcon =
+        (await getIconUrlFromIssuer({
+          key: assetIssuer || "",
+          code: destAssetCode || "",
+          networkDetails,
+        })) || icons[getCanonicalFromAsset(destAssetCode, assetIssuer)];
       return {
         action: operation.limit === "0.0000000" ? "Removed" : "Added",
         actionIcon: operation.limit === "0.0000000" ? "remove" : "add",
@@ -574,6 +595,7 @@ const createHistorySections = async (
   publicKey: string,
   operations: HorizonOperation[],
   balances: AssetType[],
+  icons: AssetIcons,
   networkDetails: NetworkDetails,
   isHideDustEnabled: boolean,
 ) =>
@@ -605,6 +627,7 @@ const createHistorySections = async (
         balances,
         parsedOperation,
         networkDetails,
+        icons,
       );
 
       if (isDustPayment && isHideDustEnabled) {
@@ -706,6 +729,7 @@ function useGetHistoryData(
           publicKey,
           history,
           balancesResult.balances,
+          balancesResult.icons || {},
           networkDetails,
           historyOptions.isHideDustEnabled,
         ),

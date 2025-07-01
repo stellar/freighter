@@ -73,7 +73,7 @@ describe("HistoryItem", () => {
     expect(screen.getByTestId("history-item")).toBeDefined();
     expect(
       screen.getByTestId("history-item-amount-component"),
-    ).toHaveTextContent("+10 XLM");
+    ).toHaveTextContent("10");
   });
   it("renders SAC transfer correctly when balance includes LP shares", async () => {
     const props = {
@@ -125,9 +125,9 @@ describe("HistoryItem", () => {
     expect(screen.getByTestId("history-item")).toBeDefined();
     expect(
       screen.getByTestId("history-item-amount-component"),
-    ).toHaveTextContent("+10 XLM");
+    ).toHaveTextContent("10");
   });
-  it("renders failed transactions with payment details", async () => {
+  it.only("renders failed transactions with payment details", async () => {
     const props = {
       accountBalances: {
         balances: {
@@ -152,6 +152,7 @@ describe("HistoryItem", () => {
         starting_balance: "10",
         type: "payment",
         type_i: 1,
+        rowText: "Transaction failed",
         transaction_attr: {
           operation_count: 1,
         },

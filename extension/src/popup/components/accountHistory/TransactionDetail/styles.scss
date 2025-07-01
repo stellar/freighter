@@ -146,6 +146,98 @@
         }
       }
     }
+
+    &.send {
+      display: flex;
+      flex-direction: column;
+      padding: pxToRem(24px);
+      border-radius: pxToRem(16px);
+      background: var(--sds-clr-gray-03);
+
+      .Send {
+        &__direction {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--sds-clr-gray-11);
+          height: 2rem;
+          width: 2rem;
+          border-radius: 2rem;
+          border: 1px solid var(--sds-clr-gray-06);
+          margin: pxToRem(24px) 0;
+        }
+        &__src,
+        &__dst {
+          display: flex;
+          justify-content: space-between;
+        }
+
+        &__dst {
+          &__icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 2rem;
+            border: 1px solid var(--sds-clr-gray-06);
+            padding: pxToRem(4px);
+          }
+        }
+      }
+    }
+
+    &.transfer {
+      display: flex;
+      flex-direction: column;
+      padding: pxToRem(24px);
+      border-radius: pxToRem(16px);
+      background: var(--sds-clr-gray-03);
+
+      .Send {
+        &__direction {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--sds-clr-gray-11);
+          height: 2rem;
+          width: 2rem;
+          border-radius: 2rem;
+          border: 1px solid var(--sds-clr-gray-06);
+          margin: pxToRem(24px) 0;
+        }
+        &__src,
+        &__dst {
+          display: flex;
+          justify-content: space-between;
+        }
+
+        &__src {
+          &__icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 2rem;
+            padding: pxToRem(4px);
+
+            .HistoryItem__icon__bordered {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              height: pxToRem(32px);
+              width: pxToRem(32px);
+              border-radius: pxToRem(32px);
+            }
+          }
+        }
+
+        &__dst {
+          &__icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 2rem;
+            border: 1px solid var(--sds-clr-gray-06);
+            padding: pxToRem(4px);
+          }
+        }
+      }
+    }
   }
 
   &__metadata {
@@ -159,6 +251,16 @@
     .Metadata {
       display: flex;
       justify-content: space-between;
+
+      &__value {
+        &.failed {
+          color: var(--sds-clr-red-11);
+        }
+
+        &.success {
+          color: var(--sds-clr-green-11);
+        }
+      }
 
       &__label {
         display: flex;

@@ -2,7 +2,9 @@ import React, { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Asset, Button, CopyText, Icon, Text } from "@stellar/design-system";
+import { Horizon } from "stellar-sdk";
 
+import StellarLogo from "popup/assets/stellar-logo.png";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AssetNetworkInfo } from "popup/components/accountHistory/AssetNetworkInfo";
@@ -11,11 +13,10 @@ import { View } from "popup/basics/layout/View";
 
 import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
-import { stroopToXlm } from "helpers/stellar";
+import { stroopToXlm, truncatedPublicKey } from "helpers/stellar";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { useScanAsset } from "popup/helpers/blockaid";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { SlideupModal } from "popup/components/SlideupModal";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -23,11 +24,13 @@ import { HorizonOperation } from "@shared/api/types";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import {
   getActionIconByType,
+  getPaymentIcon,
   getSwapIcons,
   OperationDataRow,
 } from "popup/views/AccountHistory/hooks/useGetHistoryData";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
+import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 
 import "./styles.scss";
 
@@ -216,13 +219,9 @@ export const TransactionDetail = ({
 
 export const TransactionDetail2 = ({
   activeOperation,
-  isModalOpen,
-  setIsModalOpen,
   networkDetails,
 }: {
   activeOperation?: OperationDataRow;
-  isModalOpen: boolean;
-  setIsModalOpen: (isOpen: boolean) => void;
   networkDetails: NetworkDetails;
 }) => {
   const { t } = useTranslation();
@@ -230,9 +229,151 @@ export const TransactionDetail2 = ({
     return <></>;
   }
 
+  const createdAtDateInstance = new Date(
+    Date.parse(activeOperation.metadata.createdAt),
+  );
+  const createdAtLocalStrArr = createdAtDateInstance
+    .toLocaleString()
+    .split(" ");
+  const createdAtTime = `${createdAtLocalStrArr[1]
+    .split(":")
+    .slice(0, 2)
+    .join(":")} ${createdAtLocalStrArr[2]}`;
+  const createdAtDateStr = createdAtDateInstance
+    .toDateString()
+    .split(" ")
+    .slice(1)
+    .join(" ");
+
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
   const { feeCharged, memo } = activeOperation.metadata;
+
   const renderBody = (activeOperation: OperationDataRow) => {
+    if (activeOperation.metadata.isInvokeHostFn) {
+      const {
+        destAssetCode,
+        isTokenMint,
+        isTokenTransfer,
+        nonLabelAmount,
+        to,
+      } = activeOperation.metadata;
+      const title =
+        isTokenTransfer || isTokenMint ? (
+          <>
+            {`${activeOperation.action} `}
+            {activeOperation.rowText}
+          </>
+        ) : (
+          activeOperation.action
+        );
+      return (
+        <>
+          <div className="TransactionDetailModal__title-row">
+            <div className="TransactionDetailModal__icon">
+              {activeOperation.rowIcon}
+            </div>
+            <div className="TransactionDetailModal__title-details">
+              <div className="TransactionDetailModal__title invocation">
+                {title}
+              </div>
+              <Text
+                as="div"
+                size="xs"
+                weight="regular"
+                addlClassName="TransactionDetailModal__subtitle"
+              >
+                <>
+                  {getActionIconByType(activeOperation.actionIcon)}
+                  <div className="TransactionDetailModal__subtitle-date">
+                    {createdAtDateStr} &bull; {createdAtTime}
+                  </div>
+                </>
+              </Text>
+            </div>
+          </div>
+          {isTokenTransfer && (
+            <div className="TransactionDetailModal__body transfer">
+              <div className="Send__src">
+                <div className="Send__src__amount">{nonLabelAmount}</div>
+                <div className="Send__src__icon">
+                  {getPaymentIcon({ destAssetCode })}
+                </div>
+              </div>
+              <div className="Send__direction">
+                <Icon.ChevronDownDouble />
+              </div>
+              <div className="Send__dst">
+                <div className="Send__dst__amount">
+                  {truncatedPublicKey(to)}
+                </div>
+                <div className="Send__dst__icon">
+                  <IdenticonImg publicKey={to} />
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      );
+    }
+
+    if (activeOperation.metadata.isPayment) {
+      const { destIcon, destAssetCode, to, nonLabelAmount } =
+        activeOperation.metadata;
+
+      return (
+        <>
+          <div className="TransactionDetailModal__title-row">
+            <div className="TransactionDetailModal__icon">
+              {getPaymentIcon({ destIcon, destAssetCode })}
+            </div>
+            <div className="TransactionDetailModal__title-details">
+              <div className="TransactionDetailModal__title swap">
+                {`${activeOperation.action} `}
+                {activeOperation.rowText}
+              </div>
+              <Text
+                as="div"
+                size="xs"
+                weight="regular"
+                addlClassName="TransactionDetailModal__subtitle"
+              >
+                <>
+                  {getActionIconByType(activeOperation.actionIcon)}
+                  <div className="TransactionDetailModal__subtitle-date">
+                    {createdAtDateStr} &bull; {createdAtTime}
+                  </div>
+                </>
+              </Text>
+            </div>
+          </div>
+          <div className="TransactionDetailModal__body send">
+            <div className="Send__src">
+              <div className="Send__src__amount">{nonLabelAmount}</div>
+              <div className="Send__src__icon">
+                <Asset
+                  size="lg"
+                  variant="single"
+                  sourceOne={{
+                    altText: "Payment asset",
+                    image: destIcon,
+                  }}
+                />
+              </div>
+            </div>
+            <div className="Send__direction">
+              <Icon.ChevronDownDouble />
+            </div>
+            <div className="Send__dst">
+              <div className="Send__dst__amount">{truncatedPublicKey(to)}</div>
+              <div className="Send__dst__icon">
+                <IdenticonImg publicKey={to} />
+              </div>
+            </div>
+          </div>
+        </>
+      );
+    }
+
     if (activeOperation.metadata.isSwap) {
       const { destIcon, formattedSrcAmount, srcAssetCode, sourceIcon } =
         activeOperation.metadata;
@@ -256,7 +397,7 @@ export const TransactionDetail2 = ({
                 <>
                   {getActionIconByType(activeOperation.actionIcon)}
                   <div className="TransactionDetailModal__subtitle-date">
-                    {activeOperation.date}
+                    {createdAtDateStr} &bull; {createdAtTime}
                   </div>
                 </>
               </Text>
@@ -298,6 +439,63 @@ export const TransactionDetail2 = ({
     }
 
     switch (activeOperation.metadata.type) {
+      case Horizon.HorizonApi.OperationResponseType.createAccount: {
+        const { nonLabelAmount, to } = activeOperation.metadata;
+        return (
+          <>
+            <div className="TransactionDetailModal__title-row">
+              <div className="TransactionDetailModal__icon">
+                {activeOperation.rowIcon}
+              </div>
+              <div className="TransactionDetailModal__title-details">
+                <div className="TransactionDetailModal__title invocation">
+                  {activeOperation.rowText}
+                </div>
+                <Text
+                  as="div"
+                  size="xs"
+                  weight="regular"
+                  addlClassName="TransactionDetailModal__subtitle"
+                >
+                  <>
+                    {getActionIconByType(activeOperation.actionIcon)}
+                    <div className="TransactionDetailModal__subtitle-date">
+                      {createdAtDateStr} &bull; {createdAtTime}
+                    </div>
+                  </>
+                </Text>
+              </div>
+            </div>
+            <div className="TransactionDetailModal__body send">
+              <div className="Send__src">
+                <div className="Send__src__amount">{nonLabelAmount}</div>
+                <div className="Send__src__icon">
+                  <Asset
+                    size="lg"
+                    variant="single"
+                    sourceOne={{
+                      altText: "Stellar token logo",
+                      image: StellarLogo,
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="Send__direction">
+                <Icon.ChevronDownDouble />
+              </div>
+              <div className="Send__dst">
+                <div className="Send__dst__amount">
+                  {truncatedPublicKey(to)}
+                </div>
+                <div className="Send__dst__icon">
+                  <IdenticonImg publicKey={to} />
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      }
+
       default: {
         return (
           <>
@@ -305,8 +503,23 @@ export const TransactionDetail2 = ({
               <div className="TransactionDetailModal__icon">
                 {activeOperation.rowIcon}
               </div>
-              <div className="TransactionDetailModal__title">
-                {activeOperation.rowText}
+              <div className="TransactionDetailModal__title-details">
+                <div className="TransactionDetailModal__title invocation">
+                  {activeOperation.rowText}
+                </div>
+                <Text
+                  as="div"
+                  size="xs"
+                  weight="regular"
+                  addlClassName="TransactionDetailModal__subtitle"
+                >
+                  <>
+                    {getActionIconByType(activeOperation.actionIcon)}
+                    <div className="TransactionDetailModal__subtitle-date">
+                      {createdAtDateStr} &bull; {createdAtTime}
+                    </div>
+                  </>
+                </Text>
               </div>
             </div>
           </>
@@ -314,54 +527,57 @@ export const TransactionDetail2 = ({
       }
     }
   };
+
   return (
-    <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
-      <div className="TransactionDetailModal">
-        {renderBody(activeOperation)}
-        <div className="TransactionDetailModal__metadata">
-          <div className="Metadata">
-            <div className="Metadata__label">
-              <Icon.ClockCheck />
-              Status
-            </div>
-            <div className="Metadata__value">Success</div>
+    <div className="TransactionDetailModal">
+      {renderBody(activeOperation)}
+      <div className="TransactionDetailModal__metadata">
+        <div className="Metadata">
+          <div className="Metadata__label">
+            <Icon.ClockCheck />
+            Status
           </div>
-          <div className="Metadata">
-            <div className="Metadata__label">
-              <Icon.Route />
-              Fee
-            </div>
-            <div className="Metadata__value">
-              {stroopToXlm(feeCharged as string).toString()} XLM
-            </div>
-          </div>
-          {memo && (
-            <div className="Metadata">
-              <div className="Metadata__label">
-                <Icon.Route />
-                Memo
-              </div>
-              <div className="Metadata__value">{memo}</div>
-            </div>
-          )}
-        </div>
-        {!isCustomNetwork(networkDetails) ? (
-          <Button
-            size="md"
-            variant="secondary"
-            isFullWidth
-            isRounded
-            onClick={() => {
-              emitMetric(METRIC_NAMES.historyOpenItem);
-              openTab(`${stellarExpertUrl}/op/${activeOperation.metadata.id}`);
-            }}
-            icon={<Icon.LinkExternal01 />}
-            iconPosition="right"
+          <div
+            className={`Metadata__value ${activeOperation.metadata.transactionFailed ? "failed" : "success"}`}
           >
-            {t("View on")} stellar.expert
-          </Button>
-        ) : null}
+            {activeOperation.metadata.transactionFailed ? "Failed" : "Success"}
+          </div>
+        </div>
+        <div className="Metadata">
+          <div className="Metadata__label">
+            <Icon.Route />
+            Fee
+          </div>
+          <div className="Metadata__value">
+            {stroopToXlm(feeCharged as string).toString()} XLM
+          </div>
+        </div>
+        {memo && (
+          <div className="Metadata">
+            <div className="Metadata__label">
+              <Icon.File02 />
+              Memo
+            </div>
+            <div className="Metadata__value">{memo}</div>
+          </div>
+        )}
       </div>
-    </SlideupModal>
+      {!isCustomNetwork(networkDetails) ? (
+        <Button
+          size="md"
+          variant="secondary"
+          isFullWidth
+          isRounded
+          onClick={() => {
+            emitMetric(METRIC_NAMES.historyOpenItem);
+            openTab(`${stellarExpertUrl}/op/${activeOperation.id}`);
+          }}
+          icon={<Icon.LinkExternal01 />}
+          iconPosition="right"
+        >
+          {t("View on")} stellar.expert
+        </Button>
+      ) : null}
+    </div>
   );
 };

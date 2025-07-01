@@ -157,6 +157,7 @@ export const sortOperationsByAsset = ({
       balances,
       parsedOperation,
       networkDetails,
+      {},
     );
     if (getIsPayment(op.type)) {
       Object.keys(assetOperationMap).forEach((assetKey) => {
