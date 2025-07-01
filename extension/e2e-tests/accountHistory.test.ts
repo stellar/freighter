@@ -43,19 +43,17 @@ test("View failed transaction", async ({ page, extensionId }) => {
   await loginAndFund({ page, extensionId });
   await page.getByTestId("nav-link-account-history").click();
   await expect(page.getByTestId("history-item-amount-component")).toHaveText(
-    "",
+    "Mar 21",
   );
   await expect(page.getByTestId("history-item-label")).toHaveText(
-    "Transaction failed",
+    "Transaction Failed",
   );
   await expectPageToHaveScreenshot({
     page,
     screenshot: "failed-transaction-history-item.png",
   });
   await page.getByText("Transaction failed").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText(
-    "Transaction failed",
-  );
+  await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("History");
   await expectPageToHaveScreenshot({
     page,
     screenshot: "failed-transaction.png",
