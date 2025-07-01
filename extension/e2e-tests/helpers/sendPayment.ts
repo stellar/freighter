@@ -3,7 +3,7 @@ import { expect, expectPageToHaveScreenshot } from "../test-fixtures";
 
 export const sendXlmPayment = async ({ page }) => {
   test.setTimeout(180_000);
-  await page.getByTitle("Send Payment").click({ force: true });
+  await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByText("Send To")).toBeVisible();
   await expectPageToHaveScreenshot({

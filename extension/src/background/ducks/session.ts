@@ -111,19 +111,17 @@ export const sessionSlice = createSlice({
       },
       password: "",
     }),
-    updateAllAccountsAccountName: (
+    updateAccountName: (
       state,
-      action: { payload: { updatedAccountName: string } },
+      action: { payload: { publicKey: string; updatedAccountName: string } },
     ) => {
-      const { updatedAccountName = "" } = action.payload;
-
+      const { updatedAccountName, publicKey } = action.payload;
       if (!state.allAccounts) {
         return state;
       }
 
       const newAllAccounts = state.allAccounts.map((account) => {
-        if (state.publicKey === account.publicKey) {
-          // this is the current active public key, let's edit it
+        if (publicKey === account.publicKey) {
           return {
             ...account,
             name: updatedAccountName,
@@ -160,8 +158,8 @@ export const {
     logOut,
     setActiveHashKey,
     timeoutAccountAccess,
-    updateAllAccountsAccountName,
     setMigratedMnemonicPhrase,
+    updateAccountName,
   },
 } = sessionSlice;
 

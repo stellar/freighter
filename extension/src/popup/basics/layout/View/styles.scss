@@ -154,6 +154,10 @@
       gap: 1rem;
     }
 
+    &--account-header {
+      height: auto;
+    }
+
     &--vertical-border {
       @media (min-width: 850px) {
         border-left: 1px solid var(--sds-clr-gray-04);

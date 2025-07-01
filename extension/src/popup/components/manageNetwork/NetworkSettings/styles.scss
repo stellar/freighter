@@ -1,3 +1,5 @@
+@use "../../../styles/utils.scss" as *;
+
 $activeColor: rgba(61, 204, 152, 1);
 
 .NetworkSettings {
@@ -23,12 +25,12 @@ $activeColor: rgba(61, 204, 152, 1);
   }
 
   &__active-marker {
-    border: 2px solid $activeColor;
+    border: 1px solid $activeColor;
     border-radius: 2rem;
-    height: 1rem;
-    margin-left: -0.25rem;
+    height: pxToRem(16px);
+    margin-left: pxToRem(-1px);
     position: absolute;
-    width: 1rem;
+    width: pxToRem(16px);
   }
 
   &__url {

@@ -596,7 +596,7 @@ export const SendAmount = ({
               </div>
             ) : null
           }
-          hasBackButton={!isSwap}
+          hasBackButton
           customBackAction={() => {
             // NOTE: resets base state for transaction data
             dispatch(saveAsset("native"));

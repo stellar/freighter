@@ -1,4 +1,5 @@
 import React from "react";
+import { Icon } from "@stellar/design-system";
 
 import "./styles.scss";
 
@@ -38,5 +39,7 @@ interface NetworkIconProps {
 }
 
 export const NetworkIcon = ({ index }: NetworkIconProps) => (
-  <div className={`NetworkIcon NetworkIcon--${getNetworkColor(index)}`} />
+  <div className={`NetworkIcon NetworkIcon--${getNetworkColor(index)}`}>
+    <Icon.Globe02 />
+  </div>
 );

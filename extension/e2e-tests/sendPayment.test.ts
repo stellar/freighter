@@ -16,7 +16,7 @@ test("Swap doesn't throw error when account is unfunded", async ({
   test.slow();
   await login({ page, extensionId });
 
-  await page.getByTestId("BottomNav-link-swap").click();
+  await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
     "Swap XLM",
   );
@@ -165,7 +165,7 @@ test("Swap shows correct balances for assets", async ({
   test.slow();
   await login({ page, extensionId });
 
-  await page.getByTestId("BottomNav-link-swap").click();
+  await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
     "Swap XLM",
   );
@@ -184,7 +184,7 @@ test("Send doesn't throw error when account is unfunded", async ({
 }) => {
   test.slow();
   await login({ page, extensionId });
-  await page.getByTitle("Send Payment").click({ force: true });
+  await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByText("Send To")).toBeVisible();
   await page
@@ -202,7 +202,7 @@ test("Send doesn't throw error when creating muxed account", async ({
 }) => {
   test.slow();
   await loginAndFund({ page, extensionId });
-  await page.getByTitle("Send Payment").click({ force: true });
+  await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByText("Send To")).toBeVisible();
   await page
@@ -233,7 +233,7 @@ test("Send XLM payments to recent federated addresses", async ({
 }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
-  await page.getByTitle("Send Payment").click({ force: true });
+  await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByText("Send To")).toBeVisible();
 
@@ -266,7 +266,7 @@ test("Send XLM payments to recent federated addresses", async ({
 
   await page.getByText("Done").click();
 
-  await page.getByTitle("Send Payment").click();
+  await page.getByTestId("nav-link-send").click();
 
   await expect(page.getByText("Send To")).toBeVisible();
   await expect(page.getByText("RECENT")).toBeVisible();
@@ -302,9 +302,11 @@ test("Send XLM payments from multiple accounts to G Address", async ({
   await sendXlmPayment({ page });
 
   await page.getByTestId("BackButton").click();
-  await page.getByTestId("BottomNav-link-account").click();
-  await page.getByTestId("AccountHeader__icon-btn").click();
-  await page.getByText("Create a new Stellar address").click();
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("account-view-account-name").click();
+  await page.getByTestId("add-wallet").click();
+  await page.getByText("Create a new wallet").click();
 
   // test incorrect password
   await page.locator("#password-input").fill("wrong password");
@@ -324,15 +326,18 @@ test("Send XLM payments from multiple accounts to G Address", async ({
   await sendXlmPayment({ page });
 
   await page.getByTestId("BackButton").click();
-  await page.getByTestId("BottomNav-link-account").click();
-  await page.getByTestId("AccountHeader__icon-btn").click();
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("account-view-account-name").click();
 
   await page.getByText("Account 1").click();
   await sendXlmPayment({ page });
 
   await page.getByTestId("BackButton").click();
-  await page.getByTestId("BottomNav-link-account").click();
-  await page.getByTestId("AccountHeader__icon-btn").click();
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("account-view-account-name").click();
+  await page.getByTestId("add-wallet").click();
   await page.getByText("Import a Stellar secret key").click();
 
   // test private key account from different mnemonic phrase
@@ -358,7 +363,7 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   await loginToTestAccount({ page, extensionId });
 
   // send XLM to C address
-  await page.getByTitle("Send Payment").click({ force: true });
+  await page.getByTestId("nav-link-send").click({ force: true });
   await expect(page.getByText("Send To")).toBeVisible();
   await page.getByTestId("send-to-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByText("Continue").click({ force: true });
@@ -392,9 +397,6 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   await expect(page.getByText("Sent XLM")).toBeVisible();
   await expect(page.getByTestId("asset-amount")).toContainText("0.001");
   await expect(page.getByTestId("memo")).toContainText("Test memo");
-
-  await page.getByTestId("BackButton").click({ force: true });
-  await page.getByTestId("BottomNav-link-account").click({ force: true });
 });
 
 test("Send XLM payment to M address", async ({ page, extensionId }) => {
@@ -402,7 +404,7 @@ test("Send XLM payment to M address", async ({ page, extensionId }) => {
   await loginToTestAccount({ page, extensionId });
 
   // send XLM to C address
-  await page.getByTitle("Send Payment").click({ force: true });
+  await page.getByTestId("nav-link-send").click({ force: true });
   await expect(page.getByText("Send To")).toBeVisible();
   await page.getByTestId("send-to-input").fill(TEST_M_ADDRESS);
   await page.getByText("Continue").click({ force: true });
@@ -437,9 +439,6 @@ test("Send XLM payment to M address", async ({ page, extensionId }) => {
   await expect(page.getByTestId("to-field")).toContainText(
     truncatedPublicKey(TEST_M_ADDRESS),
   );
-
-  await page.getByTestId("BackButton").click({ force: true });
-  await page.getByTestId("BottomNav-link-account").click({ force: true });
 });
 
 test.skip("Send SAC to C address", async ({ page, extensionId }) => {
@@ -448,7 +447,7 @@ test.skip("Send SAC to C address", async ({ page, extensionId }) => {
 
   // add USDC asset
   await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Manage Assets").click({ force: true });
+  await page.getByText("Manage assets").click({ force: true });
 
   await page.getByText("Add an asset").click({ force: true });
   await page
@@ -467,7 +466,7 @@ test.skip("Send SAC to C address", async ({ page, extensionId }) => {
   });
 
   // swap to get some USDC
-  await page.getByTestId("BottomNav-link-swap").click({ force: true });
+  await page.getByTestId("nav-link-swap").click({ force: true });
   await expect(page.getByText("Swap XLM")).toBeVisible();
   await expect(
     page.getByTestId("AssetSelect").filter({ hasText: "USDC" }),
@@ -495,7 +494,7 @@ test.skip("Send SAC to C address", async ({ page, extensionId }) => {
   await page.getByText("Done").click({ force: true });
 
   // send SAC to C address
-  await page.getByTitle("Send Payment").click({ force: true });
+  await page.getByTestId("nav-link-send").click({ force: true });
   await page.getByTestId("send-to-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByText("Continue").click({ force: true });
 
@@ -523,11 +522,15 @@ test.skip("Send SAC to C address", async ({ page, extensionId }) => {
   await expect(page.getByText("Sent USDC")).toBeVisible();
 
   await page.getByTestId("BackButton").click({ force: true });
-  await page.getByTestId("BottomNav-link-account").click({ force: true });
+  await page.getByTestId("BackButton").click({ force: true });
+  await page.getByTestId("BackButton").click({ force: true });
+  await expect(page.getByTestId("account-view")).toBeVisible({
+    timeout: 30000,
+  });
 
   // remove USDC
   await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Manage Assets").click({ force: true });
+  await page.getByText("Manage assets").click({ force: true });
   await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
   await page.getByText("Remove asset").click({ force: true });
 
@@ -542,7 +545,7 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
 
   // add E2E token
   await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Manage Assets").click({ force: true });
+  await page.getByText("Manage assets").click({ force: true });
   await expect(page.getByText("Your assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });
   await page.getByTestId("search-asset-input").fill(TEST_TOKEN_ADDRESS);
@@ -550,7 +553,7 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   await page.getByTestId("add-asset").dispatchEvent("click");
 
   // send E2E token to C address
-  await page.getByTitle("Send Payment").click({ force: true });
+  await page.getByTestId("nav-link-send").click({ force: true });
   await page.getByTestId("send-to-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByText("Continue").click({ force: true });
 
@@ -587,7 +590,7 @@ test.afterAll(async ({ page, extensionId }) => {
     await loginToTestAccount({ page, extensionId });
 
     await page.getByTestId("account-options-dropdown").click();
-    await page.getByText("Manage Assets").click({ force: true });
+    await page.getByText("Manage assets").click({ force: true });
 
     await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
     await page.getByText("Remove asset").click();

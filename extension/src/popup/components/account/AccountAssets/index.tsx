@@ -20,6 +20,7 @@ import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import ImageMissingIcon from "popup/assets/image-missing.svg?react";
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
+import { getPriceDeltaColor } from "popup/helpers/balance";
 
 import "./styles.scss";
 
@@ -266,21 +267,6 @@ export const AccountAssets = ({
             ? formatTokenAmount(rb.total, rb.decimals)
             : rb.total.toFixed();
 
-        const getDeltaColor = (delta: BigNumber) => {
-          if (delta.isZero()) {
-            return "";
-          }
-
-          if (delta.isNegative()) {
-            return "negative";
-          }
-          if (delta.isPositive()) {
-            return "positive";
-          }
-
-          return "";
-        };
-
         return (
           <div
             data-testid="account-assets-item"
@@ -326,7 +312,7 @@ export const AccountAssets = ({
                 {assetPrice.percentagePriceChange24h ? (
                   <div
                     data-testid={`asset-price-delta-${canonicalAsset}`}
-                    className={`asset-value-delta ${getDeltaColor(
+                    className={`asset-value-delta ${getPriceDeltaColor(
                       new BigNumber(
                         roundUsdValue(assetPrice.percentagePriceChange24h),
                       ),

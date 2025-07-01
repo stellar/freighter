@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { Button, Notification, Select } from "@stellar/design-system";
+import { Navigate, useLocation } from "react-router-dom";
 
 import { saveAllowList } from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -11,15 +12,14 @@ import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 import { View } from "popup/basics/layout/View";
 import { RemoveButton } from "popup/basics/buttons/RemoveButton";
 import { AppDispatch } from "popup/App";
-
-import "./styles.scss";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
-import { Navigate, useLocation } from "react-router-dom";
 import { reRouteOnboarding } from "popup/helpers/route";
+
+import "./styles.scss";
 
 export const ManageConnectedApps = () => {
   const dispatch = useDispatch<AppDispatch>();

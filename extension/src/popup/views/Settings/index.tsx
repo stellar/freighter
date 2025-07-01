@@ -10,6 +10,7 @@ import { ROUTES } from "popup/constants/routes";
 import { signOut } from "popup/ducks/accountServices";
 import { navigateTo } from "popup/helpers/navigate";
 import { AppDispatch } from "popup/App";
+import { BackButton } from "popup/basics/buttons/BackButton";
 
 import IconNetwork from "popup/assets/icon-settings-network.svg?react";
 import IconSecurity from "popup/assets/icon-settings-security.svg?react";
@@ -39,6 +40,7 @@ export const Settings = () => {
       <View.Content>
         <nav className="Settings">
           <div>
+            <BackButton />
             <div className="Settings__header">
               <Heading as="h2" size="lg">
                 Settings
