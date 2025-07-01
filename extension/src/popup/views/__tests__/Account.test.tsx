@@ -20,7 +20,6 @@ import * as UseAssetDomain from "popup/helpers/useAssetDomain";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { HorizonOperation, Response, SettingsState } from "@shared/api/types";
-import { accountNameSelector } from "popup/ducks/accountServices";
 import * as TokenListHelpers from "@shared/api/helpers/token-list";
 import * as RouteHelpers from "popup/helpers/route";
 
@@ -32,7 +31,6 @@ import {
   mockPrices,
   TEST_CANONICAL,
   TEST_PUBLIC_KEY,
-  mockSelector,
 } from "../../__testHelpers__";
 import { Account } from "../Account";
 import { ROUTES } from "popup/constants/routes";
@@ -280,7 +278,7 @@ describe("Account view", () => {
   it("loads accounts", async () => {
     render(
       <Wrapper
-        routes={[ROUTES.welcome]}
+        routes={[ROUTES.account]}
         state={{
           auth: {
             error: null,
@@ -300,9 +298,6 @@ describe("Account view", () => {
 
     await waitFor(() => screen.getByTestId("account-header"));
     expect(screen.getByTestId("account-header")).toBeDefined();
-    const accountNodes = screen.getAllByTestId("account-list-item");
-    expect(accountNodes.length).toEqual(3);
-    expect(screen.getAllByText("Account 1")).toBeDefined();
   });
 
   it("displays balances and scam notifications on Mainnet", async () => {
@@ -496,48 +491,6 @@ describe("Account view", () => {
     });
     await waitFor(() => {
       expect(screen.getByTestId("ScamAssetWarning__box")).toBeDefined();
-    });
-  });
-
-  it("switches accounts", async () => {
-    mockSelector(accountNameSelector, () => "Account 1");
-
-    jest
-      .spyOn(ApiInternal, "makeAccountActive")
-      .mockImplementation(() =>
-        Promise.resolve({ publicKey: "G2", hasPrivateKey: true, bipPath: "" }),
-      );
-    render(
-      <Wrapper
-        routes={[ROUTES.welcome]}
-        state={{
-          auth: {
-            error: null,
-            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
-            publicKey: "G1",
-            allAccounts: mockAccounts,
-          },
-          settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
-            networksList: DEFAULT_NETWORKS,
-          },
-        }}
-      >
-        <Account />
-      </Wrapper>,
-    );
-    await waitFor(async () => {
-      const accountIdenticonNodes = screen.getAllByTestId(
-        "account-list-identicon-button",
-      );
-      mockSelector(accountNameSelector, () => "Account 2");
-      await fireEvent.click(accountIdenticonNodes[2]);
-    });
-
-    await waitFor(async () => {
-      expect(screen.getByTestId("account-view-account-name")).toHaveTextContent(
-        "Account 2",
-      );
     });
   });
 

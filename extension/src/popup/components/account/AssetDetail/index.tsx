@@ -1,55 +1,42 @@
 import React, { useState } from "react";
-import { createPortal } from "react-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { IconButton, Icon, Button } from "@stellar/design-system";
 
-import { AssetToken } from "@shared/api/types";
+import { ApiTokenPrice, ApiTokenPrices } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import {
+  displaySorobanId,
   getAvailableBalance,
   getIssuerFromBalance,
   isSorobanIssuer,
 } from "popup/helpers/account";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
-import { navigateTo } from "popup/helpers/navigate";
-import { formatTokenAmount, isContractId } from "popup/helpers/soroban";
-import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
-import { ROUTES } from "popup/constants/routes";
+import { formatTokenAmount } from "popup/helpers/soroban";
+import { getAssetFromCanonical } from "helpers/stellar";
 
 import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
-import { AssetNetworkInfo } from "popup/components/accountHistory/AssetNetworkInfo";
 import { TransactionDetail2 } from "popup/components/accountHistory/TransactionDetail";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
-import {
-  saveAsset,
-  saveDestinationAsset,
-  saveIsToken,
-} from "popup/ducks/transactionSubmission";
 import { settingsSelector } from "popup/ducks/settings";
-import { AppDispatch } from "popup/App";
 import StellarLogo from "popup/assets/stellar-logo.png";
-import { formatAmount } from "popup/helpers/formatters";
+import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { Loading } from "popup/components/Loading";
-import {
-  BlockaidAssetWarning,
-  WarningMessage,
-  WarningMessageVariant,
-} from "popup/components/WarningMessages";
+import { BlockaidAssetWarning } from "popup/components/WarningMessages";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
-import { getBalanceByAsset } from "popup/helpers/balance";
+import { getBalanceByAsset, getPriceDeltaColor } from "popup/helpers/balance";
+import { CopyValue } from "popup/components/CopyValue";
 import {
   AssetType,
+  ClassicAsset,
   LiquidityPoolShareAsset,
+  NativeAsset,
   SorobanAsset,
 } from "@shared/api/types/account-balance";
-import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
 import { OperationDataRow } from "popup/views/AccountHistory/hooks/useGetHistoryData";
 
 import "./styles.scss";
@@ -60,8 +47,9 @@ interface AssetDetailProps {
   networkDetails: NetworkDetails;
   publicKey: string;
   selectedAsset: string;
-  subentryCount: number;
   setSelectedAsset: (selectedAsset: string) => void;
+  subentryCount: number;
+  tokenPrices?: ApiTokenPrices | null;
 }
 
 export const AssetDetail = ({
@@ -72,16 +60,11 @@ export const AssetDetail = ({
   selectedAsset,
   setSelectedAsset,
   subentryCount,
+  tokenPrices,
 }: AssetDetailProps) => {
-  const dispatch: AppDispatch = useDispatch<AppDispatch>();
-  const navigate = useNavigate();
+  const { t } = useTranslation();
   const { isHideDustEnabled } = useSelector(settingsSelector);
-  const USDC_ASSET =
-    "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
   const isNative = selectedAsset === "native";
-  const isUsdc = selectedAsset === USDC_ASSET;
-
-  const isOnrampSupported = (isNative || isUsdc) && isMainnet(networkDetails);
 
   const canonical = getAssetFromCanonical(selectedAsset);
   const isSorobanAsset = canonical.issuer && isSorobanIssuer(canonical.issuer);
@@ -89,9 +72,20 @@ export const AssetDetail = ({
   const selectedBalance = getBalanceByAsset(
     canonical,
     accountBalances.balances,
-  ) as Exclude<AssetType, LiquidityPoolShareAsset | SorobanAsset>;
-  const isSuspicious = isAssetSuspicious(selectedBalance.blockaidData);
+  ) as Exclude<AssetType, LiquidityPoolShareAsset>;
+  const isSuspicious =
+    "blockaidData" in selectedBalance
+      ? isAssetSuspicious(selectedBalance.blockaidData)
+      : false;
 
+  const icons = accountBalances.icons || {};
+  const assetIconUrl =
+    "type" in selectedBalance.token && selectedBalance.token.type === "native"
+      ? StellarLogo
+      : icons[selectedAsset];
+  const assetPrice: ApiTokenPrice | null = tokenPrices
+    ? tokenPrices[selectedAsset]
+    : null;
   const assetIssuer = selectedBalance
     ? getIssuerFromBalance(selectedBalance)
     : "";
@@ -115,36 +109,9 @@ export const AssetDetail = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeAssetId, setActiveAssetId] = useState<string | null>(null);
 
-  const { t } = useTranslation();
-
-  const [onrampAsset, setOnrampAsset] = useState("");
-  const {
-    fetchData,
-    isLoading: isTokenRequestLoading,
-    tokenError,
-    clearTokenError,
-  } = useGetOnrampToken({
-    asset: onrampAsset,
-  });
-
-  const handleOnrampClick = async () => {
-    let asset = "";
-    if (isUsdc) {
-      asset = "USDC";
-    }
-
-    if (isNative) {
-      asset = "XLM";
-    }
-    setOnrampAsset(asset);
-    await fetchData();
-  };
-
   const { assetDomain, error: assetError } = useAssetDomain({
     assetIssuer,
   });
-
-  const isContract = isContractId(assetIssuer);
 
   if (!assetOperations && !isSorobanAsset) {
     return null;
@@ -167,6 +134,17 @@ export const AssetDetail = ({
     (op) => op.id === activeAssetId,
   );
 
+  const title = (balance: NativeAsset | ClassicAsset | SorobanAsset) => {
+    if ("type" in balance.token && balance.token.type === "native") {
+      return "Stellar Lumens";
+    }
+    if ("symbol" in balance) {
+      return balance.symbol;
+    }
+
+    return "";
+  };
+
   return activeAssetId ? (
     <SlideupModal
       isModalOpen={activeOperation !== null}
@@ -181,131 +159,77 @@ export const AssetDetail = ({
     <React.Fragment>
       <SubviewHeader
         title={canonical.code}
-        subtitle={
-          isNative ? (
-            <div className="AssetDetail__available">
-              <span className="AssetDetail__available__copy">
-                {availableTotal} {t("available")}
-              </span>
-              <span
-                className="AssetDetail__available__icon"
-                onClick={() => setIsModalOpen(true)}
-              >
-                <IconButton
-                  altText="Available Info"
-                  icon={<Icon.InfoCircle />}
-                />{" "}
-              </span>
-            </div>
-          ) : null
-        }
         customBackAction={() => setSelectedAsset("")}
       />
       <View.Content>
         <div className="AssetDetail__wrapper" data-testid="AssetDetail">
-          {selectedBalance && "name" in selectedBalance && (
-            <span className="AssetDetail__token-name">
-              {selectedBalance.name as string}
-            </span>
-          )}
-          <div className="AssetDetail__total">
-            <div
-              className={`AssetDetail__total__copy ${
-                isSuspicious ? "AssetDetail__total__copy--isSuspicious" : ""
-              }`}
-              data-testid="asset-detail-available-copy"
-            >
-              {displayTotal}
-            </div>
-            <div className="AssetDetail__total__network">
-              <AssetNetworkInfo
-                assetCode={canonical.code}
-                assetIssuer={assetIssuer}
-                assetType={
-                  selectedBalance &&
-                  "token" in selectedBalance &&
-                  "type" in selectedBalance.token
-                    ? selectedBalance.token.type
-                    : null
-                }
-                assetDomain={assetDomain}
-                contractId={
-                  selectedBalance && "decimals" in selectedBalance
-                    ? (selectedBalance.token as AssetToken)?.issuer?.key
-                    : undefined
-                }
+          <div className="AssetDetail__network-icon">
+            {assetIconUrl ? (
+              <img src={assetIconUrl} alt="Network icon" />
+            ) : null}
+          </div>
+          <div className="AssetDetail__title">
+            {title(selectedBalance) || assetDomain}
+          </div>
+          {"contractId" in selectedBalance ? (
+            <div className="AssetDetail__subtitle">
+              <CopyValue
+                value={selectedBalance.contractId}
+                displayValue={displaySorobanId(selectedBalance.contractId, 28)}
               />
             </div>
+          ) : null}
+          <div className="AssetDetail__price">
+            {assetPrice && assetPrice.currentPrice
+              ? `$${formatAmount(
+                  roundUsdValue(
+                    new BigNumber(assetPrice.currentPrice).toString(),
+                  ),
+                )}`
+              : null}
           </div>
-          <div className="AssetDetail__actions">
-            {selectedBalance?.total &&
-            new BigNumber(selectedBalance?.total).toNumber() > 0 ? (
-              <>
-                <Button
-                  data-testid="asset-detail-send-button"
-                  size="md"
-                  variant="tertiary"
-                  onClick={() => {
-                    dispatch(saveAsset(selectedAsset));
-                    if (isContract) {
-                      dispatch(saveIsToken(true));
-                    } else {
-                      dispatch(saveIsToken(false));
-                    }
-                    navigateTo(ROUTES.sendPayment, navigate);
-                  }}
-                >
-                  {t("SEND")}
-                </Button>
-                {!isSorobanAsset && (
-                  <Button
-                    data-testid="asset-detail-swap-button"
-                    size="md"
-                    variant="tertiary"
-                    onClick={() => {
-                      dispatch(saveAsset(selectedAsset));
-                      navigateTo(ROUTES.swap, navigate);
-                    }}
-                  >
-                    {t("SWAP")}
-                  </Button>
-                )}
-                {isOnrampSupported && (
-                  <Button
-                    size="md"
-                    variant="tertiary"
-                    onClick={() => {
-                      handleOnrampClick();
-                    }}
-                    isLoading={isTokenRequestLoading}
-                  >
-                    {t("BUY")}
-                  </Button>
-                )}
-              </>
-            ) : (
-              <>
-                {!isSorobanAsset && (
-                  <Button
-                    data-testid="asset-detail-swap-button"
-                    size="md"
-                    variant="tertiary"
-                    onClick={() => {
-                      dispatch(saveDestinationAsset(selectedAsset));
-                      navigateTo(ROUTES.swap, navigate);
-                    }}
-                  >
-                    {t("SWAP")}
-                  </Button>
-                )}
-              </>
-            )}
+          {assetPrice && assetPrice.percentagePriceChange24h ? (
+            <div
+              className={`AssetDetail__delta ${getPriceDeltaColor(
+                new BigNumber(
+                  roundUsdValue(assetPrice.percentagePriceChange24h),
+                ),
+              )}`}
+            >
+              {formatAmount(roundUsdValue(assetPrice.percentagePriceChange24h))}
+              %
+            </div>
+          ) : null}
+          <div className="AssetDetail__balance-info">
+            <div
+              className="AssetDetail__balance"
+              data-testid="asset-detail-available-copy"
+            >
+              <div className="AssetDetail__balance-label">Balance</div>
+              <div>{displayTotal}</div>
+            </div>
+            <div className="AssetDetail__balance-value">
+              <div className="AssetDetail__balance-label">Value</div>
+              <div>
+                {assetPrice && assetPrice.currentPrice
+                  ? `$${formatAmount(
+                      roundUsdValue(
+                        new BigNumber(assetPrice.currentPrice)
+                          .multipliedBy(selectedBalance.total)
+                          .toString(),
+                      ),
+                    )}`
+                  : "--"}
+              </div>
+            </div>
           </div>
           <div className="AssetDetail__scam-warning">
             {isSuspicious && (
               <BlockaidAssetWarning
                 blockaidData={
-                  selectedBalance.blockaidData || defaultBlockaidScanAssetResult
+                  ("blockaidData" in selectedBalance &&
+                    selectedBalance.blockaidData) ||
+                  defaultBlockaidScanAssetResult
                 }
               />
             )}
@@ -389,19 +313,6 @@ export const AssetDetail = ({
           </div>
         </SlideupModal>
       )}
-      {tokenError
-        ? createPortal(
-            <WarningMessage
-              header={t("Error fetching Coinbase token. Please try again.")}
-              isActive={!!tokenError}
-              variant={WarningMessageVariant.warning}
-              handleCloseClick={clearTokenError}
-            >
-              <div>{tokenError}</div>
-            </WarningMessage>,
-            document.querySelector("#modal-root")!,
-          )
-        : null}
     </React.Fragment>
   );
 };

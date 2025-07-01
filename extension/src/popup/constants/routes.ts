@@ -53,4 +53,5 @@ export enum ROUTES {
   accountMigrationMigrationComplete = "/account-migration/migration-complete",
 
   discover = "/discover",
+  wallets = "/wallets",
 }

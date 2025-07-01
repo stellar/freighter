@@ -98,7 +98,7 @@ export const AccountHistory = () => {
 
   return (
     <>
-      <View.AppHeader pageTitle={t("History")} />
+      <View.AppHeader hasBackButton pageTitle={t("History")} />
       <View.Content hasNoTopPadding hasNoBottomPadding>
         <div className="AccountHistory" data-testid="AccountHistory">
           {!hasError &&
