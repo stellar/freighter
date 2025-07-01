@@ -38,6 +38,7 @@ describe("AssetDetail", () => {
             "70952a50b7d60c8b64ffb0183002d98aa42fd95c1bea56250435833f0b51f9cb",
           transaction_successful: true,
           transaction_attr: { operation_count: 1 },
+          metadata: {},
           type: "payment",
           type_i: 1,
         },
@@ -97,6 +98,9 @@ describe("AssetDetail", () => {
             "70952a50b7d60c8b64ffb0183002d98aa42fd95c1bea56250435833f0b51f9cb",
           transaction_successful: true,
           transaction_attr: { operation_count: 1 },
+          metadata: {
+            isDustPayment: true,
+          },
           type: "payment",
           type_i: 1,
         },
@@ -157,6 +161,9 @@ describe("AssetDetail", () => {
             "70952a50b7d60c8b64ffb0183002d98aa42fd95c1bea56250435833f0b51f9cb",
           transaction_successful: true,
           transaction_attr: { operation_count: 1 },
+          metadata: {
+            isDustPayment: true,
+          },
           type: "payment",
           type_i: 1,
         },

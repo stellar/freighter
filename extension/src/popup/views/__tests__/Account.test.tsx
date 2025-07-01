@@ -1,6 +1,5 @@
 import React from "react";
 import { render, waitFor, screen, fireEvent } from "@testing-library/react";
-import { Horizon } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 import * as ReactRouterDom from "react-router-dom";
 
@@ -20,7 +19,7 @@ import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import * as UseAssetDomain from "popup/helpers/useAssetDomain";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { SERVICE_TYPES } from "@shared/constants/services";
-import { Response, SettingsState } from "@shared/api/types";
+import { HorizonOperation, Response, SettingsState } from "@shared/api/types";
 import * as TokenListHelpers from "@shared/api/helpers/token-list";
 import * as RouteHelpers from "popup/helpers/route";
 
@@ -50,8 +49,9 @@ const mockHistoryOperations = {
       asset_code: "code",
       from: "G1",
       to: "G2",
+      transaction_attr: { operation_count: 1, fee_charged: "" },
     },
-  ] as Horizon.ServerApi.PaymentOperationRecord[],
+  ] as HorizonOperation[],
 };
 
 jest
