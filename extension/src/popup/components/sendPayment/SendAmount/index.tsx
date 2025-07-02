@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createPortal } from "react-dom";
 import debounce from "lodash/debounce";
@@ -31,7 +31,6 @@ import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   cleanAmount,
-  formatAmount,
   formatAmountPreserveCursor,
 } from "popup/helpers/formatters";
 import {
@@ -61,14 +60,13 @@ import {
 
 import { RequestState } from "constants/request";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
-
-import "../styles.scss";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { Navigate, useLocation } from "react-router-dom";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
-import { InfoTooltip } from "popup/basics/InfoTooltip";
+
+import "../styles.scss";
 
 enum AMOUNT_ERROR {
   TOO_HIGH = "amount too high",
@@ -119,6 +117,8 @@ const ConversionRate = ({
 // default so can find a path even if user has not given input
 const defaultSourceAmount = "1";
 
+const CHAR_WIDTH = 24;
+
 export const SendAmount = ({
   goBack,
   goToNext,
@@ -134,6 +134,8 @@ export const SendAmount = ({
   const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
   const runAfterUpdate = useRunAfterUpdate();
+  const spanRef = useRef<HTMLSpanElement>(null);
+  const [inputWidth, setInputWidth] = useState(CHAR_WIDTH);
 
   const { transactionData, soroswapTokens } = useSelector(
     transactionSubmissionSelector,
@@ -316,6 +318,13 @@ export const SendAmount = ({
     validate,
     enableReinitialize: true,
   });
+
+  useEffect(() => {
+    if (spanRef.current) {
+      // Use scrollWidth to get actual rendered width
+      setInputWidth(spanRef.current.scrollWidth + 2); // Add small padding buffer
+    }
+  }, [formik.values.amount]);
 
   const showSourceAndDestAsset = !!formik.values.destinationAsset;
   const parsedSourceAsset = getAssetFromCanonical(formik.values.asset);
@@ -567,7 +576,7 @@ export const SendAmount = ({
         <SubviewHeader
           title={
             <span>
-              {isSwap ? "Swap" : "Send"} {parsedSourceAsset.code}{" "}
+              {isSwap ? "Swap" : "Send"}
               {isSoroswap ? (
                 <span>
                   on{" "}
@@ -581,20 +590,6 @@ export const SendAmount = ({
                 </span>
               ) : null}
             </span>
-          }
-          subtitle={
-            asset === "native" ? (
-              <div className="SendAmount__subtitle">
-                <InfoTooltip
-                  infoText={t(
-                    "The amount of XLM not reserved or needed for fees. This number may be lower than your total balance.",
-                  )}
-                  placement="bottom-end"
-                >
-                  {`${formatAmount(availBalance)} ${parsedSourceAsset.code} ${t("available")}`}
-                </InfoTooltip>
-              </div>
-            ) : null
           }
           hasBackButton
           customBackAction={() => {
@@ -634,66 +629,64 @@ export const SendAmount = ({
                   formik.submitForm();
                 }}
               >
-                {t("Continue")}
+                {t("Review Send")}
               </Button>
             </div>
           }
         >
           <div className="SendAmount">
             <div className="SendAmount__content">
-              <div className="SendAmount__btn-set-max">
-                <Button
-                  size="md"
-                  variant="tertiary"
-                  onClick={() => {
-                    emitMetric(METRIC_NAMES.sendPaymentSetMax);
-                    formik.setFieldValue(
-                      "amount",
-                      calculateAvailBalance(formik.values.asset),
-                    );
-                  }}
-                  data-testid="SendAmountSetMax"
-                >
-                  {t("SET MAX")}
-                </Button>
-              </div>
-
               <form>
                 <div className="SendAmount__simplebar__content">
-                  <input
-                    className={`SendAmount__input-amount ${
-                      isSwap ? "SendAmount__input-amount__full-height" : ""
-                    } SendAmount__${getAmountFontSize()}`}
-                    data-testid="send-amount-amount-input"
-                    name="amount"
-                    type="text"
-                    placeholder="0"
-                    value={formik.values.amount}
-                    onChange={(e) => {
-                      const input = e.target;
-                      const { amount: newAmount, newCursor } =
-                        formatAmountPreserveCursor(
-                          e.target.value,
-                          formik.values.amount,
-                          getAssetDecimals(
-                            asset,
-                            sendData.userBalances,
-                            isToken,
-                          ),
-                          e.target.selectionStart || 1,
-                        );
-                      formik.setFieldValue("amount", newAmount);
-                      dispatch(saveAmount(newAmount));
-                      runAfterUpdate(() => {
-                        input.selectionStart = newCursor;
-                        input.selectionEnd = newCursor;
-                      });
-                    }}
-                    autoFocus
-                    autoComplete="off"
-                  />
-                  <div className="SendAmount__input-amount__asset-copy">
-                    {parsedSourceAsset.code}
+                  <div className="SendAmount__amount-row">
+                    <div className="SendAmount__amount-input-container">
+                      <span
+                        ref={spanRef}
+                        className={`SendAmount__mirror-amount SendAmount__${getAmountFontSize()}`}
+                      >
+                        {formik.values.amount}
+                      </span>
+                      <input
+                        className={`SendAmount__input-amount ${
+                          isSwap ? "SendAmount__input-amount__full-height" : ""
+                        } SendAmount__${getAmountFontSize()}`}
+                        style={{
+                          width: inputWidth,
+                        }}
+                        data-testid="send-amount-amount-input"
+                        name="amount"
+                        type="text"
+                        placeholder="0"
+                        value={formik.values.amount}
+                        onChange={(e) => {
+                          const input = e.target;
+                          const { amount: newAmount, newCursor } =
+                            formatAmountPreserveCursor(
+                              e.target.value,
+                              formik.values.amount,
+                              getAssetDecimals(
+                                asset,
+                                sendData.userBalances,
+                                isToken,
+                              ),
+                              e.target.selectionStart || 1,
+                            );
+                          formik.setFieldValue("amount", newAmount);
+                          dispatch(saveAmount(newAmount));
+                          runAfterUpdate(() => {
+                            input.selectionStart = newCursor;
+                            input.selectionEnd = newCursor;
+                          });
+                        }}
+                        autoFocus
+                        autoComplete="off"
+                      />
+                      <div
+                        className={`SendAmount__amount-label SendAmount__${getAmountFontSize()}`}
+                      >
+                        {parsedSourceAsset.code}
+                      </div>
+                    </div>
                   </div>
                   {showSourceAndDestAsset && formik.values.amount !== "0" && (
                     <ConversionRate
@@ -706,6 +699,23 @@ export const SendAmount = ({
                       destAmount={destinationAmount}
                     />
                   )}
+                  <div className="SendAmount__btn-set-max">
+                    <Button
+                      size="md"
+                      variant="tertiary"
+                      isRounded
+                      onClick={() => {
+                        emitMetric(METRIC_NAMES.sendPaymentSetMax);
+                        formik.setFieldValue(
+                          "amount",
+                          calculateAvailBalance(formik.values.asset),
+                        );
+                      }}
+                      data-testid="SendAmountSetMax"
+                    >
+                      {t("SET MAX")}
+                    </Button>
+                  </div>
                   <div
                     className={`SendAmount__amount-warning${
                       destinationAsset ? "__path-payment" : ""

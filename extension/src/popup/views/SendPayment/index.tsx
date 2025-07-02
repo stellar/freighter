@@ -14,6 +14,7 @@ import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/
 import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 import { SendSettingsTxTimeout } from "popup/components/sendPayment/SendSettings/TxTimeout";
 import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
+import { SendDestinationAsset } from "popup/components/sendPayment/SendDestinationAsset";
 
 export const SendPayment = () => {
   const navigate = useNavigate();
@@ -76,10 +77,18 @@ export const SendPayment = () => {
         emitMetric(METRIC_NAMES.sendPaymentAmount);
         return (
           <SendAmount
-            goBack={() => setActiveStep(STEPS.DESTINATION)}
+            goBack={() => setActiveStep(STEPS.SET_DESTINATION_ASSET)}
             goToNext={() => setActiveStep(STEPS.PAYMENT_SETTINGS)}
             goToPaymentType={() => setActiveStep(STEPS.PAYMENT_TYPE)}
             goToChooseAsset={() => setActiveStep(STEPS.CHOOSE_ASSET)}
+          />
+        );
+      }
+      case STEPS.SET_DESTINATION_ASSET: {
+        return (
+          <SendDestinationAsset
+            goBack={() => setActiveStep(STEPS.DESTINATION)}
+            goToNext={() => setActiveStep(STEPS.AMOUNT)}
           />
         );
       }
@@ -89,7 +98,7 @@ export const SendPayment = () => {
         return (
           <SendTo
             goBack={() => navigate(ROUTES.account)}
-            goToNext={() => setActiveStep(STEPS.AMOUNT)}
+            goToNext={() => setActiveStep(STEPS.SET_DESTINATION_ASSET)}
           />
         );
       }
