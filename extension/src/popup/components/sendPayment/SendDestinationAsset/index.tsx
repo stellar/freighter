@@ -125,7 +125,7 @@ export const SendDestinationAsset = ({
               </div>
               {truncatedPublicKey(destination)}
             </div>
-            <Button isRounded size="sm" variant="tertiary">
+            <Button isRounded size="sm" variant="tertiary" onClick={goBack}>
               Edit
             </Button>
           </div>
@@ -156,7 +156,7 @@ export const SendDestinationAsset = ({
                     const isContract = "contractId" in balance;
                     const canonical = getCanonicalFromAsset(code, issuerKey);
                     const icon = icons[canonical];
-                    // TODO: should this be available balance for XLM
+                    // TODO: should this be available balance for XLM?
                     const displayTotal = `${formatAmount(balance.total.toString())} ${code}`;
                     const usdValue = tokenPrices[canonical];
                     return (

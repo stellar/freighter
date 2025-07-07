@@ -70,12 +70,13 @@
     justify-content: center;
     font-size: 0.875rem;
     line-height: 1.5rem;
+    margin-bottom: pxToRem(32px);
   }
 
   &__amount-row {
     display: flex;
     position: relative;
-    margin-top: 3rem;
+    margin-top: 1rem;
   }
 
   &__amount-input-container {
@@ -89,6 +90,11 @@
     font-size: 2.5rem;
     font-weight: var(--font-weight-light);
     margin-left: pxToRem(6px);
+  }
+
+  &__amount-label-usd {
+    font-size: 2.5rem;
+    font-weight: var(--font-weight-light);
   }
 
   &__mirror-amount {
@@ -139,7 +145,103 @@
   }
 
   &__btn-continue {
-    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__settings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: pxToRem(12px);
+  }
+
+  &__settings-fee-display {
+    display: flex;
+
+    svg {
+      margin-right: pxToRem(6px);
+      path {
+        fill: var(--sds-clr-white);
+      }
+    }
+
+    &__label {
+      color: var(--sds-clr-gray-11);
+      margin-right: pxToRem(6px);
+    }
+  }
+
+  &__settings-options {
+    display: flex;
+
+    .Button:first-child {
+      margin-right: pxToRem(6px);
+    }
+  }
+
+  &__EditDestination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: pxToRem(12px) pxToRem(24px);
+    background-color: var(--sds-clr-gray-03);
+    border-radius: pxToRem(14px);
+
+    &__title {
+      display: flex;
+      align-items: center;
+    }
+
+    &__identicon {
+      width: 2rem;
+      height: 2rem;
+      padding: pxToRem(6px);
+      border: 1px solid var(--sds-clr-gray-09);
+      border-radius: pxToRem(100px);
+      margin-right: pxToRem(12px);
+    }
+  }
+
+  &__EditDestAsset {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: pxToRem(12px) pxToRem(24px);
+    background-color: var(--sds-clr-gray-03);
+    border-radius: pxToRem(14px);
+    margin-bottom: pxToRem(24px);
+
+    &__title {
+      display: flex;
+      align-items: center;
+    }
+
+    &__asset-title {
+      display: flex;
+      flex-direction: column;
+    }
+    // &__asset-heading {}
+    &__asset-total {
+      font-size: pxToRem(12px);
+      color: var(--sds-clr-gray-11);
+      margin-top: pxToRem(4px);
+    }
+  }
+
+  &__amount-price {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: pxToRem(12px);
+    margin-bottom: pxToRem(32px);
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(24px);
+
+    .Button {
+      border: 0;
+      margin-left: pxToRem(6px);
+    }
   }
 }
 
@@ -281,5 +383,110 @@
   text-align: center;
   &__input {
     color: black;
+  }
+}
+
+.EditMemoWrapper {
+  position: absolute;
+  width: 100%;
+  top: 30%;
+}
+
+.EditMemo {
+  z-index: var(--z-index--banner);
+  position: relative;
+
+  &__description {
+    font-size: 14px;
+    color: var(--sds-clr-gray-10);
+    margin: #{pxToRem(12px)} 0 #{pxToRem(18px)} 0;
+  }
+
+  &__actions {
+    display: flex;
+
+    button {
+      flex: 1;
+    }
+    button:not(:first-child) {
+      margin-left: #{pxToRem(10px)};
+    }
+  }
+}
+
+.EditTxSettings {
+  z-index: var(--z-index--banner);
+  position: relative;
+
+  &__congestion {
+    display: flex;
+    align-items: baseline;
+    font-size: 12px;
+    color: var(--sds-clr-gray-10);
+    margin: #{pxToRem(12px)} 0 #{pxToRem(24px)} 0;
+    padding-left: pxToRem(6px);
+  }
+
+  &__form {
+    .Input__container {
+      padding-right: 0;
+      .Button {
+        // mask button as right element of input
+        border-right: 0;
+        border-top: 0;
+        border-bottom: 0;
+        border-radius: 0;
+        height: 95%;
+        margin-right: 1px;
+      }
+    }
+  }
+
+  &__actions {
+    display: flex;
+    margin-top: pxToRem(32px);
+
+    button {
+      flex: 1;
+    }
+    button:not(:first-child) {
+      margin-left: #{pxToRem(10px)};
+    }
+  }
+}
+
+.NetworkCongestionIndicator {
+  display: flex;
+  margin-right: pxToRem(6px);
+  align-items: baseline;
+
+  &__level {
+    width: pxToRem(6px);
+    margin-right: pxToRem(2px);
+    border-radius: pxToRem(24px);
+
+    &.level-Low {
+      height: 6px;
+    }
+
+    &.level-Medium {
+      height: 10px;
+    }
+
+    &.level-High {
+      height: 14px;
+    }
+
+    &.level-color-Low {
+      background-color: var(--sds-clr-grey-09);
+    }
+
+    &.level-color-Medium {
+      background-color: var(--sds-clr-lime-09);
+    }
+
+    &.level-color-High {
+      background-color: var(--sds-clr-red-09);
+    }
   }
 }

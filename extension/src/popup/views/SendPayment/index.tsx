@@ -6,7 +6,7 @@ import { STEPS } from "popup/constants/send-payment";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SendTo } from "popup/components/sendPayment/SendTo";
-import { SendAmount } from "popup/components/sendPayment/SendAmount";
+import { SendAmount2 } from "popup/components/sendPayment/SendAmount";
 import { SendType } from "popup/components/sendPayment/SendAmount/SendType";
 import { SendSettings } from "popup/components/sendPayment/SendSettings";
 import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/TransactionFee";
@@ -76,11 +76,10 @@ export const SendPayment = () => {
       case STEPS.AMOUNT: {
         emitMetric(METRIC_NAMES.sendPaymentAmount);
         return (
-          <SendAmount
+          <SendAmount2
             goBack={() => setActiveStep(STEPS.SET_DESTINATION_ASSET)}
-            goToNext={() => setActiveStep(STEPS.PAYMENT_SETTINGS)}
-            goToPaymentType={() => setActiveStep(STEPS.PAYMENT_TYPE)}
-            goToChooseAsset={() => setActiveStep(STEPS.CHOOSE_ASSET)}
+            goToNext={() => setActiveStep(STEPS.PAYMENT_CONFIRM)}
+            goToChooseDest={() => setActiveStep(STEPS.DESTINATION)}
           />
         );
       }
