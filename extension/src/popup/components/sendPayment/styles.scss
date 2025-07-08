@@ -235,6 +235,7 @@
     align-items: center;
     margin-top: pxToRem(12px);
     margin-bottom: pxToRem(32px);
+    margin-left: pxToRem(32px);
     color: var(--sds-clr-gray-11);
     font-size: pxToRem(24px);
 
@@ -488,5 +489,117 @@
     &.level-color-High {
       background-color: var(--sds-clr-red-09);
     }
+  }
+}
+
+.ReviewTxWrapper {
+  position: absolute;
+  width: 100%;
+  top: 18%;
+}
+
+.ReviewTx {
+  z-index: var(--z-index--banner);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  background-color: var(--sds-clr-gray-01);
+  border-radius: 0.875rem;
+
+  &__Divider {
+    margin: pxToRem(12px) 0;
+    svg {
+      color: var(--sds-clr-gray-09);
+      margin-left: pxToRem(7px);
+    }
+  }
+
+  &__SendSummary {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__Details {
+    margin: pxToRem(32px) 0;
+
+    .Card {
+      display: flex;
+      flex-direction: column;
+    }
+
+    &__Memo {
+      display: flex;
+      justify-content: space-between;
+
+      &__Title {
+        display: flex;
+        align-items: center;
+        color: var(--sds-clr-gray-09);
+
+        svg {
+          margin-right: pxToRem(6px);
+        }
+      }
+    }
+
+    &__Fee {
+      display: flex;
+      justify-content: space-between;
+      margin-top: pxToRem(12px);
+
+      &__Title {
+        display: flex;
+        align-items: center;
+        color: var(--sds-clr-gray-09);
+
+        svg {
+          margin-right: pxToRem(6px);
+        }
+      }
+    }
+  }
+
+  &__Actions {
+    display: flex;
+    flex-direction: column;
+
+    .Button {
+      margin-top: pxToRem(12px);
+    }
+  }
+
+  &__SendAsset {
+    display: flex;
+    align-items: center;
+  }
+
+  &__SendAssetDetails {
+    display: flex;
+    flex-direction: column;
+
+    &__price {
+      color: var(--sds-clr-gray-09);
+      font-size: pxToRem(14px);
+    }
+  }
+
+  &__SendDestination {
+    display: flex;
+    align-items: center;
+
+    .IdenticonImg {
+      width: 2rem;
+      height: 2rem;
+      padding: pxToRem(6px);
+      border: 1px solid var(--sds-clr-gray-09);
+      border-radius: pxToRem(100px);
+      margin-right: pxToRem(12px);
+    }
+  }
+
+  &__SendDestinationDetails {
+    display: flex;
+    flex-direction: column;
   }
 }

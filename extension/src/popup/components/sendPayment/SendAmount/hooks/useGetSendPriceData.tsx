@@ -7,10 +7,9 @@ import { isMainnet } from "helpers/stellar";
 import { getTokenPrices } from "@shared/api/internal";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
-const BASE_PRICE_STATE = "$0.00";
-
 interface SendPriceData {
   assetValue: string | null;
+  assetValueUsd: string | null;
 }
 
 function useGetSendPriceData({ assetId }: { assetId: string }) {
@@ -29,10 +28,10 @@ function useGetSendPriceData({ assetId }: { assetId: string }) {
     assetDecimals: number;
     inputType: "crypto" | "fiat";
     networkDetails: NetworkDetails;
-  }) => {
+  }): Promise<SendPriceData | { error: string }> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const payload = { assetValue: BASE_PRICE_STATE } as SendPriceData;
+      const payload = { assetValue: null } as SendPriceData;
       const isMainnetNetwork = isMainnet(networkDetails);
 
       if (isMainnetNetwork) {
@@ -40,10 +39,9 @@ function useGetSendPriceData({ assetId }: { assetId: string }) {
           const prices = await getTokenPrices([assetId]);
           const assetPrice = prices[assetId]?.currentPrice;
           if (assetPrice) {
-            console.log(assetAmount, assetPrice);
             payload.assetValue =
               inputType === "crypto"
-                ? `$${formatAmount(
+                ? `${formatAmount(
                     roundUsdValue(
                       new BigNumber(assetPrice)
                         .multipliedBy(new BigNumber(assetAmount))
@@ -64,7 +62,8 @@ function useGetSendPriceData({ assetId }: { assetId: string }) {
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
-      return error;
+      const _err = typeof error === "string" ? error : JSON.stringify(error);
+      return { error: _err };
     }
   };
 

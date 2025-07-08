@@ -19,6 +19,7 @@ import {
   isMuxedAccount,
   getConversionRate,
   truncatedFedAddress,
+  truncatedPublicKey,
 } from "helpers/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { AssetIcons, ActionStatus } from "@shared/api/types";
@@ -81,6 +82,8 @@ import {
 import { VerifyAccountDrawer } from "popup/components/VerifyAccountDrawer";
 
 import "./styles.scss";
+import { useSubmitTxData } from "./hooks/useSubmitTxData";
+import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 
 const TwoAssetCard = ({
   sourceAssetIcons,
@@ -705,5 +708,109 @@ export const TransactionDetails = ({
         </React.Fragment>
       )}
     </>
+  );
+};
+
+interface SendingTransactionProps {
+  xdr: string;
+}
+
+export const SendingTransaction = ({ xdr }: SendingTransactionProps) => {
+  const submission = useSelector(transactionSubmissionSelector);
+  const {
+    transactionData: { amount, asset, destination, isToken },
+  } = submission;
+  const publicKey = useSelector(publicKeySelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
+  const isHardwareWallet = !!hardwareWalletType;
+  const srcAsset = getAssetFromCanonical(asset);
+
+  const { state: submissionState, fetchData } = useSubmitTxData({
+    publicKey,
+    networkDetails,
+    xdr,
+  });
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData({
+        isToken,
+        isHardwareWallet,
+      });
+    };
+    // TODO
+    console.log(getData);
+    // getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const isLoading =
+    submissionState.state === RequestState.IDLE ||
+    submissionState.state === RequestState.LOADING;
+  const isSuccess = submissionState.state === RequestState.SUCCESS;
+  const assetIcon = submissionState.data?.icons[asset]!;
+  const assetIcons = asset !== "native" ? { [asset]: assetIcon } : {};
+
+  return (
+    <View.Content
+      contentFooter={
+        <div className="SendingTransaction__footer">
+          <div className="SendingTransaction__footer__subtext">
+            You can close this screen, your transaction should be complete in
+            less than a minute.
+          </div>
+          <Button
+            size="md"
+            isFullWidth
+            isRounded
+            variant="tertiary"
+            onClick={(e) => {
+              e.preventDefault();
+              window.close();
+            }}
+          >
+            Close
+          </Button>
+        </div>
+      }
+    >
+      <div className="SendingTransaction">
+        <div className="SendingTransaction__Title">
+          {isLoading ? (
+            <>
+              <Loader size="2rem" />
+              <span>Sending</span>
+            </>
+          ) : (
+            <>
+              <Icon.CheckCircle />
+              <span>Sent!</span>
+            </>
+          )}
+        </div>
+        <div className="SendingTransaction__Summary">
+          <div className="SendingTransaction__Summary__Assets">
+            <AssetIcon
+              assetIcons={assetIcons}
+              code={srcAsset.code}
+              issuerKey={srcAsset.issuer}
+              icon={assetIcon}
+              isSuspicious={false}
+            />
+            <div className="SendingTransaction__Summary__Assets__Divider">
+              <Icon.ChevronRightDouble />
+            </div>
+            <IdenticonImg publicKey={destination} />
+          </div>
+          <div className="SendingTransaction__Summary__Description">
+            {isLoading &&
+              `${amount} ${srcAsset.code} to ${truncatedPublicKey(destination)}`}
+            {isSuccess &&
+              `${amount} ${srcAsset.code} was sent to ${truncatedPublicKey(destination)}`}
+          </div>
+        </div>
+      </div>
+    </View.Content>
   );
 };

@@ -12,7 +12,7 @@ import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 
 import { SubmitFail, SubmitSuccess } from "./SubmitResult";
-import { TransactionDetails } from "./TransactionDetails";
+import { SendingTransaction, TransactionDetails } from "./TransactionDetails";
 
 import "../styles.scss";
 
@@ -46,6 +46,25 @@ export const SendConfirm = ({ goBack }: { goBack: () => void }) => {
         return <SubmitFail />;
       default:
         return <TransactionDetails shouldScanTx={false} goBack={goBack} />;
+    }
+  };
+
+  return render();
+};
+
+export const SendConfirm2 = ({ xdr }: { xdr: string }) => {
+  const submission = useSelector(transactionSubmissionSelector);
+
+  const render = () => {
+    switch (submission.submitStatus) {
+      case ActionStatus.IDLE:
+      case ActionStatus.PENDING:
+      case ActionStatus.SUCCESS:
+        return <SendingTransaction xdr={xdr} />;
+      case ActionStatus.ERROR:
+        return <SubmitFail />;
+      default:
+        return <SendingTransaction xdr={xdr} />;
     }
   };
 

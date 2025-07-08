@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/send-payment";
@@ -11,13 +12,77 @@ import { SendType } from "popup/components/sendPayment/SendAmount/SendType";
 import { SendSettings } from "popup/components/sendPayment/SendSettings";
 import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/TransactionFee";
 import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/Slippage";
-import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
+import { SendConfirm2 } from "popup/components/sendPayment/SendConfirm";
 import { SendSettingsTxTimeout } from "popup/components/sendPayment/SendSettings/TxTimeout";
 import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
 import { SendDestinationAsset } from "popup/components/sendPayment/SendDestinationAsset";
+import {
+  isPathPaymentSelector,
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
+import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
+import { isContractId } from "popup/helpers/soroban";
+import { useSimulateTxData } from "popup/components/sendPayment/SendAmount/hooks/useSimulateTxData";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { publicKeySelector } from "popup/ducks/accountServices";
 
 export const SendPayment = () => {
   const navigate = useNavigate();
+  const submission = useSelector(transactionSubmissionSelector);
+  const isPathPayment = useSelector(isPathPaymentSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
+
+  const {
+    transactionData: {
+      destination,
+      amount,
+      asset: srcAsset,
+      memo,
+      transactionFee,
+      transactionTimeout,
+      allowedSlippage,
+      destinationAsset,
+      destinationAmount,
+      path,
+      isToken,
+      isSoroswap,
+    },
+    transactionSimulation,
+  } = submission;
+
+  const asset = getAssetFromCanonical(srcAsset);
+
+  const simParams =
+    isToken || isSoroswap || isContractId(destination)
+      ? {
+          type: "soroban" as const,
+          xdr: transactionSimulation.preparedTransaction!,
+        }
+      : {
+          type: "classic" as const,
+          sourceAsset: asset,
+          destAsset: getAssetFromCanonical(destinationAsset || "native"),
+          amount,
+          destinationAmount,
+          allowedSlippage,
+          path,
+          isPathPayment,
+          isSwap: false,
+          memo,
+          transactionFee,
+          transactionTimeout,
+        };
+  const { state: simulationState, fetchData } = useSimulateTxData({
+    publicKey,
+    destination,
+    networkDetails,
+    destAsset: getAssetFromCanonical(destinationAsset || "native"),
+    sourceAsset: asset,
+    simParams,
+    isMainnet: isMainnet(networkDetails),
+  });
+
   const [activeStep, setActiveStep] = React.useState(STEPS.DESTINATION);
 
   const renderStep = (step: STEPS) => {
@@ -35,9 +100,7 @@ export const SendPayment = () => {
       }
       case STEPS.PAYMENT_CONFIRM: {
         emitMetric(METRIC_NAMES.sendPaymentConfirm);
-        return (
-          <SendConfirm goBack={() => setActiveStep(STEPS.PAYMENT_SETTINGS)} />
-        );
+        return <SendConfirm2 xdr={simulationState.data?.transactionXdr!} />;
       }
       case STEPS.SET_PAYMENT_SLIPPAGE: {
         emitMetric(METRIC_NAMES.sendPaymentSettingsSlippage);
@@ -80,6 +143,8 @@ export const SendPayment = () => {
             goBack={() => setActiveStep(STEPS.SET_DESTINATION_ASSET)}
             goToNext={() => setActiveStep(STEPS.PAYMENT_CONFIRM)}
             goToChooseDest={() => setActiveStep(STEPS.DESTINATION)}
+            fetchSimulationData={fetchData}
+            simulationState={simulationState}
           />
         );
       }

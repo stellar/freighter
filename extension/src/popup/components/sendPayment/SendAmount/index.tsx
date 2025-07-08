@@ -77,7 +77,7 @@ import {
   LiquidityPoolShareAsset,
 } from "@shared/api/types/account-balance";
 
-import { RequestState } from "constants/request";
+import { RequestState, State } from "constants/request";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
@@ -87,6 +87,7 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { useGetSendPriceData } from "./hooks/useGetSendPriceData";
+import { SimulateTxData } from "./hooks/useSimulateTxData";
 
 import "../styles.scss";
 
@@ -825,17 +826,25 @@ export const SendAmount2 = ({
   goBack,
   goToNext,
   goToChooseDest,
+  simulationState,
+  fetchSimulationData,
 }: {
   goBack: () => void;
   goToNext: () => void;
   goToChooseDest: () => void;
+  simulationState: State<SimulateTxData, unknown>;
+  fetchSimulationData: () => Promise<unknown>;
 }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
   const runAfterUpdate = useRunAfterUpdate();
+
   const spanRef = useRef<HTMLSpanElement>(null);
+  const spanRefUsd = useRef<HTMLSpanElement>(null);
+
   const [inputWidth, setInputWidth] = useState(CHAR_WIDTH);
+  const [inputWidthUsd, setInputWidthUsd] = useState(CHAR_WIDTH);
   const [inputType, setInputType] = useState<InputType>("crypto");
 
   const { transactionData } = useSelector(transactionSubmissionSelector);
@@ -843,10 +852,9 @@ export const SendAmount2 = ({
     transactionData;
 
   const srcAsset = getAssetFromCanonical(asset);
-  const { state: priceDataState, fetchData: fetchPriceData } =
-    useGetSendPriceData({
-      assetId: asset,
-    });
+  const { fetchData: fetchPriceData } = useGetSendPriceData({
+    assetId: asset,
+  });
   const { state: sendAmountData, fetchData } = useGetSendAmountData(
     {
       showHidden: false,
@@ -871,6 +879,8 @@ export const SendAmount2 = ({
 
   const [isEditingMemo, setIsEditingMemo] = React.useState(false);
   const [isEditingSettings, setIsEditingSettings] = React.useState(false);
+  const [isReviewingTx, setIsReviewingTx] = React.useState(false);
+  const [priceValue, setPriceValue] = React.useState("0.00");
 
   /* eslint-disable react-hooks/exhaustive-deps */
   const calculateAvailBalance = useCallback(
@@ -923,12 +933,10 @@ export const SendAmount2 = ({
 
   const handleContinue = (values: {
     amount: string;
+    amountUsd: string;
     asset: string;
     destinationAsset: string;
   }) => {
-    dispatch(saveAmount(cleanAmount(values.amount)));
-    dispatch(saveAsset(values.asset));
-
     let isDestAssetScam = false;
 
     if (sendAmountData.data?.type === AppDataType.REROUTE) {
@@ -988,8 +996,14 @@ export const SendAmount2 = ({
             : defaultBlockaidScanAssetResult,
       });
     } else {
-      goToNext();
+      setIsReviewingTx(true);
     }
+  };
+
+  const onConfirmSend = async () => {
+    const amount = inputType === "crypto" ? formik.values.amount : priceValue;
+    dispatch(saveAmount(cleanAmount(amount)));
+    goToNext();
   };
 
   const validate = (values: { amount: string }) => {
@@ -1011,7 +1025,7 @@ export const SendAmount2 = ({
   };
 
   const formik = useFormik({
-    initialValues: { amount, asset, destinationAsset },
+    initialValues: { amount, amountUsd: "0.00", asset, destinationAsset },
     onSubmit: handleContinue,
     validate,
     enableReinitialize: true,
@@ -1020,12 +1034,17 @@ export const SendAmount2 = ({
   useEffect(() => {
     if (spanRef.current) {
       // Use scrollWidth to get actual rendered width
-      setInputWidth(spanRef.current.scrollWidth + 2); // Add small padding buffer
+      setInputWidth(spanRef.current.scrollWidth + 8); // Add small padding buffer
     }
   }, [formik.values.amount]);
 
+  useEffect(() => {
+    if (spanRefUsd.current) {
+      setInputWidthUsd(spanRefUsd.current.scrollWidth + 8);
+    }
+  }, [formik.values.amountUsd]);
+
   const parsedSourceAsset = getAssetFromCanonical(formik.values.asset);
-  const amountValue = priceDataState.data?.assetValue || "$0.00";
 
   useEffect(() => {
     setAvailBalance(calculateAvailBalance(formik.values.asset));
@@ -1052,10 +1071,10 @@ export const SendAmount2 = ({
   useEffect(() => {
     const handler = debounce(async () => {
       const amount =
-        inputType === "crypto" ? formik.values.amount : amountValue;
+        inputType === "crypto" ? formik.values.amount : formik.values.amountUsd;
       const cleanedAmount = cleanAmount(amount);
       if (sendAmountData.data?.type === AppDataType.RESOLVED) {
-        await fetchPriceData({
+        const priceData = await fetchPriceData({
           assetAmount: cleanedAmount,
           assetDecimals: getAssetDecimals(
             asset,
@@ -1065,6 +1084,9 @@ export const SendAmount2 = ({
           networkDetails: sendAmountData.data.networkDetails,
           inputType,
         });
+        if ("assetValue" in priceData && priceData.assetValue) {
+          setPriceValue(priceData.assetValue);
+        }
       }
     }, 250);
 
@@ -1073,7 +1095,7 @@ export const SendAmount2 = ({
     return () => {
       handler.cancel();
     };
-  }, [formik.values.amount, sendAmountData, inputType]);
+  }, [formik.values.amount, formik.values.amountUsd]);
 
   if (isLoading) {
     return <Loading />;
@@ -1246,10 +1268,10 @@ export const SendAmount2 = ({
                       {inputType === "fiat" && (
                         <>
                           <span
-                            ref={spanRef}
+                            ref={spanRefUsd}
                             className={`SendAmount__mirror-amount SendAmount__${getAmountFontSize()}`}
                           >
-                            {formik.values.amount}
+                            {formik.values.amountUsd}
                           </span>
                           <div
                             className={`SendAmount__amount-label-usd SendAmount__${getAmountFontSize()}`}
@@ -1259,24 +1281,22 @@ export const SendAmount2 = ({
                           <input
                             className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
                             style={{
-                              width: inputWidth,
+                              width: inputWidthUsd,
                             }}
                             data-testid="send-amount-amount-input"
-                            name="amount"
+                            name="amountUsd"
                             type="text"
-                            placeholder="0"
-                            value={formik.values.amount}
+                            value={formik.values.amountUsd}
                             onChange={(e) => {
                               const input = e.target;
                               const { amount: newAmount, newCursor } =
                                 formatAmountPreserveCursor(
                                   e.target.value,
-                                  formik.values.amount,
+                                  formik.values.amountUsd,
                                   2,
                                   e.target.selectionStart || 1,
                                 );
-                              formik.setFieldValue("amount", newAmount);
-                              // dispatch(saveAmount(newAmount));
+                              formik.setFieldValue("amountUsd", newAmount);
                               runAfterUpdate(() => {
                                 input.selectionStart = newCursor;
                                 input.selectionEnd = newCursor;
@@ -1291,8 +1311,8 @@ export const SendAmount2 = ({
                   </div>
                   <div className="SendAmount__amount-price">
                     {inputType === "crypto"
-                      ? amountValue
-                      : `${amountValue} ${parsedSourceAsset.code}`}
+                      ? `$ ${priceValue}`
+                      : `${priceValue} ${parsedSourceAsset.code}`}
                     <Button
                       size="md"
                       type="button"
@@ -1303,8 +1323,13 @@ export const SendAmount2 = ({
                         const newInputType =
                           inputType === "crypto" ? "fiat" : "crypto";
                         formik.setFieldValue(
-                          "amount",
-                          cleanAmount(amountValue),
+                          newInputType === "crypto" ? "amount" : "amountUsd",
+                          cleanAmount(priceValue),
+                        );
+                        setPriceValue(
+                          newInputType === "crypto"
+                            ? formik.values.amountUsd
+                            : formik.values.amount,
                         );
                         setInputType(newInputType);
                       }}
@@ -1417,6 +1442,27 @@ export const SendAmount2 = ({
             <LoadingBackground
               onClick={() => setIsEditingSettings(false)}
               isActive={isEditingSettings}
+            />
+          </>
+        ) : null}
+        {isReviewingTx ? (
+          <>
+            <div className="ReviewTxWrapper">
+              <ReviewTx
+                assetIcon={assetIcon}
+                srcAsset={asset}
+                fee={recommendedFee}
+                sendAmount={amount}
+                sendPriceUsd={priceValue}
+                onConfirm={onConfirmSend}
+                onCancel={() => setIsReviewingTx(false)}
+                simulationState={simulationState}
+                fetchData={fetchSimulationData}
+              />
+            </div>
+            <LoadingBackground
+              onClick={() => setIsReviewingTx(false)}
+              isActive={isReviewingTx}
             />
           </>
         ) : null}
@@ -1632,5 +1678,162 @@ const CongestionIndicator = ({ congestion }: CongestionIndicatorProps) => {
         );
       })}
     </div>
+  );
+};
+
+interface ReviewTxProps {
+  assetIcon: string;
+  fee: string;
+  sendAmount: string;
+  sendPriceUsd: string;
+  srcAsset: string;
+  simulationState: State<SimulateTxData, unknown>;
+  onConfirm: () => void;
+  onCancel: () => void;
+  fetchData: () => Promise<unknown>;
+}
+
+const ReviewTx = ({
+  assetIcon,
+  fee,
+  srcAsset,
+  sendAmount,
+  sendPriceUsd,
+  simulationState,
+  onConfirm,
+  onCancel,
+  fetchData,
+}: ReviewTxProps) => {
+  const { t } = useTranslation();
+  const submission = useSelector(transactionSubmissionSelector);
+
+  const {
+    transactionData: { destination, memo },
+    // hardwareWalletData: { status: hwStatus },
+    // memoRequiredAccounts,
+  } = submission;
+
+  const asset = getAssetFromCanonical(srcAsset);
+  const assetIcons = srcAsset !== "native" ? { [srcAsset]: assetIcon } : {};
+  const truncatedDest = truncatedPublicKey(destination);
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchData();
+    };
+    getData();
+  }, []);
+
+  if (simulationState.state === RequestState.ERROR) {
+    return (
+      <div className="ReviewTx__error">
+        <Notification
+          variant="error"
+          title={t("Failed to fetch your transaction details")}
+        >
+          {t(
+            "We had an issue retrieving your transaction details. Please try again.",
+          )}
+        </Notification>
+        <Button size="md" variant="secondary" onClick={onCancel}>
+          {t("Back")}
+        </Button>
+      </div>
+    );
+  }
+
+  const isLoading =
+    simulationState.state === RequestState.IDLE ||
+    simulationState.state === RequestState.LOADING;
+
+  return isLoading ? (
+    <View.Content hasNoTopPadding>
+      <div className="ReviewTx__loader">
+        <Loader size="2rem" />
+      </div>
+    </View.Content>
+  ) : (
+    <View.Content hasNoTopPadding>
+      <div className="ReviewTx">
+        <div className="ReviewTx__Summary">
+          <p>You are sending</p>
+          <div className="ReviewTx__SendSummary">
+            <div className="ReviewTx__SendAsset">
+              <AssetIcon
+                assetIcons={assetIcons}
+                code={asset.code}
+                issuerKey={asset.issuer}
+                icon={assetIcon}
+                isSuspicious={false}
+              />
+              <div className="ReviewTx__SendAssetDetails">
+                <span>
+                  {sendAmount} {asset.code}
+                </span>
+                <span className="ReviewTx__SendAssetDetails__price">
+                  {`$ ${sendPriceUsd}`}
+                </span>
+              </div>
+            </div>
+            <div className="ReviewTx__Divider">
+              <Icon.ChevronDownDouble />
+            </div>
+            <div className="ReviewTx__SendDestination">
+              {/* TODO: FedOrGAddress */}
+              <IdenticonImg publicKey={destination} />
+              <div className="ReviewTx__SendDestinationDetails">
+                {truncatedDest}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="ReviewTx__Details">
+          <Card>
+            <div className="ReviewTx__Details__Memo">
+              <div className="ReviewTx__Details__Memo__Title">
+                <Icon.File02 />
+                Memo
+              </div>
+              <div className="ReviewTx__Details__Memo__Value">
+                {memo || "None"}
+              </div>
+            </div>
+            <div className="ReviewTx__Details__Fee">
+              <div className="ReviewTx__Details__Fee__Title">
+                <Icon.Route />
+                Fee
+              </div>
+              <div className="ReviewTx__Details__Fee__Value">{fee} XLM</div>
+            </div>
+          </Card>
+        </div>
+        <div className="ReviewTx__Actions">
+          <Button
+            size="md"
+            isFullWidth
+            isRounded
+            variant="secondary"
+            onClick={(e) => {
+              e.preventDefault();
+              onConfirm();
+            }}
+          >
+            {`Send to ${truncatedDest}`}
+          </Button>
+          <Button
+            size="md"
+            isFullWidth
+            isRounded
+            variant="tertiary"
+            onClick={(e) => {
+              e.preventDefault();
+              onCancel();
+            }}
+          >
+            Cancel
+          </Button>
+        </div>
+      </div>
+    </View.Content>
   );
 };
