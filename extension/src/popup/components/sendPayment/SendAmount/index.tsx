@@ -27,6 +27,7 @@ import { AppDispatch } from "popup/App";
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
+  isMainnet,
   truncatedPublicKey,
 } from "helpers/stellar";
 import {
@@ -60,15 +61,19 @@ import {
   saveMemo,
   saveTransactionFee,
   saveTransactionTimeout,
+  saveAmountUsd,
 } from "popup/ducks/transactionSubmission";
 import {
   AccountDoesntExistWarning,
   shouldAccountDoesntExistWarning,
 } from "popup/components/sendPayment/SendTo";
 import { Loading } from "popup/components/Loading";
-import { ScamAssetWarning } from "popup/components/WarningMessages";
+import {
+  BlockaidTxScanLabel,
+  ScamAssetWarning,
+} from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
-import { BASE_RESERVE } from "@shared/constants/stellar";
+import { BASE_RESERVE, NetworkDetails } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import { isSorobanBalance, findAssetBalance } from "popup/helpers/balance";
 import {
@@ -842,13 +847,15 @@ export const SendAmount2 = ({
 
   const spanRef = useRef<HTMLSpanElement>(null);
   const spanRefUsd = useRef<HTMLSpanElement>(null);
+  const cryptoInputRef = useRef<HTMLInputElement>(null);
+  const usdInputRef = useRef<HTMLInputElement>(null);
 
   const [inputWidth, setInputWidth] = useState(CHAR_WIDTH);
   const [inputWidthUsd, setInputWidthUsd] = useState(CHAR_WIDTH);
   const [inputType, setInputType] = useState<InputType>("crypto");
 
   const { transactionData } = useSelector(transactionSubmissionSelector);
-  const { amount, asset, destination, destinationAsset, isToken } =
+  const { amount, amountUsd, asset, destination, destinationAsset, isToken } =
     transactionData;
 
   const srcAsset = getAssetFromCanonical(asset);
@@ -880,7 +887,7 @@ export const SendAmount2 = ({
   const [isEditingMemo, setIsEditingMemo] = React.useState(false);
   const [isEditingSettings, setIsEditingSettings] = React.useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
-  const [priceValue, setPriceValue] = React.useState("0.00");
+  const [priceValue, setPriceValue] = React.useState(amountUsd);
 
   /* eslint-disable react-hooks/exhaustive-deps */
   const calculateAvailBalance = useCallback(
@@ -931,7 +938,7 @@ export const SendAmount2 = ({
     calculateAvailBalance(asset),
   );
 
-  const handleContinue = (values: {
+  const handleContinue = async (values: {
     amount: string;
     amountUsd: string;
     asset: string;
@@ -996,6 +1003,7 @@ export const SendAmount2 = ({
             : defaultBlockaidScanAssetResult,
       });
     } else {
+      await fetchSimulationData();
       setIsReviewingTx(true);
     }
   };
@@ -1025,7 +1033,7 @@ export const SendAmount2 = ({
   };
 
   const formik = useFormik({
-    initialValues: { amount, amountUsd: "0.00", asset, destinationAsset },
+    initialValues: { amount, amountUsd: amountUsd, asset, destinationAsset },
     onSubmit: handleContinue,
     validate,
     enableReinitialize: true,
@@ -1033,10 +1041,27 @@ export const SendAmount2 = ({
 
   useEffect(() => {
     if (spanRef.current) {
-      // Use scrollWidth to get actual rendered width
-      setInputWidth(spanRef.current.scrollWidth + 8); // Add small padding buffer
+      setInputWidth(spanRef.current.scrollWidth + 8);
     }
-  }, [formik.values.amount]);
+  }, [formik.values.amount, amount, priceValue]);
+
+  useEffect(() => {
+    if (spanRefUsd.current) {
+      setInputWidthUsd(spanRefUsd.current.scrollWidth + 8);
+    }
+  }, [formik.values.amountUsd, amountUsd, priceValue]);
+
+  useEffect(() => {
+    if (cryptoInputRef.current) {
+      cryptoInputRef.current.focus();
+      cryptoInputRef.current.select();
+    }
+
+    if (usdInputRef.current) {
+      usdInputRef.current.focus();
+      usdInputRef.current.select();
+    }
+  }, []);
 
   useEffect(() => {
     if (spanRefUsd.current) {
@@ -1086,6 +1111,12 @@ export const SendAmount2 = ({
         });
         if ("assetValue" in priceData && priceData.assetValue) {
           setPriceValue(priceData.assetValue);
+          if (inputType === "fiat") {
+            dispatch(saveAmount(priceData.assetValue));
+          }
+          if (inputType === "crypto") {
+            dispatch(saveAmountUsd(priceData.assetValue));
+          }
         }
       }
     }, 250);
@@ -1131,8 +1162,14 @@ export const SendAmount2 = ({
     srcAsset,
   )!;
   const displayTotal = `${formatAmount(assetBalance.total.toString())} ${srcAsset.code}`;
-
   const srcTitle = asset === "native" ? "Stellar Lumens" : srcAsset.code;
+  const goBackAction = () => {
+    // NOTE: resets base state for transaction data
+    dispatch(saveAsset("native"));
+    dispatch(saveAmount("0"));
+    dispatch(saveAmountUsd("0.00"));
+    goBack();
+  };
 
   return (
     <>
@@ -1157,12 +1194,7 @@ export const SendAmount2 = ({
         <SubviewHeader
           title={<span>Send</span>}
           hasBackButton
-          customBackAction={() => {
-            // NOTE: resets base state for transaction data
-            dispatch(saveAsset("native"));
-            dispatch(saveAmount("0"));
-            goBack();
-          }}
+          customBackAction={goBackAction}
         />
         <View.Content
           contentFooter={
@@ -1196,7 +1228,13 @@ export const SendAmount2 = ({
               </div>
               <Button
                 size="md"
-                disabled={formik.values.amount === "0"}
+                disabled={
+                  (inputType === "crypto" &&
+                    new BigNumber(formik.values.amount).isZero()) ||
+                  (inputType === "fiat" &&
+                    new BigNumber(formik.values.amountUsd).isZero())
+                }
+                isLoading={simulationState.state === RequestState.LOADING}
                 data-testid="send-amount-btn-continue"
                 isFullWidth
                 isRounded
@@ -1226,6 +1264,7 @@ export const SendAmount2 = ({
                             {formik.values.amount}
                           </span>
                           <input
+                            ref={cryptoInputRef}
                             className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
                             style={{
                               width: inputWidth,
@@ -1279,6 +1318,7 @@ export const SendAmount2 = ({
                             $
                           </div>
                           <input
+                            ref={usdInputRef}
                             className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
                             style={{
                               width: inputWidthUsd,
@@ -1297,6 +1337,7 @@ export const SendAmount2 = ({
                                   e.target.selectionStart || 1,
                                 );
                               formik.setFieldValue("amountUsd", newAmount);
+                              dispatch(saveAmountUsd(newAmount));
                               runAfterUpdate(() => {
                                 input.selectionStart = newCursor;
                                 input.selectionEnd = newCursor;
@@ -1309,34 +1350,43 @@ export const SendAmount2 = ({
                       )}
                     </div>
                   </div>
-                  <div className="SendAmount__amount-price">
-                    {inputType === "crypto"
-                      ? `$ ${priceValue}`
-                      : `${priceValue} ${parsedSourceAsset.code}`}
-                    <Button
-                      size="md"
-                      type="button"
-                      isRounded
-                      variant="tertiary"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        const newInputType =
-                          inputType === "crypto" ? "fiat" : "crypto";
-                        formik.setFieldValue(
-                          newInputType === "crypto" ? "amount" : "amountUsd",
-                          cleanAmount(priceValue),
-                        );
-                        setPriceValue(
-                          newInputType === "crypto"
-                            ? formik.values.amountUsd
-                            : formik.values.amount,
-                        );
-                        setInputType(newInputType);
-                      }}
-                    >
-                      <Icon.RefreshCw03 />
-                    </Button>
-                  </div>
+                  {isMainnet(sendAmountData.data?.networkDetails!) && (
+                    <div className="SendAmount__amount-price">
+                      {inputType === "crypto"
+                        ? `$ ${priceValue}`
+                        : `${priceValue} ${parsedSourceAsset.code}`}
+                      <Button
+                        size="md"
+                        type="button"
+                        isRounded
+                        variant="tertiary"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const newInputType =
+                            inputType === "crypto" ? "fiat" : "crypto";
+                          formik.setFieldValue(
+                            newInputType === "crypto" ? "amount" : "amountUsd",
+                            cleanAmount(priceValue),
+                          );
+                          setPriceValue(
+                            newInputType === "crypto"
+                              ? formik.values.amountUsd
+                              : formik.values.amount,
+                          );
+                          console.log(priceValue, formik.values, newInputType);
+                          if (newInputType === "fiat") {
+                            dispatch(saveAmountUsd(priceValue));
+                          }
+                          if (newInputType === "crypto") {
+                            dispatch(saveAmount(priceValue));
+                          }
+                          setInputType(newInputType);
+                        }}
+                      >
+                        <Icon.RefreshCw03 />
+                      </Button>
+                    </div>
+                  )}
                   <div className="SendAmount__btn-set-max">
                     <Button
                       size="md"
@@ -1380,7 +1430,7 @@ export const SendAmount2 = ({
                       isRounded
                       size="sm"
                       variant="tertiary"
-                      onClick={goBack}
+                      onClick={goBackAction}
                     >
                       Edit
                     </Button>
@@ -1396,7 +1446,12 @@ export const SendAmount2 = ({
                       isRounded
                       size="sm"
                       variant="tertiary"
-                      onClick={goToChooseDest}
+                      onClick={() => {
+                        dispatch(saveAsset("native"));
+                        dispatch(saveAmount("0"));
+                        dispatch(saveAmountUsd("0.00"));
+                        goToChooseDest();
+                      }}
                     >
                       Edit
                     </Button>
@@ -1453,11 +1508,11 @@ export const SendAmount2 = ({
                 srcAsset={asset}
                 fee={recommendedFee}
                 sendAmount={amount}
-                sendPriceUsd={priceValue}
+                sendPriceUsd={inputType === "crypto" ? priceValue : amountUsd}
                 onConfirm={onConfirmSend}
                 onCancel={() => setIsReviewingTx(false)}
                 simulationState={simulationState}
-                fetchData={fetchSimulationData}
+                networkDetails={sendAmountData.data?.networkDetails!}
               />
             </div>
             <LoadingBackground
@@ -1688,9 +1743,9 @@ interface ReviewTxProps {
   sendPriceUsd: string;
   srcAsset: string;
   simulationState: State<SimulateTxData, unknown>;
+  networkDetails: NetworkDetails;
   onConfirm: () => void;
   onCancel: () => void;
-  fetchData: () => Promise<unknown>;
 }
 
 const ReviewTx = ({
@@ -1700,29 +1755,20 @@ const ReviewTx = ({
   sendAmount,
   sendPriceUsd,
   simulationState,
+  networkDetails,
   onConfirm,
   onCancel,
-  fetchData,
 }: ReviewTxProps) => {
   const { t } = useTranslation();
   const submission = useSelector(transactionSubmissionSelector);
 
   const {
     transactionData: { destination, memo },
-    // hardwareWalletData: { status: hwStatus },
-    // memoRequiredAccounts,
   } = submission;
 
   const asset = getAssetFromCanonical(srcAsset);
   const assetIcons = srcAsset !== "native" ? { [srcAsset]: assetIcon } : {};
   const truncatedDest = truncatedPublicKey(destination);
-
-  useEffect(() => {
-    const getData = async () => {
-      await fetchData();
-    };
-    getData();
-  }, []);
 
   if (simulationState.state === RequestState.ERROR) {
     return (
@@ -1742,17 +1788,7 @@ const ReviewTx = ({
     );
   }
 
-  const isLoading =
-    simulationState.state === RequestState.IDLE ||
-    simulationState.state === RequestState.LOADING;
-
-  return isLoading ? (
-    <View.Content hasNoTopPadding>
-      <div className="ReviewTx__loader">
-        <Loader size="2rem" />
-      </div>
-    </View.Content>
-  ) : (
+  return (
     <View.Content hasNoTopPadding>
       <div className="ReviewTx">
         <div className="ReviewTx__Summary">
@@ -1770,9 +1806,11 @@ const ReviewTx = ({
                 <span>
                   {sendAmount} {asset.code}
                 </span>
-                <span className="ReviewTx__SendAssetDetails__price">
-                  {`$ ${sendPriceUsd}`}
-                </span>
+                {isMainnet(networkDetails) && (
+                  <span className="ReviewTx__SendAssetDetails__price">
+                    {`$ ${sendPriceUsd}`}
+                  </span>
+                )}
               </div>
             </div>
             <div className="ReviewTx__Divider">
@@ -1786,6 +1824,11 @@ const ReviewTx = ({
               </div>
             </div>
           </div>
+        </div>
+        <div className="ReviewTx__Warnings">
+          {simulationState.data?.scanResult && (
+            <BlockaidTxScanLabel scanResult={simulationState.data.scanResult} />
+          )}
         </div>
         <div className="ReviewTx__Details">
           <Card>

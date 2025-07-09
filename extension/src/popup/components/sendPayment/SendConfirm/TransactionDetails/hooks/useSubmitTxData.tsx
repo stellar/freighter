@@ -91,6 +91,7 @@ function useSubmitTxData({
               network: networkDetails.networkPassphrase,
             }),
           );
+          console.log(res, xdr);
 
           if (
             signFreighterTransaction.fulfilled.match(res) &&
@@ -144,6 +145,7 @@ function useSubmitTxData({
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
+      console.log(error);
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
       return error;
     }

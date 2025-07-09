@@ -100,7 +100,12 @@ export const SendPayment = () => {
       }
       case STEPS.PAYMENT_CONFIRM: {
         emitMetric(METRIC_NAMES.sendPaymentConfirm);
-        return <SendConfirm2 xdr={simulationState.data?.transactionXdr!} />;
+        return (
+          <SendConfirm2
+            xdr={simulationState.data?.transactionXdr!}
+            goBack={() => setActiveStep(STEPS.AMOUNT)}
+          />
+        );
       }
       case STEPS.SET_PAYMENT_SLIPPAGE: {
         emitMetric(METRIC_NAMES.sendPaymentSettingsSlippage);

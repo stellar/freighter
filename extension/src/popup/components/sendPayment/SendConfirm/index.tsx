@@ -52,19 +52,24 @@ export const SendConfirm = ({ goBack }: { goBack: () => void }) => {
   return render();
 };
 
-export const SendConfirm2 = ({ xdr }: { xdr: string }) => {
+export const SendConfirm2 = ({
+  xdr,
+  goBack,
+}: {
+  xdr: string;
+  goBack: () => void;
+}) => {
   const submission = useSelector(transactionSubmissionSelector);
 
   const render = () => {
     switch (submission.submitStatus) {
+      case ActionStatus.ERROR:
+        return <SubmitFail />;
       case ActionStatus.IDLE:
       case ActionStatus.PENDING:
       case ActionStatus.SUCCESS:
-        return <SendingTransaction xdr={xdr} />;
-      case ActionStatus.ERROR:
-        return <SubmitFail />;
       default:
-        return <SendingTransaction xdr={xdr} />;
+        return <SendingTransaction xdr={xdr} goBack={goBack} />;
     }
   };
 

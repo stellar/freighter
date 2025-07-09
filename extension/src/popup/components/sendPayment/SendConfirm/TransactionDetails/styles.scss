@@ -264,8 +264,11 @@
   align-items: center;
   height: 100%;
 
-  &__footer {
-    &__subtext {
+  &__Footer {
+    &__Done {
+      margin-top: pxToRem(12px);
+    }
+    &__Subtext {
       font-size: pxToRem(14px);
       color: var(--sds-clr-gray-09);
       margin-bottom: pxToRem(12px);
@@ -281,7 +284,14 @@
     font-size: pxToRem(18px);
 
     .Loader {
-      margin-bottom: pxToRem(6px);
+      margin-bottom: pxToRem(8px);
+    }
+
+    &__Success {
+      color: var(--sds-clr-green-09);
+      margin-bottom: pxToRem(8px);
+      width: 2rem;
+      height: 2rem;
     }
   }
 
@@ -296,6 +306,10 @@
 
     &__Description {
       font-size: pxToRem(16px);
+
+      &__Label {
+        color: var(--sds-clr-gray-09);
+      }
     }
 
     &__Assets {

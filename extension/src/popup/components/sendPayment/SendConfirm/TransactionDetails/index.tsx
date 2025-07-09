@@ -52,6 +52,8 @@ import {
   publicKeySelector,
   hardwareWalletTypeSelector,
   addTokenId,
+  hasPrivateKeySelector,
+  confirmPassword,
 } from "popup/ducks/accountServices";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { useIsSwap } from "popup/helpers/useIsSwap";
@@ -80,10 +82,11 @@ import {
   useGetTxDetailsData,
 } from "./hooks/useGetTxDetailsData";
 import { VerifyAccountDrawer } from "popup/components/VerifyAccountDrawer";
-
-import "./styles.scss";
 import { useSubmitTxData } from "./hooks/useSubmitTxData";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
+import { EnterPassword } from "popup/components/EnterPassword";
+
+import "./styles.scss";
 
 const TwoAssetCard = ({
   sourceAssetIcons,
@@ -713,16 +716,28 @@ export const TransactionDetails = ({
 
 interface SendingTransactionProps {
   xdr: string;
+  goBack: () => void;
 }
 
-export const SendingTransaction = ({ xdr }: SendingTransactionProps) => {
+export const SendingTransaction = ({
+  xdr,
+  goBack,
+}: SendingTransactionProps) => {
+  const dispatch: AppDispatch = useDispatch();
+  const navigate = useNavigate();
   const submission = useSelector(transactionSubmissionSelector);
-  const {
-    transactionData: { amount, asset, destination, isToken },
-  } = submission;
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
+  const hasPrivateKey = useSelector(hasPrivateKeySelector);
+  const [isVerifyAccountModalOpen, setIsVerifyAccountModalOpen] =
+    useState(!hasPrivateKey);
+
+  const {
+    transactionData: { amount, asset, destination, isToken },
+    response,
+  } = submission;
+  const transactionHash = response?.hash;
   const isHardwareWallet = !!hardwareWalletType;
   const srcAsset = getAssetFromCanonical(asset);
 
@@ -739,11 +754,11 @@ export const SendingTransaction = ({ xdr }: SendingTransactionProps) => {
         isHardwareWallet,
       });
     };
-    // TODO
-    console.log(getData);
-    // getData();
+    if (!isVerifyAccountModalOpen) {
+      getData();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isVerifyAccountModalOpen]);
 
   const isLoading =
     submissionState.state === RequestState.IDLE ||
@@ -752,65 +767,137 @@ export const SendingTransaction = ({ xdr }: SendingTransactionProps) => {
   const assetIcon = submissionState.data?.icons[asset]!;
   const assetIcons = asset !== "native" ? { [asset]: assetIcon } : {};
 
+  const handleConfirm = async (password: string) => {
+    await dispatch(confirmPassword(password));
+    setIsVerifyAccountModalOpen(false);
+  };
+
   return (
-    <View.Content
-      contentFooter={
-        <div className="SendingTransaction__footer">
-          <div className="SendingTransaction__footer__subtext">
-            You can close this screen, your transaction should be complete in
-            less than a minute.
-          </div>
-          <Button
-            size="md"
-            isFullWidth
-            isRounded
-            variant="tertiary"
-            onClick={(e) => {
-              e.preventDefault();
-              window.close();
-            }}
-          >
-            Close
-          </Button>
-        </div>
-      }
-    >
-      <div className="SendingTransaction">
-        <div className="SendingTransaction__Title">
-          {isLoading ? (
-            <>
-              <Loader size="2rem" />
-              <span>Sending</span>
-            </>
-          ) : (
-            <>
-              <Icon.CheckCircle />
-              <span>Sent!</span>
-            </>
-          )}
-        </div>
-        <div className="SendingTransaction__Summary">
-          <div className="SendingTransaction__Summary__Assets">
-            <AssetIcon
-              assetIcons={assetIcons}
-              code={srcAsset.code}
-              issuerKey={srcAsset.issuer}
-              icon={assetIcon}
-              isSuspicious={false}
-            />
-            <div className="SendingTransaction__Summary__Assets__Divider">
-              <Icon.ChevronRightDouble />
+    <>
+      {isVerifyAccountModalOpen ? (
+        <EnterPassword
+          accountAddress={publicKey}
+          description={
+            "Enter your account password to authorize this transaction."
+          }
+          confirmButtonTitle={"Submit"}
+          onConfirm={handleConfirm}
+          onCancel={goBack}
+        />
+      ) : (
+        <View.Content
+          contentFooter={
+            <div className="SendingTransaction__Footer">
+              {isLoading && (
+                <>
+                  <div className="SendingTransaction__Footer__Subtext">
+                    You can close this screen, your transaction should be
+                    complete in less than a minute.
+                  </div>
+                  <Button
+                    size="md"
+                    isFullWidth
+                    isRounded
+                    variant="tertiary"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.close();
+                    }}
+                  >
+                    Close
+                  </Button>
+                </>
+              )}
+              {!isCustomNetwork(networkDetails) && isSuccess ? (
+                <>
+                  <Button
+                    size="md"
+                    isFullWidth
+                    isRounded
+                    variant="tertiary"
+                    onClick={() =>
+                      openTab(
+                        `${getStellarExpertUrl(networkDetails)}/tx/${transactionHash}`,
+                      )
+                    }
+                  >
+                    View transaction
+                  </Button>
+                </>
+              ) : null}
+              {isSuccess && (
+                <div className="SendingTransaction__Footer__Done">
+                  <Button
+                    size="md"
+                    isFullWidth
+                    isRounded
+                    variant="secondary"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      dispatch(resetSimulation());
+                      dispatch(resetSubmission());
+                      navigateTo(ROUTES.account, navigate);
+                    }}
+                  >
+                    Done
+                  </Button>
+                </div>
+              )}
             </div>
-            <IdenticonImg publicKey={destination} />
+          }
+        >
+          <div className="SendingTransaction">
+            <div className="SendingTransaction__Title">
+              {isLoading ? (
+                <>
+                  <Loader size="2rem" />
+                  <span>Sending</span>
+                </>
+              ) : (
+                <>
+                  <Icon.CheckCircle className="SendingTransaction__Title__Success" />
+                  <span>Sent!</span>
+                </>
+              )}
+            </div>
+            <div className="SendingTransaction__Summary">
+              <div className="SendingTransaction__Summary__Assets">
+                <AssetIcon
+                  assetIcons={assetIcons}
+                  code={srcAsset.code}
+                  issuerKey={srcAsset.issuer}
+                  icon={assetIcon}
+                  isSuspicious={false}
+                />
+                <div className="SendingTransaction__Summary__Assets__Divider">
+                  <Icon.ChevronRightDouble />
+                </div>
+                <IdenticonImg publicKey={destination} />
+              </div>
+              <div className="SendingTransaction__Summary__Description">
+                {isLoading && (
+                  <>
+                    {amount} {srcAsset.code}{" "}
+                    <span className="SendingTransaction__Summary__Description__Label">
+                      to
+                    </span>{" "}
+                    {truncatedPublicKey(destination)}
+                  </>
+                )}
+                {isSuccess && (
+                  <>
+                    {amount} {srcAsset.code}{" "}
+                    <span className="SendingTransaction__Summary__Description__Label">
+                      was sent to
+                    </span>{" "}
+                    {truncatedPublicKey(destination)}
+                  </>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="SendingTransaction__Summary__Description">
-            {isLoading &&
-              `${amount} ${srcAsset.code} to ${truncatedPublicKey(destination)}`}
-            {isSuccess &&
-              `${amount} ${srcAsset.code} was sent to ${truncatedPublicKey(destination)}`}
-          </div>
-        </div>
-      </div>
-    </View.Content>
+        </View.Content>
+      )}
+    </>
   );
 };

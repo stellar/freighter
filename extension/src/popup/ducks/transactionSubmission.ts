@@ -423,6 +423,7 @@ export enum ShowOverlayStatus {
 
 interface TransactionData {
   amount: string;
+  amountUsd: string;
   asset: string;
   decimals?: number;
   destination: string;
@@ -481,6 +482,7 @@ export const initialState: InitialState = {
   error: undefined,
   transactionData: {
     amount: "0",
+    amountUsd: "0.00",
     asset: "native",
     destination: "",
     federationAddress: "",
@@ -530,6 +532,9 @@ const transactionSubmissionSlice = createSlice({
     },
     saveAmount: (state, action) => {
       state.transactionData.amount = action.payload;
+    },
+    saveAmountUsd: (state, action) => {
+      state.transactionData.amountUsd = action.payload;
     },
     saveAsset: (state, action) => {
       state.transactionData.asset = action.payload;
@@ -699,6 +704,7 @@ export const {
   saveDestination,
   saveFederationAddress,
   saveAmount,
+  saveAmountUsd,
   saveAsset,
   saveTransactionFee,
   saveTransactionTimeout,
