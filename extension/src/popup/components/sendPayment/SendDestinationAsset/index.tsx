@@ -132,7 +132,7 @@ export const SendDestinationAsset = ({
           <div className="SendDestinationAsset__Assets">
             {!destAssetDataState.data?.balances.balances.length ? (
               <div className="SendDestinationAsset__Assets__empty">
-                You have no assets added. Get started by adding an asset below.
+                You have no assets added. Get started by adding an asset.
               </div>
             ) : (
               <>

@@ -16,7 +16,7 @@ import { isMainnet } from "helpers/stellar";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getTokenPrices } from "popup/views/Account/hooks/useGetAccountData";
 
-export interface ResolvedSendAmountData {
+export interface ResolvedSwapAmountData {
   type: AppDataType.RESOLVED;
   userBalances: AccountBalances;
   destinationBalances: AccountBalances;
@@ -28,9 +28,9 @@ export interface ResolvedSendAmountData {
   tokenPrices: ApiTokenPrices;
 }
 
-type SendAmountData = NeedsReRoute | ResolvedSendAmountData;
+type SwapAmountData = NeedsReRoute | ResolvedSwapAmountData;
 
-function useGetSendAmountData(
+function useGetSwapAmountData(
   options: {
     showHidden: boolean;
     includeIcons: boolean;
@@ -38,7 +38,7 @@ function useGetSendAmountData(
   destinationAddress?: string, // NOTE: can be a G/C/M address
 ) {
   const [state, dispatch] = useReducer(
-    reducer<SendAmountData, unknown>,
+    reducer<SwapAmountData, unknown>,
     initialState,
   );
   const { fetchData: fetchBalances } = useGetBalances({
@@ -93,7 +93,7 @@ function useGetSendAmountData(
               balances: userDomains.balances.balances,
             })
           : {},
-      } as ResolvedSendAmountData;
+      } as ResolvedSwapAmountData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
@@ -108,4 +108,4 @@ function useGetSendAmountData(
   };
 }
 
-export { useGetSendAmountData };
+export { useGetSwapAmountData };

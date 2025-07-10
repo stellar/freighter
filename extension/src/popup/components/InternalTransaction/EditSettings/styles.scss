@@ -1,0 +1,42 @@
+@use "../../../styles/utils.scss" as *;
+
+.EditTxSettings {
+  z-index: var(--z-index--banner);
+  position: relative;
+
+  &__congestion {
+    display: flex;
+    align-items: baseline;
+    font-size: 12px;
+    color: var(--sds-clr-gray-10);
+    margin: #{pxToRem(12px)} 0 #{pxToRem(24px)} 0;
+    padding-left: pxToRem(6px);
+  }
+
+  &__form {
+    .Input__container {
+      padding-right: 0;
+      .Button {
+        // mask button as right element of input
+        border-right: 0;
+        border-top: 0;
+        border-bottom: 0;
+        border-radius: 0;
+        height: 95%;
+        margin-right: 1px;
+      }
+    }
+  }
+
+  &__actions {
+    display: flex;
+    margin-top: pxToRem(32px);
+
+    button {
+      flex: 1;
+    }
+    button:not(:first-child) {
+      margin-left: #{pxToRem(10px)};
+    }
+  }
+}

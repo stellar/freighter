@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/send-payment";
@@ -8,16 +8,11 @@ import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SendTo } from "popup/components/sendPayment/SendTo";
 import { SendAmount2 } from "popup/components/sendPayment/SendAmount";
-import { SendType } from "popup/components/sendPayment/SendAmount/SendType";
-import { SendSettings } from "popup/components/sendPayment/SendSettings";
-import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/TransactionFee";
-import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/Slippage";
 import { SendConfirm2 } from "popup/components/sendPayment/SendConfirm";
-import { SendSettingsTxTimeout } from "popup/components/sendPayment/SendSettings/TxTimeout";
-import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
 import { SendDestinationAsset } from "popup/components/sendPayment/SendDestinationAsset";
 import {
   isPathPaymentSelector,
+  resetSubmission,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
@@ -25,13 +20,21 @@ import { isContractId } from "popup/helpers/soroban";
 import { useSimulateTxData } from "popup/components/sendPayment/SendAmount/hooks/useSimulateTxData";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
+import { AppDispatch } from "popup/App";
+import { resetSimulation } from "popup/ducks/token-payment";
 
 export const SendPayment = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
   const submission = useSelector(transactionSubmissionSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
+
+  useEffect(() => {
+    dispatch(resetSimulation());
+    dispatch(resetSubmission());
+  }, [dispatch]);
 
   const {
     transactionData: {
@@ -87,17 +90,6 @@ export const SendPayment = () => {
 
   const renderStep = (step: STEPS) => {
     switch (step) {
-      case STEPS.CHOOSE_ASSET: {
-        return <ChooseAsset goBack={() => setActiveStep(STEPS.AMOUNT)} />;
-      }
-      case STEPS.SET_PAYMENT_TIMEOUT: {
-        emitMetric(METRIC_NAMES.sendPaymentSettingsTimeout);
-        return (
-          <SendSettingsTxTimeout
-            goBack={() => setActiveStep(STEPS.PAYMENT_SETTINGS)}
-          />
-        );
-      }
       case STEPS.PAYMENT_CONFIRM: {
         emitMetric(METRIC_NAMES.sendPaymentConfirm);
         return (
@@ -106,40 +98,6 @@ export const SendPayment = () => {
             goBack={() => setActiveStep(STEPS.AMOUNT)}
           />
         );
-      }
-      case STEPS.SET_PAYMENT_SLIPPAGE: {
-        emitMetric(METRIC_NAMES.sendPaymentSettingsSlippage);
-        return (
-          <SendSettingsSlippage
-            goBack={() => setActiveStep(STEPS.PAYMENT_SETTINGS)}
-          />
-        );
-      }
-      case STEPS.SET_PAYMENT_FEE: {
-        emitMetric(METRIC_NAMES.sendPaymentSettingsFee);
-        return (
-          <SendSettingsFee
-            goBack={() => setActiveStep(STEPS.PAYMENT_SETTINGS)}
-          />
-        );
-      }
-      case STEPS.PAYMENT_SETTINGS: {
-        emitMetric(METRIC_NAMES.sendPaymentSettings);
-        return (
-          <SendSettings
-            goBack={() => setActiveStep(STEPS.AMOUNT)}
-            goToNext={() => setActiveStep(STEPS.PAYMENT_CONFIRM)}
-            goToFeeSetting={() => setActiveStep(STEPS.SET_PAYMENT_FEE)}
-            goToSlippageSetting={() =>
-              setActiveStep(STEPS.SET_PAYMENT_SLIPPAGE)
-            }
-            goToTimeoutSetting={() => setActiveStep(STEPS.SET_PAYMENT_TIMEOUT)}
-          />
-        );
-      }
-      case STEPS.PAYMENT_TYPE: {
-        emitMetric(METRIC_NAMES.sendPaymentType);
-        return <SendType setStep={setActiveStep} />;
       }
       case STEPS.AMOUNT: {
         emitMetric(METRIC_NAMES.sendPaymentAmount);

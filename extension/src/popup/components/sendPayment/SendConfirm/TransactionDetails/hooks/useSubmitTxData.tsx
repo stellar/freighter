@@ -91,7 +91,6 @@ function useSubmitTxData({
               network: networkDetails.networkPassphrase,
             }),
           );
-          console.log(res, xdr);
 
           if (
             signFreighterTransaction.fulfilled.match(res) &&

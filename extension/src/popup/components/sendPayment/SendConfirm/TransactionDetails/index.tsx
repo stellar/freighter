@@ -760,17 +760,17 @@ export const SendingTransaction = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isVerifyAccountModalOpen]);
 
+  const handleConfirm = async (password: string) => {
+    await dispatch(confirmPassword(password));
+    setIsVerifyAccountModalOpen(false);
+  };
+
   const isLoading =
     submissionState.state === RequestState.IDLE ||
     submissionState.state === RequestState.LOADING;
   const isSuccess = submissionState.state === RequestState.SUCCESS;
   const assetIcon = submissionState.data?.icons[asset]!;
   const assetIcons = asset !== "native" ? { [asset]: assetIcon } : {};
-
-  const handleConfirm = async (password: string) => {
-    await dispatch(confirmPassword(password));
-    setIsVerifyAccountModalOpen(false);
-  };
 
   return (
     <>
@@ -834,8 +834,6 @@ export const SendingTransaction = ({
                     variant="secondary"
                     onClick={(e) => {
                       e.preventDefault();
-                      dispatch(resetSimulation());
-                      dispatch(resetSubmission());
                       navigateTo(ROUTES.account, navigate);
                     }}
                   >

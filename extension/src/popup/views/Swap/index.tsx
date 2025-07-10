@@ -1,10 +1,8 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 
 import { STEPS } from "popup/constants/swap";
-import { ROUTES } from "popup/constants/routes";
 import { emitMetric } from "helpers/metrics";
-import { SendAmount } from "popup/components/sendPayment/SendAmount";
 import { SendSettings } from "popup/components/sendPayment/SendSettings";
 import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/TransactionFee";
 import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/Slippage";
@@ -12,10 +10,18 @@ import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
 import { SendSettingsTxTimeout } from "popup/components/sendPayment/SendSettings/TxTimeout";
 import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { SwapFrom } from "popup/components/swap/SwapFrom";
+import { SwapAmount } from "popup/components/swap/SwapAmount";
+import { AppDispatch } from "popup/App";
+import {
+  saveAsset,
+  saveDestinationAsset,
+  saveIsToken,
+} from "popup/ducks/transactionSubmission";
 
 export const Swap = () => {
-  const navigate = useNavigate();
-  const [activeStep, setActiveStep] = React.useState(STEPS.AMOUNT);
+  const dispatch = useDispatch<AppDispatch>();
+  const [activeStep, setActiveStep] = React.useState(STEPS.SET_FROM_ASSET);
 
   const renderStep = (step: STEPS) => {
     switch (step) {
@@ -59,14 +65,41 @@ export const Swap = () => {
           />
         );
       }
-      default:
+      case STEPS.SET_DST_ASSET: {
+        emitMetric(METRIC_NAMES.swapTo);
+        return (
+          <SwapFrom
+            title="Swap to"
+            onClickAsset={(canonical: string, isContract: boolean) => {
+              dispatch(saveDestinationAsset(canonical));
+              dispatch(saveIsToken(isContract));
+              setActiveStep(STEPS.AMOUNT);
+            }}
+          />
+        );
+      }
+
+      case STEPS.SET_FROM_ASSET:
+      default: {
+        emitMetric(METRIC_NAMES.swapFrom);
+        return (
+          <SwapFrom
+            title="Swap from"
+            onClickAsset={(canonical: string, isContract: boolean) => {
+              dispatch(saveAsset(canonical));
+              dispatch(saveIsToken(isContract));
+              setActiveStep(STEPS.AMOUNT);
+            }}
+          />
+        );
+      }
+
       case STEPS.AMOUNT: {
         emitMetric(METRIC_NAMES.swapAmount);
         return (
-          <SendAmount
-            goBack={() => navigate(ROUTES.account)}
-            goToNext={() => setActiveStep(STEPS.SWAP_SETTINGS)}
-            goToChooseAsset={() => setActiveStep(STEPS.CHOOSE_ASSETS)}
+          <SwapAmount
+            goBack={() => setActiveStep(STEPS.SET_FROM_ASSET)}
+            goToNext={() => setActiveStep(STEPS.SET_DST_ASSET)}
           />
         );
       }

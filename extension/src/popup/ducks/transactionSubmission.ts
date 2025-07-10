@@ -592,6 +592,11 @@ const transactionSubmissionSlice = createSlice({
     saveBalancesToMigrate: (state, action) => {
       state.transactionData.balancesToMigrate = action.payload;
     },
+    saveSwapBestPath: (state, action) => {
+      state.transactionData.path = action.payload.path;
+      state.transactionData.destinationAmount =
+        action.payload.destinationAmount;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(submitFreighterTransaction.pending, (state) => {
@@ -722,6 +727,7 @@ export const {
   saveAssetSelectSource,
   saveIsMergeSelected,
   saveBalancesToMigrate,
+  saveSwapBestPath,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 
