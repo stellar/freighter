@@ -1,12 +1,11 @@
 import React, { useEffect } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { Icon, Input, Loader } from "@stellar/design-system";
 import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import { navigateTo, openTab } from "popup/helpers/navigate";
-import { ROUTES } from "popup/constants/routes";
+import { openTab } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
 import { FormRows } from "popup/basics/Forms";
 import { RequestState } from "constants/request";
@@ -21,16 +20,23 @@ import { getCanonicalFromAsset } from "helpers/stellar";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { useGetSwapFromData } from "./hooks/useSwapFromData";
+import { formatTokenAmount } from "popup/helpers/soroban";
 
 import "./styles.scss";
 
-interface SwapFromProps {
+interface SwapAssetProps {
   title: string;
+  hiddenAssets: string[];
   onClickAsset: (canonical: string, isContract: boolean) => void;
+  goBack: () => void;
 }
 
-export const SwapFrom = ({ title, onClickAsset }: SwapFromProps) => {
-  const navigate = useNavigate();
+export const SwapAsset = ({
+  title,
+  hiddenAssets,
+  onClickAsset,
+  goBack,
+}: SwapAssetProps) => {
   const { state, fetchData } = useGetSwapFromData({
     showHidden: false,
     includeIcons: true,
@@ -95,9 +101,7 @@ export const SwapFrom = ({ title, onClickAsset }: SwapFromProps) => {
       <SubviewHeader
         title={<span>{title}</span>}
         hasBackButton
-        customBackAction={() => {
-          navigateTo(ROUTES.account, navigate);
-        }}
+        customBackAction={goBack}
       />
       <View.Content hasTopInput>
         <FormRows>
@@ -139,6 +143,15 @@ export const SwapFrom = ({ title, onClickAsset }: SwapFromProps) => {
                         LiquidityPoolShareAsset
                       > => !("liquidityPoolId" in balance),
                     )
+                    .filter((balance) => {
+                      const { code } = balance.token;
+                      const issuerKey =
+                        "issuer" in balance.token
+                          ? balance.token.issuer.key
+                          : undefined;
+                      const canonical = getCanonicalFromAsset(code, issuerKey);
+                      return !hiddenAssets.includes(canonical);
+                    })
                     .map((balance) => {
                       const { code } = balance.token;
                       const issuerKey =
@@ -149,7 +162,10 @@ export const SwapFrom = ({ title, onClickAsset }: SwapFromProps) => {
                       const canonical = getCanonicalFromAsset(code, issuerKey);
                       const icon = icons[canonical];
                       // TODO: should this be available balance for XLM?
-                      const displayTotal = `${formatAmount(balance.total.toString())} ${code}`;
+                      const displayTotal =
+                        "decimals" in balance
+                          ? `${formatTokenAmount(balance.total, balance.decimals)} ${code}`
+                          : `${formatAmount(balance.total.toString())} ${code}`;
                       const usdValue = tokenPrices[canonical];
                       return (
                         <div

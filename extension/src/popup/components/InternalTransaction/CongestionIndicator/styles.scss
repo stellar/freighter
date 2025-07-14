@@ -9,6 +9,11 @@
     width: pxToRem(6px);
     margin-right: pxToRem(2px);
     border-radius: pxToRem(24px);
+    background-color: var(--sds-clr-gray-09);
+
+    &.highlighted {
+      background-color: var(--sds-clr-lime-09);
+    }
 
     &.level-Low {
       height: 6px;
@@ -20,18 +25,6 @@
 
     &.level-High {
       height: 14px;
-    }
-
-    &.level-color-Low {
-      background-color: var(--sds-clr-gray-09);
-    }
-
-    &.level-color-Medium {
-      background-color: var(--sds-clr-lime-09);
-    }
-
-    &.level-color-High {
-      background-color: var(--sds-clr-red-09);
     }
   }
 }

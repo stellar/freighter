@@ -91,15 +91,6 @@
     font-weight: var(--font-weight-light);
   }
 
-  &__mirror-amount {
-    position: absolute;
-    visibility: hidden;
-    white-space: pre;
-    font-size: 2.5rem;
-    font-family: inherit;
-    padding: 0;
-  }
-
   &__input-amount {
     font-size: 2.5rem;
     font-weight: var(--font-weight-light);

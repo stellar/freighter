@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import {
   Account,
@@ -18,14 +18,20 @@ import {
   stroopToXlm,
   xlmToStroop,
 } from "helpers/stellar";
+import { computeDestMinWithSlippage } from "helpers/transaction";
 
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { transactionDataSelector } from "popup/ducks/transactionSubmission";
+import {
+  saveSimulation,
+  saveSwapBestPath,
+  transactionDataSelector,
+} from "popup/ducks/transactionSubmission";
 import { useScanTx } from "popup/helpers/blockaid";
 import { BlockAidScanTxResult } from "@shared/api/types";
-import { computeDestMinWithSlippage } from "popup/components/sendPayment/SendConfirm/TransactionDetails/hooks/useGetTxDetailsData";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
+import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+import { AppDispatch } from "popup/App";
 
 const scanUrlstub = "internal";
 
@@ -33,7 +39,6 @@ interface SimulationParams {
   sourceAsset: ReturnType<typeof getAssetFromCanonical>;
   destAsset: ReturnType<typeof getAssetFromCanonical>;
   amount: string;
-  destinationAmount: string;
   allowedSlippage: string;
   path: string[];
   transactionFee: string;
@@ -43,6 +48,7 @@ interface SimulationParams {
 
 export interface SimulateTxData {
   transactionXdr: string;
+  dstAmountPriceUsd: string;
   scanResult?: BlockAidScanTxResult | null;
 }
 
@@ -132,7 +138,8 @@ function useSimulateTxData({
   simParams: SimulationParams;
 }) {
   const { recommendedFee } = useNetworkFees();
-  const { amount, memo } = useSelector(transactionDataSelector);
+  const { memo } = useSelector(transactionDataSelector);
+  const reduxDispatch = useDispatch<AppDispatch>();
 
   const { scanTx } = useScanTx();
   const [state, dispatch] = useReducer(
@@ -140,7 +147,13 @@ function useSimulateTxData({
     initialState,
   );
 
-  const fetchData = async () => {
+  const fetchData = async ({
+    amount,
+    destinationRate,
+  }: {
+    amount: string;
+    destinationRate?: string;
+  }) => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const payload = { transactionXdr: "" } as SimulateTxData;
@@ -158,6 +171,7 @@ function useSimulateTxData({
         destAsset: getCanonicalFromAsset(destAsset.code, destAsset.issuer),
         networkDetails,
       });
+      const destinationAmount = bestPath.destination_amount;
       // store in canonical form for easier use
       const path: string[] = [];
       bestPath.path.forEach((p) => {
@@ -167,13 +181,22 @@ function useSimulateTxData({
           path.push(getCanonicalFromAsset(p.asset_code, p.asset_issuer));
         }
       });
+      if (destinationRate) {
+        payload.dstAmountPriceUsd = formatAmount(
+          roundUsdValue(
+            new BigNumber(destinationRate)
+              .multipliedBy(new BigNumber(destinationAmount))
+              .toString(),
+          ),
+        );
+      }
       const transaction = await getBuiltTx(
         publicKey,
         {
           sourceAsset,
           destAsset,
           amount,
-          destinationAmount: bestPath.destination_amount,
+          destinationAmount,
           allowedSlippage,
           path,
         },
@@ -185,6 +208,17 @@ function useSimulateTxData({
       const xdr = transaction.build().toXDR();
       payload.transactionXdr = xdr;
       payload.scanResult = await scanTx(xdr, scanUrlstub, networkDetails);
+      reduxDispatch(
+        saveSimulation({
+          preparedTransaction: xdr,
+        }),
+      );
+      reduxDispatch(
+        saveSwapBestPath({
+          path,
+          destinationAmount,
+        }),
+      );
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;

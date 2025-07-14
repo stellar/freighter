@@ -1,11 +1,15 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Button, Card, Icon, Notification } from "@stellar/design-system";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { RequestState, State } from "constants/request";
-import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
+import {
+  ShowOverlayStatus,
+  startHwSign,
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
 import {
   getAssetFromCanonical,
   isMainnet,
@@ -17,6 +21,8 @@ import { View } from "popup/basics/layout/View";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { BlockaidTxScanLabel } from "popup/components/WarningMessages";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
+import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 
 import "./styles.scss";
 
@@ -25,12 +31,12 @@ interface ReviewTxProps {
   dstAsset?: {
     icon: string;
     canonical: string;
-    priceUsd: string;
+    priceUsd: string | null;
     amount: string;
   };
   fee: string;
   sendAmount: string;
-  sendPriceUsd: string;
+  sendPriceUsd: string | null;
   srcAsset: string;
   simulationState: State<SimulateTxData, unknown>;
   networkDetails: NetworkDetails;
@@ -53,9 +59,13 @@ export const ReviewTx = ({
   onCancel,
 }: ReviewTxProps) => {
   const { t } = useTranslation();
+  const dispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
+  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
+  const isHardwareWallet = !!hardwareWalletType;
 
   const {
+    hardwareWalletData: { status: hwStatus },
     transactionData: { destination, memo },
   } = submission;
 
@@ -82,8 +92,24 @@ export const ReviewTx = ({
     );
   }
 
+  const onConfirmTx = () => {
+    if (isHardwareWallet) {
+      dispatch(
+        startHwSign({
+          transactionXDR: simulationState.data!.transactionXdr,
+          shouldSubmit: true,
+        }),
+      );
+      return;
+    }
+    onConfirm();
+  };
+
   return (
     <View.Content hasNoTopPadding>
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
+        <HardwareSign walletType={hardwareWalletType} onSubmit={onConfirm} />
+      )}
       <div className="ReviewTx">
         <div className="ReviewTx__Summary">
           <p>{title}</p>
@@ -177,9 +203,10 @@ export const ReviewTx = ({
             isFullWidth
             isRounded
             variant="secondary"
+            data-testid="SubmitAction"
             onClick={(e) => {
               e.preventDefault();
-              onConfirm();
+              onConfirmTx();
             }}
           >
             {dstAsset && dest

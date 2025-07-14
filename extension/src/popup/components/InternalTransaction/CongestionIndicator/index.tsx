@@ -37,8 +37,7 @@ export const CongestionIndicator = ({
         const classes = classNames({
           NetworkCongestionIndicator__level: true,
           [`level-${level}`]: true,
-          [`level-color-${shouldHaveColor(level, congestion) ? congestion : "Low"}`]:
-            true,
+          highlighted: shouldHaveColor(level, congestion),
         });
         return <div className={classes}></div>;
       })}

@@ -7,9 +7,9 @@ import { STEPS } from "popup/constants/send-payment";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SendTo } from "popup/components/sendPayment/SendTo";
-import { SendAmount2 } from "popup/components/sendPayment/SendAmount";
-import { SendConfirm2 } from "popup/components/sendPayment/SendConfirm";
+import { SendAmount } from "popup/components/sendPayment/SendAmount";
 import { SendDestinationAsset } from "popup/components/sendPayment/SendDestinationAsset";
+import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitTransaction";
 import {
   isPathPaymentSelector,
   resetSubmission,
@@ -93,7 +93,7 @@ export const SendPayment = () => {
       case STEPS.PAYMENT_CONFIRM: {
         emitMetric(METRIC_NAMES.sendPaymentConfirm);
         return (
-          <SendConfirm2
+          <TransactionConfirm
             xdr={simulationState.data?.transactionXdr!}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
           />
@@ -102,7 +102,7 @@ export const SendPayment = () => {
       case STEPS.AMOUNT: {
         emitMetric(METRIC_NAMES.sendPaymentAmount);
         return (
-          <SendAmount2
+          <SendAmount
             goBack={() => setActiveStep(STEPS.SET_DESTINATION_ASSET)}
             goToNext={() => setActiveStep(STEPS.PAYMENT_CONFIRM)}
             goToChooseDest={() => setActiveStep(STEPS.DESTINATION)}

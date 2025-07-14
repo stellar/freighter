@@ -1,90 +1,100 @@
-import React from "react";
-import { useDispatch } from "react-redux";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 import { STEPS } from "popup/constants/swap";
 import { emitMetric } from "helpers/metrics";
-import { SendSettings } from "popup/components/sendPayment/SendSettings";
-import { SendSettingsFee } from "popup/components/sendPayment/SendSettings/TransactionFee";
-import { SendSettingsSlippage } from "popup/components/sendPayment/SendSettings/Slippage";
-import { SendConfirm } from "popup/components/sendPayment/SendConfirm";
-import { SendSettingsTxTimeout } from "popup/components/sendPayment/SendSettings/TxTimeout";
-import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
+import { InputType } from "helpers/transaction";
+import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitTransaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { SwapFrom } from "popup/components/swap/SwapFrom";
+import { SwapAsset } from "popup/components/swap/SwapAsset";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import { AppDispatch } from "popup/App";
 import {
+  resetSubmission,
   saveAsset,
   saveDestinationAsset,
   saveIsToken,
+  transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
+import { navigateTo } from "popup/helpers/navigate";
+import { ROUTES } from "popup/constants/routes";
+import { resetSimulation } from "popup/ducks/token-payment";
 
 export const Swap = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const [activeStep, setActiveStep] = React.useState(STEPS.SET_FROM_ASSET);
+  const submission = useSelector(transactionSubmissionSelector);
+  const { transactionSimulation, transactionData } = submission;
+
+  const [inputType, setInputType] = useState<InputType>("crypto");
+
+  useEffect(() => {
+    dispatch(resetSimulation());
+    dispatch(resetSubmission());
+  }, [dispatch]);
 
   const renderStep = (step: STEPS) => {
     switch (step) {
-      case STEPS.SET_SWAP_TIMEOUT: {
-        emitMetric(METRIC_NAMES.swapSettingsTimeout);
-        return (
-          <SendSettingsTxTimeout
-            goBack={() => setActiveStep(STEPS.SWAP_SETTINGS)}
-          />
-        );
-      }
       case STEPS.SWAP_CONFIRM: {
         emitMetric(METRIC_NAMES.swapConfirm);
         return (
-          <SendConfirm goBack={() => setActiveStep(STEPS.SWAP_SETTINGS)} />
-        );
-      }
-      case STEPS.SET_SWAP_SLIPPAGE: {
-        emitMetric(METRIC_NAMES.swapSettingsSlippage);
-        return (
-          <SendSettingsSlippage
+          <TransactionConfirm
+            xdr={transactionSimulation.preparedTransaction!}
             goBack={() => setActiveStep(STEPS.SWAP_SETTINGS)}
-          />
-        );
-      }
-      case STEPS.SET_SWAP_FEE: {
-        emitMetric(METRIC_NAMES.swapSettingsFee);
-        return (
-          <SendSettingsFee goBack={() => setActiveStep(STEPS.SWAP_SETTINGS)} />
-        );
-      }
-      case STEPS.SWAP_SETTINGS: {
-        emitMetric(METRIC_NAMES.swapSettings);
-        return (
-          <SendSettings
-            goBack={() => setActiveStep(STEPS.AMOUNT)}
-            goToNext={() => setActiveStep(STEPS.SWAP_CONFIRM)}
-            goToFeeSetting={() => setActiveStep(STEPS.SET_SWAP_FEE)}
-            goToSlippageSetting={() => setActiveStep(STEPS.SET_SWAP_SLIPPAGE)}
-            goToTimeoutSetting={() => setActiveStep(STEPS.SET_SWAP_TIMEOUT)}
           />
         );
       }
       case STEPS.SET_DST_ASSET: {
         emitMetric(METRIC_NAMES.swapTo);
         return (
-          <SwapFrom
+          <SwapAsset
             title="Swap to"
+            hiddenAssets={[transactionData.asset]}
+            goBack={() => setActiveStep(STEPS.AMOUNT)}
             onClickAsset={(canonical: string, isContract: boolean) => {
               dispatch(saveDestinationAsset(canonical));
               dispatch(saveIsToken(isContract));
-              setActiveStep(STEPS.AMOUNT);
+              setActiveStep(STEPS.CONFIRM_AMOUNT);
             }}
           />
         );
       }
-
+      case STEPS.AMOUNT: {
+        emitMetric(METRIC_NAMES.swapAmount);
+        return (
+          <SwapAmount
+            inputType={inputType}
+            setInputType={setInputType}
+            goBack={() => setActiveStep(STEPS.SET_FROM_ASSET)}
+            goToEditSrc={() => setActiveStep(STEPS.SET_FROM_ASSET)}
+            goToNext={() => setActiveStep(STEPS.SET_DST_ASSET)}
+          />
+        );
+      }
+      case STEPS.CONFIRM_AMOUNT: {
+        emitMetric(METRIC_NAMES.swapAmount);
+        return (
+          <SwapAmount
+            inputType={inputType}
+            setInputType={setInputType}
+            goBack={() => setActiveStep(STEPS.SET_DST_ASSET)}
+            goToEditSrc={() => setActiveStep(STEPS.SET_FROM_ASSET)}
+            goToNext={() => setActiveStep(STEPS.SWAP_CONFIRM)}
+          />
+        );
+      }
       case STEPS.SET_FROM_ASSET:
       default: {
         emitMetric(METRIC_NAMES.swapFrom);
         return (
-          <SwapFrom
+          <SwapAsset
             title="Swap from"
+            hiddenAssets={[transactionData.destinationAsset]}
+            goBack={() => {
+              navigateTo(ROUTES.account, navigate);
+            }}
             onClickAsset={(canonical: string, isContract: boolean) => {
               dispatch(saveAsset(canonical));
               dispatch(saveIsToken(isContract));
@@ -92,19 +102,6 @@ export const Swap = () => {
             }}
           />
         );
-      }
-
-      case STEPS.AMOUNT: {
-        emitMetric(METRIC_NAMES.swapAmount);
-        return (
-          <SwapAmount
-            goBack={() => setActiveStep(STEPS.SET_FROM_ASSET)}
-            goToNext={() => setActiveStep(STEPS.SET_DST_ASSET)}
-          />
-        );
-      }
-      case STEPS.CHOOSE_ASSETS: {
-        return <ChooseAsset goBack={() => setActiveStep(STEPS.AMOUNT)} />;
       }
     }
   };

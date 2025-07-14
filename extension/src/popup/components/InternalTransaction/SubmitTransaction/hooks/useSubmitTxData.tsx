@@ -7,7 +7,6 @@ import {
   addRecentAddress,
   signFreighterSorobanTransaction,
   signFreighterTransaction,
-  startHwSign,
   submitFreighterSorobanTransaction,
   submitFreighterTransaction,
   transactionSubmissionSelector,
@@ -26,13 +25,15 @@ interface SubmitTxData {
 }
 
 function useSubmitTxData({
+  isHardwareWallet,
+  networkDetails,
   publicKey,
   xdr,
-  networkDetails,
 }: {
+  isHardwareWallet: boolean;
+  networkDetails: NetworkDetails;
   publicKey: string;
   xdr: string;
-  networkDetails: NetworkDetails;
 }) {
   const reduxDispatch = useDispatch<AppDispatch>();
   const [state, dispatch] = useReducer(
@@ -46,16 +47,11 @@ function useSubmitTxData({
   const submission = useSelector(transactionSubmissionSelector);
   const {
     transactionData: { asset, destination, federationAddress },
+    transactionSimulation,
   } = submission;
   const sourceAsset = getAssetFromCanonical(asset);
 
-  const fetchData = async ({
-    isToken,
-    isHardwareWallet,
-  }: {
-    isToken: boolean;
-    isHardwareWallet: boolean;
-  }) => {
+  const fetchData = async ({ isToken }: { isToken: boolean }) => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const payload = {
@@ -78,12 +74,20 @@ function useSubmitTxData({
 
       if (isToken) {
         if (isHardwareWallet) {
-          reduxDispatch(
-            startHwSign({
-              transactionXDR: xdr,
-              shouldSubmit: true,
+          const submitResp = await reduxDispatch(
+            submitFreighterTransaction({
+              publicKey,
+              signedXDR: transactionSimulation.preparedTransaction!,
+              networkDetails,
             }),
           );
+
+          if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+            await reduxDispatch(
+              addRecentAddress({ address: federationAddress || destination }),
+            );
+            emitMetric(METRIC_NAMES.sendPaymentSuccess, { sourceAsset });
+          }
         } else {
           const res = await reduxDispatch(
             signFreighterTransaction({
@@ -113,30 +117,49 @@ function useSubmitTxData({
           }
         }
       } else {
-        const res = await reduxDispatch(
-          signFreighterSorobanTransaction({
-            transactionXDR: xdr,
-            network: networkDetails.networkPassphrase,
-          }),
-        );
-
-        if (
-          signFreighterSorobanTransaction.fulfilled.match(res) &&
-          res.payload.signedTransaction
-        ) {
+        if (isHardwareWallet) {
           const submitResp = await reduxDispatch(
-            submitFreighterSorobanTransaction({
+            submitFreighterTransaction({
               publicKey,
-              signedXDR: res.payload.signedTransaction,
+              signedXDR: transactionSimulation.preparedTransaction!,
               networkDetails,
             }),
           );
 
-          if (submitFreighterSorobanTransaction.fulfilled.match(submitResp)) {
-            addRecentAddress({ address: destination }),
+          if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+            await reduxDispatch(
+              addRecentAddress({ address: federationAddress || destination }),
+            );
+            emitMetric(METRIC_NAMES.sendPaymentSuccess, { sourceAsset });
+          }
+        } else {
+          const res = await reduxDispatch(
+            signFreighterSorobanTransaction({
+              transactionXDR: xdr,
+              network: networkDetails.networkPassphrase,
+            }),
+          );
+
+          if (
+            signFreighterSorobanTransaction.fulfilled.match(res) &&
+            res.payload.signedTransaction
+          ) {
+            const submitResp = await reduxDispatch(
+              submitFreighterSorobanTransaction({
+                publicKey,
+                signedXDR: res.payload.signedTransaction,
+                networkDetails,
+              }),
+            );
+
+            if (submitFreighterSorobanTransaction.fulfilled.match(submitResp)) {
+              await reduxDispatch(
+                addRecentAddress({ address: federationAddress || destination }),
+              );
               emitMetric(METRIC_NAMES.sendPaymentSuccess, {
                 sourceAsset: sourceAsset.code,
               });
+            }
           }
         }
       }

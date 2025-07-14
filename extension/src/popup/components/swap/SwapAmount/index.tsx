@@ -40,43 +40,61 @@ import { findAssetBalance } from "popup/helpers/balance";
 import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
 import { AppDispatch } from "popup/App";
 import { emitMetric } from "helpers/metrics";
+import { AMOUNT_ERROR, InputType } from "helpers/transaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AssetIcon } from "popup/components/account/AccountAssets";
-
-import "./styles.scss";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { EditSettings } from "popup/components/InternalTransaction/EditSettings";
+import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
+import { useSimulateTxData } from "./hooks/useSimulateSwapData";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
-enum AMOUNT_ERROR {
-  TOO_HIGH = "amount too high",
-  DEC_MAX = "too many decimal digits",
-  SEND_MAX = "amount higher than send max",
-}
-type InputType = "crypto" | "fiat";
+import "./styles.scss";
 
-const CHAR_WIDTH = 24;
 const defaultSlippage = "1";
 
 interface SwapAmountProps {
+  inputType: InputType;
+  setInputType: (type: InputType) => void;
   goBack: () => void;
   goToNext: () => void;
+  goToEditSrc: () => void;
 }
 
-export const SwapAmount = ({ goBack, goToNext }: SwapAmountProps) => {
+export const SwapAmount = ({
+  inputType,
+  setInputType,
+  goBack,
+  goToNext,
+  goToEditSrc,
+}: SwapAmountProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const { networkCongestion, recommendedFee } = useNetworkFees();
   const runAfterUpdate = useRunAfterUpdate();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
   const { transactionData } = useSelector(transactionSubmissionSelector);
   const {
+    allowedSlippage,
     amount,
     amountUsd,
     asset,
-    allowedSlippage,
     destination,
+    destinationAmount,
     destinationAsset,
     isToken,
+    memo,
+    path,
+    transactionFee,
+    transactionTimeout,
   } = transactionData;
+  const srcAsset = getAssetFromCanonical(asset);
+  const dstAsset = destinationAsset
+    ? getAssetFromCanonical(destinationAsset)
+    : null;
+
   const { state: swapAmountData, fetchData } = useGetSwapAmountData(
     {
       showHidden: false,
@@ -84,19 +102,35 @@ export const SwapAmount = ({ goBack, goToNext }: SwapAmountProps) => {
     },
     destination,
   );
+  const { state: simulationState, fetchData: fetchSimulationData } =
+    useSimulateTxData({
+      publicKey,
+      networkDetails,
+      simParams: {
+        sourceAsset: srcAsset,
+        destAsset: dstAsset!,
+        amount,
+        allowedSlippage,
+        path,
+        transactionFee,
+        transactionTimeout,
+        memo,
+      },
+    });
 
-  const spanRef = useRef<HTMLSpanElement>(null);
-  const spanRefUsd = useRef<HTMLSpanElement>(null);
   const cryptoInputRef = useRef<HTMLInputElement>(null);
   const usdInputRef = useRef<HTMLInputElement>(null);
 
-  const [inputWidth, setInputWidth] = useState(CHAR_WIDTH);
-  const [inputWidthUsd, setInputWidthUsd] = useState(CHAR_WIDTH);
   const [isEditingSlippage, setIsEditingSlippage] = useState(false);
   const [isEditingSettings, setIsEditingSettings] = useState(false);
-  const [inputType, setInputType] = useState<InputType>("crypto");
+  const [isReviewingTx, setIsReviewingTx] = React.useState(false);
 
-  const handleContinue = async () => {};
+  const handleContinue = async (values: { amount: string }) => {
+    const amount = inputType === "crypto" ? values.amount : priceValue!;
+    dispatch(saveAmount(cleanAmount(amount)));
+    await fetchSimulationData({ amount, destinationRate: dstAssetPrice });
+    setIsReviewingTx(true);
+  };
 
   const validate = (values: { amount: string }) => {
     const amount = inputType === "crypto" ? values.amount : priceValue!;
@@ -111,7 +145,7 @@ export const SwapAmount = ({ goBack, goToNext }: SwapAmountProps) => {
   };
 
   const formik = useFormik({
-    initialValues: { amount, amountUsd: amountUsd, asset, destinationAsset },
+    initialValues: { amount, amountUsd, asset, destinationAsset },
     onSubmit: handleContinue,
     validate,
     enableReinitialize: true,
@@ -129,26 +163,10 @@ export const SwapAmount = ({ goBack, goToNext }: SwapAmountProps) => {
     return "small";
   };
 
-  const srcAsset = getAssetFromCanonical(asset);
-  const dstAsset = destinationAsset
-    ? getAssetFromCanonical(destinationAsset)
-    : null;
   const parsedSourceAsset = getAssetFromCanonical(formik.values.asset);
   const isLoading =
     swapAmountData.state === RequestState.IDLE ||
     swapAmountData.state === RequestState.LOADING;
-
-  useEffect(() => {
-    if (spanRef.current) {
-      setInputWidth(spanRef.current.scrollWidth + 8);
-    }
-  }, [formik.values.amount, amount, amountUsd]);
-
-  useEffect(() => {
-    if (spanRefUsd.current) {
-      setInputWidthUsd(spanRefUsd.current.scrollWidth + 8);
-    }
-  }, [formik.values.amountUsd, amount, amountUsd]);
 
   useEffect(() => {
     if (cryptoInputRef.current) {
@@ -210,6 +228,7 @@ export const SwapAmount = ({ goBack, goToNext }: SwapAmountProps) => {
   const prices = sendData.tokenPrices;
   const assetPrice = prices[asset] && prices[asset].currentPrice;
   const xlmPrice = prices["native"]?.currentPrice;
+  const dstAssetPrice = prices[destinationAsset]?.currentPrice;
   const assetDecimals = getAssetDecimals(asset, sendData.userBalances, isToken);
   const priceValue = assetPrice
     ? new BigNumber(cleanAmount(formik.values.amountUsd))
@@ -236,7 +255,7 @@ export const SwapAmount = ({ goBack, goToNext }: SwapAmountProps) => {
       )}`
     : null;
   const supportsUsd =
-    isMainnet(swapAmountData.data?.networkDetails!) && assetPrice;
+    isMainnet(swapAmountData.data?.networkDetails!) && assetPrice !== null;
   const displayTotal = `${formatAmount(assetBalance.total.toString())} ${srcAsset.code}`;
   const dstDisplayTotal =
     dstAssetBalance && dstAsset
@@ -251,11 +270,12 @@ export const SwapAmount = ({ goBack, goToNext }: SwapAmountProps) => {
   const srcTitle = asset === "native" ? "Stellar Lumens" : srcAsset.code;
   const dstTitle =
     destinationAsset === "native" ? "Stellar Lumens" : dstAsset?.code;
-  const goBackAction = () => {
+
+  const goToEditSrcAction = () => {
     dispatch(saveAsset("native"));
     dispatch(saveAmount("0"));
     dispatch(saveAmountUsd("0.00"));
-    goBack();
+    goToEditSrc();
   };
 
   return (
@@ -305,8 +325,27 @@ export const SwapAmount = ({ goBack, goToNext }: SwapAmountProps) => {
               isFullWidth
               isRounded
               variant="secondary"
+              isLoading={simulationState.state === RequestState.LOADING}
+              disabled={
+                (inputType === "crypto" &&
+                  new BigNumber(formik.values.amount).isZero()) ||
+                (inputType === "fiat" &&
+                  new BigNumber(formik.values.amountUsd).isZero()) ||
+                (inputType === "crypto" &&
+                  new BigNumber(cleanAmount(formik.values.amount)).gt(
+                    new BigNumber(availableBalance),
+                  )) ||
+                (inputType === "fiat" &&
+                  new BigNumber(cleanAmount(priceValue!)).gt(
+                    new BigNumber(availableBalance),
+                  ))
+              }
               onClick={(e) => {
                 e.preventDefault();
+                if (destinationAsset) {
+                  formik.submitForm();
+                  return;
+                }
                 goToNext();
               }}
             >
@@ -323,17 +362,11 @@ export const SwapAmount = ({ goBack, goToNext }: SwapAmountProps) => {
                   <div className="SwapAsset__amount-input-container">
                     {inputType === "crypto" && (
                       <>
-                        <span
-                          ref={spanRef}
-                          className={`SwapAsset__mirror-amount SwapAsset__${getAmountFontSize()}`}
-                        >
-                          {formik.values.amount}
-                        </span>
                         <input
                           ref={cryptoInputRef}
                           className={`SwapAsset__input-amount SwapAsset__${getAmountFontSize()}`}
                           style={{
-                            width: inputWidth,
+                            width: `${formik.values.amount.length + 1 || 5}ch`,
                           }}
                           data-testid="send-amount-amount-input"
                           name="amount"
@@ -372,12 +405,6 @@ export const SwapAmount = ({ goBack, goToNext }: SwapAmountProps) => {
                     )}
                     {inputType === "fiat" && (
                       <>
-                        <span
-                          ref={spanRefUsd}
-                          className={`SwapAsset__mirror-amount SwapAsset__${getAmountFontSize()}`}
-                        >
-                          {formik.values.amountUsd}
-                        </span>
                         <div
                           className={`SwapAsset__amount-label-usd SwapAsset__${getAmountFontSize()}`}
                         >
@@ -387,7 +414,7 @@ export const SwapAmount = ({ goBack, goToNext }: SwapAmountProps) => {
                           ref={usdInputRef}
                           className={`SwapAsset__input-amount SwapAsset__${getAmountFontSize()}`}
                           style={{
-                            width: inputWidthUsd,
+                            width: `${formik.values.amountUsd.length + 1 || 5}ch`,
                           }}
                           data-testid="send-amount-amount-input"
                           name="amountUsd"
@@ -500,7 +527,7 @@ export const SwapAmount = ({ goBack, goToNext }: SwapAmountProps) => {
                     isRounded
                     size="sm"
                     variant="tertiary"
-                    onClick={goBackAction}
+                    onClick={goToEditSrcAction}
                   >
                     Edit
                   </Button>
@@ -549,6 +576,20 @@ export const SwapAmount = ({ goBack, goToNext }: SwapAmountProps) => {
                     isRounded
                     size="sm"
                     variant="tertiary"
+                    disabled={
+                      (inputType === "crypto" &&
+                        new BigNumber(formik.values.amount).isZero()) ||
+                      (inputType === "fiat" &&
+                        new BigNumber(formik.values.amountUsd).isZero()) ||
+                      (inputType === "crypto" &&
+                        new BigNumber(cleanAmount(formik.values.amount)).gt(
+                          new BigNumber(availableBalance),
+                        )) ||
+                      (inputType === "fiat" &&
+                        new BigNumber(cleanAmount(priceValue!)).gt(
+                          new BigNumber(availableBalance),
+                        ))
+                    }
                     onClick={goToNext}
                   >
                     Edit
@@ -594,6 +635,34 @@ export const SwapAmount = ({ goBack, goToNext }: SwapAmountProps) => {
           <LoadingBackground
             onClick={() => setIsEditingSettings(false)}
             isActive={isEditingSettings}
+          />
+        </>
+      ) : null}
+      {isReviewingTx ? (
+        <>
+          <div className="ReviewTxWrapper">
+            <ReviewTx
+              assetIcon={assetIcon}
+              fee={recommendedFee}
+              networkDetails={networkDetails}
+              onCancel={() => setIsReviewingTx(false)}
+              onConfirm={goToNext}
+              sendAmount={amount}
+              sendPriceUsd={priceValueUsd}
+              simulationState={simulationState}
+              srcAsset={asset}
+              dstAsset={{
+                icon: dstAssetIcon,
+                canonical: destinationAsset,
+                priceUsd: simulationState.data?.dstAmountPriceUsd!,
+                amount: destinationAmount,
+              }}
+              title="You are swapping"
+            />
+          </div>
+          <LoadingBackground
+            onClick={() => setIsReviewingTx(false)}
+            isActive={isReviewingTx}
           />
         </>
       ) : null}

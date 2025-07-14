@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Navigate } from "react-router-dom";
 import { Button, Icon, Loader } from "@stellar/design-system";
 import BigNumber from "bignumber.js";
 
@@ -18,7 +19,7 @@ import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
-import { Navigate } from "react-router-dom";
+import { title } from "helpers/transaction";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { useGetDestAssetData } from "./hooks/useGetDestAssetData";
@@ -27,6 +28,7 @@ import {
   LiquidityPoolShareAsset,
 } from "@shared/api/types/account-balance";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+import { formatTokenAmount } from "popup/helpers/soroban";
 
 import "./styles.scss";
 
@@ -94,17 +96,6 @@ export const SendDestinationAsset = ({
   const icons = destAssetDataState.data?.balances.icons || {};
   const tokenPrices = destAssetDataState.data?.tokenPrices || {};
 
-  const title = (balance: Exclude<AssetType, LiquidityPoolShareAsset>) => {
-    if ("type" in balance.token && balance.token.type === "native") {
-      return "Stellar Lumens";
-    }
-    if ("symbol" in balance) {
-      return balance.symbol;
-    }
-
-    return balance.token.code;
-  };
-
   return (
     <>
       <SubviewHeader
@@ -157,10 +148,14 @@ export const SendDestinationAsset = ({
                     const canonical = getCanonicalFromAsset(code, issuerKey);
                     const icon = icons[canonical];
                     // TODO: should this be available balance for XLM?
-                    const displayTotal = `${formatAmount(balance.total.toString())} ${code}`;
+                    const displayTotal =
+                      "decimals" in balance
+                        ? `${formatTokenAmount(balance.total, balance.decimals)} ${code}`
+                        : `${formatAmount(balance.total.toString())} ${code}`;
                     const usdValue = tokenPrices[canonical];
                     return (
                       <div
+                        data-testid={`SendRow-${canonical}`}
                         className="SendDestinationAsset__AssetRow"
                         onClick={() => {
                           dispatch(saveAsset(canonical));

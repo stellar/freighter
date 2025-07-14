@@ -1,15 +1,6 @@
 import { useReducer } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
-
-import { initialState, isError, reducer } from "helpers/request";
-import { NetworkDetails } from "@shared/constants/stellar";
-import {
-  getAssetFromCanonical,
-  isMuxedAccount,
-  stroopToXlm,
-  xlmToStroop,
-} from "helpers/stellar";
 import {
   Account,
   Asset,
@@ -20,7 +11,16 @@ import {
   Operation,
   TransactionBuilder,
 } from "stellar-sdk";
-import { computeDestMinWithSlippage } from "../../SendConfirm/TransactionDetails/hooks/useGetTxDetailsData";
+
+import { initialState, isError, reducer } from "helpers/request";
+import { NetworkDetails } from "@shared/constants/stellar";
+import {
+  getAssetFromCanonical,
+  isMuxedAccount,
+  stroopToXlm,
+  xlmToStroop,
+} from "helpers/stellar";
+import { computeDestMinWithSlippage } from "helpers/transaction";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { getBaseAccount } from "popup/helpers/account";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
@@ -31,17 +31,17 @@ import {
   parseTokenAmount,
 } from "popup/helpers/soroban";
 import { simulateTokenTransfer } from "@shared/api/internal";
+import { BlockAidScanTxResult } from "@shared/api/types";
+import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import {
   saveSimulation,
   saveTransactionFee,
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
-import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import { findAddressBalance } from "popup/helpers/balance";
 import { AppDispatch } from "popup/App";
 import { useScanTx } from "popup/helpers/blockaid";
-import { BlockAidScanTxResult } from "@shared/api/types";
 
 interface SimClassic {
   type: "classic";
