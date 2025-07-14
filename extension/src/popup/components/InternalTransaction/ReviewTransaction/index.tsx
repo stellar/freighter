@@ -76,19 +76,21 @@ export const ReviewTx = ({
 
   if (simulationState.state === RequestState.ERROR) {
     return (
-      <div className="ReviewTx__error">
-        <Notification
-          variant="error"
-          title={t("Failed to fetch your transaction details")}
-        >
-          {t(
-            "We had an issue retrieving your transaction details. Please try again.",
-          )}
-        </Notification>
-        <Button size="md" variant="secondary" onClick={onCancel}>
-          {t("Back")}
-        </Button>
-      </div>
+      <View.Content hasNoTopPadding>
+        <div className="ReviewTx">
+          <Notification
+            variant="error"
+            title={t("Failed to fetch your transaction details")}
+          >
+            {t(
+              "We had an issue retrieving your transaction details. Please try again.",
+            )}
+          </Notification>
+          <Button size="md" variant="secondary" onClick={onCancel}>
+            {t("Back")}
+          </Button>
+        </div>
+      </View.Content>
     );
   }
 

@@ -287,16 +287,6 @@ export const SendTo = ({
                             publicKey={sendDataState.data.validatedAddress}
                           />
                         </div>
-                        {/* {isFederationAddress(formik.values.destination) && (
-                          <>
-                            <div className="SendTo__subheading">
-                              {t("Federation Address")}
-                            </div>
-                            <div className="SendTo__subsection-copy">
-                              {formik.values.destination}
-                            </div>
-                          </>
-                        )} */}
                         <span>
                           {truncatedPublicKey(
                             sendDataState.data.validatedAddress,

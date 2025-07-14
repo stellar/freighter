@@ -406,7 +406,7 @@ test.skip("Send SAC to C address", async ({ page, extensionId }) => {
   });
 });
 
-test.only("Send token payment to C address", async ({ page, extensionId }) => {
+test("Send token payment to C address", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
 

@@ -9,14 +9,6 @@
   background-color: var(--sds-clr-gray-01);
   border-radius: 0.875rem;
 
-  &__error {
-    flex: 1;
-    padding: var(--View-inset-padding-top);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-
   &__loader {
     width: 100%;
     height: 100%;
