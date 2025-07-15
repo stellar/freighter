@@ -20,7 +20,7 @@ import { getCanonicalFromAsset } from "helpers/stellar";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { useGetSwapFromData } from "./hooks/useSwapFromData";
-import { formatTokenAmount } from "popup/helpers/soroban";
+import { getAvailableBalance } from "popup/helpers/soroban";
 
 import "./styles.scss";
 
@@ -95,6 +95,7 @@ export const SwapAsset = ({
 
   const icons = state.data?.balances.icons || {};
   const tokenPrices = state.data?.tokenPrices || {};
+  const balances = state.data?.balances;
 
   return (
     <>
@@ -124,7 +125,7 @@ export const SwapAsset = ({
             </div>
           ) : (
             <div className="SwapFrom__Assets">
-              {!state.data?.balances.balances.length ? (
+              {!balances?.balances.length ? (
                 <div className="SwapFrom__Assets__empty">
                   You have no assets added. Get started by adding an asset.
                 </div>
@@ -134,7 +135,7 @@ export const SwapAsset = ({
                     <Icon.Coins03 />
                     Your Tokens
                   </div>
-                  {state.data.balances.balances
+                  {balances.balances
                     .filter(
                       (
                         balance,
@@ -161,11 +162,16 @@ export const SwapAsset = ({
                       const isContract = "contractId" in balance;
                       const canonical = getCanonicalFromAsset(code, issuerKey);
                       const icon = icons[canonical];
-                      // TODO: should this be available balance for XLM?
+                      const availableBalance = getAvailableBalance({
+                        assetCanonical: canonical,
+                        balances: [balance],
+                        subentryCount: balances.subentryCount,
+                        recommendedFee: "0",
+                      });
                       const displayTotal =
                         "decimals" in balance
-                          ? `${formatTokenAmount(balance.total, balance.decimals)} ${code}`
-                          : `${formatAmount(balance.total.toString())} ${code}`;
+                          ? `${availableBalance} ${code}`
+                          : `${formatAmount(availableBalance)} ${code}`;
                       const usdValue = tokenPrices[canonical];
                       return (
                         <div

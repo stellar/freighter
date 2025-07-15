@@ -222,13 +222,16 @@ export const SendAmount = ({
     : null;
   const supportsUsd =
     isMainnet(sendAmountData.data?.networkDetails!) && assetPrice;
-  const displayTotal = `${formatAmount(assetBalance.total.toString())} ${srcAsset.code}`;
   const availableBalance = getAvailableBalance({
     assetCanonical: asset,
     balances: sendData.userBalances.balances,
     recommendedFee,
     subentryCount: sendData.userBalances.subentryCount,
   });
+  const displayTotal =
+    "decimals" in assetBalance
+      ? `${availableBalance} ${assetBalance.token.code}`
+      : `${formatAmount(availableBalance)} ${assetBalance.token.code}`;
   const srcTitle = asset === "native" ? "Stellar Lumens" : srcAsset.code;
   const goBackAction = () => {
     dispatch(saveAsset("native"));

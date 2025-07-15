@@ -54,7 +54,6 @@ export const SendingTransaction = ({
       destination,
       destinationAsset,
       destinationAmount,
-      isToken,
     },
     response,
   } = submission;
@@ -74,7 +73,7 @@ export const SendingTransaction = ({
   useEffect(() => {
     const getData = async () => {
       await fetchData({
-        isToken,
+        isSwap,
       });
     };
     if (!isVerifyAccountModalOpen) {

@@ -28,7 +28,7 @@ import {
   LiquidityPoolShareAsset,
 } from "@shared/api/types/account-balance";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
-import { formatTokenAmount } from "popup/helpers/soroban";
+import { getAvailableBalance } from "popup/helpers/soroban";
 
 import "./styles.scss";
 
@@ -95,6 +95,7 @@ export const SendDestinationAsset = ({
 
   const icons = destAssetDataState.data?.balances.icons || {};
   const tokenPrices = destAssetDataState.data?.tokenPrices || {};
+  const balances = destAssetDataState.data?.balances;
 
   return (
     <>
@@ -121,7 +122,7 @@ export const SendDestinationAsset = ({
             </Button>
           </div>
           <div className="SendDestinationAsset__Assets">
-            {!destAssetDataState.data?.balances.balances.length ? (
+            {!balances?.balances.length ? (
               <div className="SendDestinationAsset__Assets__empty">
                 You have no assets added. Get started by adding an asset.
               </div>
@@ -131,7 +132,7 @@ export const SendDestinationAsset = ({
                   <Icon.Coins03 />
                   Tokens
                 </div>
-                {destAssetDataState.data.balances.balances
+                {balances.balances
                   .filter(
                     (
                       balance,
@@ -147,11 +148,16 @@ export const SendDestinationAsset = ({
                     const isContract = "contractId" in balance;
                     const canonical = getCanonicalFromAsset(code, issuerKey);
                     const icon = icons[canonical];
-                    // TODO: should this be available balance for XLM?
+                    const availableBalance = getAvailableBalance({
+                      assetCanonical: canonical,
+                      balances: [balance],
+                      subentryCount: balances.subentryCount,
+                      recommendedFee: "0",
+                    });
                     const displayTotal =
                       "decimals" in balance
-                        ? `${formatTokenAmount(balance.total, balance.decimals)} ${code}`
-                        : `${formatAmount(balance.total.toString())} ${code}`;
+                        ? `${availableBalance} ${code}`
+                        : `${formatAmount(availableBalance)} ${code}`;
                     const usdValue = tokenPrices[canonical];
                     return (
                       <div
