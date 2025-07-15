@@ -147,7 +147,7 @@ test("Swap shows correct balances for assets", async ({
         },
       },
       isFunded: true,
-      subentryCount: 14,
+      subentryCount: 0,
       error: {
         horizon: null,
         soroban: null,
@@ -165,7 +165,7 @@ test("Swap shows correct balances for assets", async ({
   await expect(page.getByText("100 FOO")).toBeVisible();
   await expect(page.getByText("10 BAZ")).toBeVisible();
   await expect(page.getByText("98.997 PBT")).toBeVisible();
-  await expect(page.getByText("999 XLM")).toBeVisible();
+  await expect(page.getByText("998 XLM")).toBeVisible();
 });
 test("Send doesn't throw error when account is unfunded", async ({
   page,
