@@ -1,7 +1,7 @@
 import { useReducer } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { initialState, isError, reducer } from "helpers/request";
+import { initialState, reducer } from "helpers/request";
 import { AppDispatch } from "popup/App";
 import {
   addRecentAddress,
@@ -12,8 +12,7 @@ import {
 import { NetworkDetails } from "@shared/constants/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
-import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
+import { getAssetFromCanonical } from "helpers/stellar";
 import { AssetIcons } from "@shared/api/types";
 
 interface SubmitTxData {
@@ -38,10 +37,6 @@ function useSubmitTxData({
     reducer<SubmitTxData, unknown>,
     initialState,
   );
-  const { fetchData: fetchBalances } = useGetBalances({
-    showHidden: false,
-    includeIcons: true,
-  });
   const submission = useSelector(transactionSubmissionSelector);
   const {
     transactionData: { asset, destination, federationAddress },
@@ -55,19 +50,6 @@ function useSubmitTxData({
       const payload = {
         status: "success",
       } as SubmitTxData;
-
-      const isMainnetNetwork = isMainnet(networkDetails);
-      const balances = await fetchBalances(
-        publicKey,
-        isMainnetNetwork,
-        networkDetails,
-        true,
-      );
-
-      if (isError<AccountBalances>(balances)) {
-        throw new Error(balances.message);
-      }
-      payload.icons = balances.icons || {};
 
       let signedXDR = transactionSimulation.preparedTransaction!;
       if (!isHardwareWallet) {

@@ -55,6 +55,7 @@ import { useGetSendAmountData } from "./hooks/useSendAmountData";
 import { SimulateTxData } from "./hooks/useSimulateTxData";
 
 import "../styles.scss";
+import { SlideupModal } from "popup/components/SlideupModal";
 
 export const SendAmount = ({
   goBack,
@@ -561,28 +562,27 @@ export const SendAmount = ({
           />
         </>
       ) : null}
-      {isReviewingTx ? (
-        <>
-          <div className="ReviewTxWrapper">
-            <ReviewTx
-              assetIcon={assetIcon}
-              fee={recommendedFee}
-              networkDetails={sendAmountData.data?.networkDetails!}
-              onCancel={() => setIsReviewingTx(false)}
-              onConfirm={goToNext}
-              sendAmount={amount}
-              sendPriceUsd={inputType === "crypto" ? priceValue! : amountUsd}
-              simulationState={simulationState}
-              srcAsset={asset}
-              title="You are sending"
-            />
-          </div>
-          <LoadingBackground
-            onClick={() => setIsReviewingTx(false)}
-            isActive={isReviewingTx}
+      <SlideupModal
+        setIsModalOpen={() => setIsReviewingTx(false)}
+        isModalOpen={isReviewingTx}
+      >
+        {isReviewingTx ? (
+          <ReviewTx
+            assetIcon={assetIcon}
+            fee={recommendedFee}
+            networkDetails={sendAmountData.data?.networkDetails!}
+            onCancel={() => setIsReviewingTx(false)}
+            onConfirm={goToNext}
+            sendAmount={amount}
+            sendPriceUsd={inputType === "crypto" ? priceValue! : amountUsd}
+            simulationState={simulationState}
+            srcAsset={asset}
+            title="You are sending"
           />
-        </>
-      ) : null}
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
     </React.Fragment>
   );
 };

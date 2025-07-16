@@ -27,6 +27,7 @@ import { navigateTo, openTab } from "popup/helpers/navigate";
 import { SubmitFail } from "../SubmitFail";
 
 import "./styles.scss";
+import { iconsSelector } from "popup/ducks/cache";
 
 interface SendingTransactionProps {
   xdr: string;
@@ -44,6 +45,7 @@ export const SendingTransaction = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
   const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
+  const icons = useSelector(iconsSelector);
   const [isVerifyAccountModalOpen, setIsVerifyAccountModalOpen] =
     useState(!hasPrivateKey);
 
@@ -92,9 +94,9 @@ export const SendingTransaction = ({
     submissionState.state === RequestState.IDLE ||
     submissionState.state === RequestState.LOADING;
   const isSuccess = submissionState.state === RequestState.SUCCESS;
-  const assetIcon = submissionState.data?.icons[asset]!;
+  const assetIcon = icons[asset]!;
   const assetIcons = asset !== "native" ? { [asset]: assetIcon } : {};
-  const dstAssetIcon = submissionState.data?.icons[destinationAsset]!;
+  const dstAssetIcon = icons[destinationAsset]!;
   const dstAssetIcons =
     asset !== "native" ? { [destinationAsset]: dstAssetIcon } : {};
 

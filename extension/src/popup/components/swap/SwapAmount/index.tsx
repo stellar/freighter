@@ -51,6 +51,7 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import "./styles.scss";
+import { SlideupModal } from "popup/components/SlideupModal";
 
 const defaultSlippage = "1";
 
@@ -638,34 +639,33 @@ export const SwapAmount = ({
           />
         </>
       ) : null}
-      {isReviewingTx ? (
-        <>
-          <div className="ReviewTxWrapper">
-            <ReviewTx
-              assetIcon={assetIcon}
-              fee={recommendedFee}
-              networkDetails={networkDetails}
-              onCancel={() => setIsReviewingTx(false)}
-              onConfirm={goToNext}
-              sendAmount={amount}
-              sendPriceUsd={priceValueUsd}
-              simulationState={simulationState}
-              srcAsset={asset}
-              dstAsset={{
-                icon: dstAssetIcon,
-                canonical: destinationAsset,
-                priceUsd: simulationState.data?.dstAmountPriceUsd!,
-                amount: destinationAmount,
-              }}
-              title="You are swapping"
-            />
-          </div>
-          <LoadingBackground
-            onClick={() => setIsReviewingTx(false)}
-            isActive={isReviewingTx}
+      <SlideupModal
+        setIsModalOpen={() => setIsReviewingTx(false)}
+        isModalOpen={isReviewingTx}
+      >
+        {isReviewingTx ? (
+          <ReviewTx
+            assetIcon={assetIcon}
+            fee={recommendedFee}
+            networkDetails={networkDetails}
+            onCancel={() => setIsReviewingTx(false)}
+            onConfirm={goToNext}
+            sendAmount={amount}
+            sendPriceUsd={priceValueUsd}
+            simulationState={simulationState}
+            srcAsset={asset}
+            dstAsset={{
+              icon: dstAssetIcon,
+              canonical: destinationAsset,
+              priceUsd: simulationState.data?.dstAmountPriceUsd!,
+              amount: destinationAmount,
+            }}
+            title="You are swapping"
           />
-        </>
-      ) : null}
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
     </>
   );
 };

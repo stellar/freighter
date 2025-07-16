@@ -21,7 +21,13 @@
   }
 
   &__balance-label {
+    display: flex;
+    align-items: center;
     color: var(--sds-clr-gray-09);
+
+    svg {
+      margin-right: pxToRem(6px);
+    }
   }
 
   &__balance-value {

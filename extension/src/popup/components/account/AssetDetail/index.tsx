@@ -279,11 +279,17 @@ export const AssetDetail = ({
               className="AssetDetail__balance"
               data-testid="asset-detail-available-copy"
             >
-              <div className="AssetDetail__balance-label">Balance</div>
+              <div className="AssetDetail__balance-label">
+                <Icon.Coins01 />
+                Balance
+              </div>
               <div>{displayTotal}</div>
             </div>
             <div className="AssetDetail__balance-value">
-              <div className="AssetDetail__balance-label">Value</div>
+              <div className="AssetDetail__balance-label">
+                <Icon.BankNote02 />
+                Value
+              </div>
               <div>
                 {assetPrice && assetPrice.currentPrice
                   ? `$${formatAmount(
@@ -335,7 +341,6 @@ export const AssetDetail = ({
           )}
         </div>
       </View.Content>
-      {/* TODO: fix the slideup modal */}
       {isNative && (
         <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
           <div className="AssetDetail__info-modal">
