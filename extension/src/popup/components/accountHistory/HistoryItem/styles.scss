@@ -34,6 +34,9 @@
   &__amount {
     text-align: right;
     max-width: 45%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 
     .Badge {
       white-space: nowrap;

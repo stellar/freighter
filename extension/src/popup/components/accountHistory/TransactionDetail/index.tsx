@@ -182,8 +182,13 @@ export const TransactionDetail = ({
     }
 
     if (activeOperation.metadata.isSwap) {
-      const { destIcon, formattedSrcAmount, srcAssetCode, sourceIcon } =
-        activeOperation.metadata;
+      const {
+        destIcon,
+        formattedSrcAmount,
+        srcAssetCode,
+        sourceIcon,
+        nonLabelAmount,
+      } = activeOperation.metadata;
       return (
         <>
           <div className="TransactionDetailModal__title-row">
@@ -228,7 +233,7 @@ export const TransactionDetail = ({
               <Icon.ChevronDownDouble />
             </div>
             <div className="Swap__dst">
-              <div className="Swap__dst__amount">{activeOperation.amount}</div>
+              <div className="Swap__dst__amount">{nonLabelAmount}</div>
               <div className="Swap__dst__icon">
                 <Asset
                   size="lg"
@@ -297,6 +302,37 @@ export const TransactionDetail = ({
                 <div className="Send__dst__icon">
                   <IdenticonImg publicKey={to} />
                 </div>
+              </div>
+            </div>
+          </>
+        );
+      }
+
+      case Horizon.HorizonApi.OperationResponseType.changeTrust: {
+        return (
+          <>
+            <div className="TransactionDetailModal__title-row">
+              <div className="TransactionDetailModal__icon">
+                {activeOperation.rowIcon}
+              </div>
+              <div className="TransactionDetailModal__title-details">
+                <div className="TransactionDetailModal__title invocation">
+                  {activeOperation.rowText} for{" "}
+                  {activeOperation.metadata.destAssetCode}
+                </div>
+                <Text
+                  as="div"
+                  size="xs"
+                  weight="regular"
+                  addlClassName="TransactionDetailModal__subtitle"
+                >
+                  <>
+                    {getActionIconByType(activeOperation.actionIcon)}
+                    <div className="TransactionDetailModal__subtitle-date">
+                      {createdAtDateStr} &bull; {createdAtTime}
+                    </div>
+                  </>
+                </Text>
               </div>
             </div>
           </>

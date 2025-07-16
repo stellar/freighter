@@ -2,8 +2,31 @@
   background: var(--sds-clr-gray-01);
   border-radius: 1.5rem 1.5rem 0 0;
   box-shadow: 0 1rem 1.5rem rgba(0, 0, 0, 0.24);
-  position: absolute;
-  transition: all var(--dropdown-animation);
+  position: fixed;
+  bottom: 0;
+  left: 0;
   width: 100%;
   z-index: var(--z-index-modal);
+
+  /* Start hidden/offscreen and invisible */
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+
+  transition:
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+}
+
+.SlideupModal.open {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.SlideupModal.closed {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
 }

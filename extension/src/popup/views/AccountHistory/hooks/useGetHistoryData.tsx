@@ -30,7 +30,7 @@ import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { AssetIcons, HorizonOperation, TokenBalance } from "@shared/api/types";
 import { OPERATION_TYPES } from "constants/transaction";
-import { formatAmount } from "popup/helpers/formatters";
+import { capitalize, formatAmount } from "popup/helpers/formatters";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
@@ -219,10 +219,6 @@ export const getActionIconByType = (iconType: string) => {
   }
 };
 
-function capitalize(str: string) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
 export interface OperationDataRow {
   action: string | null;
   actionIcon: string;
@@ -309,9 +305,10 @@ export const getRowDataByOpType = async (
     "source_amount" in operation ? operation.source_amount : null;
 
   if (isSwap) {
-    const formattedAmount = `${formatAmount(
+    const nonLabelAmount = `${formatAmount(
       new BigNumber(amount!).toString(),
     )} ${destAssetCode}`;
+    const formattedAmount = `+${nonLabelAmount}`;
     const formattedSrcAmount = srcAmount
       ? `${formatAmount(new BigNumber(srcAmount).toString())} ${srcAssetCode}`
       : null;
@@ -341,12 +338,13 @@ export const getRowDataByOpType = async (
       id,
       metadata: {
         ...baseMetadata,
-        destMinAmount: destAssetCode,
         destIcon,
+        destMinAmount: destAssetCode,
         formattedSrcAmount,
+        isSwap,
+        nonLabelAmount,
         sourceIcon,
         srcAssetCode,
-        isSwap,
       },
       rowIcon: getSwapIcons({ destIcon, srcAssetCode, sourceIcon }),
       rowText: (
@@ -554,6 +552,7 @@ export const getRowDataByOpType = async (
         id,
         metadata: {
           ...baseMetadata,
+          destAssetCode,
         },
         rowIcon: destIcon ? (
           <AssetSds
