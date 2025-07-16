@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   Asset,
   Claimant,
+  hash,
   LiquidityPoolAsset,
   nativeToScVal,
   Operation,
@@ -668,14 +669,17 @@ export const KeyValueInvokeHostFn = ({
       }
 
       case xdr.HostFunctionType.hostFunctionTypeUploadContractWasm(): {
-        const wasm = hostfn.wasm().toString();
+        const wasmHash = hash(hostfn.value() as Buffer);
         return (
           <>
             <KeyValueList
               operationKey={t("Invocation Type")}
               operationValue="Upload Contract Wasm"
             />
-            <KeyValueList operationKey={t("wasm")} operationValue={wasm} />
+            <KeyValueList
+              operationKey={t("Wasm Hash")}
+              operationValue={truncateString(wasmHash.toString("hex"), 8)}
+            />
           </>
         );
       }
