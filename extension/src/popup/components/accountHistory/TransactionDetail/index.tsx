@@ -182,8 +182,13 @@ export const TransactionDetail = ({
     }
 
     if (activeOperation.metadata.isSwap) {
-      const { destIcon, formattedSrcAmount, srcAssetCode, sourceIcon } =
-        activeOperation.metadata;
+      const {
+        destIcon,
+        formattedSrcAmount,
+        srcAssetCode,
+        sourceIcon,
+        nonLabelAmount,
+      } = activeOperation.metadata;
       return (
         <>
           <div className="TransactionDetailModal__title-row">
@@ -228,7 +233,7 @@ export const TransactionDetail = ({
               <Icon.ChevronDownDouble />
             </div>
             <div className="Swap__dst">
-              <div className="Swap__dst__amount">{activeOperation.amount}</div>
+              <div className="Swap__dst__amount">{nonLabelAmount}</div>
               <div className="Swap__dst__icon">
                 <Asset
                   size="lg"
