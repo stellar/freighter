@@ -308,6 +308,37 @@ export const TransactionDetail = ({
         );
       }
 
+      case Horizon.HorizonApi.OperationResponseType.changeTrust: {
+        return (
+          <>
+            <div className="TransactionDetailModal__title-row">
+              <div className="TransactionDetailModal__icon">
+                {activeOperation.rowIcon}
+              </div>
+              <div className="TransactionDetailModal__title-details">
+                <div className="TransactionDetailModal__title invocation">
+                  {activeOperation.rowText} for{" "}
+                  {activeOperation.metadata.destAssetCode}
+                </div>
+                <Text
+                  as="div"
+                  size="xs"
+                  weight="regular"
+                  addlClassName="TransactionDetailModal__subtitle"
+                >
+                  <>
+                    {getActionIconByType(activeOperation.actionIcon)}
+                    <div className="TransactionDetailModal__subtitle-date">
+                      {createdAtDateStr} &bull; {createdAtTime}
+                    </div>
+                  </>
+                </Text>
+              </div>
+            </div>
+          </>
+        );
+      }
+
       default: {
         return (
           <>

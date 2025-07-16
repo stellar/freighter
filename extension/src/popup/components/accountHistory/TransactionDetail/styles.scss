@@ -253,6 +253,11 @@
     .Metadata {
       display: flex;
       justify-content: space-between;
+      margin-bottom: 0.75rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
 
       &__value {
         &.failed {
@@ -267,7 +272,6 @@
       &__label {
         display: flex;
         align-items: center;
-        margin-bottom: pxToRem(12px);
         color: var(--sds-clr-gray-11);
 
         svg {

@@ -552,6 +552,7 @@ export const getRowDataByOpType = async (
         id,
         metadata: {
           ...baseMetadata,
+          destAssetCode,
         },
         rowIcon: destIcon ? (
           <AssetSds
