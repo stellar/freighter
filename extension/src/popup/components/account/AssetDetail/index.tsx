@@ -30,6 +30,7 @@ import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { Loading } from "popup/components/Loading";
 import { BlockaidAssetWarning } from "popup/components/WarningMessages";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
+import { title } from "helpers/transaction";
 import {
   getBalanceByAsset,
   getPriceDeltaColor,
@@ -39,10 +40,7 @@ import {
 import { CopyValue } from "popup/components/CopyValue";
 import {
   AssetType,
-  ClassicAsset,
   LiquidityPoolShareAsset,
-  NativeAsset,
-  SorobanAsset,
 } from "@shared/api/types/account-balance";
 import { OperationDataRow } from "popup/views/AccountHistory/hooks/useGetHistoryData";
 
@@ -158,17 +156,6 @@ export const AssetDetail = ({
   const activeOperation = sortedAssetOperations.find(
     (op) => op.id === activeAssetId,
   );
-
-  const title = (balance: NativeAsset | ClassicAsset | SorobanAsset) => {
-    if ("type" in balance.token && balance.token.type === "native") {
-      return "Stellar Lumens";
-    }
-    if ("symbol" in balance) {
-      return balance.symbol;
-    }
-
-    return "";
-  };
 
   const isStellarExpertSupported =
     isMainnet(networkDetails) || isTestnet(networkDetails);

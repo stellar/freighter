@@ -1,110 +1,140 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Navigate, useLocation } from "react-router-dom";
-import BigNumber from "bignumber.js";
-import { useFormik } from "formik";
-import { Button, Icon, Logo } from "@stellar/design-system";
+import { Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Form, Field, FieldProps, Formik, useFormik } from "formik";
+import BigNumber from "bignumber.js";
+import { object as YupObject, number as YupNumber } from "yup";
+import { Button, Card, Icon, Input, Logo } from "@stellar/design-system";
 
-import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { AppDispatch } from "popup/App";
-import {
-  getAssetFromCanonical,
-  isMainnet,
-  truncatedPublicKey,
-} from "helpers/stellar";
-import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { emitMetric } from "helpers/metrics";
-import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
-import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
+import {
+  saveAllowedSlippage,
+  saveAmount,
+  saveAmountUsd,
+  saveAsset,
+  saveTransactionFee,
+  saveTransactionTimeout,
+  transactionDataSelector,
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
 import {
   cleanAmount,
   formatAmount,
   formatAmountPreserveCursor,
   roundUsdValue,
 } from "popup/helpers/formatters";
-import {
-  transactionSubmissionSelector,
-  saveAmount,
-  saveAsset,
-  saveMemo,
-  saveTransactionFee,
-  saveTransactionTimeout,
-  saveAmountUsd,
-} from "popup/ducks/transactionSubmission";
-import { Loading } from "popup/components/Loading";
 import { TX_SEND_MAX } from "popup/constants/transaction";
-import { findAssetBalance } from "popup/helpers/balance";
-
-import { RequestState, State } from "constants/request";
+import { useGetSwapAmountData } from "./hooks/useGetSwapAmountData";
+import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
+import { RequestState } from "constants/request";
+import { Loading } from "popup/components/Loading";
+import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
-import { AMOUNT_ERROR, InputType } from "helpers/transaction";
 import { reRouteOnboarding } from "popup/helpers/route";
-import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
+import { findAssetBalance } from "popup/helpers/balance";
+import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
+import { AppDispatch } from "popup/App";
+import { emitMetric } from "helpers/metrics";
+import { AMOUNT_ERROR, InputType } from "helpers/transaction";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AssetIcon } from "popup/components/account/AccountAssets";
+import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { EditSettings } from "popup/components/InternalTransaction/EditSettings";
-import { EditMemo } from "popup/components/InternalTransaction/EditMemo";
 import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
+import { useSimulateTxData } from "./hooks/useSimulateSwapData";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
-import { AppDataType } from "helpers/hooks/useGetAppData";
-import { useGetSendAmountData } from "./hooks/useSendAmountData";
-import { SimulateTxData } from "./hooks/useSimulateTxData";
+import "./styles.scss";
 
-import "../styles.scss";
+const defaultSlippage = "1";
 
-export const SendAmount = ({
-  goBack,
-  goToNext,
-  goToChooseDest,
-  simulationState,
-  fetchSimulationData,
-}: {
+interface SwapAmountProps {
+  inputType: InputType;
+  setInputType: (type: InputType) => void;
   goBack: () => void;
   goToNext: () => void;
-  goToChooseDest: () => void;
-  simulationState: State<SimulateTxData, unknown>;
-  fetchSimulationData: () => Promise<unknown>;
-}) => {
-  const { t } = useTranslation();
-  const location = useLocation();
-  const dispatch = useDispatch<AppDispatch>();
-  const runAfterUpdate = useRunAfterUpdate();
-  const { transactionData } = useSelector(transactionSubmissionSelector);
-  const { amount, amountUsd, asset, destination, destinationAsset, isToken } =
-    transactionData;
-  const { networkCongestion, recommendedFee } = useNetworkFees();
+  goToEditSrc: () => void;
+}
 
-  const { state: sendAmountData, fetchData } = useGetSendAmountData(
+export const SwapAmount = ({
+  inputType,
+  setInputType,
+  goBack,
+  goToNext,
+  goToEditSrc,
+}: SwapAmountProps) => {
+  const { t } = useTranslation();
+  const dispatch = useDispatch<AppDispatch>();
+  const { networkCongestion, recommendedFee } = useNetworkFees();
+  const runAfterUpdate = useRunAfterUpdate();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
+  const { transactionData } = useSelector(transactionSubmissionSelector);
+  const {
+    allowedSlippage,
+    amount,
+    amountUsd,
+    asset,
+    destination,
+    destinationAmount,
+    destinationAsset,
+    isToken,
+    memo,
+    path,
+    transactionFee,
+    transactionTimeout,
+  } = transactionData;
+  const srcAsset = getAssetFromCanonical(asset);
+  const dstAsset = destinationAsset
+    ? getAssetFromCanonical(destinationAsset)
+    : null;
+
+  const { state: swapAmountData, fetchData } = useGetSwapAmountData(
     {
       showHidden: false,
       includeIcons: true,
     },
     destination,
   );
+  const { state: simulationState, fetchData: fetchSimulationData } =
+    useSimulateTxData({
+      publicKey,
+      networkDetails,
+      simParams: {
+        sourceAsset: srcAsset,
+        destAsset: dstAsset!,
+        amount,
+        allowedSlippage,
+        path,
+        transactionFee,
+        transactionTimeout,
+        memo,
+      },
+    });
 
   const cryptoInputRef = useRef<HTMLInputElement>(null);
   const usdInputRef = useRef<HTMLInputElement>(null);
 
-  const [inputType, setInputType] = useState<InputType>("crypto");
-  const [isEditingMemo, setIsEditingMemo] = React.useState(false);
-  const [isEditingSettings, setIsEditingSettings] = React.useState(false);
+  const [isEditingSlippage, setIsEditingSlippage] = useState(false);
+  const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
 
-  const handleContinue = async () => {
-    const amount = inputType === "crypto" ? formik.values.amount : priceValue!;
+  const handleContinue = async (values: { amount: string }) => {
+    const amount = inputType === "crypto" ? values.amount : priceValue!;
     dispatch(saveAmount(cleanAmount(amount)));
-    await fetchSimulationData();
+    await fetchSimulationData({ amount, destinationRate: dstAssetPrice });
     setIsReviewingTx(true);
   };
 
   const validate = (values: { amount: string }) => {
     const amount = inputType === "crypto" ? values.amount : priceValue!;
     const val = cleanAmount(amount);
-
     if (val.indexOf(".") !== -1 && val.split(".")[1].length > 7) {
       return { amount: AMOUNT_ERROR.DEC_MAX };
     }
@@ -115,18 +145,28 @@ export const SendAmount = ({
   };
 
   const formik = useFormik({
-    initialValues: { amount, amountUsd: amountUsd, asset, destinationAsset },
+    initialValues: { amount, amountUsd, asset, destinationAsset },
     onSubmit: handleContinue,
     validate,
     enableReinitialize: true,
     validateOnChange: true,
   });
 
-  const srcAsset = getAssetFromCanonical(asset);
+  const getAmountFontSize = () => {
+    const length = formik.values.amount.length;
+    if (length <= 9) {
+      return "";
+    }
+    if (length <= 15) {
+      return "med";
+    }
+    return "small";
+  };
+
   const parsedSourceAsset = getAssetFromCanonical(formik.values.asset);
   const isLoading =
-    sendAmountData.state === RequestState.IDLE ||
-    sendAmountData.state === RequestState.LOADING;
+    swapAmountData.state === RequestState.IDLE ||
+    swapAmountData.state === RequestState.LOADING;
 
   useEffect(() => {
     if (cryptoInputRef.current) {
@@ -148,30 +188,19 @@ export const SendAmount = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const getAmountFontSize = () => {
-    const length = formik.values.amount.length;
-    if (length <= 9) {
-      return "";
-    }
-    if (length <= 15) {
-      return "med";
-    }
-    return "small";
-  };
-
   if (isLoading) {
     return <Loading />;
   }
 
-  const hasError = sendAmountData.state === RequestState.ERROR;
-  if (sendAmountData.data?.type === AppDataType.REROUTE) {
-    if (sendAmountData.data.shouldOpenTab) {
-      openTab(newTabHref(sendAmountData.data.routeTarget));
+  const hasError = swapAmountData.state === RequestState.ERROR;
+  if (swapAmountData.data?.type === AppDataType.REROUTE) {
+    if (swapAmountData.data.shouldOpenTab) {
+      openTab(newTabHref(swapAmountData.data.routeTarget));
       window.close();
     }
     return (
       <Navigate
-        to={`${sendAmountData.data.routeTarget}${location.search}`}
+        to={`${swapAmountData.data.routeTarget}${location.search}`}
         state={{ from: location }}
         replace
       />
@@ -180,21 +209,26 @@ export const SendAmount = ({
 
   if (!hasError) {
     reRouteOnboarding({
-      type: sendAmountData.data.type,
-      applicationState: sendAmountData.data.applicationState,
-      state: sendAmountData.state,
+      type: swapAmountData.data.type,
+      applicationState: swapAmountData.data.applicationState,
+      state: swapAmountData.state,
     });
   }
 
-  const sendData = sendAmountData.data!;
+  const sendData = swapAmountData.data!;
   const assetIcon = sendData.icons[asset];
+  const dstAssetIcon = sendData.icons[destinationAsset];
   const assetBalance = findAssetBalance(
     sendData.userBalances.balances,
     srcAsset,
   )!;
+  const dstAssetBalance = dstAsset
+    ? findAssetBalance(sendData.userBalances.balances, dstAsset)
+    : null;
   const prices = sendData.tokenPrices;
   const assetPrice = prices[asset] && prices[asset].currentPrice;
   const xlmPrice = prices["native"]?.currentPrice;
+  const dstAssetPrice = prices[destinationAsset]?.currentPrice;
   const assetDecimals = getAssetDecimals(asset, sendData.userBalances, isToken);
   const priceValue = assetPrice
     ? new BigNumber(cleanAmount(formik.values.amountUsd))
@@ -221,38 +255,42 @@ export const SendAmount = ({
       )}`
     : null;
   const supportsUsd =
-    isMainnet(sendAmountData.data?.networkDetails!) && assetPrice;
+    isMainnet(swapAmountData.data?.networkDetails!) && assetPrice !== null;
+  const displayTotal = `${formatAmount(assetBalance.total.toString())} ${srcAsset.code}`;
+  const dstDisplayTotal =
+    dstAssetBalance && dstAsset
+      ? `${formatAmount(dstAssetBalance.total.toString())} ${dstAsset.code}`
+      : "0";
   const availableBalance = getAvailableBalance({
     assetCanonical: asset,
     balances: sendData.userBalances.balances,
     recommendedFee,
     subentryCount: sendData.userBalances.subentryCount,
   });
-  const displayTotal =
-    "decimals" in assetBalance
-      ? `${availableBalance} ${assetBalance.token.code}`
-      : `${formatAmount(availableBalance)} ${assetBalance.token.code}`;
   const srcTitle = asset === "native" ? "Stellar Lumens" : srcAsset.code;
-  const goBackAction = () => {
+  const dstTitle =
+    destinationAsset === "native" ? "Stellar Lumens" : dstAsset?.code;
+
+  const goToEditSrcAction = () => {
     dispatch(saveAsset("native"));
     dispatch(saveAmount("0"));
     dispatch(saveAmountUsd("0.00"));
-    goBack();
+    goToEditSrc();
   };
 
   return (
-    <React.Fragment>
+    <>
       <SubviewHeader
-        title={<span>Send</span>}
+        title={<span>Swap</span>}
         hasBackButton
-        customBackAction={goBackAction}
+        customBackAction={goBack}
       />
       <View.Content
         contentFooter={
-          <div className="SendAmount__btn-continue">
-            <div className="SendAmount__settings-row">
-              <div className="SendAmount__settings-fee-display">
-                <span className="SendAmount__settings-fee-display__label">
+          <div className="SwapAsset__btn-continue">
+            <div className="SwapAsset__settings-row">
+              <div className="SwapAsset__settings-fee-display">
+                <span className="SwapAsset__settings-fee-display__label">
                   Fee:
                 </span>
                 {inputType === "crypto" && <Logo.StellarShort />}
@@ -262,14 +300,14 @@ export const SendAmount = ({
                     : recommendedFeeUsd}
                 </span>
               </div>
-              <div className="SendAmount__settings-options">
+              <div className="SwapAsset__settings-options">
                 <Button
                   size="sm"
                   isRounded
                   variant="tertiary"
-                  onClick={() => setIsEditingMemo(true)}
+                  onClick={() => setIsEditingSlippage(true)}
                 >
-                  {t("Add a memo")}
+                  {`Slippage: ${allowedSlippage}%`}
                 </Button>
                 <Button
                   size="sm"
@@ -283,6 +321,11 @@ export const SendAmount = ({
             </div>
             <Button
               size="md"
+              data-testid="swap-amount-btn-continue"
+              isFullWidth
+              isRounded
+              variant="secondary"
+              isLoading={simulationState.state === RequestState.LOADING}
               disabled={
                 (inputType === "crypto" &&
                   new BigNumber(formik.values.amount).isZero()) ||
@@ -297,32 +340,31 @@ export const SendAmount = ({
                     new BigNumber(availableBalance),
                   ))
               }
-              isLoading={simulationState.state === RequestState.LOADING}
-              data-testid="send-amount-btn-continue"
-              isFullWidth
-              isRounded
-              variant="secondary"
               onClick={(e) => {
                 e.preventDefault();
-                formik.submitForm();
+                if (destinationAsset) {
+                  formik.submitForm();
+                  return;
+                }
+                goToNext();
               }}
             >
-              {t("Review Send")}
+              {destinationAsset ? t("Review swap") : t("Select an asset")}
             </Button>
           </div>
         }
       >
-        <div className="SendAmount">
-          <div className="SendAmount__content">
+        <div className="SwapAsset">
+          <div className="SwapAsset__content">
             <form>
-              <div className="SendAmount__simplebar__content">
-                <div className="SendAmount__amount-row">
-                  <div className="SendAmount__amount-input-container">
+              <div className="SwapAsset__simplebar__content">
+                <div className="SwapAsset__amount-row">
+                  <div className="SwapAsset__amount-input-container">
                     {inputType === "crypto" && (
                       <>
                         <input
                           ref={cryptoInputRef}
-                          className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                          className={`SwapAsset__input-amount SwapAsset__${getAmountFontSize()}`}
                           style={{
                             width: `${formik.values.amount.length + 1 || 5}ch`,
                           }}
@@ -355,7 +397,7 @@ export const SendAmount = ({
                           autoComplete="off"
                         />
                         <div
-                          className={`SendAmount__amount-label SendAmount__${getAmountFontSize()}`}
+                          className={`SwapAsset__amount-label SwapAsset__${getAmountFontSize()}`}
                         >
                           {parsedSourceAsset.code}
                         </div>
@@ -364,13 +406,13 @@ export const SendAmount = ({
                     {inputType === "fiat" && (
                       <>
                         <div
-                          className={`SendAmount__amount-label-usd SendAmount__${getAmountFontSize()}`}
+                          className={`SwapAsset__amount-label-usd SwapAsset__${getAmountFontSize()}`}
                         >
                           $
                         </div>
                         <input
                           ref={usdInputRef}
-                          className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                          className={`SwapAsset__input-amount SwapAsset__${getAmountFontSize()}`}
                           style={{
                             width: `${formik.values.amountUsd.length + 1 || 5}ch`,
                           }}
@@ -402,7 +444,7 @@ export const SendAmount = ({
                   </div>
                 </div>
                 {supportsUsd && (
-                  <div className="SendAmount__amount-price">
+                  <div className="SwapAsset__amount-price">
                     {inputType === "crypto"
                       ? `$ ${priceValueUsd}`
                       : `${priceValue} ${parsedSourceAsset.code}`}
@@ -430,7 +472,7 @@ export const SendAmount = ({
                     </Button>
                   </div>
                 )}
-                <div className="SendAmount__btn-set-max">
+                <div className="SwapAsset__btn-set-max">
                   <Button
                     size="md"
                     type="button"
@@ -438,7 +480,7 @@ export const SendAmount = ({
                     isRounded
                     onClick={(e) => {
                       e.preventDefault();
-                      emitMetric(METRIC_NAMES.sendPaymentSetMax);
+                      emitMetric(METRIC_NAMES.swapAmount);
                       if (inputType === "fiat") {
                         const availableUsd = formatAmount(
                           roundUsdValue(
@@ -456,13 +498,13 @@ export const SendAmount = ({
                         dispatch(saveAmount(availableBalance));
                       }
                     }}
-                    data-testid="SendAmountSetMax"
+                    data-testid="SwapAssetSetMax"
                   >
                     {t("Set Max")}
                   </Button>
                 </div>
-                <div className="SendAmount__EditDestAsset">
-                  <div className="SendAmount__EditDestAsset__title">
+                <div className="SwapAsset__EditSrcAsset">
+                  <div className="SwapAsset__EditSrcAsset__title">
                     <AssetIcon
                       assetIcons={
                         asset !== "native" ? { [asset]: assetIcon } : {}
@@ -472,11 +514,11 @@ export const SendAmount = ({
                       icon={assetIcon}
                       isSuspicious={false}
                     />
-                    <div className="SendAmount__EditDestAsset__asset-title">
-                      <div className="SendAmount__EditDestAsset__asset-heading">
+                    <div className="SwapAsset__EditSrcAsset__asset-title">
+                      <div className="SwapAsset__EditSrcAsset__asset-heading">
                         {srcTitle}
                       </div>
-                      <div className="SendAmount__EditDestAsset__asset-total">
+                      <div className="SwapAsset__EditSrcAsset__asset-total">
                         {displayTotal}
                       </div>
                     </div>
@@ -485,28 +527,70 @@ export const SendAmount = ({
                     isRounded
                     size="sm"
                     variant="tertiary"
-                    onClick={goBackAction}
+                    onClick={goToEditSrcAction}
                   >
                     Edit
                   </Button>
                 </div>
-                <div className="SendAmount__EditDestination">
-                  <div className="SendAmount__EditDestination__title">
-                    <div className="SendAmount__EditDestination__identicon">
-                      <IdenticonImg publicKey={destination} />
-                    </div>
-                    {truncatedPublicKey(destination)}
+                <div className="SwapAsset__EditDstAsset">
+                  <div className="SwapAsset__EditDstAsset__title">
+                    {destinationAsset ? (
+                      <>
+                        <AssetIcon
+                          assetIcons={
+                            destinationAsset !== "native"
+                              ? { [destinationAsset]: dstAssetIcon }
+                              : {}
+                          }
+                          code={dstAsset?.code!}
+                          issuerKey={dstAsset?.issuer!}
+                          icon={dstAssetIcon}
+                          isSuspicious={false}
+                        />
+                        <div className="SwapAsset__EditDstAsset__asset-title">
+                          <div className="SwapAsset__EditDstAsset__asset-heading">
+                            {dstTitle}
+                          </div>
+                          <div className="SwapAsset__EditDstAsset__asset-total">
+                            {dstDisplayTotal}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="SwapAsset__EditDstAsset__asset-placeholder">
+                          <Icon.Activity />
+                        </div>
+                        <div className="SwapAsset__EditDstAsset__asset-title">
+                          <div className="SwapAsset__EditDstAsset__asset-heading">
+                            Receive
+                          </div>
+                          <div className="SwapAsset__EditDstAsset__asset-total">
+                            Choose asset
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                   <Button
                     isRounded
                     size="sm"
                     variant="tertiary"
-                    onClick={() => {
-                      dispatch(saveAsset("native"));
-                      dispatch(saveAmount("0"));
-                      dispatch(saveAmountUsd("0.00"));
-                      goToChooseDest();
-                    }}
+                    disabled={
+                      (inputType === "crypto" &&
+                        new BigNumber(formik.values.amount).isZero()) ||
+                      (inputType === "fiat" &&
+                        new BigNumber(formik.values.amountUsd).isZero()) ||
+                      (inputType === "crypto" &&
+                        new BigNumber(cleanAmount(formik.values.amount)).gt(
+                          new BigNumber(availableBalance),
+                        )) ||
+                      (inputType === "fiat" &&
+                        new BigNumber(cleanAmount(priceValue!)).gt(
+                          new BigNumber(availableBalance),
+                        ))
+                    }
+                    onClick={goToNext}
                   >
                     Edit
                   </Button>
@@ -516,27 +600,20 @@ export const SendAmount = ({
           </div>
         </div>
       </View.Content>
-      {isEditingMemo ? (
+      {isEditingSlippage ? (
         <>
-          <div className="EditMemoWrapper">
-            <EditMemo
-              memo={transactionData.memo || ""}
-              onClose={() => setIsEditingMemo(false)}
-              onSubmit={({ memo }: { memo: string }) => {
-                dispatch(saveMemo(memo));
-                setIsEditingMemo(false);
-              }}
-            />
+          <div className="SlippageWrapper">
+            <EditSlippage onClose={() => setIsEditingSlippage(false)} />
           </div>
           <LoadingBackground
-            onClick={() => setIsEditingMemo(false)}
-            isActive={isEditingMemo}
+            onClick={() => setIsEditingSlippage(false)}
+            isActive={isEditingSlippage}
           />
         </>
       ) : null}
       {isEditingSettings ? (
         <>
-          <div className="EditMemoWrapper">
+          <div className="SlippageWrapper">
             <EditSettings
               fee={recommendedFee}
               timeout={transactionData.transactionTimeout}
@@ -567,14 +644,20 @@ export const SendAmount = ({
             <ReviewTx
               assetIcon={assetIcon}
               fee={recommendedFee}
-              networkDetails={sendAmountData.data?.networkDetails!}
+              networkDetails={networkDetails}
               onCancel={() => setIsReviewingTx(false)}
               onConfirm={goToNext}
               sendAmount={amount}
-              sendPriceUsd={inputType === "crypto" ? priceValue! : amountUsd}
+              sendPriceUsd={priceValueUsd}
               simulationState={simulationState}
               srcAsset={asset}
-              title="You are sending"
+              dstAsset={{
+                icon: dstAssetIcon,
+                canonical: destinationAsset,
+                priceUsd: simulationState.data?.dstAmountPriceUsd!,
+                amount: destinationAmount,
+              }}
+              title="You are swapping"
             />
           </div>
           <LoadingBackground
@@ -583,6 +666,119 @@ export const SendAmount = ({
           />
         </>
       ) : null}
-    </React.Fragment>
+    </>
+  );
+};
+
+interface EditSlippageProps {
+  onClose: () => void;
+}
+
+const EditSlippage = ({ onClose }: EditSlippageProps) => {
+  const { t } = useTranslation();
+  const dispatch = useDispatch();
+  const { allowedSlippage } = useSelector(transactionDataSelector);
+
+  let presetSlippage = "";
+  let customSlippage = "";
+  if (["1", "2", "3"].includes(allowedSlippage)) {
+    presetSlippage = allowedSlippage;
+  } else {
+    customSlippage = allowedSlippage;
+  }
+
+  return (
+    <Formik
+      initialValues={{ presetSlippage, customSlippage }}
+      onSubmit={(values) => {
+        dispatch(
+          saveAllowedSlippage(values.customSlippage || values.presetSlippage),
+        );
+        onClose();
+      }}
+      validationSchema={YupObject().shape({
+        customSlippage: YupNumber()
+          .min(0, `${t("must be at least")} 0%`)
+          .max(10, `${t("must be below")} 10%`),
+      })}
+    >
+      {({ setFieldValue, values, errors }) => (
+        <Form
+          className="View__contentAndFooterWrapper"
+          data-testid="slippage-form"
+        >
+          <View.Content hasNoTopPadding>
+            <div className="Slippage">
+              <Card>
+                <p>Allowed Slippage</p>
+                <div className="Slippage__cards">
+                  {["1", "2", "3"].map((value) => (
+                    <label key={value} className="Slippage--radio-label">
+                      <Field
+                        className="Slippage--radio-field"
+                        name="presetSlippage"
+                        type="radio"
+                        value={value}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          setFieldValue("presetSlippage", e.target.value);
+                          setFieldValue("customSlippage", "");
+                        }}
+                      />
+                      <Card>{value}%</Card>
+                    </label>
+                  ))}
+                </div>
+                <div className="Slippage__custom-input">
+                  <Field name="customSlippage">
+                    {({ field }: FieldProps) => (
+                      <Input
+                        data-testid="custom-slippage-input"
+                        fieldSize="md"
+                        id="custom-input"
+                        min={0}
+                        max={10}
+                        placeholder={`${t("Custom")} %`}
+                        type="number"
+                        {...field}
+                        onChange={(e) => {
+                          setFieldValue("customSlippage", e.target.value);
+                          setFieldValue("presetSlippage", "");
+                        }}
+                        error={errors.customSlippage}
+                      />
+                    )}
+                  </Field>
+                </div>
+                <div className="Slippage__Footer">
+                  <Button
+                    size="md"
+                    isFullWidth
+                    isRounded
+                    variant="tertiary"
+                    type="button"
+                    onClick={() => {
+                      setFieldValue("presetSlippage", defaultSlippage);
+                      setFieldValue("customSlippage", "");
+                    }}
+                  >
+                    {t("Set default")}
+                  </Button>
+                  <Button
+                    size="md"
+                    isFullWidth
+                    isRounded
+                    disabled={!values.presetSlippage && !values.customSlippage}
+                    variant="secondary"
+                    type="submit"
+                  >
+                    {t("Done")}
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          </View.Content>
+        </Form>
+      )}
+    </Formik>
   );
 };

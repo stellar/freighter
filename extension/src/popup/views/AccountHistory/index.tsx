@@ -11,10 +11,7 @@ import {
 import { getMonthLabel } from "popup/helpers/getMonthLabel";
 
 import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
-import {
-  // TransactionDetail,
-  TransactionDetail,
-} from "popup/components/accountHistory/TransactionDetail";
+import { TransactionDetail } from "popup/components/accountHistory/TransactionDetail";
 import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
 import { RequestState } from "constants/request";
@@ -23,9 +20,9 @@ import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { useGetHistoryData } from "./hooks/useGetHistoryData";
+import { SlideupModal } from "popup/components/SlideupModal";
 
 import "./styles.scss";
-import { SlideupModal } from "popup/components/SlideupModal";
 
 export const AccountHistory = () => {
   const { t } = useTranslation();

@@ -1,0 +1,234 @@
+import React from "react";
+import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
+import { Button, Card, Icon, Notification } from "@stellar/design-system";
+
+import { NetworkDetails } from "@shared/constants/stellar";
+import { RequestState, State } from "constants/request";
+import {
+  ShowOverlayStatus,
+  startHwSign,
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
+import {
+  getAssetFromCanonical,
+  isMainnet,
+  truncatedPublicKey,
+} from "helpers/stellar";
+
+import { SimulateTxData } from "popup/components/sendPayment/SendAmount/hooks/useSimulateTxData";
+import { View } from "popup/basics/layout/View";
+import { AssetIcon } from "popup/components/account/AccountAssets";
+import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
+import { BlockaidTxScanLabel } from "popup/components/WarningMessages";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
+import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
+
+import "./styles.scss";
+
+interface ReviewTxProps {
+  assetIcon: string;
+  dstAsset?: {
+    icon: string;
+    canonical: string;
+    priceUsd: string | null;
+    amount: string;
+  };
+  fee: string;
+  sendAmount: string;
+  sendPriceUsd: string | null;
+  srcAsset: string;
+  simulationState: State<SimulateTxData, unknown>;
+  networkDetails: NetworkDetails;
+  title: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+export const ReviewTx = ({
+  assetIcon,
+  dstAsset,
+  fee,
+  srcAsset,
+  sendAmount,
+  sendPriceUsd,
+  simulationState,
+  networkDetails,
+  title,
+  onConfirm,
+  onCancel,
+}: ReviewTxProps) => {
+  const { t } = useTranslation();
+  const dispatch = useDispatch();
+  const submission = useSelector(transactionSubmissionSelector);
+  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
+  const isHardwareWallet = !!hardwareWalletType;
+
+  const {
+    hardwareWalletData: { status: hwStatus },
+    transactionData: { destination, memo },
+  } = submission;
+
+  const asset = getAssetFromCanonical(srcAsset);
+  const dest = dstAsset ? getAssetFromCanonical(dstAsset.canonical) : null;
+  const assetIcons = srcAsset !== "native" ? { [srcAsset]: assetIcon } : {};
+  const truncatedDest = truncatedPublicKey(destination);
+
+  if (simulationState.state === RequestState.ERROR) {
+    return (
+      <View.Content hasNoTopPadding>
+        <div className="ReviewTx">
+          <Notification
+            variant="error"
+            title={t("Failed to fetch your transaction details")}
+          >
+            {t(
+              "We had an issue retrieving your transaction details. Please try again.",
+            )}
+          </Notification>
+          <Button size="md" variant="secondary" onClick={onCancel}>
+            {t("Back")}
+          </Button>
+        </div>
+      </View.Content>
+    );
+  }
+
+  const onConfirmTx = () => {
+    if (isHardwareWallet) {
+      dispatch(
+        startHwSign({
+          transactionXDR: simulationState.data!.transactionXdr,
+          shouldSubmit: true,
+        }),
+      );
+      return;
+    }
+    onConfirm();
+  };
+
+  return (
+    <View.Content hasNoTopPadding>
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
+        <HardwareSign walletType={hardwareWalletType} onSubmit={onConfirm} />
+      )}
+      <div className="ReviewTx">
+        <div className="ReviewTx__Summary">
+          <p>{title}</p>
+          <div className="ReviewTx__SendSummary">
+            <div className="ReviewTx__SendAsset">
+              <AssetIcon
+                assetIcons={assetIcons}
+                code={asset.code}
+                issuerKey={asset.issuer}
+                icon={assetIcon}
+                isSuspicious={false}
+              />
+              <div className="ReviewTx__SendAssetDetails">
+                <span>
+                  {sendAmount} {asset.code}
+                </span>
+                {isMainnet(networkDetails) && (
+                  <span className="ReviewTx__SendAssetDetails__price">
+                    {`$ ${sendPriceUsd}`}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="ReviewTx__Divider">
+              <Icon.ChevronDownDouble />
+            </div>
+            <div className="ReviewTx__SendDestination">
+              {dstAsset && dest ? (
+                <>
+                  <AssetIcon
+                    assetIcons={
+                      dstAsset.canonical !== "native"
+                        ? { [dstAsset.canonical]: dstAsset.icon }
+                        : {}
+                    }
+                    code={dest.code}
+                    issuerKey={dest.issuer}
+                    icon={dstAsset.icon}
+                    isSuspicious={false}
+                  />
+                  <div className="ReviewTx__SendAssetDetails">
+                    <span>
+                      {dstAsset.amount} {dest.code}
+                    </span>
+                    {isMainnet(networkDetails) && (
+                      <span className="ReviewTx__SendAssetDetails__price">
+                        {`$ ${dstAsset.priceUsd}`}
+                      </span>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <IdenticonImg publicKey={destination} />
+                  <div className="ReviewTx__SendDestinationDetails">
+                    {truncatedDest}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="ReviewTx__Warnings">
+          {simulationState.data?.scanResult && (
+            <BlockaidTxScanLabel scanResult={simulationState.data.scanResult} />
+          )}
+        </div>
+        <div className="ReviewTx__Details">
+          <Card>
+            <div className="ReviewTx__Details__Memo">
+              <div className="ReviewTx__Details__Memo__Title">
+                <Icon.File02 />
+                Memo
+              </div>
+              <div className="ReviewTx__Details__Memo__Value">
+                {memo || "None"}
+              </div>
+            </div>
+            <div className="ReviewTx__Details__Fee">
+              <div className="ReviewTx__Details__Fee__Title">
+                <Icon.Route />
+                Fee
+              </div>
+              <div className="ReviewTx__Details__Fee__Value">{fee} XLM</div>
+            </div>
+          </Card>
+        </div>
+        <div className="ReviewTx__Actions">
+          <Button
+            size="md"
+            isFullWidth
+            isRounded
+            variant="secondary"
+            data-testid="SubmitAction"
+            onClick={(e) => {
+              e.preventDefault();
+              onConfirmTx();
+            }}
+          >
+            {dstAsset && dest
+              ? `Swap ${asset.code} to ${dest.code}`
+              : `Send to ${truncatedDest}`}
+          </Button>
+          <Button
+            size="md"
+            isFullWidth
+            isRounded
+            variant="tertiary"
+            onClick={(e) => {
+              e.preventDefault();
+              onCancel();
+            }}
+          >
+            Cancel
+          </Button>
+        </div>
+      </div>
+    </View.Content>
+  );
+};

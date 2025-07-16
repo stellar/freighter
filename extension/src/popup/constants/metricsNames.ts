@@ -65,6 +65,8 @@ export const METRIC_NAMES = {
   simuilateTokenPaymentError: "failed to simulate token payment",
 
   viewSwap: "loaded screen: swap",
+  swapFrom: "loaded screen: swap from asset",
+  swapTo: "loaded screen: swap to asset",
   swapAmount: "loaded screen: swap amount",
   swapSettings: "loaded screen: swap settings",
   swapSettingsFee: "loaded screen: swap settings fee",

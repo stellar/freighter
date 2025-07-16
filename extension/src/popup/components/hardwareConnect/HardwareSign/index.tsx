@@ -12,16 +12,14 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { bipPathSelector } from "popup/ducks/accountServices";
 import {
   signWithHardwareWallet,
-  submitFreighterTransaction,
   transactionSubmissionSelector,
   closeHwOverlay,
-  addRecentAddress,
+  saveSimulation,
 } from "popup/ducks/transactionSubmission";
 import { settingsSelector } from "popup/ducks/settings";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { WalletErrorBlock } from "popup/views/AddAccount/connect/DeviceConnect";
 
-import { useIsSwap } from "popup/helpers/useIsSwap";
 import {
   getWalletPublicKey,
   parseWalletError,
@@ -34,9 +32,11 @@ import "./styles.scss";
 export const HardwareSign = ({
   walletType,
   isSignSorobanAuthorization,
+  onSubmit,
 }: {
   walletType: ConfigurableWalletType;
   isSignSorobanAuthorization?: boolean;
+  onSubmit?: () => void;
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
@@ -45,14 +45,12 @@ export const HardwareSign = ({
     useSelector(settingsSelector);
   const {
     hardwareWalletData: { transactionXDR, shouldSubmit },
-    transactionData: { destination },
   } = useSelector(transactionSubmissionSelector);
   const bipPath = useSelector(bipPathSelector);
   const [hardwareConnectSuccessful, setHardwareConnectSuccessful] =
     useState(false);
   const [hardwareWalletIsSigning, setHardwareWalletIsSigning] = useState(false);
   const [connectError, setConnectError] = useState("");
-  const isSwap = useIsSwap();
   const [isDetectBtnDirty, setIsDetectBtnDirty] = useState(false);
 
   const closeOverlay = () => {
@@ -91,27 +89,23 @@ export const HardwareSign = ({
           isSignSorobanAuthorization,
         }),
       );
+      // should support saving signed xdr for SubmitTransaction to submit
       if (signWithHardwareWallet.fulfilled.match(res)) {
         if (shouldSubmit && !isSignSorobanAuthorization) {
-          const submitResp = await dispatch(
-            submitFreighterTransaction({
-              publicKey,
-              signedXDR: res.payload as string,
-              networkDetails,
+          dispatch(
+            saveSimulation({
+              preparedTransaction: res.payload,
             }),
           );
-          if (
-            submitFreighterTransaction.fulfilled.match(submitResp) &&
-            !isSwap
-          ) {
-            dispatch(addRecentAddress({ address: destination }));
-          }
         } else {
           // right now there are only two cases after signing,
           // submitting to network or handling in background script
           await handleSignedHwPayload({ signedPayload: res.payload });
         }
         closeOverlay();
+        if (onSubmit) {
+          onSubmit();
+        }
       } else {
         setHardwareConnectSuccessful(false);
         setConnectError(

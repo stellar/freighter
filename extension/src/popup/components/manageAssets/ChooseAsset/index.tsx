@@ -11,15 +11,15 @@ import { View } from "popup/basics/layout/View";
 
 import { RequestState } from "constants/request";
 import { useGetAssetDomainsWithBalances } from "helpers/hooks/useGetAssetDomainsWithBalances";
+import { openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { reRouteOnboarding } from "popup/helpers/route";
 
 import { ManageAssetRows } from "../ManageAssetRows";
 import { SelectAssetRows } from "../SelectAssetRows";
 
 import "./styles.scss";
-import { openTab } from "popup/helpers/navigate";
-import { newTabHref } from "helpers/urls";
-import { AppDataType } from "helpers/hooks/useGetAppData";
-import { reRouteOnboarding } from "popup/helpers/route";
 
 export const ChooseAsset = ({
   goBack,
