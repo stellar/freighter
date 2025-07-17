@@ -98,7 +98,7 @@ export const SendingTransaction = ({
   const assetIcons = asset !== "native" ? { [asset]: assetIcon } : {};
   const dstAssetIcon = icons[destinationAsset]!;
   const dstAssetIcons =
-    asset !== "native" ? { [destinationAsset]: dstAssetIcon } : {};
+    destinationAsset !== "native" ? { [destinationAsset]: dstAssetIcon } : {};
 
   return (
     <>
@@ -213,40 +213,52 @@ export const SendingTransaction = ({
               <div className="SendingTransaction__Summary__Description">
                 {isLoading && (
                   <>
-                    {amount} {srcAsset.code}{" "}
+                    <span className="SendingTransaction__Summary__Description__Label">
+                      {amount} {srcAsset.code}{" "}
+                    </span>
                     {isSwap && dstAsset ? (
                       <>
-                        <span className="SendingTransaction__Summary__Description__Label">
+                        <span className="SendingTransaction__Summary__Description__Label Verb">
                           to
                         </span>{" "}
-                        {destinationAmount} {dstAsset.code}
+                        <span className="SendingTransaction__Summary__Description__Label">
+                          {destinationAmount} {dstAsset.code}
+                        </span>
                       </>
                     ) : (
                       <>
-                        <span className="SendingTransaction__Summary__Description__Label">
+                        <span className="SendingTransaction__Summary__Description__Label Verb">
                           to
                         </span>{" "}
-                        {truncatedPublicKey(destination)}
+                        <span className="SendingTransaction__Summary__Description__Label">
+                          {truncatedPublicKey(destination)}
+                        </span>
                       </>
                     )}
                   </>
                 )}
                 {isSuccess && (
                   <>
-                    {amount} {srcAsset.code}{" "}
+                    <span className="SendingTransaction__Summary__Description__Label">
+                      {amount} {srcAsset.code}{" "}
+                    </span>
                     {isSwap && dstAsset ? (
                       <>
-                        <span className="SendingTransaction__Summary__Description__Label">
+                        <span className="SendingTransaction__Summary__Description__Label Verb">
                           was swapped to
                         </span>{" "}
-                        {destinationAmount} {dstAsset.code}
+                        <span className="SendingTransaction__Summary__Description__Label">
+                          {destinationAmount} {dstAsset.code}
+                        </span>
                       </>
                     ) : (
                       <>
-                        <span className="SendingTransaction__Summary__Description__Label">
+                        <span className="SendingTransaction__Summary__Description__Label Verb">
                           was sent to
                         </span>{" "}
-                        {truncatedPublicKey(destination)}
+                        <span className="SendingTransaction__Summary__Description__Label">
+                          {truncatedPublicKey(destination)}
+                        </span>
                       </>
                     )}
                   </>
