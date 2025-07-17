@@ -18,6 +18,18 @@ import {
 import { createAccount } from "background/messageListener/handlers/createAccount";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
+jest.mock("stellar-hd-wallet", () => {
+  return {
+    generateMnemonic: () => "mocked mnemonic phrase",
+    fromMnemonic: () => {
+      return {
+        getPublicKey: (_: number) => "pubKey",
+        getSecret: (_: number) => "secret",
+      };
+    },
+  };
+});
+
 const testAlarm = new MockBrowserAlarm(() => console.log("Alarm fired"));
 describe("Create account message listener", () => {
   beforeEach(async () => {
