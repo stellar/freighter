@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Asset, StrKey } from "stellar-sdk";
 import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
@@ -31,6 +31,7 @@ import {
   saveDestination,
   saveDestinationAsset,
   saveFederationAddress,
+  transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
 
 import { RequestState } from "constants/request";
@@ -106,6 +107,9 @@ export const SendTo = ({
   const { t } = useTranslation();
   const location = useLocation();
   const dispatch: AppDispatch = useDispatch<AppDispatch>();
+  const { destination, federationAddress } = useSelector(
+    transactionDataSelector,
+  );
   const { state: sendDataState, fetchData } = useSendToData();
 
   const handleContinue = (
@@ -119,7 +123,7 @@ export const SendTo = ({
   };
 
   const formik = useFormik({
-    initialValues: { destination: "" },
+    initialValues: { destination: federationAddress || destination || "" },
     onSubmit: () => {
       if (
         sendDataState.state === RequestState.SUCCESS &&
