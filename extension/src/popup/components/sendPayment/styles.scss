@@ -176,6 +176,11 @@
     display: flex;
 
     .Button:first-child {
+      width: 95px;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      display: inline-block;
       margin-right: pxToRem(6px);
     }
   }

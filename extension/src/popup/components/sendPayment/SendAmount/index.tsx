@@ -270,7 +270,7 @@ export const SendAmount = ({
                   variant="tertiary"
                   onClick={() => setIsEditingMemo(true)}
                 >
-                  {t("Add a memo")}
+                  {transactionData.memo || t("Add a memo")}
                 </Button>
                 <Button
                   size="sm"
