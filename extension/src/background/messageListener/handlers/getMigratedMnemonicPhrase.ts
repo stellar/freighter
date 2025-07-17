@@ -1,6 +1,5 @@
 import { Store } from "redux";
-// @ts-ignore
-import { generateMnemonic } from "stellar-hd-wallet";
+import StellarHDWallet from "stellar-hd-wallet";
 import { setMigratedMnemonicPhrase } from "background/ducks/session";
 
 export const getMigratedMnemonicPhrase = ({
@@ -8,7 +7,9 @@ export const getMigratedMnemonicPhrase = ({
 }: {
   sessionStore: Store;
 }) => {
-  const migratedMnemonicPhrase = generateMnemonic({ entropyBits: 128 });
+  const migratedMnemonicPhrase = StellarHDWallet.generateMnemonic({
+    entropyBits: 128,
+  });
 
   sessionStore.dispatch(setMigratedMnemonicPhrase({ migratedMnemonicPhrase }));
 

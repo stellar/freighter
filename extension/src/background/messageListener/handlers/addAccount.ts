@@ -1,6 +1,5 @@
 import { Store } from "redux";
-// @ts-ignore
-import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
+import StellarHDWallet from "stellar-hd-wallet";
 
 import { AddAccountMessage } from "@shared/api/types/message-request";
 import {
@@ -26,6 +25,8 @@ import {
   buildHasPrivateKeySelector,
   publicKeySelector,
 } from "background/ducks/session";
+
+const { fromMnemonic } = StellarHDWallet;
 
 export const addAccount = async ({
   request,
