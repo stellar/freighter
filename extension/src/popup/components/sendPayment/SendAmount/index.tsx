@@ -13,6 +13,7 @@ import { AppDispatch } from "popup/App";
 import {
   getAssetFromCanonical,
   isMainnet,
+  truncatedFedAddress,
   truncatedPublicKey,
 } from "helpers/stellar";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
@@ -75,8 +76,15 @@ export const SendAmount = ({
   const dispatch = useDispatch<AppDispatch>();
   const runAfterUpdate = useRunAfterUpdate();
   const { transactionData } = useSelector(transactionSubmissionSelector);
-  const { amount, amountUsd, asset, destination, destinationAsset, isToken } =
-    transactionData;
+  const {
+    amount,
+    amountUsd,
+    asset,
+    destination,
+    destinationAsset,
+    federationAddress,
+    isToken,
+  } = transactionData;
   const { networkCongestion, recommendedFee } = useNetworkFees();
 
   const { state: sendAmountData, fetchData } = useGetSendAmountData(
@@ -496,7 +504,9 @@ export const SendAmount = ({
                     <div className="SendAmount__EditDestination__identicon">
                       <IdenticonImg publicKey={destination} />
                     </div>
-                    {truncatedPublicKey(destination)}
+                    {federationAddress
+                      ? truncatedFedAddress(federationAddress)
+                      : truncatedPublicKey(destination)}
                   </div>
                   <Button
                     isRounded
