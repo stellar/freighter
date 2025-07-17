@@ -271,6 +271,15 @@ export const SwapAmount = ({
   const srcTitle = asset === "native" ? "Stellar Lumens" : srcAsset.code;
   const dstTitle =
     destinationAsset === "native" ? "Stellar Lumens" : dstAsset?.code;
+  const isAmountTooHigh =
+    (inputType === "crypto" &&
+      new BigNumber(cleanAmount(formik.values.amount)).gt(
+        new BigNumber(availableBalance),
+      )) ||
+    (inputType === "fiat" &&
+      new BigNumber(cleanAmount(priceValue!)).gt(
+        new BigNumber(availableBalance),
+      ));
 
   const goToEditSrcAction = () => {
     dispatch(saveAsset("native"));
@@ -328,18 +337,12 @@ export const SwapAmount = ({
               variant="secondary"
               isLoading={simulationState.state === RequestState.LOADING}
               disabled={
-                (inputType === "crypto" &&
+                !!destinationAsset &&
+                ((inputType === "crypto" &&
                   new BigNumber(formik.values.amount).isZero()) ||
-                (inputType === "fiat" &&
-                  new BigNumber(formik.values.amountUsd).isZero()) ||
-                (inputType === "crypto" &&
-                  new BigNumber(cleanAmount(formik.values.amount)).gt(
-                    new BigNumber(availableBalance),
-                  )) ||
-                (inputType === "fiat" &&
-                  new BigNumber(cleanAmount(priceValue!)).gt(
-                    new BigNumber(availableBalance),
-                  ))
+                  (inputType === "fiat" &&
+                    new BigNumber(formik.values.amountUsd).isZero()) ||
+                  isAmountTooHigh)
               }
               onClick={(e) => {
                 e.preventDefault();
@@ -473,6 +476,17 @@ export const SwapAmount = ({
                     </Button>
                   </div>
                 )}
+                <div className="SwapAsset__invalid-state">
+                  {isAmountTooHigh && (
+                    <>
+                      <Icon.AlertCircle />
+                      <span>
+                        You don't have enough {parsedSourceAsset.code} in your
+                        account
+                      </span>
+                    </>
+                  )}
+                </div>
                 <div className="SwapAsset__btn-set-max">
                   <Button
                     size="md"
@@ -577,20 +591,6 @@ export const SwapAmount = ({
                     isRounded
                     size="sm"
                     variant="tertiary"
-                    disabled={
-                      (inputType === "crypto" &&
-                        new BigNumber(formik.values.amount).isZero()) ||
-                      (inputType === "fiat" &&
-                        new BigNumber(formik.values.amountUsd).isZero()) ||
-                      (inputType === "crypto" &&
-                        new BigNumber(cleanAmount(formik.values.amount)).gt(
-                          new BigNumber(availableBalance),
-                        )) ||
-                      (inputType === "fiat" &&
-                        new BigNumber(cleanAmount(priceValue!)).gt(
-                          new BigNumber(availableBalance),
-                        ))
-                    }
                     onClick={goToNext}
                   >
                     Edit

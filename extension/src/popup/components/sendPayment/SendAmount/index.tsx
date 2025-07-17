@@ -54,9 +54,9 @@ import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
 import { SimulateTxData } from "./hooks/useSimulateTxData";
+import { SlideupModal } from "popup/components/SlideupModal";
 
 import "../styles.scss";
-import { SlideupModal } from "popup/components/SlideupModal";
 
 export const SendAmount = ({
   goBack,
@@ -249,6 +249,16 @@ export const SendAmount = ({
     goBack();
   };
 
+  const isAmountTooHigh =
+    (inputType === "crypto" &&
+      new BigNumber(cleanAmount(formik.values.amount)).gt(
+        new BigNumber(availableBalance),
+      )) ||
+    (inputType === "fiat" &&
+      new BigNumber(cleanAmount(priceValue!)).gt(
+        new BigNumber(availableBalance),
+      ));
+
   return (
     <React.Fragment>
       <SubviewHeader
@@ -297,14 +307,7 @@ export const SendAmount = ({
                   new BigNumber(formik.values.amount).isZero()) ||
                 (inputType === "fiat" &&
                   new BigNumber(formik.values.amountUsd).isZero()) ||
-                (inputType === "crypto" &&
-                  new BigNumber(cleanAmount(formik.values.amount)).gt(
-                    new BigNumber(availableBalance),
-                  )) ||
-                (inputType === "fiat" &&
-                  new BigNumber(cleanAmount(priceValue!)).gt(
-                    new BigNumber(availableBalance),
-                  ))
+                isAmountTooHigh
               }
               isLoading={simulationState.state === RequestState.LOADING}
               data-testid="send-amount-btn-continue"
@@ -439,6 +442,17 @@ export const SendAmount = ({
                     </Button>
                   </div>
                 )}
+                <div className="SendAmount__invalid-state">
+                  {isAmountTooHigh && (
+                    <>
+                      <Icon.AlertCircle />
+                      <span>
+                        You don't have enough {parsedSourceAsset.code} in your
+                        account
+                      </span>
+                    </>
+                  )}
+                </div>
                 <div className="SendAmount__btn-set-max">
                   <Button
                     size="md"

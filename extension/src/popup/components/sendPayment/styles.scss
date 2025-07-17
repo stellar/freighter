@@ -70,13 +70,12 @@
     justify-content: center;
     font-size: 0.875rem;
     line-height: 1.5rem;
-    margin: pxToRem(32px) 0;
+    margin-bottom: pxToRem(32px);
   }
 
   &__amount-row {
     display: flex;
     position: relative;
-    margin-top: 1rem;
   }
 
   &__amount-input-container {
@@ -246,6 +245,19 @@
     .Button {
       border: 0;
       margin-left: pxToRem(6px);
+    }
+  }
+
+  &__invalid-state {
+    display: flex;
+    justify-content: center;
+    height: pxToRem(20px);
+    margin: 2rem 0;
+    color: var(--sds-clr-red-09);
+    font-size: pxToRem(14px);
+
+    svg {
+      margin-right: pxToRem(6px);
     }
   }
 }
