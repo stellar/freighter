@@ -1,5 +1,9 @@
 export enum STEPS {
   AMOUNT = "set-swap-amount",
+  CONFIRM_AMOUNT = "confirm-amount",
+  SET_FROM_ASSET = "set-from-asset",
+  SET_DST_ASSET = "set-dst-asset",
+
   CHOOSE_ASSETS = "choose-swap-assets",
   SWAP_SETTINGS = "set-swap-settings",
   SET_SWAP_FEE = "set-swap-fee",

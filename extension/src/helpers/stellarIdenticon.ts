@@ -48,7 +48,7 @@ function decodeBase32(input) {
   return buf;
 }
 
-function publicKeyToBytes(public_key) {
+export function publicKeyToBytes(public_key) {
   const decoded = decodeBase32(public_key);
   return decoded.slice(2, 16); //take 16 meaningful bytes from raw pub key
 }
@@ -113,7 +113,7 @@ function drawMatrix(canvas, matrix) {
   }
 }
 
-function HSVtoRGB(h, s, v) {
+export function HSVtoRGB(h, s, v) {
   // Source https://stackoverflow.com/a/17243070
 
   var r, g, b, i, f, p, q, t;
@@ -184,5 +184,10 @@ function createStellarIdenticon(stellarAddress, options = {}) {
 
   return canvas;
 }
+
+export const getColorPubKey = (publicKey: string) => {
+  var bytes = publicKeyToBytes(publicKey);
+  return HSVtoRGB(bytes[0] / 255, 0.7, 0.8);
+};
 
 export default createStellarIdenticon;

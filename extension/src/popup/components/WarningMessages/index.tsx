@@ -1558,7 +1558,7 @@ export const BlockaidWarningModal = ({
 
   return isModalActive ? (
     <>
-      <WarningInfoBlock hasArrow />
+      <WarningInfoBlock hasArrow={false} />
       {createPortal(
         <div
           className="BlockaidWarningModal"
@@ -1626,7 +1626,7 @@ export const BlockaidWarningModal = ({
       className="WarningMessage__activate-button"
       data-testid={`BlockaidWarningModal__button__${isAsset ? "asset" : "tx"}`}
     >
-      <WarningInfoBlock hasArrow />
+      <WarningInfoBlock hasArrow={false} />
     </div>
   );
 };
