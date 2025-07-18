@@ -14,7 +14,11 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { View } from "popup/basics/layout/View";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
-import { getCanonicalFromAsset, truncatedPublicKey } from "helpers/stellar";
+import {
+  getCanonicalFromAsset,
+  truncatedPublicKey,
+  truncatedFedAddress,
+} from "helpers/stellar";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
@@ -42,7 +46,9 @@ export const SendDestinationAsset = ({
   goToNext,
 }: SendDestinationAssetProps) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { destination } = useSelector(transactionDataSelector);
+  const { destination, federationAddress } = useSelector(
+    transactionDataSelector,
+  );
   const { state: destAssetDataState, fetchData } = useGetDestAssetData({
     showHidden: false,
     includeIcons: true,
@@ -115,7 +121,9 @@ export const SendDestinationAsset = ({
               <div className="SendDestinationAsset__EditDestination__identicon">
                 <IdenticonImg publicKey={destination} />
               </div>
-              {truncatedPublicKey(destination)}
+              {federationAddress
+                ? truncatedFedAddress(federationAddress)
+                : truncatedPublicKey(destination)}
             </div>
             <Button isRounded size="sm" variant="tertiary" onClick={goBack}>
               Edit

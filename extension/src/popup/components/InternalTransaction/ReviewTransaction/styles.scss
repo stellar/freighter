@@ -19,6 +19,7 @@
   }
 
   &__Divider {
+    display: flex;
     margin: pxToRem(12px) 0;
     svg {
       color: var(--sds-clr-gray-09);

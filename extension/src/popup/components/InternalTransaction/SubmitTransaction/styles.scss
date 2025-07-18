@@ -47,10 +47,19 @@
     border-radius: pxToRem(14px);
 
     &__Description {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       font-size: pxToRem(16px);
 
       &__Label {
-        color: var(--sds-clr-gray-09);
+        &:not(:last-child) {
+          margin-bottom: pxToRem(6px);
+        }
+
+        &.Verb {
+          color: var(--sds-clr-gray-09);
+        }
       }
     }
 
@@ -68,13 +77,22 @@
         }
       }
 
+      .AccountAssets__asset--logo {
+        &:last-child {
+          margin-right: 0;
+        }
+      }
+
       .IdenticonImg {
         width: 2rem;
         height: 2rem;
         padding: pxToRem(6px);
         border: 1px solid var(--sds-clr-gray-09);
         border-radius: pxToRem(100px);
-        margin-right: pxToRem(12px);
+
+        &:not(:last-child) {
+          margin-right: pxToRem(12px);
+        }
       }
     }
   }

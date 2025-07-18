@@ -13,6 +13,7 @@ import {
 import {
   getAssetFromCanonical,
   isMainnet,
+  truncatedFedAddress,
   truncatedPublicKey,
 } from "helpers/stellar";
 
@@ -66,13 +67,15 @@ export const ReviewTx = ({
 
   const {
     hardwareWalletData: { status: hwStatus },
-    transactionData: { destination, memo },
+    transactionData: { destination, memo, federationAddress },
   } = submission;
 
   const asset = getAssetFromCanonical(srcAsset);
   const dest = dstAsset ? getAssetFromCanonical(dstAsset.canonical) : null;
   const assetIcons = srcAsset !== "native" ? { [srcAsset]: assetIcon } : {};
-  const truncatedDest = truncatedPublicKey(destination);
+  const truncatedDest = federationAddress
+    ? truncatedFedAddress(federationAddress)
+    : truncatedPublicKey(destination);
 
   if (simulationState.state === RequestState.ERROR) {
     return (

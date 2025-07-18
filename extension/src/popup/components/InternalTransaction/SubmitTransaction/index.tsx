@@ -21,13 +21,17 @@ import {
   publicKeySelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
+import {
+  resetSubmission,
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { SubmitFail } from "../SubmitFail";
 
 import "./styles.scss";
 import { iconsSelector } from "popup/ducks/cache";
+import { resetSimulation } from "popup/ducks/token-payment";
 
 interface SendingTransactionProps {
   xdr: string;
@@ -98,7 +102,7 @@ export const SendingTransaction = ({
   const assetIcons = asset !== "native" ? { [asset]: assetIcon } : {};
   const dstAssetIcon = icons[destinationAsset]!;
   const dstAssetIcons =
-    asset !== "native" ? { [destinationAsset]: dstAssetIcon } : {};
+    destinationAsset !== "native" ? { [destinationAsset]: dstAssetIcon } : {};
 
   return (
     <>
@@ -163,6 +167,10 @@ export const SendingTransaction = ({
                     onClick={(e) => {
                       e.preventDefault();
                       navigateTo(ROUTES.account, navigate);
+                      setTimeout(() => {
+                        dispatch(resetSimulation());
+                        dispatch(resetSubmission());
+                      }, 100);
                     }}
                   >
                     Done
@@ -213,40 +221,52 @@ export const SendingTransaction = ({
               <div className="SendingTransaction__Summary__Description">
                 {isLoading && (
                   <>
-                    {amount} {srcAsset.code}{" "}
+                    <span className="SendingTransaction__Summary__Description__Label">
+                      {amount} {srcAsset.code}{" "}
+                    </span>
                     {isSwap && dstAsset ? (
                       <>
-                        <span className="SendingTransaction__Summary__Description__Label">
+                        <span className="SendingTransaction__Summary__Description__Label Verb">
                           to
                         </span>{" "}
-                        {destinationAmount} {dstAsset.code}
+                        <span className="SendingTransaction__Summary__Description__Label">
+                          {destinationAmount} {dstAsset.code}
+                        </span>
                       </>
                     ) : (
                       <>
-                        <span className="SendingTransaction__Summary__Description__Label">
+                        <span className="SendingTransaction__Summary__Description__Label Verb">
                           to
                         </span>{" "}
-                        {truncatedPublicKey(destination)}
+                        <span className="SendingTransaction__Summary__Description__Label">
+                          {truncatedPublicKey(destination)}
+                        </span>
                       </>
                     )}
                   </>
                 )}
                 {isSuccess && (
                   <>
-                    {amount} {srcAsset.code}{" "}
+                    <span className="SendingTransaction__Summary__Description__Label">
+                      {amount} {srcAsset.code}{" "}
+                    </span>
                     {isSwap && dstAsset ? (
                       <>
-                        <span className="SendingTransaction__Summary__Description__Label">
+                        <span className="SendingTransaction__Summary__Description__Label Verb">
                           was swapped to
                         </span>{" "}
-                        {destinationAmount} {dstAsset.code}
+                        <span className="SendingTransaction__Summary__Description__Label">
+                          {destinationAmount} {dstAsset.code}
+                        </span>
                       </>
                     ) : (
                       <>
-                        <span className="SendingTransaction__Summary__Description__Label">
+                        <span className="SendingTransaction__Summary__Description__Label Verb">
                           was sent to
                         </span>{" "}
-                        {truncatedPublicKey(destination)}
+                        <span className="SendingTransaction__Summary__Description__Label">
+                          {truncatedPublicKey(destination)}
+                        </span>
                       </>
                     )}
                   </>

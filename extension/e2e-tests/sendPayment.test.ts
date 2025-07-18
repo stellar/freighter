@@ -231,7 +231,11 @@ test("Send XLM payments to recent federated addresses", async ({
   await page.getByText("Review Send").click({ force: true });
 
   await expect(page.getByText("You are sending")).toBeVisible();
-  await page.getByTestId("SubmitAction").click({ force: true });
+  const submitAction = page.getByTestId("SubmitAction");
+
+  await page.waitForTimeout(300);
+  await submitAction.waitFor({ state: "visible" });
+  await submitAction.click({ force: true });
 
   await expect(page.getByText("Sent!")).toBeVisible({
     timeout: 60000,
@@ -249,7 +253,10 @@ test("Send XLM payments to recent federated addresses", async ({
   await page.getByText("Review Send").click({ force: true });
 
   await expect(page.getByText("You are sending")).toBeVisible();
-  await page.getByTestId("SubmitAction").click({ force: true });
+
+  await page.waitForTimeout(300);
+  await submitAction.waitFor({ state: "visible" });
+  await submitAction.click({ force: true });
 
   await expect(page.getByText("Sent!")).toBeVisible({
     timeout: 60000,
