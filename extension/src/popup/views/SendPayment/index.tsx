@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
 import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/send-payment";
@@ -12,7 +12,6 @@ import { SendDestinationAsset } from "popup/components/sendPayment/SendDestinati
 import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitTransaction";
 import {
   isPathPaymentSelector,
-  resetSubmission,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
@@ -20,21 +19,13 @@ import { isContractId } from "popup/helpers/soroban";
 import { useSimulateTxData } from "popup/components/sendPayment/SendAmount/hooks/useSimulateTxData";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
-import { AppDispatch } from "popup/App";
-import { resetSimulation } from "popup/ducks/token-payment";
 
 export const SendPayment = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
   const submission = useSelector(transactionSubmissionSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
-
-  useEffect(() => {
-    dispatch(resetSimulation());
-    dispatch(resetSubmission());
-  }, [dispatch]);
 
   const {
     transactionData: {

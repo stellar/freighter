@@ -21,13 +21,17 @@ import {
   publicKeySelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
+import {
+  resetSubmission,
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { SubmitFail } from "../SubmitFail";
 
 import "./styles.scss";
 import { iconsSelector } from "popup/ducks/cache";
+import { resetSimulation } from "popup/ducks/token-payment";
 
 interface SendingTransactionProps {
   xdr: string;
@@ -163,6 +167,10 @@ export const SendingTransaction = ({
                     onClick={(e) => {
                       e.preventDefault();
                       navigateTo(ROUTES.account, navigate);
+                      setTimeout(() => {
+                        dispatch(resetSimulation());
+                        dispatch(resetSubmission());
+                      }, 100);
                     }}
                   >
                     Done
