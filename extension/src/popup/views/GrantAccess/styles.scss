@@ -4,7 +4,30 @@
   &__SigningWith {
     display: flex;
     flex-direction: column;
-    min-width: 300px;
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-04);
+    padding: pxToRem(12px) pxToRem(16px);
+  }
+
+  &__Detail {
+    display: flex;
+    justify-content: space-between;
+
+    &:not(:last-child) {
+      margin-bottom: pxToRem(12px);
+      padding-bottom: pxToRem(12px);
+      border-bottom: 1px solid var(--sds-clr-gray-06);
+    }
+
+    &__Label {
+      display: flex;
+      align-items: center;
+      color: var(--sds-clr-gray-11);
+
+      svg {
+        margin-right: pxToRem(6px);
+      }
+    }
   }
 
   &__network {
@@ -39,5 +62,84 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
+  }
+
+  .PunycodedDomain__domain {
+    margin: pxToRem(12px) 0;
+  }
+
+  &__Warning {
+    color: var(--sds-clr-gray-10);
+    text-align: center;
+    font-size: pxToRem(14px);
+    font-style: normal;
+    font-weight: 500;
+    line-height: pxToRem(20px);
+  }
+
+  &__ButtonsContainer {
+    display: flex;
+    width: 100%;
+    gap: 0.5rem;
+    height: var(--buttons-container-height);
+    padding: 0.5rem 0;
+  }
+
+  &__ButtonsContainerMalicious {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 0.5rem;
+    height: var(--buttons-container-height);
+    padding: 0.5rem 0;
+  }
+
+  &__ConnectAnywayBtn {
+    border: 0;
+    color: var(--sds-clr-red-11);
+    background-color: transparent;
+    cursor: pointer;
+    margin-top: pxToRem(12px);
+    padding-top: 0;
+  }
+
+  &__BlockaidDetails {
+    display: flex;
+    flex-direction: column;
+
+    &__Header {
+      display: flex;
+      justify-content: space-between;
+
+      .WarningMark {
+        display: flex;
+        width: 40px;
+        height: 40px;
+        padding: 7.5px;
+        justify-content: center;
+        align-items: center;
+        aspect-ratio: 1/1;
+        border-radius: 8px;
+        border: 1px solid var(--sds-clr-red-06);
+        background: var(--sds-clr-red-03);
+
+        svg {
+          width: 25px;
+          height: 25px;
+          color: var(--sds-clr-red-09);
+        }
+      }
+
+      .Close {
+        display: flex;
+        width: 32px;
+        height: 32px;
+        justify-content: center;
+        align-items: center;
+        border-radius: 1000px;
+        background: var(--sds-clr-gray-03);
+        color: var(--sds-clr-gray-09);
+      }
+    }
   }
 }

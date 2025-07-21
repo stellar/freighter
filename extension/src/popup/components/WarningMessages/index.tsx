@@ -1358,31 +1358,50 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
   );
 };
 
-export const BlockAidMaliciousLabel = () => {
+export const BlockAidMaliciousLabel = ({
+  onClick,
+}: {
+  onClick: () => void;
+}) => {
   const { t } = useTranslation();
   return (
     <div
       className="ScanLabel ScanMalicious"
       data-testid="blockaid-malicious-label"
+      onClick={onClick}
     >
-      <div className="Icon">
-        <Icon.InfoOctagon className="WarningMessage__icon" />
+      <div className="ScanLabel__Info">
+        <div className="Icon">
+          <Icon.InfoSquare className="WarningMessage__icon" />
+        </div>
+        <p className="Message">{t("This site was flagged as malicious")}</p>
       </div>
-      <p className="Message">{t("This site was flagged as malicious")}</p>
+      <div className="ScanLabel__Action">
+        <Icon.ChevronRight />
+      </div>
     </div>
   );
 };
 
-export const BlockAidMissLabel = () => {
+export const BlockAidMissLabel = ({ onClick }: { onClick: () => void }) => {
   const { t } = useTranslation();
   return (
-    <div className="ScanLabel ScanMiss" data-testid="blockaid-miss-label">
-      <div className="Icon">
-        <Icon.InfoOctagon className="WarningMessage__icon" />
+    <div
+      className="ScanLabel ScanMiss"
+      data-testid="blockaid-miss-label"
+      onClick={onClick}
+    >
+      <div className="ScanLabel__Info">
+        <div className="Icon">
+          <Icon.InfoSquare className="WarningMessage__icon" />
+        </div>
+        <p className="Message">
+          {t("Unable to scan site for malicious behavior")}
+        </p>
       </div>
-      <p className="Message">
-        {t("Unable to scan site for malicious behavior")}
-      </p>
+      <div className="ScanLabel__Action">
+        <Icon.ChevronRight />
+      </div>
     </div>
   );
 };
@@ -1390,16 +1409,18 @@ export const BlockAidMissLabel = () => {
 export const BlockAidSiteScanLabel = ({
   status,
   isMalicious,
+  onClick,
 }: {
   status: "hit" | "miss";
   isMalicious: boolean;
+  onClick: () => void;
 }) => {
   if (status === "miss") {
-    return <BlockAidMissLabel />;
+    return <BlockAidMissLabel onClick={onClick} />;
   }
 
   if (isMalicious) {
-    return <BlockAidMaliciousLabel />;
+    return <BlockAidMaliciousLabel onClick={onClick} />;
   }
 
   // benign case should not show anything for now
