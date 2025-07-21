@@ -580,17 +580,6 @@ export const TransactionDetails = ({
             {transactionSimulation.response && (
               <>
                 <div className="TransactionDetails__row">
-                  <div>{t("Resource cost")} </div>
-                  <div className="TransactionDetails__row__right">
-                    <div className="TransactionDetails__row__right__item">
-                      {transactionSimulation.response.cost.cpuInsns} CPU
-                    </div>
-                    <div className="TransactionDetails__row__right__item">
-                      {transactionSimulation.response.cost.memBytes} Bytes
-                    </div>
-                  </div>
-                </div>
-                <div className="TransactionDetails__row">
                   <div>{t("Minimum resource fee")} </div>
                   <div className="TransactionDetails__row__right">
                     {transactionSimulation.response.minResourceFee} XLM

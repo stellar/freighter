@@ -535,7 +535,7 @@ export const KeyValueInvokeHostFn = ({
               </>
             );
           }
-          const contractId = StrKey.encodeContract(address.contractId());
+          const contractId = StrKey.encodeContract(address.contractId() as any);
           return (
             <>
               <KeyValueList
@@ -635,7 +635,7 @@ export const KeyValueInvokeHostFn = ({
       case xdr.HostFunctionType.hostFunctionTypeInvokeContract(): {
         const invocation = hostfn.invokeContract();
         const contractId = StrKey.encodeContract(
-          invocation.contractAddress().contractId(),
+          invocation.contractAddress().contractId() as any,
         );
         const fnName = invocation.functionName().toString();
         const args = invocation.args();
