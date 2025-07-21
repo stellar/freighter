@@ -76,8 +76,8 @@ jest.mock("stellar-sdk", () => {
     Networks: original.Networks,
     StrKey: original.StrKey,
     Horizon: original.Horizon,
-    SorobanRpc: {
-      ...original.SorobanRpc,
+    rpc: {
+      ...original.rpc,
       assembleTransaction: (tx: any, _sim: any) => {
         return new original.TransactionBuilder.cloneFrom(tx);
       },
