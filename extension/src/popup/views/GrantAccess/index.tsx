@@ -19,6 +19,8 @@ import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 
 import "popup/metrics/access";
 import "./styles.scss";
+import { BlockaidByLine } from "popup/components/WarningMessages";
+import { ATTACK_TO_DISPLAY } from "popup/helpers/blockaid";
 
 export const GrantAccess = () => {
   const { t } = useTranslation();
@@ -100,6 +102,9 @@ export const GrantAccess = () => {
 
   const scanData = state.data.scanData;
   const isMalicious = scanData.status === "hit" && scanData.is_malicious;
+  const attackTypes = Object.keys(
+    "attack_types" in scanData ? scanData.attack_types : {},
+  );
 
   return (
     <>
@@ -148,6 +153,27 @@ export const GrantAccess = () => {
                 <div className="Close" onClick={() => setActivePaneIndex(0)}>
                   <Icon.X />
                 </div>
+              </div>
+              <div className="GrantAccess__BlockaidDetails__Title">
+                Do not proceed
+              </div>
+              <div className="GrantAccess__BlockaidDetails__SubTitle">
+                This transaction does not appear safe for the following reasons.
+              </div>
+              <div className="GrantAccess__BlockaidDetails__Details">
+                {attackTypes.map((attack) => (
+                  <div className="GrantAccess__BlockaidDetails__DetailRow">
+                    <Icon.XCircle />
+                    <span>
+                      {
+                        ATTACK_TO_DISPLAY[
+                          attack as keyof typeof ATTACK_TO_DISPLAY
+                        ]
+                      }
+                    </span>
+                  </div>
+                ))}
+                <BlockaidByLine address={""} />
               </div>
             </div>,
           ]}

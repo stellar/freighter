@@ -10,7 +10,7 @@
 .BlockaidByLine {
   color: var(--sds-clr-gray-11);
   display: flex;
-  font-size: var(--sds-fs-secondary);
+  font-size: pxToRem(14px);
   justify-content: space-between;
   gap: pxToRem(6px);
 
@@ -18,6 +18,15 @@
     display: flex;
     gap: pxToRem(4px);
     align-items: center;
+
+    svg {
+      margin: 0 pxToRem(6px);
+    }
+
+    .Text {
+      display: flex;
+      align-items: center;
+    }
   }
 
   &__feedback {

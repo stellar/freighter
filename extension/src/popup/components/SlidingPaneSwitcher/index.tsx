@@ -28,7 +28,12 @@ export const MultiPaneSlider = ({
         }}
       >
         {panes.map((pane, i) => (
-          <div className="multi-pane-slider__pane" key={i}>
+          <div
+            className={`multi-pane-slider__pane ${
+              i === activeIndex ? "multi-pane-slider__pane--active" : ""
+            }`}
+            key={i}
+          >
             {pane}
           </div>
         ))}

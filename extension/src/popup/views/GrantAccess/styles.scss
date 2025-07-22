@@ -141,5 +141,49 @@
         color: var(--sds-clr-gray-09);
       }
     }
+
+    &__Title {
+      display: flex;
+      margin: pxToRem(16px) 0;
+      font-size: pxToRem(20px);
+      font-weight: 500;
+    }
+
+    &__SubTitle {
+      font-size: pxToRem(16px);
+      font-weight: 500;
+      margin-bottom: pxToRem(16px);
+      color: var(--sds-clr-gray-11);
+    }
+
+    &__Details {
+      display: flex;
+      padding: pxToRem(12px) pxToRem(16px);
+      flex-direction: column;
+      justify-content: center;
+      background-color: var(--sds-clr-gray-03);
+      border-radius: pxToRem(16px);
+
+      .BlockaidByLine {
+        margin-top: pxToRem(12px);
+        padding-top: pxToRem(12px);
+        border-top: 1px solid var(--sds-clr-gray-06);
+      }
+    }
+
+    &__DetailRow {
+      display: flex;
+
+      &:not(:last-child) {
+        margin-bottom: pxToRem(8px);
+      }
+
+      svg {
+        width: 28px;
+        height: 28px;
+        color: var(--sds-clr-red-09);
+        margin-right: pxToRem(8px);
+      }
+    }
   }
 }
