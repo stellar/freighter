@@ -1,5 +1,4 @@
 import { useReducer } from "react";
-import Blockaid from "@blockaid/client";
 
 import { initialState, isError, reducer } from "../../../../helpers/request";
 import {
