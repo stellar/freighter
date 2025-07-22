@@ -1,37 +1,40 @@
+@use "../../styles/utils.scss" as *;
+
 .ModalInfo {
   &--connection-request {
     display: flex;
     justify-content: center;
-    margin-bottom: 0.75rem;
+    margin-bottom: pxToRem(14px);
   }
 
   &--subject {
-    font-size: 0.75rem;
-    color: #a0a0a0;
-    background-color: var(--sds-clr-gray-04);
-    border-radius: 6px;
-    line-height: 1rem;
+    font-size: pxToRem(16px);
+    text-align: center;
+    color: var(--sds-clr-gray-11);
+    background-color: var(--sds-clr-gray-03);
+    border-radius: pxToRem(16px);
+    line-height: pxToRem(24px);
     margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
-    padding: 0.5rem;
+    padding: pxToRem(12px) pxToRem(16px);
   }
 
   &--connection-request-pill {
     display: flex;
     align-items: center;
-    font-size: 0.75rem;
+    justify-content: center;
+    text-align: center;
+    font-size: pxToRem(12px);
     gap: 0.5rem;
-    padding: 0 0.5rem;
-    background-color: var(--sds-clr-gray-04);
-    color: var(--sds-clr-gray-12);
-    border: 1px solid var(--sds-clr-gray-06);
-    border-radius: 6px;
-    margin-bottom: 0.5rem;
-    line-height: 1.25rem;
+    padding: 2px 8px;
+    background-color: var(--sds-clr-lilac-02);
+    color: var(--sds-clr-lilac-11);
+    border: 1px solid var(--sds-clr-lilac-06);
+    border-radius: 100px;
 
     p {
-      font-size: 0.75rem;
-      margin-left: 0.25rem;
+      font-size: pxToRem(12px);
+      font-weight: 600;
+      line-height: pxToRem(20px);
     }
   }
 

@@ -73,7 +73,6 @@ import IconShieldCross from "popup/assets/icon-shield-cross.svg";
 import IconWarning from "popup/assets/icon-warning.svg";
 import IconUnverified from "popup/assets/icon-unverified.svg";
 import IconNewAsset from "popup/assets/icon-new-asset.svg";
-import IconShieldBlockaid from "popup/assets/icon-shield-blockaid.svg";
 import IconWarningBlockaid from "popup/assets/icon-warning-blockaid.svg";
 import IconWarningBlockaidYellow from "popup/assets/icon-warning-blockaid-yellow.svg";
 import { getVerifiedTokens } from "popup/helpers/searchAsset";
@@ -432,7 +431,7 @@ const BlockaidFeedbackForm = ({
   );
 };
 
-const BlockaidByLine = ({
+export const BlockaidByLine = ({
   hasArrow = false,
   handleClick,
   requestId,
@@ -450,12 +449,24 @@ const BlockaidByLine = ({
   return (
     <div className="BlockaidByLine">
       <div className="BlockaidByLine__copy">
-        <img src={IconShieldBlockaid} alt="icon shield blockaid" />
-        <Text as="p" size="xs" weight="medium">
+        <Text as="p" size="sm" weight="medium">
           {t("Powered by ")}
-          <a rel="noreferrer" href="https://www.blockaid.io/" target="_blank">
-            Blockaid
-          </a>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <g clip-path="url(#clip0_5576_70196)">
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M9.76866 2.29851H0.130597V0H9.76866C11.5709 0 13.0336 1.46269 13.0336 3.26493C13.0336 5.06716 11.5709 6.52985 9.76866 6.52985H2.76866C2.50746 6.52985 2.27239 6.73881 2.27239 7C2.27239 7.26119 2.48134 7.47015 2.76866 7.47015H9.76866C11.5709 7.47015 13.0336 8.93284 13.0336 10.7351C13.0336 12.5373 11.5709 14 9.76866 14H0.130597V11.7015H9.76866C10.291 11.7015 10.7351 11.2575 10.7351 10.7351C10.7351 10.2127 10.291 9.76866 9.76866 9.76866H2.76866C1.25373 9.76866 0 8.54105 0 7C0 5.45896 1.25373 4.23134 2.76866 4.23134H9.76866C10.291 4.23134 10.7351 3.78731 10.7351 3.26493C10.7351 2.71642 10.291 2.29851 9.76866 2.29851Z"
+                fill="#707070"
+              />
+            </g>
+            <defs>
+              <clipPath id="clip0_5576_70196">
+                <rect width="13.0336" height="14" fill="white" />
+              </clipPath>
+            </defs>
+          </svg>
+          <span>Blockaid</span>
         </Text>
       </div>
       {isMainnet(networkDetails) || isTestnet(networkDetails) ? (
@@ -466,7 +477,7 @@ const BlockaidByLine = ({
               setIsFeedbackActive(true);
             }}
           >
-            <Text as="p" size="xs" weight="medium">
+            <Text as="p" size="sm" weight="medium">
               {t("Feedback?")}
             </Text>
           </div>
@@ -1358,31 +1369,50 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
   );
 };
 
-export const BlockAidMaliciousLabel = () => {
+export const BlockAidMaliciousLabel = ({
+  onClick,
+}: {
+  onClick: () => void;
+}) => {
   const { t } = useTranslation();
   return (
     <div
       className="ScanLabel ScanMalicious"
       data-testid="blockaid-malicious-label"
+      onClick={onClick}
     >
-      <div className="Icon">
-        <Icon.InfoOctagon className="WarningMessage__icon" />
+      <div className="ScanLabel__Info">
+        <div className="Icon">
+          <Icon.InfoSquare className="WarningMessage__icon" />
+        </div>
+        <p className="Message">{t("This site was flagged as malicious")}</p>
       </div>
-      <p className="Message">{t("This site was flagged as malicious")}</p>
+      <div className="ScanLabel__Action">
+        <Icon.ChevronRight />
+      </div>
     </div>
   );
 };
 
-export const BlockAidMissLabel = () => {
+export const BlockAidMissLabel = ({ onClick }: { onClick: () => void }) => {
   const { t } = useTranslation();
   return (
-    <div className="ScanLabel ScanMiss" data-testid="blockaid-miss-label">
-      <div className="Icon">
-        <Icon.InfoOctagon className="WarningMessage__icon" />
+    <div
+      className="ScanLabel ScanMiss"
+      data-testid="blockaid-miss-label"
+      onClick={onClick}
+    >
+      <div className="ScanLabel__Info">
+        <div className="Icon">
+          <Icon.InfoSquare className="WarningMessage__icon" />
+        </div>
+        <p className="Message">
+          {t("Unable to scan site for malicious behavior")}
+        </p>
       </div>
-      <p className="Message">
-        {t("Unable to scan site for malicious behavior")}
-      </p>
+      <div className="ScanLabel__Action">
+        <Icon.ChevronRight />
+      </div>
     </div>
   );
 };
@@ -1390,16 +1420,18 @@ export const BlockAidMissLabel = () => {
 export const BlockAidSiteScanLabel = ({
   status,
   isMalicious,
+  onClick,
 }: {
   status: "hit" | "miss";
   isMalicious: boolean;
+  onClick: () => void;
 }) => {
   if (status === "miss") {
-    return <BlockAidMissLabel />;
+    return <BlockAidMissLabel onClick={onClick} />;
   }
 
   if (isMalicious) {
-    return <BlockAidMaliciousLabel />;
+    return <BlockAidMaliciousLabel onClick={onClick} />;
   }
 
   // benign case should not show anything for now
