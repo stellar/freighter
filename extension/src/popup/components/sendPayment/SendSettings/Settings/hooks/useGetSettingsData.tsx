@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { Asset, BASE_FEE, Networks, SorobanRpc } from "stellar-sdk";
+import { Asset, BASE_FEE, Networks, rpc as SorobanRpc } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 import { useDispatch } from "react-redux";
 

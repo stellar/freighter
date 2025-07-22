@@ -1,6 +1,5 @@
 import { Store } from "redux";
-// @ts-ignore
-import { fromMnemonic } from "stellar-hd-wallet";
+import StellarHDWallet from "stellar-hd-wallet";
 
 import { RecoverAccountMessage } from "@shared/api/types/message-request";
 import { removePreviousAccount } from "../helpers/remove-previous-account";
@@ -25,6 +24,8 @@ import { captureException } from "@sentry/browser";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { activatePublicKey } from "../helpers/activate-public-key";
+
+const { fromMnemonic } = StellarHDWallet;
 
 export const recoverAccount = async ({
   request,

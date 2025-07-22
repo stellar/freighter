@@ -1,6 +1,5 @@
 import { Store } from "redux";
-// @ts-ignore
-import { fromMnemonic } from "stellar-hd-wallet";
+import StellarHDWallet from "stellar-hd-wallet";
 import * as StellarSdk from "stellar-sdk";
 import BigNumber from "bignumber.js";
 
@@ -36,6 +35,8 @@ import {
   storeEncryptedTemporaryData,
 } from "background/helpers/session";
 import { KEY_ID } from "constants/localStorageTypes";
+
+const { fromMnemonic } = StellarHDWallet;
 
 export const migrateAccounts = async ({
   request,

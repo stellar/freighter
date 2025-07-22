@@ -157,31 +157,52 @@ const getBuiltTx = async (
     networkDetails.networkPassphrase,
   );
   const sourceAccount: Account = await server.loadAccount(publicKey);
-  const operation = getOperation(
-    sourceAsset,
-    destAsset,
-    amount,
-    destinationAmount,
-    destination,
-    allowedSlippage,
-    path,
-    isPathPayment,
-    isSwap,
-    isFunded,
-    publicKey,
-  );
-  const transaction = new TransactionBuilder(sourceAccount, {
-    fee: xlmToStroop(fee).toFixed(),
-    networkPassphrase: networkDetails.networkPassphrase,
-  })
-    .addOperation(operation)
-    .setTimeout(transactionTimeout);
+  try {
+    const operation = getOperation(
+      sourceAsset,
+      destAsset,
+      amount,
+      destinationAmount,
+      destination,
+      allowedSlippage,
+      path,
+      isPathPayment,
+      isSwap,
+      isFunded,
+      publicKey,
+    );
+    const transaction = new TransactionBuilder(sourceAccount, {
+      fee: xlmToStroop(fee).toFixed(),
+      networkPassphrase: networkDetails.networkPassphrase,
+    })
+      .addOperation(operation)
+      .setTimeout(transactionTimeout);
 
-  if (memo) {
-    transaction.addMemo(Memo.text(memo));
+    if (memo) {
+      transaction.addMemo(Memo.text(memo));
+    }
+
+    return transaction;
+  } catch (error) {
+    captureException({
+      error,
+      arguments: {
+        sourceAsset,
+        destAsset,
+        amount,
+        destinationAmount,
+        destination,
+        allowedSlippage,
+        path,
+        isPathPayment,
+        isSwap,
+        isFunded,
+        publicKey,
+      },
+    });
+    const err = typeof error === "string" ? error : JSON.stringify(error);
+    throw new Error(`Failed to build operation: ${err}`);
   }
-
-  return transaction;
 };
 
 function useGetTxDetailsData(

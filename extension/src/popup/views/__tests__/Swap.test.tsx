@@ -223,7 +223,7 @@ jest.mock("stellar-sdk", () => {
         }
       },
     },
-    SorobanRpc: original.SorobanRpc,
+    rpc: original.rpc,
   };
 });
 
