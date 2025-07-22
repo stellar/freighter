@@ -10,6 +10,10 @@
     overflow: hidden;
     color: var(--sds-clr-gray-12);
 
+    .ParameterName {
+      color: var(--sds-clr-gray-11);
+    }
+
     .CopyText {
       width: 100%;
 

@@ -10,7 +10,7 @@
   &--header {
     display: flex;
     align-items: center;
-    color: var(--sds-clr-gray-12);
+    color: var(--sds-clr-gray-11);
     line-height: 1.5rem;
     margin-bottom: 0.5rem;
 
@@ -34,6 +34,7 @@
       & > .Operations__pair--key {
         width: 200px;
         text-overflow: ellipsis;
+        color: var(--sds-clr-gray-11);
       }
 
       & > .Operations__pair--value {

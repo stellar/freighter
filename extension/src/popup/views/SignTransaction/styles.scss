@@ -7,7 +7,7 @@
   padding: 1rem;
   background-color: var(--sds-clr-gray-01);
   display: flex;
-  justify-content: center;
+  flex-direction: column;
 
   &__tabWrapper {
     display: flex;
@@ -16,25 +16,20 @@
     width: 100%;
   }
 
-  &__Title {
+  &__TitleRow {
     display: flex;
-    flex-direction: column;
-    height: 130px;
-  }
+    align-items: center;
+    margin-bottom: pxToRem(16px);
 
-  .Tabs {
-    width: 100%;
-    height: 100%;
-    flex-grow: 1;
-
-    .BodyWrapper {
-      width: 100%;
+    &__Detail {
       display: flex;
       flex-direction: column;
-      border-radius: 4px;
-      background-color: var(--sds-clr-gray-02);
-      padding: 1rem;
-      overflow-y: scroll;
+      margin-left: pxToRem(12px);
+    }
+
+    &__Domain {
+      font-size: pxToRem(14px);
+      color: var(--sds-clr-gray-11);
     }
   }
 
@@ -44,29 +39,8 @@
     margin-top: 2rem;
     max-width: 57rem;
     width: 100%;
-  }
-
-  &--connection-request {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 0.75rem;
-  }
-
-  &--connection-request-pill {
-    display: flex;
-    align-items: center;
-    padding: 0 0.5rem;
-    background-color: var(--sds-clr-gray-02);
-    color: var(--sds-clr-gray-12);
-    border: 1px solid var(--sds-clr-gray-03);
-    border-radius: 6px;
-    margin-bottom: 0.5rem;
-    line-height: 1.25rem;
-
-    p {
-      font-size: 0.75rem;
-      margin-left: 0.25rem;
-    }
+    flex: 1;
+    overflow-y: auto;
   }
 
   .Blob {
@@ -131,12 +105,11 @@
     flex-direction: column;
     align-self: flex-end;
     width: 100%;
-    height: 130px;
-
-    &__SigningWith {
-      display: flex;
-      flex-direction: column;
-    }
+    position: sticky;
+    bottom: 0;
+    background-color: var(--sds-clr-gray-01);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 10;
 
     &__PublicKey {
       display: flex;
@@ -155,6 +128,99 @@
       display: flex;
       margin-top: 10px;
       gap: 0.5rem;
+    }
+  }
+
+  &__AssetDiffs {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+  }
+
+  &__AssetDiffRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+
+    &:not(:last-child) {
+      margin-bottom: pxToRem(12px);
+      padding-bottom: pxToRem(12px);
+      border-bottom: 1px solid var(--sds-clr-gray-06);
+    }
+
+    &__Asset {
+      display: flex;
+      align-items: center;
+    }
+
+    &__Amount {
+      &.Credit {
+        color: var(--sds-clr-green-11);
+      }
+      &.Debit {
+        color: var(--sds-clr-red-11);
+      }
+    }
+  }
+
+  &__Metadata {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    margin-top: pxToRem(12px);
+
+    &__Row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+
+      &:not(:last-child) {
+        margin-bottom: pxToRem(12px);
+        padding-bottom: pxToRem(12px);
+        border-bottom: 1px solid var(--sds-clr-gray-06);
+      }
+    }
+
+    &__Label {
+      display: flex;
+      align-items: center;
+      color: var(--sds-clr-gray-11);
+
+      svg {
+        margin-right: pxToRem(8px);
+      }
+    }
+  }
+
+  &__TransactionDetails {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    margin-top: pxToRem(12px);
+
+    &__Title {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      margin-bottom: pxToRem(12px);
+      padding-bottom: pxToRem(12px);
+      border-bottom: 1px solid var(--sds-clr-gray-06);
+      color: var(--sds-clr-gray-11);
+
+      svg {
+        margin-right: pxToRem(8px);
+      }
     }
   }
 }

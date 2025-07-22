@@ -12,7 +12,7 @@ import {
   StrKey,
   xdr,
 } from "stellar-sdk";
-import { Loader } from "@stellar/design-system";
+import { Icon, Loader } from "@stellar/design-system";
 import { getContractSpec } from "@shared/api/internal";
 
 import { CLAIM_PREDICATES } from "constants/transaction";
@@ -436,7 +436,10 @@ export const KeyValueInvokeHostFnArgs = ({
     </div>
   ) : (
     <div className="Operations__pair--invoke" data-testid="OperationKeyVal">
-      <div>Parameters</div>
+      <div className="Operations--header">
+        <Icon.Cube01 />
+        <span>Parameters</span>
+      </div>
       <div className="OperationParameters" data-testid="OperationParameters">
         {args.map((arg, ind) => (
           <div
@@ -648,10 +651,7 @@ export const KeyValueInvokeHostFn = ({
             <KeyValueList
               operationKey={t("Contract ID")}
               operationValue={
-                <CopyValue
-                  value={contractId}
-                  displayValue={truncateString(contractId, 6)}
-                />
+                <CopyValue value={contractId} displayValue={contractId} />
               }
             />
             <KeyValueList

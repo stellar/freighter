@@ -814,6 +814,7 @@ describe("SignTransactions", () => {
         data: {
           type: AppDataType.RESOLVED,
           scanResult: null,
+          icons: {},
           balances: {
             balances: sortBalances(mockBalances.balances),
             isFunded: true,

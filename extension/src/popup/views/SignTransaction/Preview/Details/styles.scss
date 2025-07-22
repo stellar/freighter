@@ -1,4 +1,7 @@
+@use "../../../../styles/utils.scss" as *;
+
 .DetailsBody {
   width: 100%;
   font-size: 0.75rem;
+  font-size: pxToRem(16px);
 }
