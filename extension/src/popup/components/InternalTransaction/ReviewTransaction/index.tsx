@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, Card, Icon, Notification } from "@stellar/design-system";
@@ -21,9 +21,13 @@ import { SimulateTxData } from "popup/components/sendPayment/SendAmount/hooks/us
 import { View } from "popup/basics/layout/View";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
-import { BlockaidTxScanLabel } from "popup/components/WarningMessages";
+import {
+  BlockaidTxScanLabel,
+  BlockAidTxScanExpanded,
+} from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
+import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 
 import "./styles.scss";
 
@@ -64,6 +68,8 @@ export const ReviewTx = ({
   const submission = useSelector(transactionSubmissionSelector);
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
   const isHardwareWallet = !!hardwareWalletType;
+
+  const [activePaneIndex, setActivePaneIndex] = useState(0);
 
   const {
     hardwareWalletData: { status: hwStatus },
@@ -116,96 +122,108 @@ export const ReviewTx = ({
         <HardwareSign walletType={hardwareWalletType} onSubmit={onConfirm} />
       )}
       <div className="ReviewTx">
-        <div className="ReviewTx__Summary">
-          <p>{title}</p>
-          <div className="ReviewTx__SendSummary">
-            <div className="ReviewTx__SendAsset">
-              <AssetIcon
-                assetIcons={assetIcons}
-                code={asset.code}
-                issuerKey={asset.issuer}
-                icon={assetIcon}
-                isSuspicious={false}
-              />
-              <div className="ReviewTx__SendAssetDetails">
-                <span>
-                  {sendAmount} {asset.code}
-                </span>
-                {isMainnet(networkDetails) && (
-                  <span className="ReviewTx__SendAssetDetails__price">
-                    {`$ ${sendPriceUsd}`}
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="ReviewTx__Divider">
-              <Icon.ChevronDownDouble />
-            </div>
-            <div className="ReviewTx__SendDestination">
-              {dstAsset && dest ? (
-                <>
-                  <AssetIcon
-                    assetIcons={
-                      dstAsset.canonical !== "native"
-                        ? { [dstAsset.canonical]: dstAsset.icon }
-                        : {}
-                    }
-                    code={dest.code}
-                    issuerKey={dest.issuer}
-                    icon={dstAsset.icon}
-                    isSuspicious={false}
-                  />
-                  <div className="ReviewTx__SendAssetDetails">
-                    <span>
-                      {dstAsset.amount} {dest.code}
-                    </span>
-                    {isMainnet(networkDetails) && (
-                      <span className="ReviewTx__SendAssetDetails__price">
-                        {`$ ${dstAsset.priceUsd}`}
+        <MultiPaneSlider
+          activeIndex={activePaneIndex}
+          panes={[
+            <>
+              <div className="ReviewTx__Summary">
+                <p>{title}</p>
+                <div className="ReviewTx__SendSummary">
+                  <div className="ReviewTx__SendAsset">
+                    <AssetIcon
+                      assetIcons={assetIcons}
+                      code={asset.code}
+                      issuerKey={asset.issuer}
+                      icon={assetIcon}
+                      isSuspicious={false}
+                    />
+                    <div className="ReviewTx__SendAssetDetails">
+                      <span>
+                        {sendAmount} {asset.code}
                       </span>
+                      {isMainnet(networkDetails) && (
+                        <span className="ReviewTx__SendAssetDetails__price">
+                          {`$ ${sendPriceUsd}`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="ReviewTx__Divider">
+                    <Icon.ChevronDownDouble />
+                  </div>
+                  <div className="ReviewTx__SendDestination">
+                    {dstAsset && dest ? (
+                      <>
+                        <AssetIcon
+                          assetIcons={
+                            dstAsset.canonical !== "native"
+                              ? { [dstAsset.canonical]: dstAsset.icon }
+                              : {}
+                          }
+                          code={dest.code}
+                          issuerKey={dest.issuer}
+                          icon={dstAsset.icon}
+                          isSuspicious={false}
+                        />
+                        <div className="ReviewTx__SendAssetDetails">
+                          <span>
+                            {dstAsset.amount} {dest.code}
+                          </span>
+                          {isMainnet(networkDetails) && (
+                            <span className="ReviewTx__SendAssetDetails__price">
+                              {`$ ${dstAsset.priceUsd}`}
+                            </span>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <IdenticonImg publicKey={destination} />
+                        <div className="ReviewTx__SendDestinationDetails">
+                          {truncatedDest}
+                        </div>
+                      </>
                     )}
                   </div>
-                </>
-              ) : (
-                <>
-                  <IdenticonImg publicKey={destination} />
-                  <div className="ReviewTx__SendDestinationDetails">
-                    {truncatedDest}
+                </div>
+              </div>
+              <div className="ReviewTx__Warnings">
+                {simulationState.data?.scanResult && (
+                  <BlockaidTxScanLabel
+                    scanResult={simulationState.data?.scanResult}
+                    onClick={() => setActivePaneIndex(1)}
+                  />
+                )}
+              </div>
+              <div className="ReviewTx__Details">
+                <Card>
+                  <div className="ReviewTx__Details__Memo">
+                    <div className="ReviewTx__Details__Memo__Title">
+                      <Icon.File02 />
+                      Memo
+                    </div>
+                    <div className="ReviewTx__Details__Memo__Value">
+                      {memo || "None"}
+                    </div>
                   </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="ReviewTx__Warnings">
-          {/* TODO: add blockaid details pane */}
-          {simulationState.data?.scanResult && (
-            <BlockaidTxScanLabel
-              scanResult={simulationState.data.scanResult}
-              onClick={() => ({})}
-            />
-          )}
-        </div>
-        <div className="ReviewTx__Details">
-          <Card>
-            <div className="ReviewTx__Details__Memo">
-              <div className="ReviewTx__Details__Memo__Title">
-                <Icon.File02 />
-                Memo
+                  <div className="ReviewTx__Details__Fee">
+                    <div className="ReviewTx__Details__Fee__Title">
+                      <Icon.Route />
+                      Fee
+                    </div>
+                    <div className="ReviewTx__Details__Fee__Value">
+                      {fee} XLM
+                    </div>
+                  </div>
+                </Card>
               </div>
-              <div className="ReviewTx__Details__Memo__Value">
-                {memo || "None"}
-              </div>
-            </div>
-            <div className="ReviewTx__Details__Fee">
-              <div className="ReviewTx__Details__Fee__Title">
-                <Icon.Route />
-                Fee
-              </div>
-              <div className="ReviewTx__Details__Fee__Value">{fee} XLM</div>
-            </div>
-          </Card>
-        </div>
+            </>,
+            <BlockAidTxScanExpanded
+              scanResult={simulationState.data?.scanResult!}
+              onClose={() => setActivePaneIndex(0)}
+            />,
+          ]}
+        />
         <div className="ReviewTx__Actions">
           <Button
             size="md"

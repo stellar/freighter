@@ -72,12 +72,12 @@ import {
   KeyValueList,
 } from "popup/components/signTransaction/Operations/KeyVal";
 import { CopyValue } from "popup/components/CopyValue";
+import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 
 import { Summary } from "./Preview/Summary";
 import { Details } from "./Preview/Details";
 
 import "./styles.scss";
-import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 
 export const SignTransaction = () => {
   const location = useLocation();
