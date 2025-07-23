@@ -63,7 +63,6 @@ function useGetSignTxData(
   const { assetsLists } = useSelector(settingsSelector);
   const { scanTx } = useScanTx();
   const [accountNotFound, setAccountNotFound] = useState(false);
-  console.log(scanTx, scanOptions);
 
   const fetchData = async (newPublicKey?: string) => {
     dispatch({ type: "FETCH_DATA_START" });

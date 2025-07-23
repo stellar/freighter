@@ -303,6 +303,10 @@ export const SignTransaction = () => {
   const hasAuthEntries = _tx.operations.some(
     (op) => op.type === "invokeHostFunction" && op.auth && op.auth.length,
   );
+  const assetDiffs =
+    scanResult?.simulation?.status === "Success"
+      ? scanResult.simulation.assets_diffs?.[publicKey]
+      : undefined;
 
   return isPasswordRequired ? (
     <VerifyAccount
@@ -339,17 +343,12 @@ export const SignTransaction = () => {
                 scanResult={scanResult!}
                 onClick={() => setActivePaneIndex(1)}
               />
-              {scanResult &&
-                "simulation" in scanResult &&
-                scanResult.simulation &&
-                scanResult.simulation.status === "Success" &&
-                "assets_diffs" in scanResult.simulation &&
-                scanResult.simulation.assets_diffs !== undefined && (
-                  <AssetDiffs
-                    icons={scanTxState.data?.icons || {}}
-                    assetDiffs={scanResult.simulation.assets_diffs![publicKey]}
-                  />
-                )}
+              {assetDiffs && (
+                <AssetDiffs
+                  icons={scanTxState.data?.icons || {}}
+                  assetDiffs={assetDiffs}
+                />
+              )}
               <div className="SignTransaction__Metadata">
                 <div className="SignTransaction__Metadata__Row">
                   <div className="SignTransaction__Metadata__Label">
