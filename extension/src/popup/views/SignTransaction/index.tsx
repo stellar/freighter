@@ -530,7 +530,10 @@ const AuthEntries = ({ operation }: AuthEntriesProps) => {
     const createSacs = details.filter((detail) => detail.type === "sac");
 
     return (
-      <div className="SignTransaction__AuthEntry">
+      <div
+        className="SignTransaction__AuthEntry"
+        key={authEntry.toXDR("raw").toString()}
+      >
         {invocations.map((detail) => (
           <React.Fragment key={detail.fnName}>
             <div

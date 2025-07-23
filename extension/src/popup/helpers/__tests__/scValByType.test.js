@@ -1,4 +1,6 @@
 import { Address, xdr, StrKey } from "stellar-sdk";
+import yaml from "js-yaml";
+
 import { scValByType } from "../soroban";
 
 const ACCOUNT = "GBBM6BKZPEHWYO3E3YKREDPQXMS4VK35YLNU7NFBRI26RAN7GI5POFBB";
@@ -75,13 +77,16 @@ describe("scValByType", () => {
       }),
     ]);
     const parsedMap = scValByType(xdrMap);
-    expect(parsedMap).toEqual(
-      JSON.stringify(
-        { [key]: value.toString() },
-        (_, val) => (typeof val === "bigint" ? val.toString() : val),
-        2,
-      ),
+    const scMapJson = JSON.stringify(
+      { [key]: value.toString() },
+      (_, val) => (typeof val === "bigint" ? val.toString() : val),
+      2,
     );
+    const yamlString = yaml.dump(JSON.parse(scMapJson), {
+      flowLevel: -1, // Forces block-style formatting
+      noRefs: true,
+    });
+    expect(parsedMap).toEqual(yamlString);
   });
   it("should render strings and symbols as strings", () => {
     const str = "arbitrary string";
