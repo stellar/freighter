@@ -1,22 +1,23 @@
+@use "../../../styles/utils.scss" as *;
+
 .Operations {
   display: flex;
   flex-direction: column;
-  margin-bottom: 1.5rem;
-
-  &--wrapper {
-    margin-bottom: 1.5rem;
-  }
 
   &--header {
     display: flex;
     align-items: center;
-    color: var(--sds-clr-gray-12);
+    color: var(--sds-clr-gray-11);
     line-height: 1.5rem;
     margin-bottom: 0.5rem;
 
     .OpType {
       font-weight: 600;
       margin-left: 0.5rem;
+    }
+
+    svg {
+      margin-right: pxToRem(8px);
     }
   }
 
@@ -30,10 +31,12 @@
       color: var(--sds-clr-gray-12);
       display: flex;
       line-height: 1.5rem;
+      margin-bottom: pxToRem(12px);
 
       & > .Operations__pair--key {
         width: 200px;
         text-overflow: ellipsis;
+        color: var(--sds-clr-gray-11);
       }
 
       & > .Operations__pair--value {

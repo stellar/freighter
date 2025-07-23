@@ -5,9 +5,13 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 1.5rem 1rem;
+  padding: 1.5rem 0;
   background-color: var(--sds-clr-gray-01);
   border-radius: 0.875rem;
+
+  &__Warnings {
+    margin-top: pxToRem(32px);
+  }
 
   &__loader {
     width: 100%;

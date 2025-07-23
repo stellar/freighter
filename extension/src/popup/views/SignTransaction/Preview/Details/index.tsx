@@ -1,9 +1,10 @@
 import React from "react";
 import { Operation } from "stellar-sdk";
 
-import "./styles.scss";
 import { Operations } from "popup/components/signTransaction/Operations";
 import { FlaggedKeys } from "types/transactions";
+
+import "./styles.scss";
 
 interface DetailsProps {
   operations: Operation[];

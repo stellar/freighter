@@ -733,10 +733,8 @@ export const Operations = ({
             data-testid="OperationsWrapper"
           >
             <div className="Operations--header">
-              <Icon.ParagraphSpacing />
-              <strong className="OpType">
-                {OPERATION_TYPES[type] || type}
-              </strong>
+              <Icon.CodeCircle01 />
+              <span>{OPERATION_TYPES[type] || type}</span>
             </div>
             <div className="Operations--item">
               {sourceVal && (
