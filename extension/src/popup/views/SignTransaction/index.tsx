@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
 import { Button, Icon } from "@stellar/design-system";
@@ -12,6 +12,7 @@ import {
   Memo,
   MemoType,
   Operation,
+  xdr,
 } from "stellar-sdk";
 
 import { isNonSSLEnabledSelector } from "popup/ducks/settings";
@@ -21,7 +22,6 @@ import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 
 import {
-  encodeObject,
   getPunycodedDomain,
   newTabHref,
   parsedSearchParam,
@@ -33,17 +33,19 @@ import {
   isFederationAddress,
   isMuxedAccount,
   stroopToXlm,
+  truncateString,
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
-import { navigateTo, openTab } from "popup/helpers/navigate";
-import { ROUTES } from "popup/constants/routes";
+import { openTab } from "popup/helpers/navigate";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import {
   WarningMessageVariant,
   WarningMessage,
   SSLWarningMessage,
+  BlockaidTxScanLabel,
+  BlockAidTxScanExpanded,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Loading } from "popup/components/Loading";
@@ -62,17 +64,23 @@ import { AssetIcon } from "popup/components/account/AccountAssets";
 import {
   CLASSIC_ASSET_DECIMALS,
   formatTokenAmount,
+  getInvocationDetails,
 } from "popup/helpers/soroban";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import {
+  KeyValueInvokeHostFnArgs,
+  KeyValueList,
+} from "popup/components/signTransaction/Operations/KeyVal";
+import { CopyValue } from "popup/components/CopyValue";
 
 import { Summary } from "./Preview/Summary";
 import { Details } from "./Preview/Details";
 
 import "./styles.scss";
+import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 
 export const SignTransaction = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const { t } = useTranslation();
   const tx = getTransactionInfo(location.search);
   const { url } = parsedSearchParam(location.search);
@@ -88,6 +96,7 @@ export const SignTransaction = () => {
 
   const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =
     useState(false);
+  const [activePaneIndex, setActivePaneIndex] = useState(0);
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
@@ -124,13 +133,10 @@ export const SignTransaction = () => {
     _networkPassphrase as string,
   );
 
-  let isFeeBump = false;
   let _memo = {};
   let _sequence = "";
 
-  if ("innerTransaction" in transaction) {
-    isFeeBump = true;
-  } else {
+  if (!("innerTransaction" in transaction)) {
     _sequence = transaction.sequence;
     _memo = transaction.memo;
   }
@@ -220,10 +226,20 @@ export const SignTransaction = () => {
   const { networkName, networkPassphrase } = scanTxState.data?.networkDetails!;
 
   const scanResult = scanTxState.data?.scanResult;
-  const flaggedMalicious =
+  const hasNonBenignValidation = !!(
     scanResult?.validation &&
     "result_type" in scanResult.validation &&
-    scanResult.validation.result_type === "Malicious";
+    (scanResult.validation.result_type === "Malicious" ||
+      scanResult.validation.result_type === "Warning")
+  );
+  const hasSimulationError =
+    scanResult && scanResult.simulation && "error" in scanResult.simulation;
+  const showBlockAidDetails = hasSimulationError || hasNonBenignValidation;
+  const btnIsDestructive =
+    (scanResult?.validation &&
+      "result_type" in scanResult.validation &&
+      scanResult.validation.result_type === "Malicious") ||
+    hasSimulationError;
 
   if (_networkPassphrase !== networkPassphrase) {
     return (
@@ -278,18 +294,15 @@ export const SignTransaction = () => {
     );
   }
 
-  const needsReviewAuth =
-    !isFeeBump &&
-    (transaction as Transaction<Memo<MemoType>, Operation[]>).operations.some(
-      (op) => op.type === "invokeHostFunction" && op.auth && op.auth.length,
-    );
-
   const punycodedDomain = getPunycodedDomain(domain);
   const isDomainValid = punycodedDomain === domain;
 
   const favicon = getSiteFavicon(domain);
   const validDomain = isDomainValid ? punycodedDomain : `xn-${punycodedDomain}`;
   const _tx = transaction as Transaction<Memo<MemoType>, Operation[]>;
+  const hasAuthEntries = _tx.operations.some(
+    (op) => op.type === "invokeHostFunction" && op.auth && op.auth.length,
+  );
 
   return isPasswordRequired ? (
     <VerifyAccount
@@ -303,128 +316,125 @@ export const SignTransaction = () => {
         <HardwareSign walletType={hardwareWalletType} />
       )}
       <div data-testid="SignTransaction" className="SignTransaction">
-        <div className="SignTransaction__Body">
-          <div className="SignTransaction__TitleRow">
-            <img
-              className="PunycodedDomain__favicon"
-              src={favicon}
-              alt="Site favicon"
-            />
-            <div className="SignTransaction__TitleRow__Detail">
-              <span className="SignTransaction__TitleRow__Title">
-                Confirm Transaction
-              </span>
-              <span className="SignTransaction__TitleRow__Domain">
-                {validDomain}
-              </span>
-            </div>
-          </div>
-          {scanResult &&
-            "simulation" in scanResult &&
-            scanResult.simulation &&
-            scanResult.simulation.status === "Success" &&
-            "assets_diffs" in scanResult.simulation &&
-            scanResult.simulation.assets_diffs !== undefined && (
-              <AssetDiffs
-                icons={scanTxState.data?.icons || {}}
-                assetDiffs={scanResult.simulation.assets_diffs![publicKey]}
+        <MultiPaneSlider
+          activeIndex={activePaneIndex}
+          panes={[
+            <div className="SignTransaction__Body">
+              <div className="SignTransaction__TitleRow">
+                <img
+                  className="PunycodedDomain__favicon"
+                  src={favicon}
+                  alt="Site favicon"
+                />
+                <div className="SignTransaction__TitleRow__Detail">
+                  <span className="SignTransaction__TitleRow__Title">
+                    Confirm Transaction
+                  </span>
+                  <span className="SignTransaction__TitleRow__Domain">
+                    {validDomain}
+                  </span>
+                </div>
+              </div>
+              <BlockaidTxScanLabel
+                scanResult={scanResult!}
+                onClick={() => setActivePaneIndex(1)}
               />
-            )}
-          <div className="SignTransaction__Metadata">
-            <div className="SignTransaction__Metadata__Row">
-              <div className="SignTransaction__Metadata__Label">
-                <Icon.Wallet01 />
-                <span>Wallet</span>
+              {scanResult &&
+                "simulation" in scanResult &&
+                scanResult.simulation &&
+                scanResult.simulation.status === "Success" &&
+                "assets_diffs" in scanResult.simulation &&
+                scanResult.simulation.assets_diffs !== undefined && (
+                  <AssetDiffs
+                    icons={scanTxState.data?.icons || {}}
+                    assetDiffs={scanResult.simulation.assets_diffs![publicKey]}
+                  />
+                )}
+              <div className="SignTransaction__Metadata">
+                <div className="SignTransaction__Metadata__Row">
+                  <div className="SignTransaction__Metadata__Label">
+                    <Icon.Wallet01 />
+                    <span>Wallet</span>
+                  </div>
+                  <div className="SignTransaction__Metadata__Value">
+                    <KeyIdenticon publicKey={publicKey} />
+                  </div>
+                </div>
+                <div className="SignTransaction__Metadata__Row">
+                  <div className="SignTransaction__Metadata__Label">
+                    <Icon.Route />
+                    <span>Fee</span>
+                  </div>
+                  <div className="SignTransaction__Metadata__Value">
+                    <span>
+                      {formatTokenAmount(
+                        new BigNumber(_fee),
+                        CLASSIC_ASSET_DECIMALS,
+                      )}{" "}
+                      XLM
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="SignTransaction__Metadata__Value">
-                <KeyIdenticon publicKey={publicKey} />
+              <div className="SignTransaction__TransactionDetails">
+                <div className="SignTransaction__TransactionDetails__Title">
+                  <Icon.List />
+                  <span>Transaction Details</span>
+                </div>
+                <Summary
+                  sequenceNumber={_sequence}
+                  fee={_fee}
+                  memo={decodedMemo}
+                  operationNames={_tx.operations.map(
+                    (op) => OPERATION_TYPES[op.type] || op.type,
+                  )}
+                />
+                <Details
+                  operations={_tx.operations}
+                  flaggedKeys={flaggedKeys}
+                  isMemoRequired={isMemoRequired}
+                />
+                {hasAuthEntries && (
+                  <AuthEntries
+                    operation={
+                      _tx.operations[0] as Operation.InvokeHostFunction
+                    }
+                  />
+                )}
               </div>
-            </div>
-            <div className="SignTransaction__Metadata__Row">
-              <div className="SignTransaction__Metadata__Label">
-                <Icon.Route />
-                <span>Fee</span>
-              </div>
-              <div className="SignTransaction__Metadata__Value">
-                <span>
-                  {formatTokenAmount(
-                    new BigNumber(_fee),
-                    CLASSIC_ASSET_DECIMALS,
-                  )}{" "}
-                  XLM
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="SignTransaction__TransactionDetails">
-            <div className="SignTransaction__TransactionDetails__Title">
-              <Icon.List />
-              <span>Transaction Details</span>
-            </div>
-            <Summary
-              sequenceNumber={_sequence}
-              fee={_fee}
-              memo={decodedMemo}
-              operationNames={_tx.operations.map(
-                (op) => OPERATION_TYPES[op.type] || op.type,
-              )}
-            />
-            <Details
-              operations={_tx.operations}
-              flaggedKeys={flaggedKeys}
-              isMemoRequired={isMemoRequired}
-            />
-          </div>
-        </div>
+            </div>,
+            <BlockAidTxScanExpanded
+              scanResult={scanResult!}
+              onClose={() => setActivePaneIndex(0)}
+            />,
+          ]}
+        />
         <div className="SignTransaction__Actions">
           <div className="SignTransaction__Actions__BtnRow">
-            {flaggedMalicious ? (
-              <>
-                {needsReviewAuth ? (
-                  <Button
-                    disabled={isSubmitDisabled}
-                    variant="error"
-                    isFullWidth
-                    size="md"
-                    isLoading={isConfirming}
-                    onClick={() =>
-                      navigateTo(
-                        ROUTES.reviewAuthorization,
-                        navigate,
-                        `?${encodeObject({
-                          accountToSign,
-                          transactionXdr,
-                          domain,
-                          flaggedKeys,
-                          isMemoRequired,
-                          memo: decodedMemo,
-                        })}`,
-                      )
-                    }
-                  >
-                    {t("Review anyway")}
-                  </Button>
-                ) : (
-                  <Button
-                    disabled={isSubmitDisabled}
-                    variant="error"
-                    isFullWidth
-                    size="md"
-                    isLoading={isConfirming}
-                    onClick={() => handleApprove()}
-                  >
-                    {t("Sign anyway")}
-                  </Button>
-                )}
+            {showBlockAidDetails ? (
+              <div className="SignTransaction__Actions__BtnRowReject">
                 <Button
                   isFullWidth
+                  isRounded
                   size="md"
-                  variant="tertiary"
+                  variant={btnIsDestructive ? "destructive" : "secondary"}
                   onClick={() => rejectAndClose()}
                 >
-                  {t("Reject")}
+                  {t("Cancel")}
                 </Button>
-              </>
+                <Button
+                  disabled={isSubmitDisabled}
+                  variant="error"
+                  isFullWidth
+                  isRounded
+                  size="md"
+                  isLoading={isConfirming}
+                  onClick={() => handleApprove()}
+                  className={`SignTransaction__Action__ConfirmAnyway ${btnIsDestructive ? "" : "Warning"}`}
+                >
+                  {t("Confirm anyway")}
+                </Button>
+              </div>
             ) : (
               <>
                 <Button
@@ -436,44 +446,18 @@ export const SignTransaction = () => {
                 >
                   {t("Cancel")}
                 </Button>
-                {needsReviewAuth ? (
-                  <Button
-                    disabled={isSubmitDisabled}
-                    variant="secondary"
-                    isFullWidth
-                    isRounded
-                    size="md"
-                    isLoading={isConfirming}
-                    onClick={() =>
-                      navigateTo(
-                        ROUTES.reviewAuthorization,
-                        navigate,
-                        `?${encodeObject({
-                          accountToSign,
-                          transactionXdr,
-                          domain,
-                          flaggedKeys,
-                          isMemoRequired,
-                          memo: decodedMemo,
-                        })}`,
-                      )
-                    }
-                  >
-                    {t("Confirm")}
-                  </Button>
-                ) : (
-                  <Button
-                    data-testid="sign-transaction-sign"
-                    disabled={isSubmitDisabled || !isDomainListedAllowed}
-                    variant="secondary"
-                    isFullWidth
-                    size="md"
-                    isLoading={isConfirming}
-                    onClick={() => handleApprove()}
-                  >
-                    {t("Sign")}
-                  </Button>
-                )}
+                <Button
+                  data-testid="sign-transaction-sign"
+                  disabled={isSubmitDisabled || !isDomainListedAllowed}
+                  variant="secondary"
+                  isFullWidth
+                  isRounded
+                  size="md"
+                  isLoading={isConfirming}
+                  onClick={() => handleApprove()}
+                >
+                  {t("Confirm")}
+                </Button>
               </>
             )}
           </div>
@@ -526,6 +510,115 @@ const AssetDiffs = ({ assetDiffs, icons }: AssetDiffsProps) => {
   return (
     <div className="SignTransaction__AssetDiffs">
       {assetDiffs.map(renderAssetDiffs)}
+    </div>
+  );
+};
+
+interface AuthEntriesProps {
+  operation: Operation.InvokeHostFunction;
+}
+
+const AuthEntries = ({ operation }: AuthEntriesProps) => {
+  const { t } = useTranslation();
+  const authEntries = operation.auth || [];
+
+  const renderAuthEntry = (authEntry: xdr.SorobanAuthorizationEntry) => {
+    const rootInvocation = authEntry.rootInvocation();
+    const details = getInvocationDetails(rootInvocation);
+    const invocations = details.filter((detail) => detail.type === "invoke");
+    const createWasms = details.filter((detail) => detail.type === "wasm");
+    const createSacs = details.filter((detail) => detail.type === "sac");
+
+    return (
+      <div className="SignTransaction__AuthEntry">
+        {invocations.map((detail) => (
+          <React.Fragment key={detail.fnName}>
+            <div
+              className="SignTransaction__AuthEntry__TitleRow"
+              data-testid="AuthDetail__invocation"
+            >
+              <Icon.CodeSnippet01 />
+              <span>Invocation</span>
+            </div>
+            <div className="SignTransaction__AuthEntry__InfoBlock">
+              <KeyValueList
+                operationKey={t("Contract ID")}
+                operationValue={
+                  <CopyValue
+                    value={detail.contractId}
+                    displayValue={truncateString(detail.contractId)}
+                  />
+                }
+              />
+              <KeyValueList
+                operationKey={t("Function Name")}
+                operationValue={detail.fnName}
+              />
+              <KeyValueInvokeHostFnArgs
+                args={detail.args}
+                contractId={detail.contractId}
+                fnName={detail.fnName}
+              />
+            </div>
+          </React.Fragment>
+        ))}
+        {createWasms.map((detail) => (
+          <React.Fragment key={detail.hash}>
+            <div
+              className="SignTransaction__AuthEntry__TitleRow"
+              data-testid="SignTransaction__AuthEntry__CreateWasmInvocation"
+            >
+              <Icon.CodeSnippet01 />
+              <span>Contract Creation</span>
+            </div>
+            <div className="SignTransaction__AuthEntry__InfoBlock">
+              <KeyValueList
+                operationKey={t("Contract Address")}
+                operationValue={
+                  <CopyValue
+                    value={detail.address}
+                    displayValue={truncateString(detail.address)}
+                  />
+                }
+              />
+              <KeyValueList
+                operationKey={t("Hash")}
+                operationValue={truncateString(detail.hash)}
+              />
+              <KeyValueList
+                operationKey={t("Salt")}
+                operationValue={truncateString(detail.salt)}
+              />
+              {detail.args && <KeyValueInvokeHostFnArgs args={detail.args} />}
+            </div>
+          </React.Fragment>
+        ))}
+        {createSacs.map((detail) => (
+          <React.Fragment key={detail.asset}>
+            <div className="SignTransaction__AuthEntry__TitleRow">
+              <Icon.CodeSnippet01 />
+              <span>Contract Creation</span>
+            </div>
+            <div className="SignTransaction__AuthEntry__InfoBlock">
+              <KeyValueList
+                operationKey={t("Asset")}
+                operationValue={truncateString(detail.asset)}
+              />
+              {detail.args && <KeyValueInvokeHostFnArgs args={detail.args} />}
+            </div>
+          </React.Fragment>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="SignTransaction__AuthEntries">
+      <div className="SignTransaction__AuthEntries__TitleRow">
+        <Icon.Key01 />
+        <span>Authorizations</span>
+      </div>
+      {authEntries.map(renderAuthEntry)}
     </div>
   );
 };

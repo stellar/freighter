@@ -446,9 +446,12 @@ export const KeyValueInvokeHostFnArgs = ({
             className="Parameter"
             key={arg.toXDR().toString()}
             data-testid="Parameter"
+            style={{ whiteSpace: "pre-wrap" }}
           >
             {argNames[ind] && (
-              <div data-testid="ParameterName">{argNames[ind]}</div>
+              <div data-testid="ParameterName" className="ParameterName">
+                {argNames[ind]}
+              </div>
             )}
             {arg.switch() === xdr.ScValType.scvAddress() ? (
               <CopyValue
@@ -651,7 +654,10 @@ export const KeyValueInvokeHostFn = ({
             <KeyValueList
               operationKey={t("Contract ID")}
               operationValue={
-                <CopyValue value={contractId} displayValue={contractId} />
+                <CopyValue
+                  value={contractId}
+                  displayValue={truncateString(contractId)}
+                />
               }
             />
             <KeyValueList

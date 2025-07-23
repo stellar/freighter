@@ -12,6 +12,7 @@ import {
   xdr,
   walkInvocationTree,
 } from "stellar-sdk";
+import yaml from "js-yaml";
 
 import { HorizonOperation, SorobanBalance } from "@shared/api/types";
 import { BASE_RESERVE, NetworkDetails } from "@shared/constants/stellar";
@@ -407,11 +408,16 @@ export const scValByType = (scVal: xdr.ScVal) => {
 
     case xdr.ScValType.scvVec():
     case xdr.ScValType.scvMap(): {
-      return JSON.stringify(
+      const scMapJson = JSON.stringify(
         scValToNative(scVal),
         (_, val) => (typeof val === "bigint" ? val.toString() : val),
         2,
       );
+      const yamlString = yaml.dump(JSON.parse(scMapJson), {
+        flowLevel: -1, // Forces block-style formatting
+        noRefs: true,
+      });
+      return yamlString;
     }
 
     case xdr.ScValType.scvString():

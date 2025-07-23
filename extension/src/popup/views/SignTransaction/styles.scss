@@ -5,9 +5,19 @@
   overflow: hidden;
   position: relative;
   padding: 1rem;
+  padding-top: 0;
   background-color: var(--sds-clr-gray-01);
   display: flex;
   flex-direction: column;
+
+  .multi-pane-slider__pane--active {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .BlockaidDetailsExpanded {
+    padding-top: 1rem;
+  }
 
   &__tabWrapper {
     display: flex;
@@ -36,7 +46,7 @@
   &__Body {
     display: flex;
     flex-direction: column;
-    margin-top: 2rem;
+    padding-top: 2rem;
     max-width: 57rem;
     width: 100%;
     flex: 1;
@@ -129,6 +139,27 @@
       margin-top: 10px;
       gap: 0.5rem;
     }
+
+    &__BtnRowReject {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      margin-top: 10px;
+      gap: 0.5rem;
+
+      .SignTransaction__Action__ConfirmAnyway {
+        border: 0;
+        color: var(--sds-clr-red-11);
+        background-color: transparent;
+        cursor: pointer;
+        margin-top: pxToRem(12px);
+        padding-top: 0;
+
+        &.Warning {
+          color: var(--sds-clr-gray-11);
+        }
+      }
+    }
   }
 
   &__AssetDiffs {
@@ -220,6 +251,80 @@
 
       svg {
         margin-right: pxToRem(8px);
+      }
+    }
+  }
+
+  &__AuthEntries {
+    width: 100%;
+    font-size: pxToRem(16px);
+
+    &__TitleRow {
+      display: flex;
+      color: var(--sds-clr-gray-11);
+      margin-bottom: pxToRem(12px);
+
+      svg {
+        margin-right: pxToRem(8px);
+      }
+    }
+  }
+
+  &__AuthEntry {
+    width: 100%;
+    font-size: pxToRem(16px);
+
+    &__TitleRow {
+      display: flex;
+      color: var(--sds-clr-gray-11);
+      margin-bottom: pxToRem(12px);
+
+      svg {
+        margin-right: pxToRem(8px);
+      }
+    }
+
+    &__InfoBlock {
+      .Operations__pair {
+        align-items: center;
+        color: var(--sds-clr-gray-12);
+        display: flex;
+        line-height: 1.5rem;
+        margin-bottom: pxToRem(12px);
+
+        & > .Operations__pair--key {
+          width: 200px;
+          text-overflow: ellipsis;
+          color: var(--sds-clr-gray-11);
+        }
+
+        & > .Operations__pair--value {
+          width: 200px;
+          flex-grow: 1;
+          display: flex;
+          justify-content: flex-end;
+        }
+
+        &--invoke {
+          flex-direction: column;
+          align-items: baseline;
+          color: var(--sds-clr-gray-12);
+          display: flex;
+          justify-content: space-between;
+          line-height: 1.5rem;
+        }
+
+        &--smart-contract {
+          flex-direction: column;
+
+          pre {
+            margin: 0;
+          }
+        }
+
+        & > :nth-child(2) {
+          color: var(--sds-clr-gray-12);
+        }
       }
     }
   }

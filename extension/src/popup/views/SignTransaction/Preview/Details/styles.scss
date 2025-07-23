@@ -2,6 +2,8 @@
 
 .DetailsBody {
   width: 100%;
-  font-size: 0.75rem;
   font-size: pxToRem(16px);
+  margin-bottom: pxToRem(12px);
+  padding-bottom: pxToRem(12px);
+  border-bottom: 1px solid var(--sds-clr-gray-06);
 }

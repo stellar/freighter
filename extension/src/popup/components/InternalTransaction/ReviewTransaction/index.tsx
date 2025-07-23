@@ -178,8 +178,12 @@ export const ReviewTx = ({
           </div>
         </div>
         <div className="ReviewTx__Warnings">
+          {/* TODO: add blockaid details pane */}
           {simulationState.data?.scanResult && (
-            <BlockaidTxScanLabel scanResult={simulationState.data.scanResult} />
+            <BlockaidTxScanLabel
+              scanResult={simulationState.data.scanResult}
+              onClick={() => ({})}
+            />
           )}
         </div>
         <div className="ReviewTx__Details">

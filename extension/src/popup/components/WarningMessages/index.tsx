@@ -1440,57 +1440,78 @@ export const BlockAidSiteScanLabel = ({
 
 export const BlockaidTxScanLabel = ({
   scanResult,
+  onClick,
 }: {
   scanResult: BlockAidScanTxResult;
+  onClick: () => void;
 }) => {
   const { t } = useTranslation();
-  const { simulation, validation, request_id: requestId } = scanResult;
+  const { simulation, validation } = scanResult;
 
   if (simulation && "error" in simulation) {
     const header = t("This transaction is expected to fail");
     return (
-      <BlockaidWarningModal
-        header={header}
-        description={[simulation.error]}
-        isWarning
-        requestId={requestId}
-      />
+      <div
+        className="ScanLabel ScanMiss"
+        data-testid="blockaid-miss-label"
+        onClick={onClick}
+      >
+        <div className="ScanLabel__Info">
+          <div className="Icon">
+            <Icon.InfoSquare className="WarningMessage__icon" />
+          </div>
+          <p className="Message">{header}</p>
+        </div>
+        <div className="ScanLabel__Action">
+          <Icon.ChevronRight />
+        </div>
+      </div>
     );
   }
 
-  let message = null;
   if (validation && "result_type" in validation) {
     switch (validation.result_type) {
       case "Malicious": {
-        message = {
-          header: t("This transaction was flagged as malicious"),
-          variant: WarningMessageVariant.highAlert,
-          message: validation.description,
-        };
-
         return (
-          <BlockaidWarningModal
-            header={message.header}
-            description={[message.message]}
-            isWarning={false}
-            requestId={requestId}
-          />
+          <div
+            className="ScanLabel ScanMalicious"
+            data-testid="blockaid-malicious-label"
+            onClick={onClick}
+          >
+            <div className="ScanLabel__Info">
+              <div className="Icon">
+                <Icon.InfoSquare className="WarningMessage__icon" />
+              </div>
+              <p className="Message">
+                {t("This transaction was flagged as malicious")}
+              </p>
+            </div>
+            <div className="ScanLabel__Action">
+              <Icon.ChevronRight />
+            </div>
+          </div>
         );
       }
 
       case "Warning": {
-        message = {
-          header: "This transaction was flagged as suspicious",
-          variant: WarningMessageVariant.warning,
-          message: validation.description,
-        };
-
         return (
-          <BlockaidWarningModal
-            header={message.header}
-            description={[message.message]}
-            isWarning
-          />
+          <div
+            className="ScanLabel ScanMiss"
+            data-testid="blockaid-miss-label"
+            onClick={onClick}
+          >
+            <div className="ScanLabel__Info">
+              <div className="Icon">
+                <Icon.InfoSquare className="WarningMessage__icon" />
+              </div>
+              <p className="Message">
+                {"This transaction was flagged as suspicious"}
+              </p>
+            </div>
+            <div className="ScanLabel__Action">
+              <Icon.ChevronRight />
+            </div>
+          </div>
         );
       }
 
@@ -1661,4 +1682,105 @@ export const BlockaidWarningModal = ({
       <WarningInfoBlock hasArrow={false} />
     </div>
   );
+};
+
+interface BlockAidTxScanExpandedProps {
+  scanResult: BlockAidScanTxResult;
+  onClose?: () => void;
+}
+
+export const BlockAidTxScanExpanded = ({
+  scanResult,
+  onClose,
+}: BlockAidTxScanExpandedProps) => {
+  const { simulation, validation } = scanResult;
+
+  if (simulation && "error" in simulation) {
+    return (
+      <div className="BlockaidDetailsExpanded">
+        <div className="BlockaidDetailsExpanded__Header">
+          <div className="WarningMark">
+            <Icon.AlertTriangle />
+          </div>
+          <div className="Close" onClick={onClose}>
+            <Icon.X />
+          </div>
+        </div>
+        <div className="BlockaidDetailsExpanded__Title">Warning</div>
+        <div className="BlockaidDetailsExpanded__SubTitle">
+          This transaction is expected to fail for the following reasons.
+        </div>
+        <div className="BlockaidDetailsExpanded__Details">
+          <div className="BlockaidDetailsExpanded__DetailRow">
+            <Icon.MinusCircle />
+            <span>{simulation.error}</span>
+          </div>
+          <BlockaidByLine address={""} />
+        </div>
+      </div>
+    );
+  }
+
+  if (validation && "result_type" in validation) {
+    switch (validation.result_type) {
+      case "Malicious": {
+        return (
+          <div className="BlockaidDetailsExpanded">
+            <div className="BlockaidDetailsExpanded__Header">
+              <div className="WarningMarkError">
+                <Icon.AlertOctagon />
+              </div>
+              <div className="Close" onClick={onClose}>
+                <Icon.X />
+              </div>
+            </div>
+            <div className="BlockaidDetailsExpanded__Title">Do not proceed</div>
+            <div className="BlockaidDetailsExpanded__SubTitle">
+              This transaction does not appear safe for the following reasons.
+            </div>
+            <div className="BlockaidDetailsExpanded__Details">
+              <div className="BlockaidDetailsExpanded__DetailRowError">
+                <Icon.XCircle />
+                <span>{validation.description}</span>
+              </div>
+              <BlockaidByLine address={""} />
+            </div>
+          </div>
+        );
+      }
+
+      case "Warning": {
+        return (
+          <div className="BlockaidDetailsExpanded">
+            <div className="BlockaidDetailsExpanded__Header">
+              <div className="WarningMark">
+                <Icon.AlertTriangle />
+              </div>
+              <div className="Close" onClick={onClose}>
+                <Icon.X />
+              </div>
+            </div>
+            <div className="BlockaidDetailsExpanded__Title">
+              Suspicious Request
+            </div>
+            <div className="BlockaidDetailsExpanded__SubTitle">
+              This transaction does not appear safe for the following reasons.
+            </div>
+            <div className="BlockaidDetailsExpanded__Details">
+              <div className="BlockaidDetailsExpanded__DetailRow">
+                <Icon.MinusCircle />
+                <span>{validation.description}</span>
+              </div>
+            </div>
+            <BlockaidByLine address={""} />
+          </div>
+        );
+      }
+
+      case "Benign":
+      default:
+    }
+  }
+
+  return <></>;
 };

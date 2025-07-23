@@ -1,5 +1,4 @@
 import { useReducer, useState } from "react";
-import Blockaid from "@blockaid/client";
 
 import { Account, AssetIcons, BlockAidScanTxResult } from "@shared/api/types";
 import { initialState, isError, reducer } from "helpers/request";
@@ -92,154 +91,15 @@ function useGetSignTxData(
         networkDetails,
       );
 
-      // const scanResult = await scanTx(
-      //   scanOptions.xdr,
-      //   scanOptions.url,
-      //   networkDetails,
-      // );
-      const scanResult = {
-        simulation: {
-          status: "Success",
-          assets_diffs: {
-            CCLBPEYS3XFK65MYYXSBMOGKUI4ODN5S7SUZBGD7NALUQF64QILLX5B5: [
-              {
-                asset: {
-                  type: "ASSET",
-                  code: "wETH",
-                  issuer:
-                    "GATALTGTWIOT6BUDBCZM3Q4OQ4BO2COLOAZ7IYSKPLC2PMSOPPGF5V56",
-                  org_name: "",
-                  org_url: "",
-                },
-                in: null,
-                out: {
-                  usd_price: "0",
-                  summary: "Sent 0.5000355 wETH",
-                  value: "1",
-                  raw_value: 5000355,
-                },
-                asset_type: "ASSET",
-              },
-            ],
-            GCBDC5AVPZEOSO3IAASQZSVRJMHX3UCCZH5O7S53FPZ636LQ5RHEW65H: [
-              {
-                asset: {
-                  type: "ASSET",
-                  code: "wETH",
-                  issuer:
-                    "GATALTGTWIOT6BUDBCZM3Q4OQ4BO2COLOAZ7IYSKPLC2PMSOPPGF5V56",
-                  org_name: "",
-                  org_url: "",
-                },
-                in: {
-                  usd_price: "0",
-                  summary: "Received 0.5000355 wETH",
-                  value: "1",
-                  raw_value: 5000355,
-                },
-                out: null,
-                asset_type: "ASSET",
-              },
-              {
-                asset: {
-                  type: "NATIVE",
-                  code: "XLM",
-                  issuer: "",
-                  org_name: "",
-                  org_url: "",
-                },
-                out: {
-                  usd_price: "0",
-                  summary: "Received 0.5000355 wETH",
-                  value: "1",
-                  raw_value: 1000355,
-                },
-                in: null,
-                asset_type: "NATIVE",
-              },
-            ],
-          },
-          exposures: {
-            GCBDC5AVPZEOSO3IAASQZSVRJMHX3UCCZH5O7S53FPZ636LQ5RHEW65H: [
-              {
-                asset: {
-                  type: "NATIVE",
-                  code: "XLM",
-                },
-                spenders: {
-                  CCLBPEYS3XFK65MYYXSBMOGKUI4ODN5S7SUZBGD7NALUQF64QILLX5B5: {
-                    approval: "",
-                    exposure: [
-                      {
-                        usd_price: "0",
-                        summary: "Received 0.5000355 wETH",
-                        value: "1",
-                        raw_value: 1000355,
-                      },
-                    ],
-                  } as Blockaid.StellarSingleAssetExposure,
-                },
-              },
-            ],
-          },
-          assets_ownership_diff: {
-            GCBDC5AVPZEOSO3IAASQZSVRJMHX3UCCZH5O7S53FPZ636LQ5RHEW65H: [
-              {
-                post_signers: [
-                  "CCLBPEYS3XFK65MYYXSBMOGKUI4ODN5S7SUZBGD7NALUQF64QILLX5B5",
-                ],
-                pre_signers: [
-                  "CCLBPEYS3XFK65MYYXSBMOGKUI4ODN5S7SUZBGD7NALUQF64QILLX5B5",
-                ],
-                type: "SET_OPTIONS",
-              },
-            ],
-          },
-          address_details: [],
-          account_summary: {
-            account_assets_diffs: [
-              {
-                asset: {
-                  type: "ASSET",
-                  code: "wETH",
-                  issuer:
-                    "GATALTGTWIOT6BUDBCZM3Q4OQ4BO2COLOAZ7IYSKPLC2PMSOPPGF5V56",
-                  org_name: "",
-                  org_url: "",
-                },
-                in: {
-                  usd_price: "0",
-                  summary: "Received 0.5000355 wETH",
-                  value: "1",
-                  raw_value: 5000355,
-                },
-                out: null,
-                asset_type: "ASSET",
-              } as Blockaid.StellarTransactionScanResponse.StellarSimulationResult.AccountSummary.StellarLegacyAssetDiff,
-            ],
-            account_exposures: [],
-            account_ownerships_diff: [],
-            total_usd_diff: {
-              in: 0,
-              out: 0,
-              total: 0,
-            },
-            total_usd_exposure: {},
-          },
-        },
-        validation: {
-          status: "Success",
-          result_type: "Benign",
-          description: "",
-          reason: "",
-          classification: "",
-          features: [],
-        },
-        request_id: "d7dbd848-66f4-4b8e-b151-ff280593df3c",
-      } as BlockAidScanTxResult;
+      const scanResult = await scanTx(
+        scanOptions.xdr,
+        scanOptions.url,
+        networkDetails,
+      );
 
       const icons = {} as { [code: string]: string };
       if (
+        scanResult &&
         "simulation" in scanResult &&
         scanResult.simulation &&
         scanResult.simulation.status === "Success" &&

@@ -2,13 +2,16 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-bottom: 1.5rem;
   width: 100%;
 
   .Parameter {
     text-overflow: ellipsis;
     overflow: hidden;
     color: var(--sds-clr-gray-12);
+
+    &:not(:last-child) {
+      margin-bottom: pxToRem(12px);
+    }
 
     .ParameterName {
       color: var(--sds-clr-gray-11);
