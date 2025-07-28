@@ -207,10 +207,10 @@ export const SignMessage = () => {
           </span>
           <div className="SignMessage__Actions">
             <Button
-              md
+              size="md"
               isFullWidth
               isRounded
-              tertiary
+              variant="tertiary"
               onClick={() => rejectAndClose()}
             >
               {t("Cancel")}
@@ -218,10 +218,10 @@ export const SignMessage = () => {
             <Button
               data-testid="sign-message-approve-button"
               disabled={!isDomainListedAllowed}
-              md
+              size="md"
               isFullWidth
               isRounded
-              secondary
+              variant="secondary"
               isLoading={isConfirming}
               onClick={() => handleApprove()}
             >
