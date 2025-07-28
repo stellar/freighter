@@ -1,8 +1,4 @@
-import {
-  requestAllowedStatus,
-  requestAccess,
-  submitTransaction,
-} from "@shared/api/external";
+import { submitTransaction } from "@shared/api/external";
 import { FreighterApiError } from "@shared/api/types";
 import { FreighterApiNodeError } from "@shared/api/helpers/extensionMessaging";
 import { isBrowser } from ".";
