@@ -374,6 +374,20 @@ export const SignTransaction = () => {
                     </span>
                   </div>
                 </div>
+                <div className="SignTransaction__Metadata__Row">
+                  <div className="SignTransaction__Metadata__Label">
+                    <Icon.FileCode02 />
+                    <span>XDR</span>
+                  </div>
+                  <div className="SignTransaction__Metadata__Value">
+                    <span>
+                      <CopyValue
+                        value={transactionXdr}
+                        displayValue={transactionXdr}
+                      />
+                    </span>
+                  </div>
+                </div>
               </div>
               <div className="SignTransaction__TransactionDetails">
                 <div className="SignTransaction__TransactionDetails__Title">

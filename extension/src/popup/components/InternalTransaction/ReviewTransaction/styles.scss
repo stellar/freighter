@@ -44,33 +44,33 @@
       flex-direction: column;
     }
 
-    &__Memo {
+    &__Row {
       display: flex;
       justify-content: space-between;
 
+      &:first-child {
+        margin-top: pxToRem(12px);
+      }
+
       &__Title {
         display: flex;
-        align-items: center;
         color: var(--sds-clr-gray-09);
 
         svg {
           margin-right: pxToRem(6px);
         }
       }
-    }
 
-    &__Fee {
-      display: flex;
-      justify-content: space-between;
-      margin-top: pxToRem(12px);
+      &__Value {
+        .CopyValue {
+          max-width: pxToRem(120px);
 
-      &__Title {
-        display: flex;
-        align-items: center;
-        color: var(--sds-clr-gray-09);
-
-        svg {
-          margin-right: pxToRem(6px);
+          .Value {
+            max-width: pxToRem(100px);
+            text-overflow: ellipsis;
+            white-space: pre-wrap;
+            overflow: hidden;
+          }
         }
       }
     }

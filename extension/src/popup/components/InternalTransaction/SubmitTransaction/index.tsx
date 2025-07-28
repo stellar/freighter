@@ -27,11 +27,11 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { navigateTo, openTab } from "popup/helpers/navigate";
+import { iconsSelector } from "popup/ducks/cache";
+import { resetSimulation } from "popup/ducks/token-payment";
 import { SubmitFail } from "../SubmitFail";
 
 import "./styles.scss";
-import { iconsSelector } from "popup/ducks/cache";
-import { resetSimulation } from "popup/ducks/token-payment";
 
 interface SendingTransactionProps {
   xdr: string;

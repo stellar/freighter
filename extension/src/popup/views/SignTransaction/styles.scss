@@ -13,6 +13,7 @@
   .multi-pane-slider__pane--active {
     display: flex;
     flex-direction: column;
+    align-items: center;
   }
 
   .BlockaidDetailsExpanded {
@@ -114,6 +115,7 @@
     display: flex;
     flex-direction: column;
     align-self: flex-end;
+    align-items: center;
     width: 100%;
     position: sticky;
     bottom: 0;
@@ -136,6 +138,8 @@
 
     &__BtnRow {
       display: flex;
+      max-width: 57rem;
+      width: 100%;
       margin-top: 10px;
       gap: 0.5rem;
     }
@@ -227,6 +231,19 @@
 
       svg {
         margin-right: pxToRem(8px);
+      }
+    }
+
+    &__Value {
+      .CopyValue {
+        max-width: pxToRem(120px);
+
+        .Value {
+          max-width: pxToRem(100px);
+          text-overflow: ellipsis;
+          white-space: pre-wrap;
+          overflow: hidden;
+        }
       }
     }
   }

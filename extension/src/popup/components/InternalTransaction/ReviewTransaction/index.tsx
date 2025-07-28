@@ -28,6 +28,7 @@ import {
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
+import { CopyValue } from "popup/components/CopyValue";
 
 import "./styles.scss";
 
@@ -197,7 +198,7 @@ export const ReviewTx = ({
               </div>
               <div className="ReviewTx__Details">
                 <Card>
-                  <div className="ReviewTx__Details__Memo">
+                  <div className="ReviewTx__Details__Row">
                     <div className="ReviewTx__Details__Memo__Title">
                       <Icon.File02 />
                       Memo
@@ -206,13 +207,25 @@ export const ReviewTx = ({
                       {memo || "None"}
                     </div>
                   </div>
-                  <div className="ReviewTx__Details__Fee">
+                  <div className="ReviewTx__Details__Row">
                     <div className="ReviewTx__Details__Fee__Title">
                       <Icon.Route />
                       Fee
                     </div>
                     <div className="ReviewTx__Details__Fee__Value">
                       {fee} XLM
+                    </div>
+                  </div>
+                  <div className="ReviewTx__Details__Row">
+                    <div className="ReviewTx__Details__Fee__Title">
+                      <Icon.FileCode02 />
+                      XDR
+                    </div>
+                    <div className="ReviewTx__Details__Fee__Value">
+                      <CopyValue
+                        value={simulationState.data!.transactionXdr}
+                        displayValue={simulationState.data!.transactionXdr}
+                      />
                     </div>
                   </div>
                 </Card>
