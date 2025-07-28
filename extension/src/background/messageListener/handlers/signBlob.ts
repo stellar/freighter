@@ -11,6 +11,8 @@ import {
   ResponseQueue,
   SignBlobResponse,
 } from "@shared/api/types/message-request";
+import { SIGN_MESSAGE_PREFIX } from "helpers/stellar";
+import { hash } from "stellar-sdk";
 
 export const signBlob = async ({
   localStore,
@@ -44,9 +46,15 @@ export const signBlob = async ({
     const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
     const blob = blobQueue.pop();
 
-    const response = blob
-      ? sourceKeys.sign(Buffer.from(blob.message, "base64"))
-      : null;
+    let response = null;
+
+    if (blob) {
+      const messageBytes = Buffer.from(blob.message, "utf8");
+      const prefixBytes = Buffer.from(SIGN_MESSAGE_PREFIX, "utf8");
+      const encodedMessage = Buffer.concat([prefixBytes, messageBytes]);
+      const messageHash = hash(encodedMessage);
+      response = sourceKeys.sign(messageHash);
+    }
 
     const blobResponse = responseQueue.pop();
 

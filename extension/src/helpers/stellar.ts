@@ -15,6 +15,8 @@ export {
 import { TransactionInfo } from "types/transactions";
 import { parsedSearchParam, getUrlHostname } from "./urls";
 
+export const SIGN_MESSAGE_PREFIX = "Stellar Signed Message:\n";
+
 export const truncateString = (str: string, charCount = 4) =>
   str ? `${str.slice(0, charCount)}…${str.slice(-charCount)}` : "";
 

@@ -1,7 +1,87 @@
+@use "../../styles/utils.scss" as *;
+
 .SignMessage {
   height: var(--popup--height);
   overflow: hidden;
   position: relative;
+
+  &__Body {
+    display: flex;
+    flex-direction: column;
+    max-width: 57rem;
+    width: 100%;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  &__TitleRow {
+    display: flex;
+    align-items: center;
+    margin-bottom: pxToRem(16px);
+
+    &__Detail {
+      display: flex;
+      flex-direction: column;
+      margin-left: pxToRem(12px);
+    }
+
+    &__Domain {
+      font-size: pxToRem(14px);
+      color: var(--sds-clr-gray-11);
+    }
+  }
+
+  &__Metadata {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    margin-top: pxToRem(12px);
+
+    &__Row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+
+      &:not(:last-child) {
+        margin-bottom: pxToRem(12px);
+        padding-bottom: pxToRem(12px);
+        border-bottom: 1px solid var(--sds-clr-gray-06);
+      }
+    }
+
+    &__Label {
+      display: flex;
+      align-items: center;
+      color: var(--sds-clr-gray-11);
+
+      svg {
+        margin-right: pxToRem(8px);
+      }
+    }
+  }
+
+  &__Warning {
+    color: var(--sds-clr-gray-10);
+    text-align: center;
+    font-size: pxToRem(14px);
+    font-style: normal;
+    font-weight: 500;
+    line-height: pxToRem(20px);
+  }
+
+  &__Actions {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+
+    .Button:first-child {
+      margin-right: pxToRem(12px);
+    }
+  }
 
   .Blob {
     display: -webkit-box;
