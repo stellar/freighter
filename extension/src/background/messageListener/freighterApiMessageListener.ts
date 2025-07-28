@@ -433,7 +433,7 @@ export const freighterApiMessageListener = (
           if (signedBlob) {
             if (apiVersion && semver.gte(apiVersion, "4.0.0")) {
               resolve({
-                signedBlob: Buffer.from(signedBlob).toString("base64"),
+                signedBlob: signedBlob.toString("base64"),
                 signerAddress,
               });
               return;

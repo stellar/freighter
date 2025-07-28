@@ -32,6 +32,12 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on-first-retry",
+    launchOptions: {
+      env: {
+        ...process.env,
+        IS_PLAYWRIGHT: "true",
+      },
+    },
   },
 
   /* Configure projects for major browsers */

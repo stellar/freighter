@@ -12,6 +12,7 @@ import {
   WarningMessageVariant,
   WarningMessage,
   SSLWarningMessage,
+  DomainNotAllowedWarningMessage,
 } from "popup/components/WarningMessages";
 import { View } from "popup/basics/layout/View";
 
@@ -194,6 +195,9 @@ export const SignMessage = () => {
               </div>
             </div>
           </div>
+          {!isDomainListedAllowed && (
+            <DomainNotAllowedWarningMessage domain={domain} />
+          )}
           <Message message={SIGN_MESSAGE_PREFIX + message.message} />
           <div className="SignMessage__Metadata">
             <div className="SignMessage__Metadata__Row">

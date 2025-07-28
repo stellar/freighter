@@ -21,10 +21,10 @@ const SIGNED_AUTH_ENTRY = JSON.stringify({
   ],
 });
 
-const MSG_TO_SIGN = "test message";
+const MSG_TO_SIGN = "Hello, World!";
 
 const SIGNED_MSG =
-  '"vtBm2byHA0fY2ZsV46t2owv/sD5RfS+iExq7/u37C7ZE401RAGsIsEIHfdbFqOez+KOiBbTT8BKvHtq8/WXYAA=="';
+  '"v6NmJHPZ5jUzZzphmTAb4/2Yv18mXFLmzjnwgDmqKR6Rq7/HQB6YxcUbxtBYNtBxccmPq2PB+7EBwOL3nuwQAQ=="';
 
 test("should sign transaction when allowed", async ({ page, extensionId }) => {
   await loginToTestAccount({ page, extensionId });
@@ -217,7 +217,7 @@ test("should sign message when allowed", async ({ page, extensionId }) => {
     screenshot: "sign-message.png",
   });
 
-  await popup.getByRole("button", { name: "Approve" }).click();
+  await popup.getByTestId("sign-message-approve-button").click();
 
   await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(SIGNED_MSG);
   await expect(pageTwo.getByRole("textbox").nth(4)).toHaveValue(
@@ -321,6 +321,7 @@ test("should not add token when not allowed", async ({ page, extensionId }) => {
     screenshot: "domain-not-allowed-add-token.png",
   });
 });
+
 test("should get public key when logged out", async ({ page, extensionId }) => {
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("account-options-dropdown").click();

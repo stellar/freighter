@@ -6,7 +6,7 @@ import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { getEncryptedTemporaryData } from "background/helpers/session";
 import { KEY_ID } from "constants/localStorageTypes";
 import { getNetworkDetails } from "background/helpers/account";
-import { getSdk } from "@shared/helpers/stellar";
+import { getSdk, isPlaywright } from "@shared/helpers/stellar";
 import {
   BlobQueue,
   ResponseQueue,
@@ -51,7 +51,8 @@ export const signBlob = async ({
     let response = null;
 
     if (blob) {
-      const supportsSep53 = apiVersion && semver.gte(apiVersion, "5.0.0");
+      const supportsSep53 =
+        (apiVersion && semver.gte(apiVersion, "5.0.0")) || isPlaywright;
       const signPayload = supportsSep53
         ? encodeSep53Message(blob.message)
         : Buffer.from(blob.message, "base64");
