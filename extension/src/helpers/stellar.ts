@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Asset, Networks } from "stellar-sdk";
+import { Asset, hash, Networks } from "stellar-sdk";
 import isEqual from "lodash/isEqual";
 
 import {
@@ -16,6 +16,13 @@ import { TransactionInfo } from "types/transactions";
 import { parsedSearchParam, getUrlHostname } from "./urls";
 
 export const SIGN_MESSAGE_PREFIX = "Stellar Signed Message:\n";
+
+export const encodeSep53Message = (message: string) => {
+  const messageBytes = Buffer.from(message, "utf8");
+  const prefixBytes = Buffer.from(SIGN_MESSAGE_PREFIX, "utf8");
+  const encodedMessage = Buffer.concat([prefixBytes, messageBytes]);
+  return hash(encodedMessage);
+};
 
 export const truncateString = (str: string, charCount = 4) =>
   str ? `${str.slice(0, charCount)}…${str.slice(-charCount)}` : "";

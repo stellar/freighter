@@ -278,6 +278,7 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.SIGN_BLOB: {
       return signBlob({
+        apiVersion: request.apiVersion,
         localStore,
         sessionStore,
         responseQueue,

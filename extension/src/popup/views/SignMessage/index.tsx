@@ -51,6 +51,7 @@ export const SignMessage = () => {
 
   const message = parsedSearchParam(location.search) as MessageToSign;
   const {
+    apiVersion,
     accountToSign,
     domain,
     url,
@@ -73,7 +74,12 @@ export const SignMessage = () => {
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-  } = useSetupSigningFlow(rejectTransaction, signBlob, message.message);
+  } = useSetupSigningFlow(
+    rejectTransaction,
+    signBlob,
+    message.message,
+    apiVersion,
+  );
 
   useEffect(() => {
     const getData = async () => {

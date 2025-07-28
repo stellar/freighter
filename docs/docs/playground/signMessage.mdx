@@ -15,7 +15,7 @@ const message = "hi";
 const res = await stellarApi.signMessage(message, { networkPassphrase: SorobanClient.Networks.TESTNET });
 const SIGN_MESSAGE_PREFIX = "Stellar Signed Message:\n";
 const messageHash = SHA256(SIGN_MESSAGE_PREFIX + message);
-const passes = kp.verify(messageHash, res.signedMessage); // true
+const passes = kp.verify(Buffer.from(messageHash, "base64"), res.signedMessage); // true
 ```
 </p>
 <strong>Test Freighter's `signMessage` method:</strong>

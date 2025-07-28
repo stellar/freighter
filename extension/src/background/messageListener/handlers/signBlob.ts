@@ -1,9 +1,10 @@
 import { Store } from "redux";
+import semver from "semver";
+import { captureException } from "@sentry/browser";
 
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { getEncryptedTemporaryData } from "background/helpers/session";
 import { KEY_ID } from "constants/localStorageTypes";
-import { captureException } from "@sentry/browser";
 import { getNetworkDetails } from "background/helpers/account";
 import { getSdk } from "@shared/helpers/stellar";
 import {
@@ -11,15 +12,16 @@ import {
   ResponseQueue,
   SignBlobResponse,
 } from "@shared/api/types/message-request";
-import { SIGN_MESSAGE_PREFIX } from "helpers/stellar";
-import { hash } from "stellar-sdk";
+import { encodeSep53Message } from "helpers/stellar";
 
 export const signBlob = async ({
+  apiVersion,
   localStore,
   sessionStore,
   blobQueue,
   responseQueue,
 }: {
+  apiVersion?: string;
   localStore: DataStorageAccess;
   sessionStore: Store;
   blobQueue: BlobQueue;
@@ -49,11 +51,11 @@ export const signBlob = async ({
     let response = null;
 
     if (blob) {
-      const messageBytes = Buffer.from(blob.message, "utf8");
-      const prefixBytes = Buffer.from(SIGN_MESSAGE_PREFIX, "utf8");
-      const encodedMessage = Buffer.concat([prefixBytes, messageBytes]);
-      const messageHash = hash(encodedMessage);
-      response = sourceKeys.sign(messageHash);
+      const supportsSep53 = apiVersion && semver.gte(apiVersion, "5.0.0");
+      const signPayload = supportsSep53
+        ? encodeSep53Message(blob.message)
+        : Buffer.from(blob.message, "base64");
+      response = sourceKeys.sign(signPayload);
     }
 
     const blobResponse = responseQueue.pop();

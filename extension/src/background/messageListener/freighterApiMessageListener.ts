@@ -393,6 +393,7 @@ export const freighterApiMessageListener = (
       const punycodedDomain = getPunycodedDomain(domain);
 
       const blobData: MessageToSign = {
+        apiVersion,
         domain: punycodedDomain,
         tab,
         message: blob,
