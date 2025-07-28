@@ -474,7 +474,11 @@ interface AssetDiffsProps {
 const AssetDiffs = ({ assetDiffs, icons }: AssetDiffsProps) => {
   const renderAssetDiffs = (diff: BlockaidAssetDiff) => {
     switch (diff.asset_type) {
-      // TODO: handle custom token decimals case
+      // NOTE:
+      // Blockaid does not populate custom tokens in asset diffs
+      // If the begin to do this, we will need to add a lookup for token details
+      // When asset diffs include tokens not in the users balance.
+      case "NATIVE":
       case "ASSET":
       default: {
         const code = "code" in diff.asset ? diff.asset.code! : "";
