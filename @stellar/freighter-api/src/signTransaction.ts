@@ -19,15 +19,6 @@ export const signTransaction = async (
   }
 > => {
   if (isBrowser) {
-    const { isAllowed } = await requestAllowedStatus();
-    if (!isAllowed) {
-      const req = await requestAccess();
-
-      if (req.error) {
-        return { signedTxXdr: "", signerAddress: "", error: req.error };
-      }
-    }
-
     const req = await submitTransaction(transactionXdr, opts);
 
     if (req.error) {
