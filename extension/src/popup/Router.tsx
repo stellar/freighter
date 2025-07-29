@@ -61,15 +61,15 @@ import { AddFunds } from "popup/views/AddFunds";
 import { Discover } from "popup/views/Discover";
 import { Wallets } from "popup/views/Wallets";
 
-import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
 import { SettingsState } from "@shared/api/types";
 
 import { SignMessage } from "./views/SignMessage";
-import { ReviewAuth } from "./views/ReviewAuth";
 
 import { View } from "./basics/layout/View";
 import { AppDispatch } from "./App";
+
+import "popup/metrics/views";
 
 /*
 We don't know if the user is missing their public key because
@@ -182,10 +182,6 @@ export const Router = () => (
         <Route
           path={ROUTES.signTransaction}
           element={<SignTransaction />}
-        ></Route>
-        <Route
-          path={ROUTES.reviewAuthorization}
-          element={<ReviewAuth />}
         ></Route>
         <Route path={ROUTES.signAuthEntry} element={<SignAuthEntry />}></Route>
         <Route path={ROUTES.signMessage} element={<SignMessage />}></Route>

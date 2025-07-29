@@ -77,16 +77,13 @@ describe("scValByType", () => {
       }),
     ]);
     const parsedMap = scValByType(xdrMap);
-    const scMapJson = JSON.stringify(
-      { [key]: value.toString() },
-      (_, val) => (typeof val === "bigint" ? val.toString() : val),
-      2,
+    expect(parsedMap).toEqual(
+      JSON.stringify(
+        { [key]: value.toString() },
+        (_, val) => (typeof val === "bigint" ? val.toString() : val),
+        2,
+      ),
     );
-    const yamlString = yaml.dump(JSON.parse(scMapJson), {
-      flowLevel: -1, // Forces block-style formatting
-      noRefs: true,
-    });
-    expect(parsedMap).toEqual(yamlString);
   });
   it("should render strings and symbols as strings", () => {
     const str = "arbitrary string";

@@ -5,29 +5,36 @@
   flex-direction: column;
   width: 100%;
   font-size: pxToRem(16px);
-  margin-bottom: pxToRem(12px);
-  padding-bottom: pxToRem(12px);
-  border-bottom: 1px solid var(--sds-clr-gray-06);
 
   .TxInfoBlock {
     display: flex;
     justify-content: space-between;
-    margin-bottom: pxToRem(12px);
+
+    &:not(:last-child) {
+      margin-bottom: pxToRem(12px);
+    }
 
     &__title {
       display: flex;
       align-items: center;
       color: var(--sds-clr-gray-11);
-
-      p {
-        margin-left: 0.5rem;
-      }
     }
 
     &__value {
       color: var(
         --sds-clr-gray-12
       ) !important; //sds rule does not allwo changing colors on p tags
+
+      .CopyValue {
+        max-width: pxToRem(120px);
+
+        .Value {
+          max-width: pxToRem(100px);
+          text-overflow: ellipsis;
+          white-space: pre-wrap;
+          overflow: hidden;
+        }
+      }
     }
   }
 }

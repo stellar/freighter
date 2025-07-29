@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
-import { Button, Icon } from "@stellar/design-system";
+import { Button, CopyText, Icon } from "@stellar/design-system";
 import BigNumber from "bignumber.js";
 import {
   MuxedAccount,
@@ -65,6 +65,7 @@ import {
   CLASSIC_ASSET_DECIMALS,
   formatTokenAmount,
   getInvocationDetails,
+  InvocationArgs,
 } from "popup/helpers/soroban";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import {
@@ -374,52 +375,53 @@ export const SignTransaction = () => {
                     </span>
                   </div>
                 </div>
-                <div className="SignTransaction__Metadata__Row">
-                  <div className="SignTransaction__Metadata__Label">
-                    <Icon.FileCode02 />
-                    <span>XDR</span>
-                  </div>
-                  <div className="SignTransaction__Metadata__Value">
-                    <span>
-                      <CopyValue
-                        value={transactionXdr}
-                        displayValue={transactionXdr}
-                      />
-                    </span>
-                  </div>
-                </div>
               </div>
-              <div className="SignTransaction__TransactionDetails">
-                <div className="SignTransaction__TransactionDetails__Title">
-                  <Icon.List />
-                  <span>Transaction Details</span>
-                </div>
-                <Summary
-                  sequenceNumber={_sequence}
-                  fee={_fee}
-                  memo={decodedMemo}
-                  operationNames={_tx.operations.map(
-                    (op) => OPERATION_TYPES[op.type] || op.type,
-                  )}
-                />
-                <Details
-                  operations={_tx.operations}
-                  flaggedKeys={flaggedKeys}
-                  isMemoRequired={isMemoRequired}
-                />
-                {hasAuthEntries && (
-                  <AuthEntries
-                    operation={
-                      _tx.operations[0] as Operation.InvokeHostFunction
-                    }
-                  />
-                )}
+              <div
+                className="SignTransaction__TransactionDetailsBtn"
+                onClick={() => setActivePaneIndex(2)}
+              >
+                <Icon.List />
+                <span>Transaction details</span>
               </div>
             </div>,
             <BlockAidTxScanExpanded
               scanResult={scanResult!}
               onClose={() => setActivePaneIndex(0)}
             />,
+            <div className="SignTransaction__TransactionDetails">
+              <div className="SignTransaction__TransactionDetails__Header">
+                <div className="DetailsMark">
+                  <Icon.List />
+                </div>
+                <div className="Close" onClick={() => setActivePaneIndex(0)}>
+                  <Icon.X />
+                </div>
+              </div>
+              <div className="SignTransaction__TransactionDetails__Title">
+                <span>Transaction Details</span>
+              </div>
+              <div className="SignTransaction__TransactionDetails__Summary">
+                <Summary
+                  sequenceNumber={_sequence}
+                  fee={_fee}
+                  memo={decodedMemo}
+                  xdr={transactionXdr}
+                  operationNames={_tx.operations.map(
+                    (op) => OPERATION_TYPES[op.type] || op.type,
+                  )}
+                />
+              </div>
+              {hasAuthEntries && (
+                <AuthEntries
+                  operation={_tx.operations[0] as Operation.InvokeHostFunction}
+                />
+              )}
+              <Details
+                operations={_tx.operations}
+                flaggedKeys={flaggedKeys}
+                isMemoRequired={isMemoRequired}
+              />
+            </div>,
           ]}
         />
         <div className="SignTransaction__Actions">
@@ -538,97 +540,158 @@ interface AuthEntriesProps {
 const AuthEntries = ({ operation }: AuthEntriesProps) => {
   const { t } = useTranslation();
   const authEntries = operation.auth || [];
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
+  const handleExpandDetail = (index: number) => {
+    setExpandedIndex((prev) => (prev === index ? null : index));
+  };
 
   const renderAuthEntry = (authEntry: xdr.SorobanAuthorizationEntry) => {
     const rootInvocation = authEntry.rootInvocation();
     const details = getInvocationDetails(rootInvocation);
-    const invocations = details.filter((detail) => detail.type === "invoke");
-    const createWasms = details.filter((detail) => detail.type === "wasm");
-    const createSacs = details.filter((detail) => detail.type === "sac");
+
+    const renderDetailTitle = (detail: InvocationArgs) => {
+      switch (detail.type) {
+        case "invoke": {
+          return detail.fnName;
+        }
+        case "sac":
+        case "wasm": {
+          return "Contract creation";
+        }
+        default: {
+          return null;
+        }
+      }
+    };
+
+    const renderDetailContent = (detail: InvocationArgs) => {
+      switch (detail.type) {
+        case "invoke": {
+          return (
+            <React.Fragment key={detail.fnName}>
+              <div
+                className="SignTransaction__AuthEntry__InfoBlock"
+                data-testid="AuthDetail__invocation"
+              >
+                <div className="SignTransaction__AuthEntry__InfoBlock_Inner">
+                  <div className="SignTransaction__AuthEntry__InfoBlock_Inner__Value">
+                    <CopyText textToCopy={detail.contractId}>
+                      <div className="Parameters">
+                        <div className="ParameterKey">
+                          {t("Contract ID")}
+                          <Icon.Copy01 />
+                        </div>
+                        <div className="ParameterValue">
+                          {detail.contractId}
+                        </div>
+                      </div>
+                    </CopyText>
+                    <CopyText textToCopy={detail.fnName}>
+                      <div className="Parameters">
+                        <div className="ParameterKey">
+                          {t("Function Name")}
+                          <Icon.Copy01 />
+                        </div>
+                        <div className="ParameterValue">{detail.fnName}</div>
+                      </div>
+                    </CopyText>
+                  </div>
+                </div>
+                <div className="SignTransaction__AuthEntry__InfoBlock_Inner">
+                  <KeyValueInvokeHostFnArgs
+                    args={detail.args}
+                    contractId={detail.contractId}
+                    fnName={detail.fnName}
+                  />
+                </div>
+              </div>
+            </React.Fragment>
+          );
+        }
+        case "sac": {
+          return (
+            <React.Fragment key={detail.asset}>
+              <div className="SignTransaction__AuthEntry__TitleRow">
+                <Icon.CodeSnippet01 />
+                <span>Contract Creation</span>
+              </div>
+              <div className="SignTransaction__AuthEntry__InfoBlock">
+                <KeyValueList
+                  operationKey={t("Asset")}
+                  operationValue={truncateString(detail.asset)}
+                />
+                {detail.args && <KeyValueInvokeHostFnArgs args={detail.args} />}
+              </div>
+            </React.Fragment>
+          );
+        }
+        case "wasm": {
+          return (
+            <React.Fragment key={detail.hash}>
+              <div
+                className="SignTransaction__AuthEntry__TitleRow"
+                data-testid="SignTransaction__AuthEntry__CreateWasmInvocation"
+              >
+                <Icon.CodeSnippet01 />
+                <span>Contract Creation</span>
+              </div>
+              <div className="SignTransaction__AuthEntry__InfoBlock">
+                <KeyValueList
+                  operationKey={t("Contract Address")}
+                  operationValue={
+                    <CopyValue
+                      value={detail.address}
+                      displayValue={truncateString(detail.address)}
+                    />
+                  }
+                />
+                <KeyValueList
+                  operationKey={t("Hash")}
+                  operationValue={truncateString(detail.hash)}
+                />
+                <KeyValueList
+                  operationKey={t("Salt")}
+                  operationValue={truncateString(detail.salt)}
+                />
+                {detail.args && <KeyValueInvokeHostFnArgs args={detail.args} />}
+              </div>
+            </React.Fragment>
+          );
+        }
+        default: {
+          return null;
+        }
+      }
+    };
 
     return (
-      <div
-        className="SignTransaction__AuthEntry"
-        key={authEntry.toXDR("raw").toString()}
-      >
-        {invocations.map((detail) => (
-          <React.Fragment key={detail.fnName}>
+      <>
+        {details.map((detail, ind) => (
+          <div
+            className="SignTransaction__AuthEntryContainer"
+            key={authEntry.toXDR("raw").toString()}
+          >
             <div
-              className="SignTransaction__AuthEntry__TitleRow"
-              data-testid="AuthDetail__invocation"
+              className="SignTransaction__AuthEntryBtn"
+              onClick={() => handleExpandDetail(ind)}
             >
-              <Icon.CodeSnippet01 />
-              <span>Invocation</span>
-            </div>
-            <div className="SignTransaction__AuthEntry__InfoBlock">
-              <KeyValueList
-                operationKey={t("Contract ID")}
-                operationValue={
-                  <CopyValue
-                    value={detail.contractId}
-                    displayValue={truncateString(detail.contractId)}
-                  />
-                }
-              />
-              <KeyValueList
-                operationKey={t("Function Name")}
-                operationValue={detail.fnName}
-              />
-              <KeyValueInvokeHostFnArgs
-                args={detail.args}
-                contractId={detail.contractId}
-                fnName={detail.fnName}
+              <div className="SignTransaction__AuthEntryBtn__Title">
+                <Icon.CodeCircle01 />
+                {renderDetailTitle(detail)}
+              </div>
+              <Icon.ChevronRight
+                className={`Icon--rotate ${expandedIndex === ind ? "open" : ""}`}
               />
             </div>
-          </React.Fragment>
+            {expandedIndex === ind ? (
+              <div className="SignTransaction__AuthEntryContent">
+                {renderDetailContent(detail)}
+              </div>
+            ) : null}
+          </div>
         ))}
-        {createWasms.map((detail) => (
-          <React.Fragment key={detail.hash}>
-            <div
-              className="SignTransaction__AuthEntry__TitleRow"
-              data-testid="SignTransaction__AuthEntry__CreateWasmInvocation"
-            >
-              <Icon.CodeSnippet01 />
-              <span>Contract Creation</span>
-            </div>
-            <div className="SignTransaction__AuthEntry__InfoBlock">
-              <KeyValueList
-                operationKey={t("Contract Address")}
-                operationValue={
-                  <CopyValue
-                    value={detail.address}
-                    displayValue={truncateString(detail.address)}
-                  />
-                }
-              />
-              <KeyValueList
-                operationKey={t("Hash")}
-                operationValue={truncateString(detail.hash)}
-              />
-              <KeyValueList
-                operationKey={t("Salt")}
-                operationValue={truncateString(detail.salt)}
-              />
-              {detail.args && <KeyValueInvokeHostFnArgs args={detail.args} />}
-            </div>
-          </React.Fragment>
-        ))}
-        {createSacs.map((detail) => (
-          <React.Fragment key={detail.asset}>
-            <div className="SignTransaction__AuthEntry__TitleRow">
-              <Icon.CodeSnippet01 />
-              <span>Contract Creation</span>
-            </div>
-            <div className="SignTransaction__AuthEntry__InfoBlock">
-              <KeyValueList
-                operationKey={t("Asset")}
-                operationValue={truncateString(detail.asset)}
-              />
-              {detail.args && <KeyValueInvokeHostFnArgs args={detail.args} />}
-            </div>
-          </React.Fragment>
-        ))}
-      </div>
+      </>
     );
   };
 
