@@ -328,7 +328,7 @@ export const migratePubnetRpcUrl = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "5.33.5")) {
+  if (!storageVersion || semver.lte(storageVersion, "5.33.6")) {
     const networksList: NetworkDetails[] =
       (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
@@ -353,7 +353,7 @@ export const migratePubnetRpcUrl = async () => {
     }
 
     await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
-    await migrateDataStorageVersion("5.33.5");
+    await migrateDataStorageVersion("5.33.6");
   }
 };
 
