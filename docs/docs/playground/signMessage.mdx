@@ -11,8 +11,11 @@ import { SignMessageDemo } from "./components/SignMessageDemo";
 <p>
 ```
 const kp = <signing key pair>
-const res = await stellarApi.signMessage("hi", { networkPassphrase: SorobanClient.Networks.TESTNET })
-const passes = kp.verify(Buffer.from("hi", "base64"), Buffer.from(res.signedMessage, "base64")) // true
+const message = "hi";
+const res = await stellarApi.signMessage(message, { networkPassphrase: SorobanClient.Networks.TESTNET });
+const SIGN_MESSAGE_PREFIX = "Stellar Signed Message:\n";
+const messageHash = SHA256(SIGN_MESSAGE_PREFIX + message);
+const passes = kp.verify(Buffer.from(messageHash, "base64"), res.signedMessage); // true
 ```
 </p>
 <strong>Test Freighter's `signMessage` method:</strong>
