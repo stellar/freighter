@@ -14,6 +14,8 @@ import { INDEXER_URL } from "@shared/constants/mercury";
 export const CUSTOM_NETWORK = "STANDALONE";
 export const LP_ISSUER_KEY = "lp";
 
+export const isPlaywright = process.env.IS_PLAYWRIGHT === "true";
+
 export const isNextSdk = (networkPassphrase: string) =>
   [""].includes(networkPassphrase);
 

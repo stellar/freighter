@@ -16,6 +16,7 @@ export interface TokenToAdd {
 }
 
 export interface MessageToSign {
+  apiVersion?: string;
   domain: string;
   tab?: browser.Tabs.Tab;
   message: string;
@@ -184,6 +185,7 @@ export interface SignTransactionMessage extends BaseMessage {
 }
 
 export interface SignBlobMessage extends BaseMessage {
+  apiVersion?: string;
   type: SERVICE_TYPES.SIGN_BLOB;
 }
 

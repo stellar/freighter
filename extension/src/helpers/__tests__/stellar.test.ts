@@ -5,6 +5,7 @@ import {
   truncateString,
   stroopToXlm,
   xlmToStroop,
+  encodeSep53Message,
 } from "../stellar";
 import * as urls from "../urls";
 
@@ -111,5 +112,13 @@ describe("xlmToStroop", () => {
     const stroops = xlmToStroop(lumens);
 
     expect(stroops).toEqual(lumens.times(1e7));
+  });
+});
+
+describe("encodeSep53Message", () => {
+  test("should encode a simple ascii message", () => {
+    const message = "Hello, World!";
+    const expected = "1S61nAa7UQ0GWZf/kwdwaO7QpIbCAhW14C4asNLr6l8=";
+    expect(encodeSep53Message(message).toString("base64")).toEqual(expected);
   });
 });

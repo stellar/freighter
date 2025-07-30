@@ -1214,12 +1214,15 @@ export const signTransaction = async ({
 };
 
 export const signBlob = async ({
+  apiVersion,
   activePublicKey,
 }: {
+  apiVersion?: string;
   activePublicKey: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
+      apiVersion,
       activePublicKey,
       type: SERVICE_TYPES.SIGN_BLOB,
     });
