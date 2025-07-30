@@ -217,7 +217,7 @@ export const SignMessage = () => {
           </span>
           <div className="SignMessage__Actions">
             <Button
-              size="md"
+              size="lg"
               isFullWidth
               isRounded
               variant="tertiary"
@@ -228,7 +228,7 @@ export const SignMessage = () => {
             <Button
               data-testid="sign-message-approve-button"
               disabled={!isDomainListedAllowed}
-              size="md"
+              size="lg"
               isFullWidth
               isRounded
               variant="secondary"

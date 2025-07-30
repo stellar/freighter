@@ -432,7 +432,7 @@ export const SignTransaction = () => {
                 <Button
                   isFullWidth
                   isRounded
-                  size="md"
+                  size="lg"
                   variant={btnIsDestructive ? "destructive" : "secondary"}
                   onClick={() => rejectAndClose()}
                 >
@@ -443,7 +443,7 @@ export const SignTransaction = () => {
                   variant="error"
                   isFullWidth
                   isRounded
-                  size="md"
+                  size="lg"
                   isLoading={isConfirming}
                   onClick={() => handleApprove()}
                   className={`SignTransaction__Action__ConfirmAnyway ${btnIsDestructive ? "" : "Warning"}`}
@@ -456,7 +456,7 @@ export const SignTransaction = () => {
                 <Button
                   isFullWidth
                   isRounded
-                  size="md"
+                  size="lg"
                   variant="tertiary"
                   onClick={() => rejectAndClose()}
                 >
@@ -468,7 +468,7 @@ export const SignTransaction = () => {
                   variant="secondary"
                   isFullWidth
                   isRounded
-                  size="md"
+                  size="lg"
                   isLoading={isConfirming}
                   onClick={() => handleApprove()}
                 >

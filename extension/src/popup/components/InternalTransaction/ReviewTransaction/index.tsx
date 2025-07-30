@@ -239,7 +239,7 @@ export const ReviewTx = ({
         />
         <div className="ReviewTx__Actions">
           <Button
-            size="md"
+            size="lg"
             isFullWidth
             isRounded
             variant="secondary"
@@ -254,7 +254,7 @@ export const ReviewTx = ({
               : `Send to ${truncatedDest}`}
           </Button>
           <Button
-            size="md"
+            size="lg"
             isFullWidth
             isRounded
             variant="tertiary"
