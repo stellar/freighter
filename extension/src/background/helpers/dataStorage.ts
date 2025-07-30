@@ -324,6 +324,39 @@ export const migrateAllowlistToKeyNetworkSchema = async () => {
   }
 };
 
+export const migratePubnetRpcUrl = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (!storageVersion || semver.lt(storageVersion, "5.33.5")) {
+    const networksList: NetworkDetails[] =
+      (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
+
+    const migratedNetworkList = networksList.map((network) => {
+      if (network.network === NETWORKS.PUBLIC) {
+        return {
+          ...MAINNET_NETWORK_DETAILS,
+          sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.PUBLIC],
+        };
+      }
+
+      return network;
+    });
+
+    const currentNetwork = await localStore.getItem(NETWORK_ID);
+
+    if (currentNetwork && currentNetwork.network === NETWORKS.PUBLIC) {
+      await localStore.setItem(NETWORK_ID, {
+        ...MAINNET_NETWORK_DETAILS,
+        sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.PUBLIC],
+      });
+    }
+
+    await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+    await migrateDataStorageVersion("5.33.5");
+  }
+};
+
 export const versionedMigration = async () => {
   // sequentially call migrations in order to enforce smooth schema upgrades
 
@@ -338,6 +371,7 @@ export const versionedMigration = async () => {
   await addIsNonSSLEnabled();
   await removeStellarExpertData();
   await migrateAllowlistToKeyNetworkSchema();
+  await migratePubnetRpcUrl();
 };
 
 // Updates storage version
