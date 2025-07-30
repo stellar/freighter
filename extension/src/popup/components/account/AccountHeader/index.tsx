@@ -209,10 +209,12 @@ export const AccountHeader = ({
                   <>
                     <div className="AccountHeader__network-selector">
                       {networksList.map((n, i) => (
-                        <div className="AccountHeader__options__item">
+                        <div
+                          className="AccountHeader__options__item"
+                          key={n.networkName}
+                        >
                           <div
                             className="AccountHeader__network-selector__row"
-                            key={n.networkName}
                             onClick={async () => {
                               await onClickRow({ network: n });
                               setIsNetworkSelectorOpen(false);

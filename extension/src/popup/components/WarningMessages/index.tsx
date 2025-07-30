@@ -433,10 +433,10 @@ export const BlockaidByLine = ({
         <Text as="p" size="sm" weight="medium">
           {t("Powered by ")}
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <g clip-path="url(#clip0_5576_70196)">
+            <g clipPath="url(#clip0_5576_70196)">
               <path
-                fill-rule="evenodd"
-                clip-rule="evenodd"
+                fillRule="evenodd"
+                clipRule="evenodd"
                 d="M9.76866 2.29851H0.130597V0H9.76866C11.5709 0 13.0336 1.46269 13.0336 3.26493C13.0336 5.06716 11.5709 6.52985 9.76866 6.52985H2.76866C2.50746 6.52985 2.27239 6.73881 2.27239 7C2.27239 7.26119 2.48134 7.47015 2.76866 7.47015H9.76866C11.5709 7.47015 13.0336 8.93284 13.0336 10.7351C13.0336 12.5373 11.5709 14 9.76866 14H0.130597V11.7015H9.76866C10.291 11.7015 10.7351 11.2575 10.7351 10.7351C10.7351 10.2127 10.291 9.76866 9.76866 9.76866H2.76866C1.25373 9.76866 0 8.54105 0 7C0 5.45896 1.25373 4.23134 2.76866 4.23134H9.76866C10.291 4.23134 10.7351 3.78731 10.7351 3.26493C10.7351 2.71642 10.291 2.29851 9.76866 2.29851Z"
                 fill="#707070"
               />
@@ -1375,14 +1375,10 @@ export const BlockAidMaliciousLabel = ({
   );
 };
 
-export const BlockAidMissLabel = ({ onClick }: { onClick: () => void }) => {
+export const BlockAidMissLabel = () => {
   const { t } = useTranslation();
   return (
-    <div
-      className="ScanLabel ScanMiss"
-      data-testid="blockaid-miss-label"
-      onClick={onClick}
-    >
+    <div className="ScanLabel ScanMiss" data-testid="blockaid-miss-label">
       <div className="ScanLabel__Info">
         <div className="Icon">
           <Icon.InfoSquare className="WarningMessage__icon" />
@@ -1390,9 +1386,6 @@ export const BlockAidMissLabel = ({ onClick }: { onClick: () => void }) => {
         <p className="Message">
           {t("Unable to scan site for malicious behavior")}
         </p>
-      </div>
-      <div className="ScanLabel__Action">
-        <Icon.ChevronRight />
       </div>
     </div>
   );
@@ -1408,7 +1401,7 @@ export const BlockAidSiteScanLabel = ({
   onClick: () => void;
 }) => {
   if (status === "miss") {
-    return <BlockAidMissLabel onClick={onClick} />;
+    return <BlockAidMissLabel />;
   }
 
   if (isMalicious) {

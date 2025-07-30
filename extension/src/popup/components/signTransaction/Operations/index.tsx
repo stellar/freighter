@@ -15,7 +15,7 @@ import { FlaggedKeys } from "types/transactions";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { truncateString, truncatedPoolId } from "helpers/stellar";
 import { scanAsset } from "popup/helpers/blockaid";
-
+import { getCreateContractArgs } from "popup/helpers/soroban";
 import {
   KeyValueClaimants,
   KeyValueInvokeHostFn,
@@ -27,8 +27,8 @@ import {
   KeyValueWithPublicKey,
   PathList,
 } from "./KeyVal";
+
 import "./styles.scss";
-import { getCreateContractArgs } from "popup/helpers/soroban";
 
 const MemoRequiredWarning = ({
   isDestMemoRequired,

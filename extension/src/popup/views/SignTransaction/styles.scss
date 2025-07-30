@@ -245,6 +245,10 @@
           white-space: pre-wrap;
           overflow: hidden;
         }
+
+        svg {
+          color: var(--sds-clr-gray-09);
+        }
       }
     }
   }
@@ -268,6 +272,7 @@
     flex-direction: column;
     width: 100%;
     overflow-y: scroll;
+    max-width: 57rem;
 
     &__Header {
       display: flex;
@@ -465,8 +470,9 @@
   &__AuthEntryBtn {
     width: 100%;
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
+    gap: pxToRem(8px);
     cursor: pointer;
 
     svg {
@@ -474,6 +480,7 @@
     }
 
     .Icon--rotate {
+      flex-shrink: 0;
       transition: transform 0.2s;
     }
     .Icon--rotate.open {
@@ -482,9 +489,21 @@
 
     &__Title {
       display: flex;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
 
       svg {
+        flex-shrink: 0;
         margin-right: pxToRem(8px);
+      }
+
+      span {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
     }
   }

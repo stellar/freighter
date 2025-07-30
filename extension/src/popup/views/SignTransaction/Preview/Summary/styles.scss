@@ -12,6 +12,8 @@
 
     &:not(:last-child) {
       margin-bottom: pxToRem(12px);
+      padding-bottom: pxToRem(12px);
+      border-bottom: 1px solid var(--sds-clr-gray-06);
     }
 
     &__title {
@@ -33,6 +35,10 @@
           text-overflow: ellipsis;
           white-space: pre-wrap;
           overflow: hidden;
+        }
+
+        svg {
+          color: var(--sds-clr-gray-09);
         }
       }
     }

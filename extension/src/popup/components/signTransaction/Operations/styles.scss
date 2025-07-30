@@ -45,19 +45,38 @@
 
       &:not(:last-child) {
         margin-bottom: pxToRem(12px);
+        padding-bottom: pxToRem(12px);
+        border-bottom: 1px solid var(--sds-clr-gray-06);
       }
 
       & > .Operations__pair--key {
-        width: 200px;
+        flex: 2;
         text-overflow: ellipsis;
         color: var(--sds-clr-gray-11);
       }
 
       & > .Operations__pair--value {
-        width: 200px;
-        flex-grow: 1;
+        flex: 2;
+        min-width: 0;
         display: flex;
         justify-content: flex-end;
+        align-items: center;
+        text-align: right;
+
+        .Operations__pair--value-text {
+          display: block;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          min-width: 0;
+          max-width: 100%;
+        }
+
+        .CopyValue {
+          svg {
+            color: var(--sds-clr-gray-09);
+          }
+        }
       }
 
       &--invoke {

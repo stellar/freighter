@@ -58,9 +58,9 @@ export const Summary = (props: SummaryProps) => (
       <div className="TxInfoBlock__title">
         <p>XDR</p>
       </div>
-      <p className="TxInfoBlock__value">
+      <span className="TxInfoBlock__value">
         <CopyValue value={props.xdr} displayValue={props.xdr} />
-      </p>
+      </span>
     </div>
   </div>
 );

@@ -13,8 +13,8 @@ import {
   xdr,
 } from "stellar-sdk";
 import { CopyText, Icon, Loader } from "@stellar/design-system";
-import { getContractSpec } from "@shared/api/internal";
 
+import { getContractSpec } from "@shared/api/internal";
 import { CLAIM_PREDICATES } from "constants/transaction";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { CopyValue } from "popup/components/CopyValue";
@@ -45,7 +45,7 @@ export const KeyValueList = ({
       className="Operations__pair--value"
       data-testid="OperationKeyVal__value"
     >
-      {operationValue}
+      <span className="Operations__pair--value-text">{operationValue}</span>
     </div>
   </div>
 );
@@ -424,7 +424,7 @@ export const KeyValueInvokeHostFnArgs = ({
       )}
       <div className="OperationParameters" data-testid="OperationParameters">
         {args.map((arg, ind) => (
-          <CopyText textToCopy={scValByType(arg)}>
+          <CopyText textToCopy={scValByType(arg)} key={arg.toXDR().toString()}>
             <div className="Parameters">
               <div className="ParameterKey">
                 {argNames[ind] && argNames[ind]}

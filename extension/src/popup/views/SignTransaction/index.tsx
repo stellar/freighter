@@ -304,6 +304,7 @@ export const SignTransaction = () => {
   const hasAuthEntries = _tx.operations.some(
     (op) => op.type === "invokeHostFunction" && op.auth && op.auth.length,
   );
+
   const assetDiffs =
     scanResult?.simulation?.status === "Success"
       ? scanResult.simulation.assets_diffs?.[publicKey]
@@ -553,11 +554,11 @@ const AuthEntries = ({ operation }: AuthEntriesProps) => {
     const renderDetailTitle = (detail: InvocationArgs) => {
       switch (detail.type) {
         case "invoke": {
-          return detail.fnName;
+          return <span>{detail.fnName}</span>;
         }
         case "sac":
         case "wasm": {
-          return "Contract creation";
+          return <span>Contract creation</span>;
         }
         default: {
           return null;
@@ -670,7 +671,7 @@ const AuthEntries = ({ operation }: AuthEntriesProps) => {
         {details.map((detail, ind) => (
           <div
             className="SignTransaction__AuthEntryContainer"
-            key={authEntry.toXDR("raw").toString()}
+            key={`${authEntry.toXDR("raw").toString()}-${ind}`}
           >
             <div
               className="SignTransaction__AuthEntryBtn"
@@ -701,7 +702,11 @@ const AuthEntries = ({ operation }: AuthEntriesProps) => {
         <Icon.Key01 />
         <span>Authorizations</span>
       </div>
-      {authEntries.map(renderAuthEntry)}
+      {authEntries.map((entry) => (
+        <React.Fragment key={entry.toXDR("raw").toString()}>
+          {renderAuthEntry(entry)}
+        </React.Fragment>
+      ))}
     </div>
   );
 };
