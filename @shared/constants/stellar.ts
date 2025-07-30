@@ -24,8 +24,7 @@ export enum FRIENDBOT_URLS {
 }
 
 export const SOROBAN_RPC_URLS: { [key in NETWORKS]: string } = {
-  [NETWORKS.PUBLIC]:
-    "http://soroban-rpc-pubnet-prd.soroban-rpc-pubnet-prd.svc.cluster.local:8000",
+  [NETWORKS.PUBLIC]: "http://stellar-rpc-pubnet-prd:8000",
   [NETWORKS.TESTNET]: "https://soroban-testnet.stellar.org/",
   [NETWORKS.FUTURENET]: "https://rpc-futurenet.stellar.org/",
 };
