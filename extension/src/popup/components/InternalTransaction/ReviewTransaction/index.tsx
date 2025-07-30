@@ -199,29 +199,29 @@ export const ReviewTx = ({
               <div className="ReviewTx__Details">
                 <Card>
                   <div className="ReviewTx__Details__Row">
-                    <div className="ReviewTx__Details__Memo__Title">
+                    <div className="ReviewTx__Details__Row__Title">
                       <Icon.File02 />
                       Memo
                     </div>
-                    <div className="ReviewTx__Details__Memo__Value">
+                    <div className="ReviewTx__Details__Row__Value">
                       {memo || "None"}
                     </div>
                   </div>
                   <div className="ReviewTx__Details__Row">
-                    <div className="ReviewTx__Details__Fee__Title">
+                    <div className="ReviewTx__Details__Row__Title">
                       <Icon.Route />
                       Fee
                     </div>
-                    <div className="ReviewTx__Details__Fee__Value">
+                    <div className="ReviewTx__Details__Row__Value">
                       {fee} XLM
                     </div>
                   </div>
                   <div className="ReviewTx__Details__Row">
-                    <div className="ReviewTx__Details__Fee__Title">
+                    <div className="ReviewTx__Details__Row__Title">
                       <Icon.FileCode02 />
                       XDR
                     </div>
-                    <div className="ReviewTx__Details__Fee__Value">
+                    <div className="ReviewTx__Details__Row__Value">
                       <CopyValue
                         value={simulationState.data!.transactionXdr}
                         displayValue={simulationState.data!.transactionXdr}

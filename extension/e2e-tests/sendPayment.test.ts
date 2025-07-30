@@ -308,7 +308,9 @@ test("Send XLM payment to M address", async ({ page, extensionId }) => {
     timeout: 60000,
   });
 
-  await page.getByTestId(`SubmitAction`).click({ force: true });
+  const submitButton = page.getByTestId("SubmitAction");
+  await submitButton.scrollIntoViewIfNeeded();
+  await submitButton.click();
 
   await expect(page.getByText("Sent!")).toBeVisible({
     timeout: 60000,
