@@ -248,7 +248,7 @@ export const addIsNonSSLEnabled = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.2.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.2.0" })) {
     await localStore.setItem(IS_NON_SSL_ENABLED_ID, false);
     await migrateDataStorageVersion("4.2.0");
   }
@@ -258,7 +258,7 @@ export const removeStellarExpertData = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.3.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.3.0" })) {
     await localStore.remove([
       "cachedBlockedAccountsId",
       "cachedBlockedAccountsId_date",
@@ -273,7 +273,7 @@ export const addHideDustIsEnabled = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.4.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.4.0" })) {
     await localStore.setItem(IS_HIDE_DUST_ENABLED_ID, true);
 
     await migrateDataStorageVersion("4.4.0");
@@ -284,7 +284,7 @@ export const addBlockaidAnnouncedIsEnabled = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.5.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.5.0" })) {
     await localStore.setItem(IS_BLOCKAID_ANNOUNCED_ID, false);
 
     await migrateDataStorageVersion("4.5.0");
@@ -295,7 +295,7 @@ export const migrateAllowlistToKeyNetworkSchema = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.6.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.6.0" })) {
     const currentAllowlist = await localStore.getItem(ALLOWLIST_ID);
     const lastUsedAccount = await localStore.getItem(LAST_USED_ACCOUNT);
     let allowlistByKey = {};
@@ -328,7 +328,7 @@ export const migratePubnetRpcUrl = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lte(storageVersion, "5.33.6")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "5.33.5" })) {
     const networksList: NetworkDetails[] =
       (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
@@ -353,7 +353,7 @@ export const migratePubnetRpcUrl = async () => {
     }
 
     await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
-    await migrateDataStorageVersion("5.33.6");
+    await migrateDataStorageVersion("5.33.5");
   }
 };
 
@@ -380,4 +380,21 @@ export const migrateDataStorageVersion = async (version: string) => {
 
   // This value should be manually updated when a new schema change is made
   await localStore.setItem(STORAGE_VERSION, version);
+};
+
+const shouldRunMigration = ({
+  storageVersion,
+  migrationVersion,
+}: {
+  storageVersion: string;
+  migrationVersion: string;
+}) => {
+  try {
+    if (!storageVersion || semver.lt(storageVersion, migrationVersion)) {
+      return true;
+    }
+    return false;
+  } catch (error) {
+    return true;
+  }
 };
