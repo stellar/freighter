@@ -1,53 +1,45 @@
-.BodyWrapper {
-  h5 {
-    color: var(--sds-clr-gray-12);
-  }
+@use "../../../../styles/utils.scss" as *;
 
-  .Operations {
+.TxInfo {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  font-size: pxToRem(16px);
+
+  .TxInfoBlock {
     display: flex;
-    flex-direction: column;
-    margin-bottom: 1rem;
+    justify-content: space-between;
 
-    .OpName {
+    &:not(:last-child) {
+      margin-bottom: pxToRem(12px);
+      padding-bottom: pxToRem(12px);
+      border-bottom: 1px solid var(--sds-clr-gray-06);
+    }
+
+    &__title {
       display: flex;
       align-items: center;
-      margin-bottom: 0.25rem;
-
-      &:first-child {
-        margin-top: 0.5rem;
-      }
-
-      p {
-        font-size: 0.75rem;
-        margin-left: 0.5rem;
-      }
+      color: var(--sds-clr-gray-11);
     }
-  }
 
-  .TxInfo {
-    display: flex;
-    flex-direction: column;
-    margin-top: 0.5rem;
+    &__value {
+      color: var(
+        --sds-clr-gray-12
+      ) !important; //sds rule does not allwo changing colors on p tags
 
-    .TxInfoBlock {
-      display: flex;
-      justify-content: space-between;
+      .CopyValue {
+        max-width: pxToRem(120px);
 
-      &__title {
-        display: flex;
-        align-items: center;
-
-        p {
-          font-size: 0.75rem;
-          margin-left: 0.5rem;
+        .Value {
+          max-width: pxToRem(100px);
+          text-overflow: ellipsis;
+          white-space: pre-wrap;
+          overflow: hidden;
         }
-      }
 
-      &__value {
-        font-size: 0.75rem;
-        color: var(
-          --sds-clr-gray-12
-        ) !important; //sds rule does not allwo changing colors on p tags
+        svg {
+          color: var(--sds-clr-gray-09);
+        }
       }
     }
   }

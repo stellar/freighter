@@ -5,9 +5,21 @@
   overflow: hidden;
   position: relative;
   padding: 1rem;
+  padding-top: 0;
   background-color: var(--sds-clr-gray-01);
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: space-between;
+
+  .multi-pane-slider__pane--active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .BlockaidDetailsExpanded {
+    padding-top: 1rem;
+  }
 
   &__tabWrapper {
     display: flex;
@@ -16,57 +28,31 @@
     width: 100%;
   }
 
-  &__Title {
+  &__TitleRow {
     display: flex;
-    flex-direction: column;
-    height: 130px;
-  }
+    align-items: center;
+    margin-bottom: pxToRem(16px);
 
-  .Tabs {
-    width: 100%;
-    height: 100%;
-    flex-grow: 1;
-
-    .BodyWrapper {
-      width: 100%;
+    &__Detail {
       display: flex;
       flex-direction: column;
-      border-radius: 4px;
-      background-color: var(--sds-clr-gray-02);
-      padding: 1rem;
-      overflow-y: scroll;
+      margin-left: pxToRem(12px);
+    }
+
+    &__Domain {
+      font-size: pxToRem(14px);
+      color: var(--sds-clr-gray-11);
     }
   }
 
   &__Body {
     display: flex;
     flex-direction: column;
-    margin-top: 2rem;
+    padding-top: 2rem;
     max-width: 57rem;
     width: 100%;
-  }
-
-  &--connection-request {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 0.75rem;
-  }
-
-  &--connection-request-pill {
-    display: flex;
-    align-items: center;
-    padding: 0 0.5rem;
-    background-color: var(--sds-clr-gray-02);
-    color: var(--sds-clr-gray-12);
-    border: 1px solid var(--sds-clr-gray-03);
-    border-radius: 6px;
-    margin-bottom: 0.5rem;
-    line-height: 1.25rem;
-
-    p {
-      font-size: 0.75rem;
-      margin-left: 0.25rem;
-    }
+    flex: 1;
+    overflow-y: auto;
   }
 
   .Blob {
@@ -130,13 +116,13 @@
     display: flex;
     flex-direction: column;
     align-self: flex-end;
+    align-items: center;
     width: 100%;
-    height: 130px;
-
-    &__SigningWith {
-      display: flex;
-      flex-direction: column;
-    }
+    position: sticky;
+    bottom: 0;
+    background-color: var(--sds-clr-gray-01);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 10;
 
     &__PublicKey {
       display: flex;
@@ -153,8 +139,388 @@
 
     &__BtnRow {
       display: flex;
+      max-width: 57rem;
+      width: 100%;
       margin-top: 10px;
       gap: 0.5rem;
     }
+
+    &__BtnRowReject {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      margin-top: 10px;
+      gap: 0.5rem;
+
+      .SignTransaction__Action__ConfirmAnyway {
+        border: 0;
+        color: var(--sds-clr-red-11);
+        background-color: transparent;
+        cursor: pointer;
+        margin-top: pxToRem(12px);
+        padding-top: 0;
+
+        &.Warning {
+          color: var(--sds-clr-gray-11);
+        }
+      }
+    }
+  }
+
+  &__AssetDiffs {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+  }
+
+  &__AssetDiffRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+
+    &:not(:last-child) {
+      margin-bottom: pxToRem(12px);
+      padding-bottom: pxToRem(12px);
+      border-bottom: 1px solid var(--sds-clr-gray-06);
+    }
+
+    &__Asset {
+      display: flex;
+      align-items: center;
+    }
+
+    &__Amount {
+      &.Credit {
+        color: var(--sds-clr-green-11);
+      }
+      &.Debit {
+        color: var(--sds-clr-red-11);
+      }
+    }
+  }
+
+  &__Metadata {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    margin-top: pxToRem(12px);
+
+    &__Row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+
+      &:not(:last-child) {
+        margin-bottom: pxToRem(12px);
+        padding-bottom: pxToRem(12px);
+        border-bottom: 1px solid var(--sds-clr-gray-06);
+      }
+    }
+
+    &__Label {
+      display: flex;
+      align-items: center;
+      color: var(--sds-clr-gray-11);
+
+      svg {
+        margin-right: pxToRem(8px);
+      }
+    }
+
+    &__Value {
+      .CopyValue {
+        max-width: pxToRem(120px);
+
+        .Value {
+          max-width: pxToRem(100px);
+          text-overflow: ellipsis;
+          white-space: pre-wrap;
+          overflow: hidden;
+        }
+
+        svg {
+          color: var(--sds-clr-gray-09);
+        }
+      }
+    }
+  }
+
+  &__TransactionDetailsBtn {
+    display: flex;
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    margin-top: pxToRem(12px);
+    color: var(--sds-clr-lilac-11);
+    cursor: pointer;
+
+    svg {
+      margin-right: pxToRem(8px);
+    }
+  }
+
+  &__TransactionDetails {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    overflow-y: scroll;
+    max-width: 57rem;
+
+    &__Header {
+      display: flex;
+      justify-content: space-between;
+      margin: pxToRem(12px) 0;
+
+      .DetailsMark {
+        display: flex;
+        width: 40px;
+        height: 40px;
+        padding: 7.5px;
+        justify-content: center;
+        align-items: center;
+        aspect-ratio: 1/1;
+        border-radius: 8px;
+        border: 1px solid var(--sds-clr-lilac-06);
+        background: var(--sds-clr-lilac-03);
+
+        svg {
+          width: 25px;
+          height: 25px;
+          color: var(--sds-clr-lilac-09);
+        }
+      }
+
+      .Close {
+        display: flex;
+        width: 32px;
+        height: 32px;
+        justify-content: center;
+        align-items: center;
+        border-radius: 1000px;
+        background: var(--sds-clr-gray-03);
+        color: var(--sds-clr-gray-09);
+      }
+    }
+
+    &__Summary {
+      padding: pxToRem(12px) pxToRem(12px);
+      border-radius: pxToRem(16px);
+      background-color: var(--sds-clr-gray-03);
+      margin-top: pxToRem(12px);
+    }
+
+    &__Title {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      margin: pxToRem(12px) 0;
+      font-size: pxToRem(20px);
+    }
+  }
+
+  &__AuthEntries {
+    width: 100%;
+    font-size: pxToRem(16px);
+    margin-top: pxToRem(12px);
+    padding-top: pxToRem(12px);
+
+    &__TitleRow {
+      display: flex;
+      color: var(--sds-clr-gray-11);
+      margin-bottom: pxToRem(12px);
+
+      svg {
+        margin-right: pxToRem(8px);
+      }
+    }
+  }
+
+  &__AuthEntry {
+    width: 100%;
+    font-size: pxToRem(16px);
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    margin-top: pxToRem(12px);
+    color: var(--sds-clr-lilac-11);
+    cursor: pointer;
+
+    &__TitleRow {
+      display: flex;
+      color: var(--sds-clr-gray-11);
+      margin-bottom: pxToRem(12px);
+
+      svg {
+        margin-right: pxToRem(8px);
+      }
+    }
+
+    &__InfoBlock {
+      &_Inner {
+        padding: pxToRem(12px) pxToRem(16px);
+        border-radius: pxToRem(16px);
+        background-color: var(--sds-clr-gray-02);
+        margin-top: pxToRem(12px);
+        font-size: pxToRem(14px);
+
+        &__Value {
+          display: flex;
+          flex-direction: column;
+
+          &:not(:first-child) {
+            margin-top: pxToRem(12px);
+          }
+
+          .CopyText {
+            &:not(:first-child) {
+              margin-top: pxToRem(12px);
+            }
+          }
+        }
+      }
+
+      .Operations__pair {
+        align-items: center;
+        color: var(--sds-clr-gray-12);
+        display: flex;
+        line-height: 1.5rem;
+        margin-bottom: pxToRem(12px);
+
+        & > .Operations__pair--key {
+          width: 200px;
+          text-overflow: ellipsis;
+          color: var(--sds-clr-gray-11);
+        }
+
+        & > .Operations__pair--value {
+          width: 200px;
+          flex-grow: 1;
+          display: flex;
+          justify-content: flex-end;
+        }
+
+        &--invoke {
+          flex-direction: column;
+          align-items: baseline;
+          color: var(--sds-clr-gray-12);
+          display: flex;
+          justify-content: space-between;
+          line-height: 1.5rem;
+        }
+
+        &--smart-contract {
+          flex-direction: column;
+
+          pre {
+            margin: 0;
+          }
+        }
+
+        & > :nth-child(2) {
+          color: var(--sds-clr-gray-12);
+        }
+      }
+
+      .Parameters {
+        display: flex;
+        flex-direction: column;
+
+        .ParameterKey {
+          display: flex;
+          align-items: center;
+          color: var(--sds-clr-gray-11);
+
+          svg {
+            margin-left: pxToRem(8px);
+          }
+        }
+
+        .ParameterValue {
+          margin-top: pxToRem(8px);
+          word-break: break-word;
+        }
+      }
+    }
+  }
+
+  &__AuthEntryContainer {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    font-size: pxToRem(16px);
+    padding: pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+
+    &:not(:first-child) {
+      margin-top: pxToRem(12px);
+    }
+  }
+
+  &__AuthEntryBtn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: pxToRem(8px);
+    cursor: pointer;
+
+    svg {
+      color: var(--sds-clr-gray-09);
+    }
+
+    .Icon--rotate {
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+    .Icon--rotate.open {
+      transform: rotate(90deg);
+    }
+
+    &__Title {
+      display: flex;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+
+      svg {
+        flex-shrink: 0;
+        margin-right: pxToRem(8px);
+      }
+
+      span {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  &__AuthEntryContent {
+    width: 100%;
+    animation: fadeIn 0.2s ease-in-out;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

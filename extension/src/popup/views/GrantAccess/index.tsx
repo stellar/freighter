@@ -188,7 +188,7 @@ export const GrantAccess = () => {
         {isMalicious ? (
           <div className="GrantAccess__ButtonsContainerMalicious">
             <Button
-              size="md"
+              size="lg"
               isFullWidth
               isRounded
               variant="destructive"
@@ -199,7 +199,7 @@ export const GrantAccess = () => {
             <Button
               data-testid="grant-access-connect-anyway-button"
               className="GrantAccess__ConnectAnywayBtn"
-              size="md"
+              size="lg"
               isFullWidth
               isRounded
               variant="error"
@@ -212,7 +212,7 @@ export const GrantAccess = () => {
         ) : (
           <div className="GrantAccess__ButtonsContainer">
             <Button
-              size="md"
+              size="lg"
               isFullWidth
               isRounded
               variant="tertiary"
@@ -222,7 +222,7 @@ export const GrantAccess = () => {
             </Button>
             <Button
               data-testid="grant-access-connect-button"
-              size="md"
+              size="lg"
               isFullWidth
               isRounded
               variant="secondary"

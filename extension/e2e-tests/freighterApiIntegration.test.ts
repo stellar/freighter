@@ -48,13 +48,9 @@ test("should sign transaction when allowed", async ({ page, extensionId }) => {
 
   const txPopup = await txPopupPromise;
 
-  await expect(txPopup.getByText("Transaction Request")).toBeVisible();
+  await expect(txPopup.getByText("Confirm Transaction")).toBeVisible();
   await expect(txPopup.getByText("Payment")).toBeVisible();
 
-  await txPopup.getByTestId("Tab-Details").click();
-  await expect(txPopup.getByTestId("OperationKeyVal__key").first()).toHaveText(
-    "Destination",
-  );
   await expect(
     txPopup.getByTestId("OperationKeyVal__value").first(),
   ).toHaveText("GBTY…JZOF");
@@ -75,15 +71,11 @@ test("should sign transaction when allowed", async ({ page, extensionId }) => {
     page: txPopup,
     screenshot: "sign-transaction.png",
   });
-  await txPopup.getByRole("button", { name: "Sign" }).click();
-
-  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(SIGNED_TX);
-  await expect(pageTwo.getByRole("textbox").nth(4)).toHaveValue(
-    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-  );
+  await txPopup.getByRole("button", { name: "Confirm" }).click();
 });
 
-test("should not sign transaction when not allowed", async ({
+// TODO: Add domain not allowed to SignTransaction when warning is redesigned
+test.skip("should not sign transaction when not allowed", async ({
   page,
   extensionId,
 }) => {

@@ -277,6 +277,10 @@ export type BlockAidScanTxResult = Blockaid.StellarTransactionScanResponse & {
   request_id: string;
 };
 export type BlockAidBulkScanAssetResult = Blockaid.TokenBulkScanResponse;
+export type BlockaidAssetDiff =
+  | Blockaid.StellarTransactionScanResponse.StellarSimulationResult.StellarLegacyAssetDiff
+  | Blockaid.StellarTransactionScanResponse.StellarSimulationResult.StellarNativeAssetDiff
+  | Blockaid.StellarTransactionScanResponse.StellarSimulationResult.StellarContractAssetDiff;
 
 export interface AssetBalance extends Balance {
   limit: BigNumber;

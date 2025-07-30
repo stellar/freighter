@@ -470,7 +470,7 @@ export interface FnArgsCreateSac {
   args?: xdr.ScVal[];
 }
 
-type InvocationArgs = FnArgsInvoke | FnArgsCreateWasm | FnArgsCreateSac;
+export type InvocationArgs = FnArgsInvoke | FnArgsCreateWasm | FnArgsCreateSac;
 
 const isInvocationArg = (
   invocation: InvocationArgs | undefined,

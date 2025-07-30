@@ -1,4 +1,6 @@
 import { Address, xdr, StrKey } from "stellar-sdk";
+import yaml from "js-yaml";
+
 import { scValByType } from "../soroban";
 
 const ACCOUNT = "GBBM6BKZPEHWYO3E3YKREDPQXMS4VK35YLNU7NFBRI26RAN7GI5POFBB";

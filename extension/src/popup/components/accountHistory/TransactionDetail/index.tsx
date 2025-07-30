@@ -407,7 +407,7 @@ export const TransactionDetail = ({
       </div>
       {!isCustomNetwork(networkDetails) ? (
         <Button
-          size="md"
+          size="lg"
           variant="secondary"
           isFullWidth
           isRounded

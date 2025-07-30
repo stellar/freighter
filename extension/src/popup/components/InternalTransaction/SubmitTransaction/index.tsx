@@ -27,11 +27,11 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { navigateTo, openTab } from "popup/helpers/navigate";
+import { iconsSelector } from "popup/ducks/cache";
+import { resetSimulation } from "popup/ducks/token-payment";
 import { SubmitFail } from "../SubmitFail";
 
 import "./styles.scss";
-import { iconsSelector } from "popup/ducks/cache";
-import { resetSimulation } from "popup/ducks/token-payment";
 
 interface SendingTransactionProps {
   xdr: string;
@@ -127,7 +127,7 @@ export const SendingTransaction = ({
                     complete in less than a minute.
                   </div>
                   <Button
-                    size="md"
+                    size="lg"
                     isFullWidth
                     isRounded
                     variant="tertiary"
@@ -143,7 +143,7 @@ export const SendingTransaction = ({
               {!isCustomNetwork(networkDetails) && isSuccess ? (
                 <>
                   <Button
-                    size="md"
+                    size="lg"
                     isFullWidth
                     isRounded
                     variant="tertiary"
@@ -160,7 +160,7 @@ export const SendingTransaction = ({
               {isSuccess && (
                 <div className="SendingTransaction__Footer__Done">
                   <Button
-                    size="md"
+                    size="lg"
                     isFullWidth
                     isRounded
                     variant="secondary"

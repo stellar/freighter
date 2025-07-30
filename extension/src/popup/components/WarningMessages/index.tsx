@@ -220,25 +220,6 @@ export const MemoWarningMessage = ({
   ) : null;
 };
 
-interface FlaggedWarningMessageProps {
-  isMemoRequired: boolean;
-  isSuspicious: boolean;
-  blockaidData: BlockAidScanAssetResult;
-}
-
-export const FlaggedWarningMessage = ({
-  isMemoRequired,
-  isSuspicious,
-  blockaidData,
-}: FlaggedWarningMessageProps) => (
-  <>
-    {isSuspicious ? (
-      <BlockaidAssetScanLabel blockaidData={blockaidData} />
-    ) : null}
-    <MemoWarningMessage isMemoRequired={isMemoRequired} />
-  </>
-);
-
 export const DomainNotAllowedWarningMessage = ({
   domain,
 }: {
@@ -452,10 +433,10 @@ export const BlockaidByLine = ({
         <Text as="p" size="sm" weight="medium">
           {t("Powered by ")}
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <g clip-path="url(#clip0_5576_70196)">
+            <g clipPath="url(#clip0_5576_70196)">
               <path
-                fill-rule="evenodd"
-                clip-rule="evenodd"
+                fillRule="evenodd"
+                clipRule="evenodd"
                 d="M9.76866 2.29851H0.130597V0H9.76866C11.5709 0 13.0336 1.46269 13.0336 3.26493C13.0336 5.06716 11.5709 6.52985 9.76866 6.52985H2.76866C2.50746 6.52985 2.27239 6.73881 2.27239 7C2.27239 7.26119 2.48134 7.47015 2.76866 7.47015H9.76866C11.5709 7.47015 13.0336 8.93284 13.0336 10.7351C13.0336 12.5373 11.5709 14 9.76866 14H0.130597V11.7015H9.76866C10.291 11.7015 10.7351 11.2575 10.7351 10.7351C10.7351 10.2127 10.291 9.76866 9.76866 9.76866H2.76866C1.25373 9.76866 0 8.54105 0 7C0 5.45896 1.25373 4.23134 2.76866 4.23134H9.76866C10.291 4.23134 10.7351 3.78731 10.7351 3.26493C10.7351 2.71642 10.291 2.29851 9.76866 2.29851Z"
                 fill="#707070"
               />
@@ -1394,14 +1375,10 @@ export const BlockAidMaliciousLabel = ({
   );
 };
 
-export const BlockAidMissLabel = ({ onClick }: { onClick: () => void }) => {
+export const BlockAidMissLabel = () => {
   const { t } = useTranslation();
   return (
-    <div
-      className="ScanLabel ScanMiss"
-      data-testid="blockaid-miss-label"
-      onClick={onClick}
-    >
+    <div className="ScanLabel ScanMiss" data-testid="blockaid-miss-label">
       <div className="ScanLabel__Info">
         <div className="Icon">
           <Icon.InfoSquare className="WarningMessage__icon" />
@@ -1409,9 +1386,6 @@ export const BlockAidMissLabel = ({ onClick }: { onClick: () => void }) => {
         <p className="Message">
           {t("Unable to scan site for malicious behavior")}
         </p>
-      </div>
-      <div className="ScanLabel__Action">
-        <Icon.ChevronRight />
       </div>
     </div>
   );
@@ -1427,7 +1401,7 @@ export const BlockAidSiteScanLabel = ({
   onClick: () => void;
 }) => {
   if (status === "miss") {
-    return <BlockAidMissLabel onClick={onClick} />;
+    return <BlockAidMissLabel />;
   }
 
   if (isMalicious) {
@@ -1440,57 +1414,78 @@ export const BlockAidSiteScanLabel = ({
 
 export const BlockaidTxScanLabel = ({
   scanResult,
+  onClick,
 }: {
   scanResult: BlockAidScanTxResult;
+  onClick: () => void;
 }) => {
   const { t } = useTranslation();
-  const { simulation, validation, request_id: requestId } = scanResult;
+  const { simulation, validation } = scanResult;
 
   if (simulation && "error" in simulation) {
     const header = t("This transaction is expected to fail");
     return (
-      <BlockaidWarningModal
-        header={header}
-        description={[simulation.error]}
-        isWarning
-        requestId={requestId}
-      />
+      <div
+        className="ScanLabel ScanMiss"
+        data-testid="blockaid-miss-label"
+        onClick={onClick}
+      >
+        <div className="ScanLabel__Info">
+          <div className="Icon">
+            <Icon.InfoSquare className="WarningMessage__icon" />
+          </div>
+          <p className="Message">{header}</p>
+        </div>
+        <div className="ScanLabel__Action">
+          <Icon.ChevronRight />
+        </div>
+      </div>
     );
   }
 
-  let message = null;
   if (validation && "result_type" in validation) {
     switch (validation.result_type) {
       case "Malicious": {
-        message = {
-          header: t("This transaction was flagged as malicious"),
-          variant: WarningMessageVariant.highAlert,
-          message: validation.description,
-        };
-
         return (
-          <BlockaidWarningModal
-            header={message.header}
-            description={[message.message]}
-            isWarning={false}
-            requestId={requestId}
-          />
+          <div
+            className="ScanLabel ScanMalicious"
+            data-testid="blockaid-malicious-label"
+            onClick={onClick}
+          >
+            <div className="ScanLabel__Info">
+              <div className="Icon">
+                <Icon.InfoSquare className="WarningMessage__icon" />
+              </div>
+              <p className="Message">
+                {t("This transaction was flagged as malicious")}
+              </p>
+            </div>
+            <div className="ScanLabel__Action">
+              <Icon.ChevronRight />
+            </div>
+          </div>
         );
       }
 
       case "Warning": {
-        message = {
-          header: "This transaction was flagged as suspicious",
-          variant: WarningMessageVariant.warning,
-          message: validation.description,
-        };
-
         return (
-          <BlockaidWarningModal
-            header={message.header}
-            description={[message.message]}
-            isWarning
-          />
+          <div
+            className="ScanLabel ScanMiss"
+            data-testid="blockaid-miss-label"
+            onClick={onClick}
+          >
+            <div className="ScanLabel__Info">
+              <div className="Icon">
+                <Icon.InfoSquare className="WarningMessage__icon" />
+              </div>
+              <p className="Message">
+                {"This transaction was flagged as suspicious"}
+              </p>
+            </div>
+            <div className="ScanLabel__Action">
+              <Icon.ChevronRight />
+            </div>
+          </div>
         );
       }
 
@@ -1501,164 +1496,103 @@ export const BlockaidTxScanLabel = ({
   return <></>;
 };
 
-export const BlockaidAssetScanLabel = ({
-  blockaidData,
-}: {
-  blockaidData: BlockAidScanAssetResult;
-}) => {
-  const isWarning = isBlockaidWarning(blockaidData.result_type);
-
-  return (
-    <BlockaidWarningModal
-      header={`This asset was flagged as ${blockaidData.result_type.toLowerCase()}`}
-      description={blockaidData.features?.map((f) => f.description) || []}
-      isWarning={isWarning}
-      address={blockaidData.address}
-    />
-  );
-};
-
-interface BlockaidWarningModalProps {
-  header: string;
-  description: string[];
-  handleCloseClick?: () => void;
-  isActive?: boolean;
-  isWarning: boolean;
-  requestId?: string;
-  address?: string;
+interface BlockAidTxScanExpandedProps {
+  scanResult: BlockAidScanTxResult;
+  onClose?: () => void;
 }
 
-export const BlockaidWarningModal = ({
-  handleCloseClick,
-  header,
-  description,
-  isActive = false,
-  isWarning,
-  requestId,
-  address,
-}: BlockaidWarningModalProps) => {
-  const { t } = useTranslation();
-  const [isModalActive, setIsModalActive] = useState(isActive);
-  const isAsset = !!address;
+export const BlockAidTxScanExpanded = ({
+  scanResult,
+  onClose,
+}: BlockAidTxScanExpandedProps) => {
+  const { simulation, validation } = scanResult;
 
-  const WarningInfoBlock = ({ hasArrow = false }: { hasArrow?: boolean }) => (
-    <div
-      className={`ScamAssetWarning__box ${
-        isWarning ? "ScamAssetWarning__box--isWarning" : ""
-      }`}
-      data-testid="BlockaidWarningModal__alert"
-    >
-      <div className="ScamAssetWarning__box__content">
-        <div className="Icon">
-          <img
-            className="ScamAssetWarning__box__icon"
-            src={isWarning ? IconWarningBlockaidYellow : IconWarningBlockaid}
-            alt="icon warning blockaid"
-          />
+  if (simulation && "error" in simulation) {
+    return (
+      <div className="BlockaidDetailsExpanded">
+        <div className="BlockaidDetailsExpanded__Header">
+          <div className="WarningMark">
+            <Icon.AlertTriangle />
+          </div>
+          <div className="Close" onClick={onClose}>
+            <Icon.X />
+          </div>
         </div>
-        <div className="ScamAssetWarning__alert">
-          <div className="ScamAssetWarning__description">{header}</div>
-          <BlockaidByLine
-            hasArrow={hasArrow}
-            handleClick={() => setIsModalActive(true)}
-            requestId={requestId}
-            address={address}
-          />
+        <div className="BlockaidDetailsExpanded__Title">Warning</div>
+        <div className="BlockaidDetailsExpanded__SubTitle">
+          This transaction is expected to fail for the following reasons.
+        </div>
+        <div className="BlockaidDetailsExpanded__Details">
+          <div className="BlockaidDetailsExpanded__DetailRow">
+            <Icon.MinusCircle />
+            <span>{simulation.error}</span>
+          </div>
+          <BlockaidByLine address={""} />
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 
-  const truncatedDescription = (desc: string) => {
-    const arr = desc.split(" ");
-
-    return arr.map((word) => {
-      if (word.length > 30) {
+  if (validation && "result_type" in validation) {
+    switch (validation.result_type) {
+      case "Malicious": {
         return (
-          <>
-            <CopyValue
-              value={word}
-              displayValue={`${word.slice(0, 4)}...${word.slice(-4)}`}
-            />{" "}
-          </>
+          <div className="BlockaidDetailsExpanded">
+            <div className="BlockaidDetailsExpanded__Header">
+              <div className="WarningMarkError">
+                <Icon.AlertOctagon />
+              </div>
+              <div className="Close" onClick={onClose}>
+                <Icon.X />
+              </div>
+            </div>
+            <div className="BlockaidDetailsExpanded__Title">Do not proceed</div>
+            <div className="BlockaidDetailsExpanded__SubTitle">
+              This transaction does not appear safe for the following reasons.
+            </div>
+            <div className="BlockaidDetailsExpanded__Details">
+              <div className="BlockaidDetailsExpanded__DetailRowError">
+                <Icon.XCircle />
+                <span>{validation.description}</span>
+              </div>
+              <BlockaidByLine address={""} />
+            </div>
+          </div>
         );
       }
 
-      return <span key={word}>{word} </span>;
-    });
-  };
-
-  return isModalActive ? (
-    <>
-      <WarningInfoBlock hasArrow={false} />
-      {createPortal(
-        <div
-          className="BlockaidWarningModal"
-          data-testid={`BlockaidWarningModal__${isAsset ? "asset" : "tx"}`}
-        >
-          <LoadingBackground isActive />
-          <div className="BlockaidWarningModal__modal">
-            <Card>
-              <div
-                className={`BlockaidWarningModal__modal__icon ${
-                  isWarning
-                    ? "BlockaidWarningModal__modal__icon--isWarning"
-                    : ""
-                }`}
-              >
-                <img
-                  className="BlockaidWarningModal__modal__image"
-                  src={
-                    isWarning ? IconWarningBlockaidYellow : IconWarningBlockaid
-                  }
-                  alt="icon warning blockaid"
-                />
+      case "Warning": {
+        return (
+          <div className="BlockaidDetailsExpanded">
+            <div className="BlockaidDetailsExpanded__Header">
+              <div className="WarningMark">
+                <Icon.AlertTriangle />
               </div>
-
-              <div className="BlockaidWarningModal__modal__title">{header}</div>
-              <div className="BlockaidWarningModal__modal__description">
-                {t(
-                  `${header} by Blockaid. Interacting with this ${
-                    isAsset ? "token" : "transaction"
-                  } may result in loss of funds and is not recommended for the following reasons`,
-                )}
-                :
-                <ul className="ScamAssetWarning__list">
-                  {description.map((d) => (
-                    <li key={d.replace(" ", "-")}>{truncatedDescription(d)}</li>
-                  ))}
-                </ul>
+              <div className="Close" onClick={onClose}>
+                <Icon.X />
               </div>
-              <div className="BlockaidWarningModal__modal__byline">
-                <BlockaidByLine requestId={requestId} address={address} />
+            </div>
+            <div className="BlockaidDetailsExpanded__Title">
+              Suspicious Request
+            </div>
+            <div className="BlockaidDetailsExpanded__SubTitle">
+              This transaction does not appear safe for the following reasons.
+            </div>
+            <div className="BlockaidDetailsExpanded__Details">
+              <div className="BlockaidDetailsExpanded__DetailRow">
+                <Icon.MinusCircle />
+                <span>{validation.description}</span>
               </div>
-
-              <Button
-                data-testid="BlockaidWarningModal__button"
-                size="md"
-                variant="tertiary"
-                isFullWidth
-                type="button"
-                onClick={() =>
-                  handleCloseClick
-                    ? handleCloseClick()
-                    : setIsModalActive(false)
-                }
-              >
-                {t("Got it")}
-              </Button>
-            </Card>
+            </div>
+            <BlockaidByLine address={""} />
           </div>
-        </div>,
-        document.querySelector("#modal-root")!,
-      )}
-    </>
-  ) : (
-    <div
-      className="WarningMessage__activate-button"
-      data-testid={`BlockaidWarningModal__button__${isAsset ? "asset" : "tx"}`}
-    >
-      <WarningInfoBlock hasArrow={false} />
-    </div>
-  );
+        );
+      }
+
+      case "Benign":
+      default:
+    }
+  }
+
+  return <></>;
 };

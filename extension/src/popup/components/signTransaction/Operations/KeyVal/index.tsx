@@ -12,9 +12,9 @@ import {
   StrKey,
   xdr,
 } from "stellar-sdk";
-import { Loader } from "@stellar/design-system";
-import { getContractSpec } from "@shared/api/internal";
+import { CopyText, Icon, Loader } from "@stellar/design-system";
 
+import { getContractSpec } from "@shared/api/internal";
 import { CLAIM_PREDICATES } from "constants/transaction";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { CopyValue } from "popup/components/CopyValue";
@@ -22,12 +22,12 @@ import { truncateString } from "helpers/stellar";
 import { formattedBuffer } from "popup/helpers/formatters";
 
 import {
-  buildInvocationTree,
   getCreateContractArgs,
   InvocationTree,
   scValByType,
 } from "popup/helpers/soroban";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+
 import "./styles.scss";
 
 export const KeyValueList = ({
@@ -45,7 +45,7 @@ export const KeyValueList = ({
       className="Operations__pair--value"
       data-testid="OperationKeyVal__value"
     >
-      {operationValue}
+      <span className="Operations__pair--value-text">{operationValue}</span>
     </div>
   </div>
 );
@@ -139,28 +139,6 @@ export const KeyValueInvocation = ({
     ))}
   </>
 );
-
-export const KeyValueAuthEntry = ({
-  entry,
-}: {
-  entry: xdr.SorobanAuthorizationEntry;
-}) => {
-  const invocation = entry.rootInvocation();
-  const invocationTree = buildInvocationTree(invocation);
-
-  return (
-    <>
-      <KeyValueList operationKey="Root Invocation" operationValue="" />
-      <InvocationByType _invocation={invocationTree} />
-      {invocationTree.invocations.map((subInvocation) => (
-        <KeyValueInvocation
-          key={subInvocation.type}
-          invocation={subInvocation}
-        />
-      ))}
-    </>
-  );
-};
 
 export const KeyValueSigner = ({ signer }: { signer: Signer }) => {
   const { t } = useTranslation();
@@ -399,10 +377,12 @@ export const KeyValueInvokeHostFnArgs = ({
   args,
   contractId,
   fnName,
+  showHeader = true,
 }: {
   args: xdr.ScVal[];
   contractId?: string;
   fnName?: string;
+  showHeader?: boolean;
 }) => {
   const [isLoading, setLoading] = React.useState(true);
   const [argNames, setArgNames] = React.useState([] as string[]);
@@ -436,26 +416,23 @@ export const KeyValueInvokeHostFnArgs = ({
     </div>
   ) : (
     <div className="Operations__pair--invoke" data-testid="OperationKeyVal">
-      <div>Parameters</div>
+      {showHeader && (
+        <div className="Operations--header">
+          <Icon.BracketsEllipses />
+          <span>Parameters</span>
+        </div>
+      )}
       <div className="OperationParameters" data-testid="OperationParameters">
         {args.map((arg, ind) => (
-          <div
-            className="Parameter"
-            key={arg.toXDR().toString()}
-            data-testid="Parameter"
-          >
-            {argNames[ind] && (
-              <div data-testid="ParameterName">{argNames[ind]}</div>
-            )}
-            {arg.switch() === xdr.ScValType.scvAddress() ? (
-              <CopyValue
-                value={scValByType(arg)}
-                displayValue={scValByType(arg)}
-              />
-            ) : (
-              scValByType(arg)
-            )}
-          </div>
+          <CopyText textToCopy={scValByType(arg)} key={arg.toXDR().toString()}>
+            <div className="Parameters">
+              <div className="ParameterKey">
+                {argNames[ind] && argNames[ind]}
+                <Icon.Copy01 />
+              </div>
+              <div className="ParameterValue">{scValByType(arg)}</div>
+            </div>
+          </CopyText>
         ))}
       </div>
     </div>
@@ -494,7 +471,7 @@ export const KeyValueInvokeHostFn = ({
             return (
               <>
                 <KeyValueList
-                  operationKey={t("Invocation Type")}
+                  operationKey={t("Type")}
                   operationValue="Create Contract"
                 />
                 <KeyValueWithPublicKey
@@ -528,9 +505,6 @@ export const KeyValueInvokeHostFn = ({
                     }
                   />
                 )}
-                {createV2Args && (
-                  <KeyValueInvokeHostFnArgs args={createV2Args} />
-                )}
               </>
             );
           }
@@ -538,7 +512,7 @@ export const KeyValueInvokeHostFn = ({
           return (
             <>
               <KeyValueList
-                operationKey={t("Invocation Type")}
+                operationKey={t("Type")}
                 operationValue="Create Contract"
               />
               <KeyValueWithPublicKey
@@ -581,7 +555,7 @@ export const KeyValueInvokeHostFn = ({
         return (
           <>
             <KeyValueList
-              operationKey={t("Invocation Type")}
+              operationKey={t("Type")}
               operationValue="Create Contract"
             />
             {preimageFromAsset.switch().name === "assetTypeCreditAlphanum4" ||
@@ -637,12 +611,11 @@ export const KeyValueInvokeHostFn = ({
           invocation.contractAddress().contractId(),
         );
         const fnName = invocation.functionName().toString();
-        const args = invocation.args();
 
         return (
           <>
             <KeyValueList
-              operationKey={t("Invocation Type")}
+              operationKey={t("Type")}
               operationValue="Invoke Contract"
             />
             <KeyValueList
@@ -650,7 +623,7 @@ export const KeyValueInvokeHostFn = ({
               operationValue={
                 <CopyValue
                   value={contractId}
-                  displayValue={truncateString(contractId, 6)}
+                  displayValue={truncateString(contractId)}
                 />
               }
             />
@@ -658,24 +631,17 @@ export const KeyValueInvokeHostFn = ({
               operationKey={t("Function Name")}
               operationValue={fnName}
             />
-            <KeyValueInvokeHostFnArgs
-              args={args}
-              contractId={contractId}
-              fnName={fnName}
-            />
           </>
         );
       }
 
       case xdr.HostFunctionType.hostFunctionTypeUploadContractWasm(): {
-        const wasm = hostfn.wasm().toString();
         return (
           <>
             <KeyValueList
-              operationKey={t("Invocation Type")}
+              operationKey={t("Type")}
               operationValue="Upload Contract Wasm"
             />
-            <KeyValueList operationKey={t("wasm")} operationValue={wasm} />
           </>
         );
       }
