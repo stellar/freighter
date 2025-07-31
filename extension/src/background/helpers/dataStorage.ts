@@ -107,16 +107,9 @@ export const migrateTokenIdList = async () => {
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   if (shouldRunMigration({ storageVersion, migrationVersion: "1.0.0" })) {
-    try {
-      if (Array.isArray(tokenIdsByKey)) {
-        const newTokenList = {
-          [NETWORKS.FUTURENET]: tokenIdsByKey,
-        };
-        await localStore.setItem(TOKEN_ID_LIST, newTokenList);
-      }
-    } catch (error) {
+    if (Array.isArray(tokenIdsByKey)) {
       const newTokenList = {
-        [NETWORKS.FUTURENET]: [],
+        [NETWORKS.FUTURENET]: tokenIdsByKey,
       };
       await localStore.setItem(TOKEN_ID_LIST, newTokenList);
     }
