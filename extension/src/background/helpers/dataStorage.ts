@@ -123,27 +123,31 @@ export const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   if (shouldRunMigration({ storageVersion, migrationVersion: "2.0.0" })) {
-    const networksList: NetworkDetails[] =
-      (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
+    try {
+      const networksList: NetworkDetails[] =
+        (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
-    const migratedNetworkList = networksList.map((network) => {
-      if (network.network === NETWORKS.TESTNET) {
-        return {
-          ...TESTNET_NETWORK_DETAILS,
-          sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.TESTNET],
-        };
+      const migratedNetworkList = networksList.map((network) => {
+        if (network.network === NETWORKS.TESTNET) {
+          return {
+            ...TESTNET_NETWORK_DETAILS,
+            sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.TESTNET],
+          };
+        }
+
+        return network;
+      });
+
+      const currentNetwork = await localStore.getItem(NETWORK_ID);
+
+      if (currentNetwork && currentNetwork.network === NETWORKS.TESTNET) {
+        await localStore.setItem(NETWORK_ID, TESTNET_NETWORK_DETAILS);
       }
 
-      return network;
-    });
-
-    const currentNetwork = await localStore.getItem(NETWORK_ID);
-
-    if (currentNetwork && currentNetwork.network === NETWORKS.TESTNET) {
-      await localStore.setItem(NETWORK_ID, TESTNET_NETWORK_DETAILS);
+      await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+    } catch (error) {
+      await localStore.setItem(NETWORKS_LIST_ID, DEFAULT_NETWORKS);
     }
-
-    await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
     await migrateDataStorageVersion("2.0.0");
   }
 };
@@ -164,27 +168,31 @@ export const migrateMainnetSorobanRpcUrlNetworkDetails = async () => {
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   if (shouldRunMigration({ storageVersion, migrationVersion: "4.0.0" })) {
-    const networksList: NetworkDetails[] =
-      (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
+    try {
+      const networksList: NetworkDetails[] =
+        (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
-    const migratedNetworkList = networksList.map((network) => {
-      if (network.network === NETWORKS.PUBLIC) {
-        return {
-          ...MAINNET_NETWORK_DETAILS,
-          sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.PUBLIC],
-        };
+      const migratedNetworkList = networksList.map((network) => {
+        if (network.network === NETWORKS.PUBLIC) {
+          return {
+            ...MAINNET_NETWORK_DETAILS,
+            sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.PUBLIC],
+          };
+        }
+
+        return network;
+      });
+
+      const currentNetwork = await localStore.getItem(NETWORK_ID);
+
+      if (currentNetwork && currentNetwork.network === NETWORKS.PUBLIC) {
+        await localStore.setItem(NETWORK_ID, MAINNET_NETWORK_DETAILS);
       }
 
-      return network;
-    });
-
-    const currentNetwork = await localStore.getItem(NETWORK_ID);
-
-    if (currentNetwork && currentNetwork.network === NETWORKS.PUBLIC) {
-      await localStore.setItem(NETWORK_ID, MAINNET_NETWORK_DETAILS);
+      await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+    } catch (error) {
+      await localStore.setItem(NETWORKS_LIST_ID, DEFAULT_NETWORKS);
     }
-
-    await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
     await migrateDataStorageVersion("4.0.0");
   }
 };
@@ -300,17 +308,25 @@ export const migrateAllowlistToKeyNetworkSchema = async () => {
     const lastUsedAccount = await localStore.getItem(LAST_USED_ACCOUNT);
     let allowlistByKey = {};
 
-    if (currentAllowlist && lastUsedAccount) {
-      const allowlistArr = currentAllowlist.split(",").slice(1);
+    try {
+      if (currentAllowlist && lastUsedAccount) {
+        const allowlistArr = currentAllowlist.split(",").slice(1);
 
-      allowlistByKey = {
-        [NETWORK_NAMES.PUBNET]: {},
-        [NETWORK_NAMES.TESTNET]: {
-          [lastUsedAccount]: allowlistArr,
-        },
-        [NETWORK_NAMES.FUTURENET]: {},
-      };
-    } else {
+        allowlistByKey = {
+          [NETWORK_NAMES.PUBNET]: {},
+          [NETWORK_NAMES.TESTNET]: {
+            [lastUsedAccount]: allowlistArr,
+          },
+          [NETWORK_NAMES.FUTURENET]: {},
+        };
+      } else {
+        allowlistByKey = {
+          [NETWORK_NAMES.PUBNET]: {},
+          [NETWORK_NAMES.TESTNET]: {},
+          [NETWORK_NAMES.FUTURENET]: {},
+        };
+      }
+    } catch (error) {
       allowlistByKey = {
         [NETWORK_NAMES.PUBNET]: {},
         [NETWORK_NAMES.TESTNET]: {},
@@ -329,30 +345,34 @@ export const migratePubnetRpcUrl = async () => {
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   if (shouldRunMigration({ storageVersion, migrationVersion: "5.33.5" })) {
-    const networksList: NetworkDetails[] =
-      (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
+    try {
+      const networksList: NetworkDetails[] =
+        (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
-    const migratedNetworkList = networksList.map((network) => {
-      if (network.network === NETWORKS.PUBLIC) {
-        return {
+      const migratedNetworkList = networksList.map((network) => {
+        if (network.network === NETWORKS.PUBLIC) {
+          return {
+            ...MAINNET_NETWORK_DETAILS,
+            sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.PUBLIC],
+          };
+        }
+
+        return network;
+      });
+
+      const currentNetwork = await localStore.getItem(NETWORK_ID);
+
+      if (currentNetwork && currentNetwork.network === NETWORKS.PUBLIC) {
+        await localStore.setItem(NETWORK_ID, {
           ...MAINNET_NETWORK_DETAILS,
           sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.PUBLIC],
-        };
+        });
       }
 
-      return network;
-    });
-
-    const currentNetwork = await localStore.getItem(NETWORK_ID);
-
-    if (currentNetwork && currentNetwork.network === NETWORKS.PUBLIC) {
-      await localStore.setItem(NETWORK_ID, {
-        ...MAINNET_NETWORK_DETAILS,
-        sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.PUBLIC],
-      });
+      await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+    } catch (error) {
+      await localStore.setItem(NETWORKS_LIST_ID, DEFAULT_NETWORKS);
     }
-
-    await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
     await migrateDataStorageVersion("5.33.5");
   }
 };
