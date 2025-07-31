@@ -168,7 +168,7 @@ export const SignAuthEntry = () => {
               />
               <div className="SignAuthEntry__TitleRow__Detail">
                 <span className="SignAuthEntry__TitleRow__Title">
-                  Confirm Authorization
+                  Confirm Authorizations
                 </span>
                 <span className="SignAuthEntry__TitleRow__Domain">
                   {validDomain}
