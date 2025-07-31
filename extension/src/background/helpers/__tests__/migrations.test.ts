@@ -150,7 +150,7 @@ describe("Storage migrations", () => {
     expect(storedNetworks[NETWORKS_LIST_ID]).toBeUndefined;
   });
   it("migrateToAccountSubscriptions should set an empty map for account subscriptions", async () => {
-    await mockStorage.set({ [STORAGE_VERSION]: "3.0.0" });
+    await mockStorage.set({ [STORAGE_VERSION]: "2.9.0" });
     await DataStorage.migrateToAccountSubscriptions();
     const storedAccountSubs = await mockStorage.get(HAS_ACCOUNT_SUBSCRIPTION);
     expect(storedAccountSubs[HAS_ACCOUNT_SUBSCRIPTION]).toEqual({});
@@ -209,7 +209,7 @@ describe("Storage migrations", () => {
     expect(storedVersion[STORAGE_VERSION]).toEqual("4.0.1");
   });
   it("resetAccountSubscriptions should reset accoutn subscriptions at storage versions 4.0.2", async () => {
-    await mockStorage.set({ [STORAGE_VERSION]: "4.0.2" });
+    await mockStorage.set({ [STORAGE_VERSION]: "4.0.1" });
     await DataStorage.resetAccountSubscriptions();
     const storedAccountSubs = await mockStorage.get(HAS_ACCOUNT_SUBSCRIPTION);
     expect(storedAccountSubs[HAS_ACCOUNT_SUBSCRIPTION]).toEqual({});
