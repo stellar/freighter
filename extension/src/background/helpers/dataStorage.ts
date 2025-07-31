@@ -106,7 +106,7 @@ export const migrateTokenIdList = async () => {
   const tokenIdsByKey = await localStore.getItem(TOKEN_ID_LIST);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "1.0.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "1.0.0" })) {
     if (Array.isArray(tokenIdsByKey)) {
       const newTokenList = {
         [NETWORKS.FUTURENET]: tokenIdsByKey,
@@ -122,7 +122,7 @@ export const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "2.0.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "2.0.0" })) {
     const networksList: NetworkDetails[] =
       (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
@@ -153,7 +153,7 @@ export const migrateToAccountSubscriptions = async () => {
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   // we only want to run this once per user
-  if (!storageVersion || semver.eq(storageVersion, "3.0.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "3.0.0" })) {
     // once account is unlocked, setup Mercury account subscription if !HAS_ACCOUNT_SUBSCRIPTION
     await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, {});
   }
@@ -163,7 +163,7 @@ export const migrateMainnetSorobanRpcUrlNetworkDetails = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.0.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.0.0" })) {
     const networksList: NetworkDetails[] =
       (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
@@ -193,7 +193,7 @@ export const migrateSorobanRpcUrlNetwork = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.0.1")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.0.1" })) {
     // an edge case exists in `migrateSorobanRpcUrlNetworkDetails` where we may have updated the `networksList` in storage,
     // but not the `network`, which is the current active network,
     // If a user has Futurenet selected by default, they will not have sorobanRpcUrl set
@@ -215,7 +215,7 @@ export const resetAccountSubscriptions = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.eq(storageVersion, "4.0.2")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.0.2" })) {
     // once account is unlocked, setup Mercury account subscription if !HAS_ACCOUNT_SUBSCRIPTION
     await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, {});
     await migrateDataStorageVersion("4.0.2");
@@ -226,7 +226,7 @@ export const addAssetsLists = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.1.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.1.0" })) {
     // add the base asset lists
     await localStore.setItem(ASSETS_LISTS_ID, DEFAULT_ASSETS_LISTS);
     await migrateDataStorageVersion("4.1.0");
@@ -237,7 +237,7 @@ export const addIsHashSigningEnabled = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.1.1")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.1.1" })) {
     // add the base asset lists
     await localStore.setItem(IS_HASH_SIGNING_ENABLED_ID, false);
     await migrateDataStorageVersion("4.1.1");
