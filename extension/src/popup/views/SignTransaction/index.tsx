@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
-import { Button, CopyText, Icon } from "@stellar/design-system";
+import { Button, Icon } from "@stellar/design-system";
 import BigNumber from "bignumber.js";
 import {
   MuxedAccount,
@@ -12,7 +12,6 @@ import {
   Memo,
   MemoType,
   Operation,
-  xdr,
 } from "stellar-sdk";
 
 import { isNonSSLEnabledSelector } from "popup/ducks/settings";
@@ -33,7 +32,6 @@ import {
   isFederationAddress,
   isMuxedAccount,
   stroopToXlm,
-  truncateString,
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
@@ -64,17 +62,11 @@ import { AssetIcon } from "popup/components/account/AccountAssets";
 import {
   CLASSIC_ASSET_DECIMALS,
   formatTokenAmount,
-  getInvocationDetails,
-  InvocationArgs,
 } from "popup/helpers/soroban";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
-import {
-  KeyValueInvokeHostFnArgs,
-  KeyValueList,
-} from "popup/components/signTransaction/Operations/KeyVal";
-import { CopyValue } from "popup/components/CopyValue";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 
+import { AuthEntries } from "popup/components/AuthEntry";
 import { Summary } from "./Preview/Summary";
 import { Details } from "./Preview/Details";
 
@@ -414,7 +406,11 @@ export const SignTransaction = () => {
               </div>
               {hasAuthEntries && (
                 <AuthEntries
-                  operation={_tx.operations[0] as Operation.InvokeHostFunction}
+                  invocations={
+                    (
+                      _tx.operations[0] as Operation.InvokeHostFunction
+                    ).auth?.map((authEntry) => authEntry.rootInvocation()) || []
+                  }
                 />
               )}
               <Details
@@ -530,183 +526,6 @@ const AssetDiffs = ({ assetDiffs, icons }: AssetDiffsProps) => {
   return (
     <div className="SignTransaction__AssetDiffs">
       {assetDiffs.map(renderAssetDiffs)}
-    </div>
-  );
-};
-
-interface AuthEntriesProps {
-  operation: Operation.InvokeHostFunction;
-}
-
-const AuthEntries = ({ operation }: AuthEntriesProps) => {
-  const { t } = useTranslation();
-  const authEntries = operation.auth || [];
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
-
-  const handleExpandDetail = (index: number) => {
-    setExpandedIndex((prev) => (prev === index ? null : index));
-  };
-
-  const renderAuthEntry = (authEntry: xdr.SorobanAuthorizationEntry) => {
-    const rootInvocation = authEntry.rootInvocation();
-    const details = getInvocationDetails(rootInvocation);
-
-    const renderDetailTitle = (detail: InvocationArgs) => {
-      switch (detail.type) {
-        case "invoke": {
-          return <span>{detail.fnName}</span>;
-        }
-        case "sac":
-        case "wasm": {
-          return <span>Contract creation</span>;
-        }
-        default: {
-          return null;
-        }
-      }
-    };
-
-    const renderDetailContent = (detail: InvocationArgs) => {
-      switch (detail.type) {
-        case "invoke": {
-          return (
-            <React.Fragment key={detail.fnName}>
-              <div
-                className="SignTransaction__AuthEntry__InfoBlock"
-                data-testid="AuthDetail__invocation"
-              >
-                <div className="SignTransaction__AuthEntry__InfoBlock_Inner">
-                  <div className="SignTransaction__AuthEntry__InfoBlock_Inner__Value">
-                    <CopyText textToCopy={detail.contractId}>
-                      <div className="Parameters">
-                        <div className="ParameterKey">
-                          {t("Contract ID")}
-                          <Icon.Copy01 />
-                        </div>
-                        <div className="ParameterValue">
-                          {detail.contractId}
-                        </div>
-                      </div>
-                    </CopyText>
-                    <CopyText textToCopy={detail.fnName}>
-                      <div className="Parameters">
-                        <div className="ParameterKey">
-                          {t("Function Name")}
-                          <Icon.Copy01 />
-                        </div>
-                        <div className="ParameterValue">{detail.fnName}</div>
-                      </div>
-                    </CopyText>
-                  </div>
-                </div>
-                <div className="SignTransaction__AuthEntry__InfoBlock_Inner">
-                  <KeyValueInvokeHostFnArgs
-                    args={detail.args}
-                    contractId={detail.contractId}
-                    fnName={detail.fnName}
-                  />
-                </div>
-              </div>
-            </React.Fragment>
-          );
-        }
-        case "sac": {
-          return (
-            <React.Fragment key={detail.asset}>
-              <div className="SignTransaction__AuthEntry__TitleRow">
-                <Icon.CodeSnippet01 />
-                <span>Contract Creation</span>
-              </div>
-              <div className="SignTransaction__AuthEntry__InfoBlock">
-                <KeyValueList
-                  operationKey={t("Asset")}
-                  operationValue={truncateString(detail.asset)}
-                />
-                {detail.args && <KeyValueInvokeHostFnArgs args={detail.args} />}
-              </div>
-            </React.Fragment>
-          );
-        }
-        case "wasm": {
-          return (
-            <React.Fragment key={detail.hash}>
-              <div
-                className="SignTransaction__AuthEntry__TitleRow"
-                data-testid="SignTransaction__AuthEntry__CreateWasmInvocation"
-              >
-                <Icon.CodeSnippet01 />
-                <span>Contract Creation</span>
-              </div>
-              <div className="SignTransaction__AuthEntry__InfoBlock">
-                <KeyValueList
-                  operationKey={t("Contract Address")}
-                  operationValue={
-                    <CopyValue
-                      value={detail.address}
-                      displayValue={truncateString(detail.address)}
-                    />
-                  }
-                />
-                <KeyValueList
-                  operationKey={t("Hash")}
-                  operationValue={truncateString(detail.hash)}
-                />
-                <KeyValueList
-                  operationKey={t("Salt")}
-                  operationValue={truncateString(detail.salt)}
-                />
-                {detail.args && <KeyValueInvokeHostFnArgs args={detail.args} />}
-              </div>
-            </React.Fragment>
-          );
-        }
-        default: {
-          return null;
-        }
-      }
-    };
-
-    return (
-      <>
-        {details.map((detail, ind) => (
-          <div
-            className="SignTransaction__AuthEntryContainer"
-            key={`${authEntry.toXDR("raw").toString()}-${ind}`}
-          >
-            <div
-              className="SignTransaction__AuthEntryBtn"
-              onClick={() => handleExpandDetail(ind)}
-            >
-              <div className="SignTransaction__AuthEntryBtn__Title">
-                <Icon.CodeCircle01 />
-                {renderDetailTitle(detail)}
-              </div>
-              <Icon.ChevronRight
-                className={`Icon--rotate ${expandedIndex === ind ? "open" : ""}`}
-              />
-            </div>
-            {expandedIndex === ind ? (
-              <div className="SignTransaction__AuthEntryContent">
-                {renderDetailContent(detail)}
-              </div>
-            ) : null}
-          </div>
-        ))}
-      </>
-    );
-  };
-
-  return (
-    <div className="SignTransaction__AuthEntries">
-      <div className="SignTransaction__AuthEntries__TitleRow">
-        <Icon.Key01 />
-        <span>Authorizations</span>
-      </div>
-      {authEntries.map((entry) => (
-        <React.Fragment key={entry.toXDR("raw").toString()}>
-          {renderAuthEntry(entry)}
-        </React.Fragment>
-      ))}
     </div>
   );
 };
