@@ -1,6 +1,12 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS, USDC_TOKEN_ADDRESS } from "./helpers/test-token";
+import {
+  stubAccountBalances,
+  stubAccountHistory,
+  stubTokenDetails,
+  stubTokenPrices,
+} from "./helpers/stubs";
 
 test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   test.slow();
@@ -72,6 +78,11 @@ test.skip("Adding Soroban verified token", async ({ page, extensionId }) => {
   });
 });
 test("Adding token on Futurenet", async ({ page, extensionId }) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
@@ -89,8 +100,10 @@ test("Adding token on Futurenet", async ({ page, extensionId }) => {
   await expect(page.getByTestId("account-options-dropdown")).toBeVisible();
   await page.getByTestId("account-options-dropdown").click();
 
-  await expect(page.getByText("Manage assets")).toBeVisible();
-  await page.getByText("Manage assets").click({ force: true });
+  const manageAssets = page.getByText("Manage assets");
+  await expect(manageAssets).toBeVisible();
+  await expect(manageAssets).toBeEnabled();
+  await manageAssets.click();
 
   await expect(page.getByText("Your assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });
