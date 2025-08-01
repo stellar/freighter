@@ -1,6 +1,13 @@
 import { test, expect } from "./test-fixtures";
 import { login, loginAndFund, loginToTestAccount } from "./helpers/login";
 import { TEST_M_ADDRESS, TEST_TOKEN_ADDRESS } from "./helpers/test-token";
+import {
+  stubAccountBalances,
+  stubAccountBalancesE2e,
+  stubAccountHistory,
+  stubTokenDetails,
+  stubTokenPrices,
+} from "./helpers/stubs";
 
 test("Swap doesn't throw error when account is unfunded", async ({
   page,
@@ -215,6 +222,11 @@ test("Send XLM payments to recent federated addresses", async ({
   page,
   extensionId,
 }) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+
   test.slow();
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("nav-link-send").click({ force: true });
@@ -264,6 +276,11 @@ test("Send XLM payments to recent federated addresses", async ({
 });
 
 test("Send XLM payment to C address", async ({ page, extensionId }) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
@@ -290,6 +307,11 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
 });
 
 test("Send XLM payment to M address", async ({ page, extensionId }) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
@@ -416,17 +438,13 @@ test.skip("Send SAC to C address", async ({ page, extensionId }) => {
 });
 
 test("Send token payment to C address", async ({ page, extensionId }) => {
+  await stubTokenDetails(page);
+  await stubAccountBalancesE2e(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+
   test.slow();
   await loginToTestAccount({ page, extensionId });
-
-  // add E2E token
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Manage assets").click({ force: true });
-  await expect(page.getByText("Your assets")).toBeVisible();
-  await page.getByText("Add an asset").click({ force: true });
-  await page.getByTestId("search-asset-input").fill(TEST_TOKEN_ADDRESS);
-  await page.getByTestId("ManageAssetRowButton").click({ force: true });
-  await page.getByTestId("add-asset").dispatchEvent("click");
 
   // send E2E token to C address
   await page.getByTestId("nav-link-send").click({ force: true });
@@ -450,6 +468,7 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
     timeout: 60000,
   });
 });
+
 test.afterAll(async ({ page, extensionId }) => {
   if (
     test.info().status !== test.info().expectedStatus &&

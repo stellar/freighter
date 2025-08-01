@@ -132,13 +132,13 @@ test("should sign auth entry when allowed", async ({ page, extensionId }) => {
 
   const popup = await popupPromise;
 
-  await expect(popup.getByText("Authorization Entry").first()).toBeVisible();
+  await expect(popup.getByText("Confirm Authorization").first()).toBeVisible();
   await expectPageToHaveScreenshot({
     page: popup,
     screenshot: "sign-auth-entry.png",
   });
 
-  await popup.getByRole("button", { name: "Approve" }).click();
+  await popup.getByRole("button", { name: "Confirm" }).click();
 
   await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(
     SIGNED_AUTH_ENTRY,
