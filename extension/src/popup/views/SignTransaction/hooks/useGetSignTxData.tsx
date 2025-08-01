@@ -102,7 +102,7 @@ function useGetSignTxData(
         "simulation" in scanResult &&
         scanResult.simulation &&
         scanResult.simulation.status === "Success" &&
-        "asset_diffs" in scanResult.simulation
+        "assets_diffs" in scanResult.simulation
       ) {
         const assetsListsData = await getCombinedAssetListData({
           networkDetails,
