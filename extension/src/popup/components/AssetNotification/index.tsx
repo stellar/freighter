@@ -4,14 +4,14 @@ import { Tooltip, Icon } from "@stellar/design-system";
 
 import "./styles.scss";
 
-export const AssetNotifcation = ({ isVerified }: { isVerified: boolean }) => {
+export const AssetNotification = ({ isVerified }: { isVerified: boolean }) => {
   const { t } = useTranslation();
 
   return (
     <div className="AssetNotification" data-testid="asset-notification">
       {isVerified ? t("On your lists") : t("Not on your lists")}
       <Tooltip
-        placement="right"
+        placement="bottom"
         triggerEl={
           <button className="AssetNotification__button">
             <Icon.InfoCircle className="AssetNotification__info" />
