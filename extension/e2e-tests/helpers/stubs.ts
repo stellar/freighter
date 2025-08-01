@@ -129,6 +129,75 @@ export const stubAccountBalances = async (page: Page) => {
   });
 };
 
+export const stubAccountBalancesE2e = async (page: Page) => {
+  await page.route("**/account-balances/**", async (route) => {
+    const json = {
+      balances: {
+        native: {
+          token: {
+            type: "native",
+            code: "XLM",
+          },
+          total: "9697.8556678",
+          available: "9697.8556678",
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          minimumBalance: "1",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: "",
+            metadata: {
+              type: "",
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
+        },
+        "E2E:CBXQIAGT7PN6T2FD3BLFQTN3L2YE4O7MNP3BF32ZPBD3V4BSFPOU3OJG": {
+          token: {
+            code: "E2E",
+            issuer: {
+              key: "CBXQIAGT7PN6T2FD3BLFQTN3L2YE4O7MNP3BF32ZPBD3V4BSFPOU3OJG",
+            },
+          },
+          contractId:
+            "CBXQIAGT7PN6T2FD3BLFQTN3L2YE4O7MNP3BF32ZPBD3V4BSFPOU3OJG",
+          symbol: "E2E",
+          decimals: 3,
+          total: "100000099976",
+          available: "100000099976",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: "",
+            metadata: {
+              type: "",
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
+        },
+      },
+      isFunded: true,
+      subentryCount: 0,
+      error: {
+        horizon: null,
+        soroban: null,
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
 export const stubAccountHistory = async (page: Page) => {
   await page.route("**/account-history/**", async (route) => {
     const json = [
