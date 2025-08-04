@@ -12,6 +12,9 @@ import {
   Memo,
   MemoType,
   Operation,
+  Asset,
+  LiquidityPoolAsset,
+  getLiquidityPoolId,
 } from "stellar-sdk";
 
 import { isNonSSLEnabledSelector } from "popup/ducks/settings";
@@ -44,6 +47,7 @@ import {
   SSLWarningMessage,
   BlockaidTxScanLabel,
   BlockAidTxScanExpanded,
+  DomainNotAllowedWarningMessage,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Loading } from "popup/components/Loading";
@@ -296,6 +300,9 @@ export const SignTransaction = () => {
   const hasAuthEntries = _tx.operations.some(
     (op) => op.type === "invokeHostFunction" && op.auth && op.auth.length,
   );
+  const trustlineChanges = _tx.operations.filter(
+    (op) => op.type === "changeTrust",
+  );
 
   const assetDiffs =
     scanResult?.simulation?.status === "Success"
@@ -337,10 +344,19 @@ export const SignTransaction = () => {
                 scanResult={scanResult!}
                 onClick={() => setActivePaneIndex(1)}
               />
+              {!isDomainListedAllowed && (
+                <DomainNotAllowedWarningMessage domain={domain} />
+              )}
               {assetDiffs && (
                 <AssetDiffs
                   icons={scanTxState.data?.icons || {}}
                   assetDiffs={assetDiffs}
+                />
+              )}
+              {trustlineChanges.length && (
+                <Trustline
+                  operations={trustlineChanges}
+                  icons={scanTxState.data?.icons || {}}
                 />
               )}
               <div className="SignTransaction__Metadata">
@@ -526,6 +542,70 @@ const AssetDiffs = ({ assetDiffs, icons }: AssetDiffsProps) => {
   return (
     <div className="SignTransaction__AssetDiffs">
       {assetDiffs.map(renderAssetDiffs)}
+    </div>
+  );
+};
+
+interface TrustlineProps {
+  operations: Operation.ChangeTrust[];
+  icons: AssetIcons;
+}
+
+const Trustline = ({ operations, icons }: TrustlineProps) => {
+  const renderTrustlineChanges = (operation: Operation.ChangeTrust) => {
+    const { line, limit } = operation;
+    const isRemoveTrustline = limit === "0";
+
+    const renderTrustlineAsset = (line: Asset | LiquidityPoolAsset) => {
+      if ("code" in line) {
+        const { code, issuer } = line;
+        const canonical = getCanonicalFromAsset(code, issuer);
+        const icon = icons[canonical];
+        return (
+          <>
+            <AssetIcon
+              assetIcons={code !== "XLM" ? { [canonical]: icon } : {}}
+              code={code}
+              issuerKey={issuer}
+            />
+            {code}
+          </>
+        );
+      }
+      const parameters = line.getLiquidityPoolParameters();
+      const poolId = getLiquidityPoolId("constant_product", parameters);
+      return (
+        <>
+          <AssetIcon assetIcons={{}} code={""} issuerKey={""} isLPShare />
+          {poolId.toString("hex")}
+        </>
+      );
+    };
+
+    return (
+      <div className="SignTransaction__TrustlineRow">
+        <div className="SignTransaction__TrustlineRow__Asset">
+          {renderTrustlineAsset(line)}
+        </div>
+        <div className="SignTransaction__TrustlineRow__Type">
+          {isRemoveTrustline ? (
+            <>
+              <Icon.MinusCircle />
+              <span>Remove Trustline</span>
+            </>
+          ) : (
+            <>
+              <Icon.PlusCircle />
+              <span>Add Trustline</span>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+  return (
+    <div className="SignTransaction__Trustlines">
+      {operations.map(renderTrustlineChanges)}
     </div>
   );
 };
