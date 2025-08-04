@@ -22,6 +22,7 @@ import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList"
 import { isContractId } from "popup/helpers/soroban";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 import { settingsSelector } from "popup/ducks/settings";
+import { TransactionBuilder } from "stellar-sdk";
 
 export interface ResolvedData {
   type: AppDataType.RESOLVED;
@@ -96,7 +97,13 @@ function useGetSignTxData(
         networkDetails,
       );
 
+      // Add all icons needed for tx assets
       const icons = {} as { [code: string]: string };
+      const assetsListsData = await getCombinedAssetListData({
+        networkDetails,
+        assetsLists,
+      });
+
       if (
         scanResult &&
         "simulation" in scanResult &&
@@ -104,12 +111,9 @@ function useGetSignTxData(
         scanResult.simulation.status === "Success" &&
         "assets_diffs" in scanResult.simulation
       ) {
-        const assetsListsData = await getCombinedAssetListData({
-          networkDetails,
-          assetsLists,
-        });
         const diffs = scanResult.simulation.assets_diffs || {};
-        for (const diff of diffs[publicKey]) {
+        const accountDiffs = diffs[publicKey] || [];
+        for (const diff of accountDiffs) {
           if (
             "code" in diff.asset &&
             diff.asset.code &&
@@ -132,6 +136,45 @@ function useGetSignTxData(
                   networkDetails,
                   issuerId: key,
                   contractId: isContractId(key) ? key : undefined,
+                  code,
+                  assetsListsData,
+                });
+                if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
+                  icon = tokenListIcon.icon;
+                  canonical = tokenListIcon.canonicalAsset;
+                }
+              }
+              icons[canonical] = icon;
+            }
+          }
+        }
+      }
+
+      const transaction = TransactionBuilder.fromXDR(
+        scanOptions.xdr,
+        networkDetails.networkPassphrase,
+      );
+      const trustlineChanges = transaction.operations.filter(
+        (op) => op.type === "changeTrust",
+      );
+      if (trustlineChanges.length) {
+        for (const trustChange of trustlineChanges) {
+          if ("code" in trustChange.line) {
+            const { code, issuer } = trustChange.line;
+            let canonical = getCanonicalFromAsset(code, issuer);
+            if (cachedIcons[canonical]) {
+              icons[canonical] = cachedIcons[canonical];
+            } else {
+              let icon = await getIconUrlFromIssuer({
+                key: issuer,
+                code,
+                networkDetails,
+              });
+              if (!icon) {
+                const tokenListIcon = await getIconFromTokenLists({
+                  networkDetails,
+                  issuerId: issuer,
+                  contractId: isContractId(issuer) ? issuer : undefined,
                   code,
                   assetsListsData,
                 });
