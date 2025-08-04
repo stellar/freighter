@@ -6,7 +6,6 @@ import {
   Button,
   Card,
   Icon,
-  Loader,
   Select,
   Textarea,
   Text,
@@ -23,7 +22,6 @@ import {
   Horizon,
   TransactionBuilder,
 } from "stellar-sdk";
-import { captureException } from "@sentry/browser";
 
 import {
   ActionStatus,
@@ -31,8 +29,6 @@ import {
   BlockAidScanAssetResult,
   BlockAidScanTxResult,
 } from "@shared/api/types";
-import { getTokenDetails } from "@shared/api/internal";
-import { TokenArgsDisplay } from "@shared/api/helpers/soroban";
 
 import {
   getCanonicalFromAsset,
@@ -48,10 +44,7 @@ import {
   startHwSign,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
-import {
-  settingsSelector,
-  settingsNetworkDetailsSelector,
-} from "popup/ducks/settings";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { ModalInfo } from "popup/components/ModalInfo";
 import { NewAssetFlags } from "popup/components/manageAssets/ManageAssetRows";
@@ -70,12 +63,10 @@ import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
 import IconShieldCross from "popup/assets/icon-shield-cross.svg";
-import IconWarning from "popup/assets/icon-warning.svg";
 import IconUnverified from "popup/assets/icon-unverified.svg";
 import IconNewAsset from "popup/assets/icon-new-asset.svg";
 import IconWarningBlockaid from "popup/assets/icon-warning-blockaid.svg";
 import IconWarningBlockaidYellow from "popup/assets/icon-warning-blockaid-yellow.svg";
-import { getVerifiedTokens } from "popup/helpers/searchAsset";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import {
@@ -84,12 +75,11 @@ import {
   reportAssetWarning,
   reportTransactionWarning,
 } from "popup/helpers/blockaid";
+import { getPunycodedDomain } from "helpers/urls";
 
-import { CopyValue } from "../CopyValue";
 import { Notification as NotificationV2 } from "../Notification";
 
 import "./styles.scss";
-import { getPunycodedDomain } from "helpers/urls";
 
 export enum WarningMessageVariant {
   default = "",
@@ -193,33 +183,6 @@ export const WarningMessage = ({
   );
 };
 
-export const MemoWarningMessage = ({
-  isMemoRequired,
-}: {
-  isMemoRequired: boolean;
-}) => {
-  const { t } = useTranslation();
-
-  return isMemoRequired ? (
-    <WarningMessage
-      header="Memo is required"
-      variant={WarningMessageVariant.highAlert}
-    >
-      <p>
-        {t(
-          "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign. Freighter automatically disabled the option to sign this transaction.",
-        )}
-      </p>
-
-      <p>
-        {t(
-          "Check the destination account memo requirements and include it in the transaction.",
-        )}
-      </p>
-    </WarningMessage>
-  ) : null;
-};
-
 export const DomainNotAllowedWarningMessage = ({
   domain,
 }: {
@@ -228,21 +191,19 @@ export const DomainNotAllowedWarningMessage = ({
   const { t } = useTranslation();
 
   return (
-    <WarningMessage
-      variant={WarningMessageVariant.highAlert}
-      header={`${getPunycodedDomain(domain)} ${t("is currently not connected to this Freighter account")}`}
-    >
-      <p>
-        {t(
-          "If you believe you have connected to this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam.",
-        )}
-      </p>
-      <p>
-        {t(
-          "Double check the domain name. If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct.",
-        )}
-      </p>
-    </WarningMessage>
+    <div className="WarningMessage__backup">
+      <div className="WarningMessage__infoBlock--warning">
+        <div className="DomainNotAllowedWarning">
+          <div className="WarningMessage__icon-container">
+            <Icon.InfoOctagon className="WarningMessage__icon" />
+          </div>
+          <span className="ConnectionWarning">
+            {getPunycodedDomain(domain)}{" "}
+            {t("is currently not connected to this Freighter account")}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -257,7 +218,7 @@ export const BackupPhraseWarningMessage = () => {
           <div>{t("Important")}</div>
         </div>
 
-        <p>
+        <p className="BackupWarning">
           {t(
             "Keep your recovery phrase in a safe and secure place. Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
           )}
@@ -939,38 +900,6 @@ export const NewAssetWarning = ({
   );
 };
 
-export const WarningModal = (props: { description: string }) => {
-  const { t } = useTranslation();
-
-  return (
-    <div
-      className="WarningModal__box WarningModal__box--isWarning"
-      data-testid="WarningModal"
-    >
-      <div className="WarningModal__box__content">
-        <div className="Icon">
-          <img
-            className="WarningModal__box__icon"
-            src={IconWarning}
-            alt="icon warning"
-          />
-        </div>
-        <div className="WarningModal__alert">
-          <div className="WarningModal__description">
-            {t(props.description)}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export const UnverifiedTokenNotification = () => {
-  return (
-    <WarningModal description="Before you add this asset, please double-check its information and characteristics. This can help you identify fraudulent assets." />
-  );
-};
-
 export const TokenWarning = ({
   domain,
   code,
@@ -1141,192 +1070,6 @@ export const TokenWarning = ({
   );
 };
 
-export const TransferWarning = ({
-  transfers,
-}: {
-  transfers: TokenArgsDisplay[];
-}) => {
-  const { t } = useTranslation();
-
-  if (!transfers.length) {
-    return null;
-  }
-
-  return (
-    <WarningMessage
-      header="Authorizes a token transfer. Proceed with caution."
-      variant={WarningMessageVariant.warning}
-    >
-      <div className="TokenTransferWarning">
-        <p>
-          {t(
-            "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed.",
-          )}
-        </p>
-        {transfers.map((transfer, i) => (
-          <WarningMessageTokenDetails
-            index={i}
-            transfer={transfer}
-            key={`${transfer.contractId}-${transfer.amount}-${transfer.to}`}
-          />
-        ))}
-      </div>
-    </WarningMessage>
-  );
-};
-
-export const InvokerAuthWarning = () => {
-  const { t } = useTranslation();
-
-  return (
-    <WarningMessage
-      header="Your account is signing this authorization. Proceed with caution."
-      variant={WarningMessageVariant.warning}
-    >
-      <div className="InvokerAuthWarning">
-        <p>
-          {t(
-            "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction.",
-          )}
-        </p>
-      </div>
-    </WarningMessage>
-  );
-};
-
-export const UnverifiedTokenTransferWarning = ({
-  transfers,
-}: {
-  transfers: TokenArgsDisplay[];
-}) => {
-  const { t } = useTranslation();
-  const { networkDetails, assetsLists } = useSelector(settingsSelector);
-  const [isUnverifiedToken, setIsUnverifiedToken] = useState(false);
-
-  useEffect(() => {
-    if (!isMainnet(networkDetails) && !isTestnet(networkDetails)) {
-      return;
-    }
-    const fetchVerifiedTokens = async () => {
-      for (let j = 0; j < transfers.length; j += 1) {
-        const c = transfers[j].contractId;
-        const verifiedTokens = await getVerifiedTokens({
-          contractId: c,
-          networkDetails,
-          assetsLists,
-        });
-        if (!verifiedTokens.length) {
-          setIsUnverifiedToken(true);
-        }
-      }
-    };
-
-    fetchVerifiedTokens();
-  }, [networkDetails, transfers, assetsLists]);
-
-  return isUnverifiedToken ? (
-    <WarningMessage
-      header="This asset is not on an asset list"
-      variant={WarningMessageVariant.default}
-    >
-      <div className="TokenTransferWarning">
-        <p>
-          {t(
-            `This asset is not part of any of your enabled asset lists (${networkDetails.network})`,
-          )}
-        </p>
-      </div>
-    </WarningMessage>
-  ) : null;
-};
-
-const WarningMessageTokenDetails = ({
-  transfer,
-  index,
-}: {
-  transfer: { contractId: string; amount: string; to: string };
-  index: number;
-}) => {
-  const publicKey = useSelector(publicKeySelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-
-  const [isLoadingTokenDetails, setLoadingTokenDetails] = React.useState(false);
-  const [tokenDetails, setTokenDetails] = React.useState(
-    {} as Record<string, { name: string; symbol: string }>,
-  );
-  React.useEffect(() => {
-    async function _getTokenDetails() {
-      setLoadingTokenDetails(true);
-      const _tokenDetails = {} as Record<
-        string,
-        { name: string; symbol: string }
-      >;
-      try {
-        const tokenDetailsResponse = await getTokenDetails({
-          contractId: transfer.contractId,
-          publicKey,
-          networkDetails,
-        });
-
-        if (!tokenDetailsResponse) {
-          throw new Error("failed to fetch token details");
-        }
-        _tokenDetails[transfer.contractId] = tokenDetailsResponse;
-      } catch (error) {
-        // falls back to only showing contract ID
-        captureException(
-          `Failed to fetch token details - ${JSON.stringify(error)} - ${
-            transfer.contractId
-          } - ${networkDetails.network}`,
-        );
-        console.error(error);
-      }
-      setTokenDetails(_tokenDetails);
-      setLoadingTokenDetails(false);
-    }
-    _getTokenDetails();
-  }, [transfer.contractId, networkDetails, publicKey]);
-
-  return (
-    <div className="TokenDetails">
-      <p className="FnName">TRANSFER #{index + 1}:</p>
-      {}
-      {isLoadingTokenDetails ? (
-        <div className="TokenDetails__loader">
-          <Loader size="1rem" />
-        </div>
-      ) : tokenDetails[transfer.contractId] ? (
-        <p>
-          <span className="InlineLabel">Token:</span>{" "}
-          {`(${
-            tokenDetails[transfer.contractId].name === "native"
-              ? "XLM"
-              : tokenDetails[transfer.contractId].symbol
-          }) ${tokenDetails[transfer.contractId].name}`}
-        </p>
-      ) : (
-        <p>
-          <span className="InlineLabel">Token: Unknown</span>
-        </p>
-      )}
-      <p>
-        <span className="InlineLabel">Contract ID:</span>
-        <CopyValue
-          value={transfer.contractId}
-          displayValue={transfer.contractId}
-        />
-      </p>
-      <p>
-        <span className="InlineLabel">Amount:</span> {transfer.amount}
-      </p>
-      <p>
-        <span className="InlineLabel">To:</span>
-        <CopyValue value={transfer.to} displayValue={transfer.to} />
-      </p>
-    </div>
-  );
-};
-
 export const SSLWarningMessage = ({ url }: { url: string }) => {
   const { t } = useTranslation();
 
@@ -1337,7 +1080,7 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
       variant={WarningMessageVariant.warning}
       header={t("WEBSITE CONNECTION IS NOT SECURE")}
     >
-      <p>
+      <p className="SslWarningText">
         <Trans domain={url}>
           The website <strong>{url}</strong> does not use an SSL certificate.
           For additional safety Freighter only works with websites that provide
