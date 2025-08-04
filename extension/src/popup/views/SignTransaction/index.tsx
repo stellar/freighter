@@ -353,7 +353,7 @@ export const SignTransaction = () => {
                   assetDiffs={assetDiffs}
                 />
               )}
-              {trustlineChanges.length && (
+              {trustlineChanges.length > 0 && (
                 <Trustline
                   operations={trustlineChanges}
                   icons={scanTxState.data?.icons || {}}

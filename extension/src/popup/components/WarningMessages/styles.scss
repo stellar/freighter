@@ -98,50 +98,74 @@
     overflow-y: auto;
   }
 
+  &__icon-container {
+    width: pxToRem(16px);
+    height: pxToRem(16px);
+    margin-right: pxToRem(5px);
+  }
+
   &__backup {
     p {
       font-size: 0.875rem;
       line-height: 1.375rem;
     }
+
+    .DomainNotAllowedWarning {
+      display: flex;
+      justify-content: space-between;
+      align-self: stretch;
+      justify-content: space-between;
+
+      .ConnectionWarning {
+        font-size: pxToRem(14px);
+      }
+    }
   }
 
   &__infoBlock {
-    background: var(--sds-clr-lilac-02);
-    border: 1px solid var(--sds-clr-lilac-06);
-    border-radius: 0.5rem;
-    color: var(--sds-clr-white) !important;
+    background: var(--sds-clr-lilac-03);
+    border-radius: pxToRem(16px);
+    color: var(--sds-clr-lilac-11);
     font-size: 0.875rem;
-    padding: 0.5rem;
+    padding: pxToRem(16px) pxToRem(12px);
 
     &--high-alert {
-      border-color: var(--sds-clr-red-06);
-      background: rgba(241, 50, 50, 0.32);
+      background-color: var(--sds-clr-red-09);
+      color: var(--sds-clr-red-11);
+      border-radius: pxToRem(16px);
+      padding: pxToRem(16px) pxToRem(12px);
 
       .WarningMessage__icon {
-        color: rgba(241, 50, 50, 1);
+        width: pxToRem(16px);
+        height: pxToRem(16px);
+        color: var(--sds-clr-red-09);
       }
     }
 
     &--warning {
-      border-color: rgba(241, 165, 50, 0.32);
-      background-color: rgba(94, 58, 4, 0.32);
+      background-color: var(--sds-clr-amber-03);
+      color: var(--sds-clr-amber-11);
+      border-radius: pxToRem(16px);
+      padding: pxToRem(16px) pxToRem(12px);
 
       .WarningMessage__icon {
-        color: rgba(241, 165, 50, 1);
+        width: pxToRem(16px);
+        height: pxToRem(16px);
+        color: var(--sds-clr-amber-11);
       }
     }
   }
 
   &__header {
     align-items: center;
-    font-weight: var(--font-weight-medium);
+    font-weight: bold;
     display: flex;
     gap: 0.625rem;
-  }
 
-  &__icon {
-    color: #6432f1;
-    width: 24px;
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+    }
   }
 
   &__default-icon {
@@ -168,6 +192,7 @@
   &__children-wrapper {
     flex-grow: 1;
     word-break: break-word;
+    margin-top: pxToRem(12px);
 
     a {
       color: var(--sds-clr-white);
@@ -175,7 +200,6 @@
   }
 }
 
-.WarningModal,
 .ScamAssetWarning {
   height: 100vh;
   z-index: var(--z-index--scam-warning);
@@ -468,10 +492,6 @@
       }
     }
   }
-}
-
-.InvokerAuthWarning {
-  overflow-wrap: break-word;
 }
 
 .ScanLabel {

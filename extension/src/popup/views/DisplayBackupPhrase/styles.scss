@@ -1,9 +1,19 @@
+@use "../../styles/utils.scss" as *;
+
 .DisplayBackupPhrase {
   &__form {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
     justify-content: space-between;
+
+    .WarningMessage__backup {
+      margin-bottom: pxToRem(12px);
+
+      .BackupWarning {
+        margin-top: pxToRem(12px);
+      }
+    }
   }
 
   &__button {
