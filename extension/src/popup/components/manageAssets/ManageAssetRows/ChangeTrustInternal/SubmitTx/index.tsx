@@ -143,23 +143,22 @@ export const SubmitTransaction = ({
                   </Button>
                 </>
               ) : null}
-              {isSuccess ||
-                (isFail && (
-                  <div className="SubmitTransaction__Footer__Done">
-                    <Button
-                      size="lg"
-                      isFullWidth
-                      isRounded
-                      variant="secondary"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onSuccess();
-                      }}
-                    >
-                      Done
-                    </Button>
-                  </div>
-                ))}
+              {(isSuccess || isFail) && (
+                <div className="SubmitTransaction__Footer__Done">
+                  <Button
+                    size="lg"
+                    isFullWidth
+                    isRounded
+                    variant="secondary"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onSuccess();
+                    }}
+                  >
+                    Done
+                  </Button>
+                </div>
+              )}
             </div>
           }
         >

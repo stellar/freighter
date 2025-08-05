@@ -68,6 +68,7 @@ export const ManageAssetRows = ({
         code: string;
         issuer: string;
         domain: string;
+        image: string;
         isTrustlineActive: boolean;
         contract?: string;
       }
@@ -116,6 +117,7 @@ export const ManageAssetRows = ({
                       code,
                       issuer,
                       domain,
+                      image,
                       isTrustlineActive,
                       contract,
                     })

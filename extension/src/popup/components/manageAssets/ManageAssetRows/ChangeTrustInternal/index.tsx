@@ -38,9 +38,9 @@ interface ChangeTrustInternalProps {
   asset: {
     code: string;
     issuer: string;
+    image: string;
     domain: string;
   };
-  assetImage: string;
   networkDetails: NetworkDetails;
   publicKey: string;
   addTrustline: boolean;
@@ -49,7 +49,6 @@ interface ChangeTrustInternalProps {
 
 export const ChangeTrustInternal = ({
   asset,
-  assetImage,
   addTrustline,
   publicKey,
   networkDetails,
@@ -72,7 +71,7 @@ export const ChangeTrustInternal = ({
 
   const { state } = useGetChangeTrustData({
     asset,
-    assetImage,
+    assetImage: asset.image,
     addTrustline,
     publicKey,
     networkDetails,
@@ -126,7 +125,7 @@ export const ChangeTrustInternal = ({
   const canonical = getCanonicalFromAsset(asset.code, asset.issuer);
   const xdr = state.data.transactionXDR;
   const flaggedKeys = state.data.flaggedKeys;
-  const icons = { [canonical]: assetImage };
+  const icons = { [canonical]: asset.image };
 
   const transaction = TransactionBuilder.fromXDR(
     xdr,
