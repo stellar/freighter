@@ -1,0 +1,338 @@
+import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Button, Icon, Loader, Notification } from "@stellar/design-system";
+import { BASE_FEE, TransactionBuilder } from "stellar-sdk";
+
+import { NetworkDetails } from "@shared/constants/stellar";
+import { RequestState } from "constants/request";
+import {
+  getCanonicalFromAsset,
+  stroopToXlm,
+  xlmToStroop,
+} from "helpers/stellar";
+import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
+import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import StellarLogo from "popup/assets/stellar-logo.png";
+import { Summary } from "popup/views/SignTransaction/Preview/Summary";
+import { Details } from "popup/views/SignTransaction/Preview/Details";
+import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
+import { Trustline } from "popup/views/SignTransaction";
+import { useGetChangeTrustData } from "./hooks/useChangeTrustData";
+import { Fee } from "./Settings/Fee";
+import { Timeout } from "./Settings/Timeout";
+import { Memo } from "./Settings/Memo";
+
+import "./styles.scss";
+import { SubmitTransaction } from "./SubmitTx";
+
+enum ActiveBodyContent {
+  details = "details",
+  fee = "fee",
+  timeout = "timeout",
+  memo = "memo",
+  submitTx = "submit-tx",
+}
+
+interface ChangeTrustInternalProps {
+  asset: {
+    code: string;
+    issuer: string;
+    domain: string;
+  };
+  assetImage: string;
+  networkDetails: NetworkDetails;
+  publicKey: string;
+  addTrustline: boolean;
+  onCancel: () => void;
+}
+
+export const ChangeTrustInternal = ({
+  asset,
+  assetImage,
+  addTrustline,
+  publicKey,
+  networkDetails,
+  onCancel,
+}: ChangeTrustInternalProps) => {
+  const activeOptionsRef = useRef<HTMLDivElement>(null);
+  const [activePaneIndex, setActivePaneIndex] = useState(0);
+  const [activeBodyContent, setActiveBodyContent] = useState(
+    ActiveBodyContent.details,
+  );
+  const { t } = useTranslation();
+  const { recommendedFee } = useNetworkFees();
+
+  const baseFeeStroops = stroopToXlm(BASE_FEE).toString();
+  const [fee, setFee] = useState(baseFeeStroops);
+  const [timeout, setTimeout] = useState("180");
+  const [memo, setMemo] = useState("");
+  const [isSettingsSelectorOpen, setSettingsSelectorOpen] =
+    React.useState(false);
+
+  const { state } = useGetChangeTrustData({
+    asset,
+    assetImage,
+    addTrustline,
+    publicKey,
+    networkDetails,
+    recommendedFee: BASE_FEE,
+  });
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        activeOptionsRef.current &&
+        !activeOptionsRef.current.contains(event.target as Node)
+      ) {
+        setSettingsSelectorOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [activeOptionsRef]);
+
+  if (
+    state.state === RequestState.LOADING ||
+    state.state === RequestState.IDLE
+  ) {
+    return (
+      <div data-testid="ChangeTrustInternal" className="ChangeTrustInternal">
+        <div className="ChangeTrustInternal__Loading">
+          <Loader size="2rem" />
+        </div>
+      </div>
+    );
+  }
+
+  if (state.state === RequestState.ERROR) {
+    return (
+      <div data-testid="ChangeTrustInternal" className="ChangeTrustInternal">
+        <div className="ChangeTrustInternal__Error">
+          <Notification
+            variant="error"
+            title={t("Failed to build transaction.")}
+          >
+            {t("An unknown error has occured while building this transaction.")}
+          </Notification>
+        </div>
+      </div>
+    );
+  }
+
+  const canonical = getCanonicalFromAsset(asset.code, asset.issuer);
+  const xdr = state.data.transactionXDR;
+  const flaggedKeys = state.data.flaggedKeys;
+  const icons = { [canonical]: assetImage };
+
+  const transaction = TransactionBuilder.fromXDR(
+    xdr,
+    networkDetails.networkPassphrase,
+  );
+  let sequence = "";
+  if (!("innerTransaction" in transaction)) {
+    sequence = transaction.sequence;
+  }
+  const flaggedKeyValues = Object.values(flaggedKeys);
+  const isMemoRequired = flaggedKeyValues.some(
+    ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
+  );
+  const trustlineChanges = transaction.operations.filter(
+    (op) => op.type === "changeTrust",
+  );
+
+  return (
+    <div data-testid="ChangeTrustInternal" className="ChangeTrustInternal">
+      {activeBodyContent === ActiveBodyContent.details && (
+        <MultiPaneSlider
+          activeIndex={activePaneIndex}
+          panes={[
+            <div className="ChangeTrustInternal__Body">
+              <div className="ChangeTrustInternal__TitleRow">
+                <img src={StellarLogo} alt="Stellar Logo" />
+                <div className="ChangeTrustInternal__TitleRow__Detail">
+                  <span className="ChangeTrustInternal__TitleRow__Title">
+                    Confirm Transaction
+                  </span>
+                  <span className="SignTransaction__TitleRow__Domain">
+                    {asset.domain}
+                  </span>
+                </div>
+              </div>
+              {trustlineChanges.length > 0 && (
+                <Trustline operations={trustlineChanges} icons={icons} />
+              )}
+              <div className="ChangeTrustInternal__Metadata">
+                <div className="ChangeTrustInternal__Metadata__Row">
+                  <div className="ChangeTrustInternal__Metadata__Label">
+                    <Icon.Wallet01 />
+                    <span>Wallet</span>
+                  </div>
+                  <div className="ChangeTrustInternal__Metadata__Value">
+                    <KeyIdenticon publicKey={publicKey} />
+                  </div>
+                </div>
+                <div className="ChangeTrustInternal__Metadata__Row">
+                  <div className="ChangeTrustInternal__Metadata__Label">
+                    <Icon.Route />
+                    <span>Fee</span>
+                  </div>
+                  <div className="ChangeTrustInternal__Metadata__Value">
+                    <span>{`${fee} XLM`}</span>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="ChangeTrustInternal__TransactionDetailsBtn"
+                onClick={() => setActivePaneIndex(1)}
+              >
+                <Icon.List />
+                <span>Transaction details</span>
+              </div>
+            </div>,
+            <div className="ChangeTrustInternal__TransactionDetails">
+              <div className="ChangeTrustInternal__TransactionDetails__Header">
+                <div className="DetailsMark">
+                  <Icon.List />
+                </div>
+                <div className="Close" onClick={() => setActivePaneIndex(0)}>
+                  <Icon.X />
+                </div>
+              </div>
+              <div className="ChangeTrustInternal__TransactionDetails__Title">
+                <span>Transaction Details</span>
+              </div>
+              <div className="ChangeTrustInternal__TransactionDetails__Summary">
+                <Summary
+                  sequenceNumber={sequence}
+                  fee={xlmToStroop(fee).toString()}
+                  memo={{ value: memo, type: "text" }}
+                  xdr={xdr}
+                  operationNames={transaction.operations.map(
+                    (op) => OPERATION_TYPES[op.type] || op.type,
+                  )}
+                />
+              </div>
+              <Details
+                operations={transaction.operations}
+                flaggedKeys={flaggedKeys}
+                isMemoRequired={isMemoRequired}
+              />
+            </div>,
+          ]}
+        />
+      )}
+      {activeBodyContent === ActiveBodyContent.fee && (
+        <Fee
+          fee={fee}
+          onSaveFee={setFee}
+          recommendedFee={recommendedFee}
+          goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
+        />
+      )}
+      {activeBodyContent === ActiveBodyContent.timeout && (
+        <Timeout
+          timeout={timeout}
+          onSave={setTimeout}
+          goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
+        />
+      )}
+      {activeBodyContent === ActiveBodyContent.memo && (
+        <Memo
+          memo={memo}
+          onSave={setMemo}
+          goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
+        />
+      )}
+      {activeBodyContent === ActiveBodyContent.submitTx && (
+        <SubmitTransaction
+          assetCode={asset.code}
+          assetIssuer={asset.issuer}
+          addTrustline={addTrustline}
+          icons={icons}
+          fee={fee}
+          goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
+          onSuccess={onCancel}
+        />
+      )}
+      {activeBodyContent === ActiveBodyContent.details && (
+        <div className="ChangeTrustInternal__Actions">
+          <div className="ChangeTrustInternal__Actions__BtnRow">
+            {isSettingsSelectorOpen ? (
+              <div
+                className="ChangeTrustInternal__options-actions"
+                ref={activeOptionsRef}
+              >
+                <div
+                  className="ChangeTrustInternal__options-actions__row"
+                  onClick={() => setActiveBodyContent(ActiveBodyContent.fee)}
+                >
+                  <div className="action-copy">
+                    <div className="ChangeTrustInternal__options-actions__label">
+                      Fee: {`${fee} XLM`}
+                    </div>
+                    <Icon.Route />
+                  </div>
+                </div>
+                <div
+                  className="ChangeTrustInternal__options-actions__row"
+                  onClick={() =>
+                    setActiveBodyContent(ActiveBodyContent.timeout)
+                  }
+                >
+                  <div className="action-copy">
+                    <div className="ChangeTrustInternal__options-actions__label">
+                      Timeout: {`${timeout}(s)`}
+                    </div>
+                    <Icon.Clock />
+                  </div>
+                </div>
+                <div
+                  className="ChangeTrustInternal__options-actions__row"
+                  onClick={() => setActiveBodyContent(ActiveBodyContent.memo)}
+                >
+                  <div className="action-copy">
+                    <div className="ChangeTrustInternal__options-actions__label">
+                      Memo
+                    </div>
+                    <Icon.File02 />
+                  </div>
+                </div>
+              </div>
+            ) : null}
+            <Button
+              isRounded
+              size="lg"
+              variant="tertiary"
+              onClick={() => setSettingsSelectorOpen(true)}
+            >
+              <Icon.Settings04 />
+            </Button>
+            <Button
+              isFullWidth
+              isRounded
+              size="lg"
+              variant="tertiary"
+              onClick={onCancel}
+            >
+              {t("Cancel")}
+            </Button>
+            <Button
+              data-testid="sign-transaction-sign"
+              variant="secondary"
+              isFullWidth
+              isRounded
+              size="lg"
+              onClick={() => setActiveBodyContent(ActiveBodyContent.submitTx)}
+            >
+              {t("Confirm")}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

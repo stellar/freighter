@@ -551,10 +551,10 @@ interface TrustlineProps {
   icons: AssetIcons;
 }
 
-const Trustline = ({ operations, icons }: TrustlineProps) => {
+export const Trustline = ({ operations, icons }: TrustlineProps) => {
   const renderTrustlineChanges = (operation: Operation.ChangeTrust) => {
     const { line, limit } = operation;
-    const isRemoveTrustline = limit === "0";
+    const isRemoveTrustline = new BigNumber(limit).isZero();
 
     const renderTrustlineAsset = (line: Asset | LiquidityPoolAsset) => {
       if ("code" in line) {

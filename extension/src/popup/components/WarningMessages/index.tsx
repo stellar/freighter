@@ -813,7 +813,7 @@ export const NewAssetWarning = ({
                   className="TokenWarning__description__text"
                   data-testid="DescriptionLabel"
                 >
-                  {t("Add Asset Trustline")}
+                  {t("Approve Trustline")}
                 </div>
               </div>
             </div>
