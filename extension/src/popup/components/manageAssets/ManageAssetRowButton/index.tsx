@@ -55,7 +55,6 @@ interface ManageAssetRowButtonProps {
   setNewAssetFlags: (flags: any) => void;
   setShowUnverifiedWarning: (rowButtonShowing: boolean) => void;
   setHandleAddToken: (func: any) => void;
-  recommendedFee: string;
   balances: AccountBalances;
 }
 
@@ -78,7 +77,6 @@ export const ManageAssetRowButton = ({
   setNewAssetFlags,
   setShowUnverifiedWarning,
   setHandleAddToken,
-  recommendedFee,
   balances,
 }: ManageAssetRowButtonProps) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -101,7 +99,6 @@ export const ManageAssetRowButton = ({
   const { changeTrustline } = useChangeTrustline({
     assetCode: code,
     assetIssuer: issuer,
-    recommendedFee,
     setAssetSubmitting,
     setIsSigningWithHardwareWallet,
     setIsTrustlineErrorShowing,

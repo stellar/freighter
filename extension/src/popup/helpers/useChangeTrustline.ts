@@ -25,7 +25,6 @@ import { useNetworkFees } from "./useNetworkFees";
 export const useChangeTrustline = ({
   assetCode,
   assetIssuer,
-  recommendedFee: inputFee,
   setAssetSubmitting,
   setIsSigningWithHardwareWallet,
   setIsTrustlineErrorShowing,
@@ -33,7 +32,6 @@ export const useChangeTrustline = ({
 }: {
   assetCode: string;
   assetIssuer: string;
-  recommendedFee?: string;
   setAssetSubmitting?: (rowButtonShowing: string) => void;
   setIsSigningWithHardwareWallet?: (value: boolean) => void;
   setIsTrustlineErrorShowing?: (value: boolean) => void;
@@ -56,8 +54,7 @@ export const useChangeTrustline = ({
     networkDetails.networkPassphrase,
   );
 
-  const networkFees = useNetworkFees();
-  const recommendedFee = inputFee || networkFees.recommendedFee;
+  const { fetchData: fetchFees } = useNetworkFees();
 
   const canonicalAsset = getCanonicalFromAsset(assetCode, assetIssuer);
 
@@ -104,14 +101,14 @@ export const useChangeTrustline = ({
     successfulCallback?: () => Promise<void>,
   ) => {
     setAssetSubmitting?.(canonicalAsset);
-
+    const fees = await fetchFees();
     const transactionXDR: string = await getManageAssetXDR({
       publicKey,
       assetCode,
       assetIssuer,
       addTrustline,
       server,
-      recommendedFee,
+      recommendedFee: fees.recommendedFee,
       networkDetails,
     });
 
