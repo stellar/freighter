@@ -70,11 +70,11 @@ test.skip("Adding Soroban verified token", async ({ page, extensionId }) => {
     timeout: 30000,
   });
 });
-test("Adding token on Futurenet", async ({ page, extensionId }) => {
+test("Adding token on Futurenet", async ({ page, extensionId, context }) => {
   await stubTokenDetails(page);
   await stubAccountBalances(page);
   await stubAccountHistory(page);
-  await stubTokenPrices(page);
+  await stubTokenPrices(context);
 
   test.slow();
   await loginToTestAccount({ page, extensionId });

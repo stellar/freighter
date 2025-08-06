@@ -94,7 +94,7 @@ export const stubTokenDetails = async (page: Page | BrowserContext) => {
   });
 };
 
-export const stubTokenPrices = async (page: Page) => {
+export const stubTokenPrices = async (page: Page | BrowserContext) => {
   await page.route("**/token-prices/**", async (route) => {
     const request = route.request();
 
