@@ -15,7 +15,6 @@ import {
   truncateString,
 } from "helpers/stellar";
 import { isContractId, isSacContract } from "popup/helpers/soroban";
-import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
 import { LoadingBackground } from "popup/basics/LoadingBackground";
@@ -100,7 +99,6 @@ export const ManageAssetRows = ({
   const [assetSubmitting, setAssetSubmitting] = useState("");
   const dispatch = useDispatch<AppDispatch>();
   const walletType = useSelector(hardwareWalletTypeSelector);
-  const { recommendedFee } = useNetworkFees();
   const navigate = useNavigate();
 
   const [showBlockedDomainWarning, setShowBlockedDomainWarning] =
@@ -238,7 +236,6 @@ export const ManageAssetRows = ({
                   setAssetSubmitting={setAssetSubmitting}
                   setShowNewAssetWarning={setShowNewAssetWarning}
                   setShowUnverifiedWarning={setShowUnverifiedWarning}
-                  recommendedFee={recommendedFee}
                 />
               </>
             )}

@@ -61,6 +61,7 @@ jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => {
   return {
     recommendedFee: ".00001",
     networkCongestion: UseNetworkFees.NetworkCongestion.MEDIUM,
+    fetchData: () => Promise.resolve({ recommendedFee: "00.1" }),
   };
 });
 
