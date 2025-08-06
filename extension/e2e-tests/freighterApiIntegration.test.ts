@@ -224,12 +224,6 @@ test("should sign message when allowed", async ({
   extensionId,
   context,
 }) => {
-  page.on("request", (req) => {
-    if (req.url().includes("backend")) {
-      console.log("🕵️ All requests →", req.url());
-    }
-  });
-
   await stubTokenDetails(page);
   await stubAccountBalances(page);
   await stubAccountHistory(page);
@@ -313,11 +307,12 @@ test("should add token when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
+  await stubTokenDetails(context);
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
   await stubScanDapp(context);
+  await stubIsSac(context);
 
   await loginToTestAccount({ page, extensionId });
   await allowDapp({ page });
@@ -336,7 +331,6 @@ test("should add token when allowed", async ({
   await pageTwo.getByText("Add Token").click();
 
   const popup = await popupPromise;
-  await stubIsSac(popup);
 
   await expect(popup.getByText("E2E Token")).toBeDefined();
   await expectPageToHaveScreenshot({
@@ -355,11 +349,12 @@ test("should not add token when not allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
+  await stubTokenDetails(context);
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
   await stubScanDapp(context);
+  await stubIsSac(context);
 
   await loginToTestAccount({ page, extensionId });
 
@@ -377,7 +372,6 @@ test("should not add token when not allowed", async ({
   await pageTwo.getByText("Add Token").click();
 
   const popup = await popupPromise;
-  await stubIsSac(popup);
 
   await expect(
     popup.getByText(

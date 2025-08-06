@@ -59,7 +59,7 @@ export const stubScanDapp = async (context: BrowserContext) => {
   });
 };
 
-export const stubIsSac = async (page: Page) => {
+export const stubIsSac = async (page: Page | BrowserContext) => {
   await page.route("**/is-sac-contract**", async (route) => {
     const json = {
       isSacContract: false,
@@ -68,7 +68,7 @@ export const stubIsSac = async (page: Page) => {
   });
 };
 
-export const stubTokenDetails = async (page: Page) => {
+export const stubTokenDetails = async (page: Page | BrowserContext) => {
   await page.route("**/token-details/**", async (route) => {
     const url = route.request().url();
     const parsedUrl = new URL(url);
