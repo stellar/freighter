@@ -184,9 +184,12 @@ const getBuiltTx = async (
 
     return transaction;
   } catch (error) {
-    captureException({
-      error,
-      arguments: {
+    const err =
+      error instanceof Error
+        ? error
+        : new Error(typeof error === "string" ? error : JSON.stringify(error));
+    captureException(err, {
+      extra: {
         sourceAsset,
         destAsset,
         amount,
@@ -200,8 +203,7 @@ const getBuiltTx = async (
         publicKey,
       },
     });
-    const err = typeof error === "string" ? error : JSON.stringify(error);
-    throw new Error(`Failed to build operation: ${err}`);
+    throw new Error(`Failed to build operation: ${err.message}`);
   }
 };
 

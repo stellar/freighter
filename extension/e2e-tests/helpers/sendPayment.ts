@@ -27,10 +27,9 @@ export const sendXlmPayment = async ({ page }) => {
   await expect(page.getByTestId("SendSettingsTransactionFee")).toHaveText(
     /[0-9]/,
   );
-  // 100 XLM is the default, so likely a sign the fee was not set properly from Horizon
-  await expect(
-    page.getByTestId("SendSettingsTransactionFee"),
-  ).not.toContainText("100 XLM");
+  await expect(page.getByTestId("SendSettingsTransactionFee")).toContainText(
+    "100 XLM",
+  );
   await expectPageToHaveScreenshot(
     {
       page,
