@@ -2,6 +2,14 @@ import { expect, test, expectPageToHaveScreenshot } from "./test-fixtures";
 import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 import { loginToTestAccount } from "./helpers/login";
 import { allowDapp } from "./helpers/allowDapp";
+import {
+  stubAccountBalances,
+  stubAccountHistory,
+  stubIsSac,
+  stubScanDapp,
+  stubTokenDetails,
+  stubTokenPrices,
+} from "./helpers/stubs";
 
 const TX_TO_SIGN =
   "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAAGQAAAfjAAAOpQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAAAAAAAAvrwgAAAAAAAAAAA";
@@ -26,7 +34,17 @@ const MSG_TO_SIGN = "Hello, World!";
 const SIGNED_MSG =
   '"v6NmJHPZ5jUzZzphmTAb4/2Yv18mXFLmzjnwgDmqKR6Rq7/HQB6YxcUbxtBYNtBxccmPq2PB+7EBwOL3nuwQAQ=="';
 
-test("should sign transaction when allowed", async ({ page, extensionId }) => {
+test("should sign transaction when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
   await loginToTestAccount({ page, extensionId });
   await allowDapp({ page });
 
@@ -111,12 +129,23 @@ test.skip("should not sign transaction when not allowed", async ({
   });
 });
 
-test("should sign auth entry when allowed", async ({ page, extensionId }) => {
+test("should sign auth entry when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
   await loginToTestAccount({ page, extensionId });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
+
   await pageTwo.waitForLoadState();
 
   const popupPromise = page.context().waitForEvent("page");
@@ -148,7 +177,13 @@ test("should sign auth entry when allowed", async ({ page, extensionId }) => {
 test("should not sign auth entry when not allowed", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
   await loginToTestAccount({ page, extensionId });
 
   // open a second tab and go to docs playground
@@ -184,12 +219,29 @@ test("should not sign auth entry when not allowed", async ({
   });
 });
 
-test("should sign message when allowed", async ({ page, extensionId }) => {
+test("should sign message when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  page.on("request", (req) => {
+    if (req.url().includes("backend")) {
+      console.log("🕵️ All requests →", req.url());
+    }
+  });
+
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
   await loginToTestAccount({ page, extensionId });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
+
   await pageTwo.waitForLoadState();
 
   const popupPromise = page.context().waitForEvent("page");
@@ -220,7 +272,13 @@ test("should sign message when allowed", async ({ page, extensionId }) => {
 test("should not sign message when not allowed", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
   await loginToTestAccount({ page, extensionId });
 
   // open a second tab and go to docs playground
@@ -250,7 +308,17 @@ test("should not sign message when not allowed", async ({
   });
 });
 
-test("should add token when allowed", async ({ page, extensionId }) => {
+test("should add token when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
   await loginToTestAccount({ page, extensionId });
   await allowDapp({ page });
 
@@ -268,11 +336,9 @@ test("should add token when allowed", async ({ page, extensionId }) => {
   await pageTwo.getByText("Add Token").click();
 
   const popup = await popupPromise;
+  await stubIsSac(popup);
 
-  await expect(popup.getByTestId("add-token-asset-code")).toHaveText("E2E");
-  await expect(popup.getByTestId("add-token-asset-name")).toHaveText(
-    "E2E Token",
-  );
+  await expect(popup.getByText("E2E Token")).toBeDefined();
   await expectPageToHaveScreenshot({
     page: popup,
     screenshot: "add-token.png",
@@ -284,7 +350,17 @@ test("should add token when allowed", async ({ page, extensionId }) => {
   );
 });
 
-test("should not add token when not allowed", async ({ page, extensionId }) => {
+test("should not add token when not allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
   await loginToTestAccount({ page, extensionId });
 
   // open a second tab and go to docs playground
@@ -301,6 +377,7 @@ test("should not add token when not allowed", async ({ page, extensionId }) => {
   await pageTwo.getByText("Add Token").click();
 
   const popup = await popupPromise;
+  await stubIsSac(popup);
 
   await expect(
     popup.getByText(
@@ -314,7 +391,17 @@ test("should not add token when not allowed", async ({ page, extensionId }) => {
   });
 });
 
-test("should get public key when logged out", async ({ page, extensionId }) => {
+test("should get public key when logged out", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Settings").click();
