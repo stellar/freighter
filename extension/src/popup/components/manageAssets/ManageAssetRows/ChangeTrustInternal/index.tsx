@@ -1,7 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Icon, Loader, Notification } from "@stellar/design-system";
-import { BASE_FEE, TransactionBuilder } from "stellar-sdk";
+import {
+  BASE_FEE,
+  Operation,
+  Transaction,
+  TransactionBuilder,
+} from "stellar-sdk";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { RequestState } from "constants/request";
@@ -18,13 +23,14 @@ import { Summary } from "popup/views/SignTransaction/Preview/Summary";
 import { Details } from "popup/views/SignTransaction/Preview/Details";
 import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 import { Trustline } from "popup/views/SignTransaction";
+import { BlockaidAssetWarning } from "popup/components/WarningMessages";
 import { useGetChangeTrustData } from "./hooks/useChangeTrustData";
 import { Fee } from "./Settings/Fee";
 import { Timeout } from "./Settings/Timeout";
 import { Memo } from "./Settings/Memo";
+import { SubmitTransaction } from "./SubmitTx";
 
 import "./styles.scss";
-import { SubmitTransaction } from "./SubmitTx";
 
 enum ActiveBodyContent {
   details = "details",
@@ -40,6 +46,7 @@ interface ChangeTrustInternalProps {
     issuer: string;
     image: string;
     domain: string;
+    contract?: string;
   };
   networkDetails: NetworkDetails;
   publicKey: string;
@@ -127,21 +134,29 @@ export const ChangeTrustInternal = ({
   const flaggedKeys = state.data.flaggedKeys;
   const icons = { [canonical]: asset.image };
 
-  const transaction = TransactionBuilder.fromXDR(
-    xdr,
-    networkDetails.networkPassphrase,
-  );
+  // NOTE: no transaction associated with adding a custom token
+  let transaction = undefined as undefined | Transaction;
+  let operations = [] as Operation[];
+  let trustlineChanges = [] as Operation.ChangeTrust[];
+  let isMemoRequired = false;
   let sequence = "";
-  if (!("innerTransaction" in transaction)) {
-    sequence = transaction.sequence;
+  if (xdr) {
+    transaction = TransactionBuilder.fromXDR(
+      xdr,
+      networkDetails.networkPassphrase,
+    ) as Transaction;
+    if (!("innerTransaction" in transaction)) {
+      sequence = transaction.sequence;
+    }
+    const flaggedKeyValues = Object.values(flaggedKeys);
+    isMemoRequired = flaggedKeyValues.some(
+      ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
+    );
+    operations = transaction.operations;
+    trustlineChanges = transaction.operations.filter(
+      (op) => op.type === "changeTrust",
+    );
   }
-  const flaggedKeyValues = Object.values(flaggedKeys);
-  const isMemoRequired = flaggedKeyValues.some(
-    ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
-  );
-  const trustlineChanges = transaction.operations.filter(
-    (op) => op.type === "changeTrust",
-  );
 
   return (
     <div data-testid="ChangeTrustInternal" className="ChangeTrustInternal">
@@ -161,6 +176,9 @@ export const ChangeTrustInternal = ({
                   </span>
                 </div>
               </div>
+              {state.data.isAssetSuspicious && (
+                <BlockaidAssetWarning blockaidData={state.data.scanResult} />
+              )}
               {trustlineChanges.length > 0 && (
                 <Trustline operations={trustlineChanges} icons={icons} />
               )}
@@ -210,13 +228,13 @@ export const ChangeTrustInternal = ({
                   fee={xlmToStroop(fee).toString()}
                   memo={{ value: memo, type: "text" }}
                   xdr={xdr}
-                  operationNames={transaction.operations.map(
+                  operationNames={operations.map(
                     (op) => OPERATION_TYPES[op.type] || op.type,
                   )}
                 />
               </div>
               <Details
-                operations={transaction.operations}
+                operations={operations}
                 flaggedKeys={flaggedKeys}
                 isMemoRequired={isMemoRequired}
               />
@@ -248,8 +266,7 @@ export const ChangeTrustInternal = ({
       )}
       {activeBodyContent === ActiveBodyContent.submitTx && (
         <SubmitTransaction
-          assetCode={asset.code}
-          assetIssuer={asset.issuer}
+          asset={asset}
           addTrustline={addTrustline}
           icons={icons}
           fee={fee}
@@ -320,7 +337,6 @@ export const ChangeTrustInternal = ({
               {t("Cancel")}
             </Button>
             <Button
-              data-testid="sign-transaction-sign"
               variant="secondary"
               isFullWidth
               isRounded

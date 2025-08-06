@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Networks } from "stellar-sdk";
 import { Button, Icon, Loader } from "@stellar/design-system";
 
 import {
@@ -12,6 +13,7 @@ import { View } from "popup/basics/layout/View";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { EnterPassword } from "popup/components/EnterPassword";
 import {
+  addTokenId,
   confirmPassword,
   hasPrivateKeySelector,
   publicKeySelector,
@@ -22,13 +24,20 @@ import { openTab } from "popup/helpers/navigate";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetIcons } from "@shared/api/types";
+import { removeTokenId } from "popup/ducks/transactionSubmission";
+import { NETWORKS } from "@shared/constants/stellar";
 import { useGetChangeTrust } from "../hooks/useChangeTrust";
 
 import "./styles.scss";
 
 interface SubmitTransactionProps {
-  assetCode: string;
-  assetIssuer: string;
+  asset: {
+    code: string;
+    issuer: string;
+    image: string;
+    domain: string;
+    contract?: string;
+  };
   addTrustline: boolean;
   fee: string;
   icons: AssetIcons;
@@ -37,8 +46,7 @@ interface SubmitTransactionProps {
 }
 
 export const SubmitTransaction = ({
-  assetCode,
-  assetIssuer,
+  asset,
   addTrustline,
   icons,
   fee,
@@ -56,20 +64,39 @@ export const SubmitTransaction = ({
 
   useEffect(() => {
     const getData = async () => {
-      const server = stellarSdkServer(
-        networkDetails.networkUrl,
-        networkDetails.networkPassphrase,
-      );
-      const xdr = await getManageAssetXDR({
-        publicKey,
-        assetCode,
-        assetIssuer,
-        addTrustline,
-        server,
-        recommendedFee: fee,
-        networkDetails,
-      });
-      await fetchData({ publicKey, xdr, networkDetails });
+      if (asset.contract) {
+        if (addTrustline) {
+          await dispatch(
+            addTokenId({
+              publicKey,
+              tokenId: asset.contract,
+              network: networkDetails.network as Networks,
+            }),
+          );
+        } else {
+          await dispatch(
+            removeTokenId({
+              contractId: asset.contract,
+              network: networkDetails.network as NETWORKS,
+            }),
+          );
+        }
+      } else {
+        const server = stellarSdkServer(
+          networkDetails.networkUrl,
+          networkDetails.networkPassphrase,
+        );
+        const xdr = await getManageAssetXDR({
+          publicKey,
+          assetCode: asset.code,
+          assetIssuer: asset.issuer,
+          addTrustline,
+          server,
+          recommendedFee: fee,
+          networkDetails,
+        });
+        await fetchData({ publicKey, xdr, networkDetails });
+      }
     };
     if (!isVerifyAccountModalOpen) {
       getData();
@@ -87,7 +114,10 @@ export const SubmitTransaction = ({
   const isSuccess = state.state === RequestState.SUCCESS;
   const isFail = state.state === RequestState.ERROR;
 
-  const canonical = getCanonicalFromAsset(assetCode, assetIssuer);
+  const canonical = getCanonicalFromAsset(
+    asset.code,
+    asset.contract || asset.issuer,
+  );
   const icon = icons[canonical];
 
   return (
@@ -187,8 +217,8 @@ export const SubmitTransaction = ({
               <div className="SubmitTransaction__Summary__Assets">
                 <AssetIcon
                   assetIcons={icons}
-                  code={assetCode}
-                  issuerKey={assetIssuer}
+                  code={asset.code}
+                  issuerKey={asset.issuer}
                   icon={icon}
                   isSuspicious={false}
                 />

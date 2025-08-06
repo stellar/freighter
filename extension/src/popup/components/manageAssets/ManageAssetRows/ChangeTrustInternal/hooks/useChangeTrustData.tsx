@@ -4,7 +4,7 @@ import { initialState, reducer } from "helpers/request";
 import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { scanAsset } from "popup/helpers/blockaid";
+import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { FlaggedKeys } from "types/transactions";
@@ -19,6 +19,7 @@ export interface ChangeTrustData {
   flaggedKeys: FlaggedKeys;
   scanResult: BlockAidScanAssetResult;
   transactionXDR: string;
+  isAssetSuspicious: boolean;
 }
 
 function useGetChangeTrustData({
@@ -32,6 +33,7 @@ function useGetChangeTrustData({
     code: string;
     issuer: string;
     domain: string;
+    contract?: string;
   };
   assetImage: string;
   networkDetails: NetworkDetails;
@@ -48,35 +50,39 @@ function useGetChangeTrustData({
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const payload = { flaggedKeys: {} } as ChangeTrustData;
-      const server = stellarSdkServer(
-        networkDetails.networkUrl,
-        networkDetails.networkPassphrase,
-      );
-      const resp = await checkForSuspiciousAsset({
-        code: asset.code,
-        issuer: asset.issuer,
-        domain: asset.domain,
-        server,
-        networkDetails,
-      });
-      payload.asset = resp;
 
-      const scannedAsset = await scanAsset(
-        `${asset.code}-${asset.issuer}`,
-        networkDetails,
-      );
-      payload.scanResult = scannedAsset;
+      if (!asset.contract) {
+        const server = stellarSdkServer(
+          networkDetails.networkUrl,
+          networkDetails.networkPassphrase,
+        );
+        const resp = await checkForSuspiciousAsset({
+          code: asset.code,
+          issuer: asset.issuer,
+          domain: asset.domain,
+          server,
+          networkDetails,
+        });
+        payload.asset = resp;
 
-      const transactionXDR = await getManageAssetXDR({
-        publicKey,
-        assetCode: asset.code,
-        assetIssuer: asset.issuer,
-        addTrustline,
-        server,
-        recommendedFee,
-        networkDetails,
-      });
-      payload.transactionXDR = transactionXDR;
+        const scannedAsset = await scanAsset(
+          `${asset.code}-${asset.issuer}`,
+          networkDetails,
+        );
+        payload.scanResult = scannedAsset;
+
+        const transactionXDR = await getManageAssetXDR({
+          publicKey,
+          assetCode: asset.code,
+          assetIssuer: asset.issuer,
+          addTrustline,
+          server,
+          recommendedFee,
+          networkDetails,
+        });
+        payload.transactionXDR = transactionXDR;
+        payload.isAssetSuspicious = isAssetSuspicious(scannedAsset);
+      }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
