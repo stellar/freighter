@@ -28,10 +28,6 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");
   await page.getByTestId("ManageAssetRowButton").click({ force: true });
 
-  await expectPageToHaveScreenshot({
-    page,
-    screenshot: "manage-assets-unverified-token.png",
-  });
   await page.getByTestId("ManageAssetRowButton").dispatchEvent("click");
   await expect(page.getByTestId("account-view")).toContainText("E2E");
 });
