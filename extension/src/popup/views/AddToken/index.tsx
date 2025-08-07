@@ -420,7 +420,7 @@ export const AddToken = () => {
           {t("Cancel")}
         </Button>
         <Button
-          data-testid="sign-auth-entry-approve-button"
+          data-testid="add-token-approve"
           disabled={!isDomainListedAllowed}
           isFullWidth
           isRounded
