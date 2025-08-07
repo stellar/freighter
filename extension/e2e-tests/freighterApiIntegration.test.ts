@@ -369,7 +369,7 @@ test("should not add token when not allowed", async ({
 
   await expect(
     popup.getByText(
-      "docs.freighter.app is currently not connected to this Freighter account",
+      "docs.freighter.app is not currently connected to Freighter",
     ),
   ).toBeVisible();
   await expect(popup.getByTestId("add-token-approve")).toBeDisabled();

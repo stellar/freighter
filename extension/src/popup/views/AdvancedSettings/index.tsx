@@ -55,7 +55,7 @@ const AdvancedSettingFeature = ({
         data-testid={toggleId}
       >
         <Toggle
-          fieldSize="md"
+          fieldSize="sm"
           checked={isToggled}
           customInput={<Field />}
           id={toggleId}

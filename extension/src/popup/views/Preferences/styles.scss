@@ -9,6 +9,10 @@
     gap: 1rem;
     margin-bottom: 2rem;
 
+    .Card {
+      color: var(--sds-clr-gray-11);
+    }
+
     &--title {
       display: flex;
       justify-content: space-between;
