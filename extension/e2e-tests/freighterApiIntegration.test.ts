@@ -10,6 +10,7 @@ import {
   stubTokenDetails,
   stubTokenPrices,
 } from "./helpers/stubs";
+import { Page } from "@playwright/test";
 
 const TX_TO_SIGN =
   "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAAGQAAAfjAAAOpQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAAAAAAAAvrwgAAAAAAAAAAA";
@@ -67,24 +68,10 @@ test("should sign transaction when allowed", async ({
   const txPopup = await txPopupPromise;
 
   await expect(txPopup.getByText("Confirm Transaction")).toBeVisible();
-  await expect(txPopup.getByText("Payment")).toBeVisible();
 
-  await expect(
-    txPopup.getByTestId("OperationKeyVal__value").first(),
-  ).toHaveText("GBTY…JZOF");
+  await expect(txPopup.getByText("GDF3…ZEFY")).toBeVisible();
 
-  await expect(txPopup.getByTestId("OperationKeyVal__key").nth(1)).toHaveText(
-    "Asset Code",
-  );
-  await expect(txPopup.getByTestId("OperationKeyVal__value").nth(1)).toHaveText(
-    "XLM",
-  );
-  await expect(txPopup.getByTestId("OperationKeyVal__key").nth(2)).toHaveText(
-    "Amount",
-  );
-  await expect(txPopup.getByTestId("OperationKeyVal__value").nth(2)).toHaveText(
-    "5.0000000",
-  );
+  await expect(txPopup.getByText("-5")).toBeVisible();
   await expectPageToHaveScreenshot({
     page: txPopup,
     screenshot: "sign-transaction.png",
@@ -157,7 +144,9 @@ test("should sign auth entry when allowed", async ({
     .getByRole("textbox")
     .nth(1)
     .fill("Test SDF Network ; September 2015");
-  await pageTwo.getByText("Sign Authorization Entry XDR").click();
+  await pageTwo
+    .getByText("Sign Authorization Entry XDR")
+    .click({ force: true });
 
   const popup = await popupPromise;
 
@@ -184,10 +173,12 @@ test("should not sign auth entry when not allowed", async ({
   await stubAccountHistory(page);
   await stubTokenPrices(page);
   await stubScanDapp(context);
+
   await loginToTestAccount({ page, extensionId });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
+
   await pageTwo.waitForLoadState();
 
   const popupPromise = page.context().waitForEvent("page");
@@ -199,13 +190,16 @@ test("should not sign auth entry when not allowed", async ({
     .getByRole("textbox")
     .nth(1)
     .fill("Test SDF Network ; September 2015");
-  await pageTwo.getByText("Sign Authorization Entry XDR").click();
+  await pageTwo
+    .getByText("Sign Authorization Entry XDR")
+    .click({ force: true });
 
   const popup = await popupPromise;
 
+  await expect(popup.getByText("Confirm Authorization").first()).toBeVisible();
   await expect(
     popup.getByText(
-      "docs.freighter.app is currently not connected to this Freighter account",
+      "docs.freighter.app is not currently connected to Freighter",
     ),
   ).toBeVisible();
 
@@ -286,13 +280,13 @@ test("should not sign message when not allowed", async ({
     .getByRole("textbox")
     .nth(1)
     .fill("Test SDF Network ; September 2015");
-  await pageTwo.getByText("Sign message").click();
+  await pageTwo.getByText("Sign message").click({ force: true });
 
   const popup = await popupPromise;
 
   await expect(
     popup.getByText(
-      "docs.freighter.app is currently not connected to this Freighter account",
+      "docs.freighter.app is not currently connected to Freighter",
     ),
   ).toBeVisible();
   await expect(popup.getByTestId("sign-message-approve-button")).toBeDisabled();
@@ -369,13 +363,13 @@ test("should not add token when not allowed", async ({
     .getByRole("textbox")
     .nth(1)
     .fill("Test SDF Network ; September 2015");
-  await pageTwo.getByText("Add Token").click();
+  await pageTwo.getByText("Add Token").click({ force: true });
 
   const popup = await popupPromise;
 
   await expect(
     popup.getByText(
-      "docs.freighter.app is currently not connected to this Freighter account",
+      "docs.freighter.app is not currently connected to Freighter",
     ),
   ).toBeVisible();
   await expect(popup.getByTestId("add-token-approve")).toBeDisabled();
