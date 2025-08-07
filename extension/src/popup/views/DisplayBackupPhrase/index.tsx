@@ -17,13 +17,13 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 
 import { BackupPhraseWarningMessage } from "popup/components/WarningMessages";
-
-import "./styles.scss";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
+
+import "./styles.scss";
 
 export const DisplayBackupPhrase = () => {
   const { t } = useTranslation();
@@ -121,7 +121,7 @@ export const DisplayBackupPhrase = () => {
 
   return (
     <React.Fragment>
-      <SubviewHeader title={t("Show recovery phrase")} />
+      <SubviewHeader title={t("Reveal recovery phrase")} />
       {isPhraseUnlocked ? (
         <>
           <View.Content>
@@ -156,6 +156,7 @@ export const DisplayBackupPhrase = () => {
                     fieldSize="md"
                     id="password"
                     autoComplete="off"
+                    label="Password"
                     error={errorMessage}
                     customInput={<Field />}
                     type="password"
@@ -172,7 +173,7 @@ export const DisplayBackupPhrase = () => {
                     type="submit"
                     variant="secondary"
                   >
-                    {t("Show recovery phrase")}
+                    {t("Reveal recovery phrase")}
                   </Button>
                 </View.Footer>
               </Form>

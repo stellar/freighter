@@ -154,18 +154,17 @@ export const BackupPhraseWarningMessage = () => {
 
   return (
     <div className="WarningMessage__backup">
-      <div className="WarningMessage__infoBlock">
-        <div className="WarningMessage__header">
-          <Icon.InfoOctagon className="WarningMessage__icon" />
-          <div>{t("Important")}</div>
-        </div>
-
-        <p className="BackupWarning">
+      <Card>
+        <h3>Important</h3>
+        <span className="WarningMessage__backup__description">
+          {t("Keep your recovery phrase in a safe and secure place.")}
+        </span>
+        <span className="WarningMessage__backup__description">
           {t(
-            "Keep your recovery phrase in a safe and secure place. Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
+            "Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
           )}
-        </p>
-      </div>
+        </span>
+      </Card>
     </div>
   );
 };
