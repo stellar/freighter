@@ -27,11 +27,13 @@ import {
   SSLWarningMessage,
   BlockaidAssetWarning,
   DomainNotAllowedWarningMessage,
+  BlockAidAssetScanExpanded,
+  AssetListWarning,
+  AssetListWarningExpanded,
 } from "popup/components/WarningMessages";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { View } from "popup/basics/layout/View";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
-import { AssetNotification } from "popup/components/AssetNotification";
 import { useTokenLookup } from "popup/helpers/useTokenLookup";
 import { isContractId } from "popup/helpers/soroban";
 import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
@@ -43,6 +45,7 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 
 import "./styles.scss";
+import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 
 export const AddToken = () => {
   const location = useLocation();
@@ -75,6 +78,7 @@ export const AddToken = () => {
     BlockAidScanAssetResult | undefined
   >(undefined);
   const [errorMessage, setErrorMessage] = useState("");
+  const [activePaneIndex, setActivePaneIndex] = useState(0);
 
   const assetCurrency: ManageAssetCurrency | undefined = assetRows[0];
 
@@ -138,9 +142,6 @@ export const AddToken = () => {
         `${assetCode}-${assetIssuer}`,
         networkDetails,
       );
-
-      // "Benign" | "Warning" | "Malicious" | "Spam"
-      // scannedAsset.result_type = "Warning";
 
       if (isAssetSuspicious(scannedAsset)) {
         setBlockaidData(scannedAsset);
@@ -324,89 +325,110 @@ export const AddToken = () => {
 
   return (
     <React.Fragment>
-      <View.Content>
+      <View.Content hasNoBottomPadding>
         <div className="AddToken">
-          <div className="AddToken__wrapper">
-            <div className="AddToken__wrapper__header">
-              {assetIcon && (
-                <div className="AddToken__wrapper__icon-logo">
-                  <Asset
-                    size="lg"
-                    variant="single"
-                    sourceOne={{
-                      altText: "Add token logo",
-                      image: assetIcon,
-                    }}
+          <MultiPaneSlider
+            activeIndex={activePaneIndex}
+            panes={[
+              <div className="AddToken__wrapper">
+                <div className="AddToken__wrapper__header">
+                  {assetIcon && (
+                    <div className="AddToken__wrapper__icon-logo">
+                      <Asset
+                        size="lg"
+                        variant="single"
+                        sourceOne={{
+                          altText: "Add token logo",
+                          image: assetIcon,
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {!assetIcon && assetCode && (
+                    <div className="AddToken__wrapper__code-logo">
+                      <Text
+                        as="div"
+                        size="sm"
+                        weight="bold"
+                        addlClassName="AddToken__wrapper--logo-label"
+                      >
+                        {assetCode.slice(0, 2)}
+                      </Text>
+                    </div>
+                  )}
+
+                  {assetCurrency && (
+                    <Text as="div" size="sm" weight="medium">
+                      {assetName || assetCode}
+                    </Text>
+                  )}
+                  {assetDomain && (
+                    <Text
+                      as="div"
+                      size="sm"
+                      addlClassName="AddToken__wrapper--domain-label"
+                    >
+                      {assetDomain}
+                    </Text>
+                  )}
+                  <div className="AddToken__wrapper__badge">
+                    <Badge
+                      size="sm"
+                      variant="secondary"
+                      icon={<Icon.PlusCircle />}
+                      iconPosition="left"
+                    >
+                      {t("Add Token")}
+                    </Badge>
+                  </div>
+                </div>
+
+                {assetCurrency &&
+                  isVerificationInfoShowing &&
+                  !isVerifiedToken && (
+                    <AssetListWarning
+                      isVerified={isVerifiedToken}
+                      onClick={() => setActivePaneIndex(2)}
+                    />
+                  )}
+
+                {blockaidData && (
+                  <BlockaidAssetWarning
+                    blockaidData={blockaidData}
+                    onClick={() => setActivePaneIndex(1)}
                   />
+                )}
+
+                {!isDomainListedAllowed && (
+                  <DomainNotAllowedWarningMessage domain={params.domain} />
+                )}
+
+                <div className="AddToken__Description">
+                  Allow token to be displayed and used with this wallet address
                 </div>
-              )}
-
-              {!assetIcon && assetCode && (
-                <div className="AddToken__wrapper__code-logo">
-                  <Text
-                    as="div"
-                    size="sm"
-                    weight="bold"
-                    addlClassName="AddToken__wrapper--logo-label"
-                  >
-                    {assetCode.slice(0, 2)}
-                  </Text>
+                <div className="AddToken__Metadata">
+                  <div className="AddToken__Metadata__Row">
+                    <div className="AddToken__Metadata__Label">
+                      <Icon.Wallet01 />
+                      <span>Wallet</span>
+                    </div>
+                    <div className="AddToken__Metadata__Value">
+                      <KeyIdenticon publicKey={state.data.account.publicKey} />
+                    </div>
+                  </div>
                 </div>
-              )}
-
-              {assetCurrency && (
-                <Text as="div" size="sm" weight="medium">
-                  {assetName || assetCode}
-                </Text>
-              )}
-              {assetDomain && (
-                <Text
-                  as="div"
-                  size="sm"
-                  addlClassName="AddToken__wrapper--domain-label"
-                >
-                  {assetDomain}
-                </Text>
-              )}
-              <div className="AddToken__wrapper__badge">
-                <Badge
-                  size="sm"
-                  variant="secondary"
-                  icon={<Icon.PlusCircle />}
-                  iconPosition="left"
-                >
-                  {t("Add Token")}
-                </Badge>
-              </div>
-            </div>
-
-            {assetCurrency && isVerificationInfoShowing && (
-              <AssetNotification isVerified={isVerifiedToken} />
-            )}
-
-            {blockaidData && (
-              <BlockaidAssetWarning blockaidData={blockaidData} />
-            )}
-
-            {!isDomainListedAllowed && (
-              <DomainNotAllowedWarningMessage domain={params.domain} />
-            )}
-
-            <div className="AddToken__Description">
-              Allow token to be displayed and used with this wallet address
-            </div>
-            <div className="AddToken__Metadata">
-              <div className="AddToken__Metadata__Row">
-                <div className="AddToken__Metadata__Label">
-                  <Icon.Wallet01 />
-                  <span>Wallet</span>
-                </div>
-                <div className="AddToken__Metadata__Value">
-                  <KeyIdenticon publicKey={state.data.account.publicKey} />
-                </div>
-              </div>
-            </div>
-          </div>
+              </div>,
+              <BlockAidAssetScanExpanded
+                scanResult={blockaidData!}
+                onClose={() => setActivePaneIndex(0)}
+              />,
+              <AssetListWarningExpanded
+                isVerified={isVerifiedToken}
+                onClose={() => setActivePaneIndex(0)}
+              />,
+            ]}
+          />
         </div>
       </View.Content>
       <View.Footer isInline>

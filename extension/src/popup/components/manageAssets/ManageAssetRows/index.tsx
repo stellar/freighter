@@ -117,12 +117,10 @@ export const ManageAssetRows = ({
                 <ManageAssetRowButton
                   code={code}
                   issuer={issuer}
-                  balances={balances}
                   isTrustlineActive={!!isTrustlineActive}
                   isLoading={false}
                   onClick={async () => {
                     // NOTE: if the selected asset is classic, go through tx flow, otherwise just add to storage.
-                    console.log(contract);
                     if (!contract) {
                       setSelectedAsset({
                         code,

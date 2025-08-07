@@ -150,7 +150,7 @@ export const SignMessage = () => {
           {t("The requester expects you to sign this message on")}{" "}
           {blobNetworkPassphrase}.
         </p>
-        <p>{t("Signing this transaction is not possible at the moment.")}</p>
+        <p>{t("Signing this message is not possible at the moment.")}</p>
       </WarningMessage>
     );
   }

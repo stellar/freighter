@@ -6,7 +6,6 @@ import { CopyText, Icon, Link } from "@stellar/design-system";
 
 import { ApiTokenPrice, ApiTokenPrices } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
 import {
   displaySorobanId,
@@ -26,9 +25,7 @@ import { View } from "popup/basics/layout/View";
 import { settingsSelector } from "popup/ducks/settings";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
-import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { Loading } from "popup/components/Loading";
-import { BlockaidAssetWarning } from "popup/components/WarningMessages";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { title } from "helpers/transaction";
 import {
@@ -96,10 +93,6 @@ export const AssetDetail = ({
     canonical,
     accountBalances.balances,
   ) as Exclude<AssetType, LiquidityPoolShareAsset>;
-  const isSuspicious =
-    "blockaidData" in selectedBalance
-      ? isAssetSuspicious(selectedBalance.blockaidData)
-      : false;
 
   const icons = accountBalances.icons || {};
   const assetIconUrl =
@@ -302,17 +295,6 @@ export const AssetDetail = ({
                   : "--"}
               </div>
             </div>
-          </div>
-          <div className="AssetDetail__scam-warning">
-            {isSuspicious && (
-              <BlockaidAssetWarning
-                blockaidData={
-                  ("blockaidData" in selectedBalance &&
-                    selectedBalance.blockaidData) ||
-                  defaultBlockaidScanAssetResult
-                }
-              />
-            )}
           </div>
           {sortedAssetOperations.length ? (
             <div className="AssetDetail__list" data-testid="AssetDetail__list">

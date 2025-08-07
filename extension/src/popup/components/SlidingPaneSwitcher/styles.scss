@@ -1,34 +1,73 @@
 .multi-pane-slider {
-  overflow: hidden;
-  width: 100%;
   position: relative;
-  will-change: transform;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 
-  &__track {
-    display: flex;
+  &__container {
+    position: relative;
+    width: 100%;
     height: 100%;
-    transition: transform 200ms ease-in-out;
-  }
-
-  &--forward {
-    transition: transform 200ms ease-in;
-  }
-
-  &--backward {
-    transition: transform 250ms ease-out;
   }
 
   &__pane {
-    flex: 1 0 100%;
+    position: absolute;
     width: 100%;
     height: 100%;
-    opacity: 0.4;
-    pointer-events: none;
-    transition: opacity 250ms ease-in-out;
+    top: 0;
+    left: 0;
+    overflow-y: scroll;
+  }
+}
 
-    &--active {
-      opacity: 1;
-      pointer-events: auto;
-    }
+.slide-out-left {
+  animation: slideOutLeft 300ms forwards;
+}
+
+.slide-out-right {
+  animation: slideOutRight 300ms forwards;
+}
+
+.slide-in-left {
+  animation: slideInLeft 300ms forwards;
+}
+
+.slide-in-right {
+  animation: slideInRight 300ms forwards;
+}
+
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0%);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0%);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0%);
   }
 }

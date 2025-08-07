@@ -21,16 +21,12 @@ import {
 import { isMainnet, isTestnet } from "helpers/stellar";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import IconWarningBlockaid from "popup/assets/icon-warning-blockaid.svg";
-import IconWarningBlockaidYellow from "popup/assets/icon-warning-blockaid-yellow.svg";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 
 import {
-  isBlockaidWarning,
   reportAssetWarning,
   reportTransactionWarning,
 } from "popup/helpers/blockaid";
-import { getPunycodedDomain } from "helpers/urls";
 
 import "./styles.scss";
 
@@ -141,20 +137,13 @@ export const DomainNotAllowedWarningMessage = ({
 }: {
   domain: string;
 }) => {
-  const { t } = useTranslation();
-
   return (
-    <div className="WarningMessage__backup">
-      <div className="WarningMessage__infoBlock--warning">
-        <div className="DomainNotAllowedWarning">
-          <div className="WarningMessage__icon-container">
-            <Icon.InfoOctagon className="WarningMessage__icon" />
-          </div>
-          <span className="ConnectionWarning">
-            {getPunycodedDomain(domain)}{" "}
-            {t("is currently not connected to this Freighter account")}
-          </span>
+    <div className="ScanLabel ScanMiss">
+      <div className="ScanLabel__Info">
+        <div className="Icon">
+          <Icon.InfoSquare className="WarningMessage__icon" />
         </div>
+        <p className="Message">{`${domain} is not currently connected to Freighter`}</p>
       </div>
     </div>
   );
@@ -176,6 +165,61 @@ export const BackupPhraseWarningMessage = () => {
             "Keep your recovery phrase in a safe and secure place. Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
           )}
         </p>
+      </div>
+    </div>
+  );
+};
+
+export const AssetListWarning = ({
+  isVerified,
+  onClick,
+}: {
+  isVerified: boolean;
+  onClick: () => void;
+}) => {
+  const title = isVerified ? "On your lists" : "Not on your lists";
+  return (
+    <div className="ScanLabel ScanMiss" onClick={onClick}>
+      <div className="ScanLabel__Info">
+        <div className="Icon">
+          <Icon.InfoSquare className="WarningMessage__icon" />
+        </div>
+        <p className="Message">{title}</p>
+      </div>
+      <div className="ScanLabel__Action">
+        <Icon.ChevronRight />
+      </div>
+    </div>
+  );
+};
+
+interface AssetListWarningExpandedProps {
+  isVerified: boolean;
+  onClose?: () => void;
+}
+
+export const AssetListWarningExpanded = ({
+  isVerified,
+  onClose,
+}: AssetListWarningExpandedProps) => {
+  const title = isVerified
+    ? "This asset is on your lists"
+    : "This asset is not on your lists";
+
+  return (
+    <div className="BlockaidDetailsExpanded">
+      <div className="BlockaidDetailsExpanded__Header">
+        <div className="WarningMark">
+          <Icon.AlertTriangle />
+        </div>
+        <div className="Close" onClick={onClose}>
+          <Icon.X />
+        </div>
+      </div>
+      <div className="BlockaidDetailsExpanded__Title">{title}</div>
+      <div className="BlockaidDetailsExpanded__SubTitle">
+        Freighter uses asset lists to check assets you interact with. You can
+        define your own assets lists in Settings.
       </div>
     </div>
   );
@@ -403,45 +447,132 @@ export const BlockaidByLine = ({
 
 interface BlockaidAssetWarningProps {
   blockaidData: BlockAidScanAssetResult;
+  onClick: () => void;
 }
 
 export const BlockaidAssetWarning = ({
   blockaidData,
+  onClick,
 }: BlockaidAssetWarningProps) => {
-  const { t } = useTranslation();
-  const isWarning = isBlockaidWarning(blockaidData.result_type);
+  const renderHeader = (
+    result_type: BlockAidScanAssetResult["result_type"],
+  ) => {
+    switch (result_type) {
+      case "Spam": {
+        return "This asset was flagged as spam";
+      }
+
+      case "Malicious": {
+        return "This asset was flagged as malicious";
+      }
+
+      default: {
+        return "This asset was flagged as suspicious";
+      }
+    }
+  };
+
+  const scanType =
+    blockaidData.result_type === "Spam" ||
+    blockaidData.result_type === "Warning"
+      ? "ScanMiss"
+      : "ScanMalicious";
 
   return (
     <div
-      className={`ScamAssetWarning__box ${
-        isWarning ? "ScamAssetWarning__box--isWarning" : ""
-      }`}
-      data-testid="ScamAssetWarning__box"
+      className={`ScanLabel ${scanType}`}
+      data-testid="blockaid-miss-label"
+      onClick={onClick}
     >
-      <div className="ScamAssetWarning__box__content">
+      <div className="ScanLabel__Info">
         <div className="Icon">
-          <img
-            className="ScamAssetWarning__box__icon"
-            src={isWarning ? IconWarningBlockaidYellow : IconWarningBlockaid}
-            alt="icon warning blockaid"
-          />
+          <Icon.InfoSquare className="WarningMessage__icon" />
         </div>
-        <div>
-          <div className="ScamAssetWarning__description">
-            {t(
-              `This token was flagged as ${blockaidData.result_type} by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons`,
-            )}
-            :
-            <ul className="ScamAssetWarning__list">
-              {blockaidData.features &&
-                blockaidData.features.map((f) => (
-                  <li key={f.feature_id}>{f.description}</li>
-                ))}
-            </ul>
-          </div>
+        <p className="Message">{renderHeader(blockaidData.result_type)}</p>
+      </div>
+      <div className="ScanLabel__Action">
+        <Icon.ChevronRight />
+      </div>
+    </div>
+  );
+};
+
+interface BlockAidAssetScanExpandedProps {
+  scanResult: BlockAidScanAssetResult;
+  onClose?: () => void;
+}
+
+export const BlockAidAssetScanExpanded = ({
+  scanResult,
+  onClose,
+}: BlockAidAssetScanExpandedProps) => {
+  const { result_type, features } = scanResult;
+  const _features = features || [];
+
+  const renderDetails = (
+    result_type: BlockAidScanAssetResult["result_type"],
+  ) => {
+    switch (result_type) {
+      case "Spam": {
+        return {
+          title: "Warning",
+          description:
+            "This asset has been flagged as spam for the following reasons.",
+        };
+      }
+
+      case "Malicious": {
+        return {
+          title: "Do not proceed",
+          description:
+            "This asset has been flagged as malicious for the following reasons.",
+        };
+      }
+
+      default: {
+        return {
+          title: "Warning",
+          description:
+            "This asset has been flagged as suspicious for the following reasons.",
+        };
+      }
+    }
+  };
+
+  const { title, description } = renderDetails(result_type);
+  const warningType =
+    result_type === "Spam" || result_type === "Warning"
+      ? {
+          class: "WarningMark",
+          icon: <Icon.AlertTriangle />,
+        }
+      : {
+          class: "WarningMarkError",
+          icon: <Icon.AlertOctagon />,
+        };
+
+  return (
+    <div className="BlockaidDetailsExpanded">
+      <div className="BlockaidDetailsExpanded__Header">
+        <div className={warningType.class}>{warningType.icon}</div>
+        <div className="Close" onClick={onClose}>
+          <Icon.X />
         </div>
       </div>
-      <BlockaidByLine address={blockaidData.address} />
+      <div className="BlockaidDetailsExpanded__Title">{title}</div>
+      <div className="BlockaidDetailsExpanded__SubTitle">{description}</div>
+      <div className="BlockaidDetailsExpanded__Details">
+        {_features.map((feature) => (
+          <div
+            className="BlockaidDetailsExpanded__DetailRow"
+            key={feature.feature_id}
+          >
+            <Icon.MinusCircle />
+            <span>{feature.description}</span>
+          </div>
+        ))}
+        <BlockaidByLine address={""} />
+      </div>
     </div>
   );
 };

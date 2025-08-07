@@ -125,7 +125,7 @@ export const SignAuthEntry = () => {
           {t("The requester expects you to sign this auth entry on")}{" "}
           {entryNetworkPassphrase}.
         </p>
-        <p>{t("Signing this transaction is not possible at the moment.")}</p>
+        <p>{t("Signing this authorization is not possible at the moment.")}</p>
       </WarningMessage>
     );
   }
