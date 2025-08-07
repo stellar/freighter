@@ -1,3 +1,5 @@
+@use "../../styles/utils.scss" as *;
+
 .Preferences {
   font-size: 0.875rem;
 
@@ -8,8 +10,21 @@
     margin-bottom: 2rem;
 
     &--title {
-      color: var(--sds-clr-gray-12);
-      font-weight: var(--font-weight-medium);
+      display: flex;
+      justify-content: space-between;
+      font-size: pxToRem(16px);
+      font-weight: 600;
+
+      span {
+        display: flex;
+        align-items: center;
+      }
+
+      svg {
+        width: pxToRem(20px);
+        height: pxToRem(20px);
+        margin-right: pxToRem(12px);
+      }
     }
   }
   &--label {
