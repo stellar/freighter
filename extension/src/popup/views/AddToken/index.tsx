@@ -7,7 +7,6 @@ import {
   Notification,
   Text,
 } from "@stellar/design-system";
-import BigNumber from "bignumber.js";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router-dom";
@@ -32,17 +31,18 @@ import {
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { View } from "popup/basics/layout/View";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
-import { AssetNotifcation } from "popup/components/AssetNotification";
+import { AssetNotification } from "popup/components/AssetNotification";
 import { useTokenLookup } from "popup/helpers/useTokenLookup";
-import { formatTokenAmount, isContractId } from "popup/helpers/soroban";
+import { isContractId } from "popup/helpers/soroban";
 import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
-
-import "./styles.scss";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
 import { openTab } from "popup/helpers/navigate";
 import { reRouteOnboarding } from "popup/helpers/route";
+import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+
+import "./styles.scss";
 
 export const AddToken = () => {
   const location = useLocation();
@@ -78,31 +78,10 @@ export const AddToken = () => {
 
   const assetCurrency: ManageAssetCurrency | undefined = assetRows[0];
 
-  const getAssetBalance = () => {
-    const code = assetCurrency?.code;
-    const balance = assetCurrency?.balance;
-    const decimals = assetCurrency?.decimals;
-    if (code && balance && decimals) {
-      const balanceNumber = new BigNumber(balance);
-
-      // Let's only show the balance if it's greater than 0
-      if (balanceNumber.isZero()) {
-        return undefined;
-      }
-
-      const formattedTokenAmount = formatTokenAmount(balanceNumber, decimals);
-      return `+${formattedTokenAmount} ${code}`;
-    }
-
-    return undefined;
-  };
-
   const assetCode = assetCurrency?.code || "";
   const assetIssuer = assetCurrency?.issuer || "";
   const assetName = assetTomlName || assetCurrency?.name?.split(":")[0];
   const assetDomain = assetCurrency?.domain || "";
-  const assetBalance = getAssetBalance();
-  const hasBalance = assetBalance !== undefined;
 
   const isLoading =
     isSearching || assetIcon === undefined || assetTomlName === undefined;
@@ -392,18 +371,17 @@ export const AddToken = () => {
               <div className="AddToken__wrapper__badge">
                 <Badge
                   size="sm"
-                  variant="tertiary"
-                  isSquare
-                  icon={<Icon.ShieldPlus />}
+                  variant="secondary"
+                  icon={<Icon.PlusCircle />}
                   iconPosition="left"
                 >
-                  {t("Approve Asset")}
+                  {t("Add Token")}
                 </Badge>
               </div>
             </div>
 
             {assetCurrency && isVerificationInfoShowing && (
-              <AssetNotifcation isVerified={isVerifiedToken} />
+              <AssetNotification isVerified={isVerifiedToken} />
             )}
 
             {blockaidData && (
@@ -414,105 +392,46 @@ export const AddToken = () => {
               <DomainNotAllowedWarningMessage domain={params.domain} />
             )}
 
-            <div className="AddToken__wrapper__info">
-              <Text
-                as="div"
-                size="xs"
-                addlClassName="AddToken__wrapper__info--title"
-              >
-                {t("Asset info")}
-              </Text>
-
-              {assetCode && (
-                <div className="AddToken__wrapper__info__row">
-                  <div className="AddToken__wrapper__info__row--icon">
-                    <Icon.Coins01 />
-                  </div>
-                  <Text as="div" size="xs">
-                    {t("Symbol")}
-                  </Text>
-                  <Text
-                    data-testid="add-token-asset-code"
-                    as="div"
-                    size="xs"
-                    addlClassName="AddToken__wrapper__info__row__right_label"
-                  >
-                    {assetCode}
-                  </Text>
-                </div>
-              )}
-
-              {assetName && assetName !== assetCode && (
-                <div className="AddToken__wrapper__info__row">
-                  <div className="AddToken__wrapper__info__row--icon">
-                    <Icon.TypeSquare />
-                  </div>
-                  <Text as="div" size="xs">
-                    {t("Name")}
-                  </Text>
-                  <Text
-                    data-testid="add-token-asset-name"
-                    as="div"
-                    size="xs"
-                    addlClassName="AddToken__wrapper__info__row__right_label"
-                  >
-                    {assetName}
-                  </Text>
-                </div>
-              )}
+            <div className="AddToken__Description">
+              Allow token to be displayed and used with this wallet address
             </div>
-
-            {hasBalance && (
-              <div className="AddToken__wrapper__info">
-                <Text
-                  as="div"
-                  size="xs"
-                  addlClassName="AddToken__wrapper__info--title"
-                >
-                  {t("Balance Info")}
-                </Text>
-                <div className="AddToken__wrapper__info__row">
-                  <div className="AddToken__wrapper__info__row--icon">
-                    <Icon.CoinsStacked03 />
-                  </div>
-                  <Text as="div" size="xs">
-                    {t("Amount")}
-                  </Text>
-                  <Text
-                    as="div"
-                    size="xs"
-                    addlClassName="AddToken__wrapper__info--amount AddToken__wrapper__info__row__right_label"
-                  >
-                    {assetBalance}
-                  </Text>
+            <div className="AddToken__Metadata">
+              <div className="AddToken__Metadata__Row">
+                <div className="AddToken__Metadata__Label">
+                  <Icon.Wallet01 />
+                  <span>Wallet</span>
+                </div>
+                <div className="AddToken__Metadata__Value">
+                  <KeyIdenticon publicKey={state.data.account.publicKey} />
                 </div>
               </div>
-            )}
-
-            <div className="AddToken__wrapper__footer">
-              <Button
-                isFullWidth
-                size="md"
-                variant="tertiary"
-                onClick={() => rejectAndClose()}
-              >
-                {t("Cancel")}
-              </Button>
-              <Button
-                data-testid="add-token-approve"
-                disabled={!assetCurrency || !isDomainListedAllowed}
-                isFullWidth
-                size="md"
-                variant="secondary"
-                isLoading={isConfirming}
-                onClick={() => handleApprove()}
-              >
-                {t("Add asset")}
-              </Button>
             </div>
           </div>
         </div>
       </View.Content>
+      <View.Footer isInline>
+        <Button
+          isFullWidth
+          isRounded
+          size="lg"
+          variant="tertiary"
+          onClick={() => rejectAndClose()}
+        >
+          {t("Cancel")}
+        </Button>
+        <Button
+          data-testid="add-token-approve"
+          disabled={!isDomainListedAllowed}
+          isFullWidth
+          isRounded
+          size="lg"
+          variant="secondary"
+          isLoading={isConfirming}
+          onClick={() => handleApprove()}
+        >
+          {t("Confirm")}
+        </Button>
+      </View.Footer>
     </React.Fragment>
   );
 };

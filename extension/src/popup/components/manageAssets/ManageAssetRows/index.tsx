@@ -1,44 +1,29 @@
-import React, { useState, useEffect } from "react";
-import { Networks } from "stellar-sdk";
-import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
+import { Networks } from "stellar-sdk";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { ActionStatus, BlockAidScanAssetResult } from "@shared/api/types";
 
-import { AppDispatch } from "popup/App";
-
-import { navigateTo } from "popup/helpers/navigate";
 import {
   formatDomain,
   getCanonicalFromAsset,
   truncateString,
 } from "helpers/stellar";
 import { isContractId, isSacContract } from "popup/helpers/soroban";
-import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
-
-import { LoadingBackground } from "popup/basics/LoadingBackground";
-import { ROUTES } from "popup/constants/routes";
-import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { findAssetBalance } from "popup/helpers/balance";
-import {
-  resetSubmission,
-  transactionSubmissionSelector,
-  ShowOverlayStatus,
-} from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { AssetIcon } from "popup/components/account/AccountAssets";
-import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
-import {
-  ScamAssetWarning,
-  NewAssetWarning,
-  TokenWarning,
-} from "popup/components/WarningMessages";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
-
 import { AccountBalances } from "helpers/hooks/useGetBalances";
-
+import { SlideupModal } from "popup/components/SlideupModal";
+import { addTokenId, publicKeySelector } from "popup/ducks/accountServices";
+import { AppDispatch } from "popup/App";
+import { removeTokenId } from "popup/ducks/transactionSubmission";
+import { NETWORKS } from "@shared/constants/stellar";
+import { navigateTo } from "popup/helpers/navigate";
+import { ROUTES } from "popup/constants/routes";
+import { ChangeTrustInternal } from "./ChangeTrustInternal";
 import { ManageAssetRowButton } from "../ManageAssetRowButton";
 
 import "./styles.scss";
@@ -73,121 +58,33 @@ interface ManageAssetRowsProps {
   shouldSplitAssetsByVerificationStatus?: boolean;
 }
 
-interface SuspiciousAssetData {
-  domain: string;
-  code: string;
-  issuer: string;
-  image: string;
-  isVerifiedToken?: boolean;
-  blockaidData: BlockAidScanAssetResult;
-}
-
 export const ManageAssetRows = ({
   children,
   header,
   verifiedAssetRows,
   unverifiedAssetRows,
-  isVerifiedToken,
-  isVerificationInfoShowing,
-  verifiedLists,
   balances,
   shouldSplitAssetsByVerificationStatus = true,
 }: ManageAssetRowsProps) => {
-  const {
-    submitStatus,
-    hardwareWalletData: { status: hwStatus },
-  } = useSelector(transactionSubmissionSelector);
-  const [assetSubmitting, setAssetSubmitting] = useState("");
-  const dispatch = useDispatch<AppDispatch>();
-  const walletType = useSelector(hardwareWalletTypeSelector);
-  const { recommendedFee } = useNetworkFees();
+  const dispatch: AppDispatch = useDispatch();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
   const navigate = useNavigate();
 
-  const [showBlockedDomainWarning, setShowBlockedDomainWarning] =
-    useState(false);
-  const [showNewAssetWarning, setShowNewAssetWarning] = useState(false);
-  const [showUnverifiedWarning, setShowUnverifiedWarning] = useState(false);
-  const [newAssetFlags, setNewAssetFlags] = useState<NewAssetFlags>({
-    isInvalidDomain: false,
-    isRevocable: false,
-  });
-  const [suspiciousAssetData, setSuspiciousAssetData] = useState({
-    domain: "",
-    code: "",
-    issuer: "",
-    image: "",
-    isVerifiedToken: false,
-    blockaidData: defaultBlockaidScanAssetResult,
-  } as SuspiciousAssetData);
-  const [handleAddToken, setHandleAddToken] = useState(
-    null as null | (() => () => Promise<void>),
-  );
-
-  useEffect(
-    () => () => {
-      setAssetSubmitting("");
-    },
-    [],
-  );
-
-  // watch submitStatus if used ledger to send transaction
-  useEffect(() => {
-    if (submitStatus === ActionStatus.SUCCESS) {
-      dispatch(resetSubmission());
-      navigateTo(ROUTES.account, navigate);
-    }
-  }, [submitStatus, dispatch, navigate]);
-
-  const isActionPending = submitStatus === ActionStatus.PENDING;
+  const [selectedAsset, setSelectedAsset] = useState<
+    | {
+        code: string;
+        issuer: string;
+        domain: string;
+        image: string;
+        isTrustlineActive: boolean;
+        contract?: string;
+      }
+    | undefined
+  >(undefined);
 
   return (
     <>
-      {hwStatus === ShowOverlayStatus.IN_PROGRESS && walletType && (
-        <HardwareSign walletType={walletType} />
-      )}
-      {showBlockedDomainWarning &&
-        createPortal(
-          <ScamAssetWarning
-            pillType="Trustline"
-            balances={balances}
-            domain={suspiciousAssetData.domain}
-            assetIcons={balances.icons || {}}
-            code={suspiciousAssetData.code}
-            issuer={suspiciousAssetData.issuer}
-            image={suspiciousAssetData.image}
-            blockaidData={suspiciousAssetData.blockaidData}
-            onClose={() => {
-              setShowBlockedDomainWarning(false);
-            }}
-          />,
-          document.querySelector("#modal-root")!,
-        )}
-      {showNewAssetWarning && (
-        <NewAssetWarning
-          balances={balances}
-          domain={suspiciousAssetData.domain}
-          code={suspiciousAssetData.code}
-          issuer={suspiciousAssetData.issuer}
-          image={suspiciousAssetData.image}
-          newAssetFlags={newAssetFlags}
-          onClose={() => {
-            setShowNewAssetWarning(false);
-          }}
-        />
-      )}
-      {showUnverifiedWarning && (
-        <TokenWarning
-          isCustomToken={isContractId(suspiciousAssetData.issuer)}
-          handleAddToken={handleAddToken}
-          domain={suspiciousAssetData.domain}
-          code={suspiciousAssetData.code}
-          onClose={() => {
-            setShowUnverifiedWarning(false);
-          }}
-          isVerifiedToken={!!suspiciousAssetData.isVerifiedToken}
-          verifiedLists={verifiedLists}
-        />
-      )}
       <div className="ManageAssetRows__scrollbar">
         {header}
         <div className="ManageAssetRows__content">
@@ -203,7 +100,6 @@ export const ManageAssetRows = ({
               contract,
               domain,
               image,
-              isContract,
               issuer,
               isSuspicious,
               isTrustlineActive,
@@ -220,38 +116,68 @@ export const ManageAssetRows = ({
                 />
                 <ManageAssetRowButton
                   code={code}
-                  contract={contract}
                   issuer={issuer}
-                  image={image}
                   balances={balances}
-                  domain={domain}
                   isTrustlineActive={!!isTrustlineActive}
-                  isActionPending={isActionPending}
-                  isContract={isContract}
-                  isVerifiedToken={!!isVerifiedToken}
-                  isVerificationInfoShowing={!!isVerificationInfoShowing}
-                  setNewAssetFlags={setNewAssetFlags}
-                  setSuspiciousAssetData={setSuspiciousAssetData}
-                  setHandleAddToken={setHandleAddToken}
-                  setShowBlockedDomainWarning={setShowBlockedDomainWarning}
-                  assetSubmitting={assetSubmitting}
-                  setAssetSubmitting={setAssetSubmitting}
-                  setShowNewAssetWarning={setShowNewAssetWarning}
-                  setShowUnverifiedWarning={setShowUnverifiedWarning}
-                  recommendedFee={recommendedFee}
+                  isLoading={false}
+                  onClick={async () => {
+                    // NOTE: if the selected asset is classic, go through tx flow, otherwise just add to storage.
+                    console.log(contract);
+                    if (!contract) {
+                      setSelectedAsset({
+                        code,
+                        issuer,
+                        domain,
+                        image,
+                        isTrustlineActive,
+                        contract,
+                      });
+                    } else {
+                      if (!isTrustlineActive) {
+                        await dispatch(
+                          addTokenId({
+                            publicKey,
+                            tokenId: contract,
+                            network: networkDetails.network as Networks,
+                          }),
+                        );
+                      } else {
+                        await dispatch(
+                          removeTokenId({
+                            contractId: contract,
+                            network: networkDetails.network as NETWORKS,
+                          }),
+                        );
+                      }
+                      navigateTo(ROUTES.account, navigate);
+                    }
+                  }}
                 />
               </>
             )}
           />
         </div>
         {children}
+        {createPortal(
+          <SlideupModal
+            setIsModalOpen={() => setSelectedAsset(undefined)}
+            isModalOpen={selectedAsset !== undefined}
+          >
+            {selectedAsset !== undefined ? (
+              <ChangeTrustInternal
+                asset={selectedAsset}
+                addTrustline={!selectedAsset.isTrustlineActive}
+                networkDetails={networkDetails}
+                publicKey={publicKey}
+                onCancel={() => setSelectedAsset(undefined)}
+              />
+            ) : (
+              <></>
+            )}
+          </SlideupModal>,
+          document.getElementById("layout-view")!,
+        )}
       </div>
-      {showNewAssetWarning || showBlockedDomainWarning
-        ? createPortal(
-            <LoadingBackground onClick={() => {}} isActive isFullScreen />,
-            document.querySelector("#modal-root")!,
-          )
-        : null}
     </>
   );
 };

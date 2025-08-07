@@ -164,7 +164,7 @@ export const SearchAsset = () => {
   const data = state.data;
 
   return (
-    <View>
+    <>
       <SubviewHeader title={t("Choose Asset")} />
 
       <View.Content hasTopInput>
@@ -240,6 +240,6 @@ export const SearchAsset = () => {
           )}
         </Formik>
       </View.Content>
-    </View>
+    </>
   );
 };

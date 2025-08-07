@@ -283,7 +283,7 @@ export const View: React.FC<ViewLayoutProps> & ViewComponent = ({
   ...props
 }: ViewLayoutProps) => (
   <ViewContext.Provider value={{ isAppLayout }}>
-    <div className="View" {...props}>
+    <div className="View" id="layout-view" {...props}>
       {children}
     </div>
   </ViewContext.Provider>

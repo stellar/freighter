@@ -175,6 +175,9 @@ export const SignAuthEntry = () => {
                 </span>
               </div>
             </div>
+            {!isDomainListedAllowed && (
+              <DomainNotAllowedWarningMessage domain={domain} />
+            )}
             <div className="SignAuthEntry__Metadata">
               <div className="SignAuthEntry__Metadata__Row">
                 <div className="SignAuthEntry__Metadata__Label">
@@ -187,9 +190,6 @@ export const SignAuthEntry = () => {
               </div>
             </div>
           </div>
-          {!isDomainListedAllowed && (
-            <DomainNotAllowedWarningMessage domain={domain} />
-          )}
           <AuthEntries invocations={[invocation]} />
         </View.Content>
         <View.Footer isInline>

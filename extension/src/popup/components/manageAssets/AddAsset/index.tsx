@@ -362,7 +362,7 @@ export const AddAsset = () => {
             setHasNoResults(false);
           }}
         >
-          <View>
+          <>
             <SubviewHeader
               title={t("Add by address")}
               customBackAction={() => navigate(-2)}
@@ -411,7 +411,7 @@ export const AddAsset = () => {
                 </SearchResults>
               </FormRows>
             </View.Content>
-          </View>
+          </>
         </Form>
       )}
     </Formik>

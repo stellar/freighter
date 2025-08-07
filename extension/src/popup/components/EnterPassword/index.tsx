@@ -93,7 +93,14 @@ export const EnterPassword = ({
               onSubmit={handleSubmit}
               onReset={handleReset}
             >
-              {({ dirty, isSubmitting, isValid, errors, touched }) => (
+              {({
+                dirty,
+                isSubmitting,
+                isValid,
+                errors,
+                touched,
+                setFieldValue,
+              }) => (
                 <Form>
                   <Field name="password">
                     {({ field }: FieldProps) => (
@@ -104,6 +111,11 @@ export const EnterPassword = ({
                         fieldSize="md"
                         autoComplete="off"
                         placeholder={t("Enter Password")}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          const target = e.target as HTMLInputElement;
+                          setFieldValue("password", target.value);
+                        }}
                         error={
                           authError ||
                           (errors.password && touched.password

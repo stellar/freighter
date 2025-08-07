@@ -1,4 +1,4 @@
-import { Page } from "@playwright/test";
+import { BrowserContext, Page } from "@playwright/test";
 import { USDC_TOKEN_ADDRESS } from "./test-token";
 
 export const STELLAR_EXPERT_ASSET_LIST_JSON = {
@@ -22,7 +22,53 @@ export const STELLAR_EXPERT_ASSET_LIST_JSON = {
   ],
 };
 
-export const stubTokenDetails = async (page: Page) => {
+export const stubScanDapp = async (context: BrowserContext) => {
+  await context.route("**/scan-dapp**", async (route) => {
+    const json = {
+      data: {
+        status: "hit",
+        url: "https://docs.freighter.app/docs/playground/setallowed/",
+        scan_start_time: "2025-07-04T08:58:59.350000",
+        scan_end_time: "2025-07-04T09:02:37.766000",
+        malicious_score: 0,
+        is_reachable: true,
+        is_web3_site: false,
+        is_malicious: false,
+        attack_types: {},
+        network_operations: [
+          "framer.com",
+          "framerusercontent.com",
+          "freighter.app",
+          "googletagmanager.com",
+          "w3.org",
+        ],
+        json_rpc_operations: [],
+        contract_write: {
+          contract_addresses: [],
+          functions: {},
+        },
+        contract_read: {
+          contract_addresses: [],
+          functions: {},
+        },
+        modals: [],
+      },
+      error: null,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+export const stubIsSac = async (page: Page | BrowserContext) => {
+  await page.route("**/is-sac-contract**", async (route) => {
+    const json = {
+      isSacContract: false,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+export const stubTokenDetails = async (page: Page | BrowserContext) => {
   await page.route("**/token-details/**", async (route) => {
     const url = route.request().url();
     const parsedUrl = new URL(url);
@@ -48,7 +94,7 @@ export const stubTokenDetails = async (page: Page) => {
   });
 };
 
-export const stubTokenPrices = async (page: Page) => {
+export const stubTokenPrices = async (page: Page | BrowserContext) => {
   await page.route("**/token-prices/**", async (route) => {
     const request = route.request();
 
