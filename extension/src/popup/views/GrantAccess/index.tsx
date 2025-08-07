@@ -16,11 +16,11 @@ import { useGetGrantAccessData } from "./hooks/useGetGrantAccessData";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
+import { BlockaidByLine } from "popup/components/WarningMessages";
+import { ATTACK_TO_DISPLAY } from "popup/helpers/blockaid";
 
 import "popup/metrics/access";
 import "./styles.scss";
-import { BlockaidByLine } from "popup/components/WarningMessages";
-import { ATTACK_TO_DISPLAY } from "popup/helpers/blockaid";
 
 export const GrantAccess = () => {
   const { t } = useTranslation();

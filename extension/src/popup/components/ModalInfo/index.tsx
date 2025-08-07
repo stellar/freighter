@@ -126,11 +126,15 @@ export const DomainScanModalInfo = ({
           <p>Connection Request</p>
         </div>
       </div>
-      <BlockAidSiteScanLabel
-        isMalicious={isMalicious}
-        status={scanStatus}
-        onClick={onClick}
-      />
+      {isMalicious && (
+        <div className="ModalInfo--connection-request-scan-label">
+          <BlockAidSiteScanLabel
+            isMalicious={isMalicious}
+            status={scanStatus}
+            onClick={onClick}
+          />
+        </div>
+      )}
       <div className="ModalInfo--subject">{subject}</div>
       {children}
     </>
