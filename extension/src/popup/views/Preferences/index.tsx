@@ -127,6 +127,7 @@ export const Preferences = () => {
                       checked={initialValues.isValidatingMemoValue}
                       customInput={<Field />}
                       id="isValidatingMemoValue"
+                      data-testid="isValidatingMemoValue"
                     />
                   </div>
                 </div>
