@@ -76,7 +76,10 @@ export const ManageAssetRowButton = ({
                   variant="secondary"
                   disabled={isLoading}
                   isLoading={isLoading}
-                  onClick={onClick}
+                  onClick={() => {
+                    setRowButtonShowing("");
+                    onClick();
+                  }}
                   type="button"
                   data-testid="ManageAssetRowButton"
                 >

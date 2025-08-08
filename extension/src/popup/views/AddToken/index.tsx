@@ -43,9 +43,9 @@ import { RequestState } from "constants/request";
 import { openTab } from "popup/helpers/navigate";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 
 import "./styles.scss";
-import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 
 export const AddToken = () => {
   const location = useLocation();

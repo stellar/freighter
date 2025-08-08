@@ -29,7 +29,7 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   await page.getByTestId("ManageAssetRowButton").click({ force: true });
 
   await page.getByTestId("ManageAssetRowButton").dispatchEvent("click");
-  await expect(page.getByTestId("account-view")).toContainText("E2E");
+  await expect(page.getByText("E2E Token")).toBeVisible();
 });
 
 // Skipping this test because on Testnet, stellar.expert's asset list is formatter incorrectly

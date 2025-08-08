@@ -121,13 +121,15 @@ export const Preferences = () => {
                   <span>
                     <Icon.FileCheck02 /> {t("Verification with")} stellar.expert
                   </span>
-                  <div className="Preferences--toggle">
+                  <div
+                    className="Preferences--toggle"
+                    data-testid="isValidatingMemoValue"
+                  >
                     <Toggle
                       fieldSize="sm"
                       checked={initialValues.isValidatingMemoValue}
                       customInput={<Field />}
                       id="isValidatingMemoValue"
-                      data-testid="isValidatingMemoValue"
                     />
                   </div>
                 </div>
