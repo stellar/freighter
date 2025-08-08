@@ -20,6 +20,7 @@ export interface ChangeTrustData {
   scanResult: BlockAidScanAssetResult;
   transactionXDR: string;
   isAssetSuspicious: boolean;
+  isAssetVerified: boolean;
 }
 
 function useGetChangeTrustData({

@@ -106,7 +106,7 @@ test.skip("should not sign transaction when not allowed", async ({
 
   await expect(
     txPopup.getByText(
-      "docs.freighter.app is currently not connected to this Freighter account",
+      "docs.freighter.app is not currently connected to Freighter",
     ),
   ).toBeVisible();
   await expect(txPopup.getByTestId("sign-transaction-sign")).toBeDisabled();
@@ -199,7 +199,7 @@ test("should not sign auth entry when not allowed", async ({
   await expect(popup.getByText("Confirm Authorization").first()).toBeVisible();
   await expect(
     popup.getByText(
-      "docs.freighter.app is currently not connected to this Freighter account",
+      "docs.freighter.app is not currently connected to Freighter",
     ),
   ).toBeVisible();
 
@@ -286,7 +286,7 @@ test("should not sign message when not allowed", async ({
 
   await expect(
     popup.getByText(
-      "docs.freighter.app is currently not connected to this Freighter account",
+      "docs.freighter.app is not currently connected to Freighter",
     ),
   ).toBeVisible();
   await expect(popup.getByTestId("sign-message-approve-button")).toBeDisabled();
@@ -369,7 +369,7 @@ test("should not add token when not allowed", async ({
 
   await expect(
     popup.getByText(
-      "docs.freighter.app is currently not connected to this Freighter account",
+      "docs.freighter.app is not currently connected to Freighter",
     ),
   ).toBeVisible();
   await expect(popup.getByTestId("add-token-approve")).toBeDisabled();

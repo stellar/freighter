@@ -1,12 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Icon, Loader, Notification } from "@stellar/design-system";
-import {
-  BASE_FEE,
-  Operation,
-  Transaction,
-  TransactionBuilder,
-} from "stellar-sdk";
+import { BASE_FEE, Transaction, TransactionBuilder } from "stellar-sdk";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { RequestState } from "constants/request";
@@ -23,7 +18,10 @@ import { Summary } from "popup/views/SignTransaction/Preview/Summary";
 import { Details } from "popup/views/SignTransaction/Preview/Details";
 import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 import { Trustline } from "popup/views/SignTransaction";
-import { BlockaidAssetWarning } from "popup/components/WarningMessages";
+import {
+  BlockAidAssetScanExpanded,
+  BlockaidAssetWarning,
+} from "popup/components/WarningMessages";
 import { useGetChangeTrustData } from "./hooks/useChangeTrustData";
 import { Fee } from "./Settings/Fee";
 import { Timeout } from "./Settings/Timeout";
@@ -134,29 +132,22 @@ export const ChangeTrustInternal = ({
   const flaggedKeys = state.data.flaggedKeys;
   const icons = { [canonical]: asset.image };
 
-  // NOTE: no transaction associated with adding a custom token
-  let transaction = undefined as undefined | Transaction;
-  let operations = [] as Operation[];
-  let trustlineChanges = [] as Operation.ChangeTrust[];
-  let isMemoRequired = false;
   let sequence = "";
-  if (xdr) {
-    transaction = TransactionBuilder.fromXDR(
-      xdr,
-      networkDetails.networkPassphrase,
-    ) as Transaction;
-    if (!("innerTransaction" in transaction)) {
-      sequence = transaction.sequence;
-    }
-    const flaggedKeyValues = Object.values(flaggedKeys);
-    isMemoRequired = flaggedKeyValues.some(
-      ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
-    );
-    operations = transaction.operations;
-    trustlineChanges = transaction.operations.filter(
-      (op) => op.type === "changeTrust",
-    );
+  const transaction = TransactionBuilder.fromXDR(
+    xdr,
+    networkDetails.networkPassphrase,
+  ) as Transaction;
+  if (!("innerTransaction" in transaction)) {
+    sequence = transaction.sequence;
   }
+  const flaggedKeyValues = Object.values(flaggedKeys);
+  const isMemoRequired = flaggedKeyValues.some(
+    ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
+  );
+  const operations = transaction.operations;
+  const trustlineChanges = transaction.operations.filter(
+    (op) => op.type === "changeTrust",
+  );
 
   return (
     <div data-testid="ChangeTrustInternal" className="ChangeTrustInternal">
@@ -177,7 +168,10 @@ export const ChangeTrustInternal = ({
                 </div>
               </div>
               {state.data.isAssetSuspicious && (
-                <BlockaidAssetWarning blockaidData={state.data.scanResult} />
+                <BlockaidAssetWarning
+                  blockaidData={state.data.scanResult}
+                  onClick={() => setActivePaneIndex(2)}
+                />
               )}
               {trustlineChanges.length > 0 && (
                 <Trustline operations={trustlineChanges} icons={icons} />
@@ -239,6 +233,10 @@ export const ChangeTrustInternal = ({
                 isMemoRequired={isMemoRequired}
               />
             </div>,
+            <BlockAidAssetScanExpanded
+              scanResult={state.data.scanResult}
+              onClose={() => setActivePaneIndex(0)}
+            />,
           ]}
         />
       )}

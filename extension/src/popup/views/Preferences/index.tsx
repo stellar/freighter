@@ -1,17 +1,14 @@
 import React, { useEffect } from "react";
-import { Notification, Toggle } from "@stellar/design-system";
+import { Card, Icon, Notification, Toggle } from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
+
 import { View } from "popup/basics/layout/View";
 import { AppDispatch } from "popup/App";
-
 import { saveSettings } from "popup/ducks/settings";
-
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AutoSaveFields } from "popup/components/AutoSave";
-
-import "./styles.scss";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
@@ -19,6 +16,8 @@ import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { Navigate, useLocation } from "react-router-dom";
 import { reRouteOnboarding } from "popup/helpers/route";
+
+import "./styles.scss";
 
 export const Preferences = () => {
   const { t } = useTranslation();
@@ -119,66 +118,61 @@ export const Preferences = () => {
               <AutoSaveFields />
               <div className="Preferences--section">
                 <div className="Preferences--section--title">
-                  {t("Verification with")} stellar.expert
-                </div>
-                <div className="Preferences--toggle">
-                  <label
-                    htmlFor="isValidatingMemoValue"
-                    className="Preferences--label"
+                  <span>
+                    <Icon.FileCheck02 /> {t("Verification with")} stellar.expert
+                  </span>
+                  <div
+                    className="Preferences--toggle"
+                    data-testid="isValidatingMemoValue"
                   >
-                    {t("Validate addresses that require a memo")}
-                  </label>
-                  <Toggle
-                    fieldSize="md"
-                    checked={initialValues.isValidatingMemoValue}
-                    customInput={<Field />}
-                    id="isValidatingMemoValue"
-                  />
+                    <Toggle
+                      fieldSize="sm"
+                      checked={initialValues.isValidatingMemoValue}
+                      customInput={<Field />}
+                      id="isValidatingMemoValue"
+                    />
+                  </div>
                 </div>
+                <Card>{t("Validate addresses that require a memo")}</Card>
               </div>
 
               <div className="Preferences--section">
                 <div className="Preferences--section--title">
-                  {t("Anonymous data sharing")}{" "}
+                  <span>
+                    <Icon.Data /> {t("Anonymous data sharing")}{" "}
+                  </span>
+                  <div className="Preferences--toggle">
+                    <Toggle
+                      fieldSize="sm"
+                      checked={initialValues.isDataSharingAllowedValue}
+                      customInput={<Field />}
+                      id="isDataSharingAllowedValue"
+                    />
+                  </div>
                 </div>
-
-                <div className="Preferences--toggle">
-                  <label
-                    htmlFor="isDataSharingAllowedValue"
-                    className="Preferences--label"
-                  >
-                    {t(
-                      "Allow Freighter to collect anonymous information about usage. Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts.",
-                    )}
-                  </label>
-                  <Toggle
-                    fieldSize="md"
-                    checked={initialValues.isDataSharingAllowedValue}
-                    customInput={<Field />}
-                    id="isDataSharingAllowedValue"
-                  />
-                </div>
+                <Card>
+                  {t(
+                    "Allow Freighter to collect anonymous information about usage. Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts.",
+                  )}
+                </Card>
               </div>
 
               <div className="Preferences--section">
                 <div className="Preferences--section--title">
-                  {t("Hide small payments")}{" "}
+                  <span>
+                    <Icon.CurrencyDollar />
+                    {t("Hide small payments")}{" "}
+                  </span>
+                  <div className="Preferences--toggle">
+                    <Toggle
+                      fieldSize="sm"
+                      checked={initialValues.isHideDustEnabledValue}
+                      customInput={<Field />}
+                      id="isHideDustEnabledValue"
+                    />
+                  </div>
                 </div>
-
-                <div className="Preferences--toggle">
-                  <label
-                    htmlFor="isHideDustEnabledValue"
-                    className="Preferences--label"
-                  >
-                    {t("Hide payments smaller than 0.1 XLM")}
-                  </label>
-                  <Toggle
-                    fieldSize="md"
-                    checked={initialValues.isHideDustEnabledValue}
-                    customInput={<Field />}
-                    id="isHideDustEnabledValue"
-                  />
-                </div>
+                <Card>{t("Hide payments smaller than 0.1 XLM")}</Card>
               </div>
             </Form>
           </div>

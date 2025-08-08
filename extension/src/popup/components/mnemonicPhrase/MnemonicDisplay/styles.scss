@@ -5,17 +5,28 @@
   text-align: center;
   margin-bottom: #{pxToRem(32px)};
 
+  &__columns {
+    display: flex;
+    gap: 1rem;
+  }
+
+  &__column {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
   &__ordered-list {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: pxToRem(16px);
-    row-gap: pxToRem(8px);
-    text-align: start;
-    counter-reset: item;
-    list-style-type: none;
-    padding: 0 #{pxToRem(8px)} !important;
+    display: flex;
+    justify-content: center;
+    gap: pxToRem(32px);
+    list-style: none;
+    padding: 0;
+    margin: 0;
 
     li::before {
+      display: flex;
+      justify-content: center;
       counter-increment: item;
       content: counter(item, decimal-leading-zero) !important;
       display: inline-block;
@@ -31,11 +42,14 @@
   }
 
   &__list-item {
-    border: 1px solid var(--sds-clr-gray-06);
-    border-radius: pxToRem(6px);
     display: flex;
     gap: pxToRem(4px);
     padding: pxToRem(6px) pxToRem(10px);
+
+    &__index {
+      margin-right: pxToRem(12px);
+      color: var(--sds-clr-gray-11);
+    }
 
     &::before {
       color: var(--sds-clr-gray-11);

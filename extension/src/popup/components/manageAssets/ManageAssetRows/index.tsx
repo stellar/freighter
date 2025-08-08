@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
 import { Networks } from "stellar-sdk";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -17,14 +16,10 @@ import { AssetIcon } from "popup/components/account/AccountAssets";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { SlideupModal } from "popup/components/SlideupModal";
-import { addTokenId, publicKeySelector } from "popup/ducks/accountServices";
-import { AppDispatch } from "popup/App";
-import { removeTokenId } from "popup/ducks/transactionSubmission";
-import { NETWORKS } from "@shared/constants/stellar";
-import { navigateTo } from "popup/helpers/navigate";
-import { ROUTES } from "popup/constants/routes";
+import { publicKeySelector } from "popup/ducks/accountServices";
 import { ChangeTrustInternal } from "./ChangeTrustInternal";
 import { ManageAssetRowButton } from "../ManageAssetRowButton";
+import { ToggleTokenInternal } from "./ToggleTokenInternal";
 
 import "./styles.scss";
 
@@ -66,10 +61,8 @@ export const ManageAssetRows = ({
   balances,
   shouldSplitAssetsByVerificationStatus = true,
 }: ManageAssetRowsProps) => {
-  const dispatch: AppDispatch = useDispatch();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
-  const navigate = useNavigate();
 
   const [selectedAsset, setSelectedAsset] = useState<
     | {
@@ -79,6 +72,7 @@ export const ManageAssetRows = ({
         image: string;
         isTrustlineActive: boolean;
         contract?: string;
+        name?: string;
       }
     | undefined
   >(undefined);
@@ -117,40 +111,18 @@ export const ManageAssetRows = ({
                 <ManageAssetRowButton
                   code={code}
                   issuer={issuer}
-                  balances={balances}
                   isTrustlineActive={!!isTrustlineActive}
                   isLoading={false}
                   onClick={async () => {
-                    // NOTE: if the selected asset is classic, go through tx flow, otherwise just add to storage.
-                    console.log(contract);
-                    if (!contract) {
-                      setSelectedAsset({
-                        code,
-                        issuer,
-                        domain,
-                        image,
-                        isTrustlineActive,
-                        contract,
-                      });
-                    } else {
-                      if (!isTrustlineActive) {
-                        await dispatch(
-                          addTokenId({
-                            publicKey,
-                            tokenId: contract,
-                            network: networkDetails.network as Networks,
-                          }),
-                        );
-                      } else {
-                        await dispatch(
-                          removeTokenId({
-                            contractId: contract,
-                            network: networkDetails.network as NETWORKS,
-                          }),
-                        );
-                      }
-                      navigateTo(ROUTES.account, navigate);
-                    }
+                    setSelectedAsset({
+                      code,
+                      issuer,
+                      domain,
+                      name,
+                      image,
+                      isTrustlineActive,
+                      contract,
+                    });
                   }}
                 />
               </>
@@ -163,17 +135,25 @@ export const ManageAssetRows = ({
             setIsModalOpen={() => setSelectedAsset(undefined)}
             isModalOpen={selectedAsset !== undefined}
           >
-            {selectedAsset !== undefined ? (
-              <ChangeTrustInternal
-                asset={selectedAsset}
-                addTrustline={!selectedAsset.isTrustlineActive}
-                networkDetails={networkDetails}
-                publicKey={publicKey}
-                onCancel={() => setSelectedAsset(undefined)}
-              />
-            ) : (
-              <></>
-            )}
+            <>
+              {selectedAsset && !selectedAsset.contract && (
+                <ChangeTrustInternal
+                  asset={selectedAsset}
+                  addTrustline={!selectedAsset.isTrustlineActive}
+                  networkDetails={networkDetails}
+                  publicKey={publicKey}
+                  onCancel={() => setSelectedAsset(undefined)}
+                />
+              )}
+              {selectedAsset && selectedAsset.contract && (
+                <ToggleTokenInternal
+                  asset={selectedAsset}
+                  networkDetails={networkDetails}
+                  publicKey={publicKey}
+                  onCancel={() => setSelectedAsset(undefined)}
+                />
+              )}
+            </>
           </SlideupModal>,
           document.getElementById("layout-view")!,
         )}

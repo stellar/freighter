@@ -5,6 +5,10 @@
     display: flex;
     justify-content: center;
     margin-bottom: pxToRem(14px);
+
+    &__scan-label {
+      margin-bottom: pxToRem(14px);
+    }
   }
 
   &--subject {

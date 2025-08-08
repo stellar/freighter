@@ -1,7 +1,24 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
+import {
+  stubAccountBalances,
+  stubAccountHistory,
+  stubScanDapp,
+  stubTokenDetails,
+  stubTokenPrices,
+} from "./helpers/stubs";
 
-test("Load accounts on standalone network", async ({ page, extensionId }) => {
+test("Load accounts on standalone network", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
   test.slow();
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("account-options-dropdown").click();
@@ -35,7 +52,13 @@ test("Load accounts on standalone network", async ({ page, extensionId }) => {
 test("Switches account and fetches correct balances", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubTokenDetails(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
   test.slow();
   await loginToTestAccount({ page, extensionId });
   await expect(page.getByTestId("account-assets")).toContainText("XLM");
@@ -56,7 +79,14 @@ test("Switches account and fetches correct balances", async ({
 test("Switches account without password prompt", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
   test.slow();
   await loginToTestAccount({ page, extensionId });
   await expect(page.getByTestId("account-assets")).toContainText("XLM");
@@ -72,7 +102,14 @@ test("Switches account without password prompt", async ({
 test("Can't change settings on a stale window", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubTokenDetails(context);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
   test.slow();
 
   const pageOne = await page.context().newPage();
@@ -81,6 +118,11 @@ test("Can't change settings on a stale window", async ({
   // open a second tab and change the account
   const pageTwo = await page.context().newPage();
   await pageTwo.waitForLoadState();
+  await stubTokenDetails(context);
+  await stubAccountBalances(pageTwo);
+  await stubAccountHistory(pageTwo);
+  await stubTokenPrices(pageTwo);
+  await stubScanDapp(context);
 
   await pageTwo.goto(`chrome-extension://${extensionId}/index.html`);
   await expect(pageTwo.getByTestId("account-view")).toBeVisible({
@@ -100,7 +142,7 @@ test("Can't change settings on a stale window", async ({
   await pageOne.getByText("Settings").click();
   await pageOne.getByText("Preferences").click();
   await expect(pageOne.locator("#isValidatingMemoValue")).toHaveValue("true");
-  await pageOne.getByText("Validate addresses that require a memo").click();
+  await pageOne.getByTestId("isValidatingMemoValue").click();
   await expect(pageOne.getByTestId("account-mismatch")).toBeVisible();
 
   // go back to the second tab and confirm the setting didn't change

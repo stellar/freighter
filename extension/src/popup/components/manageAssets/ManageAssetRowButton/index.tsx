@@ -1,17 +1,12 @@
 import React, { useRef, useState } from "react";
 import { Button, Icon, CopyText } from "@stellar/design-system";
 import { createPortal } from "react-dom";
-import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 
-import { AppDispatch } from "popup/App";
 import { getCanonicalFromAsset } from "helpers/stellar";
-import { resetSubmitStatus } from "popup/ducks/transactionSubmission";
 import IconAdd from "popup/assets/icon-add.svg";
 import IconRemove from "popup/assets/icon-remove.svg";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
-import { AccountBalances } from "helpers/hooks/useGetBalances";
-import { TrustlineError } from "../TrustlineError";
 
 import "./styles.scss";
 
@@ -19,7 +14,6 @@ interface ManageAssetRowButtonProps {
   code: string;
   issuer: string;
   isTrustlineActive: boolean;
-  balances: AccountBalances;
   isLoading: boolean;
   onClick: () => void;
 }
@@ -28,14 +22,11 @@ export const ManageAssetRowButton = ({
   code,
   issuer,
   isTrustlineActive,
-  balances,
   isLoading,
   onClick,
 }: ManageAssetRowButtonProps) => {
-  const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
   const [rowButtonShowing, setRowButtonShowing] = useState("");
-  const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
 
   const ManageAssetRowDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -85,7 +76,10 @@ export const ManageAssetRowButton = ({
                   variant="secondary"
                   disabled={isLoading}
                   isLoading={isLoading}
-                  onClick={onClick}
+                  onClick={() => {
+                    setRowButtonShowing("");
+                    onClick();
+                  }}
                   type="button"
                   data-testid="ManageAssetRowButton"
                 >
@@ -121,18 +115,6 @@ export const ManageAssetRowButton = ({
           <img src={IconAdd} alt="icon add" />
         </Button>
       )}
-      {isTrustlineErrorShowing
-        ? createPortal(
-            <TrustlineError
-              balances={balances}
-              handleClose={() => {
-                setIsTrustlineErrorShowing(false);
-                dispatch(resetSubmitStatus());
-              }}
-            />,
-            document.querySelector("#modal-root")!,
-          )
-        : null}
     </div>
   );
 };

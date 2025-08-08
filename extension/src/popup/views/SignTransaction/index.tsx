@@ -188,7 +188,7 @@ export const SignTransaction = () => {
     }
   }, [isMemoRequired]);
 
-  const isSubmitDisabled = isMemoRequired;
+  const isSubmitDisabled = isMemoRequired || !isDomainListedAllowed;
 
   if (
     scanTxState.state === RequestState.IDLE ||
@@ -476,7 +476,7 @@ export const SignTransaction = () => {
                 </Button>
                 <Button
                   data-testid="sign-transaction-sign"
-                  disabled={isSubmitDisabled || !isDomainListedAllowed}
+                  disabled={isSubmitDisabled}
                   variant="secondary"
                   isFullWidth
                   isRounded
