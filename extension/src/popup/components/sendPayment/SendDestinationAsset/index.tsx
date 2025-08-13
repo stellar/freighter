@@ -201,7 +201,7 @@ export const SendDestinationAsset = ({
                             ? `$${formatAmount(
                                 roundUsdValue(
                                   new BigNumber(usdValue.currentPrice)
-                                    .multipliedBy(balance.total)
+                                    .multipliedBy(availableBalance)
                                     .toString(),
                                 ),
                               )}`
