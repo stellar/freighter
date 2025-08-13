@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { Icon, Input, Loader } from "@stellar/design-system";
 import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
+import { debounce } from "lodash";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { openTab } from "popup/helpers/navigate";
@@ -37,7 +38,7 @@ export const SwapAsset = ({
   onClickAsset,
   goBack,
 }: SwapAssetProps) => {
-  const { state, fetchData } = useGetSwapFromData({
+  const { state, fetchData, filterBalances } = useGetSwapFromData({
     showHidden: false,
     includeIcons: true,
   });
@@ -47,9 +48,23 @@ export const SwapAsset = ({
 
   const formik = useFormik({
     initialValues: { searchTerm: "" },
-    onSubmit: () => {},
+    onSubmit: (values) => filterBalances(values.searchTerm),
     validateOnChange: false,
   });
+
+  const debouncedSubmit = React.useMemo(
+    () =>
+      debounce(() => {
+        formik.submitForm();
+      }, 300),
+    [formik],
+  );
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    formik.setFieldValue("searchTerm", val);
+    debouncedSubmit();
+  };
 
   useEffect(() => {
     const getData = async () => {
@@ -95,7 +110,8 @@ export const SwapAsset = ({
 
   const icons = state.data?.balances.icons || {};
   const tokenPrices = state.data?.tokenPrices || {};
-  const balances = state.data?.balances;
+  const balances = state.data?.filteredBalances || [];
+  const subentryCount = state.data?.balances.subentryCount!;
 
   return (
     <>
@@ -110,10 +126,10 @@ export const SwapAsset = ({
             fieldSize="md"
             autoComplete="off"
             id="destination-input"
-            name="destination"
+            name="searchTerm"
             placeholder={"Search token name or address"}
-            onChange={formik.handleChange}
             value={formik.values.searchTerm}
+            onChange={handleChange}
             leftElement={<Icon.SearchMd />}
             data-testid="swap-from-search"
           />
@@ -125,7 +141,7 @@ export const SwapAsset = ({
             </div>
           ) : (
             <div className="SwapFrom__Assets">
-              {!balances?.balances.length ? (
+              {!balances.length ? (
                 <div className="SwapFrom__Assets__empty">
                   You have no assets added. Get started by adding an asset.
                 </div>
@@ -135,7 +151,7 @@ export const SwapAsset = ({
                     <Icon.Coins03 />
                     Your Tokens
                   </div>
-                  {balances.balances
+                  {balances
                     .filter(
                       (
                         balance,
@@ -165,7 +181,7 @@ export const SwapAsset = ({
                       const availableBalance = getAvailableBalance({
                         assetCanonical: canonical,
                         balances: [balance],
-                        subentryCount: balances.subentryCount,
+                        subentryCount,
                         recommendedFee: "0",
                       });
                       const displayTotal =

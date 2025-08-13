@@ -19,6 +19,7 @@ export interface ResolvedSwapFrom {
   type: AppDataType.RESOLVED;
   publicKey: string;
   balances: AccountBalances;
+  filteredBalances: AccountBalances["balances"];
   networkDetails: NetworkDetails;
   applicationState: APPLICATION_STATE;
   tokenPrices: ApiTokenPrices;
@@ -69,6 +70,7 @@ export function useGetSwapFromData(getBalancesOptions: {
       const payload = {
         type: AppDataType.RESOLVED,
         balances,
+        filteredBalances: balances.balances,
         publicKey,
         networkDetails,
         tokenPrices,
@@ -82,8 +84,52 @@ export function useGetSwapFromData(getBalancesOptions: {
     }
   };
 
+  const filterBalances = (searchTerm: string) => {
+    const resolvedSwapData = state.data as ResolvedSwapFrom;
+    const term = searchTerm.toLowerCase();
+
+    if (!term) {
+      const payload = {
+        ...resolvedSwapData,
+        filteredBalances: resolvedSwapData?.balances.balances || [],
+      } as SwapFrom;
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      return;
+    }
+
+    const balances = resolvedSwapData?.balances.balances || [];
+    const filtered =
+      term?.length > 2
+        ? balances.filter((balance) => {
+            if (
+              "token" in balance &&
+              balance.token.code.toLowerCase().includes(term)
+            )
+              return true;
+            if (
+              "token" in balance &&
+              "issuer" in balance.token &&
+              balance.token.issuer.key.toLowerCase().includes(term)
+            )
+              return true;
+            if (
+              "contractId" in balance &&
+              balance.contractId.toLowerCase().includes(term)
+            )
+              return true;
+            return false;
+          })
+        : balances;
+    const payload = {
+      ...resolvedSwapData,
+      filteredBalances: filtered,
+    } as SwapFrom;
+    dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+  };
+
   return {
     state,
     fetchData,
+    filterBalances,
   };
 }
