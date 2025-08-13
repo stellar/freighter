@@ -382,7 +382,7 @@ export const SendAmount = ({
                           ref={usdInputRef}
                           className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
                           style={{
-                            width: `${formik.values.amountUsd.length + 1 || 5}ch`,
+                            width: `${formik.values.amountUsd.length || 5}ch`,
                           }}
                           data-testid="send-amount-amount-input"
                           name="amountUsd"
@@ -572,7 +572,6 @@ export const SendAmount = ({
                 fee: string;
                 timeout: number;
               }) => {
-                console.log(fee, timeout);
                 dispatch(saveTransactionFee(fee));
                 dispatch(saveTransactionTimeout(timeout));
                 setIsEditingSettings(false);
