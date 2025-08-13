@@ -114,7 +114,7 @@ export const SendDestinationAsset = ({
           goBack();
         }}
       />
-      <View.Content>
+      <View.Content hasNoTopPadding>
         <div className="SendDestinationAsset">
           <div className="SendDestinationAsset__EditDestination">
             <div className="SendDestinationAsset__EditDestination__title">
