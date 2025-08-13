@@ -19,6 +19,7 @@ import { isContractId } from "popup/helpers/soroban";
 import { useSimulateTxData } from "popup/components/sendPayment/SendAmount/hooks/useSimulateTxData";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
+import { useNetworkFees } from "popup/helpers/useNetworkFees";
 
 export const SendPayment = () => {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ export const SendPayment = () => {
   const isPathPayment = useSelector(isPathPaymentSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
+  const { recommendedFee } = useNetworkFees();
 
   const {
     transactionData: {
@@ -64,7 +66,7 @@ export const SendPayment = () => {
           isPathPayment,
           isSwap: false,
           memo,
-          transactionFee,
+          transactionFee: transactionFee || recommendedFee,
           transactionTimeout,
         };
   const { state: simulationState, fetchData } = useSimulateTxData({

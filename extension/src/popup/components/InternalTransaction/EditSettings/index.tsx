@@ -49,6 +49,8 @@ export const EditSettings = ({
                   <Field name="fee">
                     {({ field }: FieldProps) => (
                       <Input
+                        type="text"
+                        min={0}
                         autoFocus
                         fieldSize="md"
                         autoComplete="off"
@@ -57,6 +59,23 @@ export const EditSettings = ({
                         label="Transaction Fee"
                         {...field}
                         error={errors.fee}
+                        onChange={(e) => {
+                          let value = e.target.value;
+                          if (value === "") {
+                            setFieldValue("fee", "");
+                            return;
+                          }
+
+                          // Only allow digits and one decimal point
+                          if (!/^\d*\.?\d*$/.test(value)) return;
+
+                          const [intPart, decPart] = value.split(".");
+                          if (decPart && decPart.length > 7) {
+                            value = `${intPart}.${decPart.slice(0, 7)}`;
+                          }
+
+                          setFieldValue("fee", value);
+                        }}
                         rightElement={
                           <Button
                             type="button"
@@ -77,6 +96,7 @@ export const EditSettings = ({
                   <Field name="timeout">
                     {({ field }: FieldProps) => (
                       <Input
+                        type="text"
                         fieldSize="md"
                         autoComplete="off"
                         id="timeout"
@@ -84,6 +104,16 @@ export const EditSettings = ({
                         label="Timeout (seconds)"
                         {...field}
                         error={errors.timeout}
+                        onChange={(e) => {
+                          let value = e.target.value;
+
+                          // Only digits, no decimals
+                          if (!/^\d*$/.test(value)) return;
+                          setFieldValue(
+                            "timeout",
+                            value === "" ? "" : parseInt(value, 10),
+                          );
+                        }}
                         rightElement={
                           <Button
                             type="button"

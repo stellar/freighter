@@ -84,8 +84,10 @@ export const SendAmount = ({
     destinationAsset,
     federationAddress,
     isToken,
+    transactionFee,
   } = transactionData;
   const { networkCongestion, recommendedFee } = useNetworkFees();
+  const fee = transactionFee || recommendedFee;
 
   const { state: sendAmountData, fetchData } = useGetSendAmountData(
     {
@@ -223,9 +225,7 @@ export const SendAmount = ({
   const recommendedFeeUsd = xlmPrice
     ? `$ ${formatAmount(
         roundUsdValue(
-          new BigNumber(xlmPrice)
-            .multipliedBy(new BigNumber(recommendedFee))
-            .toString(),
+          new BigNumber(xlmPrice).multipliedBy(new BigNumber(fee)).toString(),
         ),
       )}`
     : null;
@@ -234,7 +234,7 @@ export const SendAmount = ({
   const availableBalance = getAvailableBalance({
     assetCanonical: asset,
     balances: sendData.userBalances.balances,
-    recommendedFee,
+    recommendedFee: fee,
     subentryCount: sendData.userBalances.subentryCount,
   });
   const displayTotal =
@@ -276,9 +276,7 @@ export const SendAmount = ({
                 </span>
                 {inputType === "crypto" && <Logo.StellarShort />}
                 <span>
-                  {inputType === "crypto"
-                    ? `${recommendedFee} XLM`
-                    : recommendedFeeUsd}
+                  {inputType === "crypto" ? `${fee} XLM` : recommendedFeeUsd}
                 </span>
               </div>
               <div className="SendAmount__settings-options">
@@ -563,7 +561,7 @@ export const SendAmount = ({
         <>
           <div className="EditMemoWrapper">
             <EditSettings
-              fee={recommendedFee}
+              fee={fee}
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
               onClose={() => setIsEditingSettings(false)}
@@ -574,6 +572,7 @@ export const SendAmount = ({
                 fee: string;
                 timeout: number;
               }) => {
+                console.log(fee, timeout);
                 dispatch(saveTransactionFee(fee));
                 dispatch(saveTransactionTimeout(timeout));
                 setIsEditingSettings(false);
@@ -593,7 +592,7 @@ export const SendAmount = ({
         {isReviewingTx ? (
           <ReviewTx
             assetIcon={assetIcon}
-            fee={recommendedFee}
+            fee={fee}
             networkDetails={sendAmountData.data?.networkDetails!}
             onCancel={() => setIsReviewingTx(false)}
             onConfirm={goToNext}

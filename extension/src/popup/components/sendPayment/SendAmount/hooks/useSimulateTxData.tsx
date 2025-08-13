@@ -33,7 +33,6 @@ import {
 import { simulateTokenTransfer } from "@shared/api/internal";
 import { BlockAidScanTxResult } from "@shared/api/types";
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
-import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import {
   saveSimulation,
   saveTransactionFee,
@@ -287,7 +286,6 @@ function useSimulateTxData({
   simParams: SimClassic | SimSoroban;
   isMainnet: boolean;
 }) {
-  const { recommendedFee } = useNetworkFees();
   const reduxDispatch = useDispatch<AppDispatch>();
   const { asset, amount, transactionFee, memo } = useSelector(
     transactionDataSelector,
@@ -360,7 +358,7 @@ function useSimulateTxData({
 
       const simResponse = await simulateTx({
         type: simParams.type,
-        recommendedFee,
+        recommendedFee: transactionFee,
         options: {
           tokenPayment: {
             address: tokenAddress,
