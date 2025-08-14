@@ -21,7 +21,6 @@ import {
 import { computeDestMinWithSlippage } from "helpers/transaction";
 
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
-import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import {
   saveSimulation,
   saveSwapBestPath,
@@ -137,7 +136,6 @@ function useSimulateTxData({
   networkDetails: NetworkDetails;
   simParams: SimulationParams;
 }) {
-  const { recommendedFee } = useNetworkFees();
   const { memo } = useSelector(transactionDataSelector);
   const reduxDispatch = useDispatch<AppDispatch>();
 
@@ -160,7 +158,9 @@ function useSimulateTxData({
       const { allowedSlippage, sourceAsset, destAsset, transactionTimeout } =
         simParams;
 
-      const baseFee = new BigNumber(recommendedFee || stroopToXlm(BASE_FEE));
+      const baseFee = new BigNumber(
+        simParams.transactionFee || stroopToXlm(BASE_FEE),
+      );
 
       const bestPath = await horizonGetBestPath({
         amount,

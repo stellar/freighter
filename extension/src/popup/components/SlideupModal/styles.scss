@@ -6,7 +6,7 @@
   bottom: 0;
   left: 0;
   width: 100%;
-  z-index: var(--z-index-modal);
+  z-index: var(--back--button-z-index);
 
   /* Start hidden/offscreen and invisible */
   transform: translateY(100%);

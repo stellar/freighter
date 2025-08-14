@@ -156,82 +156,91 @@ export const ChangeTrustInternal = ({
           activeIndex={activePaneIndex}
           panes={[
             <div className="ChangeTrustInternal__Body">
-              <div className="ChangeTrustInternal__TitleRow">
-                <img src={StellarLogo} alt="Stellar Logo" />
-                <div className="ChangeTrustInternal__TitleRow__Detail">
-                  <span className="ChangeTrustInternal__TitleRow__Title">
-                    Confirm Transaction
-                  </span>
-                  <span className="SignTransaction__TitleRow__Domain">
-                    {asset.domain}
-                  </span>
-                </div>
-              </div>
-              {state.data.isAssetSuspicious && (
-                <BlockaidAssetWarning
-                  blockaidData={state.data.scanResult}
-                  onClick={() => setActivePaneIndex(2)}
-                />
-              )}
-              {trustlineChanges.length > 0 && (
-                <Trustline operations={trustlineChanges} icons={icons} />
-              )}
-              <div className="ChangeTrustInternal__Metadata">
-                <div className="ChangeTrustInternal__Metadata__Row">
-                  <div className="ChangeTrustInternal__Metadata__Label">
-                    <Icon.Wallet01 />
-                    <span>Wallet</span>
-                  </div>
-                  <div className="ChangeTrustInternal__Metadata__Value">
-                    <KeyIdenticon publicKey={publicKey} />
+              <div className="ChangeTrustInternal__Body__Wrapper">
+                <div className="ChangeTrustInternal__TitleRow">
+                  <img src={StellarLogo} alt="Stellar Logo" />
+                  <div className="ChangeTrustInternal__TitleRow__Detail">
+                    <span className="ChangeTrustInternal__TitleRow__Title">
+                      Confirm Transaction
+                    </span>
+                    <span className="SignTransaction__TitleRow__Domain">
+                      {asset.domain}
+                    </span>
                   </div>
                 </div>
-                <div className="ChangeTrustInternal__Metadata__Row">
-                  <div className="ChangeTrustInternal__Metadata__Label">
-                    <Icon.Route />
-                    <span>Fee</span>
+                {state.data.isAssetSuspicious && (
+                  <BlockaidAssetWarning
+                    blockaidData={state.data.scanResult}
+                    onClick={() => setActivePaneIndex(2)}
+                  />
+                )}
+                {trustlineChanges.length > 0 && (
+                  <Trustline operations={trustlineChanges} icons={icons} />
+                )}
+                <div className="ChangeTrustInternal__Metadata">
+                  <div className="ChangeTrustInternal__Metadata__Row">
+                    <div className="ChangeTrustInternal__Metadata__Label">
+                      <Icon.Wallet01 />
+                      <span>Wallet</span>
+                    </div>
+                    <div className="ChangeTrustInternal__Metadata__Value">
+                      <KeyIdenticon publicKey={publicKey} />
+                    </div>
                   </div>
-                  <div className="ChangeTrustInternal__Metadata__Value">
-                    <span>{`${fee} XLM`}</span>
+                  <div className="ChangeTrustInternal__Metadata__Row">
+                    <div className="ChangeTrustInternal__Metadata__Label">
+                      <Icon.Route />
+                      <span>Fee</span>
+                    </div>
+                    <div className="ChangeTrustInternal__Metadata__Value">
+                      <span>{`${fee} XLM`}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div
-                className="ChangeTrustInternal__TransactionDetailsBtn"
-                onClick={() => setActivePaneIndex(1)}
-              >
-                <Icon.List />
-                <span>Transaction details</span>
+                <div
+                  className="ChangeTrustInternal__TransactionDetailsBtn"
+                  onClick={() => setActivePaneIndex(1)}
+                >
+                  <Icon.List />
+                  <span>Transaction details</span>
+                </div>
               </div>
             </div>,
-            <div className="ChangeTrustInternal__TransactionDetails">
-              <div className="ChangeTrustInternal__TransactionDetails__Header">
-                <div className="DetailsMark">
-                  <Icon.List />
+            <div className="ChangeTrustInternal__Body">
+              <div className="ChangeTrustInternal__Body__Wrapper">
+                <div className="ChangeTrustInternal__TransactionDetails">
+                  <div className="ChangeTrustInternal__TransactionDetails__Header">
+                    <div className="DetailsMark">
+                      <Icon.List />
+                    </div>
+                    <div
+                      className="Close"
+                      onClick={() => setActivePaneIndex(0)}
+                    >
+                      <Icon.X />
+                    </div>
+                  </div>
+                  <div className="ChangeTrustInternal__TransactionDetails__Title">
+                    <span>Transaction Details</span>
+                  </div>
+                  <div className="ChangeTrustInternal__TransactionDetails__Summary">
+                    <Summary
+                      sequenceNumber={sequence}
+                      fee={xlmToStroop(fee).toString()}
+                      memo={{ value: memo, type: "text" }}
+                      xdr={xdr}
+                      operationNames={operations.map(
+                        (op) => OPERATION_TYPES[op.type] || op.type,
+                      )}
+                    />
+                  </div>
+                  <Details
+                    operations={operations}
+                    flaggedKeys={flaggedKeys}
+                    isMemoRequired={isMemoRequired}
+                  />
                 </div>
-                <div className="Close" onClick={() => setActivePaneIndex(0)}>
-                  <Icon.X />
-                </div>
               </div>
-              <div className="ChangeTrustInternal__TransactionDetails__Title">
-                <span>Transaction Details</span>
-              </div>
-              <div className="ChangeTrustInternal__TransactionDetails__Summary">
-                <Summary
-                  sequenceNumber={sequence}
-                  fee={xlmToStroop(fee).toString()}
-                  memo={{ value: memo, type: "text" }}
-                  xdr={xdr}
-                  operationNames={operations.map(
-                    (op) => OPERATION_TYPES[op.type] || op.type,
-                  )}
-                />
-              </div>
-              <Details
-                operations={operations}
-                flaggedKeys={flaggedKeys}
-                isMemoRequired={isMemoRequired}
-              />
             </div>,
             <BlockAidAssetScanExpanded
               scanResult={state.data.scanResult}

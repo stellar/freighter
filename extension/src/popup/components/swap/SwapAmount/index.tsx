@@ -91,6 +91,7 @@ export const SwapAmount = ({
     transactionFee,
     transactionTimeout,
   } = transactionData;
+  const fee = transactionFee || recommendedFee;
   const srcAsset = getAssetFromCanonical(asset);
   const dstAsset = destinationAsset
     ? getAssetFromCanonical(destinationAsset)
@@ -113,12 +114,11 @@ export const SwapAmount = ({
         amount,
         allowedSlippage,
         path,
-        transactionFee,
+        transactionFee: fee,
         transactionTimeout,
         memo,
       },
     });
-
   const cryptoInputRef = useRef<HTMLInputElement>(null);
   const usdInputRef = useRef<HTMLInputElement>(null);
 
@@ -249,9 +249,7 @@ export const SwapAmount = ({
   const recommendedFeeUsd = xlmPrice
     ? `$ ${formatAmount(
         roundUsdValue(
-          new BigNumber(xlmPrice)
-            .multipliedBy(new BigNumber(recommendedFee))
-            .toString(),
+          new BigNumber(xlmPrice).multipliedBy(new BigNumber(fee)).toString(),
         ),
       )}`
     : null;
@@ -265,7 +263,7 @@ export const SwapAmount = ({
   const availableBalance = getAvailableBalance({
     assetCanonical: asset,
     balances: sendData.userBalances.balances,
-    recommendedFee,
+    recommendedFee: fee,
     subentryCount: sendData.userBalances.subentryCount,
   });
   const srcTitle = asset === "native" ? "Stellar Lumens" : srcAsset.code;
@@ -305,9 +303,7 @@ export const SwapAmount = ({
                 </span>
                 {inputType === "crypto" && <Logo.StellarShort />}
                 <span>
-                  {inputType === "crypto"
-                    ? `${recommendedFee} XLM`
-                    : recommendedFeeUsd}
+                  {inputType === "crypto" ? `${fee} XLM` : recommendedFeeUsd}
                 </span>
               </div>
               <div className="SwapAsset__settings-options">
@@ -418,7 +414,7 @@ export const SwapAmount = ({
                           ref={usdInputRef}
                           className={`SwapAsset__input-amount SwapAsset__${getAmountFontSize()}`}
                           style={{
-                            width: `${formik.values.amountUsd.length + 1 || 5}ch`,
+                            width: `${formik.values.amountUsd.length || 5}ch`,
                           }}
                           data-testid="send-amount-amount-input"
                           name="amountUsd"
@@ -544,7 +540,7 @@ export const SwapAmount = ({
                     variant="tertiary"
                     onClick={goToEditSrcAction}
                   >
-                    Edit
+                    <Icon.ChevronRight />
                   </Button>
                 </div>
                 <div className="SwapAsset__EditDstAsset">
@@ -587,14 +583,16 @@ export const SwapAmount = ({
                       </>
                     )}
                   </div>
-                  <Button
-                    isRounded
-                    size="sm"
-                    variant="tertiary"
-                    onClick={goToNext}
-                  >
-                    Edit
-                  </Button>
+                  {destinationAsset && (
+                    <Button
+                      isRounded
+                      size="sm"
+                      variant="tertiary"
+                      onClick={goToNext}
+                    >
+                      <Icon.ChevronRight />
+                    </Button>
+                  )}
                 </div>
               </div>
             </form>
@@ -616,7 +614,8 @@ export const SwapAmount = ({
         <>
           <div className="SlippageWrapper">
             <EditSettings
-              fee={recommendedFee}
+              fee={fee}
+              title="Swap Settings"
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
               onClose={() => setIsEditingSettings(false)}
@@ -646,7 +645,7 @@ export const SwapAmount = ({
         {isReviewingTx ? (
           <ReviewTx
             assetIcon={assetIcon}
-            fee={recommendedFee}
+            fee={fee}
             networkDetails={networkDetails}
             onCancel={() => setIsReviewingTx(false)}
             onConfirm={goToNext}
@@ -722,6 +721,8 @@ const EditSlippage = ({ onClose }: EditSlippageProps) => {
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                           setFieldValue("presetSlippage", e.target.value);
                           setFieldValue("customSlippage", "");
+                          dispatch(saveAllowedSlippage(e.target.value));
+                          onClose();
                         }}
                       />
                       <Card>{value}%</Card>

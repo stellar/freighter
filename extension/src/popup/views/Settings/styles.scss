@@ -1,20 +1,44 @@
+@use "../../styles/utils.scss" as *;
+
 .Settings {
   display: flex;
   flex-direction: column;
+  background-color: var(--sds-clr-gray-02);
+  border-radius: pxToRem(16px);
+  padding: pxToRem(16px);
 
   &__header {
     margin-bottom: 2rem;
   }
 
   &__version {
-    color: var(--sds-clr-gray-12);
-    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    background-color: var(--sds-clr-gray-02);
+    border-radius: pxToRem(16px);
+    padding: pxToRem(16px);
+    margin-top: pxToRem(24px);
+
+    span {
+      margin-left: pxToRem(12px);
+    }
+
+    svg {
+      width: pxToRem(24px);
+      height: pxToRem(24px);
+    }
   }
 
   &__row {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+
+    &:not(:last-child) {
+      margin-bottom: pxToRem(12px);
+      padding-bottom: pxToRem(12px);
+      border-bottom: 1px solid var(--sds-clr-gray-06);
+    }
   }
 
   &__icon {

@@ -142,7 +142,7 @@ export const ReviewTx = ({
                       <span>
                         {sendAmount} {asset.code}
                       </span>
-                      {isMainnet(networkDetails) && (
+                      {isMainnet(networkDetails) && sendPriceUsd && (
                         <span className="ReviewTx__SendAssetDetails__price">
                           {`$ ${sendPriceUsd}`}
                         </span>

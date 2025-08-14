@@ -27,7 +27,7 @@ export const SendPayment = () => {
   const isPathPayment = useSelector(isPathPaymentSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
-  const { recommendedFee } = useNetworkFees();
+  const { recommendedFee, networkCongestion } = useNetworkFees();
 
   const {
     transactionData: {
@@ -101,6 +101,8 @@ export const SendPayment = () => {
             goToChooseDest={() => setActiveStep(STEPS.DESTINATION)}
             fetchSimulationData={fetchData}
             simulationState={simulationState}
+            recommendedFee={recommendedFee}
+            networkCongestion={networkCongestion}
           />
         );
       }

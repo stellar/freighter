@@ -126,7 +126,7 @@ export const SendDestinationAsset = ({
                 : truncatedPublicKey(destination)}
             </div>
             <Button isRounded size="sm" variant="tertiary" onClick={goBack}>
-              Edit
+              <Icon.ChevronRight />
             </Button>
           </div>
           <div className="SendDestinationAsset__Assets">
@@ -137,7 +137,6 @@ export const SendDestinationAsset = ({
             ) : (
               <>
                 <div className="SendDestinationAsset__Assets__Header">
-                  <Icon.Coins03 />
                   Tokens
                 </div>
                 {balances.balances

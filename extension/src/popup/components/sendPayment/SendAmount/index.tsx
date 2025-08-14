@@ -16,7 +16,7 @@ import {
   truncatedFedAddress,
   truncatedPublicKey,
 } from "helpers/stellar";
-import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { NetworkCongestion } from "popup/helpers/useNetworkFees";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
@@ -64,12 +64,16 @@ export const SendAmount = ({
   goToChooseDest,
   simulationState,
   fetchSimulationData,
+  networkCongestion,
+  recommendedFee,
 }: {
   goBack: () => void;
   goToNext: () => void;
   goToChooseDest: () => void;
   simulationState: State<SimulateTxData, unknown>;
   fetchSimulationData: () => Promise<unknown>;
+  networkCongestion: NetworkCongestion;
+  recommendedFee: string;
 }) => {
   const { t } = useTranslation();
   const location = useLocation();
@@ -86,8 +90,8 @@ export const SendAmount = ({
     isToken,
     transactionFee,
   } = transactionData;
-  const { networkCongestion, recommendedFee } = useNetworkFees();
   const fee = transactionFee || recommendedFee;
+  console.log(transactionFee, recommendedFee);
 
   const { state: sendAmountData, fetchData } = useGetSendAmountData(
     {
@@ -286,7 +290,7 @@ export const SendAmount = ({
                   variant="tertiary"
                   onClick={() => setIsEditingMemo(true)}
                 >
-                  {transactionData.memo || t("Add a memo")}
+                  {transactionData.memo ? t("Edit memo") : t("Add memo")}
                 </Button>
                 <Button
                   size="sm"
@@ -508,7 +512,7 @@ export const SendAmount = ({
                     variant="tertiary"
                     onClick={goBackAction}
                   >
-                    Edit
+                    <Icon.ChevronRight />
                   </Button>
                 </div>
                 <div className="SendAmount__EditDestination">
@@ -531,7 +535,7 @@ export const SendAmount = ({
                       goToChooseDest();
                     }}
                   >
-                    Edit
+                    <Icon.ChevronRight />
                   </Button>
                 </div>
               </div>
@@ -562,6 +566,7 @@ export const SendAmount = ({
           <div className="EditMemoWrapper">
             <EditSettings
               fee={fee}
+              title="Send Settings"
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
               onClose={() => setIsEditingSettings(false)}
@@ -596,7 +601,7 @@ export const SendAmount = ({
             onCancel={() => setIsReviewingTx(false)}
             onConfirm={goToNext}
             sendAmount={amount}
-            sendPriceUsd={inputType === "crypto" ? priceValue! : amountUsd}
+            sendPriceUsd={priceValueUsd}
             simulationState={simulationState}
             srcAsset={asset}
             title="You are sending"

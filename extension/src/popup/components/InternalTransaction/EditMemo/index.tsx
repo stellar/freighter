@@ -30,7 +30,7 @@ export const EditMemo = ({ memo, onClose, onSubmit }: EditMemoProps) => {
     <View.Content hasNoTopPadding>
       <div className="EditMemo">
         <Card>
-          <p>Add a memo</p>
+          <p>Add memo</p>
           <Formik initialValues={initialValues} onSubmit={handleSubmit}>
             {({ errors }) => (
               <>

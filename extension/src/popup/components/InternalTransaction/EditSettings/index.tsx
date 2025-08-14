@@ -17,6 +17,7 @@ interface EditSettingsProps {
   fee: string;
   timeout: number;
   congestion: string;
+  title: string;
   onClose: () => void;
   onSubmit: (args: EditSettingsFormValue) => void;
 }
@@ -25,6 +26,7 @@ export const EditSettings = ({
   fee,
   timeout,
   congestion,
+  title,
   onClose,
   onSubmit,
 }: EditSettingsProps) => {
@@ -41,7 +43,7 @@ export const EditSettings = ({
     <View.Content hasNoTopPadding>
       <div className="EditTxSettings">
         <Card>
-          <p>Send Settings</p>
+          {title && <p>{title}</p>}
           <Formik initialValues={initialValues} onSubmit={handleSubmit}>
             {({ errors, setFieldValue }) => (
               <>

@@ -131,7 +131,7 @@ export const ManageConnectedApps = () => {
           <div className="ManageConnectedApps__select-wrapper">
             <Select
               data-testid="manage-connected-apps-select"
-              fieldSize="sm"
+              fieldSize="md"
               id="select"
               className="ManageConnectedApps__select"
               onChange={handleSelectChange}

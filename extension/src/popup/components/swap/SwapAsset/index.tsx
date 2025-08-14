@@ -147,10 +147,7 @@ export const SwapAsset = ({
                 </div>
               ) : (
                 <>
-                  <div className="SwapFrom__Assets__Header">
-                    <Icon.Coins03 />
-                    Your Tokens
-                  </div>
+                  <div className="SwapFrom__Assets__Header">Your Tokens</div>
                   {balances
                     .filter(
                       (
