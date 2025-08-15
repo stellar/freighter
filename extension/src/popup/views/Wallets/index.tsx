@@ -286,7 +286,7 @@ export const Wallets = () => {
 
   useEffect(() => {
     const getData = async () => {
-      await fetchData();
+      await fetchData(true);
     };
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps

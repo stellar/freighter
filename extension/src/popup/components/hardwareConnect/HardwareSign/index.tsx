@@ -33,10 +33,12 @@ export const HardwareSign = ({
   walletType,
   isSignSorobanAuthorization,
   onSubmit,
+  isInternal = false,
 }: {
   walletType: ConfigurableWalletType;
   isSignSorobanAuthorization?: boolean;
   onSubmit?: () => void;
+  isInternal?: boolean;
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
@@ -126,7 +128,56 @@ export const HardwareSign = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return (
+  return isInternal ? (
+    <div className="HardwareSign__internal" ref={hardwareConnectRef}>
+      <div className="HardwareSign__internal__wrapper">
+        <SubviewHeader
+          customBackAction={closeOverlay}
+          customBackIcon={<Icon.XClose />}
+          title={`Connect ${walletType}`}
+        />
+        <div className="HardwareSign__content">
+          <div className="HardwareSign__success">
+            {hardwareConnectSuccessful ? "Connected" : ""}
+          </div>
+          <div className="HardwareSign__content__center">
+            <img
+              className="HardwareSign__img"
+              src={hardwareConnectSuccessful ? LedgerSigning : Ledger}
+              alt={walletType}
+            />
+            <span>
+              {hardwareConnectSuccessful
+                ? t("Review transaction on device")
+                : t("Connect device to computer")}
+            </span>
+            {hardwareWalletIsSigning && (
+              <div className="HardwareSign__loader">
+                <Loader size="2rem" />
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="HardwareSign__bottom">
+          {isDetectBtnDirty && <WalletErrorBlock error={connectError} />}
+          {!hardwareConnectSuccessful && (
+            <Button
+              size="md"
+              variant="secondary"
+              isFullWidth
+              onClick={() => {
+                setIsDetectBtnDirty(true);
+                handleSign();
+              }}
+              isLoading={isDetecting}
+            >
+              {isDetecting ? t("Detecting") : t("Detect device")}
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  ) : (
     <div className="HardwareSign">
       <div className="HardwareSign__wrapper" ref={hardwareConnectRef}>
         <SubviewHeader

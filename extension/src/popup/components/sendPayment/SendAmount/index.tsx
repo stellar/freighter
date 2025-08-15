@@ -91,7 +91,6 @@ export const SendAmount = ({
     transactionFee,
   } = transactionData;
   const fee = transactionFee || recommendedFee;
-  console.log(transactionFee, recommendedFee);
 
   const { state: sendAmountData, fetchData } = useGetSendAmountData(
     {
