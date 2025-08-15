@@ -133,6 +133,7 @@ export const EnterPassword = ({
                       <Button
                         size="md"
                         isFullWidth
+                        isRounded
                         variant="tertiary"
                         type="reset"
                       >
@@ -143,6 +144,7 @@ export const EnterPassword = ({
                     <Button
                       size="md"
                       isFullWidth
+                      isRounded
                       variant="secondary"
                       type="submit"
                       isLoading={isSubmitting}

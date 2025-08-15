@@ -37,10 +37,10 @@ function useGetSearchData(options: {
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(options);
 
-  const fetchData = async (): Promise<SearchData | Error> => {
+  const fetchData = async (useCache = false): Promise<SearchData | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const appData = await fetchAppData();
+      const appData = await fetchAppData(useCache);
       if (isError(appData)) {
         throw new Error(appData.message);
       }
@@ -59,6 +59,7 @@ function useGetSearchData(options: {
         publicKey,
         isMainnetNetwork,
         networkDetails,
+        useCache,
       );
 
       if (isError<AccountBalances>(balances)) {

@@ -149,8 +149,9 @@ export const ChooseAsset = ({
           <div className="ChooseAsset__button">
             <Link to={ROUTES.searchAsset}>
               <Button
-                size="md"
+                size="lg"
                 isFullWidth
+                isRounded
                 variant="tertiary"
                 data-testid="ChooseAssetAddAssetButton"
               >

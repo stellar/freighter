@@ -6,6 +6,27 @@
   top: 0;
   left: 0;
 
+  &__internal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 57rem;
+    height: var(--popup--height);
+    position: relative;
+    margin-top: 12px;
+
+    &__wrapper {
+      display: flex;
+      flex-direction: column;
+      width: var(--popup--width);
+      height: 100%;
+      border-radius: 16px;
+      background-color: var(--sds-clr-gray-03);
+      padding: 12px 16px;
+    }
+  }
+
   &__loader {
     display: flex;
     flex-direction: column;

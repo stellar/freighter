@@ -370,12 +370,10 @@ const BlockaidFeedbackForm = ({
 };
 
 export const BlockaidByLine = ({
-  hasArrow = false,
   handleClick,
   requestId,
   address,
 }: {
-  hasArrow?: boolean;
   handleClick?: () => void;
   requestId?: string;
   address?: string;
@@ -412,6 +410,9 @@ export const BlockaidByLine = ({
           <div
             className="BlockaidByLine__feedback__button"
             onClick={() => {
+              if (handleClick) {
+                handleClick();
+              }
               setIsFeedbackActive(true);
             }}
           >
@@ -421,16 +422,6 @@ export const BlockaidByLine = ({
           </div>
         </div>
       ) : null}
-
-      {hasArrow && (
-        <div
-          className="BlockaidByLine__arrow"
-          data-testid={`BlockaidByLine__arrow__${address ? "asset" : "tx"}`}
-          onClick={handleClick}
-        >
-          <Icon.ChevronRight />
-        </div>
-      )}
       {isFeedbackActive &&
         createPortal(
           <BlockaidFeedbackForm

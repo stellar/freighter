@@ -64,7 +64,7 @@ export const Memo = ({ memo, onSave, goBack }: MemoProps) => {
               <div className="TxMemo__actions">
                 <Button
                   type="button"
-                  size="md"
+                  size="lg"
                   isRounded
                   isFullWidth
                   variant="secondary"

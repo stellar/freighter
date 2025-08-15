@@ -53,8 +53,9 @@ export const NotFundedMessage = ({
 
       <Button
         variant="secondary"
-        size="md"
+        size="lg"
         isFullWidth
+        isRounded
         onClick={() =>
           isMainnet(networkDetails)
             ? navigateTo(ROUTES.addFunds, navigate, "?isAddXlm=true")
@@ -72,8 +73,9 @@ export const NotFundedMessage = ({
             <Form>
               <Button
                 variant="primary"
-                size="md"
+                size="lg"
                 isFullWidth
+                isRounded
                 isLoading={isSubmitting}
               >
                 {t("Fund with Friendbot")}

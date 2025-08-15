@@ -65,7 +65,7 @@ export const Timeout = ({ timeout, onSave, goBack }: TimeoutProps) => {
               <div className="TxTimeout__actions">
                 <Button
                   type="button"
-                  size="md"
+                  size="lg"
                   isRounded
                   isFullWidth
                   variant="secondary"

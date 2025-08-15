@@ -323,13 +323,13 @@ export const AccountHeader = ({
                 {roundedTotalBalanceUsd}
               </div>
               <div className="AccountHeader__actions">
-                <NavLink to={ROUTES.addFunds} data-testid="nav-link-buy">
+                <NavLink to={ROUTES.addFunds} data-testid="nav-link-add">
                   <div className="AccountHeader__actions__column">
                     <div className="AccountHeader__actions__btn">
                       <Icon.Plus />
                     </div>
                     <Text as="div" size="sm" weight="medium">
-                      {t("Buy")}
+                      {t("Add")}
                     </Text>
                   </div>
                 </NavLink>

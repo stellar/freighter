@@ -48,11 +48,18 @@
   &__Body {
     display: flex;
     flex-direction: column;
-    max-width: 57rem;
+    align-items: center;
     width: 100%;
     flex: 1;
     overflow-y: auto;
     padding: 1rem 1.5rem;
+
+    &__Wrapper {
+      max-width: 57rem;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
   }
 
   &__Actions {
@@ -216,9 +223,6 @@
     flex-direction: column;
     width: 100%;
     overflow-y: scroll;
-    max-width: 57rem;
-    padding: 1rem 1.5rem;
-    padding-top: 1.5rem;
 
     &__Header {
       display: flex;

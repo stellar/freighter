@@ -121,7 +121,9 @@ export const NetworkSettings = () => {
       </View.Content>
       <View.Footer>
         <Button
-          size="md"
+          size="lg"
+          isFullWidth
+          isRounded
           variant="secondary"
           onClick={() => navigateTo(ROUTES.addNetwork, navigate)}
         >

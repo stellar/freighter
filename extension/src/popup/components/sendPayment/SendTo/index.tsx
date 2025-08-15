@@ -198,7 +198,11 @@ export const SendTo = ({
 
   return (
     <React.Fragment>
-      <SubviewHeader title="Send" customBackAction={goBack} />
+      <SubviewHeader
+        title="Send"
+        customBackAction={goBack}
+        customBackIcon={<Icon.X />}
+      />
       <View.Content hasTopInput>
         <FormRows>
           <Input
@@ -310,8 +314,9 @@ export const SendTo = ({
       <View.Footer>
         {!isLoading && formik.values.destination && formik.isValid ? (
           <Button
-            size="md"
+            size="lg"
             isFullWidth
+            isRounded
             variant="secondary"
             onClick={() => formik.submitForm()}
             data-testid="send-to-btn-continue"

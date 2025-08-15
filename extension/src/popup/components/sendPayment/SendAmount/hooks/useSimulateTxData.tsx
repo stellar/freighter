@@ -33,7 +33,6 @@ import {
 import { simulateTokenTransfer } from "@shared/api/internal";
 import { BlockAidScanTxResult } from "@shared/api/types";
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
-import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import {
   saveSimulation,
   saveTransactionFee,
@@ -287,7 +286,6 @@ function useSimulateTxData({
   simParams: SimClassic | SimSoroban;
   isMainnet: boolean;
 }) {
-  const { recommendedFee } = useNetworkFees();
   const reduxDispatch = useDispatch<AppDispatch>();
   const { asset, amount, transactionFee, memo } = useSelector(
     transactionDataSelector,
@@ -296,7 +294,7 @@ function useSimulateTxData({
 
   const { scanTx } = useScanTx();
   const [state, dispatch] = useReducer(
-    reducer<SimulateTxData, unknown>,
+    reducer<SimulateTxData, string>,
     initialState,
   );
 
@@ -360,7 +358,7 @@ function useSimulateTxData({
 
       const simResponse = await simulateTx({
         type: simParams.type,
-        recommendedFee,
+        recommendedFee: transactionFee,
         options: {
           tokenPayment: {
             address: tokenAddress,
@@ -436,7 +434,11 @@ function useSimulateTxData({
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
-      dispatch({ type: "FETCH_DATA_ERROR", payload: error });
+      dispatch({
+        type: "FETCH_DATA_ERROR",
+        payload:
+          "We had an issue retrieving your transaction details. Please try again.",
+      });
       return error;
     }
   };

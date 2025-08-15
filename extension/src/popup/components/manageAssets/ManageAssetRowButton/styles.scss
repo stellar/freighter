@@ -13,7 +13,6 @@
   &__ellipsis {
     cursor: pointer;
     position: relative;
-    z-index: var(--back--button-z-index);
 
     &--is-pending {
       cursor: not-allowed;

@@ -48,11 +48,18 @@
   &__Body {
     display: flex;
     flex-direction: column;
+    align-items: center;
     padding-top: 2rem;
-    max-width: 57rem;
     width: 100%;
     flex: 1;
     overflow-y: auto;
+
+    &__Wrapper {
+      max-width: 57rem;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
   }
 
   .Blob {

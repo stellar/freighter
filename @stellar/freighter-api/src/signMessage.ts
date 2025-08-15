@@ -1,4 +1,3 @@
-import packageJson from "../package.json";
 import { Buffer } from "buffer";
 
 import {
@@ -41,7 +40,7 @@ export const signMessage = async (
       }
     }
 
-    const req = await submitMessage(message, packageJson.version, opts);
+    const req = await submitMessage(message, __PACKAGE_VERSION__, opts);
 
     if (req.error) {
       return { signedMessage: null, signerAddress: "", error: req.error };

@@ -69,6 +69,7 @@ export const Swap = () => {
             setInputType={setInputType}
             goBack={() => setActiveStep(STEPS.SET_FROM_ASSET)}
             goToEditSrc={() => setActiveStep(STEPS.SET_FROM_ASSET)}
+            goToEditDst={() => setActiveStep(STEPS.SET_DST_ASSET)}
             goToNext={() => setActiveStep(STEPS.SET_DST_ASSET)}
           />
         );
@@ -81,6 +82,7 @@ export const Swap = () => {
             setInputType={setInputType}
             goBack={() => setActiveStep(STEPS.SET_DST_ASSET)}
             goToEditSrc={() => setActiveStep(STEPS.SET_FROM_ASSET)}
+            goToEditDst={() => setActiveStep(STEPS.SET_DST_ASSET)}
             goToNext={() => setActiveStep(STEPS.SWAP_CONFIRM)}
           />
         );

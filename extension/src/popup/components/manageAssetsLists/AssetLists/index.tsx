@@ -60,7 +60,7 @@ export const AssetLists = ({
       <View.Content hasNoTopPadding>
         <div className="ManageAssetsLists__select-wrapper">
           <Select
-            fieldSize="sm"
+            fieldSize="md"
             id="select"
             className="ManageAssetsLists__select"
             onChange={handleSelectChange}
@@ -114,9 +114,10 @@ export const AssetLists = ({
       <View.Footer>
         <Button
           disabled={isLoading}
-          size="md"
+          size="lg"
           isFullWidth
-          variant="tertiary"
+          isRounded
+          variant="secondary"
           onClick={() =>
             navigateTo(ROUTES.manageAssetsListsModifyAssetList, navigate)
           }

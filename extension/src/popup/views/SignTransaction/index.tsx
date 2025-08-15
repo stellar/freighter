@@ -325,115 +325,126 @@ export const SignTransaction = () => {
           activeIndex={activePaneIndex}
           panes={[
             <div className="SignTransaction__Body">
-              <div className="SignTransaction__TitleRow">
-                <img
-                  className="PunycodedDomain__favicon"
-                  src={favicon}
-                  alt="Site favicon"
-                />
-                <div className="SignTransaction__TitleRow__Detail">
-                  <span className="SignTransaction__TitleRow__Title">
-                    Confirm Transaction
-                  </span>
-                  <span className="SignTransaction__TitleRow__Domain">
-                    {validDomain}
-                  </span>
-                </div>
-              </div>
-              <BlockaidTxScanLabel
-                scanResult={scanResult!}
-                onClick={() => setActivePaneIndex(1)}
-              />
-              {!isDomainListedAllowed && (
-                <DomainNotAllowedWarningMessage domain={domain} />
-              )}
-              {assetDiffs && (
-                <AssetDiffs
-                  icons={scanTxState.data?.icons || {}}
-                  assetDiffs={assetDiffs}
-                />
-              )}
-              {trustlineChanges.length > 0 && (
-                <Trustline
-                  operations={trustlineChanges}
-                  icons={scanTxState.data?.icons || {}}
-                />
-              )}
-              <div className="SignTransaction__Metadata">
-                <div className="SignTransaction__Metadata__Row">
-                  <div className="SignTransaction__Metadata__Label">
-                    <Icon.Wallet01 />
-                    <span>Wallet</span>
-                  </div>
-                  <div className="SignTransaction__Metadata__Value">
-                    <KeyIdenticon publicKey={publicKey} />
-                  </div>
-                </div>
-                <div className="SignTransaction__Metadata__Row">
-                  <div className="SignTransaction__Metadata__Label">
-                    <Icon.Route />
-                    <span>Fee</span>
-                  </div>
-                  <div className="SignTransaction__Metadata__Value">
-                    <span>
-                      {formatTokenAmount(
-                        new BigNumber(_fee),
-                        CLASSIC_ASSET_DECIMALS,
-                      )}{" "}
-                      XLM
+              <div className="SignTransaction__Body__Wrapper">
+                <div className="SignTransaction__TitleRow">
+                  <img
+                    className="PunycodedDomain__favicon"
+                    src={favicon}
+                    alt="Site favicon"
+                  />
+                  <div className="SignTransaction__TitleRow__Detail">
+                    <span className="SignTransaction__TitleRow__Title">
+                      Confirm Transaction
+                    </span>
+                    <span className="SignTransaction__TitleRow__Domain">
+                      {validDomain}
                     </span>
                   </div>
                 </div>
-              </div>
-              <div
-                className="SignTransaction__TransactionDetailsBtn"
-                onClick={() => setActivePaneIndex(2)}
-              >
-                <Icon.List />
-                <span>Transaction details</span>
+                <BlockaidTxScanLabel
+                  scanResult={scanResult!}
+                  onClick={() => setActivePaneIndex(1)}
+                />
+                {!isDomainListedAllowed && (
+                  <DomainNotAllowedWarningMessage domain={domain} />
+                )}
+                {assetDiffs && (
+                  <AssetDiffs
+                    icons={scanTxState.data?.icons || {}}
+                    assetDiffs={assetDiffs}
+                  />
+                )}
+                {trustlineChanges.length > 0 && (
+                  <Trustline
+                    operations={trustlineChanges}
+                    icons={scanTxState.data?.icons || {}}
+                  />
+                )}
+                <div className="SignTransaction__Metadata">
+                  <div className="SignTransaction__Metadata__Row">
+                    <div className="SignTransaction__Metadata__Label">
+                      <Icon.Wallet01 />
+                      <span>Wallet</span>
+                    </div>
+                    <div className="SignTransaction__Metadata__Value">
+                      <KeyIdenticon publicKey={publicKey} />
+                    </div>
+                  </div>
+                  <div className="SignTransaction__Metadata__Row">
+                    <div className="SignTransaction__Metadata__Label">
+                      <Icon.Route />
+                      <span>Fee</span>
+                    </div>
+                    <div className="SignTransaction__Metadata__Value">
+                      <span>
+                        {formatTokenAmount(
+                          new BigNumber(_fee),
+                          CLASSIC_ASSET_DECIMALS,
+                        )}{" "}
+                        XLM
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  className="SignTransaction__TransactionDetailsBtn"
+                  onClick={() => setActivePaneIndex(2)}
+                >
+                  <Icon.List />
+                  <span>Transaction details</span>
+                </div>
               </div>
             </div>,
             <BlockAidTxScanExpanded
               scanResult={scanResult!}
               onClose={() => setActivePaneIndex(0)}
             />,
-            <div className="SignTransaction__TransactionDetails">
-              <div className="SignTransaction__TransactionDetails__Header">
-                <div className="DetailsMark">
-                  <Icon.List />
-                </div>
-                <div className="Close" onClick={() => setActivePaneIndex(0)}>
-                  <Icon.X />
-                </div>
-              </div>
-              <div className="SignTransaction__TransactionDetails__Title">
-                <span>Transaction Details</span>
-              </div>
-              <div className="SignTransaction__TransactionDetails__Summary">
-                <Summary
-                  sequenceNumber={_sequence}
-                  fee={_fee}
-                  memo={decodedMemo}
-                  xdr={transactionXdr}
-                  operationNames={_tx.operations.map(
-                    (op) => OPERATION_TYPES[op.type] || op.type,
+            <div className="SignTransaction__Body">
+              <div className="SignTransaction__Body__Wrapper">
+                <div className="SignTransaction__TransactionDetails">
+                  <div className="SignTransaction__TransactionDetails__Header">
+                    <div className="DetailsMark">
+                      <Icon.List />
+                    </div>
+                    <div
+                      className="Close"
+                      onClick={() => setActivePaneIndex(0)}
+                    >
+                      <Icon.X />
+                    </div>
+                  </div>
+                  <div className="SignTransaction__TransactionDetails__Title">
+                    <span>Transaction Details</span>
+                  </div>
+                  <div className="SignTransaction__TransactionDetails__Summary">
+                    <Summary
+                      sequenceNumber={_sequence}
+                      fee={_fee}
+                      memo={decodedMemo}
+                      xdr={transactionXdr}
+                      operationNames={_tx.operations.map(
+                        (op) => OPERATION_TYPES[op.type] || op.type,
+                      )}
+                    />
+                  </div>
+                  {hasAuthEntries && (
+                    <AuthEntries
+                      invocations={
+                        (
+                          _tx.operations[0] as Operation.InvokeHostFunction
+                        ).auth?.map((authEntry) =>
+                          authEntry.rootInvocation(),
+                        ) || []
+                      }
+                    />
                   )}
-                />
+                  <Details
+                    operations={_tx.operations}
+                    flaggedKeys={flaggedKeys}
+                    isMemoRequired={isMemoRequired}
+                  />
+                </div>
               </div>
-              {hasAuthEntries && (
-                <AuthEntries
-                  invocations={
-                    (
-                      _tx.operations[0] as Operation.InvokeHostFunction
-                    ).auth?.map((authEntry) => authEntry.rootInvocation()) || []
-                  }
-                />
-              )}
-              <Details
-                operations={_tx.operations}
-                flaggedKeys={flaggedKeys}
-                isMemoRequired={isMemoRequired}
-              />
             </div>,
           ]}
         />

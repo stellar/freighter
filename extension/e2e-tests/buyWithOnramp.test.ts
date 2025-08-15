@@ -41,7 +41,7 @@ test("should show Buy with Coinbase and open Coinbase", async ({
     timeout: 30000,
   });
   const popupPromise = page.context().waitForEvent("page");
-  await page.getByTestId("nav-link-buy").click();
+  await page.getByTestId("nav-link-add").click();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "buy-with-coinbase.png",
