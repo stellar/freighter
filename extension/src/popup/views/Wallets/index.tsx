@@ -369,7 +369,7 @@ export const Wallets = () => {
         hasNoTopPadding
         contentFooter={
           <Button
-            size="md"
+            size="lg"
             isFullWidth
             isRounded
             variant="secondary"

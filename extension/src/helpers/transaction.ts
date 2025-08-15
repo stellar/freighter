@@ -22,7 +22,7 @@ export const computeDestMinWithSlippage = (
 
 export const title = (balance: Exclude<AssetType, LiquidityPoolShareAsset>) => {
   if ("type" in balance.token && balance.token.type === "native") {
-    return "Stellar Lumens";
+    return "XLM";
   }
   if ("symbol" in balance) {
     return balance.symbol;

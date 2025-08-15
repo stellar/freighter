@@ -44,7 +44,7 @@ interface ReviewTxProps {
   sendAmount: string;
   sendPriceUsd: string | null;
   srcAsset: string;
-  simulationState: State<SimulateTxData, unknown>;
+  simulationState: State<SimulateTxData, string>;
   networkDetails: NetworkDetails;
   title: string;
   onConfirm: () => void;
@@ -92,13 +92,8 @@ export const ReviewTx = ({
             variant="error"
             title={t("Failed to fetch your transaction details")}
           >
-            {t(
-              "We had an issue retrieving your transaction details. Please try again.",
-            )}
+            {simulationState.error}
           </Notification>
-          <Button size="md" variant="secondary" onClick={onCancel}>
-            {t("Back")}
-          </Button>
         </div>
       </View.Content>
     );

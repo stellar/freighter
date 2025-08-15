@@ -2,9 +2,9 @@ import React, { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { Icon, Input, Loader } from "@stellar/design-system";
 import { useFormik } from "formik";
-import BigNumber from "bignumber.js";
 import { debounce } from "lodash";
 
+import { TokenList } from "popup/components/InternalTransaction/TokenList";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { openTab } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
@@ -13,15 +13,7 @@ import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
-import {
-  AssetType,
-  LiquidityPoolShareAsset,
-} from "@shared/api/types/account-balance";
-import { getCanonicalFromAsset } from "helpers/stellar";
-import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
-import { AssetIcon } from "popup/components/account/AccountAssets";
 import { useGetSwapFromData } from "./hooks/useSwapFromData";
-import { getAvailableBalance } from "popup/helpers/soroban";
 
 import "./styles.scss";
 
@@ -97,17 +89,6 @@ export const SwapAsset = ({
     });
   }
 
-  const assetTitle = (balance: Exclude<AssetType, LiquidityPoolShareAsset>) => {
-    if ("type" in balance.token && balance.token.type === "native") {
-      return "Stellar Lumens";
-    }
-    if ("symbol" in balance) {
-      return balance.symbol;
-    }
-
-    return balance.token.code;
-  };
-
   const icons = state.data?.balances.icons || {};
   const tokenPrices = state.data?.tokenPrices || {};
   const balances = state.data?.filteredBalances || [];
@@ -140,93 +121,14 @@ export const SwapAsset = ({
               <Loader size="2rem" />
             </div>
           ) : (
-            <div className="SwapFrom__Assets">
-              {!balances.length ? (
-                <div className="SwapFrom__Assets__empty">
-                  You have no assets added. Get started by adding an asset.
-                </div>
-              ) : (
-                <>
-                  <div className="SwapFrom__Assets__Header">Your Tokens</div>
-                  {balances
-                    .filter(
-                      (
-                        balance,
-                      ): balance is Exclude<
-                        AssetType,
-                        LiquidityPoolShareAsset
-                      > => !("liquidityPoolId" in balance),
-                    )
-                    .filter((balance) => {
-                      const { code } = balance.token;
-                      const issuerKey =
-                        "issuer" in balance.token
-                          ? balance.token.issuer.key
-                          : undefined;
-                      const canonical = getCanonicalFromAsset(code, issuerKey);
-                      return !hiddenAssets.includes(canonical);
-                    })
-                    .map((balance) => {
-                      const { code } = balance.token;
-                      const issuerKey =
-                        "issuer" in balance.token
-                          ? balance.token.issuer.key
-                          : undefined;
-                      const isContract = "contractId" in balance;
-                      const canonical = getCanonicalFromAsset(code, issuerKey);
-                      const icon = icons[canonical];
-                      const availableBalance = getAvailableBalance({
-                        assetCanonical: canonical,
-                        balances: [balance],
-                        subentryCount,
-                        recommendedFee: "0",
-                      });
-                      const displayTotal =
-                        "decimals" in balance
-                          ? `${availableBalance} ${code}`
-                          : `${formatAmount(availableBalance)} ${code}`;
-                      const usdValue = tokenPrices[canonical];
-                      return (
-                        <div
-                          className="SwapFrom__AssetRow"
-                          onClick={() => onClickAsset(canonical, isContract)}
-                        >
-                          <div className="SwapFrom__AssetRow__Body">
-                            <AssetIcon
-                              assetIcons={
-                                code !== "XLM" ? { [canonical]: icon } : {}
-                              }
-                              code={code}
-                              issuerKey={issuerKey!}
-                              icon={icon}
-                              isSuspicious={false}
-                            />
-                            <div className="SwapFrom__AssetRow__Title">
-                              <div className="SwapFrom__AssetRow__Title__Heading">
-                                {assetTitle(balance)}
-                              </div>
-                              <div className="SwapFrom__AssetRow__Title__Total">
-                                {displayTotal}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="SwapFrom__AssetRow__UsdValue">
-                            {usdValue && usdValue.currentPrice
-                              ? `$${formatAmount(
-                                  roundUsdValue(
-                                    new BigNumber(usdValue.currentPrice)
-                                      .multipliedBy(balance.total)
-                                      .toString(),
-                                  ),
-                                )}`
-                              : null}
-                          </div>
-                        </div>
-                      );
-                    })}
-                </>
-              )}
-            </div>
+            <TokenList
+              tokens={balances}
+              hiddenAssets={hiddenAssets}
+              icons={icons}
+              subentryCount={subentryCount}
+              tokenPrices={tokenPrices}
+              onClickAsset={onClickAsset}
+            />
           )}
         </div>
       </View.Content>

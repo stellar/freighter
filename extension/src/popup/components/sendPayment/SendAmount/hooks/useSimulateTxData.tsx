@@ -294,7 +294,7 @@ function useSimulateTxData({
 
   const { scanTx } = useScanTx();
   const [state, dispatch] = useReducer(
-    reducer<SimulateTxData, unknown>,
+    reducer<SimulateTxData, string>,
     initialState,
   );
 
@@ -434,7 +434,11 @@ function useSimulateTxData({
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
-      dispatch({ type: "FETCH_DATA_ERROR", payload: error });
+      dispatch({
+        type: "FETCH_DATA_ERROR",
+        payload:
+          "We had an issue retrieving your transaction details. Please try again.",
+      });
       return error;
     }
   };

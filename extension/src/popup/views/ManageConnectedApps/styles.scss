@@ -16,13 +16,56 @@
   &__list {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-02);
   }
 
   &__row {
     display: flex;
     align-items: center;
     justify-content: space-between;
+
+    &:not(:last-child) {
+      margin-bottom: pxToRem(16px);
+      padding-bottom: pxToRem(16px);
+      border-bottom: 1px solid var(--sds-clr-gray-06);
+    }
+
+    .Button {
+      flex: 0 0 auto;
+      margin-left: pxToRem(8px);
+      color: var(--sds-clr-red-09);
+      background-color: transparent;
+      border: none;
+      height: 18px;
+      width: 18px;
+      padding: 0;
+    }
+
+    .PunycodedDomain {
+      flex: 1 1 0%;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: pxToRem(8px);
+
+      div {
+        margin-bottom: 0;
+      }
+
+      .PunycodedDomain__favicon-container {
+        flex: 0 0 auto;
+      }
+
+      .PunycodedDomain__domain {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
 
     .PunycodedDomain__favicon-container {
       border-radius: 50%;

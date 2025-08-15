@@ -28,31 +28,39 @@ export const Security = () => {
     <React.Fragment>
       <SubviewHeader title="Security" />
       <View.Content hasNoTopPadding>
-        <ListNavLinkWrapper>
-          {/*
-      TODO: Add Change Password
-      <ListNavLink href="/">Change Password</ListNavLink>
-      */}
-          <ListNavLink href={ROUTES.manageAssetsLists} icon={<IconAssetList />}>
-            {t("Asset lists")}
-          </ListNavLink>
-          <ListNavLink href={ROUTES.displayBackupPhrase} icon={<IconPhrase />}>
-            {t("Show recovery phrase")}
-          </ListNavLink>
-          <ListNavLink
-            href={ROUTES.advancedSettings}
-            icon={<IconExperimentalLink />}
-          >
-            {t("Advanced settings")}
-          </ListNavLink>
-          {/* <ListNavButtonLink
-            handleClick={() => {
-              openTab(newTabHref(ROUTES.accountMigration));
-            }}
-          >
-            {t("Account migration")}
-          </ListNavButtonLink> */}
-        </ListNavLinkWrapper>
+        <div className="Security">
+          <ListNavLinkWrapper>
+            {/*
+        TODO: Add Change Password
+        <ListNavLink href="/">Change Password</ListNavLink>
+        */}
+            <ListNavLink
+              href={ROUTES.manageAssetsLists}
+              icon={<IconAssetList />}
+            >
+              {t("Asset lists")}
+            </ListNavLink>
+            <ListNavLink
+              href={ROUTES.displayBackupPhrase}
+              icon={<IconPhrase />}
+            >
+              {t("Show recovery phrase")}
+            </ListNavLink>
+            <ListNavLink
+              href={ROUTES.advancedSettings}
+              icon={<IconExperimentalLink />}
+            >
+              {t("Advanced settings")}
+            </ListNavLink>
+            {/* <ListNavButtonLink
+              handleClick={() => {
+                openTab(newTabHref(ROUTES.accountMigration));
+              }}
+            >
+              {t("Account migration")}
+            </ListNavButtonLink> */}
+          </ListNavLinkWrapper>
+        </div>
       </View.Content>
     </React.Fragment>
   );

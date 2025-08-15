@@ -162,9 +162,10 @@ export const HardwareSign = ({
           {isDetectBtnDirty && <WalletErrorBlock error={connectError} />}
           {!hardwareConnectSuccessful && (
             <Button
-              size="md"
+              size="lg"
               variant="secondary"
               isFullWidth
+              isRounded
               onClick={() => {
                 setIsDetectBtnDirty(true);
                 handleSign();

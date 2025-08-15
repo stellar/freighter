@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Form, Field, FieldProps, Formik, useFormik } from "formik";
 import BigNumber from "bignumber.js";
 import { object as YupObject, number as YupNumber } from "yup";
-import { Button, Card, Icon, Input, Logo } from "@stellar/design-system";
+import { Button, Card, Icon, Input } from "@stellar/design-system";
 
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -49,9 +49,9 @@ import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction
 import { useSimulateTxData } from "./hooks/useSimulateSwapData";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { SlideupModal } from "popup/components/SlideupModal";
 
 import "./styles.scss";
-import { SlideupModal } from "popup/components/SlideupModal";
 
 const defaultSlippage = "1";
 
@@ -61,6 +61,7 @@ interface SwapAmountProps {
   goBack: () => void;
   goToNext: () => void;
   goToEditSrc: () => void;
+  goToEditDst: () => void;
 }
 
 export const SwapAmount = ({
@@ -69,6 +70,7 @@ export const SwapAmount = ({
   goBack,
   goToNext,
   goToEditSrc,
+  goToEditDst,
 }: SwapAmountProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
@@ -247,7 +249,7 @@ export const SwapAmount = ({
       )}`
     : null;
   const recommendedFeeUsd = xlmPrice
-    ? `$ ${formatAmount(
+    ? `$${formatAmount(
         roundUsdValue(
           new BigNumber(xlmPrice).multipliedBy(new BigNumber(fee)).toString(),
         ),
@@ -255,10 +257,10 @@ export const SwapAmount = ({
     : null;
   const supportsUsd =
     isMainnet(swapAmountData.data?.networkDetails!) && assetPrice !== null;
-  const displayTotal = `${formatAmount(assetBalance.total.toString())} ${srcAsset.code}`;
+  const displayTotal = `${formatAmount(assetBalance.total.toString())}`;
   const dstDisplayTotal =
     dstAssetBalance && dstAsset
-      ? `${formatAmount(dstAssetBalance.total.toString())} ${dstAsset.code}`
+      ? `${formatAmount(dstAssetBalance.total.toString())}`
       : "0";
   const availableBalance = getAvailableBalance({
     assetCanonical: asset,
@@ -266,9 +268,8 @@ export const SwapAmount = ({
     recommendedFee: fee,
     subentryCount: sendData.userBalances.subentryCount,
   });
-  const srcTitle = asset === "native" ? "Stellar Lumens" : srcAsset.code;
-  const dstTitle =
-    destinationAsset === "native" ? "Stellar Lumens" : dstAsset?.code;
+  const srcTitle = srcAsset.code;
+  const dstTitle = dstAsset?.code;
   const isAmountTooHigh =
     (inputType === "crypto" &&
       new BigNumber(cleanAmount(formik.values.amount)).gt(
@@ -301,14 +302,14 @@ export const SwapAmount = ({
                 <span className="SwapAsset__settings-fee-display__label">
                   Fee:
                 </span>
-                {inputType === "crypto" && <Logo.StellarShort />}
                 <span>
                   {inputType === "crypto" ? `${fee} XLM` : recommendedFeeUsd}
                 </span>
               </div>
               <div className="SwapAsset__settings-options">
                 <Button
-                  size="sm"
+                  type="button"
+                  size="md"
                   isRounded
                   variant="tertiary"
                   onClick={() => setIsEditingSlippage(true)}
@@ -316,7 +317,8 @@ export const SwapAmount = ({
                   {`Slippage: ${allowedSlippage}%`}
                 </Button>
                 <Button
-                  size="sm"
+                  type="button"
+                  size="md"
                   isRounded
                   variant="tertiary"
                   onClick={() => setIsEditingSettings(true)}
@@ -326,6 +328,7 @@ export const SwapAmount = ({
               </div>
             </div>
             <Button
+              type="button"
               size="md"
               data-testid="swap-amount-btn-continue"
               isFullWidth
@@ -446,7 +449,7 @@ export const SwapAmount = ({
                 {supportsUsd && (
                   <div className="SwapAsset__amount-price">
                     {inputType === "crypto"
-                      ? `$ ${priceValueUsd}`
+                      ? `$${priceValueUsd}`
                       : `${priceValue} ${parsedSourceAsset.code}`}
                     <Button
                       size="md"
@@ -535,6 +538,7 @@ export const SwapAmount = ({
                     </div>
                   </div>
                   <Button
+                    type="button"
                     isRounded
                     size="sm"
                     variant="tertiary"
@@ -585,10 +589,11 @@ export const SwapAmount = ({
                   </div>
                   {destinationAsset && (
                     <Button
+                      type="button"
                       isRounded
                       size="sm"
                       variant="tertiary"
-                      onClick={goToNext}
+                      onClick={goToEditDst}
                     >
                       <Icon.ChevronRight />
                     </Button>

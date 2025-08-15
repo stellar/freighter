@@ -7,6 +7,10 @@
   gap: 0.75rem;
   width: 100%;
 
+  &:not(:last-child) {
+    margin-bottom: pxToRem(12px);
+  }
+
   a,
   span {
     align-items: center;

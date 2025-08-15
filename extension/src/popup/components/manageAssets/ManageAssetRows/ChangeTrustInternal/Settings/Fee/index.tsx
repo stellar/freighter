@@ -66,7 +66,7 @@ export const Fee = ({ fee, recommendedFee, onSaveFee, goBack }: FeeProps) => {
               <div className="TxFee__actions">
                 <Button
                   type="button"
-                  size="md"
+                  size="lg"
                   isRounded
                   isFullWidth
                   variant="tertiary"
@@ -79,7 +79,7 @@ export const Fee = ({ fee, recommendedFee, onSaveFee, goBack }: FeeProps) => {
                 </Button>
                 <Button
                   type="button"
-                  size="md"
+                  size="lg"
                   isRounded
                   isFullWidth
                   variant="secondary"

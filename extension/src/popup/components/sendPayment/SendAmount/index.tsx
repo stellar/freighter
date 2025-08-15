@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useLocation } from "react-router-dom";
 import BigNumber from "bignumber.js";
 import { useFormik } from "formik";
-import { Button, Icon, Logo } from "@stellar/design-system";
+import { Button, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { LoadingBackground } from "popup/basics/LoadingBackground";
@@ -70,7 +70,7 @@ export const SendAmount = ({
   goBack: () => void;
   goToNext: () => void;
   goToChooseDest: () => void;
-  simulationState: State<SimulateTxData, unknown>;
+  simulationState: State<SimulateTxData, string>;
   fetchSimulationData: () => Promise<unknown>;
   networkCongestion: NetworkCongestion;
   recommendedFee: string;
@@ -226,7 +226,7 @@ export const SendAmount = ({
       )}`
     : null;
   const recommendedFeeUsd = xlmPrice
-    ? `$ ${formatAmount(
+    ? `$${formatAmount(
         roundUsdValue(
           new BigNumber(xlmPrice).multipliedBy(new BigNumber(fee)).toString(),
         ),
@@ -242,9 +242,9 @@ export const SendAmount = ({
   });
   const displayTotal =
     "decimals" in assetBalance
-      ? `${availableBalance} ${assetBalance.token.code}`
-      : `${formatAmount(availableBalance)} ${assetBalance.token.code}`;
-  const srcTitle = asset === "native" ? "Stellar Lumens" : srcAsset.code;
+      ? availableBalance
+      : formatAmount(availableBalance);
+  const srcTitle = srcAsset.code;
   const goBackAction = () => {
     dispatch(saveAsset("native"));
     dispatch(saveAmount("0"));
@@ -277,22 +277,23 @@ export const SendAmount = ({
                 <span className="SendAmount__settings-fee-display__label">
                   Fee:
                 </span>
-                {inputType === "crypto" && <Logo.StellarShort />}
                 <span>
                   {inputType === "crypto" ? `${fee} XLM` : recommendedFeeUsd}
                 </span>
               </div>
               <div className="SendAmount__settings-options">
                 <Button
-                  size="sm"
+                  size="md"
                   isRounded
                   variant="tertiary"
                   onClick={() => setIsEditingMemo(true)}
+                  icon={<Icon.File02 />}
+                  iconPosition="left"
                 >
-                  {transactionData.memo ? t("Edit memo") : t("Add memo")}
+                  {t("Memo")}
                 </Button>
                 <Button
-                  size="sm"
+                  size="md"
                   isRounded
                   variant="tertiary"
                   onClick={() => setIsEditingSettings(true)}
@@ -302,7 +303,7 @@ export const SendAmount = ({
               </div>
             </div>
             <Button
-              size="md"
+              size="lg"
               disabled={
                 (inputType === "crypto" &&
                   new BigNumber(formik.values.amount).isZero()) ||
@@ -417,7 +418,7 @@ export const SendAmount = ({
                 {supportsUsd && (
                   <div className="SendAmount__amount-price">
                     {inputType === "crypto"
-                      ? `$ ${priceValueUsd}`
+                      ? `$${priceValueUsd}`
                       : `${priceValue} ${parsedSourceAsset.code}`}
                     <Button
                       size="md"

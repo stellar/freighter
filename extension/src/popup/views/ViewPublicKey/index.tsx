@@ -190,7 +190,7 @@ export const ViewPublicKey = () => {
           </div>
           <div className="ViewPublicKey__copy-btn">
             <CopyText textToCopy={publicKey} doneLabel="ADDRESS COPIED">
-              <Button size="md" variant="tertiary">
+              <Button size="md" variant="tertiary" isRounded>
                 {t("COPY")}
               </Button>
             </CopyText>
@@ -201,8 +201,9 @@ export const ViewPublicKey = () => {
         <div className="ViewPublicKey__external-link">
           {!isCustomNetwork(networkDetails) ? (
             <Button
-              size="md"
+              size="lg"
               isFullWidth
+              isRounded
               variant="tertiary"
               onClick={() => {
                 openTab(

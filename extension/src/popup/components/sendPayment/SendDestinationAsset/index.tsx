@@ -1,8 +1,7 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
-import { Button, Icon, Loader } from "@stellar/design-system";
-import BigNumber from "bignumber.js";
+import { Button, Icon, Loader, Notification } from "@stellar/design-system";
 
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -14,25 +13,14 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { View } from "popup/basics/layout/View";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
-import {
-  getCanonicalFromAsset,
-  truncatedPublicKey,
-  truncatedFedAddress,
-} from "helpers/stellar";
+import { TokenList } from "popup/components/InternalTransaction/TokenList";
+import { truncatedPublicKey, truncatedFedAddress } from "helpers/stellar";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
-import { title } from "helpers/transaction";
 import { reRouteOnboarding } from "popup/helpers/route";
-import { AssetIcon } from "popup/components/account/AccountAssets";
 import { useGetDestAssetData } from "./hooks/useGetDestAssetData";
-import {
-  AssetType,
-  LiquidityPoolShareAsset,
-} from "@shared/api/types/account-balance";
-import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
-import { getAvailableBalance } from "popup/helpers/soroban";
 
 import "./styles.scss";
 
@@ -57,6 +45,7 @@ export const SendDestinationAsset = ({
   const isLoading =
     destAssetDataState.state === RequestState.IDLE ||
     destAssetDataState.state === RequestState.LOADING;
+  const hasError = destAssetDataState.state === RequestState.ERROR;
 
   useEffect(() => {
     const getData = async () => {
@@ -76,7 +65,16 @@ export const SendDestinationAsset = ({
     );
   }
 
-  const hasError = destAssetDataState.state === RequestState.ERROR;
+  if (destAssetDataState.state === RequestState.ERROR) {
+    return (
+      <div className="ChooseAsset___fail">
+        <Notification variant="error" title={"Failed to fetch assets."}>
+          An unknown error has occurred.
+        </Notification>
+      </div>
+    );
+  }
+
   if (destAssetDataState.data?.type === AppDataType.REROUTE) {
     if (destAssetDataState.data.shouldOpenTab) {
       openTab(newTabHref(destAssetDataState.data.routeTarget));
@@ -99,9 +97,9 @@ export const SendDestinationAsset = ({
     });
   }
 
-  const icons = destAssetDataState.data?.balances.icons || {};
-  const tokenPrices = destAssetDataState.data?.tokenPrices || {};
-  const balances = destAssetDataState.data?.balances;
+  const icons = destAssetDataState.data.balances.icons || {};
+  const tokenPrices = destAssetDataState.data.tokenPrices || {};
+  const balances = destAssetDataState.data.balances;
 
   return (
     <>
@@ -129,89 +127,18 @@ export const SendDestinationAsset = ({
               <Icon.ChevronRight />
             </Button>
           </div>
-          <div className="SendDestinationAsset__Assets">
-            {!balances?.balances.length ? (
-              <div className="SendDestinationAsset__Assets__empty">
-                You have no assets added. Get started by adding an asset.
-              </div>
-            ) : (
-              <>
-                <div className="SendDestinationAsset__Assets__Header">
-                  Tokens
-                </div>
-                {balances.balances
-                  .filter(
-                    (
-                      balance,
-                    ): balance is Exclude<AssetType, LiquidityPoolShareAsset> =>
-                      !("liquidityPoolId" in balance),
-                  )
-                  .map((balance) => {
-                    const { code } = balance.token;
-                    const issuerKey =
-                      "issuer" in balance.token
-                        ? balance.token.issuer.key
-                        : undefined;
-                    const isContract = "contractId" in balance;
-                    const canonical = getCanonicalFromAsset(code, issuerKey);
-                    const icon = icons[canonical];
-                    const availableBalance = getAvailableBalance({
-                      assetCanonical: canonical,
-                      balances: [balance],
-                      subentryCount: balances.subentryCount,
-                      recommendedFee: "0",
-                    });
-                    const displayTotal =
-                      "decimals" in balance
-                        ? `${availableBalance} ${code}`
-                        : `${formatAmount(availableBalance)} ${code}`;
-                    const usdValue = tokenPrices[canonical];
-                    return (
-                      <div
-                        data-testid={`SendRow-${canonical}`}
-                        className="SendDestinationAsset__AssetRow"
-                        onClick={() => {
-                          dispatch(saveAsset(canonical));
-                          dispatch(saveIsToken(isContract));
-                          goToNext();
-                        }}
-                      >
-                        <div className="SendDestinationAsset__AssetRow__Body">
-                          <AssetIcon
-                            assetIcons={
-                              code !== "XLM" ? { [canonical]: icon } : {}
-                            }
-                            code={code}
-                            issuerKey={issuerKey!}
-                            icon={icon}
-                            isSuspicious={false}
-                          />
-                          <div className="SendDestinationAsset__AssetRow__Title">
-                            <div className="SendDestinationAsset__AssetRow__Title__Heading">
-                              {title(balance)}
-                            </div>
-                            <div className="SendDestinationAsset__AssetRow__Title__Total">
-                              {displayTotal}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="SendDestinationAsset__AssetRow__UsdValue">
-                          {usdValue && usdValue.currentPrice
-                            ? `$${formatAmount(
-                                roundUsdValue(
-                                  new BigNumber(usdValue.currentPrice)
-                                    .multipliedBy(availableBalance)
-                                    .toString(),
-                                ),
-                              )}`
-                            : null}
-                        </div>
-                      </div>
-                    );
-                  })}
-              </>
-            )}
-          </div>
+          <TokenList
+            tokens={balances.balances}
+            hiddenAssets={[]}
+            icons={icons}
+            subentryCount={balances.subentryCount}
+            tokenPrices={tokenPrices}
+            onClickAsset={(canonical, isContract) => {
+              dispatch(saveAsset(canonical));
+              dispatch(saveIsToken(isContract));
+              goToNext();
+            }}
+          />
         </div>
       </View.Content>
     </>

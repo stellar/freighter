@@ -175,11 +175,6 @@
     display: flex;
 
     .Button:first-child {
-      width: 95px;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      overflow: hidden;
-      display: inline-block;
       margin-right: pxToRem(6px);
     }
   }
@@ -214,7 +209,7 @@
     padding: pxToRem(12px) pxToRem(24px);
     background-color: var(--sds-clr-gray-03);
     border-radius: pxToRem(14px);
-    margin-bottom: pxToRem(24px);
+    margin-bottom: pxToRem(12px);
 
     &__title {
       display: flex;
@@ -238,12 +233,14 @@
     justify-content: center;
     align-items: center;
     margin-top: pxToRem(12px);
-    margin-left: pxToRem(32px);
     color: var(--sds-clr-gray-11);
     font-size: pxToRem(18px);
 
     .Button {
       border: 0;
+      padding: 0;
+      width: 14px;
+      height: 14px;
       margin-left: pxToRem(6px);
     }
   }
@@ -406,7 +403,10 @@
 .EditMemoWrapper {
   position: absolute;
   width: 100%;
-  top: 30%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .ReviewTxWrapper {

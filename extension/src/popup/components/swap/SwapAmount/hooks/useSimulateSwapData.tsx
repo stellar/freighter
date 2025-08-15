@@ -34,6 +34,10 @@ import { AppDispatch } from "popup/App";
 
 const scanUrlstub = "internal";
 
+export const ERROR_TO_DISPLAY = {
+  NO_PATH_FOUND: "No path found for swap.",
+};
+
 interface SimulationParams {
   sourceAsset: ReturnType<typeof getAssetFromCanonical>;
   destAsset: ReturnType<typeof getAssetFromCanonical>;
@@ -141,7 +145,7 @@ function useSimulateTxData({
 
   const { scanTx } = useScanTx();
   const [state, dispatch] = useReducer(
-    reducer<SimulateTxData, unknown>,
+    reducer<SimulateTxData, string>,
     initialState,
   );
 
@@ -171,6 +175,11 @@ function useSimulateTxData({
         destAsset: getCanonicalFromAsset(destAsset.code, destAsset.issuer),
         networkDetails,
       });
+
+      if (!bestPath?.destination_amount) {
+        throw new Error(ERROR_TO_DISPLAY.NO_PATH_FOUND);
+      }
+
       const destinationAmount = bestPath.destination_amount;
       // store in canonical form for easier use
       const path: string[] = [];
@@ -223,7 +232,24 @@ function useSimulateTxData({
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
-      dispatch({ type: "FETCH_DATA_ERROR", payload: error });
+      const unknownErrorDisplay =
+        "We had an issue retrieving your transaction details. Please try again.";
+      let payload: string;
+
+      if (error instanceof Error) {
+        // If the error message matches one of our known display errors, use it
+        payload = Object.values(ERROR_TO_DISPLAY).includes(error.message)
+          ? error.message
+          : unknownErrorDisplay;
+      } else if (typeof error === "string") {
+        payload = Object.values(ERROR_TO_DISPLAY).includes(error)
+          ? error
+          : unknownErrorDisplay;
+      } else {
+        payload = unknownErrorDisplay;
+      }
+
+      dispatch({ type: "FETCH_DATA_ERROR", payload });
       return error;
     }
   };
