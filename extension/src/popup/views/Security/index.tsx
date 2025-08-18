@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { Icon } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
 
@@ -17,7 +18,6 @@ import {
 
 import IconAssetList from "popup/assets/icon-security-asset-list.svg?react";
 import IconPhrase from "popup/assets/icon-security-phrase.svg?react";
-import IconExperimentalLink from "popup/assets/icon-security-experimental-link.svg?react";
 
 import "./styles.scss";
 
@@ -48,7 +48,7 @@ export const Security = () => {
             </ListNavLink>
             <ListNavLink
               href={ROUTES.advancedSettings}
-              icon={<IconExperimentalLink />}
+              icon={<Icon.LifeBuoy01 />}
             >
               {t("Advanced settings")}
             </ListNavLink>

@@ -3,14 +3,12 @@
 $activeColor: rgba(61, 204, 152, 1);
 
 .NetworkSettings {
-  display: flex;
-  flex-direction: column;
-
   &__header {
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 0.875rem;
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14px);
     font-weight: var(--font-weight-medium);
-    margin-bottom: 1rem;
+    margin-bottom: pxToRem(16px);
+    margin-top: pxToRem(32px);
   }
 
   &__name {
@@ -41,5 +39,11 @@ $activeColor: rgba(61, 204, 152, 1);
 
   &__bottom {
     padding: 1.5rem 0;
+  }
+
+  .ListNavLink__wrapper {
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-02);
+    padding: pxToRem(16px);
   }
 }

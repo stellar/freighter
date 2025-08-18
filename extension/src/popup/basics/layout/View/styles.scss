@@ -43,6 +43,10 @@
       &--center {
         justify-content: center;
         flex-direction: column;
+
+        &.full {
+          width: 100%;
+        }
       }
 
       &--right {

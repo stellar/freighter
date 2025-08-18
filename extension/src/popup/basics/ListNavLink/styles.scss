@@ -8,7 +8,9 @@
   width: 100%;
 
   &:not(:last-child) {
-    margin-bottom: pxToRem(12px);
+    margin-bottom: pxToRem(16px);
+    padding-bottom: pxToRem(16px);
+    border-bottom: 1px solid var(--sds-clr-gray-06);
   }
 
   a,
@@ -35,6 +37,7 @@
     svg {
       width: pxToRem(24px);
       height: pxToRem(24px);
+      color: var(--sds-clr-gray-09);
     }
   }
 

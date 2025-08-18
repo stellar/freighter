@@ -114,7 +114,10 @@ export const SendDestinationAsset = ({
       />
       <View.Content hasNoTopPadding>
         <div className="SendDestinationAsset">
-          <div className="SendDestinationAsset__EditDestination">
+          <div
+            className="SendDestinationAsset__EditDestination"
+            onClick={goBack}
+          >
             <div className="SendDestinationAsset__EditDestination__title">
               <div className="SendDestinationAsset__EditDestination__identicon">
                 <IdenticonImg publicKey={destination} />
@@ -123,7 +126,7 @@ export const SendDestinationAsset = ({
                 ? truncatedFedAddress(federationAddress)
                 : truncatedPublicKey(destination)}
             </div>
-            <Button isRounded size="sm" variant="tertiary" onClick={goBack}>
+            <Button isRounded size="sm" variant="tertiary">
               <Icon.ChevronRight />
             </Button>
           </div>

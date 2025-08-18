@@ -486,7 +486,10 @@ export const SendAmount = ({
                     {t("Set Max")}
                   </Button>
                 </div>
-                <div className="SendAmount__EditDestAsset">
+                <div
+                  className="SendAmount__EditDestAsset"
+                  onClick={goBackAction}
+                >
                   <div className="SendAmount__EditDestAsset__title">
                     <AssetIcon
                       assetIcons={
@@ -506,16 +509,19 @@ export const SendAmount = ({
                       </div>
                     </div>
                   </div>
-                  <Button
-                    isRounded
-                    size="sm"
-                    variant="tertiary"
-                    onClick={goBackAction}
-                  >
+                  <Button isRounded size="sm" variant="tertiary">
                     <Icon.ChevronRight />
                   </Button>
                 </div>
-                <div className="SendAmount__EditDestination">
+                <div
+                  className="SendAmount__EditDestination"
+                  onClick={() => {
+                    dispatch(saveAsset("native"));
+                    dispatch(saveAmount("0"));
+                    dispatch(saveAmountUsd("0.00"));
+                    goToChooseDest();
+                  }}
+                >
                   <div className="SendAmount__EditDestination__title">
                     <div className="SendAmount__EditDestination__identicon">
                       <IdenticonImg publicKey={destination} />
@@ -524,17 +530,7 @@ export const SendAmount = ({
                       ? truncatedFedAddress(federationAddress)
                       : truncatedPublicKey(destination)}
                   </div>
-                  <Button
-                    isRounded
-                    size="sm"
-                    variant="tertiary"
-                    onClick={() => {
-                      dispatch(saveAsset("native"));
-                      dispatch(saveAmount("0"));
-                      dispatch(saveAmountUsd("0.00"));
-                      goToChooseDest();
-                    }}
-                  >
+                  <Button isRounded size="sm" variant="tertiary">
                     <Icon.ChevronRight />
                   </Button>
                 </div>

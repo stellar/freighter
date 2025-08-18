@@ -1,4 +1,10 @@
+@use "../../styles/utils.scss" as *;
+
 .AdvancedSettings {
+  border-radius: pxToRem(16px);
+  background-color: var(--sds-clr-gray-02);
+  padding: pxToRem(16px);
+
   &__column {
     display: flex;
     height: 100%;
@@ -14,7 +20,11 @@
   }
 
   &__feature {
-    margin-bottom: 1.5rem;
+    &:not(:last-child) {
+      margin-bottom: pxToRem(16px);
+      padding-bottom: pxToRem(16px);
+      border-bottom: 1px solid var(--sds-clr-gray-06);
+    }
 
     &__row {
       display: flex;
@@ -46,10 +56,9 @@
       }
     }
     &__description {
-      border-radius: 0.5rem;
-      border: 1px solid var(--sds-clr-gray-03);
       color: var(--sds-clr-gray-11);
-      padding: 0.75rem;
+      font-size: pxToRem(14px);
+      line-height: pxToRem(20px);
     }
   }
 }

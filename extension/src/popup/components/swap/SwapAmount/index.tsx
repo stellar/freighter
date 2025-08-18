@@ -517,7 +517,10 @@ export const SwapAmount = ({
                     {t("Set Max")}
                   </Button>
                 </div>
-                <div className="SwapAsset__EditSrcAsset">
+                <div
+                  className="SwapAsset__EditSrcAsset"
+                  onClick={goToEditSrcAction}
+                >
                   <div className="SwapAsset__EditSrcAsset__title">
                     <AssetIcon
                       assetIcons={
@@ -537,17 +540,11 @@ export const SwapAmount = ({
                       </div>
                     </div>
                   </div>
-                  <Button
-                    type="button"
-                    isRounded
-                    size="sm"
-                    variant="tertiary"
-                    onClick={goToEditSrcAction}
-                  >
+                  <Button type="button" isRounded size="sm" variant="tertiary">
                     <Icon.ChevronRight />
                   </Button>
                 </div>
-                <div className="SwapAsset__EditDstAsset">
+                <div className="SwapAsset__EditDstAsset" onClick={goToEditDst}>
                   <div className="SwapAsset__EditDstAsset__title">
                     {destinationAsset ? (
                       <>
@@ -573,7 +570,10 @@ export const SwapAmount = ({
                       </>
                     ) : (
                       <>
-                        <div className="SwapAsset__EditDstAsset__asset-placeholder">
+                        <div
+                          className="SwapAsset__EditDstAsset__asset-placeholder"
+                          onClick={goToEditDst}
+                        >
                           <Icon.Activity />
                         </div>
                         <div className="SwapAsset__EditDstAsset__asset-title">
@@ -593,7 +593,6 @@ export const SwapAmount = ({
                       isRounded
                       size="sm"
                       variant="tertiary"
-                      onClick={goToEditDst}
                     >
                       <Icon.ChevronRight />
                     </Button>

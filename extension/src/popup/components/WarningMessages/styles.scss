@@ -105,13 +105,13 @@
   }
 
   &__backup {
-    p {
-      font-size: 0.875rem;
-      line-height: 1.375rem;
-    }
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    padding: pxToRem(24px);
 
     &__description {
       display: flex;
+      font-size: pxToRem(16px);
       color: var(--sds-clr-gray-11);
       margin-top: pxToRem(12px);
     }
@@ -124,6 +124,32 @@
 
       .ConnectionWarning {
         font-size: pxToRem(14px);
+      }
+    }
+
+    &__tips {
+      display: flex;
+      flex-direction: column;
+
+      &__icon {
+        width: 20px;
+        height: 20px;
+        margin-right: pxToRem(16px);
+      }
+
+      &__row {
+        display: flex;
+        align-items: center;
+        margin-top: pxToRem(24px);
+
+        svg {
+          color: var(--sds-clr-lime-10);
+        }
+
+        span {
+          font-size: pxToRem(14px);
+          line-height: pxToRem(20px);
+        }
       }
     }
   }

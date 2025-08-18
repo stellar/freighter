@@ -1,8 +1,8 @@
 import React, { useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button, Notification } from "@stellar/design-system";
+import { Button, Notification, Select } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
@@ -10,21 +10,25 @@ import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 import { isActiveNetwork } from "helpers/stellar";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  changeNetwork,
+  settingsNetworkDetailsSelector,
+} from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 import { View } from "popup/basics/layout/View";
-
-import { NETWORK_INDEX_SEARCH_PARAM } from "../NetworkForm";
-
-import "./styles.scss";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
+import { AppDispatch } from "popup/App";
+import { NETWORK_INDEX_SEARCH_PARAM } from "../NetworkForm";
+
+import "./styles.scss";
 
 export const NetworkSettings = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const activeNetworkDetails = useSelector(settingsNetworkDetailsSelector);
   const { t } = useTranslation();
   const location = useLocation();
@@ -83,14 +87,31 @@ export const NetworkSettings = () => {
 
   return (
     <React.Fragment>
-      <SubviewHeader title={t("Network Settings")} />
+      <SubviewHeader title={t("Network")} />
       <View.Content hasNoTopPadding>
-        <div className="NetworkSettings__header">{t("Network")}</div>
-        <div className="NetworkSettings__scrollbar">
+        <div className="NetworkSettings">
+          <Select
+            fieldSize="md"
+            id="select"
+            label="Current Network"
+            className="NetworkSettings__select"
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+              dispatch(changeNetwork({ networkName: e.target.value }));
+            }}
+          >
+            {networksList.map((network) => (
+              <option
+                value={network.networkName}
+                key={network.networkPassphrase}
+                selected={isActiveNetwork(activeNetworkDetails, network)}
+              >
+                {network.networkName}
+              </option>
+            ))}
+          </Select>
+          <div className="NetworkSettings__header">{t("Network settings")}</div>
           <ListNavLinkWrapper>
             {networksList.map((network, i) => {
-              const isActive = isActiveNetwork(activeNetworkDetails, network);
-
               return (
                 <ListNavLink
                   key={network.networkName}
@@ -98,19 +119,9 @@ export const NetworkSettings = () => {
                   searchParams={`?${NETWORK_INDEX_SEARCH_PARAM}=${i}`}
                 >
                   <div key={network.networkName}>
-                    <div
-                      className={`NetworkSettings__name ${
-                        isActive ? "NetworkSettings__name--active" : ""
-                      }`}
-                    >
-                      {isActive ? (
-                        <div className="NetworkSettings__active-marker"></div>
-                      ) : null}
+                    <div className={`NetworkSettings__name`}>
                       <NetworkIcon index={i} />
                       <div>{network.networkName}</div>
-                    </div>
-                    <div className="NetworkSettings__url">
-                      {network.networkUrl}
                     </div>
                   </div>
                 </ListNavLink>

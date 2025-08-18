@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Button, Heading } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -6,10 +7,9 @@ import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
 
-import LogoWelcome from "popup/assets/logo-freighter-welcome.svg";
+import LogoWelcome from "popup/assets/logo-freighter-welcome-2.svg";
 
 import "./styles.scss";
-import { useNavigate } from "react-router-dom";
 
 export const Welcome = () => {
   const { t } = useTranslation();
@@ -22,30 +22,15 @@ export const Welcome = () => {
           <div className="Welcome__centered-screen">
             <img src={LogoWelcome} alt="Freighter logo" />
             <div>
-              <Heading
-                addlClassName="Welcome__heading"
-                as="h1"
-                size="xl"
-                weight="semi-bold"
-              >
-                {t("Welcome to Freighter")}
+              <Heading addlClassName="Welcome__heading" as="h1" size="lg">
+                {t("Freighter Wallet")}
               </Heading>
-              <Heading
-                addlClassName="Welcome__heading Welcome__heading--subheading"
-                as="h1"
-                size="xl"
-                weight="semi-bold"
-              >
-                {t("Your favorite Stellar wallet")}
-              </Heading>
-            </div>
-            <div className="Welcome__cta">
-              {t("How do you want to get started?")}
             </div>
           </div>
           <div className="Welcome__row-screen">
             <Button
               size="lg"
+              isRounded
               variant="secondary"
               onClick={() => navigateTo(ROUTES.accountCreator, navigate)}
             >
@@ -53,10 +38,11 @@ export const Welcome = () => {
             </Button>
             <Button
               size="lg"
+              isRounded
               variant="tertiary"
               onClick={() => navigateTo(ROUTES.recoverAccount, navigate)}
             >
-              {t("Import wallet")}
+              {t("I already have a wallet")}
             </Button>
           </div>
         </div>

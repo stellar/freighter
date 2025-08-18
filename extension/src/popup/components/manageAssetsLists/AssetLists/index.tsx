@@ -10,7 +10,6 @@ import { NETWORKS } from "@shared/constants/stellar";
 import { AssetsListKey } from "@shared/constants/soroban/asset-list";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 import { View } from "popup/basics/layout/View";
 
 import {
@@ -32,18 +31,28 @@ interface AssetListsProps {
   isLoading: boolean;
 }
 
-const AssetListLink = ({ assetList }: { assetList: AssetsListsData }) => (
-  <ListNavLink
-    href={ROUTES.manageAssetsListsModifyAssetList}
-    searchParams={`?asset-list-url=${encodeURIComponent(assetList.url)}`}
-    key={assetList.name}
-  >
-    <div>
-      <div className="ManageAssetsLists__title">{assetList.name}</div>
-      <div className="ManageAssetsLists__subtitle">{assetList.provider}</div>
-    </div>
-  </ListNavLink>
-);
+const AssetListLink = ({ assetList }: { assetList: AssetsListsData }) => {
+  const { t } = useTranslation();
+  return (
+    <ListNavLink
+      href={ROUTES.manageAssetsListsModifyAssetList}
+      searchParams={`?asset-list-url=${encodeURIComponent(assetList.url)}`}
+      key={assetList.name}
+    >
+      <div>
+        <div className="ManageAssetsLists__title">{assetList.name}</div>
+        <div className="ManageAssetsLists__subtitle">
+          {assetList.provider}
+          {assetList.isEnabled && (
+            <div className="ManageAssetsLists__badge">
+              <Badge variant="success">{t("Enabled")}</Badge>
+            </div>
+          )}
+        </div>
+      </div>
+    </ListNavLink>
+  );
+};
 
 export const AssetLists = ({
   sortedAssetsListsData,
@@ -76,9 +85,6 @@ export const AssetLists = ({
             ))}
           </Select>
         </div>
-        <div className="ManageAssetsLists__network">
-          <NetworkIcon index={selectedNetwork === NETWORKS.PUBLIC ? 0 : 1} />
-        </div>
         {isLoading ? (
           <div className="ManageAssetsLists__loader">
             <Loader size="5rem" />
@@ -86,9 +92,6 @@ export const AssetLists = ({
         ) : (
           <>
             <div className="ManageAssetsLists__list">
-              <div className="ManageAssetsLists__badge">
-                <Badge variant="success">{t("Enabled")}</Badge>
-              </div>
               <ListNavLinkWrapper>
                 {sortedAssetsListsData.enabled.map((assetList) => (
                   <AssetListLink assetList={assetList} />

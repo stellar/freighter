@@ -1,10 +1,6 @@
 @use "../../../styles/utils.scss" as *;
 
 .ManageAssetsLists {
-  &__select {
-    padding-left: 1.625rem !important;
-  }
-
   &__network {
     position: absolute;
     top: pxToRem(12);
@@ -19,23 +15,28 @@
   }
 
   &__list {
+    background-color: var(--sds-clr-gray-02);
+    border-radius: pxToRem(16px);
+    padding: pxToRem(16px);
     margin-top: 1.5rem;
   }
 
   &__badge {
     display: flex;
-    margin-bottom: 1rem;
+    margin-left: pxToRem(6px);
   }
 
   &__title {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
+    font-size: pxToRem(16px);
+    line-height: pxToRem(24px);
+    margin-bottom: pxToRem(8px);
   }
 
   &__subtitle {
-    font-size: 0.75rem;
+    display: flex;
+    font-size: pxToRem(14px);
     color: var(--sds-clr-gray-11);
-    line-height: 1.125rem;
+    line-height: pxToRem(20px);
   }
 
   &__select-wrapper {
