@@ -394,7 +394,7 @@ test("should get public key when logged out", async ({
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Settings").click();
   await page.getByText("Log Out").click();
-  await expect(page.getByText("Welcome back!")).toBeVisible();
+  await expect(page.getByText("Welcome back")).toBeVisible();
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
@@ -407,9 +407,9 @@ test("should get public key when logged out", async ({
   await pageTwo.getByText("Request Access").click();
 
   const popup = await popupPromise;
-  await expect(popup.getByText("Welcome back!")).toBeVisible();
+  await expect(popup.getByText("Welcome back")).toBeVisible();
   await popup.locator("#password-input").fill("My-password123");
-  await popup.getByText("Login").click();
+  await popup.getByRole("button", { name: "Unlock" }).click();
   await expect(popup.getByText("Connection Request")).toBeVisible();
   await popup.getByTestId("grant-access-connect-button").click();
 
