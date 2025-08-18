@@ -1,9 +1,9 @@
 import { Networks } from "stellar-sdk";
 
 export enum NETWORK_NAMES {
-  TESTNET = "Testnet",
-  PUBNET = "Mainnet",
-  FUTURENET = "Futurenet",
+  TESTNET = "Test Net",
+  PUBNET = "Main Net",
+  FUTURENET = "Future Net",
 }
 
 export enum NETWORKS {
