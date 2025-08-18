@@ -57,7 +57,6 @@ export const SwapAsset = ({
     formik.setFieldValue("searchTerm", val);
     debouncedSubmit();
   };
-
   useEffect(() => {
     const getData = async () => {
       await fetchData(true);

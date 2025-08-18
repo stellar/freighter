@@ -204,15 +204,15 @@ export const stubAccountBalancesE2e = async (page: Page) => {
             financial_stats: {},
           },
         },
-        "E2E:CBXQIAGT7PN6T2FD3BLFQTN3L2YE4O7MNP3BF32ZPBD3V4BSFPOU3OJG": {
+        "E2E:CBVXO445IA4SZ4ZBZFRITNP2XSPS2JPBDRMCCNXHN7O646VMJ7KTHWXJ": {
           token: {
             code: "E2E",
             issuer: {
-              key: "CBXQIAGT7PN6T2FD3BLFQTN3L2YE4O7MNP3BF32ZPBD3V4BSFPOU3OJG",
+              key: "CBVXO445IA4SZ4ZBZFRITNP2XSPS2JPBDRMCCNXHN7O646VMJ7KTHWXJ",
             },
           },
           contractId:
-            "CBXQIAGT7PN6T2FD3BLFQTN3L2YE4O7MNP3BF32ZPBD3V4BSFPOU3OJG",
+            "CBVXO445IA4SZ4ZBZFRITNP2XSPS2JPBDRMCCNXHN7O646VMJ7KTHWXJ",
           symbol: "E2E",
           decimals: 3,
           total: "100000099976",

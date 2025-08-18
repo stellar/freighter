@@ -94,7 +94,10 @@ export const TokenList = ({
                       <div className="TokenList__AssetRow__Title__Heading">
                         {title(balance)}
                       </div>
-                      <div className="TokenList__AssetRow__Title__Total">
+                      <div
+                        className="TokenList__AssetRow__Title__Total"
+                        data-testid={`${code}-balance`}
+                      >
                         {displayTotal}
                       </div>
                     </div>
