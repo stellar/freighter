@@ -340,6 +340,7 @@ export const AddToken = () => {
                         sourceOne={{
                           altText: "Add token logo",
                           image: assetIcon,
+                          backgroundColor: "transparent",
                         }}
                       />
                     </div>

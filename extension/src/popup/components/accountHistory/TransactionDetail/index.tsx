@@ -225,6 +225,7 @@ export const TransactionDetail = ({
                   sourceOne={{
                     altText: "Swap source",
                     image: sourceIcon,
+                    backgroundColor: "transparent",
                   }}
                 />
               </div>
