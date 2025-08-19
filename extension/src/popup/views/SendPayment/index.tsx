@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/send-payment";
@@ -12,6 +12,7 @@ import { SendDestinationAsset } from "popup/components/sendPayment/SendDestinati
 import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitTransaction";
 import {
   isPathPaymentSelector,
+  resetSubmission,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
@@ -23,6 +24,7 @@ import { useNetworkFees } from "popup/helpers/useNetworkFees";
 
 export const SendPayment = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -119,7 +121,10 @@ export const SendPayment = () => {
         emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
         return (
           <SendTo
-            goBack={() => navigate(ROUTES.account)}
+            goBack={() => {
+              dispatch(resetSubmission());
+              navigate(ROUTES.account);
+            }}
             goToNext={() => setActiveStep(STEPS.SET_DESTINATION_ASSET)}
           />
         );
