@@ -1,7 +1,7 @@
 import React, { createContext, useContext } from "react";
 import { Text } from "@stellar/design-system";
 
-import FreighterLogo from "popup/assets/logo-freighter.svg";
+import FreighterLogo from "popup/assets/logo-freighter-welcome-2.svg";
 import { BackButton } from "popup/basics/buttons/BackButton";
 import { addStyleClasses } from "popup/helpers/addStyleClasses";
 
@@ -17,7 +17,7 @@ const ViewContext = createContext<ViewContextProps>({ isAppLayout: undefined });
 const ViewHeader: React.FC = ({ ...props }) => (
   <header className="View__header" {...props}>
     <ViewInset isInline hasVerticalBorder>
-      <div className="View__header__box View__header__box--center">
+      <div className="View__header__box View__header__box--center full">
         <img
           className="View__header__logo"
           alt="Freighter logo"

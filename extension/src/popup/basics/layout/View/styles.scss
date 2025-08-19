@@ -36,16 +36,21 @@
       gap: 1rem;
 
       &--left {
+        min-width: pxToRem(20px);
         justify-content: flex-start;
       }
 
       &--center {
         justify-content: center;
         flex-direction: column;
-        flex: 1;
+
+        &.full {
+          width: 100%;
+        }
       }
 
       &--right {
+        min-width: pxToRem(20px);
         justify-content: flex-end;
       }
     }

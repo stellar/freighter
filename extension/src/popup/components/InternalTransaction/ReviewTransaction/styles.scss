@@ -5,9 +5,10 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 1.5rem 0;
+  padding-top: 1.5rem;
   background-color: var(--sds-clr-gray-01);
   border-radius: 0.875rem;
+  height: 480px;
 
   &__Warnings {
     margin-top: pxToRem(32px);

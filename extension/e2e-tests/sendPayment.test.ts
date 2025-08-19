@@ -25,15 +25,17 @@ test("Swap shows correct balances for assets", async ({
   page,
   extensionId,
 }) => {
+  await stubAccountHistory(page);
+  await stubTokenDetails(page);
   await page.route("*/**/account-balances/*", async (route) => {
     const json = {
       balances: {
-        "FOO:GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5": {
+        "FOO:GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY": {
           token: {
             type: "credit_alphanum12",
             code: "FOO",
             issuer: {
-              key: "GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5",
+              key: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
             },
           },
           sellingLiabilities: "0",
@@ -47,7 +49,7 @@ test("Swap shows correct balances for assets", async ({
             attack_types: {},
             chain: "stellar",
             address:
-              "FOO-GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5",
+              "FOO-GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
             metadata: {
               external_links: {},
             },
@@ -59,12 +61,12 @@ test("Swap shows correct balances for assets", async ({
             },
           },
         },
-        "BAZ:GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5": {
+        "BAZ:GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY": {
           token: {
             type: "credit_alphanum12",
             code: "BAZ",
             issuer: {
-              key: "GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5",
+              key: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
             },
           },
           sellingLiabilities: "0",
@@ -78,7 +80,7 @@ test("Swap shows correct balances for assets", async ({
             attack_types: {},
             chain: "stellar",
             address:
-              "BAZ-GBHNGLLIE3KWGKCHIKMHJ5HVZHYIK7WTBE4QF5PLAKL4CJGSEU7HZIW5",
+              "BAZ-GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
             metadata: {
               external_links: {},
             },
@@ -121,7 +123,7 @@ test("Swap shows correct balances for assets", async ({
             financial_stats: {},
           },
         },
-        "PBT:CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND": {
+        "PBT:GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY": {
           token: {
             code: "PBT",
             issuer: {
@@ -169,10 +171,11 @@ test("Swap shows correct balances for assets", async ({
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
     "Swap from",
   );
-  await expect(page.getByText("100 FOO")).toBeVisible();
-  await expect(page.getByText("10 BAZ")).toBeVisible();
-  await expect(page.getByText("98.997 PBT")).toBeVisible();
-  await expect(page.getByText("998 XLM")).toBeVisible();
+  await expect(page.getByText(/FOO/)).toBeVisible();
+  await expect(page.getByTestId("FOO-balance")).toContainText("100");
+  await expect(page.getByTestId("BAZ-balance")).toContainText("10");
+  await expect(page.getByTestId("PBT-balance")).toContainText("98.997");
+  await expect(page.getByTestId("XLM-balance")).toContainText("998");
 });
 test("Send doesn't throw error when account is unfunded", async ({
   page,

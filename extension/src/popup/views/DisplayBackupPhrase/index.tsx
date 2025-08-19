@@ -121,24 +121,31 @@ export const DisplayBackupPhrase = () => {
 
   return (
     <React.Fragment>
-      <SubviewHeader title={t("Reveal recovery phrase")} />
+      <SubviewHeader
+        title={
+          isPhraseUnlocked
+            ? t("Your recovery phrase")
+            : t("Show recovery phrase")
+        }
+      />
       {isPhraseUnlocked ? (
         <>
-          <View.Content>
-            <div>
-              <p>
+          <View.Content hasNoTopPadding hasNoBottomPadding>
+            <div className="DisplayBackupPhrase__container">
+              <MnemonicDisplay mnemonicPhrase={mnemonicPhrase} />
+              <span className="DisplayBackupPhrase__description">
                 {t(
-                  "Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
+                  "These words are your wallet’s keys—store them securely to keep your funds safe.",
                 )}
-              </p>
-              <MnemonicDisplay mnemonicPhrase={mnemonicPhrase} isPopupView />
+              </span>
             </div>
           </View.Content>
           <View.Footer>
             <Button
-              size="md"
+              size="lg"
               isFullWidth
-              variant="tertiary"
+              isRounded
+              variant="secondary"
               onClick={() => navigateTo(ROUTES.account, navigate)}
             >
               {t("Done")}
@@ -150,7 +157,7 @@ export const DisplayBackupPhrase = () => {
           <Formik onSubmit={handleSubmit} initialValues={initialValues}>
             {({ dirty, isSubmitting, isValid }) => (
               <Form className="DisplayBackupPhrase__form">
-                <View.Content>
+                <View.Content hasNoTopPadding hasNoBottomPadding>
                   <BackupPhraseWarningMessage />
                   <Input
                     fieldSize="md"
@@ -166,14 +173,15 @@ export const DisplayBackupPhrase = () => {
                 </View.Content>
                 <View.Footer>
                   <Button
-                    size="md"
+                    size="lg"
                     disabled={!(isValid && dirty)}
                     isFullWidth
+                    isRounded
                     isLoading={isSubmitting}
                     type="submit"
                     variant="secondary"
                   >
-                    {t("Reveal recovery phrase")}
+                    {t("Show recovery phrase")}
                   </Button>
                 </View.Footer>
               </Form>

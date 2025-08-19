@@ -247,13 +247,19 @@
     flex-direction: column;
     padding: pxToRem(24px);
     border-radius: pxToRem(16px);
-    border: 1px solid var(--sds-clr-gray-03);
+    background: var(--sds-clr-gray-03);
     margin: pxToRem(24px) 0;
 
     .Metadata {
       display: flex;
       justify-content: space-between;
       margin-bottom: 0.75rem;
+
+      &:not(:last-child) {
+        margin-bottom: pxToRem(12px);
+        padding-bottom: pxToRem(12px);
+        border-bottom: 1px solid var(--sds-clr-gray-06);
+      }
 
       &:last-child {
         margin-bottom: 0;

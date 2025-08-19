@@ -44,7 +44,7 @@ interface ReviewTxProps {
   sendAmount: string;
   sendPriceUsd: string | null;
   srcAsset: string;
-  simulationState: State<SimulateTxData, unknown>;
+  simulationState: State<SimulateTxData, string>;
   networkDetails: NetworkDetails;
   title: string;
   onConfirm: () => void;
@@ -92,13 +92,8 @@ export const ReviewTx = ({
             variant="error"
             title={t("Failed to fetch your transaction details")}
           >
-            {t(
-              "We had an issue retrieving your transaction details. Please try again.",
-            )}
+            {simulationState.error}
           </Notification>
-          <Button size="md" variant="secondary" onClick={onCancel}>
-            {t("Back")}
-          </Button>
         </div>
       </View.Content>
     );
@@ -119,154 +114,159 @@ export const ReviewTx = ({
 
   return (
     <View.Content hasNoTopPadding>
-      {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
-        <HardwareSign walletType={hardwareWalletType} onSubmit={onConfirm} />
-      )}
-      <div className="ReviewTx">
-        <MultiPaneSlider
-          activeIndex={activePaneIndex}
-          panes={[
-            <>
-              <div className="ReviewTx__Summary">
-                <p>{title}</p>
-                <div className="ReviewTx__SendSummary">
-                  <div className="ReviewTx__SendAsset">
-                    <AssetIcon
-                      assetIcons={assetIcons}
-                      code={asset.code}
-                      issuerKey={asset.issuer}
-                      icon={assetIcon}
-                      isSuspicious={false}
-                    />
-                    <div className="ReviewTx__SendAssetDetails">
-                      <span>
-                        {sendAmount} {asset.code}
-                      </span>
-                      {isMainnet(networkDetails) && (
-                        <span className="ReviewTx__SendAssetDetails__price">
-                          {`$ ${sendPriceUsd}`}
+      {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType ? (
+        <HardwareSign
+          isInternal
+          walletType={hardwareWalletType}
+          onSubmit={onConfirm}
+        />
+      ) : (
+        <div className="ReviewTx">
+          <MultiPaneSlider
+            activeIndex={activePaneIndex}
+            panes={[
+              <>
+                <div className="ReviewTx__Summary">
+                  <p>{title}</p>
+                  <div className="ReviewTx__SendSummary">
+                    <div className="ReviewTx__SendAsset">
+                      <AssetIcon
+                        assetIcons={assetIcons}
+                        code={asset.code}
+                        issuerKey={asset.issuer}
+                        icon={assetIcon}
+                        isSuspicious={false}
+                      />
+                      <div className="ReviewTx__SendAssetDetails">
+                        <span>
+                          {sendAmount} {asset.code}
                         </span>
+                        {isMainnet(networkDetails) && sendPriceUsd && (
+                          <span className="ReviewTx__SendAssetDetails__price">
+                            {`$ ${sendPriceUsd}`}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="ReviewTx__Divider">
+                      <Icon.ChevronDownDouble />
+                    </div>
+                    <div className="ReviewTx__SendDestination">
+                      {dstAsset && dest ? (
+                        <>
+                          <AssetIcon
+                            assetIcons={
+                              dstAsset.canonical !== "native"
+                                ? { [dstAsset.canonical]: dstAsset.icon }
+                                : {}
+                            }
+                            code={dest.code}
+                            issuerKey={dest.issuer}
+                            icon={dstAsset.icon}
+                            isSuspicious={false}
+                          />
+                          <div className="ReviewTx__SendAssetDetails">
+                            <span>
+                              {dstAsset.amount} {dest.code}
+                            </span>
+                            {isMainnet(networkDetails) && (
+                              <span className="ReviewTx__SendAssetDetails__price">
+                                {`$ ${dstAsset.priceUsd}`}
+                              </span>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <IdenticonImg publicKey={destination} />
+                          <div className="ReviewTx__SendDestinationDetails">
+                            {truncatedDest}
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
-                  <div className="ReviewTx__Divider">
-                    <Icon.ChevronDownDouble />
-                  </div>
-                  <div className="ReviewTx__SendDestination">
-                    {dstAsset && dest ? (
-                      <>
-                        <AssetIcon
-                          assetIcons={
-                            dstAsset.canonical !== "native"
-                              ? { [dstAsset.canonical]: dstAsset.icon }
-                              : {}
-                          }
-                          code={dest.code}
-                          issuerKey={dest.issuer}
-                          icon={dstAsset.icon}
-                          isSuspicious={false}
-                        />
-                        <div className="ReviewTx__SendAssetDetails">
-                          <span>
-                            {dstAsset.amount} {dest.code}
-                          </span>
-                          {isMainnet(networkDetails) && (
-                            <span className="ReviewTx__SendAssetDetails__price">
-                              {`$ ${dstAsset.priceUsd}`}
-                            </span>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <IdenticonImg publicKey={destination} />
-                        <div className="ReviewTx__SendDestinationDetails">
-                          {truncatedDest}
-                        </div>
-                      </>
-                    )}
-                  </div>
                 </div>
-              </div>
-              <div className="ReviewTx__Warnings">
-                {simulationState.data?.scanResult && (
-                  <BlockaidTxScanLabel
-                    scanResult={simulationState.data?.scanResult}
-                    onClick={() => setActivePaneIndex(1)}
-                  />
-                )}
-              </div>
-              <div className="ReviewTx__Details">
-                <Card>
-                  <div className="ReviewTx__Details__Row">
-                    <div className="ReviewTx__Details__Row__Title">
-                      <Icon.File02 />
-                      Memo
+                <div className="ReviewTx__Warnings">
+                  {simulationState.data?.scanResult && (
+                    <BlockaidTxScanLabel
+                      scanResult={simulationState.data?.scanResult}
+                      onClick={() => setActivePaneIndex(1)}
+                    />
+                  )}
+                </div>
+                <div className="ReviewTx__Details">
+                  <Card>
+                    <div className="ReviewTx__Details__Row">
+                      <div className="ReviewTx__Details__Row__Title">
+                        <Icon.File02 />
+                        Memo
+                      </div>
+                      <div className="ReviewTx__Details__Row__Value">
+                        {memo || "None"}
+                      </div>
                     </div>
-                    <div className="ReviewTx__Details__Row__Value">
-                      {memo || "None"}
+                    <div className="ReviewTx__Details__Row">
+                      <div className="ReviewTx__Details__Row__Title">
+                        <Icon.Route />
+                        Fee
+                      </div>
+                      <div className="ReviewTx__Details__Row__Value">
+                        {fee} XLM
+                      </div>
                     </div>
-                  </div>
-                  <div className="ReviewTx__Details__Row">
-                    <div className="ReviewTx__Details__Row__Title">
-                      <Icon.Route />
-                      Fee
+                    <div className="ReviewTx__Details__Row">
+                      <div className="ReviewTx__Details__Row__Title">
+                        <Icon.FileCode02 />
+                        XDR
+                      </div>
+                      <div className="ReviewTx__Details__Row__Value">
+                        <CopyValue
+                          value={simulationState.data!.transactionXdr}
+                          displayValue={simulationState.data!.transactionXdr}
+                        />
+                      </div>
                     </div>
-                    <div className="ReviewTx__Details__Row__Value">
-                      {fee} XLM
-                    </div>
-                  </div>
-                  <div className="ReviewTx__Details__Row">
-                    <div className="ReviewTx__Details__Row__Title">
-                      <Icon.FileCode02 />
-                      XDR
-                    </div>
-                    <div className="ReviewTx__Details__Row__Value">
-                      <CopyValue
-                        value={simulationState.data!.transactionXdr}
-                        displayValue={simulationState.data!.transactionXdr}
-                      />
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            </>,
-            <BlockAidTxScanExpanded
-              scanResult={simulationState.data?.scanResult!}
-              onClose={() => setActivePaneIndex(0)}
-            />,
-          ]}
-        />
-        <div className="ReviewTx__Actions">
-          <Button
-            size="lg"
-            isFullWidth
-            isRounded
-            variant="secondary"
-            data-testid="SubmitAction"
-            onClick={(e) => {
-              e.preventDefault();
-              onConfirmTx();
-            }}
-          >
-            {dstAsset && dest
-              ? `Swap ${asset.code} to ${dest.code}`
-              : `Send to ${truncatedDest}`}
-          </Button>
-          <Button
-            size="lg"
-            isFullWidth
-            isRounded
-            variant="tertiary"
-            onClick={(e) => {
-              e.preventDefault();
-              onCancel();
-            }}
-          >
-            Cancel
-          </Button>
+                  </Card>
+                </div>
+              </>,
+              <BlockAidTxScanExpanded
+                scanResult={simulationState.data?.scanResult!}
+                onClose={() => setActivePaneIndex(0)}
+              />,
+            ]}
+          />
+          <div className="ReviewTx__Actions">
+            <Button
+              size="lg"
+              isFullWidth
+              isRounded
+              variant="secondary"
+              data-testid="SubmitAction"
+              onClick={(e) => {
+                e.preventDefault();
+                onConfirmTx();
+              }}
+            >
+              {dstAsset && dest
+                ? `Swap ${asset.code} to ${dest.code}`
+                : `Send to ${truncatedDest}`}
+            </Button>
+            <Button
+              size="lg"
+              isFullWidth
+              isRounded
+              variant="tertiary"
+              onClick={(e) => {
+                e.preventDefault();
+                onCancel();
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </View.Content>
   );
 };

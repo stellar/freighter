@@ -688,7 +688,7 @@ function useGetHistoryData(
   const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
   const { fetchData: fetchHistory } = useGetHistory();
 
-  const fetchData = async () => {
+  const fetchData = async (useCache = false) => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const appData = await fetchAppData();
@@ -708,6 +708,7 @@ function useGetHistoryData(
         publicKey,
         isMainnetNetwork,
         networkDetails,
+        useCache,
       );
       const history = await fetchHistory(publicKey, networkDetails);
 

@@ -154,17 +154,38 @@ export const BackupPhraseWarningMessage = () => {
 
   return (
     <div className="WarningMessage__backup">
-      <Card>
-        <h3>Important</h3>
-        <span className="WarningMessage__backup__description">
-          {t("Keep your recovery phrase in a safe and secure place.")}
-        </span>
-        <span className="WarningMessage__backup__description">
-          {t(
-            "Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
-          )}
-        </span>
-      </Card>
+      <span className="WarningMessage__backup__description">
+        {t("Keep your recovery phrase in a safe and secure place.")}
+      </span>
+      <span className="WarningMessage__backup__description">
+        {t(
+          "Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
+        )}
+      </span>
+      <div className="WarningMessage__backup__tips">
+        <div className="WarningMessage__backup__tips__row">
+          <div className="WarningMessage__backup__tips__icon">
+            <Icon.Lock01 />
+          </div>
+          <span>
+            Your recovery phrase gives you full access to your wallets and funds
+          </span>
+        </div>
+        <div className="WarningMessage__backup__tips__row">
+          <div className="WarningMessage__backup__tips__icon">
+            <Icon.EyeOff />
+          </div>
+          <span>Don't share this phrase with anyone</span>
+        </div>
+        <div className="WarningMessage__backup__tips__row">
+          <div className="WarningMessage__backup__tips__icon">
+            <Icon.XSquare />
+          </div>
+          <span>
+            Stellar Development Foundation will never ask for your phrase
+          </span>
+        </div>
+      </div>
     </div>
   );
 };
@@ -370,12 +391,10 @@ const BlockaidFeedbackForm = ({
 };
 
 export const BlockaidByLine = ({
-  hasArrow = false,
   handleClick,
   requestId,
   address,
 }: {
-  hasArrow?: boolean;
   handleClick?: () => void;
   requestId?: string;
   address?: string;
@@ -412,6 +431,9 @@ export const BlockaidByLine = ({
           <div
             className="BlockaidByLine__feedback__button"
             onClick={() => {
+              if (handleClick) {
+                handleClick();
+              }
               setIsFeedbackActive(true);
             }}
           >
@@ -421,16 +443,6 @@ export const BlockaidByLine = ({
           </div>
         </div>
       ) : null}
-
-      {hasArrow && (
-        <div
-          className="BlockaidByLine__arrow"
-          data-testid={`BlockaidByLine__arrow__${address ? "asset" : "tx"}`}
-          onClick={handleClick}
-        >
-          <Icon.ChevronRight />
-        </div>
-      )}
       {isFeedbackActive &&
         createPortal(
           <BlockaidFeedbackForm

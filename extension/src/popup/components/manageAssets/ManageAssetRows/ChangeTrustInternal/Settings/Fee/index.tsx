@@ -53,8 +53,21 @@ export const Fee = ({ fee, recommendedFee, onSaveFee, goBack }: FeeProps) => {
                         rightElement={<span>XLM</span>}
                         onChange={(e) => {
                           e.stopPropagation();
-                          const target = e.target as HTMLInputElement;
-                          setFieldValue("fee", target.value);
+                          let value = e.target.value;
+                          if (value === "") {
+                            setFieldValue("fee", "");
+                            return;
+                          }
+
+                          // Only allow digits and one decimal point
+                          if (!/^\d*\.?\d*$/.test(value)) return;
+
+                          const [intPart, decPart] = value.split(".");
+                          if (decPart && decPart.length > 7) {
+                            value = `${intPart}.${decPart.slice(0, 7)}`;
+                          }
+
+                          setFieldValue("fee", value);
                         }}
                       />
                     )}
@@ -66,7 +79,7 @@ export const Fee = ({ fee, recommendedFee, onSaveFee, goBack }: FeeProps) => {
               <div className="TxFee__actions">
                 <Button
                   type="button"
-                  size="md"
+                  size="lg"
                   isRounded
                   isFullWidth
                   variant="tertiary"
@@ -79,7 +92,7 @@ export const Fee = ({ fee, recommendedFee, onSaveFee, goBack }: FeeProps) => {
                 </Button>
                 <Button
                   type="button"
-                  size="md"
+                  size="lg"
                   isRounded
                   isFullWidth
                   variant="secondary"

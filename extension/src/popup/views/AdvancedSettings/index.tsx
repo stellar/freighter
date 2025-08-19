@@ -11,7 +11,6 @@ import { SettingsState } from "@shared/api/types";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AutoSaveFields } from "popup/components/AutoSave";
 import { View } from "popup/basics/layout/View";
-import IconExperimental from "popup/assets/icon-settings-experimental.svg";
 
 import "./styles.scss";
 import { AppDispatch } from "popup/App";
@@ -40,9 +39,6 @@ const AdvancedSettingFeature = ({
   <div className="AdvancedSettings__feature">
     <div className="AdvancedSettings__feature__row">
       <div className="AdvancedSettings__feature__row__title">
-        <div className="AdvancedSettings__feature__row__icon">
-          <img src={IconExperimental} alt="icon experimental feature" />
-        </div>
         <span>{title}</span>
         {isLoading ? (
           <div className="AdvancedSettings__feature__row__loader">
@@ -168,7 +164,7 @@ export const AdvancedSettings = () => {
         enableReinitialize
       >
         <View.Content hasNoTopPadding>
-          <Form>
+          <Form className="AdvancedSettings">
             <AutoSaveFields />
             <AdvancedSettingFeature
               title={t("Use Futurenet")}
@@ -228,6 +224,7 @@ export const AdvancedSettings = () => {
               size="md"
               variant="error"
               isFullWidth
+              isRounded
               onClick={() => setIsUnderstood(true)}
             >
               {t("I understand, continue")}
@@ -236,6 +233,7 @@ export const AdvancedSettings = () => {
               size="md"
               variant="tertiary"
               isFullWidth
+              isRounded
               onClick={() => navigate(-1)}
             >
               {t("Go back")}

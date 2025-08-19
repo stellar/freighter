@@ -52,8 +52,14 @@ export const Timeout = ({ timeout, onSave, goBack }: TimeoutProps) => {
                         rightElement={<span>seconds</span>}
                         onChange={(e) => {
                           e.stopPropagation();
-                          const target = e.target as HTMLInputElement;
-                          setFieldValue("timeout", target.value);
+                          let value = e.target.value;
+
+                          // Only digits, no decimals
+                          if (!/^\d*$/.test(value)) return;
+                          setFieldValue(
+                            "timeout",
+                            value === "" ? "" : parseInt(value, 10),
+                          );
                         }}
                       />
                     )}
@@ -65,7 +71,7 @@ export const Timeout = ({ timeout, onSave, goBack }: TimeoutProps) => {
               <div className="TxTimeout__actions">
                 <Button
                   type="button"
-                  size="md"
+                  size="lg"
                   isRounded
                   isFullWidth
                   variant="secondary"

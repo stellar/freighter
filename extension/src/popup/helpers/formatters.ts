@@ -110,7 +110,7 @@ export const scrubPathGkey = (route: string, url: string) => {
 };
 
 export const roundUsdValue = (fullValue: string) =>
-  (Math.ceil(parseFloat(fullValue) * 100) / 100).toFixed(2);
+  (Math.floor(parseFloat(fullValue) * 100) / 100).toFixed(2);
 
 export const capitalize = (str: string) => {
   return str.charAt(0).toUpperCase() + str.slice(1);

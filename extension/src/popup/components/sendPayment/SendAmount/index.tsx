@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useLocation } from "react-router-dom";
 import BigNumber from "bignumber.js";
 import { useFormik } from "formik";
-import { Button, Icon, Logo } from "@stellar/design-system";
+import { Button, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { LoadingBackground } from "popup/basics/LoadingBackground";
@@ -16,7 +16,7 @@ import {
   truncatedFedAddress,
   truncatedPublicKey,
 } from "helpers/stellar";
-import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { NetworkCongestion } from "popup/helpers/useNetworkFees";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
@@ -64,12 +64,16 @@ export const SendAmount = ({
   goToChooseDest,
   simulationState,
   fetchSimulationData,
+  networkCongestion,
+  recommendedFee,
 }: {
   goBack: () => void;
   goToNext: () => void;
   goToChooseDest: () => void;
-  simulationState: State<SimulateTxData, unknown>;
+  simulationState: State<SimulateTxData, string>;
   fetchSimulationData: () => Promise<unknown>;
+  networkCongestion: NetworkCongestion;
+  recommendedFee: string;
 }) => {
   const { t } = useTranslation();
   const location = useLocation();
@@ -84,8 +88,9 @@ export const SendAmount = ({
     destinationAsset,
     federationAddress,
     isToken,
+    transactionFee,
   } = transactionData;
-  const { networkCongestion, recommendedFee } = useNetworkFees();
+  const fee = transactionFee || recommendedFee;
 
   const { state: sendAmountData, fetchData } = useGetSendAmountData(
     {
@@ -221,11 +226,9 @@ export const SendAmount = ({
       )}`
     : null;
   const recommendedFeeUsd = xlmPrice
-    ? `$ ${formatAmount(
+    ? `$${formatAmount(
         roundUsdValue(
-          new BigNumber(xlmPrice)
-            .multipliedBy(new BigNumber(recommendedFee))
-            .toString(),
+          new BigNumber(xlmPrice).multipliedBy(new BigNumber(fee)).toString(),
         ),
       )}`
     : null;
@@ -234,14 +237,14 @@ export const SendAmount = ({
   const availableBalance = getAvailableBalance({
     assetCanonical: asset,
     balances: sendData.userBalances.balances,
-    recommendedFee,
+    recommendedFee: fee,
     subentryCount: sendData.userBalances.subentryCount,
   });
   const displayTotal =
     "decimals" in assetBalance
-      ? `${availableBalance} ${assetBalance.token.code}`
-      : `${formatAmount(availableBalance)} ${assetBalance.token.code}`;
-  const srcTitle = asset === "native" ? "Stellar Lumens" : srcAsset.code;
+      ? availableBalance
+      : formatAmount(availableBalance);
+  const srcTitle = srcAsset.code;
   const goBackAction = () => {
     dispatch(saveAsset("native"));
     dispatch(saveAmount("0"));
@@ -274,24 +277,23 @@ export const SendAmount = ({
                 <span className="SendAmount__settings-fee-display__label">
                   Fee:
                 </span>
-                {inputType === "crypto" && <Logo.StellarShort />}
                 <span>
-                  {inputType === "crypto"
-                    ? `${recommendedFee} XLM`
-                    : recommendedFeeUsd}
+                  {inputType === "crypto" ? `${fee} XLM` : recommendedFeeUsd}
                 </span>
               </div>
               <div className="SendAmount__settings-options">
                 <Button
-                  size="sm"
+                  size="md"
                   isRounded
                   variant="tertiary"
                   onClick={() => setIsEditingMemo(true)}
+                  icon={<Icon.File02 />}
+                  iconPosition="left"
                 >
-                  {transactionData.memo || t("Add a memo")}
+                  {t("Memo")}
                 </Button>
                 <Button
-                  size="sm"
+                  size="md"
                   isRounded
                   variant="tertiary"
                   onClick={() => setIsEditingSettings(true)}
@@ -301,7 +303,7 @@ export const SendAmount = ({
               </div>
             </div>
             <Button
-              size="md"
+              size="lg"
               disabled={
                 (inputType === "crypto" &&
                   new BigNumber(formik.values.amount).isZero()) ||
@@ -384,7 +386,7 @@ export const SendAmount = ({
                           ref={usdInputRef}
                           className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
                           style={{
-                            width: `${formik.values.amountUsd.length + 1 || 5}ch`,
+                            width: `${formik.values.amountUsd.length || 5}ch`,
                           }}
                           data-testid="send-amount-amount-input"
                           name="amountUsd"
@@ -416,7 +418,7 @@ export const SendAmount = ({
                 {supportsUsd && (
                   <div className="SendAmount__amount-price">
                     {inputType === "crypto"
-                      ? `$ ${priceValueUsd}`
+                      ? `$${priceValueUsd}`
                       : `${priceValue} ${parsedSourceAsset.code}`}
                     <Button
                       size="md"
@@ -484,7 +486,10 @@ export const SendAmount = ({
                     {t("Set Max")}
                   </Button>
                 </div>
-                <div className="SendAmount__EditDestAsset">
+                <div
+                  className="SendAmount__EditDestAsset"
+                  onClick={goBackAction}
+                >
                   <div className="SendAmount__EditDestAsset__title">
                     <AssetIcon
                       assetIcons={
@@ -504,16 +509,19 @@ export const SendAmount = ({
                       </div>
                     </div>
                   </div>
-                  <Button
-                    isRounded
-                    size="sm"
-                    variant="tertiary"
-                    onClick={goBackAction}
-                  >
-                    Edit
+                  <Button isRounded size="sm" variant="tertiary">
+                    <Icon.ChevronRight />
                   </Button>
                 </div>
-                <div className="SendAmount__EditDestination">
+                <div
+                  className="SendAmount__EditDestination"
+                  onClick={() => {
+                    dispatch(saveAsset("native"));
+                    dispatch(saveAmount("0"));
+                    dispatch(saveAmountUsd("0.00"));
+                    goToChooseDest();
+                  }}
+                >
                   <div className="SendAmount__EditDestination__title">
                     <div className="SendAmount__EditDestination__identicon">
                       <IdenticonImg publicKey={destination} />
@@ -522,18 +530,8 @@ export const SendAmount = ({
                       ? truncatedFedAddress(federationAddress)
                       : truncatedPublicKey(destination)}
                   </div>
-                  <Button
-                    isRounded
-                    size="sm"
-                    variant="tertiary"
-                    onClick={() => {
-                      dispatch(saveAsset("native"));
-                      dispatch(saveAmount("0"));
-                      dispatch(saveAmountUsd("0.00"));
-                      goToChooseDest();
-                    }}
-                  >
-                    Edit
+                  <Button isRounded size="sm" variant="tertiary">
+                    <Icon.ChevronRight />
                   </Button>
                 </div>
               </div>
@@ -563,7 +561,8 @@ export const SendAmount = ({
         <>
           <div className="EditMemoWrapper">
             <EditSettings
-              fee={recommendedFee}
+              fee={fee}
+              title="Send Settings"
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
               onClose={() => setIsEditingSettings(false)}
@@ -593,12 +592,12 @@ export const SendAmount = ({
         {isReviewingTx ? (
           <ReviewTx
             assetIcon={assetIcon}
-            fee={recommendedFee}
+            fee={fee}
             networkDetails={sendAmountData.data?.networkDetails!}
             onCancel={() => setIsReviewingTx(false)}
             onConfirm={goToNext}
             sendAmount={amount}
-            sendPriceUsd={inputType === "crypto" ? priceValue! : amountUsd}
+            sendPriceUsd={priceValueUsd}
             simulationState={simulationState}
             srcAsset={asset}
             title="You are sending"

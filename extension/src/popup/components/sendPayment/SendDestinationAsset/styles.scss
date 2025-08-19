@@ -11,6 +11,7 @@
     padding: pxToRem(12px) pxToRem(24px);
     background-color: var(--sds-clr-gray-03);
     border-radius: pxToRem(14px);
+    cursor: pointer;
 
     &__title {
       display: flex;
@@ -24,46 +25,6 @@
       border: 1px solid var(--sds-clr-gray-09);
       border-radius: pxToRem(100px);
       margin-right: pxToRem(12px);
-    }
-  }
-
-  &__Assets {
-    display: flex;
-    flex-direction: column;
-    margin-top: pxToRem(32px);
-
-    &__Header {
-      display: flex;
-      align-items: center;
-      margin-bottom: pxToRem(12px);
-
-      svg {
-        margin-right: pxToRem(4px);
-      }
-    }
-  }
-
-  &__AssetRow {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: pxToRem(12px) 0;
-    margin-bottom: pxToRem(12px);
-    cursor: pointer;
-
-    &__Body {
-      display: flex;
-    }
-
-    &__Title {
-      display: flex;
-      flex-direction: column;
-
-      &__Total {
-        font-size: pxToRem(12px);
-        color: var(--sds-clr-gray-11);
-        margin-top: pxToRem(4px);
-      }
     }
   }
 }

@@ -56,10 +56,10 @@ export const UnlockAccount = () => {
 
       <EnterPassword
         accountAddress={accountAddress}
-        title={t("Welcome back!")}
-        description={t("Enter password to unlock Freighter.")}
+        title={t("Welcome back")}
+        description={t("Enter password to unlock Freighter")}
         onConfirm={handleSubmit}
-        confirmButtonTitle={t("Login")}
+        confirmButtonTitle={t("Unlock")}
       />
 
       <View.Footer customGap="0.5rem">
@@ -68,8 +68,9 @@ export const UnlockAccount = () => {
         </div>
 
         <Button
-          size="md"
+          size="lg"
           isFullWidth
+          isRounded
           variant="tertiary"
           onClick={() => {
             openTab(newTabHref(ROUTES.recoverAccount));
@@ -79,8 +80,9 @@ export const UnlockAccount = () => {
         </Button>
 
         <Button
-          size="md"
+          size="lg"
           isFullWidth
+          isRounded
           variant="tertiary"
           onClick={() => {
             openTab(newTabHref(ROUTES.accountCreator));

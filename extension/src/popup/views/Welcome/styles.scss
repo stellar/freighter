@@ -38,6 +38,7 @@
 
   &__row-screen {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     gap: 0.75rem;
   }

@@ -1,6 +1,10 @@
 @use "../../styles/utils.scss" as *;
 
 .SignMessageData {
+  &:not(:first-child) {
+    margin-top: pxToRem(12px);
+  }
+
   .Message {
     display: flex;
     flex-direction: column;

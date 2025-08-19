@@ -2,6 +2,7 @@ const webpack = require("webpack");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const path = require("path");
 const { DEFAULT_STATS } = require("../../config/webpack");
+const packageJson = require("./package.json");
 
 const BUILD_PATH = path.resolve(__dirname, "./build");
 
@@ -39,10 +40,11 @@ const config = {
   plugins: [
     new webpack.DefinePlugin({
       DEV_SERVER: false,
+      __PACKAGE_VERSION__: JSON.stringify(packageJson.version),
     }),
     new webpack.NormalModuleReplacementPlugin(
       /webextension-polyfill/,
-      path.resolve(__dirname, "../../config/shims/webextension-polyfill.ts")
+      path.resolve(__dirname, "../../config/shims/webextension-polyfill.ts"),
     ),
   ],
   stats: DEFAULT_STATS,

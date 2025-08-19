@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Card, Icon, Notification, Toggle } from "@stellar/design-system";
+import { Notification, Toggle } from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -118,9 +118,7 @@ export const Preferences = () => {
               <AutoSaveFields />
               <div className="Preferences--section">
                 <div className="Preferences--section--title">
-                  <span>
-                    <Icon.FileCheck02 /> {t("Verification with")} stellar.expert
-                  </span>
+                  <span>{t("Verification with")} stellar.expert</span>
                   <div
                     className="Preferences--toggle"
                     data-testid="isValidatingMemoValue"
@@ -133,14 +131,14 @@ export const Preferences = () => {
                     />
                   </div>
                 </div>
-                <Card>{t("Validate addresses that require a memo")}</Card>
+                <span className="Preferences--section--subtitle">
+                  {t("Validate addresses that require a memo")}
+                </span>
               </div>
 
               <div className="Preferences--section">
                 <div className="Preferences--section--title">
-                  <span>
-                    <Icon.Data /> {t("Anonymous data sharing")}{" "}
-                  </span>
+                  <span>{t("Anonymous data sharing")} </span>
                   <div className="Preferences--toggle">
                     <Toggle
                       fieldSize="sm"
@@ -150,19 +148,16 @@ export const Preferences = () => {
                     />
                   </div>
                 </div>
-                <Card>
+                <span className="Preferences--section--subtitle">
                   {t(
                     "Allow Freighter to collect anonymous information about usage. Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts.",
                   )}
-                </Card>
+                </span>
               </div>
 
               <div className="Preferences--section">
                 <div className="Preferences--section--title">
-                  <span>
-                    <Icon.CurrencyDollar />
-                    {t("Hide small payments")}{" "}
-                  </span>
+                  <span>{t("Hide small payments")} </span>
                   <div className="Preferences--toggle">
                     <Toggle
                       fieldSize="sm"
@@ -172,7 +167,9 @@ export const Preferences = () => {
                     />
                   </div>
                 </div>
-                <Card>{t("Hide payments smaller than 0.1 XLM")}</Card>
+                <span className="Preferences--section--subtitle">
+                  {t("Hide payments smaller than 0.1 XLM")}
+                </span>
               </div>
             </Form>
           </div>

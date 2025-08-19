@@ -23,6 +23,7 @@ global.EXPERIMENTAL = false;
 global.TextEncoder = TextEncoder;
 // @ts-expect-error
 global.TextDecoder = TextDecoder;
+global.__PACKAGE_VERSION__ = "5.0.0";
 
 Object.defineProperty(global.self, "crypto", {
   value: {

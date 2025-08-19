@@ -4,8 +4,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import { truncatedPublicKey } from "helpers/stellar";
-
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { View } from "popup/basics/layout/View";
 import { authErrorSelector } from "popup/ducks/accountServices";
@@ -62,26 +60,18 @@ export const EnterPassword = ({
       <div className="EnterPassword">
         <div className="EnterPassword__wrapper">
           {accountAddress && (
-            <>
-              <div className="EnterPassword__wrapper__identicon">
-                <IdenticonImg publicKey={accountAddress} />
-              </div>
-
-              <Text as="div" size="xs" addlClassName="EnterPassword__gray11">
-                {truncatedPublicKey(accountAddress)}
-              </Text>
-
-              <div className="EnterPassword__spacer-big" />
-            </>
+            <div className="EnterPassword__wrapper__identicon">
+              <IdenticonImg publicKey={accountAddress} />
+            </div>
           )}
 
-          <Text as="div" size="sm">
+          <Text as="div" size="md" weight="semi-bold">
             {titleLabel}
           </Text>
 
           <Text
             as="div"
-            size="xs"
+            size="sm"
             addlClassName="EnterPassword__gray11 EnterPassword__text-centered"
           >
             {descriptionLabel}
@@ -133,6 +123,7 @@ export const EnterPassword = ({
                       <Button
                         size="md"
                         isFullWidth
+                        isRounded
                         variant="tertiary"
                         type="reset"
                       >
@@ -143,6 +134,7 @@ export const EnterPassword = ({
                     <Button
                       size="md"
                       isFullWidth
+                      isRounded
                       variant="secondary"
                       type="submit"
                       isLoading={isSubmitting}

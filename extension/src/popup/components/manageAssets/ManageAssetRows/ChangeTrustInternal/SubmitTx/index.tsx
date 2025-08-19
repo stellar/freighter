@@ -225,7 +225,9 @@ export const SubmitTransaction = ({
               </div>
               <div className="SubmitTransaction__Summary__Description">
                 <span>
-                  {addTrustline ? "Add trustline" : "Remove trustline"}
+                  {addTrustline
+                    ? `Add ${asset.code} trustline`
+                    : `Remove ${asset.code} trustline`}
                 </span>
               </div>
             </div>

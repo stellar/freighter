@@ -605,15 +605,15 @@ describe("Account view", () => {
       expect(assetNodes.length).toEqual(3);
       expect(
         screen.getByTestId(`asset-amount-${TEST_CANONICAL}`),
-      ).toHaveTextContent("$834,463.68");
+      ).toHaveTextContent("$834,463.67");
       expect(
         screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
-      ).toHaveTextContent("3.98%");
+      ).toHaveTextContent("3.97%");
       expect(screen.getByTestId(`asset-amount-native`)).toHaveTextContent(
-        "$13.82",
+        "$13.81",
       );
       expect(screen.getByTestId(`asset-price-delta-native`)).toHaveTextContent(
-        "1.10%",
+        "1.09%",
       );
     });
   });

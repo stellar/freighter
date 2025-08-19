@@ -8,12 +8,11 @@ import {
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
 import { isMainnet } from "helpers/stellar";
-import { getAccountBalances } from "@shared/api/internal";
-import { sortBalances } from "popup/helpers/account";
 import { getTokenPrices } from "popup/views/Account/hooks/useGetAccountData";
 import { getTotalUsd } from "popup/helpers/balance";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 
 export interface ResolvedData {
   type: AppDataType.RESOLVED;
@@ -33,11 +32,15 @@ function useGetWalletsData() {
     initialState,
   );
   const { fetchData: fetchAppData } = useGetAppData();
+  const { fetchData: fetchBalances } = useGetBalances({
+    showHidden: true,
+    includeIcons: false,
+  });
 
-  const fetchData = async () => {
+  const fetchData = async (useCache = false) => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const appData = await fetchAppData(false);
+      const appData = await fetchAppData(true);
       if (isError(appData)) {
         throw new Error(appData.message);
       }
@@ -62,16 +65,20 @@ function useGetWalletsData() {
       if (isMainnetNetwork) {
         const prices = await Promise.all(
           allAccounts.map(async (account) => {
-            const { balances } = await getAccountBalances(
+            const balances = await fetchBalances(
               account.publicKey,
-              networkDetails,
               isMainnetNetwork,
+              networkDetails,
+              useCache,
             );
-            const sortedBalances = sortBalances(balances);
+            if (isError<AccountBalances>(balances)) {
+              throw new Error(balances.message);
+            }
+
             const prices = await getTokenPrices({
-              balances: sortedBalances,
+              balances: balances.balances,
             });
-            const totalPriceUsd = getTotalUsd(prices, sortedBalances);
+            const totalPriceUsd = getTotalUsd(prices, balances.balances);
             return {
               [account.publicKey]: `$${formatAmount(roundUsdValue(totalPriceUsd.toString()))}`,
             };

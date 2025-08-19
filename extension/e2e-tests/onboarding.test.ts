@@ -9,10 +9,9 @@ test.beforeEach(async ({ page, extensionId }) => {
 
 test("Welcome page loads", async ({ page }) => {
   await page.locator(".Welcome__column").waitFor();
-  await expect(page.getByText("Welcome to Freighter")).toBeVisible();
-  await expect(page.getByText("Your favorite Stellar wallet")).toBeVisible();
+  await expect(page.getByText("Freighter Wallet")).toBeVisible();
   await expect(page.getByText("Create new wallet")).toBeVisible();
-  await expect(page.getByText("Import wallet")).toBeVisible();
+  await expect(page.getByText("I already have a wallet")).toBeVisible();
   await expectPageToHaveScreenshot({ page, screenshot: "welcome-page.png" });
 });
 
@@ -69,7 +68,7 @@ test("Create new wallet", async ({ page }) => {
 });
 
 test("Import 12 word wallet", async ({ page }) => {
-  await page.getByText("Import Wallet").click();
+  await page.getByText("I already have a wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -120,7 +119,7 @@ test("Import 12 word wallet", async ({ page }) => {
 test("Import 12 word wallet by pasting", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-  await page.getByText("Import Wallet").click();
+  await page.getByText("I already have a wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -178,7 +177,7 @@ test("Import 12 word wallet by pasting", async ({ page, context }) => {
 });
 
 test("Import 24 word wallet", async ({ page }) => {
-  await page.getByText("Import Wallet").click();
+  await page.getByText("I already have a wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -245,7 +244,7 @@ test("Import 24 word wallet", async ({ page }) => {
 test("Import 24 word wallet by pasting", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-  await page.getByText("Import Wallet").click();
+  await page.getByText("I already have a wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -315,7 +314,7 @@ test("Import 24 word wallet by pasting", async ({ page, context }) => {
 });
 
 test("Import wallet with wrong password", async ({ page }) => {
-  await page.getByText("Import Wallet").click();
+  await page.getByText("I already have a wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -441,7 +440,7 @@ test("Logout and create new account", async ({ page, extensionId }) => {
   await newPage.getByText("Log Out").click();
 
   await newPage.locator("#password-input").fill(PASSWORD);
-  await newPage.getByText("Login").click();
+  await newPage.getByRole("button", { name: "Unlock" }).click();
 
   await expect(newPage.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
@@ -520,7 +519,7 @@ test("Logout and import new account", async ({ page, extensionId }) => {
   await newPage.getByText("Log Out").click();
 
   await newPage.locator("#password-input").fill(PASSWORD);
-  await newPage.getByText("Login").click();
+  await newPage.getByRole("button", { name: "Unlock" }).click();
 
   await expect(newPage.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
