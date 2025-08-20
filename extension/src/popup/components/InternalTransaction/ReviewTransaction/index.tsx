@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Button, Card, Icon, Notification } from "@stellar/design-system";
+import { Button, Icon, Notification } from "@stellar/design-system";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { RequestState, State } from "constants/request";
@@ -196,38 +196,36 @@ export const ReviewTx = ({
                   )}
                 </div>
                 <div className="ReviewTx__Details">
-                  <Card>
-                    <div className="ReviewTx__Details__Row">
-                      <div className="ReviewTx__Details__Row__Title">
-                        <Icon.File02 />
-                        Memo
-                      </div>
-                      <div className="ReviewTx__Details__Row__Value">
-                        {memo || "None"}
-                      </div>
+                  <div className="ReviewTx__Details__Row">
+                    <div className="ReviewTx__Details__Row__Title">
+                      <Icon.File02 />
+                      Memo
                     </div>
-                    <div className="ReviewTx__Details__Row">
-                      <div className="ReviewTx__Details__Row__Title">
-                        <Icon.Route />
-                        Fee
-                      </div>
-                      <div className="ReviewTx__Details__Row__Value">
-                        {fee} XLM
-                      </div>
+                    <div className="ReviewTx__Details__Row__Value">
+                      {memo || "None"}
                     </div>
-                    <div className="ReviewTx__Details__Row">
-                      <div className="ReviewTx__Details__Row__Title">
-                        <Icon.FileCode02 />
-                        XDR
-                      </div>
-                      <div className="ReviewTx__Details__Row__Value">
-                        <CopyValue
-                          value={simulationState.data!.transactionXdr}
-                          displayValue={simulationState.data!.transactionXdr}
-                        />
-                      </div>
+                  </div>
+                  <div className="ReviewTx__Details__Row">
+                    <div className="ReviewTx__Details__Row__Title">
+                      <Icon.Route />
+                      Fee
                     </div>
-                  </Card>
+                    <div className="ReviewTx__Details__Row__Value">
+                      {fee} XLM
+                    </div>
+                  </div>
+                  <div className="ReviewTx__Details__Row">
+                    <div className="ReviewTx__Details__Row__Title">
+                      <Icon.FileCode02 />
+                      XDR
+                    </div>
+                    <div className="ReviewTx__Details__Row__Value">
+                      <CopyValue
+                        value={simulationState.data!.transactionXdr}
+                        displayValue={simulationState.data!.transactionXdr}
+                      />
+                    </div>
+                  </div>
                 </div>
               </>,
               <BlockAidTxScanExpanded

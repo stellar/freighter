@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useLocation } from "react-router-dom";
 import BigNumber from "bignumber.js";
@@ -58,6 +58,8 @@ import { SlideupModal } from "popup/components/SlideupModal";
 
 import "../styles.scss";
 
+const DEFAULT_INPUT_WIDTH = 25;
+
 export const SendAmount = ({
   goBack,
   goToNext,
@@ -99,6 +101,11 @@ export const SendAmount = ({
     },
     destination,
   );
+  const cryptoSpanRef = useRef<HTMLSpanElement>(null);
+  const [inputWidthCrypto, setInputWidthCrypto] = useState(0);
+
+  const fiatSpanRef = useRef<HTMLSpanElement>(null);
+  const [inputWidthFiat, setInputWidthFiat] = useState(0);
 
   const cryptoInputRef = useRef<HTMLInputElement>(null);
   const usdInputRef = useRef<HTMLInputElement>(null);
@@ -135,6 +142,17 @@ export const SendAmount = ({
     enableReinitialize: true,
     validateOnChange: true,
   });
+
+  useLayoutEffect(() => {
+    if (cryptoSpanRef.current) {
+      setInputWidthCrypto(cryptoSpanRef.current.offsetWidth + 2);
+    }
+  }, [formik.values.amount]);
+  useLayoutEffect(() => {
+    if (fiatSpanRef.current) {
+      setInputWidthFiat(fiatSpanRef.current.offsetWidth + 4);
+    }
+  }, [formik.values.amountUsd]);
 
   const srcAsset = getAssetFromCanonical(asset);
   const parsedSourceAsset = getAssetFromCanonical(formik.values.asset);
@@ -334,11 +352,22 @@ export const SendAmount = ({
                   <div className="SendAmount__amount-input-container">
                     {inputType === "crypto" && (
                       <>
+                        <span
+                          ref={cryptoSpanRef}
+                          className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                          style={{
+                            position: "absolute",
+                            visibility: "hidden",
+                            whiteSpace: "pre",
+                          }}
+                        >
+                          {formik.values.amount || "0"}
+                        </span>
                         <input
                           ref={cryptoInputRef}
                           className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
                           style={{
-                            width: `${formik.values.amount.length + 1 || 5}ch`,
+                            width: `${inputWidthCrypto || DEFAULT_INPUT_WIDTH}px`,
                           }}
                           data-testid="send-amount-amount-input"
                           name="amount"
@@ -382,11 +411,22 @@ export const SendAmount = ({
                         >
                           $
                         </div>
+                        <span
+                          ref={fiatSpanRef}
+                          className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                          style={{
+                            position: "absolute",
+                            visibility: "hidden",
+                            whiteSpace: "pre",
+                          }}
+                        >
+                          {formik.values.amountUsd || "0"}
+                        </span>
                         <input
                           ref={usdInputRef}
                           className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
                           style={{
-                            width: `${formik.values.amountUsd.length || 5}ch`,
+                            width: `${inputWidthFiat || DEFAULT_INPUT_WIDTH}px`,
                           }}
                           data-testid="send-amount-amount-input"
                           name="amountUsd"

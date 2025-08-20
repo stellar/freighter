@@ -121,7 +121,7 @@ export const EnterPassword = ({
                   <div className="EnterPassword__wrapper__formik__buttons">
                     {onCancel && (
                       <Button
-                        size="md"
+                        size="lg"
                         isFullWidth
                         isRounded
                         variant="tertiary"
@@ -132,7 +132,7 @@ export const EnterPassword = ({
                     )}
 
                     <Button
-                      size="md"
+                      size="lg"
                       isFullWidth
                       isRounded
                       variant="secondary"

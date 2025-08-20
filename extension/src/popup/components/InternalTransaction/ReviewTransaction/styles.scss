@@ -38,18 +38,19 @@
   }
 
   &__Details {
-    margin: pxToRem(32px) 0;
-
-    .Card {
-      display: flex;
-      flex-direction: column;
-    }
+    padding: pxToRem(12px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    margin-top: pxToRem(12px);
+    margin-top: pxToRem(24px);
 
     &__Row {
       display: flex;
 
-      &:not(:first-child) {
-        margin-top: pxToRem(12px);
+      &:not(:last-child) {
+        margin-bottom: pxToRem(12px);
+        padding-bottom: pxToRem(12px);
+        border-bottom: 1px solid var(--sds-clr-gray-06);
       }
 
       &__Title {
