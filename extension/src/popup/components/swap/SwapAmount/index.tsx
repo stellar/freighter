@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -54,6 +54,7 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import "./styles.scss";
 
 const defaultSlippage = "1";
+const DEFAULT_INPUT_WIDTH = 25;
 
 interface SwapAmountProps {
   inputType: InputType;
@@ -124,6 +125,12 @@ export const SwapAmount = ({
   const cryptoInputRef = useRef<HTMLInputElement>(null);
   const usdInputRef = useRef<HTMLInputElement>(null);
 
+  const cryptoSpanRef = useRef<HTMLSpanElement>(null);
+  const [inputWidthCrypto, setInputWidthCrypto] = useState(0);
+
+  const fiatSpanRef = useRef<HTMLSpanElement>(null);
+  const [inputWidthFiat, setInputWidthFiat] = useState(0);
+
   const [isEditingSlippage, setIsEditingSlippage] = useState(false);
   const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
@@ -154,6 +161,17 @@ export const SwapAmount = ({
     enableReinitialize: true,
     validateOnChange: true,
   });
+
+  useLayoutEffect(() => {
+    if (cryptoSpanRef.current) {
+      setInputWidthCrypto(cryptoSpanRef.current.offsetWidth + 2);
+    }
+  }, [formik.values.amount]);
+  useLayoutEffect(() => {
+    if (fiatSpanRef.current) {
+      setInputWidthFiat(fiatSpanRef.current.offsetWidth + 4);
+    }
+  }, [formik.values.amountUsd]);
 
   const getAmountFontSize = () => {
     const length = formik.values.amount.length;
@@ -221,10 +239,6 @@ export const SwapAmount = ({
   const sendData = swapAmountData.data!;
   const assetIcon = sendData.icons[asset];
   const dstAssetIcon = sendData.icons[destinationAsset];
-  const assetBalance = findAssetBalance(
-    sendData.userBalances.balances,
-    srcAsset,
-  )!;
   const dstAssetBalance = dstAsset
     ? findAssetBalance(sendData.userBalances.balances, dstAsset)
     : null;
@@ -257,17 +271,17 @@ export const SwapAmount = ({
     : null;
   const supportsUsd =
     isMainnet(swapAmountData.data?.networkDetails!) && assetPrice !== null;
-  const displayTotal = `${formatAmount(assetBalance.total.toString())}`;
-  const dstDisplayTotal =
-    dstAssetBalance && dstAsset
-      ? `${formatAmount(dstAssetBalance.total.toString())}`
-      : "0";
   const availableBalance = getAvailableBalance({
     assetCanonical: asset,
     balances: sendData.userBalances.balances,
     recommendedFee: fee,
     subentryCount: sendData.userBalances.subentryCount,
   });
+  const displayTotal = `${formatAmount(availableBalance)}`;
+  const dstDisplayTotal =
+    dstAssetBalance && dstAsset
+      ? `${formatAmount(dstAssetBalance.total.toString())}`
+      : "0";
   const srcTitle = srcAsset.code;
   const dstTitle = dstAsset?.code;
   const isAmountTooHigh =
@@ -365,11 +379,22 @@ export const SwapAmount = ({
                   <div className="SwapAsset__amount-input-container">
                     {inputType === "crypto" && (
                       <>
+                        <span
+                          ref={cryptoSpanRef}
+                          className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                          style={{
+                            position: "absolute",
+                            visibility: "hidden",
+                            whiteSpace: "pre",
+                          }}
+                        >
+                          {formik.values.amount || "0"}
+                        </span>
                         <input
                           ref={cryptoInputRef}
                           className={`SwapAsset__input-amount SwapAsset__${getAmountFontSize()}`}
                           style={{
-                            width: `${formik.values.amount.length + 1 || 5}ch`,
+                            width: `${inputWidthCrypto || DEFAULT_INPUT_WIDTH}px`,
                           }}
                           data-testid="send-amount-amount-input"
                           name="amount"
@@ -413,11 +438,22 @@ export const SwapAmount = ({
                         >
                           $
                         </div>
+                        <span
+                          ref={fiatSpanRef}
+                          className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                          style={{
+                            position: "absolute",
+                            visibility: "hidden",
+                            whiteSpace: "pre",
+                          }}
+                        >
+                          {formik.values.amountUsd || "0"}
+                        </span>
                         <input
                           ref={usdInputRef}
                           className={`SwapAsset__input-amount SwapAsset__${getAmountFontSize()}`}
                           style={{
-                            width: `${formik.values.amountUsd.length || 5}ch`,
+                            width: `${inputWidthFiat || DEFAULT_INPUT_WIDTH}px`,
                           }}
                           data-testid="send-amount-amount-input"
                           name="amountUsd"

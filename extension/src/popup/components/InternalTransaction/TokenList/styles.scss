@@ -19,6 +19,16 @@
     flex-direction: column;
     margin-top: pxToRem(32px);
 
+    &__empty {
+      display: flex;
+      justify-content: center;
+      height: 100%;
+      width: 100%;
+      color: var(--clr-text-secondary);
+      text-align: center;
+      font-size: pxToRem(12px);
+    }
+
     &__Header {
       display: flex;
       align-items: center;

@@ -130,14 +130,14 @@ export const EditSettings = ({
                 <div className="EditTxSettings__actions">
                   <Button
                     type="button"
-                    size="md"
+                    size="lg"
                     isRounded
                     variant="tertiary"
                     onClick={onClose}
                   >
                     {t("Cancel")}
                   </Button>
-                  <Button type="submit" size="md" isRounded variant="secondary">
+                  <Button type="submit" size="lg" isRounded variant="secondary">
                     {t("Save")}
                   </Button>
                 </div>
