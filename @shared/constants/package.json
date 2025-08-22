@@ -3,8 +3,8 @@
   "prettier": "../../.prettierrc.yaml",
   "version": "1.0.0",
   "dependencies": {
-    "stellar-sdk": "yarn:@stellar/stellar-sdk@13.0.0-beta.1",
-    "stellar-sdk-next": "yarn:@stellar/stellar-sdk@13.0.0-beta.1",
+    "stellar-sdk": "yarn:@stellar/stellar-sdk@14.0.0-rc.3",
+    "stellar-sdk-next": "yarn:@stellar/stellar-sdk@14.0.0-rc.3",
     "typescript": "5.8.3"
   },
   "devDependencies": {

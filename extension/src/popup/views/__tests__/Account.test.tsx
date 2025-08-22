@@ -162,7 +162,7 @@ jest.mock("stellar-sdk", () => {
       },
       HorizonApi: original.Horizon.HorizonApi,
     },
-    SorobanRpc: original.SorobanRpc,
+    rpc: original.rpc,
     TransactionBuilder: original.TransactionBuilder,
   };
 });

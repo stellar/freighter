@@ -1,7 +1,8 @@
 import React from "react";
-// @ts-ignore
-import { generateMnemonic } from "stellar-hd-wallet";
+import StellarHDWallet from "stellar-hd-wallet";
 import random from "lodash/random";
+
+const { generateMnemonic } = StellarHDWallet;
 
 import "./styles.scss";
 

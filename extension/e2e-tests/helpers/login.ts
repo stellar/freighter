@@ -1,5 +1,7 @@
-import { generateMnemonic } from "stellar-hd-wallet";
+import StellarHDWallet from "stellar-hd-wallet";
 import { expect } from "../test-fixtures";
+
+const { generateMnemonic } = StellarHDWallet;
 
 export const PASSWORD = "My-password123";
 

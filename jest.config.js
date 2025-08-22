@@ -1,4 +1,4 @@
-const esModules = ["@stellar/design-system"];
+const esModules = ["@stellar/design-system", "stellar-hd-wallet"];
 
 const jsdomTests = {
   rootDir: __dirname,

@@ -106,7 +106,7 @@ export const migrateTokenIdList = async () => {
   const tokenIdsByKey = await localStore.getItem(TOKEN_ID_LIST);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "1.0.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "1.0.0" })) {
     if (Array.isArray(tokenIdsByKey)) {
       const newTokenList = {
         [NETWORKS.FUTURENET]: tokenIdsByKey,
@@ -122,28 +122,32 @@ export const migrateTestnetSorobanRpcUrlNetworkDetails = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "2.0.0")) {
-    const networksList: NetworkDetails[] =
-      (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
+  if (shouldRunMigration({ storageVersion, migrationVersion: "2.0.0" })) {
+    try {
+      const networksList: NetworkDetails[] =
+        (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
-    const migratedNetworkList = networksList.map((network) => {
-      if (network.network === NETWORKS.TESTNET) {
-        return {
-          ...TESTNET_NETWORK_DETAILS,
-          sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.TESTNET],
-        };
+      const migratedNetworkList = networksList.map((network) => {
+        if (network.network === NETWORKS.TESTNET) {
+          return {
+            ...TESTNET_NETWORK_DETAILS,
+            sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.TESTNET],
+          };
+        }
+
+        return network;
+      });
+
+      const currentNetwork = await localStore.getItem(NETWORK_ID);
+
+      if (currentNetwork && currentNetwork.network === NETWORKS.TESTNET) {
+        await localStore.setItem(NETWORK_ID, TESTNET_NETWORK_DETAILS);
       }
 
-      return network;
-    });
-
-    const currentNetwork = await localStore.getItem(NETWORK_ID);
-
-    if (currentNetwork && currentNetwork.network === NETWORKS.TESTNET) {
-      await localStore.setItem(NETWORK_ID, TESTNET_NETWORK_DETAILS);
+      await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+    } catch (error) {
+      await localStore.setItem(NETWORKS_LIST_ID, DEFAULT_NETWORKS);
     }
-
-    await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
     await migrateDataStorageVersion("2.0.0");
   }
 };
@@ -153,7 +157,7 @@ export const migrateToAccountSubscriptions = async () => {
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   // we only want to run this once per user
-  if (!storageVersion || semver.eq(storageVersion, "3.0.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "3.0.0" })) {
     // once account is unlocked, setup Mercury account subscription if !HAS_ACCOUNT_SUBSCRIPTION
     await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, {});
   }
@@ -163,28 +167,32 @@ export const migrateMainnetSorobanRpcUrlNetworkDetails = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.0.0")) {
-    const networksList: NetworkDetails[] =
-      (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.0.0" })) {
+    try {
+      const networksList: NetworkDetails[] =
+        (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
 
-    const migratedNetworkList = networksList.map((network) => {
-      if (network.network === NETWORKS.PUBLIC) {
-        return {
-          ...MAINNET_NETWORK_DETAILS,
-          sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.PUBLIC],
-        };
+      const migratedNetworkList = networksList.map((network) => {
+        if (network.network === NETWORKS.PUBLIC) {
+          return {
+            ...MAINNET_NETWORK_DETAILS,
+            sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.PUBLIC],
+          };
+        }
+
+        return network;
+      });
+
+      const currentNetwork = await localStore.getItem(NETWORK_ID);
+
+      if (currentNetwork && currentNetwork.network === NETWORKS.PUBLIC) {
+        await localStore.setItem(NETWORK_ID, MAINNET_NETWORK_DETAILS);
       }
 
-      return network;
-    });
-
-    const currentNetwork = await localStore.getItem(NETWORK_ID);
-
-    if (currentNetwork && currentNetwork.network === NETWORKS.PUBLIC) {
-      await localStore.setItem(NETWORK_ID, MAINNET_NETWORK_DETAILS);
+      await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+    } catch (error) {
+      await localStore.setItem(NETWORKS_LIST_ID, DEFAULT_NETWORKS);
     }
-
-    await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
     await migrateDataStorageVersion("4.0.0");
   }
 };
@@ -193,7 +201,7 @@ export const migrateSorobanRpcUrlNetwork = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.0.1")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.0.1" })) {
     // an edge case exists in `migrateSorobanRpcUrlNetworkDetails` where we may have updated the `networksList` in storage,
     // but not the `network`, which is the current active network,
     // If a user has Futurenet selected by default, they will not have sorobanRpcUrl set
@@ -215,7 +223,7 @@ export const resetAccountSubscriptions = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.eq(storageVersion, "4.0.2")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.0.2" })) {
     // once account is unlocked, setup Mercury account subscription if !HAS_ACCOUNT_SUBSCRIPTION
     await localStore.setItem(HAS_ACCOUNT_SUBSCRIPTION, {});
     await migrateDataStorageVersion("4.0.2");
@@ -226,7 +234,7 @@ export const addAssetsLists = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.1.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.1.0" })) {
     // add the base asset lists
     await localStore.setItem(ASSETS_LISTS_ID, DEFAULT_ASSETS_LISTS);
     await migrateDataStorageVersion("4.1.0");
@@ -237,7 +245,7 @@ export const addIsHashSigningEnabled = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.1.1")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.1.1" })) {
     // add the base asset lists
     await localStore.setItem(IS_HASH_SIGNING_ENABLED_ID, false);
     await migrateDataStorageVersion("4.1.1");
@@ -248,7 +256,7 @@ export const addIsNonSSLEnabled = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.2.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.2.0" })) {
     await localStore.setItem(IS_NON_SSL_ENABLED_ID, false);
     await migrateDataStorageVersion("4.2.0");
   }
@@ -258,7 +266,7 @@ export const removeStellarExpertData = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.3.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.3.0" })) {
     await localStore.remove([
       "cachedBlockedAccountsId",
       "cachedBlockedAccountsId_date",
@@ -273,7 +281,7 @@ export const addHideDustIsEnabled = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.4.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.4.0" })) {
     await localStore.setItem(IS_HIDE_DUST_ENABLED_ID, true);
 
     await migrateDataStorageVersion("4.4.0");
@@ -284,7 +292,7 @@ export const addBlockaidAnnouncedIsEnabled = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.5.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.5.0" })) {
     await localStore.setItem(IS_BLOCKAID_ANNOUNCED_ID, false);
 
     await migrateDataStorageVersion("4.5.0");
@@ -295,22 +303,30 @@ export const migrateAllowlistToKeyNetworkSchema = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
-  if (!storageVersion || semver.lt(storageVersion, "4.6.0")) {
+  if (shouldRunMigration({ storageVersion, migrationVersion: "4.6.0" })) {
     const currentAllowlist = await localStore.getItem(ALLOWLIST_ID);
     const lastUsedAccount = await localStore.getItem(LAST_USED_ACCOUNT);
     let allowlistByKey = {};
 
-    if (currentAllowlist && lastUsedAccount) {
-      const allowlistArr = currentAllowlist.split(",").slice(1);
+    try {
+      if (currentAllowlist && lastUsedAccount) {
+        const allowlistArr = currentAllowlist.split(",").slice(1);
 
-      allowlistByKey = {
-        [NETWORK_NAMES.PUBNET]: {},
-        [NETWORK_NAMES.TESTNET]: {
-          [lastUsedAccount]: allowlistArr,
-        },
-        [NETWORK_NAMES.FUTURENET]: {},
-      };
-    } else {
+        allowlistByKey = {
+          [NETWORK_NAMES.PUBNET]: {},
+          [NETWORK_NAMES.TESTNET]: {
+            [lastUsedAccount]: allowlistArr,
+          },
+          [NETWORK_NAMES.FUTURENET]: {},
+        };
+      } else {
+        allowlistByKey = {
+          [NETWORK_NAMES.PUBNET]: {},
+          [NETWORK_NAMES.TESTNET]: {},
+          [NETWORK_NAMES.FUTURENET]: {},
+        };
+      }
+    } catch (error) {
       allowlistByKey = {
         [NETWORK_NAMES.PUBNET]: {},
         [NETWORK_NAMES.TESTNET]: {},
@@ -321,6 +337,43 @@ export const migrateAllowlistToKeyNetworkSchema = async () => {
     await localStore.setItem(ALLOWLIST_ID, allowlistByKey);
 
     await migrateDataStorageVersion("4.6.0");
+  }
+};
+
+export const migratePubnetRpcUrl = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (shouldRunMigration({ storageVersion, migrationVersion: "5.33.5" })) {
+    try {
+      const networksList: NetworkDetails[] =
+        (await localStore.getItem(NETWORKS_LIST_ID)) || DEFAULT_NETWORKS;
+
+      const migratedNetworkList = networksList.map((network) => {
+        if (network.network === NETWORKS.PUBLIC) {
+          return {
+            ...MAINNET_NETWORK_DETAILS,
+            sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.PUBLIC],
+          };
+        }
+
+        return network;
+      });
+
+      const currentNetwork = await localStore.getItem(NETWORK_ID);
+
+      if (currentNetwork && currentNetwork.network === NETWORKS.PUBLIC) {
+        await localStore.setItem(NETWORK_ID, {
+          ...MAINNET_NETWORK_DETAILS,
+          sorobanRpcUrl: SOROBAN_RPC_URLS[NETWORKS.PUBLIC],
+        });
+      }
+
+      await localStore.setItem(NETWORKS_LIST_ID, migratedNetworkList);
+    } catch (error) {
+      await localStore.setItem(NETWORKS_LIST_ID, DEFAULT_NETWORKS);
+    }
+    await migrateDataStorageVersion("5.33.5");
   }
 };
 
@@ -338,6 +391,7 @@ export const versionedMigration = async () => {
   await addIsNonSSLEnabled();
   await removeStellarExpertData();
   await migrateAllowlistToKeyNetworkSchema();
+  await migratePubnetRpcUrl();
 };
 
 // Updates storage version
@@ -346,4 +400,21 @@ export const migrateDataStorageVersion = async (version: string) => {
 
   // This value should be manually updated when a new schema change is made
   await localStore.setItem(STORAGE_VERSION, version);
+};
+
+const shouldRunMigration = ({
+  storageVersion,
+  migrationVersion,
+}: {
+  storageVersion: string;
+  migrationVersion: string;
+}) => {
+  try {
+    if (!storageVersion || semver.lt(storageVersion, migrationVersion)) {
+      return true;
+    }
+    return false;
+  } catch (error) {
+    return true;
+  }
 };

@@ -155,7 +155,7 @@ export const addressToString = (address: xdr.ScAddress) => {
   if (address.switch().name === "scAddressTypeAccount") {
     return StrKey.encodeEd25519PublicKey(address.accountId().ed25519());
   }
-  return StrKey.encodeContract(address.contractId());
+  return StrKey.encodeContract(address.contractId() as any);
 };
 
 export const getArgsForTokenInvocation = (
@@ -202,7 +202,7 @@ export const getTokenInvocationArgs = (
   }
 
   const contractId = StrKey.encodeContract(
-    invokedContract.contractAddress().contractId(),
+    invokedContract.contractAddress().contractId() as any,
   );
   const fnName = invokedContract.functionName().toString();
   const args = invokedContract.args();
@@ -358,7 +358,7 @@ export const scValByType = (scVal: xdr.ScVal) => {
       if (addressType.name === "scAddressTypeAccount") {
         return StrKey.encodeEd25519PublicKey(address.accountId().ed25519());
       }
-      return StrKey.encodeContract(address.contractId());
+      return StrKey.encodeContract(address.contractId() as any);
     }
 
     case xdr.ScValType.scvBool(): {
@@ -486,7 +486,7 @@ export function getInvocationArgs(
     case 0: {
       const _invocation = fn.contractFn();
       const contractId = StrKey.encodeContract(
-        _invocation.contractAddress().contractId(),
+        _invocation.contractAddress().contractId() as any,
       );
       const fnName = _invocation.functionName().toString();
       const args = _invocation.args();

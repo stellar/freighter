@@ -143,7 +143,7 @@ export const ReviewTx = ({
                         </span>
                         {isMainnet(networkDetails) && sendPriceUsd && (
                           <span className="ReviewTx__SendAssetDetails__price">
-                            {`$ ${sendPriceUsd}`}
+                            {`$${sendPriceUsd}`}
                           </span>
                         )}
                       </div>
@@ -169,9 +169,9 @@ export const ReviewTx = ({
                             <span>
                               {dstAsset.amount} {dest.code}
                             </span>
-                            {isMainnet(networkDetails) && (
+                            {isMainnet(networkDetails) && dstAsset.priceUsd && (
                               <span className="ReviewTx__SendAssetDetails__price">
-                                {`$ ${dstAsset.priceUsd}`}
+                                {`$${dstAsset.priceUsd}`}
                               </span>
                             )}
                           </div>

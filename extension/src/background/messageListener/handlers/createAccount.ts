@@ -1,7 +1,6 @@
 import { Store } from "redux";
 import { captureException } from "@sentry/browser";
-// @ts-ignore
-import { fromMnemonic, generateMnemonic } from "stellar-hd-wallet";
+import StellarHDWallet from "stellar-hd-wallet";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 
 import { CreateAccountMessage } from "@shared/api/types/message-request";
@@ -19,6 +18,8 @@ import {
   buildHasPrivateKeySelector,
   publicKeySelector,
 } from "background/ducks/session";
+
+const { fromMnemonic, generateMnemonic } = StellarHDWallet;
 
 export const createAccount = async ({
   request,

@@ -805,7 +805,7 @@ export const Operations = ({
             case xdr.HostFunctionType.hostFunctionTypeInvokeContract(): {
               const invocation = hostfn.invokeContract();
               const contractId = StrKey.encodeContract(
-                invocation.contractAddress().contractId(),
+                invocation.contractAddress().toXDR(),
               );
               const fnName = invocation.functionName().toString();
               const args = invocation.args();

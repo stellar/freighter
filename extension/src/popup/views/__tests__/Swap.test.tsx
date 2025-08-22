@@ -131,6 +131,7 @@ jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() =>
 jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => ({
   recommendedFee: "0.00001",
   networkCongestion: UseNetworkFees.NetworkCongestion.MEDIUM,
+  fetchData: () => Promise.resolve({ recommendedFee: "00.1" }),
 }));
 
 jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
@@ -223,7 +224,7 @@ jest.mock("stellar-sdk", () => {
         }
       },
     },
-    SorobanRpc: original.SorobanRpc,
+    rpc: original.rpc,
   };
 });
 

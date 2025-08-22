@@ -1,7 +1,7 @@
 import { captureException } from "@sentry/browser";
 import {
   Address,
-  SorobanRpc,
+  rpc as SorobanRpc,
   Networks,
   Horizon,
   FeeBumpTransaction,
@@ -1336,7 +1336,7 @@ export const submitFreighterSorobanTransaction = async ({
 
   const serverUrl = networkDetails.sorobanRpcUrl || "";
 
-  const server = new Sdk.SorobanRpc.Server(serverUrl, {
+  const server = new Sdk.rpc.Server(serverUrl, {
     allowHttp: !serverUrl.startsWith("https"),
   });
 
