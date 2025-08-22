@@ -114,7 +114,7 @@ test("Adding token on Futurenet", async ({ page, extensionId, context }) => {
 
   await expect(page.getByText("Your assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });
-  await expect(page.getByTestId("search-asset-input")).toBeVisible();
+  await expect(page.getByTestId("search-token-input")).toBeVisible();
 });
 test.afterAll(async ({ page, extensionId }) => {
   if (
