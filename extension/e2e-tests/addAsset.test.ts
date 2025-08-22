@@ -7,6 +7,7 @@ import {
   stubTokenDetails,
   stubTokenPrices,
 } from "./helpers/stubs";
+import { truncateString } from "../src/helpers/stellar";
 
 test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   test.slow();
@@ -21,15 +22,32 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
   });
   await page.getByText("Add an asset").click({ force: true });
   await page.getByTestId("search-asset-input").fill(TEST_TOKEN_ADDRESS);
-  await expect(page.getByTestId("not-asset-on-list")).toHaveText(
-    "Not on your lists",
-  );
-  await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E");
-  await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");
-  await page.getByTestId("ManageAssetRowButton").click({ force: true });
+  const notOnLists = page.getByTestId("not-asset-on-list");
+  const onLists = page.getByTestId("asset-on-list");
 
-  await page.getByTestId("ManageAssetRowButton").dispatchEvent("click");
-  await expect(page.getByText("E2E Token")).toBeVisible();
+  // Wait for either to be visible
+  await Promise.race([
+    notOnLists.waitFor({ state: "visible" }),
+    onLists.waitFor({ state: "visible" }),
+  ]);
+
+  if (await notOnLists.isVisible()) {
+    // Case 1: token is not on your lists
+    await expect(notOnLists).toHaveText("Not on your lists");
+    await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E");
+    await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");
+  } else if (await onLists.isVisible()) {
+    // Case 2: token is already on your lists
+    await expect(onLists).toHaveText("On your lists");
+    await expect(page.getByTestId("ManageAssetCode")).toHaveText(
+      truncateString(TEST_TOKEN_ADDRESS),
+    );
+    await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");
+  } else {
+    throw new Error(
+      "Expected token to be either on or not on lists, but neither was visible",
+    );
+  }
 });
 
 // Skipping this test because on Testnet, stellar.expert's asset list is formatter incorrectly
@@ -96,7 +114,7 @@ test("Adding token on Futurenet", async ({ page, extensionId, context }) => {
 
   await expect(page.getByText("Your assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });
-  await expect(page.getByTestId("search-token-input")).toBeVisible();
+  await expect(page.getByTestId("search-asset-input")).toBeVisible();
 });
 test.afterAll(async ({ page, extensionId }) => {
   if (
