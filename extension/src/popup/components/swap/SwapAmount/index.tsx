@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -125,11 +125,21 @@ export const SwapAmount = ({
   const cryptoInputRef = useRef<HTMLInputElement>(null);
   const usdInputRef = useRef<HTMLInputElement>(null);
 
-  const cryptoSpanRef = useRef<HTMLSpanElement>(null);
   const [inputWidthCrypto, setInputWidthCrypto] = useState(0);
+  const setCryptoSpan = (el: HTMLSpanElement | null) => {
+    if (el) {
+      const width = el.offsetWidth + 4;
+      setInputWidthCrypto(Math.max(DEFAULT_INPUT_WIDTH, width));
+    }
+  };
 
-  const fiatSpanRef = useRef<HTMLSpanElement>(null);
   const [inputWidthFiat, setInputWidthFiat] = useState(0);
+  const setFiatSpan = (el: HTMLSpanElement | null) => {
+    if (el) {
+      const width = el.offsetWidth + 2;
+      setInputWidthFiat(Math.max(DEFAULT_INPUT_WIDTH, width));
+    }
+  };
 
   const [isEditingSlippage, setIsEditingSlippage] = useState(false);
   const [isEditingSettings, setIsEditingSettings] = useState(false);
@@ -161,17 +171,6 @@ export const SwapAmount = ({
     enableReinitialize: true,
     validateOnChange: true,
   });
-
-  useLayoutEffect(() => {
-    if (cryptoSpanRef.current) {
-      setInputWidthCrypto(cryptoSpanRef.current.offsetWidth + 2);
-    }
-  }, [formik.values.amount]);
-  useLayoutEffect(() => {
-    if (fiatSpanRef.current) {
-      setInputWidthFiat(fiatSpanRef.current.offsetWidth + 4);
-    }
-  }, [formik.values.amountUsd]);
 
   const getAmountFontSize = () => {
     const length = formik.values.amount.length;
@@ -380,7 +379,7 @@ export const SwapAmount = ({
                     {inputType === "crypto" && (
                       <>
                         <span
-                          ref={cryptoSpanRef}
+                          ref={setCryptoSpan}
                           className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
                           style={{
                             position: "absolute",
@@ -439,7 +438,7 @@ export const SwapAmount = ({
                           $
                         </div>
                         <span
-                          ref={fiatSpanRef}
+                          ref={setFiatSpan}
                           className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
                           style={{
                             position: "absolute",
