@@ -59,18 +59,17 @@ import { LeaveFeedback } from "popup/views/LeaveFeedback";
 import { AccountMigration } from "popup/views/AccountMigration";
 import { AddFunds } from "popup/views/AddFunds";
 import { Discover } from "popup/views/Discover";
+import { Wallets } from "popup/views/Wallets";
 
-import "popup/metrics/views";
 import { DEV_SERVER } from "@shared/constants/services";
 import { SettingsState } from "@shared/api/types";
 
 import { SignMessage } from "./views/SignMessage";
-import { ReviewAuth } from "./views/ReviewAuth";
 
 import { View } from "./basics/layout/View";
-import { BottomNav } from "./components/BottomNav";
-import { useIsSwap } from "./helpers/useIsSwap";
 import { AppDispatch } from "./App";
+
+import "popup/metrics/views";
 
 /*
 We don't know if the user is missing their public key because
@@ -126,14 +125,6 @@ const RouteListener = () => {
   return null;
 };
 
-const SHOW_NAV_ROUTES = [
-  ROUTES.account,
-  ROUTES.accountHistory,
-  ROUTES.settings,
-  ROUTES.connectWallet,
-  ROUTES.connectWalletPlugin,
-];
-
 const NO_APP_LAYOUT_ROUTES = [
   ROUTES.mnemonicPhrase,
   ROUTES.mnemonicPhraseConfirmed,
@@ -146,17 +137,9 @@ const NO_APP_LAYOUT_ROUTES = [
 
 const Layout = () => {
   const location = useLocation();
-  const isSwap = useIsSwap();
 
   const applicationState = useSelector(applicationStateSelector);
   const error = useSelector(authErrorSelector);
-
-  const showNav =
-    location.pathname &&
-    ((location.pathname === ROUTES.welcome &&
-      applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED) ||
-      SHOW_NAV_ROUTES.some((route) => location.pathname === route) ||
-      (isSwap && location.pathname !== ROUTES.unlockAccount));
 
   const isAppLayout = NO_APP_LAYOUT_ROUTES.every(
     (route) => route !== location.pathname,
@@ -169,7 +152,6 @@ const Layout = () => {
   return (
     <View isAppLayout={isAppLayout}>
       <Outlet />
-      {showNav && <BottomNav />}
     </View>
   );
 };
@@ -200,10 +182,6 @@ export const Router = () => (
         <Route
           path={ROUTES.signTransaction}
           element={<SignTransaction />}
-        ></Route>
-        <Route
-          path={ROUTES.reviewAuthorization}
-          element={<ReviewAuth />}
         ></Route>
         <Route path={ROUTES.signAuthEntry} element={<SignAuthEntry />}></Route>
         <Route path={ROUTES.signMessage} element={<SignMessage />}></Route>
@@ -278,6 +256,7 @@ export const Router = () => (
         ></Route>
         <Route path={ROUTES.addFunds} element={<AddFunds />} />
         <Route path={ROUTES.discover} element={<Discover />} />
+        <Route path={ROUTES.wallets} element={<Wallets />} />
 
         {DEV_SERVER && (
           <>

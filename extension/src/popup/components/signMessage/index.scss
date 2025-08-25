@@ -1,6 +1,18 @@
-.Message {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  margin-bottom: 1.5rem;
+@use "../../styles/utils.scss" as *;
+
+.SignMessageData {
+  &:not(:first-child) {
+    margin-top: pxToRem(12px);
+  }
+
+  .Message {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    min-height: pxToRem(200px);
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-11);
+  }
 }

@@ -36,6 +36,7 @@ export const DisplayMnemonicPhrase = ({
         size="md"
         data-testid="display-mnemonic-phrase-next-btn"
         isFullWidth
+        isRounded
         variant="secondary"
         onClick={() => {
           setIsConfirmed(true);

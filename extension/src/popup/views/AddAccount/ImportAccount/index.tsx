@@ -134,8 +134,9 @@ export const ImportAccount = () => {
             </View.Content>
             <View.Footer isInline>
               <Button
-                size="md"
+                size="lg"
                 isFullWidth
+                isRounded
                 variant="secondary"
                 onClick={() => navigateTo(ROUTES.account, navigate)}
               >
@@ -143,8 +144,9 @@ export const ImportAccount = () => {
               </Button>
               <Button
                 data-testid="import-account-button"
-                size="md"
+                size="lg"
                 isFullWidth
+                isRounded
                 variant="primary"
                 type="submit"
                 isLoading={isSubmitting}

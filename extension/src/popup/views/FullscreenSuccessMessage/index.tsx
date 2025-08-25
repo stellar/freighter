@@ -8,7 +8,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { Onboarding, OnboardingModal } from "popup/components/Onboarding";
 import { View } from "popup/basics/layout/View";
 
-import LogoWelcome from "popup/assets/logo-freighter-welcome.svg";
+import LogoWelcome from "popup/assets/logo-freighter-welcome-2.svg";
 
 import "./styles.scss";
 

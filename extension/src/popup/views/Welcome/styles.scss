@@ -38,7 +38,13 @@
 
   &__row-screen {
     display: flex;
+    flex-direction: column;
     justify-content: center;
+    align-items: center;
     gap: 0.75rem;
+
+    .Button {
+      width: pxToRem(320px);
+    }
   }
 }

@@ -104,6 +104,12 @@ a {
   }
 }
 
+.Loader * {
+  cursor: none;
+  pointer-events: none;
+  user-select: none;
+}
+
 // TODO: fix in SDS
 .sds-theme-light p,
 .sds-theme-light ul,

@@ -106,6 +106,7 @@ interface DomainScanModalInfoProps {
   subject: string;
   isMalicious: boolean;
   scanStatus: "hit" | "miss";
+  onClick: () => void;
 }
 
 export const DomainScanModalInfo = ({
@@ -114,9 +115,10 @@ export const DomainScanModalInfo = ({
   subject,
   isMalicious,
   scanStatus,
+  onClick,
 }: DomainScanModalInfoProps) => (
-  <div className="ModalInfo--card">
-    <Card variant="secondary">
+  <div className="ModalInfo--card GrantAccess">
+    <>
       <PunycodedDomain domain={domain} />
       <div className="ModalInfo--connection-request">
         <div className="ModalInfo--connection-request-pill">
@@ -124,9 +126,15 @@ export const DomainScanModalInfo = ({
           <p>Connection Request</p>
         </div>
       </div>
-      <BlockAidSiteScanLabel isMalicious={isMalicious} status={scanStatus} />
+      <div className="ModalInfo--connection-request-scan-label">
+        <BlockAidSiteScanLabel
+          isMalicious={isMalicious}
+          status={scanStatus}
+          onClick={onClick}
+        />
+      </div>
       <div className="ModalInfo--subject">{subject}</div>
       {children}
-    </Card>
+    </>
   </div>
 );

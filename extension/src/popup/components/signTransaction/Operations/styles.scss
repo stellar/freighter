@@ -1,22 +1,27 @@
+@use "../../../styles/utils.scss" as *;
+
 .Operations {
   display: flex;
   flex-direction: column;
-  margin-bottom: 1.5rem;
-
-  &--wrapper {
-    margin-bottom: 1.5rem;
-  }
 
   &--header {
     display: flex;
     align-items: center;
-    color: var(--sds-clr-gray-12);
+    color: var(--sds-clr-gray-11);
     line-height: 1.5rem;
     margin-bottom: 0.5rem;
+
+    &:not(:first-child) {
+      margin-top: pxToRem(24px);
+    }
 
     .OpType {
       font-weight: 600;
       margin-left: 0.5rem;
+    }
+
+    svg {
+      margin-right: pxToRem(8px);
     }
   }
 
@@ -24,6 +29,13 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    padding: pxToRem(12px) pxToRem(12px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+
+    &:not(:first-child) {
+      margin-top: pxToRem(12px);
+    }
 
     & > .Operations__pair {
       align-items: center;
@@ -31,16 +43,40 @@
       display: flex;
       line-height: 1.5rem;
 
+      &:not(:last-child) {
+        margin-bottom: pxToRem(12px);
+        padding-bottom: pxToRem(12px);
+        border-bottom: 1px solid var(--sds-clr-gray-06);
+      }
+
       & > .Operations__pair--key {
-        width: 200px;
+        flex: 2;
         text-overflow: ellipsis;
+        color: var(--sds-clr-gray-11);
       }
 
       & > .Operations__pair--value {
-        width: 200px;
-        flex-grow: 1;
+        flex: 2;
+        min-width: 0;
         display: flex;
         justify-content: flex-end;
+        align-items: center;
+        text-align: right;
+
+        .Operations__pair--value-text {
+          display: block;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          min-width: 0;
+          max-width: 100%;
+        }
+
+        .CopyValue {
+          svg {
+            color: var(--sds-clr-gray-09);
+          }
+        }
       }
 
       &--invoke {
@@ -64,6 +100,10 @@
         color: var(--sds-clr-gray-12);
       }
     }
+  }
+
+  &--wrapper {
+    margin-top: pxToRem(16px);
   }
 
   &__scValue {

@@ -246,7 +246,7 @@ export const ModifyAssetList = ({
 
   return (
     <>
-      <SubviewHeader title="Add Asset List" />
+      <SubviewHeader title={isEditing ? "Manage List" : "Add Asset List"} />
       <View.Content hasNoTopPadding>
         <Formik
           initialValues={{
@@ -268,9 +268,9 @@ export const ModifyAssetList = ({
                 />
               ) : null}
               <div>
-                <label className="ModifyAssetList__label">
+                <span className="ModifyAssetList__label">
                   {t("Enter a Stellar Asset List compatible URL")}
-                </label>
+                </span>
                 <div className="ModifyAssetList__input">
                   <Field name="assetList">
                     {({ field }: FieldProps) => (
@@ -291,6 +291,7 @@ export const ModifyAssetList = ({
               <Button
                 size="md"
                 isFullWidth
+                isRounded
                 variant="tertiary"
                 isLoading={isFetchingAssetList}
                 disabled={!isValid || isDefaultAssetList}
@@ -300,25 +301,16 @@ export const ModifyAssetList = ({
               </Button>
               <div className="ModifyAssetList__results">
                 {Object.keys(assetListInfo).length ? (
-                  <>
-                    <div className="ModifyAssetList__info">
-                      <div className="AddAssetList__info__name">
-                        {assetListInfo.name}
+                  <div className="ModifyAssetList__info">
+                    <div className="ModifyAssetList__info__title-row">
+                      <div>
+                        <div className="ModifyAssetList__info__name">
+                          {assetListInfo.name}
+                        </div>
+                        <div className="ModifyAssetList__info__provider">
+                          {t("by")} {assetListInfo.provider}
+                        </div>
                       </div>
-                      <div className="ModifyAssetList__info__provider">
-                        {t("by")} {assetListInfo.provider}
-                      </div>
-                      <div className="ModifyAssetList__info__description">
-                        {assetListInfo.description}
-                      </div>
-                    </div>
-                    <div className="ModifyAssetList__enable">
-                      <label
-                        htmlFor="isEnabled"
-                        className="ModifyAssetList__enable__label"
-                      >
-                        {t("Enable this list")}
-                      </label>
                       <Toggle
                         checked={assetListInfo.isEnabled}
                         id="isEnabled"
@@ -328,7 +320,10 @@ export const ModifyAssetList = ({
                         }
                       />
                     </div>
-                  </>
+                    <div className="ModifyAssetList__info__description">
+                      {assetListInfo.description}
+                    </div>
+                  </div>
                 ) : null}
                 {fetchErrorString ? (
                   <View.Inset hasScrollShadow>
@@ -353,7 +348,7 @@ export const ModifyAssetList = ({
                   isLoading={isSubmitting}
                   disabled={isDefaultAssetList}
                 >
-                  {t("Delete")}
+                  {t("Remove List")}
                 </Button>
               ) : (
                 <Button

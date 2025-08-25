@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch } from "popup/App";
-import { signTransaction, rejectTransaction } from "popup/ducks/access";
+import { AsyncThunk } from "@reduxjs/toolkit";
+
+import { AppDispatch, AppState } from "popup/App";
+import { rejectTransaction } from "popup/ducks/access";
 
 import {
   confirmPassword,
@@ -17,10 +19,13 @@ import {
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
-export function useSetupSigningFlow(
+type AppThunk<Arg = void> = AsyncThunk<void, Arg, { state: AppState }>;
+
+export function useSetupSigningFlow<Arg = void>(
   reject: typeof rejectTransaction,
-  signFn: typeof signTransaction,
+  signFn: AppThunk<Arg>,
   transactionXdr: string,
+  apiVersion?: string,
 ) {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
@@ -48,7 +53,7 @@ export function useSetupSigningFlow(
       );
       setStartedHwSign(true);
     } else {
-      await dispatch(signFn());
+      await dispatch(signFn({ apiVersion } as Arg));
       await emitMetric(METRIC_NAMES.approveSign);
       window.close();
     }

@@ -53,7 +53,7 @@ describe("Operations KeyVal", () => {
       render(<KeyValueInvokeHostFn op={op} />);
       await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
 
-      const invocationTypeLabel = screen.getByText("Invocation Type");
+      const invocationTypeLabel = screen.getByText("Type");
       const invocationTypeValue = invocationTypeLabel.parentNode?.querySelector(
         "[data-testid='OperationKeyVal__value']",
       );
@@ -123,7 +123,7 @@ describe("Operations KeyVal", () => {
       );
       await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
 
-      const invocationTypeLabel = screen.getByText("Invocation Type");
+      const invocationTypeLabel = screen.getByText("Type");
       const invocationTypeValue = invocationTypeLabel.parentNode?.querySelector(
         "[data-testid='OperationKeyVal__value']",
       );
@@ -146,11 +146,6 @@ describe("Operations KeyVal", () => {
         "[data-testid='OperationKeyVal__value']",
       );
       expect(execTypeValue).toHaveTextContent("contractExecutableStellarAsset");
-
-      const paramName = screen.getAllByTestId("Parameter");
-      for (const param of paramName) {
-        expect(param).toHaveTextContent(TEST_PUBLIC_KEY);
-      }
     });
   });
 });

@@ -12,6 +12,8 @@ export const getManageAssetXDR = async ({
   server,
   recommendedFee,
   networkDetails,
+  timeout = 180,
+  memo,
 }: {
   publicKey: string;
   assetCode: string;
@@ -20,13 +22,15 @@ export const getManageAssetXDR = async ({
   server: StellarSdk.Horizon.Server | StellarSdkNext.Horizon.Server;
   recommendedFee: string;
   networkDetails: NetworkDetails;
+  timeout?: number;
+  memo?: string;
 }) => {
   const changeParams = addTrustline ? {} : { limit: "0" };
   const sourceAccount: StellarSdk.Account = await server.loadAccount(publicKey);
 
   const Sdk = getSdk(networkDetails.networkPassphrase);
 
-  return new Sdk.TransactionBuilder(sourceAccount, {
+  const tx = new Sdk.TransactionBuilder(sourceAccount, {
     fee: xlmToStroop(recommendedFee).toFixed(),
     networkPassphrase: networkDetails.networkPassphrase,
   })
@@ -36,7 +40,11 @@ export const getManageAssetXDR = async ({
         ...changeParams,
       }),
     )
-    .setTimeout(180)
-    .build()
-    .toXDR();
+    .setTimeout(timeout);
+
+  if (memo) {
+    tx.addMemo(Sdk.Memo.text(memo));
+  }
+
+  return tx.build().toXDR();
 };

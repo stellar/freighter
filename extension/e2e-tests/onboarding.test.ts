@@ -11,10 +11,9 @@ test.beforeEach(async ({ page, extensionId }) => {
 
 test("Welcome page loads", async ({ page }) => {
   await page.locator(".Welcome__column").waitFor();
-  await expect(page.getByText("Welcome to Freighter")).toBeVisible();
-  await expect(page.getByText("Your favorite Stellar wallet")).toBeVisible();
+  await expect(page.getByText("Freighter Wallet")).toBeVisible();
   await expect(page.getByText("Create new wallet")).toBeVisible();
-  await expect(page.getByText("Import wallet")).toBeVisible();
+  await expect(page.getByText("I already have a wallet")).toBeVisible();
   await expectPageToHaveScreenshot({ page, screenshot: "welcome-page.png" });
 });
 
@@ -71,7 +70,7 @@ test("Create new wallet", async ({ page }) => {
 });
 
 test("Import 12 word wallet", async ({ page }) => {
-  await page.getByText("Import Wallet").click();
+  await page.getByText("I already have a wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -122,7 +121,7 @@ test("Import 12 word wallet", async ({ page }) => {
 test("Import 12 word wallet by pasting", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-  await page.getByText("Import Wallet").click();
+  await page.getByText("I already have a wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -180,7 +179,7 @@ test("Import 12 word wallet by pasting", async ({ page, context }) => {
 });
 
 test("Import 24 word wallet", async ({ page }) => {
-  await page.getByText("Import Wallet").click();
+  await page.getByText("I already have a wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -247,7 +246,7 @@ test("Import 24 word wallet", async ({ page }) => {
 test("Import 24 word wallet by pasting", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-  await page.getByText("Import Wallet").click();
+  await page.getByText("I already have a wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -317,7 +316,7 @@ test("Import 24 word wallet by pasting", async ({ page, context }) => {
 });
 
 test("Import wallet with wrong password", async ({ page }) => {
-  await page.getByText("Import Wallet").click();
+  await page.getByText("I already have a wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -387,13 +386,15 @@ test("Logout and create new account", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
-  await page.getByTestId("AccountHeader__icon-btn").click();
-  const originalAccounts = page.getByTestId("account-list-item");
+  await page.getByTestId("account-view-account-name").click();
+  const originalAccounts = page.getByTestId("wallet-row-select");
   const originalAccountsCount = await originalAccounts.count();
   // the test seed phrase should have multiple funded accounts
   expect(originalAccountsCount).not.toBe(1);
 
-  await page.getByTestId("BottomNav-link-settings").click();
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Settings").click();
   await page.getByText("Log Out").click();
 
   await expectPageToHaveScreenshot({
@@ -425,22 +426,23 @@ test("Logout and create new account", async ({ page, extensionId }) => {
   await expect(newPage.getByText("You’re all set!")).toBeVisible();
 
   await newPage.goto(`chrome-extension://${extensionId}/index.html#/`);
-  await expect(newPage.getByTestId("network-selector-open")).toBeVisible({
+  await expect(newPage.getByTestId("account-view")).toBeVisible({
     timeout: 10000,
   });
-  await newPage.getByTestId("AccountHeader__icon-btn").click();
-  const newAccounts = newPage.getByTestId("account-list-item");
+  await newPage.getByTestId("account-view-account-name").click();
+  const newAccounts = newPage.getByTestId("wallet-row-select");
   await expect(newAccounts).toBeVisible();
   const newAccountsCount = await newAccounts.count();
   // the new seed phrase should only have one funded account; this confirms that the other accounts are no longer present
   expect(newAccountsCount).toBe(1);
-  await newPage.locator(".LoadingBackground--active").click();
 
-  await newPage.getByTestId("BottomNav-link-settings").click();
+  await newPage.getByTestId("BackButton").click();
+  await newPage.getByTestId("account-options-dropdown").click();
+  await newPage.getByText("Settings").click();
   await newPage.getByText("Log Out").click();
 
   await newPage.locator("#password-input").fill(PASSWORD);
-  await newPage.getByText("Login").click();
+  await newPage.getByRole("button", { name: "Unlock" }).click();
 
   await expect(newPage.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
@@ -451,14 +453,16 @@ test("Logout and import new account", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
-  await page.getByTestId("AccountHeader__icon-btn").click();
-  const originalAccounts = page.getByTestId("account-list-item");
+  await page.getByTestId("account-view-account-name").click();
+  const originalAccounts = page.getByTestId("wallet-row-select");
   const originalAccountsCount = await originalAccounts.count();
 
   // the test seed phrase should have multiple funded accounts
   expect(originalAccountsCount).not.toBe(1);
 
-  await page.getByTestId("BottomNav-link-settings").click();
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Settings").click();
   await page.getByText("Log Out").click();
 
   await expectPageToHaveScreenshot({
@@ -503,22 +507,21 @@ test("Logout and import new account", async ({ page, extensionId }) => {
   });
 
   await newPage.goto(`chrome-extension://${extensionId}/index.html#/`);
-  await expect(newPage.getByTestId("network-selector-open")).toBeVisible({
-    timeout: 10000,
-  });
-  await newPage.getByTestId("AccountHeader__icon-btn").click();
-  const newAccounts = newPage.getByTestId("account-list-item");
+
+  await newPage.getByTestId("account-view-account-name").click();
+  const newAccounts = newPage.getByTestId("wallet-row-select");
   await expect(newAccounts).toBeVisible();
   const newAccountsCount = await newAccounts.count();
   // the new seed phrase should only have one funded account; this confirms that the other accounts are no longer present
   expect(newAccountsCount).toBe(1);
-  await newPage.locator(".LoadingBackground--active").click();
 
-  await newPage.getByTestId("BottomNav-link-settings").click();
+  await newPage.getByTestId("BackButton").click();
+  await newPage.getByTestId("account-options-dropdown").click();
+  await newPage.getByText("Settings").click();
   await newPage.getByText("Log Out").click();
 
   await newPage.locator("#password-input").fill(PASSWORD);
-  await newPage.getByText("Login").click();
+  await newPage.getByRole("button", { name: "Unlock" }).click();
 
   await expect(newPage.getByTestId("account-view")).toBeVisible({
     timeout: 30000,

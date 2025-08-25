@@ -1,7 +1,7 @@
 import { useReducer } from "react";
 
 import { initialState, isError, reducer } from "helpers/request";
-import { AssetIcons } from "@shared/api/types";
+import { ApiTokenPrices, AssetIcons } from "@shared/api/types";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { isContractId } from "popup/helpers/soroban";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
@@ -14,8 +14,9 @@ import { AppDataType, NeedsReRoute } from "helpers/hooks/useGetAppData";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { isMainnet } from "helpers/stellar";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { getTokenPrices } from "popup/views/Account/hooks/useGetAccountData";
 
-interface ResolvedSendAmountData {
+export interface ResolvedSendAmountData {
   type: AppDataType.RESOLVED;
   userBalances: AccountBalances;
   destinationBalances: AccountBalances;
@@ -24,6 +25,7 @@ interface ResolvedSendAmountData {
   applicationState: APPLICATION_STATE;
   publicKey: string;
   networkDetails: NetworkDetails;
+  tokenPrices: ApiTokenPrices;
 }
 
 type SendAmountData = NeedsReRoute | ResolvedSendAmountData;
@@ -86,6 +88,11 @@ function useGetSendAmountData(
         destinationBalances,
         icons: userDomains.balances.icons || {},
         domains: userDomains.domains,
+        tokenPrices: _isMainnet
+          ? await getTokenPrices({
+              balances: userDomains.balances.balances,
+            })
+          : {},
       } as ResolvedSendAmountData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;

@@ -1,8 +1,8 @@
 import React from "react";
-
-import { Icon } from "@stellar/design-system";
-import { stroopToXlm } from "helpers/stellar";
 import { MemoType } from "stellar-sdk";
+
+import { stroopToXlm } from "helpers/stellar";
+import { CopyValue } from "popup/components/CopyValue";
 
 import "./styles.scss";
 
@@ -19,55 +19,48 @@ interface SummaryProps {
   fee: string;
   sequenceNumber: string;
   memo?: { value: string; type: MemoType };
+  xdr: string;
 }
 
 export const Summary = (props: SummaryProps) => (
-  <>
-    <h5>Operations</h5>
-    <div className="Operations">
-      {props.operationNames.map((opName) => (
-        <div key={opName} className="OpName">
-          <Icon.CodeCircle01 />
-          <p>{opName}</p>
-        </div>
-      ))}
+  <div className="TxInfo">
+    <div className="TxInfoBlock">
+      <div className="TxInfoBlock__title">
+        <p>Operations</p>
+      </div>
+      <p className="TxInfoBlock__value">{props.operationNames.length}</p>
     </div>
-    <h5>Transaction Info</h5>
-    <div className="TxInfo">
-      <div className="TxInfoBlock">
-        <div className="TxInfoBlock__title">
-          <Icon.ParagraphSpacing />
-          <p>Operations</p>
-        </div>
-        <p className="TxInfoBlock__value">{props.operationNames.length}</p>
+    <div className="TxInfoBlock">
+      <div className="TxInfoBlock__title">
+        <p>Fees</p>
       </div>
-      <div className="TxInfoBlock">
-        <div className="TxInfoBlock__title">
-          <Icon.Percent03 />
-          <p>Fees</p>
-        </div>
-        <p className="TxInfoBlock__value">
-          {stroopToXlm(props.fee).toString()} XLM
-        </p>
-      </div>
-      <div className="TxInfoBlock">
-        <div className="TxInfoBlock__title">
-          <Icon.ArrowSquareRight />
-          <p>Sequence #</p>
-        </div>
-        <p className="TxInfoBlock__value">{props.sequenceNumber}</p>
-      </div>
-      {props.memo && props.memo.value && (
-        <div className="TxInfoBlock" data-testid="MemoBlock">
-          <div className="TxInfoBlock__title">
-            <Icon.CoinsHand />
-            <p>Memo</p>
-          </div>
-          <p className="TxInfoBlock__value">{`${props.memo.value} (${
-            mapMemoLabel[props.memo.type]
-          })`}</p>
-        </div>
-      )}
+      <p className="TxInfoBlock__value">
+        {stroopToXlm(props.fee).toString()} XLM
+      </p>
     </div>
-  </>
+    <div className="TxInfoBlock">
+      <div className="TxInfoBlock__title">
+        <p>Sequence #</p>
+      </div>
+      <p className="TxInfoBlock__value">{props.sequenceNumber}</p>
+    </div>
+    {props.memo && props.memo.value && (
+      <div className="TxInfoBlock" data-testid="MemoBlock">
+        <div className="TxInfoBlock__title">
+          <p>Memo</p>
+        </div>
+        <p className="TxInfoBlock__value">{`${props.memo.value} (${
+          mapMemoLabel[props.memo.type]
+        })`}</p>
+      </div>
+    )}
+    <div className="TxInfoBlock">
+      <div className="TxInfoBlock__title">
+        <p>XDR</p>
+      </div>
+      <span className="TxInfoBlock__value">
+        <CopyValue value={props.xdr} displayValue={props.xdr} />
+      </span>
+    </div>
+  </div>
 );

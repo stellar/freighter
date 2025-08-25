@@ -20,6 +20,8 @@ import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
 import { settingsSelector } from "popup/ducks/settings";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
+import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
 
 interface AssetRecord {
   asset: string;
@@ -329,6 +331,28 @@ const useAssetLookup = () => {
       assetRows = assetRows.filter(
         (record) => record.domain && /\S/.test(record.domain),
       );
+    }
+
+    const assetsListsData = await getCombinedAssetListData({
+      networkDetails,
+      assetsLists,
+    });
+
+    for (const assetRow of assetRows) {
+      const key = assetRow.issuer!;
+      const code = assetRow.code!;
+      if (!assetRow.image) {
+        const tokenListIcon = await getIconFromTokenLists({
+          networkDetails,
+          issuerId: key,
+          contractId: assetRow.contract,
+          code,
+          assetsListsData,
+        });
+        if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
+          assetRow.image = tokenListIcon.icon;
+        }
+      }
     }
 
     const { verifiedAssets, unverifiedAssets } =

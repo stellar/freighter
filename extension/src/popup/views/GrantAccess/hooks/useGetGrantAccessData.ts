@@ -18,6 +18,7 @@ type ResolvedGrantAccessData = BlockAidScanSiteResult & {
   networkDetails: NetworkDetails;
   networksList: NetworkDetails[];
   applicationState: APPLICATION_STATE;
+  scanData: BlockAidScanSiteResult;
 };
 
 type GrantAccessData = NeedsReRoute | ResolvedGrantAccessData;
@@ -44,7 +45,6 @@ function useGetGrantAccessData(url: string) {
       }
 
       const scanData = await scanSite(url, appData.settings.networkDetails);
-
       if (!scanData && !isCustomNetwork(appData.settings.networkDetails)) {
         throw new Error("Unable to scan site");
       }
@@ -55,7 +55,7 @@ function useGetGrantAccessData(url: string) {
         networkDetails: appData.settings.networkDetails,
         applicationState: appData.account.applicationState,
         networksList: appData.settings.networksList,
-        ...scanData,
+        scanData,
       } as ResolvedGrantAccessData;
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

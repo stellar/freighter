@@ -17,6 +17,24 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { fetchJson } from "./fetch";
 
+export const ATTACK_TO_DISPLAY = {
+  signature_farming:
+    "A malicious RPC attempted to issue a raw transaction signature from the user.",
+  transfer_farming:
+    "A malicious transaction causes a transfer, draining the user’s assets and tokens.",
+  transfer_from_farming:
+    "A malicious transaction causes a transferFrom, draining the user’s assets and tokens.",
+  raw_ether_transfer:
+    "A transaction draining the user’s native currency to a malicious address.",
+  seed_farming: "A request for the user to enter the seed phrase.",
+  malicious_network_interaction:
+    "A malicious network interaction with a known Command and Control (CNC) server owned by an attacking group.",
+  malicious_sdk: "A known piece of malicious code is embedded within the site.",
+  investment_scam:
+    "A request for the user to deposit money into a scam investment system.",
+  other: "A malicious behavior was detected by the Blockaid network.",
+};
+
 export const useScanSite = () => {
   const [data, setData] = useState({} as BlockAidScanSiteResult);
   const [error, setError] = useState(null as string | null);

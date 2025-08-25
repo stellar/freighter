@@ -326,7 +326,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   return (
     <React.Fragment>
       <SubviewHeader
-        title={!isEditing ? t("Add Custom Network") : t("Network Details")}
+        title={!isEditing ? t("Add Custom Network") : t("Network Settings")}
       />
       <Formik
         onSubmit={handleSubmit}

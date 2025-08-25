@@ -277,6 +277,10 @@ export type BlockAidScanTxResult = Blockaid.StellarTransactionScanResponse & {
   request_id: string;
 };
 export type BlockAidBulkScanAssetResult = Blockaid.TokenBulkScanResponse;
+export type BlockaidAssetDiff =
+  | Blockaid.StellarTransactionScanResponse.StellarSimulationResult.StellarLegacyAssetDiff
+  | Blockaid.StellarTransactionScanResponse.StellarSimulationResult.StellarNativeAssetDiff
+  | Blockaid.StellarTransactionScanResponse.StellarSimulationResult.StellarContractAssetDiff;
 
 export interface AssetBalance extends Balance {
   limit: BigNumber;
@@ -307,7 +311,24 @@ export interface SorobanBalance {
 
 export type TokenBalances = SorobanBalance[];
 
-export type HorizonOperation = Horizon.ServerApi.OperationRecord;
+export type HorizonOperation = Horizon.ServerApi.OperationRecord & {
+  account: string;
+  amount?: string;
+  starting_balance?: string;
+  asset_code?: string;
+  asset_issuer?: string;
+  asset_type?: string;
+  transaction_attr: Horizon.ServerApi.TransactionRecord & {
+    contractId?: string;
+    fnName: string;
+    args: {
+      [key: string]: any;
+    };
+  };
+  to_muxed?: string;
+  to?: string;
+  from?: string;
+};
 
 export interface AccountHistoryInterface {
   operations: Array<HorizonOperation> | [];
@@ -345,11 +366,13 @@ export interface FreighterApiError {
   ext?: string[];
 }
 
+export interface ApiTokenPrice {
+  currentPrice: string;
+  percentagePriceChange24h?: string;
+}
+
 export interface ApiTokenPrices {
-  [key: string]: {
-    currentPrice: string;
-    percentagePriceChange24h?: string;
-  } | null;
+  [key: string]: ApiTokenPrice | null;
 }
 
 export type DiscoverData = {

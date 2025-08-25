@@ -1,12 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { createPortal } from "react-dom";
 import {
   Button,
   Card,
   Icon,
-  Loader,
   Select,
   Textarea,
   Text,
@@ -15,82 +13,22 @@ import { useTranslation, Trans } from "react-i18next";
 import { Field, FieldProps, Formik, Form } from "formik";
 import { object as YupObject, string as YupString } from "yup";
 
-import { POPUP_HEIGHT } from "constants/dimensions";
 import {
-  Account,
-  Asset,
-  Operation,
-  Horizon,
-  TransactionBuilder,
-} from "stellar-sdk";
-import { captureException } from "@sentry/browser";
-
-import {
-  ActionStatus,
-  AssetIcons,
   BlockAidScanAssetResult,
   BlockAidScanTxResult,
 } from "@shared/api/types";
-import { getTokenDetails } from "@shared/api/internal";
-import { TokenArgsDisplay } from "@shared/api/helpers/soroban";
 
-import {
-  getCanonicalFromAsset,
-  xlmToStroop,
-  isMainnet,
-  isTestnet,
-} from "helpers/stellar";
+import { isMainnet, isTestnet } from "helpers/stellar";
 
-import { AppDispatch } from "popup/App";
-import {
-  signFreighterTransaction,
-  submitFreighterTransaction,
-  startHwSign,
-  transactionSubmissionSelector,
-} from "popup/ducks/transactionSubmission";
-import {
-  settingsSelector,
-  settingsNetworkDetailsSelector,
-} from "popup/ducks/settings";
-import { AssetIcon } from "popup/components/account/AccountAssets";
-import { ModalInfo } from "popup/components/ModalInfo";
-import { NewAssetFlags } from "popup/components/manageAssets/ManageAssetRows";
-import { SorobanTokenIcon } from "popup/components/account/AccountAssets";
-import { TrustlineError } from "popup/components/manageAssets/TrustlineError";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
-import { View } from "popup/basics/layout/View";
-import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import {
-  publicKeySelector,
-  hardwareWalletTypeSelector,
-} from "popup/ducks/accountServices";
-import { ROUTES } from "popup/constants/routes";
-import { navigateTo } from "popup/helpers/navigate";
-import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { emitMetric } from "helpers/metrics";
-import IconShieldCross from "popup/assets/icon-shield-cross.svg";
-import IconWarning from "popup/assets/icon-warning.svg";
-import IconUnverified from "popup/assets/icon-unverified.svg";
-import IconNewAsset from "popup/assets/icon-new-asset.svg";
-import IconShieldBlockaid from "popup/assets/icon-shield-blockaid.svg";
-import IconWarningBlockaid from "popup/assets/icon-warning-blockaid.svg";
-import IconWarningBlockaidYellow from "popup/assets/icon-warning-blockaid-yellow.svg";
-import { getVerifiedTokens } from "popup/helpers/searchAsset";
-import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import {
-  isAssetSuspicious,
-  isBlockaidWarning,
   reportAssetWarning,
   reportTransactionWarning,
 } from "popup/helpers/blockaid";
 
-import { CopyValue } from "../CopyValue";
-import { Notification as NotificationV2 } from "../Notification";
-
 import "./styles.scss";
-import { getPunycodedDomain } from "helpers/urls";
 
 export enum WarningMessageVariant {
   default = "",
@@ -194,75 +132,20 @@ export const WarningMessage = ({
   );
 };
 
-export const MemoWarningMessage = ({
-  isMemoRequired,
-}: {
-  isMemoRequired: boolean;
-}) => {
-  const { t } = useTranslation();
-
-  return isMemoRequired ? (
-    <WarningMessage
-      header="Memo is required"
-      variant={WarningMessageVariant.highAlert}
-    >
-      <p>
-        {t(
-          "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign. Freighter automatically disabled the option to sign this transaction.",
-        )}
-      </p>
-
-      <p>
-        {t(
-          "Check the destination account memo requirements and include it in the transaction.",
-        )}
-      </p>
-    </WarningMessage>
-  ) : null;
-};
-
-interface FlaggedWarningMessageProps {
-  isMemoRequired: boolean;
-  isSuspicious: boolean;
-  blockaidData: BlockAidScanAssetResult;
-}
-
-export const FlaggedWarningMessage = ({
-  isMemoRequired,
-  isSuspicious,
-  blockaidData,
-}: FlaggedWarningMessageProps) => (
-  <>
-    {isSuspicious ? (
-      <BlockaidAssetScanLabel blockaidData={blockaidData} />
-    ) : null}
-    <MemoWarningMessage isMemoRequired={isMemoRequired} />
-  </>
-);
-
 export const DomainNotAllowedWarningMessage = ({
   domain,
 }: {
   domain: string;
 }) => {
-  const { t } = useTranslation();
-
   return (
-    <WarningMessage
-      variant={WarningMessageVariant.highAlert}
-      header={`${getPunycodedDomain(domain)} ${t("is currently not connected to this Freighter account")}`}
-    >
-      <p>
-        {t(
-          "If you believe you have connected to this domain before, it is possible that scammers have copied the original site and/or made small changes to the domain name, and that this site is a scam.",
-        )}
-      </p>
-      <p>
-        {t(
-          "Double check the domain name. If it is incorrect in any way, do not share your public key and contact the site administrator via a verified email or social media account to confirm that this domain is correct.",
-        )}
-      </p>
-    </WarningMessage>
+    <div className="ScanLabel ScanMiss">
+      <div className="ScanLabel__Info">
+        <div className="Icon">
+          <Icon.InfoSquare className="WarningMessage__icon" />
+        </div>
+        <p className="Message">{`${domain} is not currently connected to Freighter`}</p>
+      </div>
+    </div>
   );
 };
 
@@ -271,17 +154,92 @@ export const BackupPhraseWarningMessage = () => {
 
   return (
     <div className="WarningMessage__backup">
-      <div className="WarningMessage__infoBlock">
-        <div className="WarningMessage__header">
-          <Icon.InfoOctagon className="WarningMessage__icon" />
-          <div>{t("Important")}</div>
+      <span className="WarningMessage__backup__description">
+        {t("Keep your recovery phrase in a safe and secure place.")}
+      </span>
+      <span className="WarningMessage__backup__description">
+        {t(
+          "Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
+        )}
+      </span>
+      <div className="WarningMessage__backup__tips">
+        <div className="WarningMessage__backup__tips__row">
+          <div className="WarningMessage__backup__tips__icon">
+            <Icon.Lock01 />
+          </div>
+          <span>
+            Your recovery phrase gives you full access to your wallets and funds
+          </span>
         </div>
+        <div className="WarningMessage__backup__tips__row">
+          <div className="WarningMessage__backup__tips__icon">
+            <Icon.EyeOff />
+          </div>
+          <span>Don't share this phrase with anyone</span>
+        </div>
+        <div className="WarningMessage__backup__tips__row">
+          <div className="WarningMessage__backup__tips__icon">
+            <Icon.XSquare />
+          </div>
+          <span>
+            Stellar Development Foundation will never ask for your phrase
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-        <p>
-          {t(
-            "Keep your recovery phrase in a safe and secure place. Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
-          )}
-        </p>
+export const AssetListWarning = ({
+  isVerified,
+  onClick,
+}: {
+  isVerified: boolean;
+  onClick: () => void;
+}) => {
+  const title = isVerified ? "On your lists" : "Not on your lists";
+  return (
+    <div className="ScanLabel ScanMiss" onClick={onClick}>
+      <div className="ScanLabel__Info">
+        <div className="Icon">
+          <Icon.InfoSquare className="WarningMessage__icon" />
+        </div>
+        <p className="Message">{title}</p>
+      </div>
+      <div className="ScanLabel__Action">
+        <Icon.ChevronRight />
+      </div>
+    </div>
+  );
+};
+
+interface AssetListWarningExpandedProps {
+  isVerified: boolean;
+  onClose?: () => void;
+}
+
+export const AssetListWarningExpanded = ({
+  isVerified,
+  onClose,
+}: AssetListWarningExpandedProps) => {
+  const title = isVerified
+    ? "This asset is on your lists"
+    : "This asset is not on your lists";
+
+  return (
+    <div className="BlockaidDetailsExpanded">
+      <div className="BlockaidDetailsExpanded__Header">
+        <div className="WarningMark">
+          <Icon.AlertTriangle />
+        </div>
+        <div className="Close" onClick={onClose}>
+          <Icon.X />
+        </div>
+      </div>
+      <div className="BlockaidDetailsExpanded__Title">{title}</div>
+      <div className="BlockaidDetailsExpanded__SubTitle">
+        Freighter uses asset lists to check assets you interact with. You can
+        define your own assets lists in Settings.
       </div>
     </div>
   );
@@ -432,13 +390,11 @@ const BlockaidFeedbackForm = ({
   );
 };
 
-const BlockaidByLine = ({
-  hasArrow = false,
+export const BlockaidByLine = ({
   handleClick,
   requestId,
   address,
 }: {
-  hasArrow?: boolean;
   handleClick?: () => void;
   requestId?: string;
   address?: string;
@@ -450,12 +406,24 @@ const BlockaidByLine = ({
   return (
     <div className="BlockaidByLine">
       <div className="BlockaidByLine__copy">
-        <img src={IconShieldBlockaid} alt="icon shield blockaid" />
-        <Text as="p" size="xs" weight="medium">
+        <Text as="p" size="sm" weight="medium">
           {t("Powered by ")}
-          <a rel="noreferrer" href="https://www.blockaid.io/" target="_blank">
-            Blockaid
-          </a>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <g clipPath="url(#clip0_5576_70196)">
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M9.76866 2.29851H0.130597V0H9.76866C11.5709 0 13.0336 1.46269 13.0336 3.26493C13.0336 5.06716 11.5709 6.52985 9.76866 6.52985H2.76866C2.50746 6.52985 2.27239 6.73881 2.27239 7C2.27239 7.26119 2.48134 7.47015 2.76866 7.47015H9.76866C11.5709 7.47015 13.0336 8.93284 13.0336 10.7351C13.0336 12.5373 11.5709 14 9.76866 14H0.130597V11.7015H9.76866C10.291 11.7015 10.7351 11.2575 10.7351 10.7351C10.7351 10.2127 10.291 9.76866 9.76866 9.76866H2.76866C1.25373 9.76866 0 8.54105 0 7C0 5.45896 1.25373 4.23134 2.76866 4.23134H9.76866C10.291 4.23134 10.7351 3.78731 10.7351 3.26493C10.7351 2.71642 10.291 2.29851 9.76866 2.29851Z"
+                fill="#707070"
+              />
+            </g>
+            <defs>
+              <clipPath id="clip0_5576_70196">
+                <rect width="13.0336" height="14" fill="white" />
+              </clipPath>
+            </defs>
+          </svg>
+          <span>Blockaid</span>
         </Text>
       </div>
       {isMainnet(networkDetails) || isTestnet(networkDetails) ? (
@@ -463,25 +431,18 @@ const BlockaidByLine = ({
           <div
             className="BlockaidByLine__feedback__button"
             onClick={() => {
+              if (handleClick) {
+                handleClick();
+              }
               setIsFeedbackActive(true);
             }}
           >
-            <Text as="p" size="xs" weight="medium">
+            <Text as="p" size="sm" weight="medium">
               {t("Feedback?")}
             </Text>
           </div>
         </div>
       ) : null}
-
-      {hasArrow && (
-        <div
-          className="BlockaidByLine__arrow"
-          data-testid={`BlockaidByLine__arrow__${address ? "asset" : "tx"}`}
-          onClick={handleClick}
-        >
-          <Icon.ChevronRight />
-        </div>
-      )}
       {isFeedbackActive &&
         createPortal(
           <BlockaidFeedbackForm
@@ -497,840 +458,132 @@ const BlockaidByLine = ({
 
 interface BlockaidAssetWarningProps {
   blockaidData: BlockAidScanAssetResult;
+  onClick: () => void;
 }
 
 export const BlockaidAssetWarning = ({
   blockaidData,
+  onClick,
 }: BlockaidAssetWarningProps) => {
-  const { t } = useTranslation();
-  const isWarning = isBlockaidWarning(blockaidData.result_type);
+  const renderHeader = (
+    result_type: BlockAidScanAssetResult["result_type"],
+  ) => {
+    switch (result_type) {
+      case "Spam": {
+        return "This asset was flagged as spam";
+      }
 
-  return (
-    <div
-      className={`ScamAssetWarning__box ${
-        isWarning ? "ScamAssetWarning__box--isWarning" : ""
-      }`}
-      data-testid="ScamAssetWarning__box"
-    >
-      <div className="ScamAssetWarning__box__content">
-        <div className="Icon">
-          <img
-            className="ScamAssetWarning__box__icon"
-            src={isWarning ? IconWarningBlockaidYellow : IconWarningBlockaid}
-            alt="icon warning blockaid"
-          />
-        </div>
-        <div>
-          <div className="ScamAssetWarning__description">
-            {t(
-              `This token was flagged as ${blockaidData.result_type} by Blockaid. Interacting with this token may result in loss of funds and is not recommended for the following reasons`,
-            )}
-            :
-            <ul className="ScamAssetWarning__list">
-              {blockaidData.features &&
-                blockaidData.features.map((f) => (
-                  <li key={f.feature_id}>{f.description}</li>
-                ))}
-            </ul>
-          </div>
-        </div>
-      </div>
-      <BlockaidByLine address={blockaidData.address} />
-    </div>
-  );
-};
+      case "Malicious": {
+        return "This asset was flagged as malicious";
+      }
 
-export const ScamAssetWarning = ({
-  pillType,
-  isSendWarning = false,
-  domain,
-  code,
-  issuer,
-  image,
-  onClose,
-
-  onContinue = () => {},
-  blockaidData,
-  assetIcons,
-  balances,
-}: {
-  pillType: "Connection" | "Trustline" | "Transaction";
-  isSendWarning?: boolean;
-  domain: string;
-  code: string;
-  issuer: string;
-  image: string;
-  onClose: () => void;
-  onContinue?: () => void;
-  blockaidData: BlockAidScanAssetResult;
-  assetIcons: AssetIcons;
-  balances: AccountBalances;
-}) => {
-  const { t } = useTranslation();
-  const dispatch: AppDispatch = useDispatch();
-  const warningRef = useRef<HTMLDivElement>(null);
-  const { recommendedFee } = useNetworkFees();
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const publicKey = useSelector(publicKeySelector);
-  const { submitStatus } = useSelector(transactionSubmissionSelector);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
-  const navigate = useNavigate();
-
-  const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
-
-  const closeOverlay = () => {
-    if (warningRef.current) {
-      warningRef.current.style.bottom = `-${POPUP_HEIGHT}px`;
-    }
-    const timeout = setTimeout(() => {
-      onClose();
-      clearTimeout(timeout);
-    }, 300);
-  };
-
-  // animate entry
-  useEffect(() => {
-    if (warningRef.current) {
-      const timeout = setTimeout(() => {
-        // Adding extra check to fix flaky tests
-        if (warningRef.current) {
-          warningRef.current.style.bottom = "0";
-        }
-        clearTimeout(timeout);
-      }, 10);
-    }
-  }, [warningRef]);
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-
-    const server = new Horizon.Server(networkDetails.networkUrl);
-    const sourceAccount: Account = await server.loadAccount(publicKey);
-    const transactionXDR = new TransactionBuilder(sourceAccount, {
-      fee: xlmToStroop(recommendedFee).toFixed(),
-      networkPassphrase: networkDetails.networkPassphrase,
-    })
-      .addOperation(
-        Operation.changeTrust({
-          asset: new Asset(code, issuer),
-        }),
-      )
-      .setTimeout(180)
-      .build()
-      .toXDR();
-
-    if (isHardwareWallet) {
-      await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
-      emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
-    } else {
-      const res = await dispatch(
-        signFreighterTransaction({
-          transactionXDR,
-          network: networkDetails.networkPassphrase,
-        }),
-      );
-
-      if (signFreighterTransaction.fulfilled.match(res)) {
-        const submitResp = await dispatch(
-          submitFreighterTransaction({
-            publicKey,
-            signedXDR: res.payload.signedTransaction,
-            networkDetails,
-          }),
-        );
-        if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-          navigateTo(ROUTES.account, navigate);
-          emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
-        } else {
-          setIsTrustlineErrorShowing(true);
-        }
+      default: {
+        return "This asset was flagged as suspicious";
       }
     }
-    setIsSubmitting(false);
   };
 
-  return isTrustlineErrorShowing ? (
-    createPortal(
-      <TrustlineError handleClose={() => closeOverlay()} balances={balances} />,
-      document.querySelector("#modal-root")!,
-    )
-  ) : (
+  const scanType =
+    blockaidData.result_type === "Spam" ||
+    blockaidData.result_type === "Warning"
+      ? "ScanMiss"
+      : "ScanMalicious";
+
+  return (
     <div
-      className={`ScamAssetWarning ${
-        pillType === "Trustline" ? "ScamAssetWarning--isTrustline" : ""
-      }`}
-      data-testid="ScamAssetWarning"
+      className={`ScanLabel ${scanType}`}
+      data-testid="blockaid-miss-label"
+      onClick={onClick}
     >
-      <View.Content>
-        <ModalInfo
-          code={code}
-          issuer={issuer}
-          domain={domain}
-          image={image}
-          assetIcons={assetIcons}
-          variant={isAssetSuspicious(blockaidData) ? "malicious" : "default"}
-          asset={code}
-          pillType={pillType}
-        >
-          <div className="ScamAssetWarning__wrapper" ref={warningRef}>
-            <div>
-              <BlockaidAssetWarning blockaidData={blockaidData} />
-            </div>
-            <div className="ScamAssetWarning__btns">
-              {!isSendWarning && (
-                <Button
-                  data-testid="ScamAsset__add-asset"
-                  size="md"
-                  isFullWidth
-                  onClick={handleSubmit}
-                  type="button"
-                  variant="error"
-                  isLoading={
-                    isSubmitting || submitStatus === ActionStatus.PENDING
-                  }
-                >
-                  {t("Add anyway")}
-                </Button>
-              )}
-              <Button
-                size="md"
-                isFullWidth
-                variant="secondary"
-                type="button"
-                onClick={closeOverlay}
-              >
-                {t("Cancel")}
-              </Button>
-              {isSendWarning && (
-                <Button
-                  data-testid="ScamAsset__send"
-                  size="md"
-                  isFullWidth
-                  onClick={onContinue}
-                  type="button"
-                  variant="error"
-                  isLoading={
-                    isSubmitting || submitStatus === ActionStatus.PENDING
-                  }
-                >
-                  {t("Continue")}
-                </Button>
-              )}
-            </div>{" "}
-          </div>
-        </ModalInfo>
-      </View.Content>
+      <div className="ScanLabel__Info">
+        <div className="Icon">
+          <Icon.InfoSquare className="WarningMessage__icon" />
+        </div>
+        <p className="Message">{renderHeader(blockaidData.result_type)}</p>
+      </div>
+      <div className="ScanLabel__Action">
+        <Icon.ChevronRight />
+      </div>
     </div>
   );
 };
 
-export const NewAssetWarning = ({
-  domain,
-  code,
-  issuer,
-  image,
-  newAssetFlags,
+interface BlockAidAssetScanExpandedProps {
+  scanResult: BlockAidScanAssetResult;
+  onClose?: () => void;
+}
+
+export const BlockAidAssetScanExpanded = ({
+  scanResult,
   onClose,
-  balances,
-}: {
-  domain: string;
-  code: string;
-  issuer: string;
-  image: string;
-  newAssetFlags: NewAssetFlags;
-  onClose: () => void;
-  balances: AccountBalances;
-}) => {
-  const { t } = useTranslation();
-  const dispatch: AppDispatch = useDispatch();
-  const warningRef = useRef<HTMLDivElement>(null);
-  const { recommendedFee } = useNetworkFees();
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const publicKey = useSelector(publicKeySelector);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const isHardwareWallet = !!useSelector(hardwareWalletTypeSelector);
-  const navigate = useNavigate();
+}: BlockAidAssetScanExpandedProps) => {
+  const { result_type, features } = scanResult;
+  const _features = features || [];
 
-  const [isTrustlineErrorShowing, setIsTrustlineErrorShowing] = useState(false);
+  const renderDetails = (
+    result_type: BlockAidScanAssetResult["result_type"],
+  ) => {
+    switch (result_type) {
+      case "Spam": {
+        return {
+          title: "Warning",
+          description:
+            "This asset has been flagged as spam for the following reasons.",
+        };
+      }
 
-  const { isRevocable, isInvalidDomain } = newAssetFlags;
-  const canonicalAsset = getCanonicalFromAsset(code, issuer);
+      case "Malicious": {
+        return {
+          title: "Do not proceed",
+          description:
+            "This asset has been flagged as malicious for the following reasons.",
+        };
+      }
 
-  useEffect(
-    () => () => {
-      setIsSubmitting(false);
-    },
-    [],
-  );
-
-  // animate entry
-  useEffect(() => {
-    if (warningRef.current) {
-      const timeout = setTimeout(() => {
-        // Adding extra check to fix flaky tests
-        if (warningRef.current) {
-          warningRef.current.style.bottom = "0";
-        }
-        clearTimeout(timeout);
-      }, 10);
-    }
-  }, [warningRef]);
-
-  const closeOverlay = () => {
-    if (warningRef.current) {
-      warningRef.current.style.bottom = `-${POPUP_HEIGHT}px`;
-    }
-    const timeout = setTimeout(() => {
-      onClose();
-      clearTimeout(timeout);
-    }, 300);
-  };
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-
-    const server = new Horizon.Server(networkDetails.networkUrl);
-    const transactionXDR = await getManageAssetXDR({
-      publicKey,
-      assetCode: code,
-      assetIssuer: issuer,
-      addTrustline: true,
-      server,
-      recommendedFee,
-      networkDetails,
-    });
-
-    if (isHardwareWallet) {
-      await dispatch(startHwSign({ transactionXDR, shouldSubmit: true }));
-      emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
-    } else {
-      const res = await dispatch(
-        signFreighterTransaction({
-          transactionXDR,
-          network: networkDetails.networkPassphrase,
-        }),
-      );
-
-      if (signFreighterTransaction.fulfilled.match(res)) {
-        const submitResp = await dispatch(
-          submitFreighterTransaction({
-            publicKey,
-            signedXDR: res.payload.signedTransaction,
-            networkDetails,
-          }),
-        );
-        if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-          navigateTo(ROUTES.account, navigate);
-          emitMetric(METRIC_NAMES.manageAssetAddUnsafeAsset, { code, issuer });
-        } else {
-          setIsTrustlineErrorShowing(true);
-        }
+      default: {
+        return {
+          title: "Warning",
+          description:
+            "This asset has been flagged as suspicious for the following reasons.",
+        };
       }
     }
-    setIsSubmitting(false);
   };
 
-  return isTrustlineErrorShowing ? (
-    createPortal(
-      <TrustlineError handleClose={() => closeOverlay()} balances={balances} />,
-      document.querySelector("#modal-root")!,
-    )
-  ) : (
-    <div className="TokenWarning" data-testid="NewAssetWarning">
-      <View.Content>
-        <div className="TokenWarning__wrapper" ref={warningRef}>
-          <div className="TokenWarning__body">
-            <div className="TokenWarning__heading">
-              <div className="TokenWarning__icon">
-                <AssetIcon
-                  assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
-                  code={code}
-                  issuerKey={issuer}
-                  isSuspicious={false}
-                />
-              </div>
-              <div className="TokenWarning__code">{code}</div>
-              <div className="TokenWarning__domain">{domain}</div>
-              <div className="TokenWarning__description">
-                <div className="TokenWarning__description__icon">
-                  <Icon.User02 />
-                </div>
-                <div
-                  className="TokenWarning__description__text"
-                  data-testid="DescriptionLabel"
-                >
-                  {t("Add Asset Trustline")}
-                </div>
-              </div>
-            </div>
-            <div className="TokenWarning__flags">
-              <div className="TokenWarning__flags__info">{t("Asset Info")}</div>
-              {isRevocable && (
-                <div className="TokenWarning__flag">
-                  <div className="TokenWarning__flag__icon">
-                    <img src={IconShieldCross} alt="revocable" />
-                  </div>
-                  <div className="TokenWarning_flag__content">
-                    <div className="TokenWarning__flag__header TokenWarning__flag__icon--unverified">
-                      {t("Revocable Asset")}
-                    </div>
-                    <div className="TokenWarning__flag__content">
-                      {t(
-                        "The asset creator can revoke your access to this asset at anytime",
-                      )}{" "}
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div>
-                {isInvalidDomain && (
-                  <div className="TokenWarning__flag">
-                    <div className="TokenWarning__flag__icon--invalid-format">
-                      <Icon.AlertTriangle />
-                    </div>
-                    <div className="TokenWarning_flag__content">
-                      <div className="TokenWarning__flag__header TokenWarning__flag__icon">
-                        {t("Invalid Format Asset")}
-                      </div>
-                      <div className="TokenWarning__flag__content">
-                        {t(
-                          "Asset home domain doesn’t exist, TOML file format is invalid, or asset doesn't match currency description",
-                        )}{" "}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div className="TokenWarning__flag">
-                  <div className="TokenWarning__flag__icon">
-                    <img src={IconNewAsset} alt="new asset icon" />
-                  </div>
-                  <div className="TokenWarning_flag__content">
-                    <div className="TokenWarning__flag__header TokenWarning__flag__icon">
-                      {t("New asset")}
-                    </div>
-                    <div className="TokenWarning__flag__content">
-                      {t("This is a relatively new asset")}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="TokenWarning__bottom-content">
-                <div className="ScamAssetWarning__btns">
-                  <Button
-                    size="md"
-                    isFullWidth
-                    variant="tertiary"
-                    type="button"
-                    onClick={closeOverlay}
-                  >
-                    {t("Cancel")}
-                  </Button>
-                  <Button
-                    size="md"
-                    isFullWidth
-                    variant="secondary"
-                    onClick={handleSubmit}
-                    type="button"
-                    isLoading={isSubmitting}
-                    data-testid="NewAssetWarningAddButton"
-                  >
-                    {t("Add asset")}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </View.Content>
-    </div>
-  );
-};
-
-export const WarningModal = (props: { description: string }) => {
-  const { t } = useTranslation();
-
-  return (
-    <div
-      className="WarningModal__box WarningModal__box--isWarning"
-      data-testid="WarningModal"
-    >
-      <div className="WarningModal__box__content">
-        <div className="Icon">
-          <img
-            className="WarningModal__box__icon"
-            src={IconWarning}
-            alt="icon warning"
-          />
-        </div>
-        <div className="WarningModal__alert">
-          <div className="WarningModal__description">
-            {t(props.description)}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export const UnverifiedTokenNotification = () => {
-  return (
-    <WarningModal description="Before you add this asset, please double-check its information and characteristics. This can help you identify fraudulent assets." />
-  );
-};
-
-export const TokenWarning = ({
-  domain,
-  code,
-  onClose,
-  isVerifiedToken,
-  verifiedLists = [],
-  handleAddToken,
-  isCustomToken,
-}: {
-  domain: string;
-  code: string;
-  onClose: () => void;
-  isVerifiedToken: boolean;
-  verifiedLists?: string[];
-  handleAddToken: null | (() => Promise<void>);
-  isCustomToken: boolean;
-}) => {
-  const { t } = useTranslation();
-  const warningRef = useRef<HTMLDivElement>(null);
-  const { submitStatus } = useSelector(transactionSubmissionSelector);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const closeOverlay = () => {
-    if (warningRef.current) {
-      warningRef.current.style.marginBottom = `-${POPUP_HEIGHT}px`;
-    }
-    const timeout = setTimeout(() => {
-      onClose();
-      clearTimeout(timeout);
-    }, 300);
-  };
-
-  // animate entry
-  useEffect(() => {
-    if (warningRef.current) {
-      const timeout = setTimeout(() => {
-        // Adding extra check to fix flaky tests
-        if (warningRef.current) {
-          warningRef.current.style.marginBottom = "0";
+  const { title, description } = renderDetails(result_type);
+  const warningType =
+    result_type === "Spam" || result_type === "Warning"
+      ? {
+          class: "WarningMark",
+          icon: <Icon.AlertTriangle />,
         }
-        clearTimeout(timeout);
-      }, 10);
-    }
-  }, [warningRef]);
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    if (handleAddToken) {
-      await handleAddToken();
-    }
-
-    setIsSubmitting(false);
-    closeOverlay();
-  };
-
-  return createPortal(
-    <>
-      <LoadingBackground isActive isOpaque />
-      <div className="TokenWarning" data-testid="TokenWarning">
-        <View.Content>
-          <div className="TokenWarning__wrapper" ref={warningRef}>
-            <div className="TokenWarning__body">
-              <div className="TokenWarning__heading">
-                <div className="TokenWarning__icon">
-                  <SorobanTokenIcon noMargin />
-                </div>
-                <div className="TokenWarning__code">{code}</div>
-                <div className="TokenWarning__domain">{domain}</div>
-                <div className="TokenWarning__description">
-                  <div className="TokenWarning__description__icon">
-                    <Icon.User02 />
-                  </div>
-                  <div
-                    className="TokenWarning__description__text"
-                    data-testid="DescriptionLabel"
-                  >
-                    {isCustomToken ? t("Add Asset") : t("Add Asset Trustline")}
-                  </div>
-                </div>
-              </div>
-              <div data-testid="token-warning-notification">
-                {isVerifiedToken ? (
-                  <NotificationV2
-                    description={t(
-                      `This asset is part of the asset list(s): "${verifiedLists.join(
-                        ", ",
-                      )}". Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.`,
-                    )}
-                    type="info"
-                  />
-                ) : (
-                  <NotificationV2
-                    description={t(
-                      "This asset is not part of an asset list. Please, double-check the asset you’re interacting with and proceed with care. Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
-                    )}
-                    type="warning"
-                  />
-                )}
-              </div>
-
-              <div className="TokenWarning__flags">
-                <div className="TokenWarning__flags__info">
-                  {t("Asset Info")}
-                </div>
-
-                {isVerifiedToken ? null : (
-                  <div className="TokenWarning__flag">
-                    <div className="TokenWarning__flag__icon">
-                      <img src={IconUnverified} alt="unverified icon" />
-                    </div>
-                    <div className="TokenWarning_flag__content">
-                      <div className="TokenWarning__flag__header TokenWarning__flag__icon--unverified">
-                        {t("Unverified asset")}
-                      </div>
-                      <div className="TokenWarning__flag__content">
-                        {t("Proceed with caution")}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div className="TokenWarning__flag">
-                  <div className="TokenWarning__flag__icon">
-                    <img src={IconNewAsset} alt="new asset icon" />
-                  </div>
-                  <div className="TokenWarning_flag__content">
-                    <div className="TokenWarning__flag__header TokenWarning__flag__icon">
-                      {t("New asset")}
-                    </div>
-                    <div className="TokenWarning__flag__content">
-                      {t("This is a relatively new asset")}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="TokenWarning__bottom-content">
-              <div className="ScamAssetWarning__btns">
-                <Button
-                  size="md"
-                  isFullWidth
-                  variant="tertiary"
-                  type="button"
-                  onClick={closeOverlay}
-                >
-                  {t("Cancel")}
-                </Button>
-                <Button
-                  data-testid="add-asset"
-                  size="md"
-                  isFullWidth
-                  onClick={handleSubmit}
-                  type="button"
-                  variant="secondary"
-                  isLoading={
-                    isSubmitting || submitStatus === ActionStatus.PENDING
-                  }
-                >
-                  {t("Add asset")}
-                </Button>
-              </div>{" "}
-            </div>
-          </div>
-        </View.Content>
-      </div>
-    </>,
-    document.querySelector("#modal-root")!,
-  );
-};
-
-export const TransferWarning = ({
-  transfers,
-}: {
-  transfers: TokenArgsDisplay[];
-}) => {
-  const { t } = useTranslation();
-
-  if (!transfers.length) {
-    return null;
-  }
+      : {
+          class: "WarningMarkError",
+          icon: <Icon.AlertOctagon />,
+        };
 
   return (
-    <WarningMessage
-      header="Authorizes a token transfer. Proceed with caution."
-      variant={WarningMessageVariant.warning}
-    >
-      <div className="TokenTransferWarning">
-        <p>
-          {t(
-            "This invocation authorizes the following transfers, please review the invocation tree and confirm that you want to proceed.",
-          )}
-        </p>
-        {transfers.map((transfer, i) => (
-          <WarningMessageTokenDetails
-            index={i}
-            transfer={transfer}
-            key={`${transfer.contractId}-${transfer.amount}-${transfer.to}`}
-          />
+    <div className="BlockaidDetailsExpanded">
+      <div className="BlockaidDetailsExpanded__Header">
+        <div className={warningType.class}>{warningType.icon}</div>
+        <div className="Close" onClick={onClose}>
+          <Icon.X />
+        </div>
+      </div>
+      <div className="BlockaidDetailsExpanded__Title">{title}</div>
+      <div className="BlockaidDetailsExpanded__SubTitle">{description}</div>
+      <div className="BlockaidDetailsExpanded__Details">
+        {_features.map((feature) => (
+          <div
+            className="BlockaidDetailsExpanded__DetailRow"
+            key={feature.feature_id}
+          >
+            <Icon.MinusCircle />
+            <span>{feature.description}</span>
+          </div>
         ))}
+        <BlockaidByLine address={""} />
       </div>
-    </WarningMessage>
-  );
-};
-
-export const InvokerAuthWarning = () => {
-  const { t } = useTranslation();
-
-  return (
-    <WarningMessage
-      header="Your account is signing this authorization. Proceed with caution."
-      variant={WarningMessageVariant.warning}
-    >
-      <div className="InvokerAuthWarning">
-        <p>
-          {t(
-            "This authorization uses the source account's credentials, so you are implicitly authorizing this when you sign the transaction.",
-          )}
-        </p>
-      </div>
-    </WarningMessage>
-  );
-};
-
-export const UnverifiedTokenTransferWarning = ({
-  transfers,
-}: {
-  transfers: TokenArgsDisplay[];
-}) => {
-  const { t } = useTranslation();
-  const { networkDetails, assetsLists } = useSelector(settingsSelector);
-  const [isUnverifiedToken, setIsUnverifiedToken] = useState(false);
-
-  useEffect(() => {
-    if (!isMainnet(networkDetails) && !isTestnet(networkDetails)) {
-      return;
-    }
-    const fetchVerifiedTokens = async () => {
-      for (let j = 0; j < transfers.length; j += 1) {
-        const c = transfers[j].contractId;
-        const verifiedTokens = await getVerifiedTokens({
-          contractId: c,
-          networkDetails,
-          assetsLists,
-        });
-        if (!verifiedTokens.length) {
-          setIsUnverifiedToken(true);
-        }
-      }
-    };
-
-    fetchVerifiedTokens();
-  }, [networkDetails, transfers, assetsLists]);
-
-  return isUnverifiedToken ? (
-    <WarningMessage
-      header="This asset is not on an asset list"
-      variant={WarningMessageVariant.default}
-    >
-      <div className="TokenTransferWarning">
-        <p>
-          {t(
-            `This asset is not part of any of your enabled asset lists (${networkDetails.network})`,
-          )}
-        </p>
-      </div>
-    </WarningMessage>
-  ) : null;
-};
-
-const WarningMessageTokenDetails = ({
-  transfer,
-  index,
-}: {
-  transfer: { contractId: string; amount: string; to: string };
-  index: number;
-}) => {
-  const publicKey = useSelector(publicKeySelector);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-
-  const [isLoadingTokenDetails, setLoadingTokenDetails] = React.useState(false);
-  const [tokenDetails, setTokenDetails] = React.useState(
-    {} as Record<string, { name: string; symbol: string }>,
-  );
-  React.useEffect(() => {
-    async function _getTokenDetails() {
-      setLoadingTokenDetails(true);
-      const _tokenDetails = {} as Record<
-        string,
-        { name: string; symbol: string }
-      >;
-      try {
-        const tokenDetailsResponse = await getTokenDetails({
-          contractId: transfer.contractId,
-          publicKey,
-          networkDetails,
-        });
-
-        if (!tokenDetailsResponse) {
-          throw new Error("failed to fetch token details");
-        }
-        _tokenDetails[transfer.contractId] = tokenDetailsResponse;
-      } catch (error) {
-        // falls back to only showing contract ID
-        captureException(
-          `Failed to fetch token details - ${JSON.stringify(error)} - ${
-            transfer.contractId
-          } - ${networkDetails.network}`,
-        );
-        console.error(error);
-      }
-      setTokenDetails(_tokenDetails);
-      setLoadingTokenDetails(false);
-    }
-    _getTokenDetails();
-  }, [transfer.contractId, networkDetails, publicKey]);
-
-  return (
-    <div className="TokenDetails">
-      <p className="FnName">TRANSFER #{index + 1}:</p>
-      {}
-      {isLoadingTokenDetails ? (
-        <div className="TokenDetails__loader">
-          <Loader size="1rem" />
-        </div>
-      ) : tokenDetails[transfer.contractId] ? (
-        <p>
-          <span className="InlineLabel">Token:</span>{" "}
-          {`(${
-            tokenDetails[transfer.contractId].name === "native"
-              ? "XLM"
-              : tokenDetails[transfer.contractId].symbol
-          }) ${tokenDetails[transfer.contractId].name}`}
-        </p>
-      ) : (
-        <p>
-          <span className="InlineLabel">Token: Unknown</span>
-        </p>
-      )}
-      <p>
-        <span className="InlineLabel">Contract ID:</span>
-        <CopyValue
-          value={transfer.contractId}
-          displayValue={transfer.contractId}
-        />
-      </p>
-      <p>
-        <span className="InlineLabel">Amount:</span> {transfer.amount}
-      </p>
-      <p>
-        <span className="InlineLabel">To:</span>
-        <CopyValue value={transfer.to} displayValue={transfer.to} />
-      </p>
     </div>
   );
 };
@@ -1345,7 +598,7 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
       variant={WarningMessageVariant.warning}
       header={t("WEBSITE CONNECTION IS NOT SECURE")}
     >
-      <p>
+      <p className="SslWarningText">
         <Trans domain={url}>
           The website <strong>{url}</strong> does not use an SSL certificate.
           For additional safety Freighter only works with websites that provide
@@ -1358,17 +611,27 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
   );
 };
 
-export const BlockAidMaliciousLabel = () => {
+export const BlockAidMaliciousLabel = ({
+  onClick,
+}: {
+  onClick: () => void;
+}) => {
   const { t } = useTranslation();
   return (
     <div
       className="ScanLabel ScanMalicious"
       data-testid="blockaid-malicious-label"
+      onClick={onClick}
     >
-      <div className="Icon">
-        <Icon.InfoOctagon className="WarningMessage__icon" />
+      <div className="ScanLabel__Info">
+        <div className="Icon">
+          <Icon.InfoSquare className="WarningMessage__icon" />
+        </div>
+        <p className="Message">{t("This site was flagged as malicious")}</p>
       </div>
-      <p className="Message">{t("This site was flagged as malicious")}</p>
+      <div className="ScanLabel__Action">
+        <Icon.ChevronRight />
+      </div>
     </div>
   );
 };
@@ -1377,12 +640,14 @@ export const BlockAidMissLabel = () => {
   const { t } = useTranslation();
   return (
     <div className="ScanLabel ScanMiss" data-testid="blockaid-miss-label">
-      <div className="Icon">
-        <Icon.InfoOctagon className="WarningMessage__icon" />
+      <div className="ScanLabel__Info">
+        <div className="Icon">
+          <Icon.InfoSquare className="WarningMessage__icon" />
+        </div>
+        <p className="Message">
+          {t("Unable to scan site for malicious behavior")}
+        </p>
       </div>
-      <p className="Message">
-        {t("Unable to scan site for malicious behavior")}
-      </p>
     </div>
   );
 };
@@ -1390,16 +655,18 @@ export const BlockAidMissLabel = () => {
 export const BlockAidSiteScanLabel = ({
   status,
   isMalicious,
+  onClick,
 }: {
   status: "hit" | "miss";
   isMalicious: boolean;
+  onClick: () => void;
 }) => {
   if (status === "miss") {
     return <BlockAidMissLabel />;
   }
 
   if (isMalicious) {
-    return <BlockAidMaliciousLabel />;
+    return <BlockAidMaliciousLabel onClick={onClick} />;
   }
 
   // benign case should not show anything for now
@@ -1408,57 +675,78 @@ export const BlockAidSiteScanLabel = ({
 
 export const BlockaidTxScanLabel = ({
   scanResult,
+  onClick,
 }: {
   scanResult: BlockAidScanTxResult;
+  onClick: () => void;
 }) => {
   const { t } = useTranslation();
-  const { simulation, validation, request_id: requestId } = scanResult;
+  const { simulation, validation } = scanResult;
 
   if (simulation && "error" in simulation) {
     const header = t("This transaction is expected to fail");
     return (
-      <BlockaidWarningModal
-        header={header}
-        description={[simulation.error]}
-        isWarning
-        requestId={requestId}
-      />
+      <div
+        className="ScanLabel ScanMiss"
+        data-testid="blockaid-miss-label"
+        onClick={onClick}
+      >
+        <div className="ScanLabel__Info">
+          <div className="Icon">
+            <Icon.InfoSquare className="WarningMessage__icon" />
+          </div>
+          <p className="Message">{header}</p>
+        </div>
+        <div className="ScanLabel__Action">
+          <Icon.ChevronRight />
+        </div>
+      </div>
     );
   }
 
-  let message = null;
   if (validation && "result_type" in validation) {
     switch (validation.result_type) {
       case "Malicious": {
-        message = {
-          header: t("This transaction was flagged as malicious"),
-          variant: WarningMessageVariant.highAlert,
-          message: validation.description,
-        };
-
         return (
-          <BlockaidWarningModal
-            header={message.header}
-            description={[message.message]}
-            isWarning={false}
-            requestId={requestId}
-          />
+          <div
+            className="ScanLabel ScanMalicious"
+            data-testid="blockaid-malicious-label"
+            onClick={onClick}
+          >
+            <div className="ScanLabel__Info">
+              <div className="Icon">
+                <Icon.InfoSquare className="WarningMessage__icon" />
+              </div>
+              <p className="Message">
+                {t("This transaction was flagged as malicious")}
+              </p>
+            </div>
+            <div className="ScanLabel__Action">
+              <Icon.ChevronRight />
+            </div>
+          </div>
         );
       }
 
       case "Warning": {
-        message = {
-          header: "This transaction was flagged as suspicious",
-          variant: WarningMessageVariant.warning,
-          message: validation.description,
-        };
-
         return (
-          <BlockaidWarningModal
-            header={message.header}
-            description={[message.message]}
-            isWarning
-          />
+          <div
+            className="ScanLabel ScanMiss"
+            data-testid="blockaid-miss-label"
+            onClick={onClick}
+          >
+            <div className="ScanLabel__Info">
+              <div className="Icon">
+                <Icon.InfoSquare className="WarningMessage__icon" />
+              </div>
+              <p className="Message">
+                {"This transaction was flagged as suspicious"}
+              </p>
+            </div>
+            <div className="ScanLabel__Action">
+              <Icon.ChevronRight />
+            </div>
+          </div>
         );
       }
 
@@ -1469,164 +757,103 @@ export const BlockaidTxScanLabel = ({
   return <></>;
 };
 
-export const BlockaidAssetScanLabel = ({
-  blockaidData,
-}: {
-  blockaidData: BlockAidScanAssetResult;
-}) => {
-  const isWarning = isBlockaidWarning(blockaidData.result_type);
-
-  return (
-    <BlockaidWarningModal
-      header={`This asset was flagged as ${blockaidData.result_type.toLowerCase()}`}
-      description={blockaidData.features?.map((f) => f.description) || []}
-      isWarning={isWarning}
-      address={blockaidData.address}
-    />
-  );
-};
-
-interface BlockaidWarningModalProps {
-  header: string;
-  description: string[];
-  handleCloseClick?: () => void;
-  isActive?: boolean;
-  isWarning: boolean;
-  requestId?: string;
-  address?: string;
+interface BlockAidTxScanExpandedProps {
+  scanResult: BlockAidScanTxResult;
+  onClose?: () => void;
 }
 
-export const BlockaidWarningModal = ({
-  handleCloseClick,
-  header,
-  description,
-  isActive = false,
-  isWarning,
-  requestId,
-  address,
-}: BlockaidWarningModalProps) => {
-  const { t } = useTranslation();
-  const [isModalActive, setIsModalActive] = useState(isActive);
-  const isAsset = !!address;
+export const BlockAidTxScanExpanded = ({
+  scanResult,
+  onClose,
+}: BlockAidTxScanExpandedProps) => {
+  const { simulation, validation } = scanResult;
 
-  const WarningInfoBlock = ({ hasArrow = false }: { hasArrow?: boolean }) => (
-    <div
-      className={`ScamAssetWarning__box ${
-        isWarning ? "ScamAssetWarning__box--isWarning" : ""
-      }`}
-      data-testid="BlockaidWarningModal__alert"
-    >
-      <div className="ScamAssetWarning__box__content">
-        <div className="Icon">
-          <img
-            className="ScamAssetWarning__box__icon"
-            src={isWarning ? IconWarningBlockaidYellow : IconWarningBlockaid}
-            alt="icon warning blockaid"
-          />
+  if (simulation && "error" in simulation) {
+    return (
+      <div className="BlockaidDetailsExpanded">
+        <div className="BlockaidDetailsExpanded__Header">
+          <div className="WarningMark">
+            <Icon.AlertTriangle />
+          </div>
+          <div className="Close" onClick={onClose}>
+            <Icon.X />
+          </div>
         </div>
-        <div className="ScamAssetWarning__alert">
-          <div className="ScamAssetWarning__description">{header}</div>
-          <BlockaidByLine
-            hasArrow={hasArrow}
-            handleClick={() => setIsModalActive(true)}
-            requestId={requestId}
-            address={address}
-          />
+        <div className="BlockaidDetailsExpanded__Title">Warning</div>
+        <div className="BlockaidDetailsExpanded__SubTitle">
+          This transaction is expected to fail for the following reasons.
+        </div>
+        <div className="BlockaidDetailsExpanded__Details">
+          <div className="BlockaidDetailsExpanded__DetailRow">
+            <Icon.MinusCircle />
+            <span>{simulation.error}</span>
+          </div>
+          <BlockaidByLine address={""} />
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 
-  const truncatedDescription = (desc: string) => {
-    const arr = desc.split(" ");
-
-    return arr.map((word) => {
-      if (word.length > 30) {
+  if (validation && "result_type" in validation) {
+    switch (validation.result_type) {
+      case "Malicious": {
         return (
-          <>
-            <CopyValue
-              value={word}
-              displayValue={`${word.slice(0, 4)}...${word.slice(-4)}`}
-            />{" "}
-          </>
+          <div className="BlockaidDetailsExpanded">
+            <div className="BlockaidDetailsExpanded__Header">
+              <div className="WarningMarkError">
+                <Icon.AlertOctagon />
+              </div>
+              <div className="Close" onClick={onClose}>
+                <Icon.X />
+              </div>
+            </div>
+            <div className="BlockaidDetailsExpanded__Title">Do not proceed</div>
+            <div className="BlockaidDetailsExpanded__SubTitle">
+              This transaction does not appear safe for the following reasons.
+            </div>
+            <div className="BlockaidDetailsExpanded__Details">
+              <div className="BlockaidDetailsExpanded__DetailRowError">
+                <Icon.XCircle />
+                <span>{validation.description}</span>
+              </div>
+              <BlockaidByLine address={""} />
+            </div>
+          </div>
         );
       }
 
-      return <span key={word}>{word} </span>;
-    });
-  };
-
-  return isModalActive ? (
-    <>
-      <WarningInfoBlock hasArrow />
-      {createPortal(
-        <div
-          className="BlockaidWarningModal"
-          data-testid={`BlockaidWarningModal__${isAsset ? "asset" : "tx"}`}
-        >
-          <LoadingBackground isActive />
-          <div className="BlockaidWarningModal__modal">
-            <Card>
-              <div
-                className={`BlockaidWarningModal__modal__icon ${
-                  isWarning
-                    ? "BlockaidWarningModal__modal__icon--isWarning"
-                    : ""
-                }`}
-              >
-                <img
-                  className="BlockaidWarningModal__modal__image"
-                  src={
-                    isWarning ? IconWarningBlockaidYellow : IconWarningBlockaid
-                  }
-                  alt="icon warning blockaid"
-                />
+      case "Warning": {
+        return (
+          <div className="BlockaidDetailsExpanded">
+            <div className="BlockaidDetailsExpanded__Header">
+              <div className="WarningMark">
+                <Icon.AlertTriangle />
               </div>
-
-              <div className="BlockaidWarningModal__modal__title">{header}</div>
-              <div className="BlockaidWarningModal__modal__description">
-                {t(
-                  `${header} by Blockaid. Interacting with this ${
-                    isAsset ? "token" : "transaction"
-                  } may result in loss of funds and is not recommended for the following reasons`,
-                )}
-                :
-                <ul className="ScamAssetWarning__list">
-                  {description.map((d) => (
-                    <li key={d.replace(" ", "-")}>{truncatedDescription(d)}</li>
-                  ))}
-                </ul>
+              <div className="Close" onClick={onClose}>
+                <Icon.X />
               </div>
-              <div className="BlockaidWarningModal__modal__byline">
-                <BlockaidByLine requestId={requestId} address={address} />
+            </div>
+            <div className="BlockaidDetailsExpanded__Title">
+              Suspicious Request
+            </div>
+            <div className="BlockaidDetailsExpanded__SubTitle">
+              This transaction does not appear safe for the following reasons.
+            </div>
+            <div className="BlockaidDetailsExpanded__Details">
+              <div className="BlockaidDetailsExpanded__DetailRow">
+                <Icon.MinusCircle />
+                <span>{validation.description}</span>
               </div>
-
-              <Button
-                data-testid="BlockaidWarningModal__button"
-                size="md"
-                variant="tertiary"
-                isFullWidth
-                type="button"
-                onClick={() =>
-                  handleCloseClick
-                    ? handleCloseClick()
-                    : setIsModalActive(false)
-                }
-              >
-                {t("Got it")}
-              </Button>
-            </Card>
+            </div>
+            <BlockaidByLine address={""} />
           </div>
-        </div>,
-        document.querySelector("#modal-root")!,
-      )}
-    </>
-  ) : (
-    <div
-      className="WarningMessage__activate-button"
-      data-testid={`BlockaidWarningModal__button__${isAsset ? "asset" : "tx"}`}
-    >
-      <WarningInfoBlock hasArrow />
-    </div>
-  );
+        );
+      }
+
+      case "Benign":
+      default:
+    }
+  }
+
+  return <></>;
 };

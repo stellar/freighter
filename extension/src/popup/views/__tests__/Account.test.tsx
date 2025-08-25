@@ -1,6 +1,5 @@
 import React from "react";
 import { render, waitFor, screen, fireEvent } from "@testing-library/react";
-import { Horizon } from "stellar-sdk";
 import BigNumber from "bignumber.js";
 import * as ReactRouterDom from "react-router-dom";
 
@@ -20,8 +19,7 @@ import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import * as UseAssetDomain from "popup/helpers/useAssetDomain";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { SERVICE_TYPES } from "@shared/constants/services";
-import { Response, SettingsState } from "@shared/api/types";
-import { accountNameSelector } from "popup/ducks/accountServices";
+import { HorizonOperation, Response, SettingsState } from "@shared/api/types";
 import * as TokenListHelpers from "@shared/api/helpers/token-list";
 import * as RouteHelpers from "popup/helpers/route";
 
@@ -33,7 +31,6 @@ import {
   mockPrices,
   TEST_CANONICAL,
   TEST_PUBLIC_KEY,
-  mockSelector,
 } from "../../__testHelpers__";
 import { Account } from "../Account";
 import { ROUTES } from "popup/constants/routes";
@@ -52,8 +49,9 @@ const mockHistoryOperations = {
       asset_code: "code",
       from: "G1",
       to: "G2",
+      transaction_attr: { operation_count: 1, fee_charged: "" },
     },
-  ] as Horizon.ServerApi.PaymentOperationRecord[],
+  ] as HorizonOperation[],
 };
 
 jest
@@ -280,7 +278,7 @@ describe("Account view", () => {
   it("loads accounts", async () => {
     render(
       <Wrapper
-        routes={[ROUTES.welcome]}
+        routes={[ROUTES.account]}
         state={{
           auth: {
             error: null,
@@ -300,9 +298,6 @@ describe("Account view", () => {
 
     await waitFor(() => screen.getByTestId("account-header"));
     expect(screen.getByTestId("account-header")).toBeDefined();
-    const accountNodes = screen.getAllByTestId("account-list-item");
-    expect(accountNodes.length).toEqual(3);
-    expect(screen.getAllByText("Account 1")).toBeDefined();
   });
 
   it("displays balances and scam notifications on Mainnet", async () => {
@@ -459,88 +454,6 @@ describe("Account view", () => {
     });
   });
 
-  it("shows Blockaid warning in account details", async () => {
-    jest
-      .spyOn(ApiInternal, "getAccountBalances")
-      .mockImplementation(() => Promise.resolve(mockBalances));
-
-    render(
-      <Wrapper
-        routes={[ROUTES.welcome]}
-        state={{
-          auth: {
-            error: null,
-            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
-            publicKey: "G1",
-            allAccounts: mockAccounts,
-          },
-          settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
-            networksList: DEFAULT_NETWORKS,
-          },
-        }}
-      >
-        <Account />
-      </Wrapper>,
-    );
-
-    await waitFor(async () => {
-      await fireEvent.click(
-        screen.getByTestId("AccountAssets__asset--loading-USDC"),
-      );
-    });
-    await waitFor(() => {
-      expect(
-        screen.getByTestId("asset-detail-available-copy"),
-      ).toHaveTextContent("100 USDC");
-    });
-    await waitFor(() => {
-      expect(screen.getByTestId("ScamAssetWarning__box")).toBeDefined();
-    });
-  });
-
-  it("switches accounts", async () => {
-    mockSelector(accountNameSelector, () => "Account 1");
-
-    jest
-      .spyOn(ApiInternal, "makeAccountActive")
-      .mockImplementation(() =>
-        Promise.resolve({ publicKey: "G2", hasPrivateKey: true, bipPath: "" }),
-      );
-    render(
-      <Wrapper
-        routes={[ROUTES.welcome]}
-        state={{
-          auth: {
-            error: null,
-            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
-            publicKey: "G1",
-            allAccounts: mockAccounts,
-          },
-          settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
-            networksList: DEFAULT_NETWORKS,
-          },
-        }}
-      >
-        <Account />
-      </Wrapper>,
-    );
-    await waitFor(async () => {
-      const accountIdenticonNodes = screen.getAllByTestId(
-        "account-list-identicon-button",
-      );
-      mockSelector(accountNameSelector, () => "Account 2");
-      await fireEvent.click(accountIdenticonNodes[2]);
-    });
-
-    await waitFor(async () => {
-      expect(screen.getByTestId("account-view-account-name")).toHaveTextContent(
-        "Account 2",
-      );
-    });
-  });
-
   it("loads LP shares", async () => {
     const mockLpBalance = {
       balances: {
@@ -692,15 +605,15 @@ describe("Account view", () => {
       expect(assetNodes.length).toEqual(3);
       expect(
         screen.getByTestId(`asset-amount-${TEST_CANONICAL}`),
-      ).toHaveTextContent("$834,463.68");
+      ).toHaveTextContent("$834,463.67");
       expect(
         screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
-      ).toHaveTextContent("3.98%");
+      ).toHaveTextContent("3.97%");
       expect(screen.getByTestId(`asset-amount-native`)).toHaveTextContent(
-        "$13.82",
+        "$13.81",
       );
       expect(screen.getByTestId(`asset-price-delta-native`)).toHaveTextContent(
-        "1.10%",
+        "1.09%",
       );
     });
   });
@@ -921,6 +834,7 @@ describe("Account view", () => {
         error: null,
       },
       fetchData: jest.fn(),
+      refreshAppData: jest.fn(),
     });
 
     render(

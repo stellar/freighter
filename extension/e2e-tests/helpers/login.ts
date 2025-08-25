@@ -7,7 +7,7 @@ export const PASSWORD = "My-password123";
 
 export const login = async ({ page, extensionId }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await page.getByText("Import Wallet").click();
+  await page.getByText("I already have a wallet").click();
 
   await expect(page.getByText("Create a Password")).toBeVisible();
 
@@ -57,7 +57,7 @@ export const loginAndFund = async ({ page, extensionId }) => {
 
 export const loginToTestAccount = async ({ page, extensionId }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await page.getByText("Import Wallet").click();
+  await page.getByText("I already have a wallet").click();
 
   await page.locator("#new-password-input").fill("My-password123");
   await page.locator("#confirm-password-input").fill("My-password123");

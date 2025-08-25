@@ -1,49 +1,20 @@
 @use "../../../styles/utils.scss" as *;
 
 .MnemonicDisplay {
+  max-width: 100%;
   position: relative;
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
   margin-bottom: #{pxToRem(32px)};
+  border-radius: pxToRem(16px);
+  background-color: var(--sds-clr-gray-03);
+  padding: pxToRem(24px);
 
-  &__ordered-list {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: pxToRem(16px);
-    row-gap: pxToRem(8px);
-    text-align: start;
-    counter-reset: item;
-    list-style-type: none;
-    padding: 0 #{pxToRem(8px)} !important;
-
-    li::before {
-      counter-increment: item;
-      content: counter(item, decimal-leading-zero) !important;
-      display: inline-block;
-      width: #{pxToRem(24px)};
-      position: relative !important;
-      left: 0 !important;
-    }
-
-    &--popup-view {
-      column-gap: 3rem;
-      padding: 0 1rem;
-    }
-  }
-
-  &__list-item {
-    border: 1px solid var(--sds-clr-gray-06);
-    border-radius: pxToRem(6px);
-    display: flex;
-    gap: pxToRem(4px);
-    padding: pxToRem(6px) pxToRem(10px);
-
-    &::before {
-      color: var(--sds-clr-gray-11);
-      content: none !important;
-    }
-
-    span {
-      font-weight: var(--sds-fw-semi-bold);
+  &__word {
+    line-height: pxToRem(24px);
+    &:not(:first-child) {
+      margin-left: pxToRem(6px);
     }
   }
 

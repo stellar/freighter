@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
@@ -63,7 +63,6 @@ export const SearchAsset = () => {
   const { t } = useTranslation();
   const location = useLocation();
 
-  const [hasNoResults, setHasNoResults] = useState(false);
   const ResultsRef = useRef<HTMLDivElement>(null);
 
   const { state, fetchData } = useGetSearchData({
@@ -74,7 +73,7 @@ export const SearchAsset = () => {
   const { state: tokenState, fetchData: fetchTokenData } = useAssetLookup();
 
   /* eslint-disable react-hooks/exhaustive-deps */
-  const handleSearch = useCallback(
+  const handleSearchRef = useRef(
     debounce(
       async (
         { target: { value: asset } },
@@ -92,20 +91,12 @@ export const SearchAsset = () => {
       },
       500,
     ),
-    [],
   );
-
-  useEffect(() => {
-    setHasNoResults(
-      !!tokenState.data &&
-        !tokenState.data.verifiedAssetRows.length &&
-        !tokenState.data.unverifiedAssetRows.length,
-    );
-  }, [tokenState]);
+  const handleSearch = handleSearchRef.current;
 
   useEffect(() => {
     const getData = async () => {
-      await fetchData();
+      await fetchData(true);
     };
 
     getData();
@@ -162,34 +153,37 @@ export const SearchAsset = () => {
   }
 
   const data = state.data;
+  const hasNoResults =
+    !!tokenState.data &&
+    !tokenState.data.verifiedAssetRows.length &&
+    !tokenState.data.unverifiedAssetRows.length;
 
   return (
-    <View>
+    <>
       <SubviewHeader title={t("Choose Asset")} />
 
       <View.Content hasTopInput>
         <Formik initialValues={initialValues} onSubmit={() => {}}>
           {({ dirty }) => (
-            <Form
-              onChange={(e) => {
-                handleSearch(
-                  e,
-                  data.publicKey,
-                  data.isAllowListVerificationEnabled,
-                  data.networkDetails,
-                );
-                setHasNoResults(false);
-              }}
-            >
+            <Form>
               <FormRows>
                 <div className="SearchAsset__search-input">
                   <Field name="asset">
                     {({ field }: FieldProps) => (
                       <SearchInput
-                        id="asset"
-                        placeholder={t("Search for asset name")}
                         {...field}
+                        id="asset"
                         data-testid="search-asset-input"
+                        placeholder={t("Search for asset name")}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          handleSearch(
+                            e,
+                            data.publicKey,
+                            data.isAllowListVerificationEnabled,
+                            data.networkDetails,
+                          );
+                        }}
                       />
                     )}
                   </Field>
@@ -240,6 +234,6 @@ export const SearchAsset = () => {
           )}
         </Formik>
       </View.Content>
-    </View>
+    </>
   );
 };

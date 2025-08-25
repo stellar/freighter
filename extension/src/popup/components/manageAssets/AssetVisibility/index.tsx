@@ -85,7 +85,7 @@ export const AssetVisibility = () => {
   const data = domainState.data;
 
   return (
-    <View>
+    <>
       <SubviewHeader customBackAction={goBack} title={t("Toggle Assets")} />
       <View.Content hasNoTopPadding>
         {isLoading ? (
@@ -123,6 +123,6 @@ export const AssetVisibility = () => {
           </div>
         )}
       </View.Content>
-    </View>
+    </>
   );
 };

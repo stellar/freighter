@@ -33,11 +33,11 @@
     justify-content: center;
     height: 100%;
     width: 100%;
-    color: var(--sds-clr-gray-11);
+    color: var(--clr-text-secondary);
     text-align: center;
 
     p {
-      font-size: var(--sds-fs-secondary);
+      font-size: pxToRem(12px);
     }
   }
 

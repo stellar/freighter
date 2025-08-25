@@ -75,7 +75,7 @@ export const AssetNetworkInfo = ({
             displayValue={displaySorobanId(contractId, 28)}
           />
         ) : (
-          <span>{assetDomain || "Stellar Lumens"}</span>
+          <span>{assetDomain || "XLM"}</span>
         )}
       </>
     </div>

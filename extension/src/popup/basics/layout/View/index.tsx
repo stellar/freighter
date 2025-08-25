@@ -1,7 +1,7 @@
 import React, { createContext, useContext } from "react";
 import { Text } from "@stellar/design-system";
 
-import FreighterLogo from "popup/assets/logo-freighter.svg";
+import FreighterLogo from "popup/assets/logo-freighter-welcome-2.svg";
 import { BackButton } from "popup/basics/buttons/BackButton";
 import { addStyleClasses } from "popup/helpers/addStyleClasses";
 
@@ -17,7 +17,7 @@ const ViewContext = createContext<ViewContextProps>({ isAppLayout: undefined });
 const ViewHeader: React.FC = ({ ...props }) => (
   <header className="View__header" {...props}>
     <ViewInset isInline hasVerticalBorder>
-      <div className="View__header__box View__header__box--center">
+      <div className="View__header__box View__header__box--center full">
         <img
           className="View__header__logo"
           alt="Freighter logo"
@@ -38,6 +38,7 @@ interface ViewAppHeaderProps {
   hasBackButton?: boolean;
   customBackAction?: () => void;
   customBackIcon?: React.ReactNode;
+  isAccountHeader?: boolean;
   children?: React.ReactNode;
 }
 
@@ -51,10 +52,11 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
   customBackAction,
   customBackIcon,
   children,
+  isAccountHeader = false,
   ...props
 }: ViewAppHeaderProps) => (
   <div className="View__header" {...props}>
-    <ViewInset isInline hasVerticalBorder>
+    <ViewInset isInline isAccountHeader={isAccountHeader} hasVerticalBorder>
       {/* Left */}
       <div className="View__header__box View__header__box--left">
         {hasBackButton ? (
@@ -223,6 +225,7 @@ interface ViewInsetProps {
   hasNoTopPadding?: boolean;
   hasTopInput?: boolean;
   hasNoBottomPadding?: boolean;
+  isAccountHeader?: boolean;
 }
 
 export const ViewInset: React.FC<ViewInsetProps> = ({
@@ -237,6 +240,7 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
   hasNoTopPadding,
   hasTopInput,
   hasNoBottomPadding,
+  isAccountHeader,
   ...props
 }: ViewInsetProps) => (
   <div
@@ -250,6 +254,7 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
       hasNoTopPadding ? "View__inset--no-top-padding" : "",
       hasTopInput ? "View__inset--top-input" : "",
       hasNoBottomPadding ? "View__inset--no-bottom-padding" : "",
+      isAccountHeader ? "View__inset--account-header" : "",
     ])}${additionalClassName ? ` ${additionalClassName}` : ""}`}
     {...props}
   >
@@ -278,7 +283,7 @@ export const View: React.FC<ViewLayoutProps> & ViewComponent = ({
   ...props
 }: ViewLayoutProps) => (
   <ViewContext.Provider value={{ isAppLayout }}>
-    <div className="View" {...props}>
+    <div className="View" id="layout-view" {...props}>
       {children}
     </div>
   </ViewContext.Provider>

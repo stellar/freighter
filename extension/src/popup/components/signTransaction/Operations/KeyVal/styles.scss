@@ -1,14 +1,50 @@
+@use "../../../../styles/utils.scss" as *;
+
 .OperationParameters {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-bottom: 1.5rem;
   width: 100%;
+
+  .CopyText {
+    &:not(:first-child) {
+      margin-top: pxToRem(12px);
+    }
+  }
+
+  .Parameters {
+    display: flex;
+    flex-direction: column;
+
+    .ParameterKey {
+      display: flex;
+      align-items: center;
+      color: var(--sds-clr-gray-11);
+
+      svg {
+        margin-left: pxToRem(8px);
+      }
+    }
+
+    .ParameterValue {
+      margin-top: pxToRem(8px);
+      word-break: break-word;
+    }
+  }
 
   .Parameter {
     text-overflow: ellipsis;
     overflow: hidden;
     color: var(--sds-clr-gray-12);
+    white-space: pre;
+
+    &:not(:last-child) {
+      margin-bottom: pxToRem(12px);
+    }
+
+    .ParameterName {
+      color: var(--sds-clr-gray-11);
+    }
 
     .CopyText {
       width: 100%;

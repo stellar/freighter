@@ -1,36 +1,34 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Button, Card, Icon, Notification } from "@stellar/design-system";
+import { Button, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { AccountListIdenticon } from "popup/components/identicons/AccountListIdenticon";
-import { AccountList, OptionTag } from "popup/components/account/AccountList";
-import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { Message } from "popup/components/signMessage";
 import {
   isNonSSLEnabledSelector,
-  settingsExperimentalModeSelector,
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
 import {
   WarningMessageVariant,
   WarningMessage,
-  DomainNotAllowedWarningMessage,
   SSLWarningMessage,
+  DomainNotAllowedWarningMessage,
 } from "popup/components/WarningMessages";
 import { View } from "popup/basics/layout/View";
 
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
-import { SlideupModal } from "popup/components/SlideupModal";
 
 import { VerifyAccount } from "popup/views/VerifyAccount";
-import { MessageToSign, newTabHref, parsedSearchParam } from "helpers/urls";
-import { truncatedPublicKey } from "helpers/stellar";
+import {
+  getPunycodedDomain,
+  MessageToSign,
+  newTabHref,
+  parsedSearchParam,
+} from "helpers/urls";
+import { SIGN_MESSAGE_PREFIX } from "helpers/stellar";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
-
-import "./styles.scss";
 import { useGetSignMessageData } from "./hooks/useGetSignMessageData";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
@@ -39,15 +37,14 @@ import { openTab } from "popup/helpers/navigate";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { rejectTransaction, signBlob } from "popup/ducks/access";
 import { reRouteOnboarding } from "popup/helpers/route";
+import { getSiteFavicon } from "popup/helpers/getSiteFavicon";
+import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+
+import "./styles.scss";
 
 export const SignMessage = () => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
   const location = useLocation();
   const { t } = useTranslation();
-  const isExperimentalModeEnabled = useSelector(
-    settingsExperimentalModeSelector,
-  );
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
   const { networkName, networkPassphrase } = useSelector(
     settingsNetworkDetailsSelector,
@@ -55,6 +52,7 @@ export const SignMessage = () => {
 
   const message = parsedSearchParam(location.search) as MessageToSign;
   const {
+    apiVersion,
     accountToSign,
     domain,
     url,
@@ -77,7 +75,12 @@ export const SignMessage = () => {
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-  } = useSetupSigningFlow(rejectTransaction, signBlob, message.message);
+  } = useSetupSigningFlow(
+    rejectTransaction,
+    signBlob,
+    message.message,
+    apiVersion,
+  );
 
   useEffect(() => {
     const getData = async () => {
@@ -118,10 +121,6 @@ export const SignMessage = () => {
     });
   }
 
-  const publicKey = signMessageState.data?.publicKey!;
-  const { allAccounts, accountNotFound, currentAccount } =
-    signMessageState.data?.signFlowState!;
-
   if (isHardwareWallet) {
     return (
       <WarningMessage
@@ -151,7 +150,7 @@ export const SignMessage = () => {
           {t("The requester expects you to sign this message on")}{" "}
           {blobNetworkPassphrase}.
         </p>
-        <p>{t("Signing this transaction is not possible at the moment.")}</p>
+        <p>{t("Signing this message is not possible at the moment.")}</p>
       </WarningMessage>
     );
   }
@@ -159,6 +158,12 @@ export const SignMessage = () => {
   if (!url.startsWith("https") && !isNonSSLEnabled) {
     return <SSLWarningMessage url={domain} />;
   }
+
+  const publicKey = signMessageState.data?.publicKey!;
+  const punycodedDomain = getPunycodedDomain(domain);
+  const isDomainValid = punycodedDomain === domain;
+  const favicon = getSiteFavicon(domain);
+  const validDomain = isDomainValid ? punycodedDomain : `xn-${punycodedDomain}`;
 
   return isPasswordRequired ? (
     <VerifyAccount
@@ -172,123 +177,68 @@ export const SignMessage = () => {
         <HardwareSign walletType={hardwareWalletType} />
       )}
       <React.Fragment>
-        <View.AppHeader pageTitle={t("Confirm Data")} />
         <View.Content>
-          {isExperimentalModeEnabled ? (
-            <WarningMessage
-              header="Experimental Mode"
-              variant={WarningMessageVariant.default}
-            >
-              <p>
-                {t(
-                  "You are interacting with data that may be using untested and changing schemas. Proceed at your own risk.",
-                )}
-              </p>
-            </WarningMessage>
-          ) : null}
-          <WarningMessage
-            header="Unknown data"
-            variant={WarningMessageVariant.highAlert}
-          >
-            <p>
-              {t(
-                "You are attempting to sign an arbitrary message. Please use extreme caution and understand the implications of signing this data.",
-              )}
-            </p>
-          </WarningMessage>
+          <div className="SignMessage__Body">
+            <div className="SignMessage__TitleRow">
+              <img
+                className="PunycodedDomain__favicon"
+                src={favicon}
+                alt="Site favicon"
+              />
+              <div className="SignMessage__TitleRow__Detail">
+                <span className="SignMessage__TitleRow__Title">
+                  Sign message
+                </span>
+                <span className="SignMessage__TitleRow__Domain">
+                  {validDomain}
+                </span>
+              </div>
+            </div>
+          </div>
           {!isDomainListedAllowed && (
             <DomainNotAllowedWarningMessage domain={domain} />
           )}
-          <div className="SignMessage__info">
-            <Card variant="secondary">
-              <PunycodedDomain domain={domain} isRow />
-              <div className="SignMessage__subject">
-                {t("is requesting approval to sign a message")}
+          <Message message={SIGN_MESSAGE_PREFIX + message.message} />
+          <div className="SignMessage__Metadata">
+            <div className="SignMessage__Metadata__Row">
+              <div className="SignMessage__Metadata__Label">
+                <Icon.Wallet01 />
+                <span>Wallet</span>
               </div>
-              <div className="SignMessage__approval">
-                <div className="SignMessage__approval__title">
-                  {t("Approve using")}:
-                </div>
-                <div
-                  className="SignMessage__current-account"
-                  onClick={() => setIsDropdownOpen(true)}
-                >
-                  <AccountListIdenticon
-                    displayKey
-                    accountName={currentAccount.name}
-                    active
-                    publicKey={currentAccount.publicKey}
-                    onClickAccount={async () => {
-                      setIsDropdownOpen(!isDropdownOpen);
-                    }}
-                  >
-                    <OptionTag
-                      hardwareWalletType={currentAccount.hardwareWalletType}
-                      imported={currentAccount.imported}
-                    />
-                  </AccountListIdenticon>
-                  <div className="SignMessage__current-account__chevron">
-                    <Icon.ChevronDown />
-                  </div>
-                </div>
+              <div className="SignMessage__Metadata__Value">
+                <KeyIdenticon publicKey={publicKey} />
               </div>
-            </Card>
-            {accountNotFound && accountToSign ? (
-              <div className="SignMessage__account-not-found">
-                <Notification
-                  variant="warning"
-                  icon={<Icon.InfoOctagon />}
-                  title={t("Account not available")}
-                >
-                  {t("The application is requesting a specific account")} (
-                  {truncatedPublicKey(accountToSign)}),{" "}
-                  {t(
-                    "which is not available on Freighter. If you own this account, you can import it into Freighter to complete this request.",
-                  )}
-                </Notification>
-              </div>
-            ) : null}
+            </div>
           </div>
-          <Message message={message.message} />
         </View.Content>
-        <View.Footer isInline>
-          <Button
-            size="md"
-            isFullWidth
-            variant="secondary"
-            onClick={() => rejectAndClose()}
-          >
-            {t("Reject")}
-          </Button>
-          <Button
-            data-testid="sign-message-approve-button"
-            disabled={!isDomainListedAllowed}
-            size="md"
-            isFullWidth
-            variant="primary"
-            isLoading={isConfirming}
-            onClick={() => handleApprove()}
-          >
-            {t("Approve")}
-          </Button>
-        </View.Footer>
-        <SlideupModal
-          isModalOpen={isDropdownOpen}
-          setIsModalOpen={setIsDropdownOpen}
-        >
-          <div className="SignMessage__modal">
-            <AccountList
-              allAccounts={allAccounts}
-              publicKey={publicKey}
-              onClickAccount={async (clickedPublicKey: string) => {
-                setIsDropdownOpen(!isDropdownOpen);
-                if (clickedPublicKey !== publicKey) {
-                  await fetchData(clickedPublicKey);
-                }
-              }}
-            />
+        <View.Footer>
+          <span className="SignMessage__Warning">
+            Only confirm if you trust this site
+          </span>
+          <div className="SignMessage__Actions">
+            <Button
+              size="lg"
+              isFullWidth
+              isRounded
+              variant="tertiary"
+              onClick={() => rejectAndClose()}
+            >
+              {t("Cancel")}
+            </Button>
+            <Button
+              data-testid="sign-message-approve-button"
+              disabled={!isDomainListedAllowed}
+              size="lg"
+              isFullWidth
+              isRounded
+              variant="secondary"
+              isLoading={isConfirming}
+              onClick={() => handleApprove()}
+            >
+              {t("Confirm")}
+            </Button>
           </div>
-        </SlideupModal>
+        </View.Footer>
       </React.Fragment>
     </>
   );
