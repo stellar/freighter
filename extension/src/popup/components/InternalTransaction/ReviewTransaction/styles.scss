@@ -1,0 +1,128 @@
+@use "../../../styles/utils.scss" as *;
+
+.ReviewTx {
+  z-index: var(--z-index--banner);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-top: 1.5rem;
+  background-color: var(--sds-clr-gray-01);
+  border-radius: 0.875rem;
+  height: 480px;
+
+  &__Warnings {
+    margin-top: pxToRem(32px);
+  }
+
+  &__loader {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__Divider {
+    display: flex;
+    margin: pxToRem(12px) 0;
+    svg {
+      color: var(--sds-clr-gray-09);
+      margin-left: pxToRem(7px);
+    }
+  }
+
+  &__SendSummary {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__Details {
+    padding: pxToRem(12px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    margin-top: pxToRem(12px);
+    margin-top: pxToRem(24px);
+
+    &__Row {
+      display: flex;
+
+      &:not(:last-child) {
+        margin-bottom: pxToRem(12px);
+        padding-bottom: pxToRem(12px);
+        border-bottom: 1px solid var(--sds-clr-gray-06);
+      }
+
+      &__Title {
+        flex: 2;
+        display: flex;
+        color: var(--sds-clr-gray-09);
+
+        svg {
+          margin-right: pxToRem(6px);
+        }
+      }
+
+      &__Value {
+        flex: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: end;
+
+        .CopyValue {
+          max-width: pxToRem(120px);
+
+          .Value {
+            max-width: pxToRem(100px);
+            text-overflow: ellipsis;
+            white-space: pre-wrap;
+            overflow: hidden;
+          }
+        }
+      }
+    }
+  }
+
+  &__Actions {
+    display: flex;
+    flex-direction: column;
+
+    .Button {
+      margin-top: pxToRem(12px);
+    }
+  }
+
+  &__SendAsset {
+    display: flex;
+    align-items: center;
+  }
+
+  &__SendAssetDetails {
+    display: flex;
+    flex-direction: column;
+
+    &__price {
+      color: var(--sds-clr-gray-09);
+      font-size: pxToRem(14px);
+    }
+  }
+
+  &__SendDestination {
+    display: flex;
+    align-items: center;
+
+    .IdenticonImg {
+      width: 2rem;
+      height: 2rem;
+      padding: pxToRem(6px);
+      border: 1px solid var(--sds-clr-gray-09);
+      border-radius: pxToRem(100px);
+      margin-right: pxToRem(12px);
+    }
+  }
+
+  &__SendDestinationDetails {
+    display: flex;
+    flex-direction: column;
+  }
+}

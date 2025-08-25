@@ -1,0 +1,66 @@
+@use "../../../styles/utils.scss" as *;
+
+.TokenList {
+  display: flex;
+  flex-direction: column;
+
+  &__loader {
+    width: 100%;
+    height: 100%;
+    margin-top: pxToRem(32px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__Assets {
+    display: flex;
+    flex-direction: column;
+    margin-top: pxToRem(32px);
+
+    &__empty {
+      display: flex;
+      justify-content: center;
+      height: 100%;
+      width: 100%;
+      color: var(--clr-text-secondary);
+      text-align: center;
+      font-size: pxToRem(12px);
+    }
+
+    &__Header {
+      display: flex;
+      align-items: center;
+      margin-bottom: pxToRem(12px);
+
+      svg {
+        margin-right: pxToRem(4px);
+      }
+    }
+  }
+
+  &__AssetRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: pxToRem(12px) 0;
+    margin-bottom: pxToRem(12px);
+    cursor: pointer;
+
+    &__Body {
+      display: flex;
+    }
+
+    &__Title {
+      display: flex;
+      flex-direction: column;
+
+      &__Total {
+        font-size: pxToRem(12px);
+        color: var(--sds-clr-gray-11);
+        margin-top: pxToRem(4px);
+      }
+    }
+  }
+}

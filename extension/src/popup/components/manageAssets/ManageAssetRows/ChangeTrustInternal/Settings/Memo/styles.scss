@@ -1,0 +1,29 @@
+@use "../../../../../../styles/utils.scss" as *;
+
+.TxMemo {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  overflow-y: scroll;
+  max-width: 57rem;
+  padding: pxToRem(8px);
+
+  &__form {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  &__actions {
+    width: 100%;
+
+    .Button {
+      &:not(:first-child) {
+        margin-top: 12px;
+      }
+    }
+  }
+}

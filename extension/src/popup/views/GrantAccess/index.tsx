@@ -2,33 +2,37 @@ import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { Navigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button, Loader, Notification } from "@stellar/design-system";
+import { Button, Icon, Loader, Notification } from "@stellar/design-system";
 
+import { View } from "popup/basics/layout/View";
 import { getUrlHostname, newTabHref, parsedSearchParam } from "helpers/urls";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
-import { ButtonsContainer, ModalWrapper } from "popup/basics/Modal";
 import { DomainScanModalInfo } from "popup/components/ModalInfo";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
-import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 import { AppDispatch } from "popup/App";
-
-import "popup/metrics/access";
-import "./styles.scss";
 import { RequestState } from "constants/request";
 import { openTab } from "popup/helpers/navigate";
 import { useGetGrantAccessData } from "./hooks/useGetGrantAccessData";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
+import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
+import { BlockaidByLine } from "popup/components/WarningMessages";
+import { ATTACK_TO_DISPLAY } from "popup/helpers/blockaid";
+
+import "popup/metrics/access";
+import "./styles.scss";
 
 export const GrantAccess = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
-  const [isGranting, setIsGranting] = useState(false);
 
   const { url } = parsedSearchParam(location.search);
   const domain = getUrlHostname(url);
   const { state, fetchData } = useGetGrantAccessData(url);
+
+  const [isGranting, setIsGranting] = useState(false);
+  const [activePaneIndex, setActivePaneIndex] = useState(0);
 
   useEffect(() => {
     const getData = async () => {
@@ -82,7 +86,7 @@ export const GrantAccess = () => {
     state: state.state,
   });
 
-  const { publicKey, networkDetails, networksList } = state.data;
+  const { publicKey, networkDetails } = state.data;
 
   const rejectAndClose = () => {
     dispatch(rejectAccess());
@@ -96,82 +100,140 @@ export const GrantAccess = () => {
     window.close();
   };
 
-  const isMalicious = state.data.status === "hit" && state.data.is_malicious;
+  const scanData = state.data.scanData;
+  const isMalicious = scanData.status === "hit" && scanData.is_malicious;
+  const attackTypes = Object.keys(
+    "attack_types" in scanData ? scanData.attack_types : {},
+  );
 
   return (
     <>
-      <ModalWrapper>
-        <DomainScanModalInfo
-          domain={domain}
-          isMalicious={isMalicious}
-          scanStatus={state.data.status}
-          subject={t(
-            `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,
-          )}
-        >
-          <div
-            className="GrantAccess__SigningWith"
-            data-testid="grant-access-view"
-          >
-            <h5>Connecting with</h5>
-            <div className="GrantAccess__network">
-              <NetworkIcon
-                index={networksList.findIndex(
-                  ({ networkName: currNetworkName }) =>
-                    currNetworkName === networkDetails.networkName,
-                )}
-              />
-              <span>{networkDetails.networkName}</span>
-            </div>
-            <div className="GrantAccess__PublicKey">
-              <KeyIdenticon publicKey={publicKey} />
-            </div>
+      <View.Content>
+        <MultiPaneSlider
+          activeIndex={activePaneIndex}
+          panes={[
+            <DomainScanModalInfo
+              domain={domain}
+              isMalicious={isMalicious}
+              scanStatus={scanData.status}
+              onClick={() => setActivePaneIndex(1)}
+              subject={t(
+                `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,
+              )}
+            >
+              <div
+                className="GrantAccess__SigningWith"
+                data-testid="grant-access-view"
+              >
+                <div className="GrantAccess__Detail">
+                  <div className="GrantAccess__Detail__Label">
+                    <Icon.Wallet01 />
+                    <span>Wallet</span>
+                  </div>
+                  <div className="GrantAccess__Detail__Value">
+                    <KeyIdenticon publicKey={publicKey} />
+                  </div>
+                </div>
+                <div className="GrantAccess__Detail">
+                  <div className="GrantAccess__Detail__Label">
+                    <Icon.Globe02 />
+                    <span>Network</span>
+                  </div>
+                  <div className="GrantAccess__Detail__Value">
+                    <span>{networkDetails.networkName}</span>
+                  </div>
+                </div>
+              </div>
+            </DomainScanModalInfo>,
+            <div className="GrantAccess__BlockaidDetails">
+              <div className="GrantAccess__BlockaidDetails__Header">
+                <div className="WarningMark">
+                  <Icon.AlertOctagon />
+                </div>
+                <div className="Close" onClick={() => setActivePaneIndex(0)}>
+                  <Icon.X />
+                </div>
+              </div>
+              <div className="GrantAccess__BlockaidDetails__Title">
+                Do not proceed
+              </div>
+              <div className="GrantAccess__BlockaidDetails__SubTitle">
+                This transaction does not appear safe for the following reasons.
+              </div>
+              <div className="GrantAccess__BlockaidDetails__Details">
+                {attackTypes.map((attack) => (
+                  <div className="GrantAccess__BlockaidDetails__DetailRow">
+                    <Icon.XCircle />
+                    <span>
+                      {
+                        ATTACK_TO_DISPLAY[
+                          attack as keyof typeof ATTACK_TO_DISPLAY
+                        ]
+                      }
+                    </span>
+                  </div>
+                ))}
+                <BlockaidByLine address={""} />
+              </div>
+            </div>,
+          ]}
+        />
+      </View.Content>
+      <View.Footer>
+        {!isMalicious && (
+          <span className="GrantAccess__Warning">
+            Only confirm if you trust this site
+          </span>
+        )}
+        {isMalicious ? (
+          <div className="GrantAccess__ButtonsContainerMalicious">
+            <Button
+              size="lg"
+              isFullWidth
+              isRounded
+              variant="destructive"
+              onClick={rejectAndClose}
+            >
+              {t("Cancel")}
+            </Button>
+            <Button
+              data-testid="grant-access-connect-anyway-button"
+              className="GrantAccess__ConnectAnywayBtn"
+              size="lg"
+              isFullWidth
+              isRounded
+              variant="error"
+              isLoading={isGranting}
+              onClick={() => grantAndClose()}
+            >
+              {t("Connect anyway")}
+            </Button>
           </div>
-          {isMalicious ? (
-            <ButtonsContainer>
-              <Button
-                data-testid="grant-access-connect-anyway-button"
-                size="md"
-                isFullWidth
-                variant="error"
-                isLoading={isGranting}
-                onClick={() => grantAndClose()}
-              >
-                {t("Connect anyway")}
-              </Button>
-              <Button
-                size="md"
-                isFullWidth
-                variant="tertiary"
-                onClick={rejectAndClose}
-              >
-                {t("Reject")}
-              </Button>
-            </ButtonsContainer>
-          ) : (
-            <ButtonsContainer>
-              <Button
-                size="md"
-                isFullWidth
-                variant="tertiary"
-                onClick={rejectAndClose}
-              >
-                {t("Cancel")}
-              </Button>
-              <Button
-                data-testid="grant-access-connect-button"
-                size="md"
-                isFullWidth
-                variant="secondary"
-                isLoading={isGranting}
-                onClick={() => grantAndClose()}
-              >
-                {t("Connect")}
-              </Button>
-            </ButtonsContainer>
-          )}
-        </DomainScanModalInfo>
-      </ModalWrapper>
+        ) : (
+          <div className="GrantAccess__ButtonsContainer">
+            <Button
+              size="lg"
+              isFullWidth
+              isRounded
+              variant="tertiary"
+              onClick={rejectAndClose}
+            >
+              {t("Cancel")}
+            </Button>
+            <Button
+              data-testid="grant-access-connect-button"
+              size="lg"
+              isFullWidth
+              isRounded
+              variant="secondary"
+              isLoading={isGranting}
+              onClick={() => grantAndClose()}
+            >
+              {t("Connect")}
+            </Button>
+          </div>
+        )}
+      </View.Footer>
     </>
   );
 };

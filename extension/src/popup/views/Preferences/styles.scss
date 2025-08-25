@@ -1,15 +1,47 @@
+@use "../../styles/utils.scss" as *;
+
 .Preferences {
   font-size: 0.875rem;
+  padding: pxToRem(16px);
+  border-radius: pxToRem(16px);
+  background-color: var(--sds-clr-gray-02);
 
   &--section {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    margin-bottom: 2rem;
+
+    &:not(:last-child) {
+      margin-bottom: pxToRem(16px);
+      padding-bottom: pxToRem(16px);
+      border-bottom: 1px solid var(--sds-clr-gray-06);
+    }
+
+    .Card {
+      color: var(--sds-clr-gray-11);
+    }
 
     &--title {
-      color: var(--sds-clr-gray-12);
-      font-weight: var(--font-weight-medium);
+      display: flex;
+      justify-content: space-between;
+      font-size: pxToRem(16px);
+
+      span {
+        display: flex;
+        align-items: center;
+      }
+
+      svg {
+        width: pxToRem(20px);
+        height: pxToRem(20px);
+        margin-right: pxToRem(12px);
+      }
+    }
+
+    &--subtitle {
+      font-size: pxToRem(14px);
+      color: var(--sds-clr-gray-11);
+      line-height: 20px;
     }
   }
   &--label {

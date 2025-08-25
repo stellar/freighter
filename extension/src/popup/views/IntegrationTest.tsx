@@ -175,6 +175,7 @@ export const IntegrationTest = () => {
 
       res = await updateAccountName({
         activePublicKey: testPublicKey,
+        publicKey: testPublicKey,
         accountName: "new-name",
       });
       runAsserts("updateAccountName", () => {

@@ -14,7 +14,7 @@ import {
 } from "stellar-sdk";
 
 import { HorizonOperation, SorobanBalance } from "@shared/api/types";
-import { NetworkDetails } from "@shared/constants/stellar";
+import { BASE_RESERVE, NetworkDetails } from "@shared/constants/stellar";
 import {
   ArgsForTokenInvocation,
   SorobanTokenInterface,
@@ -22,8 +22,9 @@ import {
 } from "@shared/constants/soroban/token";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getAssetFromCanonical } from "helpers/stellar";
-import { findAssetBalance } from "./balance";
+import { findAssetBalance, isSorobanBalance } from "./balance";
 import { getSdk } from "@shared/helpers/stellar";
+import { AssetType } from "@shared/api/types/account-balance";
 export { isContractId } from "@shared/api/helpers/soroban";
 
 export const SOROBAN_OPERATION_TYPES = [
@@ -58,6 +59,44 @@ export const getTokenBalance = (tokenBalance: SorobanBalance) =>
     new BigNumber(tokenBalance.total),
     Number(tokenBalance.decimals),
   );
+
+export const getAvailableBalance = ({
+  assetCanonical,
+  balances,
+  subentryCount,
+  recommendedFee,
+}: {
+  assetCanonical: string;
+  balances: AssetType[];
+  subentryCount: number;
+  recommendedFee: string;
+}) => {
+  const selectedCanonical = getAssetFromCanonical(assetCanonical);
+  const selectedBalance = findAssetBalance(balances, selectedCanonical);
+  if (selectedBalance) {
+    if (isSorobanBalance(selectedBalance)) {
+      return getTokenBalance(selectedBalance);
+    }
+
+    const balance = selectedBalance.total;
+    if (assetCanonical === "native") {
+      // take base reserve into account for XLM payments
+      const minBalance = new BigNumber((2 + subentryCount) * BASE_RESERVE);
+      const currentBal = new BigNumber(balance.toFixed());
+      const available = currentBal
+        .minus(minBalance)
+        .minus(new BigNumber(Number(recommendedFee)));
+
+      if (available.lt(minBalance)) {
+        return "0";
+      }
+      return available.toFixed().toString();
+    } else {
+      return new BigNumber(balance).toFixed().toString();
+    }
+  }
+  return "0";
+};
 
 // Adopted from https://github.com/ethers-io/ethers.js/blob/master/packages/bignumber/src.ts/fixednumber.ts#L27
 export const formatTokenAmount = (amount: BigNumber, decimals: number) => {
@@ -198,19 +237,8 @@ export const getAttrsFromSorobanHorizonOp = (
     return null;
   }
 
-  // operation record from Mercury
-  // why does transaction_attr not exist on any horizon types?
-  const _op = operation as any;
-  if (_op.transaction_attr.contractId) {
-    return {
-      contractId: _op.transaction_attr.contractId,
-      fnName: _op.transaction_attr.fnName,
-      ..._op.transaction_attr.args,
-    };
-  }
-
   const txEnvelope = TransactionBuilder.fromXDR(
-    _op.transaction_attr.envelope_xdr as string,
+    operation.transaction_attr.envelope_xdr as string,
     networkDetails.networkPassphrase,
   ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
 
@@ -442,7 +470,7 @@ export interface FnArgsCreateSac {
   args?: xdr.ScVal[];
 }
 
-type InvocationArgs = FnArgsInvoke | FnArgsCreateWasm | FnArgsCreateSac;
+export type InvocationArgs = FnArgsInvoke | FnArgsCreateWasm | FnArgsCreateSac;
 
 const isInvocationArg = (
   invocation: InvocationArgs | undefined,

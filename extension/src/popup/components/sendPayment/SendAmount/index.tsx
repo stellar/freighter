@@ -1,153 +1,99 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { createPortal } from "react-dom";
-import debounce from "lodash/debounce";
+import { Navigate, useLocation } from "react-router-dom";
 import BigNumber from "bignumber.js";
 import { useFormik } from "formik";
-import { Button, Icon, Loader, Notification } from "@stellar/design-system";
-import { Asset } from "stellar-sdk";
+import { Button, Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import {
-  AssetSelect,
-  PathPayAssetSelect,
-} from "popup/components/sendPayment/SendAmount/AssetSelect";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
-import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
-import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { useIsSwap, useIsSoroswapEnabled } from "popup/helpers/useIsSwap";
-import { isAssetSuspicious } from "popup/helpers/blockaid";
+import {
+  getAssetFromCanonical,
+  isMainnet,
+  truncatedFedAddress,
+  truncatedPublicKey,
+} from "helpers/stellar";
+import { NetworkCongestion } from "popup/helpers/useNetworkFees";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
-import {
-  getAssetDecimals,
-  getTokenBalance,
-  isContractId,
-} from "popup/helpers/soroban";
-import { getNativeContractDetails } from "popup/helpers/searchAsset";
+import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   cleanAmount,
   formatAmount,
   formatAmountPreserveCursor,
+  roundUsdValue,
 } from "popup/helpers/formatters";
 import {
   transactionSubmissionSelector,
   saveAmount,
   saveAsset,
-  saveDestinationAsset,
-  getBestPath,
-  getBestSoroswapPath,
-  getSoroswapTokens,
+  saveMemo,
+  saveTransactionFee,
+  saveTransactionTimeout,
+  saveAmountUsd,
 } from "popup/ducks/transactionSubmission";
-import {
-  AccountDoesntExistWarning,
-  shouldAccountDoesntExistWarning,
-} from "popup/components/sendPayment/SendTo";
 import { Loading } from "popup/components/Loading";
-import { ScamAssetWarning } from "popup/components/WarningMessages";
 import { TX_SEND_MAX } from "popup/constants/transaction";
-import { BASE_RESERVE } from "@shared/constants/stellar";
-import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
-import { isSorobanBalance, findAssetBalance } from "popup/helpers/balance";
-import {
-  AssetType,
-  ClassicAsset,
-  LiquidityPoolShareAsset,
-} from "@shared/api/types/account-balance";
+import { findAssetBalance } from "popup/helpers/balance";
 
-import { RequestState } from "constants/request";
-import { useGetSendAmountData } from "./hooks/useSendAmountData";
-
-import "../styles.scss";
+import { RequestState, State } from "constants/request";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
-import { Navigate, useLocation } from "react-router-dom";
-import { AppDataType } from "helpers/hooks/useGetAppData";
+import { AMOUNT_ERROR, InputType } from "helpers/transaction";
 import { reRouteOnboarding } from "popup/helpers/route";
-import { InfoTooltip } from "popup/basics/InfoTooltip";
+import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
+import { AssetIcon } from "popup/components/account/AccountAssets";
+import { EditSettings } from "popup/components/InternalTransaction/EditSettings";
+import { EditMemo } from "popup/components/InternalTransaction/EditMemo";
+import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
 
-enum AMOUNT_ERROR {
-  TOO_HIGH = "amount too high",
-  DEC_MAX = "too many decimal digits",
-  SEND_MAX = "amount higher than send max",
-}
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { useGetSendAmountData } from "./hooks/useSendAmountData";
+import { SimulateTxData } from "./hooks/useSimulateTxData";
+import { SlideupModal } from "popup/components/SlideupModal";
 
-const ConversionRate = ({
-  source,
-  sourceAmount,
-  dest,
-  destAmount,
-  loading,
-}: {
-  source: string;
-  sourceAmount: string;
-  dest: string;
-  destAmount: string;
-  loading: boolean;
-}) => {
-  const { t } = useTranslation();
+import "../styles.scss";
 
-  return (
-    <div className="SendAmount__row__rate" data-testid="SendAmountRate">
-      {loading ? (
-        <div data-testid="SendAmountRateLoader">
-          <Loader />
-        </div>
-      ) : (
-        <>
-          {destAmount ? (
-            <span data-testid="SendAmountRateAmount">
-              1 {source} ≈{" "}
-              {new BigNumber(destAmount)
-                .div(new BigNumber(sourceAmount))
-                .toFixed(7)}{" "}
-              {dest}
-            </span>
-          ) : (
-            <span>{t("no path found")}</span>
-          )}
-        </>
-      )}
-    </div>
-  );
-};
-
-// default so can find a path even if user has not given input
-const defaultSourceAmount = "1";
+const DEFAULT_INPUT_WIDTH = 25;
 
 export const SendAmount = ({
   goBack,
   goToNext,
-  goToPaymentType,
-  goToChooseAsset,
+  goToChooseDest,
+  simulationState,
+  fetchSimulationData,
+  networkCongestion,
+  recommendedFee,
 }: {
   goBack: () => void;
   goToNext: () => void;
-  goToChooseAsset: () => void;
-  goToPaymentType?: () => void;
+  goToChooseDest: () => void;
+  simulationState: State<SimulateTxData, string>;
+  fetchSimulationData: () => Promise<unknown>;
+  networkCongestion: NetworkCongestion;
+  recommendedFee: string;
 }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
   const runAfterUpdate = useRunAfterUpdate();
-
-  const { transactionData, soroswapTokens } = useSelector(
-    transactionSubmissionSelector,
-  );
+  const { transactionData } = useSelector(transactionSubmissionSelector);
   const {
     amount,
+    amountUsd,
     asset,
     destination,
-    destinationAmount,
     destinationAsset,
+    federationAddress,
     isToken,
-    destinationIcon,
-    isSoroswap,
+    transactionFee,
   } = transactionData;
+  const fee = transactionFee || recommendedFee;
+
   const { state: sendAmountData, fetchData } = useGetSendAmountData(
     {
       showHidden: false,
@@ -155,152 +101,31 @@ export const SendAmount = ({
     },
     destination,
   );
-  const isLoading =
-    sendAmountData.state === RequestState.IDLE ||
-    sendAmountData.state === RequestState.LOADING;
+  const cryptoSpanRef = useRef<HTMLSpanElement>(null);
+  const [inputWidthCrypto, setInputWidthCrypto] = useState(0);
 
-  const isSwap = useIsSwap();
-  const { recommendedFee } = useNetworkFees();
-  const [loadingRate, setLoadingRate] = useState(false);
-  const [showBlockedDomainWarning, setShowBlockedDomainWarning] =
-    useState(false);
-  const [suspiciousAssetData, setSuspiciousAssetData] = useState({
-    domain: "",
-    code: "",
-    issuer: "",
-    image: "",
-    blockaidData: defaultBlockaidScanAssetResult,
-  });
+  const fiatSpanRef = useRef<HTMLSpanElement>(null);
+  const [inputWidthFiat, setInputWidthFiat] = useState(0);
 
-  /* eslint-disable react-hooks/exhaustive-deps */
-  const calculateAvailBalance = useCallback(
-    (selectedAsset: string) => {
-      if (isLoading || sendAmountData.data?.type === AppDataType.REROUTE) {
-        return "";
-      }
-      const userBalances = sendAmountData.data?.userBalances!;
+  const cryptoInputRef = useRef<HTMLInputElement>(null);
+  const usdInputRef = useRef<HTMLInputElement>(null);
 
-      let _availBalance = new BigNumber("0");
-      const selectedCanonical = getAssetFromCanonical(selectedAsset);
-      const selectedBalance = findAssetBalance(
-        userBalances?.balances,
-        selectedCanonical,
-      );
-      if (isToken && selectedBalance && isSorobanBalance(selectedBalance)) {
-        return getTokenBalance(selectedBalance);
-      }
-      if (userBalances) {
-        // take base reserve into account for XLM payments
-        const minBalance = new BigNumber(
-          (2 + userBalances.subentryCount) * BASE_RESERVE,
-        );
+  const [inputType, setInputType] = useState<InputType>("crypto");
+  const [isEditingMemo, setIsEditingMemo] = React.useState(false);
+  const [isEditingSettings, setIsEditingSettings] = React.useState(false);
+  const [isReviewingTx, setIsReviewingTx] = React.useState(false);
 
-        const balance = selectedBalance?.total || new BigNumber("0");
-        if (selectedAsset === "native") {
-          // needed for different wallet-sdk bignumber.js version
-          const currentBal = new BigNumber(balance.toFixed());
-          _availBalance = currentBal
-            .minus(minBalance)
-            .minus(new BigNumber(Number(recommendedFee)));
-
-          if (_availBalance.lt(minBalance)) {
-            return "0";
-          }
-        } else {
-          // needed for different wallet-sdk bignumber.js version
-          _availBalance = new BigNumber(balance);
-        }
-      }
-
-      return _availBalance.toFixed().toString();
-    },
-    [sendAmountData.data, recommendedFee, isToken],
-  );
-
-  const [availBalance, setAvailBalance] = useState(
-    calculateAvailBalance(asset),
-  );
-
-  const handleContinue = (values: {
-    amount: string;
-    asset: string;
-    destinationAsset: string;
-  }) => {
-    dispatch(saveAmount(cleanAmount(values.amount)));
-    dispatch(saveAsset(values.asset));
-
-    let isDestAssetScam = false;
-
-    if (sendAmountData.data?.type === AppDataType.REROUTE) {
-      return;
-    }
-    const userBalances = sendAmountData.data?.userBalances!;
-    const domains = sendAmountData.data?.domains!;
-    const icons = sendAmountData.data?.icons!;
-
-    const destinationBalance = findAssetBalance(
-      userBalances.balances,
-      getAssetFromCanonical(destinationAsset || "native"),
-    );
-    if (values.destinationAsset) {
-      dispatch(saveDestinationAsset(values.destinationAsset));
-      isDestAssetScam =
-        !!destinationBalance &&
-        "blockaidData" in destinationBalance &&
-        isAssetSuspicious(destinationBalance.blockaidData);
-    }
-    // check for scam asset
-    const assetBalance = findAssetBalance(
-      userBalances.balances,
-      getAssetFromCanonical(asset),
-    );
-    const isSourceAssetScam =
-      !!assetBalance &&
-      "blockaidData" in assetBalance &&
-      isAssetSuspicious(assetBalance.blockaidData);
-    if (isSourceAssetScam) {
-      setShowBlockedDomainWarning(true);
-      setSuspiciousAssetData({
-        code: getAssetFromCanonical(values.asset).code,
-        issuer: getAssetFromCanonical(values.asset).issuer,
-        domain: domains.find(
-          (domain) =>
-            getCanonicalFromAsset(domain.code!, domain.issuer) === values.asset,
-        )!.domain,
-        image: icons[values.asset]!,
-        blockaidData:
-          assetBalance?.blockaidData || defaultBlockaidScanAssetResult,
-      });
-    } else if (isDestAssetScam) {
-      setShowBlockedDomainWarning(true);
-      setSuspiciousAssetData({
-        code: getAssetFromCanonical(values.destinationAsset).code,
-        issuer: getAssetFromCanonical(values.destinationAsset).issuer,
-        domain: domains.find(
-          (domain) =>
-            getCanonicalFromAsset(domain.code!, domain.issuer) ===
-            values.destinationAsset,
-        )!.domain,
-        image: icons[values.destinationAsset]!,
-        blockaidData:
-          !!destinationBalance && "blockaidData" in destinationBalance
-            ? destinationBalance.blockaidData
-            : defaultBlockaidScanAssetResult,
-      });
-    } else {
-      goToNext();
-    }
+  const handleContinue = async () => {
+    const amount = inputType === "crypto" ? formik.values.amount : priceValue!;
+    dispatch(saveAmount(cleanAmount(amount)));
+    await fetchSimulationData();
+    setIsReviewingTx(true);
   };
 
   const validate = (values: { amount: string }) => {
-    if (!availBalance) {
-      return {};
-    }
+    const amount = inputType === "crypto" ? values.amount : priceValue!;
+    const val = cleanAmount(amount);
 
-    const val = cleanAmount(values.amount);
-    if (new BigNumber(val).gt(new BigNumber(availBalance))) {
-      return { amount: AMOUNT_ERROR.TOO_HIGH };
-    }
     if (val.indexOf(".") !== -1 && val.split(".")[1].length > 7) {
       return { amount: AMOUNT_ERROR.DEC_MAX };
     }
@@ -311,77 +136,48 @@ export const SendAmount = ({
   };
 
   const formik = useFormik({
-    initialValues: { amount, asset, destinationAsset },
+    initialValues: { amount, amountUsd: amountUsd, asset, destinationAsset },
     onSubmit: handleContinue,
     validate,
     enableReinitialize: true,
+    validateOnChange: true,
   });
 
-  const showSourceAndDestAsset = !!formik.values.destinationAsset;
+  useLayoutEffect(() => {
+    if (cryptoSpanRef.current) {
+      setInputWidthCrypto(cryptoSpanRef.current.offsetWidth + 2);
+    }
+  }, [formik.values.amount]);
+  useLayoutEffect(() => {
+    if (fiatSpanRef.current) {
+      setInputWidthFiat(fiatSpanRef.current.offsetWidth + 4);
+    }
+  }, [formik.values.amountUsd]);
+
+  const srcAsset = getAssetFromCanonical(asset);
   const parsedSourceAsset = getAssetFromCanonical(formik.values.asset);
-  const parsedDestAsset = getAssetFromCanonical(
-    formik.values.destinationAsset || "native",
-  );
+  const isLoading =
+    sendAmountData.state === RequestState.IDLE ||
+    sendAmountData.state === RequestState.LOADING;
 
   useEffect(() => {
-    setAvailBalance(calculateAvailBalance(formik.values.asset));
-  }, [calculateAvailBalance, formik.values.asset, sendAmountData.state]);
-
-  // for swaps we're loading and choosing the default destinationAsset here
-  // also, need to check if both source and destination are native
-  useEffect(() => {
-    if (
-      sendAmountData.data?.type === "resolved" &&
-      isSwap &&
-      (!destinationAsset ||
-        (destinationAsset === "native" && asset === "native"))
-    ) {
-      let defaultDestAsset;
-      const userBalances = sendAmountData.data.userBalances;
-
-      // if pre-chosen source asset (eg. from AssetDetails) not XLM, default dest asset to XLM
-      if (formik.values.asset !== Asset.native().toString()) {
-        defaultDestAsset = Asset.native().toString();
-      } else {
-        // otherwise default to first classic side asset if exists
-        const nonXlmAssets = userBalances.balances.filter(
-          (b) =>
-            !("token" in b && b.token.code === "XLM") &&
-            !("liquidityPoolId" in b) &&
-            !("decimals" in b),
-        ) as Exclude<AssetType, LiquidityPoolShareAsset>[];
-        defaultDestAsset =
-          nonXlmAssets && nonXlmAssets[0]
-            ? getCanonicalFromAsset(
-                nonXlmAssets[0].token.code,
-                // casting here since this will be classic or native asset
-                (nonXlmAssets[0] as ClassicAsset).token.issuer?.key,
-              )
-            : Asset.native().toString();
-      }
-
-      dispatch(saveDestinationAsset(defaultDestAsset));
+    if (cryptoInputRef.current) {
+      cryptoInputRef.current.focus();
+      cryptoInputRef.current.select();
     }
-  }, [
-    isSwap,
-    dispatch,
-    destinationAsset,
-    sendAmountData.data,
-    formik.values.asset,
-    asset,
-  ]);
 
-  useEffect(() => {
-    if (!soroswapTokens.length) {
-      dispatch(getSoroswapTokens());
+    if (usdInputRef.current) {
+      usdInputRef.current.focus();
+      usdInputRef.current.select();
     }
-  }, [isSwap, useIsSoroswapEnabled]);
+  }, []);
 
   useEffect(() => {
     const getData = async () => {
       await fetchData();
     };
     getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getAmountFontSize = () => {
@@ -394,70 +190,6 @@ export const SendAmount = ({
     }
     return "small";
   };
-
-  const db = useCallback(
-    debounce(
-      async (formikAm, sourceAsset, destAsset, publicKey, networkDetails) => {
-        if (isSoroswap) {
-          const getContract = (formAsset: string) =>
-            formAsset === "native"
-              ? getNativeContractDetails(networkDetails).contract
-              : formAsset.split(":")[1];
-
-          await dispatch(
-            getBestSoroswapPath({
-              amount: formikAm,
-              sourceContract: getContract(formik.values.asset),
-              destContract: getContract(formik.values.destinationAsset),
-              networkDetails,
-              publicKey,
-            }),
-          );
-        } else {
-          await dispatch(
-            getBestPath({
-              amount: formikAm,
-              sourceAsset,
-              destAsset,
-              networkDetails,
-            }),
-          );
-        }
-
-        setLoadingRate(false);
-      },
-      2000,
-    ),
-    [],
-  );
-
-  // on asset select get conversion rate
-  useEffect(() => {
-    if (
-      !formik.values.destinationAsset ||
-      Number(formik.values.amount) === 0 ||
-      sendAmountData.state !== RequestState.SUCCESS ||
-      sendAmountData.data.type !== AppDataType.RESOLVED
-    ) {
-      return;
-    }
-    setLoadingRate(true);
-    // clear dest amount before re-calculating for UI
-    db(
-      formik.values.amount || defaultSourceAmount,
-      formik.values.asset,
-      formik.values.destinationAsset,
-      sendAmountData.data.publicKey,
-      sendAmountData.data.networkDetails,
-    );
-  }, [
-    db,
-    formik.values.asset,
-    formik.values.destinationAsset,
-    formik.values.amount,
-    dispatch,
-    sendAmountData.state,
-  ]);
 
   if (isLoading) {
     return <Loading />;
@@ -486,303 +218,434 @@ export const SendAmount = ({
     });
   }
 
-  const sourceBalance = findAssetBalance(
-    sendAmountData.data!.userBalances.balances,
-    parsedSourceAsset,
-  );
-  const destBalance = findAssetBalance(
-    sendAmountData.data!.userBalances.balances,
-    getAssetFromCanonical(formik.values.destinationAsset || "native"),
-  );
   const sendData = sendAmountData.data!;
-
-  const DecideWarning = () => {
-    // unfunded destination
-    if (
-      !isContractId(destination) &&
-      !isSwap &&
-      shouldAccountDoesntExistWarning(
-        isSwap ? false : sendData.destinationBalances.isFunded!,
-        asset,
-        formik.values.amount || "0",
-      )
-    ) {
-      return <AccountDoesntExistWarning />;
-    }
-    if (formik.errors.amount === AMOUNT_ERROR.TOO_HIGH) {
-      return (
-        <Notification
-          variant="error"
-          title={t("Entered amount is higher than your balance")}
-        />
-      );
-    }
-    if (formik.errors.amount === AMOUNT_ERROR.DEC_MAX) {
-      return (
-        <Notification
-          variant="error"
-          title={`7 ${t("digits after the decimal allowed")}`}
-        />
-      );
-    }
-    if (formik.errors.amount === AMOUNT_ERROR.SEND_MAX) {
-      return (
-        <Notification
-          variant="error"
-          title={`${t(
-            "Entered amount is higher than the maximum send amount",
-          )} (
-          ${formatAmountPreserveCursor(
-            TX_SEND_MAX,
-            formik.values.amount,
-            getAssetDecimals(asset, sendData.userBalances, isToken),
-          )}
-          )`}
-        />
-      );
-    }
-    return null;
+  const assetIcon = sendData.icons[asset];
+  const assetBalance = findAssetBalance(
+    sendData.userBalances.balances,
+    srcAsset,
+  )!;
+  const prices = sendData.tokenPrices;
+  const assetPrice = prices[asset] && prices[asset].currentPrice;
+  const xlmPrice = prices["native"]?.currentPrice;
+  const assetDecimals = getAssetDecimals(asset, sendData.userBalances, isToken);
+  const priceValue = assetPrice
+    ? new BigNumber(cleanAmount(formik.values.amountUsd))
+        .dividedBy(new BigNumber(assetPrice))
+        .decimalPlaces(assetDecimals)
+        .toString()
+    : null;
+  const priceValueUsd = assetPrice
+    ? `${formatAmount(
+        roundUsdValue(
+          new BigNumber(assetPrice)
+            .multipliedBy(new BigNumber(cleanAmount(formik.values.amount)))
+            .toString(),
+        ),
+      )}`
+    : null;
+  const recommendedFeeUsd = xlmPrice
+    ? `$${formatAmount(
+        roundUsdValue(
+          new BigNumber(xlmPrice).multipliedBy(new BigNumber(fee)).toString(),
+        ),
+      )}`
+    : null;
+  const supportsUsd =
+    isMainnet(sendAmountData.data?.networkDetails!) && assetPrice;
+  const availableBalance = getAvailableBalance({
+    assetCanonical: asset,
+    balances: sendData.userBalances.balances,
+    recommendedFee: fee,
+    subentryCount: sendData.userBalances.subentryCount,
+  });
+  const displayTotal =
+    "decimals" in assetBalance
+      ? availableBalance
+      : formatAmount(availableBalance);
+  const srcTitle = srcAsset.code;
+  const goBackAction = () => {
+    dispatch(saveAsset("native"));
+    dispatch(saveAmount("0"));
+    dispatch(saveAmountUsd("0.00"));
+    goBack();
   };
 
+  const isAmountTooHigh =
+    (inputType === "crypto" &&
+      new BigNumber(cleanAmount(formik.values.amount)).gt(
+        new BigNumber(availableBalance),
+      )) ||
+    (inputType === "fiat" &&
+      new BigNumber(cleanAmount(priceValue!)).gt(
+        new BigNumber(availableBalance),
+      ));
+
   return (
-    <>
-      {showBlockedDomainWarning &&
-        createPortal(
-          <ScamAssetWarning
-            isSendWarning
-            pillType="Transaction"
-            balances={sendData.userBalances}
-            assetIcons={sendAmountData.data?.icons || {}}
-            domain={suspiciousAssetData.domain}
-            code={suspiciousAssetData.code}
-            issuer={suspiciousAssetData.issuer}
-            image={suspiciousAssetData.image}
-            onClose={() => setShowBlockedDomainWarning(false)}
-            onContinue={goToNext}
-            blockaidData={suspiciousAssetData.blockaidData}
-          />,
-          document.querySelector("#modal-root")!,
-        )}
-      <React.Fragment>
-        <SubviewHeader
-          title={
-            <span>
-              {isSwap ? "Swap" : "Send"} {parsedSourceAsset.code}{" "}
-              {isSoroswap ? (
-                <span>
-                  on{" "}
-                  <a
-                    href="https://soroswap.finance/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Soroswap
-                  </a>
+    <React.Fragment>
+      <SubviewHeader
+        title={<span>Send</span>}
+        hasBackButton
+        customBackAction={goBackAction}
+      />
+      <View.Content
+        contentFooter={
+          <div className="SendAmount__btn-continue">
+            <div className="SendAmount__settings-row">
+              <div className="SendAmount__settings-fee-display">
+                <span className="SendAmount__settings-fee-display__label">
+                  Fee:
                 </span>
-              ) : null}
-            </span>
-          }
-          subtitle={
-            asset === "native" ? (
-              <div className="SendAmount__subtitle">
-                <InfoTooltip
-                  infoText={t(
-                    "The amount of XLM not reserved or needed for fees. This number may be lower than your total balance.",
-                  )}
-                  placement="bottom-end"
-                >
-                  {`${formatAmount(availBalance)} ${parsedSourceAsset.code} ${t("available")}`}
-                </InfoTooltip>
+                <span>
+                  {inputType === "crypto" ? `${fee} XLM` : recommendedFeeUsd}
+                </span>
               </div>
-            ) : null
-          }
-          hasBackButton={!isSwap}
-          customBackAction={() => {
-            // NOTE: resets base state for transaction data
-            dispatch(saveAsset("native"));
-            dispatch(saveAmount("0"));
-            goBack();
-          }}
-          rightButton={
-            isSwap ? null : (
-              <button
-                onClick={goToPaymentType}
-                className="SendAmount__icon-slider"
-              >
-                <Icon.Expand01 />
-              </button>
-            )
-          }
-        />
-        <View.Content
-          contentFooter={
-            <div className="SendAmount__btn-continue">
-              <Button
-                size="md"
-                disabled={
-                  loadingRate ||
-                  formik.values.amount === "0" ||
-                  !formik.isValid ||
-                  // path payment, but path not found
-                  (showSourceAndDestAsset && !destinationAmount)
-                }
-                data-testid="send-amount-btn-continue"
-                isFullWidth
-                variant="secondary"
-                onClick={(e) => {
-                  e.preventDefault();
-                  formik.submitForm();
-                }}
-              >
-                {t("Continue")}
-              </Button>
-            </div>
-          }
-        >
-          <div className="SendAmount">
-            <div className="SendAmount__content">
-              <div className="SendAmount__btn-set-max">
+              <div className="SendAmount__settings-options">
                 <Button
                   size="md"
+                  isRounded
                   variant="tertiary"
-                  onClick={() => {
-                    emitMetric(METRIC_NAMES.sendPaymentSetMax);
-                    formik.setFieldValue(
-                      "amount",
-                      calculateAvailBalance(formik.values.asset),
-                    );
-                  }}
-                  data-testid="SendAmountSetMax"
+                  onClick={() => setIsEditingMemo(true)}
+                  icon={<Icon.File02 />}
+                  iconPosition="left"
                 >
-                  {t("SET MAX")}
+                  {t("Memo")}
+                </Button>
+                <Button
+                  size="md"
+                  isRounded
+                  variant="tertiary"
+                  onClick={() => setIsEditingSettings(true)}
+                >
+                  <Icon.Settings01 />
                 </Button>
               </div>
-
-              <form>
-                <div className="SendAmount__simplebar__content">
-                  <input
-                    className={`SendAmount__input-amount ${
-                      isSwap ? "SendAmount__input-amount__full-height" : ""
-                    } SendAmount__${getAmountFontSize()}`}
-                    data-testid="send-amount-amount-input"
-                    name="amount"
-                    type="text"
-                    placeholder="0"
-                    value={formik.values.amount}
-                    onChange={(e) => {
-                      const input = e.target;
-                      const { amount: newAmount, newCursor } =
-                        formatAmountPreserveCursor(
-                          e.target.value,
-                          formik.values.amount,
-                          getAssetDecimals(
-                            asset,
-                            sendData.userBalances,
-                            isToken,
-                          ),
-                          e.target.selectionStart || 1,
-                        );
-                      formik.setFieldValue("amount", newAmount);
-                      dispatch(saveAmount(newAmount));
-                      runAfterUpdate(() => {
-                        input.selectionStart = newCursor;
-                        input.selectionEnd = newCursor;
-                      });
-                    }}
-                    autoFocus
-                    autoComplete="off"
-                  />
-                  <div className="SendAmount__input-amount__asset-copy">
-                    {parsedSourceAsset.code}
-                  </div>
-                  {showSourceAndDestAsset && formik.values.amount !== "0" && (
-                    <ConversionRate
-                      loading={loadingRate}
-                      source={parsedSourceAsset.code}
-                      sourceAmount={
-                        cleanAmount(formik.values.amount) || defaultSourceAmount
-                      }
-                      dest={parsedDestAsset.code}
-                      destAmount={destinationAmount}
-                    />
-                  )}
-                  <div
-                    className={`SendAmount__amount-warning${
-                      destinationAsset ? "__path-payment" : ""
-                    }`}
-                  >
-                    <DecideWarning />
-                  </div>
-                  <div className="SendAmount__asset-select-container">
-                    {!showSourceAndDestAsset && (
-                      <AssetSelect
-                        assetCode={parsedSourceAsset.code}
-                        issuerKey={parsedSourceAsset.issuer}
-                        icons={sendAmountData.data?.icons || {}}
-                        isSuspicious={
-                          !!sourceBalance &&
-                          "blockaidData" in sourceBalance &&
-                          isAssetSuspicious(sourceBalance.blockaidData)
-                        }
-                        onSelectAsset={() => {
-                          dispatch(saveAmount("0"));
-                          goToChooseAsset();
-                        }}
-                      />
-                    )}
-                    {showSourceAndDestAsset && (
+            </div>
+            <Button
+              size="lg"
+              disabled={
+                (inputType === "crypto" &&
+                  new BigNumber(formik.values.amount).isZero()) ||
+                (inputType === "fiat" &&
+                  new BigNumber(formik.values.amountUsd).isZero()) ||
+                isAmountTooHigh
+              }
+              isLoading={simulationState.state === RequestState.LOADING}
+              data-testid="send-amount-btn-continue"
+              isFullWidth
+              isRounded
+              variant="secondary"
+              onClick={(e) => {
+                e.preventDefault();
+                formik.submitForm();
+              }}
+            >
+              {t("Review Send")}
+            </Button>
+          </div>
+        }
+      >
+        <div className="SendAmount">
+          <div className="SendAmount__content">
+            <form>
+              <div className="SendAmount__simplebar__content">
+                <div className="SendAmount__amount-row">
+                  <div className="SendAmount__amount-input-container">
+                    {inputType === "crypto" && (
                       <>
-                        <PathPayAssetSelect
-                          source={true}
-                          assetCode={parsedSourceAsset.code}
-                          issuerKey={parsedSourceAsset.issuer}
-                          balance={formik.values.amount}
-                          icon=""
-                          icons={sendAmountData.data?.icons || {}}
-                          isSuspicious={
-                            !!sourceBalance &&
-                            "blockaidData" in sourceBalance &&
-                            isAssetSuspicious(sourceBalance.blockaidData)
-                          }
-                          onSelectAsset={() => {
-                            dispatch(saveAmount("0"));
-                            goToChooseAsset();
+                        <span
+                          ref={cryptoSpanRef}
+                          className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                          style={{
+                            position: "absolute",
+                            visibility: "hidden",
+                            whiteSpace: "pre",
                           }}
+                        >
+                          {formik.values.amount || "0"}
+                        </span>
+                        <input
+                          ref={cryptoInputRef}
+                          className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                          style={{
+                            width: `${inputWidthCrypto || DEFAULT_INPUT_WIDTH}px`,
+                          }}
+                          data-testid="send-amount-amount-input"
+                          name="amount"
+                          type="text"
+                          placeholder="0"
+                          value={formik.values.amount}
+                          onChange={(e) => {
+                            const input = e.target;
+                            const { amount: newAmount, newCursor } =
+                              formatAmountPreserveCursor(
+                                e.target.value,
+                                formik.values.amount,
+                                getAssetDecimals(
+                                  asset,
+                                  sendData.userBalances,
+                                  isToken,
+                                ),
+                                e.target.selectionStart || 1,
+                              );
+                            formik.setFieldValue("amount", newAmount);
+                            dispatch(saveAmount(newAmount));
+                            runAfterUpdate(() => {
+                              input.selectionStart = newCursor;
+                              input.selectionEnd = newCursor;
+                            });
+                          }}
+                          autoFocus
+                          autoComplete="off"
                         />
-                        <PathPayAssetSelect
-                          source={false}
-                          assetCode={parsedDestAsset.code}
-                          issuerKey={parsedDestAsset.issuer}
-                          balance={
-                            destinationAmount
-                              ? new BigNumber(destinationAmount).toFixed()
-                              : "0"
-                          }
-                          icon={destinationIcon}
-                          icons={sendAmountData.data!.icons}
-                          isSuspicious={
-                            !!destBalance &&
-                            "blockaidData" in destBalance &&
-                            isAssetSuspicious(destBalance.blockaidData)
-                          }
-                          onSelectAsset={() => {
-                            dispatch(saveAmount("0"));
-                            goToChooseAsset();
+                        <div
+                          className={`SendAmount__amount-label SendAmount__${getAmountFontSize()}`}
+                        >
+                          {parsedSourceAsset.code}
+                        </div>
+                      </>
+                    )}
+                    {inputType === "fiat" && (
+                      <>
+                        <div
+                          className={`SendAmount__amount-label-usd SendAmount__${getAmountFontSize()}`}
+                        >
+                          $
+                        </div>
+                        <span
+                          ref={fiatSpanRef}
+                          className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                          style={{
+                            position: "absolute",
+                            visibility: "hidden",
+                            whiteSpace: "pre",
                           }}
+                        >
+                          {formik.values.amountUsd || "0"}
+                        </span>
+                        <input
+                          ref={usdInputRef}
+                          className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                          style={{
+                            width: `${inputWidthFiat || DEFAULT_INPUT_WIDTH}px`,
+                          }}
+                          data-testid="send-amount-amount-input"
+                          name="amountUsd"
+                          type="text"
+                          value={formik.values.amountUsd}
+                          onChange={(e) => {
+                            const input = e.target;
+                            const { amount: newAmount, newCursor } =
+                              formatAmountPreserveCursor(
+                                e.target.value,
+                                formik.values.amountUsd,
+                                2,
+                                e.target.selectionStart || 1,
+                              );
+                            formik.setFieldValue("amountUsd", newAmount);
+                            dispatch(saveAmountUsd(newAmount));
+                            runAfterUpdate(() => {
+                              input.selectionStart = newCursor;
+                              input.selectionEnd = newCursor;
+                            });
+                          }}
+                          autoFocus
+                          autoComplete="off"
                         />
                       </>
                     )}
                   </div>
                 </div>
-              </form>
-            </div>
+                {supportsUsd && (
+                  <div className="SendAmount__amount-price">
+                    {inputType === "crypto"
+                      ? `$${priceValueUsd}`
+                      : `${priceValue} ${parsedSourceAsset.code}`}
+                    <Button
+                      size="md"
+                      type="button"
+                      isRounded
+                      variant="tertiary"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const newInputType =
+                          inputType === "crypto" ? "fiat" : "crypto";
+                        if (newInputType === "crypto") {
+                          dispatch(saveAmount(priceValue));
+                          formik.setFieldValue("amount", priceValue);
+                        }
+                        if (newInputType === "fiat") {
+                          dispatch(saveAmountUsd(priceValueUsd));
+                          formik.setFieldValue("amountUsd", priceValueUsd);
+                        }
+                        setInputType(newInputType);
+                      }}
+                    >
+                      <Icon.RefreshCw03 />
+                    </Button>
+                  </div>
+                )}
+                <div className="SendAmount__invalid-state">
+                  {isAmountTooHigh && (
+                    <>
+                      <Icon.AlertCircle />
+                      <span>
+                        You don't have enough {parsedSourceAsset.code} in your
+                        account
+                      </span>
+                    </>
+                  )}
+                </div>
+                <div className="SendAmount__btn-set-max">
+                  <Button
+                    size="md"
+                    type="button"
+                    variant="tertiary"
+                    isRounded
+                    onClick={(e) => {
+                      e.preventDefault();
+                      emitMetric(METRIC_NAMES.sendPaymentSetMax);
+                      if (inputType === "fiat") {
+                        const availableUsd = formatAmount(
+                          roundUsdValue(
+                            new BigNumber(assetPrice!)
+                              .multipliedBy(
+                                new BigNumber(cleanAmount(availableBalance)),
+                              )
+                              .toString(),
+                          ),
+                        );
+                        formik.setFieldValue("amountUsd", availableUsd);
+                        dispatch(saveAmountUsd(availableUsd));
+                      } else {
+                        formik.setFieldValue("amount", availableBalance);
+                        dispatch(saveAmount(availableBalance));
+                      }
+                    }}
+                    data-testid="SendAmountSetMax"
+                  >
+                    {t("Set Max")}
+                  </Button>
+                </div>
+                <div
+                  className="SendAmount__EditDestAsset"
+                  onClick={goBackAction}
+                >
+                  <div className="SendAmount__EditDestAsset__title">
+                    <AssetIcon
+                      assetIcons={
+                        asset !== "native" ? { [asset]: assetIcon } : {}
+                      }
+                      code={srcAsset.code}
+                      issuerKey={srcAsset.issuer}
+                      icon={assetIcon}
+                      isSuspicious={false}
+                    />
+                    <div className="SendAmount__EditDestAsset__asset-title">
+                      <div className="SendAmount__EditDestAsset__asset-heading">
+                        {srcTitle}
+                      </div>
+                      <div className="SendAmount__EditDestAsset__asset-total">
+                        {displayTotal}
+                      </div>
+                    </div>
+                  </div>
+                  <Button isRounded size="sm" variant="tertiary">
+                    <Icon.ChevronRight />
+                  </Button>
+                </div>
+                <div
+                  className="SendAmount__EditDestination"
+                  onClick={() => {
+                    dispatch(saveAsset("native"));
+                    dispatch(saveAmount("0"));
+                    dispatch(saveAmountUsd("0.00"));
+                    goToChooseDest();
+                  }}
+                >
+                  <div className="SendAmount__EditDestination__title">
+                    <div className="SendAmount__EditDestination__identicon">
+                      <IdenticonImg publicKey={destination} />
+                    </div>
+                    {federationAddress
+                      ? truncatedFedAddress(federationAddress)
+                      : truncatedPublicKey(destination)}
+                  </div>
+                  <Button isRounded size="sm" variant="tertiary">
+                    <Icon.ChevronRight />
+                  </Button>
+                </div>
+              </div>
+            </form>
           </div>
-        </View.Content>
-      </React.Fragment>
-      <LoadingBackground
-        onClick={() => {}}
-        isActive={showBlockedDomainWarning}
-      />
-    </>
+        </div>
+      </View.Content>
+      {isEditingMemo ? (
+        <>
+          <div className="EditMemoWrapper">
+            <EditMemo
+              memo={transactionData.memo || ""}
+              onClose={() => setIsEditingMemo(false)}
+              onSubmit={({ memo }: { memo: string }) => {
+                dispatch(saveMemo(memo));
+                setIsEditingMemo(false);
+              }}
+            />
+          </div>
+          <LoadingBackground
+            onClick={() => setIsEditingMemo(false)}
+            isActive={isEditingMemo}
+          />
+        </>
+      ) : null}
+      {isEditingSettings ? (
+        <>
+          <div className="EditMemoWrapper">
+            <EditSettings
+              fee={fee}
+              title="Send Settings"
+              timeout={transactionData.transactionTimeout}
+              congestion={networkCongestion}
+              onClose={() => setIsEditingSettings(false)}
+              onSubmit={({
+                fee,
+                timeout,
+              }: {
+                fee: string;
+                timeout: number;
+              }) => {
+                dispatch(saveTransactionFee(fee));
+                dispatch(saveTransactionTimeout(timeout));
+                setIsEditingSettings(false);
+              }}
+            />
+          </div>
+          <LoadingBackground
+            onClick={() => setIsEditingSettings(false)}
+            isActive={isEditingSettings}
+          />
+        </>
+      ) : null}
+      <SlideupModal
+        setIsModalOpen={() => setIsReviewingTx(false)}
+        isModalOpen={isReviewingTx}
+      >
+        {isReviewingTx ? (
+          <ReviewTx
+            assetIcon={assetIcon}
+            fee={fee}
+            networkDetails={sendAmountData.data?.networkDetails!}
+            onCancel={() => setIsReviewingTx(false)}
+            onConfirm={goToNext}
+            sendAmount={amount}
+            sendPriceUsd={priceValueUsd}
+            simulationState={simulationState}
+            srcAsset={asset}
+            title="You are sending"
+          />
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
+    </React.Fragment>
   );
 };

@@ -73,6 +73,7 @@ function useSendToData() {
       try {
         const { validatedAddress, fedAddress } =
           await getAddressFromInput(userInput);
+
         const { recentAddresses } = await loadRecentAddresses({
           activePublicKey: publicKey,
         });
@@ -109,7 +110,7 @@ function useSendToData() {
         return error;
       }
     },
-    2000,
+    0,
   );
 
   const fetchData = async (

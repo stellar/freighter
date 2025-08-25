@@ -20,17 +20,33 @@
   &__description {
     flex: 1;
     color: var(--sds-clr-gray-12);
+
+    &__swap-label {
+      display: flex;
+      align-items: center;
+
+      .swap-label-direction {
+        margin: 0 pxToRem(6px);
+      }
+    }
   }
 
   &__amount {
     text-align: right;
     max-width: 45%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 
     .Badge {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       display: block;
+    }
+
+    &.credit {
+      color: var(--sds-clr-green-11);
     }
   }
 
@@ -102,6 +118,12 @@
     justify-content: space-between;
   }
 
+  &--action {
+    display: flex;
+    align-items: center;
+    color: var(--sds-clr-gray-11);
+  }
+
   &--date {
     color: var(--sds-clr-gray-11);
   }
@@ -129,6 +151,22 @@
     color: var(--sds-clr-gray-01);
     svg {
       fill: var(--sds-clr-red-09);
+    }
+  }
+
+  &__action-icon {
+    display: flex;
+    align-items: center;
+    margin-right: 2px;
+  }
+
+  &__action-detail {
+    font-size: pxToRem(14px);
+    &.credit {
+      color: var(--sds-clr-green-11);
+    }
+    &.debit {
+      color: var(--sds-clr-gray-09);
     }
   }
 }

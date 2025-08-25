@@ -1,6 +1,6 @@
 import { useReducer, useState } from "react";
 
-import { Account, BlockAidScanTxResult } from "@shared/api/types";
+import { Account, AssetIcons, BlockAidScanTxResult } from "@shared/api/types";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { useScanTx } from "popup/helpers/blockaid";
@@ -9,13 +9,20 @@ import {
   NeedsReRoute,
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
-import { isMainnet } from "helpers/stellar";
+import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { makeAccountActive } from "popup/ducks/accountServices";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "popup/App";
 import { signFlowAccountSelector } from "popup/helpers/account";
+import { iconsSelector } from "popup/ducks/cache";
+import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
+import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
+import { isContractId } from "popup/helpers/soroban";
+import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
+import { settingsSelector } from "popup/ducks/settings";
+import { TransactionBuilder } from "stellar-sdk";
 
 export interface ResolvedData {
   type: AppDataType.RESOLVED;
@@ -29,6 +36,7 @@ export interface ResolvedData {
   };
   applicationState: APPLICATION_STATE;
   networkDetails: NetworkDetails;
+  icons: AssetIcons;
 }
 
 type SignTxData = NeedsReRoute | ResolvedData;
@@ -52,6 +60,8 @@ function useGetSignTxData(
 
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
+  const cachedIcons = useSelector(iconsSelector);
+  const { assetsLists } = useSelector(settingsSelector);
   const { scanTx } = useScanTx();
   const [accountNotFound, setAccountNotFound] = useState(false);
 
@@ -87,6 +97,98 @@ function useGetSignTxData(
         networkDetails,
       );
 
+      // Add all icons needed for tx assets
+      const icons = {} as { [code: string]: string };
+      const assetsListsData = await getCombinedAssetListData({
+        networkDetails,
+        assetsLists,
+      });
+
+      if (
+        scanResult &&
+        "simulation" in scanResult &&
+        scanResult.simulation &&
+        scanResult.simulation.status === "Success" &&
+        "assets_diffs" in scanResult.simulation
+      ) {
+        const diffs = scanResult.simulation.assets_diffs || {};
+        const accountDiffs = diffs[publicKey] || [];
+        for (const diff of accountDiffs) {
+          if (
+            "code" in diff.asset &&
+            diff.asset.code &&
+            "issuer" in diff.asset &&
+            diff.asset.issuer
+          ) {
+            const key = diff.asset.issuer;
+            const code = diff.asset.code;
+            let canonical = getCanonicalFromAsset(code, key);
+            if (cachedIcons[canonical]) {
+              icons[canonical] = cachedIcons[canonical];
+            } else {
+              let icon = await getIconUrlFromIssuer({
+                key,
+                code,
+                networkDetails,
+              });
+              if (!icon) {
+                const tokenListIcon = await getIconFromTokenLists({
+                  networkDetails,
+                  issuerId: key,
+                  contractId: isContractId(key) ? key : undefined,
+                  code,
+                  assetsListsData,
+                });
+                if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
+                  icon = tokenListIcon.icon;
+                  canonical = tokenListIcon.canonicalAsset;
+                }
+              }
+              icons[canonical] = icon;
+            }
+          }
+        }
+      }
+
+      const transaction = TransactionBuilder.fromXDR(
+        scanOptions.xdr,
+        networkDetails.networkPassphrase,
+      );
+      const trustlineChanges = transaction.operations.filter(
+        (op) => op.type === "changeTrust",
+      );
+      if (trustlineChanges.length) {
+        for (const trustChange of trustlineChanges) {
+          if ("code" in trustChange.line) {
+            const { code, issuer } = trustChange.line;
+            let canonical = getCanonicalFromAsset(code, issuer);
+            if (cachedIcons[canonical]) {
+              icons[canonical] = cachedIcons[canonical];
+            } else {
+              let icon = await getIconUrlFromIssuer({
+                key: issuer,
+                code,
+                networkDetails,
+              });
+              if (!icon) {
+                const tokenListIcon = await getIconFromTokenLists({
+                  networkDetails,
+                  issuerId: issuer,
+                  contractId: isContractId(issuer) ? issuer : undefined,
+                  code,
+                  assetsListsData,
+                });
+                if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
+                  icon = tokenListIcon.icon;
+                  canonical = tokenListIcon.canonicalAsset;
+                }
+              }
+              icons[canonical] = icon;
+            }
+          }
+        }
+      }
+
       if (isError<AccountBalances>(balancesResult)) {
         throw new Error(balancesResult.message);
       }
@@ -111,6 +213,7 @@ function useGetSignTxData(
         publicKey,
         applicationState: appData.account.applicationState,
         networkDetails: appData.settings.networkDetails,
+        icons,
         signFlowState: {
           allAccounts,
           accountNotFound,

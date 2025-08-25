@@ -1,2 +1,17 @@
+@use "../../styles/utils.scss" as *;
+
 .Security {
+  display: flex;
+  flex-direction: column;
+  padding: pxToRem(16px);
+  border-radius: pxToRem(16px);
+  background-color: var(--sds-clr-gray-02);
+
+  .ListNavLink {
+    &:not(:last-child) {
+      margin-bottom: pxToRem(16px);
+      padding-bottom: pxToRem(16px);
+      border-bottom: 1px solid var(--sds-clr-gray-06);
+    }
+  }
 }

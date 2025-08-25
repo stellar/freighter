@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Asset, StrKey } from "stellar-sdk";
 import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
@@ -31,6 +31,7 @@ import {
   saveDestination,
   saveDestinationAsset,
   saveFederationAddress,
+  transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
 
 import { RequestState } from "constants/request";
@@ -106,6 +107,9 @@ export const SendTo = ({
   const { t } = useTranslation();
   const location = useLocation();
   const dispatch: AppDispatch = useDispatch<AppDispatch>();
+  const { destination, federationAddress } = useSelector(
+    transactionDataSelector,
+  );
   const { state: sendDataState, fetchData } = useSendToData();
 
   const handleContinue = (
@@ -119,7 +123,7 @@ export const SendTo = ({
   };
 
   const formik = useFormik({
-    initialValues: { destination: "" },
+    initialValues: { destination: federationAddress || destination || "" },
     onSubmit: () => {
       if (
         sendDataState.state === RequestState.SUCCESS &&
@@ -194,7 +198,11 @@ export const SendTo = ({
 
   return (
     <React.Fragment>
-      <SubviewHeader title="Send To" customBackAction={goBack} />
+      <SubviewHeader
+        title="Send"
+        customBackAction={goBack}
+        customBackIcon={<Icon.X />}
+      />
       <View.Content hasTopInput>
         <FormRows>
           <Input
@@ -202,9 +210,10 @@ export const SendTo = ({
             autoComplete="off"
             id="destination-input"
             name="destination"
-            placeholder={t("Recipient Stellar address")}
+            placeholder={t("Enter address")}
             onChange={formik.handleChange}
             value={formik.values.destination}
+            leftElement={<Icon.UserCircle />}
             data-testid="send-to-input"
           />
         </FormRows>
@@ -228,7 +237,10 @@ export const SendTo = ({
               {formik.values.destination === "" ? (
                 <>
                   {sendDataState.data.recentAddresses.length > 0 && (
-                    <div className="SendTo__subheading">{t("RECENT")}</div>
+                    <div className="SendTo__subheading">
+                      <Icon.Clock />
+                      {t("Recents")}
+                    </div>
                   )}
                   <div className="SendTo__simplebar">
                     <ul className="SendTo__recent-accts-ul">
@@ -248,7 +260,9 @@ export const SendTo = ({
                             }}
                             className="SendTo__subheading-identicon"
                           >
-                            <IdenticonImg publicKey={address} />
+                            <div className="SendTo__subheading-identicon__identicon">
+                              <IdenticonImg publicKey={address} />
+                            </div>
                             <span>
                               {isFederationAddress(address)
                                 ? address
@@ -268,24 +282,19 @@ export const SendTo = ({
                         !sendDataState.data.destinationBalances.isFunded && (
                           <AccountDoesntExistWarning />
                         )}
-                      {isFederationAddress(formik.values.destination) && (
-                        <>
-                          <div className="SendTo__subheading">
-                            {t("FEDERATION ADDRESS")}
-                          </div>
-                          <div className="SendTo__subsection-copy">
-                            {formik.values.destination}
-                          </div>
-                        </>
-                      )}
-                      <div className="SendTo__subheading">Address</div>
+                      <div className="SendTo__subheading">
+                        <Icon.SearchLg />
+                        Suggestions
+                      </div>
                       <div
                         className="SendTo__subheading-identicon"
                         data-testid="send-to-identicon"
                       >
-                        <IdenticonImg
-                          publicKey={sendDataState.data.validatedAddress}
-                        />
+                        <div className="SendTo__subheading-identicon__identicon">
+                          <IdenticonImg
+                            publicKey={sendDataState.data.validatedAddress}
+                          />
+                        </div>
                         <span>
                           {truncatedPublicKey(
                             sendDataState.data.validatedAddress,
@@ -305,8 +314,9 @@ export const SendTo = ({
       <View.Footer>
         {!isLoading && formik.values.destination && formik.isValid ? (
           <Button
-            size="md"
+            size="lg"
             isFullWidth
+            isRounded
             variant="secondary"
             onClick={() => formik.submitForm()}
             data-testid="send-to-btn-continue"

@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Icon, IconButton } from "@stellar/design-system";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Operation } from "stellar-sdk";
+import { Operation, StrKey, xdr } from "stellar-sdk";
 
 import {
   FLAG_TYPES,
@@ -15,10 +15,11 @@ import { FlaggedKeys } from "types/transactions";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { truncateString, truncatedPoolId } from "helpers/stellar";
 import { scanAsset } from "popup/helpers/blockaid";
-
+import { getCreateContractArgs } from "popup/helpers/soroban";
 import {
   KeyValueClaimants,
   KeyValueInvokeHostFn,
+  KeyValueInvokeHostFnArgs,
   KeyValueLine,
   KeyValueList,
   KeyValueSigner,
@@ -26,6 +27,7 @@ import {
   KeyValueWithPublicKey,
   PathList,
 } from "./KeyVal";
+
 import "./styles.scss";
 
 const MemoRequiredWarning = ({
@@ -719,6 +721,125 @@ export const Operations = ({
     }
   };
 
+  const RenderOpArgsByType = ({ op }: { op: Operation }) => {
+    const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
+    useEffect(() => {
+      const scan = async () => {
+        let sendAsset;
+        let destAsset;
+
+        if (op.type === "payment") {
+          sendAsset = op.asset;
+        }
+
+        if (
+          op.type === "pathPaymentStrictReceive" ||
+          op.type === "pathPaymentStrictSend"
+        ) {
+          sendAsset = op.sendAsset;
+          destAsset = op.destAsset;
+        }
+
+        if (sendAsset) {
+          await scanAsset(
+            `${sendAsset.code}-${sendAsset.issuer}`,
+            networkDetails,
+          );
+        }
+
+        if (destAsset) {
+          await scanAsset(
+            `${destAsset.code}-${destAsset.issuer}`,
+            networkDetails,
+          );
+        }
+      };
+
+      scan();
+    }, [networkDetails, op]);
+
+    switch (op.type) {
+      case "invokeHostFunction": {
+        const hostfn = op.func;
+
+        function renderDetails() {
+          switch (hostfn.switch()) {
+            case xdr.HostFunctionType.hostFunctionTypeCreateContractV2():
+            case xdr.HostFunctionType.hostFunctionTypeCreateContract(): {
+              const createContractArgs = getCreateContractArgs(hostfn);
+              const preimage = createContractArgs.contractIdPreimage;
+              const createV2Args = createContractArgs.constructorArgs;
+
+              if (preimage.switch().name === "contractIdPreimageFromAddress") {
+                const preimageFromAddress = preimage.fromAddress();
+                const address = preimageFromAddress.address();
+
+                const addressType = address.switch();
+                if (addressType.name === "scAddressTypeAccount") {
+                  return (
+                    createV2Args && (
+                      <KeyValueInvokeHostFnArgs args={createV2Args} />
+                    )
+                  );
+                }
+                return (
+                  <>
+                    {createV2Args && (
+                      <KeyValueInvokeHostFnArgs args={createV2Args} />
+                    )}
+                  </>
+                );
+              }
+
+              // contractIdPreimageFromAsset
+              return (
+                <>
+                  {createV2Args && (
+                    <KeyValueInvokeHostFnArgs args={createV2Args} />
+                  )}
+                </>
+              );
+            }
+
+            case xdr.HostFunctionType.hostFunctionTypeInvokeContract(): {
+              const invocation = hostfn.invokeContract();
+              const contractId = StrKey.encodeContract(
+                invocation.contractAddress().toXDR(),
+              );
+              const fnName = invocation.functionName().toString();
+              const args = invocation.args();
+
+              return (
+                <KeyValueInvokeHostFnArgs
+                  args={args}
+                  contractId={contractId}
+                  fnName={fnName}
+                  showHeader={false}
+                />
+              );
+            }
+
+            case xdr.HostFunctionType.hostFunctionTypeUploadContractWasm(): {
+              const wasm = hostfn.wasm().toString();
+              return (
+                <KeyValueList operationKey={t("wasm")} operationValue={wasm} />
+              );
+            }
+
+            default:
+              return <></>;
+          }
+        }
+        return renderDetails();
+      }
+
+      default: {
+        return <></>;
+      }
+    }
+  };
+
   return (
     <div className="Operations">
       {operations.map((op, i: number) => {
@@ -733,10 +854,8 @@ export const Operations = ({
             data-testid="OperationsWrapper"
           >
             <div className="Operations--header">
-              <Icon.ParagraphSpacing />
-              <strong className="OpType">
-                {OPERATION_TYPES[type] || type}
-              </strong>
+              <Icon.Cube02 />
+              <span>{OPERATION_TYPES[type] || type}</span>
             </div>
             <div className="Operations--item">
               {sourceVal && (
@@ -747,6 +866,17 @@ export const Operations = ({
               )}
               <RenderOpByType op={op} />
             </div>
+            {type === "invokeHostFunction" && (
+              <>
+                <div className="Operations--header">
+                  <Icon.BracketsEllipses />
+                  <span>Parameters</span>
+                </div>
+                <div className="Operations--item">
+                  <RenderOpArgsByType op={op} />
+                </div>
+              </>
+            )}
           </div>
         );
       })}

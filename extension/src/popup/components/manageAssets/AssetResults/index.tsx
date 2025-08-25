@@ -1,12 +1,18 @@
 import React from "react";
-import { Icon, Input, Loader } from "@stellar/design-system";
+import { Icon, Input, InputProps, Loader } from "@stellar/design-system";
 
 import "./styles.scss";
 
-interface SearchInputProps {
+interface Props
+  extends InputProps,
+    React.InputHTMLAttributes<HTMLInputElement> {
+  id: string;
+}
+
+type SearchInputProps = {
   id: string;
   placeholder: string;
-}
+} & Partial<Props>;
 
 export const SearchInput = ({
   id,

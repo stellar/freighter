@@ -1,0 +1,99 @@
+@use "../../../styles/utils.scss" as *;
+
+.SendingTransaction {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+
+  &__Footer {
+    &__Done {
+      margin-top: pxToRem(12px);
+    }
+    &__Subtext {
+      font-size: pxToRem(14px);
+      color: var(--sds-clr-gray-09);
+      margin-bottom: pxToRem(12px);
+    }
+  }
+
+  &__Title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: pxToRem(32px) 0;
+    font-size: pxToRem(18px);
+
+    .Loader {
+      margin-bottom: pxToRem(8px);
+    }
+
+    &__Success {
+      color: var(--sds-clr-green-09);
+      margin-bottom: pxToRem(8px);
+      width: 2rem;
+      height: 2rem;
+    }
+  }
+
+  &__Summary {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: pxToRem(24px);
+    background-color: var(--sds-clr-gray-03);
+    border-radius: pxToRem(14px);
+
+    &__Description {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: pxToRem(16px);
+
+      &__Label {
+        &:not(:last-child) {
+          margin-bottom: pxToRem(6px);
+        }
+
+        &.Verb {
+          color: var(--sds-clr-gray-09);
+        }
+      }
+    }
+
+    &__Assets {
+      display: flex;
+      margin-bottom: pxToRem(28px);
+
+      &__Divider {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-right: 1rem;
+        svg {
+          color: var(--sds-clr-gray-09);
+        }
+      }
+
+      .AccountAssets__asset--logo {
+        &:last-child {
+          margin-right: 0;
+        }
+      }
+
+      .IdenticonImg {
+        width: 2rem;
+        height: 2rem;
+        padding: pxToRem(6px);
+        border: 1px solid var(--sds-clr-gray-09);
+        border-radius: pxToRem(100px);
+
+        &:not(:last-child) {
+          margin-right: pxToRem(12px);
+        }
+      }
+    }
+  }
+}

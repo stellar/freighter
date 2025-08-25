@@ -10,7 +10,7 @@
 .BlockaidByLine {
   color: var(--sds-clr-gray-11);
   display: flex;
-  font-size: var(--sds-fs-secondary);
+  font-size: pxToRem(14px);
   justify-content: space-between;
   gap: pxToRem(6px);
 
@@ -18,6 +18,15 @@
     display: flex;
     gap: pxToRem(4px);
     align-items: center;
+
+    svg {
+      margin: 0 pxToRem(6px);
+    }
+
+    .Text {
+      display: flex;
+      align-items: center;
+    }
   }
 
   &__feedback {
@@ -89,51 +98,106 @@
     overflow-y: auto;
   }
 
+  &__icon-container {
+    width: pxToRem(16px);
+    height: pxToRem(16px);
+    margin-right: pxToRem(5px);
+  }
+
   &__backup {
-    p {
-      font-size: 0.875rem;
-      line-height: 1.375rem;
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    padding: pxToRem(24px);
+
+    &__description {
+      display: flex;
+      font-size: pxToRem(16px);
+      color: var(--sds-clr-gray-11);
+      margin-top: pxToRem(12px);
+    }
+
+    .DomainNotAllowedWarning {
+      display: flex;
+      justify-content: space-between;
+      align-self: stretch;
+      justify-content: space-between;
+
+      .ConnectionWarning {
+        font-size: pxToRem(14px);
+      }
+    }
+
+    &__tips {
+      display: flex;
+      flex-direction: column;
+
+      &__icon {
+        width: 20px;
+        height: 20px;
+        margin-right: pxToRem(16px);
+      }
+
+      &__row {
+        display: flex;
+        align-items: center;
+        margin-top: pxToRem(24px);
+
+        svg {
+          color: var(--sds-clr-lime-10);
+        }
+
+        span {
+          font-size: pxToRem(14px);
+          line-height: pxToRem(20px);
+        }
+      }
     }
   }
 
   &__infoBlock {
-    background: var(--sds-clr-lilac-02);
-    border: 1px solid var(--sds-clr-lilac-06);
-    border-radius: 0.5rem;
-    color: var(--sds-clr-white) !important;
+    background: var(--sds-clr-lilac-03);
+    border-radius: pxToRem(16px);
+    color: var(--sds-clr-lilac-11);
     font-size: 0.875rem;
-    margin-bottom: 1rem;
-    padding: 0.5rem;
+    padding: pxToRem(16px) pxToRem(12px);
 
     &--high-alert {
-      border-color: var(--sds-clr-red-06);
-      background: rgba(241, 50, 50, 0.32);
+      background-color: var(--sds-clr-red-09);
+      color: var(--sds-clr-red-11);
+      border-radius: pxToRem(16px);
+      padding: pxToRem(16px) pxToRem(12px);
 
       .WarningMessage__icon {
-        color: rgba(241, 50, 50, 1);
+        width: pxToRem(16px);
+        height: pxToRem(16px);
+        color: var(--sds-clr-red-09);
       }
     }
 
     &--warning {
-      border-color: rgba(241, 165, 50, 0.32);
-      background-color: rgba(94, 58, 4, 0.32);
+      background-color: var(--sds-clr-amber-03);
+      color: var(--sds-clr-amber-11);
+      border-radius: pxToRem(16px);
+      padding: pxToRem(16px) pxToRem(12px);
 
       .WarningMessage__icon {
-        color: rgba(241, 165, 50, 1);
+        width: pxToRem(16px);
+        height: pxToRem(16px);
+        color: var(--sds-clr-amber-11);
       }
     }
   }
 
   &__header {
     align-items: center;
-    font-weight: var(--font-weight-medium);
+    font-weight: bold;
     display: flex;
     gap: 0.625rem;
-  }
 
-  &__icon {
-    color: #6432f1;
-    width: 24px;
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+    }
   }
 
   &__default-icon {
@@ -160,6 +224,7 @@
   &__children-wrapper {
     flex-grow: 1;
     word-break: break-word;
+    margin-top: pxToRem(12px);
 
     a {
       color: var(--sds-clr-white);
@@ -167,7 +232,6 @@
   }
 }
 
-.WarningModal,
 .ScamAssetWarning {
   height: 100vh;
   z-index: var(--z-index--scam-warning);
@@ -198,14 +262,17 @@
   }
 
   &__box {
-    background-color: var(--sds-clr-red-02);
-    border: 1px solid var(--sds-clr-red-06);
-    border-radius: 6px;
-    margin-bottom: 1.5rem;
-    padding: 0.5rem;
+    background-color: var(--sds-clr-red-03);
+    border-radius: 16px;
+    padding: pxToRem(12) pxToRem(16px);
+
+    &:not(:first-child) {
+      margin-top: pxToRem(12px);
+    }
 
     &__content {
       display: flex;
+      align-items: center;
       height: fit-content;
     }
 
@@ -239,9 +306,9 @@
   }
 
   &__description {
-    font-size: 0.75rem;
+    font-size: pxToRem(14px);
     line-height: 1.125rem;
-    margin-bottom: 0.375rem;
+    color: var(--sds-clr-red-11);
     word-break: break-word;
   }
 
@@ -462,16 +529,29 @@
   }
 }
 
-.InvokerAuthWarning {
-  overflow-wrap: break-word;
-}
-
 .ScanLabel {
   display: flex;
-  border-radius: 6px;
-  margin-bottom: 10px;
-  padding: 0.5rem;
-  padding-left: 0.25rem;
+  padding: 12px 16px;
+  align-items: center;
+  align-self: stretch;
+  justify-content: space-between;
+  border-radius: 16px;
+  cursor: pointer;
+
+  &:not(:first-child) {
+    margin-top: pxToRem(12px);
+  }
+
+  &__Info {
+    display: flex;
+    align-items: center;
+  }
+
+  &__Action {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 
   .Icon {
     height: 16px;
@@ -479,28 +559,29 @@
   }
 
   .Message {
-    font-size: 0.75rem;
+    font-size: pxToRem(14px);
     line-height: 1rem;
   }
 }
 
 .ScanMalicious {
-  background-color: var(--sds-clr-red-02);
-  border: 1px solid var(--sds-clr-red-06);
+  background-color: var(--sds-clr-red-03);
+  color: var(--sds-clr-red-11);
 
   .Icon {
     .WarningMessage__icon {
-      color: var(--sds-clr-red-06);
+      color: var(--sds-clr-red-11);
     }
   }
 }
 
 .ScanMiss {
-  border: 1px solid var(--sds-clr-gray-06);
+  color: var(--sds-clr-amber-11);
+  background-color: var(--sds-clr-amber-03);
 
   .Icon {
     .WarningMessage__icon {
-      color: var(--sds-clr-gray-06);
+      color: var(--sds-clr-amber-11);
     }
   }
 }
@@ -550,6 +631,130 @@
 
     &__byline {
       margin-bottom: 1rem;
+    }
+  }
+}
+
+.BlockaidDetailsExpanded {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px;
+
+  &__Header {
+    display: flex;
+    justify-content: space-between;
+
+    .WarningMark {
+      display: flex;
+      width: 40px;
+      height: 40px;
+      padding: 7.5px;
+      justify-content: center;
+      align-items: center;
+      aspect-ratio: 1/1;
+      border-radius: 8px;
+      border: 1px solid var(--sds-clr-amber-06);
+      background: var(--sds-clr-amber-03);
+
+      svg {
+        width: 25px;
+        height: 25px;
+        color: var(--sds-clr-amber-09);
+      }
+    }
+
+    .WarningMarkError {
+      display: flex;
+      width: 40px;
+      height: 40px;
+      padding: 7.5px;
+      justify-content: center;
+      align-items: center;
+      aspect-ratio: 1/1;
+      border-radius: 8px;
+      border: 1px solid var(--sds-clr-red-06);
+      background: var(--sds-clr-red-03);
+
+      svg {
+        width: 25px;
+        height: 25px;
+        color: var(--sds-clr-red-09);
+      }
+    }
+
+    .Close {
+      display: flex;
+      width: 32px;
+      height: 32px;
+      justify-content: center;
+      align-items: center;
+      border-radius: 1000px;
+      background: var(--sds-clr-gray-03);
+      color: var(--sds-clr-gray-09);
+    }
+  }
+
+  &__Title {
+    display: flex;
+    margin: pxToRem(16px) 0;
+    font-size: pxToRem(20px);
+    font-weight: 500;
+  }
+
+  &__SubTitle {
+    font-size: pxToRem(16px);
+    font-weight: 500;
+    margin-bottom: pxToRem(16px);
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__Details {
+    display: flex;
+    padding: pxToRem(12px) pxToRem(16px);
+    flex-direction: column;
+    justify-content: center;
+    background-color: var(--sds-clr-gray-03);
+    border-radius: pxToRem(16px);
+
+    .BlockaidByLine {
+      margin-top: pxToRem(12px);
+      padding-top: pxToRem(12px);
+      border-top: 1px solid var(--sds-clr-gray-06);
+    }
+  }
+
+  &__DetailRow {
+    display: flex;
+
+    &:not(:last-child) {
+      margin-bottom: pxToRem(8px);
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+      color: var(--sds-clr-gray-09);
+      margin-right: pxToRem(8px);
+    }
+
+    span {
+      flex: 3;
+      word-break: break-word;
+    }
+  }
+
+  &__DetailRowError {
+    display: flex;
+
+    &:not(:last-child) {
+      margin-bottom: pxToRem(8px);
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+      color: var(--sds-clr-red-09);
+      margin-right: pxToRem(8px);
     }
   }
 }

@@ -1,7 +1,81 @@
+@use "../../styles/utils.scss" as *;
+
 .SignAuthEntry {
   height: var(--popup--height);
   overflow: hidden;
   position: relative;
+
+  &__Body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__TitleRow {
+    display: flex;
+    align-items: center;
+    margin-bottom: pxToRem(16px);
+
+    &__Detail {
+      display: flex;
+      flex-direction: column;
+      margin-left: pxToRem(12px);
+    }
+
+    &__Domain {
+      font-size: pxToRem(14px);
+      color: var(--sds-clr-gray-11);
+    }
+  }
+
+  &__Metadata {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    margin-top: pxToRem(12px);
+
+    &__Row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+
+      &:not(:last-child) {
+        margin-bottom: pxToRem(12px);
+        padding-bottom: pxToRem(12px);
+        border-bottom: 1px solid var(--sds-clr-gray-06);
+      }
+    }
+
+    &__Label {
+      display: flex;
+      align-items: center;
+      color: var(--sds-clr-gray-11);
+
+      svg {
+        margin-right: pxToRem(8px);
+      }
+    }
+
+    &__Value {
+      .CopyValue {
+        max-width: pxToRem(120px);
+
+        .Value {
+          max-width: pxToRem(100px);
+          text-overflow: ellipsis;
+          white-space: pre-wrap;
+          overflow: hidden;
+        }
+
+        svg {
+          color: var(--sds-clr-gray-09);
+        }
+      }
+    }
+  }
 
   .AuthEntry {
     display: -webkit-box;

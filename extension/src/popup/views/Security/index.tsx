@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { Icon } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
 
@@ -17,7 +18,6 @@ import {
 
 import IconAssetList from "popup/assets/icon-security-asset-list.svg?react";
 import IconPhrase from "popup/assets/icon-security-phrase.svg?react";
-import IconExperimentalLink from "popup/assets/icon-security-experimental-link.svg?react";
 
 import "./styles.scss";
 
@@ -28,31 +28,39 @@ export const Security = () => {
     <React.Fragment>
       <SubviewHeader title="Security" />
       <View.Content hasNoTopPadding>
-        <ListNavLinkWrapper>
-          {/*
-      TODO: Add Change Password
-      <ListNavLink href="/">Change Password</ListNavLink>
-      */}
-          <ListNavLink href={ROUTES.manageAssetsLists} icon={<IconAssetList />}>
-            {t("Asset lists")}
-          </ListNavLink>
-          <ListNavLink href={ROUTES.displayBackupPhrase} icon={<IconPhrase />}>
-            {t("Show recovery phrase")}
-          </ListNavLink>
-          <ListNavLink
-            href={ROUTES.advancedSettings}
-            icon={<IconExperimentalLink />}
-          >
-            {t("Advanced settings")}
-          </ListNavLink>
-          {/* <ListNavButtonLink
-            handleClick={() => {
-              openTab(newTabHref(ROUTES.accountMigration));
-            }}
-          >
-            {t("Account migration")}
-          </ListNavButtonLink> */}
-        </ListNavLinkWrapper>
+        <div className="Security">
+          <ListNavLinkWrapper>
+            {/*
+        TODO: Add Change Password
+        <ListNavLink href="/">Change Password</ListNavLink>
+        */}
+            <ListNavLink
+              href={ROUTES.manageAssetsLists}
+              icon={<IconAssetList />}
+            >
+              {t("Asset lists")}
+            </ListNavLink>
+            <ListNavLink
+              href={ROUTES.displayBackupPhrase}
+              icon={<IconPhrase />}
+            >
+              {t("Show recovery phrase")}
+            </ListNavLink>
+            <ListNavLink
+              href={ROUTES.advancedSettings}
+              icon={<Icon.LifeBuoy01 />}
+            >
+              {t("Advanced settings")}
+            </ListNavLink>
+            {/* <ListNavButtonLink
+              handleClick={() => {
+                openTab(newTabHref(ROUTES.accountMigration));
+              }}
+            >
+              {t("Account migration")}
+            </ListNavButtonLink> */}
+          </ListNavLinkWrapper>
+        </div>
       </View.Content>
     </React.Fragment>
   );

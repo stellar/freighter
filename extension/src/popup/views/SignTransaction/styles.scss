@@ -5,9 +5,21 @@
   overflow: hidden;
   position: relative;
   padding: 1rem;
+  padding-top: 0;
   background-color: var(--sds-clr-gray-01);
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: space-between;
+
+  .multi-pane-slider__pane--active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .BlockaidDetailsExpanded {
+    padding-top: 1rem;
+  }
 
   &__tabWrapper {
     display: flex;
@@ -16,56 +28,37 @@
     width: 100%;
   }
 
-  &__Title {
+  &__TitleRow {
     display: flex;
-    flex-direction: column;
-    height: 130px;
-  }
+    align-items: center;
+    margin-bottom: pxToRem(16px);
 
-  .Tabs {
-    width: 100%;
-    height: 100%;
-    flex-grow: 1;
-
-    .BodyWrapper {
-      width: 100%;
+    &__Detail {
       display: flex;
       flex-direction: column;
-      border-radius: 4px;
-      background-color: var(--sds-clr-gray-02);
-      padding: 1rem;
-      overflow-y: scroll;
+      margin-left: pxToRem(12px);
+    }
+
+    &__Domain {
+      font-size: pxToRem(14px);
+      color: var(--sds-clr-gray-11);
     }
   }
 
   &__Body {
     display: flex;
     flex-direction: column;
-    margin-top: 2rem;
-    max-width: 57rem;
-    width: 100%;
-  }
-
-  &--connection-request {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 0.75rem;
-  }
-
-  &--connection-request-pill {
-    display: flex;
     align-items: center;
-    padding: 0 0.5rem;
-    background-color: var(--sds-clr-gray-02);
-    color: var(--sds-clr-gray-12);
-    border: 1px solid var(--sds-clr-gray-03);
-    border-radius: 6px;
-    margin-bottom: 0.5rem;
-    line-height: 1.25rem;
+    padding-top: 2rem;
+    width: 100%;
+    flex: 1;
+    overflow-y: auto;
 
-    p {
-      font-size: 0.75rem;
-      margin-left: 0.25rem;
+    &__Wrapper {
+      max-width: 57rem;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
     }
   }
 
@@ -130,13 +123,13 @@
     display: flex;
     flex-direction: column;
     align-self: flex-end;
+    align-items: center;
     width: 100%;
-    height: 130px;
-
-    &__SigningWith {
-      display: flex;
-      flex-direction: column;
-    }
+    position: sticky;
+    bottom: 0;
+    background-color: var(--sds-clr-gray-01);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 10;
 
     &__PublicKey {
       display: flex;
@@ -153,8 +146,239 @@
 
     &__BtnRow {
       display: flex;
+      max-width: 57rem;
+      width: 100%;
       margin-top: 10px;
       gap: 0.5rem;
     }
+
+    &__BtnRowReject {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      margin-top: 10px;
+      gap: 0.5rem;
+
+      .SignTransaction__Action__ConfirmAnyway {
+        border: 0;
+        color: var(--sds-clr-red-11);
+        background-color: transparent;
+        cursor: pointer;
+        margin-top: pxToRem(12px);
+        padding-top: 0;
+
+        &.Warning {
+          color: var(--sds-clr-gray-11);
+        }
+      }
+    }
+  }
+
+  &__AssetDiffs {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+
+    &:not(:first-child) {
+      margin-top: pxToRem(12px);
+    }
+  }
+
+  &__AssetDiffRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+
+    &:not(:last-child) {
+      margin-bottom: pxToRem(12px);
+      padding-bottom: pxToRem(12px);
+      border-bottom: 1px solid var(--sds-clr-gray-06);
+    }
+
+    &__Asset {
+      display: flex;
+      align-items: center;
+    }
+
+    &__Amount {
+      &.Credit {
+        color: var(--sds-clr-green-11);
+      }
+      &.Debit {
+        color: var(--sds-clr-red-11);
+      }
+    }
+  }
+
+  &__Metadata {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    margin-top: pxToRem(12px);
+
+    &__Row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+
+      &:not(:last-child) {
+        margin-bottom: pxToRem(12px);
+        padding-bottom: pxToRem(12px);
+        border-bottom: 1px solid var(--sds-clr-gray-06);
+      }
+    }
+
+    &__Label {
+      display: flex;
+      align-items: center;
+      color: var(--sds-clr-gray-11);
+
+      svg {
+        margin-right: pxToRem(8px);
+      }
+    }
+
+    &__Value {
+      .CopyValue {
+        max-width: pxToRem(120px);
+
+        .Value {
+          max-width: pxToRem(100px);
+          text-overflow: ellipsis;
+          white-space: pre-wrap;
+          overflow: hidden;
+        }
+
+        svg {
+          color: var(--sds-clr-gray-09);
+        }
+      }
+    }
+  }
+
+  &__Trustlines {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+
+    &:not(:first-child) {
+      margin-top: pxToRem(12px);
+    }
+  }
+
+  &__TrustlineRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+
+    &__Asset {
+      display: flex;
+      align-items: center;
+    }
+
+    &__Type {
+      display: flex;
+      color: var(--sds-clr-lilac-11);
+
+      svg {
+        margin-right: pxToRem(8px);
+      }
+    }
+  }
+
+  &__TransactionDetailsBtn {
+    display: flex;
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    margin-top: pxToRem(12px);
+    color: var(--sds-clr-lilac-11);
+    cursor: pointer;
+
+    svg {
+      margin-right: pxToRem(8px);
+    }
+  }
+
+  &__TransactionDetails {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    overflow-y: scroll;
+    max-width: 57rem;
+
+    &__Header {
+      display: flex;
+      justify-content: space-between;
+      margin: pxToRem(12px) 0;
+
+      .DetailsMark {
+        display: flex;
+        width: 40px;
+        height: 40px;
+        padding: 7.5px;
+        justify-content: center;
+        align-items: center;
+        aspect-ratio: 1/1;
+        border-radius: 8px;
+        border: 1px solid var(--sds-clr-lilac-06);
+        background: var(--sds-clr-lilac-03);
+
+        svg {
+          width: 25px;
+          height: 25px;
+          color: var(--sds-clr-lilac-09);
+        }
+      }
+
+      .Close {
+        display: flex;
+        width: 32px;
+        height: 32px;
+        justify-content: center;
+        align-items: center;
+        border-radius: 1000px;
+        background: var(--sds-clr-gray-03);
+        color: var(--sds-clr-gray-09);
+      }
+    }
+
+    &__Summary {
+      padding: pxToRem(12px) pxToRem(12px);
+      border-radius: pxToRem(16px);
+      background-color: var(--sds-clr-gray-03);
+      margin-top: pxToRem(12px);
+    }
+
+    &__Title {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      margin: pxToRem(12px) 0;
+      font-size: pxToRem(20px);
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

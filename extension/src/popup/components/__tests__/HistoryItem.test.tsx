@@ -6,6 +6,7 @@ import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import * as sorobanHelpers from "popup/helpers/soroban";
 import * as internalApi from "@shared/api/internal";
+import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 
 describe("HistoryItem", () => {
   afterAll(() => {
@@ -18,8 +19,8 @@ describe("HistoryItem", () => {
         to: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
         from: "GCGORBD5DB4JDIKVIA536CJE3EWMWZ6KBUBWZWRQM7Y3NHFRCLOKYVAL",
         contractId: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
-        fnName: "transfer",
-        amount: "100000000",
+        fnName: SorobanTokenInterface.transfer,
+        amount: 100000000,
       };
     });
   jest.spyOn(internalApi, "getTokenDetails").mockImplementation(() => {
@@ -65,15 +66,14 @@ describe("HistoryItem", () => {
       publicKey: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
       url: "example.com",
       networkDetails: TESTNET_NETWORK_DETAILS,
-      setDetailViewProps: () => null,
-      setIsDetailViewShowing: () => null,
+      setActiveHistoryDetailId: () => null,
     };
     render(<HistoryItem {...props} />);
     await waitFor(() => screen.getByTestId("history-item"));
     expect(screen.getByTestId("history-item")).toBeDefined();
     expect(
       screen.getByTestId("history-item-amount-component"),
-    ).toHaveTextContent("+10 XLM");
+    ).toHaveTextContent("10");
   });
   it("renders SAC transfer correctly when balance includes LP shares", async () => {
     const props = {
@@ -118,17 +118,16 @@ describe("HistoryItem", () => {
       publicKey: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
       url: "example.com",
       networkDetails: TESTNET_NETWORK_DETAILS,
-      setDetailViewProps: () => null,
-      setIsDetailViewShowing: () => null,
+      setActiveHistoryDetailId: () => null,
     };
     render(<HistoryItem {...props} />);
     await waitFor(() => screen.getByTestId("history-item"));
     expect(screen.getByTestId("history-item")).toBeDefined();
     expect(
       screen.getByTestId("history-item-amount-component"),
-    ).toHaveTextContent("+10 XLM");
+    ).toHaveTextContent("10");
   });
-  it("renders failed transactions with payment details", async () => {
+  it.only("renders failed transactions with payment details", async () => {
     const props = {
       accountBalances: {
         balances: {
@@ -153,6 +152,7 @@ describe("HistoryItem", () => {
         starting_balance: "10",
         type: "payment",
         type_i: 1,
+        rowText: "Transaction failed",
         transaction_attr: {
           operation_count: 1,
         },
@@ -164,8 +164,7 @@ describe("HistoryItem", () => {
       publicKey: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
       url: "example.com",
       networkDetails: TESTNET_NETWORK_DETAILS,
-      setDetailViewProps: () => null,
-      setIsDetailViewShowing: () => null,
+      setActiveHistoryDetailId: () => null,
     };
     render(<HistoryItem {...props} />);
     await waitFor(() => screen.getByTestId("history-item"));

@@ -16,6 +16,7 @@ export interface TokenToAdd {
 }
 
 export interface MessageToSign {
+  apiVersion?: string;
   domain: string;
   tab?: browser.Tabs.Tab;
   message: string;
@@ -101,6 +102,7 @@ export interface MakeAccountActiveMessage extends BaseMessage {
 export interface UpdateAccountNameMessage extends BaseMessage {
   type: SERVICE_TYPES.UPDATE_ACCOUNT_NAME;
   accountName: string;
+  publicKey: string;
 }
 
 export interface AddCustomNetworkMessage extends BaseMessage {
@@ -183,6 +185,7 @@ export interface SignTransactionMessage extends BaseMessage {
 }
 
 export interface SignBlobMessage extends BaseMessage {
+  apiVersion?: string;
   type: SERVICE_TYPES.SIGN_BLOB;
 }
 

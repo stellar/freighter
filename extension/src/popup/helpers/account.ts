@@ -5,7 +5,6 @@ import {
   AssetVisibility,
   HorizonOperation,
   IssuerKey,
-  SorobanBalance,
   TokenBalances,
 } from "@shared/api/types";
 import { Balances, BalanceMap } from "@shared/api/types/backend-api";
@@ -23,6 +22,10 @@ import {
 } from "helpers/stellar";
 import { getAttrsFromSorobanHorizonOp } from "./soroban";
 import { isAssetVisible } from "./settings";
+import {
+  getRowDataByOpType,
+  OperationDataRow,
+} from "popup/views/AccountHistory/hooks/useGetHistoryData";
 
 export const LP_IDENTIFIER = ":lp";
 
@@ -83,13 +86,12 @@ export const getIsDustPayment = (
   "to" in operation &&
   operation.to === publicKey &&
   "amount" in operation &&
-  new BigNumber(operation.amount).lte(new BigNumber(0.1));
+  new BigNumber(operation.amount!).lte(new BigNumber(0.1));
 
 export const getIsCreateClaimableBalanceSpam = (
   operation: HorizonOperation,
 ) => {
-  // transaction_attr does not exist in HorizonOperation type
-  const op = operation as any;
+  const op = operation;
   if (op.type === "create_claimable_balance") {
     if (op?.transaction_attr?.operation_count > 50) {
       return true;
@@ -101,13 +103,13 @@ export const getIsCreateClaimableBalanceSpam = (
 
 interface SortOperationsByAsset {
   operations: HorizonOperation[];
-  balances: AssetType[] | SorobanBalance[];
+  balances: AssetType[];
   networkDetails: NetworkDetails;
   publicKey: string;
 }
 
 export interface AssetOperations {
-  [key: string]: HorizonOperation[];
+  [key: string]: OperationDataRow[];
 }
 
 export const sortOperationsByAsset = ({
@@ -135,7 +137,28 @@ export const sortOperationsByAsset = ({
     }
   });
 
-  operations.forEach((op) => {
+  operations.forEach(async (op) => {
+    const isPayment = getIsPayment(op.type);
+    const isSwap = getIsSwap(op);
+    const isCreateExternalAccount =
+      op.type === Horizon.HorizonApi.OperationResponseType.createAccount &&
+      op.account !== publicKey;
+    const isDustPayment = getIsDustPayment(publicKey, op);
+
+    const parsedOperation = {
+      ...op,
+      isPayment,
+      isSwap,
+      isDustPayment,
+      isCreateExternalAccount,
+    };
+    const opRowData = await getRowDataByOpType(
+      publicKey,
+      balances,
+      parsedOperation,
+      networkDetails,
+      {},
+    );
     if (getIsPayment(op.type)) {
       Object.keys(assetOperationMap).forEach((assetKey) => {
         const asset = getAssetFromCanonical(assetKey);
@@ -149,7 +172,7 @@ export const sortOperationsByAsset = ({
             op.asset_issuer === assetIssuer) ||
           ("asset_type" in op && op.asset_type === assetCode)
         ) {
-          assetOperationMap[assetKey].push(op);
+          assetOperationMap[assetKey].push(opRowData);
         } else if ("source_asset_type" in op || "source_asset_code" in op) {
           if (
             ("source_asset_type" in op && op.source_asset_type === assetCode) ||
@@ -157,7 +180,7 @@ export const sortOperationsByAsset = ({
               "source_asset_issuer" in op &&
               op.source_asset_issuer === assetIssuer)
           ) {
-            assetOperationMap[assetKey].push(op);
+            assetOperationMap[assetKey].push(opRowData);
           }
         }
       });
@@ -172,7 +195,7 @@ export const sortOperationsByAsset = ({
           op.source_account === publicKey &&
           asset.issuer === attrs.contractId
         ) {
-          assetOperationMap[assetKey].push(op);
+          assetOperationMap[assetKey].push(opRowData);
         }
       });
     }

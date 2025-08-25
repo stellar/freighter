@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useEffect } from "react";
 
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 
@@ -16,27 +16,29 @@ export const SlideupModal = ({
   setIsModalOpen,
 }: SlideupModalProps) => {
   const slideupModalRef = useRef<HTMLDivElement>(null);
-  const [slideupModalHeight, setSlideupModalHeight] = useState(-500);
+  const [isOpen, setIsOpen] = React.useState(isModalOpen);
 
   useEffect(() => {
-    const height = slideupModalRef.current?.clientHeight || 0;
-    setSlideupModalHeight(-height);
-  }, [slideupModalRef]);
+    setIsOpen(isModalOpen);
+  }, [isModalOpen]);
 
   return (
     <>
       <div
-        className="SlideupModal"
+        className={`SlideupModal ${isOpen ? "open" : "closed"}`}
         ref={slideupModalRef}
-        style={{
-          bottom: isModalOpen ? "0px" : `${slideupModalHeight}px`,
-        }}
       >
         {children}
       </div>
       <LoadingBackground
-        onClick={() => setIsModalOpen(false)}
-        isActive={isModalOpen}
+        onClick={() => {
+          setIsOpen(false);
+          // our dismiss transition is 200ms long
+          setTimeout(() => {
+            setIsModalOpen(false);
+          }, 200);
+        }}
+        isActive={isOpen}
       />
     </>
   );
