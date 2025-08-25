@@ -62,28 +62,28 @@ jobs:
           secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{ secrets.SENTRY_KEY }}"
       - name: Install zip
         uses: montudor/action-zip@0852c26906e00f8a315c704958823928d8018b28 #v1.0.0
-      - name: Commit files
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add -A
-          git commit -m "docs(): bumping release to ${{ github.event.inputs.version }}"
-          git tag ${{ github.event.inputs.version }}
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e #v7.0.8
-        with:
-          title: Bump versions to ${{ github.event.inputs.version }}
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          tag_name: ${{ github.event.inputs.version }}
-          release_name: ${{ github.event.inputs.version }}
-          body: ${{ github.event.inputs.version }}
-          draft: false
-          prerelease: false
+      # - name: Commit files
+      #   run: |
+      #     git config --local user.email "action@github.com"
+      #     git config --local user.name "GitHub Action"
+      #     git add -A
+      #     git commit -m "docs(): bumping release to ${{ github.event.inputs.version }}"
+      #     git tag ${{ github.event.inputs.version }}
+      # - name: Create Pull Request
+      #   uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e #v7.0.8
+      #   with:
+      #     title: Bump versions to ${{ github.event.inputs.version }}
+      # - name: Create GitHub Release
+      #   id: create_release
+      #   uses: actions/create-release@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ github.token }}
+      #   with:
+      #     tag_name: ${{ github.event.inputs.version }}
+      #     release_name: ${{ github.event.inputs.version }}
+      #     body: ${{ github.event.inputs.version }}
+      #     draft: false
+      #     prerelease: false
       - name: Build for Firefox
         id: web-ext-build
         uses: kewisch/action-web-ext@fe10addf5d5e5ba6b78ffde720dd488a27d10e8c #v1
