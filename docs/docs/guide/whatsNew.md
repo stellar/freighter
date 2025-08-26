@@ -17,18 +17,26 @@ asset that would be routed to another token, through the DEX.
 
 ## Settings is now under the top left dropdown navigation
 
-Previous: <img src={require('./assets/5.34.0/settings.png').default}
-alt="Discover Button" width="300"/>
+Previous:
 
-New: <img src={require('./assets/5.34.0/settings-new.png').default}
-alt="Discover Button" width="300"/>
+<img src={require('./assets/5.34.0/settings.png').default} alt="Discover Button"
+width="300"/>
+
+New:
+
+<img src={require('./assets/5.34.0/settings-new.png').default} alt="Discover
+Button" width="300"/>
 
 ## Secondary navigation is now in the top left dropdown
 
-Previous: <img src={require('./assets/5.34.0/secondary-nav.png').default}
-alt="Discover Button" width="300"/>
+Previous:
 
-New: <img src={require('./assets/5.34.0/secondary-nav-new.png').default}
+<img src={require('./assets/5.34.0/secondary-nav.png').default} alt="Discover
+Button" width="300"/>
+
+New:
+
+<img src={require('./assets/5.34.0/secondary-nav-new.png').default}
 alt="Discover Button" width="300"/>
 
 ## Implements SEP-53 handling for sign-message API
