@@ -4,18 +4,21 @@ title: What's New
 slug: /whatsNew
 ---
 
-## Release 5.34.0
+# Release 5.34.0
 
-Implements app-wide design system upgrade.
+### App-Wide Design system Update
 
-## Path payments feature is no longer part of the send asset flow
+For this release, we've freshened up the design system, and implemented a number
+of changes across the app. Feel free to read more about the changes below:
+
+### Path payments feature is no longer part of the send asset flow
 
 This means that when sending Stellar Classic Assets, if you wish to send an
 asset, you will need to hold that token. Freighter will no longer support
 designating an asset that is not held by the wallet, and then sending another
 asset that would be routed to another token, through the DEX.
 
-## Settings is now under the top left dropdown navigation
+### Settings is now under the top left dropdown navigation
 
 Previous:
 
@@ -27,7 +30,7 @@ New:
 <img src={require('./assets/5.34.0/settings-new.png').default} alt="Discover
 Button" width="300"/>
 
-## Secondary navigation is now in the top left dropdown
+### Secondary navigation is now in the top left dropdown
 
 Previous:
 
@@ -39,7 +42,7 @@ New:
 <img src={require('./assets/5.34.0/secondary-nav-new.png').default}
 alt="Discover Button" width="300"/>
 
-## Implements SEP-53 handling for sign-message API
+### Implements SEP-53 handling for sign-message API
 
 [SEP-53](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0053.md)
 
