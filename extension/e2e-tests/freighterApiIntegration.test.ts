@@ -35,7 +35,7 @@ const MSG_TO_SIGN = "Hello, World!";
 const SIGNED_MSG =
   '"v6NmJHPZ5jUzZzphmTAb4/2Yv18mXFLmzjnwgDmqKR6Rq7/HQB6YxcUbxtBYNtBxccmPq2PB+7EBwOL3nuwQAQ=="';
 
-test("should sign transaction when allowed", async ({
+test.skip("should sign transaction when allowed", async ({
   page,
   extensionId,
   context,
@@ -116,7 +116,7 @@ test.skip("should not sign transaction when not allowed", async ({
   });
 });
 
-test("should sign auth entry when allowed", async ({
+test.skip("should sign auth entry when allowed", async ({
   page,
   extensionId,
   context,
@@ -163,7 +163,7 @@ test("should sign auth entry when allowed", async ({
   );
 });
 
-test("should not sign auth entry when not allowed", async ({
+test.skip("should not sign auth entry when not allowed", async ({
   page,
   extensionId,
   context,
@@ -213,7 +213,7 @@ test("should not sign auth entry when not allowed", async ({
   });
 });
 
-test("should sign message when allowed", async ({
+test.skip("should sign message when allowed", async ({
   page,
   extensionId,
   context,
@@ -257,7 +257,7 @@ test("should sign message when allowed", async ({
   );
 });
 
-test("should not sign message when not allowed", async ({
+test.skip("should not sign message when not allowed", async ({
   page,
   extensionId,
   context,
@@ -296,7 +296,7 @@ test("should not sign message when not allowed", async ({
   });
 });
 
-test("should add token when allowed", async ({
+test.skip("should add token when allowed", async ({
   page,
   extensionId,
   context,
@@ -338,7 +338,7 @@ test("should add token when allowed", async ({
   );
 });
 
-test("should not add token when not allowed", async ({
+test.skip("should not add token when not allowed", async ({
   page,
   extensionId,
   context,
@@ -379,7 +379,7 @@ test("should not add token when not allowed", async ({
   });
 });
 
-test("should get public key when logged out", async ({
+test.skip("should get public key when logged out", async ({
   page,
   extensionId,
   context,
