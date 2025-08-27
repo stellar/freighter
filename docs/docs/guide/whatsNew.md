@@ -4,7 +4,56 @@ title: What's New
 slug: /whatsNew
 ---
 
-## Release 5.33.0
+# Release 5.34.0
+
+## App-Wide Design system Update
+
+For this release, we've freshened up the design system, removed the nav bar at the bottom, and reorganized certain buttons.
+
+Old Homescreen:
+<img src={require("./assets/5.34.0/Old_Homescreen_5.34.png").default} alt="Old Homescreen" width="300"/> 
+
+New Homescreen:
+<img src={require("./assets/5.34.0/New_Homescreen_5.34.png").default} alt="Old Homescreen" width="300"/> 
+
+
+Old History Page:
+<img src={require("./assets/5.34.0/Old_History_5.34.png").default} alt="Old History Page" width="300"/> 
+
+New History Page:
+<img src={require("./assets/5.34.0/New_History_5.34.png").default} alt="New History Page" width="300"/> 
+
+./assets/5.34.0/New_History_5.34.png
+
+
+## Settings is now under the top left dropdown navigation
+
+Old Settings Location:
+<img src={require("./assets/5.34.0/Old_settings_button_Location_5.34.png").default} alt="Old Settings Button Location" width="300"/> 
+
+
+New Settings Location:
+<img src={require("./assets/5.34.0/New_settings_button_Location_5.34.png").default} alt="New Settings Button Location" width="300"/> 
+
+
+## Secondary navigation is now in the top left dropdown
+
+Old Secondary Nav Location:
+<img src={require("./assets/5.34.0/Old_Settings_Dropdown_5.34.png").default} alt="Old Secondary Nav Location" width="300"/> 
+
+
+New Secondary Nav Location:
+<img src={require("./assets/5.34.0/New_Settings_Dropdown_5.34.png").default} alt="New Secondary Nav Location" width="300"/> 
+
+
+## Implements SEP-53 handling for sign-message API
+
+Learn more about SEP-53 message signing [here](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0053.md).
+
+[Full changelog](https://github.com/stellar/freighter/releases/tag/5.34.0)
+
+
+# Release 5.33.0
 
 ## Discover
 
@@ -42,7 +91,7 @@ visiting a block explorer like [stellar.expert](https://stellar.expert).
 
 [Full changelog](https://github.com/stellar/freighter/releases/tag/5.33.0)
 
-## Release 5.32.0
+# Release 5.32.0
 
 ## Add Asset Unification
 
@@ -85,7 +134,7 @@ History Item" width="300"/>
 
 [Full changelog](https://github.com/stellar/freighter/releases/tag/5.32.0)
 
-## Release 5.31.0
+# Release 5.31.0
 
 ## Coinbase Onramp:
 
