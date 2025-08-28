@@ -325,12 +325,6 @@ const useAssetLookup = () => {
         dispatch({ type: "FETCH_DATA_ERROR", payload: DEFAULT_PAYLOAD });
         return;
       }
-
-      // Only show records that have a domain and domains that don't have just whitespace
-      // We omit these results as a safety precaution and to encourage asset issuers to add a domain to their asset
-      assetRows = assetRows.filter(
-        (record) => record.domain && /\S/.test(record.domain),
-      );
     }
 
     const assetsListsData = await getCombinedAssetListData({
