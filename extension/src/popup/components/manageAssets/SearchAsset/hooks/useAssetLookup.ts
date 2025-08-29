@@ -150,8 +150,10 @@ const useAssetLookup = () => {
       assetRows = [
         {
           code: nativeContractDetails.code,
-          issuer: contractId,
+          issuer: nativeContractDetails.issuer,
+          contract: contractId,
           domain: nativeContractDetails.domain,
+          name: `${nativeContractDetails.code}:${nativeContractDetails.issuer}`,
         },
       ];
 
