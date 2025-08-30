@@ -339,7 +339,6 @@ const AssetRows = ({
                   contract,
                   networkDetails.networkPassphrase,
                 ));
-            console.log(name, issuer, contract, nativeContract);
 
             return (
               <div
