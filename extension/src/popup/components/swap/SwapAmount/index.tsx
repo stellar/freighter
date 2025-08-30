@@ -147,8 +147,12 @@ export const SwapAmount = ({
 
   const handleContinue = async (values: { amount: string }) => {
     const amount = inputType === "crypto" ? values.amount : priceValue!;
-    dispatch(saveAmount(cleanAmount(amount)));
-    await fetchSimulationData({ amount, destinationRate: dstAssetPrice });
+    const cleanedAmount = cleanAmount(amount);
+    dispatch(saveAmount(cleanedAmount));
+    await fetchSimulationData({
+      amount: cleanedAmount,
+      destinationRate: dstAssetPrice,
+    });
     setIsReviewingTx(true);
   };
 

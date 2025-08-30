@@ -22,6 +22,8 @@ import { ManageAssetRowButton } from "../ManageAssetRowButton";
 import { ToggleTokenInternal } from "./ToggleTokenInternal";
 
 import "./styles.scss";
+import { NetworkDetails } from "@shared/constants/stellar";
+import { getNativeContractDetails } from "popup/helpers/searchAsset";
 
 export type ManageAssetCurrency = {
   code?: string;
@@ -86,6 +88,7 @@ export const ManageAssetRows = ({
             accountBalances={balances}
             verifiedAssetRows={verifiedAssetRows}
             unverifiedAssetRows={unverifiedAssetRows}
+            networkDetails={networkDetails}
             shouldSplitAssetsByVerificationStatus={
               shouldSplitAssetsByVerificationStatus
             }
@@ -96,6 +99,7 @@ export const ManageAssetRows = ({
               image,
               issuer,
               isSuspicious,
+              isSac,
               isTrustlineActive,
               name,
             }) => (
@@ -112,6 +116,7 @@ export const ManageAssetRows = ({
                   code={code}
                   issuer={issuer}
                   isTrustlineActive={!!isTrustlineActive}
+                  isSac={isSac}
                   isLoading={false}
                   onClick={async () => {
                     setSelectedAsset({
@@ -178,11 +183,13 @@ const AssetRows = ({
   shouldSplitAssetsByVerificationStatus,
   unverifiedAssetRows,
   verifiedAssetRows,
+  networkDetails,
 }: {
   accountBalances: AccountBalances;
   shouldSplitAssetsByVerificationStatus?: boolean;
   unverifiedAssetRows: ManageAssetCurrency[];
   verifiedAssetRows: ManageAssetCurrency[];
+  networkDetails: NetworkDetails;
   renderAssetRow: ({
     code,
     domain,
@@ -193,6 +200,7 @@ const AssetRows = ({
     isContract,
     isTrustlineActive,
     isSuspicious,
+    isSac,
   }: {
     code: string;
     domain: string;
@@ -203,6 +211,7 @@ const AssetRows = ({
     isContract: boolean;
     isTrustlineActive: boolean;
     isSuspicious?: boolean;
+    isSac: boolean;
   }) => React.ReactNode;
 }) => {
   const { t } = useTranslation();
@@ -242,12 +251,22 @@ const AssetRows = ({
             if (!accountBalances.balances) {
               return null;
             }
+            const nativeContract = getNativeContractDetails(networkDetails);
             const isContract = isContractId(contract);
             const canonicalAsset = getCanonicalFromAsset(code, issuer);
             const isTrustlineActive = findAssetBalance(
               accountBalances.balances,
               { code, issuer },
             );
+            const isSac =
+              contract === nativeContract.contract ||
+              (!!name &&
+                !!contract &&
+                isSacContract(
+                  name,
+                  contract,
+                  networkDetails.networkPassphrase,
+                ));
             return (
               <div
                 className="ManageAssetRows__row"
@@ -262,7 +281,10 @@ const AssetRows = ({
                   isContract,
                   issuer,
                   isSuspicious,
-                  isTrustlineActive: isTrustlineActive !== undefined,
+                  isSac,
+                  isTrustlineActive:
+                    isTrustlineActive !== undefined ||
+                    contract === nativeContract.contract,
                   name,
                 })}
               </div>
@@ -301,12 +323,24 @@ const AssetRows = ({
             if (!accountBalances.balances) {
               return null;
             }
+            const nativeContract = getNativeContractDetails(networkDetails);
             const isContract = isContractId(contract);
             const canonicalAsset = getCanonicalFromAsset(code, issuer);
             const isTrustlineActive = findAssetBalance(
               accountBalances.balances,
               { code, issuer },
             );
+            const isSac =
+              contract === nativeContract.contract ||
+              (!!name &&
+                !!contract &&
+                isSacContract(
+                  name,
+                  contract,
+                  networkDetails.networkPassphrase,
+                ));
+            console.log(name, issuer, contract, nativeContract);
+
             return (
               <div
                 className="ManageAssetRows__row"
@@ -321,7 +355,10 @@ const AssetRows = ({
                   isContract,
                   issuer,
                   isSuspicious,
-                  isTrustlineActive: isTrustlineActive !== undefined,
+                  isSac,
+                  isTrustlineActive:
+                    isTrustlineActive !== undefined ||
+                    contract === nativeContract.contract,
                   name,
                 })}
               </div>
@@ -347,12 +384,18 @@ const AssetRows = ({
           if (!accountBalances.balances) {
             return null;
           }
+          const nativeContract = getNativeContractDetails(networkDetails);
           const isContract = isContractId(contract);
           const canonicalAsset = getCanonicalFromAsset(code, issuer);
           const isTrustlineActive = findAssetBalance(accountBalances.balances, {
             code,
             issuer,
           });
+          const isSac =
+            contract === nativeContract.contract ||
+            (!!name &&
+              !!contract &&
+              isSacContract(name, contract, networkDetails.networkPassphrase));
           return (
             <div
               className="ManageAssetRows__row"
@@ -367,7 +410,10 @@ const AssetRows = ({
                 isContract,
                 issuer,
                 isSuspicious,
-                isTrustlineActive: isTrustlineActive !== undefined,
+                isSac,
+                isTrustlineActive:
+                  isTrustlineActive !== undefined ||
+                  contract === nativeContract.contract,
                 name,
               })}
             </div>
