@@ -14,6 +14,7 @@ interface ManageAssetRowButtonProps {
   code: string;
   issuer: string;
   isTrustlineActive: boolean;
+  isSac: boolean;
   isLoading: boolean;
   onClick: () => void;
 }
@@ -22,6 +23,7 @@ export const ManageAssetRowButton = ({
   code,
   issuer,
   isTrustlineActive,
+  isSac,
   isLoading,
   onClick,
 }: ManageAssetRowButtonProps) => {
@@ -69,28 +71,30 @@ export const ManageAssetRowButton = ({
                   </>
                 </CopyText>
               </div>
-              <div className="ManageAssetRowButton__dropdown__row">
-                <Button
-                  className="ManageAssetRowButton__remove"
-                  size="md"
-                  variant="secondary"
-                  disabled={isLoading}
-                  isLoading={isLoading}
-                  onClick={() => {
-                    setRowButtonShowing("");
-                    onClick();
-                  }}
-                  type="button"
-                  data-testid="ManageAssetRowButton"
-                >
-                  <div className="ManageAssetRowButton__label">
-                    {t("Remove asset")}
-                  </div>
-                  {isLoading ? null : (
-                    <img src={IconRemove} alt="icon remove" />
-                  )}
-                </Button>
-              </div>
+              {!isSac && (
+                <div className="ManageAssetRowButton__dropdown__row">
+                  <Button
+                    className="ManageAssetRowButton__remove"
+                    size="md"
+                    variant="secondary"
+                    disabled={isLoading}
+                    isLoading={isLoading}
+                    onClick={() => {
+                      setRowButtonShowing("");
+                      onClick();
+                    }}
+                    type="button"
+                    data-testid="ManageAssetRowButton"
+                  >
+                    <div className="ManageAssetRowButton__label">
+                      {t("Remove asset")}
+                    </div>
+                    {isLoading ? null : (
+                      <img src={IconRemove} alt="icon remove" />
+                    )}
+                  </Button>
+                </div>
+              )}
               {createPortal(
                 <div
                   className="ManageAssetRowButton__dropdown__background"

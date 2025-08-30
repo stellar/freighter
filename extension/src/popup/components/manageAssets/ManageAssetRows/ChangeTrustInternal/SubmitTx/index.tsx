@@ -208,7 +208,7 @@ export const SubmitTransaction = ({
               )}
               {isFail && (
                 <>
-                  <Icon.CheckCircle className="SubmitTransaction__Title__Fail" />
+                  <Icon.XCircle className="SubmitTransaction__Title__Fail" />
                   <span>Failed!</span>
                 </>
               )}

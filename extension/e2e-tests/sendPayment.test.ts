@@ -221,6 +221,31 @@ test("Send doesn't throw error when creating muxed account", async ({
   });
 });
 
+test("Send can review formatted inputs", async ({ page, extensionId }) => {
+  test.slow();
+  await loginAndFund({ page, extensionId });
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByText("Send")).toBeVisible();
+  await page
+    .getByTestId("send-to-input")
+    .fill(
+      "MAUPPMNJUS76SG5NA6UXVCSO5HYVAJT422LBISV6LMCX37OIEPDJGAAAAAAAAAAAAF54C",
+    );
+  await expect(
+    page.getByText("The destination account doesn’t exist."),
+  ).toBeVisible();
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Send");
+  await page.getByTestId(`SendRow-native`).click({ force: true });
+  await page.getByTestId("send-amount-amount-input").fill("1000");
+  await page.getByText("Review Send").click({ force: true });
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
+});
+
 test("Send XLM payments to recent federated addresses", async ({
   page,
   extensionId,

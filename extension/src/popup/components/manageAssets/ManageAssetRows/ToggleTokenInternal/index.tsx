@@ -13,6 +13,8 @@ import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 
 import "./styles.scss";
+import { isSacContract } from "popup/helpers/soroban";
+import { truncateString } from "helpers/stellar";
 
 interface ToggleTokenInternalProps {
   asset: {
@@ -57,6 +59,10 @@ export const ToggleTokenInternal = ({
     }
     navigateTo(ROUTES.account, nav);
   };
+  const isSac =
+    !!asset.name &&
+    !!asset.contract &&
+    isSacContract(asset.name, asset.contract, networkDetails.networkPassphrase);
   return (
     <div className="ToggleToken__wrapper">
       <div className="ToggleToken__wrapper__body">
@@ -88,7 +94,7 @@ export const ToggleTokenInternal = ({
           )}
 
           <Text as="div" size="sm" weight="medium">
-            {asset.name || asset.code}
+            {isSac ? asset.code : asset.name || truncateString(asset.contract!)}
           </Text>
           <div className="ToggleToken__wrapper__badge">
             <Badge
