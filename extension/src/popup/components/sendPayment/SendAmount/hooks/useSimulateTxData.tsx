@@ -42,6 +42,7 @@ import {
 import { findAddressBalance } from "popup/helpers/balance";
 import { AppDispatch } from "popup/App";
 import { useScanTx } from "popup/helpers/blockaid";
+import { cleanAmount } from "popup/helpers/formatters";
 
 interface SimClassic {
   type: "classic";
@@ -375,7 +376,7 @@ function useSimulateTxData({
           ? Asset.native().contractId(networkDetails.networkPassphrase)
           : assetAddress;
       const parsedAmount = parseTokenAmount(
-        amount,
+        cleanAmount(amount),
         Number("decimals" in assetBalance ? assetBalance.decimals : 7),
       );
 
@@ -426,7 +427,7 @@ function useSimulateTxData({
           {
             sourceAsset,
             destAsset,
-            amount,
+            amount: cleanAmount(amount),
             destinationAmount,
             destination,
             allowedSlippage,
