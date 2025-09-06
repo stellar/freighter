@@ -29,7 +29,7 @@ jobs:
           gh run cancel ${{ github.run_id }}
           gh run watch ${{ github.run_id }}
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: release/${{ github.event.inputs.release }}
       - name: Update manifest-v2.json name
