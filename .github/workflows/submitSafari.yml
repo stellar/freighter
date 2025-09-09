@@ -53,6 +53,8 @@ jobs:
           file: ./extension/public/static/manifest/v3.json
           field: version
           value: ${{ steps.manifest_version.outputs.replaced }}
+      - name: Enable Corepack
+        run: corepack enable
       - name: Build extension
         uses: actions/setup-node@v4
         with:

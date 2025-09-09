@@ -76,6 +76,8 @@ jobs:
           value:
             ${{ github.event.inputs.release }}.${{ github.event.inputs.version
             }}
+      - name: Enable Corepack
+        run: corepack enable
       - name: Build extension
         uses: actions/setup-node@v4
         with:
