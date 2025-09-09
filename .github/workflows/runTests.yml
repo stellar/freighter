@@ -12,10 +12,11 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - run: corepack enable
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install -g yarn && yarn
+      - run: npm install -g corepack && yarn set version stable &&
       - run: npx playwright install --with-deps chromium
       - run: yarn setup
       - run: yarn build:freighter-api
