@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Icon, IconButton } from "@stellar/design-system";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Operation, StrKey, xdr } from "stellar-sdk";
+import { Operation, xdr } from "stellar-sdk";
 
 import {
   FLAG_TYPES,
@@ -15,7 +15,7 @@ import { FlaggedKeys } from "types/transactions";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { truncateString, truncatedPoolId } from "helpers/stellar";
 import { scanAsset } from "popup/helpers/blockaid";
-import { getCreateContractArgs } from "popup/helpers/soroban";
+import { addressToString, getCreateContractArgs } from "popup/helpers/soroban";
 import {
   KeyValueClaimants,
   KeyValueInvokeHostFn,
@@ -804,9 +804,7 @@ export const Operations = ({
 
             case xdr.HostFunctionType.hostFunctionTypeInvokeContract(): {
               const invocation = hostfn.invokeContract();
-              const contractId = StrKey.encodeContract(
-                invocation.contractAddress().toXDR(),
-              );
+              const contractId = addressToString(invocation.contractAddress());
               const fnName = invocation.functionName().toString();
               const args = invocation.args();
 

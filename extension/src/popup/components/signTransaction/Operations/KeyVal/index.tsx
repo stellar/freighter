@@ -23,6 +23,7 @@ import { truncateString } from "helpers/stellar";
 import { formattedBuffer } from "popup/helpers/formatters";
 
 import {
+  addressToString,
   getCreateContractArgs,
   InvocationTree,
   scValByType,
@@ -427,11 +428,13 @@ export const KeyValueInvokeHostFnArgs = ({
         {args.map((arg, ind) => (
           <CopyText textToCopy={scValByType(arg)} key={arg.toXDR().toString()}>
             <div className="Parameters">
-              <div className="ParameterKey">
+              <div className="ParameterKey" data-testid="ParameterKey">
                 {argNames[ind] && argNames[ind]}
                 <Icon.Copy01 />
               </div>
-              <div className="ParameterValue">{scValByType(arg)}</div>
+              <div className="ParameterValue" data-testid="ParameterValue">
+                {scValByType(arg)}
+              </div>
             </div>
           </CopyText>
         ))}
@@ -509,7 +512,7 @@ export const KeyValueInvokeHostFn = ({
               </>
             );
           }
-          const contractId = StrKey.encodeContract(address.contractId() as any);
+          const contractId = addressToString(address);
           return (
             <>
               <KeyValueList
@@ -608,9 +611,8 @@ export const KeyValueInvokeHostFn = ({
 
       case xdr.HostFunctionType.hostFunctionTypeInvokeContract(): {
         const invocation = hostfn.invokeContract();
-        const contractId = StrKey.encodeContract(
-          invocation.contractAddress().contractId() as any,
-        );
+        const contractId = addressToString(invocation.contractAddress());
+
         const fnName = invocation.functionName().toString();
 
         return (
