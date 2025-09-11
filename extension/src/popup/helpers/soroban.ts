@@ -155,7 +155,8 @@ export const addressToString = (address: xdr.ScAddress) => {
   if (address.switch().name === "scAddressTypeAccount") {
     return StrKey.encodeEd25519PublicKey(address.accountId().ed25519());
   }
-  return StrKey.encodeContract(address.contractId() as any);
+
+  return Address.fromScAddress(address).toString();
 };
 
 export const getArgsForTokenInvocation = (
@@ -201,9 +202,8 @@ export const getTokenInvocationArgs = (
     return null;
   }
 
-  const contractId = StrKey.encodeContract(
-    invokedContract.contractAddress().contractId() as any,
-  );
+  const contractId = addressToString(invokedContract.contractAddress());
+
   const fnName = invokedContract.functionName().toString();
   const args = invokedContract.args();
 
@@ -358,7 +358,7 @@ export const scValByType = (scVal: xdr.ScVal) => {
       if (addressType.name === "scAddressTypeAccount") {
         return StrKey.encodeEd25519PublicKey(address.accountId().ed25519());
       }
-      return StrKey.encodeContract(address.contractId() as any);
+      return addressToString(address);
     }
 
     case xdr.ScValType.scvBool(): {
@@ -485,9 +485,7 @@ export function getInvocationArgs(
     // sorobanAuthorizedFunctionTypeContractFn
     case 0: {
       const _invocation = fn.contractFn();
-      const contractId = StrKey.encodeContract(
-        _invocation.contractAddress().contractId() as any,
-      );
+      const contractId = addressToString(_invocation.contractAddress());
       const fnName = _invocation.functionName().toString();
       const args = _invocation.args();
       return { fnName, contractId, args, type: "invoke" };
