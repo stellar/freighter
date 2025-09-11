@@ -70,6 +70,10 @@
           white-space: nowrap;
           min-width: 0;
           max-width: 100%;
+
+          &--overflow-allowed {
+            overflow: visible;
+          }
         }
 
         .CopyValue {
