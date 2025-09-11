@@ -81,6 +81,7 @@ export const AuthEntries = ({ invocations }: AuthEntriesProps) => {
                     args={detail.args}
                     contractId={detail.contractId}
                     fnName={detail.fnName}
+                    isAuthEntry
                   />
                 </div>
               </div>
@@ -148,13 +149,18 @@ export const AuthEntries = ({ invocations }: AuthEntriesProps) => {
         {details.map((detail, ind) => (
           <div
             className="AuthEntryContainer"
+            data-testid="AuthEntryContainer"
             key={`${invocation.toXDR("raw").toString()}-${ind}`}
           >
             <div
               className="AuthEntryBtn"
+              data-testid="AuthEntryBtn"
               onClick={() => handleExpandDetail(ind)}
             >
-              <div className="AuthEntryBtn__Title">
+              <div
+                className="AuthEntryBtn__Title"
+                data-testid="AuthEntryBtn__Title"
+              >
                 <Icon.CodeCircle01 />
                 {renderDetailTitle(detail)}
               </div>
@@ -163,7 +169,7 @@ export const AuthEntries = ({ invocations }: AuthEntriesProps) => {
               />
             </div>
             {expandedIndex === ind ? (
-              <div className="AuthEntryContent">
+              <div className="AuthEntryContent" data-testid="AuthEntryContent">
                 {renderDetailContent(detail)}
               </div>
             ) : null}
