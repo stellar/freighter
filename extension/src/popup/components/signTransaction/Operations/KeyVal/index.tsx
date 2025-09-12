@@ -35,11 +35,9 @@ import "./styles.scss";
 export const KeyValueList = ({
   operationKey,
   operationValue,
-  isOverflowAllowed = false,
 }: {
   operationKey: string;
   operationValue: string | number | React.ReactNode;
-  isOverflowAllowed?: boolean; // flag is used to show `Copied` tooltip
 }) => (
   <div className="Operations__pair" data-testid="OperationKeyVal">
     <div className="Operations__pair--key" data-testid="OperationKeyVal__key">
@@ -49,11 +47,7 @@ export const KeyValueList = ({
       className="Operations__pair--value"
       data-testid="OperationKeyVal__value"
     >
-      <span
-        className={`Operations__pair--value-text ${isOverflowAllowed ? "Operations__pair--value-text--overflow-allowed" : ""}`}
-      >
-        {operationValue}
-      </span>
+      <span className={"Operations__pair--value-text"}>{operationValue}</span>
     </div>
   </div>
 );
@@ -233,7 +227,6 @@ export const KeyValueLine = ({
             displayValue={truncateString(line.issuer)}
           />
         }
-        isOverflowAllowed
       />{" "}
     </>
   );
@@ -510,7 +503,6 @@ export const KeyValueInvokeHostFn = ({
                       displayValue={truncateString(salt, 8)}
                     />
                   }
-                  isOverflowAllowed
                 />
                 <KeyValueList
                   operationKey={t("Executable Type")}
@@ -528,7 +520,6 @@ export const KeyValueInvokeHostFn = ({
                         )}
                       />
                     }
-                    isOverflowAllowed
                   />
                 )}
               </>
@@ -553,7 +544,6 @@ export const KeyValueInvokeHostFn = ({
                     displayValue={truncateString(salt, 8)}
                   />
                 }
-                isOverflowAllowed
               />
               <KeyValueList
                 operationKey={t("Executable Type")}
@@ -568,7 +558,6 @@ export const KeyValueInvokeHostFn = ({
                       displayValue={truncateString(wasmHash.toString("hex"), 8)}
                     />
                   }
-                  isOverflowAllowed
                 />
               )}
               {createV2Args && <KeyValueInvokeHostFnArgs args={createV2Args} />}
@@ -609,7 +598,6 @@ export const KeyValueInvokeHostFn = ({
                       )}
                     />
                   }
-                  isOverflowAllowed
                 />
               </>
             ) : null}
@@ -627,7 +615,6 @@ export const KeyValueInvokeHostFn = ({
                     displayValue={truncateString(wasmHash.toString("hex"), 8)}
                   />
                 }
-                isOverflowAllowed
               />
             )}
             {createV2Args && <KeyValueInvokeHostFnArgs args={createV2Args} />}
@@ -655,7 +642,6 @@ export const KeyValueInvokeHostFn = ({
                   displayValue={truncateString(contractId)}
                 />
               }
-              isOverflowAllowed
             />
             <KeyValueList
               operationKey={t("Function Name")}

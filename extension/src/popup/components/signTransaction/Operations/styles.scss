@@ -71,7 +71,7 @@
           min-width: 0;
           max-width: 100%;
 
-          &--overflow-allowed {
+          &:has(.Floater.trigger.trigger--active) {
             overflow: visible;
           }
         }
