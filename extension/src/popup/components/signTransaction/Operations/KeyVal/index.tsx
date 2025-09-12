@@ -380,11 +380,13 @@ export const KeyValueInvokeHostFnArgs = ({
   contractId,
   fnName,
   showHeader = true,
+  isAuthEntry = false,
 }: {
   args: xdr.ScVal[];
   contractId?: string;
   fnName?: string;
   showHeader?: boolean;
+  isAuthEntry?: boolean;
 }) => {
   const [isLoading, setLoading] = React.useState(true);
   const [argNames, setArgNames] = React.useState([] as string[]);
@@ -405,12 +407,12 @@ export const KeyValueInvokeHostFnArgs = ({
       }
     }
 
-    if (contractId && fnName) {
+    if (contractId && fnName && !isAuthEntry) {
       getSpec(contractId, fnName);
     } else {
       setLoading(false);
     }
-  }, [contractId, fnName, networkDetails]);
+  }, [contractId, fnName, networkDetails, isAuthEntry]);
 
   return isLoading ? (
     <div className="Operations__pair--invoke" data-testid="OperationKeyVal">
