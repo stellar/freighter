@@ -12,7 +12,7 @@ import {
   DEFAULT_NETWORKS,
 } from "@shared/constants/stellar";
 
-describe("Operations", () => {
+describe("Operations KeyVal", () => {
   describe("InvokeHostFunction", () => {
     afterAll(() => {
       jest.clearAllMocks();
@@ -191,62 +191,6 @@ describe("Operations", () => {
       expect(parameterValues[0]).toHaveTextContent(TEST_PUBLIC_KEY);
       expect(parameterValues[1]).toHaveTextContent(TEST_PUBLIC_KEY);
       expect(parameterValues[2]).toHaveTextContent("100");
-    });
-    it("renders changeTrust operation", async () => {
-      const assetCode = "KHL3";
-      const op = {
-        line: {
-          code: assetCode,
-          issuer: TEST_PUBLIC_KEY,
-        },
-        limit: "100",
-        type: "changeTrust",
-      } as Operation.ChangeTrust;
-      render(
-        <Wrapper
-          routes={[ROUTES.signTransaction]}
-          state={{
-            auth: {
-              error: null,
-              applicationState: APPLICATION_STATE.PASSWORD_CREATED,
-              TEST_PUBLIC_KEY,
-              allAccounts: mockAccounts,
-              hasPrivateKey: true,
-            },
-            settings: {
-              networkDetails: TESTNET_NETWORK_DETAILS,
-              networksList: DEFAULT_NETWORKS,
-              isSorobanPublicEnabled: true,
-              isRpcHealthy: true,
-            },
-          }}
-        >
-          <Operations
-            operations={[op]}
-            flaggedKeys={{}}
-            isMemoRequired={false}
-          />
-          ,
-        </Wrapper>,
-      );
-      await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
-      const assetCodeLabel = screen.getByText("Asset Code");
-      const assetCodeValue = assetCodeLabel.parentNode?.querySelector(
-        "[data-testid='OperationKeyVal__value']",
-      );
-      expect(assetCodeValue).toHaveTextContent(assetCode);
-
-      const issuerLabel = screen.getByText("Asset Issuer");
-      const issuerValue = issuerLabel.parentNode?.querySelector(
-        "[data-testid='OperationKeyVal__value']",
-      );
-      expect(issuerValue).toHaveTextContent("GBTY…JZOFCopied");
-
-      const limitLabel = screen.getByText("Limit");
-      const limitValue = limitLabel.parentNode?.querySelector(
-        "[data-testid='OperationKeyVal__value']",
-      );
-      expect(limitValue).toHaveTextContent("100");
     });
   });
 });

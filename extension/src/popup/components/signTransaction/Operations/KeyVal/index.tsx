@@ -47,7 +47,7 @@ export const KeyValueList = ({
       className="Operations__pair--value"
       data-testid="OperationKeyVal__value"
     >
-      <span className={"Operations__pair--value-text"}>{operationValue}</span>
+      <span className="Operations__pair--value-text">{operationValue}</span>
     </div>
   </div>
 );
@@ -217,18 +217,7 @@ export const KeyValueLine = ({
     );
   }
   return (
-    <>
-      <KeyValueList operationKey={t("Asset Code")} operationValue={line.code} />
-      <KeyValueList
-        operationKey={t("Asset Issuer")}
-        operationValue={
-          <CopyValue
-            value={line.issuer}
-            displayValue={truncateString(line.issuer)}
-          />
-        }
-      />{" "}
-    </>
+    <KeyValueList operationKey={t("Asset Code")} operationValue={line.code} />
   );
 };
 
