@@ -247,6 +247,10 @@ describe("Account view", () => {
   afterAll(() => {
     jest.clearAllMocks();
   });
+  afterEach(() => {
+    jest.useRealTimers();
+    jest.clearAllMocks();
+  });
 
   it("renders", async () => {
     render(

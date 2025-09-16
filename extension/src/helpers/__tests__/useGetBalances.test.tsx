@@ -52,7 +52,9 @@ describe("useGetBalances (cached path)", () => {
 
   const preloadedState = {
     cache: {
-      balanceData: { [publicKey]: cachedBalanceData },
+      balanceData: {
+        [TESTNET_NETWORK_DETAILS.network]: { [publicKey]: cachedBalanceData },
+      },
       icons: cachedIcons,
       tokenLists: tokenListData,
     },
