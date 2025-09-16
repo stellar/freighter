@@ -1,5 +1,5 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
-import { loginToTestAccount } from "./helpers/login";
+import { loginToTestAccount, loginAndFund } from "./helpers/login";
 import {
   stubAccountBalances,
   stubAccountHistory,
@@ -74,6 +74,134 @@ test("Switches account and fetches correct balances", async ({
     .textContent();
 
   await expect(account1XlmBalance).not.toEqual(account2XlmBalance);
+});
+
+test("Switches network and fetches correct balances", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
+  await page.route("**/account-balances/**", async (route) => {
+    let json = {};
+
+    if (route.request().url().includes("TESTNET")) {
+      json = {
+        balances: {
+          native: {
+            token: {
+              type: "native",
+              code: "XLM",
+            },
+            total: "2",
+            available: "2",
+            sellingLiabilities: "0",
+            buyingLiabilities: "0",
+            minimumBalance: "1",
+            blockaidData: {
+              result_type: "Benign",
+              malicious_score: "0.0",
+              attack_types: {},
+              chain: "stellar",
+              address: "",
+              metadata: {
+                type: "",
+              },
+              fees: {},
+              features: [],
+              trading_limits: {},
+              financial_stats: {},
+            },
+          },
+        },
+        isFunded: true,
+        subentryCount: 0,
+        error: {
+          horizon: null,
+          soroban: null,
+        },
+      };
+    } else {
+      json = {
+        balances: {
+          native: {
+            token: {
+              type: "native",
+              code: "XLM",
+            },
+            total: "1",
+            available: "1",
+            sellingLiabilities: "0",
+            buyingLiabilities: "0",
+            minimumBalance: "1",
+            blockaidData: {
+              result_type: "Benign",
+              malicious_score: "0.0",
+              attack_types: {},
+              chain: "stellar",
+              address: "",
+              metadata: {
+                type: "",
+              },
+              fees: {},
+              features: [],
+              trading_limits: {},
+              financial_stats: {},
+            },
+          },
+        },
+        isFunded: true,
+        subentryCount: 0,
+        error: {
+          horizon: null,
+          soroban: null,
+        },
+      };
+    }
+
+    await route.fulfill({ json });
+  });
+
+  test.slow();
+  await loginToTestAccount({ page, extensionId });
+  await expect(page.getByTestId("account-assets")).toContainText("XLM");
+  await expect(page.getByTestId("asset-amount")).toHaveText("2");
+
+  await page.getByTestId("network-selector-open").click();
+  await page.getByText("Main Net").click();
+
+  await expect(page.getByTestId("asset-amount")).toHaveText("1");
+});
+
+test("Account Balances should be loaded once and cached", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
+  test.slow();
+  await loginToTestAccount({ page, extensionId });
+
+  let accountBalancesRequestWasMade = false;
+  page.on("request", (request) => {
+    if (request.url().includes("/account-balances/")) {
+      accountBalancesRequestWasMade = true;
+    }
+  });
+
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Settings").click();
+  await page.getByTestId("BackButton").click();
+  await expect(accountBalancesRequestWasMade).toBeFalsy();
 });
 
 test("Switches account without password prompt", async ({

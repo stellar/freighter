@@ -689,6 +689,71 @@ describe("Account view", () => {
     });
   });
 
+  it("polls for account balances", async () => {
+    jest.useFakeTimers();
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+      }),
+    );
+    const getAccountBalancesSpy = jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+
+    jest.spyOn(ApiInternal, "getTokenPrices").mockImplementation(() => {
+      throw new Error("Failed to fetch prices");
+    });
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      const assetNodes = screen.getAllByTestId("account-assets-item");
+      expect(assetNodes.length).toEqual(3);
+      expect(getAccountBalancesSpy).toHaveBeenCalledTimes(1);
+    });
+
+    // Fast-forward 30 seconds
+    jest.advanceTimersByTime(30000);
+    expect(getAccountBalancesSpy).toHaveBeenCalledTimes(2);
+  });
+
   it("handles abandoned onboarding in password created step", async () => {
     jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
       Promise.resolve({

@@ -1,5 +1,6 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit";
 import { AccountBalancesInterface } from "@shared/api/types/backend-api";
+import { NetworkDetails } from "@shared/constants/stellar";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 
 type AssetCode = string;
@@ -10,6 +11,7 @@ type HomeDomain = string;
 interface SaveBalancesPayload {
   publicKey: PublicKey;
   balances: AccountBalancesInterface;
+  networkDetails: NetworkDetails;
 }
 
 interface SaveIconsPayload {
@@ -21,7 +23,9 @@ type SaveDomainPayload = Record<PublicKey, HomeDomain>;
 type SaveTokenLists = AssetListResponse[];
 
 interface InitialState {
-  balanceData: Record<PublicKey, AccountBalancesInterface>;
+  balanceData: {
+    [network: string]: Record<PublicKey, AccountBalancesInterface>;
+  };
   icons: Record<AssetCode, IconUrl>;
   homeDomains: Record<PublicKey, HomeDomain>;
   tokenLists: AssetListResponse[];
@@ -47,7 +51,10 @@ const cacheSlice = createSlice({
     saveBalancesForAccount(state, action: { payload: SaveBalancesPayload }) {
       state.balanceData = {
         ...state.balanceData,
-        [action.payload.publicKey]: action.payload.balances,
+        [action.payload.networkDetails.network]: {
+          ...state.balanceData[action.payload.networkDetails.network],
+          [action.payload.publicKey]: action.payload.balances,
+        },
       };
     },
     saveIconsForBalances(state, action: { payload: SaveIconsPayload }) {
