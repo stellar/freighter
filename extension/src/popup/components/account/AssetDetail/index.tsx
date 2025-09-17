@@ -40,11 +40,80 @@ import {
   LiquidityPoolShareAsset,
 } from "@shared/api/types/account-balance";
 import { OperationDataRow } from "popup/views/AccountHistory/hooks/useGetHistoryData";
+import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
+import { AppDataType } from "helpers/hooks/useGetAppData";
 
 import "./styles.scss";
 
-interface AssetDetailProps {
+const AssetDetailOperations = ({
+  assetOperations,
+  accountBalances,
+  publicKey,
+  networkDetails,
+  activeAssetId,
+  setActiveAssetId,
+  setActiveOperation,
+  isSorobanAsset,
+}: {
   assetOperations: OperationDataRow[];
+  accountBalances: AccountBalances;
+  publicKey: string;
+  networkDetails: NetworkDetails;
+  activeAssetId: string;
+  setActiveAssetId: (id: string) => void;
+  setActiveOperation: (operation: OperationDataRow) => void;
+  isSorobanAsset: boolean;
+}) => {
+  const { t } = useTranslation();
+  const { isHideDustEnabled } = useSelector(settingsSelector);
+
+  const sortedAssetOperations = assetOperations.filter((operation) => {
+    if (operation.metadata.isDustPayment && isHideDustEnabled) {
+      return false;
+    }
+
+    return true;
+  });
+
+  useEffect(() => {
+    const activeOperation = sortedAssetOperations.find(
+      (op) => op.id === activeAssetId,
+    );
+    setActiveOperation(activeOperation as OperationDataRow);
+  }, [activeAssetId, setActiveOperation, sortedAssetOperations]);
+
+  if (!assetOperations && !isSorobanAsset) {
+    return null;
+  }
+
+  return (
+    <>
+      {sortedAssetOperations.length ? (
+        <div className="AssetDetail__list" data-testid="AssetDetail__list">
+          <>
+            {sortedAssetOperations.map((operation) => (
+              <HistoryItem
+                key={operation.id}
+                accountBalances={accountBalances}
+                operation={operation}
+                publicKey={publicKey}
+                networkDetails={networkDetails}
+                setActiveHistoryDetailId={() => setActiveAssetId(operation.id)}
+              />
+            ))}
+          </>
+        </div>
+      ) : (
+        <div className="AssetDetail__empty" data-testid="AssetDetail__empty">
+          {t("No transactions to show")}
+        </div>
+      )}
+    </>
+  );
+};
+
+interface AssetDetailProps {
+  historyData: AccountHistoryData | null;
   accountBalances: AccountBalances;
   networkDetails: NetworkDetails;
   publicKey: string;
@@ -55,7 +124,7 @@ interface AssetDetailProps {
 }
 
 export const AssetDetail = ({
-  assetOperations,
+  historyData,
   accountBalances,
   networkDetails,
   publicKey,
@@ -65,7 +134,7 @@ export const AssetDetail = ({
   tokenPrices,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
-  const { isHideDustEnabled } = useSelector(settingsSelector);
+  // const { isHideDustEnabled } = useSelector(settingsSelector);
   const [optionsOpen, setOptionsOpen] = React.useState(false);
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const isNative = selectedAsset === "native";
@@ -124,31 +193,39 @@ export const AssetDetail = ({
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeAssetId, setActiveAssetId] = useState<string | null>(null);
+  const [activeOperation, setActiveOperation] = useState<OperationDataRow>();
 
   const { assetDomain, error: assetError } = useAssetDomain({
     assetIssuer,
   });
 
-  if (!assetOperations && !isSorobanAsset) {
+  if (historyData?.type === AppDataType.REROUTE) {
     return null;
   }
 
-  const sortedAssetOperations = assetOperations.filter((operation) => {
-    if (operation.metadata.isDustPayment && isHideDustEnabled) {
-      return false;
-    }
+  const assetOperations =
+    historyData?.operationsByAsset?.[selectedAsset] || null;
 
-    return true;
-  });
+  // if (!assetOperations && !isSorobanAsset) {
+  //   return null;
+  // }
+
+  // const sortedAssetOperations = assetOperations.filter((operation) => {
+  //   if (operation.metadata.isDustPayment && isHideDustEnabled) {
+  //     return false;
+  //   }
+
+  //   return true;
+  // });
 
   if (assetIssuer && !assetDomain && !assetError && !isSorobanAsset) {
     // if we have an asset issuer, wait until we have the asset domain before continuing
     return <Loading />;
   }
 
-  const activeOperation = sortedAssetOperations.find(
-    (op) => op.id === activeAssetId,
-  );
+  // const activeOperation = sortedAssetOperations.find(
+  //   (op) => op.id === activeAssetId,
+  // );
 
   const isStellarExpertSupported =
     isMainnet(networkDetails) || isTestnet(networkDetails);
@@ -296,7 +373,7 @@ export const AssetDetail = ({
               </div>
             </div>
           </div>
-          {sortedAssetOperations.length ? (
+          {/* {sortedAssetOperations.length ? (
             <div className="AssetDetail__list" data-testid="AssetDetail__list">
               <>
                 {sortedAssetOperations.map((operation) => (
@@ -320,6 +397,20 @@ export const AssetDetail = ({
             >
               {t("No transactions to show")}
             </div>
+          )} */}
+          {assetOperations === null ? (
+            <Loading />
+          ) : (
+            <AssetDetailOperations
+              assetOperations={assetOperations}
+              accountBalances={accountBalances}
+              publicKey={publicKey}
+              networkDetails={networkDetails}
+              activeAssetId={activeAssetId || ""}
+              setActiveAssetId={setActiveAssetId}
+              setActiveOperation={setActiveOperation}
+              isSorobanAsset={!!isSorobanAsset}
+            />
           )}
         </div>
       </View.Content>

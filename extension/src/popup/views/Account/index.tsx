@@ -21,12 +21,14 @@ import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
-import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 import { newTabHref } from "helpers/urls";
 import { getTotalUsd } from "popup/helpers/balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
+
+import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
+import { useGetAccountHistoryData } from "./hooks/useGetAccountHistoryData";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
@@ -47,6 +49,8 @@ export const Account = () => {
     showHidden: false,
     includeIcons: true,
   });
+  const { state: historyData, fetchData: fetchHistoryData } =
+    useGetAccountHistoryData();
 
   useEffect(() => {
     const getData = async () => {
@@ -55,6 +59,23 @@ export const Account = () => {
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const getData = async () => {
+      if (
+        accountData.state === RequestState.SUCCESS &&
+        accountData.data.type === AppDataType.RESOLVED
+      ) {
+        console.log("fetching history data");
+        await fetchHistoryData({ balances: accountData.data.balances });
+      }
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountData.data]);
+
+  // console.log(historyData);
+  // console.log(accountData);
 
   if (
     accountData.state === RequestState.IDLE ||
@@ -95,7 +116,7 @@ export const Account = () => {
     return (
       <AssetDetail
         accountBalances={accountData.data.balances}
-        assetOperations={accountData.data.operationsByAsset[selectedAsset]}
+        historyData={historyData.data}
         networkDetails={accountData.data.networkDetails}
         publicKey={accountData.data.publicKey}
         selectedAsset={selectedAsset}
