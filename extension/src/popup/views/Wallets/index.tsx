@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import {
   Button,
@@ -24,8 +24,9 @@ import {
   makeAccountActive,
   updateAccountName,
 } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
-import { truncatedPublicKey } from "helpers/stellar";
+import { truncatedPublicKey, isMainnet } from "helpers/stellar";
 import { getColorPubKey } from "helpers/stellarIdenticon";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
@@ -40,6 +41,7 @@ import { reRouteOnboarding } from "popup/helpers/route";
 
 import "./styles.scss";
 import { WalletType } from "@shared/constants/hardwareWallet";
+import { useGetBalances } from "helpers/hooks/useGetBalances";
 
 interface AddWalletProps {
   onBack: () => void;
@@ -283,6 +285,11 @@ export const Wallets = () => {
   const [activeOptionsPublicKey, setActiveOptionsPublicKey] =
     React.useState("");
   const { state: dataState, fetchData } = useGetWalletsData();
+  const { fetchData: fetchBalances } = useGetBalances({
+    showHidden: true,
+    includeIcons: false,
+  });
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   useEffect(() => {
     const getData = async () => {
@@ -399,6 +406,12 @@ export const Wallets = () => {
                     isSelected={isSelected}
                     onClick={async (publicKey) => {
                       await dispatch(makeAccountActive(publicKey));
+                      await fetchBalances(
+                        publicKey,
+                        isMainnet(networkDetails),
+                        networkDetails,
+                        false,
+                      );
                       navigateTo(ROUTES.account, navigate);
                     }}
                     setOptionsOpen={setActiveOptionsPublicKey}

@@ -136,6 +136,7 @@ export const Account = () => {
           await fetchData({
             useAppDataCache: false,
             updatedAppData: updatedValues,
+            shouldForceBalancesRefresh: true,
           });
         }}
         roundedTotalBalanceUsd={roundedTotalBalanceUsd}
