@@ -14,6 +14,11 @@ interface SaveBalancesPayload {
   networkDetails: NetworkDetails;
 }
 
+interface ClearBalancesPayload {
+  publicKey: PublicKey;
+  networkDetails: NetworkDetails;
+}
+
 interface SaveIconsPayload {
   icons: Record<AssetCode, IconUrl>;
 }
@@ -57,6 +62,11 @@ const cacheSlice = createSlice({
         },
       };
     },
+    clearBalancesForAccount(state, action: { payload: ClearBalancesPayload }) {
+      delete state.balanceData[action.payload.networkDetails.network][
+        action.payload.publicKey
+      ];
+    },
     saveIconsForBalances(state, action: { payload: SaveIconsPayload }) {
       state.icons = {
         ...state.icons,
@@ -93,4 +103,5 @@ export const {
   saveIconsForBalances,
   saveDomainForIssuer,
   saveTokenLists,
+  clearBalancesForAccount,
 } = cacheSlice.actions;

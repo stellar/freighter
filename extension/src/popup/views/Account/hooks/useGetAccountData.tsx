@@ -1,5 +1,4 @@
 import { useEffect, useReducer, useState } from "react";
-import { useSelector } from "react-redux";
 
 import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
@@ -18,7 +17,6 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "popup/App";
 import { makeAccountActive } from "popup/ducks/accountServices";
 import { changeNetwork } from "popup/ducks/settings";
-import { balancesSelector } from "popup/ducks/cache";
 
 export const getTokenPrices = async ({
   balances,
@@ -65,8 +63,6 @@ function useGetAccountData(options: {
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(options);
 
-  const cachedBalances = useSelector(balancesSelector);
-
   const fetchData = async ({
     useAppDataCache = true,
     updatedAppData,
@@ -104,16 +100,11 @@ function useGetAccountData(options: {
       const allowList = appData.settings.allowList;
       const isMainnetNetwork = isMainnet(networkDetails);
 
-      const hasBalanceCache =
-        cachedBalances &&
-        Object.keys(cachedBalances[networkDetails.network]?.[publicKey] || {})
-          .length > 0;
-
       const balancesResult = await fetchBalances(
         publicKey,
         isMainnetNetwork,
         networkDetails,
-        hasBalanceCache && !shouldForceBalancesRefresh,
+        !shouldForceBalancesRefresh,
       );
 
       if (isError<AccountBalances>(balancesResult)) {

@@ -25,8 +25,9 @@ import {
   updateAccountName,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { clearBalancesForAccount } from "popup/ducks/cache";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
-import { truncatedPublicKey, isMainnet } from "helpers/stellar";
+import { truncatedPublicKey } from "helpers/stellar";
 import { getColorPubKey } from "helpers/stellarIdenticon";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
@@ -41,7 +42,6 @@ import { reRouteOnboarding } from "popup/helpers/route";
 
 import "./styles.scss";
 import { WalletType } from "@shared/constants/hardwareWallet";
-import { useGetBalances } from "helpers/hooks/useGetBalances";
 
 interface AddWalletProps {
   onBack: () => void;
@@ -285,10 +285,6 @@ export const Wallets = () => {
   const [activeOptionsPublicKey, setActiveOptionsPublicKey] =
     React.useState("");
   const { state: dataState, fetchData } = useGetWalletsData();
-  const { fetchData: fetchBalances } = useGetBalances({
-    showHidden: true,
-    includeIcons: false,
-  });
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   useEffect(() => {
@@ -406,11 +402,8 @@ export const Wallets = () => {
                     isSelected={isSelected}
                     onClick={async (publicKey) => {
                       await dispatch(makeAccountActive(publicKey));
-                      await fetchBalances(
-                        publicKey,
-                        isMainnet(networkDetails),
-                        networkDetails,
-                        false,
+                      await dispatch(
+                        clearBalancesForAccount({ publicKey, networkDetails }),
                       );
                       navigateTo(ROUTES.account, navigate);
                     }}
