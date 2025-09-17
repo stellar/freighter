@@ -1,5 +1,5 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
-import { loginToTestAccount, loginAndFund } from "./helpers/login";
+import { loginToTestAccount } from "./helpers/login";
 import {
   stubAccountBalances,
   stubAccountHistory,
@@ -222,7 +222,7 @@ test("Switches account without password prompt", async ({
   await page.getByText("Account 2").click();
 
   await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Manage assets").click({ force: true });
+  await page.getByText("Manage assets").click();
 
   await expect(page.getByText("Your assets")).toBeVisible();
 });
