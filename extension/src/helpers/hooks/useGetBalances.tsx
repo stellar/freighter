@@ -80,7 +80,8 @@ function useGetBalances(options: {
   ): Promise<AccountBalances | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const cachedBalanceData = cachedBalances[publicKey];
+      const cachedBalanceData =
+        cachedBalances[networkDetails.network]?.[publicKey];
       const accountBalances =
         useCache && cachedBalanceData
           ? cachedBalanceData
@@ -121,6 +122,7 @@ function useGetBalances(options: {
         saveBalancesForAccount({
           publicKey,
           balances: accountBalances,
+          networkDetails,
         }),
       );
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

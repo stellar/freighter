@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import {
   Button,
@@ -24,6 +24,8 @@ import {
   makeAccountActive,
   updateAccountName,
 } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { clearBalancesForAccount } from "popup/ducks/cache";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
 import { truncatedPublicKey } from "helpers/stellar";
 import { getColorPubKey } from "helpers/stellarIdenticon";
@@ -283,6 +285,7 @@ export const Wallets = () => {
   const [activeOptionsPublicKey, setActiveOptionsPublicKey] =
     React.useState("");
   const { state: dataState, fetchData } = useGetWalletsData();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   useEffect(() => {
     const getData = async () => {
@@ -399,6 +402,9 @@ export const Wallets = () => {
                     isSelected={isSelected}
                     onClick={async (publicKey) => {
                       await dispatch(makeAccountActive(publicKey));
+                      await dispatch(
+                        clearBalancesForAccount({ publicKey, networkDetails }),
+                      );
                       navigateTo(ROUTES.account, navigate);
                     }}
                     setOptionsOpen={setActiveOptionsPublicKey}

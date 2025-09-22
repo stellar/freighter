@@ -67,13 +67,18 @@ function useGetAccountData(options: {
   const { fetchData: fetchBalances } = useGetBalances(options);
   const { fetchData: fetchHistory } = useGetHistory();
 
-  const fetchData = async (
+  const fetchData = async ({
     useAppDataCache = true,
+    updatedAppData,
+    shouldForceBalancesRefresh,
+  }: {
+    useAppDataCache: boolean;
     updatedAppData?: {
       publicKey?: string;
       network?: NetworkDetails;
-    },
-  ) => {
+    };
+    shouldForceBalancesRefresh?: boolean;
+  }) => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       if (updatedAppData && updatedAppData.publicKey) {
@@ -98,11 +103,14 @@ function useGetAccountData(options: {
       const networkDetails = appData.settings.networkDetails;
       const allowList = appData.settings.allowList;
       const isMainnetNetwork = isMainnet(networkDetails);
+
       const balancesResult = await fetchBalances(
         publicKey,
         isMainnetNetwork,
         networkDetails,
+        !shouldForceBalancesRefresh,
       );
+
       const history = await fetchHistory(publicKey, networkDetails);
 
       if (isError<AccountBalances>(balancesResult)) {
@@ -195,6 +203,33 @@ function useGetAccountData(options: {
     }, 30000);
     return () => clearInterval(interval);
   }, [_isMainnet, state.data]);
+
+  useEffect(() => {
+    // refresh balances every 30 seconds
+
+    if (!state.data || state.data.type === AppDataType.REROUTE) {
+      return;
+    }
+    const resolvedData = state.data;
+
+    const interval = setInterval(async () => {
+      const publicKey = resolvedData.publicKey;
+      const networkDetails = resolvedData.networkDetails;
+      const balancesResult = await fetchBalances(
+        publicKey,
+        _isMainnet,
+        networkDetails,
+        false,
+      );
+
+      const payload = {
+        ...state.data,
+        balances: balancesResult,
+      } as AccountData;
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [_isMainnet, state.data, fetchBalances]);
 
   return {
     state,

@@ -134,7 +134,7 @@ export const stubTokenPrices = async (page: Page | BrowserContext) => {
   });
 };
 
-export const stubAccountBalances = async (page: Page) => {
+export const stubAccountBalances = async (page: Page, xlmBalance?: string) => {
   await page.route("**/account-balances/**", async (route) => {
     const json = {
       balances: {
@@ -143,8 +143,8 @@ export const stubAccountBalances = async (page: Page) => {
             type: "native",
             code: "XLM",
           },
-          total: "9697.8556678",
-          available: "9697.8556678",
+          total: xlmBalance || "9697.8556678",
+          available: xlmBalance || "9697.8556678",
           sellingLiabilities: "0",
           buyingLiabilities: "0",
           minimumBalance: "1",

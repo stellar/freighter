@@ -1,7 +1,8 @@
 import { useReducer } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { captureException } from "@sentry/browser";
 
-import { initialState, reducer } from "helpers/request";
+import { initialState, reducer, isError } from "helpers/request";
 import { AppDispatch } from "popup/App";
 import {
   addRecentAddress,
@@ -9,10 +10,11 @@ import {
   submitFreighterTransaction,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
+import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { getAssetFromCanonical } from "helpers/stellar";
+import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
 import { AssetIcons } from "@shared/api/types";
 
 interface SubmitTxData {
@@ -38,6 +40,11 @@ function useSubmitTxData({
     initialState,
   );
   const submission = useSelector(transactionSubmissionSelector);
+  const { fetchData: fetchBalances } = useGetBalances({
+    showHidden: false,
+    includeIcons: false,
+  });
+
   const {
     transactionData: { asset, destination, federationAddress },
     transactionSimulation,
@@ -84,6 +91,23 @@ function useSubmitTxData({
         emitMetric(METRIC_NAMES.sendPaymentSuccess, {
           sourceAsset: sourceAsset.code,
         });
+
+        const balancesResult = await fetchBalances(
+          publicKey,
+          isMainnet(networkDetails),
+          networkDetails,
+          false,
+        );
+
+        if (isError<AccountBalances>(balancesResult)) {
+          // we don't want to throw an error if balances fail to fetch as this doesn't affect the tx submission
+          // let's simply log the error and continue - the user will need to refresh the Account page or wait for polling to refresh the balances
+          captureException(
+            `Failed to fetch balances after ${isSwap ? "swap" : "send"} tx submission - ${JSON.stringify(
+              balancesResult.message,
+            )} ${networkDetails.network}`,
+          );
+        }
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
