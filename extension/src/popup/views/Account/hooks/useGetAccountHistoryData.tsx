@@ -10,6 +10,7 @@ import {
   NeedsReRoute,
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
+import { useTokenDetails } from "helpers/hooks/useTokenDetails";
 
 interface ResolvedAccountHistoryData {
   type: AppDataType.RESOLVED;
@@ -25,6 +26,7 @@ function useGetAccountHistoryData() {
   );
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchHistory } = useGetHistory();
+  const { fetchData: fetchTokenDetails } = useTokenDetails();
 
   const fetchData = async ({ balances }: { balances: AccountBalances }) => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -42,13 +44,15 @@ function useGetAccountHistoryData() {
       const publicKey = appData.account.publicKey;
       const networkDetails = appData.settings.networkDetails;
 
-      const delay = () =>
-        new Promise((resolve) => {
-          setTimeout(() => {
-            resolve(true);
-          }, 5000);
-        });
-      await delay();
+      // // take this out; for testing only
+      // const delay = () =>
+      //   new Promise((resolve) => {
+      //     setTimeout(() => {
+      //       resolve(true);
+      //     }, 5000);
+      //   });
+      // await delay();
+
       const history = await fetchHistory(publicKey, networkDetails);
 
       if (isError<HistoryResponse>(history)) {
@@ -62,6 +66,7 @@ function useGetAccountHistoryData() {
           operations: history,
           networkDetails: networkDetails,
           publicKey,
+          fetchTokenDetails,
         }),
       } as ResolvedAccountHistoryData;
 

@@ -26,6 +26,7 @@ import {
   getRowDataByOpType,
   OperationDataRow,
 } from "popup/views/AccountHistory/hooks/useGetHistoryData";
+import { TokenDetailsResponse } from "helpers/hooks/useTokenDetails";
 
 export const LP_IDENTIFIER = ":lp";
 
@@ -106,6 +107,11 @@ interface SortOperationsByAsset {
   balances: AssetType[];
   networkDetails: NetworkDetails;
   publicKey: string;
+  fetchTokenDetails: (args: {
+    contractId: string;
+    publicKey: string;
+    networkDetails: NetworkDetails;
+  }) => Promise<TokenDetailsResponse | Error>;
 }
 
 export interface AssetOperations {
@@ -117,6 +123,7 @@ export const sortOperationsByAsset = ({
   operations,
   networkDetails,
   publicKey,
+  fetchTokenDetails,
 }: SortOperationsByAsset) => {
   const assetOperationMap = {} as AssetOperations;
 
@@ -158,6 +165,7 @@ export const sortOperationsByAsset = ({
       parsedOperation,
       networkDetails,
       {},
+      fetchTokenDetails,
     );
     if (getIsPayment(op.type)) {
       Object.keys(assetOperationMap).forEach((assetKey) => {

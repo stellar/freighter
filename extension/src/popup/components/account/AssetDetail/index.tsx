@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { CopyText, Icon, Link } from "@stellar/design-system";
+import { CopyText, Icon, Link, Loader } from "@stellar/design-system";
 
 import { ApiTokenPrice, ApiTokenPrices } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -134,7 +134,6 @@ export const AssetDetail = ({
   tokenPrices,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
-  // const { isHideDustEnabled } = useSelector(settingsSelector);
   const [optionsOpen, setOptionsOpen] = React.useState(false);
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const isNative = selectedAsset === "native";
@@ -206,26 +205,10 @@ export const AssetDetail = ({
   const assetOperations =
     historyData?.operationsByAsset?.[selectedAsset] || null;
 
-  // if (!assetOperations && !isSorobanAsset) {
-  //   return null;
-  // }
-
-  // const sortedAssetOperations = assetOperations.filter((operation) => {
-  //   if (operation.metadata.isDustPayment && isHideDustEnabled) {
-  //     return false;
-  //   }
-
-  //   return true;
-  // });
-
   if (assetIssuer && !assetDomain && !assetError && !isSorobanAsset) {
     // if we have an asset issuer, wait until we have the asset domain before continuing
     return <Loading />;
   }
-
-  // const activeOperation = sortedAssetOperations.find(
-  //   (op) => op.id === activeAssetId,
-  // );
 
   const isStellarExpertSupported =
     isMainnet(networkDetails) || isTestnet(networkDetails);
@@ -373,33 +356,13 @@ export const AssetDetail = ({
               </div>
             </div>
           </div>
-          {/* {sortedAssetOperations.length ? (
-            <div className="AssetDetail__list" data-testid="AssetDetail__list">
-              <>
-                {sortedAssetOperations.map((operation) => (
-                  <HistoryItem
-                    key={operation.id}
-                    accountBalances={accountBalances}
-                    operation={operation}
-                    publicKey={publicKey}
-                    networkDetails={networkDetails}
-                    setActiveHistoryDetailId={() =>
-                      setActiveAssetId(operation.id)
-                    }
-                  />
-                ))}
-              </>
-            </div>
-          ) : (
-            <div
-              className="AssetDetail__empty"
-              data-testid="AssetDetail__empty"
-            >
-              {t("No transactions to show")}
-            </div>
-          )} */}
           {assetOperations === null ? (
-            <Loading />
+            <div
+              className="AssetDetail__list AssetDetail__list--loading"
+              data-testid="AssetDetail__list__loader"
+            >
+              <Loader />
+            </div>
           ) : (
             <AssetDetailOperations
               assetOperations={assetOperations}
