@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useState } from "react";
+import { captureException } from "@sentry/browser";
 
 import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
@@ -181,6 +182,7 @@ function useGetAccountData(options: {
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
+      captureException(`Error loading account data on Account - ${error}`);
       return error;
     }
   };
