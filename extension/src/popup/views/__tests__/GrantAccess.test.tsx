@@ -9,7 +9,6 @@ import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
-  NetworkDetails,
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { GrantAccess } from "../GrantAccess";
