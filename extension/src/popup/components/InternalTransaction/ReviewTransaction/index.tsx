@@ -137,7 +137,10 @@ export const ReviewTx = ({
                         icon={assetIcon}
                         isSuspicious={false}
                       />
-                      <div className="ReviewTx__SendAssetDetails">
+                      <div
+                        className="ReviewTx__SendAssetDetails"
+                        data-testid="review-tx-send-amount"
+                      >
                         <span>
                           {sendAmount} {asset.code}
                         </span>
@@ -151,7 +154,10 @@ export const ReviewTx = ({
                     <div className="ReviewTx__Divider">
                       <Icon.ChevronDownDouble />
                     </div>
-                    <div className="ReviewTx__SendDestination">
+                    <div
+                      className="ReviewTx__SendDestination"
+                      data-testid="review-tx-send-destination"
+                    >
                       {dstAsset && dest ? (
                         <>
                           <AssetIcon
@@ -201,7 +207,10 @@ export const ReviewTx = ({
                       <Icon.File02 />
                       Memo
                     </div>
-                    <div className="ReviewTx__Details__Row__Value">
+                    <div
+                      className="ReviewTx__Details__Row__Value"
+                      data-testid="review-tx-memo"
+                    >
                       {memo || "None"}
                     </div>
                   </div>
@@ -210,7 +219,10 @@ export const ReviewTx = ({
                       <Icon.Route />
                       Fee
                     </div>
-                    <div className="ReviewTx__Details__Row__Value">
+                    <div
+                      className="ReviewTx__Details__Row__Value"
+                      data-testid="review-tx-fee"
+                    >
                       {fee} XLM
                     </div>
                   </div>
