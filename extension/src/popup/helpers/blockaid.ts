@@ -46,7 +46,7 @@ export const useScanSite = () => {
       if (isCustomNetwork(networkDetails)) {
         setError("Scanning sites is not supported on custom networks");
         setLoading(false);
-        return;
+        return null;
       }
       const res = await fetch(
         `${INDEXER_URL}/scan-dapp?url=${encodeURIComponent(url)}`,
