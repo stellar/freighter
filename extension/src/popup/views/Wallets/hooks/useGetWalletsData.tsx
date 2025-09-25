@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-
+import { captureException } from "@sentry/browser";
 import { Account } from "@shared/api/types";
 import { initialState, isError, reducer } from "helpers/request";
 import {
@@ -72,6 +72,9 @@ function useGetWalletsData() {
               useCache,
             );
             if (isError<AccountBalances>(balances)) {
+              captureException(
+                `Error loading account balances in wallets data - ${balances.message}`,
+              );
               throw new Error(balances.message);
             }
 
@@ -97,6 +100,7 @@ function useGetWalletsData() {
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
+      captureException(`Error loading wallets data - ${error}`);
       return error;
     }
   };
