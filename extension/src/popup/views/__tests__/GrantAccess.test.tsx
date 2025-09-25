@@ -78,7 +78,7 @@ describe("Grant Access view", () => {
         data: {
           is_malicious: false,
         } as BlockAidScanSiteResult,
-        scanSite: (_url: string, _networkDetails: NetworkDetails) => {
+        scanSite: (_url: string) => {
           return Promise.resolve({
             is_malicious: false,
           } as BlockAidScanSiteResult);
@@ -119,7 +119,7 @@ describe("Grant Access view", () => {
         data: {
           is_malicious: false,
         } as BlockAidScanSiteResult,
-        scanSite: (_url: string, _networkDetails: NetworkDetails) => {
+        scanSite: (_url: string) => {
           return Promise.resolve({
             is_malicious: false,
           } as BlockAidScanSiteResult);
@@ -161,7 +161,7 @@ describe("Grant Access view", () => {
         data: {
           status: "miss",
         } as BlockAidScanSiteResult,
-        scanSite: (_url: string, _networkDetails: NetworkDetails) => {
+        scanSite: (_url: string) => {
           return Promise.resolve({
             status: "miss",
           } as BlockAidScanSiteResult);
@@ -203,7 +203,7 @@ describe("Grant Access view", () => {
         data: {
           is_malicious: true,
         } as BlockAidScanSiteResult,
-        scanSite: (_url: string, _networkDetails: NetworkDetails) => {
+        scanSite: (_url: string) => {
           return Promise.resolve({
             status: "hit",
             is_malicious: true,
@@ -246,7 +246,7 @@ describe("Grant Access view", () => {
         data: {
           is_malicious: true,
         } as BlockAidScanSiteResult,
-        scanSite: (_url: string, _networkDetails: NetworkDetails) => {
+        scanSite: (_url: string) => {
           throw new Error("Failed to scan site");
         },
       };

@@ -47,7 +47,7 @@ function useGetGrantAccessData(url: string) {
       let scanData = null;
 
       try {
-        scanData = await scanSite(url, appData.settings.networkDetails);
+        scanData = await scanSite(url);
       } catch (error) {
         console.error(error);
         captureException(`Grant Access: Failed to call scan site: ${error}`);
