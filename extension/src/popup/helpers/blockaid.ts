@@ -40,14 +40,9 @@ export const useScanSite = () => {
   const [error, setError] = useState(null as string | null);
   const [isLoading, setLoading] = useState(true);
 
-  const scanSite = async (url: string, networkDetails: NetworkDetails) => {
+  const scanSite = async (url: string) => {
     setLoading(true);
     try {
-      if (isCustomNetwork(networkDetails)) {
-        setError("Scanning sites is not supported on custom networks");
-        setLoading(false);
-        return;
-      }
       const res = await fetch(
         `${INDEXER_URL}/scan-dapp?url=${encodeURIComponent(url)}`,
       );

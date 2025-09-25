@@ -101,10 +101,14 @@ export const GrantAccess = () => {
   };
 
   const scanData = state.data.scanData;
-  const isMalicious = scanData.status === "hit" && scanData.is_malicious;
-  const attackTypes = Object.keys(
-    "attack_types" in scanData ? scanData.attack_types : {},
-  );
+  const isMalicious = scanData?.status === "hit" && scanData.is_malicious;
+  let attackTypes = [] as string[];
+
+  if (scanData) {
+    attackTypes = Object.keys(
+      "attack_types" in scanData ? scanData.attack_types : {},
+    );
+  }
 
   return (
     <>
@@ -115,7 +119,7 @@ export const GrantAccess = () => {
             <DomainScanModalInfo
               domain={domain}
               isMalicious={isMalicious}
-              scanStatus={scanData.status}
+              scanStatus={scanData?.status}
               onClick={() => setActivePaneIndex(1)}
               subject={t(
                 `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,
