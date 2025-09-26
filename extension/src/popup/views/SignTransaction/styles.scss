@@ -167,6 +167,11 @@
         margin-top: pxToRem(12px);
         padding-top: 0;
 
+        &:disabled {
+          color: var(--sds-clr-gray-09);
+          cursor: not-allowed;
+        }
+
         &.Warning {
           color: var(--sds-clr-gray-11);
         }

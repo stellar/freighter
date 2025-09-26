@@ -341,10 +341,12 @@ export const SignTransaction = () => {
                     </span>
                   </div>
                 </div>
-                <BlockaidTxScanLabel
-                  scanResult={scanResult!}
-                  onClick={() => setActivePaneIndex(1)}
-                />
+                {scanResult && (
+                  <BlockaidTxScanLabel
+                    scanResult={scanResult}
+                    onClick={() => setActivePaneIndex(1)}
+                  />
+                )}
                 {!isDomainListedAllowed && (
                   <DomainNotAllowedWarningMessage domain={domain} />
                 )}
