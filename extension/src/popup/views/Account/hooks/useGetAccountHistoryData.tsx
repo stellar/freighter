@@ -44,15 +44,6 @@ function useGetAccountHistoryData() {
       const publicKey = appData.account.publicKey;
       const networkDetails = appData.settings.networkDetails;
 
-      // // take this out; for testing only
-      // const delay = () =>
-      //   new Promise((resolve) => {
-      //     setTimeout(() => {
-      //       resolve(true);
-      //     }, 5000);
-      //   });
-      // await delay();
-
       const history = await fetchHistory(publicKey, networkDetails);
 
       if (isError<HistoryResponse>(history)) {
