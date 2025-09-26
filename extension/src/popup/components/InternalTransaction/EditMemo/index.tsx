@@ -38,6 +38,7 @@ export const EditMemo = ({ memo, onClose, onSubmit }: EditMemoProps) => {
                   <Field name="memo">
                     {({ field }: FieldProps) => (
                       <Input
+                        data-testid="edit-memo-input"
                         autoFocus
                         fieldSize="md"
                         autoComplete="off"
