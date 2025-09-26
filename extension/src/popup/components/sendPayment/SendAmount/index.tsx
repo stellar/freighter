@@ -301,6 +301,7 @@ export const SendAmount = ({
               </div>
               <div className="SendAmount__settings-options">
                 <Button
+                  data-testid="send-amount-btn-memo"
                   size="md"
                   isRounded
                   variant="tertiary"
@@ -311,6 +312,7 @@ export const SendAmount = ({
                   {t("Memo")}
                 </Button>
                 <Button
+                  data-testid="send-amount-btn-fee"
                   size="md"
                   isRounded
                   variant="tertiary"
