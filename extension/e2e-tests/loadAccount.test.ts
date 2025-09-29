@@ -433,7 +433,6 @@ test("Clears cache and fetches balances if it's been 2 minutes since the last ba
       },
     };
 
-    console.log("fulfilling");
     await route.fulfill({ json });
   });
 
