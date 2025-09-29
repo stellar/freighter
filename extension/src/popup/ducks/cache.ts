@@ -12,6 +12,7 @@ interface SaveBalancesPayload {
   publicKey: PublicKey;
   balances: AccountBalancesInterface;
   networkDetails: NetworkDetails;
+  usedCache: boolean;
 }
 
 interface ClearBalancesPayload {
@@ -29,7 +30,10 @@ type SaveTokenLists = AssetListResponse[];
 
 interface InitialState {
   balanceData: {
-    [network: string]: Record<PublicKey, AccountBalancesInterface>;
+    [network: string]: Record<
+      PublicKey,
+      AccountBalancesInterface & { updatedAt: number }
+    >;
   };
   icons: Record<AssetCode, IconUrl>;
   homeDomains: Record<PublicKey, HomeDomain>;
@@ -54,13 +58,18 @@ const cacheSlice = createSlice({
       state.tokenLists = [];
     },
     saveBalancesForAccount(state, action: { payload: SaveBalancesPayload }) {
-      state.balanceData = {
-        ...state.balanceData,
-        [action.payload.networkDetails.network]: {
-          ...state.balanceData[action.payload.networkDetails.network],
-          [action.payload.publicKey]: action.payload.balances,
-        },
-      };
+      if (!action.payload.usedCache) {
+        state.balanceData = {
+          ...state.balanceData,
+          [action.payload.networkDetails.network]: {
+            ...state.balanceData[action.payload.networkDetails.network],
+            [action.payload.publicKey]: {
+              ...action.payload.balances,
+              updatedAt: Date.now(),
+            },
+          },
+        };
+      }
     },
     clearBalancesForAccount(state, action: { payload: ClearBalancesPayload }) {
       delete state.balanceData[action.payload.networkDetails.network][

@@ -372,3 +372,94 @@ test("Can't change settings on a stale window", async ({
   await pageTwo.getByText("Preferences").click();
   await expect(pageTwo.locator("#isValidatingMemoValue")).toHaveValue("true");
 });
+
+test("Clears cache and fetches balances if it's been 2 minutes since the last balance update", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
+  test.slow();
+  await page.clock.install({ time: new Date("2024-01-01T12:00:00") });
+  await loginToTestAccount({ page, extensionId });
+  await expect(page.getByTestId("account-assets")).toContainText("XLM");
+  const account1XlmBalance = await page
+    .getByTestId("asset-amount")
+    .textContent();
+
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Settings").click();
+  await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("Settings");
+
+  // go back to account 1 and make sure we do a fresh balance fetch
+  await page.route("**/account-balances/**", async (route) => {
+    const json = {
+      balances: {
+        native: {
+          token: {
+            type: "native",
+            code: "XLM",
+          },
+          total: "999111",
+          available: "99911",
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          minimumBalance: "1",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: "",
+            metadata: {
+              type: "",
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
+        },
+      },
+      isFunded: true,
+      subentryCount: 0,
+      error: {
+        horizon: null,
+        soroban: null,
+      },
+    };
+
+    console.log("fulfilling");
+    await route.fulfill({ json });
+  });
+
+  // test 1 minute
+  await page.clock.fastForward("01:00");
+
+  await page.getByTestId("BackButton").click();
+  const updatedAccount1XlmBalance1minute = await page
+    .getByTestId("asset-amount")
+    .textContent();
+  await expect(updatedAccount1XlmBalance1minute).toEqual(account1XlmBalance);
+
+  // go back and wait another minute
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Settings").click();
+  await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("Settings");
+  await page.clock.fastForward("01:00");
+  await page.getByTestId("BackButton").click();
+
+  const updatedAccount1XlmBalance2minutes = await page
+    .getByTestId("asset-amount")
+    .textContent();
+
+  await expect(updatedAccount1XlmBalance2minutes).not.toEqual(
+    account1XlmBalance,
+  );
+
+  await expect(updatedAccount1XlmBalance2minutes).toEqual("999,111");
+});

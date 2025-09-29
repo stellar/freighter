@@ -123,6 +123,7 @@ function useGetBalances(options: {
           publicKey,
           balances: accountBalances,
           networkDetails,
+          usedCache: useCache && !!cachedBalanceData,
         }),
       );
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
