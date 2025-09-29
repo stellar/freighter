@@ -12,7 +12,6 @@ interface SaveBalancesPayload {
   publicKey: PublicKey;
   balances: AccountBalancesInterface;
   networkDetails: NetworkDetails;
-  usedCache: boolean;
 }
 
 interface ClearBalancesPayload {
@@ -58,18 +57,16 @@ const cacheSlice = createSlice({
       state.tokenLists = [];
     },
     saveBalancesForAccount(state, action: { payload: SaveBalancesPayload }) {
-      if (!action.payload.usedCache) {
-        state.balanceData = {
-          ...state.balanceData,
-          [action.payload.networkDetails.network]: {
-            ...state.balanceData[action.payload.networkDetails.network],
-            [action.payload.publicKey]: {
-              ...action.payload.balances,
-              updatedAt: Date.now(),
-            },
+      state.balanceData = {
+        ...state.balanceData,
+        [action.payload.networkDetails.network]: {
+          ...state.balanceData[action.payload.networkDetails.network],
+          [action.payload.publicKey]: {
+            ...action.payload.balances,
+            updatedAt: Date.now(),
           },
-        };
-      }
+        },
+      };
     },
     clearBalancesForAccount(state, action: { payload: ClearBalancesPayload }) {
       delete state.balanceData[action.payload.networkDetails.network][

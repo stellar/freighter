@@ -118,14 +118,17 @@ function useGetBalances(options: {
         reduxDispatch(saveIconsForBalances({ icons }));
       }
 
-      reduxDispatch(
-        saveBalancesForAccount({
-          publicKey,
-          balances: accountBalances,
-          networkDetails,
-          usedCache: useCache && !!cachedBalanceData,
-        }),
-      );
+      if (!(useCache && !!cachedBalanceData)) {
+        // we have fetched new balance data from the API, update the cache
+        reduxDispatch(
+          saveBalancesForAccount({
+            publicKey,
+            balances: accountBalances,
+            networkDetails,
+          }),
+        );
+      }
+
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       storeBalanceMetricData(publicKey, accountBalances.isFunded || false);
       return payload;
