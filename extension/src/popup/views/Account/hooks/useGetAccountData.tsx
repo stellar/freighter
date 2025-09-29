@@ -197,14 +197,18 @@ function useGetAccountData(options: {
     const resolvedData = state.data;
 
     const interval = setInterval(async () => {
-      const tokenPrices = await getTokenPrices({
-        balances: resolvedData.balances.balances,
-      });
-      const payload = {
-        ...state.data,
-        tokenPrices,
-      } as AccountData;
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      try {
+        const tokenPrices = await getTokenPrices({
+          balances: resolvedData.balances.balances,
+        });
+        const payload = {
+          ...state.data,
+          tokenPrices,
+        } as AccountData;
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      } catch (error) {
+        captureException(`Error refreshing token prices on Account - ${error}`);
+      }
     }, 30000);
     return () => clearInterval(interval);
   }, [_isMainnet, state.data]);
