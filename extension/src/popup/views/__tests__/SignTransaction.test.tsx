@@ -741,6 +741,7 @@ describe("SignTransactions", () => {
     expect(screen.getByTestId("blockaid-miss-label")).toHaveTextContent(
       "This transaction is expected to fail",
     );
+    expect(screen.getByText("Confirm anyway")).toBeDefined();
   });
   it("renders blockaid scan label when tx is malicious", async () => {
     let currentSignTxDataMock = {
@@ -858,6 +859,7 @@ describe("SignTransactions", () => {
     expect(screen.getByTestId("blockaid-malicious-label")).toHaveTextContent(
       "This transaction was flagged as malicious",
     );
+    expect(screen.getByText("Confirm anyway")).toBeDefined();
   });
   it("renders blockaid scan label when tx is flagged as warning", async () => {
     let currentSignTxDataMock = {
@@ -975,6 +977,7 @@ describe("SignTransactions", () => {
     expect(screen.getByTestId("blockaid-miss-label")).toHaveTextContent(
       "This transaction was flagged as suspicious",
     );
+    expect(screen.getByText("Confirm anyway")).toBeDefined();
   });
   it("renders when blockaid scan fails", async () => {
     let currentSignTxDataMock = {
