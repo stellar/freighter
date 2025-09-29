@@ -59,9 +59,9 @@ jobs:
         with:
           node-version: 22
       - run:
-          yarn setup && yarn build:freighter-api && yarn
-          build:extension:production --env AMPLITUDE_KEY="${{
-          secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{ secrets.SENTRY_KEY }}"
+          yarn && yarn build:freighter-api && yarn build:extension:production
+          --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{
+          secrets.SENTRY_KEY }}"
       - name: Install zip
         uses: montudor/action-zip@0852c26906e00f8a315c704958823928d8018b28 #v1.0.0
       - name: Commit files
