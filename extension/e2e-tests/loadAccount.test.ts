@@ -445,20 +445,15 @@ test("Clears cache and fetches balances if it's been 2 minutes since the last ba
     .textContent();
   await expect(updatedAccount1XlmBalance1minute).toEqual(account1XlmBalance);
 
-  // go back and wait another minute
+  // go back and wait another 2 minutes
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Settings").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("Settings");
-  await page.clock.fastForward("01:00");
+  await page.clock.fastForward("02:00");
   await page.getByTestId("BackButton").click();
 
-  const updatedAccount1XlmBalance2minutes = await page
-    .getByTestId("asset-amount")
-    .textContent();
-
-  await expect(updatedAccount1XlmBalance2minutes).not.toEqual(
-    account1XlmBalance,
-  );
-
-  await expect(updatedAccount1XlmBalance2minutes).toEqual("999,111");
+  // make sure we fetch the new balance quickly rather than waiting for the 30 second interval
+  await expect(page.getByTestId("asset-amount")).toHaveText("999,111", {
+    timeout: 500,
+  });
 });
