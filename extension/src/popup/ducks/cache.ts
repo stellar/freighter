@@ -29,7 +29,10 @@ type SaveTokenLists = AssetListResponse[];
 
 interface InitialState {
   balanceData: {
-    [network: string]: Record<PublicKey, AccountBalancesInterface>;
+    [network: string]: Record<
+      PublicKey,
+      AccountBalancesInterface & { updatedAt: number }
+    >;
   };
   icons: Record<AssetCode, IconUrl>;
   homeDomains: Record<PublicKey, HomeDomain>;
@@ -58,7 +61,10 @@ const cacheSlice = createSlice({
         ...state.balanceData,
         [action.payload.networkDetails.network]: {
           ...state.balanceData[action.payload.networkDetails.network],
-          [action.payload.publicKey]: action.payload.balances,
+          [action.payload.publicKey]: {
+            ...action.payload.balances,
+            updatedAt: Date.now(),
+          },
         },
       };
     },
