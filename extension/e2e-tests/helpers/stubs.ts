@@ -1,5 +1,5 @@
 import { BrowserContext, Page } from "@playwright/test";
-import { USDC_TOKEN_ADDRESS } from "./test-token";
+import { USDC_TOKEN_ADDRESS, TEST_TOKEN_ADDRESS } from "./test-token";
 
 export const STELLAR_EXPERT_ASSET_LIST_JSON = {
   name: "StellarExpert Top 50",
@@ -81,9 +81,7 @@ export const stubTokenDetails = async (page: Page | BrowserContext) => {
       decimals: 7,
       symbol: "native",
     };
-    if (
-      tokenId === "CBXQIAGT7PN6T2FD3BLFQTN3L2YE4O7MNP3BF32ZPBD3V4BSFPOU3OJG"
-    ) {
+    if (tokenId === TEST_TOKEN_ADDRESS) {
       json = {
         name: "E2E Token",
         decimals: 3,
