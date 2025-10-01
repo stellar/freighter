@@ -1,5 +1,5 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
-import { loginToTestAccount } from "./helpers/login";
+import { loginAndFund, loginToTestAccount } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS, USDC_TOKEN_ADDRESS } from "./helpers/test-token";
 import {
   stubAccountBalances,
@@ -115,6 +115,51 @@ test("Adding token on Futurenet", async ({ page, extensionId, context }) => {
   await expect(page.getByText("Your assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });
   await expect(page.getByTestId("search-token-input")).toBeVisible();
+});
+test("Adding classic asset on Testnet", async ({ page, extensionId }) => {
+  test.slow();
+  await loginAndFund({ page, extensionId });
+
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Manage assets").click();
+  await expect(page.getByText("Your assets")).toBeVisible();
+  await page.getByText("Add an asset").click({ force: true });
+  await page
+    .getByTestId("search-asset-input")
+    .fill("GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5");
+  await expect(page.getByText("USDC")).toBeVisible();
+
+  await page.getByTestId("ManageAssetRowButton").click();
+  await expect(
+    page.getByTestId("SignTransaction__TrustlineRow__Asset"),
+  ).toHaveText("USDC");
+  await expect(
+    page.getByTestId("SignTransaction__TrustlineRow__Type"),
+  ).toHaveText("Add Trustline");
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(
+    page.getByTestId("ManageAssetRowButton__ellipsis-USDC"),
+  ).toBeVisible();
+
+  // now go back and remove this asset
+  await page.getByTestId("BackButton").click();
+  await expect(page.getByText("Your assets")).toBeVisible();
+  await expect(page.getByTestId("ManageAssetCode")).toHaveText("USDC");
+  await expect(page.getByTestId("ManageAssetDomain")).toHaveText("centre.io");
+  await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
+  await page.getByText("Remove asset").click();
+  await expect(
+    page.getByTestId("SignTransaction__TrustlineRow__Asset"),
+  ).toHaveText("USDC");
+  await expect(
+    page.getByTestId("SignTransaction__TrustlineRow__Type"),
+  ).toHaveText("Remove Trustline");
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(
+    page.getByText(
+      "You have no assets added. Get started by adding an asset below.",
+    ),
+  ).toBeVisible();
 });
 test.afterAll(async ({ page, extensionId }) => {
   if (
