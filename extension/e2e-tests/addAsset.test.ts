@@ -48,6 +48,39 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
       "Expected token to be either on or not on lists, but neither was visible",
     );
   }
+  await page.getByTestId("ManageAssetRowButton").click();
+  await expect(page.getByTestId("ToggleToken__asset-code")).toHaveText(
+    "E2E Token",
+  );
+  await expect(page.getByTestId("ToggleToken__asset-add-remove")).toHaveText(
+    "Add Token",
+  );
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(
+    page.getByTestId("ManageAssetRowButton__ellipsis-E2E"),
+  ).toBeVisible();
+
+  // now go back and remove this asset
+  await page.getByTestId("BackButton").click();
+  await expect(page.getByText("Your assets")).toBeVisible();
+  await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E");
+  await expect(page.getByTestId("ManageAssetDomain")).toHaveText(
+    "Stellar Network",
+  );
+  await page.getByTestId("ManageAssetRowButton__ellipsis-E2E").click();
+  await page.getByText("Remove asset").click();
+  await expect(page.getByTestId("ToggleToken__asset-code")).toHaveText(
+    "CBVX…HWXJ",
+  );
+  await expect(page.getByTestId("ToggleToken__asset-add-remove")).toHaveText(
+    "Remove Token",
+  );
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(
+    page.getByText(
+      "You have no assets added. Get started by adding an asset below.",
+    ),
+  ).toBeVisible();
 });
 
 // Skipping this test because on Testnet, stellar.expert's asset list is formatter incorrectly
