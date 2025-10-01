@@ -70,7 +70,7 @@ export const ToggleTokenInternal = ({
     );
 
     if (isError<AccountBalances>(balancesResult)) {
-      // we don't want to throw an error if balances fail to fetch as this doesn't affect the tx submission
+      // we don't want to throw an error if balances fail to fetch as this doesn't affect the UX of adding a token
       // let's simply log the error and continue - the user will need to refresh the Account page or wait for polling to refresh the balances
       captureException(
         `Failed to fetch balances after ${!asset.isTrustlineActive ? "add" : "remove"} token - ${JSON.stringify(
