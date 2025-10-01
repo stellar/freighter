@@ -597,10 +597,16 @@ export const Trustline = ({ operations, icons }: TrustlineProps) => {
 
     return (
       <div className="SignTransaction__TrustlineRow">
-        <div className="SignTransaction__TrustlineRow__Asset">
+        <div
+          className="SignTransaction__TrustlineRow__Asset"
+          data-testid="SignTransaction__TrustlineRow__Asset"
+        >
           {renderTrustlineAsset(line)}
         </div>
-        <div className="SignTransaction__TrustlineRow__Type">
+        <div
+          className="SignTransaction__TrustlineRow__Type"
+          data-testid="SignTransaction__TrustlineRow__Type"
+        >
           {isRemoveTrustline ? (
             <>
               <Icon.MinusCircle />
