@@ -9,8 +9,12 @@ import {
 } from "./helpers/stubs";
 import { truncateString } from "../src/helpers/stellar";
 
-test("Adding unverified Soroban token", async ({ page, extensionId }) => {
+test("Adding and removing unverified Soroban token", async ({
+  page,
+  extensionId,
+}) => {
   test.slow();
+  await stubTokenDetails(page);
   await loginToTestAccount({ page, extensionId });
 
   await page.getByTestId("account-options-dropdown").click();
@@ -60,8 +64,15 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
     page.getByTestId("ManageAssetRowButton__ellipsis-E2E"),
   ).toBeVisible();
 
-  // now go back and remove this asset
+  // now go back and make sure the asset is displayed in the account view
   await page.getByTestId("BackButton").click();
+  await page.getByTestId("BackButton").click();
+  await expect(page.getByTestId("account-view")).toBeVisible();
+  await expect(page.getByText("E2E")).toBeVisible();
+
+  // now go back and remove this asset
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Manage assets").click();
   await expect(page.getByText("Your assets")).toBeVisible();
   await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E");
   await expect(page.getByTestId("ManageAssetDomain")).toHaveText(
