@@ -55,7 +55,7 @@ export const useScanSite = () => {
         setError(response.error || "Failed to scan site");
       }
       setData(response.data);
-      emitMetric(METRIC_NAMES.blockaidDomainScan, { response: response.data });
+      emitMetric(METRIC_NAMES.blockaidDomainScan);
       setLoading(false);
       return response.data;
     } catch (err) {
@@ -109,7 +109,7 @@ export const useScanTx = () => {
       }>(`${INDEXER_URL}/scan-tx`, options);
 
       setData(response.data);
-      emitMetric(METRIC_NAMES.blockaidTxScan, { response: response.data });
+      emitMetric(METRIC_NAMES.blockaidTxScan);
       setLoading(false);
       return response.data;
     } catch (err) {
@@ -176,7 +176,7 @@ export const scanAsset = async (
       Sentry.captureException(response.error || "Failed to scan asset");
     }
 
-    emitMetric(METRIC_NAMES.blockaidAssetScan, { response: response.data });
+    emitMetric(METRIC_NAMES.blockaidAssetScan);
     if (!response.data) {
       return {} as BlockAidScanAssetResult;
     }
@@ -262,7 +262,7 @@ export const scanAssetBulk = async (
       Sentry.captureException(resJson.error || "Failed to bulk scan assets");
     }
 
-    emitMetric(METRIC_NAMES.blockaidAssetScan, { response: resJson });
+    emitMetric(METRIC_NAMES.blockaidAssetScan);
     if (!resJson.data) {
       return {} as BlockAidBulkScanAssetResult;
     }
@@ -300,7 +300,7 @@ export const reportAssetWarning = async ({
       Sentry.captureException(res.error || "Failed to report asset warning");
     }
 
-    emitMetric(METRIC_NAMES.blockaidAssetScan, { response: res.data });
+    emitMetric(METRIC_NAMES.blockaidAssetScan);
     if (!res.data) {
       return {} as ReportAssetWarningResponse;
     }
@@ -336,7 +336,7 @@ export const reportTransactionWarning = async ({
       );
     }
 
-    emitMetric(METRIC_NAMES.blockaidAssetScan, { response: res.data });
+    emitMetric(METRIC_NAMES.blockaidAssetScan);
     if (!res.data) {
       return {} as ReportTransactionWarningResponse;
     }
