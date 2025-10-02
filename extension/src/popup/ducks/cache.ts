@@ -117,9 +117,6 @@ const cacheSlice = createSlice({
       state.tokenLists = action.payload;
     },
     saveTokenDetails(state, action: { payload: SaveTokenDetailsPayload }) {
-      if (!action.payload) {
-        return;
-      }
       state.tokenDetails = {
         ...state.tokenDetails,
         [action.payload.contractId]: action.payload,
