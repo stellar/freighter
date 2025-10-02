@@ -17,7 +17,6 @@ import "./styles.scss";
 interface TokenListProps {
   hiddenAssets?: string[];
   icons: AssetIcons;
-  subentryCount: number;
   tokens: AssetType[];
   tokenPrices: ApiTokenPrices;
   onClickAsset: (canonical: string, isContract: boolean) => unknown;
@@ -26,7 +25,6 @@ interface TokenListProps {
 export const TokenList = ({
   hiddenAssets = [],
   icons,
-  subentryCount,
   tokens,
   tokenPrices,
   onClickAsset,
@@ -68,7 +66,6 @@ export const TokenList = ({
               const availableBalance = getAvailableBalance({
                 assetCanonical: canonical,
                 balances: [balance],
-                subentryCount,
                 recommendedFee: "0",
               });
               const displayTotal =

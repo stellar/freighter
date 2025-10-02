@@ -14,7 +14,7 @@ import {
 } from "stellar-sdk";
 
 import { HorizonOperation, SorobanBalance } from "@shared/api/types";
-import { BASE_RESERVE, NetworkDetails } from "@shared/constants/stellar";
+import { NetworkDetails } from "@shared/constants/stellar";
 import {
   ArgsForTokenInvocation,
   SorobanTokenInterface,
@@ -63,12 +63,10 @@ export const getTokenBalance = (tokenBalance: SorobanBalance) =>
 export const getAvailableBalance = ({
   assetCanonical,
   balances,
-  subentryCount,
   recommendedFee,
 }: {
   assetCanonical: string;
   balances: AssetType[];
-  subentryCount: number;
   recommendedFee: string;
 }) => {
   const selectedCanonical = getAssetFromCanonical(assetCanonical);
@@ -79,9 +77,9 @@ export const getAvailableBalance = ({
     }
 
     const balance = selectedBalance.total;
-    if (assetCanonical === "native") {
+    if ("minimumBalance" in selectedBalance && selectedBalance.minimumBalance) {
       // take base reserve into account for XLM payments
-      const minBalance = new BigNumber((2 + subentryCount) * BASE_RESERVE);
+      const minBalance = selectedBalance.minimumBalance;
       const currentBal = new BigNumber(balance.toFixed());
       const available = currentBal
         .minus(minBalance)

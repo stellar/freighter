@@ -91,7 +91,6 @@ export const SwapAsset = ({
   const icons = state.data?.balances.icons || {};
   const tokenPrices = state.data?.tokenPrices || {};
   const balances = state.data?.filteredBalances || [];
-  const subentryCount = state.data?.balances.subentryCount!;
 
   return (
     <>
@@ -124,7 +123,6 @@ export const SwapAsset = ({
               tokens={balances}
               hiddenAssets={hiddenAssets}
               icons={icons}
-              subentryCount={subentryCount}
               tokenPrices={tokenPrices}
               onClickAsset={onClickAsset}
             />

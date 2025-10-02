@@ -94,35 +94,37 @@ describe("getInvocationArgs", () => {
       }
     }
   });
-  it("can calculate the available balance of XLM without subentries", () => {
+  it("can calculate the available balance of XLM", () => {
     const availableBalance = getAvailableBalance({
       assetCanonical: "native",
       balances: [
         {
           token: { type: "native", code: "XLM" },
-          total: new BigNumber("50"),
-          available: new BigNumber("50"),
+          total: new BigNumber("2.5"),
+          available: new BigNumber("2.5"),
+          minimumBalance: "1",
         },
       ],
       subentryCount: 0,
       recommendedFee: ".11",
     });
-    expect(availableBalance).toEqual("48.89");
+    expect(availableBalance).toEqual("1.39");
   });
-  it("can calculate the available balance of XLM with subentries", () => {
+  it("can calculate the available balance of XLM if the minimum balance is a BigNumber (custom network)", () => {
     const availableBalance = getAvailableBalance({
       assetCanonical: "native",
       balances: [
         {
           token: { type: "native", code: "XLM" },
-          total: new BigNumber("50"),
-          available: new BigNumber("50"),
+          total: new BigNumber("2.5"),
+          available: new BigNumber("2.5"),
+          minimumBalance: new BigNumber("1"),
         },
       ],
-      subentryCount: 1,
+      subentryCount: 0,
       recommendedFee: ".11",
     });
-    expect(availableBalance).toEqual("48.39");
+    expect(availableBalance).toEqual("1.39");
   });
   it("can calculate the available balance of XLM when there is not enough balance to cover the recommended fee", () => {
     const availableBalance = getAvailableBalance({
@@ -130,8 +132,9 @@ describe("getInvocationArgs", () => {
       balances: [
         {
           token: { type: "native", code: "XLM" },
-          total: new BigNumber("50"),
-          available: new BigNumber("50"),
+          total: new BigNumber("3"),
+          available: new BigNumber("3"),
+          minimumBalance: "1.5",
         },
       ],
       subentryCount: 1,
@@ -139,22 +142,7 @@ describe("getInvocationArgs", () => {
     });
     expect(availableBalance).toEqual("0");
   });
-  it("can calculate the available balance of XLM when there is not enough balance to cover the subentries", () => {
-    const availableBalance = getAvailableBalance({
-      assetCanonical: "native",
-      balances: [
-        {
-          token: { type: "native", code: "XLM" },
-          total: new BigNumber("2"),
-          available: new BigNumber("2"),
-        },
-      ],
-      subentryCount: 5,
-      recommendedFee: ".01",
-    });
-    expect(availableBalance).toEqual("0");
-  });
-  it.only("can calculate the available balance if the asset is not in the balances", () => {
+  it("can calculate the available balance if the asset is not in the balances", () => {
     const availableBalance = getAvailableBalance({
       assetCanonical:
         "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",

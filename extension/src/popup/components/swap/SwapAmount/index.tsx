@@ -278,7 +278,6 @@ export const SwapAmount = ({
     assetCanonical: asset,
     balances: sendData.userBalances.balances,
     recommendedFee: fee,
-    subentryCount: sendData.userBalances.subentryCount,
   });
   const displayTotal = `${formatAmount(availableBalance)}`;
   const dstDisplayTotal =
