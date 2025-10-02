@@ -6,8 +6,13 @@ import {
   TransactionBuilder,
   xdr,
 } from "stellar-sdk";
+import BigNumber from "bignumber.js";
 
-import { getInvocationArgs, buildInvocationTree } from "../soroban";
+import {
+  getInvocationArgs,
+  buildInvocationTree,
+  getAvailableBalance,
+} from "../soroban";
 import { TEST_PUBLIC_KEY } from "popup/__testHelpers__";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 
@@ -88,5 +93,102 @@ describe("getInvocationArgs", () => {
         }
       }
     }
+  });
+  it("can calculate the available balance of XLM without subentries", () => {
+    const availableBalance = getAvailableBalance({
+      assetCanonical: "native",
+      balances: [
+        {
+          token: { type: "native", code: "XLM" },
+          total: new BigNumber("50"),
+          available: new BigNumber("50"),
+        },
+      ],
+      subentryCount: 0,
+      recommendedFee: ".11",
+    });
+    expect(availableBalance).toEqual("48.89");
+  });
+  it("can calculate the available balance of XLM with subentries", () => {
+    const availableBalance = getAvailableBalance({
+      assetCanonical: "native",
+      balances: [
+        {
+          token: { type: "native", code: "XLM" },
+          total: new BigNumber("50"),
+          available: new BigNumber("50"),
+        },
+      ],
+      subentryCount: 1,
+      recommendedFee: ".11",
+    });
+    expect(availableBalance).toEqual("48.39");
+  });
+  it("can calculate the available balance of XLM when there is not enough balance to cover the recommended fee", () => {
+    const availableBalance = getAvailableBalance({
+      assetCanonical: "native",
+      balances: [
+        {
+          token: { type: "native", code: "XLM" },
+          total: new BigNumber("50"),
+          available: new BigNumber("50"),
+        },
+      ],
+      subentryCount: 1,
+      recommendedFee: "300",
+    });
+    expect(availableBalance).toEqual("0");
+  });
+  it("can calculate the available balance of XLM when there is not enough balance to cover the subentries", () => {
+    const availableBalance = getAvailableBalance({
+      assetCanonical: "native",
+      balances: [
+        {
+          token: { type: "native", code: "XLM" },
+          total: new BigNumber("2"),
+          available: new BigNumber("2"),
+        },
+      ],
+      subentryCount: 5,
+      recommendedFee: ".01",
+    });
+    expect(availableBalance).toEqual("0");
+  });
+  it.only("can calculate the available balance if the asset is not in the balances", () => {
+    const availableBalance = getAvailableBalance({
+      assetCanonical:
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      balances: [
+        {
+          token: { type: "native", code: "XLM" },
+          total: new BigNumber("50"),
+          available: new BigNumber("50"),
+        },
+      ],
+      subentryCount: 1,
+      recommendedFee: "300",
+    });
+    expect(availableBalance).toEqual("0");
+  });
+  it("can calculate the available balance of another asset correctly", () => {
+    const availableBalance = getAvailableBalance({
+      assetCanonical:
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      balances: [
+        {
+          token: {
+            code: "USDC",
+            issuer: {
+              key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+            },
+          },
+          total: new BigNumber("100"),
+          available: new BigNumber("100"),
+        },
+      ],
+      subentryCount: 5,
+      recommendedFee: ".11",
+    });
+    expect(availableBalance).toEqual("100");
   });
 });

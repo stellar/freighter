@@ -87,10 +87,8 @@ export const getAvailableBalance = ({
         .minus(minBalance)
         .minus(new BigNumber(Number(recommendedFee)));
 
-      if (available.lt(minBalance)) {
-        return "0";
-      }
-      return available.toFixed().toString();
+      // Ensure we don't go below zero
+      return BigNumber.max(available, new BigNumber(0)).toFixed().toString();
     } else {
       return new BigNumber(balance).toFixed().toString();
     }
