@@ -118,7 +118,7 @@ export interface AssetOperations {
   [key: string]: OperationDataRow[];
 }
 
-export const sortOperationsByAsset = ({
+export const sortOperationsByAsset = async ({
   balances,
   operations,
   networkDetails,
@@ -144,7 +144,7 @@ export const sortOperationsByAsset = ({
     }
   });
 
-  operations.forEach(async (op) => {
+  for (const op of operations) {
     const isPayment = getIsPayment(op.type);
     const isSwap = getIsSwap(op);
     const isCreateExternalAccount =
@@ -207,7 +207,7 @@ export const sortOperationsByAsset = ({
         }
       });
     }
-  });
+  }
 
   return assetOperationMap;
 };

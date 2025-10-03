@@ -52,7 +52,7 @@ function useGetAccountHistoryData() {
 
       const payload = {
         type: AppDataType.RESOLVED,
-        operationsByAsset: sortOperationsByAsset({
+        operationsByAsset: await sortOperationsByAsset({
           balances: balances.balances,
           operations: history,
           networkDetails: networkDetails,

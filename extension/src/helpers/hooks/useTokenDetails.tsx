@@ -5,7 +5,7 @@ import { tokenDetailsSelector, saveTokenDetails } from "popup/ducks/cache";
 import { getTokenDetails } from "@shared/api/internal";
 import { initialState, reducer } from "helpers/request";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { AppDispatch } from "popup/App";
+import { AppDispatch, store } from "popup/App";
 
 export type TokenDetailsResponse = {
   decimals: number;
@@ -34,7 +34,17 @@ function useTokenDetails() {
   }): Promise<TokenDetailsResponse | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      const cachedTokenDetailsData = cachedTokenDetails[contractId];
+      /*
+        Unlike the other cache hooks, this hook can be called multiple times within one render.
+        For example, when constructing the history rows, this hook can be called many times as we iterate over the history items. 
+        If we have cached token details earlier in the loop, we won't have access to the update redux state until the next render.
+        To workaround this, we will also check the redux state manually here rather than waiting for the next render to 
+        update the selector hook for us.
+      */
+      const cachedTokenDetailsData =
+        cachedTokenDetails[contractId] ||
+        store.getState().cache.tokenDetails[contractId];
+
       const data =
         useCache && cachedTokenDetailsData
           ? cachedTokenDetailsData
