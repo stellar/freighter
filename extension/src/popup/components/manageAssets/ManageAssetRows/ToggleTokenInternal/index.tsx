@@ -1,20 +1,22 @@
 import React from "react";
 import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
 import { Asset, Badge, Button, Icon, Text } from "@stellar/design-system";
 import { Networks } from "stellar-sdk";
+import { captureException } from "@sentry/browser";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { AppDispatch } from "popup/App";
 import { NetworkDetails, NETWORKS } from "@shared/constants/stellar";
 import { addTokenId } from "popup/ducks/accountServices";
 import { removeTokenId } from "popup/ducks/transactionSubmission";
-import { navigateTo } from "popup/helpers/navigate";
-import { ROUTES } from "popup/constants/routes";
+
+import { isSacContract } from "popup/helpers/soroban";
+import { isMainnet, truncateString } from "helpers/stellar";
+import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
+
+import { isError } from "helpers/request";
 
 import "./styles.scss";
-import { isSacContract } from "popup/helpers/soroban";
-import { truncateString } from "helpers/stellar";
 
 interface ToggleTokenInternalProps {
   asset: {
@@ -38,7 +40,10 @@ export const ToggleTokenInternal = ({
   publicKey,
 }: ToggleTokenInternalProps) => {
   const dispatch: AppDispatch = useDispatch();
-  const nav = useNavigate();
+  const { fetchData: fetchBalances } = useGetBalances({
+    showHidden: false,
+    includeIcons: false,
+  });
 
   const onConfirm = async () => {
     if (!asset.isTrustlineActive) {
@@ -57,7 +62,23 @@ export const ToggleTokenInternal = ({
         }),
       );
     }
-    navigateTo(ROUTES.account, nav);
+    const balancesResult = await fetchBalances(
+      publicKey,
+      isMainnet(networkDetails),
+      networkDetails,
+      false,
+    );
+
+    if (isError<AccountBalances>(balancesResult)) {
+      // we don't want to throw an error if balances fail to fetch as this doesn't affect the UX of adding a token
+      // let's simply log the error and continue - the user will need to refresh the Account page or wait for polling to refresh the balances
+      captureException(
+        `Failed to fetch balances after ${!asset.isTrustlineActive ? "add" : "remove"} token - ${JSON.stringify(
+          balancesResult.message,
+        )} ${networkDetails.network}`,
+      );
+    }
+    onCancel();
   };
   const isSac =
     !!asset.name &&
@@ -93,10 +114,18 @@ export const ToggleTokenInternal = ({
             </div>
           )}
 
-          <Text as="div" size="sm" weight="medium">
+          <Text
+            as="div"
+            size="sm"
+            weight="medium"
+            data-testid="ToggleToken__asset-code"
+          >
             {isSac ? asset.code : asset.name || truncateString(asset.contract!)}
           </Text>
-          <div className="ToggleToken__wrapper__badge">
+          <div
+            className="ToggleToken__wrapper__badge"
+            data-testid="ToggleToken__asset-add-remove"
+          >
             <Badge
               size="sm"
               variant="secondary"

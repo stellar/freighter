@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 import { settingsSorobanSupportedSelector } from "popup/ducks/settings";
+import { balancesSelector } from "popup/ducks/cache";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 
@@ -31,6 +32,7 @@ export const ChooseAsset = ({
   const { t } = useTranslation();
   const location = useLocation();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
+  const cachedBalances = useSelector(balancesSelector);
 
   const ManageAssetRowsWrapperRef = useRef<HTMLDivElement>(null);
 
@@ -44,12 +46,14 @@ export const ChooseAsset = ({
     domainState.state === RequestState.LOADING;
 
   useEffect(() => {
+    /* This effect is keyed off of changes to cachedBalances as this let's us update the UI when an asset is removed */
     const getData = async () => {
       await fetchData(true);
     };
+
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [cachedBalances]);
 
   if (isLoading) {
     return (

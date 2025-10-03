@@ -1,5 +1,5 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
-import { loginToTestAccount } from "./helpers/login";
+import { loginAndFund, loginToTestAccount } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS, USDC_TOKEN_ADDRESS } from "./helpers/test-token";
 import {
   stubAccountBalances,
@@ -9,8 +9,12 @@ import {
 } from "./helpers/stubs";
 import { truncateString } from "../src/helpers/stellar";
 
-test("Adding unverified Soroban token", async ({ page, extensionId }) => {
+test("Adding and removing unverified Soroban token", async ({
+  page,
+  extensionId,
+}) => {
   test.slow();
+  await stubTokenDetails(page);
   await loginToTestAccount({ page, extensionId });
 
   await page.getByTestId("account-options-dropdown").click();
@@ -48,6 +52,46 @@ test("Adding unverified Soroban token", async ({ page, extensionId }) => {
       "Expected token to be either on or not on lists, but neither was visible",
     );
   }
+  await page.getByTestId("ManageAssetRowButton").click();
+  await expect(page.getByTestId("ToggleToken__asset-code")).toHaveText(
+    "E2E Token",
+  );
+  await expect(page.getByTestId("ToggleToken__asset-add-remove")).toHaveText(
+    "Add Token",
+  );
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(
+    page.getByTestId("ManageAssetRowButton__ellipsis-E2E"),
+  ).toBeVisible();
+
+  // now go back and make sure the asset is displayed in the account view
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("BackButton").click();
+  await expect(page.getByTestId("account-view")).toBeVisible();
+  await expect(page.getByText("E2E")).toBeVisible();
+
+  // now go back and remove this asset
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Manage assets").click();
+  await expect(page.getByText("Your assets")).toBeVisible();
+  await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E");
+  await expect(page.getByTestId("ManageAssetDomain")).toHaveText(
+    "Stellar Network",
+  );
+  await page.getByTestId("ManageAssetRowButton__ellipsis-E2E").click();
+  await page.getByText("Remove asset").click();
+  await expect(page.getByTestId("ToggleToken__asset-code")).toHaveText(
+    "CBVX…HWXJ",
+  );
+  await expect(page.getByTestId("ToggleToken__asset-add-remove")).toHaveText(
+    "Remove Token",
+  );
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(
+    page.getByText(
+      "You have no assets added. Get started by adding an asset below.",
+    ),
+  ).toBeVisible();
 });
 
 // Skipping this test because on Testnet, stellar.expert's asset list is formatter incorrectly
@@ -115,6 +159,51 @@ test("Adding token on Futurenet", async ({ page, extensionId, context }) => {
   await expect(page.getByText("Your assets")).toBeVisible();
   await page.getByText("Add an asset").click({ force: true });
   await expect(page.getByTestId("search-token-input")).toBeVisible();
+});
+test("Adding classic asset on Testnet", async ({ page, extensionId }) => {
+  test.slow();
+  await loginAndFund({ page, extensionId });
+
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Manage assets").click();
+  await expect(page.getByText("Your assets")).toBeVisible();
+  await page.getByText("Add an asset").click({ force: true });
+  await page
+    .getByTestId("search-asset-input")
+    .fill("GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5");
+  await expect(page.getByText("USDC")).toBeVisible();
+
+  await page.getByTestId("ManageAssetRowButton").click();
+  await expect(
+    page.getByTestId("SignTransaction__TrustlineRow__Asset"),
+  ).toHaveText("USDC");
+  await expect(
+    page.getByTestId("SignTransaction__TrustlineRow__Type"),
+  ).toHaveText("Add Trustline");
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(
+    page.getByTestId("ManageAssetRowButton__ellipsis-USDC"),
+  ).toBeVisible();
+
+  // now go back and remove this asset
+  await page.getByTestId("BackButton").click();
+  await expect(page.getByText("Your assets")).toBeVisible();
+  await expect(page.getByTestId("ManageAssetCode")).toHaveText("USDC");
+  await expect(page.getByTestId("ManageAssetDomain")).toHaveText("centre.io");
+  await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
+  await page.getByText("Remove asset").click();
+  await expect(
+    page.getByTestId("SignTransaction__TrustlineRow__Asset"),
+  ).toHaveText("USDC");
+  await expect(
+    page.getByTestId("SignTransaction__TrustlineRow__Type"),
+  ).toHaveText("Remove Trustline");
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(
+    page.getByText(
+      "You have no assets added. Get started by adding an asset below.",
+    ),
+  ).toBeVisible();
 });
 test.afterAll(async ({ page, extensionId }) => {
   if (

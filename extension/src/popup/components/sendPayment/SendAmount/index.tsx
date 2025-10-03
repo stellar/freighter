@@ -256,7 +256,6 @@ export const SendAmount = ({
     assetCanonical: asset,
     balances: sendData.userBalances.balances,
     recommendedFee: fee,
-    subentryCount: sendData.userBalances.subentryCount,
   });
   const displayTotal =
     "decimals" in assetBalance

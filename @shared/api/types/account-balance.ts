@@ -11,6 +11,7 @@ export interface NativeAsset {
   total: BigNumber;
   buyingLiabilities: string;
   sellingLiabilities: string;
+  minimumBalance: string;
   blockaidData: Blockaid.TokenScanResponse;
 }
 

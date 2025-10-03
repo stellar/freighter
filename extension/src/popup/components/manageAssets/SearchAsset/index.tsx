@@ -3,8 +3,8 @@ import { Navigate, useLocation } from "react-router-dom";
 import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
-
 import { Notification } from "@stellar/design-system";
+import { useSelector } from "react-redux";
 
 import { FormRows } from "popup/basics/Forms";
 import { ROUTES } from "popup/constants/routes";
@@ -13,10 +13,6 @@ import { isMainnet, isTestnet } from "helpers/stellar";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 
-import { ManageAssetRows } from "../ManageAssetRows";
-import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
-import { useAssetLookup } from "./hooks/useAssetLookup";
-import { useGetSearchData } from "./hooks/useSearchData";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { RequestState } from "helpers/hooks/fetchHookInterface";
 import { Loading } from "popup/components/Loading";
@@ -24,6 +20,12 @@ import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
+import { balancesSelector } from "popup/ducks/cache";
+
+import { ManageAssetRows } from "../ManageAssetRows";
+import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
+import { useAssetLookup } from "./hooks/useAssetLookup";
+import { useGetSearchData } from "./hooks/useSearchData";
 
 import "./styles.scss";
 
@@ -62,6 +64,7 @@ const ResultsHeader = () => {
 export const SearchAsset = () => {
   const { t } = useTranslation();
   const location = useLocation();
+  const cachedBalances = useSelector(balancesSelector);
 
   const ResultsRef = useRef<HTMLDivElement>(null);
 
@@ -95,12 +98,13 @@ export const SearchAsset = () => {
   const handleSearch = handleSearchRef.current;
 
   useEffect(() => {
+    /* This effect is keyed off of changes to cachedBalances as this let's us update the UI when an asset is removed */
     const getData = async () => {
       await fetchData(true);
     };
 
     getData();
-  }, []);
+  }, [cachedBalances]);
 
   if (
     state.state === RequestState.IDLE ||
