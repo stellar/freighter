@@ -73,6 +73,7 @@ const cacheSlice = createSlice({
       state.icons = {};
       state.homeDomains = {};
       state.tokenLists = [];
+      state.tokenDetails = {};
       state.historyData = {};
     },
     saveBalancesForAccount(state, action: { payload: SaveBalancesPayload }) {
