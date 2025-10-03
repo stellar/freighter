@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { isEqual } from "lodash";
 
 import {
   settingsSorobanSupportedSelector,
@@ -21,12 +22,15 @@ import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
-import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 import { newTabHref } from "helpers/urls";
 import { getTotalUsd } from "popup/helpers/balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
+import { AccountBalances } from "helpers/hooks/useGetBalances";
+
+import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
+import { useGetAccountHistoryData } from "./hooks/useGetAccountHistoryData";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
@@ -47,6 +51,8 @@ export const Account = () => {
     showHidden: false,
     includeIcons: true,
   });
+  const { state: historyData, fetchData: fetchHistoryData } =
+    useGetAccountHistoryData();
 
   useEffect(() => {
     const getData = async () => {
@@ -55,6 +61,29 @@ export const Account = () => {
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const accountBalances =
+    accountData.state === RequestState.SUCCESS &&
+    accountData.data.type === AppDataType.RESOLVED
+      ? accountData.data?.balances
+      : null;
+
+  const previousAccountBalancesRef = useRef<AccountBalances | null>(null);
+
+  useEffect(() => {
+    const getData = async () => {
+      /* Only fetch history data if the account balances have changed or if the previous account balances are null */
+      if (
+        accountBalances &&
+        !isEqual(accountBalances, previousAccountBalancesRef.current)
+      ) {
+        previousAccountBalancesRef.current = accountBalances;
+        await fetchHistoryData({ balances: accountBalances });
+      }
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountBalances]);
 
   if (
     accountData.state === RequestState.IDLE ||
@@ -95,7 +124,7 @@ export const Account = () => {
     return (
       <AssetDetail
         accountBalances={accountData.data.balances}
-        assetOperations={accountData.data.operationsByAsset[selectedAsset]}
+        historyData={historyData.data}
         networkDetails={accountData.data.networkDetails}
         publicKey={accountData.data.publicKey}
         selectedAsset={selectedAsset}

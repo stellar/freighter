@@ -4,8 +4,6 @@ import { captureException } from "@sentry/browser";
 import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
-import { HistoryResponse, useGetHistory } from "helpers/hooks/useGetHistory";
-import { AssetOperations, sortOperationsByAsset } from "popup/helpers/account";
 import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
 import { getTokenPrices as internalGetTokenPrices } from "@shared/api/internal";
 import { AllowList, ApiTokenPrices } from "@shared/api/types";
@@ -46,7 +44,6 @@ interface ResolvedAccountData {
   allowList: AllowList;
   type: AppDataType.RESOLVED;
   balances: AccountBalances;
-  operationsByAsset: AssetOperations;
   tokenPrices?: ApiTokenPrices | null;
   networkDetails: NetworkDetails;
   publicKey: string;
@@ -67,7 +64,6 @@ function useGetAccountData(options: {
   );
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(options);
-  const { fetchData: fetchHistory } = useGetHistory();
   const cachedBalances = useSelector(balancesSelector);
 
   const fetchData = async ({
@@ -114,14 +110,8 @@ function useGetAccountData(options: {
         !shouldForceBalancesRefresh,
       );
 
-      const history = await fetchHistory(publicKey, networkDetails);
-
       if (isError<AccountBalances>(balancesResult)) {
         throw new Error(balancesResult.message);
-      }
-
-      if (isError<HistoryResponse>(history)) {
-        throw new Error(history.message);
       }
 
       const payload = {
@@ -131,12 +121,6 @@ function useGetAccountData(options: {
         applicationState: appData.account.applicationState,
         balances: balancesResult,
         networkDetails,
-        operationsByAsset: sortOperationsByAsset({
-          balances: balancesResult.balances,
-          operations: history,
-          networkDetails: networkDetails,
-          publicKey,
-        }),
       } as ResolvedAccountData;
 
       if (isMainnetNetwork) {
