@@ -134,7 +134,6 @@ export const SendDestinationAsset = ({
             tokens={balances.balances}
             hiddenAssets={[]}
             icons={icons}
-            subentryCount={balances.subentryCount}
             tokenPrices={tokenPrices}
             onClickAsset={(canonical, isContract) => {
               dispatch(saveAsset(canonical));
