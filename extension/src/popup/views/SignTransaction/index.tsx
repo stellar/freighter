@@ -341,10 +341,12 @@ export const SignTransaction = () => {
                     </span>
                   </div>
                 </div>
-                <BlockaidTxScanLabel
-                  scanResult={scanResult!}
-                  onClick={() => setActivePaneIndex(1)}
-                />
+                {scanResult && (
+                  <BlockaidTxScanLabel
+                    scanResult={scanResult}
+                    onClick={() => setActivePaneIndex(1)}
+                  />
+                )}
                 {!isDomainListedAllowed && (
                   <DomainNotAllowedWarningMessage domain={domain} />
                 )}
@@ -595,10 +597,16 @@ export const Trustline = ({ operations, icons }: TrustlineProps) => {
 
     return (
       <div className="SignTransaction__TrustlineRow">
-        <div className="SignTransaction__TrustlineRow__Asset">
+        <div
+          className="SignTransaction__TrustlineRow__Asset"
+          data-testid="SignTransaction__TrustlineRow__Asset"
+        >
           {renderTrustlineAsset(line)}
         </div>
-        <div className="SignTransaction__TrustlineRow__Type">
+        <div
+          className="SignTransaction__TrustlineRow__Type"
+          data-testid="SignTransaction__TrustlineRow__Type"
+        >
           {isRemoveTrustline ? (
             <>
               <Icon.MinusCircle />

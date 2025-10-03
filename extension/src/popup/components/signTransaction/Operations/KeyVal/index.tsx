@@ -23,6 +23,7 @@ import { truncateString } from "helpers/stellar";
 import { formattedBuffer } from "popup/helpers/formatters";
 
 import {
+  addressToString,
   getCreateContractArgs,
   InvocationTree,
   scValByType,
@@ -46,7 +47,7 @@ export const KeyValueList = ({
       className="Operations__pair--value"
       data-testid="OperationKeyVal__value"
     >
-      <span className="Operations__pair--value-text">{operationValue}</span>
+      <span className={"Operations__pair--value-text"}>{operationValue}</span>
     </div>
   </div>
 );
@@ -216,7 +217,18 @@ export const KeyValueLine = ({
     );
   }
   return (
-    <KeyValueList operationKey={t("Asset Code")} operationValue={line.code} />
+    <>
+      <KeyValueList operationKey={t("Asset Code")} operationValue={line.code} />
+      <KeyValueList
+        operationKey={t("Asset Issuer")}
+        operationValue={
+          <CopyValue
+            value={line.issuer}
+            displayValue={truncateString(line.issuer)}
+          />
+        }
+      />{" "}
+    </>
   );
 };
 
@@ -379,11 +391,13 @@ export const KeyValueInvokeHostFnArgs = ({
   contractId,
   fnName,
   showHeader = true,
+  isAuthEntry = false,
 }: {
   args: xdr.ScVal[];
   contractId?: string;
   fnName?: string;
   showHeader?: boolean;
+  isAuthEntry?: boolean;
 }) => {
   const [isLoading, setLoading] = React.useState(true);
   const [argNames, setArgNames] = React.useState([] as string[]);
@@ -404,12 +418,12 @@ export const KeyValueInvokeHostFnArgs = ({
       }
     }
 
-    if (contractId && fnName) {
+    if (contractId && fnName && !isAuthEntry) {
       getSpec(contractId, fnName);
     } else {
       setLoading(false);
     }
-  }, [contractId, fnName, networkDetails]);
+  }, [contractId, fnName, networkDetails, isAuthEntry]);
 
   return isLoading ? (
     <div className="Operations__pair--invoke" data-testid="OperationKeyVal">
@@ -427,11 +441,13 @@ export const KeyValueInvokeHostFnArgs = ({
         {args.map((arg, ind) => (
           <CopyText textToCopy={scValByType(arg)} key={arg.toXDR().toString()}>
             <div className="Parameters">
-              <div className="ParameterKey">
+              <div className="ParameterKey" data-testid="ParameterKey">
                 {argNames[ind] && argNames[ind]}
                 <Icon.Copy01 />
               </div>
-              <div className="ParameterValue">{scValByType(arg)}</div>
+              <div className="ParameterValue" data-testid="ParameterValue">
+                {scValByType(arg)}
+              </div>
             </div>
           </CopyText>
         ))}
@@ -509,7 +525,7 @@ export const KeyValueInvokeHostFn = ({
               </>
             );
           }
-          const contractId = StrKey.encodeContract(address.contractId() as any);
+          const contractId = addressToString(address);
           return (
             <>
               <KeyValueList
@@ -608,9 +624,8 @@ export const KeyValueInvokeHostFn = ({
 
       case xdr.HostFunctionType.hostFunctionTypeInvokeContract(): {
         const invocation = hostfn.invokeContract();
-        const contractId = StrKey.encodeContract(
-          invocation.contractAddress().contractId() as any,
-        );
+        const contractId = addressToString(invocation.contractAddress());
+
         const fnName = invocation.functionName().toString();
 
         return (

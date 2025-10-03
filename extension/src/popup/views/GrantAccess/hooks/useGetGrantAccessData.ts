@@ -10,15 +10,15 @@ import { useScanSite } from "../../../../popup/helpers/blockaid";
 import { BlockAidScanSiteResult } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { isCustomNetwork } from "@shared/helpers/stellar";
+import { captureException } from "@sentry/browser";
 
-type ResolvedGrantAccessData = BlockAidScanSiteResult & {
+type ResolvedGrantAccessData = {
   type: AppDataType.RESOLVED;
   publicKey: string;
   networkDetails: NetworkDetails;
   networksList: NetworkDetails[];
   applicationState: APPLICATION_STATE;
-  scanData: BlockAidScanSiteResult;
+  scanData: BlockAidScanSiteResult | null;
 };
 
 type GrantAccessData = NeedsReRoute | ResolvedGrantAccessData;
@@ -44,9 +44,13 @@ function useGetGrantAccessData(url: string) {
         return appData;
       }
 
-      const scanData = await scanSite(url, appData.settings.networkDetails);
-      if (!scanData && !isCustomNetwork(appData.settings.networkDetails)) {
-        throw new Error("Unable to scan site");
+      let scanData = null;
+
+      try {
+        scanData = await scanSite(url);
+      } catch (error) {
+        console.error(error);
+        captureException(`Grant Access: Failed to call scan site: ${error}`);
       }
 
       const payload = {

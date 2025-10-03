@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useState } from "react";
+import { captureException } from "@sentry/browser";
 
 import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
@@ -15,10 +16,11 @@ import {
 } from "helpers/hooks/useGetAppData";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "popup/App";
 import { makeAccountActive } from "popup/ducks/accountServices";
 import { changeNetwork } from "popup/ducks/settings";
+import { balancesSelector } from "popup/ducks/cache";
 
 export const getTokenPrices = async ({
   balances,
@@ -66,14 +68,20 @@ function useGetAccountData(options: {
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(options);
   const { fetchData: fetchHistory } = useGetHistory();
+  const cachedBalances = useSelector(balancesSelector);
 
-  const fetchData = async (
+  const fetchData = async ({
     useAppDataCache = true,
+    updatedAppData,
+    shouldForceBalancesRefresh,
+  }: {
+    useAppDataCache: boolean;
     updatedAppData?: {
       publicKey?: string;
       network?: NetworkDetails;
-    },
-  ) => {
+    };
+    shouldForceBalancesRefresh?: boolean;
+  }) => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       if (updatedAppData && updatedAppData.publicKey) {
@@ -98,11 +106,14 @@ function useGetAccountData(options: {
       const networkDetails = appData.settings.networkDetails;
       const allowList = appData.settings.allowList;
       const isMainnetNetwork = isMainnet(networkDetails);
+
       const balancesResult = await fetchBalances(
         publicKey,
         isMainnetNetwork,
         networkDetails,
+        !shouldForceBalancesRefresh,
       );
+
       const history = await fetchHistory(publicKey, networkDetails);
 
       if (isError<AccountBalances>(balancesResult)) {
@@ -143,6 +154,7 @@ function useGetAccountData(options: {
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
+      captureException(`Error loading account data on Account - ${error}`);
       return error;
     }
   };
@@ -173,6 +185,7 @@ function useGetAccountData(options: {
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
+      captureException(`Error loading refresh app data on Account - ${error}`);
       return error;
     }
   };
@@ -184,17 +197,94 @@ function useGetAccountData(options: {
     const resolvedData = state.data;
 
     const interval = setInterval(async () => {
-      const tokenPrices = await getTokenPrices({
-        balances: resolvedData.balances.balances,
-      });
-      const payload = {
-        ...state.data,
-        tokenPrices,
-      } as AccountData;
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      try {
+        const tokenPrices = await getTokenPrices({
+          balances: resolvedData.balances.balances,
+        });
+        const payload = {
+          ...state.data,
+          tokenPrices,
+        } as AccountData;
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      } catch (error) {
+        captureException(`Error refreshing token prices on Account - ${error}`);
+      }
     }, 30000);
     return () => clearInterval(interval);
   }, [_isMainnet, state.data]);
+
+  useEffect(() => {
+    // refresh balances every 30 seconds
+
+    if (!state.data || state.data.type === AppDataType.REROUTE) {
+      return;
+    }
+    const resolvedData = state.data;
+
+    const interval = setInterval(async () => {
+      try {
+        const publicKey = resolvedData.publicKey;
+        const networkDetails = resolvedData.networkDetails;
+        const balancesResult = await fetchBalances(
+          publicKey,
+          _isMainnet,
+          networkDetails,
+          false,
+        );
+
+        const payload = {
+          ...state.data,
+          balances: balancesResult,
+        } as AccountData;
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      } catch (error) {
+        captureException(`Error refreshing balances on Account - ${error}`);
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [_isMainnet, state.data, fetchBalances]);
+
+  useEffect(() => {
+    // if it's been 2 minutes since the last balance update, force update
+    if (!state.data || state.data.type === AppDataType.REROUTE) {
+      return;
+    }
+    const resolvedData = state.data;
+
+    const publicKey = resolvedData.publicKey;
+    const networkDetails = resolvedData.networkDetails;
+
+    const refreshBalances = async () => {
+      try {
+        const balancesResult = await fetchBalances(
+          publicKey,
+          _isMainnet,
+          networkDetails,
+          false,
+        );
+
+        const payload = {
+          ...state.data,
+          balances: balancesResult,
+        } as AccountData;
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      } catch (error) {
+        captureException(
+          `Error refreshing cache balances on Account - ${error}`,
+        );
+      }
+    };
+
+    if (
+      cachedBalances[networkDetails.network]?.[publicKey]?.updatedAt &&
+      cachedBalances[networkDetails.network]?.[publicKey]?.updatedAt <
+        Date.now() - 120000
+    ) {
+      // force update
+      refreshBalances();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.data, cachedBalances]);
 
   return {
     state,

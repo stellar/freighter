@@ -14,7 +14,7 @@ import {
 } from "stellar-sdk";
 
 import { HorizonOperation, SorobanBalance } from "@shared/api/types";
-import { BASE_RESERVE, NetworkDetails } from "@shared/constants/stellar";
+import { NetworkDetails } from "@shared/constants/stellar";
 import {
   ArgsForTokenInvocation,
   SorobanTokenInterface,
@@ -63,12 +63,10 @@ export const getTokenBalance = (tokenBalance: SorobanBalance) =>
 export const getAvailableBalance = ({
   assetCanonical,
   balances,
-  subentryCount,
   recommendedFee,
 }: {
   assetCanonical: string;
   balances: AssetType[];
-  subentryCount: number;
   recommendedFee: string;
 }) => {
   const selectedCanonical = getAssetFromCanonical(assetCanonical);
@@ -79,18 +77,16 @@ export const getAvailableBalance = ({
     }
 
     const balance = selectedBalance.total;
-    if (assetCanonical === "native") {
+    if ("minimumBalance" in selectedBalance && selectedBalance.minimumBalance) {
       // take base reserve into account for XLM payments
-      const minBalance = new BigNumber((2 + subentryCount) * BASE_RESERVE);
+      const minBalance = selectedBalance.minimumBalance;
       const currentBal = new BigNumber(balance.toFixed());
       const available = currentBal
         .minus(minBalance)
         .minus(new BigNumber(Number(recommendedFee)));
 
-      if (available.lt(minBalance)) {
-        return "0";
-      }
-      return available.toFixed().toString();
+      // Ensure we don't go below zero
+      return BigNumber.max(available, new BigNumber(0)).toFixed().toString();
     } else {
       return new BigNumber(balance).toFixed().toString();
     }
@@ -155,7 +151,8 @@ export const addressToString = (address: xdr.ScAddress) => {
   if (address.switch().name === "scAddressTypeAccount") {
     return StrKey.encodeEd25519PublicKey(address.accountId().ed25519());
   }
-  return StrKey.encodeContract(address.contractId() as any);
+
+  return Address.fromScAddress(address).toString();
 };
 
 export const getArgsForTokenInvocation = (
@@ -201,9 +198,8 @@ export const getTokenInvocationArgs = (
     return null;
   }
 
-  const contractId = StrKey.encodeContract(
-    invokedContract.contractAddress().contractId() as any,
-  );
+  const contractId = addressToString(invokedContract.contractAddress());
+
   const fnName = invokedContract.functionName().toString();
   const args = invokedContract.args();
 
@@ -358,7 +354,7 @@ export const scValByType = (scVal: xdr.ScVal) => {
       if (addressType.name === "scAddressTypeAccount") {
         return StrKey.encodeEd25519PublicKey(address.accountId().ed25519());
       }
-      return StrKey.encodeContract(address.contractId() as any);
+      return addressToString(address);
     }
 
     case xdr.ScValType.scvBool(): {
@@ -485,9 +481,7 @@ export function getInvocationArgs(
     // sorobanAuthorizedFunctionTypeContractFn
     case 0: {
       const _invocation = fn.contractFn();
-      const contractId = StrKey.encodeContract(
-        _invocation.contractAddress().contractId() as any,
-      );
+      const contractId = addressToString(_invocation.contractAddress());
       const fnName = _invocation.functionName().toString();
       const args = _invocation.args();
       return { fnName, contractId, args, type: "invoke" };

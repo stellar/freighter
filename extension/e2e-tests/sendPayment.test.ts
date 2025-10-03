@@ -1,3 +1,4 @@
+import { TransactionBuilder } from "stellar-sdk";
 import { test, expect } from "./test-fixtures";
 import { login, loginAndFund, loginToTestAccount } from "./helpers/login";
 import { TEST_M_ADDRESS, TEST_TOKEN_ADDRESS } from "./helpers/test-token";
@@ -8,6 +9,9 @@ import {
   stubTokenDetails,
   stubTokenPrices,
 } from "./helpers/stubs";
+
+const MUXED_ACCOUNT_ADDRESS =
+  "MCQ7EGW7VXHI4AKJAFADOIHCSK2OCVA42KUETUK5LQ3LVSEQEEKP6AAAAAAAAAAAAFLVY";
 
 test("Swap doesn't throw error when account is unfunded", async ({
   page,
@@ -107,7 +111,7 @@ test("Swap shows correct balances for assets", async ({
           available: "999",
           sellingLiabilities: "0",
           buyingLiabilities: "0",
-          minimumBalance: "8",
+          minimumBalance: "1",
           blockaidData: {
             result_type: "Benign",
             malicious_score: "0.0",
@@ -202,11 +206,7 @@ test("Send doesn't throw error when creating muxed account", async ({
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByText("Send")).toBeVisible();
-  await page
-    .getByTestId("send-to-input")
-    .fill(
-      "MAUPPMNJUS76SG5NA6UXVCSO5HYVAJT422LBISV6LMCX37OIEPDJGAAAAAAAAAAAAF54C",
-    );
+  await page.getByTestId("send-to-input").fill(MUXED_ACCOUNT_ADDRESS);
   await expect(
     page.getByText("The destination account doesn’t exist."),
   ).toBeVisible();
@@ -227,11 +227,7 @@ test("Send can review formatted inputs", async ({ page, extensionId }) => {
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByText("Send")).toBeVisible();
-  await page
-    .getByTestId("send-to-input")
-    .fill(
-      "MAUPPMNJUS76SG5NA6UXVCSO5HYVAJT422LBISV6LMCX37OIEPDJGAAAAAAAAAAAAF54C",
-    );
+  await page.getByTestId("send-to-input").fill(MUXED_ACCOUNT_ADDRESS);
   await expect(
     page.getByText("The destination account doesn’t exist."),
   ).toBeVisible();
@@ -244,6 +240,71 @@ test("Send can review formatted inputs", async ({ page, extensionId }) => {
   await expect(page.getByText("You are sending")).toBeVisible({
     timeout: 200000,
   });
+});
+
+test("Send persists inputs and submits to network", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await loginAndFund({ page, extensionId });
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByText("Send")).toBeVisible();
+  await page
+    .getByTestId("send-to-input")
+    .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Send");
+  await page.getByTestId(`SendRow-native`).click({ force: true });
+  await page.getByTestId("send-amount-amount-input").fill("1");
+  await page.getByTestId("send-amount-btn-memo").click();
+  await page.getByTestId("edit-memo-input").fill("test memo");
+  await page.getByText("Save").click();
+  await page.getByTestId("send-amount-btn-fee").click();
+  await page.getByTestId("edit-tx-settings-fee-input").fill("0.00009");
+  await page.getByText("Save").click();
+  await page.getByText("Review Send").click({ force: true });
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
+  await expect(page.getByTestId("review-tx-send-amount")).toHaveText("1 XLM");
+  await expect(page.getByTestId("review-tx-memo")).toHaveText("test memo");
+  await expect(page.getByTestId("review-tx-fee")).toHaveText("0.00009 XLM");
+
+  let submitTxResponse = "";
+  page.on("response", async (response) => {
+    if (response.url().includes("/submit-tx")) {
+      submitTxResponse = await response.text();
+    }
+  });
+
+  await page.getByTestId(`SubmitAction`).click();
+
+  await expect(page.getByText("Sent!")).toBeVisible({
+    timeout: 60000,
+  });
+  const submitTxResponseJson = JSON.parse(submitTxResponse);
+
+  expect(submitTxResponseJson.memo).toBe("test memo");
+  expect(submitTxResponseJson.max_fee).toBe("900");
+
+  const tx = TransactionBuilder.fromXDR(
+    submitTxResponseJson.envelope_xdr,
+    "Test SDF Network ; September 2015",
+  );
+
+  const txOp = tx.operations[0] as any;
+
+  expect(txOp.type).toBe("payment");
+  expect(txOp.amount).toBe("1.0000000");
+  expect(txOp.destination).toBe(
+    "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+  );
+  expect(txOp.asset.code).toBe("XLM");
+
+  await page.getByText("Done").click();
 });
 
 test("Send XLM payments to recent federated addresses", async ({
@@ -298,9 +359,17 @@ test("Send XLM payments to recent federated addresses", async ({
   await submitAction.waitFor({ state: "visible" });
   await submitAction.click({ force: true });
 
+  let accountBalancesRequestWasMade = false;
+  page.on("request", (request) => {
+    if (request.url().includes("/account-balances/")) {
+      accountBalancesRequestWasMade = true;
+    }
+  });
+
   await expect(page.getByText("Sent!")).toBeVisible({
     timeout: 60000,
   });
+  expect(accountBalancesRequestWasMade).toBeTruthy();
 });
 
 test("Send XLM payment to C address", async ({ page, extensionId }) => {
@@ -329,9 +398,17 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
 
   await page.getByTestId(`SubmitAction`).click({ force: true });
 
+  let accountBalancesRequestWasMade = false;
+  page.on("request", (request) => {
+    if (request.url().includes("/account-balances/")) {
+      accountBalancesRequestWasMade = true;
+    }
+  });
+
   await expect(page.getByText("Sent!")).toBeVisible({
     timeout: 60000,
   });
+  expect(accountBalancesRequestWasMade).toBeTruthy();
 });
 
 test("Send XLM payment to M address", async ({ page, extensionId }) => {
@@ -362,9 +439,18 @@ test("Send XLM payment to M address", async ({ page, extensionId }) => {
   await submitButton.scrollIntoViewIfNeeded();
   await submitButton.click();
 
+  let accountBalancesRequestWasMade = false;
+  page.on("request", (request) => {
+    if (request.url().includes("/account-balances/")) {
+      accountBalancesRequestWasMade = true;
+    }
+  });
+
   await expect(page.getByText("Sent!")).toBeVisible({
     timeout: 60000,
   });
+
+  expect(accountBalancesRequestWasMade).toBeTruthy();
 });
 
 test.skip("Send SAC to C address", async ({ page, extensionId }) => {
@@ -492,9 +578,18 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
 
   await page.getByTestId(`SubmitAction`).click({ force: true });
 
+  let accountBalancesRequestWasMade = false;
+  page.on("request", (request) => {
+    if (request.url().includes("/account-balances/")) {
+      accountBalancesRequestWasMade = true;
+    }
+  });
+
   await expect(page.getByText("Sent!")).toBeVisible({
     timeout: 60000,
   });
+
+  expect(accountBalancesRequestWasMade).toBeTruthy();
 });
 
 test.afterAll(async ({ page, extensionId }) => {

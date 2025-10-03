@@ -52,14 +52,16 @@ jobs:
           file: ./extension/public/static/manifest/v3.json
           field: version
           value: ${{ steps.manifest_version.outputs.replaced }}
+      - name: Enable Corepack
+        run: corepack enable
       - name: Build extension
         uses: actions/setup-node@v4
         with:
           node-version: 22
       - run:
-          yarn setup && yarn build:freighter-api && yarn
-          build:extension:production --env AMPLITUDE_KEY="${{
-          secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{ secrets.SENTRY_KEY }}"
+          yarn && yarn build:freighter-api && yarn build:extension:production
+          --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{
+          secrets.SENTRY_KEY }}"
       - name: Install zip
         uses: montudor/action-zip@0852c26906e00f8a315c704958823928d8018b28 #v1.0.0
       - name: Commit files

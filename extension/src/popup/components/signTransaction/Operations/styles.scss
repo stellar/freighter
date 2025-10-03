@@ -70,6 +70,10 @@
           white-space: nowrap;
           min-width: 0;
           max-width: 100%;
+
+          &:has(.Floater.trigger.trigger--active) {
+            overflow: visible;
+          }
         }
 
         .CopyValue {

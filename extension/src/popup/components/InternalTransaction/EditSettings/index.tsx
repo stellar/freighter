@@ -49,6 +49,7 @@ export const EditSettings = ({
                 <Field name="fee">
                   {({ field }: FieldProps) => (
                     <Input
+                      data-testid="edit-tx-settings-fee-input"
                       type="text"
                       min={0}
                       autoFocus

@@ -19,6 +19,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: release/${{ github.event.inputs.release }}
+      - name: Enable Corepack
+        run: corepack enable
       - name: Build package
         uses: actions/setup-node@v4
         with:
@@ -41,7 +43,10 @@ jobs:
           SLACK_CHANNEL: team-wallet-eng
           SLACK_COLOR: "#70E1C8"
           SLACK_ICON: https://github.com/stellar/freighter/blob/master/docs/static/images/logo.png?size=48
-          SLACK_MESSAGE: "https://github.com/stellar/freighter/releases/tag/${{ github.event.inputs.release }}-beta.${{ github.event.inputs.version }}"
+          SLACK_MESSAGE:
+            "https://github.com/stellar/freighter/releases/tag/${{
+            github.event.inputs.release }}-beta.${{ github.event.inputs.version
+            }}"
           SLACK_TITLE: "@stellar/freighter-api beta has been deployed to npm!"
           SLACK_USERNAME: Freighter Administrative Assistant
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}

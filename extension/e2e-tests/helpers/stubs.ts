@@ -1,5 +1,5 @@
 import { BrowserContext, Page } from "@playwright/test";
-import { USDC_TOKEN_ADDRESS } from "./test-token";
+import { USDC_TOKEN_ADDRESS, TEST_TOKEN_ADDRESS } from "./test-token";
 
 export const STELLAR_EXPERT_ASSET_LIST_JSON = {
   name: "StellarExpert Top 50",
@@ -81,9 +81,7 @@ export const stubTokenDetails = async (page: Page | BrowserContext) => {
       decimals: 7,
       symbol: "native",
     };
-    if (
-      tokenId === "CBXQIAGT7PN6T2FD3BLFQTN3L2YE4O7MNP3BF32ZPBD3V4BSFPOU3OJG"
-    ) {
+    if (tokenId === TEST_TOKEN_ADDRESS) {
       json = {
         name: "E2E Token",
         decimals: 3,
@@ -134,7 +132,7 @@ export const stubTokenPrices = async (page: Page | BrowserContext) => {
   });
 };
 
-export const stubAccountBalances = async (page: Page) => {
+export const stubAccountBalances = async (page: Page, xlmBalance?: string) => {
   await page.route("**/account-balances/**", async (route) => {
     const json = {
       balances: {
@@ -143,8 +141,8 @@ export const stubAccountBalances = async (page: Page) => {
             type: "native",
             code: "XLM",
           },
-          total: "9697.8556678",
-          available: "9697.8556678",
+          total: xlmBalance || "9697.8556678",
+          available: xlmBalance || "9697.8556678",
           sellingLiabilities: "0",
           buyingLiabilities: "0",
           minimumBalance: "1",

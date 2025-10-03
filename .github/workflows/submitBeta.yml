@@ -76,13 +76,13 @@ jobs:
           value:
             ${{ github.event.inputs.release }}.${{ github.event.inputs.version
             }}
+      - name: Enable Corepack
+        run: corepack enable
       - name: Build extension
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run:
-          yarn setup && yarn build:freighter-api && yarn
-          build:extension:production
+      - run: yarn && yarn build:freighter-api && yarn build:extension:production
       - name: Use BETA icons
         run: |
           rm -rf ./extension/build/images

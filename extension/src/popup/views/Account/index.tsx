@@ -50,7 +50,7 @@ export const Account = () => {
 
   useEffect(() => {
     const getData = async () => {
-      await fetchData(false);
+      await fetchData({ useAppDataCache: false });
     };
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -133,7 +133,11 @@ export const Account = () => {
           publicKey?: string;
           network?: NetworkDetails;
         }) => {
-          await fetchData(false, updatedValues);
+          await fetchData({
+            useAppDataCache: false,
+            updatedAppData: updatedValues,
+            shouldForceBalancesRefresh: true,
+          });
         }}
         roundedTotalBalanceUsd={roundedTotalBalanceUsd}
         isFunded={!!resolvedData?.balances?.isFunded}
@@ -217,7 +221,12 @@ export const Account = () => {
             <NotFundedMessage
               canUseFriendbot={!!resolvedData!.networkDetails.friendbotUrl}
               publicKey={resolvedData?.publicKey || ""}
-              reloadBalances={fetchData}
+              reloadBalances={() =>
+                fetchData({
+                  useAppDataCache: true,
+                  shouldForceBalancesRefresh: true,
+                })
+              }
             />
           </View.Footer>
         )}
