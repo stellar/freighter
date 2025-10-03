@@ -111,7 +111,7 @@ test("Swap shows correct balances for assets", async ({
           available: "999",
           sellingLiabilities: "0",
           buyingLiabilities: "0",
-          minimumBalance: "8",
+          minimumBalance: "1",
           blockaidData: {
             result_type: "Benign",
             malicious_score: "0.0",
