@@ -26,7 +26,7 @@ jobs:
           gh run cancel ${{ github.run_id }}
           gh run watch ${{ github.run_id }}
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Update package.json version
         uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
@@ -55,7 +55,7 @@ jobs:
       - name: Enable Corepack
         run: corepack enable
       - name: Build extension
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
       - run:
