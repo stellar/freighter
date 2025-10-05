@@ -29,7 +29,7 @@ jobs:
           gh run cancel ${{ github.run_id }}
           gh run watch ${{ github.run_id }}
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: release/${{ github.event.inputs.release }}
       - name: Update manifest-v2.json name
@@ -79,7 +79,7 @@ jobs:
       - name: Enable Corepack
         run: corepack enable
       - name: Build extension
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
       - run: yarn && yarn build:freighter-api && yarn build:extension:production
