@@ -35,7 +35,7 @@ function useTokenDetails() {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       /*
-        Unlike the other cache hooks, this hook can be called multiple times within one render.
+        Unlike the other cache hooks, this hook may be called multiple times within one render.
         For example, when constructing the history rows, this hook can be called many times as we iterate over the history items. 
         If we have cached token details earlier in the loop, we won't have access to the update redux state until the next render.
         To workaround this, we will also check the redux state manually here rather than waiting for the next render to 
