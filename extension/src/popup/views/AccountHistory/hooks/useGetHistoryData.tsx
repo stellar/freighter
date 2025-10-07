@@ -46,13 +46,6 @@ import {
   TokenDetailsResponse,
   useTokenDetails,
 } from "helpers/hooks/useTokenDetails";
-import {
-  homeDomainsSelector,
-  saveDomainForIssuer,
-  saveIconsForBalances,
-} from "popup/ducks/cache";
-import { getAssetDomains } from "@shared/api/internal";
-import { AppDispatch } from "popup/App";
 
 export type HistorySection = {
   monthYear: string; // in format {month}:{year}
@@ -299,7 +292,6 @@ export const getRowDataByOpType = async (
     publicKey: string;
     networkDetails: NetworkDetails;
   }) => Promise<TokenDetailsResponse | Error>,
-  homeDomains: { [assetIssuer: string]: string | null },
 ): Promise<OperationDataRow> => {
   const {
     account,
@@ -733,18 +725,8 @@ const createHistorySections = async (
     publicKey: string;
     networkDetails: NetworkDetails;
   }) => Promise<TokenDetailsResponse | Error>,
-  homeDomains: { [assetIssuer: string]: string | null },
-) => {
-  /* 
-    To prevent multiple requests for home domains as we build each row, 
-    we iterate through the operations and collect the asset issuers that need home domains in a single request.
-  */
-  const fetchedHomeDomains = await getHomeDomainsForOperations(
-    operations,
-    networkDetails,
-    homeDomains,
-  );
-  return operations.reduce(
+) =>
+  await operations.reduce(
     async (
       sectionsPromise: Promise<HistorySection[]>,
       operation: HorizonOperation,
@@ -774,7 +756,6 @@ const createHistorySections = async (
         networkDetails,
         icons,
         fetchTokenDetails,
-        fetchedHomeDomains,
       );
 
       if (isDustPayment && isHideDustEnabled) {
@@ -837,8 +818,6 @@ function useGetHistoryData(
   const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
   const { fetchData: fetchHistory } = useGetHistory();
   const { fetchData: fetchTokenDetails } = useTokenDetails();
-  const homeDomains = useSelector(homeDomainsSelector);
-  const reduxDispatch = useDispatch<AppDispatch>();
 
   const fetchData = async (
     useBalancesCache = false,
@@ -898,7 +877,6 @@ function useGetHistoryData(
           networkDetails,
           historyOptions.isHideDustEnabled,
           fetchTokenDetails,
-          cachedHomeDomains,
         ),
       } as ResolvedData;
 

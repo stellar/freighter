@@ -78,6 +78,7 @@ describe("AssetDetail", () => {
       ] as any,
       selectedAsset: "native",
       setIsDetailViewShowing: () => null,
+      subentryCount: 0,
       historyData: mockHistoryData,
     };
 
@@ -137,6 +138,7 @@ describe("AssetDetail", () => {
       ] as any,
       selectedAsset: "native",
       setIsDetailViewShowing: () => null,
+      subentryCount: 0,
       historyData: mockHistoryData,
     };
 
@@ -197,6 +199,7 @@ describe("AssetDetail", () => {
       ] as any,
       selectedAsset: "native",
       setIsDetailViewShowing: () => null,
+      subentryCount: 0,
       historyData: mockHistoryData,
     };
 
@@ -261,6 +264,7 @@ describe("AssetDetail", () => {
       selectedAsset:
         "BAZ:GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
       setIsDetailViewShowing: () => null,
+      subentryCount: 0,
       historyData: mockHistoryData,
     };
 

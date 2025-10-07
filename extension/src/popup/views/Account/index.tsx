@@ -39,6 +39,9 @@ import {
 } from "./hooks/useGetIcons";
 import { AccountTabsContext, TabsList } from "./contexts/activeTabContext";
 
+import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
+import { useGetAccountHistoryData } from "./hooks/useGetAccountHistoryData";
+
 import "popup/metrics/authServices";
 import "./styles.scss";
 
@@ -63,10 +66,6 @@ export const Account = () => {
   const { state: historyData, fetchData: fetchHistoryData } =
     useGetAccountHistoryData();
 
-  const { state: iconsData, fetchData: fetchIconsData } = useGetIcons();
-
-  const previousAccountBalancesRef = useRef<AccountBalances | null>(null);
-
   useEffect(() => {
     const getData = async () => {
       await fetchData({ useAppDataCache: false });
@@ -81,33 +80,11 @@ export const Account = () => {
       ? accountData.data?.balances
       : null;
 
-  const isScanAppended =
-    accountData.state === RequestState.SUCCESS &&
-    accountData.data.type === AppDataType.RESOLVED
-      ? accountData.data?.isScanAppended
-      : false;
-
   useEffect(() => {
     const getData = async () => {
-      if (accountBalances && !isScanAppended) {
+      if (accountBalances) {
         // tie refresh history data to account balances requests
         await fetchHistoryData({ balances: accountBalances });
-      }
-    };
-    getData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accountBalances]);
-
-  useEffect(() => {
-    const getData = async () => {
-      if (
-        accountBalances &&
-        !isEqual(accountBalances, previousAccountBalancesRef.current) && // unless balances have changed, don't fetch icons; the cache should be hydrated already
-        !isScanAppended // start fetching icons on the first scan-less balance fetch
-      ) {
-        previousAccountBalancesRef.current = accountBalances;
-
-        await fetchIconsData();
       }
     };
     getData();
@@ -143,6 +120,25 @@ export const Account = () => {
       applicationState: accountData.data?.applicationState,
       state: accountData.state,
     });
+  }
+
+  if (
+    !hasError &&
+    selectedAsset &&
+    accountData.data.type === AppDataType.RESOLVED
+  ) {
+    return (
+      <AssetDetail
+        accountBalances={accountData.data.balances}
+        historyData={historyData.data}
+        networkDetails={accountData.data.networkDetails}
+        publicKey={accountData.data.publicKey}
+        selectedAsset={selectedAsset}
+        setSelectedAsset={setSelectedAsset}
+        subentryCount={accountData.data.balances.subentryCount}
+        tokenPrices={accountData.data.tokenPrices}
+      />
+    );
   }
 
   const resolvedData = accountData.data;

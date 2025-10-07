@@ -49,37 +49,6 @@ jest.mock("popup/App", () => ({
   },
 }));
 
-// Mock i18next before react-i18next
-jest.mock("i18next", () => ({
-  __esModule: true,
-  default: {
-    use: jest.fn().mockReturnThis(),
-    init: jest.fn().mockResolvedValue(undefined),
-    changeLanguage: jest.fn().mockResolvedValue(undefined),
-    t: (str: string) => str,
-    services: {
-      languageDetector: {
-        detect: jest.fn().mockReturnValue("en"),
-      },
-    },
-  },
-}));
-
-jest.mock("i18next-resources-to-backend", () => {
-  return jest.fn(() => ({
-    type: "backend",
-    init: jest.fn(),
-  }));
-});
-
-jest.mock("i18next-browser-languagedetector", () => {
-  return jest.fn(() => ({
-    type: "languageDetector",
-    detect: jest.fn().mockReturnValue("en"),
-    init: jest.fn(),
-  }));
-});
-
 jest.mock("react-i18next", () => ({
   // this mock makes sure any components using the translate hook can use it without a warning being shown
   useTranslation: () => ({

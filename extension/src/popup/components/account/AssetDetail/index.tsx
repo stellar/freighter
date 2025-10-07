@@ -2,8 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
-import { Button, CopyText, Icon, Link, Loader } from "@stellar/design-system";
+import { CopyText, Icon, Link, Loader } from "@stellar/design-system";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
@@ -48,11 +47,7 @@ import {
   LiquidityPoolShareAsset,
 } from "@shared/api/types/account-balance";
 import { OperationDataRow } from "popup/views/AccountHistory/hooks/useGetHistoryData";
-import { navigateTo } from "popup/helpers/navigate";
-import { ROUTES } from "popup/constants/routes";
 import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
-import { publicKeySelector } from "popup/ducks/accountServices";
-import { iconsSelector, tokenPricesSelector } from "popup/ducks/cache";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 
 import "./styles.scss";
@@ -98,6 +93,40 @@ const AssetDetailOperations = ({
 };
 
 interface AssetDetailProps {
+  historyData: AccountHistoryData | null;
+  accountBalances: AccountBalances;
+  publicKey: string;
+  networkDetails: NetworkDetails;
+  setActiveAssetId: (id: string) => void;
+}) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {filteredAssetOperations.length ? (
+        <div className="AssetDetail__list" data-testid="AssetDetail__list">
+          <>
+            {filteredAssetOperations.map((operation) => (
+              <HistoryItem
+                key={operation.id}
+                accountBalances={accountBalances}
+                operation={operation}
+                publicKey={publicKey}
+                networkDetails={networkDetails}
+                setActiveHistoryDetailId={() => setActiveAssetId(operation.id)}
+              />
+            ))}
+          </>
+        </div>
+      ) : (
+        <div className="AssetDetail__empty" data-testid="AssetDetail__empty">
+          {t("No transactions to show")}
+        </div>
+      )}
+    </>
+  );
+};
+
+interface AssetDetailProps {
   accountBalances: AccountBalances;
   historyData: AccountHistoryData | null;
   selectedAsset: string;
@@ -105,22 +134,17 @@ interface AssetDetailProps {
 }
 
 export const AssetDetail = ({
+  historyData,
   accountBalances,
   historyData,
   selectedAsset,
   handleClose,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const publicKey = useSelector(publicKeySelector);
-  const cachedTokenPrices = useSelector(tokenPricesSelector);
-  const assetIcons = useSelector(iconsSelector);
-  const { isHideDustEnabled } = useSelector(settingsSelector);
   const [optionsOpen, setOptionsOpen] = React.useState(false);
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const isNative = selectedAsset === "native";
-  const tokenPrices = cachedTokenPrices[publicKey] || null;
+  const { isHideDustEnabled } = useSelector(settingsSelector);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -483,9 +507,76 @@ export const AssetDetail = ({
                 </a>
               </div>
             </div>
-          </SlideupModal>
-        )}
-      </View>
+          </div>
+          {filteredAssetOperations === null ? (
+            <div
+              className="AssetDetail__list AssetDetail__list--loading"
+              data-testid="AssetDetail__list__loader"
+            >
+              <Loader />
+            </div>
+          ) : (
+            <AssetDetailOperations
+              filteredAssetOperations={filteredAssetOperations}
+              accountBalances={accountBalances}
+              publicKey={publicKey}
+              networkDetails={networkDetails}
+              setActiveAssetId={setActiveAssetId}
+            />
+          )}
+        </div>
+      </View.Content>
+      {isNative && (
+        <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
+          <div className="AssetDetail__info-modal">
+            <div className="AssetDetail__info-modal__total-box">
+              <div className="AssetDetail__info-modal__asset-code">
+                <img src={StellarLogo} alt="Network icon" />{" "}
+                <div>{canonical.code}</div>
+              </div>
+              <div>{displayTotal}</div>
+            </div>
+            <div className="AssetDetail__info-modal__available-box">
+              <div className="AssetDetail__info-modal__balance-row">
+                <div>{t("Total Balance")}</div>
+                <div>{displayTotal}</div>
+              </div>
+              <div className="AssetDetail__info-modal__balance-row">
+                <div>{t("Reserved Balance*")}</div>
+                {selectedBalance &&
+                "available" in selectedBalance &&
+                selectedBalance?.available &&
+                selectedBalance?.total ? (
+                  <div>
+                    {formatAmount(
+                      new BigNumber(balanceAvailable)
+                        .minus(new BigNumber(selectedBalance?.total))
+                        .toString(),
+                    )}{" "}
+                    {canonical.code}
+                  </div>
+                ) : null}
+              </div>
+              <div className="AssetDetail__info-modal__total-available-row">
+                <div>{t("Total Available")}</div>
+                <div>{availableTotal}</div>
+              </div>
+            </div>
+            <div className="AssetDetail__info-modal__footnote">
+              {t(
+                "* All Stellar accounts must maintain a minimum balance of lumens.",
+              )}{" "}
+              <a
+                href="https://developers.stellar.org/docs/glossary/minimum-balance/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {t("Learn More")}
+              </a>
+            </div>
+          </div>
+        </SlideupModal>
+      )}
     </React.Fragment>
   );
 };

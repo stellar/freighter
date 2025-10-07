@@ -4,8 +4,8 @@ import { captureException } from "@sentry/browser";
 import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
-import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
-import { isMainnet } from "helpers/stellar";
+import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
+import { getTokenPrices as internalGetTokenPrices } from "@shared/api/internal";
 import { AllowList, ApiTokenPrices } from "@shared/api/types";
 import {
   AppDataType,
@@ -49,10 +49,7 @@ function useGetAccountData(options: {
   );
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(options);
-  const { fetchData: fetchTokenPrices } = useGetTokenPrices();
-  const { fetchData: fetchCollectibles } = useGetCollectibles({
-    useCache: true,
-  });
+  const cachedBalances = useSelector(balancesSelector);
 
   const fetchData = async ({
     useAppDataCache = true,
@@ -111,8 +108,6 @@ function useGetAccountData(options: {
         applicationState: appData.account.applicationState,
         balances: balancesResult,
         networkDetails,
-        isScanAppended: false,
-        collectibles: { collections: [] },
       } as ResolvedAccountData;
 
       if (isMainnetNetwork) {

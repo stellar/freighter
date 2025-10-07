@@ -56,7 +56,7 @@ function useTokenDetails() {
       return data;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
-      throw new Error(`Failed to fetch token details - ${error}`);
+      throw new Error("Failed to fetch token details", { cause: error });
     }
   };
 

@@ -114,8 +114,6 @@ interface SortOperationsByAsset {
     publicKey: string;
     networkDetails: NetworkDetails;
   }) => Promise<TokenDetailsResponse | Error>;
-  icons: AssetIcons;
-  homeDomains: { [assetIssuer: string]: string | null };
 }
 
 export interface AssetOperations {
@@ -128,8 +126,6 @@ export const sortOperationsByAsset = async ({
   networkDetails,
   publicKey,
   fetchTokenDetails,
-  icons,
-  homeDomains,
 }: SortOperationsByAsset) => {
   const assetOperationMap = {} as AssetOperations;
 
@@ -149,16 +145,6 @@ export const sortOperationsByAsset = async ({
       ] = [];
     }
   });
-
-  /* 
-    To prevent multiple requests for home domains as we build each row, 
-    we iterate through the operations and collect the asset issuers that need home domains in a single request.
-  */
-  const fetchedHomeDomains = await getHomeDomainsForOperations(
-    operations,
-    networkDetails,
-    homeDomains,
-  );
 
   for (const op of operations) {
     const isPayment = getIsPayment(op.type);
@@ -181,9 +167,8 @@ export const sortOperationsByAsset = async ({
       balances,
       parsedOperation,
       networkDetails,
-      icons,
+      {},
       fetchTokenDetails,
-      fetchedHomeDomains,
     );
     if (getIsPayment(op.type)) {
       Object.keys(assetOperationMap).forEach((assetKey) => {
