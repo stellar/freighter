@@ -8,6 +8,38 @@ import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import * as ApiInternal from "@shared/api/internal";
 import { mockAccounts, Wrapper, mockBalances } from "popup/__testHelpers__";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+
+const mockHistoryData = {
+  type: AppDataType.RESOLVED,
+  operationsByAsset: {
+    native: [
+      {
+        fetchTokenDetailsaction: "Received",
+        actionIcon: "received",
+
+        amount: "+0 XLM",
+
+        date: "Sep 19",
+        id: "253426134438383665",
+
+        metadata: {
+          createdAt: "2025-09-19T21:15:45Z",
+          feeCharged: "10000",
+          memo: "Buy NXR Earn Native XLM!",
+          type: "payment",
+          isDustPayment: true,
+          isPayment: true,
+          isReceiving: true,
+          nonLabelAmount: "0 XLM",
+          to: "G1",
+        },
+        rowIcon: <></>,
+        rowText: "XLM",
+      },
+    ],
+  },
+} as any;
 
 describe("AssetDetail", () => {
   it("renders asset detail", async () => {
@@ -50,6 +82,7 @@ describe("AssetDetail", () => {
       setSelectedAsset: () => null,
       setIsDetailViewShowing: () => null,
       subentryCount: 0,
+      historyData: mockHistoryData,
     };
 
     render(
@@ -112,6 +145,7 @@ describe("AssetDetail", () => {
       setSelectedAsset: () => null,
       setIsDetailViewShowing: () => null,
       subentryCount: 0,
+      historyData: mockHistoryData,
     };
 
     render(
@@ -175,6 +209,7 @@ describe("AssetDetail", () => {
       setSelectedAsset: () => null,
       setIsDetailViewShowing: () => null,
       subentryCount: 0,
+      historyData: mockHistoryData,
     };
 
     render(
@@ -242,6 +277,7 @@ describe("AssetDetail", () => {
       setSelectedAsset: () => null,
       setIsDetailViewShowing: () => null,
       subentryCount: 0,
+      historyData: mockHistoryData,
     };
 
     render(

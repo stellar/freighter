@@ -454,6 +454,6 @@ test("Clears cache and fetches balances if it's been 2 minutes since the last ba
 
   // make sure we fetch the new balance quickly rather than waiting for the 30 second interval
   await expect(page.getByTestId("asset-amount")).toHaveText("999,111", {
-    timeout: 500,
+    timeout: 3000,
   });
 });

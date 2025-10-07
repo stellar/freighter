@@ -51,6 +51,18 @@ const mockHistoryOperations = {
       to: "G2",
       transaction_attr: { operation_count: 1, fee_charged: "" },
     },
+    {
+      id: "123",
+      amount: "100",
+      type: "payment",
+      asset_type: "credit_alphanum4",
+      asset_issuer: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      asset_code: "USDC",
+      from: "G1",
+      to: "G2",
+      transaction_attr: { operation_count: 1, fee_charged: "" },
+      created_at: "2025-10-07T12:31:45Z",
+    },
   ] as HorizonOperation[],
 };
 
@@ -455,6 +467,73 @@ describe("Account view", () => {
       expect(
         screen.getByTestId("asset-detail-available-copy"),
       ).toHaveTextContent("100 USDC");
+    });
+    fireEvent.click(screen.getByTestId("history-item"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("TransactionDetailModal")).toBeDefined();
+      expect(
+        screen.getByTestId("TransactionDetailModal__subtitle-date"),
+      ).toHaveTextContent("Oct 07 2025");
+      expect(
+        screen.getByTestId("TransactionDetailModal__src-amount"),
+      ).toHaveTextContent("100 USDC");
+      expect(
+        screen.getByTestId("TransactionDetailModal__dst-amount"),
+      ).toHaveTextContent("G2…G2");
+      expect(
+        screen.getByTestId("TransactionDetailModal__status"),
+      ).toHaveTextContent("Success");
+    });
+  });
+
+  it("goes to account details and shows loading until history data is fetched", async () => {
+    jest.useFakeTimers();
+    jest
+      .spyOn(ApiInternal, "getAccountHistory")
+      .mockImplementation(
+        () =>
+          new Promise((resolve) =>
+            setTimeout(() => resolve(mockHistoryOperations.operations), 5000),
+          ),
+      );
+
+    render(
+      <Wrapper
+        routes={[ROUTES.welcome]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      await fireEvent.click(
+        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+      );
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("asset-detail-available-copy"),
+      ).toHaveTextContent("100 USDC");
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("AssetDetail__list__loader")).toBeDefined();
+    });
+    jest.advanceTimersByTime(5000);
+    await waitFor(() => {
+      expect(screen.getByTestId("history-item")).toHaveTextContent("100 USDC");
     });
   });
 
