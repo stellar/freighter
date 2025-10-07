@@ -1,9 +1,8 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { isEqual } from "lodash";
 
 import {
   settingsSorobanSupportedSelector,
@@ -27,7 +26,6 @@ import { getTotalUsd } from "popup/helpers/balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 import { useGetAccountHistoryData } from "./hooks/useGetAccountHistoryData";
@@ -68,16 +66,10 @@ export const Account = () => {
       ? accountData.data?.balances
       : null;
 
-  const previousAccountBalancesRef = useRef<AccountBalances | null>(null);
-
   useEffect(() => {
     const getData = async () => {
-      /* Only fetch history data if the account balances have changed or if the previous account balances are null */
-      if (
-        accountBalances &&
-        !isEqual(accountBalances, previousAccountBalancesRef.current)
-      ) {
-        previousAccountBalancesRef.current = accountBalances;
+      if (accountBalances) {
+        // tie refresh history data to account balances requests
         await fetchHistoryData({ balances: accountBalances });
       }
     };
