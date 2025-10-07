@@ -49,12 +49,11 @@ function useTokenDetails() {
         useCache && cachedTokenDetailsData
           ? cachedTokenDetailsData
           : await getTokenDetails({ contractId, publicKey, networkDetails });
-      if (data) {
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload: data });
+      if (data && Object.keys(data).length) {
         reduxDispatch(saveTokenDetails({ contractId, ...data }));
-        return data;
       }
-      return null;
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload: data });
+      return data;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
       throw new Error("Failed to fetch token details", { cause: error });

@@ -133,7 +133,7 @@ export const AccountHistory = () => {
         setIsModalOpen={() => setActiveHistoryDetailId(null)}
       >
         <TransactionDetail
-          activeOperation={activeOperation}
+          activeOperation={activeOperation || null}
           networkDetails={networkDetails}
         />
       </SlideupModal>

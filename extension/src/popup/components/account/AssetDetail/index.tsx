@@ -46,52 +46,25 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import "./styles.scss";
 
 const AssetDetailOperations = ({
-  assetOperations,
+  filteredAssetOperations,
   accountBalances,
   publicKey,
   networkDetails,
-  activeAssetId,
   setActiveAssetId,
-  setActiveOperation,
-  isSorobanAsset,
 }: {
-  assetOperations: OperationDataRow[];
+  filteredAssetOperations: OperationDataRow[];
   accountBalances: AccountBalances;
   publicKey: string;
   networkDetails: NetworkDetails;
-  activeAssetId: string;
   setActiveAssetId: (id: string) => void;
-  setActiveOperation: (operation: OperationDataRow) => void;
-  isSorobanAsset: boolean;
 }) => {
   const { t } = useTranslation();
-  const { isHideDustEnabled } = useSelector(settingsSelector);
-
-  const sortedAssetOperations = assetOperations.filter((operation) => {
-    if (operation.metadata.isDustPayment && isHideDustEnabled) {
-      return false;
-    }
-
-    return true;
-  });
-
-  useEffect(() => {
-    const activeOperation = sortedAssetOperations.find(
-      (op) => op.id === activeAssetId,
-    );
-    setActiveOperation(activeOperation as OperationDataRow);
-  }, [activeAssetId, setActiveOperation, sortedAssetOperations]);
-
-  if (!assetOperations && !isSorobanAsset) {
-    return null;
-  }
-
   return (
     <>
-      {sortedAssetOperations.length ? (
+      {filteredAssetOperations.length ? (
         <div className="AssetDetail__list" data-testid="AssetDetail__list">
           <>
-            {sortedAssetOperations.map((operation) => (
+            {filteredAssetOperations.map((operation) => (
               <HistoryItem
                 key={operation.id}
                 accountBalances={accountBalances}
@@ -137,6 +110,7 @@ export const AssetDetail = ({
   const [optionsOpen, setOptionsOpen] = React.useState(false);
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const isNative = selectedAsset === "native";
+  const { isHideDustEnabled } = useSelector(settingsSelector);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -192,7 +166,6 @@ export const AssetDetail = ({
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeAssetId, setActiveAssetId] = useState<string | null>(null);
-  const [activeOperation, setActiveOperation] = useState<OperationDataRow>();
 
   const { assetDomain, error: assetError } = useAssetDomain({
     assetIssuer,
@@ -204,6 +177,21 @@ export const AssetDetail = ({
 
   const assetOperations =
     historyData?.operationsByAsset?.[selectedAsset] || null;
+
+  let filteredAssetOperations = null;
+  let activeOperation = null;
+
+  if (assetOperations) {
+    filteredAssetOperations = assetOperations.filter((operation) => {
+      if (operation.metadata.isDustPayment && isHideDustEnabled) {
+        return false;
+      }
+
+      return true;
+    });
+    activeOperation =
+      filteredAssetOperations.find((op) => op.id === activeAssetId) || null;
+  }
 
   if (assetIssuer && !assetDomain && !assetError && !isSorobanAsset) {
     // if we have an asset issuer, wait until we have the asset domain before continuing
@@ -356,7 +344,7 @@ export const AssetDetail = ({
               </div>
             </div>
           </div>
-          {assetOperations === null ? (
+          {filteredAssetOperations === null ? (
             <div
               className="AssetDetail__list AssetDetail__list--loading"
               data-testid="AssetDetail__list__loader"
@@ -365,14 +353,11 @@ export const AssetDetail = ({
             </div>
           ) : (
             <AssetDetailOperations
-              assetOperations={assetOperations}
+              filteredAssetOperations={filteredAssetOperations}
               accountBalances={accountBalances}
               publicKey={publicKey}
               networkDetails={networkDetails}
-              activeAssetId={activeAssetId || ""}
               setActiveAssetId={setActiveAssetId}
-              setActiveOperation={setActiveOperation}
-              isSorobanAsset={!!isSorobanAsset}
             />
           )}
         </div>

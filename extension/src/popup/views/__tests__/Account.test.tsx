@@ -52,6 +52,7 @@ const mockHistoryOperations = {
       transaction_attr: { operation_count: 1, fee_charged: "" },
     },
     {
+      id: "123",
       amount: "100",
       type: "payment",
       asset_type: "credit_alphanum4",
@@ -60,6 +61,7 @@ const mockHistoryOperations = {
       from: "G1",
       to: "G2",
       transaction_attr: { operation_count: 1, fee_charged: "" },
+      created_at: "2025-10-07T12:31:45Z",
     },
   ] as HorizonOperation[],
 };
@@ -465,6 +467,23 @@ describe("Account view", () => {
       expect(
         screen.getByTestId("asset-detail-available-copy"),
       ).toHaveTextContent("100 USDC");
+    });
+    fireEvent.click(screen.getByTestId("history-item"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("TransactionDetailModal")).toBeDefined();
+      expect(
+        screen.getByTestId("TransactionDetailModal__subtitle-date"),
+      ).toHaveTextContent("Oct 07 2025");
+      expect(
+        screen.getByTestId("TransactionDetailModal__src-amount"),
+      ).toHaveTextContent("100 USDC");
+      expect(
+        screen.getByTestId("TransactionDetailModal__dst-amount"),
+      ).toHaveTextContent("G2…G2");
+      expect(
+        screen.getByTestId("TransactionDetailModal__status"),
+      ).toHaveTextContent("Success");
     });
   });
 
