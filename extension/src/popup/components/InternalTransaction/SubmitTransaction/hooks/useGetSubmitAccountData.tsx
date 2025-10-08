@@ -8,9 +8,6 @@ import { AppDataType, NeedsReRoute } from "helpers/hooks/useGetAppData";
 import { loadAccount } from "@shared/api/internal";
 import { AppDispatch } from "popup/App";
 import { saveAccount } from "popup/ducks/accountServices";
-import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { ROUTES } from "popup/constants/routes";
-import { POPUP_WIDTH } from "constants/dimensions";
 
 interface ResolvedSubmitAccountData {
   type: AppDataType.RESOLVED;
@@ -32,22 +29,6 @@ function useGetSubmitAccountData() {
     try {
       const account = await loadAccount();
       reduxDispatch(saveAccount(account));
-
-      if (
-        !account.publicKey ||
-        account.applicationState === APPLICATION_STATE.APPLICATION_STARTED
-      ) {
-        const hasOnboarded =
-          account.applicationState ===
-          APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
-        const payload = {
-          type: "re-route",
-          routeTarget: hasOnboarded ? ROUTES.unlockAccount : ROUTES.welcome,
-          shouldOpenTab: window.innerWidth === POPUP_WIDTH && !hasOnboarded,
-        } as NeedsReRoute;
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-        return payload;
-      }
 
       const payload = {
         type: AppDataType.RESOLVED,
