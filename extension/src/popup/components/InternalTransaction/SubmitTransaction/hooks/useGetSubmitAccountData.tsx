@@ -58,7 +58,9 @@ function useGetSubmitAccountData() {
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
-      captureException(`Error loading account data on Account - ${error}`);
+      captureException(
+        `Error loading account data on Submit Transaction - ${error}`,
+      );
       return error;
     }
   };
