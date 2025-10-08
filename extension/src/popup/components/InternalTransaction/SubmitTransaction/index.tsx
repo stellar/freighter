@@ -165,9 +165,8 @@ export const SendingTransaction = ({
                     className="SendingTransaction__Footer__Subtext"
                     data-testid="sending-transaction-footer-subtext"
                   >
-                    {t(
-                      "You can close this screen, your transaction should be complete in less than a minute.",
-                    )}
+                    You can close this screen, your transaction should be
+                    complete in less than a minute.
                   </div>
                   <Button
                     size="lg"
