@@ -78,7 +78,7 @@ export function useGetDestAssetData(getBalancesOptions: {
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
-      throw new Error("Failed to fetch domains", { cause: error });
+      throw new Error(`Failed to fetch domains - ${error}`);
     }
   };
 
