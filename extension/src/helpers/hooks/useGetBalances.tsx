@@ -134,7 +134,7 @@ function useGetBalances(options: {
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
-      throw new Error("Failed to fetch balances", { cause: error });
+      throw new Error(`Failed to fetch balances - ${error}`);
     }
   };
 
