@@ -5,6 +5,9 @@ import {
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 
+import { sendMessageToBackground } from "./extensionMessaging";
+import { SERVICE_TYPES } from "../../constants/services";
+
 export const getIconFromTokenLists = async ({
   issuerId,
   contractId,
@@ -44,6 +47,15 @@ export const getIconFromTokenLists = async ({
         }
       }
     }
+  }
+
+  if (verifiedToken?.icon) {
+    await sendMessageToBackground({
+      activePublicKey: null,
+      assetCanonical: `${code}:${contractId || issuerId}`,
+      iconUrl: verifiedToken?.icon,
+      type: SERVICE_TYPES.CACHE_ASSET_ICON,
+    });
   }
 
   return {

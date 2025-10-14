@@ -135,7 +135,7 @@ export function useGetAssetDomainsWithBalances(getBalancesOptions: {
           domains.push({
             code,
             issuer: issuer.key,
-            image: icons[getCanonicalFromAsset(code, issuer.key)],
+            image: icons[getCanonicalFromAsset(code, issuer.key)] || null,
             domain,
             contract: contractId,
             isSuspicious: isAssetSuspicious(blockaidData),
