@@ -24,7 +24,7 @@ function useGetHistory() {
       return data;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
-      throw new Error("Failed to fetch history", { cause: error });
+      throw new Error(`Failed to fetch history - ${error}`);
     }
   };
 

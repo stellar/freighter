@@ -77,7 +77,7 @@ function useGetSearchData(options: {
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
-      throw new Error("Failed to fetch search data", { cause: error });
+      throw new Error(`Failed to fetch search data - ${error}`);
     }
   };
 
