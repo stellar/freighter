@@ -22,6 +22,12 @@ import { ROUTES } from "popup/constants/routes";
 import { SettingsState } from "@shared/api/types";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 
+jest.spyOn(ApiInternal, "getAssetIconCache").mockImplementation(() =>
+  Promise.resolve({
+    icons: {},
+  }),
+);
+
 jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
   Promise.resolve({
     hasPrivateKey: true,

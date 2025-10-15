@@ -21,6 +21,8 @@ import { INDEXER_URL } from "@shared/constants/mercury";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { HorizonOperation, Response, SettingsState } from "@shared/api/types";
 import * as TokenListHelpers from "@shared/api/helpers/token-list";
+import * as GetIconFromTokenList from "@shared/api/helpers/getIconFromTokenList";
+import * as GetIconUrlFromIssuer from "@shared/api/helpers/getIconUrlFromIssuer";
 import * as RouteHelpers from "popup/helpers/route";
 
 import {
@@ -116,10 +118,6 @@ jest
 jest
   .spyOn(ApiInternal, "getHiddenAssets")
   .mockImplementation(() => Promise.resolve({ hiddenAssets: {}, error: "" }));
-
-jest
-  .spyOn(ApiInternal, "getAccountBalances")
-  .mockImplementation(() => Promise.resolve(mockBalances));
 
 jest
   .spyOn(ApiInternal, "getTokenPrices")
@@ -264,6 +262,10 @@ describe("Account view", () => {
     jest.clearAllMocks();
   });
 
+  jest
+    .spyOn(ApiInternal, "getAccountBalances")
+    .mockImplementation(() => Promise.resolve(mockBalances));
+
   it("renders", async () => {
     render(
       <Wrapper
@@ -316,6 +318,148 @@ describe("Account view", () => {
     expect(screen.getByTestId("account-header")).toBeDefined();
   });
 
+  it("displays balances with icons", async () => {
+    const iconBalances = {
+      balances: {
+        ["USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"]: {
+          token: {
+            code: "USDC",
+            issuer: {
+              key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+            },
+          },
+          total: new BigNumber("100"),
+          available: new BigNumber("100"),
+          blockaidData: {},
+        },
+        ["FOO:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"]: {
+          token: {
+            code: "FOO",
+            issuer: {
+              key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+            },
+          },
+          total: new BigNumber("100"),
+          available: new BigNumber("100"),
+          blockaidData: {},
+        },
+        ["BAZ:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"]: {
+          token: {
+            code: "BAZ",
+            issuer: {
+              key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+            },
+          },
+          total: new BigNumber("100"),
+          available: new BigNumber("100"),
+          blockaidData: {},
+        },
+        native: {
+          token: { type: "native", code: "XLM" },
+          total: new BigNumber("50"),
+          available: new BigNumber("50"),
+          blockaidData: defaultBlockaidScanAssetResult,
+        },
+      } as any as Balances,
+      isFunded: true,
+      subentryCount: 1,
+    };
+    const getIconFromTokenListSpy = jest.spyOn(
+      GetIconFromTokenList,
+      "getIconFromTokenLists",
+    );
+    const getIconUrlFromIssuerSpy = jest
+      .spyOn(GetIconUrlFromIssuer, "getIconUrlFromIssuer")
+      .mockImplementation(() => Promise.resolve("http://domain.com/baz.png"));
+    jest
+      .spyOn(ApiInternal, "getAccountHistory")
+      .mockImplementationOnce(() => Promise.resolve({ operations: [] } as any));
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementationOnce(() => Promise.resolve(iconBalances));
+
+    jest.spyOn(ApiInternal, "getAssetIconCache").mockImplementation(() =>
+      Promise.resolve({
+        icons: {
+          "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM":
+            "http://domain.com/icon.png",
+        },
+      }),
+    );
+
+    jest.spyOn(ApiInternal, "getAssetIcons").mockRestore();
+
+    const assetsListsData = [
+      {
+        assets: [
+          {
+            code: "FOO",
+            issuer: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+            name: "FOO",
+            icon: "http://domain.com/foo.png",
+          },
+        ],
+      },
+    ] as any;
+    jest
+      .spyOn(TokenListHelpers, "getCombinedAssetListData")
+      .mockImplementation(() => Promise.resolve(assetsListsData));
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("account-header"));
+    expect(screen.getByTestId("account-header")).toBeDefined();
+
+    await waitFor(() => {
+      const assetNodes = screen.getAllByTestId("account-assets-item");
+      expect(assetNodes.length).toEqual(4);
+
+      // fetches and displays icon from background cache
+      expect(
+        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+      ).toContainHTML(
+        "<img alt='USDC logo' src='http://domain.com/icon.png' />",
+      );
+
+      // fetches and displays icon from token list
+      expect(
+        screen.getByTestId("AccountAssets__asset--loading-FOO"),
+      ).toContainHTML("<img alt='FOO logo' src='http://domain.com/foo.png' />");
+      expect(getIconFromTokenListSpy).toHaveBeenCalledWith({
+        issuerId: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+        contractId: undefined,
+        code: "FOO",
+        assetsListsData: assetsListsData,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      });
+      expect(getIconFromTokenListSpy).toHaveBeenCalledTimes(2);
+
+      expect(getIconUrlFromIssuerSpy).toHaveBeenCalledTimes(1);
+
+      // fetches and displays icon from home domain
+      expect(
+        screen.getByTestId("AccountAssets__asset--loading-BAZ"),
+      ).toContainHTML("<img alt='BAZ logo' src='http://domain.com/baz.png' />");
+    });
+  });
+
   it("displays balances and scam notifications on Mainnet", async () => {
     render(
       <Wrapper
@@ -343,6 +487,7 @@ describe("Account view", () => {
       expect(
         screen.getByTestId("AccountAssets__asset--loading-XLM"),
       ).not.toContainElement(screen.getByTestId("ScamAssetIcon"));
+
       expect(
         screen.getByTestId("AccountAssets__asset--loading-USDC"),
       ).toContainElement(screen.getByTestId("ScamAssetIcon"));

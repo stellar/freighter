@@ -39,6 +39,7 @@ export const getIconFromTokenLists = async ({
           issuerId &&
           record.issuer &&
           record.issuer === issuerId &&
+          record.code === code &&
           record.icon
         ) {
           verifiedToken = record;

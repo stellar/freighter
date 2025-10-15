@@ -18,11 +18,7 @@ import {
   settingsSelector,
 } from "popup/ducks/settings";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
-import {
-  getAssetIconCache,
-  getAssetIconsFromCache,
-  getAssetIcons,
-} from "@shared/api/internal";
+import { getAssetIconCache, getAssetIcons } from "@shared/api/internal";
 import { publicKeySelector } from "popup/ducks/accountServices";
 
 interface ResolvedAccountIconsData {
@@ -44,17 +40,12 @@ function useGetIcons() {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
-  /* 
- First,  Use tokens lists to fetch icons for assets that don't have icons in the cache 
- Second, try using the home_domain to fetch icons
- Anything found will be save to the long-lived cache in Background
-  */
   const lookupIconData = async ({
     assetsWithoutIcons,
     assetsWithIcons,
   }: {
     assetsWithoutIcons: Balances;
-    assetsWithIcons: { [code: string]: string };
+    assetsWithIcons: { [code: string]: string | null };
   }) => {
     try {
       const payload = {
@@ -85,23 +76,31 @@ function useGetIcons() {
     }
   };
 
+  /*
+    The fetchData flow is not totally dissimilar from the useGetBalances hook with icons.
+    The main differences:
+    1) We don't block the UI with this call, this happens async and loads icons when we have them
+    2) We return assets from the cache immediately and then lookup only the missing icons next
+  */
+
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const payload = {
         type: AppDataType.RESOLVED,
       } as ResolvedAccountIconsData;
+
       const backgroundCachedIcons = await getAssetIconCache({
         activePublicKey: publicKey,
       });
+
       const accountBalances =
         cachedBalances[networkDetails.network]?.[publicKey]?.balances;
 
-      const cachedIcons = backgroundCachedIcons.icons;
-      let icons = {} as { [code: string]: string };
-
+      const cachedIcons = backgroundCachedIcons.icons || {};
+      let icons = {} as { [code: string]: string | null };
       if (Object.keys(cachedIcons).length) {
-        icons = await getAssetIconsFromCache({
+        icons = await getAssetIcons({
           balances:
             cachedBalances[networkDetails.network]?.[publicKey]?.balances,
           cachedIcons,

@@ -131,8 +131,6 @@ export const AssetIcon = memo(
       );
     }
 
-    console.log("canonicalAsset", canonicalAsset);
-
     // if we have an asset path, start loading the path in an `<img>`
     return canonicalAsset || isXlm || imgSrc ? (
       <div
@@ -155,7 +153,6 @@ export const AssetIcon = memo(
           }}
           onLoad={() => {
             // we've sucessfully loaded an icon, end the "loading" state
-            console.log("onLoad");
             setIsLoading(false);
           }}
         />
@@ -192,8 +189,6 @@ export const AccountAssets = ({
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
-
-  console.log("assetIcons", assetIcons);
 
   useEffect(() => {
     setAssetIcons(inputAssetIcons);

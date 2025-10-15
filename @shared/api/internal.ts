@@ -1054,41 +1054,6 @@ export const getAssetIconCache = async ({
   return { icons };
 };
 
-export const getAssetIconsFromCache = async ({
-  balances,
-  cachedIcons,
-}: {
-  balances: Balances;
-  cachedIcons: Record<string, string>;
-}) => {
-  const assetIcons = {} as { [code: string]: string };
-
-  if (balances) {
-    let icon = "";
-    const balanceValues = Object.values(balances);
-
-    for (let i = 0; i < balanceValues.length; i++) {
-      const { token } = balanceValues[i];
-      if (token && "issuer" in token) {
-        const {
-          issuer: { key },
-          code,
-        } = token;
-
-        let canonical = getCanonicalFromAsset(code, key);
-        const cachedIcon = cachedIcons[canonical];
-        if (cachedIcon) {
-          assetIcons[canonical] = cachedIcon;
-          continue;
-        }
-
-        assetIcons[canonical] = icon;
-      }
-    }
-  }
-  return assetIcons;
-};
-
 export const getAssetIcons = async ({
   balances,
   networkDetails,
@@ -1096,11 +1061,12 @@ export const getAssetIcons = async ({
   cachedIcons,
 }: {
   balances: Balances;
-  networkDetails: NetworkDetails;
-  assetsListsData: AssetListResponse[];
+  networkDetails?: NetworkDetails;
+  assetsListsData?: AssetListResponse[];
   cachedIcons: Record<string, string | null>;
 }) => {
   const assetIcons = {} as { [code: string]: string | null };
+  const skipLookup = !assetsListsData || !networkDetails;
 
   if (balances) {
     const balanceValues = Object.values(balances);
@@ -1127,7 +1093,12 @@ export const getAssetIcons = async ({
           continue;
         }
 
+        if (skipLookup) {
+          continue;
+        }
+
         if (!icon) {
+          // if we don't have the icon, we try to get it from the token lists
           const tokenListIcon = await getIconFromTokenLists({
             networkDetails,
             issuerId: key,
@@ -1139,9 +1110,12 @@ export const getAssetIcons = async ({
             icon = tokenListIcon.icon;
             canonical = tokenListIcon.canonicalAsset;
           } else {
+            // if we still don't have the icon, we try to get it from the issuer
             icon = await getIconUrlFromIssuer({ key, code, networkDetails });
           }
         }
+
+        // we assign null here if we checked all sources and still don't have the icon
         assetIcons[canonical] = icon || null;
       }
     }
