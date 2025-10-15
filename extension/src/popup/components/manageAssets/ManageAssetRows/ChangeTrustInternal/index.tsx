@@ -42,7 +42,7 @@ interface ChangeTrustInternalProps {
   asset: {
     code: string;
     issuer: string;
-    image: string;
+    image: string | null;
     domain: string;
     contract?: string;
   };

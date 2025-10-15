@@ -55,6 +55,7 @@ import { saveAllowList } from "./handlers/saveAllowList";
 import { saveSettings } from "./handlers/saveSettings";
 import { saveExperimentalFeatures } from "./handlers/saveExperimentalFeatures";
 import { loadSettings } from "./handlers/loadSettings";
+import { getCachedAssetIconList } from "./handlers/getCachedAssetIconList";
 import { getCachedAssetIcon } from "./handlers/getCachedAssetIcons";
 import { cacheAssetIcon } from "./handlers/cacheAssetIcon";
 import { getCachedAssetDomain } from "./handlers/getCachedDomain";
@@ -356,6 +357,11 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.LOAD_SETTINGS: {
       return loadSettings({
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.GET_CACHED_ASSET_ICON_LIST: {
+      return getCachedAssetIconList({
         localStore,
       });
     }

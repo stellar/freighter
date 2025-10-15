@@ -5,6 +5,7 @@ import {
   getAccountBalances,
   getAssetIcons,
   getHiddenAssets,
+  getAssetIconCache,
 } from "@shared/api/internal";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { AssetIcons } from "@shared/api/types";
@@ -99,6 +100,14 @@ function useGetBalances(options: {
       } as AccountBalances;
 
       if (options.includeIcons) {
+        let cachedIconsFromCache = cachedIcons;
+        if (!Object.keys(cachedIcons).length) {
+          const backgroundCachedIcons = await getAssetIconCache({
+            activePublicKey: publicKey,
+          });
+
+          cachedIconsFromCache = { ...backgroundCachedIcons.icons };
+        }
         const assetsListsData =
           useCache && cachedTokenLists.length
             ? cachedTokenLists
@@ -111,7 +120,7 @@ function useGetBalances(options: {
           balances: accountBalances.balances,
           networkDetails,
           assetsListsData,
-          cachedIcons,
+          cachedIcons: cachedIconsFromCache,
         });
         payload.icons = icons;
         reduxDispatch(saveTokenLists(assetsListsData));
