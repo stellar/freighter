@@ -1102,6 +1102,7 @@ export const getAssetIcons = async ({
         if (cachedIcon === null) {
           // if we've tried to fetch this icon before and it wasn't found, we marked it as null
           // don't bother trying to fetch it again
+          // this null value is only stored in Redux, so we will re-try on next app reload
           continue;
         }
 

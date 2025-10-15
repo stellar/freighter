@@ -96,6 +96,7 @@ export const getIconUrlFromIssuer = async ({
           iconUrl,
           type: SERVICE_TYPES.CACHE_ASSET_ICON,
         });
+        break;
       }
     }
   }
