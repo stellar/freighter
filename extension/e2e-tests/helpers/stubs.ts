@@ -176,8 +176,8 @@ export const stubAccountBalances = async (page: Page, xlmBalance?: string) => {
 };
 
 export const stubAccountBalancesE2e = async (page: Page) => {
-  await page.route("**/account-balances/**", async (route, request) => {
-    const json: any = {
+  await page.route("**/account-balances/**", async (route) => {
+    const json = {
       balances: {
         native: {
           token: {
@@ -189,6 +189,20 @@ export const stubAccountBalancesE2e = async (page: Page) => {
           sellingLiabilities: "0",
           buyingLiabilities: "0",
           minimumBalance: "1",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: "",
+            metadata: {
+              type: "",
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
         },
         "E2E:CBVXO445IA4SZ4ZBZFRITNP2XSPS2JPBDRMCCNXHN7O646VMJ7KTHWXJ": {
           token: {
@@ -203,6 +217,20 @@ export const stubAccountBalancesE2e = async (page: Page) => {
           decimals: 3,
           total: "100000099976",
           available: "100000099976",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: "",
+            metadata: {
+              type: "",
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
         },
       },
       isFunded: true,
@@ -212,38 +240,6 @@ export const stubAccountBalancesE2e = async (page: Page) => {
         soroban: null,
       },
     };
-    if (!request.url().includes("is_scan_skipped=true")) {
-      json.balances.native.blockaidData = {
-        result_type: "Benign",
-        malicious_score: "0.0",
-        attack_types: {},
-        chain: "stellar",
-        address: "",
-        metadata: {
-          type: "",
-        },
-        fees: {},
-        features: [],
-        trading_limits: {},
-        financial_stats: {},
-      };
-      json.balances[
-        "E2E:CBVXO445IA4SZ4ZBZFRITNP2XSPS2JPBDRMCCNXHN7O646VMJ7KTHWXJ"
-      ].blockaidData = {
-        result_type: "Benign",
-        malicious_score: "0.0",
-        attack_types: {},
-        chain: "stellar",
-        address: "",
-        metadata: {
-          type: "",
-        },
-        fees: {},
-        features: [],
-        trading_limits: {},
-        financial_stats: {},
-      };
-    }
     await route.fulfill({ json });
   });
 };
