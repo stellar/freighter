@@ -49,6 +49,12 @@ jest.spyOn(ApiInternal, "getAssetIconCache").mockImplementation(() =>
   }),
 );
 
+jest.spyOn(ApiInternal, "getAssetIconCache").mockImplementation(() =>
+  Promise.resolve({
+    icons: {},
+  }),
+);
+
 jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
   Promise.resolve({
     hasPrivateKey: true,
