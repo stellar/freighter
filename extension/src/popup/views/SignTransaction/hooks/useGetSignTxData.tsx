@@ -131,10 +131,11 @@ function useGetSignTxData(
       dispatch({ type: "FETCH_DATA_SUCCESS", payload: firstRenderPayload });
 
       // Add all icons needed for tx assets
-      const icons = {} as { [code: string]: string };
-      // Initialize with cached lists, but we'll fetch fresh data when needed for icon lookups
-      let assetsListsData: AssetListResponse[] = cachedTokenLists || [];
-      let hasFetchedAssetLists = assetsListsData.length > 0;
+      const icons = {} as { [code: string]: string | null };
+      const assetsListsData = await getCombinedAssetListData({
+        networkDetails,
+        assetsLists,
+      });
 
       // Fetch icons for asset diffs only if includeIcons is true
       if (

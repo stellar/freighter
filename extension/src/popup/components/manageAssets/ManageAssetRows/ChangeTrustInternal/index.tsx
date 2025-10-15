@@ -43,7 +43,7 @@ interface ChangeTrustInternalProps {
     code: string;
     issuer: string;
     image: string | null;
-    domain: string | null;
+    domain: string;
     contract?: string;
   };
   networkDetails: NetworkDetails;

@@ -250,10 +250,6 @@ export interface LoadSettingsMessage extends BaseMessage {
   type: SERVICE_TYPES.LOAD_SETTINGS;
 }
 
-export interface LoadBackendSettingsMessage extends BaseMessage {
-  type: SERVICE_TYPES.LOAD_BACKEND_SETTINGS;
-}
-
 export interface GetCachedAssetIconListMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_CACHED_ASSET_ICON_LIST;
 }
@@ -411,7 +407,6 @@ export type ServiceMessageRequest =
   | SaveSettingsMessage
   | SaveExperimentalFeaturesMessage
   | LoadSettingsMessage
-  | LoadBackendSettingsMessage
   | GetCachedAssetIconListMessage
   | GetCachedAssetIconMessage
   | CacheAssetIconMessage

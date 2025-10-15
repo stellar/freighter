@@ -365,9 +365,6 @@ export const popupMessageListener = (
         localStore,
       });
     }
-    case SERVICE_TYPES.LOAD_BACKEND_SETTINGS: {
-      return loadBackendSettings();
-    }
     case SERVICE_TYPES.GET_CACHED_ASSET_ICON_LIST: {
       return getCachedAssetIconList({
         localStore,

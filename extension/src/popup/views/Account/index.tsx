@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useContext } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
@@ -28,8 +28,6 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
-import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
-import { collectionsSelector } from "popup/ducks/cache";
 
 import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 import { useGetAccountHistoryData } from "./hooks/useGetAccountHistoryData";
@@ -37,10 +35,6 @@ import {
   useGetIcons,
   RequestState as IconsRequestState,
 } from "./hooks/useGetIcons";
-import { AccountTabsContext, TabsList } from "./contexts/activeTabContext";
-
-import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
-import { useGetAccountHistoryData } from "./hooks/useGetAccountHistoryData";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
@@ -66,6 +60,10 @@ export const Account = () => {
   const { state: historyData, fetchData: fetchHistoryData } =
     useGetAccountHistoryData();
 
+  const { state: iconsData, fetchData: fetchIconsData } = useGetIcons();
+
+  const previousAccountBalancesRef = useRef<AccountBalances | null>(null);
+
   useEffect(() => {
     const getData = async () => {
       await fetchData({ useAppDataCache: false });
@@ -85,6 +83,21 @@ export const Account = () => {
       if (accountBalances) {
         // tie refresh history data to account balances requests
         await fetchHistoryData({ balances: accountBalances });
+      }
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountBalances]);
+
+  useEffect(() => {
+    const getData = async () => {
+      if (
+        accountBalances &&
+        !isEqual(accountBalances, previousAccountBalancesRef.current)
+      ) {
+        previousAccountBalancesRef.current = accountBalances;
+        // unless balances have changed, don't fetch icons; the cache should be hydrated already
+        await fetchIconsData();
       }
     };
     getData();
@@ -248,33 +261,19 @@ export const Account = () => {
             </div>
           )}
 
-          <MultiPaneSlider
-            activeIndex={Object.values(TabsList).indexOf(activeTab)}
-            panes={[
-              resolvedData?.balances?.isFunded && !hasError && (
-                <div
-                  className="AccountView__assets-wrapper"
-                  data-testid="account-assets"
-                >
-                  <AccountAssets
-                    balances={resolvedData.balances}
-                    historyData={historyData.data}
-                    assetPrices={tokenPrices}
-                    assetIcons={resolvedIcons}
-                  />
-                </div>
-              ),
-              <div data-testid="account-collectibles">
-                <AccountCollectibles
-                  collections={
-                    collections[resolvedData?.networkDetails?.network || ""]?.[
-                      resolvedData?.publicKey || ""
-                    ] || []
-                  }
-                />
-              </div>,
-            ]}
-          />
+          {resolvedData?.balances?.isFunded && !hasError && (
+            <div
+              className="AccountView__assets-wrapper"
+              data-testid="account-assets"
+            >
+              <AccountAssets
+                sortedBalances={resolvedData.balances.balances}
+                assetPrices={tokenPrices}
+                assetIcons={resolvedIcons}
+                setSelectedAsset={setSelectedAsset}
+              />
+            </div>
+          )}
         </div>
       </View.Content>
       {!resolvedData?.balances?.isFunded &&
