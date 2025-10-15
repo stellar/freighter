@@ -48,6 +48,7 @@ interface ResolvedAccountData {
   networkDetails: NetworkDetails;
   publicKey: string;
   applicationState: APPLICATION_STATE;
+  isScanAppended: boolean;
 }
 
 type AccountData = NeedsReRoute | ResolvedAccountData;
@@ -108,6 +109,7 @@ function useGetAccountData(options: {
         isMainnetNetwork,
         networkDetails,
         !shouldForceBalancesRefresh,
+        true,
       );
 
       if (isError<AccountBalances>(balancesResult)) {
@@ -121,6 +123,7 @@ function useGetAccountData(options: {
         applicationState: appData.account.applicationState,
         balances: balancesResult,
         networkDetails,
+        isScanAppended: false,
       } as ResolvedAccountData;
 
       if (isMainnetNetwork) {
@@ -135,6 +138,28 @@ function useGetAccountData(options: {
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+
+      if (isMainnetNetwork) {
+        try {
+          console.log(1);
+          const balancesResult = await fetchBalances(
+            publicKey,
+            isMainnetNetwork,
+            networkDetails,
+            false,
+            false,
+          );
+
+          const scannedPayload = {
+            ...payload,
+            balances: balancesResult,
+            isScanAppended: true,
+          } as ResolvedAccountData;
+          dispatch({ type: "FETCH_DATA_SUCCESS", payload: scannedPayload });
+        } catch (e) {
+          captureException(`Error fetching scanned balances on Account - ${e}`);
+        }
+      }
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
@@ -219,6 +244,7 @@ function useGetAccountData(options: {
         const payload = {
           ...state.data,
           balances: balancesResult,
+          isScanAppended: true,
         } as AccountData;
         dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       } catch (error) {
@@ -250,6 +276,7 @@ function useGetAccountData(options: {
         const payload = {
           ...state.data,
           balances: balancesResult,
+          isScanAppended: true,
         } as AccountData;
         dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       } catch (error) {
