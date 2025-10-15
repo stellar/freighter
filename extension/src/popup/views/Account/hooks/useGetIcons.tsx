@@ -106,9 +106,11 @@ function useGetIcons() {
           cachedIcons,
         });
 
-        payload.icons = icons;
-        reduxDispatch(saveIconsForBalances({ icons }));
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+        if (Object.keys(icons).length) {
+          payload.icons = icons;
+          reduxDispatch(saveIconsForBalances({ icons }));
+          dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+        }
       }
 
       if (accountBalances) {
