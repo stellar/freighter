@@ -1054,6 +1054,18 @@ export const getAssetIconCache = async ({
   return { icons };
 };
 
+/*
+  getAssetIcons is used to get the icons for the assets in the balances.
+  It can be used with or without lookup.
+  
+  Using this method without lookup is fastest as it just consults the cache and then returns the icons. 
+  This is useful for quickly getting the icons without extra network calls.
+
+  Using this method with lookup is slower as it needs to fetch the token lists and the issuer.
+  This is useful for getting the icons for the first time. Once we've retrieved an icon, 
+  we'll store it in the background's storage and then use this cache for future lookups.
+*/
+
 export const getAssetIcons = async ({
   balances,
   networkDetails,
