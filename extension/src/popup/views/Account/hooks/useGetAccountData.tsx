@@ -141,7 +141,6 @@ function useGetAccountData(options: {
 
       if (isMainnetNetwork) {
         try {
-          console.log(1);
           const balancesResult = await fetchBalances(
             publicKey,
             isMainnetNetwork,
