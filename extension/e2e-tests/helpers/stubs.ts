@@ -133,8 +133,8 @@ export const stubTokenPrices = async (page: Page | BrowserContext) => {
 };
 
 export const stubAccountBalances = async (page: Page, xlmBalance?: string) => {
-  await page.route("**/account-balances/**", async (route, request) => {
-    const json: any = {
+  await page.route("**/account-balances/**", async (route) => {
+    const json = {
       balances: {
         native: {
           token: {
@@ -146,6 +146,20 @@ export const stubAccountBalances = async (page: Page, xlmBalance?: string) => {
           sellingLiabilities: "0",
           buyingLiabilities: "0",
           minimumBalance: "1",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: "",
+            metadata: {
+              type: "",
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
         },
       },
       isFunded: true,
@@ -155,22 +169,6 @@ export const stubAccountBalances = async (page: Page, xlmBalance?: string) => {
         soroban: null,
       },
     };
-    if (!request.url().includes("is_scan_skipped=true")) {
-      json.balances.native.blockaidData = {
-        result_type: "Benign",
-        malicious_score: "0.0",
-        attack_types: {},
-        chain: "stellar",
-        address: "",
-        metadata: {
-          type: "",
-        },
-        fees: {},
-        features: [],
-        trading_limits: {},
-        financial_stats: {},
-      };
-    }
     await route.fulfill({ json });
   });
 };
