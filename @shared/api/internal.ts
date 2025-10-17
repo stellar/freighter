@@ -530,9 +530,11 @@ export const migrateAccounts = async ({
 export const getAccountIndexerBalances = async ({
   publicKey,
   networkDetails,
+  shouldSkipScan,
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
+  shouldSkipScan?: boolean;
 }): Promise<AccountBalancesInterface> => {
   const contractIds = await getTokenIds({
     activePublicKey: publicKey,
@@ -540,6 +542,9 @@ export const getAccountIndexerBalances = async ({
   });
   const url = new URL(`${INDEXER_URL}/account-balances/${publicKey}`);
   url.searchParams.append("network", networkDetails.network);
+  if (shouldSkipScan) {
+    url.searchParams.append("should_skip_scan", "true");
+  }
   for (const id of contractIds) {
     url.searchParams.append("contract_ids", id);
   }
@@ -940,6 +945,7 @@ export const getAccountBalances = async (
   publicKey: string,
   networkDetails: NetworkDetails,
   isMainnet: boolean,
+  shouldSkipScan?: boolean,
 ) => {
   if (isCustomNetwork(networkDetails)) {
     return await getAccountBalancesStandalone({
@@ -951,6 +957,7 @@ export const getAccountBalances = async (
   return await getAccountIndexerBalances({
     publicKey,
     networkDetails,
+    shouldSkipScan,
   });
 };
 

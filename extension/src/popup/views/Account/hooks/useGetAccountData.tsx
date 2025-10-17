@@ -48,6 +48,7 @@ interface ResolvedAccountData {
   networkDetails: NetworkDetails;
   publicKey: string;
   applicationState: APPLICATION_STATE;
+  isScanAppended: boolean;
 }
 
 type AccountData = NeedsReRoute | ResolvedAccountData;
@@ -103,11 +104,13 @@ function useGetAccountData(options: {
       const allowList = appData.settings.allowList;
       const isMainnetNetwork = isMainnet(networkDetails);
 
+      // let's fetch *just* the balances (without Blockaid scan results) to quickly be able to show the user their balances
       const balancesResult = await fetchBalances(
         publicKey,
         isMainnetNetwork,
         networkDetails,
         !shouldForceBalancesRefresh,
+        true, // skip the Blockaid scan,
       );
 
       if (isError<AccountBalances>(balancesResult)) {
@@ -121,6 +124,7 @@ function useGetAccountData(options: {
         applicationState: appData.account.applicationState,
         balances: balancesResult,
         networkDetails,
+        isScanAppended: false,
       } as ResolvedAccountData;
 
       if (isMainnetNetwork) {
@@ -135,6 +139,28 @@ function useGetAccountData(options: {
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+
+      if (isMainnetNetwork) {
+        // now that the UI has renderered, on Mainnet, let's make an additional call to fetch the balances with the Blockaid scan results included
+        try {
+          const balancesResult = await fetchBalances(
+            publicKey,
+            isMainnetNetwork,
+            networkDetails,
+            false,
+            false, // don't skip the Blockaid scan,
+          );
+
+          const scannedPayload = {
+            ...payload,
+            balances: balancesResult,
+            isScanAppended: true,
+          } as ResolvedAccountData;
+          dispatch({ type: "FETCH_DATA_SUCCESS", payload: scannedPayload });
+        } catch (e) {
+          captureException(`Error fetching scanned balances on Account - ${e}`);
+        }
+      }
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
@@ -219,6 +245,7 @@ function useGetAccountData(options: {
         const payload = {
           ...state.data,
           balances: balancesResult,
+          isScanAppended: true,
         } as AccountData;
         dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       } catch (error) {
@@ -250,6 +277,7 @@ function useGetAccountData(options: {
         const payload = {
           ...state.data,
           balances: balancesResult,
+          isScanAppended: true,
         } as AccountData;
         dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       } catch (error) {

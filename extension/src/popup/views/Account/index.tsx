@@ -76,9 +76,15 @@ export const Account = () => {
       ? accountData.data?.balances
       : null;
 
+  const isScanAppended =
+    accountData.state === RequestState.SUCCESS &&
+    accountData.data.type === AppDataType.RESOLVED
+      ? accountData.data?.isScanAppended
+      : false;
+
   useEffect(() => {
     const getData = async () => {
-      if (accountBalances) {
+      if (accountBalances && !isScanAppended) {
         // tie refresh history data to account balances requests
         await fetchHistoryData({ balances: accountBalances });
       }
@@ -91,10 +97,11 @@ export const Account = () => {
     const getData = async () => {
       if (
         accountBalances &&
-        !isEqual(accountBalances, previousAccountBalancesRef.current)
+        !isEqual(accountBalances, previousAccountBalancesRef.current) && // unless balances have changed, don't fetch icons; the cache should be hydrated already
+        !isScanAppended // start fetching icons on the first scan-less balance fetch
       ) {
         previousAccountBalancesRef.current = accountBalances;
-        // unless balances have changed, don't fetch icons; the cache should be hydrated already
+
         await fetchIconsData();
       }
     };

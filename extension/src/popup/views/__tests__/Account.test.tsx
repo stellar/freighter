@@ -264,7 +264,12 @@ describe("Account view", () => {
 
   jest
     .spyOn(ApiInternal, "getAccountBalances")
-    .mockImplementation(() => Promise.resolve(mockBalances));
+    .mockImplementation(({ isScanSkipped }: any) => {
+      if (isScanSkipped) {
+        return Promise.resolve(mockTestnetBalances);
+      }
+      return Promise.resolve(mockBalances);
+    });
 
   it("renders", async () => {
     render(
@@ -974,12 +979,12 @@ describe("Account view", () => {
     await waitFor(async () => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(3);
-      expect(getAccountBalancesSpy).toHaveBeenCalledTimes(1);
+      expect(getAccountBalancesSpy).toHaveBeenCalledTimes(2);
     });
 
     // Fast-forward 30 seconds
     jest.advanceTimersByTime(30000);
-    expect(getAccountBalancesSpy).toHaveBeenCalledTimes(2);
+    expect(getAccountBalancesSpy).toHaveBeenCalledTimes(3);
   });
 
   it("handles abandoned onboarding in password created step", async () => {
