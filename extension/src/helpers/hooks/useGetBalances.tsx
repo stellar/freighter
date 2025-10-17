@@ -78,7 +78,7 @@ function useGetBalances(options: {
     isMainnet: boolean,
     networkDetails: NetworkDetails,
     useCache = false,
-    isScanSkipped = false,
+    shouldSkipScan = false,
   ): Promise<AccountBalances | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
@@ -91,7 +91,7 @@ function useGetBalances(options: {
               publicKey,
               networkDetails,
               isMainnet,
-              isScanSkipped,
+              shouldSkipScan,
             );
 
       const payload = {
