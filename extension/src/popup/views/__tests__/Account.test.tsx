@@ -285,7 +285,12 @@ describe("Account view", () => {
 
   jest
     .spyOn(ApiInternal, "getAccountBalances")
-    .mockImplementation(() => Promise.resolve(mockBalances));
+    .mockImplementation(({ isScanSkipped }: any) => {
+      if (isScanSkipped) {
+        return Promise.resolve(mockTestnetBalances);
+      }
+      return Promise.resolve(mockBalances);
+    });
 
   it("renders", async () => {
     render(

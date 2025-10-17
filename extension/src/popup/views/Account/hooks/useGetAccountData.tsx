@@ -32,7 +32,6 @@ interface ResolvedAccountData {
   publicKey: string;
   applicationState: APPLICATION_STATE;
   isScanAppended: boolean;
-  collectibles: Collectibles;
 }
 
 type AccountData = NeedsReRoute | ResolvedAccountData;
@@ -108,6 +107,7 @@ function useGetAccountData(options: {
         applicationState: appData.account.applicationState,
         balances: balancesResult,
         networkDetails,
+        isScanAppended: false,
       } as ResolvedAccountData;
 
       if (isMainnetNetwork) {
@@ -125,14 +125,6 @@ function useGetAccountData(options: {
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-
-      if (!isCustomNetwork(networkDetails)) {
-        const collectiblesResult = await fetchCollectibles({
-          publicKey,
-          networkDetails,
-        });
-        payload.collectibles = collectiblesResult;
-      }
 
       if (isMainnetNetwork) {
         // now that the UI has renderered, on Mainnet, let's make an additional call to fetch the balances with the Blockaid scan results included
@@ -155,9 +147,6 @@ function useGetAccountData(options: {
           captureException(`Error fetching scanned balances on Account - ${e}`);
         }
       }
-
-      const backendSettings = await loadBackendSettings();
-      reduxDispatch(saveBackendSettingsAction(backendSettings));
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
@@ -254,6 +243,49 @@ function useGetAccountData(options: {
     }, 30000);
     return () => clearInterval(interval);
   }, [_isMainnet, state.data, fetchBalances]);
+
+  useEffect(() => {
+    // if it's been 2 minutes since the last balance update, force update
+    if (!state.data || state.data.type === AppDataType.REROUTE) {
+      return;
+    }
+    const resolvedData = state.data;
+
+    const publicKey = resolvedData.publicKey;
+    const networkDetails = resolvedData.networkDetails;
+
+    const refreshBalances = async () => {
+      try {
+        const balancesResult = await fetchBalances(
+          publicKey,
+          _isMainnet,
+          networkDetails,
+          false,
+        );
+
+        const payload = {
+          ...state.data,
+          balances: balancesResult,
+          isScanAppended: true,
+        } as AccountData;
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      } catch (error) {
+        captureException(
+          `Error refreshing cache balances on Account - ${error}`,
+        );
+      }
+    };
+
+    if (
+      cachedBalances[networkDetails.network]?.[publicKey]?.updatedAt &&
+      cachedBalances[networkDetails.network]?.[publicKey]?.updatedAt <
+        Date.now() - 120000
+    ) {
+      // force update
+      refreshBalances();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.data, cachedBalances]);
 
   return {
     state,

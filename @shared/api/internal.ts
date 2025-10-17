@@ -960,6 +960,7 @@ export const getAccountBalances = async (
   return await getAccountIndexerBalances({
     publicKey,
     networkDetails,
+    shouldSkipScan,
   });
 };
 
