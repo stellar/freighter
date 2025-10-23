@@ -19,7 +19,6 @@ const isJsonString = (str: string) => {
 };
 
 export const Message = (props: BlobProps) => {
-  console.log(typeof props.message);
   const isJson = isJsonString(props.message);
   return (
     <div className="SignMessageData">
