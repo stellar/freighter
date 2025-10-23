@@ -174,7 +174,7 @@ test("should sign auth entry when allowed", async ({
   );
 });
 
-// unlike
+// unlike sign tx and add token, if a dapp is not allowed, it shows the connection request modal
 test("should not sign auth entry when not allowed", async ({
   page,
   extensionId,
@@ -353,6 +353,7 @@ test("should sign message json when allowed", async ({
   );
 });
 
+// unlike sign tx and add token, if a dapp is not allowed, it shows the connection request modal
 test("should not sign message when not allowed", async ({
   page,
   extensionId,
