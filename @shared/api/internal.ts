@@ -2035,7 +2035,7 @@ export const getHiddenAssets = async ({
     activePublicKey,
   });
 
-  return { hiddenAssets: response.hiddenAssets, error: response.error };
+  return { hiddenAssets: response.hiddenAssets || {}, error: response.error };
 };
 
 export const changeAssetVisibility = async ({
