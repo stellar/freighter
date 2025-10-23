@@ -14,5 +14,24 @@
     border-radius: pxToRem(16px);
     background-color: var(--sds-clr-gray-03);
     color: var(--sds-clr-gray-11);
+
+    &__Content {
+      padding: pxToRem(16px) 0;
+      overflow: scroll;
+    }
+  }
+
+  .__json-pretty__ {
+    color: var(--sds-clr-gray-12);
+
+    .__json-key__ {
+      color: var(--sds-clr-gray-11);
+    }
+
+    .__json-string__,
+    .__json-number__,
+    .__json-boolean__ {
+      color: var(--sds-clr-gray-12);
+    }
   }
 }

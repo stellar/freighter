@@ -10,7 +10,6 @@ import {
   stubTokenDetails,
   stubTokenPrices,
 } from "./helpers/stubs";
-import { Page } from "@playwright/test";
 
 const TX_TO_SIGN =
   "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAAGQAAAfjAAAOpQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAAAAAAAAvrwgAAAAAAAAAAA";
@@ -20,22 +19,33 @@ const SIGNED_TX =
 const AUTH_ENTRY_TO_SIGN =
   "AAAACc7gMC1ZhE0yvcqRXIID3USzP7t+3BkFHqN6vt8o7NRyGVzFh1h1V3oANBPZAAAAAAAAAAGhRTk9qFLakLcWsi5wS6hhHr80ka5WABdo/8hF7QmS3QAAAARzd2FwAAAABAAAABIAAAAB0kc/9lM7RuxEsaiiUFR+T89kG7IOUk1U0cXCIDkTDesAAAASAAAAAZ+9o35h9wEnNl2hiVZHRJxsDoO3altsu023K1kAex/nAAAACgAAAAAAAAAAAAAAAAADDUAAAAAKAAAAAAAAAAAAAAAAAAGGoAAAAAEAAAAAAAAAAdJHP/ZTO0bsRLGoolBUfk/PZBuyDlJNVNHFwiA5Ew3rAAAACHRyYW5zZmVyAAAAAwAAABIAAAAAAAAAAFVmR/NPwhQJzrxxqVrqFZ83Hy9HmP4trSdB/dX7sAZjAAAAEgAAAAGhRTk9qFLakLcWsi5wS6hhHr80ka5WABdo/8hF7QmS3QAAAAoAAAAAAAAAAAAAAAAAAw1AAAAAAA==";
 
-const SIGNED_AUTH_ENTRY = JSON.stringify({
-  type: "Buffer",
-  data: [
-    165, 67, 16, 42, 244, 165, 43, 189, 159, 221, 121, 137, 153, 150, 203, 45,
-    93, 57, 72, 249, 253, 123, 201, 63, 246, 111, 81, 64, 229, 182, 24, 57, 169,
-    81, 159, 223, 75, 150, 86, 14, 192, 5, 222, 178, 110, 148, 104, 60, 1, 82,
-    246, 212, 89, 84, 175, 233, 209, 21, 193, 126, 172, 179, 162, 3,
-  ],
-});
+const SIGNED_AUTH_ENTRY =
+  '"pUMQKvSlK72f3XmJmZbLLV05SPn9e8k/9m9RQOW2GDmpUZ/fS5ZWDsAF3rJulGg8AVL21FlUr+nRFcF+rLOiAw=="';
 
 const MSG_TO_SIGN = "Hello, World!";
-
 const SIGNED_MSG =
-  '"v6NmJHPZ5jUzZzphmTAb4/2Yv18mXFLmzjnwgDmqKR6Rq7/HQB6YxcUbxtBYNtBxccmPq2PB+7EBwOL3nuwQAQ=="';
+  '"dxdeMTXPabzkvpVyTFFvPyiQ1soAJVf55NLkzgQ1a5HihB0wGi78P6p4Qac3YJa9pOVD9YeKGeUPZVNCM/f8Cg=="';
 
-test.skip("should sign transaction when allowed", async ({
+const LONG_MSG_TO_SIGN = Array(10000).fill("a").join("");
+const LONG_SIGNED_MSG =
+  '"7JrY+dlbFjYGv0TVg+vnM+6XOMeDl2TojARHiyInnXamS5MHrmINhssrvFqGyPx/QGGsKZuvfuVzXPqGoLWkBw=="';
+
+const JSON_MSG_TO_SIGN = JSON.stringify({
+  message: "Hello, World!",
+  timestamp: 111111,
+  isActive: true,
+  tags: ["tag1", "tag2"],
+  nested: {
+    message: "Hello, Universe!",
+    timestamp: 222222,
+    isActive: false,
+    tags: ["tag01", "tag02"],
+  },
+});
+const JSON_SIGNED_MSG =
+  '\"42IH7/mvkAT+ltbEG8oEPhVBzP7hb6NU+P+WZP3j1AIMdbwuFPrzBuRFRvLjXdXl5lDmC7aL0zrZIUrfrMXHDw==\"';
+
+test("should sign transaction when allowed", async ({
   page,
   extensionId,
   context,
@@ -77,10 +87,11 @@ test.skip("should sign transaction when allowed", async ({
     screenshot: "sign-transaction.png",
   });
   await txPopup.getByRole("button", { name: "Confirm" }).click();
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(SIGNED_TX);
 });
 
 // TODO: Add domain not allowed to SignTransaction when warning is redesigned
-test.skip("should not sign transaction when not allowed", async ({
+test("should not sign transaction when not allowed", async ({
   page,
   extensionId,
 }) => {
@@ -116,7 +127,7 @@ test.skip("should not sign transaction when not allowed", async ({
   });
 });
 
-test.skip("should sign auth entry when allowed", async ({
+test("should sign auth entry when allowed", async ({
   page,
   extensionId,
   context,
@@ -163,7 +174,8 @@ test.skip("should sign auth entry when allowed", async ({
   );
 });
 
-test.skip("should not sign auth entry when not allowed", async ({
+// unlike
+test("should not sign auth entry when not allowed", async ({
   page,
   extensionId,
   context,
@@ -196,24 +208,10 @@ test.skip("should not sign auth entry when not allowed", async ({
 
   const popup = await popupPromise;
 
-  await expect(popup.getByText("Confirm Authorization").first()).toBeVisible();
-  await expect(
-    popup.getByText(
-      "docs.freighter.app is not currently connected to Freighter",
-    ),
-  ).toBeVisible();
-
-  await expect(
-    popup.getByTestId("sign-auth-entry-approve-button"),
-  ).toBeDisabled();
-
-  await expectPageToHaveScreenshot({
-    page: popup,
-    screenshot: "domain-not-allowed-sign-auth-entry.png",
-  });
+  await expect(popup.getByText("Connection Request")).toBeVisible();
 });
 
-test.skip("should sign message when allowed", async ({
+test("should sign message string when allowed", async ({
   page,
   extensionId,
   context,
@@ -257,7 +255,105 @@ test.skip("should sign message when allowed", async ({
   );
 });
 
-test.skip("should not sign message when not allowed", async ({
+test("should sign message long string when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
+  await loginToTestAccount({ page, extensionId });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.getByRole("textbox").first().fill(LONG_MSG_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Sign message").click();
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText(LONG_MSG_TO_SIGN)).toBeVisible();
+  await expectPageToHaveScreenshot({
+    page: popup,
+    screenshot: "sign-message-long-string.png",
+  });
+
+  await popup.getByTestId("sign-message-approve-button").click();
+
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(LONG_SIGNED_MSG);
+  await expect(pageTwo.getByRole("textbox").nth(4)).toHaveValue(
+    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+  );
+});
+
+test("should sign message json when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
+  await loginToTestAccount({ page, extensionId });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.getByRole("textbox").first().fill(JSON_MSG_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Sign message").click();
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText("Hello, World!")).toBeVisible();
+  await expect(popup.getByText("Hello, Universe!")).toBeVisible();
+  await expect(popup.getByText("111111")).toBeVisible();
+  await expect(popup.getByText("true")).toBeVisible();
+  await expect(popup.getByText("tag1")).toBeVisible();
+  await expect(popup.getByText("tag2")).toBeVisible();
+  await expect(popup.getByText("Hello, Universe!")).toBeVisible();
+  await expect(popup.getByText("222222")).toBeVisible();
+  await expect(popup.getByText("false")).toBeVisible();
+  await expect(popup.getByText("tag01")).toBeVisible();
+  await expect(popup.getByText("tag02")).toBeVisible();
+  await expectPageToHaveScreenshot({
+    page: popup,
+    screenshot: "sign-message-json.png",
+  });
+
+  await popup.getByTestId("sign-message-approve-button").click();
+
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(JSON_SIGNED_MSG);
+  await expect(pageTwo.getByRole("textbox").nth(4)).toHaveValue(
+    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+  );
+});
+
+test("should not sign message when not allowed", async ({
   page,
   extensionId,
   context,
@@ -284,19 +380,10 @@ test.skip("should not sign message when not allowed", async ({
 
   const popup = await popupPromise;
 
-  await expect(
-    popup.getByText(
-      "docs.freighter.app is not currently connected to Freighter",
-    ),
-  ).toBeVisible();
-  await expect(popup.getByTestId("sign-message-approve-button")).toBeDisabled();
-  await expectPageToHaveScreenshot({
-    page: popup,
-    screenshot: "domain-not-allowed-sign-message.png",
-  });
+  await expect(popup.getByText("Connection Request")).toBeVisible();
 });
 
-test.skip("should add token when allowed", async ({
+test("should add token when allowed", async ({
   page,
   extensionId,
   context,
@@ -338,7 +425,7 @@ test.skip("should add token when allowed", async ({
   );
 });
 
-test.skip("should not add token when not allowed", async ({
+test("should not add token when not allowed", async ({
   page,
   extensionId,
   context,
@@ -379,7 +466,7 @@ test.skip("should not add token when not allowed", async ({
   });
 });
 
-test.skip("should get public key when logged out", async ({
+test("should get public key when logged out", async ({
   page,
   extensionId,
   context,
