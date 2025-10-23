@@ -1,5 +1,6 @@
 import React from "react";
 import JSONPretty from "react-json-pretty";
+import { captureException } from "@sentry/browser";
 import "react-json-pretty/themes/monikai.css";
 
 import "./index.scss";
@@ -27,7 +28,11 @@ export const Message = (props: BlobProps) => {
         {isJson ? (
           <JSONPretty
             json={props.message}
-            onJSONPrettyError={(e) => console.error(e)}
+            onJSONPrettyError={(e) =>
+              captureException(
+                `Error parsing JSON in Sign Message: ${e.message}`,
+              )
+            }
           />
         ) : (
           <div className="Message__Content">{props.message}</div>
