@@ -151,6 +151,7 @@ describe("SearchAsset", () => {
     });
 
     await waitFor(() => {
+      // cancel the 2 requests (stellar.expert and blockaid) for USDC, but not the 2 requests for XLM
       expect(abortMock).toHaveBeenCalledTimes(2);
       expect(fetchSpy).toHaveBeenCalledTimes(4);
     });
