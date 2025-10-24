@@ -18,10 +18,12 @@
     &__Content {
       padding: pxToRem(16px) 0;
       overflow: scroll;
+      flex-grow: 1;
     }
   }
 
   .__json-pretty__ {
+    font-size: var(--sds-fs-secondary);
     color: var(--sds-clr-gray-12);
 
     .__json-key__ {
