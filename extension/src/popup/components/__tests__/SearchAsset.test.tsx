@@ -49,7 +49,7 @@ describe("SearchAsset", () => {
       );
     });
   });
-  it("should cancel the request when the component is unmounted", async () => {
+  it("should cancel the request when search is changed", async () => {
     const signalMock = {
       addEventListener: jest.fn(),
       removeEventListener: jest.fn(),
