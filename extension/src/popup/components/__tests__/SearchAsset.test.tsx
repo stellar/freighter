@@ -145,14 +145,15 @@ describe("SearchAsset", () => {
         },
       );
     });
-
+    expect(abortMock).not.toHaveBeenCalled();
     fireEvent.change(screen.getByTestId("search-asset-input"), {
       target: { value: "XLM" },
     });
 
     await waitFor(() => {
-      // cancel the 2 requests (stellar.expert and blockaid) for USDC, but not the 2 requests for XLM
-      expect(abortMock).toHaveBeenCalledTimes(2);
+      // the 2nd request for XLM should cancel the 1st request for a Blockaid scan of USDC
+      expect(abortMock).toHaveBeenCalledTimes(1);
+      // expect 4 calls because we make 2 calls to stellar.expert and 2 calls to blockaid
       expect(fetchSpy).toHaveBeenCalledTimes(4);
     });
   });
