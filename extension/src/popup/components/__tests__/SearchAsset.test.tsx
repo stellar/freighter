@@ -155,6 +155,10 @@ describe("SearchAsset", () => {
       expect(abortMock).toHaveBeenCalledTimes(1);
       // expect 4 calls because we make 2 calls to stellar.expert and 2 calls to blockaid
       expect(fetchSpy).toHaveBeenCalledTimes(4);
+
+      // check that we only have results for our last search
+      expect(screen.getByTestId("search-asset-input")).not.toHaveValue("USDC");
+      expect(screen.getByTestId("search-asset-input")).toHaveValue("XLM");
     });
   });
 });
