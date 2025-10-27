@@ -157,8 +157,10 @@ describe("SearchAsset", () => {
       expect(fetchSpy).toHaveBeenCalledTimes(4);
 
       // check that we only have results for our last search
-      expect(screen.getByTestId("search-asset-input")).not.toHaveValue("USDC");
-      expect(screen.getByTestId("search-asset-input")).toHaveValue("XLM");
+      expect(screen.getByTestId("ManageAssetCode")).not.toHaveTextContent(
+        "USDC",
+      );
+      expect(screen.getByTestId("ManageAssetCode")).toHaveTextContent("XLM");
     });
   });
 });
