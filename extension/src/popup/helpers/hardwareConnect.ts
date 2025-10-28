@@ -12,7 +12,7 @@ import {
 } from "@shared/constants/hardwareWallet";
 
 /* Ledger Imports */
-import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
+import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import LedgerApi from "@ledgerhq/hw-app-str";
 
 import LedgerLogo from "popup/assets/ledger-logo.png";
@@ -26,6 +26,21 @@ type CreateWalletConnection = {
   [key in ConfigurableWalletType]: (bipPath?: string) => Promise<string>;
 };
 
+// To communicate with an existing ledger connection, we need to close existing connections first
+const connectToLedgerTransport = async () => {
+  // Close existing connections to avoid "device already open" error
+  const existingTransports = await TransportWebHID.list();
+  await Promise.all(
+    existingTransports.map((existingTransport) =>
+      existingTransport.close().catch(() => {
+        // Ignore close errors - device might already be closed
+      }),
+    ),
+  );
+
+  return TransportWebHID.create();
+};
+
 /*
  * Establishes a connection to the hardware wallet's account using the wallet's API
  * @param {string} bipPath - The bip path to pass to the API (optional).
@@ -33,7 +48,7 @@ type CreateWalletConnection = {
  */
 export const createWalletConnection: CreateWalletConnection = {
   [WalletType.LEDGER]: async (bipPath = "") => {
-    const transport = await TransportWebUSB.request();
+    const transport = await TransportWebHID.request();
     const ledgerApi = new LedgerApi(transport);
     const response = await ledgerApi.getPublicKey(bipPath);
 
@@ -52,7 +67,7 @@ type GetWalletPublicKey = {
  */
 export const getWalletPublicKey: GetWalletPublicKey = {
   [WalletType.LEDGER]: async (bipPath = "") => {
-    const transport = await TransportWebUSB.create();
+    const transport = await connectToLedgerTransport();
     const ledgerApi = new LedgerApi(transport);
     const response = await ledgerApi.getPublicKey(bipPath);
 
@@ -85,7 +100,7 @@ export const hardwareSign: HardwareSign = {
     tx,
     isHashSigningEnabled,
   }: HardwareSignParams) => {
-    const transport = await TransportWebUSB.create();
+    const transport = await connectToLedgerTransport();
     const ledgerApi = new LedgerApi(transport);
     const result = isHashSigningEnabled
       ? await ledgerApi.signHash(bipPath, tx.hash())
@@ -119,7 +134,7 @@ export const hardwareSignAuth: HardwareSignAuth = {
     bipPath = "",
     auth,
   }: HardwareSignAuthParams) => {
-    const transport = await TransportWebUSB.create();
+    const transport = await connectToLedgerTransport();
     const ledgerApi = new LedgerApi(transport);
 
     const result = await ledgerApi.signSorobanAuthorization(bipPath, auth);
