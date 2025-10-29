@@ -10,6 +10,8 @@ import * as StellarSdkServer from "@shared/api/helpers/stellarSdkServer";
 import * as CheckForSuspiciousAsset from "popup/helpers/checkForSuspiciousAsset";
 import * as BlockaidHelpers from "popup/helpers/blockaid";
 import * as GetManageAssetXDR from "popup/helpers/getManageAssetXDR";
+import * as TransactionSubmission from "popup/ducks/transactionSubmission";
+
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import LedgerApi from "@ledgerhq/hw-app-str";
 
@@ -527,6 +529,11 @@ describe("ManageAssetRows", () => {
       .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockBalances));
 
+    const resetSubmissionSpy = jest.spyOn(
+      TransactionSubmission,
+      "resetSubmission",
+    );
+
     jest.spyOn(ApiInternal, "getHiddenAssets").mockImplementation(() => {
       return Promise.resolve({
         hiddenAssets: {},
@@ -630,6 +637,7 @@ describe("ManageAssetRows", () => {
 
       fireEvent.click(screen.getByText("Done"));
 
+      expect(resetSubmissionSpy).toHaveBeenCalled();
       expect(getAccountBalancesSpy).toHaveBeenCalled();
     });
 
@@ -643,6 +651,11 @@ describe("ManageAssetRows", () => {
         ok: false,
         json: async () => ({}),
       } as any),
+    );
+
+    const resetSubmissionSpy = jest.spyOn(
+      TransactionSubmission,
+      "resetSubmission",
     );
 
     const getAccountBalancesSpy = jest
@@ -747,6 +760,7 @@ describe("ManageAssetRows", () => {
 
     fireEvent.click(screen.getByText("Done"));
 
+    expect(resetSubmissionSpy).toHaveBeenCalled();
     expect(getAccountBalancesSpy).not.toHaveBeenCalled();
   });
 });
