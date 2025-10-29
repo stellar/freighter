@@ -148,6 +148,7 @@ describe.skip("SendPayment", () => {
         state={{
           auth: {
             error: null,
+            hasPrivateKey: true,
             applicationState: ApplicationState.PASSWORD_CREATED,
             publicKey,
             allAccounts: mockAccounts,
@@ -156,6 +157,10 @@ describe.skip("SendPayment", () => {
             networkDetails: MAINNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
           },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            accountBalances: mockBalances,
+          },
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
@@ -163,7 +168,7 @@ describe.skip("SendPayment", () => {
       </Wrapper>,
     );
     await waitFor(() => {
-      expect(screen.getByTestId("send-to-view")).toBeDefined();
+      expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
     });
   });
 
@@ -244,6 +249,123 @@ describe.skip("SendPayment", () => {
       false,
     );
   });
+
+  it("pre-populates destination from query params", async () => {
+    const testDestination =
+      "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
+    render(
+      <Wrapper
+        routes={[`${ROUTES.sendPayment}?destination=${testDestination}`]}
+        state={{
+          auth: {
+            error: null,
+            hasPrivateKey: true,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            accountBalances: mockBalances,
+          },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
+        }}
+      >
+        <SendPayment />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      expect(screen.queryByText("Choose Recipient")).toBeNull();
+    });
+  });
+
+  it("pre-populates asset from query params", async () => {
+    const testAsset =
+      "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
+    render(
+      <Wrapper
+        routes={[`${ROUTES.sendPayment}?asset=${testAsset}`]}
+        state={{
+          auth: {
+            error: null,
+            hasPrivateKey: true,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            accountBalances: mockBalances,
+            assetDomains: {
+              "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM":
+                "domain.com",
+            },
+          },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
+        }}
+      >
+        <SendPayment />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      expect(screen.getByText(/USDC/)).toBeDefined();
+    });
+  });
+
+  it("disables continue button when destination is not set", async () => {
+    render(
+      <Wrapper
+        routes={[ROUTES.sendPayment]}
+        state={{
+          auth: {
+            error: null,
+            hasPrivateKey: true,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            transactionData: {
+              ...transactionSubmissionInitialState.transactionData,
+              asset: "native",
+            },
+            accountBalances: mockBalances,
+          },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
+        }}
+      >
+        <SendPayment />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      const input = screen.getByTestId("send-amount-amount-input");
+      fireEvent.change(input, { target: { value: "5" } });
+    });
+
+    await waitFor(() => {
+      const continueBtn = screen.getByTestId("send-amount-btn-continue");
+      // Should be disabled because destination is not set
+      expect(continueBtn).toBeDisabled();
+    });
+  });
 });
 
 const testPaymentFlow = async (
@@ -286,6 +408,19 @@ const testPaymentFlow = async (
       <SendPayment />
     </Wrapper>,
   );
+
+  await waitFor(() => {
+    const input = screen.getByTestId("send-amount-amount-input");
+    expect(input).toBeDefined();
+  });
+
+  await waitFor(async () => {
+    const addressTile = screen.getByText("Choose Recipient");
+    const tile = addressTile.closest(".AddressTile");
+    if (tile) {
+      await fireEvent.click(tile);
+    }
+  });
 
   await waitFor(() => {
     const input = screen.getByTestId("send-to-input");

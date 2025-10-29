@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
-import { Button, Icon, Loader, Notification } from "@stellar/design-system";
+import { Loader, Notification } from "@stellar/design-system";
 
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -12,9 +12,8 @@ import {
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
 import { View } from "popup/basics/layout/View";
-import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { TokenList } from "popup/components/InternalTransaction/TokenList";
-import { truncatedPublicKey, truncatedFedAddress } from "helpers/stellar";
+import { AddressTile } from "popup/components/sendPayment/AddressTile";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
@@ -27,11 +26,13 @@ import "./styles.scss";
 interface SendDestinationAssetProps {
   goBack: () => void;
   goToNext: () => void;
+  goToDestination: () => void;
 }
 
 export const SendDestinationAsset = ({
   goBack,
   goToNext,
+  goToDestination,
 }: SendDestinationAssetProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const { destination, federationAddress } = useSelector(
@@ -114,22 +115,11 @@ export const SendDestinationAsset = ({
       />
       <View.Content hasNoTopPadding>
         <div className="SendDestinationAsset">
-          <div
-            className="SendDestinationAsset__EditDestination"
-            onClick={goBack}
-          >
-            <div className="SendDestinationAsset__EditDestination__title">
-              <div className="SendDestinationAsset__EditDestination__identicon">
-                <IdenticonImg publicKey={destination} />
-              </div>
-              {federationAddress
-                ? truncatedFedAddress(federationAddress)
-                : truncatedPublicKey(destination)}
-            </div>
-            <Button isRounded size="sm" variant="tertiary">
-              <Icon.ChevronRight />
-            </Button>
-          </div>
+          <AddressTile
+            address={destination}
+            federationAddress={federationAddress}
+            onClick={goToDestination}
+          />
           <TokenList
             tokens={balances.balances}
             hiddenAssets={[]}

@@ -1,0 +1,56 @@
+@use "../../../styles/utils.scss" as *;
+
+.AddressTile {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: pxToRem(12px) pxToRem(24px);
+  background-color: var(--sds-clr-gray-03);
+  border-radius: pxToRem(14px);
+  cursor: pointer;
+
+  &__content {
+    display: flex;
+    align-items: center;
+  }
+
+  &__identicon {
+    width: 2rem;
+    height: 2rem;
+    padding: pxToRem(6px);
+    border: 1px solid var(--sds-clr-gray-06);
+    border-radius: pxToRem(100px);
+    margin-right: pxToRem(12px);
+  }
+
+  &__address {
+    display: flex;
+    align-items: center;
+  }
+
+  &__empty-icon {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid var(--sds-clr-gray-06);
+    border-radius: pxToRem(100px);
+    margin-right: pxToRem(12px);
+  }
+
+  &__empty-state {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__empty-heading {
+    font-size: pxToRem(14px);
+  }
+
+  &__empty-subtext {
+    font-size: pxToRem(12px);
+    color: var(--sds-clr-gray-11);
+    margin-top: pxToRem(4px);
+  }
+}

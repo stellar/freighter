@@ -179,30 +179,6 @@
     }
   }
 
-  &__EditDestination {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: pxToRem(12px) pxToRem(24px);
-    background-color: var(--sds-clr-gray-03);
-    border-radius: pxToRem(14px);
-    cursor: pointer;
-
-    &__title {
-      display: flex;
-      align-items: center;
-    }
-
-    &__identicon {
-      width: 2rem;
-      height: 2rem;
-      padding: pxToRem(6px);
-      border: 1px solid var(--sds-clr-gray-09);
-      border-radius: pxToRem(100px);
-      margin-right: pxToRem(12px);
-    }
-  }
-
   &__EditDestAsset {
     display: flex;
     justify-content: space-between;

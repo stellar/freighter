@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import { ROUTES } from "popup/constants/routes";
@@ -13,6 +13,9 @@ import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitT
 import {
   isPathPaymentSelector,
   resetSubmission,
+  saveAsset,
+  saveDestination,
+  saveFederationAddress,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
@@ -24,6 +27,7 @@ import { useNetworkFees } from "popup/helpers/useNetworkFees";
 
 export const SendPayment = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
@@ -81,7 +85,28 @@ export const SendPayment = () => {
     isMainnet: isMainnet(networkDetails),
   });
 
-  const [activeStep, setActiveStep] = React.useState(STEPS.DESTINATION);
+  const [activeStep, setActiveStep] = React.useState(STEPS.AMOUNT);
+
+  // Handle query params and set defaults on mount
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const destinationParam = params.get("destination");
+    const assetParam = params.get("asset");
+
+    // Pre-populate destination if provided
+    if (destinationParam) {
+      dispatch(saveDestination(destinationParam));
+      dispatch(saveFederationAddress("")); // Reset federation address
+    }
+
+    // Pre-populate asset if provided, otherwise default to native
+    if (assetParam) {
+      dispatch(saveAsset(assetParam));
+    } else if (!srcAsset) {
+      // Set default asset to native if not already set
+      dispatch(saveAsset("native"));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const renderStep = (step: STEPS) => {
     switch (step) {
@@ -98,9 +123,13 @@ export const SendPayment = () => {
         emitMetric(METRIC_NAMES.sendPaymentAmount);
         return (
           <SendAmount
-            goBack={() => setActiveStep(STEPS.SET_DESTINATION_ASSET)}
+            goBack={() => {
+              dispatch(resetSubmission());
+              navigate(ROUTES.account);
+            }}
             goToNext={() => setActiveStep(STEPS.PAYMENT_CONFIRM)}
             goToChooseDest={() => setActiveStep(STEPS.DESTINATION)}
+            goToChooseAsset={() => setActiveStep(STEPS.SET_DESTINATION_ASSET)}
             fetchSimulationData={fetchData}
             simulationState={simulationState}
             recommendedFee={recommendedFee}
@@ -111,8 +140,9 @@ export const SendPayment = () => {
       case STEPS.SET_DESTINATION_ASSET: {
         return (
           <SendDestinationAsset
-            goBack={() => setActiveStep(STEPS.DESTINATION)}
+            goBack={() => setActiveStep(STEPS.AMOUNT)}
             goToNext={() => setActiveStep(STEPS.AMOUNT)}
+            goToDestination={() => setActiveStep(STEPS.DESTINATION)}
           />
         );
       }
@@ -121,11 +151,8 @@ export const SendPayment = () => {
         emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
         return (
           <SendTo
-            goBack={() => {
-              dispatch(resetSubmission());
-              navigate(ROUTES.account);
-            }}
-            goToNext={() => setActiveStep(STEPS.SET_DESTINATION_ASSET)}
+            goBack={() => setActiveStep(STEPS.AMOUNT)}
+            goToNext={() => setActiveStep(STEPS.AMOUNT)}
           />
         );
       }
