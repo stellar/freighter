@@ -209,7 +209,10 @@ export const SubmitTransaction = ({
                     }
                     onClick={async (e) => {
                       e.preventDefault();
-                      await resetChangeTrustData({ isHardwareWallet });
+                      await resetChangeTrustData({
+                        isHardwareWallet,
+                        isSuccess,
+                      });
                       onSuccess();
                     }}
                   >

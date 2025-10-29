@@ -645,7 +645,7 @@ describe("ManageAssetRows", () => {
       } as any),
     );
 
-    jest
+    const getAccountBalancesSpy = jest
       .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockBalances));
 
@@ -744,5 +744,9 @@ describe("ManageAssetRows", () => {
         "Failed!",
       );
     });
+
+    fireEvent.click(screen.getByText("Done"));
+
+    expect(getAccountBalancesSpy).not.toHaveBeenCalled();
   });
 });
