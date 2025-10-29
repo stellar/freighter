@@ -29,27 +29,31 @@ function useResetChangeTrustData() {
 
   const resetChangeTrustData = async ({
     isHardwareWallet,
+    isSuccess,
   }: {
     isHardwareWallet: boolean;
+    isSuccess: boolean;
   }) => {
     dispatch({ type: "FETCH_DATA_START" });
 
     reduxDispatch(resetSubmission());
-    const balancesResult = await fetchBalances(
-      publicKey,
-      isMainnet(networkDetails),
-      networkDetails,
-      false,
-    );
-
-    if (isError<AccountBalances>(balancesResult)) {
-      // we don't want to throw an error if balances fail to fetch as this doesn't affect the tx submission
-      // let's simply log the error and continue - the user will need to refresh the Account page or wait for polling to refresh the balances
-      captureException(
-        `Failed to fetch balances after change trust ${isHardwareWallet ? "hardware wallet" : ""} tx submission - ${JSON.stringify(
-          balancesResult.message,
-        )} ${networkDetails.network}`,
+    if (isSuccess) {
+      const balancesResult = await fetchBalances(
+        publicKey,
+        isMainnet(networkDetails),
+        networkDetails,
+        false,
       );
+
+      if (isError<AccountBalances>(balancesResult)) {
+        // we don't want to throw an error if balances fail to fetch as this doesn't affect the tx submission
+        // let's simply log the error and continue - the user will need to refresh the Account page or wait for polling to refresh the balances
+        captureException(
+          `Failed to fetch balances after change trust ${isHardwareWallet ? "hardware wallet" : ""} tx submission - ${JSON.stringify(
+            balancesResult.message,
+          )} ${networkDetails.network}`,
+        );
+      }
     }
 
     dispatch({ type: "FETCH_DATA_SUCCESS", payload: { status: "success" } });
