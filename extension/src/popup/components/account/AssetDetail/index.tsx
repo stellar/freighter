@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { CopyText, Icon, Link } from "@stellar/design-system";
+import { Button, CopyText, Icon, Link } from "@stellar/design-system";
+import { useNavigate } from "react-router-dom";
 
 import { ApiTokenPrice, ApiTokenPrices } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -14,7 +15,7 @@ import {
   isSorobanIssuer,
 } from "popup/helpers/account";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
-import { formatTokenAmount } from "popup/helpers/soroban";
+import { formatTokenAmount, isContractId } from "popup/helpers/soroban";
 import { getAssetFromCanonical, isMainnet, isTestnet } from "helpers/stellar";
 
 import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
@@ -40,6 +41,10 @@ import {
   LiquidityPoolShareAsset,
 } from "@shared/api/types/account-balance";
 import { OperationDataRow } from "popup/views/AccountHistory/hooks/useGetHistoryData";
+import { AppDispatch } from "popup/App";
+import { saveAsset, saveIsToken } from "popup/ducks/transactionSubmission";
+import { navigateTo } from "popup/helpers/navigate";
+import { ROUTES } from "popup/constants/routes";
 
 import "./styles.scss";
 
@@ -65,6 +70,8 @@ export const AssetDetail = ({
   tokenPrices,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const { isHideDustEnabled } = useSelector(settingsSelector);
   const [optionsOpen, setOptionsOpen] = React.useState(false);
   const activeOptionsRef = useRef<HTMLDivElement>(null);
@@ -96,7 +103,9 @@ export const AssetDetail = ({
 
   const icons = accountBalances.icons || {};
   const assetIconUrl =
-    "type" in selectedBalance.token && selectedBalance.token.type === "native"
+    "token" in selectedBalance &&
+    "type" in selectedBalance.token &&
+    selectedBalance.token.type === "native"
       ? StellarLogo
       : icons[selectedAsset];
   const assetPrice: ApiTokenPrice | null = tokenPrices
@@ -155,6 +164,13 @@ export const AssetDetail = ({
   const stellarExpertAssetLinkSlug = isSorobanBalance(selectedBalance)
     ? `contract/${selectedBalance.contractId}`
     : `asset/${selectedAsset.replace(":", "-")}`;
+
+  const isLpShare = "liquidity_pool_id" in selectedBalance;
+  const hasBalance =
+    selectedBalance?.total &&
+    new BigNumber(selectedBalance.total).isGreaterThan(0);
+  const showSwap = !isSorobanAsset && !isLpShare;
+  const showSend = hasBalance;
 
   return activeAssetId ? (
     <SlideupModal
@@ -323,6 +339,45 @@ export const AssetDetail = ({
           )}
         </div>
       </View.Content>
+      {(showSwap || showSend) && (
+        <div className="AssetDetail__actions-container">
+          {showSend && (
+            <Button
+              data-testid="asset-detail-send-button"
+              variant="tertiary"
+              size="lg"
+              isRounded
+              isFullWidth
+              onClick={() => {
+                dispatch(saveAsset(selectedAsset));
+                if (isContractId(assetIssuer)) {
+                  dispatch(saveIsToken(true));
+                } else {
+                  dispatch(saveIsToken(false));
+                }
+                navigateTo(ROUTES.sendPayment, navigate);
+              }}
+            >
+              {t("Send")}
+            </Button>
+          )}
+          {showSwap && (
+            <Button
+              data-testid="asset-detail-swap-button"
+              variant="tertiary"
+              size="lg"
+              isRounded
+              isFullWidth
+              onClick={() => {
+                dispatch(saveAsset(selectedAsset));
+                navigateTo(ROUTES.swap, navigate);
+              }}
+            >
+              {t("Swap")}
+            </Button>
+          )}
+        </div>
+      )}
       {isNative && (
         <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
           <div className="AssetDetail__info-modal">

@@ -267,4 +267,187 @@ describe("AssetDetail", () => {
       "100 BAZ",
     );
   });
+
+  describe("Action Buttons", () => {
+    it("should show both send and swap buttons for native asset with balance", async () => {
+      const props = {
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(10),
+              token: { type: "native", code: "XLM" },
+              total: new BigNumber(10),
+            },
+          ],
+        } as any,
+        assetOperations: [] as any,
+        publicKey: "G1",
+        networkDetails: TESTNET_NETWORK_DETAILS,
+        selectedAsset: "native",
+        setSelectedAsset: () => null,
+        subentryCount: 0,
+      };
+
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+            },
+          }}
+        >
+          <AssetDetail {...props} />
+        </Wrapper>,
+      );
+
+      await waitFor(() => screen.getByTestId("asset-detail-send-button"));
+      expect(screen.getByTestId("asset-detail-send-button")).toBeVisible();
+      expect(screen.getByTestId("asset-detail-swap-button")).toBeVisible();
+    });
+
+    it("should not show send button when balance is 0", async () => {
+      const props = {
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(0),
+              token: { type: "native", code: "XLM" },
+              total: new BigNumber(0),
+            },
+          ],
+        } as any,
+        assetOperations: [] as any,
+        publicKey: "G1",
+        networkDetails: TESTNET_NETWORK_DETAILS,
+        selectedAsset: "native",
+        setSelectedAsset: () => null,
+        subentryCount: 0,
+      };
+
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+            },
+          }}
+        >
+          <AssetDetail {...props} />
+        </Wrapper>,
+      );
+
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      expect(screen.queryByTestId("asset-detail-send-button")).toBeNull();
+      expect(screen.getByTestId("asset-detail-swap-button")).toBeVisible();
+    });
+
+    it("should not show swap button for Soroban asset", async () => {
+      const contractId =
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4";
+      const props = {
+        accountBalances: {
+          balances: [
+            {
+              contractId,
+              total: new BigNumber(100),
+              decimals: 7,
+            },
+          ],
+        } as any,
+        assetOperations: [] as any,
+        publicKey: "G1",
+        networkDetails: TESTNET_NETWORK_DETAILS,
+        selectedAsset: `USDC:${contractId}`,
+        setSelectedAsset: () => null,
+        subentryCount: 0,
+      };
+
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+            },
+          }}
+        >
+          <AssetDetail {...props} />
+        </Wrapper>,
+      );
+
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      expect(screen.queryByTestId("asset-detail-swap-button")).toBeNull();
+      expect(screen.getByTestId("asset-detail-send-button")).toBeVisible();
+    });
+
+    it("should show both buttons for classic asset with balance", async () => {
+      const props = {
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(100),
+              token: {
+                type: "credit_alphanum4",
+                code: "USDC",
+                issuer: {
+                  key: "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+                },
+              },
+              total: new BigNumber(100),
+            },
+          ],
+        } as any,
+        assetOperations: [] as any,
+        publicKey: "G1",
+        networkDetails: TESTNET_NETWORK_DETAILS,
+        selectedAsset:
+          "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+        setSelectedAsset: () => null,
+        subentryCount: 0,
+      };
+
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+            },
+          }}
+        >
+          <AssetDetail {...props} />
+        </Wrapper>,
+      );
+
+      await waitFor(() => screen.getByTestId("asset-detail-send-button"));
+      expect(screen.getByTestId("asset-detail-send-button")).toBeVisible();
+      expect(screen.getByTestId("asset-detail-swap-button")).toBeVisible();
+    });
+  });
 });
