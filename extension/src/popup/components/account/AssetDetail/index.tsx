@@ -344,7 +344,7 @@ export const AssetDetail = ({
           {showSend && (
             <Button
               data-testid="asset-detail-send-button"
-              variant="tertiary"
+              variant="secondary"
               size="lg"
               isRounded
               isFullWidth
@@ -364,7 +364,7 @@ export const AssetDetail = ({
           {showSwap && (
             <Button
               data-testid="asset-detail-swap-button"
-              variant="tertiary"
+              variant="secondary"
               size="lg"
               isRounded
               isFullWidth
