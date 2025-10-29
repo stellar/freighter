@@ -103,4 +103,18 @@
       }
     }
   }
+
+  &__HardwareSign {
+    .HardwareSign__content {
+      height: 30%;
+    }
+    .HardwareSign__internal {
+      margin-top: 0;
+      height: pxToRem(543px);
+    }
+
+    .HardwareSign__bottom {
+      margin-top: 1rem;
+    }
+  }
 }
