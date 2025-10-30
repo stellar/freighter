@@ -16,7 +16,7 @@ export const searchAsset = async ({
 }: {
   asset: any;
   networkDetails: NetworkDetails;
-  signal?: AbortSignal;
+  signal: AbortSignal;
 }) => {
   const res = await fetch(
     `${getApiStellarExpertUrl(networkDetails)}/asset?search=${asset}`,

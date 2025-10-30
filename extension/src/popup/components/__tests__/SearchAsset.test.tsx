@@ -45,7 +45,7 @@ describe("SearchAsset", () => {
     );
     await waitFor(() => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Choose asset",
+        "Choose Asset",
       );
     });
   });
@@ -129,7 +129,7 @@ describe("SearchAsset", () => {
     );
     await waitFor(() => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Choose asset",
+        "Choose Asset",
       );
     });
 

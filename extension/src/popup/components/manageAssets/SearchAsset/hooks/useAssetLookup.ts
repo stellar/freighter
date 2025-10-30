@@ -1,5 +1,5 @@
 import { useReducer, useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
 
 import { getTokenDetails } from "@shared/api/internal";
@@ -143,7 +143,6 @@ const useAssetLookup = () => {
     contractId: string,
     isAllowListVerificationEnabled: boolean,
     networkDetails: NetworkDetails,
-    assetsListsData: AssetListResponse[],
     signal: AbortSignal,
   ) => {
     let assetRows = [] as ManageAssetCurrency[];
@@ -197,9 +196,8 @@ const useAssetLookup = () => {
           signal,
         ).catch(() => {
           if (signal.aborted) {
-            return {} as BlockAidScanAssetResult;
+            return undefined;
           }
-          return {} as BlockAidScanAssetResult;
         });
         assetRows = [
           {
@@ -276,9 +274,8 @@ const useAssetLookup = () => {
       signal,
     }).catch(() => {
       if (signal.aborted) {
-        return { _embedded: { records: [] } };
+        return;
       }
-      throw new Error("Failed to fetch Stellar Expert data");
     });
 
     return resJson._embedded.records.map((record: AssetRecord) => ({
@@ -362,7 +359,6 @@ const useAssetLookup = () => {
           asset,
           isAllowListVerificationEnabled,
           networkDetails,
-          assetsListsData,
           signal,
         );
       } catch (e) {
