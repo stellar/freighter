@@ -4,18 +4,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-radius: 0.5rem;
+  padding: pxToRem(12px) pxToRem(24px);
   background-color: var(--sds-clr-gray-03);
+  border-radius: pxToRem(14px);
   cursor: pointer;
-  transition: background-color 0.2s;
-  margin-bottom: 1rem;
+  margin-bottom: pxToRem(12px);
 
   &__content {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
     flex: 1;
-    min-width: 0; // Allow text truncation
+    min-width: 0;
   }
 
   &__icon {
@@ -23,27 +22,31 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: pxToRem(6px);
+    border: 1px solid var(--sds-clr-gray-06);
+    border-radius: pxToRem(100px);
+    margin-right: pxToRem(12px);
   }
 
   &__text {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    min-width: 0; // Allow text truncation
+    min-width: 0;
   }
 
   &__primary {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--pal-text-primary);
+    font-size: pxToRem(14px);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   &__secondary {
-    font-size: 0.75rem;
-    color: var(--pal-text-secondary);
+    font-size: pxToRem(12px);
+    color: var(--sds-clr-gray-11);
+    margin-top: pxToRem(4px);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -51,19 +54,11 @@
 
   &--empty {
     .SelectionTile__icon {
-      width: 2.5rem;
-      height: 2.5rem;
-      border-radius: 50%;
-      background-color: var(--pal-background-primary);
-
-      svg {
-        width: 1.25rem;
-        height: 1.25rem;
-      }
+      background-color: transparent;
     }
 
     .SelectionTile__primary {
-      font-weight: 600;
+      font-size: pxToRem(14px);
     }
   }
 }
