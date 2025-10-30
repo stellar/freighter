@@ -15,6 +15,7 @@ import { EnterPassword } from "popup/components/EnterPassword";
 import {
   addTokenId,
   confirmPassword,
+  hardwareWalletTypeSelector,
   hasPrivateKeySelector,
   publicKeySelector,
 } from "popup/ducks/accountServices";
@@ -24,11 +25,13 @@ import { openTab } from "popup/helpers/navigate";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { AssetIcons } from "@shared/api/types";
-import { removeTokenId } from "popup/ducks/transactionSubmission";
+import { removeTokenId, startHwSign } from "popup/ducks/transactionSubmission";
 import { NETWORKS } from "@shared/constants/stellar";
 import { useGetChangeTrust } from "../hooks/useChangeTrust";
 
 import "./styles.scss";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
+import { useResetChangeTrustData } from "../hooks/useResetChangeTrustData";
 
 interface SubmitTransactionProps {
   asset: {
@@ -59,8 +62,13 @@ export const SubmitTransaction = ({
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
   const [isVerifyAccountModalOpen, setIsVerifyAccountModalOpen] =
     useState(!hasPrivateKey);
+  const walletType = useSelector(hardwareWalletTypeSelector);
+
+  const isHardwareWallet = !!walletType;
 
   const { state, fetchData } = useGetChangeTrust();
+  const { state: resetChangeTrustDataState, resetChangeTrustData } =
+    useResetChangeTrustData();
 
   useEffect(() => {
     const getData = async () => {
@@ -95,7 +103,12 @@ export const SubmitTransaction = ({
           recommendedFee: fee,
           networkDetails,
         });
-        await fetchData({ publicKey, xdr, networkDetails });
+
+        if (isHardwareWallet) {
+          dispatch(startHwSign({ transactionXDR: xdr, shouldSubmit: true }));
+        } else {
+          await fetchData({ publicKey, xdr, networkDetails });
+        }
       }
     };
     if (!isVerifyAccountModalOpen) {
@@ -118,7 +131,18 @@ export const SubmitTransaction = ({
     asset.code,
     asset.contract || asset.issuer,
   );
+
   const icon = icons[canonical];
+
+  if (walletType && state.state === RequestState.IDLE) {
+    return (
+      <View.Content hasNoTopPadding>
+        <div className="SubmitTransaction__HardwareSign">
+          <HardwareSign isInternal walletType={walletType} onCancel={goBack} />
+        </div>
+      </View.Content>
+    );
+  }
 
   return (
     <>
@@ -180,8 +204,15 @@ export const SubmitTransaction = ({
                     isFullWidth
                     isRounded
                     variant="secondary"
-                    onClick={(e) => {
+                    isLoading={
+                      resetChangeTrustDataState.state === RequestState.LOADING
+                    }
+                    onClick={async (e) => {
                       e.preventDefault();
+                      await resetChangeTrustData({
+                        isHardwareWallet,
+                        isSuccess,
+                      });
                       onSuccess();
                     }}
                   >
@@ -193,7 +224,10 @@ export const SubmitTransaction = ({
           }
         >
           <div className="SendingTransaction">
-            <div className="SubmitTransaction__Title">
+            <div
+              className="SubmitTransaction__Title"
+              data-testid="SubmitTransaction__Title"
+            >
               {isLoading && (
                 <>
                   <Loader size="2rem" />
@@ -202,7 +236,10 @@ export const SubmitTransaction = ({
               )}
               {isSuccess && (
                 <>
-                  <Icon.CheckCircle className="SubmitTransaction__Title__Success" />
+                  <Icon.CheckCircle
+                    className="SubmitTransaction__Title__Success"
+                    data-testid="SubmitTransaction__Title__Success"
+                  />
                   <span>Success!</span>
                 </>
               )}

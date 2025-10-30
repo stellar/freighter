@@ -34,11 +34,13 @@ export const HardwareSign = ({
   isSignSorobanAuthorization,
   onSubmit,
   isInternal = false,
+  onCancel,
 }: {
   walletType: ConfigurableWalletType;
   isSignSorobanAuthorization?: boolean;
   onSubmit?: () => void;
   isInternal?: boolean;
+  onCancel?: () => void;
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
@@ -124,15 +126,26 @@ export const HardwareSign = ({
 
   // let's check connection on initial load
   useEffect(() => {
-    handleSign();
+    if (transactionXDR) {
+      handleSign();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [transactionXDR]);
 
   return isInternal ? (
-    <div className="HardwareSign__internal" ref={hardwareConnectRef}>
+    <div
+      className="HardwareSign__internal"
+      ref={hardwareConnectRef}
+      data-testid="HardwareSign__internal"
+    >
       <div className="HardwareSign__internal__wrapper">
         <SubviewHeader
-          customBackAction={closeOverlay}
+          customBackAction={() => {
+            closeOverlay();
+            if (onCancel) {
+              onCancel();
+            }
+          }}
           customBackIcon={<Icon.XClose />}
           title={`Connect ${walletType}`}
         />
@@ -146,7 +159,7 @@ export const HardwareSign = ({
               src={hardwareConnectSuccessful ? LedgerSigning : Ledger}
               alt={walletType}
             />
-            <span>
+            <span data-testid="HardwareSign__connect-text">
               {hardwareConnectSuccessful
                 ? t("Review transaction on device")
                 : t("Connect device to computer")}
@@ -162,6 +175,7 @@ export const HardwareSign = ({
           {isDetectBtnDirty && <WalletErrorBlock error={connectError} />}
           {!hardwareConnectSuccessful && (
             <Button
+              data-testid="HardwareSign__detect-device-button"
               size="lg"
               variant="secondary"
               isFullWidth
@@ -196,7 +210,7 @@ export const HardwareSign = ({
               src={hardwareConnectSuccessful ? LedgerSigning : Ledger}
               alt={walletType}
             />
-            <span>
+            <span data-testid="HardwareSign__connect-text">
               {hardwareConnectSuccessful
                 ? t("Review transaction on device")
                 : t("Connect device to computer")}
@@ -212,6 +226,7 @@ export const HardwareSign = ({
           {isDetectBtnDirty && <WalletErrorBlock error={connectError} />}
           {!hardwareConnectSuccessful && (
             <Button
+              data-testid="HardwareSign__detect-device-button"
               size="md"
               variant="secondary"
               isFullWidth
