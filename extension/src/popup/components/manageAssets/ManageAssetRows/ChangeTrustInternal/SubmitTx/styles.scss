@@ -105,6 +105,14 @@
   }
 
   &__HardwareSign {
+    .HardwareSign__internal__wrapper {
+      padding-top: 0;
+
+      .View__inset {
+        padding-top: 0;
+      }
+    }
+
     .HardwareSign__content {
       height: 30%;
     }
