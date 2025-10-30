@@ -220,7 +220,7 @@ export const SendAmount = ({
   const assetBalance = findAssetBalance(
     sendData.userBalances.balances,
     srcAsset,
-  )!;
+  );
   const prices = sendData.tokenPrices;
   const assetPrice = prices[asset] && prices[asset].currentPrice;
   const xlmPrice = prices["native"]?.currentPrice;
@@ -255,7 +255,7 @@ export const SendAmount = ({
     recommendedFee: fee,
   });
   const displayTotal =
-    "decimals" in assetBalance
+    assetBalance && "decimals" in assetBalance
       ? availableBalance
       : formatAmount(availableBalance);
   const srcTitle = srcAsset.code;

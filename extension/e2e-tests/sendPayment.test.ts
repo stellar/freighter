@@ -22,7 +22,7 @@ test("Swap doesn't throw error when account is unfunded", async ({
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
-    "Swap from",
+    "Swap XLM",
   );
 });
 test("Swap shows correct balances for assets", async ({
@@ -173,6 +173,11 @@ test("Swap shows correct balances for assets", async ({
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
+    "Swap XLM",
+  );
+  // Click on source asset tile to see asset list
+  await page.getByTestId("swap-src-asset-tile").click();
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
     "Swap from",
   );
   await expect(page.getByText(/FOO/)).toBeVisible();
@@ -189,10 +194,8 @@ test("Send doesn't throw error when account is unfunded", async ({
   await login({ page, extensionId });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  // Wait for SendAmount view to load
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  // Click AddressTile to navigate to destination entry
   await page.locator(".AddressTile").click();
 
   await page
@@ -200,7 +203,6 @@ test("Send doesn't throw error when account is unfunded", async ({
     .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
   await page.getByText("Continue").click({ force: true });
 
-  // Now back at SendAmount
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 });
 test("Send doesn't throw error when creating muxed account", async ({
@@ -211,10 +213,8 @@ test("Send doesn't throw error when creating muxed account", async ({
   await loginAndFund({ page, extensionId });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  // Wait for SendAmount view to load
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  // Click AddressTile to navigate to destination entry
   await page.locator(".AddressTile").click();
 
   await page.getByTestId("send-to-input").fill(MUXED_ACCOUNT_ADDRESS);
@@ -223,7 +223,6 @@ test("Send doesn't throw error when creating muxed account", async ({
   ).toBeVisible();
   await page.getByText("Continue").click();
 
-  // Back at SendAmount - XLM already selected by default
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await page.getByTestId("send-amount-amount-input").fill("1");
   await page.getByText("Review Send").click({ force: true });
@@ -237,10 +236,8 @@ test("Send can review formatted inputs", async ({ page, extensionId }) => {
   await loginAndFund({ page, extensionId });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  // Wait for SendAmount view to load
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  // Click AddressTile to navigate to destination entry
   await page.locator(".AddressTile").click();
 
   await page.getByTestId("send-to-input").fill(MUXED_ACCOUNT_ADDRESS);
@@ -249,7 +246,6 @@ test("Send can review formatted inputs", async ({ page, extensionId }) => {
   ).toBeVisible();
   await page.getByText("Continue").click();
 
-  // Back at SendAmount - XLM already selected by default
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await page.getByTestId("send-amount-amount-input").fill("1000");
   await page.getByText("Review Send").click({ force: true });
@@ -266,10 +262,8 @@ test("Send persists inputs and submits to network", async ({
   await loginAndFund({ page, extensionId });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  // Wait for SendAmount view to load
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  // Click AddressTile to navigate to destination entry
   await page.locator(".AddressTile").click();
 
   await page
@@ -277,7 +271,6 @@ test("Send persists inputs and submits to network", async ({
     .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
   await page.getByText("Continue").click();
 
-  // Back at SendAmount - XLM already selected by default
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await page.getByTestId("send-amount-amount-input").fill("1");
   await page.getByTestId("send-amount-btn-memo").click();
@@ -341,17 +334,14 @@ test("Send XLM payments to recent federated addresses", async ({
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  // Wait for SendAmount view to load
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  // Click AddressTile to navigate to destination entry
   await page.locator(".AddressTile").click();
 
   await page.getByTestId("send-to-input").fill("freighter.pb*lobstr.co");
   await expect(page.getByTestId("send-to-identicon")).toBeVisible();
   await page.getByText("Continue").click({ force: true });
 
-  // Back at SendAmount - XLM already selected by default
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await page.getByTestId("send-amount-amount-input").fill("1");
   await page.getByText("Review Send").click({ force: true });
@@ -370,15 +360,12 @@ test("Send XLM payments to recent federated addresses", async ({
   await page.getByText("Done").click();
   await page.getByTestId("nav-link-send").click();
 
-  // Wait for SendAmount view to load
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  // Click AddressTile to navigate to SendTo where Recents are shown
   await page.locator(".AddressTile").click();
 
   await expect(page.getByText("Recents")).toBeVisible();
 
-  // Click recent address - should navigate to SendAmount with destination pre-populated
   await page.getByTestId("recent-address-button").click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -413,19 +400,15 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
-  // send XLM to C address
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  // Wait for SendAmount view to load
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  // Click AddressTile to navigate to destination entry
   await page.locator(".AddressTile").click();
 
   await page.getByTestId("send-to-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByText("Continue").click({ force: true });
 
-  // Back at SendAmount - XLM already selected by default
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await page.getByTestId("send-amount-amount-input").fill(".001");
   await page.getByText("Review Send").click({ force: true });
@@ -458,19 +441,15 @@ test("Send XLM payment to M address", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
-  // send XLM to M address
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  // Wait for SendAmount view to load
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  // Click AddressTile to navigate to destination entry
   await page.locator(".AddressTile").click();
 
   await page.getByTestId("send-to-input").fill(TEST_M_ADDRESS);
   await page.getByText("Continue").click({ force: true });
 
-  // Back at SendAmount - XLM already selected by default
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await page.getByTestId("send-amount-amount-input").fill(".001");
   await page.getByText("Review Send").click();
@@ -524,22 +503,23 @@ test.skip("Send SAC to C address", async ({ page, extensionId }) => {
   // swap to get some USDC
   await page.getByTestId("nav-link-swap").click({ force: true });
   await expect(page.getByText("Swap XLM")).toBeVisible();
-  await expect(
-    page.getByTestId("AssetSelect").filter({ hasText: "USDC" }),
-  ).toBeVisible({
-    timeout: 20000,
-  });
+
+  // Click on destination asset tile to select USDC
+  await page.getByTestId("swap-dst-asset-tile").click({ force: true });
+  await expect(page.getByText("Swap to")).toBeVisible();
+  await page.getByText("USDC").click({ force: true });
+
+  // Back at amount step, fill in amount
+  await expect(page.getByText("Swap XLM")).toBeVisible();
   await page.getByTestId("send-amount-amount-input").fill(".001");
   await expect(page.getByTestId("SendAmountRateAmount")).toBeVisible({
     timeout: 20000,
   });
-  await page.getByText("Continue").click({ force: true });
 
-  await expect(page.getByText("Swap Settings")).toBeVisible();
-  await expect(page.getByTestId("SendSettingsTransactionFee")).toHaveText(
-    /[0-9]/,
-  );
-  await page.getByText("Review Swap").click({ force: true });
+  // Click continue to show review modal, then confirm
+  await page.getByText("Continue").click({ force: true });
+  await expect(page.getByText("You are swapping")).toBeVisible();
+  await page.getByText("Confirm").click({ force: true });
 
   await expect(page.getByText("Confirm Swap")).toBeVisible();
   await page.getByTestId("transaction-details-btn-send").click({ force: true });
@@ -604,27 +584,22 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
-  // send E2E token to C address
   await page.getByTestId("nav-link-send").click({ force: true });
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  // Click AddressTile to navigate to destination entry
   await page.locator(".AddressTile").click();
 
   await page.getByTestId("send-to-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByText("Continue").click({ force: true });
 
-  // Back at SendAmount - need to select E2E token
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  // Click on asset tile to navigate to asset selection
   await page.locator(".SendAmount__EditDestAsset").click();
 
   await page
     .getByTestId(`SendRow-E2E:${TEST_TOKEN_ADDRESS}`)
     .click({ force: true });
 
-  // Back at SendAmount with E2E selected
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await page.getByTestId("send-amount-amount-input").fill(".001");
   await page.getByText("Review Send").click({ force: true });

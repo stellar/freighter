@@ -273,7 +273,7 @@ export const SwapAmount = ({
       )}`
     : null;
   const supportsUsd =
-    isMainnet(swapAmountData.data?.networkDetails!) && assetPrice !== null;
+    isMainnet(swapAmountData.data?.networkDetails!) && assetPrice;
   const availableBalance = getAvailableBalance({
     assetCanonical: asset,
     balances: sendData.userBalances.balances,
