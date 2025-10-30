@@ -134,7 +134,7 @@ describe("AddressTile", () => {
     it("renders empty state with default labels", () => {
       render(<AddressTile address="" onClick={mockOnClick} />);
 
-      expect(screen.getByTestId("address-tile-empty")).toBeInTheDocument();
+      expect(screen.getByTestId("address-tile")).toBeInTheDocument();
       expect(screen.getByTestId("tile-primary")).toHaveTextContent("Send to");
       expect(screen.getByTestId("tile-secondary")).toHaveTextContent(
         "Choose Recipient",
@@ -144,14 +144,14 @@ describe("AddressTile", () => {
     it("applies empty state to SelectionTile", () => {
       render(<AddressTile address="" onClick={mockOnClick} />);
 
-      const tile = screen.getByTestId("address-tile-empty");
+      const tile = screen.getByTestId("address-tile");
       expect(tile).toHaveClass("SelectionTile--empty");
     });
 
     it("calls onClick in empty state", () => {
       render(<AddressTile address="" onClick={mockOnClick} />);
 
-      fireEvent.click(screen.getByTestId("address-tile-empty"));
+      fireEvent.click(screen.getByTestId("address-tile"));
       expect(mockOnClick).toHaveBeenCalledTimes(1);
     });
 
