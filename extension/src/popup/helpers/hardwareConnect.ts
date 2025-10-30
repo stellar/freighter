@@ -27,7 +27,7 @@ type CreateWalletConnection = {
 };
 
 // To communicate with an existing ledger connection, we need to close existing connections first
-const connectToLedgerTransport = async () => {
+export const connectToLedgerTransport = async () => {
   // Close existing connections to avoid "device already open" error
   const existingTransports = await TransportWebHID.list();
   await Promise.all(
