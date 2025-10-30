@@ -966,11 +966,13 @@ export const getTokenDetails = async ({
   publicKey,
   networkDetails,
   shouldFetchBalance,
+  signal,
 }: {
   contractId: string;
   publicKey: string;
   networkDetails: NetworkDetails;
   shouldFetchBalance?: boolean;
+  signal?: AbortSignal;
 }): Promise<{
   name: string;
   decimals: number;
@@ -1026,6 +1028,7 @@ export const getTokenDetails = async ({
       `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${
         networkDetails.network
       }${shouldFetchBalance ? "&should_fetch_balance=true" : ""}`,
+      { signal },
     );
     const data = await response.json();
     if (!response.ok) {
@@ -1034,6 +1037,9 @@ export const getTokenDetails = async ({
 
     return data;
   } catch (error) {
+    if (signal?.aborted) {
+      return null;
+    }
     console.error(error);
     captureException(
       `Failed to fetch token details - ${JSON.stringify(
