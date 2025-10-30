@@ -21,9 +21,7 @@ test("Swap doesn't throw error when account is unfunded", async ({
   await login({ page, extensionId });
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
-    "Swap XLM",
-  );
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
 });
 test("Swap shows correct balances for assets", async ({
   page,
@@ -172,9 +170,7 @@ test("Swap shows correct balances for assets", async ({
   await login({ page, extensionId });
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
-    "Swap XLM",
-  );
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
   // Click on source asset tile to see asset list
   await page.getByTestId("swap-src-asset-tile").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
@@ -196,7 +192,7 @@ test("Send doesn't throw error when account is unfunded", async ({
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  await page.locator(".AddressTile").click();
+  await page.getByTestId("address-tile").click();
 
   await page
     .getByTestId("send-to-input")
@@ -215,11 +211,11 @@ test("Send doesn't throw error when creating muxed account", async ({
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  await page.locator(".AddressTile").click();
+  await page.getByTestId("address-tile").click();
 
   await page.getByTestId("send-to-input").fill(MUXED_ACCOUNT_ADDRESS);
   await expect(
-    page.getByText("The destination account doesn't exist."),
+    page.getByText("The destination account doesn’t exist."),
   ).toBeVisible();
   await page.getByText("Continue").click();
 
@@ -238,11 +234,11 @@ test("Send can review formatted inputs", async ({ page, extensionId }) => {
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  await page.locator(".AddressTile").click();
+  await page.getByTestId("address-tile").click();
 
   await page.getByTestId("send-to-input").fill(MUXED_ACCOUNT_ADDRESS);
   await expect(
-    page.getByText("The destination account doesn't exist."),
+    page.getByText("The destination account doesn’t exist."),
   ).toBeVisible();
   await page.getByText("Continue").click();
 
@@ -264,7 +260,7 @@ test("Send persists inputs and submits to network", async ({
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  await page.locator(".AddressTile").click();
+  await page.getByTestId("address-tile").click();
 
   await page
     .getByTestId("send-to-input")
@@ -336,7 +332,7 @@ test("Send XLM payments to recent federated addresses", async ({
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  await page.locator(".AddressTile").click();
+  await page.getByTestId("address-tile").click();
 
   await page.getByTestId("send-to-input").fill("freighter.pb*lobstr.co");
   await expect(page.getByTestId("send-to-identicon")).toBeVisible();
@@ -362,7 +358,7 @@ test("Send XLM payments to recent federated addresses", async ({
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  await page.locator(".AddressTile").click();
+  await page.getByTestId("address-tile").click();
 
   await expect(page.getByText("Recents")).toBeVisible();
 
@@ -404,7 +400,7 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  await page.locator(".AddressTile").click();
+  await page.getByTestId("address-tile").click();
 
   await page.getByTestId("send-to-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByText("Continue").click({ force: true });
@@ -445,7 +441,7 @@ test("Send XLM payment to M address", async ({ page, extensionId }) => {
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  await page.locator(".AddressTile").click();
+  await page.getByTestId("address-tile").click();
 
   await page.getByTestId("send-to-input").fill(TEST_M_ADDRESS);
   await page.getByText("Continue").click({ force: true });
@@ -502,7 +498,7 @@ test.skip("Send SAC to C address", async ({ page, extensionId }) => {
 
   // swap to get some USDC
   await page.getByTestId("nav-link-swap").click({ force: true });
-  await expect(page.getByText("Swap XLM")).toBeVisible();
+  await expect(page.getByText("Swap")).toBeVisible();
 
   // Click on destination asset tile to select USDC
   await page.getByTestId("swap-dst-asset-tile").click({ force: true });
@@ -510,7 +506,7 @@ test.skip("Send SAC to C address", async ({ page, extensionId }) => {
   await page.getByText("USDC").click({ force: true });
 
   // Back at amount step, fill in amount
-  await expect(page.getByText("Swap XLM")).toBeVisible();
+  await expect(page.getByText("Swap")).toBeVisible();
   await page.getByTestId("send-amount-amount-input").fill(".001");
   await expect(page.getByTestId("SendAmountRateAmount")).toBeVisible({
     timeout: 20000,
@@ -587,7 +583,7 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   await page.getByTestId("nav-link-send").click({ force: true });
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  await page.locator(".AddressTile").click();
+  await page.getByTestId("address-tile").click();
 
   await page.getByTestId("send-to-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByText("Continue").click({ force: true });

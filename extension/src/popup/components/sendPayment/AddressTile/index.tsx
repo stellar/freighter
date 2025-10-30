@@ -41,7 +41,7 @@ export const AddressTile = ({
       secondaryText={t("Choose Recipient")}
       onClick={onClick}
       isEmpty
-      testId="address-tile-empty"
+      testId="address-tile"
     />
   );
 };

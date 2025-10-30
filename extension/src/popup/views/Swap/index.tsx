@@ -114,9 +114,7 @@ export const Swap = () => {
           <SwapAsset
             title="Swap from"
             hiddenAssets={[transactionData.destinationAsset]}
-            goBack={() => {
-              navigateTo(ROUTES.account, navigate);
-            }}
+            goBack={() => setActiveStep(STEPS.AMOUNT)}
             onClickAsset={(canonical: string, isContract: boolean) => {
               dispatch(saveAsset(canonical));
               dispatch(saveIsToken(isContract));

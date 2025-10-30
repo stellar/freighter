@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
-import { Loader, Notification } from "@stellar/design-system";
+import { Icon, Loader, Notification } from "@stellar/design-system";
 
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -112,6 +112,7 @@ export const SendDestinationAsset = ({
           dispatch(saveAmount("0"));
           goBack();
         }}
+        customBackIcon={<Icon.X />}
       />
       <View.Content hasNoTopPadding>
         <div className="SendDestinationAsset">
