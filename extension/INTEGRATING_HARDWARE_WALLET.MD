@@ -42,7 +42,7 @@ the example set by Ledger in each one of the files we'll cover next:
 ```
 export const createWalletConnection: CreateWalletConnection = {
   [WalletType.LEDGER]: async (bipPath = "") => {
-    const transport = await TransportWebUSB.request();
+    const transport = await TransportWebHID.request();
     const ledgerApi = new LedgerApi(transport);
     const response = await ledgerApi.getPublicKey(bipPath);
 

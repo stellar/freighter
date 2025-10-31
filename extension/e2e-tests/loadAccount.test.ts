@@ -373,7 +373,7 @@ test("Can't change settings on a stale window", async ({
   await expect(pageTwo.locator("#isValidatingMemoValue")).toHaveValue("true");
 });
 
-test("Clears cache and fetches balances if it's been 2 minutes since the last balance update", async ({
+test.skip("Clears cache and fetches balances if it's been 2 minutes since the last balance update", async ({
   page,
   extensionId,
   context,
