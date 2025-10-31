@@ -49,7 +49,7 @@ test("Load accounts on standalone network", async ({
   await expect(page.getByTestId("account-assets")).toContainText("XLM");
 });
 
-test.skip("Switches account and fetches correct balances while clearing cache", async ({
+test("Switches account and fetches correct balances while clearing cache", async ({
   page,
   extensionId,
   context,
@@ -373,7 +373,7 @@ test("Can't change settings on a stale window", async ({
   await expect(pageTwo.locator("#isValidatingMemoValue")).toHaveValue("true");
 });
 
-test("Clears cache and fetches balances if it's been 2 minutes since the last balance update", async ({
+test.skip("Clears cache and fetches balances if it's been 2 minutes since the last balance update", async ({
   page,
   extensionId,
   context,
