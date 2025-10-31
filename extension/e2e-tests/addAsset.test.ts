@@ -181,6 +181,7 @@ test("Adding classic asset on Testnet", async ({ page, extensionId }) => {
     page.getByTestId("SignTransaction__TrustlineRow__Type"),
   ).toHaveText("Add Trustline");
   await page.getByRole("button", { name: "Confirm" }).click();
+  await page.getByText("Done").click();
   await expect(
     page.getByTestId("ManageAssetRowButton__ellipsis-USDC"),
   ).toBeVisible();
@@ -199,6 +200,7 @@ test("Adding classic asset on Testnet", async ({ page, extensionId }) => {
     page.getByTestId("SignTransaction__TrustlineRow__Type"),
   ).toHaveText("Remove Trustline");
   await page.getByRole("button", { name: "Confirm" }).click();
+  await page.getByText("Done").click();
   await expect(
     page.getByText(
       "You have no assets added. Get started by adding an asset below.",
