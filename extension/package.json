@@ -1,6 +1,6 @@
 {
   "name": "extension",
-  "version": "5.35.2",
+  "version": "5.35.4",
   "license": "Apache-2.0",
   "prettier": "../.prettierrc.yaml",
   "scripts": {
