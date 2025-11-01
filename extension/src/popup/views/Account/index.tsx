@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { isEqual } from "lodash";
 
 import {
   settingsSorobanSupportedSelector,
@@ -21,12 +22,19 @@ import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
-import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 import { newTabHref } from "helpers/urls";
 import { getTotalUsd } from "popup/helpers/balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
+import { AccountBalances } from "helpers/hooks/useGetBalances";
+
+import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
+import { useGetAccountHistoryData } from "./hooks/useGetAccountHistoryData";
+import {
+  useGetIcons,
+  RequestState as IconsRequestState,
+} from "./hooks/useGetIcons";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
@@ -45,8 +53,14 @@ export const Account = () => {
     refreshAppData,
   } = useGetAccountData({
     showHidden: false,
-    includeIcons: true,
+    includeIcons: false,
   });
+  const { state: historyData, fetchData: fetchHistoryData } =
+    useGetAccountHistoryData();
+
+  const { state: iconsData, fetchData: fetchIconsData } = useGetIcons();
+
+  const previousAccountBalancesRef = useRef<AccountBalances | null>(null);
 
   useEffect(() => {
     const getData = async () => {
@@ -55,6 +69,45 @@ export const Account = () => {
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const accountBalances =
+    accountData.state === RequestState.SUCCESS &&
+    accountData.data.type === AppDataType.RESOLVED
+      ? accountData.data?.balances
+      : null;
+
+  const isScanAppended =
+    accountData.state === RequestState.SUCCESS &&
+    accountData.data.type === AppDataType.RESOLVED
+      ? accountData.data?.isScanAppended
+      : false;
+
+  useEffect(() => {
+    const getData = async () => {
+      if (accountBalances && !isScanAppended) {
+        // tie refresh history data to account balances requests
+        await fetchHistoryData({ balances: accountBalances });
+      }
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountBalances]);
+
+  useEffect(() => {
+    const getData = async () => {
+      if (
+        accountBalances &&
+        !isEqual(accountBalances, previousAccountBalancesRef.current) && // unless balances have changed, don't fetch icons; the cache should be hydrated already
+        !isScanAppended // start fetching icons on the first scan-less balance fetch
+      ) {
+        previousAccountBalancesRef.current = accountBalances;
+
+        await fetchIconsData();
+      }
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountBalances]);
 
   if (
     accountData.state === RequestState.IDLE ||
@@ -95,7 +148,7 @@ export const Account = () => {
     return (
       <AssetDetail
         accountBalances={accountData.data.balances}
-        assetOperations={accountData.data.operationsByAsset[selectedAsset]}
+        historyData={historyData.data}
         networkDetails={accountData.data.networkDetails}
         publicKey={accountData.data.publicKey}
         selectedAsset={selectedAsset}
@@ -107,6 +160,12 @@ export const Account = () => {
   }
 
   const resolvedData = accountData.data;
+  const resolvedIcons =
+    iconsData?.state === IconsRequestState.SUCCESS &&
+    iconsData?.data?.type === AppDataType.RESOLVED
+      ? iconsData?.data?.icons
+      : {};
+
   const tokenPrices = resolvedData?.tokenPrices || {};
   const balances = resolvedData?.balances.balances!;
   const totalBalanceUsd = getTotalUsd(tokenPrices, balances);
@@ -207,7 +266,7 @@ export const Account = () => {
               <AccountAssets
                 sortedBalances={resolvedData.balances.balances}
                 assetPrices={tokenPrices}
-                assetIcons={resolvedData.balances.icons || {}}
+                assetIcons={resolvedIcons}
                 setSelectedAsset={setSelectedAsset}
               />
             </div>

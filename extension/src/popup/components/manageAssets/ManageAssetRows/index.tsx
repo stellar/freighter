@@ -35,7 +35,7 @@ export type ManageAssetCurrency = {
   decimals?: number;
   balance?: string;
   name?: string;
-  image?: string;
+  image?: string | null;
 };
 
 export interface NewAssetFlags {
@@ -71,7 +71,7 @@ export const ManageAssetRows = ({
         code: string;
         issuer: string;
         domain: string;
-        image: string;
+        image: string | null;
         isTrustlineActive: boolean;
         contract?: string;
         name?: string;
@@ -170,7 +170,7 @@ export const ManageAssetRows = ({
 export interface AssetRowData {
   code?: string;
   domain: string;
-  image?: string;
+  image?: string | null;
   issuer?: string;
   isSuspicious?: boolean;
   name?: string;
@@ -204,7 +204,7 @@ const AssetRows = ({
   }: {
     code: string;
     domain: string;
-    image: string;
+    image: string | null;
     issuer: string;
     name: string;
     contract: string;

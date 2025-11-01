@@ -28,7 +28,7 @@ export const TransactionDetail = ({
   activeOperation,
   networkDetails,
 }: {
-  activeOperation?: OperationDataRow;
+  activeOperation: OperationDataRow | null;
   networkDetails: NetworkDetails;
 }) => {
   const { t } = useTranslation();
@@ -134,7 +134,10 @@ export const TransactionDetail = ({
               {getPaymentIcon({ destIcon, destAssetCode })}
             </div>
             <div className="TransactionDetailModal__title-details">
-              <div className="TransactionDetailModal__title swap">
+              <div
+                className="TransactionDetailModal__title swap"
+                data-testid="TransactionDetailModal__title"
+              >
                 {`${activeOperation.action} `}
                 {activeOperation.rowText}
               </div>
@@ -146,7 +149,10 @@ export const TransactionDetail = ({
               >
                 <>
                   {getActionIconByType(activeOperation.actionIcon)}
-                  <div className="TransactionDetailModal__subtitle-date">
+                  <div
+                    className="TransactionDetailModal__subtitle-date"
+                    data-testid="TransactionDetailModal__subtitle-date"
+                  >
                     {createdAtDateStr} &bull; {createdAtTime}
                   </div>
                 </>
@@ -155,7 +161,12 @@ export const TransactionDetail = ({
           </div>
           <div className="TransactionDetailModal__body send">
             <div className="Send__src">
-              <div className="Send__src__amount">{nonLabelAmount}</div>
+              <div
+                className="Send__src__amount"
+                data-testid="TransactionDetailModal__src-amount"
+              >
+                {nonLabelAmount}
+              </div>
               <div className="Send__src__icon">
                 <Asset
                   size="lg"
@@ -171,7 +182,12 @@ export const TransactionDetail = ({
               <Icon.ChevronDownDouble />
             </div>
             <div className="Send__dst">
-              <div className="Send__dst__amount">{truncatedPublicKey(to)}</div>
+              <div
+                className="Send__dst__amount"
+                data-testid="TransactionDetailModal__dst-amount"
+              >
+                {truncatedPublicKey(to)}
+              </div>
               <div className="Send__dst__icon">
                 <IdenticonImg publicKey={to} />
               </div>
@@ -373,7 +389,10 @@ export const TransactionDetail = ({
   };
 
   return (
-    <div className="TransactionDetailModal">
+    <div
+      className="TransactionDetailModal"
+      data-testid="TransactionDetailModal"
+    >
       {renderBody(activeOperation)}
       <div className="TransactionDetailModal__metadata">
         <div className="Metadata">
@@ -383,6 +402,7 @@ export const TransactionDetail = ({
           </div>
           <div
             className={`Metadata__value ${activeOperation.metadata.transactionFailed ? "failed" : "success"}`}
+            data-testid="TransactionDetailModal__status"
           >
             {activeOperation.metadata.transactionFailed ? "Failed" : "Success"}
           </div>

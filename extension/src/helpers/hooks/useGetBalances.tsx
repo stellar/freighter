@@ -5,6 +5,7 @@ import {
   getAccountBalances,
   getAssetIcons,
   getHiddenAssets,
+  getAssetIconCache,
 } from "@shared/api/internal";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { AssetIcons } from "@shared/api/types";
@@ -77,6 +78,7 @@ function useGetBalances(options: {
     isMainnet: boolean,
     networkDetails: NetworkDetails,
     useCache = false,
+    shouldSkipScan = false,
   ): Promise<AccountBalances | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
@@ -85,7 +87,12 @@ function useGetBalances(options: {
       const accountBalances =
         useCache && cachedBalanceData
           ? cachedBalanceData
-          : await getAccountBalances(publicKey, networkDetails, isMainnet);
+          : await getAccountBalances(
+              publicKey,
+              networkDetails,
+              isMainnet,
+              shouldSkipScan,
+            );
 
       const payload = {
         isFunded: accountBalances.isFunded,
@@ -99,6 +106,14 @@ function useGetBalances(options: {
       } as AccountBalances;
 
       if (options.includeIcons) {
+        let cachedIconsFromCache = cachedIcons;
+        if (!Object.keys(cachedIcons).length) {
+          const backgroundCachedIcons = await getAssetIconCache({
+            activePublicKey: publicKey,
+          });
+
+          cachedIconsFromCache = { ...backgroundCachedIcons.icons };
+        }
         const assetsListsData =
           useCache && cachedTokenLists.length
             ? cachedTokenLists
@@ -111,7 +126,7 @@ function useGetBalances(options: {
           balances: accountBalances.balances,
           networkDetails,
           assetsListsData,
-          cachedIcons,
+          cachedIcons: cachedIconsFromCache,
         });
         payload.icons = icons;
         reduxDispatch(saveTokenLists(assetsListsData));

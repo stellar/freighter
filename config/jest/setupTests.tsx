@@ -40,6 +40,14 @@ jest.mock("helpers/metrics", () => ({
   storeBalanceMetricData: () => {},
 }));
 
+jest.mock("popup/App", () => ({
+  store: {
+    getState: () => ({
+      cache: {},
+    }),
+  },
+}));
+
 jest.mock("react-i18next", () => ({
   // this mock makes sure any components using the translate hook can use it without a warning being shown
   useTranslation: () => ({

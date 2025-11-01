@@ -36,7 +36,7 @@ function useGetChangeTrustData({
     domain: string;
     contract?: string;
   };
-  assetImage: string;
+  assetImage: string | null;
   networkDetails: NetworkDetails;
   recommendedFee: string;
   publicKey: string;

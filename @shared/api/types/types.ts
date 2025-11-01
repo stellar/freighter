@@ -84,6 +84,7 @@ export interface Response {
   accountName: string;
   assetCode: string;
   assetCanonical: string;
+  icons: {};
   iconUrl: string;
   network: string;
   networkIndex: number;
@@ -214,7 +215,7 @@ export type Settings = {
 } & Preferences;
 
 export interface AssetIcons {
-  [code: string]: string;
+  [code: string]: string | null;
 }
 
 export interface AssetDomains {

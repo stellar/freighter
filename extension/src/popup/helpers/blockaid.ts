@@ -163,13 +163,16 @@ type ReportTransactionWarningResponse = { data: number; error: string };
 export const scanAsset = async (
   address: string,
   networkDetails: NetworkDetails,
+  signal?: AbortSignal,
 ) => {
   try {
     if (!isMainnet(networkDetails)) {
       /* Scanning assets is only supported on Mainnet */
       return {} as BlockAidScanAssetResult;
     }
-    const res = await fetch(`${INDEXER_URL}/scan-asset?address=${address}`);
+    const res = await fetch(`${INDEXER_URL}/scan-asset?address=${address}`, {
+      signal,
+    });
     const response = (await res.json()) as ScanAssetResponse;
 
     if (!res.ok || response.error) {
@@ -245,6 +248,7 @@ export const isBlockaidWarning = (resultType: string) =>
 export const scanAssetBulk = async (
   addressList: string[],
   networkDetails: NetworkDetails,
+  signal?: AbortSignal,
 ) => {
   try {
     if (!isMainnet(networkDetails)) {
@@ -255,7 +259,7 @@ export const scanAssetBulk = async (
     addressList.forEach((address) => {
       url.searchParams.append("asset_ids", address);
     });
-    const response = await fetch(url.href);
+    const response = await fetch(url.href, { signal });
     const resJson = (await response.json()) as ScanAssetBulkResponse;
 
     if (!response.ok || resJson.error) {

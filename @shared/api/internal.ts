@@ -530,9 +530,11 @@ export const migrateAccounts = async ({
 export const getAccountIndexerBalances = async ({
   publicKey,
   networkDetails,
+  shouldSkipScan,
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
+  shouldSkipScan?: boolean;
 }): Promise<AccountBalancesInterface> => {
   const contractIds = await getTokenIds({
     activePublicKey: publicKey,
@@ -540,6 +542,9 @@ export const getAccountIndexerBalances = async ({
   });
   const url = new URL(`${INDEXER_URL}/account-balances/${publicKey}`);
   url.searchParams.append("network", networkDetails.network);
+  if (shouldSkipScan) {
+    url.searchParams.append("should_skip_scan", "true");
+  }
   for (const id of contractIds) {
     url.searchParams.append("contract_ids", id);
   }
@@ -940,6 +945,7 @@ export const getAccountBalances = async (
   publicKey: string,
   networkDetails: NetworkDetails,
   isMainnet: boolean,
+  shouldSkipScan?: boolean,
 ) => {
   if (isCustomNetwork(networkDetails)) {
     return await getAccountBalancesStandalone({
@@ -948,7 +954,11 @@ export const getAccountBalances = async (
       isMainnet,
     });
   }
-  return await getAccountIndexerBalances({ publicKey, networkDetails });
+  return await getAccountIndexerBalances({
+    publicKey,
+    networkDetails,
+    shouldSkipScan,
+  });
 };
 
 export const getTokenDetails = async ({
@@ -956,11 +966,13 @@ export const getTokenDetails = async ({
   publicKey,
   networkDetails,
   shouldFetchBalance,
+  signal,
 }: {
   contractId: string;
   publicKey: string;
   networkDetails: NetworkDetails;
   shouldFetchBalance?: boolean;
+  signal?: AbortSignal;
 }): Promise<{
   name: string;
   decimals: number;
@@ -1016,6 +1028,7 @@ export const getTokenDetails = async ({
       `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${
         networkDetails.network
       }${shouldFetchBalance ? "&should_fetch_balance=true" : ""}`,
+      { signal },
     );
     const data = await response.json();
     if (!response.ok) {
@@ -1024,6 +1037,9 @@ export const getTokenDetails = async ({
 
     return data;
   } catch (error) {
+    if (signal?.aborted) {
+      return null;
+    }
     console.error(error);
     captureException(
       `Failed to fetch token details - ${JSON.stringify(
@@ -1034,6 +1050,35 @@ export const getTokenDetails = async ({
   }
 };
 
+export const getAssetIconCache = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string | null;
+}) => {
+  let icons = {};
+  try {
+    ({ icons } = await sendMessageToBackground({
+      activePublicKey,
+      type: SERVICE_TYPES.GET_CACHED_ASSET_ICON_LIST,
+    }));
+  } catch (e) {
+    return { icons };
+  }
+  return { icons };
+};
+
+/*
+  getAssetIcons is used to get the icons for the assets in the balances.
+  It can be used with or without lookup. Lookup is keyed off of passing assetListsData and networkDetails.
+  
+  Using this method without lookup is fastest as it just consults the cache and then returns the icons. 
+  This is useful for quickly getting the icons without extra network calls.
+
+  Using this method with lookup is slower as it needs to fetch the token lists and the issuer.
+  This is useful for getting the icons for the first time. Once we've retrieved an icon, 
+  we'll store it in the background's storage and then use this cache for future lookups.
+*/
+
 export const getAssetIcons = async ({
   balances,
   networkDetails,
@@ -1041,17 +1086,18 @@ export const getAssetIcons = async ({
   cachedIcons,
 }: {
   balances: Balances;
-  networkDetails: NetworkDetails;
-  assetsListsData: AssetListResponse[];
-  cachedIcons: Record<string, string>;
+  networkDetails?: NetworkDetails;
+  assetsListsData?: AssetListResponse[];
+  cachedIcons: Record<string, string | null>;
 }) => {
-  const assetIcons = {} as { [code: string]: string };
+  const assetIcons = {} as { [code: string]: string | null };
+  const skipLookup = !assetsListsData || !networkDetails;
 
   if (balances) {
-    let icon = "";
     const balanceValues = Object.values(balances);
 
     for (let i = 0; i < balanceValues.length; i++) {
+      let icon = "";
       const { token, contractId } = balanceValues[i];
       if (token && "issuer" in token) {
         const {
@@ -1066,8 +1112,19 @@ export const getAssetIcons = async ({
           continue;
         }
 
-        icon = await getIconUrlFromIssuer({ key, code, networkDetails });
+        if (cachedIcon === null) {
+          // if we've tried to fetch this icon before and it wasn't found, we marked it as null
+          // don't bother trying to fetch it again
+          // this null value is only stored in Redux, so we will re-try on next app reload
+          continue;
+        }
+
+        if (skipLookup) {
+          continue;
+        }
+
         if (!icon) {
+          // if we don't have the icon, we try to get it from the token lists
           const tokenListIcon = await getIconFromTokenLists({
             networkDetails,
             issuerId: key,
@@ -1078,9 +1135,14 @@ export const getAssetIcons = async ({
           if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
             icon = tokenListIcon.icon;
             canonical = tokenListIcon.canonicalAsset;
+          } else {
+            // if we still don't have the icon, we try to get it from the issuer
+            icon = await getIconUrlFromIssuer({ key, code, networkDetails });
           }
         }
-        assetIcons[canonical] = icon;
+
+        // we assign null here if we checked all sources and still don't have the icon
+        assetIcons[canonical] = icon || null;
       }
     }
   }
@@ -1096,7 +1158,7 @@ export const retryAssetIcon = async ({
 }: {
   key: string;
   code: string;
-  assetIcons: { [code: string]: string };
+  assetIcons: { [code: string]: string | null };
   networkDetails: NetworkDetails;
   activePublicKey: string | null;
 }) => {
