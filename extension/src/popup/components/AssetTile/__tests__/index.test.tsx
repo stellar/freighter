@@ -1,15 +1,9 @@
 import React from "react";
 import { render, fireEvent, screen } from "@testing-library/react";
+import { Provider } from "react-redux";
 import { AssetTile } from "../index";
-
-// Mock the dependencies
-jest.mock("popup/components/account/AccountAssets", () => ({
-  AssetIcon: ({ code, icon }: { code: string; icon: string | null }) => (
-    <div data-testid="asset-icon" data-code={code} data-icon={icon}>
-      {code}
-    </div>
-  ),
-}));
+import { makeDummyStore } from "popup/__testHelpers__";
+import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
 
 jest.mock("popup/components/SelectionTile", () => ({
   SelectionTile: ({
@@ -34,6 +28,17 @@ jest.mock("popup/components/SelectionTile", () => ({
   ),
 }));
 
+// Helper to render with Redux store
+const renderWithStore = (component: React.ReactElement) => {
+  const store = makeDummyStore({
+    transactionSubmission: {
+      ...transactionSubmissionInitialState,
+      soroswapTokens: [],
+    },
+  });
+  return render(<Provider store={store}>{component}</Provider>);
+};
+
 describe("AssetTile", () => {
   const mockOnClick = jest.fn();
 
@@ -50,7 +55,7 @@ describe("AssetTile", () => {
     };
 
     it("renders asset with all props", () => {
-      render(
+      renderWithStore(
         <AssetTile
           asset={mockAsset}
           assetIcon="https://example.com/usdc.png"
@@ -63,11 +68,13 @@ describe("AssetTile", () => {
       expect(screen.getByTestId("asset-tile-test")).toBeInTheDocument();
       expect(screen.getByTestId("tile-primary")).toHaveTextContent("USDC");
       expect(screen.getByTestId("tile-secondary")).toHaveTextContent("100.00");
-      expect(screen.getByTestId("asset-icon")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+      ).toBeInTheDocument();
     });
 
     it("renders asset without balance", () => {
-      render(
+      renderWithStore(
         <AssetTile
           asset={mockAsset}
           assetIcon="https://example.com/usdc.png"
@@ -80,7 +87,7 @@ describe("AssetTile", () => {
     });
 
     it("calls onClick when clicked", () => {
-      render(
+      renderWithStore(
         <AssetTile
           asset={mockAsset}
           assetIcon="https://example.com/usdc.png"
@@ -93,7 +100,7 @@ describe("AssetTile", () => {
     });
 
     it("passes useIconWrapper={false} to SelectionTile", () => {
-      render(
+      renderWithStore(
         <AssetTile
           asset={mockAsset}
           assetIcon="https://example.com/usdc.png"
@@ -106,7 +113,7 @@ describe("AssetTile", () => {
     });
 
     it("does not apply empty state", () => {
-      render(
+      renderWithStore(
         <AssetTile
           asset={mockAsset}
           assetIcon="https://example.com/usdc.png"
@@ -127,7 +134,7 @@ describe("AssetTile", () => {
     };
 
     it("renders native asset correctly", () => {
-      render(
+      renderWithStore(
         <AssetTile
           asset={nativeAsset}
           assetIcon={null}
@@ -138,11 +145,13 @@ describe("AssetTile", () => {
 
       expect(screen.getByTestId("tile-primary")).toHaveTextContent("XLM");
       expect(screen.getByTestId("tile-secondary")).toHaveTextContent("500.00");
-      expect(screen.getByTestId("asset-icon")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("AccountAssets__asset--loading-XLM"),
+      ).toBeInTheDocument();
     });
 
     it("handles null assetIcon for native asset", () => {
-      render(
+      renderWithStore(
         <AssetTile
           asset={nativeAsset}
           assetIcon={null}
@@ -150,14 +159,19 @@ describe("AssetTile", () => {
         />,
       );
 
-      const assetIcon = screen.getByTestId("asset-icon");
-      expect(assetIcon.getAttribute("data-icon")).toBeNull();
+      const assetIcon = screen.getByTestId("AccountAssets__asset--loading-XLM");
+      expect(assetIcon).toBeInTheDocument();
+      // Native asset should still render with the default XLM icon
+      const img = assetIcon.querySelector("img");
+      expect(img).toHaveAttribute("alt", "XLM logo");
     });
   });
 
   describe("empty state (no asset)", () => {
     it("renders empty state with default labels", () => {
-      render(<AssetTile asset={null} assetIcon={null} onClick={mockOnClick} />);
+      renderWithStore(
+        <AssetTile asset={null} assetIcon={null} onClick={mockOnClick} />,
+      );
 
       expect(screen.getByTestId("tile-primary")).toHaveTextContent(
         "Select asset",
@@ -168,7 +182,7 @@ describe("AssetTile", () => {
     });
 
     it("renders empty state with custom labels", () => {
-      render(
+      renderWithStore(
         <AssetTile
           asset={null}
           assetIcon={null}
@@ -185,14 +199,18 @@ describe("AssetTile", () => {
     });
 
     it("applies empty state to SelectionTile", () => {
-      render(<AssetTile asset={null} assetIcon={null} onClick={mockOnClick} />);
+      renderWithStore(
+        <AssetTile asset={null} assetIcon={null} onClick={mockOnClick} />,
+      );
 
       const tile = screen.getByTestId("selection-tile");
       expect(tile).toHaveClass("SelectionTile--empty");
     });
 
     it("calls onClick in empty state", () => {
-      render(<AssetTile asset={null} assetIcon={null} onClick={mockOnClick} />);
+      renderWithStore(
+        <AssetTile asset={null} assetIcon={null} onClick={mockOnClick} />,
+      );
 
       fireEvent.click(screen.getByTestId("selection-tile"));
       expect(mockOnClick).toHaveBeenCalledTimes(1);
@@ -208,7 +226,7 @@ describe("AssetTile", () => {
         issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
       };
 
-      render(
+      renderWithStore(
         <AssetTile
           asset={mockAsset}
           assetIcon="https://example.com/usdc.png"
@@ -228,7 +246,7 @@ describe("AssetTile", () => {
         issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
       };
 
-      render(
+      renderWithStore(
         <AssetTile
           asset={mockAsset}
           assetIcon="https://example.com/usdc.png"
@@ -241,7 +259,7 @@ describe("AssetTile", () => {
   });
 
   describe("AssetIcon integration", () => {
-    it("passes correct props to AssetIcon for non-native asset", () => {
+    it("renders AssetIcon correctly for non-native asset", () => {
       const mockAsset = {
         code: "USDC",
         canonical:
@@ -249,7 +267,7 @@ describe("AssetTile", () => {
         issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
       };
 
-      render(
+      renderWithStore(
         <AssetTile
           asset={mockAsset}
           assetIcon="https://example.com/usdc.png"
@@ -257,22 +275,23 @@ describe("AssetTile", () => {
         />,
       );
 
-      const assetIcon = screen.getByTestId("asset-icon");
-      expect(assetIcon).toHaveAttribute("data-code", "USDC");
-      expect(assetIcon).toHaveAttribute(
-        "data-icon",
-        "https://example.com/usdc.png",
+      const assetIcon = screen.getByTestId(
+        "AccountAssets__asset--loading-USDC",
       );
+      expect(assetIcon).toBeInTheDocument();
+      const img = assetIcon.querySelector("img");
+      expect(img).toHaveAttribute("src", "https://example.com/usdc.png");
+      expect(img).toHaveAttribute("alt", "USDC logo");
     });
 
-    it("passes correct props to AssetIcon for native asset", () => {
+    it("renders AssetIcon correctly for native asset", () => {
       const nativeAsset = {
         code: "XLM",
         canonical: "native",
         issuer: "",
       };
 
-      render(
+      renderWithStore(
         <AssetTile
           asset={nativeAsset}
           assetIcon={null}
@@ -280,9 +299,10 @@ describe("AssetTile", () => {
         />,
       );
 
-      const assetIcon = screen.getByTestId("asset-icon");
-      expect(assetIcon).toHaveAttribute("data-code", "XLM");
-      expect(assetIcon.getAttribute("data-icon")).toBeNull();
+      const assetIcon = screen.getByTestId("AccountAssets__asset--loading-XLM");
+      expect(assetIcon).toBeInTheDocument();
+      const img = assetIcon.querySelector("img");
+      expect(img).toHaveAttribute("alt", "XLM logo");
     });
   });
 });
