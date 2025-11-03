@@ -554,6 +554,7 @@ export const SwapAmount = ({
                   </Button>
                 </div>
                 <AssetTile
+                  isSuspicious={false}
                   asset={{
                     code: srcAsset.code,
                     canonical: asset,
@@ -566,6 +567,7 @@ export const SwapAmount = ({
                   testId="swap-src-asset-tile"
                 />
                 <AssetTile
+                  isSuspicious={false}
                   asset={
                     dstAsset
                       ? {

@@ -12,13 +12,13 @@ jest.mock("popup/components/SelectionTile", () => ({
     secondaryText,
     onClick,
     isEmpty,
-    useIconWrapper,
+    shouldUseIconWrapper,
     testId,
   }: any) => (
     <div
       data-testid={testId || "selection-tile"}
       className={`SelectionTile ${isEmpty ? "SelectionTile--empty" : ""}`}
-      data-use-icon-wrapper={useIconWrapper}
+      data-use-icon-wrapper={shouldUseIconWrapper}
       onClick={onClick}
     >
       <div data-testid="tile-icon">{icon}</div>
@@ -57,6 +57,7 @@ describe("AssetTile", () => {
     it("renders asset with all props", () => {
       renderWithStore(
         <AssetTile
+          isSuspicious={false}
           asset={mockAsset}
           assetIcon="https://example.com/usdc.png"
           balance="100.00"
@@ -76,6 +77,7 @@ describe("AssetTile", () => {
     it("renders asset without balance", () => {
       renderWithStore(
         <AssetTile
+          isSuspicious={false}
           asset={mockAsset}
           assetIcon="https://example.com/usdc.png"
           onClick={mockOnClick}
@@ -89,6 +91,7 @@ describe("AssetTile", () => {
     it("calls onClick when clicked", () => {
       renderWithStore(
         <AssetTile
+          isSuspicious={false}
           asset={mockAsset}
           assetIcon="https://example.com/usdc.png"
           onClick={mockOnClick}
@@ -99,9 +102,10 @@ describe("AssetTile", () => {
       expect(mockOnClick).toHaveBeenCalledTimes(1);
     });
 
-    it("passes useIconWrapper={false} to SelectionTile", () => {
+    it("passes shouldUseIconWrapper={false} to SelectionTile", () => {
       renderWithStore(
         <AssetTile
+          isSuspicious={false}
           asset={mockAsset}
           assetIcon="https://example.com/usdc.png"
           onClick={mockOnClick}
@@ -115,6 +119,7 @@ describe("AssetTile", () => {
     it("does not apply empty state", () => {
       renderWithStore(
         <AssetTile
+          isSuspicious={false}
           asset={mockAsset}
           assetIcon="https://example.com/usdc.png"
           onClick={mockOnClick}
@@ -136,6 +141,7 @@ describe("AssetTile", () => {
     it("renders native asset correctly", () => {
       renderWithStore(
         <AssetTile
+          isSuspicious={false}
           asset={nativeAsset}
           assetIcon={null}
           balance="500.00"
@@ -153,6 +159,7 @@ describe("AssetTile", () => {
     it("handles null assetIcon for native asset", () => {
       renderWithStore(
         <AssetTile
+          isSuspicious={false}
           asset={nativeAsset}
           assetIcon={null}
           onClick={mockOnClick}
@@ -170,7 +177,12 @@ describe("AssetTile", () => {
   describe("empty state (no asset)", () => {
     it("renders empty state with default labels", () => {
       renderWithStore(
-        <AssetTile asset={null} assetIcon={null} onClick={mockOnClick} />,
+        <AssetTile
+          isSuspicious={false}
+          asset={null}
+          assetIcon={null}
+          onClick={mockOnClick}
+        />,
       );
 
       expect(screen.getByTestId("tile-primary")).toHaveTextContent(
@@ -184,6 +196,7 @@ describe("AssetTile", () => {
     it("renders empty state with custom labels", () => {
       renderWithStore(
         <AssetTile
+          isSuspicious={false}
           asset={null}
           assetIcon={null}
           onClick={mockOnClick}
@@ -200,7 +213,12 @@ describe("AssetTile", () => {
 
     it("applies empty state to SelectionTile", () => {
       renderWithStore(
-        <AssetTile asset={null} assetIcon={null} onClick={mockOnClick} />,
+        <AssetTile
+          isSuspicious={false}
+          asset={null}
+          assetIcon={null}
+          onClick={mockOnClick}
+        />,
       );
 
       const tile = screen.getByTestId("selection-tile");
@@ -209,7 +227,12 @@ describe("AssetTile", () => {
 
     it("calls onClick in empty state", () => {
       renderWithStore(
-        <AssetTile asset={null} assetIcon={null} onClick={mockOnClick} />,
+        <AssetTile
+          isSuspicious={false}
+          asset={null}
+          assetIcon={null}
+          onClick={mockOnClick}
+        />,
       );
 
       fireEvent.click(screen.getByTestId("selection-tile"));
@@ -228,6 +251,7 @@ describe("AssetTile", () => {
 
       renderWithStore(
         <AssetTile
+          isSuspicious={false}
           asset={mockAsset}
           assetIcon="https://example.com/usdc.png"
           onClick={mockOnClick}
@@ -248,6 +272,7 @@ describe("AssetTile", () => {
 
       renderWithStore(
         <AssetTile
+          isSuspicious={false}
           asset={mockAsset}
           assetIcon="https://example.com/usdc.png"
           onClick={mockOnClick}
@@ -269,6 +294,7 @@ describe("AssetTile", () => {
 
       renderWithStore(
         <AssetTile
+          isSuspicious={false}
           asset={mockAsset}
           assetIcon="https://example.com/usdc.png"
           onClick={mockOnClick}
@@ -293,6 +319,7 @@ describe("AssetTile", () => {
 
       renderWithStore(
         <AssetTile
+          isSuspicious={false}
           asset={nativeAsset}
           assetIcon={null}
           onClick={mockOnClick}

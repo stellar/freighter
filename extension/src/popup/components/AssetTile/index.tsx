@@ -13,6 +13,7 @@ interface AssetTileProps {
   } | null;
   assetIcon: string | null;
   balance?: string;
+  isSuspicious: boolean;
   onClick: () => void;
   emptyLabel?: string;
   emptySubtext?: string;
@@ -23,6 +24,7 @@ export const AssetTile = ({
   asset,
   assetIcon,
   balance,
+  isSuspicious,
   onClick,
   emptyLabel,
   emptySubtext,
@@ -43,13 +45,13 @@ export const AssetTile = ({
             code={asset.code}
             issuerKey={asset.issuer}
             icon={assetIcon}
-            isSuspicious={false}
+            isSuspicious={isSuspicious}
           />
         }
         primaryText={asset.code}
         secondaryText={balance}
         onClick={onClick}
-        useIconWrapper={false}
+        shouldUseIconWrapper={false}
         testId={testId}
       />
     );

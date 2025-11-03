@@ -87,8 +87,8 @@ describe("SelectionTile", () => {
     });
   });
 
-  describe("useIconWrapper prop", () => {
-    it("wraps icon in SelectionTile__icon div when useIconWrapper is true (default)", () => {
+  describe("shouldUseIconWrapper prop", () => {
+    it("wraps icon in SelectionTile__icon div when shouldUseIconWrapper is true (default)", () => {
       const { container } = render(
         <SelectionTile
           icon={<div data-testid="test-icon">Icon</div>}
@@ -102,13 +102,13 @@ describe("SelectionTile", () => {
       expect(iconWrapper).toContainElement(screen.getByTestId("test-icon"));
     });
 
-    it("wraps icon when useIconWrapper is explicitly true", () => {
+    it("wraps icon when shouldUseIconWrapper is explicitly true", () => {
       const { container } = render(
         <SelectionTile
           icon={<div data-testid="test-icon">Icon</div>}
           primaryText="Primary Text"
           onClick={mockOnClick}
-          useIconWrapper={true}
+          shouldUseIconWrapper={true}
         />,
       );
 
@@ -117,13 +117,13 @@ describe("SelectionTile", () => {
       expect(iconWrapper).toContainElement(screen.getByTestId("test-icon"));
     });
 
-    it("does not wrap icon when useIconWrapper is false", () => {
+    it("does not wrap icon when shouldUseIconWrapper is false", () => {
       const { container } = render(
         <SelectionTile
           icon={<div data-testid="test-icon">Icon</div>}
           primaryText="Primary Text"
           onClick={mockOnClick}
-          useIconWrapper={false}
+          shouldUseIconWrapper={false}
         />,
       );
 
@@ -197,7 +197,7 @@ describe("SelectionTile", () => {
           primaryText="Primary Text"
           secondaryText="Secondary Text"
           onClick={mockOnClick}
-          useIconWrapper={false}
+          shouldUseIconWrapper={false}
         />,
       );
 

@@ -9,7 +9,7 @@ interface SelectionTileProps {
   secondaryText?: string;
   onClick: () => void;
   isEmpty?: boolean;
-  useIconWrapper?: boolean;
+  shouldUseIconWrapper?: boolean;
   testId?: string;
 }
 
@@ -19,7 +19,7 @@ export const SelectionTile = ({
   secondaryText,
   onClick,
   isEmpty = false,
-  useIconWrapper = true,
+  shouldUseIconWrapper = true,
   testId,
 }: SelectionTileProps) => {
   return (
@@ -29,7 +29,7 @@ export const SelectionTile = ({
       data-testid={testId}
     >
       <div className="SelectionTile__content">
-        {useIconWrapper ? (
+        {shouldUseIconWrapper ? (
           <div className="SelectionTile__icon">{icon}</div>
         ) : (
           icon
