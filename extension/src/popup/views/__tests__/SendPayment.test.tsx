@@ -324,6 +324,221 @@ describe.skip("SendPayment", () => {
     });
   });
 
+  it("ignores invalid destination query param - malformed public key", async () => {
+    const invalidDestination = "INVALID_PUBLIC_KEY_123";
+    render(
+      <Wrapper
+        routes={[`${ROUTES.sendPayment}?destination=${invalidDestination}`]}
+        state={{
+          auth: {
+            error: null,
+            hasPrivateKey: true,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            accountBalances: mockBalances,
+          },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
+        }}
+      >
+        <SendPayment />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      // Should still show "Choose Recipient" since destination is invalid
+      expect(screen.getByText("Choose Recipient")).toBeDefined();
+    });
+  });
+
+  it("ignores invalid destination query param - empty string", async () => {
+    render(
+      <Wrapper
+        routes={[`${ROUTES.sendPayment}?destination=`]}
+        state={{
+          auth: {
+            error: null,
+            hasPrivateKey: true,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            accountBalances: mockBalances,
+          },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
+        }}
+      >
+        <SendPayment />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      // Should still show "Choose Recipient" since destination is empty
+      expect(screen.getByText("Choose Recipient")).toBeDefined();
+    });
+  });
+
+  it("ignores invalid asset query param - malformed canonical format", async () => {
+    const invalidAsset = "INVALID_FORMAT";
+    render(
+      <Wrapper
+        routes={[`${ROUTES.sendPayment}?asset=${invalidAsset}`]}
+        state={{
+          auth: {
+            error: null,
+            hasPrivateKey: true,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            accountBalances: mockBalances,
+          },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
+        }}
+      >
+        <SendPayment />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      // Should fall back to native asset (XLM)
+      expect(screen.getByText(/XLM/)).toBeDefined();
+    });
+  });
+
+  it("ignores invalid asset query param - missing issuer", async () => {
+    const invalidAsset = "CODE:";
+    render(
+      <Wrapper
+        routes={[`${ROUTES.sendPayment}?asset=${invalidAsset}`]}
+        state={{
+          auth: {
+            error: null,
+            hasPrivateKey: true,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            accountBalances: mockBalances,
+          },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
+        }}
+      >
+        <SendPayment />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      // Should fall back to native asset (XLM)
+      expect(screen.getByText(/XLM/)).toBeDefined();
+    });
+  });
+
+  it("ignores invalid asset query param - no colon divider", async () => {
+    const invalidAsset = "NODIVIDER";
+    render(
+      <Wrapper
+        routes={[`${ROUTES.sendPayment}?asset=${invalidAsset}`]}
+        state={{
+          auth: {
+            error: null,
+            hasPrivateKey: true,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            accountBalances: mockBalances,
+          },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
+        }}
+      >
+        <SendPayment />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      // Should fall back to native asset (XLM)
+      expect(screen.getByText(/XLM/)).toBeDefined();
+    });
+  });
+
+  it("handles valid destination but invalid asset - uses default asset", async () => {
+    const validDestination =
+      "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
+    const invalidAsset = "MALFORMED";
+    render(
+      <Wrapper
+        routes={[
+          `${ROUTES.sendPayment}?destination=${validDestination}&asset=${invalidAsset}`,
+        ]}
+        state={{
+          auth: {
+            error: null,
+            hasPrivateKey: true,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            accountBalances: mockBalances,
+          },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
+        }}
+      >
+        <SendPayment />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      // Should pre-populate destination (not showing "Choose Recipient")
+      expect(screen.queryByText("Choose Recipient")).toBeNull();
+      // Should fall back to native asset (XLM)
+      expect(screen.getByText(/XLM/)).toBeDefined();
+    });
+  });
+
   it("disables continue button when destination is not set", async () => {
     render(
       <Wrapper

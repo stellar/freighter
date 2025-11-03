@@ -782,5 +782,199 @@ describe.skip("Swap", () => {
       const dstTile = screen.getByTestId("swap-dst-asset-tile");
       expect(within(dstTile).getByText("Choose asset")).toBeDefined();
     });
+
+    it("falls back to native when source_asset is invalid", async () => {
+      const invalidAsset = "INVALID_FORMAT";
+      render(
+        <Wrapper
+          routes={[`${ROUTES.swap}?source_asset=${invalidAsset}`]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey,
+              allAccounts: mockAccounts,
+              hasPrivateKey: true,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+            },
+            transactionSubmission: {
+              ...transactionSubmissionInitialState,
+              accountBalances: swapMockBalances,
+            },
+          }}
+        >
+          <Swap />
+        </Wrapper>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      });
+
+      // Should default to XLM since source asset is invalid
+      const srcTile = screen.getByTestId("swap-src-asset-tile");
+      expect(within(srcTile).getByText("XLM")).toBeDefined();
+    });
+
+    it("falls back to native when source_asset is empty", async () => {
+      render(
+        <Wrapper
+          routes={[`${ROUTES.swap}?source_asset=`]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey,
+              allAccounts: mockAccounts,
+              hasPrivateKey: true,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+            },
+            transactionSubmission: {
+              ...transactionSubmissionInitialState,
+              accountBalances: swapMockBalances,
+            },
+          }}
+        >
+          <Swap />
+        </Wrapper>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      });
+
+      // Should default to XLM since source asset is empty
+      const srcTile = screen.getByTestId("swap-src-asset-tile");
+      expect(within(srcTile).getByText("XLM")).toBeDefined();
+    });
+
+    it("ignores invalid destination_asset query param", async () => {
+      const invalidAsset = "MALFORMED:";
+      render(
+        <Wrapper
+          routes={[`${ROUTES.swap}?destination_asset=${invalidAsset}`]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey,
+              allAccounts: mockAccounts,
+              hasPrivateKey: true,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+            },
+            transactionSubmission: {
+              ...transactionSubmissionInitialState,
+              accountBalances: swapMockBalances,
+            },
+          }}
+        >
+          <Swap />
+        </Wrapper>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      });
+
+      // Should show empty destination asset state since param is invalid
+      const dstTile = screen.getByTestId("swap-dst-asset-tile");
+      expect(within(dstTile).getByText("Choose asset")).toBeDefined();
+    });
+
+    it("handles valid source_asset but invalid destination_asset", async () => {
+      const validSource =
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
+      const invalidDest = "BAD_FORMAT";
+      render(
+        <Wrapper
+          routes={[
+            `${ROUTES.swap}?source_asset=${validSource}&destination_asset=${invalidDest}`,
+          ]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey,
+              allAccounts: mockAccounts,
+              hasPrivateKey: true,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+            },
+            transactionSubmission: {
+              ...transactionSubmissionInitialState,
+              accountBalances: swapMockBalances,
+            },
+          }}
+        >
+          <Swap />
+        </Wrapper>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      });
+
+      // Should use valid source asset
+      const srcTile = screen.getByTestId("swap-src-asset-tile");
+      expect(within(srcTile).getByText("USDC")).toBeDefined();
+
+      // Should ignore invalid destination and show empty state
+      const dstTile = screen.getByTestId("swap-dst-asset-tile");
+      expect(within(dstTile).getByText("Choose asset")).toBeDefined();
+    });
+
+    it("handles both invalid source and destination assets", async () => {
+      const invalidSource = "INVALID_SRC";
+      const invalidDest = "INVALID_DST";
+      render(
+        <Wrapper
+          routes={[
+            `${ROUTES.swap}?source_asset=${invalidSource}&destination_asset=${invalidDest}`,
+          ]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey,
+              allAccounts: mockAccounts,
+              hasPrivateKey: true,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+            },
+            transactionSubmission: {
+              ...transactionSubmissionInitialState,
+              accountBalances: swapMockBalances,
+            },
+          }}
+        >
+          <Swap />
+        </Wrapper>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      });
+
+      // Should default source to XLM
+      const srcTile = screen.getByTestId("swap-src-asset-tile");
+      expect(within(srcTile).getByText("XLM")).toBeDefined();
+
+      // Should show empty destination state
+      const dstTile = screen.getByTestId("swap-dst-asset-tile");
+      expect(within(dstTile).getByText("Choose asset")).toBeDefined();
+    });
   });
 });

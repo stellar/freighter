@@ -20,6 +20,7 @@ import {
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { resetSimulation } from "popup/ducks/token-payment";
+import { getAssetFromCanonical } from "helpers/stellar";
 
 export const Swap = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -40,18 +41,30 @@ export const Swap = () => {
     const sourceAssetParam = params.get("source_asset");
     const destinationAssetParam = params.get("destination_asset");
 
-    // Pre-populate source asset if provided, otherwise default to native
+    // Pre-populate source asset if provided and valid, otherwise default to native
     if (sourceAssetParam) {
-      dispatch(saveAsset(sourceAssetParam));
+      try {
+        getAssetFromCanonical(sourceAssetParam);
+        dispatch(saveAsset(sourceAssetParam));
+      } catch {
+        // Invalid source asset param, use default
+        dispatch(saveAsset("native"));
+        dispatch(saveIsToken(false));
+      }
     } else {
       // Set default asset to native if not provided
       dispatch(saveAsset("native"));
       dispatch(saveIsToken(false));
     }
 
-    // Pre-populate destination asset if provided
+    // Pre-populate destination asset if provided and valid
     if (destinationAssetParam) {
-      dispatch(saveDestinationAsset(destinationAssetParam));
+      try {
+        getAssetFromCanonical(destinationAssetParam);
+        dispatch(saveDestinationAsset(destinationAssetParam));
+      } catch {
+        // Invalid destination asset param, ignore
+      }
     }
   }, [dispatch, location.search]);
 

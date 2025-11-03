@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { StrKey } from "stellar-sdk";
 
 import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/send-payment";
@@ -93,15 +94,29 @@ export const SendPayment = () => {
     const destinationParam = params.get("destination");
     const assetParam = params.get("asset");
 
-    // Pre-populate destination if provided
+    // Pre-populate destination if provided and valid
     if (destinationParam) {
-      dispatch(saveDestination(destinationParam));
-      dispatch(saveFederationAddress("")); // Reset federation address
+      const isValidDestination =
+        StrKey.isValidEd25519PublicKey(destinationParam) ||
+        isContractId(destinationParam);
+
+      if (isValidDestination) {
+        dispatch(saveDestination(destinationParam));
+        dispatch(saveFederationAddress("")); // Reset federation address
+      }
     }
 
-    // Pre-populate asset if provided, otherwise default to native
+    // Pre-populate asset if provided and valid, otherwise default to native
     if (assetParam) {
-      dispatch(saveAsset(assetParam));
+      try {
+        getAssetFromCanonical(assetParam);
+        dispatch(saveAsset(assetParam));
+      } catch {
+        // Invalid asset param, ignore and use default
+        if (!srcAsset) {
+          dispatch(saveAsset("native"));
+        }
+      }
     } else if (!srcAsset) {
       // Set default asset to native if not already set
       dispatch(saveAsset("native"));
