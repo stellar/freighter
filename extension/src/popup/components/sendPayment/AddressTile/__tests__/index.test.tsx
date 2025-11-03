@@ -3,14 +3,6 @@ import { render, fireEvent, screen } from "@testing-library/react";
 import { AddressTile } from "../index";
 
 // Mock the dependencies
-jest.mock("popup/components/identicons/IdenticonImg", () => ({
-  IdenticonImg: ({ publicKey }: { publicKey: string }) => (
-    <div data-testid="identicon-img" data-public-key={publicKey}>
-      Identicon
-    </div>
-  ),
-}));
-
 jest.mock("helpers/stellar", () => ({
   truncatedFedAddress: (address: string) => `truncated-fed-${address}`,
   truncatedPublicKey: (address: string) => `truncated-${address}`,
@@ -58,11 +50,13 @@ describe("AddressTile", () => {
       expect(screen.queryByTestId("tile-secondary")).not.toBeInTheDocument();
     });
 
-    it("passes correct publicKey to IdenticonImg", () => {
+    it("renders IdenticonImg with correct attributes", () => {
       render(<AddressTile address={mockAddress} onClick={mockOnClick} />);
 
       const identicon = screen.getByTestId("identicon-img");
-      expect(identicon).toHaveAttribute("data-public-key", mockAddress);
+      expect(identicon).toHaveAttribute("alt", "account identicon");
+      expect(identicon).toHaveAttribute("src");
+      expect(identicon.getAttribute("src")).toMatch(/^data:image/);
     });
 
     it("calls onClick when clicked", () => {
@@ -116,7 +110,7 @@ describe("AddressTile", () => {
       );
     });
 
-    it("still passes address to IdenticonImg when federation address exists", () => {
+    it("renders IdenticonImg when federation address exists", () => {
       render(
         <AddressTile
           address={mockAddress}
@@ -126,7 +120,9 @@ describe("AddressTile", () => {
       );
 
       const identicon = screen.getByTestId("identicon-img");
-      expect(identicon).toHaveAttribute("data-public-key", mockAddress);
+      expect(identicon).toHaveAttribute("alt", "account identicon");
+      expect(identicon).toHaveAttribute("src");
+      expect(identicon.getAttribute("src")).toMatch(/^data:image/);
     });
   });
 
@@ -163,14 +159,17 @@ describe("AddressTile", () => {
   });
 
   describe("IdenticonImg integration", () => {
-    it("passes correct props to IdenticonImg for standard address", () => {
+    it("renders IdenticonImg as img element for standard address", () => {
       render(<AddressTile address={mockAddress} onClick={mockOnClick} />);
 
       const identicon = screen.getByTestId("identicon-img");
-      expect(identicon).toHaveAttribute("data-public-key", mockAddress);
+      expect(identicon.tagName).toBe("IMG");
+      expect(identicon).toHaveAttribute("alt", "account identicon");
+      expect(identicon).toHaveAttribute("src");
+      expect(identicon.getAttribute("src")).toMatch(/^data:image/);
     });
 
-    it("passes correct props to IdenticonImg when federation address exists", () => {
+    it("renders IdenticonImg correctly when federation address exists", () => {
       render(
         <AddressTile
           address={mockAddress}
@@ -180,8 +179,10 @@ describe("AddressTile", () => {
       );
 
       const identicon = screen.getByTestId("identicon-img");
-      // Should still use the public key for the identicon, not the federation address
-      expect(identicon).toHaveAttribute("data-public-key", mockAddress);
+      expect(identicon.tagName).toBe("IMG");
+      expect(identicon).toHaveAttribute("alt", "account identicon");
+      expect(identicon).toHaveAttribute("src");
+      expect(identicon.getAttribute("src")).toMatch(/^data:image/);
     });
   });
 
