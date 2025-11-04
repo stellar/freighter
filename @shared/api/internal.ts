@@ -1179,30 +1179,18 @@ export const retryAssetIcon = async ({
 };
 
 export const getAssetDomains = async ({
-  balances,
+  domainsToFetch,
   networkDetails,
 }: {
-  balances: Balances;
+  domainsToFetch: string[];
   networkDetails: NetworkDetails;
 }) => {
-  const assetDomains = {} as { [code: string]: string };
+  let assetDomains = {} as { [code: string]: string };
+  assetDomains = await getDomainFromIssuer({
+    assetInfoList: domainsToFetch,
+    networkDetails,
+  });
 
-  if (balances) {
-    const balanceValues = Object.values(balances);
-
-    for (let i = 0; i < balanceValues.length; i++) {
-      const { token } = balanceValues[i];
-      if (token && "issuer" in token) {
-        const {
-          issuer: { key },
-          code,
-        } = token;
-
-        const domain = await getDomainFromIssuer({ key, code, networkDetails });
-        assetDomains[`${code}:${key}`] = domain;
-      }
-    }
-  }
   return assetDomains;
 };
 

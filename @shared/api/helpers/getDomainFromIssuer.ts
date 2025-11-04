@@ -1,58 +1,38 @@
-import { StrKey } from "stellar-sdk";
-import { getSdk } from "@shared/helpers/stellar";
-import { sendMessageToBackground } from "./extensionMessaging";
-import { SERVICE_TYPES } from "../../constants/services";
+import { captureException } from "@sentry/browser";
+import { LedgerKeyAccount } from "../types";
 import { NetworkDetails } from "../../constants/stellar";
+import { INDEXER_V2_URL } from "../../constants/mercury";
 
 export const getDomainFromIssuer = async ({
-  key,
-  code,
+  assetInfoList,
   networkDetails,
 }: {
-  key: string;
-  code: string;
+  assetInfoList: string[];
   networkDetails: NetworkDetails;
 }) => {
-  let assetDomain = "";
-  let response;
+  const fetchedAssetDomains = {} as { [code: string]: string };
 
   try {
-    /* First, check our localStorage cache in Background to see if we've found this url before */
-    ({ assetDomain } = await sendMessageToBackground({
-      activePublicKey: null,
-      assetCanonical: `${code}:${key}`,
-      type: SERVICE_TYPES.GET_CACHED_ASSET_DOMAIN,
-    }));
-    if (assetDomain) {
-      /* If we had the url stored in cache, simply return it. We're done. */
-      return assetDomain;
-    }
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        public_keys: assetInfoList,
+      }),
+    };
+    const url = new URL(`${INDEXER_V2_URL}/ledger-key/accounts`);
+    url.searchParams.append("network", networkDetails.network);
+    const response = await fetch(url, options);
+    const { data } = (await response.json()) as { data: LedgerKeyAccount };
+
+    Object.entries(data.ledger_key_accounts).forEach(([key, value]) => {
+      fetchedAssetDomains[key] = value.home_domain;
+    });
   } catch (e) {
-    console.error(e);
+    captureException(`Error fetching asset domains: ${e}`);
   }
 
-  try {
-    /* Otherwise, 1. load their account from the API */
-    const { networkUrl, networkPassphrase } = networkDetails;
-    const Sdk = getSdk(networkPassphrase);
-
-    const server = new Sdk.Horizon.Server(networkUrl);
-    if (!StrKey.isValidEd25519PublicKey(key)) {
-      return assetDomain;
-    }
-    response = await server.loadAccount(key);
-  } catch (e) {
-    return assetDomain;
-  }
-
-  assetDomain = response.home_domain || "";
-
-  /* And also save into the cache to prevent having to do this process again */
-  await sendMessageToBackground({
-    activePublicKey: null,
-    assetCanonical: `${code}:${key}`,
-    assetDomain,
-    type: SERVICE_TYPES.CACHE_ASSET_DOMAIN,
-  });
-  return assetDomain;
+  return fetchedAssetDomains;
 };

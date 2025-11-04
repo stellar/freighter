@@ -1,8 +1,9 @@
 import { StellarToml, StrKey } from "stellar-sdk";
 import { sendMessageToBackground } from "./extensionMessaging";
-import { stellarSdkServer } from "./stellarSdkServer";
 import { SERVICE_TYPES } from "../../constants/services";
 import { NetworkDetails } from "../../constants/stellar";
+import { LedgerKeyAccount } from "../types";
+import { INDEXER_V2_URL } from "@shared/constants/mercury";
 
 /* 
 This runs a slightly convoluted process to find an icon's url. 
@@ -38,7 +39,6 @@ export const getIconUrlFromIssuer = async ({
   networkDetails: NetworkDetails;
 }) => {
   let iconUrl = "";
-  let response;
 
   try {
     /* First, check our localStorage cache in Background to see if we've found this url before */
@@ -55,20 +55,33 @@ export const getIconUrlFromIssuer = async ({
     console.error(e);
   }
 
+  let homeDomain = "";
   try {
     /* Otherwise, 1. load their account from the API */
-    const { networkUrl, networkPassphrase } = networkDetails;
-    const server = stellarSdkServer(networkUrl, networkPassphrase);
     if (!StrKey.isValidEd25519PublicKey(key)) {
       return iconUrl;
     }
 
-    response = await server.loadAccount(key);
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        public_keys: [key],
+      }),
+    };
+
+    const res = await fetch(
+      `${INDEXER_V2_URL}/ledger-key/accounts?network=${networkDetails.network}`,
+      options,
+    );
+    const { data } = (await res.json()) as { data: LedgerKeyAccount };
+    ({ home_domain: homeDomain } = data.ledger_key_accounts[key]);
   } catch (e) {
     return iconUrl;
   }
 
-  const { home_domain: homeDomain } = response;
   let toml;
 
   try {

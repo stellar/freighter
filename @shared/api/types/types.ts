@@ -384,3 +384,11 @@ export type DiscoverData = {
   tags: string[];
   isBlacklisted: boolean;
 }[];
+
+export interface LedgerKeyAccount {
+  ledger_key_accounts: {
+    [key: string]: {
+      home_domain: string;
+    };
+  };
+}

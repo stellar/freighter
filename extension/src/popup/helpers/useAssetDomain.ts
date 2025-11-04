@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
-import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { getAssetDomains } from "@shared/api/internal";
 import { isSorobanIssuer } from "./account";
 
 interface UseAssetDomain {
@@ -17,13 +17,14 @@ export const useAssetDomain = ({ assetIssuer = "" }: UseAssetDomain) => {
 
   useEffect(() => {
     const fetchAssetDomain = async () => {
-      const { networkUrl, networkPassphrase } = networkDetails;
-      const server = stellarSdkServer(networkUrl, networkPassphrase);
-
       let assetDomain = "";
 
       try {
-        const account = await server.loadAccount(assetIssuer);
+        const account = await getAssetDomains({
+          domainsToFetch: [assetIssuer],
+          networkDetails,
+        });
+
         assetDomain = account.home_domain || "";
       } catch (e) {
         console.error(e);

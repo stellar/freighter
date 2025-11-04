@@ -25,7 +25,6 @@ import { ROUTES } from "popup/constants/routes";
 import { Swap } from "popup/views/Swap";
 
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
-import * as GetAssetDomain from "popup/helpers/getAssetDomain";
 import * as GetIconHelper from "@shared/api/helpers/getIconUrlFromIssuer";
 import { SettingsState } from "@shared/api/types";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
@@ -100,10 +99,6 @@ const swapMaliciousMockBalances = {
 jest
   .spyOn(ApiInternal, "getHiddenAssets")
   .mockImplementation(() => Promise.resolve({ hiddenAssets: {}, error: "" }));
-
-jest
-  .spyOn(GetAssetDomain, "getAssetDomain")
-  .mockImplementation(() => Promise.resolve("centre.io"));
 
 jest
   .spyOn(ApiInternal, "getAccountBalances")

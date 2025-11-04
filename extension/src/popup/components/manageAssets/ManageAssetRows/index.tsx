@@ -27,7 +27,7 @@ import "./styles.scss";
 export type ManageAssetCurrency = {
   code?: string;
   issuer?: string;
-  domain: string;
+  domain: string | null;
   contract?: string;
   icon?: string;
   isSuspicious?: boolean;
@@ -69,7 +69,7 @@ export const ManageAssetRows = ({
     | {
         code: string;
         issuer: string;
-        domain: string;
+        domain: string | null;
         image: string | null;
         isTrustlineActive: boolean;
         contract?: string;
@@ -165,7 +165,7 @@ export const ManageAssetRows = ({
               )}
               {selectedAsset && !shouldChangeTrust && (
                 <ToggleTokenInternal
-                  asset={selectedAsset}
+                  asset={selectedAsset || ""}
                   networkDetails={networkDetails}
                   publicKey={publicKey}
                   onCancel={() => setSelectedAsset(undefined)}
@@ -182,7 +182,7 @@ export const ManageAssetRows = ({
 
 export interface AssetRowData {
   code?: string;
-  domain: string;
+  domain: string | null;
   image?: string | null;
   issuer?: string;
   isSuspicious?: boolean;
@@ -216,7 +216,7 @@ const AssetRows = ({
     isSac,
   }: {
     code: string;
-    domain: string;
+    domain: string | null;
     image: string | null;
     issuer: string;
     name: string;
@@ -481,7 +481,7 @@ export const ManageAssetRow = ({
           className="ManageAssetRows__domain"
           data-testid="ManageAssetDomain"
         >
-          {formatDomain(domain)}
+          {formatDomain(domain || "")}
         </div>
       </div>
     </>

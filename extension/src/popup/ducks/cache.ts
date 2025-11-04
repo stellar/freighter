@@ -8,7 +8,7 @@ import { TokenDetailsResponse } from "helpers/hooks/useTokenDetails";
 type AssetCode = string;
 type PublicKey = string;
 type IconUrl = string | null;
-type HomeDomain = string;
+type HomeDomain = string | null;
 
 interface SaveBalancesPayload {
   publicKey: PublicKey;
