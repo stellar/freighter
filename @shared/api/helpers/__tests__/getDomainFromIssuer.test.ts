@@ -24,8 +24,13 @@ describe("getDomainFromIssuer", () => {
 
     expect(fetchSpy).toHaveBeenCalledWith(
       new URL(
-        "http://localhost:3003/api/v1/ledger-key/accounts?network=TESTNET&public_key=G1&public_key=g2",
+        "http://localhost:3003/api/v1/ledger-key/accounts?network=TESTNET",
       ),
+      {
+        body: '{"public_keys":["G1","g2"]}',
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      },
     );
 
     expect(domains).toEqual({
@@ -46,8 +51,13 @@ describe("getDomainFromIssuer", () => {
 
     expect(fetchSpy).toHaveBeenCalledWith(
       new URL(
-        "http://localhost:3003/api/v1/ledger-key/accounts?network=TESTNET&public_key=G1&public_key=g2",
+        "http://localhost:3003/api/v1/ledger-key/accounts?network=TESTNET",
       ),
+      {
+        body: '{"public_keys":["G1","g2"]}',
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      },
     );
 
     expect(domains).toEqual({});
@@ -68,8 +78,13 @@ describe("getDomainFromIssuer", () => {
 
     expect(fetchSpy).toHaveBeenCalledWith(
       new URL(
-        "http://localhost:3003/api/v1/ledger-key/accounts?network=TESTNET&public_key=G1&public_key=g2",
+        "http://localhost:3003/api/v1/ledger-key/accounts?network=TESTNET",
       ),
+      {
+        body: '{"public_keys":["G1","g2"]}',
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      },
     );
 
     expect(domains).toEqual({});
