@@ -560,7 +560,7 @@ export const SwapAmount = ({
                   assetIcon={assetIcon}
                   balance={displayTotal}
                   onClick={goToEditSrcAction}
-                  emptyLabel={t("Send")}
+                  emptyLabel="Send"
                   testId="swap-src-asset-tile"
                 />
                 <AssetTile
@@ -577,7 +577,7 @@ export const SwapAmount = ({
                   assetIcon={dstAssetIcon}
                   balance={dstDisplayTotal}
                   onClick={goToEditDst}
-                  emptyLabel={t("Receive")}
+                  emptyLabel="Receive"
                   testId="swap-dst-asset-tile"
                 />
               </div>

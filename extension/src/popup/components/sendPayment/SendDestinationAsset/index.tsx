@@ -2,7 +2,6 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import { Icon, Loader, Notification } from "@stellar/design-system";
-import { useTranslation } from "react-i18next";
 
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -110,7 +109,11 @@ export const SendDestinationAsset = ({
       <SubviewHeader
         title={<span>{t("Send")}</span>}
         hasBackButton
-        customBackAction={goBack}
+        customBackAction={() => {
+          dispatch(saveAsset("native"));
+          dispatch(saveAmount("0"));
+          goBack();
+        }}
         customBackIcon={<Icon.X />}
       />
       <View.Content hasNoTopPadding>

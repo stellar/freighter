@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 
 import { STEPS } from "popup/constants/swap";
 import { emitMetric } from "helpers/metrics";
@@ -104,11 +103,7 @@ export const Swap = () => {
           <SwapAmount
             inputType={inputType}
             setInputType={setInputType}
-            goBack={() => {
-              dispatch(resetSubmission());
-              dispatch(resetSimulation());
-              navigateTo(ROUTES.account, navigate);
-            }}
+            goBack={() => navigateTo(ROUTES.account, navigate)}
             goToEditSrc={() => setActiveStep(STEPS.SET_FROM_ASSET)}
             goToEditDst={() => setActiveStep(STEPS.SET_DST_ASSET)}
             goToNext={() => setActiveStep(STEPS.SWAP_CONFIRM)}

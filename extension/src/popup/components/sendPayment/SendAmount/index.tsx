@@ -271,6 +271,9 @@ export const SendAmount = ({
     goBack();
   };
   const goToChooseAssetAction = () => {
+    dispatch(saveAsset("native"));
+    dispatch(saveAmount("0"));
+    dispatch(saveAmountUsd("0.00"));
     goToChooseAsset();
   };
 
@@ -569,7 +572,12 @@ export const SendAmount = ({
                 <AddressTile
                   address={destination}
                   federationAddress={federationAddress}
-                  onClick={goToChooseDest}
+                  onClick={() => {
+                    dispatch(saveAsset("native"));
+                    dispatch(saveAmount("0"));
+                    dispatch(saveAmountUsd("0.00"));
+                    goToChooseDest();
+                  }}
                 />
               </div>
             </form>

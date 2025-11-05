@@ -8,14 +8,11 @@ interface IdenticonImgProps {
   publicKey: string;
 }
 
-export const IdenticonImg = ({ publicKey }: IdenticonImgProps) => {
-  const { t } = useTranslation();
-  return (
-    <img
-      className="IdenticonImg"
-      alt={t("account identicon")}
-      src={createStellarIdenticon(publicKey).toDataURL()}
-      data-testid="identicon-img"
-    />
-  );
-};
+export const IdenticonImg = ({ publicKey }: IdenticonImgProps) => (
+  <img
+    className="IdenticonImg"
+    alt="account identicon"
+    src={createStellarIdenticon(publicKey).toDataURL()}
+    data-testid="identicon-img"
+  />
+);
