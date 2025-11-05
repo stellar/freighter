@@ -141,6 +141,7 @@
 
   &__actions-container {
     display: flex;
+    flex-direction: row;
     gap: pxToRem(12px);
     padding: 0 pxToRem(16px) pxToRem(16px);
     background-color: var(--sds-clr-gray-01);

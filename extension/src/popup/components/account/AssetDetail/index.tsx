@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +15,7 @@ import {
   isSorobanIssuer,
 } from "popup/helpers/account";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
-import { formatTokenAmount, isContractId } from "popup/helpers/soroban";
+import { formatTokenAmount } from "popup/helpers/soroban";
 import {
   getAssetFromCanonical,
   isMainnet,
@@ -46,8 +46,6 @@ import {
   LiquidityPoolShareAsset,
 } from "@shared/api/types/account-balance";
 import { OperationDataRow } from "popup/views/AccountHistory/hooks/useGetHistoryData";
-import { AppDispatch } from "popup/App";
-import { saveAsset, saveIsToken } from "popup/ducks/transactionSubmission";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
@@ -117,7 +115,6 @@ export const AssetDetail = ({
   tokenPrices,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { isHideDustEnabled } = useSelector(settingsSelector);
   const [optionsOpen, setOptionsOpen] = React.useState(false);
@@ -400,13 +397,8 @@ export const AssetDetail = ({
               isRounded
               isFullWidth
               onClick={() => {
-                dispatch(saveAsset(selectedAsset));
-                if (isContractId(assetIssuer)) {
-                  dispatch(saveIsToken(true));
-                } else {
-                  dispatch(saveIsToken(false));
-                }
-                navigateTo(ROUTES.sendPayment, navigate);
+                const queryParams = `?asset=${encodeURIComponent(selectedAsset)}`;
+                navigateTo(ROUTES.sendPayment, navigate, queryParams);
               }}
             >
               {t("Send")}
@@ -420,8 +412,8 @@ export const AssetDetail = ({
               isRounded
               isFullWidth
               onClick={() => {
-                dispatch(saveAsset(selectedAsset));
-                navigateTo(ROUTES.swap, navigate);
+                const queryParams = `?source_asset=${encodeURIComponent(selectedAsset)}`;
+                navigateTo(ROUTES.swap, navigate, queryParams);
               }}
             >
               {t("Swap")}
