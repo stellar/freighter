@@ -16,7 +16,12 @@ import {
 } from "popup/helpers/account";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { formatTokenAmount, isContractId } from "popup/helpers/soroban";
-import { getAssetFromCanonical, isMainnet, isTestnet } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  isMainnet,
+  isTestnet,
+  truncateString,
+} from "helpers/stellar";
 
 import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
 import { TransactionDetail } from "popup/components/accountHistory/TransactionDetail";
@@ -213,7 +218,7 @@ export const AssetDetail = ({
     ? `contract/${selectedBalance.contractId}`
     : `asset/${selectedAsset.replace(":", "-")}`;
 
-  const isLpShare = "liquidity_pool_id" in selectedBalance;
+  const isLpShare = "liquidityPoolId" in selectedBalance;
   const hasBalance =
     selectedBalance?.total &&
     new BigNumber(selectedBalance.total).isGreaterThan(0);
@@ -300,7 +305,14 @@ export const AssetDetail = ({
             ) : null}
           </div>
           <div className="AssetDetail__title">
-            {title(selectedBalance) || assetDomain}
+            {isLpShare && "liquidityPoolId" in selectedBalance
+              ? `LP: ${truncateString(selectedBalance.liquidityPoolId as string, 12)}`
+              : title(
+                  selectedBalance as Exclude<
+                    AssetType,
+                    LiquidityPoolShareAsset
+                  >,
+                ) || assetDomain}
           </div>
           {"contractId" in selectedBalance ? (
             <div className="AssetDetail__subtitle">
