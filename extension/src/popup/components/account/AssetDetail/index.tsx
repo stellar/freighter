@@ -217,8 +217,8 @@ export const AssetDetail = ({
   const hasBalance =
     selectedBalance?.total &&
     new BigNumber(selectedBalance.total).isGreaterThan(0);
-  const showSwap = !isSorobanAsset && !isLpShare;
-  const showSend = hasBalance;
+  const isShowingSwap = !isSorobanAsset && !isLpShare;
+  const isShowingSend = hasBalance;
 
   return activeAssetId ? (
     <SlideupModal
@@ -378,9 +378,9 @@ export const AssetDetail = ({
           )}
         </div>
       </View.Content>
-      {(showSwap || showSend) && (
+      {(isShowingSwap || isShowingSend) && (
         <div className="AssetDetail__actions-container">
-          {showSend && (
+          {isShowingSend && (
             <Button
               data-testid="asset-detail-send-button"
               variant="secondary"
@@ -400,7 +400,7 @@ export const AssetDetail = ({
               {t("Send")}
             </Button>
           )}
-          {showSwap && (
+          {isShowingSwap && (
             <Button
               data-testid="asset-detail-swap-button"
               variant="secondary"
