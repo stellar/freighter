@@ -55,7 +55,6 @@ import {
   AssetVisibility,
   ApiTokenPrices,
   HorizonOperation,
-  LedgerKeyAccount,
 } from "./types";
 import {
   AccountBalancesInterface,
