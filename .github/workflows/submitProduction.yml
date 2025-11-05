@@ -5,11 +5,6 @@ env:
   HUSKY: 0
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: New Version
-        default: "1.0.0"
-        required: true
 jobs:
   bump-version:
     name: Bump Package Version and Submit Extension
@@ -27,6 +22,12 @@ jobs:
           gh run watch ${{ github.run_id }}
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Get version from package.json
+        id: package_version
+        run: |
+          VERSION=$(grep -o '"version": "[^"]*"' extension/package.json | head -1 | sed 's/"version": "\(.*\)"/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version from package.json: $VERSION"
       - name: Enable Corepack
         run: corepack enable
       - name: Build extension
@@ -40,16 +41,16 @@ jobs:
       - name: Install zip
         uses: montudor/action-zip@0852c26906e00f8a315c704958823928d8018b28 #v1.0.0
       - name: Create git tag
-        run: git tag ${{ github.event.inputs.version }}
+        run: git tag ${{ steps.package_version.outputs.version }}
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
-          tag_name: ${{ github.event.inputs.version }}
-          release_name: ${{ github.event.inputs.version }}
-          body: ${{ github.event.inputs.version }}
+          tag_name: ${{ steps.package_version.outputs.version }}
+          release_name: ${{ steps.package_version.outputs.version }}
+          body: ${{ steps.package_version.outputs.version }}
           draft: false
           prerelease: false
       - name: Build for Firefox
@@ -99,7 +100,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./extension/build/build_chrome.zip
-          asset_name: build-${{ github.event.inputs.version }}.zip
+          asset_name: build-${{ steps.package_version.outputs.version }}.zip
           asset_content_type: application/zip
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@e31e87e03dd19038e411e38ae27cbad084a90661 #v2.3.3
@@ -110,9 +111,9 @@ jobs:
           SLACK_ICON: https://github.com/stellar/freighter/blob/master/docs/static/images/logo.png?size=48
           SLACK_MESSAGE:
             "https://github.com/stellar/freighter/releases/tag/${{
-            github.event.inputs.version }}"
+            steps.package_version.outputs.version }}"
           SLACK_TITLE:
-            Freighter v${{ github.event.inputs.version }} has been submitted to
-            app stores for review!
+            Freighter v${{ steps.package_version.outputs.version }} has been
+            submitted to app stores for review!
           SLACK_USERNAME: Freighter Administrative Assistant
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
