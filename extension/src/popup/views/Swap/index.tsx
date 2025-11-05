@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import { STEPS } from "popup/constants/swap";
 import { emitMetric } from "helpers/metrics";
@@ -20,11 +20,13 @@ import {
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { resetSimulation } from "popup/ducks/token-payment";
+import { getAssetFromCanonical } from "helpers/stellar";
 
 export const Swap = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const [activeStep, setActiveStep] = React.useState(STEPS.SET_FROM_ASSET);
+  const location = useLocation();
+  const [activeStep, setActiveStep] = React.useState(STEPS.AMOUNT);
   const submission = useSelector(transactionSubmissionSelector);
   const { transactionSimulation, transactionData } = submission;
 
@@ -33,7 +35,38 @@ export const Swap = () => {
   useEffect(() => {
     dispatch(resetSimulation());
     dispatch(resetSubmission());
-  }, [dispatch]);
+
+    // Handle query params and set defaults on mount
+    const params = new URLSearchParams(location.search);
+    const sourceAssetParam = params.get("source_asset");
+    const destinationAssetParam = params.get("destination_asset");
+
+    // Pre-populate source asset if provided and valid, otherwise default to native
+    if (sourceAssetParam) {
+      try {
+        getAssetFromCanonical(sourceAssetParam);
+        dispatch(saveAsset(sourceAssetParam));
+      } catch {
+        // Invalid source asset param, use default
+        dispatch(saveAsset("native"));
+        dispatch(saveIsToken(false));
+      }
+    } else {
+      // Set default asset to native if not provided
+      dispatch(saveAsset("native"));
+      dispatch(saveIsToken(false));
+    }
+
+    // Pre-populate destination asset if provided and valid
+    if (destinationAssetParam) {
+      try {
+        getAssetFromCanonical(destinationAssetParam);
+        dispatch(saveDestinationAsset(destinationAssetParam));
+      } catch {
+        // Invalid destination asset param, ignore
+      }
+    }
+  }, [dispatch, location.search]);
 
   const renderStep = (step: STEPS) => {
     switch (step) {
@@ -56,7 +89,7 @@ export const Swap = () => {
             onClickAsset={(canonical: string, isContract: boolean) => {
               dispatch(saveDestinationAsset(canonical));
               dispatch(saveIsToken(isContract));
-              setActiveStep(STEPS.CONFIRM_AMOUNT);
+              setActiveStep(STEPS.AMOUNT);
             }}
           />
         );
@@ -67,10 +100,10 @@ export const Swap = () => {
           <SwapAmount
             inputType={inputType}
             setInputType={setInputType}
-            goBack={() => setActiveStep(STEPS.SET_FROM_ASSET)}
+            goBack={() => navigateTo(ROUTES.account, navigate)}
             goToEditSrc={() => setActiveStep(STEPS.SET_FROM_ASSET)}
             goToEditDst={() => setActiveStep(STEPS.SET_DST_ASSET)}
-            goToNext={() => setActiveStep(STEPS.SET_DST_ASSET)}
+            goToNext={() => setActiveStep(STEPS.SWAP_CONFIRM)}
           />
         );
       }
@@ -94,9 +127,7 @@ export const Swap = () => {
           <SwapAsset
             title="Swap from"
             hiddenAssets={[transactionData.destinationAsset]}
-            goBack={() => {
-              navigateTo(ROUTES.account, navigate);
-            }}
+            goBack={() => setActiveStep(STEPS.AMOUNT)}
             onClickAsset={(canonical: string, isContract: boolean) => {
               dispatch(saveAsset(canonical));
               dispatch(saveIsToken(isContract));
