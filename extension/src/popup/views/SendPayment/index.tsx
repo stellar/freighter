@@ -89,7 +89,7 @@ export const SendPayment = () => {
   const [activeStep, setActiveStep] = React.useState(STEPS.AMOUNT);
 
   // Handle query params and set defaults on mount
-  React.useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams(location.search);
     const destinationParam = params.get("destination");
     const assetParam = params.get("asset");
