@@ -386,9 +386,20 @@ export type DiscoverData = {
 }[];
 
 export interface LedgerKeyAccount {
+  account_id: string;
+  balance: string;
+  seq_num: number;
+  num_sub_entries: number;
+  inflation_dest: string;
+  flags: number;
+  home_domain: string;
+  thresholds: string;
+  signers: { key: string; weight: number }[];
+  sequence_number: number;
+}
+
+export interface LedgerKeyAccounts {
   ledger_key_accounts: {
-    [key: string]: {
-      home_domain: string;
-    };
+    [key: string]: LedgerKeyAccount;
   };
 }

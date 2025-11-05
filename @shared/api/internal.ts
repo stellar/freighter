@@ -55,6 +55,7 @@ import {
   AssetVisibility,
   ApiTokenPrices,
   HorizonOperation,
+  LedgerKeyAccount,
 } from "./types";
 import {
   AccountBalancesInterface,
@@ -73,7 +74,7 @@ import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
-import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
+import { getLedgerKeyAccounts } from "./helpers/getLedgerKeyAccounts";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
 import { getIconFromTokenLists } from "./helpers/getIconFromTokenList";
 
@@ -1186,10 +1187,17 @@ export const getAssetDomains = async ({
   networkDetails: NetworkDetails;
 }) => {
   let assetDomains = {} as { [code: string]: string };
-  assetDomains = await getDomainFromIssuer({
-    assetInfoList: domainsToFetch,
-    networkDetails,
-  });
+  try {
+    const fetchedAccounts = await getLedgerKeyAccounts({
+      accountList: domainsToFetch,
+      networkDetails,
+    });
+    Object.entries(fetchedAccounts).forEach(([key, value]) => {
+      assetDomains[key] = value.home_domain;
+    });
+  } catch (e) {
+    return {};
+  }
 
   return assetDomains;
 };

@@ -2,7 +2,7 @@ import { StellarToml, StrKey } from "stellar-sdk";
 import { sendMessageToBackground } from "./extensionMessaging";
 import { SERVICE_TYPES } from "../../constants/services";
 import { NetworkDetails } from "../../constants/stellar";
-import { LedgerKeyAccount } from "../types";
+import { LedgerKeyAccounts } from "../types";
 import { INDEXER_V2_URL } from "@shared/constants/mercury";
 
 /* 
@@ -76,7 +76,7 @@ export const getIconUrlFromIssuer = async ({
       `${INDEXER_V2_URL}/ledger-key/accounts?network=${networkDetails.network}`,
       options,
     );
-    const { data } = (await res.json()) as { data: LedgerKeyAccount };
+    const { data } = (await res.json()) as { data: LedgerKeyAccounts };
     ({ home_domain: homeDomain } = data.ledger_key_accounts[key]);
   } catch (e) {
     return iconUrl;
