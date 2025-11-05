@@ -6,6 +6,8 @@ import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { truncatedFedAddress, truncatedPublicKey } from "helpers/stellar";
 import { SelectionTile } from "popup/components/SelectionTile";
 
+import "./styles.scss";
+
 interface AddressTileProps {
   address: string;
   federationAddress?: string;
@@ -36,7 +38,7 @@ export const AddressTile = ({
 
   return (
     <SelectionTile
-      icon={<Icon.Plus stroke="#707070" />}
+      icon={<Icon.Plus className="TileIcon" />}
       primaryText={t("Send to")}
       secondaryText={t("Choose Recipient")}
       onClick={onClick}
