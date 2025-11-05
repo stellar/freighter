@@ -40,7 +40,10 @@ import {
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 import { getBalanceByKey } from "popup/helpers/balance";
 import { AssetType } from "@shared/api/types/account-balance";
-import { getTokenDetails } from "@shared/api/internal";
+import {
+  TokenDetailsResponse,
+  useTokenDetails,
+} from "helpers/hooks/useTokenDetails";
 
 export type HistorySection = {
   monthYear: string; // in format {month}:{year}
@@ -238,6 +241,11 @@ export const getRowDataByOpType = async (
   operation: HistoryItemOperation,
   networkDetails: NetworkDetails,
   icons: AssetIcons,
+  fetchTokenDetails: (args: {
+    contractId: string;
+    publicKey: string;
+    networkDetails: NetworkDetails;
+  }) => Promise<TokenDetailsResponse | Error>,
 ): Promise<OperationDataRow> => {
   const {
     account,
@@ -453,13 +461,16 @@ export const getRowDataByOpType = async (
 
     if (attrs.fnName === SorobanTokenInterface.transfer) {
       try {
-        const tokenDetailsResponse = await getTokenDetails({
+        const tokenDetailsResponse = await fetchTokenDetails({
           contractId: attrs.contractId,
           publicKey,
           networkDetails,
         });
 
-        if (!tokenDetailsResponse) {
+        if (
+          !tokenDetailsResponse ||
+          isError<TokenDetailsResponse>(tokenDetailsResponse)
+        ) {
           return genericInvocation;
         }
 
@@ -597,6 +608,11 @@ const createHistorySections = async (
   icons: AssetIcons,
   networkDetails: NetworkDetails,
   isHideDustEnabled: boolean,
+  fetchTokenDetails: (args: {
+    contractId: string;
+    publicKey: string;
+    networkDetails: NetworkDetails;
+  }) => Promise<TokenDetailsResponse | Error>,
 ) =>
   await operations.reduce(
     async (
@@ -627,6 +643,7 @@ const createHistorySections = async (
         parsedOperation,
         networkDetails,
         icons,
+        fetchTokenDetails,
       );
 
       if (isDustPayment && isHideDustEnabled) {
@@ -687,8 +704,12 @@ function useGetHistoryData(
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
   const { fetchData: fetchHistory } = useGetHistory();
+  const { fetchData: fetchTokenDetails } = useTokenDetails();
 
-  const fetchData = async (useCache = false) => {
+  const fetchData = async (
+    useBalancesCache = false,
+    useHistoryCache = false,
+  ) => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const appData = await fetchAppData();
@@ -708,9 +729,13 @@ function useGetHistoryData(
         publicKey,
         isMainnetNetwork,
         networkDetails,
-        useCache,
+        useBalancesCache,
       );
-      const history = await fetchHistory(publicKey, networkDetails);
+      const history = await fetchHistory(
+        publicKey,
+        networkDetails,
+        useHistoryCache,
+      );
 
       if (isError<AccountBalances>(balancesResult)) {
         throw new Error(balancesResult.message);
@@ -732,6 +757,7 @@ function useGetHistoryData(
           balancesResult.icons || {},
           networkDetails,
           historyOptions.isHideDustEnabled,
+          fetchTokenDetails,
         ),
       } as ResolvedData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

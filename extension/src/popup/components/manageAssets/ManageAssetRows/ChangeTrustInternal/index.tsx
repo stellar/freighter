@@ -42,7 +42,7 @@ interface ChangeTrustInternalProps {
   asset: {
     code: string;
     issuer: string;
-    image: string;
+    image: string | null;
     domain: string;
     contract?: string;
   };
@@ -155,15 +155,24 @@ export const ChangeTrustInternal = ({
         <MultiPaneSlider
           activeIndex={activePaneIndex}
           panes={[
-            <div className="ChangeTrustInternal__Body">
+            <div
+              className="ChangeTrustInternal__Body"
+              data-testid="ChangeTrustInternal__Body"
+            >
               <div className="ChangeTrustInternal__Body__Wrapper">
-                <div className="ChangeTrustInternal__TitleRow">
+                <div
+                  className="ChangeTrustInternal__TitleRow"
+                  data-testid="ChangeTrustInternal__TitleRow"
+                >
                   <img src={StellarLogo} alt="Stellar Logo" />
                   <div className="ChangeTrustInternal__TitleRow__Detail">
                     <span className="ChangeTrustInternal__TitleRow__Title">
                       Confirm Transaction
                     </span>
-                    <span className="SignTransaction__TitleRow__Domain">
+                    <span
+                      className="SignTransaction__TitleRow__Domain"
+                      data-testid="ChangeTrustInternal__TitleRow__Domain"
+                    >
                       {asset.domain}
                     </span>
                   </div>
@@ -188,11 +197,17 @@ export const ChangeTrustInternal = ({
                     </div>
                   </div>
                   <div className="ChangeTrustInternal__Metadata__Row">
-                    <div className="ChangeTrustInternal__Metadata__Label">
+                    <div
+                      className="ChangeTrustInternal__Metadata__Label"
+                      data-testid="ChangeTrustInternal__Metadata__Label__Fee"
+                    >
                       <Icon.Route />
                       <span>Fee</span>
                     </div>
-                    <div className="ChangeTrustInternal__Metadata__Value">
+                    <div
+                      className="ChangeTrustInternal__Metadata__Value"
+                      data-testid="ChangeTrustInternal__Metadata__Value__Fee"
+                    >
                       <span>{`${fee} XLM`}</span>
                     </div>
                   </div>

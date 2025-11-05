@@ -26,6 +26,7 @@ import {
   getRowDataByOpType,
   OperationDataRow,
 } from "popup/views/AccountHistory/hooks/useGetHistoryData";
+import { TokenDetailsResponse } from "helpers/hooks/useTokenDetails";
 
 export const LP_IDENTIFIER = ":lp";
 
@@ -106,17 +107,23 @@ interface SortOperationsByAsset {
   balances: AssetType[];
   networkDetails: NetworkDetails;
   publicKey: string;
+  fetchTokenDetails: (args: {
+    contractId: string;
+    publicKey: string;
+    networkDetails: NetworkDetails;
+  }) => Promise<TokenDetailsResponse | Error>;
 }
 
 export interface AssetOperations {
   [key: string]: OperationDataRow[];
 }
 
-export const sortOperationsByAsset = ({
+export const sortOperationsByAsset = async ({
   balances,
   operations,
   networkDetails,
   publicKey,
+  fetchTokenDetails,
 }: SortOperationsByAsset) => {
   const assetOperationMap = {} as AssetOperations;
 
@@ -137,7 +144,7 @@ export const sortOperationsByAsset = ({
     }
   });
 
-  operations.forEach(async (op) => {
+  for (const op of operations) {
     const isPayment = getIsPayment(op.type);
     const isSwap = getIsSwap(op);
     const isCreateExternalAccount =
@@ -158,6 +165,7 @@ export const sortOperationsByAsset = ({
       parsedOperation,
       networkDetails,
       {},
+      fetchTokenDetails,
     );
     if (getIsPayment(op.type)) {
       Object.keys(assetOperationMap).forEach((assetKey) => {
@@ -199,7 +207,7 @@ export const sortOperationsByAsset = ({
         }
       });
     }
-  });
+  }
 
   return assetOperationMap;
 };

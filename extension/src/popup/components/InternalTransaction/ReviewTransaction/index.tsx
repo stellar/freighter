@@ -33,9 +33,9 @@ import { CopyValue } from "popup/components/CopyValue";
 import "./styles.scss";
 
 interface ReviewTxProps {
-  assetIcon: string;
+  assetIcon: string | null;
   dstAsset?: {
-    icon: string;
+    icon: string | null;
     canonical: string;
     priceUsd: string | null;
     amount: string;

@@ -1,16 +1,16 @@
-import { useReducer } from "react";
-import { useDispatch } from "react-redux";
-import { captureException } from "@sentry/browser";
+import { useEffect, useReducer } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
-import { initialState, reducer, isError } from "helpers/request";
+import { initialState, reducer } from "helpers/request";
 import { AppDispatch } from "popup/App";
 import {
   signFreighterTransaction,
   submitFreighterTransaction,
+  transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
-import { isMainnet } from "helpers/stellar";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 export interface ChangeTrustData {
   status: "success" | "error";
@@ -24,10 +24,55 @@ function useGetChangeTrust() {
     initialState,
   );
   const reduxDispatch = useDispatch<AppDispatch>();
-  const { fetchData: fetchBalances } = useGetBalances({
-    showHidden: false,
-    includeIcons: false,
-  });
+  const publicKey = useSelector(publicKeySelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
+  const submission = useSelector(transactionSubmissionSelector);
+  const {
+    transactionSimulation: { preparedTransaction },
+  } = submission;
+
+  const submitHwData = async ({
+    publicKey,
+    networkDetails,
+  }: {
+    publicKey: string;
+    networkDetails: NetworkDetails;
+  }) => {
+    dispatch({ type: "FETCH_DATA_START" });
+    try {
+      const payload = {} as ChangeTrustData;
+      if (preparedTransaction) {
+        const submitResp = await reduxDispatch(
+          submitFreighterTransaction({
+            publicKey,
+            signedXDR: preparedTransaction,
+            networkDetails,
+          }),
+        );
+
+        if (submitFreighterTransaction.rejected.match(submitResp)) {
+          throw new Error("failed to submit transaction");
+        }
+
+        if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+          payload.status = "success";
+          payload.txHash = submitResp.payload.hash;
+        }
+      }
+
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      return payload;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      dispatch({
+        type: "FETCH_DATA_ERROR",
+        payload: { status: "error", error: errorMessage },
+      });
+      return { status: "error", error: errorMessage } as ChangeTrustData;
+    }
+  };
 
   const fetchData = async ({
     publicKey,
@@ -69,23 +114,6 @@ function useGetChangeTrust() {
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {
           payload.status = "success";
           payload.txHash = submitResp.payload.hash;
-
-          const balancesResult = await fetchBalances(
-            publicKey,
-            isMainnet(networkDetails),
-            networkDetails,
-            false,
-          );
-
-          if (isError<AccountBalances>(balancesResult)) {
-            // we don't want to throw an error if balances fail to fetch as this doesn't affect the tx submission
-            // let's simply log the error and continue - the user will need to refresh the Account page or wait for polling to refresh the balances
-            captureException(
-              `Failed to fetch balances after change trust tx submission - ${JSON.stringify(
-                balancesResult.message,
-              )} ${networkDetails.network}`,
-            );
-          }
         }
       }
 
@@ -104,9 +132,17 @@ function useGetChangeTrust() {
     }
   };
 
+  useEffect(() => {
+    if (preparedTransaction) {
+      submitHwData({ publicKey, networkDetails });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preparedTransaction]);
+
   return {
     state,
     fetchData,
+    submitHwData,
   };
 }
 

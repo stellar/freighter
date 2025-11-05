@@ -22,7 +22,7 @@ interface ToggleTokenInternalProps {
   asset: {
     code: string;
     issuer: string;
-    image: string;
+    image: string | null;
     isTrustlineActive: boolean;
     domain: string;
     contract?: string;

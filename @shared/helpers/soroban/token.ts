@@ -102,6 +102,7 @@ export const getSymbol = async (
 export const isSacContractExecutable = async (
   contractId: string,
   networkDetails: NetworkDetails,
+  signal?: AbortSignal,
 ) => {
   if (isCustomNetwork(networkDetails)) {
     // verify the contract executable in the instance entry
@@ -139,7 +140,7 @@ export const isSacContractExecutable = async (
     const url = new URL(
       `${INDEXER_URL}/is-sac-contract/${contractId}?network=${networkDetails.network}`,
     );
-    const response = await fetch(url.href);
+    const response = await fetch(url.href, { signal });
 
     const data = await response.json();
     if (!response.ok) {
@@ -148,6 +149,9 @@ export const isSacContractExecutable = async (
 
     return data.isSacContract;
   } catch (e) {
+    if (signal?.aborted) {
+      return false;
+    }
     console.error(e);
     return false;
   }

@@ -72,6 +72,12 @@
     flex-direction: column;
     gap: pxToRem(24px);
     margin-top: pxToRem(32px);
+
+    &--loading {
+      align-items: center;
+      display: flex;
+      justify-content: center;
+    }
   }
 
   .SubviewHeader {
