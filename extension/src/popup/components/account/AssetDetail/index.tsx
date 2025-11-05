@@ -303,7 +303,6 @@ export const AssetDetail = ({
               <img
                 src={assetIconUrl}
                 alt="Network icon"
-                data-testsrc={assetIconUrl}
                 data-testid="AssetDetail__icon"
               />
             ) : null}
