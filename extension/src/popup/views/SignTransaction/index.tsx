@@ -30,7 +30,6 @@ import {
 } from "helpers/urls";
 import { emitMetric } from "helpers/metrics";
 import {
-  getCanonicalFromAsset,
   getTransactionInfo,
   isFederationAddress,
   isMuxedAccount,
@@ -525,13 +524,11 @@ const AssetDiffs = ({ assetDiffs, icons }: AssetDiffsProps) => {
       default: {
         const code = "code" in diff.asset ? diff.asset.code! : "";
         const issuer = "issuer" in diff.asset ? diff.asset.issuer! : "";
-        const canonical = getCanonicalFromAsset(code, issuer);
-        const icon = icons[canonical];
         return (
           <div className="SignTransaction__AssetDiffRow">
             <div className="SignTransaction__AssetDiffRow__Asset">
               <AssetIcon
-                assetIcons={code !== "XLM" ? { [canonical]: icon } : {}}
+                assetIcons={code !== "XLM" ? icons : {}}
                 code={code}
                 issuerKey={issuer}
               />
@@ -572,12 +569,10 @@ export const Trustline = ({ operations, icons }: TrustlineProps) => {
     const renderTrustlineAsset = (line: Asset | LiquidityPoolAsset) => {
       if ("code" in line) {
         const { code, issuer } = line;
-        const canonical = getCanonicalFromAsset(code, issuer);
-        const icon = icons[canonical];
         return (
           <>
             <AssetIcon
-              assetIcons={code !== "XLM" ? { [canonical]: icon } : {}}
+              assetIcons={code !== "XLM" ? icons : {}}
               code={code}
               issuerKey={issuer}
             />
