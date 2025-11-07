@@ -23,6 +23,7 @@ import { isContractId } from "popup/helpers/soroban";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 import { settingsSelector } from "popup/ducks/settings";
 import { TransactionBuilder } from "stellar-sdk";
+import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 
 export interface ResolvedData {
   type: AppDataType.RESOLVED;
@@ -89,7 +90,22 @@ function useGetSignTxData(
         publicKey,
         isMainnetNetwork,
         networkDetails,
+        false,
+        true,
       );
+
+      // handle auto selecting the right account based on `accountToSign`
+      const currentAccount = signFlowAccountSelector({
+        allAccounts,
+        publicKey,
+        accountToSign,
+        setActiveAccount: (account: string) =>
+          reduxDispatch(makeAccountActive(account)),
+      });
+
+      if (!currentAccount) {
+        setAccountNotFound(true);
+      }
 
       const scanResult = await scanTx(
         scanOptions.xdr,
@@ -97,12 +113,25 @@ function useGetSignTxData(
         networkDetails,
       );
 
+      const firstRenderPayload = {
+        type: AppDataType.RESOLVED,
+        balances: balancesResult,
+        scanResult,
+        publicKey,
+        applicationState: appData.account.applicationState,
+        networkDetails: appData.settings.networkDetails,
+        signFlowState: {
+          allAccounts,
+          accountNotFound,
+          currentAccount,
+        },
+      } as ResolvedData;
+
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload: firstRenderPayload });
+
       // Add all icons needed for tx assets
       const icons = {} as { [code: string]: string | null };
-      const assetsListsData = await getCombinedAssetListData({
-        networkDetails,
-        assetsLists,
-      });
+      let assetsListsData: AssetListResponse[] = [];
 
       if (
         scanResult &&
@@ -132,6 +161,12 @@ function useGetSignTxData(
                 networkDetails,
               });
               if (!icon) {
+                if (!assetsListsData.length) {
+                  assetsListsData = await getCombinedAssetListData({
+                    networkDetails,
+                    assetsLists,
+                  });
+                }
                 const tokenListIcon = await getIconFromTokenLists({
                   networkDetails,
                   issuerId: key,
@@ -171,6 +206,12 @@ function useGetSignTxData(
                 networkDetails,
               });
               if (!icon) {
+                if (!assetsListsData.length) {
+                  assetsListsData = await getCombinedAssetListData({
+                    networkDetails,
+                    assetsLists,
+                  });
+                }
                 const tokenListIcon = await getIconFromTokenLists({
                   networkDetails,
                   issuerId: issuer,
@@ -191,19 +232,6 @@ function useGetSignTxData(
 
       if (isError<AccountBalances>(balancesResult)) {
         throw new Error(balancesResult.message);
-      }
-
-      // handle auto selecting the right account based on `accountToSign`
-      const currentAccount = signFlowAccountSelector({
-        allAccounts,
-        publicKey,
-        accountToSign,
-        setActiveAccount: (account: string) =>
-          reduxDispatch(makeAccountActive(account)),
-      });
-
-      if (!currentAccount) {
-        setAccountNotFound(true);
       }
 
       const payload = {
