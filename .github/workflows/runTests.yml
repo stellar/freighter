@@ -12,6 +12,48 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Check and update release branch version
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+
+          # Check if this is a release branch
+          if [[ $BRANCH_NAME =~ ^release/([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            RELEASE_VERSION="${BASH_REMATCH[1]}"
+            echo "Detected release branch with version: $RELEASE_VERSION"
+
+            # Get current version from package.json
+            CURRENT_VERSION=$(grep -o '"version": "[^"]*"' extension/package.json | head -1 | sed 's/"version": "\(.*\)"/\1/')
+            echo "Current version in files: $CURRENT_VERSION"
+
+            # Compare versions
+            if [ "$CURRENT_VERSION" != "$RELEASE_VERSION" ]; then
+              echo "Version mismatch detected. Updating to $RELEASE_VERSION..."
+
+              # Make update-version.sh executable if not already
+              chmod +x update-version.sh
+
+              # Run the version update script
+              ./update-version.sh "$RELEASE_VERSION"
+
+              # Configure git
+              git config --local user.email "action@github.com"
+              git config --local user.name "GitHub Action"
+
+              # Commit and push changes
+              git add extension/package.json extension/public/static/manifest/v3.json
+              git commit -m "chore: bump version to $RELEASE_VERSION"
+              git push
+
+              echo "Version updated and committed successfully"
+            else
+              echo "Version already matches release branch version"
+            fi
+          else
+            echo "Not a release branch, skipping version check"
+          fi
       - run: corepack enable
       - uses: actions/setup-node@v4
         with:
