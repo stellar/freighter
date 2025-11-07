@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { CopyText, Icon, Link, Loader } from "@stellar/design-system";
+import { useNavigate } from "react-router-dom";
+import { Button, CopyText, Icon, Link, Loader } from "@stellar/design-system";
 
 import { ApiTokenPrice, ApiTokenPrices } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -15,7 +16,12 @@ import {
 } from "popup/helpers/account";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { formatTokenAmount } from "popup/helpers/soroban";
-import { getAssetFromCanonical, isMainnet, isTestnet } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  isMainnet,
+  isTestnet,
+  truncateString,
+} from "helpers/stellar";
 
 import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
 import { TransactionDetail } from "popup/components/accountHistory/TransactionDetail";
@@ -40,6 +46,8 @@ import {
   LiquidityPoolShareAsset,
 } from "@shared/api/types/account-balance";
 import { OperationDataRow } from "popup/views/AccountHistory/hooks/useGetHistoryData";
+import { navigateTo } from "popup/helpers/navigate";
+import { ROUTES } from "popup/constants/routes";
 import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 
@@ -107,10 +115,11 @@ export const AssetDetail = ({
   tokenPrices,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { isHideDustEnabled } = useSelector(settingsSelector);
   const [optionsOpen, setOptionsOpen] = React.useState(false);
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const isNative = selectedAsset === "native";
-  const { isHideDustEnabled } = useSelector(settingsSelector);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -138,7 +147,9 @@ export const AssetDetail = ({
 
   const icons = accountBalances.icons || {};
   const assetIconUrl =
-    "type" in selectedBalance.token && selectedBalance.token.type === "native"
+    "token" in selectedBalance &&
+    "type" in selectedBalance.token &&
+    selectedBalance.token.type === "native"
       ? StellarLogo
       : icons[selectedAsset];
   const assetPrice: ApiTokenPrice | null = tokenPrices
@@ -203,6 +214,13 @@ export const AssetDetail = ({
   const stellarExpertAssetLinkSlug = isSorobanBalance(selectedBalance)
     ? `contract/${selectedBalance.contractId}`
     : `asset/${selectedAsset.replace(":", "-")}`;
+
+  const isLpShare = "liquidityPoolId" in selectedBalance;
+  const hasBalance =
+    selectedBalance?.total &&
+    new BigNumber(selectedBalance.total).isGreaterThan(0);
+  const isShowingSwap = !isSorobanAsset && !isLpShare;
+  const isShowingSend = hasBalance;
 
   return activeAssetId ? (
     <SlideupModal
@@ -284,7 +302,14 @@ export const AssetDetail = ({
             ) : null}
           </div>
           <div className="AssetDetail__title">
-            {title(selectedBalance) || assetDomain}
+            {isLpShare && "liquidityPoolId" in selectedBalance
+              ? `LP: ${truncateString(selectedBalance.liquidityPoolId as string, 12)}`
+              : title(
+                  selectedBalance as Exclude<
+                    AssetType,
+                    LiquidityPoolShareAsset
+                  >,
+                ) || assetDomain}
           </div>
           {"contractId" in selectedBalance ? (
             <div className="AssetDetail__subtitle">
@@ -362,6 +387,40 @@ export const AssetDetail = ({
           )}
         </div>
       </View.Content>
+      {(isShowingSwap || isShowingSend) && (
+        <div className="AssetDetail__actions-container">
+          {isShowingSend && (
+            <Button
+              data-testid="asset-detail-send-button"
+              variant="secondary"
+              size="lg"
+              isRounded
+              isFullWidth
+              onClick={() => {
+                const queryParams = `?asset=${encodeURIComponent(selectedAsset)}`;
+                navigateTo(ROUTES.sendPayment, navigate, queryParams);
+              }}
+            >
+              {t("Send")}
+            </Button>
+          )}
+          {isShowingSwap && (
+            <Button
+              data-testid="asset-detail-swap-button"
+              variant="secondary"
+              size="lg"
+              isRounded
+              isFullWidth
+              onClick={() => {
+                const queryParams = `?source_asset=${encodeURIComponent(selectedAsset)}`;
+                navigateTo(ROUTES.swap, navigate, queryParams);
+              }}
+            >
+              {t("Swap")}
+            </Button>
+          )}
+        </div>
+      )}
       {isNative && (
         <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
           <div className="AssetDetail__info-modal">
