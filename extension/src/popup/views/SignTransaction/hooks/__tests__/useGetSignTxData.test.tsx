@@ -55,16 +55,9 @@ jest
   .spyOn(AccountHelpers, "signFlowAccountSelector")
   .mockReturnValue(mockAccounts[0]);
 
-jest.spyOn(TokenListHelpers, "getCombinedAssetListData").mockResolvedValue([
-  {
-    name: "Test Asset List",
-    description: "Test description",
-    network: "testnet",
-    version: "1.0.0",
-    provider: "test",
-    assets: [],
-  },
-]);
+const GetCombinedAssetListDataSpy = jest
+  .spyOn(TokenListHelpers, "getCombinedAssetListData")
+  .mockResolvedValue([]);
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -87,16 +80,7 @@ describe("useGetSignTxData", () => {
     balances: mockBalances.balances,
   };
 
-  const tokenListData = [
-    {
-      name: "Example Asset List",
-      description: "Example description",
-      network: "testnet",
-      version: "1.0.0",
-      provider: "example",
-      assets: [],
-    },
-  ];
+  const tokenListData = [{ id: "example-token-list" }];
   const canonicalKey = "XLM:GABCDEF";
   const cachedIcons = {
     [canonicalKey]: "https://cached/icon/url.png",
@@ -192,7 +176,7 @@ describe("useGetSignTxData", () => {
       await result.current.fetchData();
     });
 
-    // Verify that asset lists data was used (icons populated indicates asset lists data length > 0)
+    expect(GetCombinedAssetListDataSpy).toHaveBeenCalled();
     // @ts-ignore
     expect(result.current.state.data?.icons).toEqual({
       [TEST_CANONICAL]: "https://example.com/icon.png",
@@ -235,7 +219,7 @@ describe("useGetSignTxData", () => {
       await result.current.fetchData();
     });
 
-    // Verify that asset lists data was not used (no icons indicates asset lists data length = 0 or not fetched)
+    expect(GetCombinedAssetListDataSpy).not.toHaveBeenCalled();
     // @ts-ignore
     expect(result.current.state.data?.icons).toEqual({});
     // @ts-ignore
@@ -271,22 +255,11 @@ describe("useGetSignTxData", () => {
       { wrapper: Wrapper(store) },
     );
 
-    jest
-      .spyOn(GetIconUrlFromIssuerHelpers, "getIconUrlFromIssuer")
-      .mockResolvedValue("");
-
-    jest
-      .spyOn(GetIconFromTokenListHelpers, "getIconFromTokenLists")
-      .mockResolvedValue({
-        icon: "https://example.com/icon.png",
-        canonicalAsset: TEST_CANONICAL,
-      });
-
     await act(async () => {
       await result.current.fetchData();
     });
 
-    // Verify that asset lists data was used (icons populated indicates asset lists data length > 0)
+    expect(GetCombinedAssetListDataSpy).toHaveBeenCalledTimes(1);
     // @ts-ignore
     expect(result.current.state.data?.icons).toEqual({
       [TEST_CANONICAL]: "https://example.com/icon.png",

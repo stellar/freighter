@@ -132,10 +132,7 @@ function useGetSignTxData(
 
       // Add all icons needed for tx assets
       const icons = {} as { [code: string]: string | null };
-      const assetsListsData = await getCombinedAssetListData({
-        networkDetails,
-        assetsLists,
-      });
+      let assetsListsData: AssetListResponse[] = [];
 
       // Fetch icons for asset diffs only if includeIcons is true
       if (
@@ -168,13 +165,11 @@ function useGetSignTxData(
                 networkDetails,
               });
               if (!icon) {
-                if (!hasFetchedAssetLists) {
+                if (!assetsListsData.length) {
                   assetsListsData = await getCombinedAssetListData({
                     networkDetails,
                     assetsLists,
-                    cachedAssetLists: cachedTokenLists,
                   });
-                  hasFetchedAssetLists = true;
                 }
                 const tokenListIcon = await getIconFromTokenLists({
                   issuerId: key,
@@ -218,13 +213,11 @@ function useGetSignTxData(
                 networkDetails,
               });
               if (!icon) {
-                if (!hasFetchedAssetLists) {
+                if (!assetsListsData.length) {
                   assetsListsData = await getCombinedAssetListData({
                     networkDetails,
                     assetsLists,
-                    cachedAssetLists: cachedTokenLists,
                   });
-                  hasFetchedAssetLists = true;
                 }
                 const tokenListIcon = await getIconFromTokenLists({
                   issuerId: issuer,
