@@ -32,7 +32,6 @@ import { useGetChangeTrust } from "../hooks/useChangeTrust";
 import "./styles.scss";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { useResetChangeTrustData } from "../hooks/useResetChangeTrustData";
-import { useTranslation } from "react-i18next";
 
 interface SubmitTransactionProps {
   asset: {
@@ -243,7 +242,7 @@ export const SubmitTransaction = ({
                     className="SubmitTransaction__Title__Success"
                     data-testid="SubmitTransaction__Title__Success"
                   />
-                  <span>{t("Success!")}</span>
+                  <span>Success!</span>
                 </>
               )}
               {isFail && (

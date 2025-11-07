@@ -1,6 +1,5 @@
 import { useEffect, useReducer } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
 
 import { initialState, reducer } from "helpers/request";
 import { AppDispatch } from "popup/App";
@@ -54,7 +53,7 @@ function useGetChangeTrust() {
         );
 
         if (submitFreighterTransaction.rejected.match(submitResp)) {
-          throw new Error(t("failed to submit transaction"));
+          throw new Error("failed to submit transaction");
         }
 
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {

@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { CopyText, Icon, Link, Loader } from "@stellar/design-system";
+import { useNavigate } from "react-router-dom";
+import { Button, CopyText, Icon, Link, Loader } from "@stellar/design-system";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
@@ -47,6 +48,8 @@ import {
   LiquidityPoolShareAsset,
 } from "@shared/api/types/account-balance";
 import { OperationDataRow } from "popup/views/AccountHistory/hooks/useGetHistoryData";
+import { navigateTo } from "popup/helpers/navigate";
+import { ROUTES } from "popup/constants/routes";
 import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 
@@ -141,10 +144,11 @@ export const AssetDetail = ({
   handleClose,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { isHideDustEnabled } = useSelector(settingsSelector);
   const [optionsOpen, setOptionsOpen] = React.useState(false);
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const isNative = selectedAsset === "native";
-  const { isHideDustEnabled } = useSelector(settingsSelector);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -489,10 +493,65 @@ export const AssetDetail = ({
                     </div>
                   ) : null}
                 </div>
-                <div className="AssetDetail__info-modal__total-available-row">
-                  <div>{t("Total Available")}</div>
-                  <div>{availableTotal}</div>
-                </div>
+              ) : null}
+            </>
+          )
+        }
+      />
+      <View.Content>
+        <div className="AssetDetail__wrapper" data-testid="AssetDetail">
+          <div className="AssetDetail__network-icon">
+            {assetIconUrl ? (
+              <img src={assetIconUrl} alt="Network icon" />
+            ) : null}
+          </div>
+          <div className="AssetDetail__title">
+            {isLpShare && "liquidityPoolId" in selectedBalance
+              ? `LP: ${truncateString(selectedBalance.liquidityPoolId as string, 12)}`
+              : title(
+                  selectedBalance as Exclude<
+                    AssetType,
+                    LiquidityPoolShareAsset
+                  >,
+                ) || assetDomain}
+          </div>
+          {"contractId" in selectedBalance ? (
+            <div className="AssetDetail__subtitle">
+              <CopyValue
+                value={selectedBalance.contractId}
+                displayValue={displaySorobanId(selectedBalance.contractId, 28)}
+              />
+            </div>
+          ) : null}
+          <div className="AssetDetail__price">
+            {assetPrice && assetPrice.currentPrice
+              ? `$${formatAmount(
+                  roundUsdValue(
+                    new BigNumber(assetPrice.currentPrice).toString(),
+                  ),
+                )}`
+              : null}
+          </div>
+          {assetPrice && assetPrice.percentagePriceChange24h ? (
+            <div
+              className={`AssetDetail__delta ${getPriceDeltaColor(
+                new BigNumber(
+                  roundUsdValue(assetPrice.percentagePriceChange24h),
+                ),
+              )}`}
+            >
+              {formatAmount(roundUsdValue(assetPrice.percentagePriceChange24h))}
+              %
+            </div>
+          ) : null}
+          <div className="AssetDetail__balance-info">
+            <div
+              className="AssetDetail__balance"
+              data-testid="asset-detail-available-copy"
+            >
+              <div className="AssetDetail__balance-label">
+                <Icon.Coins01 />
+                Balance
               </div>
               <div className="AssetDetail__info-modal__footnote">
                 {`${t(
@@ -526,6 +585,40 @@ export const AssetDetail = ({
           )}
         </div>
       </View.Content>
+      {(isShowingSwap || isShowingSend) && (
+        <div className="AssetDetail__actions-container">
+          {isShowingSend && (
+            <Button
+              data-testid="asset-detail-send-button"
+              variant="secondary"
+              size="lg"
+              isRounded
+              isFullWidth
+              onClick={() => {
+                const queryParams = `?asset=${encodeURIComponent(selectedAsset)}`;
+                navigateTo(ROUTES.sendPayment, navigate, queryParams);
+              }}
+            >
+              {t("Send")}
+            </Button>
+          )}
+          {isShowingSwap && (
+            <Button
+              data-testid="asset-detail-swap-button"
+              variant="secondary"
+              size="lg"
+              isRounded
+              isFullWidth
+              onClick={() => {
+                const queryParams = `?source_asset=${encodeURIComponent(selectedAsset)}`;
+                navigateTo(ROUTES.swap, navigate, queryParams);
+              }}
+            >
+              {t("Swap")}
+            </Button>
+          )}
+        </div>
+      )}
       {isNative && (
         <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
           <div className="AssetDetail__info-modal">

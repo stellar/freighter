@@ -17,8 +17,6 @@
   "dependencies": {
     "@ledgerhq/hw-app-str": "7.2.0",
     "@ledgerhq/hw-transport-webhid": "6.30.6",
-    "@radix-ui/react-dialog": "1.1.15",
-    "@radix-ui/react-popover": "1.1.15",
     "@reduxjs/toolkit": "2.5.0",
     "@sentry/browser": "9.13.0",
     "@shared/api": "1.0.0",

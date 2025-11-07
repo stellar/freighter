@@ -167,7 +167,7 @@ export const ChangeTrustInternal = ({
                   className="ChangeTrustInternal__TitleRow"
                   data-testid="ChangeTrustInternal__TitleRow"
                 >
-                  <img src={StellarLogo} alt={t("Stellar Logo")} />
+                  <img src={StellarLogo} alt="Stellar Logo" />
                   <div className="ChangeTrustInternal__TitleRow__Detail">
                     <span className="ChangeTrustInternal__TitleRow__Title">
                       {t("Confirm Transaction")}
