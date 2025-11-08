@@ -4,6 +4,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { HistoryResponse } from "helpers/hooks/useGetHistory";
 import { TokenDetailsResponse } from "helpers/hooks/useTokenDetails";
+import { ApiTokenPrices } from "@shared/api/types";
 
 type AssetCode = string;
 type PublicKey = string;
@@ -37,6 +38,11 @@ type SaveTokenLists = AssetListResponse[];
 
 type SaveTokenDetailsPayload = { contractId: string } & TokenDetailsResponse;
 
+type SaveTokenPricesPayload = {
+  publicKey: string;
+  tokenPrices: ApiTokenPrices;
+};
+
 interface InitialState {
   balanceData: {
     [network: string]: Record<
@@ -53,6 +59,9 @@ interface InitialState {
   historyData: {
     [network: string]: Record<PublicKey, HistoryResponse>;
   };
+  tokenPrices: {
+    [publicKey: string]: ApiTokenPrices & { updatedAt: number };
+  };
 }
 
 const initialState: InitialState = {
@@ -62,6 +71,7 @@ const initialState: InitialState = {
   tokenLists: [],
   tokenDetails: {},
   historyData: {},
+  tokenPrices: {},
 };
 
 const cacheSlice = createSlice({
@@ -75,6 +85,7 @@ const cacheSlice = createSlice({
       state.tokenLists = [];
       state.tokenDetails = {};
       state.historyData = {};
+      state.tokenPrices = {};
     },
     saveBalancesForAccount(state, action: { payload: SaveBalancesPayload }) {
       state.balanceData = {
@@ -101,6 +112,7 @@ const cacheSlice = createSlice({
       delete state.balanceData[action.payload.networkDetails.network][
         action.payload.publicKey
       ];
+      delete state.tokenPrices[action.payload.publicKey];
     },
     saveIconsForBalances(state, action: { payload: SaveIconsPayload }) {
       state.icons = {
@@ -123,6 +135,15 @@ const cacheSlice = createSlice({
         [action.payload.contractId]: action.payload,
       };
     },
+    saveTokenPrices(state, action: { payload: SaveTokenPricesPayload }) {
+      state.tokenPrices = {
+        ...state.tokenPrices,
+        [action.payload.publicKey]: {
+          ...action.payload.tokenPrices,
+          updatedAt: Date.now(),
+        } as ApiTokenPrices & { updatedAt: number },
+      };
+    },
   },
 });
 
@@ -138,6 +159,8 @@ export const tokensListsSelector = (state: { cache: InitialState }) =>
   state.cache.tokenLists;
 export const tokenDetailsSelector = (state: { cache: InitialState }) =>
   state.cache.tokenDetails;
+export const tokenPricesSelector = (state: { cache: InitialState }) =>
+  state.cache.tokenPrices;
 export const selectBalancesByPublicKey = (publicKey: string) =>
   createSelector(balancesSelector, (balances) => balances[publicKey]);
 
@@ -150,5 +173,6 @@ export const {
   saveDomainForIssuer,
   saveTokenLists,
   saveTokenDetails,
+  saveTokenPrices,
   clearBalancesForAccount,
 } = cacheSlice.actions;

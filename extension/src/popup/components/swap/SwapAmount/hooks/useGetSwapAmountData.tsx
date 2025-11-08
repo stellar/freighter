@@ -14,7 +14,7 @@ import { AppDataType, NeedsReRoute } from "helpers/hooks/useGetAppData";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { isMainnet } from "helpers/stellar";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { getTokenPrices } from "popup/views/Account/hooks/useGetAccountData";
+import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
 
 export interface ResolvedSwapAmountData {
   type: AppDataType.RESOLVED;
@@ -45,6 +45,7 @@ function useGetSwapAmountData(
     showHidden: true,
     includeIcons: false,
   });
+  const { fetchData: fetchTokenPrices } = useGetTokenPrices();
 
   const { fetchData: fetchAssetDomains } =
     useGetAssetDomainsWithBalances(options);
@@ -79,6 +80,15 @@ function useGetSwapAmountData(
         destinationBalances = balances;
       }
 
+      let tokenPrices = {} as ApiTokenPrices;
+      if (_isMainnet) {
+        const fetchedTokenPrices = await fetchTokenPrices({
+          publicKey: userDomains.publicKey,
+          balances: destinationBalances.balances,
+        });
+        tokenPrices = fetchedTokenPrices.tokenPrices;
+      }
+
       const payload = {
         type: AppDataType.RESOLVED,
         applicationState: userDomains.applicationState,
@@ -88,11 +98,7 @@ function useGetSwapAmountData(
         destinationBalances,
         icons: userDomains.balances.icons || {},
         domains: userDomains.domains,
-        tokenPrices: _isMainnet
-          ? await getTokenPrices({
-              balances: userDomains.balances.balances,
-            })
-          : {},
+        tokenPrices,
       } as ResolvedSwapAmountData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;

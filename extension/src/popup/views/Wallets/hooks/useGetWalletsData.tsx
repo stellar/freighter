@@ -8,11 +8,12 @@ import {
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
 import { isMainnet } from "helpers/stellar";
-import { getTokenPrices } from "popup/views/Account/hooks/useGetAccountData";
 import { getTotalUsd } from "popup/helpers/balance";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
+import { NetworkDetails } from "@shared/constants/stellar";
+import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
 
 export interface ResolvedData {
   type: AppDataType.RESOLVED;
@@ -22,9 +23,13 @@ export interface ResolvedData {
     [key: string]: string;
   };
   applicationState: APPLICATION_STATE;
+  isFetchingTokenPrices: boolean;
 }
 
 type GetWalletsData = NeedsReRoute | ResolvedData;
+
+// the number of wallets that fit in the extension viewport at once
+const BATCH_SIZE = 6;
 
 function useGetWalletsData() {
   const [state, dispatch] = useReducer(
@@ -36,6 +41,56 @@ function useGetWalletsData() {
     showHidden: true,
     includeIcons: false,
   });
+  const { fetchData: fetchTokenPrices } = useGetTokenPrices();
+
+  const batchedFetchBalances = async ({
+    accounts,
+    networkDetails,
+    isMainnetNetwork,
+    useCache,
+    payload,
+  }: {
+    accounts: Account[];
+    networkDetails: NetworkDetails;
+    isMainnetNetwork: boolean;
+    useCache: boolean;
+    payload: ResolvedData;
+  }) => {
+    const prices = await Promise.all(
+      accounts.map(async (account) => {
+        const balances = await fetchBalances(
+          account.publicKey,
+          isMainnetNetwork,
+          networkDetails,
+          useCache,
+          true,
+        );
+        if (isError<AccountBalances>(balances)) {
+          captureException(
+            `Error loading account balances in wallets data - ${balances.message}`,
+          );
+          throw new Error(balances.message);
+        }
+
+        const prices = await fetchTokenPrices({
+          publicKey: account.publicKey,
+          balances: balances.balances,
+        });
+        const totalPriceUsd = getTotalUsd(
+          prices.tokenPrices,
+          balances.balances,
+        );
+        return {
+          [account.publicKey]: `$${formatAmount(roundUsdValue(totalPriceUsd.toString()))}`,
+        };
+      }),
+    );
+    const pricesMap: { [key: string]: string } = prices.reduce((acc, curr) => {
+      return { ...acc, ...curr };
+    }, {});
+    payload.accountValue = { ...payload.accountValue, ...pricesMap };
+    dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+  };
 
   const fetchData = async (useCache = false) => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -60,42 +115,23 @@ function useGetWalletsData() {
         publicKey,
         allAccounts,
         applicationState: appData.account.applicationState,
+        isFetchingTokenPrices: isMainnetNetwork,
       } as ResolvedData;
 
       if (isMainnetNetwork) {
-        const prices = await Promise.all(
-          allAccounts.map(async (account) => {
-            const balances = await fetchBalances(
-              account.publicKey,
-              isMainnetNetwork,
-              networkDetails,
-              useCache,
-            );
-            if (isError<AccountBalances>(balances)) {
-              captureException(
-                `Error loading account balances in wallets data - ${balances.message}`,
-              );
-              throw new Error(balances.message);
-            }
-
-            const prices = await getTokenPrices({
-              balances: balances.balances,
-            });
-            const totalPriceUsd = getTotalUsd(prices, balances.balances);
-            return {
-              [account.publicKey]: `$${formatAmount(roundUsdValue(totalPriceUsd.toString()))}`,
-            };
-          }),
-        );
-        const pricesMap: { [key: string]: string } = prices.reduce(
-          (acc, curr) => {
-            return { ...acc, ...curr };
-          },
-          {},
-        );
-        payload.accountValue = pricesMap;
+        for (let i = 0; i < allAccounts.length; i += BATCH_SIZE) {
+          const batch = allAccounts.slice(i, i + BATCH_SIZE);
+          await batchedFetchBalances({
+            accounts: batch,
+            networkDetails,
+            isMainnetNetwork,
+            useCache,
+            payload,
+          });
+        }
       }
 
+      payload.isFetchingTokenPrices = false;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
@@ -108,6 +144,7 @@ function useGetWalletsData() {
   return {
     state,
     fetchData,
+    batchedFetchBalances,
   };
 }
 

@@ -12,7 +12,7 @@ import {
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
-import { getTokenPrices } from "popup/views/Account/hooks/useGetAccountData";
+import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
 import { ApiTokenPrices } from "@shared/api/types";
 
 export interface ResolvedSwapFrom {
@@ -37,6 +37,7 @@ export function useGetSwapFromData(getBalancesOptions: {
   );
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(getBalancesOptions);
+  const { fetchData: fetchTokenPrices } = useGetTokenPrices();
 
   const fetchData = async (useCache = false): Promise<SwapFrom | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -65,7 +66,10 @@ export function useGetSwapFromData(getBalancesOptions: {
         throw new Error(balances.message);
       }
 
-      const tokenPrices = await getTokenPrices({ balances: balances.balances });
+      const fetchedTokenPrices = await fetchTokenPrices({
+        publicKey,
+        balances: balances.balances,
+      });
 
       const payload = {
         type: AppDataType.RESOLVED,
@@ -73,7 +77,7 @@ export function useGetSwapFromData(getBalancesOptions: {
         filteredBalances: balances.balances,
         publicKey,
         networkDetails,
-        tokenPrices,
+        tokenPrices: fetchedTokenPrices.tokenPrices,
         applicationState: appData.account.applicationState,
       } as SwapFrom;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

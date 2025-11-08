@@ -4,8 +4,7 @@ import { captureException } from "@sentry/browser";
 import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
-import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
-import { getTokenPrices as internalGetTokenPrices } from "@shared/api/internal";
+import { isMainnet } from "helpers/stellar";
 import { AllowList, ApiTokenPrices } from "@shared/api/types";
 import {
   AppDataType,
@@ -19,26 +18,7 @@ import { AppDispatch } from "popup/App";
 import { makeAccountActive } from "popup/ducks/accountServices";
 import { changeNetwork } from "popup/ducks/settings";
 import { balancesSelector } from "popup/ducks/cache";
-
-export const getTokenPrices = async ({
-  balances,
-}: {
-  balances: AccountBalances["balances"];
-}) => {
-  const assetIds = balances
-    .filter((balance) => "token" in balance)
-    .map((balance) =>
-      getCanonicalFromAsset(
-        balance.token.code,
-        "issuer" in balance.token ? balance.token.issuer.key : undefined,
-      ),
-    );
-  if (!assetIds.length) {
-    return {};
-  }
-  const tokenPrices = await internalGetTokenPrices(assetIds);
-  return tokenPrices;
-};
+import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
 
 interface ResolvedAccountData {
   allowList: AllowList;
@@ -65,6 +45,7 @@ function useGetAccountData(options: {
   );
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(options);
+  const { fetchData: fetchTokenPrices } = useGetTokenPrices();
   const cachedBalances = useSelector(balancesSelector);
 
   const fetchData = async ({
@@ -129,9 +110,11 @@ function useGetAccountData(options: {
 
       if (isMainnetNetwork) {
         try {
-          payload.tokenPrices = await getTokenPrices({
+          const fetchedTokenPrices = await fetchTokenPrices({
+            publicKey,
             balances: balancesResult.balances,
           });
+          payload.tokenPrices = fetchedTokenPrices.tokenPrices;
           setIsMainnet(isMainnetNetwork);
         } catch (e) {
           payload.tokenPrices = null;
@@ -208,12 +191,13 @@ function useGetAccountData(options: {
 
     const interval = setInterval(async () => {
       try {
-        const tokenPrices = await getTokenPrices({
+        const fetchedTokenPrices = await fetchTokenPrices({
+          publicKey: resolvedData.publicKey,
           balances: resolvedData.balances.balances,
         });
         const payload = {
           ...state.data,
-          tokenPrices,
+          tokenPrices: fetchedTokenPrices.tokenPrices,
         } as AccountData;
         dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       } catch (error) {
@@ -221,6 +205,7 @@ function useGetAccountData(options: {
       }
     }, 30000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_isMainnet, state.data]);
 
   useEffect(() => {
