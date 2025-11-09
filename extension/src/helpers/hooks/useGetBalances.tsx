@@ -84,8 +84,10 @@ function useGetBalances(options: {
     try {
       const cachedBalanceData =
         cachedBalances[networkDetails.network]?.[publicKey];
+      const isCacheValid =
+        cachedBalanceData && cachedBalanceData.updatedAt > Date.now() - 180000; // 3 minutes
       const accountBalances =
-        useCache && cachedBalanceData
+        useCache && isCacheValid
           ? cachedBalanceData
           : await getAccountBalances(
               publicKey,

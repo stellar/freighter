@@ -68,6 +68,7 @@ export function useGetDestAssetData(getBalancesOptions: {
       const fetchedTokenPrices = await fetchTokenPrices({
         publicKey,
         balances: balances.balances,
+        useCache: true,
       });
 
       const payload = {

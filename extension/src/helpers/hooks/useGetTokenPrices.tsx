@@ -27,9 +27,11 @@ export function useGetTokenPrices() {
   const fetchData = async ({
     publicKey,
     balances,
+    useCache = false,
   }: {
     publicKey: string;
     balances: AccountBalances["balances"];
+    useCache: boolean;
   }): Promise<GetTokenPricesData> => {
     dispatch({ type: "FETCH_DATA_START" });
 
@@ -40,10 +42,10 @@ export function useGetTokenPrices() {
       tokenPrices,
     } as GetTokenPricesData;
 
-    if (
+    const isCacheValid =
       publicKeyTokenPrices &&
-      publicKeyTokenPrices.updatedAt > Date.now() - 30000 // 30 seconds
-    ) {
+      publicKeyTokenPrices.updatedAt > Date.now() - 180000; // 3 minutes
+    if (useCache && isCacheValid) {
       const payloadTokenPrices = {
         ...publicKeyTokenPrices,
       } as ApiTokenPrices;
@@ -62,7 +64,6 @@ export function useGetTokenPrices() {
           );
         if (assetIds.length) {
           const fetchedTokenPrices = await getTokenPrices(assetIds);
-          console.log("fetchedTokenPrices", fetchedTokenPrices);
           reduxDispatch(
             saveTokenPrices({ publicKey, tokenPrices: fetchedTokenPrices }),
           );
