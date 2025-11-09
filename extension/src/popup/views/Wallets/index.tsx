@@ -240,7 +240,7 @@ const WalletRow = ({
   let subTitle = accountValue
     ? `${shortPublicKey} - ${accountValue}`
     : shortPublicKey;
-  if (isFetchingTokenPrices) {
+  if (isFetchingTokenPrices && !accountValue) {
     subTitle = `${shortPublicKey} - ...`;
   }
   const walletIdentifier = hardwareWalletType || isImported ? "Imported" : "";
