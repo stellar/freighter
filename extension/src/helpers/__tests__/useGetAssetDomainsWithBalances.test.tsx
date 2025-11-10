@@ -27,7 +27,21 @@ jest.mock("@shared/api/helpers/token-list", () => ({
   getCombinedAssetListData: jest.fn().mockResolvedValue([]),
 }));
 jest.mock("popup/helpers/account", () => ({
-  ...jest.requireActual("popup/helpers/account"),
+  sortBalances: (balances: any) => {
+    if (!balances) return [];
+    const result = [];
+    // Put native (XLM) first
+    if (balances.native) {
+      result.push(balances.native);
+    }
+    // Then add all other assets
+    Object.entries(balances).forEach(([key, value]) => {
+      if (key !== "native") {
+        result.push(value);
+      }
+    });
+    return result;
+  },
   filterHiddenBalances: (_b: any) => _b,
 }));
 jest.mock("popup/helpers/getAssetDomain", () => ({

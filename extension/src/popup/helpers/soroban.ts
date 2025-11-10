@@ -21,10 +21,11 @@ import {
   TokenInvocationArgs,
 } from "@shared/constants/soroban/token";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
-import { getAssetFromCanonical } from "helpers/stellar";
+import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
 import { findAssetBalance, isSorobanBalance } from "./balance";
 import { getSdk } from "@shared/helpers/stellar";
 import { AssetType } from "@shared/api/types/account-balance";
+import { getNativeContractDetails } from "./searchAsset";
 export { isContractId } from "@shared/api/helpers/soroban";
 
 export const SOROBAN_OPERATION_TYPES = [
@@ -585,4 +586,40 @@ export const isSacContract = (
   }
 
   return false;
+};
+
+/**
+ * Determines if an asset is a Stellar Asset Contract (SAC).
+ * SAC assets include:
+ * 1. The native XLM contract
+ * 2. Classic Stellar assets that have been wrapped as Soroban contracts
+ *
+ * @param code - Asset code
+ * @param issuer - Asset issuer public key
+ * @param contract - Contract ID
+ * @param networkPassphrase - Network passphrase
+ * @param networkDetails - Network configuration details
+ * @returns true if the asset is a SAC, false otherwise
+ */
+export const isAssetSac = (
+  code: string,
+  issuer: string | undefined,
+  contract: string | undefined,
+  networkPassphrase: string,
+  networkDetails: NetworkDetails,
+): boolean => {
+  if (!contract) {
+    return false;
+  }
+
+  const nativeContract = getNativeContractDetails(networkDetails);
+
+  // Check if it's the native XLM contract
+  if (contract === nativeContract.contract) {
+    return true;
+  }
+
+  // Check if it's a classic asset wrapper (SAC)
+  const canonicalName = getCanonicalFromAsset(code, issuer);
+  return isSacContract(canonicalName, contract, networkPassphrase);
 };

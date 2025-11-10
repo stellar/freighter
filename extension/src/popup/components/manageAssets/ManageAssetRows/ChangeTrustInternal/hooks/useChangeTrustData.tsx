@@ -8,6 +8,7 @@ import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { FlaggedKeys } from "types/transactions";
+import { isAssetSac } from "popup/helpers/soroban";
 
 export interface NewAssetFlags {
   isInvalidDomain: boolean;
@@ -52,7 +53,14 @@ function useGetChangeTrustData({
     try {
       const payload = { flaggedKeys: {} } as ChangeTrustData;
 
-      if (!asset.contract) {
+      const isSac = isAssetSac(
+        asset.code,
+        asset.issuer,
+        asset.contract,
+        networkDetails.networkPassphrase,
+        networkDetails,
+      );
+      if (!asset.contract || isSac) {
         const server = stellarSdkServer(
           networkDetails.networkUrl,
           networkDetails.networkPassphrase,

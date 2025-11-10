@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Networks } from "stellar-sdk";
 import { useSelector } from "react-redux";
@@ -9,7 +9,7 @@ import {
   getCanonicalFromAsset,
   truncateString,
 } from "helpers/stellar";
-import { isContractId, isSacContract } from "popup/helpers/soroban";
+import { isContractId, isAssetSac } from "popup/helpers/soroban";
 import { findAssetBalance } from "popup/helpers/balance";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { AssetIcon } from "popup/components/account/AccountAssets";
@@ -20,10 +20,10 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { ChangeTrustInternal } from "./ChangeTrustInternal";
 import { ManageAssetRowButton } from "../ManageAssetRowButton";
 import { ToggleTokenInternal } from "./ToggleTokenInternal";
-
-import "./styles.scss";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
+
+import "./styles.scss";
 
 export type ManageAssetCurrency = {
   code?: string;
@@ -78,6 +78,19 @@ export const ManageAssetRows = ({
       }
     | undefined
   >(undefined);
+
+  const shouldChangeTrust = useMemo(() => {
+    if (selectedAsset && selectedAsset.contract) {
+      return isAssetSac(
+        selectedAsset.code,
+        selectedAsset.issuer,
+        selectedAsset.contract,
+        networkDetails.networkPassphrase,
+        networkDetails,
+      );
+    }
+    return true;
+  }, [selectedAsset, networkDetails]);
 
   return (
     <>
@@ -141,7 +154,7 @@ export const ManageAssetRows = ({
             isModalOpen={selectedAsset !== undefined}
           >
             <>
-              {selectedAsset && !selectedAsset.contract && (
+              {selectedAsset && shouldChangeTrust && (
                 <ChangeTrustInternal
                   asset={selectedAsset}
                   addTrustline={!selectedAsset.isTrustlineActive}
@@ -150,7 +163,7 @@ export const ManageAssetRows = ({
                   onCancel={() => setSelectedAsset(undefined)}
                 />
               )}
-              {selectedAsset && selectedAsset.contract && (
+              {selectedAsset && !shouldChangeTrust && (
                 <ToggleTokenInternal
                   asset={selectedAsset}
                   networkDetails={networkDetails}
@@ -258,15 +271,13 @@ const AssetRows = ({
               accountBalances.balances,
               { code, issuer },
             );
-            const isSac =
-              contract === nativeContract.contract ||
-              (!!name &&
-                !!contract &&
-                isSacContract(
-                  name,
-                  contract,
-                  networkDetails.networkPassphrase,
-                ));
+            const isSac = isAssetSac(
+              code,
+              issuer,
+              contract,
+              networkDetails.networkPassphrase,
+              networkDetails,
+            );
             return (
               <div
                 className="ManageAssetRows__row"
@@ -330,15 +341,13 @@ const AssetRows = ({
               accountBalances.balances,
               { code, issuer },
             );
-            const isSac =
-              contract === nativeContract.contract ||
-              (!!name &&
-                !!contract &&
-                isSacContract(
-                  name,
-                  contract,
-                  networkDetails.networkPassphrase,
-                ));
+            const isSac = isAssetSac(
+              code,
+              issuer,
+              contract,
+              networkDetails.networkPassphrase,
+              networkDetails,
+            );
 
             return (
               <div
@@ -390,11 +399,13 @@ const AssetRows = ({
             code,
             issuer,
           });
-          const isSac =
-            contract === nativeContract.contract ||
-            (!!name &&
-              !!contract &&
-              isSacContract(name, contract, networkDetails.networkPassphrase));
+          const isSac = isAssetSac(
+            code,
+            issuer,
+            contract,
+            networkDetails.networkPassphrase,
+            networkDetails,
+          );
           return (
             <div
               className="ManageAssetRows__row"
@@ -438,10 +449,12 @@ export const ManageAssetRow = ({
   const assetCode =
     name &&
     contractId &&
-    !isSacContract(
-      name,
+    !isAssetSac(
+      code,
+      issuer,
       contractId,
       networkDetails.networkPassphrase as Networks,
+      networkDetails,
     )
       ? name
       : code;
