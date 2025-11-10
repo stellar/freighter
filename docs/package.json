@@ -26,17 +26,17 @@
     ]
   },
   "dependencies": {
-    "@docusaurus/core": "3.6.3",
-    "@docusaurus/preset-classic": "3.6.3",
+    "@docusaurus/core": "3.9.2",
+    "@docusaurus/preset-classic": "3.9.2",
     "@stellar/freighter-api": "3.0.0",
     "clsx": "2.1.1",
-    "react": "19.0.0",
-    "react-dom": "19.0.0",
-    "react-is": "19.0.0",
-    "styled-components": "6.1.14"
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-is": "19.2.0",
+    "styled-components": "6.1.19"
   },
   "devDependencies": {
-    "@lavamoat/allow-scripts": "3.3.2"
+    "@lavamoat/allow-scripts": "3.4.0"
   },
   "lavamoat": {
     "allowScripts": {
