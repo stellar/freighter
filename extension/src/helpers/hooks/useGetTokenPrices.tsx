@@ -3,7 +3,7 @@ import { captureException } from "@sentry/browser";
 import { useDispatch, useSelector } from "react-redux";
 import { tokenPricesSelector } from "popup/ducks/cache";
 import { getTokenPrices } from "@shared/api/internal";
-import { initialState, reducer } from "helpers/request";
+import { initialState, isCacheValid, reducer } from "helpers/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { ApiTokenPrices } from "@shared/api/types";
@@ -42,10 +42,8 @@ export function useGetTokenPrices() {
       tokenPrices,
     } as GetTokenPricesData;
 
-    const isCacheValid =
-      publicKeyTokenPrices &&
-      publicKeyTokenPrices.updatedAt > Date.now() - 180000; // 3 minutes
-    if (useCache && isCacheValid) {
+    const isTokenCacheValid = isCacheValid(publicKeyTokenPrices);
+    if (useCache && isTokenCacheValid) {
       const payloadTokenPrices = {
         ...publicKeyTokenPrices,
       } as ApiTokenPrices;

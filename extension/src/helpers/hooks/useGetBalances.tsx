@@ -14,7 +14,7 @@ import {
   BalanceMap,
 } from "@shared/api/types/backend-api";
 import { RequestState } from "constants/request";
-import { initialState, reducer } from "helpers/request";
+import { initialState, isCacheValid, reducer } from "helpers/request";
 import { storeBalanceMetricData } from "helpers/metrics";
 import { filterHiddenBalances, sortBalances } from "popup/helpers/account";
 import { AssetType } from "@shared/api/types/account-balance";
@@ -84,10 +84,10 @@ function useGetBalances(options: {
     try {
       const cachedBalanceData =
         cachedBalances[networkDetails.network]?.[publicKey];
-      const isCacheValid =
-        cachedBalanceData && cachedBalanceData.updatedAt > Date.now() - 180000; // 3 minutes
+      const isBalancesCacheValid = isCacheValid(cachedBalanceData);
+
       const accountBalances =
-        useCache && isCacheValid
+        useCache && isBalancesCacheValid
           ? cachedBalanceData
           : await getAccountBalances(
               publicKey,
