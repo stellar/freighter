@@ -15,7 +15,7 @@ describe("useGetTokenPrices", () => {
   it("should return token prices from API with no cache", async () => {
     const getTokenPricesSpy = jest
       .spyOn(ApiInternal, "getTokenPrices")
-      .mockImplementation(() =>
+      .mockImplementationOnce(() =>
         Promise.resolve({
           native: {
             currentPrice: "1",
@@ -65,7 +65,7 @@ describe("useGetTokenPrices", () => {
   it("should return token prices from API with expired cache", async () => {
     const getTokenPricesSpy = jest
       .spyOn(ApiInternal, "getTokenPrices")
-      .mockImplementation(() =>
+      .mockImplementationOnce(() =>
         Promise.resolve({
           native: {
             currentPrice: "1",
@@ -123,7 +123,7 @@ describe("useGetTokenPrices", () => {
   it("should return token prices from cache", async () => {
     const getTokenPricesSpy = jest
       .spyOn(ApiInternal, "getTokenPrices")
-      .mockImplementation(() =>
+      .mockImplementationOnce(() =>
         Promise.resolve({
           native: {
             currentPrice: "2",
@@ -139,7 +139,7 @@ describe("useGetTokenPrices", () => {
               currentPrice: "1",
               percentagePriceChange24h: ".5",
             },
-            updatedAt: Date.now() - 20000,
+            updatedAt: Date.now(),
           },
         },
       },
@@ -167,6 +167,7 @@ describe("useGetTokenPrices", () => {
             blockaidData: defaultBlockaidScanAssetResult,
           },
         ],
+        useCache: true,
       } as any);
     });
     expect(getTokenPricesSpy).not.toHaveBeenCalled();
@@ -181,7 +182,7 @@ describe("useGetTokenPrices", () => {
   it("should return no token prices for no balances", async () => {
     const getTokenPricesSpy = jest
       .spyOn(ApiInternal, "getTokenPrices")
-      .mockImplementation(() =>
+      .mockImplementationOnce(() =>
         Promise.resolve({
           native: {
             currentPrice: "2",

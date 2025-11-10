@@ -68,7 +68,9 @@ describe("useGetAssetDomainsWithBalances (cached path)", () => {
     },
     cache: {
       balanceData: {
-        [TESTNET_NETWORK_DETAILS.network]: { [publicKey]: cachedBalanceData },
+        [TESTNET_NETWORK_DETAILS.network]: {
+          [publicKey]: { ...cachedBalanceData, updatedAt: Date.now() },
+        },
       },
       icons: cachedIcons,
       tokenLists: tokenListData,

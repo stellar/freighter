@@ -88,7 +88,7 @@ function useGetSendAmountData(
           useCache: true,
         });
 
-        tokenPrices = fetchedTokenPrices.tokenPrices;
+        tokenPrices = fetchedTokenPrices.tokenPrices || {};
       }
 
       const payload = {

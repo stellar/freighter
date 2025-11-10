@@ -13,7 +13,7 @@ import { AccountBalances } from "./useGetBalances";
 
 export interface GetTokenPricesData {
   type: AppDataType.RESOLVED;
-  tokenPrices: ApiTokenPrices;
+  tokenPrices: ApiTokenPrices | null;
 }
 
 export function useGetTokenPrices() {
@@ -73,6 +73,7 @@ export function useGetTokenPrices() {
         captureException(
           `Failed to fetch token prices in useGetTokenPrices - ${e}`,
         );
+        payload.tokenPrices = null;
       }
     }
     dispatch({ type: "FETCH_DATA_SUCCESS", payload });

@@ -58,32 +58,43 @@ function useGetWalletsData() {
   }) => {
     const prices = await Promise.all(
       accounts.map(async (account) => {
-        const balances = await fetchBalances(
-          account.publicKey,
-          isMainnetNetwork,
-          networkDetails,
-          useCache,
-          true,
-        );
-        if (isError<AccountBalances>(balances)) {
-          captureException(
-            `Error loading account balances in wallets data - ${balances.message}`,
+        try {
+          const balances = await fetchBalances(
+            account.publicKey,
+            isMainnetNetwork,
+            networkDetails,
+            useCache,
+            true,
           );
-          throw new Error(balances.message);
-        }
+          if (isError<AccountBalances>(balances)) {
+            captureException(
+              `Error loading account balances in wallets data - ${balances.message}`,
+            );
+            return {
+              [account.publicKey]: `$${formatAmount(roundUsdValue("0.00"))}`,
+            };
+          }
 
-        const prices = await fetchTokenPrices({
-          publicKey: account.publicKey,
-          balances: balances.balances,
-          useCache: true,
-        });
-        const totalPriceUsd = getTotalUsd(
-          prices.tokenPrices,
-          balances.balances,
-        );
-        return {
-          [account.publicKey]: `$${formatAmount(roundUsdValue(totalPriceUsd.toString()))}`,
-        };
+          const prices = await fetchTokenPrices({
+            publicKey: account.publicKey,
+            balances: balances.balances,
+            useCache: true,
+          });
+          const totalPriceUsd = getTotalUsd(
+            prices.tokenPrices || {},
+            balances.balances,
+          );
+          return {
+            [account.publicKey]: `$${formatAmount(roundUsdValue(totalPriceUsd.toString()))}`,
+          };
+        } catch (error) {
+          captureException(
+            `error loading account balances and token prices in wallets data - ${error}`,
+          );
+          return {
+            [account.publicKey]: "",
+          };
+        }
       }),
     );
     const pricesMap: { [key: string]: string } = prices.reduce((acc, curr) => {

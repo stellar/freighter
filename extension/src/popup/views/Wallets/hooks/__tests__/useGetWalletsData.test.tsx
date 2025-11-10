@@ -43,6 +43,10 @@ describe("useGetWalletsData", () => {
     jest.clearAllMocks();
   });
 
+  afterAll(() => {
+    jest.resetAllMocks();
+  });
+
   const publicKey = TEST_PUBLIC_KEY;
 
   const cachedBalanceData = {
@@ -114,7 +118,9 @@ describe("useGetWalletsData", () => {
       },
       cache: {
         balanceData: {
-          [MAINNET_NETWORK_DETAILS.network]: { ["G1"]: cachedBalanceData },
+          [MAINNET_NETWORK_DETAILS.network]: {
+            ["G1"]: { ...cachedBalanceData, updatedAt: Date.now() },
+          },
         },
         icons: cachedIcons,
         tokenLists: tokenListData,
@@ -155,7 +161,7 @@ describe("useGetWalletsData", () => {
       applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     });
   });
-  it.only("should return wallets data and token prices on Mainnet in batches", async () => {
+  it("should return wallets data and token prices on Mainnet in batches", async () => {
     const getTokenPricesSpy = jest.spyOn(ApiInternal, "getTokenPrices");
     const mainnetPreloadedState = {
       auth: {
@@ -174,13 +180,13 @@ describe("useGetWalletsData", () => {
       cache: {
         balanceData: {
           [MAINNET_NETWORK_DETAILS.network]: {
-            ["G1"]: cachedBalanceData,
-            ["G2"]: cachedBalanceData,
-            ["G3"]: cachedBalanceData,
-            ["G4"]: cachedBalanceData,
-            ["G5"]: cachedBalanceData,
-            ["G6"]: cachedBalanceData,
-            ["G7"]: cachedBalanceData,
+            ["G1"]: { ...cachedBalanceData, updatedAt: Date.now() },
+            ["G2"]: { ...cachedBalanceData, updatedAt: Date.now() },
+            ["G3"]: { ...cachedBalanceData, updatedAt: Date.now() },
+            ["G4"]: { ...cachedBalanceData, updatedAt: Date.now() },
+            ["G5"]: { ...cachedBalanceData, updatedAt: Date.now() },
+            ["G6"]: { ...cachedBalanceData, updatedAt: Date.now() },
+            ["G7"]: { ...cachedBalanceData, updatedAt: Date.now() },
           },
         },
         icons: cachedIcons,

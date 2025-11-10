@@ -45,7 +45,6 @@ function useGetAccountData(options: {
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(options);
   const { fetchData: fetchTokenPrices } = useGetTokenPrices();
-  // const cachedBalances = useSelector(balancesSelector);
 
   const fetchData = async ({
     useAppDataCache = true,

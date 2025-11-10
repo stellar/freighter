@@ -87,7 +87,7 @@ function useGetSwapAmountData(
           balances: destinationBalances.balances,
           useCache: true,
         });
-        tokenPrices = fetchedTokenPrices.tokenPrices;
+        tokenPrices = fetchedTokenPrices.tokenPrices || {};
       }
 
       const payload = {
