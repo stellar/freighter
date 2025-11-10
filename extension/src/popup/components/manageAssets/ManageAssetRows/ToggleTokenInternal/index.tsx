@@ -80,13 +80,14 @@ export const ToggleTokenInternal = ({
     }
     onCancel();
   };
-  const isSac = isAssetSac(
-    asset.code,
-    asset.issuer,
-    asset.contract,
-    networkDetails.networkPassphrase,
+  const isSac = isAssetSac({
+    asset: {
+      code: asset.code,
+      issuer: asset.issuer,
+      contract: asset.contract,
+    },
     networkDetails,
-  );
+  });
   return (
     <div className="ToggleToken__wrapper">
       <div className="ToggleToken__wrapper__body">

@@ -594,32 +594,37 @@ export const isSacContract = (
  * 1. The native XLM contract
  * 2. Classic Stellar assets that have been wrapped as Soroban contracts
  *
- * @param code - Asset code
- * @param issuer - Asset issuer public key
- * @param contract - Contract ID
- * @param networkPassphrase - Network passphrase
+ * @param asset - Asset details
  * @param networkDetails - Network configuration details
  * @returns true if the asset is a SAC, false otherwise
  */
-export const isAssetSac = (
-  code: string,
-  issuer: string | undefined,
-  contract: string | undefined,
-  networkPassphrase: string,
-  networkDetails: NetworkDetails,
-): boolean => {
-  if (!contract) {
+export const isAssetSac = ({
+  asset,
+  networkDetails,
+}: {
+  asset: {
+    code: string;
+    issuer: string | undefined;
+    contract: string | undefined;
+  };
+  networkDetails: NetworkDetails;
+}): boolean => {
+  if (!asset.contract) {
     return false;
   }
 
   const nativeContract = getNativeContractDetails(networkDetails);
 
   // Check if it's the native XLM contract
-  if (contract === nativeContract.contract) {
+  if (asset.contract === nativeContract.contract) {
     return true;
   }
 
   // Check if it's a classic asset wrapper (SAC)
-  const canonicalName = getCanonicalFromAsset(code, issuer);
-  return isSacContract(canonicalName, contract, networkPassphrase);
+  const canonicalName = getCanonicalFromAsset(asset.code, asset.issuer);
+  return isSacContract(
+    canonicalName,
+    asset.contract,
+    networkDetails.networkPassphrase,
+  );
 };

@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Networks } from "stellar-sdk";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
@@ -81,13 +80,14 @@ export const ManageAssetRows = ({
 
   const shouldChangeTrust = useMemo(() => {
     if (selectedAsset && selectedAsset.contract) {
-      return isAssetSac(
-        selectedAsset.code,
-        selectedAsset.issuer,
-        selectedAsset.contract,
-        networkDetails.networkPassphrase,
+      return isAssetSac({
+        asset: {
+          code: selectedAsset.code,
+          issuer: selectedAsset.issuer,
+          contract: selectedAsset.contract,
+        },
         networkDetails,
-      );
+      });
     }
     return true;
   }, [selectedAsset, networkDetails]);
@@ -271,13 +271,14 @@ const AssetRows = ({
               accountBalances.balances,
               { code, issuer },
             );
-            const isSac = isAssetSac(
-              code,
-              issuer,
-              contract,
-              networkDetails.networkPassphrase,
+            const isSac = isAssetSac({
+              asset: {
+                code,
+                issuer,
+                contract,
+              },
               networkDetails,
-            );
+            });
             return (
               <div
                 className="ManageAssetRows__row"
@@ -341,13 +342,14 @@ const AssetRows = ({
               accountBalances.balances,
               { code, issuer },
             );
-            const isSac = isAssetSac(
-              code,
-              issuer,
-              contract,
-              networkDetails.networkPassphrase,
+            const isSac = isAssetSac({
+              asset: {
+                code,
+                issuer,
+                contract,
+              },
               networkDetails,
-            );
+            });
 
             return (
               <div
@@ -399,13 +401,14 @@ const AssetRows = ({
             code,
             issuer,
           });
-          const isSac = isAssetSac(
-            code,
-            issuer,
-            contract,
-            networkDetails.networkPassphrase,
+          const isSac = isAssetSac({
+            asset: {
+              code,
+              issuer,
+              contract,
+            },
             networkDetails,
-          );
+          });
           return (
             <div
               className="ManageAssetRows__row"
@@ -449,13 +452,14 @@ export const ManageAssetRow = ({
   const assetCode =
     name &&
     contractId &&
-    !isAssetSac(
-      code,
-      issuer,
-      contractId,
-      networkDetails.networkPassphrase as Networks,
+    !isAssetSac({
+      asset: {
+        code,
+        issuer,
+        contract: contractId,
+      },
       networkDetails,
-    )
+    })
       ? name
       : code;
   const truncatedAssetCode =

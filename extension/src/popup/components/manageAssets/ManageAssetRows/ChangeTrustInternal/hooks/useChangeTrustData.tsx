@@ -53,13 +53,14 @@ function useGetChangeTrustData({
     try {
       const payload = { flaggedKeys: {} } as ChangeTrustData;
 
-      const isSac = isAssetSac(
-        asset.code,
-        asset.issuer,
-        asset.contract,
-        networkDetails.networkPassphrase,
+      const isSac = isAssetSac({
+        asset: {
+          code: asset.code,
+          issuer: asset.issuer,
+          contract: asset.contract,
+        },
         networkDetails,
-      );
+      });
       if (!asset.contract || isSac) {
         const server = stellarSdkServer(
           networkDetails.networkUrl,
