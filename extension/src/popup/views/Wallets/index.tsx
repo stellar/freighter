@@ -207,6 +207,7 @@ const RenameWallet = ({
 };
 
 interface WalletRowProps {
+  isFetchingTokenPrices: boolean;
   accountName: string;
   accountValue: string;
   isImported: boolean;
@@ -218,6 +219,7 @@ interface WalletRowProps {
 }
 
 const WalletRow = ({
+  isFetchingTokenPrices,
   accountName,
   accountValue,
   isImported,
@@ -234,9 +236,13 @@ const WalletRow = ({
   const selectedBorderColorRgb = getColorPubKey(publicKey);
   const isSelectedColor = `rgb(${selectedBorderColorRgb.r} ${selectedBorderColorRgb.g} ${selectedBorderColorRgb.b} / 100%`;
   const borderColor = isSelected ? isSelectedColor : "#232323";
-  const subTitle = accountValue
+
+  let subTitle = accountValue
     ? `${shortPublicKey} - ${accountValue}`
     : shortPublicKey;
+  if (isFetchingTokenPrices && !accountValue) {
+    subTitle = `${shortPublicKey} - ...`;
+  }
   const walletIdentifier = hardwareWalletType || isImported ? "Imported" : "";
   return (
     <div className="WalletRow">
@@ -334,6 +340,8 @@ export const Wallets = () => {
     );
   }
 
+  const isFetchingTokenPrices = dataState.data?.isFetchingTokenPrices || false;
+
   if (!hasError) {
     reRouteOnboarding({
       type: dataState.data.type,
@@ -394,6 +402,7 @@ export const Wallets = () => {
               return (
                 <>
                   <WalletRow
+                    isFetchingTokenPrices={isFetchingTokenPrices}
                     accountName={name}
                     accountValue={totalValueUsd}
                     isImported={imported}
