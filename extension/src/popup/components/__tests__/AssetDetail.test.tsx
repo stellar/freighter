@@ -343,6 +343,7 @@ describe("AssetDetail", () => {
         setSelectedAsset: () => null,
         subentryCount: 0,
         historyData: mockHistoryData,
+        assetIcons: {},
       };
 
       render(
@@ -387,6 +388,7 @@ describe("AssetDetail", () => {
         setSelectedAsset: () => null,
         subentryCount: 0,
         historyData: mockHistoryData,
+        assetIcons: {},
       };
 
       render(
@@ -436,6 +438,7 @@ describe("AssetDetail", () => {
         setSelectedAsset: () => null,
         subentryCount: 0,
         historyData: mockHistoryData,
+        assetIcons: {},
       };
 
       render(
@@ -487,6 +490,7 @@ describe("AssetDetail", () => {
         setSelectedAsset: () => null,
         subentryCount: 0,
         historyData: mockHistoryData,
+        assetIcons: {},
       };
 
       render(
@@ -545,6 +549,7 @@ describe("AssetDetail", () => {
         setSelectedAsset: () => null,
         subentryCount: 0,
         historyData: mockHistoryData,
+        assetIcons: {},
       };
 
       render(
@@ -603,6 +608,7 @@ describe("AssetDetail", () => {
         setSelectedAsset: () => null,
         subentryCount: 0,
         historyData: mockHistoryData,
+        assetIcons: {},
       };
 
       render(
