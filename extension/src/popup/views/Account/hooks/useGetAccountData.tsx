@@ -4,8 +4,7 @@ import { captureException } from "@sentry/browser";
 import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
-import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
-import { getTokenPrices as internalGetTokenPrices } from "@shared/api/internal";
+import { isMainnet } from "helpers/stellar";
 import { AllowList, ApiTokenPrices } from "@shared/api/types";
 import {
   AppDataType,
@@ -17,11 +16,8 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "popup/App";
 import { makeAccountActive } from "popup/ducks/accountServices";
-import { changeNetwork, saveBackendSettingsAction } from "popup/ducks/settings";
+import { changeNetwork } from "popup/ducks/settings";
 import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
-import { loadBackendSettings } from "@shared/api/internal";
-import { Collectibles } from "@shared/api/types/types";
-import { isCustomNetwork } from "@shared/helpers/stellar";
 
 interface ResolvedAccountData {
   allowList: AllowList;
@@ -48,7 +44,7 @@ function useGetAccountData(options: {
   );
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(options);
-  const cachedBalances = useSelector(balancesSelector);
+  const { fetchData: fetchTokenPrices } = useGetTokenPrices();
 
   const fetchData = async ({
     useAppDataCache = true,
@@ -243,49 +239,6 @@ function useGetAccountData(options: {
     }, 30000);
     return () => clearInterval(interval);
   }, [_isMainnet, state.data, fetchBalances]);
-
-  useEffect(() => {
-    // if it's been 2 minutes since the last balance update, force update
-    if (!state.data || state.data.type === AppDataType.REROUTE) {
-      return;
-    }
-    const resolvedData = state.data;
-
-    const publicKey = resolvedData.publicKey;
-    const networkDetails = resolvedData.networkDetails;
-
-    const refreshBalances = async () => {
-      try {
-        const balancesResult = await fetchBalances(
-          publicKey,
-          _isMainnet,
-          networkDetails,
-          false,
-        );
-
-        const payload = {
-          ...state.data,
-          balances: balancesResult,
-          isScanAppended: true,
-        } as AccountData;
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-      } catch (error) {
-        captureException(
-          `Error refreshing cache balances on Account - ${error}`,
-        );
-      }
-    };
-
-    if (
-      cachedBalances[networkDetails.network]?.[publicKey]?.updatedAt &&
-      cachedBalances[networkDetails.network]?.[publicKey]?.updatedAt <
-        Date.now() - 120000
-    ) {
-      // force update
-      refreshBalances();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.data, cachedBalances]);
 
   return {
     state,

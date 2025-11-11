@@ -144,7 +144,9 @@ describe("useGetBalances (cached path)", () => {
     const preloadedStateWithNullIcon = {
       cache: {
         balanceData: {
-          [TESTNET_NETWORK_DETAILS.network]: { [publicKey]: cachedBalanceData },
+          [TESTNET_NETWORK_DETAILS.network]: {
+            [publicKey]: { ...cachedBalanceData, updatedAt: Date.now() },
+          },
         },
         icons: { "XLM:GABCDEF": null },
         tokenLists: tokenListData,

@@ -246,9 +246,7 @@ const WalletRow = ({
   if (isFetchingTokenPrices && !accountValue) {
     subTitle = `${shortPublicKey} - ...`;
   }
-  const { t } = useTranslation();
-  const walletIdentifier =
-    hardwareWalletType || isImported ? t("Imported") : "";
+  const walletIdentifier = hardwareWalletType || isImported ? "Imported" : "";
   return (
     <div className="WalletRow">
       <div
