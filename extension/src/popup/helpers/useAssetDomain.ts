@@ -21,7 +21,7 @@ export const useAssetDomain = ({ assetIssuer = "" }: UseAssetDomain) => {
 
       try {
         const account = await getAssetDomains({
-          domainsToFetch: [assetIssuer],
+          assetIssuerDomainsToFetch: [assetIssuer],
           networkDetails,
         });
 

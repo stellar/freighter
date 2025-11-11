@@ -270,7 +270,7 @@ export const IntegrationTest = () => {
       });
 
       res = await getAssetDomains({
-        domainsToFetch: [
+        assetIssuerDomainsToFetch: [
           "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
         ],
         networkDetails: TESTNET_NETWORK_DETAILS,

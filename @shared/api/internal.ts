@@ -1092,6 +1092,7 @@ export const getAssetIcons = async ({
 }) => {
   const assetIcons = {} as { [code: string]: string | null };
   const skipLookup = !assetsListsData || !networkDetails;
+  const domainsToFetch = [] as { key: string; code: string }[];
 
   if (balances) {
     const balanceValues = Object.values(balances);
@@ -1136,14 +1137,37 @@ export const getAssetIcons = async ({
             icon = tokenListIcon.icon;
             canonical = tokenListIcon.canonicalAsset;
           } else {
-            // if we still don't have the icon, we try to get it from the issuer
-            icon = await getIconUrlFromIssuer({ key, code, networkDetails });
+            // if we still don't have the icon, we try to get it from the issuer,
+            // aggregate the missing icons and we'll fetch all the domains at once
+            domainsToFetch.push({ key, code });
           }
         }
 
         // we assign null here if we checked all sources and still don't have the icon
         assetIcons[canonical] = icon || null;
       }
+    }
+  }
+
+  if (domainsToFetch.length > 0 && networkDetails) {
+    const assetDomains = await getAssetDomains({
+      assetIssuerDomainsToFetch: domainsToFetch.map(({ key }) => key),
+      networkDetails,
+    });
+
+    for (const { key, code } of domainsToFetch) {
+      const canonical = getCanonicalFromAsset(code, key);
+      if (assetDomains[key]) {
+        const icon = await getIconUrlFromIssuer({
+          key,
+          code,
+          networkDetails,
+          homeDomain: assetDomains[key],
+        });
+        assetIcons[canonical] = icon || null;
+        break;
+      }
+      assetIcons[canonical] = null;
     }
   }
   return assetIcons;
@@ -1178,17 +1202,24 @@ export const retryAssetIcon = async ({
   return newAssetIcons;
 };
 
+/**
+ * getAssetDomains returns the home domain for a given asset issuer.
+ *
+ * @param assetIssuerDomainsToFetch - A list of asset issuer addresses to fetch the home domain for.
+ * @param networkDetails - Network configuration details
+ * @returns an object with the asset issuer address as the key and the home domain as the value.
+ */
 export const getAssetDomains = async ({
-  domainsToFetch,
+  assetIssuerDomainsToFetch,
   networkDetails,
 }: {
-  domainsToFetch: string[];
+  assetIssuerDomainsToFetch: string[];
   networkDetails: NetworkDetails;
 }) => {
   let assetDomains = {} as { [code: string]: string };
   try {
     const fetchedAccounts = await getLedgerKeyAccounts({
-      accountList: domainsToFetch,
+      accountList: assetIssuerDomainsToFetch,
       networkDetails,
     });
     Object.entries(fetchedAccounts).forEach(([key, value]) => {

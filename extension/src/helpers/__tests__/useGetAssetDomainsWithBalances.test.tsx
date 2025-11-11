@@ -153,7 +153,7 @@ describe("useGetAssetDomainsWithBalances (cached path)", () => {
     });
 
     expect(getAssetDomains).toHaveBeenCalledWith({
-      domainsToFetch: [
+      assetIssuerDomainsToFetch: [
         "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
       ],
       networkDetails: TESTNET_NETWORK_DETAILS,
@@ -217,7 +217,7 @@ describe("useGetAssetDomainsWithBalances (cached path)", () => {
     });
 
     expect(getAssetDomains).toHaveBeenCalledWith({
-      domainsToFetch: [
+      assetIssuerDomainsToFetch: [
         testCanonicalIssuer,
         "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
       ],
@@ -275,7 +275,7 @@ describe("useGetAssetDomainsWithBalances (cached path)", () => {
     });
 
     expect(getAssetDomains).toHaveBeenCalledWith({
-      domainsToFetch: [
+      assetIssuerDomainsToFetch: [
         testCanonicalIssuer,
         "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
       ],

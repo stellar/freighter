@@ -2,8 +2,7 @@ import { StellarToml, StrKey } from "stellar-sdk";
 import { sendMessageToBackground } from "./extensionMessaging";
 import { SERVICE_TYPES } from "../../constants/services";
 import { NetworkDetails } from "../../constants/stellar";
-import { LedgerKeyAccounts } from "../types";
-import { INDEXER_V2_URL } from "@shared/constants/mercury";
+import { getAssetDomains } from "../internal";
 
 /* 
 This runs a slightly convoluted process to find an icon's url. 
@@ -33,10 +32,12 @@ export const getIconUrlFromIssuer = async ({
   key,
   code,
   networkDetails,
+  homeDomain,
 }: {
   key: string;
   code: string;
   networkDetails: NetworkDetails;
+  homeDomain?: string;
 }) => {
   let iconUrl = "";
 
@@ -55,41 +56,36 @@ export const getIconUrlFromIssuer = async ({
     console.error(e);
   }
 
-  let homeDomain = "";
-  try {
-    /* Otherwise, 1. load their account from the API */
-    if (!StrKey.isValidEd25519PublicKey(key)) {
+  let iconHomeDomain = "";
+
+  // if we were passed a home domain, use it
+  if (homeDomain) {
+    iconHomeDomain = homeDomain;
+  } else {
+    try {
+      /* Otherwise, 1. load their account from their ledger key account */
+      if (!StrKey.isValidEd25519PublicKey(key)) {
+        return iconUrl;
+      }
+
+      const fetchedAccounts = await getAssetDomains({
+        assetIssuerDomainsToFetch: [key],
+        networkDetails,
+      });
+      iconHomeDomain = fetchedAccounts[key];
+    } catch (e) {
       return iconUrl;
     }
-
-    const options = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        public_keys: [key],
-      }),
-    };
-
-    const res = await fetch(
-      `${INDEXER_V2_URL}/ledger-key/accounts?network=${networkDetails.network}`,
-      options,
-    );
-    const { data } = (await res.json()) as { data: LedgerKeyAccounts };
-    ({ home_domain: homeDomain } = data.ledger_key_accounts[key]);
-  } catch (e) {
-    return iconUrl;
   }
 
   let toml;
 
   try {
     /* 2. Use their domain from their API account and use it attempt to load their stellar.toml */
-    if (!homeDomain) {
+    if (!iconHomeDomain) {
       return iconUrl;
     }
-    toml = await StellarToml.Resolver.resolve(homeDomain);
+    toml = await StellarToml.Resolver.resolve(iconHomeDomain);
   } catch (e) {
     console.error(e);
     return iconUrl;

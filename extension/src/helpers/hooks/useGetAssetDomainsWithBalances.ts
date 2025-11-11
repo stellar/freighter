@@ -174,7 +174,7 @@ export function useGetAssetDomainsWithBalances(getBalancesOptions: {
 
       if (domainsToFetch.length > 0) {
         fetchedDomains = await getAssetDomains({
-          domainsToFetch,
+          assetIssuerDomainsToFetch: domainsToFetch,
           networkDetails: appData.settings.networkDetails,
         });
       }

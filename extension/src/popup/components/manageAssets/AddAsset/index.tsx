@@ -199,7 +199,7 @@ export const AddAsset = () => {
   }) => {
     let assetDomainToml = {} as AssetDomainToml;
     const acct = await getAssetDomains({
-      domainsToFetch: [issuer],
+      assetIssuerDomainsToFetch: [issuer],
       networkDetails,
     });
     const homeDomain = acct[issuer] || "";
