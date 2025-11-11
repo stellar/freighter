@@ -149,7 +149,7 @@ function useGetWalletsData() {
     } catch (error) {
       dispatch({
         type: "FETCH_DATA_ERROR",
-        payload: { error, isFetchingTokenPrices: false },
+        payload: error,
       });
       captureException(`Error loading wallets data - ${error}`);
       return error;
