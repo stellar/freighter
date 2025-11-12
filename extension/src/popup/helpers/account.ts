@@ -2,6 +2,7 @@ import { Federation, Horizon, MuxedAccount } from "stellar-sdk";
 import { BigNumber } from "bignumber.js";
 import {
   Account,
+  AssetIcons,
   AssetVisibility,
   HorizonOperation,
   IssuerKey,
@@ -25,6 +26,7 @@ import { isAssetVisible } from "./settings";
 import {
   getRowDataByOpType,
   OperationDataRow,
+  getHomeDomainsForOperations,
 } from "popup/views/AccountHistory/hooks/useGetHistoryData";
 import { TokenDetailsResponse } from "helpers/hooks/useTokenDetails";
 
@@ -112,6 +114,8 @@ interface SortOperationsByAsset {
     publicKey: string;
     networkDetails: NetworkDetails;
   }) => Promise<TokenDetailsResponse | Error>;
+  icons: AssetIcons;
+  homeDomains: { [assetIssuer: string]: string | null };
 }
 
 export interface AssetOperations {
@@ -124,6 +128,8 @@ export const sortOperationsByAsset = async ({
   networkDetails,
   publicKey,
   fetchTokenDetails,
+  icons,
+  homeDomains,
 }: SortOperationsByAsset) => {
   const assetOperationMap = {} as AssetOperations;
 
@@ -144,6 +150,16 @@ export const sortOperationsByAsset = async ({
     }
   });
 
+  /* 
+    To prevent multiple requests for home domains as we build each row, 
+    we iterate through the operations and collect the asset issuers that need home domains in a single request.
+  */
+  const fetchedHomeDomains = await getHomeDomainsForOperations(
+    operations,
+    networkDetails,
+    homeDomains,
+  );
+
   for (const op of operations) {
     const isPayment = getIsPayment(op.type);
     const isSwap = getIsSwap(op);
@@ -159,13 +175,15 @@ export const sortOperationsByAsset = async ({
       isDustPayment,
       isCreateExternalAccount,
     };
+
     const opRowData = await getRowDataByOpType(
       publicKey,
       balances,
       parsedOperation,
       networkDetails,
-      {},
+      icons,
       fetchTokenDetails,
+      fetchedHomeDomains,
     );
     if (getIsPayment(op.type)) {
       Object.keys(assetOperationMap).forEach((assetKey) => {

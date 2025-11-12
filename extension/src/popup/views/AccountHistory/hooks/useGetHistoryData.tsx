@@ -1,4 +1,5 @@
 import React, { ReactNode, useReducer } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { Horizon } from "stellar-sdk";
 import { camelCase } from "lodash";
 import BigNumber from "bignumber.js";
@@ -44,6 +45,13 @@ import {
   TokenDetailsResponse,
   useTokenDetails,
 } from "helpers/hooks/useTokenDetails";
+import {
+  homeDomainsSelector,
+  saveDomainForIssuer,
+  saveIconsForBalances,
+} from "popup/ducks/cache";
+import { getAssetDomains } from "@shared/api/internal";
+import { AppDispatch } from "popup/App";
 
 export type HistorySection = {
   monthYear: string; // in format {month}:{year}
@@ -222,6 +230,50 @@ export const getActionIconByType = (iconType: string) => {
   }
 };
 
+/**
+ * Retrieves the icon URL for an asset, checking the cache first and fetching from the issuer if needed.
+ *
+ * This helper function first checks if the icon URL is already cached in the icons object.
+ * If not found, it attempts to fetch the icon URL from the issuer using the home domain
+ * (either from the provided homeDomains map or by fetching it from the issuer's account).
+ * The result is then cached in the icons object for future use.
+ *
+ * @param {Object} params - The parameters object
+ * @param {string} params.key - The asset issuer's public key
+ * @param {string} params.code - The asset code (e.g., "USDC")
+ * @param {NetworkDetails} params.networkDetails - Network configuration details
+ * @param {{ [assetIssuer: string]: string | null }} params.homeDomains - Map of asset issuer keys to their home domains
+ * @param {AssetIcons} params.icons - Cache object storing icon URLs keyed by asset canonical format
+ * @returns {Promise<string | null>} The icon URL string if found, or null if not available
+ */
+const getIconUrl = async ({
+  key,
+  code,
+  networkDetails,
+  homeDomains,
+  icons,
+}: {
+  key: string;
+  code: string;
+  networkDetails: NetworkDetails;
+  homeDomains: { [assetIssuer: string]: string | null };
+  icons: AssetIcons;
+}) => {
+  let iconUrl = icons[getCanonicalFromAsset(code, key)];
+  if (!iconUrl && iconUrl !== null) {
+    const homeDomain = homeDomains[key || ""] || "";
+    iconUrl = await getIconUrlFromIssuer({
+      key: key || "",
+      code: code || "",
+      networkDetails,
+      homeDomain,
+    });
+  }
+
+  icons[getCanonicalFromAsset(code, key)] = iconUrl || null;
+  return iconUrl;
+};
+
 export interface OperationDataRow {
   action: string | null;
   actionIcon: string;
@@ -246,6 +298,7 @@ export const getRowDataByOpType = async (
     publicKey: string;
     networkDetails: NetworkDetails;
   }) => Promise<TokenDetailsResponse | Error>,
+  homeDomains: { [assetIssuer: string]: string | null },
 ): Promise<OperationDataRow> => {
   const {
     account,
@@ -324,18 +377,22 @@ export const getRowDataByOpType = async (
     const destIcon =
       destAssetCode === "XLM"
         ? StellarLogo
-        : await getIconUrlFromIssuer({
+        : await getIconUrl({
             key: assetIssuer || "",
             code: destAssetCode || "",
             networkDetails,
+            homeDomains,
+            icons,
           });
     const sourceIcon =
       srcAssetCode === "XLM"
         ? StellarLogo
-        : await getIconUrlFromIssuer({
+        : await getIconUrl({
             key: sourceAssetIssuer || "",
             code: srcAssetCode || "",
             networkDetails,
+            homeDomains,
+            icons,
           });
 
     return {
@@ -373,13 +430,16 @@ export const getRowDataByOpType = async (
       new BigNumber(amount!).toString(),
     )} ${destAssetCode}`;
     const formattedAmount = `${paymentDifference}${nonLabelAmount}`;
+
     const destIcon =
       destAssetCode === "XLM"
         ? StellarLogo
-        : await getIconUrlFromIssuer({
+        : await getIconUrl({
             key: assetIssuer || "",
             code: destAssetCode || "",
             networkDetails,
+            homeDomains,
+            icons,
           });
 
     return {
@@ -549,12 +609,14 @@ export const getRowDataByOpType = async (
     }
 
     case Horizon.HorizonApi.OperationResponseType.changeTrust: {
-      const destIcon =
-        (await getIconUrlFromIssuer({
-          key: assetIssuer || "",
-          code: destAssetCode || "",
-          networkDetails,
-        })) || icons[getCanonicalFromAsset(destAssetCode, assetIssuer)];
+      const destIcon = await getIconUrl({
+        key: assetIssuer || "",
+        code: destAssetCode || "",
+        networkDetails,
+        homeDomains,
+        icons,
+      });
+
       return {
         action: operation.limit === "0.0000000" ? "Removed" : "Added",
         actionIcon: operation.limit === "0.0000000" ? "remove" : "add",
@@ -601,6 +663,63 @@ export const getRowDataByOpType = async (
   }
 };
 
+/**
+ * Fetches home domains for asset issuers that are needed for displaying operation icons.
+ *
+ * This function analyzes a list of Horizon operations to identify asset issuers that require
+ * home domains for icon display. It only processes operations that need icons (payments, swaps,
+ * and changeTrust operations). For each relevant operation, it checks if the asset issuer's
+ * home domain is already cached. If not, it adds the issuer to a list of domains to fetch.
+ * After collecting all missing domains, it fetches them in a single batch and updates the
+ * homeDomains cache object.
+ *
+ * @param {HorizonOperation[]} operations - Array of Horizon operations to analyze
+ * @param {NetworkDetails} networkDetails - Network configuration details
+ * @param {{ [assetIssuer: string]: string | null }} homeDomains - Cache object mapping asset issuer keys to their home domains
+ * @returns {Promise<{ [assetIssuer: string]: string | null }>} The updated homeDomains object with newly fetched domains
+ */
+export const getHomeDomainsForOperations = async (
+  operations: HorizonOperation[],
+  networkDetails: NetworkDetails,
+  homeDomains: { [assetIssuer: string]: string | null },
+) => {
+  const domainsToFetch = new Set<string>();
+  for (const operation of operations) {
+    const { asset_issuer: assetIssuer } = operation;
+    const sourceAssetIssuer =
+      "source_asset_issuer" in operation ? operation.source_asset_issuer : "";
+    const isPayment = getIsPayment(operation.type);
+    const isSwap = getIsSwap(operation);
+
+    const isIconNeeded =
+      isPayment ||
+      isSwap ||
+      operation.type === Horizon.HorizonApi.OperationResponseType.changeTrust;
+    if (isIconNeeded) {
+      if (assetIssuer && !homeDomains[assetIssuer]) {
+        domainsToFetch.add(assetIssuer);
+      }
+      if (sourceAssetIssuer && !homeDomains[sourceAssetIssuer]) {
+        domainsToFetch.add(sourceAssetIssuer);
+      }
+    }
+  }
+
+  const domainsArr = Array.from(domainsToFetch);
+  if (domainsArr.length > 0) {
+    const newDomains = await getAssetDomains({
+      assetIssuerDomainsToFetch: domainsArr,
+      networkDetails,
+    });
+
+    Object.entries(newDomains).forEach(([key, value]) => {
+      homeDomains[key] = value;
+    });
+  }
+
+  return homeDomains;
+};
+
 const createHistorySections = async (
   publicKey: string,
   operations: HorizonOperation[],
@@ -613,8 +732,18 @@ const createHistorySections = async (
     publicKey: string;
     networkDetails: NetworkDetails;
   }) => Promise<TokenDetailsResponse | Error>,
-) =>
-  await operations.reduce(
+  homeDomains: { [assetIssuer: string]: string | null },
+) => {
+  /* 
+    To prevent multiple requests for home domains as we build each row, 
+    we iterate through the operations and collect the asset issuers that need home domains in a single request.
+  */
+  const fetchedHomeDomains = await getHomeDomainsForOperations(
+    operations,
+    networkDetails,
+    homeDomains,
+  );
+  return operations.reduce(
     async (
       sectionsPromise: Promise<HistorySection[]>,
       operation: HorizonOperation,
@@ -644,6 +773,7 @@ const createHistorySections = async (
         networkDetails,
         icons,
         fetchTokenDetails,
+        fetchedHomeDomains,
       );
 
       if (isDustPayment && isHideDustEnabled) {
@@ -677,6 +807,7 @@ const createHistorySections = async (
     },
     Promise.resolve([] as HistorySection[]),
   );
+};
 
 interface ResolvedData {
   type: AppDataType.RESOLVED;
@@ -705,6 +836,8 @@ function useGetHistoryData(
   const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
   const { fetchData: fetchHistory } = useGetHistory();
   const { fetchData: fetchTokenDetails } = useTokenDetails();
+  const homeDomains = useSelector(homeDomainsSelector);
+  const reduxDispatch = useDispatch<AppDispatch>();
 
   const fetchData = async (
     useBalancesCache = false,
@@ -745,6 +878,12 @@ function useGetHistoryData(
         throw new Error(history.message);
       }
 
+      const cachedHomeDomains = { ...homeDomains[networkDetails.network] } as {
+        [assetIssuer: string]: string | null;
+      };
+
+      const cachedIcons = { ...(balancesResult.icons || {}) };
+
       const payload = {
         type: AppDataType.RESOLVED,
         publicKey,
@@ -754,12 +893,19 @@ function useGetHistoryData(
           publicKey,
           history,
           balancesResult.balances,
-          balancesResult.icons || {},
+          cachedIcons,
           networkDetails,
           historyOptions.isHideDustEnabled,
           fetchTokenDetails,
+          cachedHomeDomains,
         ),
       } as ResolvedData;
+
+      // If we found new home domains and icons during iteration, save them to the cache
+      reduxDispatch(
+        saveDomainForIssuer({ networkDetails, homeDomains: cachedHomeDomains }),
+      );
+      reduxDispatch(saveIconsForBalances({ icons: cachedIcons }));
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {

@@ -113,7 +113,8 @@ export function useGetAssetDomainsWithBalances(getBalancesOptions: {
         if (code !== "XLM") {
           let domain = "";
 
-          const cachedHomeDomain = homeDomains[issuer.key];
+          const cachedHomeDomain =
+            homeDomains[networkDetails.network]?.[issuer.key];
           if (useCache && cachedHomeDomain) {
             domain = cachedHomeDomain;
           } else if (cachedHomeDomain !== null) {
@@ -188,7 +189,10 @@ export function useGetAssetDomainsWithBalances(getBalancesOptions: {
             domainToAdd.domain = fetchedDomains[domainObj.issuer || ""] || null;
             if (domainObj.issuer) {
               reduxDispatch(
-                saveDomainForIssuer({ [domainObj.issuer]: domainToAdd.domain }),
+                saveDomainForIssuer({
+                  networkDetails,
+                  homeDomains: { [domainObj.issuer]: domainToAdd.domain },
+                }),
               );
             }
           }

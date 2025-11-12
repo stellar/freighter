@@ -86,8 +86,11 @@ describe("useGetAssetDomainsWithBalances (cached path)", () => {
       icons: cachedIcons,
       tokenLists: tokenListData,
       homeDomains: {
-        [testCanonicalIssuer]: "example.com",
-        GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM: "example.com",
+        [TESTNET_NETWORK_DETAILS.network]: {
+          [testCanonicalIssuer]: "example.com",
+          GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM:
+            "example.com",
+        },
       },
     },
     settings: {
@@ -127,7 +130,9 @@ describe("useGetAssetDomainsWithBalances (cached path)", () => {
       cache: {
         ...preloadedState.cache,
         homeDomains: {
-          [testCanonicalIssuer]: "example.com",
+          [TESTNET_NETWORK_DETAILS.network]: {
+            [testCanonicalIssuer]: "example.com",
+          },
         },
       },
     };
@@ -179,7 +184,7 @@ describe("useGetAssetDomainsWithBalances (cached path)", () => {
       },
     ]);
   });
-  it("serves all domainss using the API", async () => {
+  it("serves all domains using the API", async () => {
     const partialCachedState = {
       ...preloadedState,
       cache: {
@@ -245,7 +250,7 @@ describe("useGetAssetDomainsWithBalances (cached path)", () => {
       },
     ]);
   });
-  it("serves all domainss using the API - sets null for domains that are not found", async () => {
+  it("serves all domains using the API - sets null for domains that are not found", async () => {
     const partialCachedState = {
       ...preloadedState,
       cache: {
