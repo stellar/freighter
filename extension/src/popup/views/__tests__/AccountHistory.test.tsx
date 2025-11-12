@@ -203,7 +203,7 @@ describe("AccountHistory", () => {
       expect(historyNodeAmounts[1]).toHaveTextContent("-0.1 USDC"),
     );
   });
-  it.only("makes one request to get needed home domains", async () => {
+  it("makes one request to get needed home domains", async () => {
     jest.spyOn(ApiInternal, "getAccountHistory").mockImplementation(() =>
       Promise.resolve([
         ...mockAccountHistory,
