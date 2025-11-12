@@ -34,7 +34,7 @@ describe("internalApi", () => {
           },
         });
       const assetDomains = await internalApi.getAssetDomains({
-        domainsToFetch: ["G1", "G2"],
+        assetIssuerDomainsToFetch: ["G1", "G2"],
         networkDetails: TESTNET_NETWORK_DETAILS,
       });
 
@@ -48,7 +48,7 @@ describe("internalApi", () => {
         .spyOn(GetLedgerKeyAccounts, "getLedgerKeyAccounts")
         .mockRejectedValue(new Error("Fetch failed"));
       const assetDomains = await internalApi.getAssetDomains({
-        domainsToFetch: ["G1", "G2"],
+        assetIssuerDomainsToFetch: ["G1", "G2"],
         networkDetails: TESTNET_NETWORK_DETAILS,
       });
       expect(assetDomains).toEqual({});
