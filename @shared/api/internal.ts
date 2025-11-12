@@ -5,6 +5,7 @@ import {
   Networks,
   Horizon,
   FeeBumpTransaction,
+  StrKey,
   Transaction,
   TransactionBuilder,
   xdr,
@@ -1217,9 +1218,12 @@ export const getAssetDomains = async ({
   networkDetails: NetworkDetails;
 }) => {
   let assetDomains = {} as { [code: string]: string };
+  const filteredAssetIssuerDomainsToFetch = assetIssuerDomainsToFetch.filter(
+    (domain) => StrKey.isValidEd25519PublicKey(domain),
+  );
   try {
     const fetchedAccounts = await getLedgerKeyAccounts({
-      accountList: assetIssuerDomainsToFetch,
+      accountList: filteredAssetIssuerDomainsToFetch,
       networkDetails,
     });
     Object.entries(fetchedAccounts).forEach(([key, value]) => {
