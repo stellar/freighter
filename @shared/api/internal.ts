@@ -1156,20 +1156,25 @@ export const getAssetIcons = async ({
       networkDetails,
     });
 
+    const iconsToFetch = [] as Promise<void>[];
     for (const { key, code } of domainsToFetch) {
       const canonical = getCanonicalFromAsset(code, key);
       if (assetDomains[key]) {
-        const icon = await getIconUrlFromIssuer({
+        const fetchIcon = getIconUrlFromIssuer({
           key,
           code,
           networkDetails,
           homeDomain: assetDomains[key],
+        }).then((icon) => {
+          assetIcons[canonical] = icon || null;
         });
-        assetIcons[canonical] = icon || null;
-        break;
+
+        iconsToFetch.push(fetchIcon);
+      } else {
+        assetIcons[canonical] = null;
       }
-      assetIcons[canonical] = null;
     }
+    await Promise.all(iconsToFetch);
   }
   return assetIcons;
 };
@@ -1230,6 +1235,7 @@ export const getAssetDomains = async ({
       assetDomains[key] = value.home_domain;
     });
   } catch (e) {
+    captureException(`Error constructing asset domains: ${e}`);
     return {};
   }
 

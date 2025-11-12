@@ -25,11 +25,19 @@ export const getLedgerKeyAccounts = async ({
     const url = new URL(`${INDEXER_V2_URL}/ledger-key/accounts`);
     url.searchParams.append("network", networkDetails.network);
     const response = await fetch(url, options);
+    if (!response.ok) {
+      const _err = JSON.stringify(response);
+      captureException(
+        `Failed to fetch ledger key accounts - ${response.status}: ${response.statusText}`,
+      );
+
+      throw new Error(_err);
+    }
     const { data } = (await response.json()) as { data: LedgerKeyAccounts };
 
     fetchedAccounts = data.ledger_key_accounts;
   } catch (e) {
-    captureException(`Error fetching asset domains: ${e}`);
+    captureException(`Error fetching ledger key accounts: ${e}`);
   }
 
   return fetchedAccounts;
