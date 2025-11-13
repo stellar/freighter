@@ -23,8 +23,25 @@
     margin-top: 1.5rem;
   }
 
-  &__fetch-fail,
+  @keyframes animateNotification {
+    from {
+      margin-top: 0;
+      height: 0;
+      overflow: hidden;
+    }
+    to {
+      margin-top: 1.5rem;
+      height: auto;
+      overflow: auto;
+    }
+  }
+
   &__fullscreen {
+    margin-top: 1.5rem;
+  }
+
+  &__fetch-fail {
+    animation: animateNotification 0.3s ease-in-out;
     margin-top: 1.5rem;
   }
 }

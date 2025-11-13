@@ -73,6 +73,7 @@ import { modifyAssetsList } from "./handlers/modifyAssetsList";
 import { getIsAccountMismatch } from "./handlers/getIsAccountMismatch";
 import { changeAssetVisibility } from "./handlers/changeAssetVisibility";
 import { getHiddenAssets } from "./handlers/getHiddenAssets";
+import { loadBackendSettings } from "./handlers/loadBackendSettings";
 
 const numOfPublicKeysToCheck = 5;
 
@@ -359,6 +360,9 @@ export const popupMessageListener = (
       return loadSettings({
         localStore,
       });
+    }
+    case SERVICE_TYPES.LOAD_BACKEND_SETTINGS: {
+      return loadBackendSettings();
     }
     case SERVICE_TYPES.GET_CACHED_ASSET_ICON_LIST: {
       return getCachedAssetIconList({

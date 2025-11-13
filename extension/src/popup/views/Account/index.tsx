@@ -214,7 +214,10 @@ export const Account = () => {
             </div>
           )}
           {!isSorobanSuported && (
-            <div className="AccountView__fetch-fail">
+            <div
+              className="AccountView__fetch-fail"
+              data-testid="account-view-sorban-rpc-issue"
+            >
               <Notification
                 title={t("Soroban RPC is temporarily experiencing issues")}
                 variant="primary"
@@ -236,7 +239,10 @@ export const Account = () => {
             </div>
           )}
           {userNotification?.enabled && (
-            <div className="AccountView__fetch-fail">
+            <div
+              className="AccountView__fetch-fail"
+              data-testid="account-view-user-notification"
+            >
               <Notification
                 title={t("Please note the following message")}
                 variant="primary"
