@@ -310,7 +310,6 @@ describe("Account view", () => {
   });
 
   it("loads accounts", async () => {
-    console.log("loads accounts");
     render(
       <Wrapper
         routes={[ROUTES.account]}
@@ -347,9 +346,6 @@ describe("Account view", () => {
     ).toHaveLength(0);
   });
   it("should show user notification if user notification is enabled", async () => {
-    console.log(
-      "should show user notification if user notification is enabled",
-    );
     jest.spyOn(ApiInternal, "loadBackendSettings").mockImplementationOnce(() =>
       Promise.resolve({
         isSorobanPublicEnabled: true,
