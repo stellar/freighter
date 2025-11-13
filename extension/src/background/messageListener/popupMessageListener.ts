@@ -73,11 +73,7 @@ import { modifyAssetsList } from "./handlers/modifyAssetsList";
 import { getIsAccountMismatch } from "./handlers/getIsAccountMismatch";
 import { changeAssetVisibility } from "./handlers/changeAssetVisibility";
 import { getHiddenAssets } from "./handlers/getHiddenAssets";
-import { getMobileAppBannerDismissed } from "./handlers/getMobileAppBannerDismissed";
-import { dismissMobileAppBanner } from "./handlers/dismissMobileAppBanner";
 import { loadBackendSettings } from "./handlers/loadBackendSettings";
-import { addCollectible } from "./handlers/addCollectible";
-import { getCollectibles } from "./handlers/getCollectibles";
 
 const numOfPublicKeysToCheck = 5;
 
@@ -364,6 +360,9 @@ export const popupMessageListener = (
       return loadSettings({
         localStore,
       });
+    }
+    case SERVICE_TYPES.LOAD_BACKEND_SETTINGS: {
+      return loadBackendSettings();
     }
     case SERVICE_TYPES.GET_CACHED_ASSET_ICON_LIST: {
       return getCachedAssetIconList({

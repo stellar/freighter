@@ -57,7 +57,6 @@ import {
   ApiTokenPrices,
   HorizonOperation,
   UserNotification,
-  CollectibleContract,
 } from "./types";
 import {
   AccountBalancesInterface,
