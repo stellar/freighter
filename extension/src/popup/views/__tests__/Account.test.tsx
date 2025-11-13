@@ -236,6 +236,17 @@ jest
   .spyOn(TokenListHelpers, "getCombinedAssetListData")
   .mockImplementation(() => Promise.resolve([]));
 
+jest.spyOn(ApiInternal, "loadBackendSettings").mockImplementation(() =>
+  Promise.resolve({
+    isSorobanPublicEnabled: true,
+    isRpcHealthy: true,
+    userNotification: {
+      enabled: false,
+      message: "",
+    },
+  }),
+);
+
 jest.mock("helpers/metrics", () => ({
   storeAccountMetricsData: jest.fn(),
   registerHandler: jest.fn(),
@@ -299,6 +310,7 @@ describe("Account view", () => {
   });
 
   it("loads accounts", async () => {
+    console.log("loads accounts");
     render(
       <Wrapper
         routes={[ROUTES.account]}
@@ -312,6 +324,12 @@ describe("Account view", () => {
           settings: {
             networkDetails: TESTNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
+            isSorobanPublicEnabled: true,
+            isRpcHealthy: true,
+            userNotification: {
+              enabled: false,
+              message: "",
+            },
           },
         }}
       >
@@ -321,6 +339,102 @@ describe("Account view", () => {
 
     await waitFor(() => screen.getByTestId("account-header"));
     expect(screen.getByTestId("account-header")).toBeDefined();
+    expect(
+      screen.queryAllByTestId("account-view-user-notification"),
+    ).toHaveLength(0);
+    expect(
+      screen.queryAllByTestId("account-view-sorban-rpc-issue"),
+    ).toHaveLength(0);
+  });
+  it("should show user notification if user notification is enabled", async () => {
+    console.log(
+      "should show user notification if user notification is enabled",
+    );
+    jest.spyOn(ApiInternal, "loadBackendSettings").mockImplementationOnce(() =>
+      Promise.resolve({
+        isSorobanPublicEnabled: true,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: true,
+          message: "Test notification",
+        },
+      }),
+    );
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+            isSorobanPublicEnabled: true,
+            isRpcHealthy: true,
+            userNotification: {
+              enabled: false,
+              message: "",
+            },
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("account-view-user-notification"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("should show soroban rpc issue notification if soroban rpc is not supported", async () => {
+    jest.spyOn(ApiInternal, "loadBackendSettings").mockImplementationOnce(() =>
+      Promise.resolve({
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: false,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+      }),
+    );
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+            isSorobanPublicEnabled: true,
+            isRpcHealthy: true,
+            userNotification: {
+              enabled: false,
+              message: "",
+            },
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("account-view-sorban-rpc-issue"),
+      ).toBeInTheDocument();
+    });
   });
 
   it("displays balances with icons", async () => {

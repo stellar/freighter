@@ -16,8 +16,9 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "popup/App";
 import { makeAccountActive } from "popup/ducks/accountServices";
-import { changeNetwork } from "popup/ducks/settings";
+import { changeNetwork, saveBackendSettingsAction } from "popup/ducks/settings";
 import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
+import { loadBackendSettings } from "@shared/api/internal";
 
 interface ResolvedAccountData {
   allowList: AllowList;
@@ -68,7 +69,7 @@ function useGetAccountData(options: {
         await reduxDispatch(changeNetwork(updatedAppData.network));
       }
 
-      const appData = await fetchAppData(useAppDataCache);
+      const appData = await fetchAppData(useAppDataCache, false);
       if (isError(appData)) {
         throw new Error(appData.message);
       }
@@ -143,6 +144,9 @@ function useGetAccountData(options: {
           captureException(`Error fetching scanned balances on Account - ${e}`);
         }
       }
+
+      const backendSettings = await loadBackendSettings();
+      reduxDispatch(saveBackendSettingsAction(backendSettings));
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });

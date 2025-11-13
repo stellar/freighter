@@ -55,6 +55,7 @@ import {
   AssetVisibility,
   ApiTokenPrices,
   HorizonOperation,
+  UserNotification,
 } from "./types";
 import {
   AccountBalancesInterface,
@@ -1750,6 +1751,17 @@ export const loadSettings = (): Promise<
     activePublicKey: null,
     type: SERVICE_TYPES.LOAD_SETTINGS,
   });
+
+export const loadBackendSettings = async (): Promise<{
+  isSorobanPublicEnabled: boolean;
+  isRpcHealthy: boolean;
+  userNotification: UserNotification;
+}> => {
+  return await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.LOAD_BACKEND_SETTINGS,
+  });
+};
 
 export const getMemoRequiredAccounts = async ({
   activePublicKey,
