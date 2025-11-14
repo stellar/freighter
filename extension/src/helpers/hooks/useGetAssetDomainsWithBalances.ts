@@ -14,13 +14,13 @@ import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
 import { findAssetBalance } from "popup/helpers/balance";
 import { isAssetSuspicious } from "../../popup/helpers/blockaid";
 import { useIsSoroswapEnabled, useIsSwap } from "../../popup/helpers/useIsSwap";
-import { getAssetDomain } from "../../popup/helpers/getAssetDomain";
 import { AccountBalances, useGetBalances } from "./useGetBalances";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import { AppDataType, NeedsReRoute, useGetAppData } from "./useGetAppData";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { homeDomainsSelector, saveDomainForIssuer } from "popup/ducks/cache";
 import { AppDispatch } from "popup/App";
+import { getAssetDomains } from "@shared/api/internal";
 
 export interface ResolvedAssetDomains {
   type: AppDataType.RESOLVED;
@@ -80,7 +80,7 @@ export function useGetAssetDomainsWithBalances(getBalancesOptions: {
       if (isError<AccountBalances>(balances)) {
         throw new Error(balances.message);
       }
-
+      const domainsToFetch = [] as string[];
       const domains = [] as ManageAssetCurrency[];
       // TODO: cache home domain when getting asset icon
       // https://github.com/stellar/freighter/issues/410
@@ -113,21 +113,13 @@ export function useGetAssetDomainsWithBalances(getBalancesOptions: {
         if (code !== "XLM") {
           let domain = "";
 
-          const cachedHomeDomain = homeDomains[issuer.key];
+          const cachedHomeDomain =
+            homeDomains[networkDetails.network]?.[issuer.key];
           if (useCache && cachedHomeDomain) {
             domain = cachedHomeDomain;
-          } else {
+          } else if (cachedHomeDomain !== null) {
             if (issuer.key) {
-              try {
-                domain = await getAssetDomain(
-                  issuer.key,
-                  networkDetails.networkUrl,
-                  networkDetails.networkPassphrase,
-                );
-                reduxDispatch(saveDomainForIssuer({ [issuer.key]: domain }));
-              } catch (e) {
-                console.error(e);
-              }
+              domainsToFetch.push(issuer.key);
             }
           }
 
@@ -178,9 +170,42 @@ export function useGetAssetDomainsWithBalances(getBalancesOptions: {
         });
       }
 
+      let backfilledDomains = [] as ManageAssetCurrency[];
+      let fetchedDomains = {} as { [code: string]: string };
+
+      if (domainsToFetch.length > 0) {
+        fetchedDomains = await getAssetDomains({
+          assetIssuerDomainsToFetch: domainsToFetch,
+          networkDetails: appData.settings.networkDetails,
+        });
+      }
+
+      if (Object.keys(fetchedDomains).length > 0) {
+        domains.forEach((domainObj) => {
+          const domainToAdd = {
+            ...domainObj,
+          };
+          if (!domainObj.domain) {
+            domainToAdd.domain = fetchedDomains[domainObj.issuer || ""] || null;
+            if (domainObj.issuer) {
+              reduxDispatch(
+                saveDomainForIssuer({
+                  networkDetails,
+                  homeDomains: { [domainObj.issuer]: domainToAdd.domain },
+                }),
+              );
+            }
+          }
+
+          backfilledDomains.push(domainToAdd);
+        });
+      } else {
+        backfilledDomains = domains;
+      }
+
       const payload = {
         type: AppDataType.RESOLVED,
-        domains,
+        domains: backfilledDomains,
         isManagingAssets,
         balances,
         publicKey,

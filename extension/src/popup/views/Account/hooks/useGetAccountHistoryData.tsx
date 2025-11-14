@@ -1,4 +1,5 @@
 import { useReducer } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
@@ -11,6 +12,12 @@ import {
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
 import { useTokenDetails } from "helpers/hooks/useTokenDetails";
+import {
+  homeDomainsSelector,
+  saveDomainForIssuer,
+  saveIconsForBalances,
+} from "popup/ducks/cache";
+import { AppDispatch } from "popup/App";
 
 interface ResolvedAccountHistoryData {
   type: AppDataType.RESOLVED;
@@ -27,7 +34,8 @@ function useGetAccountHistoryData() {
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchHistory } = useGetHistory();
   const { fetchData: fetchTokenDetails } = useTokenDetails();
-
+  const homeDomains = useSelector(homeDomainsSelector);
+  const reduxDispatch = useDispatch<AppDispatch>();
   const fetchData = async ({ balances }: { balances: AccountBalances }) => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
@@ -50,6 +58,11 @@ function useGetAccountHistoryData() {
         throw new Error(history.message);
       }
 
+      const cachedIcons = { ...(balances.icons || {}) };
+      const cachedHomeDomains = {
+        ...(homeDomains[networkDetails.network] || {}),
+      };
+
       const payload = {
         type: AppDataType.RESOLVED,
         operationsByAsset: await sortOperationsByAsset({
@@ -58,8 +71,17 @@ function useGetAccountHistoryData() {
           networkDetails: networkDetails,
           publicKey,
           fetchTokenDetails,
+          icons: cachedIcons,
+          homeDomains: cachedHomeDomains,
         }),
       } as ResolvedAccountHistoryData;
+
+      // If we found new home domains and icons during iteration, save them to the cache
+
+      reduxDispatch(saveIconsForBalances({ icons: cachedIcons }));
+      reduxDispatch(
+        saveDomainForIssuer({ networkDetails, homeDomains: cachedHomeDomains }),
+      );
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;

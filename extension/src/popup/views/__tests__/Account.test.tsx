@@ -24,6 +24,7 @@ import * as TokenListHelpers from "@shared/api/helpers/token-list";
 import * as GetIconFromTokenList from "@shared/api/helpers/getIconFromTokenList";
 import * as GetIconUrlFromIssuer from "@shared/api/helpers/getIconUrlFromIssuer";
 import * as RouteHelpers from "popup/helpers/route";
+import * as GetLedgerKeyAccounts from "@shared/api/helpers/getLedgerKeyAccounts";
 
 import {
   Wrapper,
@@ -485,7 +486,18 @@ describe("Account view", () => {
     );
     const getIconUrlFromIssuerSpy = jest
       .spyOn(GetIconUrlFromIssuer, "getIconUrlFromIssuer")
-      .mockImplementation(() => Promise.resolve("http://domain.com/baz.png"));
+      .mockImplementationOnce(() =>
+        Promise.resolve("http://bazdomain.com/baz.png"),
+      );
+    jest
+      .spyOn(GetLedgerKeyAccounts, "getLedgerKeyAccounts")
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM: {
+            home_domain: "bazdomain.com",
+          },
+        } as any),
+      );
     jest
       .spyOn(ApiInternal, "getAccountHistory")
       .mockImplementationOnce(() => Promise.resolve({ operations: [] } as any));
@@ -571,7 +583,9 @@ describe("Account view", () => {
       // fetches and displays icon from home domain
       expect(
         screen.getByTestId("AccountAssets__asset--loading-BAZ"),
-      ).toContainHTML("<img alt='BAZ logo' src='http://domain.com/baz.png' />");
+      ).toContainHTML(
+        "<img alt='BAZ logo' src='http://bazdomain.com/baz.png' />",
+      );
     });
   });
 

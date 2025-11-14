@@ -9,7 +9,7 @@ import { ApiTokenPrices } from "@shared/api/types";
 type AssetCode = string;
 type PublicKey = string;
 type IconUrl = string | null;
-type HomeDomain = string;
+type HomeDomain = string | null;
 
 interface SaveBalancesPayload {
   publicKey: PublicKey;
@@ -32,7 +32,10 @@ interface SaveIconsPayload {
   icons: Record<AssetCode, IconUrl>;
 }
 
-type SaveDomainPayload = Record<PublicKey, HomeDomain>;
+type SaveDomainPayload = {
+  homeDomains: Record<PublicKey, HomeDomain>;
+  networkDetails: NetworkDetails;
+};
 
 type SaveTokenLists = AssetListResponse[];
 
@@ -51,7 +54,7 @@ interface InitialState {
     >;
   };
   icons: Record<AssetCode, IconUrl>;
-  homeDomains: Record<PublicKey, HomeDomain>;
+  homeDomains: { [network: string]: Record<PublicKey, HomeDomain> };
   tokenLists: AssetListResponse[];
   tokenDetails: {
     [contractId: string]: TokenDetailsResponse;
@@ -123,7 +126,10 @@ const cacheSlice = createSlice({
     saveDomainForIssuer(state, action: { payload: SaveDomainPayload }) {
       state.homeDomains = {
         ...state.homeDomains,
-        ...action.payload,
+        [action.payload.networkDetails.network]: {
+          ...state.homeDomains[action.payload.networkDetails.network],
+          ...action.payload.homeDomains,
+        },
       };
     },
     saveTokenLists(state, action: { payload: SaveTokenLists }) {

@@ -83,6 +83,10 @@ describe("AssetDetail", () => {
       setIsDetailViewShowing: () => null,
       subentryCount: 0,
       historyData: mockHistoryData,
+      assetIcons: {
+        "BAZ:GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF":
+          "test-img-src",
+      },
     };
 
     render(
@@ -146,6 +150,10 @@ describe("AssetDetail", () => {
       setIsDetailViewShowing: () => null,
       subentryCount: 0,
       historyData: mockHistoryData,
+      assetIcons: {
+        "BAZ:GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF":
+          "test-img-src",
+      },
     };
 
     render(
@@ -210,6 +218,10 @@ describe("AssetDetail", () => {
       setIsDetailViewShowing: () => null,
       subentryCount: 0,
       historyData: mockHistoryData,
+      assetIcons: {
+        "BAZ:GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF":
+          "test-img-src",
+      },
     };
 
     render(
@@ -278,6 +290,10 @@ describe("AssetDetail", () => {
       setIsDetailViewShowing: () => null,
       subentryCount: 0,
       historyData: mockHistoryData,
+      assetIcons: {
+        "BAZ:GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF":
+          "test-img-src",
+      },
     };
 
     render(
@@ -302,6 +318,10 @@ describe("AssetDetail", () => {
     expect(screen.getByTestId("asset-detail-available-copy")).toHaveTextContent(
       "100 BAZ",
     );
+    expect(screen.getByTestId("AssetDetail__icon")).toHaveAttribute(
+      "src",
+      "test-img-src",
+    );
   });
 
   describe("Action Buttons", () => {
@@ -323,6 +343,7 @@ describe("AssetDetail", () => {
         setSelectedAsset: () => null,
         subentryCount: 0,
         historyData: mockHistoryData,
+        assetIcons: {},
       };
 
       render(
@@ -367,6 +388,7 @@ describe("AssetDetail", () => {
         setSelectedAsset: () => null,
         subentryCount: 0,
         historyData: mockHistoryData,
+        assetIcons: {},
       };
 
       render(
@@ -416,6 +438,7 @@ describe("AssetDetail", () => {
         setSelectedAsset: () => null,
         subentryCount: 0,
         historyData: mockHistoryData,
+        assetIcons: {},
       };
 
       render(
@@ -467,6 +490,7 @@ describe("AssetDetail", () => {
         setSelectedAsset: () => null,
         subentryCount: 0,
         historyData: mockHistoryData,
+        assetIcons: {},
       };
 
       render(
@@ -525,6 +549,7 @@ describe("AssetDetail", () => {
         setSelectedAsset: () => null,
         subentryCount: 0,
         historyData: mockHistoryData,
+        assetIcons: {},
       };
 
       render(
@@ -583,6 +608,7 @@ describe("AssetDetail", () => {
         setSelectedAsset: () => null,
         subentryCount: 0,
         historyData: mockHistoryData,
+        assetIcons: {},
       };
 
       render(

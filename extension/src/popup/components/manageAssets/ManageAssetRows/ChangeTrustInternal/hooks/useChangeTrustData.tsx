@@ -34,7 +34,7 @@ function useGetChangeTrustData({
   asset: {
     code: string;
     issuer: string;
-    domain: string;
+    domain: string | null;
     contract?: string;
   };
   assetImage: string | null;
@@ -69,7 +69,7 @@ function useGetChangeTrustData({
         const resp = await checkForSuspiciousAsset({
           code: asset.code,
           issuer: asset.issuer,
-          domain: asset.domain,
+          domain: asset.domain || "",
           server,
           networkDetails,
         });

@@ -1,8 +1,8 @@
 import { StellarToml, StrKey } from "stellar-sdk";
 import { sendMessageToBackground } from "./extensionMessaging";
-import { stellarSdkServer } from "./stellarSdkServer";
 import { SERVICE_TYPES } from "../../constants/services";
 import { NetworkDetails } from "../../constants/stellar";
+import { getAssetDomains } from "../internal";
 
 /* 
 This runs a slightly convoluted process to find an icon's url. 
@@ -32,13 +32,14 @@ export const getIconUrlFromIssuer = async ({
   key,
   code,
   networkDetails,
+  homeDomain,
 }: {
   key: string;
   code: string;
   networkDetails: NetworkDetails;
+  homeDomain?: string;
 }) => {
   let iconUrl = "";
-  let response;
 
   try {
     /* First, check our localStorage cache in Background to see if we've found this url before */
@@ -55,28 +56,36 @@ export const getIconUrlFromIssuer = async ({
     console.error(e);
   }
 
-  try {
-    /* Otherwise, 1. load their account from the API */
-    const { networkUrl, networkPassphrase } = networkDetails;
-    const server = stellarSdkServer(networkUrl, networkPassphrase);
-    if (!StrKey.isValidEd25519PublicKey(key)) {
+  let iconHomeDomain = "";
+
+  // if we were passed a home domain, use it
+  if (homeDomain) {
+    iconHomeDomain = homeDomain;
+  } else {
+    try {
+      /* Otherwise, 1. load their account from their ledger key account */
+      if (!StrKey.isValidEd25519PublicKey(key)) {
+        return iconUrl;
+      }
+
+      const fetchedAccounts = await getAssetDomains({
+        assetIssuerDomainsToFetch: [key],
+        networkDetails,
+      });
+      iconHomeDomain = fetchedAccounts[key];
+    } catch (e) {
       return iconUrl;
     }
-
-    response = await server.loadAccount(key);
-  } catch (e) {
-    return iconUrl;
   }
 
-  const { home_domain: homeDomain } = response;
   let toml;
 
   try {
     /* 2. Use their domain from their API account and use it attempt to load their stellar.toml */
-    if (!homeDomain) {
+    if (!iconHomeDomain) {
       return iconUrl;
     }
-    toml = await StellarToml.Resolver.resolve(homeDomain);
+    toml = await StellarToml.Resolver.resolve(iconHomeDomain);
   } catch (e) {
     console.error(e);
     return iconUrl;

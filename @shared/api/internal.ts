@@ -5,6 +5,7 @@ import {
   Networks,
   Horizon,
   FeeBumpTransaction,
+  StrKey,
   Transaction,
   TransactionBuilder,
   xdr,
@@ -74,7 +75,7 @@ import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
-import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
+import { getLedgerKeyAccounts } from "./helpers/getLedgerKeyAccounts";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
 import { getIconFromTokenLists } from "./helpers/getIconFromTokenList";
 
@@ -1093,6 +1094,7 @@ export const getAssetIcons = async ({
 }) => {
   const assetIcons = {} as { [code: string]: string | null };
   const skipLookup = !assetsListsData || !networkDetails;
+  const domainsToFetch = [] as { key: string; code: string }[];
 
   if (balances) {
     const balanceValues = Object.values(balances);
@@ -1137,8 +1139,9 @@ export const getAssetIcons = async ({
             icon = tokenListIcon.icon;
             canonical = tokenListIcon.canonicalAsset;
           } else {
-            // if we still don't have the icon, we try to get it from the issuer
-            icon = await getIconUrlFromIssuer({ key, code, networkDetails });
+            // if we still don't have the icon, we try to get it from the issuer,
+            // aggregate the missing icons and we'll fetch all the domains at once
+            domainsToFetch.push({ key, code });
           }
         }
 
@@ -1146,6 +1149,33 @@ export const getAssetIcons = async ({
         assetIcons[canonical] = icon || null;
       }
     }
+  }
+
+  if (domainsToFetch.length > 0 && networkDetails) {
+    const assetDomains = await getAssetDomains({
+      assetIssuerDomainsToFetch: domainsToFetch.map(({ key }) => key),
+      networkDetails,
+    });
+
+    const iconsToFetch = [] as Promise<void>[];
+    for (const { key, code } of domainsToFetch) {
+      const canonical = getCanonicalFromAsset(code, key);
+      if (assetDomains[key]) {
+        const fetchIcon = getIconUrlFromIssuer({
+          key,
+          code,
+          networkDetails,
+          homeDomain: assetDomains[key],
+        }).then((icon) => {
+          assetIcons[canonical] = icon || null;
+        });
+
+        iconsToFetch.push(fetchIcon);
+      } else {
+        assetIcons[canonical] = null;
+      }
+    }
+    await Promise.all(iconsToFetch);
   }
   return assetIcons;
 };
@@ -1179,31 +1209,37 @@ export const retryAssetIcon = async ({
   return newAssetIcons;
 };
 
+/**
+ * getAssetDomains returns the home domain for a given asset issuer.
+ *
+ * @param assetIssuerDomainsToFetch - A list of asset issuer addresses to fetch the home domain for.
+ * @param networkDetails - Network configuration details
+ * @returns an object with the asset issuer address as the key and the home domain as the value.
+ */
 export const getAssetDomains = async ({
-  balances,
+  assetIssuerDomainsToFetch,
   networkDetails,
 }: {
-  balances: Balances;
+  assetIssuerDomainsToFetch: string[];
   networkDetails: NetworkDetails;
 }) => {
-  const assetDomains = {} as { [code: string]: string };
-
-  if (balances) {
-    const balanceValues = Object.values(balances);
-
-    for (let i = 0; i < balanceValues.length; i++) {
-      const { token } = balanceValues[i];
-      if (token && "issuer" in token) {
-        const {
-          issuer: { key },
-          code,
-        } = token;
-
-        const domain = await getDomainFromIssuer({ key, code, networkDetails });
-        assetDomains[`${code}:${key}`] = domain;
-      }
-    }
+  let assetDomains = {} as { [code: string]: string };
+  const filteredAssetIssuerDomainsToFetch = assetIssuerDomainsToFetch.filter(
+    (domain) => StrKey.isValidEd25519PublicKey(domain),
+  );
+  try {
+    const fetchedAccounts = await getLedgerKeyAccounts({
+      accountList: filteredAssetIssuerDomainsToFetch,
+      networkDetails,
+    });
+    Object.entries(fetchedAccounts).forEach(([key, value]) => {
+      assetDomains[key] = value.home_domain;
+    });
+  } catch (e) {
+    captureException(`Error constructing asset domains: ${e}`);
+    return {};
   }
+
   return assetDomains;
 };
 

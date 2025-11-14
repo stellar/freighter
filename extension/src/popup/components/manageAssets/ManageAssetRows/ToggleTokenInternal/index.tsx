@@ -24,7 +24,7 @@ interface ToggleTokenInternalProps {
     issuer: string;
     image: string | null;
     isTrustlineActive: boolean;
-    domain: string;
+    domain: string | null;
     contract?: string;
     name?: string;
   };
