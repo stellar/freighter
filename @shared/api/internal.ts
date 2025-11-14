@@ -1094,6 +1094,7 @@ export const getAssetIcons = async ({
 }) => {
   const assetIcons = {} as { [code: string]: string | null };
   const skipLookup = !assetsListsData || !networkDetails;
+  const domainsToFetch = [] as { key: string; code: string }[];
 
   if (balances) {
     const balanceValues = Object.values(balances);
@@ -1137,8 +1138,9 @@ export const getAssetIcons = async ({
             icon = tokenListIcon.icon;
             canonical = tokenListIcon.canonicalAsset;
           } else {
-            // if we still don't have the icon, we try to get it from the issuer
-            icon = await getIconUrlFromIssuer({ key, code, networkDetails });
+            // if we still don't have the icon, we try to get it from the issuer,
+            // aggregate the missing icons and we'll fetch all the domains at once
+            domainsToFetch.push({ key, code });
           }
         }
 
@@ -1224,9 +1226,6 @@ export const getAssetDomains = async ({
   const filteredAssetIssuerDomainsToFetch = assetIssuerDomainsToFetch.filter(
     (domain) => StrKey.isValidEd25519PublicKey(domain),
   );
-  if (filteredAssetIssuerDomainsToFetch.length === 0) {
-    return assetDomains;
-  }
   try {
     const fetchedAccounts = await getLedgerKeyAccounts({
       accountList: filteredAssetIssuerDomainsToFetch,

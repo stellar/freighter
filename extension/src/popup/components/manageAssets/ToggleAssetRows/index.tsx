@@ -118,9 +118,7 @@ export const ToggleAssetRow = ({
           className="ToggleAssetRows__domain"
           data-testid="ToggleAssetDomain"
         >
-          {formatDomain(domain || "") === "Stellar Network"
-            ? t("Stellar Network")
-            : formatDomain(domain || "")}
+          {formatDomain(domain || "")}
         </div>
       </div>
     </>

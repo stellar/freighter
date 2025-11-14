@@ -3,17 +3,13 @@ import * as GetLedgerKeyAccounts from "../helpers/getLedgerKeyAccounts";
 import * as internalApi from "../internal";
 
 describe("internalApi", () => {
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
   describe("getAssetDomains", () => {
     it("should return a list of domains from a list of issuers", async () => {
       jest
         .spyOn(GetLedgerKeyAccounts, "getLedgerKeyAccounts")
         .mockResolvedValue({
           G1: {
-            account_id:
-              "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+            account_id: "G1",
             home_domain: "stellar1.org",
             balance: "1000000000000000000",
             seq_num: 1,
@@ -21,39 +17,24 @@ describe("internalApi", () => {
             inflation_dest: "G1",
             flags: 1,
             thresholds: "1000000000000000000",
-            signers: [
-              {
-                key: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-                weight: 1,
-              },
-            ],
+            signers: [{ key: "G1", weight: 1 }],
             sequence_number: 1,
           },
           G2: {
-            account_id:
-              "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
+            account_id: "G2",
             home_domain: "stellar2.org",
             balance: "1000000000000000000",
             seq_num: 1,
             num_sub_entries: 1,
-            inflation_dest:
-              "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
+            inflation_dest: "G2",
             flags: 1,
             thresholds: "1000000000000000000",
-            signers: [
-              {
-                key: "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
-                weight: 1,
-              },
-            ],
+            signers: [{ key: "G2", weight: 1 }],
             sequence_number: 1,
           },
         });
       const assetDomains = await internalApi.getAssetDomains({
-        assetIssuerDomainsToFetch: [
-          "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-          "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
-        ],
+        assetIssuerDomainsToFetch: ["G1", "G2"],
         networkDetails: TESTNET_NETWORK_DETAILS,
       });
 
@@ -70,20 +51,6 @@ describe("internalApi", () => {
         assetIssuerDomainsToFetch: ["G1", "G2"],
         networkDetails: TESTNET_NETWORK_DETAILS,
       });
-      expect(assetDomains).toEqual({});
-    });
-    it("should return an empty object if not valid public keys are provided", async () => {
-      const getLedgerKeyAccountsSpy = jest.spyOn(
-        GetLedgerKeyAccounts,
-        "getLedgerKeyAccounts",
-      );
-      const assetDomains = await internalApi.getAssetDomains({
-        assetIssuerDomainsToFetch: [
-          "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
-        ],
-        networkDetails: TESTNET_NETWORK_DETAILS,
-      });
-      expect(getLedgerKeyAccountsSpy).not.toHaveBeenCalled();
       expect(assetDomains).toEqual({});
     });
   });

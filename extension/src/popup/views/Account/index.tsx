@@ -142,6 +142,13 @@ export const Account = () => {
     });
   }
 
+  const resolvedData = accountData.data;
+  const resolvedIcons =
+    iconsData?.state === IconsRequestState.SUCCESS &&
+    iconsData?.data?.type === AppDataType.RESOLVED
+      ? iconsData?.data?.icons
+      : {};
+
   if (
     !hasError &&
     selectedAsset &&
@@ -157,16 +164,10 @@ export const Account = () => {
         setSelectedAsset={setSelectedAsset}
         subentryCount={accountData.data.balances.subentryCount}
         tokenPrices={accountData.data.tokenPrices}
+        assetIcons={resolvedIcons}
       />
     );
   }
-
-  const resolvedData = accountData.data;
-  const resolvedIcons =
-    iconsData?.state === IconsRequestState.SUCCESS &&
-    iconsData?.data?.type === AppDataType.RESOLVED
-      ? iconsData?.data?.icons
-      : {};
 
   const tokenPrices = resolvedData?.tokenPrices || {};
   const balances = resolvedData?.balances.balances!;

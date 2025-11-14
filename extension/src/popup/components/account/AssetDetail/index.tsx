@@ -133,7 +133,10 @@ interface AssetDetailProps {
   accountBalances: AccountBalances;
   historyData: AccountHistoryData | null;
   selectedAsset: string;
-  handleClose: () => void;
+  setSelectedAsset: (selectedAsset: string) => void;
+  subentryCount: number;
+  tokenPrices?: ApiTokenPrices | null;
+  assetIcons: { [code: string]: string | null };
 }
 
 export const AssetDetail = ({
@@ -141,7 +144,10 @@ export const AssetDetail = ({
   accountBalances,
   historyData,
   selectedAsset,
-  handleClose,
+  setSelectedAsset,
+  subentryCount,
+  tokenPrices,
+  assetIcons,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -502,7 +508,11 @@ export const AssetDetail = ({
         <div className="AssetDetail__wrapper" data-testid="AssetDetail">
           <div className="AssetDetail__network-icon">
             {assetIconUrl ? (
-              <img src={assetIconUrl} alt="Network icon" />
+              <img
+                src={assetIconUrl}
+                alt="Network icon"
+                data-testid="AssetDetail__icon"
+              />
             ) : null}
           </div>
           <div className="AssetDetail__title">
