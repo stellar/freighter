@@ -198,7 +198,7 @@ export const SignMessage = () => {
           {!isDomainListedAllowed && (
             <DomainNotAllowedWarningMessage domain={domain} />
           )}
-          <Message message={SIGN_MESSAGE_PREFIX + message.message} />
+          <Message prefix={SIGN_MESSAGE_PREFIX} message={message.message} />
           <div className="SignMessage__Metadata">
             <div className="SignMessage__Metadata__Row">
               <div className="SignMessage__Metadata__Label">

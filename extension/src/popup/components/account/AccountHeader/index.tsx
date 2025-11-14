@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, NavLink } from "react-router-dom";
 import { createPortal } from "react-dom";
 
-import { Icon, Text, NavButton } from "@stellar/design-system";
+import { Icon, Text, NavButton, CopyText } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { AppDispatch } from "popup/App";
@@ -110,6 +110,16 @@ export const AccountHeader = ({
                   }
                 >
                   <>
+                    <div className="AccountHeader__options__item">
+                      <CopyText textToCopy={publicKey} doneLabel={t("Copied!")}>
+                        <Text as="div" size="sm" weight="medium">
+                          {t("Copy address")}
+                        </Text>
+                      </CopyText>
+                      <div className="AccountHeader__options__item__icon">
+                        <Icon.Copy01 />
+                      </div>
+                    </div>
                     {isFunded && (
                       <div
                         className="AccountHeader__options__item"
@@ -126,6 +136,7 @@ export const AccountHeader = ({
                         </div>
                       </div>
                     )}
+
                     <div
                       className="AccountHeader__options__item"
                       onClick={() => navigateTo(ROUTES.viewPublicKey, navigate)}
@@ -137,6 +148,7 @@ export const AccountHeader = ({
                         <Icon.QrCode01 />
                       </div>
                     </div>
+
                     <div
                       className="AccountHeader__options__item"
                       onClick={() => navigateTo(ROUTES.settings, navigate)}
@@ -148,6 +160,7 @@ export const AccountHeader = ({
                         <Icon.Settings01 />
                       </div>
                     </div>
+
                     <hr className="AccountHeader__list-divider" />
                     <div
                       className="AccountHeader__options__item"

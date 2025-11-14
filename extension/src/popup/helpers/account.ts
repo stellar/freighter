@@ -2,6 +2,7 @@ import { Federation, Horizon, MuxedAccount } from "stellar-sdk";
 import { BigNumber } from "bignumber.js";
 import {
   Account,
+  AssetIcons,
   AssetVisibility,
   HorizonOperation,
   IssuerKey,
@@ -25,7 +26,9 @@ import { isAssetVisible } from "./settings";
 import {
   getRowDataByOpType,
   OperationDataRow,
+  getHomeDomainsForOperations,
 } from "popup/views/AccountHistory/hooks/useGetHistoryData";
+import { TokenDetailsResponse } from "helpers/hooks/useTokenDetails";
 
 export const LP_IDENTIFIER = ":lp";
 
@@ -106,17 +109,27 @@ interface SortOperationsByAsset {
   balances: AssetType[];
   networkDetails: NetworkDetails;
   publicKey: string;
+  fetchTokenDetails: (args: {
+    contractId: string;
+    publicKey: string;
+    networkDetails: NetworkDetails;
+  }) => Promise<TokenDetailsResponse | Error>;
+  icons: AssetIcons;
+  homeDomains: { [assetIssuer: string]: string | null };
 }
 
 export interface AssetOperations {
   [key: string]: OperationDataRow[];
 }
 
-export const sortOperationsByAsset = ({
+export const sortOperationsByAsset = async ({
   balances,
   operations,
   networkDetails,
   publicKey,
+  fetchTokenDetails,
+  icons,
+  homeDomains,
 }: SortOperationsByAsset) => {
   const assetOperationMap = {} as AssetOperations;
 
@@ -137,7 +150,17 @@ export const sortOperationsByAsset = ({
     }
   });
 
-  operations.forEach(async (op) => {
+  /* 
+    To prevent multiple requests for home domains as we build each row, 
+    we iterate through the operations and collect the asset issuers that need home domains in a single request.
+  */
+  const fetchedHomeDomains = await getHomeDomainsForOperations(
+    operations,
+    networkDetails,
+    homeDomains,
+  );
+
+  for (const op of operations) {
     const isPayment = getIsPayment(op.type);
     const isSwap = getIsSwap(op);
     const isCreateExternalAccount =
@@ -152,12 +175,15 @@ export const sortOperationsByAsset = ({
       isDustPayment,
       isCreateExternalAccount,
     };
+
     const opRowData = await getRowDataByOpType(
       publicKey,
       balances,
       parsedOperation,
       networkDetails,
-      {},
+      icons,
+      fetchTokenDetails,
+      fetchedHomeDomains,
     );
     if (getIsPayment(op.type)) {
       Object.keys(assetOperationMap).forEach((assetKey) => {
@@ -199,7 +225,7 @@ export const sortOperationsByAsset = ({
         }
       });
     }
-  });
+  }
 
   return assetOperationMap;
 };

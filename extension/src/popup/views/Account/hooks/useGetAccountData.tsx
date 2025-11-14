@@ -4,10 +4,7 @@ import { captureException } from "@sentry/browser";
 import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
-import { HistoryResponse, useGetHistory } from "helpers/hooks/useGetHistory";
-import { AssetOperations, sortOperationsByAsset } from "popup/helpers/account";
-import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
-import { getTokenPrices as internalGetTokenPrices } from "@shared/api/internal";
+import { isMainnet } from "helpers/stellar";
 import { AllowList, ApiTokenPrices } from "@shared/api/types";
 import {
   AppDataType,
@@ -16,41 +13,22 @@ import {
 } from "helpers/hooks/useGetAppData";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { AppDispatch } from "popup/App";
 import { makeAccountActive } from "popup/ducks/accountServices";
-import { changeNetwork } from "popup/ducks/settings";
-import { balancesSelector } from "popup/ducks/cache";
-
-export const getTokenPrices = async ({
-  balances,
-}: {
-  balances: AccountBalances["balances"];
-}) => {
-  const assetIds = balances
-    .filter((balance) => "token" in balance)
-    .map((balance) =>
-      getCanonicalFromAsset(
-        balance.token.code,
-        "issuer" in balance.token ? balance.token.issuer.key : undefined,
-      ),
-    );
-  if (!assetIds.length) {
-    return {};
-  }
-  const tokenPrices = await internalGetTokenPrices(assetIds);
-  return tokenPrices;
-};
+import { changeNetwork, saveBackendSettingsAction } from "popup/ducks/settings";
+import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
+import { loadBackendSettings } from "@shared/api/internal";
 
 interface ResolvedAccountData {
   allowList: AllowList;
   type: AppDataType.RESOLVED;
   balances: AccountBalances;
-  operationsByAsset: AssetOperations;
   tokenPrices?: ApiTokenPrices | null;
   networkDetails: NetworkDetails;
   publicKey: string;
   applicationState: APPLICATION_STATE;
+  isScanAppended: boolean;
 }
 
 type AccountData = NeedsReRoute | ResolvedAccountData;
@@ -67,8 +45,7 @@ function useGetAccountData(options: {
   );
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(options);
-  const { fetchData: fetchHistory } = useGetHistory();
-  const cachedBalances = useSelector(balancesSelector);
+  const { fetchData: fetchTokenPrices } = useGetTokenPrices();
 
   const fetchData = async ({
     useAppDataCache = true,
@@ -92,7 +69,7 @@ function useGetAccountData(options: {
         await reduxDispatch(changeNetwork(updatedAppData.network));
       }
 
-      const appData = await fetchAppData(useAppDataCache);
+      const appData = await fetchAppData(useAppDataCache, false);
       if (isError(appData)) {
         throw new Error(appData.message);
       }
@@ -107,21 +84,17 @@ function useGetAccountData(options: {
       const allowList = appData.settings.allowList;
       const isMainnetNetwork = isMainnet(networkDetails);
 
+      // let's fetch *just* the balances (without Blockaid scan results) to quickly be able to show the user their balances
       const balancesResult = await fetchBalances(
         publicKey,
         isMainnetNetwork,
         networkDetails,
         !shouldForceBalancesRefresh,
+        true, // skip the Blockaid scan,
       );
-
-      const history = await fetchHistory(publicKey, networkDetails);
 
       if (isError<AccountBalances>(balancesResult)) {
         throw new Error(balancesResult.message);
-      }
-
-      if (isError<HistoryResponse>(history)) {
-        throw new Error(history.message);
       }
 
       const payload = {
@@ -131,19 +104,17 @@ function useGetAccountData(options: {
         applicationState: appData.account.applicationState,
         balances: balancesResult,
         networkDetails,
-        operationsByAsset: sortOperationsByAsset({
-          balances: balancesResult.balances,
-          operations: history,
-          networkDetails: networkDetails,
-          publicKey,
-        }),
+        isScanAppended: false,
       } as ResolvedAccountData;
 
       if (isMainnetNetwork) {
         try {
-          payload.tokenPrices = await getTokenPrices({
+          const fetchedTokenPrices = await fetchTokenPrices({
+            publicKey,
             balances: balancesResult.balances,
+            useCache: true,
           });
+          payload.tokenPrices = fetchedTokenPrices.tokenPrices;
           setIsMainnet(isMainnetNetwork);
         } catch (e) {
           payload.tokenPrices = null;
@@ -151,6 +122,31 @@ function useGetAccountData(options: {
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+
+      if (isMainnetNetwork) {
+        // now that the UI has renderered, on Mainnet, let's make an additional call to fetch the balances with the Blockaid scan results included
+        try {
+          const balancesResult = await fetchBalances(
+            publicKey,
+            isMainnetNetwork,
+            networkDetails,
+            false,
+            false, // don't skip the Blockaid scan,
+          );
+
+          const scannedPayload = {
+            ...payload,
+            balances: balancesResult,
+            isScanAppended: true,
+          } as ResolvedAccountData;
+          dispatch({ type: "FETCH_DATA_SUCCESS", payload: scannedPayload });
+        } catch (e) {
+          captureException(`Error fetching scanned balances on Account - ${e}`);
+        }
+      }
+
+      const backendSettings = await loadBackendSettings();
+      reduxDispatch(saveBackendSettingsAction(backendSettings));
       return payload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
@@ -198,12 +194,14 @@ function useGetAccountData(options: {
 
     const interval = setInterval(async () => {
       try {
-        const tokenPrices = await getTokenPrices({
+        const fetchedTokenPrices = await fetchTokenPrices({
+          publicKey: resolvedData.publicKey,
           balances: resolvedData.balances.balances,
+          useCache: false,
         });
         const payload = {
           ...state.data,
-          tokenPrices,
+          tokenPrices: fetchedTokenPrices.tokenPrices,
         } as AccountData;
         dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       } catch (error) {
@@ -211,6 +209,7 @@ function useGetAccountData(options: {
       }
     }, 30000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_isMainnet, state.data]);
 
   useEffect(() => {
@@ -235,6 +234,7 @@ function useGetAccountData(options: {
         const payload = {
           ...state.data,
           balances: balancesResult,
+          isScanAppended: true,
         } as AccountData;
         dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       } catch (error) {
@@ -243,48 +243,6 @@ function useGetAccountData(options: {
     }, 30000);
     return () => clearInterval(interval);
   }, [_isMainnet, state.data, fetchBalances]);
-
-  useEffect(() => {
-    // if it's been 2 minutes since the last balance update, force update
-    if (!state.data || state.data.type === AppDataType.REROUTE) {
-      return;
-    }
-    const resolvedData = state.data;
-
-    const publicKey = resolvedData.publicKey;
-    const networkDetails = resolvedData.networkDetails;
-
-    const refreshBalances = async () => {
-      try {
-        const balancesResult = await fetchBalances(
-          publicKey,
-          _isMainnet,
-          networkDetails,
-          false,
-        );
-
-        const payload = {
-          ...state.data,
-          balances: balancesResult,
-        } as AccountData;
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-      } catch (error) {
-        captureException(
-          `Error refreshing cache balances on Account - ${error}`,
-        );
-      }
-    };
-
-    if (
-      cachedBalances[networkDetails.network]?.[publicKey]?.updatedAt &&
-      cachedBalances[networkDetails.network]?.[publicKey]?.updatedAt <
-        Date.now() - 120000
-    ) {
-      // force update
-      refreshBalances();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.data, cachedBalances]);
 
   return {
     state,

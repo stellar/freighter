@@ -5,6 +5,7 @@ import {
   getAccountBalances,
   getAssetIcons,
   getHiddenAssets,
+  getAssetIconCache,
 } from "@shared/api/internal";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { AssetIcons } from "@shared/api/types";
@@ -13,7 +14,7 @@ import {
   BalanceMap,
 } from "@shared/api/types/backend-api";
 import { RequestState } from "constants/request";
-import { initialState, reducer } from "helpers/request";
+import { initialState, isCacheValid, reducer } from "helpers/request";
 import { storeBalanceMetricData } from "helpers/metrics";
 import { filterHiddenBalances, sortBalances } from "popup/helpers/account";
 import { AssetType } from "@shared/api/types/account-balance";
@@ -77,15 +78,23 @@ function useGetBalances(options: {
     isMainnet: boolean,
     networkDetails: NetworkDetails,
     useCache = false,
+    shouldSkipScan = false,
   ): Promise<AccountBalances | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const cachedBalanceData =
         cachedBalances[networkDetails.network]?.[publicKey];
+      const isBalancesCacheValid = isCacheValid(cachedBalanceData);
+
       const accountBalances =
-        useCache && cachedBalanceData
+        useCache && isBalancesCacheValid
           ? cachedBalanceData
-          : await getAccountBalances(publicKey, networkDetails, isMainnet);
+          : await getAccountBalances(
+              publicKey,
+              networkDetails,
+              isMainnet,
+              shouldSkipScan,
+            );
 
       const payload = {
         isFunded: accountBalances.isFunded,
@@ -99,6 +108,14 @@ function useGetBalances(options: {
       } as AccountBalances;
 
       if (options.includeIcons) {
+        let cachedIconsFromCache = cachedIcons;
+        if (!Object.keys(cachedIcons).length) {
+          const backgroundCachedIcons = await getAssetIconCache({
+            activePublicKey: publicKey,
+          });
+
+          cachedIconsFromCache = { ...backgroundCachedIcons.icons };
+        }
         const assetsListsData =
           useCache && cachedTokenLists.length
             ? cachedTokenLists
@@ -111,7 +128,7 @@ function useGetBalances(options: {
           balances: accountBalances.balances,
           networkDetails,
           assetsListsData,
-          cachedIcons,
+          cachedIcons: cachedIconsFromCache,
         });
         payload.icons = icons;
         reduxDispatch(saveTokenLists(assetsListsData));

@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useReducer, useRef } from "react";
 import { useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
 
@@ -53,6 +53,7 @@ const useAssetLookup = () => {
   let isVerifiedToken = false;
   let isVerificationInfoShowing = false;
   let verifiedLists = [] as string[];
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const { assetsLists } = useSelector(settingsSelector);
   const MAX_ASSETS_TO_SCAN = 10;
@@ -66,10 +67,12 @@ const useAssetLookup = () => {
     assetRows,
     payload,
     isVerifiedList,
+    signal,
   }: {
     assetRows: ManageAssetCurrency[];
     payload: AssetLookupDetails;
     isVerifiedList: boolean;
+    signal: AbortSignal;
   }) => {
     // scan the first few assets to see if they are suspicious
     // due to the length of time it takes to scan, we'll do it in consecutive chunks
@@ -85,7 +88,7 @@ const useAssetLookup = () => {
           );
         }
       });
-      const response = await fetch(url.href);
+      const response = await fetch(url.href, { signal });
       const data = await response.json();
       const blockaidScanChunkResults: {
         [key: string]: BlockAidScanAssetResult;
@@ -136,6 +139,7 @@ const useAssetLookup = () => {
     contractId: string,
     isAllowListVerificationEnabled: boolean,
     networkDetails: NetworkDetails,
+    signal: AbortSignal,
   ) => {
     let assetRows = [] as ManageAssetCurrency[];
 
@@ -167,11 +171,13 @@ const useAssetLookup = () => {
         contractId,
         publicKey,
         networkDetails,
+        signal,
       });
 
       const isSacContract = await isSacContractExecutable(
         contractId,
         networkDetails,
+        signal,
       );
 
       if (!tokenDetailsResponse) {
@@ -183,7 +189,12 @@ const useAssetLookup = () => {
         const scannedAsset = await scanAsset(
           `${tokenDetailsResponse.symbol}-${issuer}`,
           networkDetails,
-        );
+          signal,
+        ).catch(() => {
+          if (signal.aborted) {
+            return undefined;
+          }
+        });
         assetRows = [
           {
             code: tokenDetailsResponse.symbol,
@@ -245,13 +256,20 @@ const useAssetLookup = () => {
   const fetchStellarExpertData = async ({
     asset,
     networkDetails,
+    signal,
   }: {
     asset: string;
     networkDetails: NetworkDetails;
+    signal: AbortSignal;
   }): Promise<ManageAssetCurrency[]> => {
     const resJson = await searchAsset({
       asset,
       networkDetails,
+      signal,
+    }).catch(() => {
+      if (signal.aborted) {
+        return;
+      }
     });
 
     return resJson._embedded.records.map((record: AssetRecord) => ({
@@ -285,6 +303,12 @@ const useAssetLookup = () => {
     isAllowListVerificationEnabled: boolean;
     networkDetails: NetworkDetails;
   }) => {
+    // Cancel previous request
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const { signal } = controller;
+
     dispatch({ type: "FETCH_DATA_START" });
 
     if (!asset) {
@@ -306,6 +330,7 @@ const useAssetLookup = () => {
           asset,
           isAllowListVerificationEnabled,
           networkDetails,
+          signal,
         );
       } catch (e) {
         captureException(
@@ -318,7 +343,11 @@ const useAssetLookup = () => {
     } else {
       // otherwise, try to use stellar.expert to search for a classic asset
       try {
-        assetRows = await fetchStellarExpertData({ asset, networkDetails });
+        assetRows = await fetchStellarExpertData({
+          asset,
+          networkDetails,
+          signal,
+        });
       } catch (error) {
         captureException(
           `Failed to fetch StellarExpert data - ${JSON.stringify(error)}`,
@@ -376,6 +405,11 @@ const useAssetLookup = () => {
           assetRows: verifiedAssets,
           payload,
           isVerifiedList: true,
+          signal,
+        }).catch(() => {
+          if (signal.aborted) {
+            return;
+          }
         });
       }
 
@@ -384,6 +418,11 @@ const useAssetLookup = () => {
           assetRows: unverifiedAssets,
           payload,
           isVerifiedList: false,
+          signal,
+        }).catch(() => {
+          if (signal.aborted) {
+            return;
+          }
         });
       }
     }

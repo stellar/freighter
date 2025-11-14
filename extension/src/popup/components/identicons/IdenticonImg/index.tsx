@@ -12,5 +12,6 @@ export const IdenticonImg = ({ publicKey }: IdenticonImgProps) => (
     className="IdenticonImg"
     alt="account identicon"
     src={createStellarIdenticon(publicKey).toDataURL()}
+    data-testid="identicon-img"
   />
 );

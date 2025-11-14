@@ -10,7 +10,7 @@ import { NetworkDetails, NETWORKS } from "@shared/constants/stellar";
 import { addTokenId } from "popup/ducks/accountServices";
 import { removeTokenId } from "popup/ducks/transactionSubmission";
 
-import { isSacContract } from "popup/helpers/soroban";
+import { isAssetSac } from "popup/helpers/soroban";
 import { isMainnet, truncateString } from "helpers/stellar";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 
@@ -22,9 +22,9 @@ interface ToggleTokenInternalProps {
   asset: {
     code: string;
     issuer: string;
-    image: string;
+    image: string | null;
     isTrustlineActive: boolean;
-    domain: string;
+    domain: string | null;
     contract?: string;
     name?: string;
   };
@@ -80,10 +80,14 @@ export const ToggleTokenInternal = ({
     }
     onCancel();
   };
-  const isSac =
-    !!asset.name &&
-    !!asset.contract &&
-    isSacContract(asset.name, asset.contract, networkDetails.networkPassphrase);
+  const isSac = isAssetSac({
+    asset: {
+      code: asset.code,
+      issuer: asset.issuer,
+      contract: asset.contract,
+    },
+    networkDetails,
+  });
   return (
     <div className="ToggleToken__wrapper">
       <div className="ToggleToken__wrapper__body">

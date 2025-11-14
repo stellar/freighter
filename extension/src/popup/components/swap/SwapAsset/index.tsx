@@ -98,6 +98,7 @@ export const SwapAsset = ({
         title={<span>{title}</span>}
         hasBackButton
         customBackAction={goBack}
+        customBackIcon={<Icon.X />}
       />
       <View.Content hasTopInput>
         <FormRows>

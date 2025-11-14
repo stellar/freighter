@@ -241,7 +241,8 @@ export const mockAccountHistory = [
   },
   {
     amount: "0.100000",
-    asset: "G3:USDC",
+    asset_issuer: "G3",
+    asset_code: "USDC",
     created_at: "2024-10-14T20:35:26Z",
     from: "G1",
     id: "2",
