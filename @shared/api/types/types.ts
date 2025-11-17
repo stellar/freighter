@@ -403,3 +403,42 @@ export interface LedgerKeyAccounts {
     [key: string]: LedgerKeyAccount;
   };
 }
+
+export interface AccountCollectionTrait {
+  name: string;
+  value: string;
+}
+
+export interface AccountCollectionItem {
+  collectionAddress: string;
+  collectionName: string;
+  tokenId: string;
+  name: string;
+  image: string;
+  description: string;
+  externalUrl: string;
+  traits: AccountCollectionTrait[];
+}
+
+export interface Collectible {
+  owner: string;
+  token_id: string;
+  token_uri: string;
+}
+
+export interface Collection {
+  collection?: {
+    address: string;
+    name: string;
+    symbol: string;
+    collectibles: Collectible[];
+  };
+  error?: {
+    collection_address: string;
+    error_message: string;
+  };
+}
+
+export interface Collectibles {
+  collections: Collection[];
+}

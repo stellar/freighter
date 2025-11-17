@@ -220,6 +220,7 @@ interface ViewInsetProps {
   alignment?: "center";
   hasVerticalBorder?: boolean;
   hasTopBorder?: boolean;
+  hasBottomBorder?: boolean;
   additionalClassName?: string;
   hasScrollShadow?: boolean;
   hasNoTopPadding?: boolean;
@@ -235,6 +236,7 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
   alignment,
   hasVerticalBorder,
   hasTopBorder,
+  hasBottomBorder,
   additionalClassName,
   hasScrollShadow,
   hasNoTopPadding,
@@ -250,6 +252,7 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
       alignment === "center" ? "View__inset--align-center" : "",
       hasVerticalBorder ? "View__inset--vertical-border" : "",
       hasTopBorder ? "View__inset--top-border" : "",
+      hasBottomBorder ? "View__inset--bottom-border" : "",
       hasScrollShadow ? "View__inset--scroll-shadows" : "",
       hasNoTopPadding ? "View__inset--no-top-padding" : "",
       hasTopInput ? "View__inset--top-input" : "",

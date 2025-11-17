@@ -4,6 +4,10 @@ import { captureException } from "@sentry/browser";
 import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
+import {
+  Collectibles,
+  useGetCollectibles,
+} from "helpers/hooks/useGetCollectibles";
 import { isMainnet } from "helpers/stellar";
 import { AllowList, ApiTokenPrices } from "@shared/api/types";
 import {
@@ -29,6 +33,7 @@ interface ResolvedAccountData {
   publicKey: string;
   applicationState: APPLICATION_STATE;
   isScanAppended: boolean;
+  collectibles: Collectibles;
 }
 
 type AccountData = NeedsReRoute | ResolvedAccountData;
@@ -46,6 +51,7 @@ function useGetAccountData(options: {
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(options);
   const { fetchData: fetchTokenPrices } = useGetTokenPrices();
+  const { fetchData: fetchCollectibles } = useGetCollectibles();
 
   const fetchData = async ({
     useAppDataCache = true,
@@ -105,6 +111,7 @@ function useGetAccountData(options: {
         balances: balancesResult,
         networkDetails,
         isScanAppended: false,
+        collectibles: { collections: [] },
       } as ResolvedAccountData;
 
       if (isMainnetNetwork) {
@@ -122,6 +129,14 @@ function useGetAccountData(options: {
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+
+      // let's fetch the collectibles
+      const collectiblesResult = await fetchCollectibles({
+        publicKey,
+        networkDetails,
+      });
+
+      payload.collectibles = collectiblesResult;
 
       if (isMainnetNetwork) {
         // now that the UI has renderered, on Mainnet, let's make an additional call to fetch the balances with the Blockaid scan results included
