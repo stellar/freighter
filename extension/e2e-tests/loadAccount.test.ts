@@ -6,6 +6,7 @@ import {
   stubScanDapp,
   stubTokenDetails,
   stubTokenPrices,
+  stubCollectibles,
 } from "./helpers/stubs";
 
 test("Load accounts on standalone network", async ({
@@ -674,4 +675,21 @@ test("Renames wallets", async ({ page, extensionId, context }) => {
   await page.getByTestId("rename-wallet-input").fill("New Wallet");
   await page.getByText("Save").click();
   await expect(page.getByText("New Wallet")).toBeVisible();
+});
+
+test("Loads collectibles data", async ({ page, extensionId, context }) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+  await stubCollectibles(page);
+
+  test.slow();
+  await loginToTestAccount({ page, extensionId });
+  await page.getByTestId("account-tab-collectibles").click();
+  await expect(page.getByText("Collectibles")).toBeVisible();
+  await expect(page.getByText("Stellar Frogs")).toBeVisible();
+  await expect(page.getByText("Soroban Domains")).toBeVisible();
+  await expect(page.getByText("Future Monkeys")).toBeVisible();
 });

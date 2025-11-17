@@ -287,3 +287,72 @@ export const mockSelector = <T,>(
 ) => {
   (selector as unknown as jest.Mock).mockImplementation(implementation);
 };
+
+export const mockCollectibles = [
+  // Stellar Frogs Collection
+  {
+    collection: {
+      address: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA", // Using XLM contract address for testing
+      name: "Stellar Frogs",
+      symbol: "SFROG",
+      collectibles: [
+        {
+          owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+          token_id: "1",
+          token_uri:
+            "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
+        },
+        {
+          owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+          token_id: "2",
+          token_uri:
+            "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg",
+        },
+        {
+          owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+          token_id: "3",
+          token_uri:
+            "https://nftcalendar.io/storage/uploads/events/2023/8/5kFeYwNfhpUST3TsSoLxm7FaGY1ljwLRgfZ5gQnV.jpg",
+        },
+      ],
+    },
+  },
+  // Soroban Domains Collection
+  {
+    collection: {
+      address: "CCCSorobanDomainsCollection",
+      name: "Soroban Domains",
+      symbol: "SDOM",
+      collectibles: [
+        {
+          owner: "CCCSorobanDomainsCollection",
+          token_id: "102510",
+          token_uri:
+            "https://nftcalendar.io/storage/uploads/events/2025/7/Hdqv6YNVErVCmYlwobFVYfS5BiH19ferUgQova7Z.webp",
+        },
+        {
+          owner: "CCCSorobanDomainsCollection",
+          token_id: "102589",
+          token_uri:
+            "https://nftcalendar.io/storage/uploads/events/2025/7/MkaASwOL8VA3I5B2iIfCcNGT29vGBp4YZIJgmjzq.jpg",
+        },
+      ],
+    },
+  },
+  // Future Monkeys Collection
+  {
+    collection: {
+      address: "CCCFutureMonkeysCollection",
+      name: "Future Monkeys",
+      symbol: "FMONK",
+      collectibles: [
+        {
+          owner: "CCCFutureMonkeysCollection",
+          token_id: "111",
+          token_uri:
+            "https://nftcalendar.io/storage/uploads/events/2025/3/oUfeUrSj3KcVnjColyfnS5ICYuqzDbiuqQP4qLIz.png",
+        },
+      ],
+    },
+  },
+];
