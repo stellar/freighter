@@ -2,6 +2,40 @@ import { validAssetList } from "popup/__testHelpers__";
 import * as SearchAsset from "../searchAsset";
 import { schemaValidatedAssetList } from "@shared/api/helpers/token-list";
 
+/**
+ * SEP-0042 Asset List JSON Schema
+ * This schema is used for testing schema validation in tests.
+ * @see https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0042.md
+ */
+const SEP_0042_ASSET_LIST_SCHEMA = {
+  type: "object",
+  properties: {
+    name: { type: "string" },
+    provider: { type: "string" },
+    description: { type: "string" },
+    version: { type: "string" },
+    network: { type: "string" },
+    assets: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          code: { type: "string" },
+          issuer: { type: "string" },
+          contract: { type: "string" },
+          name: { type: "string" },
+          org: { type: "string" },
+          domain: { type: "string" },
+          icon: { type: "string" },
+          decimals: { type: "number" },
+        },
+        required: ["code", "issuer", "contract", "domain", "icon", "decimals"],
+      },
+    },
+  },
+  required: ["name", "provider", "description", "version", "network", "assets"],
+};
+
 describe("searchAsset", () => {
   beforeEach(() => {
     jest.restoreAllMocks();
@@ -52,48 +86,7 @@ describe("searchAsset", () => {
       if (url.includes("assetlist.schema.json")) {
         return Promise.resolve({
           ok: true,
-          json: async () => ({
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              provider: { type: "string" },
-              description: { type: "string" },
-              version: { type: "string" },
-              network: { type: "string" },
-              assets: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    code: { type: "string" },
-                    issuer: { type: "string" },
-                    contract: { type: "string" },
-                    name: { type: "string" },
-                    org: { type: "string" },
-                    domain: { type: "string" },
-                    icon: { type: "string" },
-                    decimals: { type: "number" },
-                  },
-                  required: [
-                    "code",
-                    "issuer",
-                    "contract",
-                    "domain",
-                    "icon",
-                    "decimals",
-                  ],
-                },
-              },
-            },
-            required: [
-              "name",
-              "provider",
-              "description",
-              "version",
-              "network",
-              "assets",
-            ],
-          }),
+          json: async () => SEP_0042_ASSET_LIST_SCHEMA,
         });
       }
       return Promise.reject(new Error("Unexpected fetch"));
@@ -118,46 +111,7 @@ describe("searchAsset", () => {
         return Promise.resolve({
           ok: true,
           json: async () => ({
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              provider: { type: "string" },
-              description: { type: "string" },
-              version: { type: "string" },
-              network: { type: "string" },
-              assets: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    code: { type: "string" },
-                    issuer: { type: "string" },
-                    contract: { type: "string" },
-                    name: { type: "string" },
-                    org: { type: "string" },
-                    domain: { type: "string" },
-                    icon: { type: "string" },
-                    decimals: { type: "number" },
-                  },
-                  required: [
-                    "code",
-                    "issuer",
-                    "contract",
-                    "domain",
-                    "icon",
-                    "decimals",
-                  ],
-                },
-              },
-            },
-            required: [
-              "name",
-              "provider",
-              "description",
-              "version",
-              "network",
-              "assets",
-            ],
+            ...SEP_0042_ASSET_LIST_SCHEMA,
             additionalProperties: false,
           }),
         });
