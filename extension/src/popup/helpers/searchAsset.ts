@@ -63,7 +63,7 @@ export const getAssetLists = async ({
   const assetsListsDetailsByNetwork =
     assetsListsDetails[network as AssetsListKey];
 
-  const assetListsResponses = [] as AssetListResponse[];
+  const assetListsResponses: Promise<AssetListResponse>[] = [];
   for (const networkList of assetsListsDetailsByNetwork) {
     const { url, isEnabled } = networkList;
 
@@ -76,7 +76,7 @@ export const getAssetLists = async ({
         return res.json();
       };
 
-      assetListsResponses.push(await fetchAndParse());
+      assetListsResponses.push(fetchAndParse());
     }
   }
 
