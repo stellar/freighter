@@ -252,6 +252,7 @@
     display: flex;
     margin-top: pxToRem(8px);
     gap: pxToRem(12px);
+    justify-content: center;
 
     &__column {
       align-items: center;
