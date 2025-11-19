@@ -114,7 +114,7 @@ export const getCombinedAssetListData = async ({
 
   const assetListsData = [];
   for (const p of promiseRes) {
-    if (p.status === "fulfilled" && p.value !== null && p.value !== undefined) {
+    if (p.status === "fulfilled" && p.value) {
       assetListsData.push(p.value);
     }
   }
