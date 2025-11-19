@@ -255,6 +255,17 @@ test("Send persists inputs and submits to network", async ({
   extensionId,
 }) => {
   test.slow();
+  let isScanSkiped = false;
+  page.on("request", (request) => {
+    if (
+      request
+        .url()
+        .includes("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF")
+    ) {
+      isScanSkiped = request.url().includes("should_skip_scan=true");
+    }
+  });
+
   await loginAndFund({ page, extensionId });
   await page.getByTestId("nav-link-send").click({ force: true });
 
@@ -265,8 +276,9 @@ test("Send persists inputs and submits to network", async ({
   await page
     .getByTestId("send-to-input")
     .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
-  await page.getByText("Continue").click();
 
+  await page.getByText("Continue").click();
+  expect(isScanSkiped).toBeTruthy();
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await page.getByTestId("send-amount-amount-input").fill("1");
   await page.getByTestId("send-amount-btn-memo").click();

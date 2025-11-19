@@ -1227,6 +1227,9 @@ export const getAssetDomains = async ({
   const filteredAssetIssuerDomainsToFetch = assetIssuerDomainsToFetch.filter(
     (domain) => StrKey.isValidEd25519PublicKey(domain),
   );
+  if (filteredAssetIssuerDomainsToFetch.length === 0) {
+    return assetDomains;
+  }
   try {
     const fetchedAccounts = await getLedgerKeyAccounts({
       accountList: filteredAssetIssuerDomainsToFetch,
