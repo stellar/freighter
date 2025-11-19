@@ -144,6 +144,8 @@ test("Adding token on Futurenet", async ({ page, extensionId, context }) => {
   await page.getByText("I understand, continue").click();
   await page.getByTestId("isExperimentalModeEnabledValue").click();
   await expect(page.locator("#isExperimentalModeEnabledValue")).toBeChecked();
+  // wait for the Background script to be updated
+  await page.waitForTimeout(1000);
   await page.getByTestId("BackButton").click();
   await page.getByTestId("BackButton").click();
   await page.getByTestId("BackButton").click();
