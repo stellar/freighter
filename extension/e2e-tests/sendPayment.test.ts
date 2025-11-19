@@ -279,6 +279,8 @@ test("Send persists inputs and submits to network", async ({
     .getByTestId("send-to-input")
     .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
 
+  await page.getByText("Continue").click();
+  expect(isScanSkiped).toBeTruthy();
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await page.getByTestId("send-amount-amount-input").fill("1");
   await page.getByTestId("send-amount-btn-memo").click();
