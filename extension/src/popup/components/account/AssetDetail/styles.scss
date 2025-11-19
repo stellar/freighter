@@ -147,7 +147,16 @@
     background-color: var(--sds-clr-gray-01);
     position: sticky;
     bottom: 0;
+    margin: 0 auto;
+    // matches View.Inset max-width
+    max-width: pxToRem(848px);
+    width: 100%;
     z-index: 10;
+
+    @media (min-width: 850px) {
+      border-left: 1px solid var(--sds-clr-gray-04);
+      border-right: 1px solid var(--sds-clr-gray-04);
+    }
 
     &::before {
       content: "";
