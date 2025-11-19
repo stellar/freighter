@@ -143,7 +143,6 @@ describe("searchAsset", () => {
     expect(assets).toStrictEqual([]);
 
     // error for missing `name` and error for additional key `title`
-    expect(errors).toBeTruthy();
-    expect(errors?.length).toBeGreaterThan(0);
-  }, 10000);
+    expect(errors).toHaveLength(3);
+  });
 });
