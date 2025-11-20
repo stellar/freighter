@@ -589,6 +589,8 @@ export const SendAmount = ({
               onSubmit={({ memo }: { memo: string }) => {
                 dispatch(saveMemo(memo));
                 setIsEditingMemo(false);
+                // Regenerate transaction XDR with new memo
+                fetchSimulationData();
               }}
             />
           </div>
@@ -637,6 +639,10 @@ export const SendAmount = ({
             networkDetails={sendAmountData.data?.networkDetails!}
             onCancel={() => setIsReviewingTx(false)}
             onConfirm={goToNext}
+            onAddMemo={() => {
+              setIsReviewingTx(false);
+              setIsEditingMemo(true);
+            }}
             sendAmount={amount}
             sendPriceUsd={priceValueUsd}
             simulationState={simulationState}

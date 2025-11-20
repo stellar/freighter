@@ -38,6 +38,7 @@ import {
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
+import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
 import { openTab } from "popup/helpers/navigate";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -142,10 +143,23 @@ export const SignTransaction = () => {
 
   const memo = decodedMemo?.value;
 
+  // Use the hook to validate memo requirements
+  const { isMemoMissing: isMemoMissingFromHook, isValidatingMemo } =
+    useValidateTransactionMemo(transactionXdr);
+
   const flaggedKeyValues = Object.values(flaggedKeys);
-  const isMemoRequired = flaggedKeyValues.some(
+  const isMemoRequiredFromFlaggedKeys = flaggedKeyValues.some(
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
+
+  // Combine both validation methods - use hook result if available, fallback to flaggedKeys
+  // isRequiredMemoMissing matches mobile app naming convention
+  const isRequiredMemoMissing = isValidatingMemo
+    ? isMemoRequiredFromFlaggedKeys
+    : isMemoMissingFromHook || isMemoRequiredFromFlaggedKeys;
+
+  // Keep isMemoRequired for backward compatibility with existing components
+  const isMemoRequired = isRequiredMemoMissing;
 
   const resolveFederatedAddress = useCallback(async (inputDest: string) => {
     let resolvedPublicKey;
@@ -188,7 +202,10 @@ export const SignTransaction = () => {
     }
   }, [isMemoRequired]);
 
-  const isSubmitDisabled = isMemoRequired || !isDomainListedAllowed;
+  // Disable submit when memo is missing, validating, or domain not allowed
+  // Matches mobile app pattern: disabled={!!isMemoMissing || isSigning || !!isValidatingMemo}
+  const isSubmitDisabled =
+    isRequiredMemoMissing || isValidatingMemo || !isDomainListedAllowed;
 
   if (
     scanTxState.state === RequestState.IDLE ||
@@ -350,6 +367,14 @@ export const SignTransaction = () => {
                 {!isDomainListedAllowed && (
                   <DomainNotAllowedWarningMessage domain={domain} />
                 )}
+                {isRequiredMemoMissing && !isValidatingMemo && (
+                  <WarningMessage
+                    variant={WarningMessageVariant.warning}
+                    header={t("Memo required")}
+                  >
+                    {t("This transaction requires a memo")}
+                  </WarningMessage>
+                )}
                 {assetDiffs && (
                   <AssetDiffs
                     icons={scanTxState.data?.icons || {}}
@@ -469,7 +494,7 @@ export const SignTransaction = () => {
                   isFullWidth
                   isRounded
                   size="lg"
-                  isLoading={isConfirming}
+                  isLoading={isConfirming || isValidatingMemo}
                   onClick={() => handleApprove()}
                   className={`SignTransaction__Action__ConfirmAnyway ${btnIsDestructive ? "" : "Warning"}`}
                 >
@@ -494,7 +519,7 @@ export const SignTransaction = () => {
                   isFullWidth
                   isRounded
                   size="lg"
-                  isLoading={isConfirming}
+                  isLoading={isConfirming || isValidatingMemo}
                   onClick={() => handleApprove()}
                 >
                   {t("Confirm")}

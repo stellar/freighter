@@ -16,6 +16,7 @@
   "Add Custom Network": "Add Custom Network",
   "Add funds": "Add funds",
   "Add list": "Add list",
+  "Add Memo": "Add Memo",
   "Add network": "Add network",
   "Add new list": "Add new list",
   "Add Token": "Add Token",
@@ -204,6 +205,7 @@
   "Insufficient Fee": "Insufficient Fee",
   "INSUFFICIENT FUNDS FOR FEE": "INSUFFICIENT FUNDS FOR FEE",
   "invalid destination address": "invalid destination address",
+  "Invalid memo format": "Invalid memo format.",
   "Invalid mnemonic phrase": "Invalid mnemonic phrase",
   "INVALID STELLAR ADDRESS": "INVALID STELLAR ADDRESS",
   "Issuer": "Issuer",
@@ -240,6 +242,9 @@
   "Max Price": "Max Price",
   "Medium Threshold": "Medium Threshold",
   "Memo": "Memo",
+  "Memo is too long": {
+    " Maximum {{max}} bytes allowed": "Memo is too long. Maximum {{max}} bytes allowed."
+  },
   "Memo required": "Memo required",
   "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts": {
     ")": "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts.)"
@@ -399,6 +404,7 @@
   "This site was flagged as malicious": "This site was flagged as malicious",
   "This transaction could not be completed": "This transaction could not be completed.",
   "This transaction is expected to fail": "This transaction is expected to fail",
+  "This transaction requires a memo": "This transaction requires a memo",
   "This transaction was flagged as malicious": "This transaction was flagged as malicious",
   "This will be used to unlock your wallet": "This will be used to unlock your wallet",
   "To access your wallet, click Freighter from your browser Extensions browser menu": "To access your wallet, click Freighter from your browser Extensions browser menu.",

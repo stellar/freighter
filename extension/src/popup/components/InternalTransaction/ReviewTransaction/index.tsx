@@ -24,11 +24,14 @@ import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import {
   BlockaidTxScanLabel,
   BlockAidTxScanExpanded,
+  WarningMessage,
+  WarningMessageVariant,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { CopyValue } from "popup/components/CopyValue";
+import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
 
 import "./styles.scss";
 
@@ -49,6 +52,7 @@ interface ReviewTxProps {
   title: string;
   onConfirm: () => void;
   onCancel: () => void;
+  onAddMemo?: () => void;
 }
 
 export const ReviewTx = ({
@@ -63,6 +67,7 @@ export const ReviewTx = ({
   title,
   onConfirm,
   onCancel,
+  onAddMemo,
 }: ReviewTxProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -76,6 +81,14 @@ export const ReviewTx = ({
     hardwareWalletData: { status: hwStatus },
     transactionData: { destination, memo, federationAddress },
   } = submission;
+
+  // Validate memo requirements using the transaction XDR
+  const transactionXdr = simulationState.data?.transactionXdr;
+  const { isMemoMissing: isRequiredMemoMissing, isValidatingMemo } =
+    useValidateTransactionMemo(transactionXdr);
+
+  // Disable button while validating or if memo is missing
+  const isSubmitDisabled = isRequiredMemoMissing || isValidatingMemo;
 
   const asset = getAssetFromCanonical(srcAsset);
   const dest = dstAsset ? getAssetFromCanonical(dstAsset.canonical) : null;
@@ -200,6 +213,14 @@ export const ReviewTx = ({
                       onClick={() => setActivePaneIndex(1)}
                     />
                   )}
+                  {isRequiredMemoMissing && !isValidatingMemo && (
+                    <WarningMessage
+                      variant={WarningMessageVariant.warning}
+                      header={t("Memo required")}
+                    >
+                      {t("This transaction requires a memo")}
+                    </WarningMessage>
+                  )}
                 </div>
                 <div className="ReviewTx__Details">
                   <div className="ReviewTx__Details__Row">
@@ -247,26 +268,45 @@ export const ReviewTx = ({
             ]}
           />
           <div className="ReviewTx__Actions">
-            <Button
-              size="lg"
-              isFullWidth
-              isRounded
-              variant="secondary"
-              data-testid="SubmitAction"
-              onClick={(e) => {
-                e.preventDefault();
-                onConfirmTx();
-              }}
-            >
-              {dstAsset && dest
-                ? `Swap ${asset.code} to ${dest.code}`
-                : `Send to ${truncatedDest}`}
-            </Button>
+            {isRequiredMemoMissing && !isValidatingMemo && onAddMemo ? (
+              <Button
+                size="lg"
+                isFullWidth
+                isRounded
+                variant="secondary"
+                data-testid="AddMemoAction"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onAddMemo();
+                }}
+              >
+                {t("Add Memo")}
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                isFullWidth
+                isRounded
+                variant="secondary"
+                data-testid="SubmitAction"
+                disabled={isSubmitDisabled}
+                isLoading={isValidatingMemo}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onConfirmTx();
+                }}
+              >
+                {dstAsset && dest
+                  ? `Swap ${asset.code} to ${dest.code}`
+                  : `Send to ${truncatedDest}`}
+              </Button>
+            )}
             <Button
               size="lg"
               isFullWidth
               isRounded
               variant="tertiary"
+              disabled={isValidatingMemo}
               onClick={(e) => {
                 e.preventDefault();
                 onCancel();
