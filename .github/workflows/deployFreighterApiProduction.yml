@@ -34,7 +34,7 @@ jobs:
       - name: Publish npm package
         run: |
           cd @stellar/freighter-api
-          yarn publish --access public
+          yarn npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Create Pull Request
