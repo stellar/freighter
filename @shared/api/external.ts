@@ -126,7 +126,7 @@ export const submitMessage = async (
     networkPassphrase?: string;
   },
 ): Promise<{
-  signedMessage: Buffer | null;
+  signedMessage: string | null;
   signerAddress: string;
   error?: FreighterApiError;
 }> => {
@@ -165,7 +165,7 @@ export const submitAuthEntry = async (
     networkPassphrase?: string;
   },
 ): Promise<{
-  signedAuthEntry: Buffer | null;
+  signedAuthEntry: string | null;
   signerAddress: string;
   error?: FreighterApiError;
 }> => {
