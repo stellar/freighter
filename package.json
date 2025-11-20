@@ -16,7 +16,7 @@
   "scripts": {
     "setup": "yarn install && yarn allow-scripts",
     "build": "run-p --print-label build:freighter-api build:docs build:extension",
-    "build:netlify": "cd docs && npm pkg set 'dependencies.@stellar/freighter-api'='latest' && yarn && yarn build",
+    "build:netlify": "cd docs && yarn && yarn build",
     "build:netlify-preview": "yarn && yarn build:freighter-api && yarn workspace docs build",
     "build:extension-preview": "run-s build:freighter-api build:extension:experimental",
     "build:freighter-api": "yarn workspace @stellar/freighter-api build",
