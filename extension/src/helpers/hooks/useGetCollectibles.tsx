@@ -44,7 +44,7 @@ function useGetCollectibles() {
       publicKey,
       contracts: [
         {
-          id: "CBQIUHOCBV2UULFV63UAPIRV5CJLON7TFBQ7WZWD6KUFCFGMDDAYKNP3",
+          id: "CDY2JQXVWASXQLXHPGKTDHKNZLVZI44NYPHN6HECRT6FTJ7PRCHAQ7QG",
           token_ids: ["1"],
         },
       ],
@@ -56,7 +56,9 @@ function useGetCollectibles() {
     collectibles.forEach((collection) => {
       const collectionList = collection.collection || { collectibles: [] };
       collectionList.collectibles.forEach((item) => {
-        images.push(item.token_uri);
+        if (item.metadata?.image) {
+          images.push(item.metadata.image);
+        }
       });
     });
 

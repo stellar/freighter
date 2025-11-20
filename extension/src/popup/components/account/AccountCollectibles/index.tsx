@@ -58,7 +58,7 @@ const CollectionsList = ({ collections }: { collections: Collection[] }) => {
             >
               <img
                 data-testid="account-collectible-image"
-                src={item.token_uri}
+                src={item.metadata?.image}
                 alt={item.token_id}
               />
             </div>
