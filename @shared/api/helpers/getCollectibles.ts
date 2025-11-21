@@ -52,7 +52,8 @@ const fetchCollectibleMetadata = async (tokenUri: string) => {
 
     return metadata;
   } catch (e) {
-    captureException(`Error fetching collectible metadata: ${e}`);
+    // we don't want to capture exceptions here because it's likely that some metadata
+    // will not be found and that is out of our control
     return null;
   }
 };
