@@ -24,6 +24,7 @@ import { signOut } from "popup/ducks/accountServices";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { MobileAppBanner } from "popup/components/account/MobileAppBanner";
 
 import "./styles.scss";
 
@@ -380,7 +381,7 @@ export const AccountHeader = ({
                   </div>
                 </NavLink>
               </div>
-
+              <MobileAppBanner />
               {isBackgroundActive
                 ? createPortal(
                     <LoadingBackground
