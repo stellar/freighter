@@ -37,6 +37,7 @@ import {
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
+import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
 import { openTab } from "popup/helpers/navigate";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -47,6 +48,7 @@ import {
   BlockaidTxScanLabel,
   BlockAidTxScanExpanded,
   DomainNotAllowedWarningMessage,
+  MemoRequiredLabel,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Loading } from "popup/components/Loading";
@@ -141,10 +143,23 @@ export const SignTransaction = () => {
 
   const memo = decodedMemo?.value;
 
+  // Use the hook to validate memo requirements
+  const { isMemoMissing: isMemoMissingFromHook, isValidatingMemo } =
+    useValidateTransactionMemo(transactionXdr);
+
   const flaggedKeyValues = Object.values(flaggedKeys);
-  const isMemoRequired = flaggedKeyValues.some(
+  const isMemoRequiredFromFlaggedKeys = flaggedKeyValues.some(
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
+
+  // Combine both validation methods - use hook result if available, fallback to flaggedKeys
+  // isRequiredMemoMissing matches mobile app naming convention
+  const isRequiredMemoMissing = isValidatingMemo
+    ? isMemoRequiredFromFlaggedKeys
+    : isMemoMissingFromHook || isMemoRequiredFromFlaggedKeys;
+
+  // Keep isMemoRequired for backward compatibility with existing components
+  const isMemoRequired = isRequiredMemoMissing;
 
   const resolveFederatedAddress = useCallback(async (inputDest: string) => {
     let resolvedPublicKey;
@@ -187,7 +202,10 @@ export const SignTransaction = () => {
     }
   }, [isMemoRequired]);
 
-  const isSubmitDisabled = isMemoRequired || !isDomainListedAllowed;
+  // Disable submit when memo is missing, validating, or domain not allowed
+  // Matches mobile app pattern: disabled={!!isMemoMissing || isSigning || !!isValidatingMemo}
+  const isSubmitDisabled =
+    isRequiredMemoMissing || isValidatingMemo || !isDomainListedAllowed;
 
   if (
     signTxState.state === RequestState.IDLE ||
@@ -333,7 +351,7 @@ export const SignTransaction = () => {
                   />
                   <div className="SignTransaction__TitleRow__Detail">
                     <span className="SignTransaction__TitleRow__Title">
-                      Confirm Transaction
+                      {t("Confirm Transaction")}
                     </span>
                     <span className="SignTransaction__TitleRow__Domain">
                       {validDomain}
@@ -348,6 +366,9 @@ export const SignTransaction = () => {
                 )}
                 {!isDomainListedAllowed && (
                   <DomainNotAllowedWarningMessage domain={domain} />
+                )}
+                {isRequiredMemoMissing && !isValidatingMemo && (
+                  <MemoRequiredLabel onClick={() => setActivePaneIndex(3)} />
                 )}
                 {assetDiffs && (
                   <AssetDiffs
@@ -365,7 +386,7 @@ export const SignTransaction = () => {
                   <div className="SignTransaction__Metadata__Row">
                     <div className="SignTransaction__Metadata__Label">
                       <Icon.Wallet01 />
-                      <span>Wallet</span>
+                      <span>{t("Wallet")}</span>
                     </div>
                     <div className="SignTransaction__Metadata__Value">
                       <KeyIdenticon publicKey={publicKey} />
@@ -374,7 +395,7 @@ export const SignTransaction = () => {
                   <div className="SignTransaction__Metadata__Row">
                     <div className="SignTransaction__Metadata__Label">
                       <Icon.Route />
-                      <span>Fee</span>
+                      <span>{t("Fee")}</span>
                     </div>
                     <div className="SignTransaction__Metadata__Value">
                       <span>
@@ -386,13 +407,26 @@ export const SignTransaction = () => {
                       </span>
                     </div>
                   </div>
+                  <div className="SignTransaction__Metadata__Row">
+                    <div className="SignTransaction__Metadata__Label">
+                      <Icon.File02 />
+                      <span>Memo</span>
+                    </div>
+                    <div className="SignTransaction__Metadata__Value">
+                      <span>
+                        {decodedMemo && decodedMemo.value
+                          ? decodedMemo.value
+                          : t("None")}
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 <div
                   className="SignTransaction__TransactionDetailsBtn"
                   onClick={() => setActivePaneIndex(2)}
                 >
                   <Icon.List />
-                  <span>Transaction details</span>
+                  <span>{t("Transaction details")}</span>
                 </div>
               </div>
             </div>,
@@ -415,7 +449,7 @@ export const SignTransaction = () => {
                     </div>
                   </div>
                   <div className="SignTransaction__TransactionDetails__Title">
-                    <span>Transaction Details</span>
+                    <span>{t("Transaction Details")}</span>
                   </div>
                   <div className="SignTransaction__TransactionDetails__Summary">
                     <Summary
@@ -447,6 +481,49 @@ export const SignTransaction = () => {
                 </div>
               </div>
             </div>,
+            <div className="SignTransaction__Body">
+              <div className="SignTransaction__Body__Wrapper">
+                <div className="SignTransaction__TransactionDetails">
+                  <div className="SignTransaction__TransactionDetails__Header">
+                    <div className="DetailsMark">
+                      <Icon.File02 />
+                    </div>
+                    <div
+                      className="Close"
+                      onClick={() => setActivePaneIndex(0)}
+                    >
+                      <Icon.X />
+                    </div>
+                  </div>
+                  <div className="SignTransaction__TransactionDetails__Title">
+                    <span>{t("Memo is required")}</span>
+                  </div>
+                  <div className="SignTransaction__TransactionDetails__Summary">
+                    <div className="WarningMessage__infoBlock WarningMessage__infoBlock--warning">
+                      <div className="WarningMessage__header">
+                        <Icon.InfoOctagon className="WarningMessage__icon" />
+                        <div>{t("Memo is required")}</div>
+                      </div>
+                    </div>
+                    <div>
+                      {t(
+                        "A destination account requires the use of the memo field which is not present in the transaction you're about to sign.",
+                      )}
+                    </div>
+                    <div>
+                      {t(
+                        "Freighter automatically disabled the option to sign this transaction.",
+                      )}
+                    </div>
+                    <div>
+                      {t(
+                        "Check the destination account memo requirements and include it in the transaction.",
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>,
           ]}
         />
         <div className="SignTransaction__Actions">
@@ -468,7 +545,7 @@ export const SignTransaction = () => {
                   isFullWidth
                   isRounded
                   size="lg"
-                  isLoading={isConfirming}
+                  isLoading={isConfirming || isValidatingMemo}
                   onClick={() => handleApprove()}
                   className={`SignTransaction__Action__ConfirmAnyway ${btnIsDestructive ? "" : "Warning"}`}
                 >
@@ -493,7 +570,7 @@ export const SignTransaction = () => {
                   isFullWidth
                   isRounded
                   size="lg"
-                  isLoading={isConfirming}
+                  isLoading={isConfirming || isValidatingMemo}
                   onClick={() => handleApprove()}
                 >
                   {t("Confirm")}

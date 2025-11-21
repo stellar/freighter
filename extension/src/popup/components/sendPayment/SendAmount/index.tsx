@@ -579,9 +579,13 @@ export const SendAmount = ({
             <EditMemo
               memo={transactionData.memo || ""}
               onClose={() => setIsEditingMemo(false)}
-              onSubmit={({ memo }: { memo: string }) => {
+              onSubmit={async ({ memo }: { memo: string }) => {
                 dispatch(saveMemo(memo));
                 setIsEditingMemo(false);
+                // Regenerate transaction XDR with new memo (now reads memo from Redux state inside fetchData)
+                await fetchSimulationData();
+                // Reopen review sheet after memo is saved and XDR is regenerated
+                setIsReviewingTx(true);
               }}
             />
           </div>
@@ -600,7 +604,7 @@ export const SendAmount = ({
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
               onClose={() => setIsEditingSettings(false)}
-              onSubmit={({
+              onSubmit={async ({
                 fee,
                 timeout,
               }: {
@@ -610,6 +614,8 @@ export const SendAmount = ({
                 dispatch(saveTransactionFee(fee));
                 dispatch(saveTransactionTimeout(timeout));
                 setIsEditingSettings(false);
+                // Regenerate transaction XDR with new fee (now reads fee from Redux state inside fetchData)
+                await fetchSimulationData();
               }}
             />
           </div>
@@ -630,6 +636,10 @@ export const SendAmount = ({
             networkDetails={sendAmountData.data?.networkDetails!}
             onCancel={() => setIsReviewingTx(false)}
             onConfirm={goToNext}
+            onAddMemo={() => {
+              setIsReviewingTx(false);
+              setIsEditingMemo(true);
+            }}
             sendAmount={amount}
             sendPriceUsd={priceValueUsd}
             simulationState={simulationState}
