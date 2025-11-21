@@ -9,6 +9,7 @@ import { BlockAidScanAssetResult } from "@shared/api/types";
 import {
   getNativeContractDetails,
   searchAsset,
+  getVerifiedTokens,
   VerifiedTokenRecord,
 } from "popup/helpers/searchAsset";
 import { splitVerifiedAssetCurrency } from "popup/helpers/assetList";
@@ -22,10 +23,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
 import { tokensListsSelector, saveTokenLists } from "popup/ducks/cache";
-import {
-  AssetListResponse,
-  AssetListReponseItem,
-} from "@shared/constants/soroban/asset-list";
+import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { AppDispatch, store } from "popup/App";
 
 interface AssetRecord {
@@ -218,36 +216,13 @@ const useAssetLookup = () => {
 
     // If we're using asset lists, we can retrieve asset info from the list
     if (isAllowListVerificationEnabled) {
-      // Use the pre-fetched asset lists data instead of calling getVerifiedTokens
-      // which would call getCombinedAssetListData again
-      const nativeContract = getNativeContractDetails(networkDetails);
-
-      if (contractId === nativeContract.contract) {
-        verifiedTokens = [{ ...nativeContract, verifiedLists: [] }];
-      } else {
-        const verifiedListsArray: string[] = [];
-        let verifiedToken: AssetListReponseItem | null = null;
-
-        // Find the token in asset lists
-        for (const assetList of assetsListsData) {
-          const matchingRecord = assetList.assets?.find(
-            (record) => record.contract === contractId,
-          );
-          if (matchingRecord) {
-            verifiedToken = matchingRecord;
-            verifiedListsArray.push(assetList.name);
-          }
-        }
-
-        if (verifiedToken) {
-          verifiedTokens = [
-            {
-              ...verifiedToken,
-              verifiedLists: verifiedListsArray,
-            } as VerifiedTokenRecord,
-          ];
-        }
-      }
+      // getVerifiedTokens will use cached data if provided, avoiding re-fetching
+      verifiedTokens = await getVerifiedTokens({
+        networkDetails,
+        contractId,
+        assetsLists,
+        cachedAssetLists: assetsListsData,
+      });
 
       try {
         if (verifiedTokens.length) {
