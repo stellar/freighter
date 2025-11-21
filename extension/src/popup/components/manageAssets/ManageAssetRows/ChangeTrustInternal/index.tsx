@@ -217,7 +217,7 @@ export const ChangeTrustInternal = ({
                   onClick={() => setActivePaneIndex(1)}
                 >
                   <Icon.List />
-                  <span>Transaction details</span>
+                  <span>{t("Transaction Details")}</span>
                 </div>
               </div>
             </div>,

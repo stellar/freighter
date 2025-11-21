@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
@@ -43,17 +44,20 @@ const WalletOption = ({
 };
 
 export const SelectHardwareWallet = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   return (
     <>
       <SubviewHeader
-        title="Connect a hardware wallet"
+        title={t("Connect a hardware wallet")}
         hasBackButton={true}
         customBackAction={() => navigateTo(ROUTES.account, navigate)}
       />
       <View.Content>
         <div className="SelectHardwareWallet">
-          <p>Select a hardware wallet you’d like to use with Freighter.</p>
+          <p>
+            {t("Select a hardware wallet you'd like to use with Freighter.")}
+          </p>
           <ul className="SelectHardwareWallet__options-list">
             {Object.entries(WalletType).map(([_k, v]) =>
               v ? (

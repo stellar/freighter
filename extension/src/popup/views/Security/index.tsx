@@ -26,7 +26,7 @@ export const Security = () => {
 
   return (
     <React.Fragment>
-      <SubviewHeader title="Security" />
+      <SubviewHeader title={t("Security")} />
       <View.Content hasNoTopPadding>
         <div className="Security">
           <ListNavLinkWrapper>
@@ -38,7 +38,7 @@ export const Security = () => {
               href={ROUTES.manageAssetsLists}
               icon={<IconAssetList />}
             >
-              {t("Asset lists")}
+              {t("Asset Lists")}
             </ListNavLink>
             <ListNavLink
               href={ROUTES.displayBackupPhrase}
@@ -50,7 +50,7 @@ export const Security = () => {
               href={ROUTES.advancedSettings}
               icon={<Icon.LifeBuoy01 />}
             >
-              {t("Advanced settings")}
+              {t("Advanced Settings")}
             </ListNavLink>
             {/* <ListNavButtonLink
               handleClick={() => {

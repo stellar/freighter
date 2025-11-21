@@ -109,7 +109,7 @@ export const NetworkSettings = () => {
               </option>
             ))}
           </Select>
-          <div className="NetworkSettings__header">{t("Network settings")}</div>
+          <div className="NetworkSettings__header">{t("Network Settings")}</div>
           <ListNavLinkWrapper>
             {networksList.map((network, i) => {
               return (
@@ -138,7 +138,7 @@ export const NetworkSettings = () => {
           variant="secondary"
           onClick={() => navigateTo(ROUTES.addNetwork, navigate)}
         >
-          {t("Add custom network")}
+          {t("Add Custom Network")}
         </Button>
       </View.Footer>
     </React.Fragment>

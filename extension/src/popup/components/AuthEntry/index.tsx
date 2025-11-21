@@ -35,7 +35,7 @@ export const AuthEntries = ({ invocations }: AuthEntriesProps) => {
         }
         case "sac":
         case "wasm": {
-          return <span>Contract creation</span>;
+          return <span>{t("Contract Creation")}</span>;
         }
         default: {
           return null;
@@ -93,7 +93,7 @@ export const AuthEntries = ({ invocations }: AuthEntriesProps) => {
             <React.Fragment key={detail.asset}>
               <div className="AuthEntry__TitleRow">
                 <Icon.CodeSnippet01 />
-                <span>Contract Creation</span>
+                <span>{t("Contract Creation")}</span>
               </div>
               <div className="AuthEntry__InfoBlock">
                 <KeyValueList

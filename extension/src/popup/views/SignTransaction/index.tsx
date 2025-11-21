@@ -365,7 +365,7 @@ export const SignTransaction = () => {
                   <div className="SignTransaction__Metadata__Row">
                     <div className="SignTransaction__Metadata__Label">
                       <Icon.Wallet01 />
-                      <span>Wallet</span>
+                      <span>{t("Wallet")}</span>
                     </div>
                     <div className="SignTransaction__Metadata__Value">
                       <KeyIdenticon publicKey={publicKey} />
@@ -374,7 +374,7 @@ export const SignTransaction = () => {
                   <div className="SignTransaction__Metadata__Row">
                     <div className="SignTransaction__Metadata__Label">
                       <Icon.Route />
-                      <span>Fee</span>
+                      <span>{t("Fee")}</span>
                     </div>
                     <div className="SignTransaction__Metadata__Value">
                       <span>
@@ -392,7 +392,7 @@ export const SignTransaction = () => {
                   onClick={() => setActivePaneIndex(2)}
                 >
                   <Icon.List />
-                  <span>Transaction details</span>
+                  <span>{t("Transaction Details")}</span>
                 </div>
               </div>
             </div>,
@@ -415,7 +415,7 @@ export const SignTransaction = () => {
                     </div>
                   </div>
                   <div className="SignTransaction__TransactionDetails__Title">
-                    <span>Transaction Details</span>
+                    <span>{t("Transaction Details")}</span>
                   </div>
                   <div className="SignTransaction__TransactionDetails__Summary">
                     <Summary
@@ -562,6 +562,7 @@ interface TrustlineProps {
 }
 
 export const Trustline = ({ operations, icons }: TrustlineProps) => {
+  const { t } = useTranslation();
   const renderTrustlineChanges = (operation: Operation.ChangeTrust) => {
     const { line, limit } = operation;
     const isRemoveTrustline = new BigNumber(limit).isZero();
@@ -605,12 +606,12 @@ export const Trustline = ({ operations, icons }: TrustlineProps) => {
           {isRemoveTrustline ? (
             <>
               <Icon.MinusCircle />
-              <span>Remove Trustline</span>
+              <span>{t("Remove Trustline")}</span>
             </>
           ) : (
             <>
               <Icon.PlusCircle />
-              <span>Add Trustline</span>
+              <span>{t("Add Trustline")}</span>
             </>
           )}
         </div>

@@ -53,12 +53,12 @@ export const UnhandledError = ({
       <View.AppHeader pageTitle={t("Error")} />
       <View.Content>
         <div className="UnexpectedError__content">
-          <div className="UnexpectedError__amount">Unexpected Error</div>
+          <div className="UnexpectedError__amount">{t("Unexpected Error")}</div>
           <div className="UnexpectedError__icon UnexpectedError__fail">
-            <img src={IconFail} alt="Icon Fail" />
+            <img src={IconFail} alt={t("Icon Fail")} />
           </div>
         </div>
-        <div className="UnexpectedError__error-block">{errorMessage}</div>
+        <div className="UnexpectedError__error-block">{t(errorMessage)}</div>
         <div className="UnexpectedError__error-string">{errorString}</div>
       </View.Content>
       <View.Footer>

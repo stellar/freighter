@@ -368,7 +368,7 @@ const BlockaidFeedbackForm = ({
                       variant="tertiary"
                       isFullWidth
                     >
-                      {t("Learn more")}
+                      {t("Learn More")}
                     </Button>
                     <Button
                       size="md"

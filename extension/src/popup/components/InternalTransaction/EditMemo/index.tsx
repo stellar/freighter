@@ -50,7 +50,7 @@ export const EditMemo = ({ memo, onClose, onSubmit }: EditMemoProps) => {
                     )}
                   </Field>
                   <div className="EditMemo__description">
-                    What is this transaction for? (optional)
+                    {t("What is this transaction for? (optional)")}
                   </div>
                   <div className="EditMemo__actions">
                     <Button

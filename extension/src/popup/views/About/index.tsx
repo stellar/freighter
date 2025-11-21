@@ -29,7 +29,7 @@ export const About = () => {
 
   return (
     <React.Fragment>
-      <SubviewHeader title="About" />
+      <SubviewHeader title={t("About")} />
       <View.Content hasNoTopPadding>
         <div className="About">
           <div>

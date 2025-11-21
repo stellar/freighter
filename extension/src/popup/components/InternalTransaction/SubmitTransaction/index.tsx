@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button, Icon, Loader } from "@stellar/design-system";
 
 import { isCustomNetwork } from "@shared/helpers/stellar";
@@ -46,6 +47,7 @@ export const SendingTransaction = ({
   xdr,
   goBack,
 }: SendingTransactionProps) => {
+  const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
   const submission = useSelector(transactionSubmissionSelector);
@@ -193,7 +195,7 @@ export const SendingTransaction = ({
                       )
                     }
                   >
-                    View transaction
+                    {t("View transaction")}
                   </Button>
                 </>
               ) : null}

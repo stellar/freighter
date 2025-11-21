@@ -57,7 +57,7 @@ export const EditSettings = ({
                       autoComplete="off"
                       id="fee"
                       placeholder={"Fee"}
-                      label="Transaction Fee"
+                      label={t("Transaction Fee")}
                       {...field}
                       error={errors.fee}
                       onChange={(e) => {
@@ -102,7 +102,7 @@ export const EditSettings = ({
                       autoComplete="off"
                       id="timeout"
                       placeholder={"Timeout"}
-                      label="Timeout (seconds)"
+                      label={t("Timeout (seconds)")}
                       {...field}
                       error={errors.timeout}
                       onChange={(e) => {
