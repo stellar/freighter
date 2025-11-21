@@ -96,20 +96,7 @@ export const getCombinedAssetListData = async ({
           return null;
         }
 
-        if (!res || !res.ok) {
-          const statusText = res?.status ? ` (${res.status})` : "";
-          captureException(`Failed to load asset list: ${url}${statusText}`);
-          return null;
-        }
-
-        try {
-          return await res.json();
-        } catch (e) {
-          captureException(
-            `Failed to parse asset list JSON: ${url} - ${JSON.stringify(e)}`,
-          );
-          return null;
-        }
+        return res.json();
       };
 
       promiseArr.push(fetchAndParse());
