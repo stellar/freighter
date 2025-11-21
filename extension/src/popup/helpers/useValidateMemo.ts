@@ -30,7 +30,7 @@ export const useValidateMemo = (memo: string) => {
     // Check byte length first (Stellar has a 28-byte limit for text memos)
     if (getByteLength(memo) > MAX_MEMO_BYTES) {
       setError(
-        t("Memo is too long. Maximum {{max}} bytes allowed.", {
+        t("Memo is too long. Maximum {{max}} bytes allowed", {
           max: String(MAX_MEMO_BYTES),
         }),
       );
@@ -43,7 +43,7 @@ export const useValidateMemo = (memo: string) => {
 
       setError(null);
     } catch (err) {
-      setError(t("Invalid memo format."));
+      setError(t("Invalid memo format"));
     }
   }, [memo, t]);
 
