@@ -12,6 +12,7 @@ import { isSacContractExecutable } from "@shared/helpers/soroban/token";
 
 import { FormRows } from "popup/basics/Forms";
 import { settingsSelector } from "popup/ducks/settings";
+import { tokensListsSelector } from "popup/ducks/cache";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import {
   getAssetListsForAsset,
@@ -69,6 +70,7 @@ export const AddAsset = () => {
     useState(false);
   const [verifiedLists, setVerifiedLists] = useState([] as string[]);
   const { assetsLists } = useSelector(settingsSelector);
+  const cachedTokenLists = useSelector(tokensListsSelector);
   const navigate = useNavigate();
 
   const { state, fetchData } = useGetAddAssetData({
@@ -168,6 +170,7 @@ export const AddAsset = () => {
             networkDetails,
             assets: [token],
             assetsListsDetails: assetsLists,
+            cachedAssetLists: cachedTokenLists,
           });
         setVerifiedAssetRows(verifiedAssets);
         setUnverifiedAssetRows(unverifiedAssets);
@@ -176,6 +179,7 @@ export const AddAsset = () => {
           asset: token,
           assetsListsDetails: assetsLists,
           networkDetails,
+          cachedAssetLists: cachedTokenLists,
         });
         setVerifiedLists(assetListsForToken);
         if (assetListsForToken.length) {
@@ -251,6 +255,7 @@ export const AddAsset = () => {
             networkDetails,
             assets: scannedAssetRows,
             assetsListsDetails: assetsLists,
+            cachedAssetLists: cachedTokenLists,
           });
         setVerifiedAssetRows(verifiedAssets);
         setUnverifiedAssetRows(unverifiedAssets);

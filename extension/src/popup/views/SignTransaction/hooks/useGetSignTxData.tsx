@@ -16,7 +16,7 @@ import { makeAccountActive } from "popup/ducks/accountServices";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "popup/App";
 import { signFlowAccountSelector } from "popup/helpers/account";
-import { iconsSelector } from "popup/ducks/cache";
+import { iconsSelector, tokensListsSelector } from "popup/ducks/cache";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
 import { isContractId } from "popup/helpers/soroban";
@@ -61,6 +61,7 @@ function useGetSignTxData(
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
   const cachedIcons = useSelector(iconsSelector);
+  const cachedTokenLists = useSelector(tokensListsSelector);
   const { assetsLists } = useSelector(settingsSelector);
   const { scanTx } = useScanTx();
   const [accountNotFound, setAccountNotFound] = useState(false);
@@ -102,6 +103,7 @@ function useGetSignTxData(
       const assetsListsData = await getCombinedAssetListData({
         networkDetails,
         assetsLists,
+        cachedAssetLists: cachedTokenLists,
       });
 
       if (

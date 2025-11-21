@@ -74,24 +74,36 @@ export const getAssetLists = async ({
   const assetsListsDetailsByNetwork =
     assetsListsDetails[network as AssetsListKey];
 
-  const assetListsResponses: Promise<AssetListResponse>[] = [];
+  const settledResponses = [];
+
+  // Fetch sequentially to avoid parallel requests
   for (const networkList of assetsListsDetailsByNetwork) {
     const { url, isEnabled } = networkList;
 
     if (isEnabled) {
-      const fetchAndParse = async (): Promise<AssetListResponse> => {
+      try {
         const res = await fetch(url);
         if (!res.ok) {
-          throw new Error(res.statusText);
+          settledResponses.push({
+            status: "rejected" as const,
+            reason: new Error(res.statusText),
+          });
+          continue;
         }
-        return res.json();
-      };
-
-      assetListsResponses.push(fetchAndParse());
+        const data = await res.json();
+        settledResponses.push({
+          status: "fulfilled" as const,
+          value: data,
+        });
+      } catch (e) {
+        settledResponses.push({
+          status: "rejected" as const,
+          reason: e,
+        });
+      }
     }
   }
 
-  const settledResponses = await Promise.allSettled(assetListsResponses);
   return settledResponses;
 };
 

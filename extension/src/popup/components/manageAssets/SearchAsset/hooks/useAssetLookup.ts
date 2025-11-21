@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
 
 import { getTokenDetails } from "@shared/api/internal";
@@ -7,7 +7,6 @@ import { isSacContractExecutable } from "@shared/helpers/soroban/token";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import {
-  getVerifiedTokens,
   getNativeContractDetails,
   searchAsset,
   VerifiedTokenRecord,
@@ -22,7 +21,12 @@ import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRo
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
-import { tokensListsSelector } from "popup/ducks/cache";
+import { tokensListsSelector, saveTokenLists } from "popup/ducks/cache";
+import {
+  AssetListResponse,
+  AssetListReponseItem,
+} from "@shared/constants/soroban/asset-list";
+import { AppDispatch, store } from "popup/App";
 
 interface AssetRecord {
   asset: string;
@@ -55,8 +59,8 @@ const useAssetLookup = () => {
   let isVerificationInfoShowing = false;
   let verifiedLists = [] as string[];
 
+  const reduxDispatch = useDispatch<AppDispatch>();
   const { assetsLists } = useSelector(settingsSelector);
-  const cachedTokenLists = useSelector(tokensListsSelector);
   const MAX_ASSETS_TO_SCAN = 10;
 
   const [state, dispatch] = useReducer(
@@ -138,6 +142,7 @@ const useAssetLookup = () => {
     contractId: string,
     isAllowListVerificationEnabled: boolean,
     networkDetails: NetworkDetails,
+    assetsListsData: AssetListResponse[],
   ) => {
     let assetRows = [] as ManageAssetCurrency[];
 
@@ -201,12 +206,39 @@ const useAssetLookup = () => {
 
     // If we're using asset lists, we can retrieve asset info from the list
     if (isAllowListVerificationEnabled) {
-      verifiedTokens = await getVerifiedTokens({
-        networkDetails,
-        contractId,
-        assetsLists,
-        cachedAssetLists: cachedTokenLists,
-      });
+      // Use the pre-fetched asset lists data instead of calling getVerifiedTokens
+      // which would call getCombinedAssetListData again
+      const nativeContract = getNativeContractDetails(networkDetails);
+
+      if (contractId === nativeContract.contract) {
+        verifiedTokens = [{ ...nativeContract, verifiedLists: [] }];
+      } else {
+        let verifiedToken = {} as AssetListReponseItem;
+        const verifiedListsArray: string[] = [];
+
+        for (const data of assetsListsData) {
+          const list = data.assets;
+          if (list) {
+            for (const record of list) {
+              const regex = new RegExp(contractId, "i");
+              if (record.contract && record.contract.match(regex)) {
+                verifiedToken = record;
+                verifiedListsArray.push(data.name);
+                break;
+              }
+            }
+          }
+        }
+
+        if (Object.keys(verifiedToken).length) {
+          verifiedTokens = [
+            {
+              ...verifiedToken,
+              verifiedLists: verifiedListsArray,
+            } as VerifiedTokenRecord,
+          ];
+        }
+      }
 
       try {
         if (verifiedTokens.length) {
@@ -301,6 +333,33 @@ const useAssetLookup = () => {
     let assetRows: ManageAssetCurrency[] = [];
     const blockaidScanResults: { [key: string]: BlockAidScanAssetResult } = {};
 
+    // Use cached data if available, otherwise fetch once and reuse
+    // Read cache directly from store to get the latest value
+    const currentCache = tokensListsSelector(store.getState());
+    let assetsListsData: AssetListResponse[] = [];
+
+    // Check cache first - use it if available
+    if (
+      currentCache &&
+      Array.isArray(currentCache) &&
+      currentCache.length > 0
+    ) {
+      // Use cached data - no network calls
+      assetsListsData = currentCache;
+    } else {
+      // Fetch only if cache is empty - fetch sequentially
+      assetsListsData = await getCombinedAssetListData({
+        networkDetails,
+        assetsLists,
+        cachedAssetLists: [], // Pass empty array to indicate no cache
+      });
+
+      // Save to cache for future use - this will persist for the session
+      if (assetsListsData.length > 0) {
+        reduxDispatch(saveTokenLists(assetsListsData));
+      }
+    }
+
     if (isContractId(asset)) {
       // for custom tokens, try to go down the the custom token flow
       try {
@@ -309,6 +368,7 @@ const useAssetLookup = () => {
           asset,
           isAllowListVerificationEnabled,
           networkDetails,
+          assetsListsData,
         );
       } catch (e) {
         captureException(
@@ -332,12 +392,6 @@ const useAssetLookup = () => {
       }
     }
 
-    const assetsListsData = await getCombinedAssetListData({
-      networkDetails,
-      assetsLists,
-      cachedAssetLists: cachedTokenLists,
-    });
-
     for (const assetRow of assetRows) {
       const key = assetRow.issuer!;
       const code = assetRow.code!;
@@ -360,6 +414,7 @@ const useAssetLookup = () => {
         networkDetails,
         assets: assetRows,
         assetsListsDetails: assetsLists,
+        cachedAssetLists: assetsListsData, // Use the fetched/cached data we already have
       });
 
     const payload = {
