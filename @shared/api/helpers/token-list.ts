@@ -82,37 +82,34 @@ export const getCombinedAssetListData = async ({
   }
 
   const networkLists = assetsLists[network as AssetsListKey] || [];
-  const assetListsData = [];
-
-  // Fetch sequentially to avoid parallel requests
+  const promiseArr = [];
   for (const networkList of networkLists) {
     const { url = "", isEnabled } = networkList;
 
     if (isEnabled) {
-      try {
-        const res = await fetch(url);
-
-        if (!res || !res.ok) {
-          const statusText = res?.status ? ` (${res.status})` : "";
-          captureException(`Failed to load asset list: ${url}${statusText}`);
-          continue;
-        }
-
+      const fetchAndParse = async () => {
+        let res;
         try {
-          const data = await res.json();
-          if (data) {
-            assetListsData.push(data);
-          }
+          res = await fetch(url);
         } catch (e) {
-          captureException(
-            `Failed to parse asset list JSON: ${url} - ${JSON.stringify(e)}`,
-          );
+          captureException(`Failed to load asset list: ${url}`);
         }
-      } catch (e) {
-        captureException(`Failed to load asset list: ${url}`);
-      }
+
+        return res?.json();
+      };
+
+      promiseArr.push(fetchAndParse());
     }
   }
 
+  const promiseRes =
+    await Promise.allSettled<Promise<AssetListResponse>>(promiseArr);
+
+  const assetListsData = [];
+  for (const p of promiseRes) {
+    if (p.status === "fulfilled") {
+      assetListsData.push(p.value);
+    }
+  }
   return assetListsData;
 };

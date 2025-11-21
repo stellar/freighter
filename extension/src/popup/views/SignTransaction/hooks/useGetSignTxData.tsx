@@ -21,6 +21,7 @@ import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
 import { isContractId } from "popup/helpers/soroban";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
+import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { settingsSelector } from "popup/ducks/settings";
 import { TransactionBuilder } from "stellar-sdk";
 
@@ -131,13 +132,13 @@ function useGetSignTxData(
 
       // Add all icons needed for tx assets
       const icons = {} as { [code: string]: string };
-      let assetsListsData = await getCombinedAssetListData({
-        networkDetails,
-        assetsLists,
-        cachedAssetLists: cachedTokenLists,
-      });
+      // Initialize with cached lists, but we'll fetch fresh data when needed for icon lookups
+      let assetsListsData: AssetListResponse[] = cachedTokenLists || [];
+      let hasFetchedAssetLists = false;
 
+      // Fetch icons for asset diffs only if includeIcons is true
       if (
+        balanceOptions.includeIcons &&
         scanResult &&
         "simulation" in scanResult &&
         scanResult.simulation &&
@@ -156,20 +157,23 @@ function useGetSignTxData(
             const key = diff.asset.issuer;
             const code = diff.asset.code;
             let canonical = getCanonicalFromAsset(code, key);
-            if (cachedIcons[canonical]) {
-              icons[canonical] = cachedIcons[canonical] || "";
+            const cachedIcon = cachedIcons[canonical];
+            if (cachedIcon) {
+              icons[canonical] = cachedIcon;
             } else {
-              let icon = await getIconUrlFromIssuer({
+              let icon: string | null = await getIconUrlFromIssuer({
                 key,
                 code,
                 networkDetails,
               });
               if (!icon) {
-                if (!assetsListsData.length) {
+                if (!hasFetchedAssetLists) {
                   assetsListsData = await getCombinedAssetListData({
                     networkDetails,
                     assetsLists,
+                    cachedAssetLists: cachedTokenLists,
                   });
+                  hasFetchedAssetLists = true;
                 }
                 const tokenListIcon = await getIconFromTokenLists({
                   issuerId: key,
@@ -190,6 +194,7 @@ function useGetSignTxData(
         }
       }
 
+      // Always fetch icons for changeTrust operations (regardless of includeIcons flag)
       const transaction = TransactionBuilder.fromXDR(
         scanOptions.xdr,
         networkDetails.networkPassphrase,
@@ -202,20 +207,23 @@ function useGetSignTxData(
           if ("code" in trustChange.line) {
             const { code, issuer } = trustChange.line;
             let canonical = getCanonicalFromAsset(code, issuer);
-            if (cachedIcons[canonical]) {
-              icons[canonical] = cachedIcons[canonical] || "";
+            const cachedIcon = cachedIcons[canonical];
+            if (cachedIcon) {
+              icons[canonical] = cachedIcon;
             } else {
-              let icon = await getIconUrlFromIssuer({
+              let icon: string | null = await getIconUrlFromIssuer({
                 key: issuer,
                 code,
                 networkDetails,
               });
               if (!icon) {
-                if (!assetsListsData.length) {
+                if (!hasFetchedAssetLists) {
                   assetsListsData = await getCombinedAssetListData({
                     networkDetails,
                     assetsLists,
+                    cachedAssetLists: cachedTokenLists,
                   });
+                  hasFetchedAssetLists = true;
                 }
                 const tokenListIcon = await getIconFromTokenLists({
                   issuerId: issuer,
