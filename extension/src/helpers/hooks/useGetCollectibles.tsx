@@ -34,28 +34,17 @@ function useGetCollectibles() {
   const fetchData = async ({
     publicKey,
     networkDetails,
+    contracts,
   }: {
     publicKey: string;
     networkDetails: NetworkDetails;
+    contracts: { id: string; token_ids: string[] }[];
   }) => {
     dispatch({ type: "FETCH_DATA_START" });
 
     const collectibles = await getCollectibles({
       publicKey,
-      contracts: [
-        {
-          id: "CDY2JQXVWASXQLXHPGKTDHKNZLVZI44NYPHN6HECRT6FTJ7PRCHAQ7QG",
-          token_ids: ["1"],
-        },
-        {
-          id: "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN",
-          token_ids: ["1", "2"],
-        },
-        {
-          id: "CCRIDTVINSOTNYOY6QNZ7JDCXWPOFF4SS3XXOIJIEPGVDGQ7UJP3DMJS",
-          token_ids: ["1"],
-        },
-      ],
+      contracts,
       networkDetails,
     });
 
@@ -70,6 +59,7 @@ function useGetCollectibles() {
       });
     });
 
+    // to prevent the images from flickering, we preload the images before rendering them
     await preloadImages(images);
 
     const payload = {

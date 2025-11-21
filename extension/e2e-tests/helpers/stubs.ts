@@ -362,7 +362,6 @@ export const stubAccountHistory = async (page: Page) => {
 };
 
 export const stubCollectibles = async (page: Page) => {
-  console.log("stubCollectibles");
   await page.route("**/tokenMetadata/1", async (route) => {
     const json = {
       name: "Stellar Frog 1",
@@ -473,19 +472,19 @@ export const stubCollectibles = async (page: Page) => {
               collectibles: [
                 {
                   owner:
-                    "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
                   token_id: "1",
                   token_uri: "https://nftcalendar.io/tokenMetadata/1",
                 },
                 {
                   owner:
-                    "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
                   token_id: "2",
                   token_uri: "https://nftcalendar.io/tokenMetadata/2",
                 },
                 {
                   owner:
-                    "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
                   token_id: "3",
                   token_uri: "https://nftcalendar.io/tokenMetadata/3",
                 },
@@ -500,12 +499,14 @@ export const stubCollectibles = async (page: Page) => {
               symbol: "SDOM",
               collectibles: [
                 {
-                  owner: "CCCSorobanDomainsCollection",
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
                   token_id: "102510",
                   token_uri: "https://nftcalendar.io/tokenMetadata/102510",
                 },
                 {
-                  owner: "CCCSorobanDomainsCollection",
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
                   token_id: "102589",
                   token_uri: "https://nftcalendar.io/tokenMetadata/102589",
                 },
@@ -520,9 +521,88 @@ export const stubCollectibles = async (page: Page) => {
               symbol: "FMONK",
               collectibles: [
                 {
-                  owner: "CCCFutureMonkeysCollection",
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
                   token_id: "111",
                   token_uri: "https://nftcalendar.io/tokenMetadata/111",
+                },
+              ],
+            },
+          },
+        ],
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
+export const stubCollectiblesUnsuccessfulMetadata = async (page: Page) => {
+  await page.route("**/tokenMetadata/1", async (route) => {
+    const json = {
+      name: "Stellar Frog 1",
+      description: "This is a test frog",
+      image:
+        "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
+      attributes: [
+        {
+          traitType: "Background",
+          value: "Green",
+        },
+      ],
+      external_url: "https://nftcalendar.io/token/1",
+    };
+    await route.fulfill({ json });
+  });
+  await page.route("**/tokenMetadata/2", async (route) => {
+    const json = {
+      name: "Stellar Frog 2",
+      description: "This is a test frog 2",
+      image:
+        "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg",
+      attributes: [
+        {
+          traitType: "Background",
+          value: "Green",
+        },
+      ],
+      external_url: "https://nftcalendar.io/token/1",
+    };
+    await route.fulfill({ json });
+  });
+  await page.route("**/tokenMetadata/3", async (route) => {
+    const json = {};
+    await route.fulfill({ json, status: 404 });
+  });
+
+  await page.route("**/collectibles**", async (route) => {
+    const json = {
+      data: {
+        collections: [
+          // Stellar Frogs Collection
+          {
+            collection: {
+              address:
+                "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA", // Using XLM contract address for testing
+              name: "Stellar Frogs",
+              symbol: "SFROG",
+              collectibles: [
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "1",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/1",
+                },
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "2",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/2",
+                },
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "3",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/3",
                 },
               ],
             },

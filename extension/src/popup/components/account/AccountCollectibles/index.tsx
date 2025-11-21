@@ -57,7 +57,14 @@ const CollectionsList = ({ collections }: { collections: Collection[] }) => {
                 <div
                   className="AccountCollectibles__collection__grid__item"
                   key={item.tokenId}
-                ></div>
+                >
+                  <div
+                    className="AccountCollectibles__collection__grid__item__placeholder"
+                    data-testid="account-collectible-placeholder"
+                  >
+                    <Icon.Image01 />
+                  </div>
+                </div>
               );
             }
             return (
