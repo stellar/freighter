@@ -137,7 +137,7 @@ export const SelectAssetRows = ({
                     {code}
                   </div>
                   <div className="SelectAssetRows__domain">
-                    {formatDomain(domain)}
+                    {formatDomain(domain || "")}
                   </div>
                 </div>
                 {!hideBalances && (

@@ -14,5 +14,30 @@
     border-radius: pxToRem(16px);
     background-color: var(--sds-clr-gray-03);
     color: var(--sds-clr-gray-11);
+
+    &__Content {
+      padding: pxToRem(16px) 0;
+      overflow: scroll;
+      flex-grow: 1;
+    }
+  }
+
+  .__json-pretty__ {
+    font-size: var(--sds-fs-secondary);
+    color: var(--sds-clr-gray-12);
+
+    .__json-key__ {
+      color: var(--sds-clr-gray-11);
+    }
+
+    .__json-string__,
+    .__json-number__,
+    .__json-boolean__ {
+      color: var(--sds-clr-gray-12);
+    }
+  }
+
+  .__json-pretty-error__ {
+    color: var(--sds-clr-gray-12);
   }
 }

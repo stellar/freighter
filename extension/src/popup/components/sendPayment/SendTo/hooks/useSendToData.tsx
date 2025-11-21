@@ -95,6 +95,7 @@ function useSendToData() {
             _isMainnet,
             networkDetails,
             true,
+            true,
           );
           if (isError<AccountBalances>(destinationBalances)) {
             throw new Error(destinationBalances.message);
