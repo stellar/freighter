@@ -412,6 +412,19 @@ export const SignTransaction = () => {
                       </span>
                     </div>
                   </div>
+                  <div className="SignTransaction__Metadata__Row">
+                    <div className="SignTransaction__Metadata__Label">
+                      <Icon.File02 />
+                      <span>Memo</span>
+                    </div>
+                    <div className="SignTransaction__Metadata__Value">
+                      <span>
+                        {decodedMemo && decodedMemo.value
+                          ? decodedMemo.value
+                          : t("None")}
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 <div
                   className="SignTransaction__TransactionDetailsBtn"

@@ -586,11 +586,13 @@ export const SendAmount = ({
             <EditMemo
               memo={transactionData.memo || ""}
               onClose={() => setIsEditingMemo(false)}
-              onSubmit={({ memo }: { memo: string }) => {
+              onSubmit={async ({ memo }: { memo: string }) => {
                 dispatch(saveMemo(memo));
                 setIsEditingMemo(false);
-                // Regenerate transaction XDR with new memo
-                fetchSimulationData();
+                // Regenerate transaction XDR with new memo (now reads memo from Redux state inside fetchData)
+                await fetchSimulationData();
+                // Reopen review sheet after memo is saved and XDR is regenerated
+                setIsReviewingTx(true);
               }}
             />
           </div>

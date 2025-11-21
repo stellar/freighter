@@ -164,6 +164,7 @@ export const useValidateTransactionMemo = (incomingXdr?: string | null) => {
 
     if (!xdr || !networkDetails) {
       setLocalTransaction(null);
+      setIsMemoMissing(false);
       return;
     }
 
@@ -174,19 +175,19 @@ export const useValidateTransactionMemo = (incomingXdr?: string | null) => {
       );
       setLocalTransaction(transaction);
 
-      // Check if memo exists in transaction
-      const memo =
-        "memo" in transaction && transaction.memo.value
-          ? String(transaction.memo.value)
-          : "";
+      // Check if memo exists in transaction (check both type and value)
+      const hasMemo =
+        "memo" in transaction &&
+        transaction.memo.type !== "none" &&
+        transaction.memo.value &&
+        String(transaction.memo.value).trim() !== "";
 
-      // If memo exists, it's not missing
-      if (memo) {
-        setIsMemoMissing(false);
-      }
+      // If memo exists, it's not missing - otherwise reset to check state
+      setIsMemoMissing(!hasMemo);
     } catch (error) {
       console.error("Error parsing transaction XDR:", error);
       setLocalTransaction(null);
+      setIsMemoMissing(false);
     }
   }, [xdr, shouldValidateMemo, networkDetails]);
 
@@ -204,14 +205,15 @@ export const useValidateTransactionMemo = (incomingXdr?: string | null) => {
       return;
     }
 
-    // Check if memo exists in transaction
-    const memo =
-      "memo" in localTransaction && localTransaction.memo.value
-        ? String(localTransaction.memo.value)
-        : "";
+    // Check if memo exists in transaction (check both type and value)
+    const hasMemo =
+      "memo" in localTransaction &&
+      localTransaction.memo.type !== "none" &&
+      localTransaction.memo.value &&
+      String(localTransaction.memo.value).trim() !== "";
 
     // If memo exists, it's not missing
-    if (memo) {
+    if (hasMemo) {
       setIsMemoMissing(false);
       return;
     }
