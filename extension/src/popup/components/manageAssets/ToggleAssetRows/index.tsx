@@ -116,7 +116,7 @@ export const ToggleAssetRow = ({
           className="ToggleAssetRows__domain"
           data-testid="ToggleAssetDomain"
         >
-          {formatDomain(domain)}
+          {formatDomain(domain || "")}
         </div>
       </div>
     </>

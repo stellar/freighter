@@ -93,7 +93,7 @@ export const stubTokenDetails = async (page: Page | BrowserContext) => {
 };
 
 export const stubTokenPrices = async (page: Page | BrowserContext) => {
-  await page.route("**/token-prices/**", async (route) => {
+  await page.route("**/token-prices", async (route) => {
     const request = route.request();
 
     let tokenIds = [] as string[];
@@ -109,10 +109,8 @@ export const stubTokenPrices = async (page: Page | BrowserContext) => {
     let json: {
       data: {
         [key: string]: {
-          native: {
-            currentPrice: string;
-            percentagePriceChange24h: string;
-          };
+          currentPrice: string;
+          percentagePriceChange24h: string;
         };
       };
     } = {
@@ -121,10 +119,8 @@ export const stubTokenPrices = async (page: Page | BrowserContext) => {
 
     for (const id of tokenIds) {
       json.data[id] = {
-        native: {
-          currentPrice: "0.4079853099738737",
-          percentagePriceChange24h: "1.022345803068746424",
-        },
+        currentPrice: "0.4079853099738737",
+        percentagePriceChange24h: "1.022345803068746424",
       };
     }
 

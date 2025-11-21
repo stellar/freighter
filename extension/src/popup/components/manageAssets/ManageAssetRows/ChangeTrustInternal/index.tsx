@@ -42,8 +42,8 @@ interface ChangeTrustInternalProps {
   asset: {
     code: string;
     issuer: string;
-    image: string;
-    domain: string;
+    image: string | null;
+    domain: string | null;
     contract?: string;
   };
   networkDetails: NetworkDetails;

@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, memo } from "react";
 import { useSelector } from "react-redux";
 import isEmpty from "lodash/isEmpty";
 import { Asset, Horizon } from "stellar-sdk";
 import BigNumber from "bignumber.js";
+import isEqual from "lodash/isEqual";
 
 import { ApiTokenPrices, AssetIcons, Balance } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
@@ -36,129 +37,141 @@ export const SorobanTokenIcon = ({ noMargin }: { noMargin?: boolean }) => (
   </div>
 );
 
-export const AssetIcon = ({
-  assetIcons,
-  code,
-  issuerKey,
-  retryAssetIconFetch,
-  isLPShare = false,
-  isSorobanToken = false,
-  icon,
-  isSuspicious = false,
-  isModal = false,
-}: {
+interface AssetIconProps {
   assetIcons: AssetIcons;
   code: string;
   issuerKey: string;
   retryAssetIconFetch?: (arg: { key: string; code: string }) => void;
   isLPShare?: boolean;
   isSorobanToken?: boolean;
-  icon?: string;
+  icon?: string | null;
   isSuspicious?: boolean;
   isModal?: boolean;
-}) => {
-  /*
+}
+
+const shouldAssetIconSkipUpdate = (
+  prevProps: AssetIconProps,
+  nextProps: AssetIconProps,
+) =>
+  isEqual(prevProps.assetIcons, nextProps.assetIcons) &&
+  prevProps.isSuspicious === nextProps.isSuspicious;
+
+export const AssetIcon = memo(
+  ({
+    assetIcons,
+    code,
+    issuerKey,
+    retryAssetIconFetch,
+    isLPShare = false,
+    isSorobanToken = false,
+    icon,
+    isSuspicious = false,
+    isModal = false,
+  }: AssetIconProps) => {
+    /*
     We load asset icons in 2 ways:
     Method 1. We get an asset's issuer and use that to look up toml info to get the icon path
     Method 2. We get an icon path directly from an API (like in the trustline flow) and just pass it to this component to render
   */
 
-  const isXlm = getIsXlm(code);
+    const isXlm = getIsXlm(code);
 
-  // in Method 1, while we wait for the icon path to load, `assetIcons` will be empty until the promise resolves
-  // This does not apply for XLM as there is no lookup as that logo lives in this codebase
-  const isFetchingAssetIcons = isEmpty(assetIcons) && !isXlm;
+    // in Method 1, while we wait for the icon path to load, `assetIcons` will be empty until the promise resolves
+    // This does not apply for XLM as there is no lookup as that logo lives in this codebase
+    const isFetchingAssetIcons = isEmpty(assetIcons) && !isXlm;
 
-  const [hasError, setHasError] = useState(false);
+    const [hasError, setHasError] = useState(false);
 
-  // For all non-XLM assets (assets where we need to fetch the icon from elsewhere), start by showing a loading state as there is work to do
-  const [isLoading, setIsLoading] = useState(!isXlm);
+    // For all non-XLM assets (assets where we need to fetch the icon from elsewhere), start by showing a loading state as there is work to do
+    const [isLoading, setIsLoading] = useState(true);
 
-  const { soroswapTokens } = useSelector(transactionSubmissionSelector);
+    const { soroswapTokens } = useSelector(transactionSubmissionSelector);
 
-  const canonicalAsset = assetIcons[getCanonicalFromAsset(code, issuerKey)];
-  let imgSrc = hasError ? ImageMissingIcon : canonicalAsset || "";
-  if (icon) {
-    imgSrc = icon;
-  }
-
-  const _isSorobanToken = !isSorobanToken
-    ? issuerKey && isSorobanIssuer(issuerKey)
-    : isSorobanToken;
-
-  // If an LP share return early w/ hardcoded icon
-  if (isLPShare) {
-    return (
-      <div className="AccountAssets__asset--logo AccountAssets__asset--lp-share">
-        LP
-      </div>
-    );
-  }
-
-  // Get icons for Soroban tokens which are not present in assetIcons list
-  if (_isSorobanToken && !icon && !canonicalAsset) {
-    const soroswapTokenDetail = soroswapTokens.find(
-      (token) => token.contract === issuerKey,
-    );
-    // check to see if we have an icon from an external service, like Soroswap
-    if (soroswapTokenDetail?.icon) {
-      imgSrc = soroswapTokenDetail?.icon;
-    } else {
-      return <SorobanTokenIcon />;
+    const canonicalAsset = assetIcons[getCanonicalFromAsset(code, issuerKey)];
+    let imgSrc = hasError ? ImageMissingIcon : canonicalAsset || "";
+    if (icon) {
+      imgSrc = icon;
     }
-  }
 
-  // If we're waiting on the icon lookup (Method 1), just return the loader until this re-renders with `assetIcons`. We can't do anything until we have it.
-  if (isFetchingAssetIcons) {
-    return (
+    const _isSorobanToken = !isSorobanToken
+      ? issuerKey && isSorobanIssuer(issuerKey)
+      : isSorobanToken;
+
+    // If an LP share return early w/ hardcoded icon
+    if (isLPShare) {
+      return (
+        <div className="AccountAssets__asset--logo AccountAssets__asset--lp-share">
+          LP
+        </div>
+      );
+    }
+
+    // Get icons for Soroban tokens which are not present in assetIcons list
+    if (_isSorobanToken && !icon && !canonicalAsset) {
+      const soroswapTokenDetail = soroswapTokens.find(
+        (token) => token.contract === issuerKey,
+      );
+      // check to see if we have an icon from an external service, like Soroswap
+      if (soroswapTokenDetail?.icon) {
+        imgSrc = soroswapTokenDetail?.icon;
+      } else {
+        return <SorobanTokenIcon />;
+      }
+    }
+
+    // If we're waiting on the icon lookup (Method 1), just return the loader until this re-renders with `assetIcons`. We can't do anything until we have it.
+    if (isFetchingAssetIcons) {
+      return (
+        <div
+          data-testid="AccountAssets__asset--loading"
+          className="AccountAssets__asset--logo AccountAssets__asset--loading"
+        >
+          <ScamAssetIcon isScamAsset={isSuspicious} />
+        </div>
+      );
+    }
+
+    // if we have an asset path, start loading the path in an `<img>`
+    return canonicalAsset || isXlm || imgSrc ? (
       <div
-        data-testid="AccountAssets__asset--loading"
-        className="AccountAssets__asset--logo AccountAssets__asset--loading"
+        data-testid={`AccountAssets__asset--loading-${code}`}
+        className={`AccountAssets__asset--logo ${
+          hasError ? "AccountAssets__asset--error" : ""
+        } ${isLoading ? "AccountAssets__asset--loading" : ""} ${
+          isModal ? "AccountAssets__asset--modal" : ""
+        }`}
       >
+        <img
+          alt={`${code} logo`}
+          src={isXlm ? StellarLogo : imgSrc}
+          onError={() => {
+            if (retryAssetIconFetch) {
+              retryAssetIconFetch({ key: issuerKey, code });
+            }
+            // we tried to load an image path but it failed, so show the broken image icon here
+            setHasError(true);
+          }}
+          onLoad={() => {
+            // we've sucessfully loaded an icon, end the "loading" state
+            setIsLoading(false);
+          }}
+        />
+        <ScamAssetIcon isScamAsset={isSuspicious} />
+      </div>
+    ) : (
+      // the image path wasn't found, show a default broken image icon
+      <div
+        className={`AccountAssets__asset--logo AccountAssets__asset--error ${
+          isModal ? "AccountAssets__asset--modal" : ""
+        }`}
+      >
+        <ImageMissingIcon />
         <ScamAssetIcon isScamAsset={isSuspicious} />
       </div>
     );
-  }
-
-  // if we have an asset path, start loading the path in an `<img>`
-  return canonicalAsset || isXlm || imgSrc ? (
-    <div
-      data-testid={`AccountAssets__asset--loading-${code}`}
-      className={`AccountAssets__asset--logo ${
-        hasError ? "AccountAssets__asset--error" : ""
-      } ${isLoading ? "AccountAssets__asset--loading" : ""} ${
-        isModal ? "AccountAssets__asset--modal" : ""
-      }`}
-    >
-      <img
-        alt={`${code} logo`}
-        src={isXlm ? StellarLogo : imgSrc}
-        onError={() => {
-          if (retryAssetIconFetch) {
-            retryAssetIconFetch({ key: issuerKey, code });
-          }
-          // we tried to load an image path but it failed, so show the broken image icon here
-          setHasError(true);
-        }}
-        onLoad={() => {
-          // we've sucessfully loaded an icon, end the "loading" state
-          setIsLoading(false);
-        }}
-      />
-      <ScamAssetIcon isScamAsset={isSuspicious} />
-    </div>
-  ) : (
-    // the image path wasn't found, show a default broken image icon
-    <div
-      className={`AccountAssets__asset--logo AccountAssets__asset--error ${
-        isModal ? "AccountAssets__asset--modal" : ""
-      }`}
-    >
-      <ImageMissingIcon />
-      <ScamAssetIcon isScamAsset={isSuspicious} />
-    </div>
-  );
-};
+  },
+  shouldAssetIconSkipUpdate,
+);
 
 interface AccountAssetsProps {
   assetIcons: AssetIcons;

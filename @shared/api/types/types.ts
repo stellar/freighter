@@ -84,6 +84,7 @@ export interface Response {
   accountName: string;
   assetCode: string;
   assetCanonical: string;
+  icons: {};
   iconUrl: string;
   network: string;
   networkIndex: number;
@@ -214,7 +215,7 @@ export type Settings = {
 } & Preferences;
 
 export interface AssetIcons {
-  [code: string]: string;
+  [code: string]: string | null;
 }
 
 export interface AssetDomains {
@@ -383,3 +384,22 @@ export type DiscoverData = {
   tags: string[];
   isBlacklisted: boolean;
 }[];
+
+export interface LedgerKeyAccount {
+  account_id: string;
+  balance: string;
+  seq_num: number;
+  num_sub_entries: number;
+  inflation_dest: string;
+  flags: number;
+  home_domain: string;
+  thresholds: string;
+  signers: { key: string; weight: number }[];
+  sequence_number: number;
+}
+
+export interface LedgerKeyAccounts {
+  ledger_key_accounts: {
+    [key: string]: LedgerKeyAccount;
+  };
+}

@@ -30,7 +30,6 @@ import {
 } from "helpers/urls";
 import { emitMetric } from "helpers/metrics";
 import {
-  getCanonicalFromAsset,
   getTransactionInfo,
   isFederationAddress,
   isMuxedAccount,
@@ -101,14 +100,14 @@ export const SignTransaction = () => {
 
   let accountToSign = _accountToSign;
 
-  const { state: scanTxState, fetchData } = useGetSignTxData(
+  const { state: signTxState, fetchData } = useGetSignTxData(
     {
       xdr: transactionXdr,
       url,
     },
     {
       showHidden: false,
-      includeIcons: true,
+      includeIcons: false,
     },
     accountToSign,
   );
@@ -191,21 +190,21 @@ export const SignTransaction = () => {
   const isSubmitDisabled = isMemoRequired || !isDomainListedAllowed;
 
   if (
-    scanTxState.state === RequestState.IDLE ||
-    scanTxState.state === RequestState.LOADING
+    signTxState.state === RequestState.IDLE ||
+    signTxState.state === RequestState.LOADING
   ) {
     return <Loading />;
   }
 
-  const hasError = scanTxState.state === RequestState.ERROR;
-  if (scanTxState.data?.type === AppDataType.REROUTE) {
-    if (scanTxState.data.shouldOpenTab) {
-      openTab(newTabHref(scanTxState.data.routeTarget));
+  const hasError = signTxState.state === RequestState.ERROR;
+  if (signTxState.data?.type === AppDataType.REROUTE) {
+    if (signTxState.data.shouldOpenTab) {
+      openTab(newTabHref(signTxState.data.routeTarget));
       window.close();
     }
     return (
       <Navigate
-        to={`${scanTxState.data.routeTarget}${location.search}`}
+        to={`${signTxState.data.routeTarget}${location.search}`}
         state={{ from: location }}
         replace
       />
@@ -214,15 +213,15 @@ export const SignTransaction = () => {
 
   if (!hasError) {
     reRouteOnboarding({
-      type: scanTxState.data.type,
-      applicationState: scanTxState.data.applicationState,
-      state: scanTxState.state,
+      type: signTxState.data.type,
+      applicationState: signTxState.data.applicationState,
+      state: signTxState.state,
     });
   }
 
-  const { networkName, networkPassphrase } = scanTxState.data?.networkDetails!;
+  const { networkName, networkPassphrase } = signTxState.data?.networkDetails!;
 
-  const scanResult = scanTxState.data?.scanResult;
+  const scanResult = signTxState.data?.scanResult;
   const hasNonBenignValidation = !!(
     scanResult?.validation &&
     "result_type" in scanResult.validation &&
@@ -259,10 +258,10 @@ export const SignTransaction = () => {
     return <SSLWarningMessage url={domain} />;
   }
 
-  const publicKey = scanTxState.data?.publicKey!;
-  const { currentAccount } = scanTxState.data?.signFlowState!;
+  const publicKey = signTxState.data?.publicKey!;
+  const { currentAccount } = signTxState.data?.signFlowState!;
 
-  const hasEnoughXlm = scanTxState.data?.balances.balances.some(
+  const hasEnoughXlm = signTxState.data?.balances.balances.some(
     (balance) =>
       "token" in balance &&
       balance.token.code === "XLM" &&
@@ -352,14 +351,14 @@ export const SignTransaction = () => {
                 )}
                 {assetDiffs && (
                   <AssetDiffs
-                    icons={scanTxState.data?.icons || {}}
+                    icons={signTxState.data?.icons || {}}
                     assetDiffs={assetDiffs}
                   />
                 )}
                 {trustlineChanges.length > 0 && (
                   <Trustline
                     operations={trustlineChanges}
-                    icons={scanTxState.data?.icons || {}}
+                    icons={signTxState.data?.icons || {}}
                   />
                 )}
                 <div className="SignTransaction__Metadata">
@@ -525,13 +524,11 @@ const AssetDiffs = ({ assetDiffs, icons }: AssetDiffsProps) => {
       default: {
         const code = "code" in diff.asset ? diff.asset.code! : "";
         const issuer = "issuer" in diff.asset ? diff.asset.issuer! : "";
-        const canonical = getCanonicalFromAsset(code, issuer);
-        const icon = icons[canonical];
         return (
           <div className="SignTransaction__AssetDiffRow">
             <div className="SignTransaction__AssetDiffRow__Asset">
               <AssetIcon
-                assetIcons={code !== "XLM" ? { [canonical]: icon } : {}}
+                assetIcons={code !== "XLM" ? icons : {}}
                 code={code}
                 issuerKey={issuer}
               />
@@ -572,12 +569,10 @@ export const Trustline = ({ operations, icons }: TrustlineProps) => {
     const renderTrustlineAsset = (line: Asset | LiquidityPoolAsset) => {
       if ("code" in line) {
         const { code, issuer } = line;
-        const canonical = getCanonicalFromAsset(code, issuer);
-        const icon = icons[canonical];
         return (
           <>
             <AssetIcon
-              assetIcons={code !== "XLM" ? { [canonical]: icon } : {}}
+              assetIcons={code !== "XLM" ? icons : {}}
               code={code}
               issuerKey={issuer}
             />

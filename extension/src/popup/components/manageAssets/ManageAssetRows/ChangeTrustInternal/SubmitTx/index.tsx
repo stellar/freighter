@@ -37,8 +37,8 @@ interface SubmitTransactionProps {
   asset: {
     code: string;
     issuer: string;
-    image: string;
-    domain: string;
+    image: string | null;
+    domain: string | null;
     contract?: string;
   };
   addTrustline: boolean;

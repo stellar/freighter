@@ -1,7 +1,6 @@
 import {
   getAllowList,
   getAssetsLists,
-  getFeatureFlags,
   getIsExperimentalModeEnabled,
   getIsHashSigningEnabled,
   getIsHideDustEnabled,
@@ -9,7 +8,6 @@ import {
   getIsNonSSLEnabled,
   getNetworkDetails,
   getNetworksList,
-  getUserNotification,
   verifySorobanRpcUrls,
 } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
@@ -25,9 +23,6 @@ export const loadSettings = async ({
 
   const isDataSharingAllowed =
     (await localStore.getItem(DATA_SHARING_ID)) ?? true;
-  const featureFlags = await getFeatureFlags();
-  const isRpcHealthy = true;
-  const userNotification = await getUserNotification();
   const isHashSigningEnabled = await getIsHashSigningEnabled({ localStore });
   const assetsLists = await getAssetsLists({ localStore });
   const isNonSSLEnabled = await getIsNonSSLEnabled({ localStore });
@@ -44,9 +39,6 @@ export const loadSettings = async ({
     isHashSigningEnabled,
     networkDetails: await getNetworkDetails({ localStore }),
     networksList: await getNetworksList({ localStore }),
-    isSorobanPublicEnabled: featureFlags.useSorobanPublic,
-    isRpcHealthy,
-    userNotification,
     assetsLists,
     isNonSSLEnabled,
     isHideDustEnabled,

@@ -53,7 +53,9 @@ describe("useGetBalances (cached path)", () => {
   const preloadedState = {
     cache: {
       balanceData: {
-        [TESTNET_NETWORK_DETAILS.network]: { [publicKey]: cachedBalanceData },
+        [TESTNET_NETWORK_DETAILS.network]: {
+          [publicKey]: { ...cachedBalanceData, updatedAt: Date.now() },
+        },
       },
       icons: cachedIcons,
       tokenLists: tokenListData,
@@ -135,6 +137,42 @@ describe("useGetBalances (cached path)", () => {
     });
 
     expect(getCombinedAssetListData).not.toHaveBeenCalled();
+    expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
+  });
+
+  it("skips trying to lookup an icon that was previously not found", async () => {
+    const preloadedStateWithNullIcon = {
+      cache: {
+        balanceData: {
+          [TESTNET_NETWORK_DETAILS.network]: {
+            [publicKey]: { ...cachedBalanceData, updatedAt: Date.now() },
+          },
+        },
+        icons: { "XLM:GABCDEF": null },
+        tokenLists: tokenListData,
+      },
+      settings: {
+        assetsLists: [],
+      },
+    };
+    const iconStore = makeDummyStore(preloadedStateWithNullIcon);
+
+    const { result } = renderHook(
+      () => useGetBalances({ showHidden: false, includeIcons: true }),
+      { wrapper: Wrapper(iconStore) },
+    );
+
+    await act(async () => {
+      await result.current.fetchData(
+        publicKey,
+        true,
+        TESTNET_NETWORK_DETAILS,
+        true,
+      );
+    });
+
+    expect(getCombinedAssetListData).not.toHaveBeenCalled();
+    expect(getIconUrlFromIssuer).not.toHaveBeenCalled();
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
   });
 });

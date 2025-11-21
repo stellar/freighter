@@ -108,7 +108,7 @@ export const TokenList = ({
                               .toString(),
                           ),
                         )}`
-                      : null}
+                      : "--"}
                   </div>
                 </div>
               );

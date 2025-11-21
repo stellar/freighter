@@ -12,7 +12,7 @@ import {
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
-import { getTokenPrices } from "popup/views/Account/hooks/useGetAccountData";
+import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
 import { ApiTokenPrices } from "@shared/api/types";
 
 export interface ResolvedAssetDomains {
@@ -36,6 +36,7 @@ export function useGetDestAssetData(getBalancesOptions: {
   );
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(getBalancesOptions);
+  const { fetchData: fetchTokenPrices } = useGetTokenPrices();
 
   const fetchData = async (useCache = false): Promise<AssetDomains | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -64,14 +65,18 @@ export function useGetDestAssetData(getBalancesOptions: {
         throw new Error(balances.message);
       }
 
-      const tokenPrices = await getTokenPrices({ balances: balances.balances });
+      const fetchedTokenPrices = await fetchTokenPrices({
+        publicKey,
+        balances: balances.balances,
+        useCache: true,
+      });
 
       const payload = {
         type: AppDataType.RESOLVED,
         balances,
         publicKey,
         networkDetails,
-        tokenPrices,
+        tokenPrices: fetchedTokenPrices.tokenPrices,
         applicationState: appData.account.applicationState,
       } as ResolvedAssetDomains;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

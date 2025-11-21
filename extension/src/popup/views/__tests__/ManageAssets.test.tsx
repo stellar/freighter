@@ -24,7 +24,6 @@ import {
   APPLICATION_STATE as ApplicationState,
 } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
-import * as AssetDomain from "popup/helpers/getAssetDomain";
 import * as CheckSuspiciousAsset from "popup/helpers/checkForSuspiciousAsset";
 import * as ManageAssetXDR from "popup/helpers/getManageAssetXDR";
 import * as SearchAsset from "popup/helpers/searchAsset";
@@ -90,25 +89,6 @@ jest
 jest
   .spyOn(ApiInternal, "getAssetIcons")
   .mockImplementation(() => Promise.resolve({}));
-
-jest
-  .spyOn(AssetDomain, "getAssetDomain")
-  .mockImplementation((issuerKey: string) => {
-    let domain = "";
-
-    switch (issuerKey) {
-      case "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM":
-        domain = "circle.io";
-        break;
-      case "GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B":
-        domain = "testanchor.stellar.org";
-        break;
-      default:
-        domain = "malicious.domain";
-    }
-
-    return Promise.resolve(domain);
-  });
 
 jest
   .spyOn(CheckSuspiciousAsset, "checkForSuspiciousAsset")

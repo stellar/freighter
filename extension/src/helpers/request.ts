@@ -28,3 +28,7 @@ export const reducer = <T, K>(
       return state;
   }
 };
+
+export const isCacheValid = (cachedData: { updatedAt: number }) => {
+  return cachedData && cachedData.updatedAt > Date.now() - 180000; // 3 minutes;
+};

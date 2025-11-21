@@ -42,7 +42,6 @@ import { AppDispatch } from "popup/App";
 import { emitMetric } from "helpers/metrics";
 import { AMOUNT_ERROR, InputType } from "helpers/transaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { AssetIcon } from "popup/components/account/AccountAssets";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { EditSettings } from "popup/components/InternalTransaction/EditSettings";
 import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
@@ -50,6 +49,7 @@ import { useSimulateTxData } from "./hooks/useSimulateSwapData";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { SlideupModal } from "popup/components/SlideupModal";
+import { AssetTile } from "popup/components/AssetTile";
 
 import "./styles.scss";
 
@@ -273,7 +273,7 @@ export const SwapAmount = ({
       )}`
     : null;
   const supportsUsd =
-    isMainnet(swapAmountData.data?.networkDetails!) && assetPrice !== null;
+    isMainnet(swapAmountData.data?.networkDetails!) && assetPrice;
   const availableBalance = getAvailableBalance({
     assetCanonical: asset,
     balances: sendData.userBalances.balances,
@@ -284,8 +284,6 @@ export const SwapAmount = ({
     dstAssetBalance && dstAsset
       ? `${formatAmount(dstAssetBalance.total.toString())}`
       : "0";
-  const srcTitle = srcAsset.code;
-  const dstTitle = dstAsset?.code;
   const isAmountTooHigh =
     (inputType === "crypto" &&
       new BigNumber(cleanAmount(formik.values.amount)).gt(
@@ -555,87 +553,36 @@ export const SwapAmount = ({
                     {t("Set Max")}
                   </Button>
                 </div>
-                <div
-                  className="SwapAsset__EditSrcAsset"
+                <AssetTile
+                  isSuspicious={false}
+                  asset={{
+                    code: srcAsset.code,
+                    canonical: asset,
+                    issuer: srcAsset.issuer,
+                  }}
+                  assetIcon={assetIcon}
+                  balance={displayTotal}
                   onClick={goToEditSrcAction}
-                >
-                  <div className="SwapAsset__EditSrcAsset__title">
-                    <AssetIcon
-                      assetIcons={
-                        asset !== "native" ? { [asset]: assetIcon } : {}
-                      }
-                      code={srcAsset.code}
-                      issuerKey={srcAsset.issuer}
-                      icon={assetIcon}
-                      isSuspicious={false}
-                    />
-                    <div className="SwapAsset__EditSrcAsset__asset-title">
-                      <div className="SwapAsset__EditSrcAsset__asset-heading">
-                        {srcTitle}
-                      </div>
-                      <div className="SwapAsset__EditSrcAsset__asset-total">
-                        {displayTotal}
-                      </div>
-                    </div>
-                  </div>
-                  <Button type="button" isRounded size="sm" variant="tertiary">
-                    <Icon.ChevronRight />
-                  </Button>
-                </div>
-                <div className="SwapAsset__EditDstAsset" onClick={goToEditDst}>
-                  <div className="SwapAsset__EditDstAsset__title">
-                    {destinationAsset ? (
-                      <>
-                        <AssetIcon
-                          assetIcons={
-                            destinationAsset !== "native"
-                              ? { [destinationAsset]: dstAssetIcon }
-                              : {}
-                          }
-                          code={dstAsset?.code!}
-                          issuerKey={dstAsset?.issuer!}
-                          icon={dstAssetIcon}
-                          isSuspicious={false}
-                        />
-                        <div className="SwapAsset__EditDstAsset__asset-title">
-                          <div className="SwapAsset__EditDstAsset__asset-heading">
-                            {dstTitle}
-                          </div>
-                          <div className="SwapAsset__EditDstAsset__asset-total">
-                            {dstDisplayTotal}
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div
-                          className="SwapAsset__EditDstAsset__asset-placeholder"
-                          onClick={goToEditDst}
-                        >
-                          <Icon.Activity />
-                        </div>
-                        <div className="SwapAsset__EditDstAsset__asset-title">
-                          <div className="SwapAsset__EditDstAsset__asset-heading">
-                            Receive
-                          </div>
-                          <div className="SwapAsset__EditDstAsset__asset-total">
-                            Choose asset
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  {destinationAsset && (
-                    <Button
-                      type="button"
-                      isRounded
-                      size="sm"
-                      variant="tertiary"
-                    >
-                      <Icon.ChevronRight />
-                    </Button>
-                  )}
-                </div>
+                  emptyLabel="Send"
+                  testId="swap-src-asset-tile"
+                />
+                <AssetTile
+                  isSuspicious={false}
+                  asset={
+                    dstAsset
+                      ? {
+                          code: dstAsset.code,
+                          canonical: destinationAsset,
+                          issuer: dstAsset.issuer,
+                        }
+                      : null
+                  }
+                  assetIcon={dstAssetIcon}
+                  balance={dstDisplayTotal}
+                  onClick={goToEditDst}
+                  emptyLabel="Receive"
+                  testId="swap-dst-asset-tile"
+                />
               </div>
             </form>
           </div>
