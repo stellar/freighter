@@ -24,8 +24,7 @@ import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import {
   BlockaidTxScanLabel,
   BlockAidTxScanExpanded,
-  WarningMessage,
-  WarningMessageVariant,
+  MemoRequiredLabel,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
@@ -214,12 +213,7 @@ export const ReviewTx = ({
                     />
                   )}
                   {isRequiredMemoMissing && !isValidatingMemo && (
-                    <WarningMessage
-                      variant={WarningMessageVariant.warning}
-                      header={t("Memo required")}
-                    >
-                      {t("This transaction requires a memo")}
-                    </WarningMessage>
+                    <MemoRequiredLabel onClick={() => setActivePaneIndex(2)} />
                   )}
                 </div>
                 <div className="ReviewTx__Details">
@@ -265,6 +259,34 @@ export const ReviewTx = ({
                 scanResult={simulationState.data?.scanResult!}
                 onClose={() => setActivePaneIndex(0)}
               />,
+              <div className="ReviewTx__MemoDetails">
+                <div className="ReviewTx__MemoDetails__Header">
+                  <div className="ReviewTx__MemoDetails__Header__Icon">
+                    <Icon.InfoOctagon className="WarningMessage__icon" />
+                  </div>
+                  <div
+                    className="ReviewTx__MemoDetails__Header__Close"
+                    onClick={() => setActivePaneIndex(0)}
+                  >
+                    <Icon.X />
+                  </div>
+                </div>
+                <div className="ReviewTx__MemoDetails__Title">
+                  <span>{t("Memo is required")}</span>
+                </div>
+                <div className="ReviewTx__MemoDetails__Content">
+                  <div className="ReviewTx__MemoDetails__Text">
+                    {t(
+                      "Some destination accounts on the Stellar network require a memo to identify your payment.",
+                    )}
+                  </div>
+                  <div className="ReviewTx__MemoDetails__Text">
+                    {t(
+                      "If a required memo is missing or incorrect, your funds may not reach the intended recipient.",
+                    )}
+                  </div>
+                </div>
+              </div>,
             ]}
           />
           <div className="ReviewTx__Actions">

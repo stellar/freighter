@@ -198,6 +198,7 @@
   "I understand, start migration": "I understand, start migration",
   "I’m aware Freighter can’t recover the imported  secret key": "I’m aware Freighter can’t recover the imported  secret key",
   "I’ve saved my phrase somewhere safe": "I’ve saved my phrase somewhere safe",
+  "If a required memo is missing or incorrect, your funds may not reach the intended recipient": "If a required memo is missing or incorrect, your funds may not reach the intended recipient.",
   "If you delete this list, you will have to re-add it manually": "If you delete this list, you will have to re-add it manually.",
   "If you forget your password, you can use the recovery phrase to access your wallet": "If you forget your password, you can use the recovery phrase to access your wallet",
   "Import": "Import",
@@ -248,6 +249,7 @@
   "Max Price": "Max Price",
   "Medium Threshold": "Medium Threshold",
   "Memo": "Memo",
+  "Memo is required": "Memo is required",
   "Memo is too long": {
     " Maximum {{max}} bytes allowed": "Memo is too long. Maximum {{max}} bytes allowed."
   },
@@ -373,6 +375,7 @@
   "Signing this transaction is not possible at the moment": "Signing this transaction is not possible at the moment.",
   "Signs for external accounts": "Signs for external accounts",
   "Skip": "Skip",
+  "Some destination accounts on the Stellar network require a memo to identify your payment": "Some destination accounts on the Stellar network require a memo to identify your payment.",
   "Some features may be disabled at this time": "Some features may be disabled at this time.",
   "Some of your assets may not appear, but they are still safe on the network!": "Some of your assets may not appear, but they are still safe on the network!",
   "Soroban RPC is temporarily experiencing issues": "Soroban RPC is temporarily experiencing issues",
