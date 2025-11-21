@@ -12,12 +12,15 @@ import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 export const searchAsset = async ({
   asset,
   networkDetails,
+  signal,
 }: {
   asset: any;
   networkDetails: NetworkDetails;
+  signal?: AbortSignal;
 }) => {
   const res = await fetch(
     `${getApiStellarExpertUrl(networkDetails)}/asset?search=${asset}`,
+    { signal },
   );
   return res.json();
 };

@@ -33,11 +33,20 @@ Object.defineProperty(global.self, "crypto", {
 });
 
 process.env.INDEXER_URL = "http://localhost:3002/api/v1";
+process.env.INDEXER_V2_URL = "http://localhost:3003/api/v1";
 
 jest.mock("helpers/metrics", () => ({
   registerHandler: () => {},
   emitMetric: () => {},
   storeBalanceMetricData: () => {},
+}));
+
+jest.mock("popup/App", () => ({
+  store: {
+    getState: () => ({
+      cache: {},
+    }),
+  },
 }));
 
 jest.mock("react-i18next", () => ({

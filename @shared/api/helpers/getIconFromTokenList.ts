@@ -2,8 +2,10 @@ import {
   AssetListReponseItem,
   AssetListResponse,
 } from "@shared/constants/soroban/asset-list";
-import { NetworkDetails } from "@shared/constants/stellar";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
+
+import { sendMessageToBackground } from "./extensionMessaging";
+import { SERVICE_TYPES } from "../../constants/services";
 
 export const getIconFromTokenLists = async ({
   issuerId,
@@ -11,7 +13,6 @@ export const getIconFromTokenLists = async ({
   code,
   assetsListsData,
 }: {
-  networkDetails: NetworkDetails;
   issuerId?: string;
   contractId?: string;
   code: string;
@@ -33,6 +34,7 @@ export const getIconFromTokenLists = async ({
           issuerId &&
           record.issuer &&
           record.issuer === issuerId &&
+          record.code === code &&
           record.icon
         ) {
           verifiedToken = record;
@@ -41,6 +43,15 @@ export const getIconFromTokenLists = async ({
         }
       }
     }
+  }
+
+  if (verifiedToken?.icon) {
+    await sendMessageToBackground({
+      activePublicKey: null,
+      assetCanonical: `${code}:${contractId || issuerId}`,
+      iconUrl: verifiedToken?.icon,
+      type: SERVICE_TYPES.CACHE_ASSET_ICON,
+    });
   }
 
   return {

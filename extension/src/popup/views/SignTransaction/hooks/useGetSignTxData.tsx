@@ -90,7 +90,22 @@ function useGetSignTxData(
         publicKey,
         isMainnetNetwork,
         networkDetails,
+        false,
+        true,
       );
+
+      // handle auto selecting the right account based on `accountToSign`
+      const currentAccount = signFlowAccountSelector({
+        allAccounts,
+        publicKey,
+        accountToSign,
+        setActiveAccount: (account: string) =>
+          reduxDispatch(makeAccountActive(account)),
+      });
+
+      if (!currentAccount) {
+        setAccountNotFound(true);
+      }
 
       const scanResult = await scanTx(
         scanOptions.xdr,
@@ -98,9 +113,25 @@ function useGetSignTxData(
         networkDetails,
       );
 
+      const firstRenderPayload = {
+        type: AppDataType.RESOLVED,
+        balances: balancesResult,
+        scanResult,
+        publicKey,
+        applicationState: appData.account.applicationState,
+        networkDetails: appData.settings.networkDetails,
+        signFlowState: {
+          allAccounts,
+          accountNotFound,
+          currentAccount,
+        },
+      } as ResolvedData;
+
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload: firstRenderPayload });
+
       // Add all icons needed for tx assets
       const icons = {} as { [code: string]: string };
-      const assetsListsData = await getCombinedAssetListData({
+      let assetsListsData = await getCombinedAssetListData({
         networkDetails,
         assetsLists,
         cachedAssetLists: cachedTokenLists,
@@ -126,7 +157,7 @@ function useGetSignTxData(
             const code = diff.asset.code;
             let canonical = getCanonicalFromAsset(code, key);
             if (cachedIcons[canonical]) {
-              icons[canonical] = cachedIcons[canonical];
+              icons[canonical] = cachedIcons[canonical] || "";
             } else {
               let icon = await getIconUrlFromIssuer({
                 key,
@@ -134,8 +165,13 @@ function useGetSignTxData(
                 networkDetails,
               });
               if (!icon) {
+                if (!assetsListsData.length) {
+                  assetsListsData = await getCombinedAssetListData({
+                    networkDetails,
+                    assetsLists,
+                  });
+                }
                 const tokenListIcon = await getIconFromTokenLists({
-                  networkDetails,
                   issuerId: key,
                   contractId: isContractId(key) ? key : undefined,
                   code,
@@ -146,7 +182,9 @@ function useGetSignTxData(
                   canonical = tokenListIcon.canonicalAsset;
                 }
               }
-              icons[canonical] = icon;
+              if (icon) {
+                icons[canonical] = icon;
+              }
             }
           }
         }
@@ -165,7 +203,7 @@ function useGetSignTxData(
             const { code, issuer } = trustChange.line;
             let canonical = getCanonicalFromAsset(code, issuer);
             if (cachedIcons[canonical]) {
-              icons[canonical] = cachedIcons[canonical];
+              icons[canonical] = cachedIcons[canonical] || "";
             } else {
               let icon = await getIconUrlFromIssuer({
                 key: issuer,
@@ -173,8 +211,13 @@ function useGetSignTxData(
                 networkDetails,
               });
               if (!icon) {
+                if (!assetsListsData.length) {
+                  assetsListsData = await getCombinedAssetListData({
+                    networkDetails,
+                    assetsLists,
+                  });
+                }
                 const tokenListIcon = await getIconFromTokenLists({
-                  networkDetails,
                   issuerId: issuer,
                   contractId: isContractId(issuer) ? issuer : undefined,
                   code,
@@ -185,7 +228,9 @@ function useGetSignTxData(
                   canonical = tokenListIcon.canonicalAsset;
                 }
               }
-              icons[canonical] = icon;
+              if (icon) {
+                icons[canonical] = icon;
+              }
             }
           }
         }
@@ -193,19 +238,6 @@ function useGetSignTxData(
 
       if (isError<AccountBalances>(balancesResult)) {
         throw new Error(balancesResult.message);
-      }
-
-      // handle auto selecting the right account based on `accountToSign`
-      const currentAccount = signFlowAccountSelector({
-        allAccounts,
-        publicKey,
-        accountToSign,
-        setActiveAccount: (account: string) =>
-          reduxDispatch(makeAccountActive(account)),
-      });
-
-      if (!currentAccount) {
-        setAccountNotFound(true);
       }
 
       const payload = {
