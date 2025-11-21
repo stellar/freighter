@@ -1,9 +1,13 @@
 import { captureException } from "@sentry/browser";
-import { Collectibles, Collection, CollectibleMetadata } from "../types";
+import {
+  CollectiblesResponse,
+  Collection,
+  CollectibleMetadata,
+} from "../types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { INDEXER_V2_URL } from "@shared/constants/mercury";
 
-const fetchCollectibleMetadata = async (token_uri: string) => {
+const fetchCollectibleMetadata = async (tokenUri: string) => {
   let metadata: CollectibleMetadata | null = {
     name: "",
     description: "",
@@ -11,7 +15,7 @@ const fetchCollectibleMetadata = async (token_uri: string) => {
     externalUrl: "",
     attributes: [],
   };
-  const response = await fetch(token_uri);
+  const response = await fetch(tokenUri);
   if (!response.ok) {
     return null;
   }
@@ -49,7 +53,7 @@ export const getCollectibles = async ({
   networkDetails: NetworkDetails;
 }) => {
   let fetchedCollections = [] as Collection[];
-  console.log(contracts);
+
   try {
     const options = {
       method: "POST",
@@ -72,22 +76,35 @@ export const getCollectibles = async ({
 
       throw new Error(_err);
     }
-    const { data } = (await response.json()) as { data: Collectibles };
-
-    console.log("data", data);
+    const { data } = (await response.json()) as { data: CollectiblesResponse };
 
     for (let i = 0; i < data.collections.length; i++) {
       const { collection } = data.collections[i];
       if (collection) {
-        for (let j = 0; j < collection.collectibles.length; j++) {
-          const { token_uri } = collection.collectibles[j];
-          const metadata = await fetchCollectibleMetadata(token_uri);
-          collection.collectibles[j].metadata = metadata;
-        }
+        fetchedCollections.push({
+          collection: {
+            address: collection.address,
+            name: collection.name,
+            symbol: collection.symbol,
+            collectibles: await Promise.all(
+              collection.collectibles.map(async (collectible) => {
+                const metadata = await fetchCollectibleMetadata(
+                  collectible.token_uri,
+                );
+                return {
+                  ...collectible,
+                  metadata,
+                  owner: collectible.owner,
+                  tokenUri: collectible.token_uri,
+                  tokenId: collectible.token_id,
+                };
+              }),
+            ),
+          },
+        });
       }
     }
 
-    fetchedCollections = data.collections;
     console.log("fetchedCollections", fetchedCollections);
   } catch (e) {
     captureException(`Error fetching collectibles: ${e}`);

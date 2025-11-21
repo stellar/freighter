@@ -108,21 +108,55 @@ describe("AccountCollectibles", () => {
           collectibles: [
             {
               owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
-              token_id: "1",
-              token_uri:
+              tokenId: "1",
+              tokenUri:
                 "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
+              metadata: {
+                image:
+                  "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
+                name: "Stellar Frog 1",
+                description: "This is a test frog",
+                attributes: [
+                  {
+                    traitType: "Background",
+                    value: "Green",
+                  },
+                ],
+              },
             },
             {
               owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
-              token_id: "2",
-              token_uri:
-                "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg",
+              tokenId: "2",
+              tokenUri: "https://nftcalendar.io/token/2",
+              metadata: {
+                image:
+                  "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg",
+                name: "Stellar Frog 2",
+                description: "This is a test frog",
+                attributes: [
+                  {
+                    traitType: "Background",
+                    value: "Red",
+                  },
+                ],
+              },
             },
             {
               owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
-              token_id: "3",
-              token_uri:
-                "https://nftcalendar.io/storage/uploads/events/2023/8/5kFeYwNfhpUST3TsSoLxm7FaGY1ljwLRgfZ5gQnV.jpg",
+              tokenId: "3",
+              tokenUri: "https://nftcalendar.io/token/3",
+              metadata: {
+                image:
+                  "https://nftcalendar.io/storage/uploads/events/2023/8/5kFeYwNfhpUST3TsSoLxm7FaGY1ljwLRgfZ5gQnV.jpg",
+                name: "Stellar Frog 3",
+                description: "This is a test frog",
+                attributes: [
+                  {
+                    traitType: "Background",
+                    value: "Blue",
+                  },
+                ],
+              },
             },
           ],
         },

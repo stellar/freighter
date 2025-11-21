@@ -54,12 +54,12 @@ const CollectionsList = ({ collections }: { collections: Collection[] }) => {
           {collection.collectibles.map((item) => (
             <div
               className="AccountCollectibles__collection__grid__item"
-              key={item.token_id}
+              key={item.tokenId}
             >
               <img
                 data-testid="account-collectible-image"
                 src={item.metadata?.image}
-                alt={item.token_id}
+                alt={item.tokenId}
               />
             </div>
           ))}
