@@ -285,7 +285,7 @@ export const SendAmount = ({
   return (
     <React.Fragment>
       <SubviewHeader
-        title={<span>Send</span>}
+        title={<span>{t("Send")}</span>}
         hasBackButton
         customBackAction={goBackAction}
       />
@@ -596,7 +596,7 @@ export const SendAmount = ({
           <div className="EditMemoWrapper">
             <EditSettings
               fee={fee}
-              title="Send Settings"
+              title={t("Send Settings")}
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
               onClose={() => setIsEditingSettings(false)}
@@ -634,7 +634,7 @@ export const SendAmount = ({
             sendPriceUsd={priceValueUsd}
             simulationState={simulationState}
             srcAsset={asset}
-            title="You are sending"
+            title={t("You are sending")}
           />
         ) : (
           <></>

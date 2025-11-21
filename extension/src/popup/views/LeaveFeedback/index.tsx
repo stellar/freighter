@@ -13,7 +13,7 @@ export const LeaveFeedback = () => {
 
   return (
     <React.Fragment>
-      <SubviewHeader title="Leave Feedback" />
+      <SubviewHeader title={t("Leave Feedback")} />
       <View.Content hasNoTopPadding>
         <ListNavLinkWrapper>
           <ListNavLink

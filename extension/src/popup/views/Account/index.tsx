@@ -223,7 +223,7 @@ export const Account = () => {
                 title={t("Soroban RPC is temporarily experiencing issues")}
                 variant="primary"
               >
-                {t("Some features may be disabled at this time.")}
+                {t("Some features may be disabled at this time")}
               </Notification>
             </div>
           )}

@@ -303,7 +303,7 @@ export const TransactionDetail = ({
                     size="lg"
                     variant="single"
                     sourceOne={{
-                      altText: "Stellar token logo",
+                      altText: t("Stellar token logo"),
                       image: StellarLogo,
                     }}
                   />

@@ -203,7 +203,7 @@ export const SubmitFail = () => {
         <div className="SubmitResult__content">
           <div className="SubmitResult__amount">{errDetails.title}</div>
           <div className="SubmitResult__icon SubmitResult__fail">
-            <img src={IconFail} alt="Icon Fail" />
+            <img src={IconFail} alt={t("Icon Fail")} />
           </div>
           <div className="SubmitResult__error-code">
             {errDetails.status ? `Status ${errDetails.status}:` : ""}{" "}

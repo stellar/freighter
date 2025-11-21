@@ -247,7 +247,7 @@ export const AssetDetail = ({
                 className="AssetDetail__options"
                 onClick={() => setOptionsOpen(true)}
               >
-                <img src={IconEllipsis} alt="asset options" />
+                <img src={IconEllipsis} alt={t("asset options")} />
               </div>
               {optionsOpen ? (
                 <div
@@ -302,7 +302,7 @@ export const AssetDetail = ({
             {assetIconUrl ? (
               <img
                 src={assetIconUrl}
-                alt="Network icon"
+                alt={t("Network icon")}
                 data-testid="AssetDetail__icon"
               />
             ) : null}
@@ -432,7 +432,7 @@ export const AssetDetail = ({
           <div className="AssetDetail__info-modal">
             <div className="AssetDetail__info-modal__total-box">
               <div className="AssetDetail__info-modal__asset-code">
-                <img src={StellarLogo} alt="Network icon" />{" "}
+                <img src={StellarLogo} alt={t("Network icon")} />{" "}
                 <div>{canonical.code}</div>
               </div>
               <div>{displayTotal}</div>

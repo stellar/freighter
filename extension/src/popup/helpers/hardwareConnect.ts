@@ -10,6 +10,7 @@ import {
   ConfigurableWalletType,
   WalletType,
 } from "@shared/constants/hardwareWallet";
+import i18n from "popup/helpers/localizationConfig";
 
 /* Ledger Imports */
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
@@ -180,11 +181,12 @@ type PluginWalletInfo = {
 */
 export const pluginWalletInfo: PluginWalletInfo = {
   [WalletType.LEDGER]: {
-    instruction:
+    instruction: i18n.t(
       "Make sure your Ledger wallet is connected to your computer and the Stellar app is open on the Ledger wallet.",
+    ),
     link: {
       href: "https://www.ledger.com/stellar-wallet",
-      text: "Learn more about using Ledger",
+      text: i18n.t("Learn more about using Ledger"),
     },
   },
 };

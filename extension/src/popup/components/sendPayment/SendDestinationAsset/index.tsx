@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import { Icon, Loader, Notification } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -34,6 +35,7 @@ export const SendDestinationAsset = ({
   goToNext,
   goToDestination,
 }: SendDestinationAssetProps) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const { destination, federationAddress } = useSelector(
     transactionDataSelector,
@@ -69,8 +71,8 @@ export const SendDestinationAsset = ({
   if (destAssetDataState.state === RequestState.ERROR) {
     return (
       <div className="ChooseAsset___fail">
-        <Notification variant="error" title={"Failed to fetch assets."}>
-          An unknown error has occurred.
+        <Notification variant="error" title={t("Failed to fetch assets.")}>
+          {t("An error occurred")}
         </Notification>
       </div>
     );
@@ -105,7 +107,7 @@ export const SendDestinationAsset = ({
   return (
     <>
       <SubviewHeader
-        title={<span>Send</span>}
+        title={<span>{t("Send")}</span>}
         hasBackButton
         customBackAction={() => {
           dispatch(saveAsset("native"));

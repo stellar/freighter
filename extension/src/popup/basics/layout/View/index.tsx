@@ -1,5 +1,6 @@
 import React, { createContext, useContext } from "react";
 import { Text } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import FreighterLogo from "popup/assets/logo-freighter-welcome-2.svg";
 import { BackButton } from "popup/basics/buttons/BackButton";
@@ -14,19 +15,22 @@ interface ViewContextProps {
 const ViewContext = createContext<ViewContextProps>({ isAppLayout: undefined });
 
 // Header
-const ViewHeader: React.FC = ({ ...props }) => (
-  <header className="View__header" {...props}>
-    <ViewInset isInline hasVerticalBorder>
-      <div className="View__header__box View__header__box--center full">
-        <img
-          className="View__header__logo"
-          alt="Freighter logo"
-          src={FreighterLogo}
-        />
-      </div>
-    </ViewInset>
-  </header>
-);
+const ViewHeader: React.FC = ({ ...props }) => {
+  const { t } = useTranslation();
+  return (
+    <header className="View__header" {...props}>
+      <ViewInset isInline hasVerticalBorder>
+        <div className="View__header__box View__header__box--center full">
+          <img
+            className="View__header__logo"
+            alt={t("Freighter logo")}
+            src={FreighterLogo}
+          />
+        </div>
+      </ViewInset>
+    </header>
+  );
+};
 
 // App header
 interface ViewAppHeaderProps {
