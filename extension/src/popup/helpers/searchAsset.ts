@@ -62,7 +62,7 @@ export const getAssetLists = async ({
   cachedAssetLists?: AssetListResponse[];
 }) => {
   // If cached asset lists are provided and not empty, use them instead of fetching
-  if (!!cachedAssetLists?.length) {
+  if (cachedAssetLists?.length) {
     // Convert cached data to the expected Promise.allSettled format
     return cachedAssetLists.map((assetList) => ({
       status: "fulfilled" as const,

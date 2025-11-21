@@ -336,7 +336,7 @@ const useAssetLookup = () => {
     let assetsListsData: AssetListResponse[] = [];
 
     // Check cache first - use it if available
-    if (!!currentCache?.length) {
+    if (currentCache?.length) {
       // Use cached data - no network calls
       assetsListsData = currentCache;
     } else {
