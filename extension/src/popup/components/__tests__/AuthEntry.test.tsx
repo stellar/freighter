@@ -81,7 +81,7 @@ describe("AuthEntry", () => {
     await waitFor(() => screen.getAllByTestId("AuthEntryContent"));
 
     expect(screen.getByTestId("AuthEntryBtn__Title")).toHaveTextContent(
-      "Contract creation",
+      "Contract Creation",
     );
 
     expect(getContractSpecSpy).not.toHaveBeenCalled();
@@ -138,7 +138,7 @@ describe("AuthEntry", () => {
     await waitFor(() => screen.getAllByTestId("AuthEntryContent"));
 
     expect(screen.getByTestId("AuthEntryBtn__Title")).toHaveTextContent(
-      "Contract creation",
+      "Contract Creation",
     );
 
     expect(getContractSpecSpy).not.toHaveBeenCalled();
