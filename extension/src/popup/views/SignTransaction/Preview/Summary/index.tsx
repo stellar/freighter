@@ -7,12 +7,15 @@ import { CopyValue } from "popup/components/CopyValue";
 
 import "./styles.scss";
 
-const mapMemoLabel: any = {
-  id: "MEMO_ID",
-  hash: "MEMO_HASH",
-  text: "MEMO_TEXT",
-  return: "MEMO_RETURN",
-  none: "MEMO_NONE",
+const getMemoLabel = (type: MemoType): string => {
+  const map: Record<string, string> = {
+    id: "MEMO_ID",
+    hash: "MEMO_HASH",
+    text: "MEMO_TEXT",
+    return: "MEMO_RETURN",
+    none: "MEMO_NONE",
+  };
+  return map[type] || "MEMO_NONE";
 };
 
 interface SummaryProps {
@@ -29,13 +32,13 @@ export const Summary = (props: SummaryProps) => {
     <div className="TxInfo">
       <div className="TxInfoBlock">
         <div className="TxInfoBlock__title">
-          <p>Operations</p>
+          <p>{t("Operations")}</p>
         </div>
         <p className="TxInfoBlock__value">{props.operationNames.length}</p>
       </div>
       <div className="TxInfoBlock">
         <div className="TxInfoBlock__title">
-          <p>Fees</p>
+          <p>{t("Fees")}</p>
         </div>
         <p className="TxInfoBlock__value">
           {stroopToXlm(props.fee).toString()} XLM
@@ -43,23 +46,23 @@ export const Summary = (props: SummaryProps) => {
       </div>
       <div className="TxInfoBlock">
         <div className="TxInfoBlock__title">
-          <p>Sequence #</p>
+          <p>{t("Sequence #")}</p>
         </div>
         <p className="TxInfoBlock__value">{props.sequenceNumber}</p>
       </div>
       <div className="TxInfoBlock" data-testid="MemoBlock">
         <div className="TxInfoBlock__title">
-          <p>Memo</p>
+          <p>{t("Memo")}</p>
         </div>
         <p className="TxInfoBlock__value">
           {props.memo && props.memo.value
-            ? `${props.memo.value} (${mapMemoLabel[props.memo.type]})`
-            : `${t("None")} (${mapMemoLabel.none})`}
+            ? `${props.memo.value} (${getMemoLabel(props.memo.type)})`
+            : `${t("None")} (${getMemoLabel("none")})`}
         </p>
       </div>
       <div className="TxInfoBlock">
         <div className="TxInfoBlock__title">
-          <p>XDR</p>
+          <p>{t("XDR")}</p>
         </div>
         <span className="TxInfoBlock__value">
           <CopyValue value={props.xdr} displayValue={props.xdr} />

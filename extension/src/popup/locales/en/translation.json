@@ -150,6 +150,7 @@
   "Failed to fetch your wallets": "Failed to fetch your wallets.",
   "Fee": "Fee",
   "Feedback?": "Feedback?",
+  "Fees": "Fees",
   "Fees can vary depending on the network congestion": {
     " Please try using the suggested fee and try again": "Fees can vary depending on the network congestion. Please try using the suggested fee and try again."
   },
@@ -347,6 +348,7 @@
   "Send funds to this account address": "Send funds to this account address",
   "Send Max": "Send Max",
   "Send XLM to this account address": "Send XLM to this account address",
+  "Sequence #": "Sequence #",
   "Set default": "Set default",
   "Set Flags": "Set Flags",
   "Set Max": "Set Max",
@@ -458,6 +460,7 @@
   "What is this transaction for? (optional)": "What is this transaction for? (optional)",
   "What’s new": "What’s new",
   "Wrong simulation result": "Wrong simulation result",
+  "XDR": "XDR",
   "XLM": "XLM",
   "You are in fullscreen mode": "You are in fullscreen mode",
   "You are overwriting an existing account": {
