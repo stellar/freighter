@@ -15,32 +15,38 @@ const fetchCollectibleMetadata = async (tokenUri: string) => {
     externalUrl: "",
     attributes: [],
   };
-  const response = await fetch(tokenUri);
-  if (!response.ok) {
+
+  try {
+    const response = await fetch(tokenUri);
+    if (!response.ok) {
+      return null;
+    }
+    const data = (await response.json()) as {
+      name?: string;
+      description?: string;
+      external_url?: string;
+      image?: string;
+      attributes?: {
+        traitType?: string;
+        value?: string | number;
+      }[];
+    };
+
+    if (!data) {
+      return null;
+    }
+
+    metadata.name = data.name;
+    metadata.description = data.description;
+    metadata.externalUrl = data.external_url;
+    metadata.attributes = data.attributes;
+    metadata.image = data.image;
+
+    return metadata;
+  } catch (e) {
+    captureException(`Error fetching collectible metadata: ${e}`);
     return null;
   }
-  const data = (await response.json()) as {
-    name?: string;
-    description?: string;
-    external_url?: string;
-    image?: string;
-    attributes?: {
-      traitType?: string;
-      value?: string | number;
-    }[];
-  };
-
-  if (!data) {
-    return null;
-  }
-
-  metadata.name = data.name;
-  metadata.description = data.description;
-  metadata.externalUrl = data.external_url;
-  metadata.attributes = data.attributes;
-  metadata.image = data.image;
-
-  return metadata;
 };
 
 export const getCollectibles = async ({
@@ -81,31 +87,34 @@ export const getCollectibles = async ({
     for (let i = 0; i < data.collections.length; i++) {
       const { collection } = data.collections[i];
       if (collection) {
-        fetchedCollections.push({
-          collection: {
-            address: collection.address,
-            name: collection.name,
-            symbol: collection.symbol,
-            collectibles: await Promise.all(
-              collection.collectibles.map(async (collectible) => {
-                const metadata = await fetchCollectibleMetadata(
-                  collectible.token_uri,
-                );
-                return {
-                  ...collectible,
-                  metadata,
-                  owner: collectible.owner,
-                  tokenUri: collectible.token_uri,
-                  tokenId: collectible.token_id,
-                };
-              }),
-            ),
-          },
-        });
+        const filteredCollectibles = collection.collectibles.filter(
+          (collectible) => collectible.owner === publicKey,
+        );
+
+        if (filteredCollectibles.length > 0) {
+          fetchedCollections.push({
+            collection: {
+              address: collection.address,
+              name: collection.name,
+              symbol: collection.symbol,
+              collectibles: await Promise.all(
+                filteredCollectibles.map(async (collectible) => {
+                  const metadata = await fetchCollectibleMetadata(
+                    collectible.token_uri,
+                  );
+                  return {
+                    metadata,
+                    owner: collectible.owner,
+                    tokenUri: collectible.token_uri,
+                    tokenId: collectible.token_id,
+                  };
+                }),
+              ),
+            },
+          });
+        }
       }
     }
-
-    console.log("fetchedCollections", fetchedCollections);
   } catch (e) {
     captureException(`Error fetching collectibles: ${e}`);
   }
