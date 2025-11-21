@@ -55,10 +55,21 @@ export type VerifiedTokenRecord = AssetListReponseItem & {
 export const getAssetLists = async ({
   assetsListsDetails,
   networkDetails,
+  cachedAssetLists,
 }: {
   assetsListsDetails: AssetsLists;
   networkDetails: NetworkDetails;
+  cachedAssetLists?: AssetListResponse[];
 }) => {
+  // If cached asset lists are provided and not empty, use them instead of fetching
+  if (cachedAssetLists && cachedAssetLists.length > 0) {
+    // Convert cached data to the expected Promise.allSettled format
+    return cachedAssetLists.map((assetList) => ({
+      status: "fulfilled" as const,
+      value: assetList,
+    }));
+  }
+
   const network = networkDetails.network;
   const assetsListsDetailsByNetwork =
     assetsListsDetails[network as AssetsListKey];
@@ -89,15 +100,18 @@ export const getVerifiedTokens = async ({
   contractId,
   setIsSearching,
   assetsLists,
+  cachedAssetLists,
 }: {
   networkDetails: NetworkDetails;
   contractId: string;
   setIsSearching?: (isSearching: boolean) => void;
   assetsLists: AssetsLists;
+  cachedAssetLists?: AssetListResponse[];
 }) => {
   const assetListsData = await getCombinedAssetListData({
     networkDetails,
     assetsLists,
+    cachedAssetLists,
   });
   const nativeContract = getNativeContractDetails(networkDetails);
 

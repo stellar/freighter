@@ -22,6 +22,7 @@ import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRo
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
+import { tokensListsSelector } from "popup/ducks/cache";
 
 interface AssetRecord {
   asset: string;
@@ -55,6 +56,7 @@ const useAssetLookup = () => {
   let verifiedLists = [] as string[];
 
   const { assetsLists } = useSelector(settingsSelector);
+  const cachedTokenLists = useSelector(tokensListsSelector);
   const MAX_ASSETS_TO_SCAN = 10;
 
   const [state, dispatch] = useReducer(
@@ -203,6 +205,7 @@ const useAssetLookup = () => {
         networkDetails,
         contractId,
         assetsLists,
+        cachedAssetLists: cachedTokenLists,
       });
 
       try {
@@ -332,6 +335,7 @@ const useAssetLookup = () => {
     const assetsListsData = await getCombinedAssetListData({
       networkDetails,
       assetsLists,
+      cachedAssetLists: cachedTokenLists,
     });
 
     for (const assetRow of assetRows) {

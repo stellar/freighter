@@ -53,10 +53,17 @@ export const schemaValidatedAssetList = async (
 export const getCombinedAssetListData = async ({
   networkDetails,
   assetsLists,
+  cachedAssetLists,
 }: {
   networkDetails: NetworkDetails;
   assetsLists: AssetsLists;
+  cachedAssetLists?: AssetListResponse[];
 }) => {
+  // If cached asset lists are provided and not empty, use them instead of fetching
+  if (cachedAssetLists && cachedAssetLists.length > 0) {
+    return cachedAssetLists;
+  }
+
   let network = networkDetails.network;
 
   if (network === CUSTOM_NETWORK) {
