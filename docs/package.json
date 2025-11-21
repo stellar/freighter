@@ -28,7 +28,7 @@
   "dependencies": {
     "@docusaurus/core": "3.6.3",
     "@docusaurus/preset-classic": "3.6.3",
-    "@stellar/freighter-api": "3.0.0",
+    "@stellar/freighter-api": "latest",
     "clsx": "2.1.1",
     "react": "19.0.0",
     "react-dom": "19.0.0",

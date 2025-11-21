@@ -14,7 +14,7 @@ export const signAuthEntry = async (
     address?: string;
   },
 ): Promise<
-  { signedAuthEntry: Buffer | null; signerAddress: string } & {
+  { signedAuthEntry: string | null; signerAddress: string } & {
     error?: FreighterApiError;
   }
 > => {
