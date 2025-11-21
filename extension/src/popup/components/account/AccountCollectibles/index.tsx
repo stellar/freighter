@@ -51,18 +51,28 @@ const CollectionsList = ({ collections }: { collections: Collection[] }) => {
           className="AccountCollectibles__collection__grid"
           data-testid="account-collection-grid"
         >
-          {collection.collectibles.map((item) => (
-            <div
-              className="AccountCollectibles__collection__grid__item"
-              key={item.tokenId}
-            >
-              <img
-                data-testid="account-collectible-image"
-                src={item.metadata?.image}
-                alt={item.tokenId}
-              />
-            </div>
-          ))}
+          {collection.collectibles.map((item) => {
+            if (!item.metadata) {
+              return (
+                <div
+                  className="AccountCollectibles__collection__grid__item"
+                  key={item.tokenId}
+                ></div>
+              );
+            }
+            return (
+              <div
+                className="AccountCollectibles__collection__grid__item"
+                key={item.tokenId}
+              >
+                <img
+                  data-testid="account-collectible-image"
+                  src={item.metadata?.image}
+                  alt={item.tokenId}
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
     );
