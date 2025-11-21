@@ -182,7 +182,7 @@ export const ChangeTrustInternal = ({
                   <img src={StellarLogo} alt="Stellar Logo" />
                   <div className="ChangeTrustInternal__TitleRow__Detail">
                     <span className="ChangeTrustInternal__TitleRow__Title">
-                      {t("Confirm transaction")}
+                      {t("Confirm Transaction")}
                     </span>
                     <span
                       className="SignTransaction__TitleRow__Domain"
