@@ -604,7 +604,7 @@ export const SendAmount = ({
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
               onClose={() => setIsEditingSettings(false)}
-              onSubmit={({
+              onSubmit={async ({
                 fee,
                 timeout,
               }: {
@@ -614,6 +614,8 @@ export const SendAmount = ({
                 dispatch(saveTransactionFee(fee));
                 dispatch(saveTransactionTimeout(timeout));
                 setIsEditingSettings(false);
+                // Regenerate transaction XDR with new fee (now reads fee from Redux state inside fetchData)
+                await fetchSimulationData();
               }}
             />
           </div>
