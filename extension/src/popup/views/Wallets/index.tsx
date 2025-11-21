@@ -403,6 +403,7 @@ export const Wallets = () => {
               return (
                 <>
                   <WalletRow
+                    key={publicKey}
                     isFetchingTokenPrices={isFetchingTokenPrices}
                     accountName={name}
                     accountValue={totalValueUsd}
