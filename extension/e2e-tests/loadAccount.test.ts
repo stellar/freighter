@@ -688,8 +688,51 @@ test("Loads collectibles data", async ({ page, extensionId, context }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("account-tab-collectibles").click();
-  await expect(page.getByText("Collectibles")).toBeVisible();
   await expect(page.getByText("Stellar Frogs")).toBeVisible();
   await expect(page.getByText("Soroban Domains")).toBeVisible();
   await expect(page.getByText("Future Monkeys")).toBeVisible();
+  const counts = await page
+    .getByTestId("account-collection-count")
+    .allTextContents();
+  await page.waitForLoadState("load");
+
+  expect(counts).toEqual(["3", "2", "1"]);
+  const imgs = await page.getByTestId("account-collectible-image").all();
+
+  expect(imgs).toHaveLength(6);
+
+  await page.getByTestId("account-collectible-image").first().waitFor({
+    state: "visible",
+  });
+
+  imgs.forEach(async (img) => {
+    await img.waitFor({
+      state: "visible",
+    });
+  });
+
+  expect(imgs[0]).toHaveAttribute(
+    "src",
+    "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
+  );
+  expect(imgs[1]).toHaveAttribute(
+    "src",
+    "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg",
+  );
+  expect(imgs[2]).toHaveAttribute(
+    "src",
+    "https://nftcalendar.io/storage/uploads/events/2023/8/5kFeYwNfhpUST3TsSoLxm7FaGY1ljwLRgfZ5gQnV.jpg",
+  );
+  expect(imgs[3]).toHaveAttribute(
+    "src",
+    "https://nftcalendar.io/storage/uploads/events/2025/7/Hdqv6YNVErVCmYlwobFVYfS5BiH19ferUgQova7Z.webp",
+  );
+  expect(imgs[4]).toHaveAttribute(
+    "src",
+    "https://nftcalendar.io/storage/uploads/events/2025/7/MkaASwOL8VA3I5B2iIfCcNGT29vGBp4YZIJgmjzq.jpg",
+  );
+  expect(imgs[5]).toHaveAttribute(
+    "src",
+    "https://nftcalendar.io/storage/uploads/events/2025/3/oUfeUrSj3KcVnjColyfnS5ICYuqzDbiuqQP4qLIz.png",
+  );
 });

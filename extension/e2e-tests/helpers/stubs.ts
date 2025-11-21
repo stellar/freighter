@@ -363,10 +363,103 @@ export const stubAccountHistory = async (page: Page) => {
 
 export const stubCollectibles = async (page: Page) => {
   console.log("stubCollectibles");
+  await page.route("**/tokenMetadata/1", async (route) => {
+    const json = {
+      name: "Stellar Frog 1",
+      description: "This is a test frog",
+      image:
+        "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
+      attributes: [
+        {
+          traitType: "Background",
+          value: "Green",
+        },
+      ],
+      external_url: "https://nftcalendar.io/token/1",
+    };
+    await route.fulfill({ json });
+  });
+  await page.route("**/tokenMetadata/2", async (route) => {
+    const json = {
+      name: "Stellar Frog 2",
+      description: "This is a test frog 2",
+      image:
+        "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg",
+      attributes: [
+        {
+          traitType: "Background",
+          value: "Green",
+        },
+      ],
+      external_url: "https://nftcalendar.io/token/1",
+    };
+    await route.fulfill({ json });
+  });
+  await page.route("**/tokenMetadata/3", async (route) => {
+    const json = {
+      name: "Stellar Frog 3",
+      description: "This is a test frog 3",
+      image:
+        "https://nftcalendar.io/storage/uploads/events/2023/8/5kFeYwNfhpUST3TsSoLxm7FaGY1ljwLRgfZ5gQnV.jpg",
+      attributes: [
+        {
+          traitType: "Background",
+          value: "Blue",
+        },
+      ],
+      external_url: "https://nftcalendar.io/token/3",
+    };
+    await route.fulfill({ json });
+  });
+  await page.route("**/tokenMetadata/102510", async (route) => {
+    const json = {
+      name: "Soroban Domain 1",
+      description: "This is a test domain 1",
+      image:
+        "https://nftcalendar.io/storage/uploads/events/2025/7/Hdqv6YNVErVCmYlwobFVYfS5BiH19ferUgQova7Z.webp",
+      attributes: [
+        {
+          traitType: "Background",
+          value: "Green",
+        },
+      ],
+      external_url: "https://nftcalendar.io/token/102510",
+    };
+    await route.fulfill({ json });
+  });
+  await page.route("**/tokenMetadata/102589", async (route) => {
+    const json = {
+      name: "Soroban Domain 2",
+      description: "This is a test domain 2",
+      image:
+        "https://nftcalendar.io/storage/uploads/events/2025/7/MkaASwOL8VA3I5B2iIfCcNGT29vGBp4YZIJgmjzq.jpg",
+      attributes: [
+        {
+          traitType: "Background",
+          value: "Red",
+        },
+      ],
+      external_url: "https://nftcalendar.io/token/102589",
+    };
+    await route.fulfill({ json });
+  });
+  await page.route("**/tokenMetadata/111", async (route) => {
+    const json = {
+      name: "Future Monkey 1",
+      description: "This is a test monkey 1",
+      image:
+        "https://nftcalendar.io/storage/uploads/events/2025/3/oUfeUrSj3KcVnjColyfnS5ICYuqzDbiuqQP4qLIz.png",
+      attributes: [
+        {
+          traitType: "Background",
+          value: "Blue",
+        },
+      ],
+      external_url: "https://nftcalendar.io/token/111",
+    };
+    await route.fulfill({ json });
+  });
   await page.route("**/collectibles**", async (route) => {
-    console.log("route");
-    console.log(route.request().url());
-
     const json = {
       data: {
         collections: [
@@ -382,22 +475,19 @@ export const stubCollectibles = async (page: Page) => {
                   owner:
                     "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
                   token_id: "1",
-                  token_uri:
-                    "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/1",
                 },
                 {
                   owner:
                     "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
                   token_id: "2",
-                  token_uri:
-                    "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/2",
                 },
                 {
                   owner:
                     "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
                   token_id: "3",
-                  token_uri:
-                    "https://nftcalendar.io/storage/uploads/events/2023/8/5kFeYwNfhpUST3TsSoLxm7FaGY1ljwLRgfZ5gQnV.jpg",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/3",
                 },
               ],
             },
@@ -412,14 +502,12 @@ export const stubCollectibles = async (page: Page) => {
                 {
                   owner: "CCCSorobanDomainsCollection",
                   token_id: "102510",
-                  token_uri:
-                    "https://nftcalendar.io/storage/uploads/events/2025/7/Hdqv6YNVErVCmYlwobFVYfS5BiH19ferUgQova7Z.webp",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/102510",
                 },
                 {
                   owner: "CCCSorobanDomainsCollection",
                   token_id: "102589",
-                  token_uri:
-                    "https://nftcalendar.io/storage/uploads/events/2025/7/MkaASwOL8VA3I5B2iIfCcNGT29vGBp4YZIJgmjzq.jpg",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/102589",
                 },
               ],
             },
@@ -434,8 +522,7 @@ export const stubCollectibles = async (page: Page) => {
                 {
                   owner: "CCCFutureMonkeysCollection",
                   token_id: "111",
-                  token_uri:
-                    "https://nftcalendar.io/storage/uploads/events/2025/3/oUfeUrSj3KcVnjColyfnS5ICYuqzDbiuqQP4qLIz.png",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/111",
                 },
               ],
             },
