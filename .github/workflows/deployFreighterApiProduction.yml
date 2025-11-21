@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Enable Corepack
         run: corepack enable
       - name: Build package
@@ -26,15 +28,13 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           cd @stellar/freighter-api
-          yarn config set version-tag-prefix "@stellar/freighter-api@"
-          yarn config set version-git-message "@stellar/freighter-api: bumping version to %s"
-          yarn version --new-version ${{ github.event.inputs.release }}
+          yarn version ${{ github.event.inputs.release }}
           cd ../../
       - run: yarn && yarn build:freighter-api
       - name: Publish npm package
         run: |
           cd @stellar/freighter-api
-          yarn publish --access public
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Create Pull Request

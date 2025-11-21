@@ -17,7 +17,7 @@ type SignMessageV3Response = {
 };
 
 type SignMessageV4Response = {
-  signedMessage: string;
+  signedMessage: string | null;
   signerAddress: string;
 } & {
   error?: FreighterApiError;
