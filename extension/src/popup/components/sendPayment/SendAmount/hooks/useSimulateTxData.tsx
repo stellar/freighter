@@ -335,11 +335,13 @@ function useSimulateTxData({
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      // Read memo from Redux state inside fetchData to get the latest value
+      // Read memo and transactionFee from Redux state inside fetchData to get the latest values
       const currentTransactionData = transactionDataSelector(
         store.getState() as AppState,
       );
       const currentMemo = currentTransactionData.memo || memo;
+      const currentTransactionFee =
+        currentTransactionData.transactionFee || transactionFee;
 
       const payload = { transactionXdr: "" } as SimulateTxData;
       let destinationAccount = await getBaseAccount(destination);
@@ -389,7 +391,7 @@ function useSimulateTxData({
 
       const simResponse = await simulateTx({
         type: simParams.type,
-        recommendedFee: transactionFee,
+        recommendedFee: currentTransactionFee,
         options: {
           tokenPayment: {
             address: tokenAddress,
@@ -401,7 +403,7 @@ function useSimulateTxData({
               destination,
             },
             networkDetails,
-            transactionFee,
+            transactionFee: currentTransactionFee,
           },
         },
       });
@@ -431,6 +433,9 @@ function useSimulateTxData({
         } = simParams;
         // Use memo from Redux state if simParams doesn't have one, otherwise use simParams memo
         const memoToUse = simParamsMemo || currentMemo;
+        // Use currentTransactionFee (fresh from Redux) instead of simResponse.recommendedFee
+        // For classic transactions, simResponse.recommendedFee is just the recommendedFee we passed in
+        const feeToUse = currentTransactionFee || simResponse.recommendedFee;
         const transaction = await getBuiltTx(
           publicKey,
           {
@@ -445,7 +450,7 @@ function useSimulateTxData({
             isSwap,
             isFunded: destBalancesResult.isFunded!,
           },
-          simResponse.recommendedFee,
+          feeToUse,
           transactionTimeout,
           networkDetails,
           memoToUse,
