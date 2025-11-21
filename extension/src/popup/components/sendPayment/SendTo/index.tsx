@@ -91,7 +91,7 @@ const InvalidAddressWarning = () => {
         icon={<Icon.InfoOctagon />}
         title={t("INVALID STELLAR ADDRESS")}
       >
-        {t("Addresses are uppercase and begin with letters “G“, “M“, or “C“.")}
+        {t(`Addresses are uppercase and begin with letters "G", "M", or "C"`)}
       </Notification>
     </div>
   );
