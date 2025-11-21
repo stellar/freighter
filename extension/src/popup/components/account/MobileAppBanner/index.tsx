@@ -2,22 +2,21 @@ import React, { useState, useEffect } from "react";
 import { Icon } from "@stellar/design-system";
 import { Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import browser from "webextension-polyfill";
 
 import {
-  dataStorageAccess,
-  browserLocalStorage,
-} from "background/helpers/dataStorageAccess";
+  getMobileAppBannerDismissed,
+  dismissMobileAppBanner,
+} from "@shared/api/internal";
 import { openTab } from "popup/helpers/navigate";
 import FreighterLogo from "popup/assets/logo-freighter-shadow.png";
 
 import "./styles.scss";
 
-const STORAGE_KEY = "mobileAppBannerDismissed";
-
-// Only create store if browserLocalStorage is available
-const localStore = browserLocalStorage
-  ? dataStorageAccess(browserLocalStorage)
-  : null;
+// Check if browser storage is available (extension context, not fullscreen)
+const isStorageAvailable = (): boolean => {
+  return !!browser?.storage?.local;
+};
 
 export const MobileAppBanner = () => {
   const { t } = useTranslation();
@@ -27,8 +26,8 @@ export const MobileAppBanner = () => {
   useEffect(() => {
     const checkDismissedStatus = async () => {
       try {
-        const dismissed = await localStore!.getItem(STORAGE_KEY);
-        setIsDismissed(!!dismissed);
+        const dismissed = await getMobileAppBannerDismissed();
+        setIsDismissed(dismissed);
       } catch (error) {
         console.error("Error checking banner dismissal status:", error);
         setIsDismissed(false);
@@ -37,13 +36,17 @@ export const MobileAppBanner = () => {
       }
     };
 
-    checkDismissedStatus();
+    if (isStorageAvailable()) {
+      checkDismissedStatus();
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
   const handleDismiss = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await localStore!.setItem(STORAGE_KEY, true);
+      await dismissMobileAppBanner();
       setIsDismissed(true);
     } catch (error) {
       console.error("Error dismissing banner:", error);
@@ -55,7 +58,7 @@ export const MobileAppBanner = () => {
   };
 
   // Don't show banner if storage is not available (e.g., fullscreen mode) or if dismissed
-  if (!localStore || isLoading || isDismissed) {
+  if (!isStorageAvailable() || isLoading || isDismissed) {
     return null;
   }
 

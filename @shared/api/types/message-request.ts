@@ -344,6 +344,14 @@ export interface GetHiddenAssetsMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_HIDDEN_ASSETS;
 }
 
+export interface GetMobileAppBannerDismissedMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_MOBILE_APP_BANNER_DISMISSED;
+}
+
+export interface DismissMobileAppBannerMessage extends BaseMessage {
+  type: SERVICE_TYPES.DISMISS_MOBILE_APP_BANNER;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -397,4 +405,6 @@ export type ServiceMessageRequest =
   | ModifyAssetsListMessage
   | GetIsAccountMismatchMessage
   | ChangeAssetVisibilityMessage
-  | GetHiddenAssetsMessage;
+  | GetHiddenAssetsMessage
+  | GetMobileAppBannerDismissedMessage
+  | DismissMobileAppBannerMessage;

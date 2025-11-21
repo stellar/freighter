@@ -1756,6 +1756,30 @@ export const getTokenIds = async ({
   return tokenIdList;
 };
 
+export const getMobileAppBannerDismissed = async (): Promise<boolean> => {
+  const { isDismissed, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_MOBILE_APP_BANNER_DISMISSED,
+  });
+
+  if (error) {
+    return false;
+  }
+
+  return isDismissed || false;
+};
+
+export const dismissMobileAppBanner = async (): Promise<void> => {
+  const { error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.DISMISS_MOBILE_APP_BANNER,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+};
+
 export const removeTokenId = async ({
   activePublicKey,
   contractId,
