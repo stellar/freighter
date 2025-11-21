@@ -37,6 +37,7 @@ import { WalletType } from "@shared/constants/hardwareWallet";
 import { AppState } from "popup/App";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { MetricsData } from "helpers/metrics";
+import i18n from "popup/helpers/localizationConfig";
 
 export const createAccount = createAsyncThunk<
   { allAccounts: Account[]; publicKey: string; hasPrivateKey: boolean },
@@ -301,7 +302,7 @@ export const confirmMnemonicPhrase = createAsyncThunk<
     } else {
       return thunkApi.rejectWithValue({
         applicationState: res.applicationState,
-        errorMessage: "The secret phrase you entered is incorrect.",
+        errorMessage: i18n.t("The secret phrase you entered is incorrect."),
       });
     }
 
@@ -336,7 +337,7 @@ export const confirmMigratedMnemonicPhrase = createAsyncThunk<
       };
     } else {
       return thunkApi.rejectWithValue({
-        errorMessage: "The secret phrase you entered is incorrect.",
+        errorMessage: i18n.t("The secret phrase you entered is incorrect."),
       });
     }
 
@@ -426,7 +427,7 @@ export const signOut = createAsyncThunk<
 
   if (res?.publicKey) {
     return rejectWithValue({
-      errorMessage: "Unable to sign out",
+      errorMessage: i18n.t("Unable to sign out"),
     });
   }
 
@@ -591,7 +592,7 @@ const authSlice = createSlice({
     },
     saveAccountError(state, action) {
       const {
-        message = "An unknown error occurred when loading your account",
+        message = i18n.t("An unknown error occurred when loading your account"),
       } = action.payload;
       return {
         ...state,
@@ -716,8 +717,9 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(makeAccountActive.rejected, (state, action) => {
-      const { message = "Freighter was unable to switch to this account" } =
-        action.error;
+      const {
+        message = i18n.t("Freighter was unable to switch to this account"),
+      } = action.error;
 
       return {
         ...state,
@@ -736,8 +738,9 @@ const authSlice = createSlice({
       };
     });
     builder.addCase(updateAccountName.rejected, (state, action) => {
-      const { message = "Freighter was unable update this account's name" } =
-        action.error;
+      const {
+        message = i18n.t("Freighter was unable update this account's name"),
+      } = action.error;
 
       return {
         ...state,

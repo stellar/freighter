@@ -338,7 +338,7 @@ export const AddToken = () => {
                         size="lg"
                         variant="single"
                         sourceOne={{
-                          altText: "Add token logo",
+                          altText: t("Add token logo"),
                           image: assetIcon,
                           backgroundColor: "transparent",
                         }}
