@@ -122,6 +122,7 @@ export const useValidateTransactionMemo = (incomingXdr?: string | null) => {
   );
 
   // Start with true to prevent button from being enabled before validation completes
+  // Reset to true whenever XDR changes to ensure we re-validate
   const [isMemoMissing, setIsMemoMissing] = useState(true);
 
   /**
@@ -156,6 +157,10 @@ export const useValidateTransactionMemo = (incomingXdr?: string | null) => {
    * Runs when XDR, network, or validation settings change
    */
   useEffect(() => {
+    // Reset validation state when XDR changes to ensure fresh validation
+    setIsMemoMissing(true);
+    setIsValidatingMemo(false);
+
     if (!shouldValidateMemo) {
       setIsMemoMissing(false);
       setLocalTransaction(null);
@@ -182,8 +187,11 @@ export const useValidateTransactionMemo = (incomingXdr?: string | null) => {
         transaction.memo.value &&
         String(transaction.memo.value).trim() !== "";
 
-      // If memo exists, it's not missing - otherwise reset to check state
-      setIsMemoMissing(!hasMemo);
+      // If memo exists, it's not missing - otherwise keep as true to trigger validation
+      if (hasMemo) {
+        setIsMemoMissing(false);
+      }
+      // If no memo, keep isMemoMissing as true so validation will run
     } catch (error) {
       console.error("Error parsing transaction XDR:", error);
       setLocalTransaction(null);

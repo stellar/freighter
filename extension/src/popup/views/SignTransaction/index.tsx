@@ -48,6 +48,7 @@ import {
   BlockaidTxScanLabel,
   BlockAidTxScanExpanded,
   DomainNotAllowedWarningMessage,
+  MemoRequiredLabel,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Loading } from "popup/components/Loading";
@@ -367,12 +368,7 @@ export const SignTransaction = () => {
                   <DomainNotAllowedWarningMessage domain={domain} />
                 )}
                 {isRequiredMemoMissing && !isValidatingMemo && (
-                  <WarningMessage
-                    variant={WarningMessageVariant.warning}
-                    header={t("Memo required")}
-                  >
-                    {t("This transaction requires a memo")}
-                  </WarningMessage>
+                  <MemoRequiredLabel onClick={() => setActivePaneIndex(3)} />
                 )}
                 {assetDiffs && (
                   <AssetDiffs
@@ -482,6 +478,42 @@ export const SignTransaction = () => {
                     flaggedKeys={flaggedKeys}
                     isMemoRequired={isMemoRequired}
                   />
+                </div>
+              </div>
+            </div>,
+            <div className="SignTransaction__Body">
+              <div className="SignTransaction__Body__Wrapper">
+                <div className="SignTransaction__TransactionDetails">
+                  <div className="SignTransaction__TransactionDetails__Header">
+                    <div className="DetailsMark">
+                      <Icon.File02 />
+                    </div>
+                    <div
+                      className="Close"
+                      onClick={() => setActivePaneIndex(0)}
+                    >
+                      <Icon.X />
+                    </div>
+                  </div>
+                  <div className="SignTransaction__TransactionDetails__Title">
+                    <span>{t("Memo required")}</span>
+                  </div>
+                  <div className="SignTransaction__TransactionDetails__Summary">
+                    <div className="WarningMessage__infoBlock WarningMessage__infoBlock--warning">
+                      <div className="WarningMessage__header">
+                        <Icon.InfoOctagon className="WarningMessage__icon" />
+                        <div>{t("Memo required")}</div>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        marginTop: "1rem",
+                        color: "var(--sds-clr-gray-11)",
+                      }}
+                    >
+                      {t("This transaction requires a memo")}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>,
