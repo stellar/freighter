@@ -7,6 +7,14 @@ import {
 import { NetworkDetails } from "@shared/constants/stellar";
 import { INDEXER_V2_URL } from "@shared/constants/mercury";
 
+/**
+ * Fetches metadata for a collectible from its token URI.
+ * The metadata follows the NFT metadata standard and includes name, description,
+ * image, external URL, and attributes.
+ *
+ * @param {string} tokenUri - The URI where the collectible metadata is hosted
+ * @returns {Promise<CollectibleMetadata | null>} The collectible metadata object, or null if the fetch fails or the response is invalid
+ */
 const fetchCollectibleMetadata = async (tokenUri: string) => {
   let metadata: CollectibleMetadata | null = {
     name: "",
@@ -49,6 +57,26 @@ const fetchCollectibleMetadata = async (tokenUri: string) => {
   }
 };
 
+/**
+ * Fetches collectibles (NFTs) for a given account from Freighter BE v2.
+ * This function queries the API, filters collectibles by owner,
+ * and enriches each collectible with metadata fetched from its token URI.
+ *
+ * @param {Object} params - The parameters object
+ * @param {string} params.publicKey - The public key of the account to fetch collectibles for
+ * @param {Array<{id: string, token_ids: string[]}>} params.contracts - Array of contract objects, each containing a contract ID and an array of token IDs to query
+ * @param {NetworkDetails} params.networkDetails - Network configuration details (e.g., testnet, mainnet)
+ * @returns {Promise<Collection[]>} Array of collection objects, each containing collectibles owned by the specified public key. Returns an empty array if the fetch fails or no collectibles are found.
+ *
+ * @example
+ * ```typescript
+ * const collectibles = await getCollectibles({
+ *   publicKey: "GABC...",
+ *   contracts: [{ id: "C123...", token_ids: ["1", "2"] }],
+ *   networkDetails: { network: "testnet", ... }
+ * });
+ * ```
+ */
 export const getCollectibles = async ({
   publicKey,
   contracts,
@@ -92,6 +120,7 @@ export const getCollectibles = async ({
         );
 
         if (filteredCollectibles.length > 0) {
+          // for each collectible, fetch the metadata from the token URI
           fetchedCollections.push({
             collection: {
               address: collection.address,

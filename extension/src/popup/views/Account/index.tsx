@@ -270,10 +270,10 @@ export const Account = () => {
             </div>
           )}
 
-          {resolvedData?.balances?.isFunded && !hasError && (
-            <MultiPaneSlider
-              activeIndex={activeTab}
-              panes={[
+          <MultiPaneSlider
+            activeIndex={activeTab}
+            panes={[
+              resolvedData?.balances?.isFunded && !hasError && (
                 <div
                   className="AccountView__assets-wrapper"
                   data-testid="account-assets"
@@ -284,15 +284,15 @@ export const Account = () => {
                     assetIcons={resolvedIcons}
                     setSelectedAsset={setSelectedAsset}
                   />
-                </div>,
-                <div data-testid="account-collectibles">
-                  <AccountCollectibles
-                    collections={resolvedData.collectibles.collections}
-                  />
-                </div>,
-              ]}
-            />
-          )}
+                </div>
+              ),
+              <div data-testid="account-collectibles">
+                <AccountCollectibles
+                  collections={resolvedData?.collectibles?.collections || []}
+                />
+              </div>,
+            ]}
+          />
         </div>
       </View.Content>
       {!resolvedData?.balances?.isFunded &&

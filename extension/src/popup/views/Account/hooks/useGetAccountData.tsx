@@ -134,6 +134,7 @@ function useGetAccountData(options: {
       const collectiblesResult = await fetchCollectibles({
         publicKey,
         networkDetails,
+        contracts: [],
       });
 
       payload.collectibles = collectiblesResult;

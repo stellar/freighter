@@ -7,6 +7,7 @@ import {
   stubTokenDetails,
   stubTokenPrices,
   stubCollectibles,
+  stubCollectiblesUnsuccessfulMetadata,
 } from "./helpers/stubs";
 
 test("Load accounts on standalone network", async ({
@@ -677,7 +678,11 @@ test("Renames wallets", async ({ page, extensionId, context }) => {
   await expect(page.getByText("New Wallet")).toBeVisible();
 });
 
-test("Loads collectibles data", async ({ page, extensionId, context }) => {
+test("Loads collectibles data with successful metadata", async ({
+  page,
+  extensionId,
+  context,
+}) => {
   await stubTokenDetails(page);
   await stubAccountBalances(page);
   await stubAccountHistory(page);
@@ -735,4 +740,54 @@ test("Loads collectibles data", async ({ page, extensionId, context }) => {
     "src",
     "https://nftcalendar.io/storage/uploads/events/2025/3/oUfeUrSj3KcVnjColyfnS5ICYuqzDbiuqQP4qLIz.png",
   );
+});
+
+test("Loads collectibles data with unsuccessful metadata", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+  await stubCollectiblesUnsuccessfulMetadata(page);
+
+  test.slow();
+  await loginToTestAccount({ page, extensionId });
+  await page.getByTestId("account-tab-collectibles").click();
+  await expect(page.getByText("Stellar Frogs")).toBeVisible();
+  const counts = await page
+    .getByTestId("account-collection-count")
+    .allTextContents();
+  await page.waitForLoadState("load");
+
+  expect(counts).toEqual(["3"]);
+  const imgs = await page.getByTestId("account-collectible-image").all();
+
+  expect(imgs).toHaveLength(2);
+
+  await page.getByTestId("account-collectible-image").first().waitFor({
+    state: "visible",
+  });
+
+  imgs.forEach(async (img) => {
+    await img.waitFor({
+      state: "visible",
+    });
+  });
+
+  expect(imgs[0]).toHaveAttribute(
+    "src",
+    "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
+  );
+  expect(imgs[1]).toHaveAttribute(
+    "src",
+    "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg",
+  );
+
+  await expect(
+    page.getByTestId("account-collectible-placeholder"),
+  ).toBeVisible();
 });
