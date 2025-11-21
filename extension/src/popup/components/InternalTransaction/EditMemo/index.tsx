@@ -46,7 +46,7 @@ export const EditMemo = ({ memo, onClose, onSubmit }: EditMemoProps) => {
       fieldSize="md"
       autoComplete="off"
       id="memo"
-      placeholder={"Memo"}
+      placeholder={t("Type your memo")}
       {...field}
       onChange={(e) => {
         field.onChange(e);
@@ -60,7 +60,7 @@ export const EditMemo = ({ memo, onClose, onSubmit }: EditMemoProps) => {
     <Form className="EditMemo__form">
       <Field name="memo">{renderField}</Field>
       <div className="EditMemo__description">
-        What is this transaction for? (optional)
+        {t("What is this transaction for? (optional)")}
       </div>
       <div className="EditMemo__actions">
         <Button
@@ -89,7 +89,7 @@ export const EditMemo = ({ memo, onClose, onSubmit }: EditMemoProps) => {
     <View.Content hasNoTopPadding>
       <div className="EditMemo">
         <Card>
-          <p>Memo</p>
+          <p>{t("Memo")}</p>
           <Formik
             initialValues={initialValues}
             onSubmit={handleSubmit}

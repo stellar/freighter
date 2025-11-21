@@ -226,13 +226,13 @@ export const ReviewTx = ({
                   <div className="ReviewTx__Details__Row">
                     <div className="ReviewTx__Details__Row__Title">
                       <Icon.File02 />
-                      Memo
+                      {t("Memo")}
                     </div>
                     <div
                       className="ReviewTx__Details__Row__Value"
                       data-testid="review-tx-memo"
                     >
-                      {memo || "None"}
+                      {memo || t("None")}
                     </div>
                   </div>
                   <div className="ReviewTx__Details__Row">

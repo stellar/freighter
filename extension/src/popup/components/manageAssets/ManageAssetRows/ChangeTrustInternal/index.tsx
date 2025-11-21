@@ -182,7 +182,7 @@ export const ChangeTrustInternal = ({
                   <img src={StellarLogo} alt="Stellar Logo" />
                   <div className="ChangeTrustInternal__TitleRow__Detail">
                     <span className="ChangeTrustInternal__TitleRow__Title">
-                      Confirm Transaction
+                      {t("Confirm transaction")}
                     </span>
                     <span
                       className="SignTransaction__TitleRow__Domain"
@@ -205,7 +205,7 @@ export const ChangeTrustInternal = ({
                   <div className="ChangeTrustInternal__Metadata__Row">
                     <div className="ChangeTrustInternal__Metadata__Label">
                       <Icon.Wallet01 />
-                      <span>Wallet</span>
+                      <span>{t("Wallet")}</span>
                     </div>
                     <div className="ChangeTrustInternal__Metadata__Value">
                       <KeyIdenticon publicKey={publicKey} />
@@ -217,7 +217,7 @@ export const ChangeTrustInternal = ({
                       data-testid="ChangeTrustInternal__Metadata__Label__Fee"
                     >
                       <Icon.Route />
-                      <span>Fee</span>
+                      <span>{t("Fee")}</span>
                     </div>
                     <div
                       className="ChangeTrustInternal__Metadata__Value"
@@ -232,7 +232,7 @@ export const ChangeTrustInternal = ({
                   onClick={() => setActivePaneIndex(1)}
                 >
                   <Icon.List />
-                  <span>Transaction details</span>
+                  <span>{t("Transaction details")}</span>
                 </div>
               </div>
             </div>,
@@ -251,7 +251,7 @@ export const ChangeTrustInternal = ({
                     </div>
                   </div>
                   <div className="ChangeTrustInternal__TransactionDetails__Title">
-                    <span>Transaction Details</span>
+                    <span>{t("Transaction Details")}</span>
                   </div>
                   <div className="ChangeTrustInternal__TransactionDetails__Summary">
                     <Summary
