@@ -23,13 +23,10 @@ export const getIconFromTokenLists = async ({
     const list = data.assets;
     if (list) {
       for (const record of list) {
-        if (contractId) {
-          const regex = new RegExp(contractId, "i");
-          if (record.contract && record.contract.match(regex) && record.icon) {
-            verifiedToken = record;
-            canonicalAsset = getCanonicalFromAsset(code, contractId);
-            break;
-          }
+        if (contractId && record.contract === contractId && record.icon) {
+          verifiedToken = record;
+          canonicalAsset = getCanonicalFromAsset(code, contractId);
+          break;
         }
 
         if (

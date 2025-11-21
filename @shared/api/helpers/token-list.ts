@@ -60,7 +60,7 @@ export const getCombinedAssetListData = async ({
   cachedAssetLists?: AssetListResponse[];
 }) => {
   // If cached asset lists are provided and not empty, use them instead of fetching
-  if (cachedAssetLists && cachedAssetLists.length > 0) {
+  if (!!cachedAssetLists?.length) {
     return cachedAssetLists;
   }
 

@@ -62,7 +62,7 @@ export const getAssetLists = async ({
   cachedAssetLists?: AssetListResponse[];
 }) => {
   // If cached asset lists are provided and not empty, use them instead of fetching
-  if (cachedAssetLists && cachedAssetLists.length > 0) {
+  if (!!cachedAssetLists?.length) {
     // Convert cached data to the expected Promise.allSettled format
     return cachedAssetLists.map((assetList) => ({
       status: "fulfilled" as const,
@@ -74,33 +74,18 @@ export const getAssetLists = async ({
   const assetsListsDetailsByNetwork =
     assetsListsDetails[network as AssetsListKey];
 
-  const settledResponses = [];
-
   // Fetch sequentially to avoid parallel requests
-  for (const networkList of assetsListsDetailsByNetwork) {
-    const { url, isEnabled } = networkList;
+  const settledResponses = [];
+  for (const { url, isEnabled } of assetsListsDetailsByNetwork) {
+    if (!isEnabled) continue;
 
-    if (isEnabled) {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) {
-          settledResponses.push({
-            status: "rejected" as const,
-            reason: new Error(res.statusText),
-          });
-          continue;
-        }
-        const data = await res.json();
-        settledResponses.push({
-          status: "fulfilled" as const,
-          value: data,
-        });
-      } catch (e) {
-        settledResponses.push({
-          status: "rejected" as const,
-          reason: e,
-        });
-      }
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(res.statusText);
+      const data = await res.json();
+      settledResponses.push({ status: "fulfilled" as const, value: data });
+    } catch (e) {
+      settledResponses.push({ status: "rejected" as const, reason: e });
     }
   }
 
@@ -120,7 +105,7 @@ export const getVerifiedTokens = async ({
   assetsLists: AssetsLists;
   cachedAssetLists?: AssetListResponse[];
 }) => {
-  const assetListsData = await getCombinedAssetListData({
+  const assetListsData: AssetListResponse[] = await getCombinedAssetListData({
     networkDetails,
     assetsLists,
     cachedAssetLists,
@@ -136,16 +121,12 @@ export const getVerifiedTokens = async ({
   const verifiedLists: string[] = [];
 
   for (const data of assetListsData) {
-    const list = data.assets;
-    if (list) {
-      for (const record of list) {
-        const regex = new RegExp(contractId, "i");
-        if (record.contract && record.contract.match(regex)) {
-          verifiedToken = record;
-          verifiedLists.push(data.name);
-          break;
-        }
-      }
+    const matchingRecord = data.assets?.find(
+      (record) => record.contract === contractId,
+    );
+    if (matchingRecord) {
+      verifiedToken = matchingRecord;
+      verifiedLists.push(data.name);
     }
   }
 

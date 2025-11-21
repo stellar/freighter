@@ -213,24 +213,21 @@ const useAssetLookup = () => {
       if (contractId === nativeContract.contract) {
         verifiedTokens = [{ ...nativeContract, verifiedLists: [] }];
       } else {
-        let verifiedToken = {} as AssetListReponseItem;
         const verifiedListsArray: string[] = [];
+        let verifiedToken: AssetListReponseItem | null = null;
 
-        for (const data of assetsListsData) {
-          const list = data.assets;
-          if (list) {
-            for (const record of list) {
-              const regex = new RegExp(contractId, "i");
-              if (record.contract && record.contract.match(regex)) {
-                verifiedToken = record;
-                verifiedListsArray.push(data.name);
-                break;
-              }
-            }
+        // Find the token in asset lists
+        for (const assetList of assetsListsData) {
+          const matchingRecord = assetList.assets?.find(
+            (record) => record.contract === contractId,
+          );
+          if (matchingRecord) {
+            verifiedToken = matchingRecord;
+            verifiedListsArray.push(assetList.name);
           }
         }
 
-        if (Object.keys(verifiedToken).length) {
+        if (verifiedToken) {
           verifiedTokens = [
             {
               ...verifiedToken,
@@ -339,11 +336,7 @@ const useAssetLookup = () => {
     let assetsListsData: AssetListResponse[] = [];
 
     // Check cache first - use it if available
-    if (
-      currentCache &&
-      Array.isArray(currentCache) &&
-      currentCache.length > 0
-    ) {
+    if (!!currentCache?.length) {
       // Use cached data - no network calls
       assetsListsData = currentCache;
     } else {
