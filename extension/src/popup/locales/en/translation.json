@@ -1,6 +1,7 @@
 {
   "* All Stellar accounts must maintain a minimum balance of lumens": "* All Stellar accounts must maintain a minimum balance of lumens.",
   "* payment methods may vary based on your location": "* payment methods may vary based on your location",
+  "A destination account requires the use of the memo field which is not present in the transaction you're about to sign": "A destination account requires the use of the memo field which is not present in the transaction you're about to sign.",
   "About": "About",
   "Account": "Account",
   "Account details": "Account details",
@@ -74,6 +75,7 @@
   "by": "by",
   "By using these services, you act at your own risk, and Freighter or Stellar Development Foundation (SDF) bears no liability for any resulting losses or damages": "By using these services, you act at your own risk, and Freighter or Stellar Development Foundation (SDF) bears no liability for any resulting losses or damages.",
   "Cancel": "Cancel",
+  "Check the destination account memo requirements and include it in the transaction": "Check the destination account memo requirements and include it in the transaction.",
   "Choose asset": "Choose asset",
   "Choose Asset": "Choose Asset",
   "Choose Recipient": "Choose Recipient",
@@ -161,6 +163,7 @@
   "Finish": "Finish",
   "For your security, we'll check if you got it right in the next step": "For your security, we'll check if you got it right in the next step.",
   "Freighter - Stellar Wallet": "Freighter - Stellar Wallet",
+  "Freighter automatically disabled the option to sign this transaction": "Freighter automatically disabled the option to sign this transaction.",
   "Freighter can’t recover your imported secret key using your recovery phrase": {
     " Storing your secret key is your responsibility": {
       " Freighter will never ask for your secret key outside of the extension": "Freighter can’t recover your imported secret key using your recovery phrase. Storing your secret key is your responsibility. Freighter will never ask for your secret key outside of the extension."
@@ -417,7 +420,6 @@
   "This site was flagged as malicious": "This site was flagged as malicious",
   "This transaction could not be completed": "This transaction could not be completed.",
   "This transaction is expected to fail": "This transaction is expected to fail",
-  "This transaction requires a memo": "This transaction requires a memo",
   "This transaction was flagged as malicious": "This transaction was flagged as malicious",
   "This will be used to unlock your wallet": "This will be used to unlock your wallet",
   "Timeout": "Timeout",

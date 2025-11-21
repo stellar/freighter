@@ -496,22 +496,29 @@ export const SignTransaction = () => {
                     </div>
                   </div>
                   <div className="SignTransaction__TransactionDetails__Title">
-                    <span>{t("Memo required")}</span>
+                    <span>{t("Memo is required")}</span>
                   </div>
                   <div className="SignTransaction__TransactionDetails__Summary">
                     <div className="WarningMessage__infoBlock WarningMessage__infoBlock--warning">
                       <div className="WarningMessage__header">
                         <Icon.InfoOctagon className="WarningMessage__icon" />
-                        <div>{t("Memo required")}</div>
+                        <div>{t("Memo is required")}</div>
                       </div>
                     </div>
-                    <div
-                      style={{
-                        marginTop: "1rem",
-                        color: "var(--sds-clr-gray-11)",
-                      }}
-                    >
-                      {t("This transaction requires a memo")}
+                    <div>
+                      {t(
+                        "A destination account requires the use of the memo field which is not present in the transaction you're about to sign.",
+                      )}
+                    </div>
+                    <div>
+                      {t(
+                        "Freighter automatically disabled the option to sign this transaction.",
+                      )}
+                    </div>
+                    <div>
+                      {t(
+                        "Check the destination account memo requirements and include it in the transaction.",
+                      )}
                     </div>
                   </div>
                 </div>
