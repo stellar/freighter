@@ -56,8 +56,8 @@ export interface Response {
   signerAddress: string;
   signedTransaction: string;
   signedPayload: string | Buffer;
-  signedBlob: Buffer | null;
-  signedAuthEntry: Buffer | null;
+  signedBlob: string | null;
+  signedAuthEntry: string | null;
   source: string;
   type: SERVICE_TYPES;
   url: string;

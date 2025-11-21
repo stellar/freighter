@@ -4830,17 +4830,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stellar/freighter-api@npm:3.0.0":
-  version: 3.0.0
-  resolution: "@stellar/freighter-api@npm:3.0.0"
-  checksum: 10c0/a2f6842e0e3f23194bed05af147595d11a3e8d945183aa37e3a38e506d913713546a35c302f8ae8f3ae432b2946713bc8c5093b78cfee9e2dcfcc9b5a4031e1e
-  languageName: node
-  linkType: hard
-
 "@stellar/freighter-api@npm:^2.0.0":
   version: 2.0.0
   resolution: "@stellar/freighter-api@npm:2.0.0"
   checksum: 10c0/ff3379a89f001930504e129d04b6b8d408b120b6a5c39c25bbf927cf7a1dc66381baeb877610049492055fffe2a91ac877d253ad73521079a74895cc1e97d996
+  languageName: node
+  linkType: hard
+
+"@stellar/freighter-api@npm:latest":
+  version: 6.0.0
+  resolution: "@stellar/freighter-api@npm:6.0.0"
+  dependencies:
+    buffer: "npm:6.0.3"
+    semver: "npm:7.7.1"
+  checksum: 10c0/dffdcf8bb77529dd683e0a330fb28ece1d9a65de7b98ec1a3146c4df6345de717c33c3fa98eddfd50175487a2c659025d863a1b119439de00c033c43af43d0c7
   languageName: node
   linkType: hard
 
@@ -9355,7 +9358,7 @@ __metadata:
     "@docusaurus/core": "npm:3.6.3"
     "@docusaurus/preset-classic": "npm:3.6.3"
     "@lavamoat/allow-scripts": "npm:3.3.2"
-    "@stellar/freighter-api": "npm:3.0.0"
+    "@stellar/freighter-api": "npm:latest"
     clsx: "npm:2.1.1"
     react: "npm:19.0.0"
     react-dom: "npm:19.0.0"
