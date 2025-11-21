@@ -183,7 +183,7 @@ export const SignMessage = () => {
               <img
                 className="PunycodedDomain__favicon"
                 src={favicon}
-                alt="Site favicon"
+                alt={t("Site favicon")}
               />
               <div className="SignMessage__TitleRow__Detail">
                 <span className="SignMessage__TitleRow__Title">

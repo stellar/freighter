@@ -57,7 +57,7 @@ export const AddFunds = () => {
               <img
                 className="AddFunds__onrampLogo"
                 src={CoinbaseLogo}
-                alt="Coinbase Logo"
+                alt={t("Coinbase Logo")}
               />
               <div>
                 <Text

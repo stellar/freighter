@@ -329,7 +329,7 @@ export const SignTransaction = () => {
                   <img
                     className="PunycodedDomain__favicon"
                     src={favicon}
-                    alt="Site favicon"
+                    alt={t("Site favicon")}
                   />
                   <div className="SignTransaction__TitleRow__Detail">
                     <span className="SignTransaction__TitleRow__Title">

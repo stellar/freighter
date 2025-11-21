@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import { Asset, Badge, Button, Icon, Text } from "@stellar/design-system";
 import { Networks } from "stellar-sdk";
 import { captureException } from "@sentry/browser";
+import { useTranslation } from "react-i18next";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { AppDispatch } from "popup/App";
@@ -39,6 +40,7 @@ export const ToggleTokenInternal = ({
   onCancel,
   publicKey,
 }: ToggleTokenInternalProps) => {
+  const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const { fetchData: fetchBalances } = useGetBalances({
     showHidden: false,
@@ -98,7 +100,7 @@ export const ToggleTokenInternal = ({
                 size="lg"
                 variant="single"
                 sourceOne={{
-                  altText: "Token logo",
+                  altText: t("Token logo"),
                   image: asset.image,
                 }}
               />
@@ -136,21 +138,23 @@ export const ToggleTokenInternal = ({
               icon={<Icon.PlusCircle />}
               iconPosition="left"
             >
-              {asset.isTrustlineActive ? "Remove Token" : "Add Token"}
+              {asset.isTrustlineActive ? t("Remove Token") : t("Add Token")}
             </Badge>
           </div>
         </div>
 
         <div className="ToggleToken__Description">
           {asset.isTrustlineActive
-            ? "Remove token from your account balance view"
-            : "Allow token to be displayed and used with this wallet address"}
+            ? t("Remove token from your account balance view")
+            : t(
+                "Allow token to be displayed and used with this wallet address",
+              )}
         </div>
         <div className="ToggleToken__Metadata">
           <div className="ToggleToken__Metadata__Row">
             <div className="ToggleToken__Metadata__Label">
               <Icon.Wallet01 />
-              <span>Wallet</span>
+              <span>{t("Wallet")}</span>
             </div>
             <div className="ToggleToken__Metadata__Value">
               <KeyIdenticon publicKey={publicKey} />

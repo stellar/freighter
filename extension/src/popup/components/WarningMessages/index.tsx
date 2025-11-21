@@ -137,13 +137,16 @@ export const DomainNotAllowedWarningMessage = ({
 }: {
   domain: string;
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="ScanLabel ScanMiss">
       <div className="ScanLabel__Info">
         <div className="Icon">
           <Icon.InfoSquare className="WarningMessage__icon" />
         </div>
-        <p className="Message">{`${domain} is not currently connected to Freighter`}</p>
+        <p className="Message">
+          {t("{{domain}} is not currently connected to Freighter", { domain })}
+        </p>
       </div>
     </div>
   );
@@ -175,7 +178,7 @@ export const BackupPhraseWarningMessage = () => {
           <div className="WarningMessage__backup__tips__icon">
             <Icon.EyeOff />
           </div>
-          <span>Don't share this phrase with anyone</span>
+          <span>{t("Don't share this phrase with anyone")}</span>
         </div>
         <div className="WarningMessage__backup__tips__row">
           <div className="WarningMessage__backup__tips__icon">
@@ -354,8 +357,8 @@ const BlockaidFeedbackForm = ({
                           className="BlockaidFeedback__details"
                           fieldSize="md"
                           id="textarea"
-                          label="Feedback"
-                          placeholder="Additional details"
+                          label={t("Feedback")}
+                          placeholder={t("Additional details")}
                         />
                       )}
                     </Field>
@@ -465,20 +468,21 @@ export const BlockaidAssetWarning = ({
   blockaidData,
   onClick,
 }: BlockaidAssetWarningProps) => {
+  const { t } = useTranslation();
   const renderHeader = (
     result_type: BlockAidScanAssetResult["result_type"],
   ) => {
     switch (result_type) {
       case "Spam": {
-        return "This asset was flagged as spam";
+        return t("This asset was flagged as spam");
       }
 
       case "Malicious": {
-        return "This asset was flagged as malicious";
+        return t("This asset was flagged as malicious");
       }
 
       default: {
-        return "This asset was flagged as suspicious";
+        return t("This asset was flagged as suspicious");
       }
     }
   };
@@ -740,7 +744,7 @@ export const BlockaidTxScanLabel = ({
                 <Icon.InfoSquare className="WarningMessage__icon" />
               </div>
               <p className="Message">
-                {"This transaction was flagged as suspicious"}
+                {t("This transaction was flagged as suspicious")}
               </p>
             </div>
             <div className="ScanLabel__Action">
@@ -766,6 +770,7 @@ export const BlockAidTxScanExpanded = ({
   scanResult,
   onClose,
 }: BlockAidTxScanExpandedProps) => {
+  const { t } = useTranslation();
   const { simulation, validation } = scanResult;
 
   if (simulation && "error" in simulation) {
@@ -779,9 +784,9 @@ export const BlockAidTxScanExpanded = ({
             <Icon.X />
           </div>
         </div>
-        <div className="BlockaidDetailsExpanded__Title">Warning</div>
+        <div className="BlockaidDetailsExpanded__Title">{t("Warning")}</div>
         <div className="BlockaidDetailsExpanded__SubTitle">
-          This transaction is expected to fail for the following reasons.
+          {t("This transaction is expected to fail for the following reasons.")}
         </div>
         <div className="BlockaidDetailsExpanded__Details">
           <div className="BlockaidDetailsExpanded__DetailRow">
@@ -807,7 +812,9 @@ export const BlockAidTxScanExpanded = ({
                 <Icon.X />
               </div>
             </div>
-            <div className="BlockaidDetailsExpanded__Title">Do not proceed</div>
+            <div className="BlockaidDetailsExpanded__Title">
+              {t("Do not proceed")}
+            </div>
             <div className="BlockaidDetailsExpanded__SubTitle">
               This transaction does not appear safe for the following reasons.
             </div>
@@ -834,10 +841,12 @@ export const BlockAidTxScanExpanded = ({
               </div>
             </div>
             <div className="BlockaidDetailsExpanded__Title">
-              Suspicious Request
+              {t("Suspicious Request")}
             </div>
             <div className="BlockaidDetailsExpanded__SubTitle">
-              This transaction does not appear safe for the following reasons.
+              {t(
+                "This transaction does not appear safe for the following reasons.",
+              )}
             </div>
             <div className="BlockaidDetailsExpanded__Details">
               <div className="BlockaidDetailsExpanded__DetailRow">

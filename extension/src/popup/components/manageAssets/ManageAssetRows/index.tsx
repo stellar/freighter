@@ -481,7 +481,9 @@ export const ManageAssetRow = ({
           className="ManageAssetRows__domain"
           data-testid="ManageAssetDomain"
         >
-          {formatDomain(domain || "")}
+          {formatDomain(domain || "") === "Stellar Network"
+            ? t("Stellar Network")
+            : formatDomain(domain || "")}
         </div>
       </div>
     </>

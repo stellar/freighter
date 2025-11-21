@@ -698,7 +698,7 @@ const EditSlippage = ({ onClose }: EditSlippageProps) => {
           <View.Content hasNoTopPadding>
             <div className="Slippage">
               <Card>
-                <p>Allowed Slippage</p>
+                <p>{t("Allowed Slippage")}</p>
                 <div className="Slippage__cards">
                   {["1", "2", "3"].map((value) => (
                     <label key={value} className="Slippage--radio-label">

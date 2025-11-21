@@ -281,7 +281,7 @@ const WalletRow = ({
         data-testid="wallet-row-options"
         onClick={() => setOptionsOpen(publicKey)}
       >
-        <img src={IconEllipsis} alt="wallet action options" />
+        <img src={IconEllipsis} alt={t("wallet action options")} />
       </div>
     </div>
   );

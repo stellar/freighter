@@ -164,7 +164,7 @@ export const SignAuthEntry = () => {
               <img
                 className="PunycodedDomain__favicon"
                 src={favicon}
-                alt="Site favicon"
+                alt={t("Site favicon")}
               />
               <div className="SignAuthEntry__TitleRow__Detail">
                 <span className="SignAuthEntry__TitleRow__Title">

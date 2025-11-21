@@ -163,7 +163,7 @@ export const DisplayBackupPhrase = () => {
                     fieldSize="md"
                     id="password"
                     autoComplete="off"
-                    label="Password"
+                    label={t("Password")}
                     error={errorMessage}
                     customInput={<Field />}
                     type="password"

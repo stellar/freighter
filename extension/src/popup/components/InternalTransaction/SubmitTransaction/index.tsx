@@ -148,10 +148,10 @@ export const SendingTransaction = ({
       {isVerifyAccountModalOpen ? (
         <EnterPassword
           accountAddress={publicKey}
-          description={
-            "Enter your account password to authorize this transaction."
-          }
-          confirmButtonTitle={"Submit"}
+          description={t(
+            "Enter your account password to authorize this transaction",
+          )}
+          confirmButtonTitle={t("Submit")}
           onConfirm={handleConfirm}
           onCancel={goBack}
         />
@@ -165,8 +165,9 @@ export const SendingTransaction = ({
                     className="SendingTransaction__Footer__Subtext"
                     data-testid="sending-transaction-footer-subtext"
                   >
-                    You can close this screen, your transaction should be
-                    complete in less than a minute.
+                    {t(
+                      "You can close this screen, your transaction should be complete in less than a minute.",
+                    )}
                   </div>
                   <Button
                     size="lg"
@@ -178,7 +179,7 @@ export const SendingTransaction = ({
                       window.close();
                     }}
                   >
-                    Close
+                    {t("Close")}
                   </Button>
                 </>
               )}
@@ -215,7 +216,7 @@ export const SendingTransaction = ({
                       }, 100);
                     }}
                   >
-                    Done
+                    {t("Done")}
                   </Button>
                 </div>
               )}
@@ -227,12 +228,12 @@ export const SendingTransaction = ({
               {isLoading ? (
                 <>
                   <Loader size="2rem" />
-                  <span>{isSwap ? "Swapping" : "Sending"}</span>
+                  <span>{isSwap ? t("Swapping") : t("Sending")}</span>
                 </>
               ) : (
                 <>
                   <Icon.CheckCircle className="SendingTransaction__Title__Success" />
-                  <span>{isSwap ? "Swapped!" : "Sent!"}</span>
+                  <span>{isSwap ? t("Swapped!") : t("Sent!")}</span>
                 </>
               )}
             </div>
@@ -269,7 +270,7 @@ export const SendingTransaction = ({
                     {isSwap && dstAsset ? (
                       <>
                         <span className="SendingTransaction__Summary__Description__Label Verb">
-                          to
+                          {t("to")}
                         </span>{" "}
                         <span className="SendingTransaction__Summary__Description__Label">
                           {destinationAmount} {dstAsset.code}
@@ -278,7 +279,7 @@ export const SendingTransaction = ({
                     ) : (
                       <>
                         <span className="SendingTransaction__Summary__Description__Label Verb">
-                          to
+                          {t("to")}
                         </span>{" "}
                         <span className="SendingTransaction__Summary__Description__Label">
                           {truncatedPublicKey(destination)}
@@ -295,7 +296,7 @@ export const SendingTransaction = ({
                     {isSwap && dstAsset ? (
                       <>
                         <span className="SendingTransaction__Summary__Description__Label Verb">
-                          was swapped to
+                          {t("was swapped to")}
                         </span>{" "}
                         <span className="SendingTransaction__Summary__Description__Label">
                           {destinationAmount} {dstAsset.code}
@@ -304,7 +305,7 @@ export const SendingTransaction = ({
                     ) : (
                       <>
                         <span className="SendingTransaction__Summary__Description__Label Verb">
-                          was sent to
+                          {t("was sent to")}
                         </span>{" "}
                         <span className="SendingTransaction__Summary__Description__Label">
                           {truncatedPublicKey(destination)}

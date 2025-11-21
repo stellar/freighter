@@ -199,7 +199,7 @@ export const SendTo = ({
   return (
     <React.Fragment>
       <SubviewHeader
-        title="Send"
+        title={t("Send")}
         customBackAction={goBack}
         customBackIcon={<Icon.X />}
       />
@@ -229,7 +229,7 @@ export const SendTo = ({
               title={
                 sendDataState.error instanceof Error
                   ? sendDataState.error.message
-                  : "Unknown error occured"
+                  : t("Unknown error occured")
               }
             />
           ) : (

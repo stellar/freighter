@@ -434,7 +434,7 @@ export const KeyValueInvokeHostFnArgs = ({
       {showHeader && (
         <div className="Operations--header">
           <Icon.BracketsEllipses />
-          <span>Parameters</span>
+          <span>{t("Parameters")}</span>
         </div>
       )}
       <div className="OperationParameters" data-testid="OperationParameters">

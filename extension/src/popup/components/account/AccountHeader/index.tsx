@@ -256,7 +256,7 @@ export const AccountHeader = ({
                           className="AccountHeader__allow-list-item"
                         >
                           <PunycodedDomain
-                            title="Connected"
+                            title={t("Connected")}
                             domain={latestConnection}
                             isRow
                           />

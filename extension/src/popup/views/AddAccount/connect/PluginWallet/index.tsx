@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button, Checkbox, Input, Link } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 
 import { newTabHref } from "helpers/urls";
@@ -15,6 +16,7 @@ import "./styles.scss";
 export const defaultStellarBipPath = "44'/148'/0'";
 
 export const PluginWallet = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const walletType = new URLSearchParams(location.search).get(
@@ -28,7 +30,7 @@ export const PluginWallet = () => {
   return (
     <>
       <SubviewHeader
-        title={`Connect with ${walletType}`}
+        title={t("Connect {walletType}", { walletType })}
         hasBackButton={true}
         customBackAction={() => navigateTo(ROUTES.connectWallet, navigate)}
       />
@@ -47,7 +49,7 @@ export const PluginWallet = () => {
         <div className="PluginWallet__bottom">
           {!useDefault && (
             <div>
-              <div className="PluginWallet__caption">ENTER BIP PATH</div>
+              <div className="PluginWallet__caption">{t("ENTER BIP PATH")}</div>
               <Input
                 fieldSize="md"
                 autoComplete="off"
@@ -64,7 +66,7 @@ export const PluginWallet = () => {
             defaultChecked
             autoComplete="off"
             id="useDefault-input"
-            label="Use default account"
+            label={t("Use default account")}
             onClick={() => setUseDefault(!useDefault)}
           />
           <Button
@@ -80,7 +82,7 @@ export const PluginWallet = () => {
               );
             }}
           >
-            Connect
+            {t("Connect")}
           </Button>
         </div>
       </View.Content>

@@ -2,6 +2,7 @@ import { captureException } from "@sentry/browser";
 import { View } from "popup/basics/layout/View";
 import React, { Component } from "react";
 import { useTranslation } from "react-i18next";
+import i18n from "popup/helpers/localizationConfig";
 
 import IconFail from "popup/assets/icon-fail.svg";
 import { Button } from "@stellar/design-system";
@@ -31,7 +32,7 @@ export class ErrorBoundary extends Component<
     if (this.state.hasError) {
       return (
         <UnhandledError
-          errorMessage="An unexpected error has occurred"
+          errorMessage={i18n.t("An unexpected error has occurred")}
           errorString={this.state.errorString}
         />
       );

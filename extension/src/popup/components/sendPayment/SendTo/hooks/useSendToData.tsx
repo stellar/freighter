@@ -41,6 +41,7 @@ export const getAddressFromInput = async (userInput: string) => {
       };
     } catch (error) {
       Sentry.captureException(`Failed to fetch toml for ${userInput}`);
+      // Error message will be translated when displayed in UI
       throw new Error("Failed to resolve federated address.");
     }
   }

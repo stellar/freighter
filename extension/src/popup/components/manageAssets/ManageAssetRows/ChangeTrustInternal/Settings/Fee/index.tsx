@@ -34,7 +34,7 @@ export const Fee = ({ fee, recommendedFee, onSaveFee, goBack }: FeeProps) => {
         {({ errors, setFieldValue, submitForm }) => (
           <>
             <SubviewHeader
-              title={<span>Transaction Fee</span>}
+              title={<span>{t("Transaction Fee")}</span>}
               hasBackButton
               customBackAction={goBack}
             />
