@@ -426,7 +426,7 @@ export const BlockaidByLine = ({
               </clipPath>
             </defs>
           </svg>
-          <span>Blockaid</span>
+          <span>{t("Blockaid")}</span>
         </Text>
       </div>
       {isMainnet(networkDetails) || isTestnet(networkDetails) ? (

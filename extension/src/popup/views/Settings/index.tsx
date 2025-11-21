@@ -108,7 +108,9 @@ export const Settings = () => {
         </nav>
         <div className="Settings__version">
           <Icon.GitCommit />
-          <span>Version {packageJson.version}</span>
+          <span>
+            {t("Version")} {packageJson.version}
+          </span>
         </div>
       </View.Content>
     </>

@@ -399,6 +399,7 @@ export const KeyValueInvokeHostFnArgs = ({
   showHeader?: boolean;
   isAuthEntry?: boolean;
 }) => {
+  const { t } = useTranslation();
   const [isLoading, setLoading] = React.useState(true);
   const [argNames, setArgNames] = React.useState([] as string[]);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);

@@ -203,7 +203,7 @@ export const SignMessage = () => {
             <div className="SignMessage__Metadata__Row">
               <div className="SignMessage__Metadata__Label">
                 <Icon.Wallet01 />
-                <span>Wallet</span>
+                <span>{t("Wallet")}</span>
               </div>
               <div className="SignMessage__Metadata__Value">
                 <KeyIdenticon publicKey={publicKey} />
@@ -213,7 +213,7 @@ export const SignMessage = () => {
         </View.Content>
         <View.Footer>
           <span className="SignMessage__Warning">
-            Only confirm if you trust this site
+            {t("Only confirm if you trust this site")}
           </span>
           <div className="SignMessage__Actions">
             <Button

@@ -406,13 +406,15 @@ export const AddToken = () => {
                 )}
 
                 <div className="AddToken__Description">
-                  Allow token to be displayed and used with this wallet address
+                  {t(
+                    "Allow token to be displayed and used with this wallet address",
+                  )}
                 </div>
                 <div className="AddToken__Metadata">
                   <div className="AddToken__Metadata__Row">
                     <div className="AddToken__Metadata__Label">
                       <Icon.Wallet01 />
-                      <span>Wallet</span>
+                      <span>{t("Wallet")}</span>
                     </div>
                     <div className="AddToken__Metadata__Value">
                       <KeyIdenticon publicKey={state.data.account.publicKey} />

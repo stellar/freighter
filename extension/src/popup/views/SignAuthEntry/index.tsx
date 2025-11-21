@@ -182,7 +182,7 @@ export const SignAuthEntry = () => {
               <div className="SignAuthEntry__Metadata__Row">
                 <div className="SignAuthEntry__Metadata__Label">
                   <Icon.Wallet01 />
-                  <span>Wallet</span>
+                  <span>{t("Wallet")}</span>
                 </div>
                 <div className="SignAuthEntry__Metadata__Value">
                   <KeyIdenticon publicKey={publicKey} />
