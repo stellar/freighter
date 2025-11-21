@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Icon } from "@stellar/design-system";
-import { Text } from "@stellar/design-system";
+import { Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import browser from "webextension-polyfill";
 
@@ -8,6 +7,7 @@ import {
   getMobileAppBannerDismissed,
   dismissMobileAppBanner,
 } from "@shared/api/internal";
+
 import { openTab } from "popup/helpers/navigate";
 import FreighterLogo from "popup/assets/logo-freighter-shadow.png";
 

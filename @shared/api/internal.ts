@@ -1879,7 +1879,7 @@ export const getMobileAppBannerDismissed = async (): Promise<boolean> => {
     return false;
   }
 
-  return isDismissed || false;
+  return !!isDismissed;
 };
 
 export const dismissMobileAppBanner = async (): Promise<void> => {
