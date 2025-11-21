@@ -70,8 +70,8 @@ const experimentalFeaturesInitialState = {
 
 const indexerInitialState: IndexerSettings = {
   settingsState: SettingsState.IDLE,
-  isSorobanPublicEnabled: false,
-  isRpcHealthy: false,
+  isSorobanPublicEnabled: true,
+  isRpcHealthy: true,
   userNotification: { enabled: false, message: "" },
 };
 
@@ -356,9 +356,6 @@ const settingsSlice = createSlice({
         isMemoValidationEnabled,
         isExperimentalModeEnabled,
         isHashSigningEnabled,
-        isSorobanPublicEnabled,
-        isRpcHealthy,
-        userNotification,
         assetsLists,
         isNonSSLEnabled,
         isHideDustEnabled,
@@ -372,13 +369,19 @@ const settingsSlice = createSlice({
       state.isMemoValidationEnabled = isMemoValidationEnabled;
       state.isExperimentalModeEnabled = isExperimentalModeEnabled;
       state.isHashSigningEnabled = isHashSigningEnabled;
-      state.isSorobanPublicEnabled = isSorobanPublicEnabled;
-      state.isRpcHealthy = isRpcHealthy;
-      state.userNotification = userNotification;
       state.assetsLists = assetsLists;
       state.isNonSSLEnabled = isNonSSLEnabled;
       state.isHideDustEnabled = isHideDustEnabled;
       state.settingsState = SettingsState.SUCCESS;
+    },
+    saveBackendSettings(state, action) {
+      const { isSorobanPublicEnabled, isRpcHealthy, userNotification } =
+        action?.payload || {
+          ...initialState,
+        };
+      state.isSorobanPublicEnabled = isSorobanPublicEnabled;
+      state.isRpcHealthy = isRpcHealthy;
+      state.userNotification = userNotification;
     },
   },
   extraReducers: (builder) => {
@@ -587,6 +590,8 @@ export const { reducer } = settingsSlice;
 
 export const { clearSettingsError } = settingsSlice.actions;
 export const saveSettingsAction = settingsSlice.actions.saveSettings;
+export const saveBackendSettingsAction =
+  settingsSlice.actions.saveBackendSettings;
 
 export const settingsSelector = (state: {
   settings: Settings &

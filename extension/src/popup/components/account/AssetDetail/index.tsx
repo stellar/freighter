@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
-import { CopyText, Icon, Link } from "@stellar/design-system";
+import { useNavigate } from "react-router-dom";
+import { Button, CopyText, Icon, Link, Loader } from "@stellar/design-system";
 
 import { ApiTokenPrice, ApiTokenPrices } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -15,7 +16,12 @@ import {
 } from "popup/helpers/account";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
 import { formatTokenAmount } from "popup/helpers/soroban";
-import { getAssetFromCanonical, isMainnet, isTestnet } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  isMainnet,
+  isTestnet,
+  truncateString,
+} from "helpers/stellar";
 
 import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
 import { TransactionDetail } from "popup/components/accountHistory/TransactionDetail";
@@ -40,11 +46,55 @@ import {
   LiquidityPoolShareAsset,
 } from "@shared/api/types/account-balance";
 import { OperationDataRow } from "popup/views/AccountHistory/hooks/useGetHistoryData";
+import { navigateTo } from "popup/helpers/navigate";
+import { ROUTES } from "popup/constants/routes";
+import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
+import { AppDataType } from "helpers/hooks/useGetAppData";
 
 import "./styles.scss";
 
+const AssetDetailOperations = ({
+  filteredAssetOperations,
+  accountBalances,
+  publicKey,
+  networkDetails,
+  setActiveAssetId,
+}: {
+  filteredAssetOperations: OperationDataRow[];
+  accountBalances: AccountBalances;
+  publicKey: string;
+  networkDetails: NetworkDetails;
+  setActiveAssetId: (id: string) => void;
+}) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {filteredAssetOperations.length ? (
+        <div className="AssetDetail__list" data-testid="AssetDetail__list">
+          <>
+            {filteredAssetOperations.map((operation) => (
+              <HistoryItem
+                key={operation.id}
+                accountBalances={accountBalances}
+                operation={operation}
+                publicKey={publicKey}
+                networkDetails={networkDetails}
+                setActiveHistoryDetailId={() => setActiveAssetId(operation.id)}
+              />
+            ))}
+          </>
+        </div>
+      ) : (
+        <div className="AssetDetail__empty" data-testid="AssetDetail__empty">
+          {t("No transactions to show")}
+        </div>
+      )}
+    </>
+  );
+};
+
 interface AssetDetailProps {
-  assetOperations: OperationDataRow[];
+  historyData: AccountHistoryData | null;
   accountBalances: AccountBalances;
   networkDetails: NetworkDetails;
   publicKey: string;
@@ -52,10 +102,11 @@ interface AssetDetailProps {
   setSelectedAsset: (selectedAsset: string) => void;
   subentryCount: number;
   tokenPrices?: ApiTokenPrices | null;
+  assetIcons: { [code: string]: string | null };
 }
 
 export const AssetDetail = ({
-  assetOperations,
+  historyData,
   accountBalances,
   networkDetails,
   publicKey,
@@ -63,8 +114,10 @@ export const AssetDetail = ({
   setSelectedAsset,
   subentryCount,
   tokenPrices,
+  assetIcons,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { isHideDustEnabled } = useSelector(settingsSelector);
   const [optionsOpen, setOptionsOpen] = React.useState(false);
   const activeOptionsRef = useRef<HTMLDivElement>(null);
@@ -94,9 +147,11 @@ export const AssetDetail = ({
     accountBalances.balances,
   ) as Exclude<AssetType, LiquidityPoolShareAsset>;
 
-  const icons = accountBalances.icons || {};
+  const icons = assetIcons || {};
   const assetIconUrl =
-    "type" in selectedBalance.token && selectedBalance.token.type === "native"
+    "token" in selectedBalance &&
+    "type" in selectedBalance.token &&
+    selectedBalance.token.type === "native"
       ? StellarLogo
       : icons[selectedAsset];
   const assetPrice: ApiTokenPrice | null = tokenPrices
@@ -129,32 +184,45 @@ export const AssetDetail = ({
     assetIssuer,
   });
 
-  if (!assetOperations && !isSorobanAsset) {
+  if (historyData?.type === AppDataType.REROUTE) {
     return null;
   }
 
-  const sortedAssetOperations = assetOperations.filter((operation) => {
-    if (operation.metadata.isDustPayment && isHideDustEnabled) {
-      return false;
-    }
+  const assetOperations =
+    historyData?.operationsByAsset?.[selectedAsset] || null;
 
-    return true;
-  });
+  let filteredAssetOperations = null;
+  let activeOperation = null;
+
+  if (assetOperations) {
+    filteredAssetOperations = assetOperations.filter((operation) => {
+      if (operation.metadata.isDustPayment && isHideDustEnabled) {
+        return false;
+      }
+
+      return true;
+    });
+    activeOperation =
+      filteredAssetOperations.find((op) => op.id === activeAssetId) || null;
+  }
 
   if (assetIssuer && !assetDomain && !assetError && !isSorobanAsset) {
     // if we have an asset issuer, wait until we have the asset domain before continuing
     return <Loading />;
   }
 
-  const activeOperation = sortedAssetOperations.find(
-    (op) => op.id === activeAssetId,
-  );
-
   const isStellarExpertSupported =
     isMainnet(networkDetails) || isTestnet(networkDetails);
   const stellarExpertAssetLinkSlug = isSorobanBalance(selectedBalance)
     ? `contract/${selectedBalance.contractId}`
     : `asset/${selectedAsset.replace(":", "-")}`;
+
+  const isLpShare = "liquidityPoolId" in selectedBalance;
+  const hasBalance =
+    selectedBalance?.total &&
+    new BigNumber(selectedBalance.total).isGreaterThan(0);
+  const isShowingSwap = !isSorobanAsset && !isLpShare;
+  const isShowingSend = hasBalance;
 
   return activeAssetId ? (
     <SlideupModal
@@ -232,11 +300,22 @@ export const AssetDetail = ({
         <div className="AssetDetail__wrapper" data-testid="AssetDetail">
           <div className="AssetDetail__network-icon">
             {assetIconUrl ? (
-              <img src={assetIconUrl} alt="Network icon" />
+              <img
+                src={assetIconUrl}
+                alt="Network icon"
+                data-testid="AssetDetail__icon"
+              />
             ) : null}
           </div>
           <div className="AssetDetail__title">
-            {title(selectedBalance) || assetDomain}
+            {isLpShare && "liquidityPoolId" in selectedBalance
+              ? `LP: ${truncateString(selectedBalance.liquidityPoolId as string, 12)}`
+              : title(
+                  selectedBalance as Exclude<
+                    AssetType,
+                    LiquidityPoolShareAsset
+                  >,
+                ) || assetDomain}
           </div>
           {"contractId" in selectedBalance ? (
             <div className="AssetDetail__subtitle">
@@ -296,33 +375,58 @@ export const AssetDetail = ({
               </div>
             </div>
           </div>
-          {sortedAssetOperations.length ? (
-            <div className="AssetDetail__list" data-testid="AssetDetail__list">
-              <>
-                {sortedAssetOperations.map((operation) => (
-                  <HistoryItem
-                    key={operation.id}
-                    accountBalances={accountBalances}
-                    operation={operation}
-                    publicKey={publicKey}
-                    networkDetails={networkDetails}
-                    setActiveHistoryDetailId={() =>
-                      setActiveAssetId(operation.id)
-                    }
-                  />
-                ))}
-              </>
+          {filteredAssetOperations === null ? (
+            <div
+              className="AssetDetail__list AssetDetail__list--loading"
+              data-testid="AssetDetail__list__loader"
+            >
+              <Loader />
             </div>
           ) : (
-            <div
-              className="AssetDetail__empty"
-              data-testid="AssetDetail__empty"
-            >
-              {t("No transactions to show")}
-            </div>
+            <AssetDetailOperations
+              filteredAssetOperations={filteredAssetOperations}
+              accountBalances={accountBalances}
+              publicKey={publicKey}
+              networkDetails={networkDetails}
+              setActiveAssetId={setActiveAssetId}
+            />
           )}
         </div>
       </View.Content>
+      {(isShowingSwap || isShowingSend) && (
+        <div className="AssetDetail__actions-container">
+          {isShowingSend && (
+            <Button
+              data-testid="asset-detail-send-button"
+              variant="secondary"
+              size="lg"
+              isRounded
+              isFullWidth
+              onClick={() => {
+                const queryParams = `?asset=${encodeURIComponent(selectedAsset)}`;
+                navigateTo(ROUTES.sendPayment, navigate, queryParams);
+              }}
+            >
+              {t("Send")}
+            </Button>
+          )}
+          {isShowingSwap && (
+            <Button
+              data-testid="asset-detail-swap-button"
+              variant="secondary"
+              size="lg"
+              isRounded
+              isFullWidth
+              onClick={() => {
+                const queryParams = `?source_asset=${encodeURIComponent(selectedAsset)}`;
+                navigateTo(ROUTES.swap, navigate, queryParams);
+              }}
+            >
+              {t("Swap")}
+            </Button>
+          )}
+        </div>
+      )}
       {isNative && (
         <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
           <div className="AssetDetail__info-modal">

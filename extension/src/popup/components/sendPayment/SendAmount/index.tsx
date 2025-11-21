@@ -10,12 +10,7 @@ import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
-import {
-  getAssetFromCanonical,
-  isMainnet,
-  truncatedFedAddress,
-  truncatedPublicKey,
-} from "helpers/stellar";
+import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
@@ -45,11 +40,11 @@ import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { AMOUNT_ERROR, InputType } from "helpers/transaction";
 import { reRouteOnboarding } from "popup/helpers/route";
-import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { EditSettings } from "popup/components/InternalTransaction/EditSettings";
 import { EditMemo } from "popup/components/InternalTransaction/EditMemo";
 import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
+import { AddressTile } from "popup/components/sendPayment/AddressTile";
 
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
@@ -64,6 +59,7 @@ export const SendAmount = ({
   goBack,
   goToNext,
   goToChooseDest,
+  goToChooseAsset,
   simulationState,
   fetchSimulationData,
   networkCongestion,
@@ -72,6 +68,7 @@ export const SendAmount = ({
   goBack: () => void;
   goToNext: () => void;
   goToChooseDest: () => void;
+  goToChooseAsset: () => void;
   simulationState: State<SimulateTxData, string>;
   fetchSimulationData: () => Promise<unknown>;
   networkCongestion: NetworkCongestion;
@@ -223,7 +220,7 @@ export const SendAmount = ({
   const assetBalance = findAssetBalance(
     sendData.userBalances.balances,
     srcAsset,
-  )!;
+  );
   const prices = sendData.tokenPrices;
   const assetPrice = prices[asset] && prices[asset].currentPrice;
   const xlmPrice = prices["native"]?.currentPrice;
@@ -258,7 +255,7 @@ export const SendAmount = ({
     recommendedFee: fee,
   });
   const displayTotal =
-    "decimals" in assetBalance
+    assetBalance && "decimals" in assetBalance
       ? availableBalance
       : formatAmount(availableBalance);
   const srcTitle = srcAsset.code;
@@ -267,6 +264,12 @@ export const SendAmount = ({
     dispatch(saveAmount("0"));
     dispatch(saveAmountUsd("0.00"));
     goBack();
+  };
+  const goToChooseAssetAction = () => {
+    dispatch(saveAsset("native"));
+    dispatch(saveAmount("0"));
+    dispatch(saveAmountUsd("0.00"));
+    goToChooseAsset();
   };
 
   const isAmountTooHigh =
@@ -324,6 +327,7 @@ export const SendAmount = ({
             <Button
               size="lg"
               disabled={
+                !destination ||
                 (inputType === "crypto" &&
                   new BigNumber(formik.values.amount).isZero()) ||
                 (inputType === "fiat" &&
@@ -529,7 +533,7 @@ export const SendAmount = ({
                 </div>
                 <div
                   className="SendAmount__EditDestAsset"
-                  onClick={goBackAction}
+                  onClick={goToChooseAssetAction}
                 >
                   <div className="SendAmount__EditDestAsset__title">
                     <AssetIcon
@@ -554,27 +558,16 @@ export const SendAmount = ({
                     <Icon.ChevronRight />
                   </Button>
                 </div>
-                <div
-                  className="SendAmount__EditDestination"
+                <AddressTile
+                  address={destination}
+                  federationAddress={federationAddress}
                   onClick={() => {
                     dispatch(saveAsset("native"));
                     dispatch(saveAmount("0"));
                     dispatch(saveAmountUsd("0.00"));
                     goToChooseDest();
                   }}
-                >
-                  <div className="SendAmount__EditDestination__title">
-                    <div className="SendAmount__EditDestination__identicon">
-                      <IdenticonImg publicKey={destination} />
-                    </div>
-                    {federationAddress
-                      ? truncatedFedAddress(federationAddress)
-                      : truncatedPublicKey(destination)}
-                  </div>
-                  <Button isRounded size="sm" variant="tertiary">
-                    <Icon.ChevronRight />
-                  </Button>
-                </div>
+                />
               </div>
             </form>
           </div>

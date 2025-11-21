@@ -72,6 +72,12 @@
     flex-direction: column;
     gap: pxToRem(24px);
     margin-top: pxToRem(32px);
+
+    &--loading {
+      align-items: center;
+      display: flex;
+      justify-content: center;
+    }
   }
 
   .SubviewHeader {
@@ -131,6 +137,41 @@
     gap: 0.5rem;
     justify-content: center;
     margin: 0.5rem 0 2.5rem 0;
+  }
+
+  &__actions-container {
+    display: flex;
+    flex-direction: row;
+    gap: pxToRem(12px);
+    padding: 0 pxToRem(16px) pxToRem(16px);
+    background-color: var(--sds-clr-gray-01);
+    position: sticky;
+    bottom: 0;
+    margin: 0 auto;
+    // matches View.Inset max-width
+    max-width: pxToRem(848px);
+    width: 100%;
+    z-index: 10;
+
+    @media (min-width: 850px) {
+      border-left: 1px solid var(--sds-clr-gray-04);
+      border-right: 1px solid var(--sds-clr-gray-04);
+    }
+
+    &::before {
+      content: "";
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      right: 0;
+      height: pxToRem(40px);
+      background: linear-gradient(
+        to bottom,
+        transparent,
+        var(--sds-clr-gray-01)
+      );
+      pointer-events: none;
+    }
   }
 
   &__empty {

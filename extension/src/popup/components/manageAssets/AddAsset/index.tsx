@@ -6,8 +6,7 @@ import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
 import { Notification } from "@stellar/design-system";
-import { getTokenDetails } from "@shared/api/internal";
-import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+import { getTokenDetails, getAssetDomains } from "@shared/api/internal";
 import { isSacContractExecutable } from "@shared/helpers/soroban/token";
 
 import { FormRows } from "popup/basics/Forms";
@@ -199,12 +198,11 @@ export const AddAsset = () => {
     networkDetails: NetworkDetails;
   }) => {
     let assetDomainToml = {} as AssetDomainToml;
-    const server = stellarSdkServer(
-      networkDetails.networkUrl,
-      networkDetails.networkPassphrase,
-    );
-    const acct = await server.loadAccount(issuer);
-    const homeDomain = acct.home_domain || "";
+    const acct = await getAssetDomains({
+      assetIssuerDomainsToFetch: [issuer],
+      networkDetails,
+    });
+    const homeDomain = acct[issuer] || "";
 
     setIsSearching(true);
 

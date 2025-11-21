@@ -45,7 +45,7 @@ export const AccountHistory = () => {
 
   useEffect(() => {
     const getData = async () => {
-      await fetchData(true);
+      await fetchData(true, true);
     };
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -133,7 +133,7 @@ export const AccountHistory = () => {
         setIsModalOpen={() => setActiveHistoryDetailId(null)}
       >
         <TransactionDetail
-          activeOperation={activeOperation}
+          activeOperation={activeOperation || null}
           networkDetails={networkDetails}
         />
       </SlideupModal>

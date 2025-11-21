@@ -2,15 +2,24 @@ import { createSelector, createSlice } from "@reduxjs/toolkit";
 import { AccountBalancesInterface } from "@shared/api/types/backend-api";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
+import { HistoryResponse } from "helpers/hooks/useGetHistory";
+import { TokenDetailsResponse } from "helpers/hooks/useTokenDetails";
+import { ApiTokenPrices } from "@shared/api/types";
 
 type AssetCode = string;
 type PublicKey = string;
-type IconUrl = string;
-type HomeDomain = string;
+type IconUrl = string | null;
+type HomeDomain = string | null;
 
 interface SaveBalancesPayload {
   publicKey: PublicKey;
   balances: AccountBalancesInterface;
+  networkDetails: NetworkDetails;
+}
+
+interface SaveHistoryPayload {
+  publicKey: PublicKey;
+  history: HistoryResponse;
   networkDetails: NetworkDetails;
 }
 
@@ -23,9 +32,19 @@ interface SaveIconsPayload {
   icons: Record<AssetCode, IconUrl>;
 }
 
-type SaveDomainPayload = Record<PublicKey, HomeDomain>;
+type SaveDomainPayload = {
+  homeDomains: Record<PublicKey, HomeDomain>;
+  networkDetails: NetworkDetails;
+};
 
 type SaveTokenLists = AssetListResponse[];
+
+type SaveTokenDetailsPayload = { contractId: string } & TokenDetailsResponse;
+
+type SaveTokenPricesPayload = {
+  publicKey: string;
+  tokenPrices: ApiTokenPrices;
+};
 
 interface InitialState {
   balanceData: {
@@ -35,8 +54,17 @@ interface InitialState {
     >;
   };
   icons: Record<AssetCode, IconUrl>;
-  homeDomains: Record<PublicKey, HomeDomain>;
+  homeDomains: { [network: string]: Record<PublicKey, HomeDomain> };
   tokenLists: AssetListResponse[];
+  tokenDetails: {
+    [contractId: string]: TokenDetailsResponse;
+  };
+  historyData: {
+    [network: string]: Record<PublicKey, HistoryResponse>;
+  };
+  tokenPrices: {
+    [publicKey: string]: ApiTokenPrices & { updatedAt: number };
+  };
 }
 
 const initialState: InitialState = {
@@ -44,6 +72,9 @@ const initialState: InitialState = {
   icons: {},
   homeDomains: {},
   tokenLists: [],
+  tokenDetails: {},
+  historyData: {},
+  tokenPrices: {},
 };
 
 const cacheSlice = createSlice({
@@ -55,6 +86,9 @@ const cacheSlice = createSlice({
       state.icons = {};
       state.homeDomains = {};
       state.tokenLists = [];
+      state.tokenDetails = {};
+      state.historyData = {};
+      state.tokenPrices = {};
     },
     saveBalancesForAccount(state, action: { payload: SaveBalancesPayload }) {
       state.balanceData = {
@@ -68,10 +102,20 @@ const cacheSlice = createSlice({
         },
       };
     },
+    saveHistoryForAccount(state, action: { payload: SaveHistoryPayload }) {
+      state.historyData = {
+        ...state.historyData,
+        [action.payload.networkDetails.network]: {
+          ...state.historyData[action.payload.networkDetails.network],
+          [action.payload.publicKey]: action.payload.history,
+        },
+      };
+    },
     clearBalancesForAccount(state, action: { payload: ClearBalancesPayload }) {
       delete state.balanceData[action.payload.networkDetails.network][
         action.payload.publicKey
       ];
+      delete state.tokenPrices[action.payload.publicKey];
     },
     saveIconsForBalances(state, action: { payload: SaveIconsPayload }) {
       state.icons = {
@@ -82,23 +126,47 @@ const cacheSlice = createSlice({
     saveDomainForIssuer(state, action: { payload: SaveDomainPayload }) {
       state.homeDomains = {
         ...state.homeDomains,
-        ...action.payload,
+        [action.payload.networkDetails.network]: {
+          ...state.homeDomains[action.payload.networkDetails.network],
+          ...action.payload.homeDomains,
+        },
       };
     },
     saveTokenLists(state, action: { payload: SaveTokenLists }) {
       state.tokenLists = action.payload;
+    },
+    saveTokenDetails(state, action: { payload: SaveTokenDetailsPayload }) {
+      state.tokenDetails = {
+        ...state.tokenDetails,
+        [action.payload.contractId]: action.payload,
+      };
+    },
+    saveTokenPrices(state, action: { payload: SaveTokenPricesPayload }) {
+      state.tokenPrices = {
+        ...state.tokenPrices,
+        [action.payload.publicKey]: {
+          ...action.payload.tokenPrices,
+          updatedAt: Date.now(),
+        } as ApiTokenPrices & { updatedAt: number },
+      };
     },
   },
 });
 
 export const balancesSelector = (state: { cache: InitialState }) =>
   state.cache.balanceData;
+export const historySelector = (state: { cache: InitialState }) =>
+  state.cache.historyData;
 export const iconsSelector = (state: { cache: InitialState }) =>
   state.cache.icons;
 export const homeDomainsSelector = (state: { cache: InitialState }) =>
   state.cache.homeDomains;
 export const tokensListsSelector = (state: { cache: InitialState }) =>
   state.cache.tokenLists;
+export const tokenDetailsSelector = (state: { cache: InitialState }) =>
+  state.cache.tokenDetails;
+export const tokenPricesSelector = (state: { cache: InitialState }) =>
+  state.cache.tokenPrices;
 export const selectBalancesByPublicKey = (publicKey: string) =>
   createSelector(balancesSelector, (balances) => balances[publicKey]);
 
@@ -106,8 +174,11 @@ export const { reducer } = cacheSlice;
 export const {
   clearAll,
   saveBalancesForAccount,
+  saveHistoryForAccount,
   saveIconsForBalances,
   saveDomainForIssuer,
   saveTokenLists,
+  saveTokenDetails,
+  saveTokenPrices,
   clearBalancesForAccount,
 } = cacheSlice.actions;
