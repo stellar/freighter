@@ -295,10 +295,12 @@ export const SendAmount = ({
             <div className="SendAmount__settings-row">
               <div className="SendAmount__settings-fee-display">
                 <span className="SendAmount__settings-fee-display__label">
-                  Fee:
+                  {t("Fee")}:
                 </span>
                 <span>
-                  {inputType === "crypto" ? `${fee} XLM` : recommendedFeeUsd}
+                  {inputType === "crypto"
+                    ? `${fee} ${t("XLM")}`
+                    : recommendedFeeUsd}
                 </span>
               </div>
               <div className="SendAmount__settings-options">
