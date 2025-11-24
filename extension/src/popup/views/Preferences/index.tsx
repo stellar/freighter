@@ -149,12 +149,11 @@ export const Preferences = () => {
                   </div>
                 </div>
                 <span className="Preferences--section--subtitle">
-                  {t(
+                  {`${t(
                     "Allow Freighter to collect anonymous information about usage.",
-                  )}{" "}
-                  {t(
+                  )} ${t(
                     "Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts.",
-                  )}
+                  )}`}
                 </span>
               </div>
 

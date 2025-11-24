@@ -208,13 +208,9 @@ export const parseWalletError: ParseWalletError = {
       return defaultErr;
     }
     if (message.indexOf("No device selected") > -1) {
-      return (
-        i18n.t("No device detected.") +
-        " " +
-        i18n.t(
-          "Please make sure your device is connected and the Stellar app is open on it.",
-        )
-      );
+      return `${i18n.t("No device detected.")} ${i18n.t(
+        "Please make sure your device is connected and the Stellar app is open on it.",
+      )}`;
     }
     if (message.indexOf("Incorrect length") > -1) {
       return i18n.t(

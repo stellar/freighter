@@ -92,7 +92,7 @@ export const EditSettings = ({
                 </Field>
                 <div className="EditTxSettings__congestion">
                   <CongestionIndicator congestion={congestion} />
-                  {t(congestion)} {t("congestion")}
+                  {`${t(congestion)} ${t("congestion")}`}
                 </div>
                 <Field name="timeout">
                   {({ field }: FieldProps) => (
