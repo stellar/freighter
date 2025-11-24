@@ -158,7 +158,7 @@ export const BackupPhraseWarningMessage = () => {
   return (
     <div className="WarningMessage__backup">
       <span className="WarningMessage__backup__description">
-        {t("Keep your recovery phrase in a safe and secure place.")}
+        {t("Keep your recovery phrase in a safe and secure place")}
       </span>
       <span className="WarningMessage__backup__description">
         {t(
@@ -605,13 +605,17 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
       header={t("WEBSITE CONNECTION IS NOT SECURE")}
     >
       <p className="SslWarningText">
-        <Trans domain={url}>
-          The website <strong>{url}</strong> does not use an SSL certificate.
-          For additional safety Freighter only works with websites that provide
-          an SSL certificate by default. You may enable connection to domains
-          that do not use an SSL certificate in Settings &gt; Security &gt;
-          Advanced Settings.
-        </Trans>
+        <Trans
+          domain={url}
+          i18nKey="The website <1>{url}</1> does not use an SSL certificate."
+          components={[<strong key="0">{url}</strong>]}
+        />{" "}
+        {t(
+          "For additional safety Freighter only works with websites that provide an SSL certificate by default.",
+        )}{" "}
+        {t(
+          "You may enable connection to domains that do not use an SSL certificate in Settings &gt; Security &gt; Advanced Settings.",
+        )}
       </p>
     </WarningMessage>
   );

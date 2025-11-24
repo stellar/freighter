@@ -81,9 +81,7 @@ export const ConfirmMigration = () => {
                     )}
                   </MigrationParagraph>
                   <Notification title={t("Important")} variant="warning">
-                    {t(
-                      "One of your accounts is a signer for another account. Freighter won't migrate signing settings. For your safety, Freighter won't merge accounts with signature set up so you can still control it.",
-                    )}
+                    {`${t("One of your accounts is a signer for another account.")} ${t("Freighter won't migrate signing settings.")} ${t("For your safety, Freighter won't merge accounts with signature set up so you can still control it.")}`}
                   </Notification>
                 </MigrationBody>
 
