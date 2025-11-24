@@ -614,6 +614,7 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
           domain={url}
           i18nKey="The website <1>{url}</1> does not use an SSL certificate."
           components={[<strong key="0">{url}</strong>]}
+          values={{ url }}
         />{" "}
         {t(
           "For additional safety Freighter only works with websites that provide an SSL certificate by default.",

@@ -100,6 +100,7 @@ const prodConfig = (
               options: {
                 createOldCatalogs: false,
                 locales: LOCALES,
+                defaultNamespace: "translation",
                 output: "src/popup/locales/$LOCALE/$NAMESPACE.json",
                 sort: true,
                 useKeysAsDefaultValue: false, // Don't use key as default

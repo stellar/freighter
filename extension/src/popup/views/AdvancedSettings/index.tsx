@@ -188,12 +188,11 @@ export const AdvancedSettings = () => {
               toggleId="isHashSigningEnabledValue"
               description={
                 <>
-                  {t(
+                  {`${t(
                     "This can be used to sign arbitrary transaction hashes without having to decode them first.",
-                  )}{" "}
-                  {t(
+                  )} ${t(
                     "Ledger will not display the transaction details in the device display prior to signing so make sure you only interact with applications you know and trust.",
-                  )}{" "}
+                  )}`}{" "}
                   <a
                     href="https://www.ledger.com/academy/enable-blind-signing-why-when-and-how-to-stay-safe/"
                     target="_blank"
