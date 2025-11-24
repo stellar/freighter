@@ -101,12 +101,15 @@ const prodConfig = (
                 createOldCatalogs: false,
                 locales: LOCALES,
                 defaultNamespace: "translation",
-                ns: ["translation"], // Only use translation namespace, ignore others
+                ns: ["translation"],
                 output: "src/popup/locales/$LOCALE/$NAMESPACE.json",
                 sort: true,
-                useKeysAsDefaultValue: false, // Don't use key as default
+                useKeysAsDefaultValue: false,
                 defaultValue: (locale, namespace, key, value) => {
-                  // Use custom function to preserve existing translations
+                  // Only process translation namespace
+                  if (namespace !== "translation") {
+                    return undefined;
+                  }
                   return preserveExistingTranslations(
                     locale,
                     namespace,
@@ -114,10 +117,10 @@ const prodConfig = (
                     value,
                   );
                 },
-                keepRemoved: true, // Keep keys not found in code
-                removeUnusedKeys: false, // Don't remove unused keys
-                keySeparator: false, // Don't create nested structures
-                nsSeparator: false, // Don't create nested structures
+                keepRemoved: true,
+                removeUnusedKeys: false,
+                keySeparator: false,
+                nsSeparator: false,
                 func: {
                   list: ["t", "i18next.t", "i18n.t"],
                   extensions: [".ts", ".tsx"],
