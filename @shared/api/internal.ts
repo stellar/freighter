@@ -5,6 +5,7 @@ import {
   Networks,
   Horizon,
   FeeBumpTransaction,
+  StrKey,
   Transaction,
   TransactionBuilder,
   xdr,
@@ -55,6 +56,7 @@ import {
   AssetVisibility,
   ApiTokenPrices,
   HorizonOperation,
+  UserNotification,
 } from "./types";
 import {
   AccountBalancesInterface,
@@ -73,7 +75,7 @@ import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
-import { getDomainFromIssuer } from "./helpers/getDomainFromIssuer";
+import { getLedgerKeyAccounts } from "./helpers/getLedgerKeyAccounts";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
 import { getIconFromTokenLists } from "./helpers/getIconFromTokenList";
 
@@ -530,9 +532,11 @@ export const migrateAccounts = async ({
 export const getAccountIndexerBalances = async ({
   publicKey,
   networkDetails,
+  shouldSkipScan,
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
+  shouldSkipScan?: boolean;
 }): Promise<AccountBalancesInterface> => {
   const contractIds = await getTokenIds({
     activePublicKey: publicKey,
@@ -540,6 +544,9 @@ export const getAccountIndexerBalances = async ({
   });
   const url = new URL(`${INDEXER_URL}/account-balances/${publicKey}`);
   url.searchParams.append("network", networkDetails.network);
+  if (shouldSkipScan) {
+    url.searchParams.append("should_skip_scan", "true");
+  }
   for (const id of contractIds) {
     url.searchParams.append("contract_ids", id);
   }
@@ -940,6 +947,7 @@ export const getAccountBalances = async (
   publicKey: string,
   networkDetails: NetworkDetails,
   isMainnet: boolean,
+  shouldSkipScan?: boolean,
 ) => {
   if (isCustomNetwork(networkDetails)) {
     return await getAccountBalancesStandalone({
@@ -948,7 +956,11 @@ export const getAccountBalances = async (
       isMainnet,
     });
   }
-  return await getAccountIndexerBalances({ publicKey, networkDetails });
+  return await getAccountIndexerBalances({
+    publicKey,
+    networkDetails,
+    shouldSkipScan,
+  });
 };
 
 export const getTokenDetails = async ({
@@ -956,11 +968,13 @@ export const getTokenDetails = async ({
   publicKey,
   networkDetails,
   shouldFetchBalance,
+  signal,
 }: {
   contractId: string;
   publicKey: string;
   networkDetails: NetworkDetails;
   shouldFetchBalance?: boolean;
+  signal?: AbortSignal;
 }): Promise<{
   name: string;
   decimals: number;
@@ -1016,6 +1030,7 @@ export const getTokenDetails = async ({
       `${INDEXER_URL}/token-details/${contractId}?pub_key=${publicKey}&network=${
         networkDetails.network
       }${shouldFetchBalance ? "&should_fetch_balance=true" : ""}`,
+      { signal },
     );
     const data = await response.json();
     if (!response.ok) {
@@ -1024,6 +1039,9 @@ export const getTokenDetails = async ({
 
     return data;
   } catch (error) {
+    if (signal?.aborted) {
+      return null;
+    }
     console.error(error);
     captureException(
       `Failed to fetch token details - ${JSON.stringify(
@@ -1034,6 +1052,35 @@ export const getTokenDetails = async ({
   }
 };
 
+export const getAssetIconCache = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string | null;
+}) => {
+  let icons = {};
+  try {
+    ({ icons } = await sendMessageToBackground({
+      activePublicKey,
+      type: SERVICE_TYPES.GET_CACHED_ASSET_ICON_LIST,
+    }));
+  } catch (e) {
+    return { icons };
+  }
+  return { icons };
+};
+
+/*
+  getAssetIcons is used to get the icons for the assets in the balances.
+  It can be used with or without lookup. Lookup is keyed off of passing assetListsData and networkDetails.
+  
+  Using this method without lookup is fastest as it just consults the cache and then returns the icons. 
+  This is useful for quickly getting the icons without extra network calls.
+
+  Using this method with lookup is slower as it needs to fetch the token lists and the issuer.
+  This is useful for getting the icons for the first time. Once we've retrieved an icon, 
+  we'll store it in the background's storage and then use this cache for future lookups.
+*/
+
 export const getAssetIcons = async ({
   balances,
   networkDetails,
@@ -1041,17 +1088,19 @@ export const getAssetIcons = async ({
   cachedIcons,
 }: {
   balances: Balances;
-  networkDetails: NetworkDetails;
-  assetsListsData: AssetListResponse[];
-  cachedIcons: Record<string, string>;
+  networkDetails?: NetworkDetails;
+  assetsListsData?: AssetListResponse[];
+  cachedIcons: Record<string, string | null>;
 }) => {
-  const assetIcons = {} as { [code: string]: string };
+  const assetIcons = {} as { [code: string]: string | null };
+  const skipLookup = !assetsListsData || !networkDetails;
+  const domainsToFetch = [] as { key: string; code: string }[];
 
   if (balances) {
-    let icon = "";
     const balanceValues = Object.values(balances);
 
     for (let i = 0; i < balanceValues.length; i++) {
+      let icon = "";
       const { token, contractId } = balanceValues[i];
       if (token && "issuer" in token) {
         const {
@@ -1066,8 +1115,19 @@ export const getAssetIcons = async ({
           continue;
         }
 
-        icon = await getIconUrlFromIssuer({ key, code, networkDetails });
+        if (cachedIcon === null) {
+          // if we've tried to fetch this icon before and it wasn't found, we marked it as null
+          // don't bother trying to fetch it again
+          // this null value is only stored in Redux, so we will re-try on next app reload
+          continue;
+        }
+
+        if (skipLookup) {
+          continue;
+        }
+
         if (!icon) {
+          // if we don't have the icon, we try to get it from the token lists
           const tokenListIcon = await getIconFromTokenLists({
             networkDetails,
             issuerId: key,
@@ -1078,11 +1138,44 @@ export const getAssetIcons = async ({
           if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
             icon = tokenListIcon.icon;
             canonical = tokenListIcon.canonicalAsset;
+          } else {
+            // if we still don't have the icon, we try to get it from the issuer,
+            // aggregate the missing icons and we'll fetch all the domains at once
+            domainsToFetch.push({ key, code });
           }
         }
-        assetIcons[canonical] = icon;
+
+        // we assign null here if we checked all sources and still don't have the icon
+        assetIcons[canonical] = icon || null;
       }
     }
+  }
+
+  if (domainsToFetch.length > 0 && networkDetails) {
+    const assetDomains = await getAssetDomains({
+      assetIssuerDomainsToFetch: domainsToFetch.map(({ key }) => key),
+      networkDetails,
+    });
+
+    const iconsToFetch = [] as Promise<void>[];
+    for (const { key, code } of domainsToFetch) {
+      const canonical = getCanonicalFromAsset(code, key);
+      if (assetDomains[key]) {
+        const fetchIcon = getIconUrlFromIssuer({
+          key,
+          code,
+          networkDetails,
+          homeDomain: assetDomains[key],
+        }).then((icon) => {
+          assetIcons[canonical] = icon || null;
+        });
+
+        iconsToFetch.push(fetchIcon);
+      } else {
+        assetIcons[canonical] = null;
+      }
+    }
+    await Promise.all(iconsToFetch);
   }
   return assetIcons;
 };
@@ -1096,7 +1189,7 @@ export const retryAssetIcon = async ({
 }: {
   key: string;
   code: string;
-  assetIcons: { [code: string]: string };
+  assetIcons: { [code: string]: string | null };
   networkDetails: NetworkDetails;
   activePublicKey: string | null;
 }) => {
@@ -1116,31 +1209,40 @@ export const retryAssetIcon = async ({
   return newAssetIcons;
 };
 
+/**
+ * getAssetDomains returns the home domain for a given asset issuer.
+ *
+ * @param assetIssuerDomainsToFetch - A list of asset issuer addresses to fetch the home domain for.
+ * @param networkDetails - Network configuration details
+ * @returns an object with the asset issuer address as the key and the home domain as the value.
+ */
 export const getAssetDomains = async ({
-  balances,
+  assetIssuerDomainsToFetch,
   networkDetails,
 }: {
-  balances: Balances;
+  assetIssuerDomainsToFetch: string[];
   networkDetails: NetworkDetails;
 }) => {
-  const assetDomains = {} as { [code: string]: string };
-
-  if (balances) {
-    const balanceValues = Object.values(balances);
-
-    for (let i = 0; i < balanceValues.length; i++) {
-      const { token } = balanceValues[i];
-      if (token && "issuer" in token) {
-        const {
-          issuer: { key },
-          code,
-        } = token;
-
-        const domain = await getDomainFromIssuer({ key, code, networkDetails });
-        assetDomains[`${code}:${key}`] = domain;
-      }
-    }
+  let assetDomains = {} as { [code: string]: string };
+  const filteredAssetIssuerDomainsToFetch = assetIssuerDomainsToFetch.filter(
+    (domain) => StrKey.isValidEd25519PublicKey(domain),
+  );
+  if (filteredAssetIssuerDomainsToFetch.length === 0) {
+    return assetDomains;
   }
+  try {
+    const fetchedAccounts = await getLedgerKeyAccounts({
+      accountList: filteredAssetIssuerDomainsToFetch,
+      networkDetails,
+    });
+    Object.entries(fetchedAccounts).forEach(([key, value]) => {
+      assetDomains[key] = value.home_domain;
+    });
+  } catch (e) {
+    captureException(`Error constructing asset domains: ${e}`);
+    return {};
+  }
+
   return assetDomains;
 };
 
@@ -1688,6 +1790,17 @@ export const loadSettings = (): Promise<
     activePublicKey: null,
     type: SERVICE_TYPES.LOAD_SETTINGS,
   });
+
+export const loadBackendSettings = async (): Promise<{
+  isSorobanPublicEnabled: boolean;
+  isRpcHealthy: boolean;
+  userNotification: UserNotification;
+}> => {
+  return await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.LOAD_BACKEND_SETTINGS,
+  });
+};
 
 export const getMemoRequiredAccounts = async ({
   activePublicKey,

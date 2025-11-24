@@ -12,6 +12,9 @@ import { View } from "popup/basics/layout/View";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { EnterPassword } from "popup/components/EnterPassword";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
+import { Loading } from "popup/components/Loading";
+
+import { useGetSubmitAccountData } from "./hooks/useGetSubmitAccountData";
 import { useSubmitTxData } from "./hooks/useSubmitTxData";
 import { ROUTES } from "popup/constants/routes";
 import {
@@ -27,6 +30,7 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { navigateTo, openTab } from "popup/helpers/navigate";
+import { AppDataType } from "helpers/hooks/useGetAppData";
 import { iconsSelector } from "popup/ducks/cache";
 import { resetSimulation } from "popup/ducks/token-payment";
 import { SubmitFail } from "../SubmitFail";
@@ -75,6 +79,8 @@ export const SendingTransaction = ({
     xdr,
     isHardwareWallet,
   });
+  const { state: submitAccountState, fetchData: fetchSubmitAccountData } =
+    useGetSubmitAccountData();
 
   useEffect(() => {
     const getData = async () => {
@@ -82,15 +88,39 @@ export const SendingTransaction = ({
         isSwap,
       });
     };
-    if (!isVerifyAccountModalOpen) {
+    if (
+      submitAccountState.state === RequestState.SUCCESS &&
+      submitAccountState.data.type === AppDataType.RESOLVED &&
+      hasPrivateKey
+    ) {
       getData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isVerifyAccountModalOpen]);
+  }, [submitAccountState, hasPrivateKey]);
+
+  useEffect(() => {
+    const getData = async () => {
+      await fetchSubmitAccountData();
+    };
+    getData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (
+      submitAccountState.state === RequestState.SUCCESS &&
+      submitAccountState.data.type === AppDataType.RESOLVED &&
+      !submitAccountState.data.hasPrivateKey
+    ) {
+      setIsVerifyAccountModalOpen(true);
+    }
+  }, [submitAccountState]);
 
   const handleConfirm = async (password: string) => {
-    await dispatch(confirmPassword(password));
-    setIsVerifyAccountModalOpen(false);
+    const confirmPasswordResp = await dispatch(confirmPassword(password));
+    if (confirmPassword.fulfilled.match(confirmPasswordResp)) {
+      setIsVerifyAccountModalOpen(false);
+    }
   };
 
   const isSwap = Boolean(destinationAsset);
@@ -103,6 +133,13 @@ export const SendingTransaction = ({
   const dstAssetIcon = icons[destinationAsset]!;
   const dstAssetIcons =
     destinationAsset !== "native" ? { [destinationAsset]: dstAssetIcon } : {};
+
+  if (
+    submitAccountState.state == RequestState.IDLE ||
+    submitAccountState.state == RequestState.LOADING
+  ) {
+    return <Loading />;
+  }
 
   return (
     <>
@@ -122,7 +159,10 @@ export const SendingTransaction = ({
             <div className="SendingTransaction__Footer">
               {isLoading && (
                 <>
-                  <div className="SendingTransaction__Footer__Subtext">
+                  <div
+                    className="SendingTransaction__Footer__Subtext"
+                    data-testid="sending-transaction-footer-subtext"
+                  >
                     You can close this screen, your transaction should be
                     complete in less than a minute.
                   </div>

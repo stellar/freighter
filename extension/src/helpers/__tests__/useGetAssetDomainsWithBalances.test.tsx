@@ -11,13 +11,16 @@ import {
 } from "popup/__testHelpers__";
 import { RequestState } from "constants/request";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
-import { getAssetDomain } from "popup/helpers/getAssetDomain";
+import { getAssetDomains } from "@shared/api/internal";
 
 jest.mock("@shared/api/internal", () => ({
   ...jest.requireActual("@shared/api/internal"),
   getAccountBalances: jest.fn(),
   getAssetIcons: jest.fn().mockResolvedValue({}),
   getHiddenAssets: jest.fn().mockResolvedValue({ hiddenAssets: [] }),
+  getAssetDomains: jest.fn().mockResolvedValue({
+    GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM: "example2.com",
+  }),
 }));
 jest.mock("@shared/api/helpers/getIconUrlFromIssuer", () => ({
   ...jest.requireActual("@shared/api/internal"),
@@ -27,12 +30,22 @@ jest.mock("@shared/api/helpers/token-list", () => ({
   getCombinedAssetListData: jest.fn().mockResolvedValue([]),
 }));
 jest.mock("popup/helpers/account", () => ({
-  ...jest.requireActual("popup/helpers/account"),
+  sortBalances: (balances: any) => {
+    if (!balances) return [];
+    const result = [];
+    // Put native (XLM) first
+    if (balances.native) {
+      result.push(balances.native);
+    }
+    // Then add all other assets
+    Object.entries(balances).forEach(([key, value]) => {
+      if (key !== "native") {
+        result.push(value);
+      }
+    });
+    return result;
+  },
   filterHiddenBalances: (_b: any) => _b,
-}));
-jest.mock("popup/helpers/getAssetDomain", () => ({
-  ...jest.requireActual("popup/helpers/getAssetDomain"),
-  getAssetDomain: jest.fn(),
 }));
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
@@ -68,13 +81,18 @@ describe("useGetAssetDomainsWithBalances (cached path)", () => {
     },
     cache: {
       balanceData: {
-        [TESTNET_NETWORK_DETAILS.network]: { [publicKey]: cachedBalanceData },
+        [TESTNET_NETWORK_DETAILS.network]: {
+          [publicKey]: { ...cachedBalanceData, updatedAt: Date.now() },
+        },
       },
       icons: cachedIcons,
       tokenLists: tokenListData,
       homeDomains: {
-        [testCanonicalIssuer]: "example.com",
-        GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM: "example.com",
+        [TESTNET_NETWORK_DETAILS.network]: {
+          [testCanonicalIssuer]: "example.com",
+          GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM:
+            "example.com",
+        },
       },
     },
     settings: {
@@ -84,13 +102,14 @@ describe("useGetAssetDomainsWithBalances (cached path)", () => {
   };
 
   const store = makeDummyStore(preloadedState);
-  const Wrapper =
-    (store: ReturnType<typeof makeDummyStore>) =>
-    ({ children }: { children: React.ReactNode }) => (
-      <Provider store={store}>{children}</Provider>
-    );
 
   it("serves domains from the cache and skips the API call", async () => {
+    const Wrapper =
+      (store: ReturnType<typeof makeDummyStore>) =>
+      ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      );
+
     const { result } = renderHook(
       () =>
         useGetAssetDomainsWithBalances({
@@ -104,7 +123,190 @@ describe("useGetAssetDomainsWithBalances (cached path)", () => {
       await result.current.fetchData(true);
     });
 
-    expect(getAssetDomain).not.toHaveBeenCalled();
+    expect(getAssetDomains).not.toHaveBeenCalled();
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
+  });
+  it("serves some domains from the cache and backfills using the API", async () => {
+    const partialCachedState = {
+      ...preloadedState,
+      cache: {
+        ...preloadedState.cache,
+        homeDomains: {
+          [TESTNET_NETWORK_DETAILS.network]: {
+            [testCanonicalIssuer]: "example.com",
+          },
+        },
+      },
+    };
+
+    const store = makeDummyStore(partialCachedState);
+    const Wrapper =
+      (store: ReturnType<typeof makeDummyStore>) =>
+      ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      );
+
+    const { result } = renderHook(
+      () =>
+        useGetAssetDomainsWithBalances({
+          showHidden: false,
+          includeIcons: false,
+        }),
+      { wrapper: Wrapper(store) },
+    );
+
+    await act(async () => {
+      await result.current.fetchData(true);
+    });
+
+    expect(getAssetDomains).toHaveBeenCalledWith({
+      assetIssuerDomainsToFetch: [
+        "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      ],
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+    expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
+    // @ts-ignore
+    expect(result.current.state.data?.domains).toEqual([
+      {
+        code: "DT",
+        issuer: testCanonicalIssuer,
+        image: null,
+        domain: "example.com",
+        contract: undefined,
+        isSuspicious: false,
+      },
+      {
+        code: "USDC",
+        issuer: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+        image: null,
+        domain: "example2.com",
+        contract: undefined,
+        isSuspicious: true,
+      },
+    ]);
+  });
+  it("serves all domains using the API", async () => {
+    const partialCachedState = {
+      ...preloadedState,
+      cache: {
+        ...preloadedState.cache,
+        homeDomains: {},
+      },
+    };
+
+    const store = makeDummyStore(partialCachedState);
+    const Wrapper =
+      (store: ReturnType<typeof makeDummyStore>) =>
+      ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      );
+
+    const { result } = renderHook(
+      () =>
+        useGetAssetDomainsWithBalances({
+          showHidden: false,
+          includeIcons: false,
+        }),
+      { wrapper: Wrapper(store) },
+    );
+
+    (getAssetDomains as jest.Mock).mockImplementationOnce(() =>
+      Promise.resolve({
+        [testCanonicalIssuer]: "example.com",
+        GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM:
+          "example2.com",
+      }),
+    );
+
+    await act(async () => {
+      await result.current.fetchData(true);
+    });
+
+    expect(getAssetDomains).toHaveBeenCalledWith({
+      assetIssuerDomainsToFetch: [
+        testCanonicalIssuer,
+        "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      ],
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+    expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
+
+    // @ts-ignore
+    expect(result.current.state.data?.domains).toEqual([
+      {
+        code: "DT",
+        issuer: testCanonicalIssuer,
+        image: null,
+        domain: "example.com",
+        contract: undefined,
+        isSuspicious: false,
+      },
+      {
+        code: "USDC",
+        issuer: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+        image: null,
+        domain: "example2.com",
+        contract: undefined,
+        isSuspicious: true,
+      },
+    ]);
+  });
+  it("serves all domains using the API - sets null for domains that are not found", async () => {
+    const partialCachedState = {
+      ...preloadedState,
+      cache: {
+        ...preloadedState.cache,
+        homeDomains: {},
+      },
+    };
+
+    const store = makeDummyStore(partialCachedState);
+    const Wrapper =
+      (store: ReturnType<typeof makeDummyStore>) =>
+      ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      );
+
+    const { result } = renderHook(
+      () =>
+        useGetAssetDomainsWithBalances({
+          showHidden: false,
+          includeIcons: false,
+        }),
+      { wrapper: Wrapper(store) },
+    );
+
+    await act(async () => {
+      await result.current.fetchData(true);
+    });
+
+    expect(getAssetDomains).toHaveBeenCalledWith({
+      assetIssuerDomainsToFetch: [
+        testCanonicalIssuer,
+        "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      ],
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+    expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
+    // @ts-ignore
+    expect(result.current.state.data?.domains).toEqual([
+      {
+        code: "DT",
+        issuer: testCanonicalIssuer,
+        image: null,
+        domain: null,
+        contract: undefined,
+        isSuspicious: false,
+      },
+      {
+        code: "USDC",
+        issuer: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+        image: null,
+        domain: "example2.com",
+        contract: undefined,
+        isSuspicious: true,
+      },
+    ]);
   });
 });
