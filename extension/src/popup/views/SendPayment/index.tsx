@@ -98,6 +98,7 @@ export const SendPayment = () => {
     if (destinationParam) {
       const isValidDestination =
         StrKey.isValidEd25519PublicKey(destinationParam) ||
+        StrKey.isValidMed25519PublicKey(destinationParam) ||
         isContractId(destinationParam);
 
       if (isValidDestination) {
