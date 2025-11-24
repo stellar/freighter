@@ -96,6 +96,7 @@
   "Confirm removing Network": "Confirmar remoção da Rede",
   "Confirm Transaction": "Confirmar Transação",
   "Confirm Your Recovery Phrase": "Confirme Sua Frase de Recuperação",
+  "congestion": "congestão",
   "Connect": "Conectar",
   "Connect {walletType}": "Conectar {walletType}",
   "Connect a hardware wallet": "Conectar uma carteira de hardware",
@@ -480,7 +481,7 @@
   "The token you're trying to add is on": "O token que você está tentando adicionar está em",
   "The transaction you're trying to sign is on": "A transação que você está tentando assinar está em",
   "The website <1>{url}</1> does not use an SSL certificate": "The website <1>{url}</1> does not use an SSL certificate.",
-  "There are no sites to display at this moment": "There are no sites to display at this moment.",
+  "There are no sites to display at this moment": "Não há sites para exibir no momento.",
   "These assets are not on any of your lists": {
     " Proceed with caution before adding": "These assets are not on any of your lists. Proceed with caution before adding."
   },
