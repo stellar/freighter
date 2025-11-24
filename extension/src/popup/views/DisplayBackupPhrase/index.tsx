@@ -135,7 +135,7 @@ export const DisplayBackupPhrase = () => {
               <MnemonicDisplay mnemonicPhrase={mnemonicPhrase} />
               <span className="DisplayBackupPhrase__description">
                 {t(
-                  "These words are your wallet’s keys—store them securely to keep your funds safe.",
+                  "These words are your wallet's keys—store them securely to keep your funds safe.",
                 )}
               </span>
             </div>

@@ -172,7 +172,7 @@ export const AdvancedSettings = () => {
               isToggled={initialValues.isExperimentalModeEnabledValue}
               toggleId="isExperimentalModeEnabledValue"
               description={t(
-                "Use experimental API’s and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing.",
+                "Use experimental API's and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing.",
               )}
             />
             <AdvancedSettingFeature

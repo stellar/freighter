@@ -66,7 +66,7 @@ export const ConfirmMigration = () => {
                   <div>{t("Migrating...")}</div>
                 </Heading>
                 <Text as="div" size="md" className="MigrationParagraph">
-                  {t("Please don’t close this window.")}
+                  {t("Please don't close this window.")}
                 </Text>
               </div>
             ) : (
@@ -77,12 +77,12 @@ export const ConfirmMigration = () => {
                 <MigrationBody>
                   <MigrationParagraph>
                     {t(
-                      "As long as you have your old and new mnemonics phrase, you’ll still be able to control accounts related to your current backup phrase which were not merged. For that, you’ll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time).",
+                      "As long as you have your old and new mnemonics phrase, you'll still be able to control accounts related to your current backup phrase which were not merged. For that, you'll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time).",
                     )}
                   </MigrationParagraph>
                   <Notification title={t("Important")} variant="warning">
                     {t(
-                      "One of your accounts is a signer for another account. Freighter won’t migrate signing settings. For your safety, Freighter won’t merge accounts with signature set up so you can still control it.",
+                      "One of your accounts is a signer for another account. Freighter won't migrate signing settings. For your safety, Freighter won't merge accounts with signature set up so you can still control it.",
                     )}
                   </Notification>
                 </MigrationBody>

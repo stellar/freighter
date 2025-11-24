@@ -91,11 +91,11 @@ export const SubmitFail = () => {
         );
         break;
       case RESULT_CODES.op_no_destination:
-        errorDetails.title = t("Destination account doesn’t exist");
+        errorDetails.title = t("Destination account doesn't exist");
         errorDetails.errorBlock = (
           <Notification
             variant="error"
-            title={t("The destination account doesn’t exist")}
+            title={t("The destination account doesn't exist")}
           >
             <div>
               {t("Make sure it is a funded Stellar account and try again.")}{" "}
@@ -120,7 +120,7 @@ export const SubmitFail = () => {
           <Notification
             variant="error"
             title={t(
-              "The destination account does not accept the asset you’re sending",
+              "The destination account does not accept the asset you're sending",
             )}
           >
             <div>

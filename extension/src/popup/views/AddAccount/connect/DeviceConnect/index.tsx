@@ -107,7 +107,7 @@ export const DeviceConnect = () => {
         </div>
         <div className="DeviceConnect__caption">
           {walletConnectSuccessful
-            ? t("You’re good to go!")
+            ? t("You're good to go!")
             : t("Connect device to computer")}
         </div>
         <div className="DeviceConnect__content__center">

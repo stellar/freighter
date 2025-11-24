@@ -38,7 +38,7 @@ export const MigrationStart = () => {
       <MigrationBody hasWarning>
         <MigrationParagraph>
           {t(
-            "At the end of this process, Freighter will only display accounts related to the new backup phrase. You’ll still be able to import your current backup phrase into Freighter and control current accounts as long as they were not merged into the new accounts.",
+            "At the end of this process, Freighter will only display accounts related to the new backup phrase. You'll still be able to import your current backup phrase into Freighter and control current accounts as long as they were not merged into the new accounts.",
           )}
         </MigrationParagraph>
         <Notification title={t("Important, Please Read")} variant="warning">
@@ -64,7 +64,7 @@ export const MigrationStart = () => {
         </MigrationParagraph>
         <MigrationParagraph>
           {t(
-            "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account. Merging is optional and will allow you to send your current account’s funding lumens to the new accounts.",
+            "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account. Merging is optional and will allow you to send your current account's funding lumens to the new accounts.",
           )}
         </MigrationParagraph>
       </MigrationBody>

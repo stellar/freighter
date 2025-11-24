@@ -45,7 +45,7 @@ export const FullscreenSuccessMessage = () => {
         <div className="FullscreenSuccessMessage">
           <Onboarding layout="half">
             <OnboardingModal
-              headerText={t("You’re all set!")}
+              headerText={t("You're all set!")}
               bodyText={
                 <div className="FullscreenSuccessMessage__text">
                   <Text as="p" size="md">

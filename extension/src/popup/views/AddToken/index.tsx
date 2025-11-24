@@ -276,7 +276,7 @@ export const AddToken = () => {
         header={`${t("Freighter is set to")} ${networkName}`}
       >
         <p>
-          {t("The token you’re trying to add is on")} {entryNetworkPassphrase}.
+          {t("The token you're trying to add is on")} {entryNetworkPassphrase}.
         </p>
         <p>{t("Adding this token is not possible at the moment.")}</p>
       </WarningMessage>

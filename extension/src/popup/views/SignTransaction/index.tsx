@@ -246,7 +246,7 @@ export const SignTransaction = () => {
         header={`${t("Freighter is set to")} ${networkName}`}
       >
         <p>
-          {t("The transaction you’re trying to sign is on")}{" "}
+          {t("The transaction you're trying to sign is on")}{" "}
           {_networkPassphrase}.
         </p>
         <p>{t("Signing this transaction is not possible at the moment.")}</p>
