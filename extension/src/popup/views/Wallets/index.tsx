@@ -178,7 +178,7 @@ const RenameWallet = ({
                     )}
                   </Field>
                   <div className="RenameWallet__short-address">
-                    {t("Address:")} {shortPublicKey}
+                    {t("Address")}: {shortPublicKey}
                   </div>
                   <div className="RenameWallet__actions">
                     <Button

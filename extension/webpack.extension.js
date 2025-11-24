@@ -106,10 +106,6 @@ const prodConfig = (
                 sort: true,
                 useKeysAsDefaultValue: false,
                 defaultValue: (locale, namespace, key, value) => {
-                  // Only process translation namespace
-                  if (namespace !== "translation") {
-                    return undefined;
-                  }
                   return preserveExistingTranslations(
                     locale,
                     namespace,
