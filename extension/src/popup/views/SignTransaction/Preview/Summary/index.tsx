@@ -7,12 +7,15 @@ import { CopyValue } from "popup/components/CopyValue";
 
 import "./styles.scss";
 
-const mapMemoLabel: any = {
-  id: "MEMO_ID",
-  hash: "MEMO_HASH",
-  text: "MEMO_TEXT",
-  return: "MEMO_RETURN",
-  none: "MEMO_NONE",
+const getMemoLabel = (type: MemoType): string => {
+  const map: Record<string, string> = {
+    id: "MEMO_ID",
+    hash: "MEMO_HASH",
+    text: "MEMO_TEXT",
+    return: "MEMO_RETURN",
+    none: "MEMO_NONE",
+  };
+  return map[type] || "MEMO_NONE";
 };
 
 interface SummaryProps {
@@ -52,9 +55,9 @@ export const Summary = (props: SummaryProps) => {
           <div className="TxInfoBlock__title">
             <p>{t("Memo")}</p>
           </div>
-          <p className="TxInfoBlock__value">{`${props.memo.value} (${
-            mapMemoLabel[props.memo.type]
-          })`}</p>
+          <p className="TxInfoBlock__value">{`${props.memo.value} (${getMemoLabel(
+            props.memo.type,
+          )})`}</p>
         </div>
       )}
       <div className="TxInfoBlock">

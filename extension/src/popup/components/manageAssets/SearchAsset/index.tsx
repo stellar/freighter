@@ -228,8 +228,7 @@ export const SearchAsset = () => {
                 </SearchResults>
                 {dirty && hasNoResults ? (
                   <div className="SearchAsset__copy">
-                    {t("Unable to find your asset.")}{" "}
-                    {t("Please check the asset code or address.")}
+                    {`${t("Unable to find your asset.")} ${t("Please check the asset code or address.")}`}
                   </div>
                 ) : null}
               </FormRows>

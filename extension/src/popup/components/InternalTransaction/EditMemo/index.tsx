@@ -4,6 +4,7 @@ import { Field, FieldProps, Form, Formik } from "formik";
 import { useTranslation } from "react-i18next";
 
 import { View } from "popup/basics/layout/View";
+import { useValidateMemo } from "popup/helpers/useValidateMemo";
 
 import "./styles.scss";
 
@@ -19,11 +20,23 @@ interface EditMemoProps {
 
 export const EditMemo = ({ memo, onClose, onSubmit }: EditMemoProps) => {
   const { t } = useTranslation();
+  const [localMemo, setLocalMemo] = React.useState(memo);
+  const { error: memoError } = useValidateMemo(localMemo);
+
   const initialValues: FormValue = {
     memo,
   };
-  const handleSubmit = async (values: FormValue) => {
+
+  const handleSubmit = (values: FormValue) => {
+    // Prevent submission if there's a validation error
+    if (memoError) {
+      return;
+    }
     onSubmit(values);
+  };
+
+  const handleFieldChange = (value: string) => {
+    setLocalMemo(value);
   };
 
   return (
@@ -45,7 +58,11 @@ export const EditMemo = ({ memo, onClose, onSubmit }: EditMemoProps) => {
                         id="memo"
                         placeholder={t("Memo")}
                         {...field}
-                        error={errors.memo}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          handleFieldChange(e.target.value);
+                        }}
+                        error={memoError || errors.memo}
                       />
                     )}
                   </Field>
