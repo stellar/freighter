@@ -24,6 +24,10 @@ import {
 import { computeDestMinWithSlippage } from "helpers/transaction";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { getBaseAccount } from "popup/helpers/account";
+import {
+  determineMuxedDestination,
+  checkContractMuxedSupport,
+} from "helpers/muxedAddress";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import {
   CLASSIC_ASSET_DECIMALS,
@@ -175,7 +179,9 @@ const getBuiltTx = async (
       .addOperation(operation)
       .setTimeout(transactionTimeout);
 
-    if (memo) {
+    // Don't add memo if destination is a muxed account (memo is encoded in the muxed address)
+    const isRecipientMuxed = isMuxedAccount(destination);
+    if (memo && !isRecipientMuxed) {
       transaction.addMemo(Memo.text(memo));
     }
 
@@ -380,6 +386,31 @@ function useSimulateTxData({
         Number("decimals" in assetBalance ? assetBalance.decimals : 7),
       );
 
+      // For Soroban transfers, check if contract supports muxed and determine final destination
+      let finalDestination = destination;
+      let sorobanMemo = memo;
+      if (simParams.type === "soroban") {
+        try {
+          const contractSupportsMuxed = await checkContractMuxedSupport({
+            contractId: tokenAddress,
+            networkDetails,
+          });
+          finalDestination = determineMuxedDestination({
+            recipientAddress: destination,
+            transactionMemo: memo,
+            contractSupportsMuxed,
+          });
+          // For Soroban transfers with muxed support, don't pass memo separately
+          // (it's encoded in the muxed address)
+          if (contractSupportsMuxed) {
+            sorobanMemo = undefined;
+          }
+        } catch (error) {
+          // If we can't determine muxed destination, use original destination
+          console.error("Error determining muxed destination:", error);
+        }
+      }
+
       const simResponse = await simulateTx({
         type: simParams.type,
         recommendedFee: transactionFee,
@@ -387,11 +418,11 @@ function useSimulateTxData({
           tokenPayment: {
             address: tokenAddress,
             publicKey,
-            memo,
+            memo: sorobanMemo,
             params: {
               amount: parsedAmount.toNumber(),
               publicKey,
-              destination,
+              destination: finalDestination,
             },
             networkDetails,
             transactionFee,

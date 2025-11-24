@@ -1976,7 +1976,7 @@ export const simulateTokenTransfer = async (args: {
 
     const transferParams = [
       new Address(publicKey).toScVal(), // from
-      new Address(address).toScVal(), // to
+      new Address(params.destination).toScVal(), // to
       new XdrLargeInt("i128", params.amount).toI128(), // amount
     ];
     const transaction = transfer(address, transferParams, memo, builder);
