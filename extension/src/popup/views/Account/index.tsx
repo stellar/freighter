@@ -258,12 +258,11 @@ export const Account = () => {
                 title={t("You are in fullscreen mode")}
                 variant="primary"
               >
-                {t(
+                {`${t(
                   "Note that you will need to reload this tab to load any account changes that happen outside this session.",
-                )}{" "}
-                {t(
+                )} ${t(
                   "For your own safety, please close this window when you are done.",
-                )}
+                )}`}
               </Notification>
             </div>
           )}

@@ -639,6 +639,10 @@ export const SendAmount = ({
             networkDetails={sendAmountData.data?.networkDetails!}
             onCancel={() => setIsReviewingTx(false)}
             onConfirm={goToNext}
+            onAddMemo={() => {
+              setIsReviewingTx(false);
+              setIsEditingMemo(true);
+            }}
             sendAmount={amount}
             sendPriceUsd={priceValueUsd}
             simulationState={simulationState}

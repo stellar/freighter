@@ -35,8 +35,7 @@ export const TokenList = ({
     <div className="TokenList__Assets">
       {!tokens.length ? (
         <div className="TokenList__Assets__empty">
-          {t("You have no assets added.")}{" "}
-          {t("Get started by adding an asset.")}
+          {`${t("You have no assets added.")} ${t("Get started by adding an asset.")}`}
         </div>
       ) : (
         <>

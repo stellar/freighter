@@ -63,8 +63,7 @@ export const SubmitFail = () => {
         errorDetails.errorBlock = (
           <Notification variant="error" title={t("Network fees")}>
             <div>
-              {t("Fees can vary depending on the network congestion.")}{" "}
-              {t("Please try using the suggested fee and try again.")}{" "}
+              {`${t("Fees can vary depending on the network congestion.")} ${t("Please try using the suggested fee and try again.")} `}
               <Link
                 isUnderline
                 variant="secondary"
@@ -83,13 +82,9 @@ export const SubmitFail = () => {
         errorDetails.errorBlock = (
           <Notification
             variant="error"
-            title={
-              t(
-                "Your account balance is not sufficient for this transaction.",
-              ) +
-              " " +
-              t("Please review the transaction and try again.")
-            }
+            title={`${t(
+              "Your account balance is not sufficient for this transaction.",
+            )} ${t("Please review the transaction and try again.")}`}
           />
         );
         break;

@@ -500,6 +500,7 @@
   "This asset was flagged as suspicious": "This asset was flagged as suspicious",
   "This can be used to sign arbitrary transaction hashes without having to decode them first.": "This can be used to sign arbitrary transaction hashes without having to decode them first.",
   "This is not a valid contract id.": "This is not a valid contract id.",
+  "This setting enables access to the Futurenet network and disables access to Pubnet.": "This setting enables access to the Futurenet network and disables access to Pubnet.",
   "This site was flagged as malicious": "This site was flagged as malicious",
   "This transaction could not be completed.": "This transaction could not be completed.",
   "This transaction does not appear safe for the following reasons": "This transaction does not appear safe for the following reasons",

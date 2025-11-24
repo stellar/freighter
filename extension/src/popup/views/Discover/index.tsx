@@ -93,10 +93,9 @@ export const Discover = () => {
           {allowedDiscoverRows.length ? (
             <div className="Discover__footer">
               <div className="Discover__footer__copy">
-                {t(
+                {`${t(
                   "Freighter provides access to third-party dApps, protocols, and tokens for informational purposes only.",
-                )}{" "}
-                {t("Freighter does not endorse any listed items.")}
+                )} ${t("Freighter does not endorse any listed items.")}`}
               </div>
               <div className="Discover__footer__copy">
                 {t(

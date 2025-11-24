@@ -51,6 +51,7 @@ interface ReviewTxProps {
   title: string;
   onConfirm: () => void;
   onCancel: () => void;
+  onAddMemo?: () => void;
 }
 
 export const ReviewTx = ({
@@ -65,6 +66,7 @@ export const ReviewTx = ({
   title,
   onConfirm,
   onCancel,
+  onAddMemo,
 }: ReviewTxProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -288,22 +290,39 @@ export const ReviewTx = ({
             ]}
           />
           <div className="ReviewTx__Actions">
-            <Button
-              size="lg"
-              isFullWidth
-              isRounded
-              variant="secondary"
-              data-testid="SubmitAction"
-              disabled={isSubmitDisabled}
-              onClick={(e) => {
-                e.preventDefault();
-                onConfirmTx();
-              }}
-            >
-              {dstAsset && dest
-                ? `${t("Swap")} ${asset.code} ${t("to")} ${dest.code}`
-                : `${t("Send to")} ${truncatedDest}`}
-            </Button>
+            {isRequiredMemoMissing && !isValidatingMemo && onAddMemo ? (
+              <Button
+                size="lg"
+                isFullWidth
+                isRounded
+                variant="secondary"
+                data-testid="AddMemoAction"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onAddMemo();
+                }}
+              >
+                {t("Add Memo")}
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                isFullWidth
+                isRounded
+                variant="secondary"
+                data-testid="SubmitAction"
+                disabled={isSubmitDisabled}
+                isLoading={isValidatingMemo}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onConfirmTx();
+                }}
+              >
+                {dstAsset && dest
+                  ? `${t("Swap")} ${asset.code} ${t("to")} ${dest.code}`
+                  : `${t("Send to")} ${truncatedDest}`}
+              </Button>
+            )}
             <Button
               size="lg"
               isFullWidth

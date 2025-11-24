@@ -76,12 +76,11 @@ export const ConfirmMigration = () => {
                 </MigrationHeader>
                 <MigrationBody>
                   <MigrationParagraph>
-                    {t(
+                    {`${t(
                       "As long as you have your old and new mnemonics phrase, you'll still be able to control accounts related to your current backup phrase which were not merged.",
-                    )}{" "}
-                    {t(
+                    )} ${t(
                       "For that, you'll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time).",
-                    )}
+                    )}`}
                   </MigrationParagraph>
                   <Notification title={t("Important")} variant="warning">
                     {`${t("One of your accounts is a signer for another account.")} ${t("Freighter won't migrate signing settings.")} ${t("For your safety, Freighter won't merge accounts with signature set up so you can still control it.")}`}
