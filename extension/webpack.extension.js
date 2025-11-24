@@ -54,6 +54,9 @@ const prodConfig = (
                 output: "src/popup/locales/$LOCALE/$NAMESPACE.json",
                 sort: true,
                 useKeysAsDefaultValue: true,
+                keepRemoved: true, // Keep keys that are not found in code (e.g. High/Medium/Low Congestion)
+                keySeparator: false, // Don't create nested structures
+                nsSeparator: false, // Don't create nested structures
               },
             }),
           ]
