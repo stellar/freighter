@@ -203,18 +203,22 @@ type ParseWalletError = {
 export const parseWalletError: ParseWalletError = {
   [WalletType.LEDGER]: (err: any) => {
     const message = err.message || err;
-    const defaultErr = "Error connecting. Please try again.";
+    const defaultErr = i18n.t("Error connecting. Please try again.");
     if (!message) {
       return defaultErr;
     }
     if (message.indexOf("No device selected") > -1) {
-      return "No device detected. Please make sure your device is connected and the Stellar app is open on it.";
+      return i18n.t(
+        "No device detected. Please make sure your device is connected and the Stellar app is open on it.",
+      );
     }
     if (message.indexOf("Incorrect length") > -1) {
-      return "Connect device to computer and open the Stellar app on it.";
+      return i18n.t(
+        "Connect device to computer and open the Stellar app on it",
+      );
     }
     if (message.indexOf("Transaction approval request was rejected") > -1) {
-      return "Transaction Rejected.";
+      return i18n.t("Transaction Rejected");
     }
     return message;
   },

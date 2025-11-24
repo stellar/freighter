@@ -1,5 +1,6 @@
 import { useReducer } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
 import { captureException } from "@sentry/browser";
 import {
@@ -208,9 +209,11 @@ const simulateTx = async ({
   type,
   options,
   recommendedFee,
+  t,
 }: {
   type: "classic" | "soroban";
   recommendedFee: string;
+  t: (key: string) => string;
   options: {
     tokenPayment: {
       address: string;
@@ -248,7 +251,7 @@ const simulateTx = async ({
       });
 
       if (!ok) {
-        throw new Error("failed to simulate token transfer");
+        throw new Error(t("failed to simulate token transfer"));
       }
 
       const minResourceFee = formatTokenAmount(
@@ -268,7 +271,7 @@ const simulateTx = async ({
     }
 
     default:
-      throw new Error("simulation type not supported");
+      throw new Error(t("simulation type not supported"));
   }
 };
 
@@ -310,6 +313,7 @@ function useSimulateTxData({
   simParams: SimClassic | SimSoroban;
   isMainnet: boolean;
 }) {
+  const { t } = useTranslation();
   const reduxDispatch = useDispatch<AppDispatch>();
   const { asset, amount, transactionFee, memo } = useSelector(
     transactionDataSelector,
@@ -368,7 +372,7 @@ function useSimulateTxData({
         networkDetails.networkPassphrase as Networks,
       );
       if (!assetBalance) {
-        throw new Error("asset balance not found");
+        throw new Error(t("asset balance not found"));
       }
 
       const tokenAddress =
@@ -383,6 +387,7 @@ function useSimulateTxData({
       const simResponse = await simulateTx({
         type: simParams.type,
         recommendedFee: transactionFee,
+        t,
         options: {
           tokenPayment: {
             address: tokenAddress,

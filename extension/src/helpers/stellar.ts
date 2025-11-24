@@ -104,6 +104,8 @@ export const formatDomain = (domain: string) => {
     domain.replace("https://", "").replace("www.", "");
     return domain;
   }
+  // Note: This function is used outside React context, so translation
+  // should be handled by the caller or use i18n.t() directly
   return "Stellar Network";
 };
 

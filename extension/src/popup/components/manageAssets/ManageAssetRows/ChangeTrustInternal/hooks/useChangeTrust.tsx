@@ -1,5 +1,6 @@
 import { useEffect, useReducer } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 
 import { initialState, reducer } from "helpers/request";
 import { AppDispatch } from "popup/App";
@@ -19,6 +20,7 @@ export interface ChangeTrustData {
 }
 
 function useGetChangeTrust() {
+  const { t } = useTranslation();
   const [state, dispatch] = useReducer(
     reducer<ChangeTrustData, unknown>,
     initialState,
@@ -52,7 +54,7 @@ function useGetChangeTrust() {
         );
 
         if (submitFreighterTransaction.rejected.match(submitResp)) {
-          throw new Error("failed to submit transaction");
+          throw new Error(t("failed to submit transaction"));
         }
 
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {
@@ -95,7 +97,7 @@ function useGetChangeTrust() {
       );
 
       if (signFreighterTransaction.rejected.match(res)) {
-        throw new Error("failed to sign transaction");
+        throw new Error(t("failed to sign transaction"));
       }
 
       if (signFreighterTransaction.fulfilled.match(res)) {
@@ -108,7 +110,7 @@ function useGetChangeTrust() {
         );
 
         if (submitFreighterTransaction.rejected.match(submitResp)) {
-          throw new Error("failed to submit transaction");
+          throw new Error(t("failed to submit transaction"));
         }
 
         if (submitFreighterTransaction.fulfilled.match(submitResp)) {

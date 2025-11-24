@@ -3,6 +3,7 @@ import { Federation } from "stellar-sdk";
 import { FormikErrors } from "formik";
 import debounce from "lodash/debounce";
 import * as Sentry from "@sentry/browser";
+import i18n from "popup/helpers/localizationConfig";
 
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
@@ -41,8 +42,7 @@ export const getAddressFromInput = async (userInput: string) => {
       };
     } catch (error) {
       Sentry.captureException(`Failed to fetch toml for ${userInput}`);
-      // Error message will be translated when displayed in UI
-      throw new Error("Failed to resolve federated address.");
+      throw new Error(i18n.t("Failed to resolve federated address"));
     }
   }
 
