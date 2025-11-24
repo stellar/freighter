@@ -204,6 +204,9 @@
   "Freighter provides access to third-party dApps, protocols, and tokens for informational purposes only": {
     " Freighter does not endorse any listed items": "Freighter provides access to third-party dApps, protocols, and tokens for informational purposes only. Freighter does not endorse any listed items."
   },
+  "Freighter uses asset lists to check assets you interact with": {
+    " You can define your own assets lists in Settings": "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
+  },
   "Freighter uses asset lists to verify assets before interactions": "Freighter uses asset lists to verify assets before interactions.",
   "Freighter Wallet": "Freighter Wallet",
   "Freighter was unable to switch to this account": "Freighter was unable to switch to this account",
@@ -333,10 +336,12 @@
   "Not enough lumens": "Not enough lumens",
   "Not funded": "Not funded",
   "Not migrated": "Not migrated",
+  "Not on your lists": "Not on your lists",
   "Note that you will need to reload this tab to load any account changes that happen outside this session": {
     " For your own safety, please close this window when you are done": "Note that you will need to reload this tab to load any account changes that happen outside this session. For your own safety, please close this window when you are done."
   },
   "Offer ID": "Offer ID",
+  "On your lists": "On your lists",
   "One of your accounts is a signer for another account": "One of your accounts is a signer for another account.",
   "One or more operations in this transaction failed": "One or more operations in this transaction failed.",
   "Only accounts ready for migration will be migrated": "Only accounts ready for migration will be migrated.",
@@ -445,6 +450,7 @@
   "Sponsored ID": "Sponsored ID",
   "SSL certificates provide an encrypted network connection and also provide proof of ownership of the domain": "SSL certificates provide an encrypted network connection and also provide proof of ownership of the domain.",
   "Starting Balance": "Starting Balance",
+  "Stellar Development Foundation will never ask for your phrase": "Stellar Development Foundation will never ask for your phrase",
   "Stellar Logo": "Stellar Logo",
   "Stellar Network": "Stellar Network",
   "Stellar token logo": "Stellar token logo",
@@ -480,7 +486,12 @@
   },
   "These words are your wallet's keys—store them securely to keep your funds safe": "These words are your wallet's keys—store them securely to keep your funds safe.",
   "This asset has a balance": "This asset has a balance",
+  "This asset has been flagged as malicious for the following reasons": "This asset has been flagged as malicious for the following reasons.",
+  "This asset has been flagged as spam for the following reasons": "This asset has been flagged as spam for the following reasons.",
+  "This asset has been flagged as suspicious for the following reasons": "This asset has been flagged as suspicious for the following reasons.",
   "This asset has buying liabilities": "This asset has buying liabilities",
+  "This asset is not on your lists": "This asset is not on your lists",
+  "This asset is on your lists": "This asset is on your lists",
   "This asset was flagged as malicious": "This asset was flagged as malicious",
   "This asset was flagged as spam": "This asset was flagged as spam",
   "This asset was flagged as suspicious": "This asset was flagged as suspicious",

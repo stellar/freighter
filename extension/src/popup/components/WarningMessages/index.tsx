@@ -187,7 +187,7 @@ export const BackupPhraseWarningMessage = () => {
             <Icon.XSquare />
           </div>
           <span>
-            Stellar Development Foundation will never ask for your phrase
+            {t("Stellar Development Foundation will never ask for your phrase")}
           </span>
         </div>
       </div>
@@ -202,7 +202,8 @@ export const AssetListWarning = ({
   isVerified: boolean;
   onClick: () => void;
 }) => {
-  const title = isVerified ? "On your lists" : "Not on your lists";
+  const { t } = useTranslation();
+  const title = isVerified ? t("On your lists") : t("Not on your lists");
   return (
     <div className="ScanLabel ScanMiss" onClick={onClick}>
       <div className="ScanLabel__Info">
@@ -227,9 +228,10 @@ export const AssetListWarningExpanded = ({
   isVerified,
   onClose,
 }: AssetListWarningExpandedProps) => {
+  const { t } = useTranslation();
   const title = isVerified
-    ? "This asset is on your lists"
-    : "This asset is not on your lists";
+    ? t("This asset is on your lists")
+    : t("This asset is not on your lists");
 
   return (
     <div className="BlockaidDetailsExpanded">
@@ -243,8 +245,9 @@ export const AssetListWarningExpanded = ({
       </div>
       <div className="BlockaidDetailsExpanded__Title">{title}</div>
       <div className="BlockaidDetailsExpanded__SubTitle">
-        Freighter uses asset lists to check assets you interact with. You can
-        define your own assets lists in Settings.
+        {t(
+          "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
+        )}
       </div>
     </div>
   );
@@ -523,6 +526,7 @@ export const BlockAidAssetScanExpanded = ({
   scanResult,
   onClose,
 }: BlockAidAssetScanExpandedProps) => {
+  const { t } = useTranslation();
   const { result_type, features } = scanResult;
   const _features = features || [];
 
@@ -532,25 +536,28 @@ export const BlockAidAssetScanExpanded = ({
     switch (result_type) {
       case "Spam": {
         return {
-          title: "Warning",
-          description:
+          title: t("Warning"),
+          description: t(
             "This asset has been flagged as spam for the following reasons.",
+          ),
         };
       }
 
       case "Malicious": {
         return {
-          title: "Do not proceed",
-          description:
+          title: t("Do not proceed"),
+          description: t(
             "This asset has been flagged as malicious for the following reasons.",
+          ),
         };
       }
 
       default: {
         return {
-          title: "Warning",
-          description:
+          title: t("Warning"),
+          description: t(
             "This asset has been flagged as suspicious for the following reasons.",
+          ),
         };
       }
     }
@@ -822,7 +829,9 @@ export const BlockAidTxScanExpanded = ({
               {t("Do not proceed")}
             </div>
             <div className="BlockaidDetailsExpanded__SubTitle">
-              This transaction does not appear safe for the following reasons.
+              {t(
+                "This transaction does not appear safe for the following reasons",
+              )}
             </div>
             <div className="BlockaidDetailsExpanded__Details">
               <div className="BlockaidDetailsExpanded__DetailRowError">

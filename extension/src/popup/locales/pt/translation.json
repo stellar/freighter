@@ -48,7 +48,7 @@
   "An unknown error has occured while building this transaction": "Ocorreu um erro desconhecido ao construir esta transação.",
   "An unknown error occurred when loading your account": "Ocorreu um erro desconhecido ao carregar sua conta",
   "Anonymous data sharing": "Compartilhamento anônimo de dados",
-  "Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place": "Qualquer pessoa que tenha acesso a esta frase terá acesso à sua conta e aos fundos nela, então guarde-a em um local seguro.",
+  "Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place": "Anyone who has access to this phrase has access to your account and to the funds in it, so save it in a safe and secure place.",
   "are required to add a new asset": "são necessários para adicionar um novo ativo.",
   "Are you sure you want to delete this list?": "Tem certeza de que deseja excluir esta lista?",
   "Are you sure you want to remove this network? You will have to re-add it if you want to use it again": "Tem certeza de que deseja remover esta rede? Você terá que adicioná-la novamente se quiser usá-la novamente.",
@@ -204,6 +204,9 @@
   "Freighter provides access to third-party dApps, protocols, and tokens for informational purposes only": {
     " Freighter does not endorse any listed items": "Freighter provides access to third-party dApps, protocols, and tokens for informational purposes only. Freighter does not endorse any listed items."
   },
+  "Freighter uses asset lists to check assets you interact with": {
+    " You can define your own assets lists in Settings": "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings."
+  },
   "Freighter uses asset lists to verify assets before interactions": "O Freighter usa listas de ativos para verificar ativos antes das interações.",
   "Freighter Wallet": "Carteira Freighter",
   "Freighter was unable to switch to this account": "O Freighter não conseguiu alternar para esta conta",
@@ -219,7 +222,7 @@
   "Hash": "Hash",
   "Help": "Ajuda",
   "Hide payments smaller than 0": {
-    "1 XLM": "Ocultar pagamentos menores que 0.1 XLM"
+    "1 XLM": "Hide payments smaller than 0.1 XLM"
   },
   "Hide small payments": "Ocultar pagamentos pequenos",
   "High Threshold": "Limite Alto",
@@ -295,11 +298,11 @@
   "Memo": "Memo",
   "Memo required": "Memo obrigatório",
   "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts": {
-    ")": "Mesclar contas após migrar (seus lumens de financiamento usados para financiar as contas atuais serão enviados para as novas - você perde acesso às contas atuais)."
+    ")": "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts.)"
   },
   "Migrated": "Migrado",
   "Migrating": {
-    "": "Migrando..."
+    "": "Migrating..."
   },
   "Migration complete": "Migration concluída",
   "Min Amount A": "Amount Mínimo A",
@@ -333,10 +336,12 @@
   "Not enough lumens": "Lumens insuficientes",
   "Not funded": "Não financiado",
   "Not migrated": "Não migrado",
+  "Not on your lists": "Não está em suas listas",
   "Note that you will need to reload this tab to load any account changes that happen outside this session": {
     " For your own safety, please close this window when you are done": "Note that you will need to reload this tab to load any account changes that happen outside this session. For your own safety, please close this window when you are done."
   },
   "Offer ID": "Offer ID",
+  "On your lists": "Está em suas listas",
   "One of your accounts is a signer for another account": "Uma de suas contas é assinante de outra conta.",
   "One or more operations in this transaction failed": "Uma ou mais operações nesta transação falharam.",
   "Only accounts ready for migration will be migrated": "Apenas contas prontas para migration serão migradas.",
@@ -389,7 +394,7 @@
   "Review swap": "Revisar troca",
   "Review transaction on device": "Revisar transação no dispositivo",
   "Running integration tests ": {
-    "": "Executando testes de integração ..."
+    "": "Running integration tests ..."
   },
   "Salt": "Salt",
   "Save": "Salvar",
@@ -445,6 +450,7 @@
   "Sponsored ID": "Sponsored ID",
   "SSL certificates provide an encrypted network connection and also provide proof of ownership of the domain": "SSL certificates provide an encrypted network connection and also provide proof of ownership of the domain.",
   "Starting Balance": "Saldo Inicial",
+  "Stellar Development Foundation will never ask for your phrase": "A Stellar Development Foundation nunca pedirá sua frase",
   "Stellar Logo": "Logo Stellar",
   "Stellar Network": "Rede Stellar",
   "Stellar token logo": "Logotipo do token Stellar",
@@ -480,7 +486,12 @@
   },
   "These words are your wallet's keys—store them securely to keep your funds safe": "These words are your carteira's keys—store them securely to keep your funds safe.",
   "This asset has a balance": "Este ativo tem um saldo",
+  "This asset has been flagged as malicious for the following reasons": "This asset has been flagged as malicious for the following reasons.",
+  "This asset has been flagged as spam for the following reasons": "This asset has been flagged as spam for the following reasons.",
+  "This asset has been flagged as suspicious for the following reasons": "This asset has been flagged as suspicious for the following reasons.",
   "This asset has buying liabilities": "Este ativo tem passivos de compra",
+  "This asset is not on your lists": "Este ativo não está em suas listas",
+  "This asset is on your lists": "Este ativo está em suas listas",
   "This asset was flagged as malicious": "Este ativo foi marcado como malicioso",
   "This asset was flagged as spam": "Este ativo foi marcado como spam",
   "This asset was flagged as suspicious": "Este ativo foi marcado como suspeito",
@@ -603,7 +614,7 @@
   "Your recovery phrase": "Sua frase de recuperação",
   "Your Recovery Phrase": "Sua Frase de Recuperação",
   "Your recovery phrase gives you access to your account and is the only way to access it in a new browser": {
-    " ": "Sua frase de recuperação lhe dá acesso à sua conta e é a única forma de acessá-la em um novo navegador. "
+    " ": "Your recovery phrase gives you access to your account and is the only way to access it in a new browser. "
   },
   "Your recovery phrase gives you full access to your wallets and funds": "Sua frase de recuperação lhe dá acesso total às suas carteiras e fundos",
   "Your Stellar secret key": "Sua Stellar secret key",
