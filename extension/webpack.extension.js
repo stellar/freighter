@@ -6,10 +6,59 @@ const Dotenv = require("dotenv-webpack");
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 const SpeedMeasurePlugin = require("speed-measure-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
+const fs = require("fs");
+const path = require("path");
 
 const smp = new SpeedMeasurePlugin();
 
 const LOCALES = ["en", "pt"];
+
+// Cache for existing translations to avoid reading files multiple times
+const existingTranslationsCache = new Map();
+
+// Custom transform function that preserves existing translations
+// Only adds new keys, never overwrites existing values
+function preserveExistingTranslations(locale, namespace, key, value) {
+  const cacheKey = `${locale}:${namespace}`;
+
+  // Load existing translations into cache if not already loaded
+  if (!existingTranslationsCache.has(cacheKey)) {
+    const translationPath = path.join(
+      __dirname,
+      "src/popup/locales",
+      locale,
+      `${namespace}.json`,
+    );
+
+    let existingTranslations = {};
+    if (fs.existsSync(translationPath)) {
+      try {
+        const existingContent = fs.readFileSync(translationPath, "utf-8");
+        existingTranslations = JSON.parse(existingContent);
+      } catch (e) {
+        // If file is corrupted, start fresh
+        console.warn(
+          `Warning: Could not parse ${translationPath}, starting fresh`,
+        );
+      }
+    }
+    existingTranslationsCache.set(cacheKey, existingTranslations);
+  }
+
+  const existingTranslations = existingTranslationsCache.get(cacheKey);
+
+  // If key already exists, preserve its value
+  if (existingTranslations.hasOwnProperty(key)) {
+    return existingTranslations[key];
+  }
+
+  // For new keys, use the provided value (or empty string for non-EN locales)
+  if (locale === "en") {
+    return value || key; // Use key as default for EN
+  } else {
+    return ""; // Empty string for other locales (needs manual translation)
+  }
+}
 
 const prodConfig = (
   env = {
@@ -53,10 +102,24 @@ const prodConfig = (
                 locales: LOCALES,
                 output: "src/popup/locales/$LOCALE/$NAMESPACE.json",
                 sort: true,
-                useKeysAsDefaultValue: true,
-                keepRemoved: true, // Keep keys that are not found in code (e.g. High/Medium/Low Congestion)
+                useKeysAsDefaultValue: false, // Don't use key as default
+                defaultValue: (locale, namespace, key, value) => {
+                  // Use custom function to preserve existing translations
+                  return preserveExistingTranslations(
+                    locale,
+                    namespace,
+                    key,
+                    value,
+                  );
+                },
+                keepRemoved: true, // Keep keys not found in code
+                removeUnusedKeys: false, // Don't remove unused keys
                 keySeparator: false, // Don't create nested structures
                 nsSeparator: false, // Don't create nested structures
+                func: {
+                  list: ["t", "i18next.t", "i18n.t"],
+                  extensions: [".ts", ".tsx"],
+                },
               },
             }),
           ]

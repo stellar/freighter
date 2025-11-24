@@ -245,9 +245,8 @@ export const AssetListWarningExpanded = ({
       </div>
       <div className="BlockaidDetailsExpanded__Title">{title}</div>
       <div className="BlockaidDetailsExpanded__SubTitle">
-        {t(
-          "Freighter uses asset lists to check assets you interact with. You can define your own assets lists in Settings.",
-        )}
+        {t("Freighter uses asset lists to check assets you interact with.")}{" "}
+        {t("You can define your own assets lists in Settings.")}
       </div>
     </div>
   );

@@ -171,9 +171,15 @@ export const AdvancedSettings = () => {
               isLoading={isLoading}
               isToggled={initialValues.isExperimentalModeEnabledValue}
               toggleId="isExperimentalModeEnabledValue"
-              description={t(
-                "Use experimental API's and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing.",
-              )}
+              description={
+                t(
+                  "Use experimental API's and connect to the Futurenet, a test network.",
+                ) +
+                " " +
+                t(
+                  "Please proceed at your own risk as you may be interacting with schemas that are untested and still changing.",
+                )
+              }
             />
             <AdvancedSettingFeature
               title={t("Enable Blind Signing on Ledger")}
@@ -183,7 +189,10 @@ export const AdvancedSettings = () => {
               description={
                 <>
                   {t(
-                    "This can be used to sign arbitrary transaction hashes without having to decode them first. Ledger will not display the transaction details in the device display prior to signing so make sure you only interact with applications you know and trust.",
+                    "This can be used to sign arbitrary transaction hashes without having to decode them first.",
+                  )}{" "}
+                  {t(
+                    "Ledger will not display the transaction details in the device display prior to signing so make sure you only interact with applications you know and trust.",
                   )}{" "}
                   <a
                     href="https://www.ledger.com/academy/enable-blind-signing-why-when-and-how-to-stay-safe/"

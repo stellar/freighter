@@ -24,9 +24,8 @@ export const DisplayMnemonicPhrase = ({
       bodyText={
         <>
           <Text as="p" size="md">
-            {t(
-              "Never disclose your recovery phrase! If you do, someone will be able to access your wallet.",
-            )}
+            {t("Never disclose your recovery phrase!")}{" "}
+            {t("If you do, someone will be able to access your wallet.")}
           </Text>
         </>
       }

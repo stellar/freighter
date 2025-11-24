@@ -74,9 +74,13 @@ export const PasswordForm = ({
             <div className="PasswordForm__notification">
               <Notification
                 variant="error"
-                title={t(
-                  "You are overwriting an existing account. You will permanently lose access to the account currently stored in Freighter.",
-                )}
+                title={
+                  t("You are overwriting an existing account.") +
+                  " " +
+                  t(
+                    "You will permanently lose access to the account currently stored in Freighter.",
+                  )
+                }
               />
             </div>
           )}
@@ -84,9 +88,13 @@ export const PasswordForm = ({
             <div className="PasswordForm__notification">
               <Notification
                 variant="error"
-                title={t(
-                  "You previously did not complete onboarding. You will permanently lose access to the account you started to create in Freighter.",
-                )}
+                title={
+                  t("You previously did not complete onboarding.") +
+                  " " +
+                  t(
+                    "You will permanently lose access to the account you started to create in Freighter.",
+                  )
+                }
               />
             </div>
           )}

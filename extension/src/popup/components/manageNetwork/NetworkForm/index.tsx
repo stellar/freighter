@@ -361,8 +361,9 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                         {t("Confirm removing Network")}
                       </div>
                       <div className="NetworkForm__modal__body">
+                        {t("Are you sure you want to remove this network?")}{" "}
                         {t(
-                          "Are you sure you want to remove this network? You will have to re-add it if you want to use it again.",
+                          "You will have to re-add it if you want to use it again.",
                         )}
                       </div>
                     </div>
@@ -379,7 +380,13 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
                       </div>
                       <div className="NetworkForm__modal__body">
                         {t(
-                          "Please check if the network information is correct and try again. Alternatively, this network may not be operational.",
+                          t(
+                            "Please check if the network information is correct and try again.",
+                          ) +
+                            " " +
+                            t(
+                              "Alternatively, this network may not be operational.",
+                            ),
                         )}{" "}
                       </div>
                     </div>

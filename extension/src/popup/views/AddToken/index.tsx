@@ -114,9 +114,9 @@ export const AddToken = () => {
   useEffect(() => {
     if (!isContractId(contractId)) {
       setErrorMessage(
-        t(
-          "This is not a valid contract id. Please try again with a different value.",
-        ),
+        t("This is not a valid contract id.") +
+          " " +
+          t("Please try again with a different value."),
       );
       return;
     }
