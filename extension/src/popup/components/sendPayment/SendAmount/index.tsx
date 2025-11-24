@@ -494,8 +494,9 @@ export const SendAmount = ({
                     <>
                       <Icon.AlertCircle />
                       <span>
-                        You don't have enough {parsedSourceAsset.code} in your
-                        account
+                        {t("You don't have enough {{asset}} in your account", {
+                          asset: parsedSourceAsset.code,
+                        })}
                       </span>
                     </>
                   )}

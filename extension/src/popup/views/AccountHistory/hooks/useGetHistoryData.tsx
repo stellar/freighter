@@ -444,7 +444,7 @@ export const getRowDataByOpType = async (
           });
 
     return {
-      action: isReceiving ? "Received" : "Sent",
+      action: isReceiving ? i18n.t("Received") : i18n.t("Sent"),
       actionIcon: isReceiving ? "received" : "sent",
       amount: formattedAmount,
       date,
@@ -505,7 +505,7 @@ export const getRowDataByOpType = async (
       }${formattedTokenAmount} ${token.code}`;
 
       return {
-        action: isReceiving ? "Received" : "Minted",
+        action: isReceiving ? i18n.t("Received") : i18n.t("Minted"),
         actionIcon: isReceiving ? "received" : "generic",
         amount: formattedAmount,
         date,
@@ -583,7 +583,7 @@ export const getRowDataByOpType = async (
       const formattedAmount = `${paymentDifference}${nonLabelAmount} ${destAssetCode}`;
 
       return {
-        action: `${isReceiving ? "Received" : "Sent"}`,
+        action: isReceiving ? i18n.t("Received") : i18n.t("Sent"),
         actionIcon: isReceiving ? "received" : "sent",
         amount: formattedAmount,
         date,

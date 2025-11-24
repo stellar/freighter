@@ -169,7 +169,7 @@ export const ToggleTokenInternal = ({
             variant="tertiary"
             onClick={onCancel}
           >
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button
             variant="secondary"
@@ -178,7 +178,7 @@ export const ToggleTokenInternal = ({
             size="lg"
             onClick={onConfirm}
           >
-            Confirm
+            {t("Confirm")}
           </Button>
         </div>
       </div>

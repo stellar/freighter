@@ -15,7 +15,7 @@
   "Add a wallet using a secret key": "Adicionar uma carteira usando uma secret key.",
   "Add an asset": "Adicionar um ativo",
   "Add another wallet": "Adicionar outra carteira",
-  "Add Asset List": "Add Asset List",
+  "Add Asset List": "Adicionar Lista de Ativos",
   "Add Asset trustline": "Adicionar linha de confiança de ativo",
   "Add by address": "Adicionar por endereço",
   "Add Custom Network": "Adicionar Rede Personalizada",
@@ -31,7 +31,7 @@
   "Adding this token is not possible at the moment": "Não é possível adicionar este token no momento.",
   "Additional details": "Detalhes adicionais",
   "Address": "Endereço",
-  "Addresses are uppercase and begin with letters \"G\", \"M\", or \"C\"": "Addresses are uppercase and begin with letters \"G\", \"M\", or \"C\"",
+  "Addresses are uppercase and begin with letters \"G\", \"M\", or \"C\"": "Os endereços são em maiúsculas e começam com as letras \"G\", \"M\" ou \"C\"",
   "Advanced Settings": "Configurações Avançadas",
   "Advanced settings are not recommended for new or unexperienced users": {
     " Enabling these may impact the security of your wallets and result in loss of funds": {
@@ -49,7 +49,7 @@
   },
   "Allow token to be displayed and used with this wallet address": "Permitir que o token seja exibido e usado com este endereço de carteira",
   "Allowed Slippage": "Deslizamento Permitido",
-  "Always check the domain of websites you're using Freighter with": "Sempre verifique o domínio dos websites que você está usando com o Freighter",
+  "Always check the domain of websites you're using Freighter with": "Always check the domain of websites you're using Freighter with",
   "Amount": "Quantia",
   "An error occurred": "Ocorreu um erro",
   "An unexpected error has occurred": "Ocorreu um erro inesperado",
@@ -61,7 +61,7 @@
   "Are you sure you want to delete this list?": "Tem certeza de que deseja excluir esta lista?",
   "Are you sure you want to remove this network? You will have to re-add it if you want to use it again": "Tem certeza de que deseja remover esta rede? Você terá que adicioná-la novamente se quiser usá-la novamente.",
   "As long as you have your old and new mnemonics phrase, you’ll still be able to control accounts related to your current backup phrase which were not merged": {
-    " For that, you’ll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time)": "As long as you have your old and new mnemonics phrase, you’ll still be able to control accounts related to your current backup phrase which were not merged. For that, you’ll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time)."
+    " For that, you’ll need to import your current backup phrase into Freighter (Freighter supports one backup phrase imported at a time)": "Enquanto você tiver sua frase mnemônica antiga e nova, ainda poderá controlar contas relacionadas à sua frase de backup atual que não foram mescladas. Para isso, você precisará importar sua frase de backup atual para o Freighter (o Freighter suporta uma frase de backup importada por vez)."
   },
   "Asset": "Ativo",
   "Asset A": "Ativo A",
@@ -73,11 +73,12 @@
   "Asset not found": "Ativo não encontrado",
   "asset options": "opções de ativo",
   "At the end of this process, Freighter will only display accounts related to the new backup phrase": {
-    " You’ll still be able to import your current backup phrase into Freighter and control current accounts as long as they were not merged into the new accounts": "At the end of this process, Freighter will only display accounts related to the new backup phrase. You’ll still be able to import your current backup phrase into Freighter and control current accounts as long as they were not merged into the new accounts."
+    " You’ll still be able to import your current backup phrase into Freighter and control current accounts as long as they were not merged into the new accounts": "Ao final deste processo, o Freighter exibirá apenas contas relacionadas à nova frase de backup. Você ainda poderá importar sua frase de backup atual para o Freighter e controlar contas atuais, desde que não tenham sido mescladas nas novas contas."
   },
   "Authorizations": "Autorizações",
   "Authorize": "Autorizar",
   "Back": "Voltar",
+  "Balance": "Saldo",
   "Balance ID": "Balance ID",
   "Before we start with migration, please read": "Antes de começarmos com a migration, por favor leia",
   "Blockaid": "Blockaid",
@@ -101,6 +102,7 @@
   "Confirm password": "Confirmar senha",
   "Confirm removing Network": "Confirmar remoção da Rede",
   "Confirm Transaction": "Confirmar Transação",
+  "Confirm Your Recovery Phrase": "Confirme Sua Frase de Recuperação",
   "Connect": "Conectar",
   "Connect {walletType}": "Conectar {walletType}",
   "Connect a hardware wallet": "Conectar uma carteira de hardware",
@@ -135,7 +137,7 @@
   "Default": "Padrão",
   "Destination": "Destino",
   "Destination account does not accept this asset": "A conta de destino não aceita este ativo",
-  "Destination account doesn’t exist": "Destination account doesn’t exist",
+  "Destination account doesn’t exist": "A conta de destino não existe",
   "Destination Amount": "Quantia de Destino",
   "Destination Asset": "Ativo de Destino",
   "Destination Minimum": "Mínimo de Destino",
@@ -146,7 +148,7 @@
   "Discover": "Descobrir",
   "Do not proceed": "Não prosseguir",
   "Do this later": "Fazer isso depois",
-  "Don't share this phrase with anyone": "Não compartilhe esta frase com ninguém",
+  "Don't share this phrase with anyone": "Don't share this phrase with anyone",
   "Done": "Concluído",
   "dummy entry": "entrada fictícia",
   "Enable Blind Signing on Ledger": "Habilitar Blind Signing no Ledger",
@@ -172,7 +174,7 @@
   "Executable Wasm Hash": "Hash Wasm Executável",
   "Extend To": "Estender Para",
   "Failed to build transaction": "Falha ao construir transação.",
-  "Failed to fetch assets": "Failed to fetch assets.",
+  "Failed to fetch assets": "Falha ao buscar ativos.",
   "Failed to fetch your account balances": "Falha ao buscar os saldos da sua conta.",
   "Failed to fetch your account data": "Falha ao buscar os dados da sua conta.",
   "Failed to fetch your transaction details": "Falha ao buscar os detalhes da sua transação",
@@ -187,11 +189,11 @@
   },
   "Fetch list information": "Buscar informações da lista",
   "Finish": "Finalizar",
-  "For your security, we'll check if you got it right in the next step": "Para sua segurança, verificaremos se você acertou na próxima etapa.",
+  "For your security, we'll check if you got it right in the next step": "For your security, we'll check if you got it right in the next step.",
   "Freighter - Stellar Wallet": "Freighter - Carteira Stellar",
   "Freighter can’t recover your imported secret key using your recovery phrase": {
     " Storing your secret key is your responsibility": {
-      " Freighter will never ask for your secret key outside of the extension": "Freighter can’t recover your imported secret key using your recovery phrase. Storing your secret key is your responsibility. Freighter will never ask for your secret key outside of the extension."
+      " Freighter will never ask for your secret key outside of the extension": "O Freighter não pode recuperar sua chave secreta importada usando sua frase de recuperação. Armazenar sua chave secreta é sua responsabilidade. O Freighter nunca pedirá sua chave secreta fora da extensão."
     }
   },
   "Freighter cannot recover your account if you lose your recovery phrase, so keep it safe": "O Freighter não pode recuperar sua conta se você perder sua recovery phrase, então mantenha-a segura",
@@ -204,13 +206,13 @@
   "Freighter uses asset lists to verify assets before interactions": "O Freighter usa listas de ativos para verificar ativos antes das interações.",
   "Freighter Wallet": "Carteira Freighter",
   "Freighter was unable to switch to this account": "O Freighter não conseguiu alternar para esta conta",
-  "Freighter was unable update this account's name": "O Freighter não conseguiu atualizar o nome desta conta",
+  "Freighter was unable update this account's name": "Freighter was unable update this account's name",
   "Friendbot URL": "Friendbot URL",
   "From": "De",
   "Fullscreen mode": "Modo fullscreen",
   "Function Name": "Nome da Função",
   "Fund with Friendbot": "Fundar com Friendbot",
-  "Go back": "Go back",
+  "Go back": "Voltar",
   "Got it": "Entendi",
   "Hash": "Hash",
   "Help": "Ajuda",
@@ -227,8 +229,8 @@
   "I have read and agree to": "Li e concordo com",
   "I understand, continue": "Entendo, continuar",
   "I understand, start migration": "Entendo, iniciar migration",
-  "I’m aware Freighter can’t recover the imported  secret key": "I’m aware Freighter can’t recover the imported  secret key",
-  "I’ve saved my phrase somewhere safe": "I’ve saved my phrase somewhere safe",
+  "I’m aware Freighter can’t recover the imported  secret key": "Estou ciente de que o Freighter não pode recuperar a chave secreta importada",
+  "I’ve saved my phrase somewhere safe": "Salvei minha frase em um local seguro",
   "icon add": "ícone adicionar",
   "icon asset options": "ícone opções de ativo",
   "Icon Fail": "Ícone de Falha",
@@ -238,6 +240,7 @@
   "Import": "Importar",
   "Import Stellar Secret Key": "Importar Stellar Secret Key",
   "Import using account seed phrase": "Importar usando seed phrase da conta",
+  "Import wallet from recovery phrase": "Importar carteira da frase de recuperação",
   "Important": "Importante",
   "Important, Please Read": "Importante, Por Favor Leia",
   "Imported": "Importado",
@@ -276,7 +279,7 @@
   "Make sure it is a funded Stellar account and try again": "Certifique-se de que é uma conta Stellar financiada e tente novamente.",
   "Make sure you have your 12 word backup phrase": "Certifique-se de ter sua backup phrase de 12 palavras",
   "Make sure you have your current 12 words backup phrase before continuing": "Certifique-se de ter sua backup phrase atual de 12 palavras antes de continuar.",
-  "Make sure your Ledger wallet is connected to your computer and the Stellar app is open on the Ledger wallet": "Make sure your Ledger wallet is connected to your computer and the Stellar app is open on the Ledger wallet.",
+  "Make sure your Ledger wallet is connected to your computer and the Stellar app is open on the Ledger wallet": "Certifique-se de que sua carteira Ledger está conectada ao seu computador e o aplicativo Stellar está aberto na carteira Ledger.",
   "Manage assets": "Gerenciar ativos",
   "Manage List": "Gerenciar Lista",
   "Master Weight": "Peso Mestre",
@@ -298,6 +301,7 @@
   "Min Amount A": "Amount Mínimo A",
   "Min Amount B": "Amount Mínimo B",
   "Min Price": "Price Mínimo",
+  "Minted": "Cunhado",
   "Multiple assets": "Múltiplos ativos",
   "Multiple assets have a similar code, please check the domain before adding": "Múltiplos ativos têm um código similar, por favor verifique o domínio antes de adicionar.",
   "must be at least": "deve ser pelo menos",
@@ -316,6 +320,7 @@
   "No connected apps found": "Nenhum app conectado encontrado",
   "No one from Stellar Development Foundation will ever ask for your recovery phrase": "Ninguém da Stellar Development Foundation jamais pedirá sua recovery phrase",
   "No transactions to show": "Nenhuma transação para mostrar",
+  "None": "Nenhum",
   "Not enough lumens": "Lumens insuficientes",
   "Not funded": "Não financiado",
   "Not migrated": "Não migrado",
@@ -325,7 +330,7 @@
   "Offer ID": "Offer ID",
   "One of your accounts is a signer for another account": {
     " Freighter won’t migrate signing settings": {
-      " For your safety, Freighter won’t merge accounts with signature set up so you can still control it": "One of your accounts is a signer for another account. Freighter won’t migrate signing settings. For your safety, Freighter won’t merge accounts with signature set up so you can still control it."
+      " For your safety, Freighter won’t merge accounts with signature set up so you can still control it": "Uma de suas contas é assinante de outra conta. O Freighter não migrará as configurações de assinatura. Para sua segurança, o Freighter não mesclará contas com configuração de assinatura para que você ainda possa controlá-las."
     }
   },
   "One or more operations in this transaction failed": "Uma ou mais operações nesta transação falharam.",
@@ -360,6 +365,7 @@
   "Read before importing your key": "Leia antes de importar sua chave",
   "Ready to migrate": "Pronto para migrar",
   "Receive": "Receber",
+  "Received": "Recebido",
   "Recents": "Recentes",
   "Recovery Phrase": "Frase de Recuperação",
   "Remember, Freighter will now display accounts related to the new backup phrase that was just created": {
@@ -370,7 +376,7 @@
   "Remove": "Remover",
   "Remove asset": "Remover ativo",
   "Remove List": "Remover Lista",
-  "Remove Token": "Remove Token",
+  "Remove Token": "Remover Token",
   "Remove token from your account balance view": "Remover token da visualização do saldo da sua conta",
   "Remove Trustline": "Remover Trustline",
   "Rename Wallet": "Renomear Carteira",
@@ -381,7 +387,7 @@
   "Review swap": "Revisar troca",
   "Review transaction on device": "Revisar transação no dispositivo",
   "Running integration tests ": {
-    "": "Running integration tests ..."
+    "": "Executando testes de integração ..."
   },
   "Salt": "Salt",
   "Save": "Salvar",
@@ -390,7 +396,7 @@
   "Search issuer public key, classic assets, SAC assets, and TI assets": "Buscar chave pública do issuer, assets clássicos, assets SAC e assets TI",
   "Search token name or address": "Buscar nome do token ou endereço",
   "Security": "Segurança",
-  "Select a hardware wallet you'd like to use with Freighter": "Selecione uma carteira de hardware que você gostaria de usar com o Freighter.",
+  "Select a hardware wallet you'd like to use with Freighter": "Select a hardware wallet you'd like to use with Freighter.",
   "Select an asset": "Selecionar um ativo",
   "Select asset": "Selecionar ativo",
   "Seller": "Vendedor",
@@ -403,7 +409,8 @@
   "Send Settings": "Configurações de Envio",
   "Send to": "Enviar para",
   "Send XLM to this account address": "Enviar XLM para este endereço de conta",
-  "Sending": "Sending",
+  "Sending": "Enviando",
+  "Sent": "Enviado",
   "Sent!": "Enviado!",
   "Sequence #": "Sequência #",
   "Set default": "Definir padrão",
@@ -436,7 +443,7 @@
   "Stellar Logo": "Logo Stellar",
   "Stellar Network": "Rede Stellar",
   "Stellar token logo": "Logotipo do token Stellar",
-  "Submit": "Submit",
+  "Submit": "Enviar",
   "Submitting": "Enviando",
   "Success!": "Sucesso!",
   "Suspicious Request": "Solicitação Suspeita",
@@ -452,14 +459,14 @@
   "Switch to this network": "Alternar para esta rede",
   "Terms of Service": "Termos de Serviço",
   "Terms of Use": "Termos de Uso",
-  "The destination account does not accept the asset you’re sending": "The destination account does not accept the asset you’re sending",
+  "The destination account does not accept the asset you’re sending": "A conta de destino não aceita o ativo que você está enviando",
   "The destination account doesn’t exist": "The destination account doesn’t exist",
   "The destination account must opt to accept this asset before receiving it": "A conta de destino deve optar por aceitar este ativo antes de recebê-lo.",
   "The requester expects you to sign this auth entry on": "O solicitante espera que você assine esta auth entry em",
   "The requester expects you to sign this message on": "O solicitante espera que você assine esta mensagem em",
-  "The secret phrase you entered is incorrect": "The secret phrase you entered is incorrect.",
-  "The token you’re trying to add is on": "The token you’re trying to add is on",
-  "The transaction you’re trying to sign is on": "The transaction you’re trying to sign is on",
+  "The secret phrase you entered is incorrect": "A frase secreta que você inseriu está incorreta.",
+  "The token you’re trying to add is on": "O token que você está tentando adicionar está em",
+  "The transaction you’re trying to sign is on": "A transação que você está tentando assinar está em",
   "The website <1>{url}</1> does not use an SSL certificate": {
     " For additional safety Freighter only works with websites that provide an SSL certificate by default": {
       " You may enable connection to domains that do not use an SSL certificate in Settings &gt; Security &gt; Advanced Settings": "O website <1>{url}</1> não usa um certificado SSL. Para segurança adicional, o Freighter funciona apenas com websites que fornecem um certificado SSL por padrão. Você pode habilitar conexão com domínios que não usam certificado SSL em Configurações &gt; Segurança &gt; Configurações Avançadas."
@@ -483,9 +490,9 @@
   },
   "This site was flagged as malicious": "Este site foi marcado como malicioso",
   "This transaction could not be completed": "Esta transação não pôde ser concluída.",
-  "This transaction does not appear safe for the following reasons": "This transaction does not appear safe for the following reasons.",
+  "This transaction does not appear safe for the following reasons": "Esta transação não parece segura pelos seguintes motivos.",
   "This transaction is expected to fail": "Esta transação deve falhar",
-  "This transaction is expected to fail for the following reasons": "This transaction is expected to fail for the following reasons.",
+  "This transaction is expected to fail for the following reasons": "Esta transação deve falhar pelos seguintes motivos.",
   "This transaction was flagged as malicious": "Esta transação foi marcada como maliciosa",
   "This transaction was flagged as suspicious": "Esta transação foi marcada como suspeita",
   "This will be used to unlock your wallet": "Isso será usado para desbloquear sua carteira",
@@ -549,7 +556,7 @@
   "WEBSITE CONNECTION IS NOT SECURE": "CONEXÃO DO WEBSITE NÃO É SEGURA",
   "Welcome back": "Bem-vindo de volta",
   "What is this transaction for? (optional)": "Para que é esta transação? (opcional)",
-  "What’s new": "What’s new",
+  "What's new": "What's new",
   "Wrong simulation result": "Resultado de simulação incorreto",
   "XDR": "XDR",
   "XLM": "XLM",
@@ -561,10 +568,11 @@
   "You are swapping": "Você está trocando",
   "You can access this later in the app, but we strongly recommend saving this in a safe place": "Você pode acessar isso mais tarde no app, mas recomendamos fortemente salvar isso em um local seguro.",
   "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account": {
-    " Merging is optional and will allow you to send your current account’s funding lumens to the new accounts": "You can choose to merge your current account into the new accounts after the migration, which will effectively destroy your current account. Merging is optional and will allow you to send your current account’s funding lumens to the new accounts."
+    " Merging is optional and will allow you to send your current account’s funding lumens to the new accounts": "Você pode escolher mesclar sua conta atual nas novas contas após a migração, o que efetivamente destruirá sua conta atual. A mesclagem é opcional e permitirá que você envie os lumens de financiamento da sua conta atual para as novas contas."
   },
-  "You can close this screen, your transaction should be complete in less than a minute": "You can close this screen, your transaction should be complete in less than a minute.",
+  "You can close this screen, your transaction should be complete in less than a minute": "Você pode fechar esta tela, sua transação deve ser concluída em menos de um minuto.",
   "You can define your own assets lists in Settings": "Você pode definir suas próprias listas de ativos em Configurações.",
+  "You don't have enough {{asset}} in your account": "Você não tem {{asset}} suficiente em sua conta",
   "You have no assets added": {
     " Get started by adding an asset": "Você não tem ativos adicionados. Comece adicionando um ativo."
   },
@@ -575,8 +583,8 @@
   },
   "You still have a balance of": "Você ainda tem um saldo de",
   "You still have a buying liability of": "Você ainda tem um passivo de compra de",
-  "You’re all set!": "You’re all set!",
-  "You’re good to go!": "You’re good to go!",
+  "You’re all set!": "Tudo pronto!",
+  "You’re good to go!": "Você está pronto para começar!",
   "Your account balance is not sufficient for this transaction": {
     " Please review the transaction and try again": "O saldo da sua conta não é suficiente para esta transação. Por favor, revise a transação e tente novamente."
   },
@@ -584,7 +592,8 @@
   "Your account data could not be fetched at this time": "Os dados da sua conta não puderam ser buscados neste momento.",
   "Your assets": "Seus ativos",
   "Your available XLM balance is not enough to pay for the transaction fee": "Seu saldo disponível de XLM não é suficiente para pagar a taxa de transação.",
-  "Your recovery phrase": "Sua recovery phrase",
+  "Your recovery phrase": "Sua frase de recuperação",
+  "Your Recovery Phrase": "Sua Frase de Recuperação",
   "Your recovery phrase gives you access to your account and is the only way to access it in a new browser": {
     " ": "Sua recovery phrase lhe dá acesso à sua conta e é a única forma de acessá-la em um novo navegador. "
   },

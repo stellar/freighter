@@ -20,7 +20,7 @@ export const DisplayMnemonicPhrase = ({
   return (
     <OnboardingModal
       data-testid="display-mnemonic-phrase"
-      headerText="Your Recovery Phrase"
+      headerText={t("Your Recovery Phrase")}
       bodyText={
         <>
           <Text as="p" size="md">

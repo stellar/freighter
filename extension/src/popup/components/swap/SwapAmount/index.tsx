@@ -314,7 +314,7 @@ export const SwapAmount = ({
             <div className="SwapAsset__settings-row">
               <div className="SwapAsset__settings-fee-display">
                 <span className="SwapAsset__settings-fee-display__label">
-                  Fee:
+                  {t("Fee")}:
                 </span>
                 <span>
                   {inputType === "crypto" ? `${fee} XLM` : recommendedFeeUsd}
@@ -328,7 +328,7 @@ export const SwapAmount = ({
                   variant="tertiary"
                   onClick={() => setIsEditingSlippage(true)}
                 >
-                  {`Slippage: ${allowedSlippage}%`}
+                  {`${t("Allowed Slippage")}: ${allowedSlippage}%`}
                 </Button>
                 <Button
                   type="button"
@@ -516,8 +516,9 @@ export const SwapAmount = ({
                     <>
                       <Icon.AlertCircle />
                       <span>
-                        You don't have enough {parsedSourceAsset.code} in your
-                        account
+                        {t("You don't have enough {{asset}} in your account", {
+                          asset: parsedSourceAsset.code,
+                        })}
                       </span>
                     </>
                   )}

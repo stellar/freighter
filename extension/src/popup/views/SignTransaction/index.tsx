@@ -333,7 +333,7 @@ export const SignTransaction = () => {
                   />
                   <div className="SignTransaction__TitleRow__Detail">
                     <span className="SignTransaction__TitleRow__Title">
-                      Confirm Transaction
+                      {t("Confirm Transaction")}
                     </span>
                     <span className="SignTransaction__TitleRow__Domain">
                       {validDomain}

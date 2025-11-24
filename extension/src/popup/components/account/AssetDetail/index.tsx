@@ -353,14 +353,14 @@ export const AssetDetail = ({
             >
               <div className="AssetDetail__balance-label">
                 <Icon.Coins01 />
-                Balance
+                {t("Balance")}
               </div>
               <div>{displayTotal}</div>
             </div>
             <div className="AssetDetail__balance-value">
               <div className="AssetDetail__balance-label">
                 <Icon.BankNote02 />
-                Value
+                {t("Value")}
               </div>
               <div>
                 {assetPrice && assetPrice.currentPrice

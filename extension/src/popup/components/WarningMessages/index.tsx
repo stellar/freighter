@@ -171,7 +171,9 @@ export const BackupPhraseWarningMessage = () => {
             <Icon.Lock01 />
           </div>
           <span>
-            Your recovery phrase gives you full access to your wallets and funds
+            {t(
+              "Your recovery phrase gives you full access to your wallets and funds",
+            )}
           </span>
         </div>
         <div className="WarningMessage__backup__tips__row">
