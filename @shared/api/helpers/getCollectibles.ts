@@ -3,6 +3,7 @@ import {
   CollectiblesResponse,
   Collection,
   CollectibleMetadata,
+  CollectibleMetadataResponse,
 } from "../types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { INDEXER_V2_URL } from "@shared/constants/mercury";
@@ -29,16 +30,7 @@ const fetchCollectibleMetadata = async (tokenUri: string) => {
     if (!response.ok) {
       return null;
     }
-    const data = (await response.json()) as {
-      name?: string;
-      description?: string;
-      external_url?: string;
-      image?: string;
-      attributes?: {
-        traitType?: string;
-        value?: string | number;
-      }[];
-    };
+    const data = (await response.json()) as CollectibleMetadataResponse;
 
     if (!data) {
       return null;

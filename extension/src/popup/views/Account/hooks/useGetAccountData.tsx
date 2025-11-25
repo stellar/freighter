@@ -4,10 +4,7 @@ import { captureException } from "@sentry/browser";
 import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
-import {
-  Collectibles,
-  useGetCollectibles,
-} from "helpers/hooks/useGetCollectibles";
+import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
 import { isMainnet } from "helpers/stellar";
 import { AllowList, ApiTokenPrices } from "@shared/api/types";
 import {
@@ -23,6 +20,7 @@ import { makeAccountActive } from "popup/ducks/accountServices";
 import { changeNetwork, saveBackendSettingsAction } from "popup/ducks/settings";
 import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
 import { loadBackendSettings } from "@shared/api/internal";
+import { Collectibles } from "@shared/api/types/types";
 
 interface ResolvedAccountData {
   allowList: AllowList;

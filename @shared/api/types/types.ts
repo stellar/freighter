@@ -444,6 +444,17 @@ export interface Collectible {
  * @property {string} external_url - The external URL of the collectible
  * @property {Object[]} attributes - The attributes of the collectible
  */
+export type CollectibleMetadataResponse = {
+  name?: string;
+  description?: string;
+  image?: string;
+  external_url?: string;
+  attributes?: {
+    trait_type?: string;
+    value?: string | number;
+  }[];
+};
+
 export type CollectibleMetadata = {
   name?: string;
   description?: string;
@@ -456,7 +467,7 @@ export type CollectibleMetadata = {
 };
 
 export interface CollectionResponse {
-  collection: {
+  collection?: {
     address: string;
     name: string;
     symbol: string;

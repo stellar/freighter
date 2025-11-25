@@ -1,14 +1,10 @@
 import { useReducer } from "react";
 
 import { initialState, reducer } from "helpers/request";
-import { Collection } from "@shared/api/types/types";
+import { Collectibles } from "@shared/api/types/types";
 import { getCollectibles } from "@shared/api/helpers/getCollectibles";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { captureException } from "@sentry/browser";
-
-export interface Collectibles {
-  collections: Collection[];
-}
 
 const preloadImages = async (images: string[]) => {
   const promises = images.map((url) => {
