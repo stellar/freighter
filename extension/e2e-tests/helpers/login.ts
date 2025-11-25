@@ -28,7 +28,10 @@ export const login = async ({ page, extensionId }) => {
 
   await page.getByRole("button", { name: "Import" }).click();
 
-  await expect(page.getByText("You’re all set!")).toBeVisible({
+  // Wait for navigation to success page
+  await page.waitForURL(`**/recover-account-success`, { timeout: 20000 });
+
+  await expect(page.getByText("You're all set!")).toBeVisible({
     timeout: 20000,
   });
 
@@ -86,7 +89,11 @@ export const loginToTestAccount = async ({ page, extensionId }) => {
   }
 
   await page.getByRole("button", { name: "Import" }).click();
-  await expect(page.getByText("You’re all set!")).toBeVisible({
+
+  // Wait for navigation to success page
+  await page.waitForURL(`**/recover-account-success`, { timeout: 20000 });
+
+  await expect(page.getByText("You're all set!")).toBeVisible({
     timeout: 20000,
   });
 

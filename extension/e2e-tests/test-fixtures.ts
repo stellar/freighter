@@ -19,6 +19,11 @@ export const test = base.extend<{
       ],
     });
 
+    // Mock metrics endpoint to prevent fetch failures in tests
+    await context.route("**/api.amplitude.com/**", async (route) => {
+      await route.fulfill({ status: 200, body: JSON.stringify({}) });
+    });
+
     await use(context);
     await context.close();
   },
