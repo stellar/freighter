@@ -21,6 +21,7 @@ import { changeNetwork, saveBackendSettingsAction } from "popup/ducks/settings";
 import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
 import { loadBackendSettings } from "@shared/api/internal";
 import { Collectibles } from "@shared/api/types/types";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 
 interface ResolvedAccountData {
   allowList: AllowList;
@@ -128,14 +129,19 @@ function useGetAccountData(options: {
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
 
-      // let's fetch the collectibles
-      const collectiblesResult = await fetchCollectibles({
-        publicKey,
-        networkDetails,
-        contracts: [],
-      });
-
-      payload.collectibles = collectiblesResult;
+      if (!isCustomNetwork(networkDetails)) {
+        const collectiblesResult = await fetchCollectibles({
+          publicKey,
+          networkDetails,
+          contracts: [
+            {
+              id: "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN",
+              token_ids: ["1", "2"],
+            },
+          ],
+        });
+        payload.collectibles = collectiblesResult;
+      }
 
       if (isMainnetNetwork) {
         // now that the UI has renderered, on Mainnet, let's make an additional call to fetch the balances with the Blockaid scan results included

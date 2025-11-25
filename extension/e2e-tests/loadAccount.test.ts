@@ -710,11 +710,11 @@ test("Loads collectibles data with successful metadata", async ({
     state: "visible",
   });
 
-  imgs.forEach(async (img) => {
-    await img.waitFor({
+  for (let i = 0; i < imgs.length; i++) {
+    await imgs[i].waitFor({
       state: "visible",
     });
-  });
+  }
 
   expect(imgs[0]).toHaveAttribute(
     "src",
