@@ -346,8 +346,8 @@ export interface AssetDiffSummary {
   decimals: number;
   amount: string;
   isCredit: boolean;
-  netAmount: BigNumber;
   destination?: string; // The destination public key for debits
+  icon?: string; // Asset icon URL
 }
 
 /**
@@ -355,10 +355,13 @@ export interface AssetDiffSummary {
  * Also finds destination public keys for debits by matching with credits in other accounts
  * @returns Array of asset diff summaries, or empty array if none/no net changes
  */
-const processAssetDiffsForUser = (
+const processAssetDiffs = async (
   operation: HorizonOperation,
   publicKey: string,
-): AssetDiffSummary[] => {
+  networkDetails: NetworkDetails,
+  homeDomains: { [assetIssuer: string]: string | null },
+  icons: AssetIcons,
+): Promise<AssetDiffSummary[]> => {
   if (!operation.asset_diffs || !operation.asset_diffs[publicKey]) {
     return [];
   }
@@ -366,11 +369,7 @@ const processAssetDiffsForUser = (
   const diffs = operation.asset_diffs[publicKey];
   const results: AssetDiffSummary[] = [];
 
-  // Handle if diffs is an array or single object
-  const diffArray = Array.isArray(diffs) ? diffs : [diffs];
-
-  for (const diff of diffArray) {
-    // Extract asset info
+  for (const diff of diffs) {
     let assetCode: string;
     let assetIssuer: string | null = null;
     let decimals: number;
@@ -383,14 +382,14 @@ const processAssetDiffsForUser = (
       assetIssuer = "issuer" in diff.asset ? diff.asset.issuer || null : null;
       decimals =
         "decimals" in diff.asset
-          ? diff.asset.decimals || CLASSIC_ASSET_DECIMALS
+          ? (diff.asset.decimals as number) || CLASSIC_ASSET_DECIMALS
           : CLASSIC_ASSET_DECIMALS;
     } else if (diff.asset_type === "CONTRACT") {
       assetCode = "code" in diff.asset ? diff.asset.code || "" : "";
       assetIssuer = "issuer" in diff.asset ? diff.asset.issuer || null : null;
       decimals =
         "decimals" in diff.asset
-          ? diff.asset.decimals || CLASSIC_ASSET_DECIMALS
+          ? (diff.asset.decimals as number) || CLASSIC_ASSET_DECIMALS
           : CLASSIC_ASSET_DECIMALS;
 
       if (!assetCode) {
@@ -400,7 +399,6 @@ const processAssetDiffsForUser = (
       continue;
     }
 
-    // Calculate net change
     const inAmount = diff.in?.raw_value
       ? new BigNumber(diff.in.raw_value)
       : new BigNumber(0);
@@ -408,16 +406,9 @@ const processAssetDiffsForUser = (
       ? new BigNumber(diff.out.raw_value)
       : new BigNumber(0);
 
-    const netAmount = inAmount.minus(outAmount);
-
-    // Skip zero amounts per user requirement
-    if (netAmount.isZero()) {
-      continue;
-    }
-
-    const isCredit = netAmount.isGreaterThan(0);
-    const absoluteAmount = netAmount.abs();
-    const formattedAmount = formatTokenAmount(absoluteAmount, decimals);
+    const isCredit = inAmount.isGreaterThan(0);
+    const amount = isCredit ? inAmount : outAmount;
+    const formattedAmount = formatTokenAmount(amount, decimals);
 
     // Find destination for debits
     let destination: string | undefined;
@@ -444,16 +435,9 @@ const processAssetDiffsForUser = (
             const otherInAmount = otherDiff.in?.raw_value
               ? new BigNumber(otherDiff.in.raw_value)
               : new BigNumber(0);
-            const otherOutAmount = otherDiff.out?.raw_value
-              ? new BigNumber(otherDiff.out.raw_value)
-              : new BigNumber(0);
-            const otherNetAmount = otherInAmount.minus(otherOutAmount);
 
             // If it's a credit with matching amount, this is the destination
-            if (
-              otherNetAmount.isGreaterThan(0) &&
-              otherNetAmount.abs().eq(absoluteAmount)
-            ) {
+            if (otherInAmount.isGreaterThan(0) && otherInAmount.eq(amount)) {
               destination = otherPublicKey;
               break;
             }
@@ -463,14 +447,26 @@ const processAssetDiffsForUser = (
       }
     }
 
+    // Get asset icon
+    const icon =
+      assetCode === "XLM"
+        ? StellarLogo
+        : await getIconUrl({
+            key: assetIssuer || "",
+            code: assetCode,
+            networkDetails,
+            homeDomains,
+            icons,
+          });
+
     results.push({
       assetCode,
       assetIssuer,
       decimals,
       amount: formattedAmount,
       isCredit,
-      netAmount,
       destination,
+      icon,
     });
   }
 
@@ -693,14 +689,23 @@ export const getRowDataByOpType = async (
       rowText: i18n.t("Contract Function"),
     };
 
-    // Check for asset diffs FIRST - this works for all invokeHostFn operations
-    const assetDiffs = processAssetDiffsForUser(operation, publicKey);
+    const assetDiffs = await processAssetDiffs(
+      operation,
+      publicKey,
+      networkDetails,
+      homeDomains,
+      icons,
+    );
 
     if (assetDiffs.length > 0) {
       // Use first asset diff for the row display amount
       const primaryDiff = assetDiffs[0];
       const paymentDifference = primaryDiff.isCredit ? "+" : "-";
       const formattedAmount = `${paymentDifference}${primaryDiff.amount} ${primaryDiff.assetCode}`;
+
+      const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
+      const isTokenTransfer = attrs?.fnName === SorobanTokenInterface.transfer;
+      const isTokenMint = attrs?.fnName === SorobanTokenInterface.mint;
 
       return {
         ...genericInvocation,
@@ -710,13 +715,16 @@ export const getRowDataByOpType = async (
           hasAssetDiffs: true,
           assetDiffs,
           isReceiving: primaryDiff.isCredit,
+          isTokenTransfer,
+          isTokenMint,
+          to: primaryDiff.destination,
+          nonLabelAmount: primaryDiff.amount,
+          destAssetCode: primaryDiff.assetCode,
         },
       };
     }
 
-    // Fallback: Try to parse as transfer or mint (for backwards compatibility)
     const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
-
     if (!attrs) {
       return genericInvocation;
     }

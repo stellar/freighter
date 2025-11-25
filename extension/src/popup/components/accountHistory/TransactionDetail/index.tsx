@@ -22,7 +22,6 @@ import {
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
-import { AssetIcon } from "popup/components/account/AccountAssets";
 
 import "./styles.scss";
 import { getMemoDisabledState } from "helpers/muxedAddress";
@@ -79,15 +78,8 @@ export const TransactionDetail = ({
 
   const renderBody = (activeOperation: OperationDataRow) => {
     if (activeOperation.metadata.isInvokeHostFn) {
-      const {
-        destAssetCode,
-        isTokenMint,
-        isTokenTransfer,
-        nonLabelAmount,
-        to,
-        hasAssetDiffs,
-        assetDiffs,
-      } = activeOperation.metadata;
+      const { hasAssetDiffs, assetDiffs, isTokenMint, isTokenTransfer } =
+        activeOperation.metadata;
       const title =
         isTokenTransfer || isTokenMint ? (
           <>
@@ -122,68 +114,46 @@ export const TransactionDetail = ({
               </Text>
             </div>
           </div>
-          {isTokenTransfer && (
+          {hasAssetDiffs && assetDiffs && assetDiffs.length > 0 && (
             <div className="TransactionDetailModal__body transfer">
-              <div className="Send__src">
-                <div className="Send__src__amount">{nonLabelAmount}</div>
-                <div className="Send__src__icon">
-                  {getPaymentIcon({ destAssetCode })}
+              {assetDiffs.map((diff: AssetDiffSummary, index: number) => (
+                <div key={index} className="AssetDiff__transfer">
+                  <div className="Send__src">
+                    <div className="Send__src__amount">
+                      {diff.amount} {diff.assetCode}
+                    </div>
+                    <div className="Send__src__icon">
+                      <Asset
+                        size="lg"
+                        variant="single"
+                        sourceOne={{
+                          altText: "Asset icon",
+                          image: diff.icon || "",
+                        }}
+                      />
+                    </div>{" "}
+                  </div>
+                  <div className="Send__direction">
+                    <Icon.ChevronDownDouble />
+                  </div>
+                  <div className="Send__dst">
+                    <div className="Send__dst__amount">
+                      {diff.destination
+                        ? truncatedPublicKey(diff.destination)
+                        : diff.isCredit
+                          ? "Received"
+                          : "Unknown"}
+                    </div>
+                    {diff.destination && (
+                      <div className="Send__dst__icon">
+                        <IdenticonImg publicKey={diff.destination} />
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="Send__direction">
-                <Icon.ChevronDownDouble />
-              </div>
-              <div className="Send__dst">
-                <div className="Send__dst__amount">
-                  {truncatedPublicKey(to)}
-                </div>
-                <div className="Send__dst__icon">
-                  <IdenticonImg publicKey={to} />
-                </div>
-              </div>
+              ))}
             </div>
           )}
-          {!isTokenTransfer &&
-            !isTokenMint &&
-            hasAssetDiffs &&
-            assetDiffs &&
-            assetDiffs.length > 0 && (
-              <div className="TransactionDetailModal__body transfer">
-                {assetDiffs.map((diff: AssetDiffSummary, index: number) => (
-                  <div key={index} className="AssetDiff__transfer">
-                    <div className="Send__src">
-                      <div className="Send__src__amount">
-                        {diff.amount} {diff.assetCode}
-                      </div>
-                      <div className="Send__src__icon">
-                        <AssetIcon
-                          assetIcons={{}}
-                          code={diff.assetCode}
-                          issuerKey={diff.assetIssuer || ""}
-                        />
-                      </div>
-                    </div>
-                    <div className="Send__direction">
-                      <Icon.ChevronDownDouble />
-                    </div>
-                    <div className="Send__dst">
-                      <div className="Send__dst__amount">
-                        {diff.destination
-                          ? truncatedPublicKey(diff.destination)
-                          : diff.isCredit
-                            ? "Received"
-                            : "Unknown"}
-                      </div>
-                      {diff.destination && (
-                        <div className="Send__dst__icon">
-                          <IdenticonImg publicKey={diff.destination} />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
         </>
       );
     }
