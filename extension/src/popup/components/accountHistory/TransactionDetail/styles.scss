@@ -286,4 +286,23 @@
       }
     }
   }
+
+  &__body.transfer {
+    .AssetDiff__transfer {
+      display: flex;
+      flex-direction: column;
+
+      &:not(:last-child) {
+        margin-bottom: pxToRem(24px);
+        padding-bottom: pxToRem(24px);
+        border-bottom: 1px solid var(--sds-clr-gray-06);
+      }
+    }
+
+    .Send__dst__label {
+      font-size: var(--sds-font-size-sm);
+      color: var(--sds-clr-gray-11);
+      margin-top: pxToRem(4px);
+    }
+  }
 }
