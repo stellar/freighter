@@ -316,7 +316,7 @@ export type TokenBalances = SorobanBalance[];
 
 export type HorizonOperation = Horizon.ServerApi.OperationRecord & {
   asset_diffs: {
-    [key: string]: BlockaidAssetDiff;
+    [key: string]: BlockaidAssetDiff[];
   };
   account: string;
   amount?: string;
