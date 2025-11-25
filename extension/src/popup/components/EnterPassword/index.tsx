@@ -57,7 +57,7 @@ export const EnterPassword = ({
 
   return (
     <View.Content alignment="center">
-      <div className="EnterPassword">
+      <div className="EnterPassword" data-testid="enter-password">
         <div className="EnterPassword__wrapper">
           {accountAddress && (
             <div className="EnterPassword__wrapper__identicon">
@@ -97,6 +97,7 @@ export const EnterPassword = ({
                       <Input
                         {...field}
                         id="password-input"
+                        data-testid="enter-password-input"
                         isPassword
                         fieldSize="md"
                         autoComplete="off"
@@ -132,6 +133,7 @@ export const EnterPassword = ({
                     )}
 
                     <Button
+                      data-testid="enter-password-submit"
                       size="lg"
                       isFullWidth
                       isRounded

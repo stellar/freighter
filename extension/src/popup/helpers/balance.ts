@@ -68,6 +68,11 @@ export const getBalanceByAsset = (
       return "contractId" in balance && balance.contractId === issuer;
     }
 
+    // LP share - issuer is "lp" and code is the liquidityPoolId
+    if (issuer === "lp" && "liquidityPoolId" in balance) {
+      return balance.liquidityPoolId === code;
+    }
+
     // G address issuer
     return (
       "token" in balance &&

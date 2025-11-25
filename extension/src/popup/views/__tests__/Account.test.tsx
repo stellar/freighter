@@ -21,7 +21,10 @@ import { INDEXER_URL } from "@shared/constants/mercury";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { HorizonOperation, Response, SettingsState } from "@shared/api/types";
 import * as TokenListHelpers from "@shared/api/helpers/token-list";
+import * as GetIconFromTokenList from "@shared/api/helpers/getIconFromTokenList";
+import * as GetIconUrlFromIssuer from "@shared/api/helpers/getIconUrlFromIssuer";
 import * as RouteHelpers from "popup/helpers/route";
+import * as GetLedgerKeyAccounts from "@shared/api/helpers/getLedgerKeyAccounts";
 
 import {
   Wrapper,
@@ -50,6 +53,18 @@ const mockHistoryOperations = {
       from: "G1",
       to: "G2",
       transaction_attr: { operation_count: 1, fee_charged: "" },
+    },
+    {
+      id: "123",
+      amount: "100",
+      type: "payment",
+      asset_type: "credit_alphanum4",
+      asset_issuer: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      asset_code: "USDC",
+      from: "G1",
+      to: "G2",
+      transaction_attr: { operation_count: 1, fee_charged: "" },
+      created_at: "2025-10-07T12:31:45Z",
     },
   ] as HorizonOperation[],
 };
@@ -104,10 +119,6 @@ jest
 jest
   .spyOn(ApiInternal, "getHiddenAssets")
   .mockImplementation(() => Promise.resolve({ hiddenAssets: {}, error: "" }));
-
-jest
-  .spyOn(ApiInternal, "getAccountBalances")
-  .mockImplementation(() => Promise.resolve(mockBalances));
 
 jest
   .spyOn(ApiInternal, "getTokenPrices")
@@ -226,6 +237,17 @@ jest
   .spyOn(TokenListHelpers, "getCombinedAssetListData")
   .mockImplementation(() => Promise.resolve([]));
 
+jest.spyOn(ApiInternal, "loadBackendSettings").mockImplementation(() =>
+  Promise.resolve({
+    isSorobanPublicEnabled: true,
+    isRpcHealthy: true,
+    userNotification: {
+      enabled: false,
+      message: "",
+    },
+  }),
+);
+
 jest.mock("helpers/metrics", () => ({
   storeAccountMetricsData: jest.fn(),
   registerHandler: jest.fn(),
@@ -251,6 +273,15 @@ describe("Account view", () => {
     jest.useRealTimers();
     jest.clearAllMocks();
   });
+
+  jest
+    .spyOn(ApiInternal, "getAccountBalances")
+    .mockImplementation(({ isScanSkipped }: any) => {
+      if (isScanSkipped) {
+        return Promise.resolve(mockTestnetBalances);
+      }
+      return Promise.resolve(mockBalances);
+    });
 
   it("renders", async () => {
     render(
@@ -293,6 +324,12 @@ describe("Account view", () => {
           settings: {
             networkDetails: TESTNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
+            isSorobanPublicEnabled: true,
+            isRpcHealthy: true,
+            userNotification: {
+              enabled: false,
+              message: "",
+            },
           },
         }}
       >
@@ -302,6 +339,254 @@ describe("Account view", () => {
 
     await waitFor(() => screen.getByTestId("account-header"));
     expect(screen.getByTestId("account-header")).toBeDefined();
+    expect(
+      screen.queryAllByTestId("account-view-user-notification"),
+    ).toHaveLength(0);
+    expect(
+      screen.queryAllByTestId("account-view-sorban-rpc-issue"),
+    ).toHaveLength(0);
+  });
+  it("should show user notification if user notification is enabled", async () => {
+    jest.spyOn(ApiInternal, "loadBackendSettings").mockImplementationOnce(() =>
+      Promise.resolve({
+        isSorobanPublicEnabled: true,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: true,
+          message: "Test notification",
+        },
+      }),
+    );
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+            isSorobanPublicEnabled: true,
+            isRpcHealthy: true,
+            userNotification: {
+              enabled: false,
+              message: "",
+            },
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("account-view-user-notification"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("should show soroban rpc issue notification if soroban rpc is not supported", async () => {
+    jest.spyOn(ApiInternal, "loadBackendSettings").mockImplementationOnce(() =>
+      Promise.resolve({
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: false,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+      }),
+    );
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+            isSorobanPublicEnabled: true,
+            isRpcHealthy: true,
+            userNotification: {
+              enabled: false,
+              message: "",
+            },
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("account-view-sorban-rpc-issue"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("displays balances with icons", async () => {
+    const iconBalances = {
+      balances: {
+        ["USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"]: {
+          token: {
+            code: "USDC",
+            issuer: {
+              key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+            },
+          },
+          total: new BigNumber("100"),
+          available: new BigNumber("100"),
+          blockaidData: {},
+        },
+        ["FOO:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"]: {
+          token: {
+            code: "FOO",
+            issuer: {
+              key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+            },
+          },
+          total: new BigNumber("100"),
+          available: new BigNumber("100"),
+          blockaidData: {},
+        },
+        ["BAZ:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"]: {
+          token: {
+            code: "BAZ",
+            issuer: {
+              key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+            },
+          },
+          total: new BigNumber("100"),
+          available: new BigNumber("100"),
+          blockaidData: {},
+        },
+        native: {
+          token: { type: "native", code: "XLM" },
+          total: new BigNumber("50"),
+          available: new BigNumber("50"),
+          blockaidData: defaultBlockaidScanAssetResult,
+        },
+      } as any as Balances,
+      isFunded: true,
+      subentryCount: 1,
+    };
+    const getIconFromTokenListSpy = jest.spyOn(
+      GetIconFromTokenList,
+      "getIconFromTokenLists",
+    );
+    const getIconUrlFromIssuerSpy = jest
+      .spyOn(GetIconUrlFromIssuer, "getIconUrlFromIssuer")
+      .mockImplementationOnce(() =>
+        Promise.resolve("http://bazdomain.com/baz.png"),
+      );
+    jest
+      .spyOn(GetLedgerKeyAccounts, "getLedgerKeyAccounts")
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM: {
+            home_domain: "bazdomain.com",
+          },
+        } as any),
+      );
+    jest
+      .spyOn(ApiInternal, "getAccountHistory")
+      .mockImplementationOnce(() => Promise.resolve({ operations: [] } as any));
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementationOnce(() => Promise.resolve(iconBalances));
+
+    jest.spyOn(ApiInternal, "getAssetIconCache").mockImplementation(() =>
+      Promise.resolve({
+        icons: {
+          "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM":
+            "http://domain.com/icon.png",
+        },
+      }),
+    );
+
+    jest.spyOn(ApiInternal, "getAssetIcons").mockRestore();
+
+    const assetsListsData = [
+      {
+        assets: [
+          {
+            code: "FOO",
+            issuer: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+            name: "FOO",
+            icon: "http://domain.com/foo.png",
+          },
+        ],
+      },
+    ] as any;
+    jest
+      .spyOn(TokenListHelpers, "getCombinedAssetListData")
+      .mockImplementation(() => Promise.resolve(assetsListsData));
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("account-header"));
+    expect(screen.getByTestId("account-header")).toBeDefined();
+
+    await waitFor(() => {
+      const assetNodes = screen.getAllByTestId("account-assets-item");
+      expect(assetNodes.length).toEqual(4);
+
+      // fetches and displays icon from background cache
+      expect(
+        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+      ).toContainHTML(
+        "<img alt='USDC logo' src='http://domain.com/icon.png' />",
+      );
+
+      // fetches and displays icon from token list
+      expect(
+        screen.getByTestId("AccountAssets__asset--loading-FOO"),
+      ).toContainHTML("<img alt='FOO logo' src='http://domain.com/foo.png' />");
+      expect(getIconFromTokenListSpy).toHaveBeenCalledWith({
+        issuerId: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+        contractId: undefined,
+        code: "FOO",
+        assetsListsData: assetsListsData,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      });
+      expect(getIconFromTokenListSpy).toHaveBeenCalledTimes(2);
+
+      expect(getIconUrlFromIssuerSpy).toHaveBeenCalledTimes(1);
+
+      // fetches and displays icon from home domain
+      expect(
+        screen.getByTestId("AccountAssets__asset--loading-BAZ"),
+      ).toContainHTML(
+        "<img alt='BAZ logo' src='http://bazdomain.com/baz.png' />",
+      );
+    });
   });
 
   it("displays balances and scam notifications on Mainnet", async () => {
@@ -331,6 +616,7 @@ describe("Account view", () => {
       expect(
         screen.getByTestId("AccountAssets__asset--loading-XLM"),
       ).not.toContainElement(screen.getByTestId("ScamAssetIcon"));
+
       expect(
         screen.getByTestId("AccountAssets__asset--loading-USDC"),
       ).toContainElement(screen.getByTestId("ScamAssetIcon"));
@@ -455,6 +741,73 @@ describe("Account view", () => {
       expect(
         screen.getByTestId("asset-detail-available-copy"),
       ).toHaveTextContent("100 USDC");
+    });
+    fireEvent.click(screen.getByTestId("history-item"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("TransactionDetailModal")).toBeDefined();
+      expect(
+        screen.getByTestId("TransactionDetailModal__subtitle-date"),
+      ).toHaveTextContent("Oct 07 2025");
+      expect(
+        screen.getByTestId("TransactionDetailModal__src-amount"),
+      ).toHaveTextContent("100 USDC");
+      expect(
+        screen.getByTestId("TransactionDetailModal__dst-amount"),
+      ).toHaveTextContent("G2…G2");
+      expect(
+        screen.getByTestId("TransactionDetailModal__status"),
+      ).toHaveTextContent("Success");
+    });
+  });
+
+  it("goes to account details and shows loading until history data is fetched", async () => {
+    jest.useFakeTimers();
+    jest
+      .spyOn(ApiInternal, "getAccountHistory")
+      .mockImplementation(
+        () =>
+          new Promise((resolve) =>
+            setTimeout(() => resolve(mockHistoryOperations.operations), 5000),
+          ),
+      );
+
+    render(
+      <Wrapper
+        routes={[ROUTES.welcome]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      await fireEvent.click(
+        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+      );
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("asset-detail-available-copy"),
+      ).toHaveTextContent("100 USDC");
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("AssetDetail__list__loader")).toBeDefined();
+    });
+    jest.advanceTimersByTime(5000);
+    await waitFor(() => {
+      expect(screen.getByTestId("history-item")).toHaveTextContent("100 USDC");
     });
   });
 
@@ -750,12 +1103,12 @@ describe("Account view", () => {
     await waitFor(async () => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(3);
-      expect(getAccountBalancesSpy).toHaveBeenCalledTimes(1);
+      expect(getAccountBalancesSpy).toHaveBeenCalledTimes(2);
     });
 
     // Fast-forward 30 seconds
     jest.advanceTimersByTime(30000);
-    expect(getAccountBalancesSpy).toHaveBeenCalledTimes(2);
+    expect(getAccountBalancesSpy).toHaveBeenCalledTimes(3);
   });
 
   it("handles abandoned onboarding in password created step", async () => {

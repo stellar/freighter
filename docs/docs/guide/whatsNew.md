@@ -4,54 +4,90 @@ title: What's New
 slug: /whatsNew
 ---
 
+# Release 5.36.0
+
+## Peformance Improvements
+
+We heard your feedback and in Release 5.36.0, we've made improvements to make
+Freighter faster and smoother than ever! We've made some updates to lazy load
+API requests and we've added even more caching to speed up your Freighter
+experience.
+
+Side by side comparison of v5.35.0 and v5.36.0:
+
+<video width="600" controls>
+  <source src={require("./assets/5.36.0/side_by_side_5.36.0.mov").default}/>
+</video>
+
+## Send and Swap Update
+
+We've also updated the UX for the Send and Swap flows in Freighter to streamline
+the process. This means fewer clicks to send a payment or swap to a different
+asset.
+
+## Copy Your Address
+
+For your convenience, we now include a button to copy your address from your
+options dropdown
+
+<img src={require("./assets/5.36.0/copy_address.png").default} alt="Copy
+Address" width="300"/>
+
+## Additional bugfixes and stability fixes
+
+[Full changelog](https://github.com/stellar/freighter/releases/tag/5.36.0)
+
 # Release 5.34.0
 
 ## App-Wide Design system Update
 
-For this release, we've freshened up the design system, removed the nav bar at the bottom, and reorganized certain buttons.
+For this release, we've freshened up the design system, removed the nav bar at
+the bottom, and reorganized certain buttons.
 
-Old Homescreen:
-<img src={require("./assets/5.34.0/Old_Homescreen_5.34.png").default} alt="Old Homescreen" width="300"/> 
+Old Homescreen: <img
+src={require("./assets/5.34.0/Old_Homescreen_5.34.png").default} alt="Old
+Homescreen" width="300"/>
 
-New Homescreen:
-<img src={require("./assets/5.34.0/New_Homescreen_5.34.png").default} alt="Old Homescreen" width="300"/> 
+New Homescreen: <img
+src={require("./assets/5.34.0/New_Homescreen_5.34.png").default} alt="Old
+Homescreen" width="300"/>
 
+Old History Page: <img
+src={require("./assets/5.34.0/Old_History_5.34.png").default} alt="Old History
+Page" width="300"/>
 
-Old History Page:
-<img src={require("./assets/5.34.0/Old_History_5.34.png").default} alt="Old History Page" width="300"/> 
-
-New History Page:
-<img src={require("./assets/5.34.0/New_History_5.34.png").default} alt="New History Page" width="300"/> 
+New History Page: <img
+src={require("./assets/5.34.0/New_History_5.34.png").default} alt="New History
+Page" width="300"/>
 
 ./assets/5.34.0/New_History_5.34.png
 
-
 ## Settings is now under the top left dropdown navigation
 
-Old Settings Location:
-<img src={require("./assets/5.34.0/Old_settings_button_Location_5.34.png").default} alt="Old Settings Button Location" width="300"/> 
+Old Settings Location: <img
+src={require("./assets/5.34.0/Old_settings_button_Location_5.34.png").default}
+alt="Old Settings Button Location" width="300"/>
 
-
-New Settings Location:
-<img src={require("./assets/5.34.0/New_settings_button_Location_5.34.png").default} alt="New Settings Button Location" width="300"/> 
-
+New Settings Location: <img
+src={require("./assets/5.34.0/New_settings_button_Location_5.34.png").default}
+alt="New Settings Button Location" width="300"/>
 
 ## Secondary navigation is now in the top left dropdown
 
-Old Secondary Nav Location:
-<img src={require("./assets/5.34.0/Old_Settings_Dropdown_5.34.png").default} alt="Old Secondary Nav Location" width="300"/> 
+Old Secondary Nav Location: <img
+src={require("./assets/5.34.0/Old_Settings_Dropdown_5.34.png").default} alt="Old
+Secondary Nav Location" width="300"/>
 
-
-New Secondary Nav Location:
-<img src={require("./assets/5.34.0/New_Settings_Dropdown_5.34.png").default} alt="New Secondary Nav Location" width="300"/> 
-
+New Secondary Nav Location: <img
+src={require("./assets/5.34.0/New_Settings_Dropdown_5.34.png").default} alt="New
+Secondary Nav Location" width="300"/>
 
 ## Implements SEP-53 handling for sign-message API
 
-Learn more about SEP-53 message signing [here](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0053.md).
+Learn more about SEP-53 message signing
+[here](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0053.md).
 
 [Full changelog](https://github.com/stellar/freighter/releases/tag/5.34.0)
-
 
 # Release 5.33.0
 
