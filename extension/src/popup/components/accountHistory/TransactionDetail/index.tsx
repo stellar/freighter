@@ -13,6 +13,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import {
+  AssetDiffSummary,
   getActionIconByType,
   getPaymentIcon,
   getSwapIcons,
@@ -21,6 +22,7 @@ import {
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
+import { AssetIcon } from "popup/components/account/AccountAssets";
 
 import "./styles.scss";
 import { getMemoDisabledState } from "helpers/muxedAddress";
@@ -83,6 +85,8 @@ export const TransactionDetail = ({
         isTokenTransfer,
         nonLabelAmount,
         to,
+        hasAssetDiffs,
+        assetDiffs,
       } = activeOperation.metadata;
       const title =
         isTokenTransfer || isTokenMint ? (
@@ -139,6 +143,47 @@ export const TransactionDetail = ({
               </div>
             </div>
           )}
+          {!isTokenTransfer &&
+            !isTokenMint &&
+            hasAssetDiffs &&
+            assetDiffs &&
+            assetDiffs.length > 0 && (
+              <div className="TransactionDetailModal__body transfer">
+                {assetDiffs.map((diff: AssetDiffSummary, index: number) => (
+                  <div key={index} className="AssetDiff__transfer">
+                    <div className="Send__src">
+                      <div className="Send__src__amount">
+                        {diff.amount} {diff.assetCode}
+                      </div>
+                      <div className="Send__src__icon">
+                        <AssetIcon
+                          assetIcons={{}}
+                          code={diff.assetCode}
+                          issuerKey={diff.assetIssuer || ""}
+                        />
+                      </div>
+                    </div>
+                    <div className="Send__direction">
+                      <Icon.ChevronDownDouble />
+                    </div>
+                    <div className="Send__dst">
+                      <div className="Send__dst__amount">
+                        {diff.destination
+                          ? truncatedPublicKey(diff.destination)
+                          : diff.isCredit
+                            ? "Received"
+                            : "Unknown"}
+                      </div>
+                      {diff.destination && (
+                        <div className="Send__dst__icon">
+                          <IdenticonImg publicKey={diff.destination} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
         </>
       );
     }
