@@ -169,13 +169,6 @@ export const SendTo = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formik.values.destination]);
 
-  useEffect(() => {
-    if (formik.values.destination === "") {
-      fetchData("", {});
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const hasError = sendDataState.state === RequestState.ERROR;
   const isLoading =
     sendDataState.state === RequestState.IDLE ||
