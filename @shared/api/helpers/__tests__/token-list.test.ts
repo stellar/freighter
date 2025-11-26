@@ -23,6 +23,93 @@ describe("getCombinedAssetListData", () => {
     global.fetch = jest.fn() as jest.Mock;
   });
 
+  it("should return cached asset lists when provided and not empty", async () => {
+    const cachedAssetLists = [
+      {
+        name: "Cached Asset List",
+        provider: "Cached Provider",
+        description: "Cached Description",
+        version: "1.0.0",
+        network: "mainnet",
+        assets: [
+          {
+            code: "CACHED",
+            issuer: "GCACHED123",
+            contract: "CCACHED456",
+            domain: "cached.com",
+            icon: "https://cached.com/icon.png",
+            decimals: 7,
+          },
+        ],
+      },
+    ];
+
+    const result = await getCombinedAssetListData({
+      networkDetails: MAINNET_NETWORK_DETAILS,
+      assetsLists: DEFAULT_ASSETS_LISTS,
+      cachedAssetLists,
+    });
+
+    // Should return cached lists without fetching
+    expect(result).toEqual(cachedAssetLists);
+    expect(result.length).toBe(1);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("should fetch asset lists when cachedAssetLists is empty", async () => {
+    const mockSuccessResponse = {
+      name: "Test Asset List",
+      provider: "Test Provider",
+      description: "Test Description",
+      version: "1.0.0",
+      network: "mainnet",
+      assets: [],
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => mockSuccessResponse,
+    });
+
+    const result = await getCombinedAssetListData({
+      networkDetails: MAINNET_NETWORK_DETAILS,
+      assetsLists: DEFAULT_ASSETS_LISTS,
+      cachedAssetLists: [],
+    });
+
+    // Should fetch lists when cache is empty
+    expect(global.fetch).toHaveBeenCalled();
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it("should fetch asset lists when cachedAssetLists is undefined", async () => {
+    const mockSuccessResponse = {
+      name: "Test Asset List",
+      provider: "Test Provider",
+      description: "Test Description",
+      version: "1.0.0",
+      network: "mainnet",
+      assets: [],
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => mockSuccessResponse,
+    });
+
+    const result = await getCombinedAssetListData({
+      networkDetails: MAINNET_NETWORK_DETAILS,
+      assetsLists: DEFAULT_ASSETS_LISTS,
+      cachedAssetLists: undefined,
+    });
+
+    // Should fetch lists when cache is undefined
+    expect(global.fetch).toHaveBeenCalled();
+    expect(result.length).toBeGreaterThan(0);
+  });
+
   it("should handle 429 rate limit error gracefully and continue with other lists", async () => {
     const mockSuccessResponse = {
       name: "Test Asset List",

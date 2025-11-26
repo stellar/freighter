@@ -142,7 +142,7 @@ describe("searchAsset", () => {
     });
     expect(assets).toStrictEqual([]);
 
-    // error for missing `name` and error for additional key `title`
+    // error for missing `name` and error for additional key `title` and error for 'feedback'
     expect(errors).toHaveLength(3);
   });
 });

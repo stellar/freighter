@@ -127,12 +127,16 @@ export const getVerifiedTokens = async ({
   const verifiedLists: string[] = [];
 
   for (const data of assetListsData) {
-    const matchingRecord = data.assets?.find(
-      (record) => record.contract === contractId,
-    );
-    if (matchingRecord) {
-      verifiedToken = matchingRecord;
-      verifiedLists.push(data.name);
+    const list = data.assets;
+    if (list) {
+      for (const record of list) {
+        const regex = new RegExp(contractId, "i");
+        if (record.contract && record.contract.match(regex)) {
+          verifiedToken = record;
+          verifiedLists.push(data.name);
+          break;
+        }
+      }
     }
   }
 

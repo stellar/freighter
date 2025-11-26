@@ -134,7 +134,7 @@ function useGetSignTxData(
       const icons = {} as { [code: string]: string };
       // Initialize with cached lists, but we'll fetch fresh data when needed for icon lookups
       let assetsListsData: AssetListResponse[] = cachedTokenLists || [];
-      let hasFetchedAssetLists = false;
+      let hasFetchedAssetLists = assetsListsData.length > 0;
 
       // Fetch icons for asset diffs only if includeIcons is true
       if (
@@ -161,7 +161,7 @@ function useGetSignTxData(
             if (cachedIcon) {
               icons[canonical] = cachedIcon;
             } else {
-              let icon: string | null = await getIconUrlFromIssuer({
+              let icon = await getIconUrlFromIssuer({
                 key,
                 code,
                 networkDetails,
@@ -211,7 +211,7 @@ function useGetSignTxData(
             if (cachedIcon) {
               icons[canonical] = cachedIcon;
             } else {
-              let icon: string | null = await getIconUrlFromIssuer({
+              let icon = await getIconUrlFromIssuer({
                 key: issuer,
                 code,
                 networkDetails,
