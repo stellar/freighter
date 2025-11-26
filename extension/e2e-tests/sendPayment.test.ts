@@ -425,7 +425,7 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
     timeout: 60000,
   });
 
-  await page.getByTestId(`SubmitAction`).click({ force: true });
+  await page.getByTestId(`SubmitAction`).click({ force: true, timeout: 60000 });
 
   let accountBalancesRequestWasMade = false;
   page.on("request", (request) => {
@@ -616,7 +616,7 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
     timeout: 60000,
   });
 
-  await page.getByTestId(`SubmitAction`).click({ force: true });
+  await page.getByTestId(`SubmitAction`).click({ force: true, timeout: 60000 });
 
   let accountBalancesRequestWasMade = false;
   page.on("request", (request) => {

@@ -23,6 +23,7 @@ import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import {
   makeAccountActive,
   updateAccountName,
+  allAccountsSelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { clearBalancesForAccount } from "popup/ducks/cache";
@@ -39,9 +40,9 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { newTabHref } from "helpers/urls";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { reRouteOnboarding } from "popup/helpers/route";
+import { WalletType } from "@shared/constants/hardwareWallet";
 
 import "./styles.scss";
-import { WalletType } from "@shared/constants/hardwareWallet";
 
 interface AddWalletProps {
   onBack: () => void;
@@ -163,6 +164,7 @@ const RenameWallet = ({
                   <Field name="accountName">
                     {({ field }: FieldProps) => (
                       <Input
+                        data-testid="rename-wallet-input"
                         autoFocus
                         fieldSize="md"
                         autoComplete="off"
@@ -273,6 +275,7 @@ const WalletRow = ({
       </div>
       <div
         className="WalletRow__options"
+        data-testid="wallet-row-options"
         onClick={() => setOptionsOpen(publicKey)}
       >
         <img src={IconEllipsis} alt="wallet action options" />
@@ -292,6 +295,7 @@ export const Wallets = () => {
     React.useState("");
   const { state: dataState, fetchData } = useGetWalletsData();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const allAccounts = useSelector(allAccountsSelector);
 
   useEffect(() => {
     const getData = async () => {
@@ -363,11 +367,7 @@ export const Wallets = () => {
     );
   }
 
-  const {
-    allAccounts,
-    publicKey: activePublicKey,
-    accountValue,
-  } = dataState.data;
+  const { publicKey: activePublicKey, accountValue } = dataState.data;
 
   return (
     <React.Fragment>

@@ -21,9 +21,9 @@ import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
 import { isContractId } from "popup/helpers/soroban";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
-import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { settingsSelector } from "popup/ducks/settings";
 import { TransactionBuilder } from "stellar-sdk";
+import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 
 export interface ResolvedData {
   type: AppDataType.RESOLVED;

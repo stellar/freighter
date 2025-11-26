@@ -657,3 +657,21 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
 
   expect(tokenPricesCallCount).toBe(7);
 });
+
+test("Renames wallets", async ({ page, extensionId, context }) => {
+  await stubTokenDetails(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
+  await loginToTestAccount({ page, extensionId });
+  await page.getByTestId("account-view-account-name").click();
+  await expect(page.getByText("Wallets")).toBeVisible();
+
+  const walletRowOptions = await page.getByTestId("wallet-row-options").all();
+  await walletRowOptions[0].click();
+  await page.getByText("Rename wallet").click();
+  await page.getByTestId("rename-wallet-input").fill("New Wallet");
+  await page.getByText("Save").click();
+  await expect(page.getByText("New Wallet")).toBeVisible();
+});
