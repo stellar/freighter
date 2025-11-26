@@ -10,8 +10,6 @@ import {
   stubCollectiblesUnsuccessfulMetadata,
 } from "./helpers/stubs";
 
-test.describe.configure({ mode: "parallel" });
-
 test("Load accounts on standalone network", async ({
   page,
   extensionId,

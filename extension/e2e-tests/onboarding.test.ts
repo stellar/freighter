@@ -5,8 +5,6 @@ import { loginToTestAccount, PASSWORD } from "./helpers/login";
 
 const { generateMnemonic } = StellarHDWallet;
 
-test.describe.configure({ mode: "parallel" });
-
 test.beforeEach(async ({ page, extensionId }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
 });
