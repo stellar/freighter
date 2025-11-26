@@ -24,6 +24,7 @@ import { signOut } from "popup/ducks/accountServices";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { AccountTabs } from "popup/components/account/AccountTabs";
 
 import "./styles.scss";
 
@@ -307,7 +308,7 @@ export const AccountHeader = ({
           </div>
         }
       >
-        <View.Inset hasVerticalBorder>
+        <View.Inset hasVerticalBorder hasBottomBorder>
           <div
             className="AccountHeader__account-info"
             data-testid="account-header"
@@ -397,6 +398,7 @@ export const AccountHeader = ({
                 : null}
             </div>
           </div>
+          <AccountTabs />
         </View.Inset>
       </View.AppHeader>
     </>

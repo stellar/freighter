@@ -430,7 +430,7 @@ test.skip("Send XLM payment to C address", async ({ page, extensionId }) => {
 
   await page.waitForTimeout(300);
   await submitAction.waitFor({ state: "visible" });
-  await submitAction.click({ force: true });
+  await submitAction.click({ force: true, timeout: 60000 });
 
   let accountBalancesRequestWasMade = false;
   page.on("request", (request) => {
@@ -619,6 +619,9 @@ test.skip("Send token payment to C address", async ({ page, extensionId }) => {
     timeout: 60000,
   });
 
+  await expect(page.getByTestId("SubmitAction")).toBeVisible({
+    timeout: 60000,
+  });
   await page.getByTestId(`SubmitAction`).click({ force: true, timeout: 60000 });
 
   let accountBalancesRequestWasMade = false;
