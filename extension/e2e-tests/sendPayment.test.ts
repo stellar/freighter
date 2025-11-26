@@ -199,11 +199,7 @@ test("Send doesn't throw error when account is unfunded", async ({
     .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
   await page.getByText("Continue").click({ force: true });
 
-  // Wait a bit for the page to transition
-  await page.waitForTimeout(500);
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible({
-    timeout: 30000,
-  });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 });
 test("Send doesn't throw error when creating muxed account", async ({
   page,
@@ -429,9 +425,7 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
     timeout: 60000,
   });
 
-  const submitButton = page.getByTestId(`SubmitAction`);
-  await submitButton.scrollIntoViewIfNeeded();
-  await submitButton.click({ force: true, timeout: 60000 });
+  await page.getByTestId(`SubmitAction`).click({ force: true, timeout: 60000 });
 
   let accountBalancesRequestWasMade = false;
   page.on("request", (request) => {
@@ -622,9 +616,7 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
     timeout: 60000,
   });
 
-  const submitButton = page.getByTestId(`SubmitAction`);
-  await submitButton.scrollIntoViewIfNeeded();
-  await submitButton.click({ force: true, timeout: 60000 });
+  await page.getByTestId(`SubmitAction`).click({ force: true, timeout: 60000 });
 
   let accountBalancesRequestWasMade = false;
   page.on("request", (request) => {
