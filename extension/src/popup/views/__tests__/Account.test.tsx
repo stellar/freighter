@@ -574,7 +574,6 @@ describe("Account view", () => {
         contractId: undefined,
         code: "FOO",
         assetsListsData: assetsListsData,
-        networkDetails: TESTNET_NETWORK_DETAILS,
       });
       expect(getIconFromTokenListSpy).toHaveBeenCalledTimes(2);
 

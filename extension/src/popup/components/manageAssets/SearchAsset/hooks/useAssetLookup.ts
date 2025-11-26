@@ -1,5 +1,5 @@
 import { useReducer, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
 
 import { getTokenDetails } from "@shared/api/internal";
@@ -7,9 +7,9 @@ import { isSacContractExecutable } from "@shared/helpers/soroban/token";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import {
-  getVerifiedTokens,
   getNativeContractDetails,
   searchAsset,
+  getVerifiedTokens,
   VerifiedTokenRecord,
 } from "popup/helpers/searchAsset";
 import { splitVerifiedAssetCurrency } from "popup/helpers/assetList";
@@ -22,6 +22,9 @@ import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRo
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
+import { tokensListsSelector, saveTokenLists } from "popup/ducks/cache";
+import { AssetListResponse } from "@shared/constants/soroban/asset-list";
+import { AppDispatch, store } from "popup/App";
 
 interface AssetRecord {
   asset: string;
@@ -55,6 +58,7 @@ const useAssetLookup = () => {
   let verifiedLists = [] as string[];
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  const reduxDispatch = useDispatch<AppDispatch>();
   const { assetsLists } = useSelector(settingsSelector);
   const MAX_ASSETS_TO_SCAN = 10;
 
@@ -139,6 +143,7 @@ const useAssetLookup = () => {
     contractId: string,
     isAllowListVerificationEnabled: boolean,
     networkDetails: NetworkDetails,
+    assetsListsData: AssetListResponse[],
     signal: AbortSignal,
   ) => {
     let assetRows = [] as ManageAssetCurrency[];
@@ -192,8 +197,9 @@ const useAssetLookup = () => {
           signal,
         ).catch(() => {
           if (signal.aborted) {
-            return undefined;
+            return {} as BlockAidScanAssetResult;
           }
+          return {} as BlockAidScanAssetResult;
         });
         assetRows = [
           {
@@ -210,10 +216,12 @@ const useAssetLookup = () => {
 
     // If we're using asset lists, we can retrieve asset info from the list
     if (isAllowListVerificationEnabled) {
+      // getVerifiedTokens will use cached data if provided, avoiding re-fetching
       verifiedTokens = await getVerifiedTokens({
         networkDetails,
         contractId,
         assetsLists,
+        cachedAssetLists: assetsListsData,
       });
 
       try {
@@ -268,8 +276,9 @@ const useAssetLookup = () => {
       signal,
     }).catch(() => {
       if (signal.aborted) {
-        return;
+        return { _embedded: { records: [] } };
       }
+      throw new Error("Failed to fetch Stellar Expert data");
     });
 
     return resJson._embedded.records.map((record: AssetRecord) => ({
@@ -322,6 +331,29 @@ const useAssetLookup = () => {
     let assetRows: ManageAssetCurrency[] = [];
     const blockaidScanResults: { [key: string]: BlockAidScanAssetResult } = {};
 
+    // Use cached data if available, otherwise fetch once and reuse
+    // Read cache directly from store to get the latest value
+    const currentCache = tokensListsSelector(store.getState());
+    let assetsListsData: AssetListResponse[] = [];
+
+    // Check cache first - use it if available
+    if (currentCache?.length) {
+      // Use cached data - no network calls
+      assetsListsData = currentCache;
+    } else {
+      // Fetch only if cache is empty - fetch sequentially
+      assetsListsData = await getCombinedAssetListData({
+        networkDetails,
+        assetsLists,
+        cachedAssetLists: [], // Pass empty array to indicate no cache
+      });
+
+      // Save to cache for future use - this will persist for the session
+      if (assetsListsData.length > 0) {
+        reduxDispatch(saveTokenLists(assetsListsData));
+      }
+    }
+
     if (isContractId(asset)) {
       // for custom tokens, try to go down the the custom token flow
       try {
@@ -330,6 +362,7 @@ const useAssetLookup = () => {
           asset,
           isAllowListVerificationEnabled,
           networkDetails,
+          assetsListsData,
           signal,
         );
       } catch (e) {
@@ -358,17 +391,11 @@ const useAssetLookup = () => {
       }
     }
 
-    const assetsListsData = await getCombinedAssetListData({
-      networkDetails,
-      assetsLists,
-    });
-
     for (const assetRow of assetRows) {
       const key = assetRow.issuer!;
       const code = assetRow.code!;
       if (!assetRow.image) {
         const tokenListIcon = await getIconFromTokenLists({
-          networkDetails,
           issuerId: key,
           contractId: assetRow.contract,
           code,
@@ -385,6 +412,7 @@ const useAssetLookup = () => {
         networkDetails,
         assets: assetRows,
         assetsListsDetails: assetsLists,
+        cachedAssetLists: assetsListsData, // Use the fetched/cached data we already have
       });
 
     const payload = {
