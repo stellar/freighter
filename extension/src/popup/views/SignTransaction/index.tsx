@@ -264,7 +264,7 @@ export const SignTransaction = () => {
         header={`${t("Freighter is set to")} ${networkName}`}
       >
         <p>
-          {t("The transaction you’re trying to sign is on")}{" "}
+          {t("The transaction you're trying to sign is on")}{" "}
           {_networkPassphrase}.
         </p>
         <p>{t("Signing this transaction is not possible at the moment.")}</p>
@@ -347,7 +347,7 @@ export const SignTransaction = () => {
                   <img
                     className="PunycodedDomain__favicon"
                     src={favicon}
-                    alt="Site favicon"
+                    alt={t("Site favicon")}
                   />
                   <div className="SignTransaction__TitleRow__Detail">
                     <span className="SignTransaction__TitleRow__Title">
@@ -426,7 +426,7 @@ export const SignTransaction = () => {
                   onClick={() => setActivePaneIndex(2)}
                 >
                   <Icon.List />
-                  <span>{t("Transaction details")}</span>
+                  <span>{t("Transaction Details")}</span>
                 </div>
               </div>
             </div>,
@@ -639,6 +639,7 @@ interface TrustlineProps {
 }
 
 export const Trustline = ({ operations, icons }: TrustlineProps) => {
+  const { t } = useTranslation();
   const renderTrustlineChanges = (operation: Operation.ChangeTrust) => {
     const { line, limit } = operation;
     const isRemoveTrustline = new BigNumber(limit).isZero();
@@ -682,12 +683,12 @@ export const Trustline = ({ operations, icons }: TrustlineProps) => {
           {isRemoveTrustline ? (
             <>
               <Icon.MinusCircle />
-              <span>Remove Trustline</span>
+              <span>{t("Remove Trustline")}</span>
             </>
           ) : (
             <>
               <Icon.PlusCircle />
-              <span>Add Trustline</span>
+              <span>{t("Add Trustline")}</span>
             </>
           )}
         </div>

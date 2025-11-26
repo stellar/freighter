@@ -20,13 +20,11 @@ export const DisplayMnemonicPhrase = ({
   return (
     <OnboardingModal
       data-testid="display-mnemonic-phrase"
-      headerText="Your Recovery Phrase"
+      headerText={t("Your Recovery Phrase")}
       bodyText={
         <>
           <Text as="p" size="md">
-            {t(
-              "Never disclose your recovery phrase! If you do, someone will be able to access your wallet.",
-            )}
+            {`${t("Never disclose your recovery phrase!")} ${t("If you do, someone will be able to access your wallet.")}`}
           </Text>
         </>
       }
@@ -42,7 +40,7 @@ export const DisplayMnemonicPhrase = ({
           setIsConfirmed(true);
         }}
       >
-        {t("I’ve saved my phrase somewhere safe")}
+        {t("I've saved my phrase somewhere safe")}
       </Button>
     </OnboardingModal>
   );

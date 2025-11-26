@@ -31,7 +31,7 @@ export const FullscreenSuccessMessage = () => {
         </div>
         <div className="FullscreenSuccessMessage__pin__row">
           <div className="FullscreenSuccessMessage__pin__row__logo">
-            <img src={LogoWelcome} alt="Freighter logo" />
+            <img src={LogoWelcome} alt={t("Freighter logo")} />
           </div>
           <div className="FullscreenSuccessMessage__pin__row__text">
             {t("Freighter - Stellar Wallet")}
@@ -45,7 +45,7 @@ export const FullscreenSuccessMessage = () => {
         <div className="FullscreenSuccessMessage">
           <Onboarding layout="half">
             <OnboardingModal
-              headerText={t("You’re all set!")}
+              headerText={t("You're all set!")}
               bodyText={
                 <div className="FullscreenSuccessMessage__text">
                   <Text as="p" size="md">

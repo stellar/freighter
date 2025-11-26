@@ -1,5 +1,6 @@
 import { useReducer } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
+import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
 import { captureException } from "@sentry/browser";
 import {
@@ -208,9 +209,11 @@ const simulateTx = async ({
   type,
   options,
   recommendedFee,
+  t,
 }: {
   type: "classic" | "soroban";
   recommendedFee: string;
+  t: (key: string) => string;
   options: {
     tokenPayment: {
       address: string;
@@ -248,7 +251,7 @@ const simulateTx = async ({
       });
 
       if (!ok) {
-        throw new Error("failed to simulate token transfer");
+        throw new Error(t("failed to simulate token transfer"));
       }
 
       const minResourceFee = formatTokenAmount(
@@ -268,7 +271,7 @@ const simulateTx = async ({
     }
 
     default:
-      throw new Error("simulation type not supported");
+      throw new Error(t("simulation type not supported"));
   }
 };
 
@@ -310,6 +313,7 @@ function useSimulateTxData({
   simParams: SimClassic | SimSoroban;
   isMainnet: boolean;
 }) {
+  const { t } = useTranslation();
   const reduxDispatch = useDispatch<AppDispatch>();
   const store = useStore();
   const { asset, amount, transactionFee, memo } = useSelector(
@@ -336,12 +340,19 @@ function useSimulateTxData({
     dispatch({ type: "FETCH_DATA_START" });
     try {
       // Read memo and transactionFee from Redux state inside fetchData to get the latest values
+      // This ensures we get the most up-to-date values even if Redux state was updated just before this call
       const currentTransactionData = transactionDataSelector(
         store.getState() as AppState,
       );
       const currentMemo = currentTransactionData.memo || memo;
+      // Preserve custom fee if set (check for null/undefined/empty string)
+      // Always read fresh from Redux state to get the most up-to-date value
+      // Empty string means no fee is set, so we treat it as null
       const currentTransactionFee =
-        currentTransactionData.transactionFee || transactionFee;
+        currentTransactionData.transactionFee &&
+        currentTransactionData.transactionFee.trim() !== ""
+          ? currentTransactionData.transactionFee
+          : null;
 
       const payload = { transactionXdr: "" } as SimulateTxData;
       let destinationAccount = await getBaseAccount(destination);
@@ -377,7 +388,7 @@ function useSimulateTxData({
         networkDetails.networkPassphrase as Networks,
       );
       if (!assetBalance) {
-        throw new Error("asset balance not found");
+        throw new Error(t("asset balance not found"));
       }
 
       const tokenAddress =
@@ -389,9 +400,21 @@ function useSimulateTxData({
         Number("decimals" in assetBalance ? assetBalance.decimals : 7),
       );
 
+      // Always use currentTransactionFee from Redux state (fresh read) if it exists
+      // If no custom fee is set in Redux, use simParams.transactionFee for classic transactions
+      // This ensures we use the most up-to-date fee value from Redux state
+      // The custom fee should take precedence over simParams.transactionFee
+      const feeToUseForSimulation =
+        currentTransactionFee != null && currentTransactionFee !== ""
+          ? currentTransactionFee
+          : simParams.type === "classic"
+            ? simParams.transactionFee
+            : transactionFee;
+
       const simResponse = await simulateTx({
         type: simParams.type,
-        recommendedFee: currentTransactionFee,
+        recommendedFee: feeToUseForSimulation,
+        t,
         options: {
           tokenPayment: {
             address: tokenAddress,
@@ -403,7 +426,7 @@ function useSimulateTxData({
               destination,
             },
             networkDetails,
-            transactionFee: currentTransactionFee,
+            transactionFee: feeToUseForSimulation,
           },
         },
       });
@@ -411,7 +434,18 @@ function useSimulateTxData({
         simResponse.payload && "simulationTransaction" in simResponse.payload
           ? simResponse.payload?.simulationTransaction
           : "";
-      reduxDispatch(saveTransactionFee(simResponse.recommendedFee));
+      // Only update fee in Redux if there isn't already a custom fee set
+      // The custom fee should take precedence over the recommended fee
+      // For classic transactions, simResponse.recommendedFee is just baseFee.toString() of the recommendedFee we passed in
+      // If we passed a custom fee, simResponse.recommendedFee will be that custom fee converted to string
+      // We should NOT overwrite a custom fee that the user has explicitly set
+      const hasCustomFee =
+        currentTransactionFee != null && currentTransactionFee !== "";
+      if (!hasCustomFee) {
+        // No custom fee set - update with the recommended fee from simulation
+        reduxDispatch(saveTransactionFee(simResponse.recommendedFee));
+      }
+      // If we have a custom fee, don't overwrite it - it's already in Redux and should be preserved
       reduxDispatch(
         saveSimulation({
           preparedTransaction: simResponse.payload?.preparedTransaction,
@@ -435,7 +469,11 @@ function useSimulateTxData({
         const memoToUse = simParamsMemo || currentMemo;
         // Use currentTransactionFee (fresh from Redux) instead of simResponse.recommendedFee
         // For classic transactions, simResponse.recommendedFee is just the recommendedFee we passed in
-        const feeToUse = currentTransactionFee || simResponse.recommendedFee;
+        // Preserve custom fee if set (check for null/undefined/empty string)
+        const feeToUse =
+          currentTransactionFee != null && currentTransactionFee !== ""
+            ? currentTransactionFee
+            : simResponse.recommendedFee;
         const transaction = await getBuiltTx(
           publicKey,
           {

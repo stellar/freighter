@@ -62,7 +62,11 @@ test("Create new wallet", async ({ page }) => {
     await page.getByLabel(words[i]).check({ force: true });
   }
   await page.getByTestId("display-mnemonic-phrase-confirm-btn").click();
-  await expect(page.getByText("You’re all set!")).toBeVisible();
+
+  // Wait for navigation to success page (create wallet uses different route than import)
+  await page.waitForURL(`**/mnemonic-phrase-confirmed`, { timeout: 20000 });
+
+  await expect(page.getByText("You're all set!")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-create-complete-page.png",
@@ -111,7 +115,10 @@ test("Import 12 word wallet", async ({ page }) => {
 
   await page.getByRole("button", { name: "Import" }).click();
 
-  await expect(page.getByText("You’re all set!")).toBeVisible();
+  // Wait for navigation to success page
+  await page.waitForURL(`**/recover-account-success`, { timeout: 20000 });
+
+  await expect(page.getByText("You're all set!")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-import-complete-page.png",
@@ -171,7 +178,10 @@ test("Import 12 word wallet by pasting", async ({ page, context }) => {
 
   await page.getByRole("button", { name: "Import" }).click();
 
-  await expect(page.getByText("You’re all set!")).toBeVisible();
+  // Wait for navigation to success page
+  await page.waitForURL(`**/recover-account-success`, { timeout: 20000 });
+
+  await expect(page.getByText("You're all set!")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-import-complete-page.png",
@@ -236,7 +246,10 @@ test("Import 24 word wallet", async ({ page }) => {
 
   await page.getByRole("button", { name: "Import" }).click();
 
-  await expect(page.getByText("You’re all set!")).toBeVisible();
+  // Wait for navigation to success page
+  await page.waitForURL(`**/recover-account-success`, { timeout: 20000 });
+
+  await expect(page.getByText("You're all set!")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-import-complete-page.png",
@@ -308,7 +321,10 @@ test("Import 24 word wallet by pasting", async ({ page, context }) => {
 
   await page.getByRole("button", { name: "Import" }).click();
 
-  await expect(page.getByText("You’re all set!")).toBeVisible();
+  // Wait for navigation to success page
+  await page.waitForURL(`**/recover-account-success`, { timeout: 20000 });
+
+  await expect(page.getByText("You're all set!")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-import-complete-page.png",
@@ -369,7 +385,6 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
   const shuffledWords = shuffle(words);
 
   for (let i = 0; i < shuffledWords.length; i++) {
-    // Use nth() to handle duplicate labels by selecting the first matching element
     await page.getByLabel(shuffledWords[i]).first().check({ force: true });
   }
 
@@ -424,7 +439,11 @@ test("Logout and create new account", async ({ page, extensionId }) => {
   await newPage.getByText("Confirm").click();
 
   await newPage.getByText("Do this later").click();
-  await expect(newPage.getByText("You’re all set!")).toBeVisible();
+
+  // Wait for navigation to success page
+  await newPage.waitForURL(`**/mnemonic-phrase-confirmed`, { timeout: 20000 });
+
+  await expect(newPage.getByText("You're all set!")).toBeVisible();
 
   await newPage.goto(`chrome-extension://${extensionId}/index.html#/`);
   await expect(newPage.getByTestId("account-view")).toBeVisible({
@@ -503,7 +522,10 @@ test("Logout and import new account", async ({ page, extensionId }) => {
 
   await newPage.getByRole("button", { name: "Import" }).click();
 
-  await expect(newPage.getByText("You’re all set!")).toBeVisible({
+  // Wait for navigation to success page
+  await newPage.waitForURL(`**/recover-account-success`, { timeout: 20000 });
+
+  await expect(newPage.getByText("You're all set!")).toBeVisible({
     timeout: 20000,
   });
 

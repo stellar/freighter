@@ -55,8 +55,8 @@ export const MnemonicPhrase = ({
               <>
                 <Text as="p" size="md">
                   {t(
-                    "Your recovery phrase gives you access to your account and is the only way to access it in a new browser. ",
-                  )}
+                    "Your recovery phrase gives you access to your account and is the only way to access it in a new browser.",
+                  )}{" "}
                   <span className="MnemonicPhrase__modal__text--highlight">
                     {t("Keep it in a safe place.")}
                   </span>

@@ -179,7 +179,7 @@ export const ChangeTrustInternal = ({
                   className="ChangeTrustInternal__TitleRow"
                   data-testid="ChangeTrustInternal__TitleRow"
                 >
-                  <img src={StellarLogo} alt="Stellar Logo" />
+                  <img src={StellarLogo} alt={t("Stellar Logo")} />
                   <div className="ChangeTrustInternal__TitleRow__Detail">
                     <span className="ChangeTrustInternal__TitleRow__Title">
                       {t("Confirm Transaction")}
@@ -232,7 +232,7 @@ export const ChangeTrustInternal = ({
                   onClick={() => setActivePaneIndex(1)}
                 >
                   <Icon.List />
-                  <span>{t("Transaction details")}</span>
+                  <span>{t("Transaction Details")}</span>
                 </div>
               </div>
             </div>,

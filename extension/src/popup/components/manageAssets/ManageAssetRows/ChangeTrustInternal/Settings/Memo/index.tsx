@@ -33,7 +33,7 @@ export const Memo = ({ memo, onSave, goBack }: MemoProps) => {
         {({ errors, setFieldValue, submitForm }) => (
           <>
             <SubviewHeader
-              title={<span>Memo</span>}
+              title={<span>{t("Memo")}</span>}
               hasBackButton
               customBackAction={goBack}
             />

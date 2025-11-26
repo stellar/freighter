@@ -232,7 +232,7 @@ export const ReviewTx = ({
                   <div className="ReviewTx__Details__Row">
                     <div className="ReviewTx__Details__Row__Title">
                       <Icon.Route />
-                      Fee
+                      {t("Fee")}
                     </div>
                     <div
                       className="ReviewTx__Details__Row__Value"
@@ -244,7 +244,7 @@ export const ReviewTx = ({
                   <div className="ReviewTx__Details__Row">
                     <div className="ReviewTx__Details__Row__Title">
                       <Icon.FileCode02 />
-                      XDR
+                      {t("XDR")}
                     </div>
                     <div className="ReviewTx__Details__Row__Value">
                       <CopyValue
@@ -319,8 +319,8 @@ export const ReviewTx = ({
                 }}
               >
                 {dstAsset && dest
-                  ? `Swap ${asset.code} to ${dest.code}`
-                  : `Send to ${truncatedDest}`}
+                  ? `${t("Swap")} ${asset.code} ${t("to")} ${dest.code}`
+                  : `${t("Send to")} ${truncatedDest}`}
               </Button>
             )}
             <Button
@@ -334,7 +334,7 @@ export const ReviewTx = ({
                 onCancel();
               }}
             >
-              Cancel
+              {t("Cancel")}
             </Button>
           </div>
         </div>

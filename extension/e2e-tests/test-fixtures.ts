@@ -1,7 +1,7 @@
 import { test as base, chromium, BrowserContext, Page } from "@playwright/test";
 import path from "path";
 
-import { STELLAR_EXPERT_ASSET_LIST_JSON } from "./helpers/stubs.ts";
+import { STELLAR_EXPERT_ASSET_LIST_JSON } from "./helpers/stubs";
 
 export const test = base.extend<{
   context: BrowserContext;
@@ -16,7 +16,19 @@ export const test = base.extend<{
         `--headless=new`,
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
+        `--lang=en-US`, // Force English language for tests
       ],
+      locale: "en-US", // Set locale to English
+    });
+
+    // Set accept-language header to English for all requests
+    await context.setExtraHTTPHeaders({
+      "Accept-Language": "en-US,en;q=0.9",
+    });
+
+    // Mock metrics endpoint to prevent fetch failures in tests
+    await context.route("**/api.amplitude.com/**", async (route) => {
+      await route.fulfill({ status: 200, body: JSON.stringify({}) });
     });
 
     await use(context);
@@ -35,6 +47,28 @@ export const test = base.extend<{
     await use(extensionId);
   },
   page: async ({ page }, use) => {
+    // Set language to English in localStorage before any page loads
+    // This needs to happen before the extension loads
+    await page.addInitScript(() => {
+      try {
+        // Set i18next language preference to English
+        if (window.localStorage) {
+          window.localStorage.setItem("i18nextLng", "en");
+        }
+        // Override navigator.language for language detection
+        Object.defineProperty(navigator, "language", {
+          get: () => "en-US",
+          configurable: true,
+        });
+        Object.defineProperty(navigator, "languages", {
+          get: () => ["en-US", "en"],
+          configurable: true,
+        });
+      } catch (e) {
+        // Ignore security errors for extension pages
+      }
+    });
+
     if (!process.env.IS_INTEGRATION_MODE) {
       await page.route("*/**/testnet/asset-list/top50", async (route) => {
         const json = STELLAR_EXPERT_ASSET_LIST_JSON;
