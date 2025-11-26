@@ -712,28 +712,27 @@ test("Loads collectibles data with successful metadata", async ({
     });
   }
 
-  expect(imgs[0]).toHaveAttribute(
-    "src",
+  expect(await imgs[0].getAttribute("src")).toBe(
     "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
   );
-  expect(imgs[1]).toHaveAttribute(
-    "src",
+
+  expect(await imgs[1].getAttribute("src")).toBe(
     "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg",
   );
-  expect(imgs[2]).toHaveAttribute(
-    "src",
+
+  expect(await imgs[2].getAttribute("src")).toBe(
     "https://nftcalendar.io/storage/uploads/events/2023/8/5kFeYwNfhpUST3TsSoLxm7FaGY1ljwLRgfZ5gQnV.jpg",
   );
-  expect(imgs[3]).toHaveAttribute(
-    "src",
+
+  expect(await imgs[3].getAttribute("src")).toBe(
     "https://nftcalendar.io/storage/uploads/events/2025/7/Hdqv6YNVErVCmYlwobFVYfS5BiH19ferUgQova7Z.webp",
   );
-  expect(imgs[4]).toHaveAttribute(
-    "src",
+
+  expect(await imgs[4].getAttribute("src")).toBe(
     "https://nftcalendar.io/storage/uploads/events/2025/7/MkaASwOL8VA3I5B2iIfCcNGT29vGBp4YZIJgmjzq.jpg",
   );
-  expect(imgs[5]).toHaveAttribute(
-    "src",
+
+  expect(await imgs[5].getAttribute("src")).toBe(
     "https://nftcalendar.io/storage/uploads/events/2025/3/oUfeUrSj3KcVnjColyfnS5ICYuqzDbiuqQP4qLIz.png",
   );
 });
