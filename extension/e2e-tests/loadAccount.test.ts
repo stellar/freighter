@@ -10,6 +10,8 @@ import {
   stubCollectiblesUnsuccessfulMetadata,
 } from "./helpers/stubs";
 
+test.describe.configure({ mode: "parallel" });
+
 test("Load accounts on standalone network", async ({
   page,
   extensionId,
@@ -705,10 +707,6 @@ test("Loads collectibles data with successful metadata", async ({
   const imgs = await page.getByTestId("account-collectible-image").all();
 
   expect(imgs).toHaveLength(6);
-
-  await page.getByTestId("account-collectible-image").first().waitFor({
-    state: "visible",
-  });
 
   for (let i = 0; i < imgs.length; i++) {
     await imgs[i].waitFor({
