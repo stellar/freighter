@@ -22,6 +22,7 @@ import { navigate } from "popup/ducks/views";
 
 import { AppError } from "popup/components/AppError";
 
+import { ActiveTabProvider } from "popup/views/Account/contexts/activeTabContext";
 import { Account } from "popup/views/Account";
 import { AccountHistory } from "popup/views/AccountHistory";
 import { AccountCreator } from "popup/views/AccountCreator";
@@ -161,7 +162,14 @@ export const Router = () => (
     <RouteListener />
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<Account />}></Route>
+        <Route
+          index
+          element={
+            <ActiveTabProvider>
+              <Account />
+            </ActiveTabProvider>
+          }
+        ></Route>
         <Route
           path={ROUTES.accountHistory}
           element={<AccountHistory />}
