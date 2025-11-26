@@ -133,12 +133,7 @@ function useGetAccountData(options: {
         const collectiblesResult = await fetchCollectibles({
           publicKey,
           networkDetails,
-          contracts: [
-            {
-              id: "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN",
-              token_ids: ["1", "2"],
-            },
-          ],
+          contracts: [],
         });
         payload.collectibles = collectiblesResult;
       }
