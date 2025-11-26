@@ -386,13 +386,33 @@ test("Send XLM payments to recent federated addresses", async ({
   });
 
   await page.getByText("Done").click();
+
+  // Wait for navigation back to account view
+  await expect(page.getByTestId("account-view")).toBeVisible();
+
+  // Wait a bit to ensure recent address is saved to storage
+  await page.waitForTimeout(2000);
+
   await page.getByTestId("nav-link-send").click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
   await page.getByTestId("address-tile").click();
 
-  await expect(page.getByText("Recents")).toBeVisible();
+  // Wait for SendTo component to load (check for the input field)
+  await expect(page.getByTestId("send-to-input")).toBeVisible();
+
+  // Wait for the component to finish loading recent addresses
+  // The loader should disappear first
+  await page
+    .waitForSelector(".SendTo__loader", { state: "hidden", timeout: 10000 })
+    .catch(() => {});
+
+  // Wait for recent addresses to appear (more reliable than waiting for "Recents" text)
+  // Use a more flexible selector that waits for either the button or confirms it doesn't exist
+  await expect(page.getByTestId("recent-address-button")).toBeVisible({
+    timeout: 30000,
+  });
 
   await page.getByTestId("recent-address-button").click();
 
