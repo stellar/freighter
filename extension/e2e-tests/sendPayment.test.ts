@@ -197,9 +197,12 @@ test("Send doesn't throw error when account is unfunded", async ({
   await page
     .getByTestId("send-to-input")
     .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
+
+  // Wait for address validation to complete (same as other send tests)
+  await expect(page.getByTestId("send-to-identicon")).toBeVisible();
+
   await page.getByText("Continue").click({ force: true });
 
-  await page.waitForTimeout(500);
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible({
     timeout: 30000,
   });
