@@ -1,7 +1,7 @@
 import { test as base, chromium, BrowserContext, Page } from "@playwright/test";
 import path from "path";
 
-import { STELLAR_EXPERT_ASSET_LIST_JSON } from "./helpers/stubs.ts";
+import { STELLAR_EXPERT_ASSET_LIST_JSON } from "./helpers/stubs";
 
 export const test = base.extend<{
   context: BrowserContext;

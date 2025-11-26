@@ -199,7 +199,6 @@ test("Send doesn't throw error when account is unfunded", async ({
     .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
   await page.getByText("Continue").click({ force: true });
 
-  // Wait a bit for the page to transition
   await page.waitForTimeout(500);
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible({
     timeout: 30000,
@@ -218,9 +217,13 @@ test("Send doesn't throw error when creating muxed account", async ({
   await page.getByTestId("address-tile").click();
 
   await page.getByTestId("send-to-input").fill(MUXED_ACCOUNT_ADDRESS);
+
+  // Wait for validation to complete and the warning to appear
   await expect(
-    page.getByText("The destination account doesn’t exist."),
-  ).toBeVisible();
+    page.getByText("The destination account doesn't exist."),
+  ).toBeVisible({
+    timeout: 30000,
+  });
   await page.getByText("Continue").click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -241,9 +244,13 @@ test("Send can review formatted inputs", async ({ page, extensionId }) => {
   await page.getByTestId("address-tile").click();
 
   await page.getByTestId("send-to-input").fill(MUXED_ACCOUNT_ADDRESS);
+
+  // Wait for validation to complete and the warning to appear
   await expect(
-    page.getByText("The destination account doesn’t exist."),
-  ).toBeVisible();
+    page.getByText("The destination account doesn't exist."),
+  ).toBeVisible({
+    timeout: 30000,
+  });
   await page.getByText("Continue").click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -288,9 +295,18 @@ test("Send persists inputs and submits to network", async ({
   await page.getByTestId("send-amount-btn-memo").click();
   await page.getByTestId("edit-memo-input").fill("test memo");
   await page.getByText("Save").click();
+
+  await expect(page.getByTestId("send-amount-btn-memo")).toBeVisible({
+    timeout: 10000,
+  });
+
   await page.getByTestId("send-amount-btn-fee").click();
   await page.getByTestId("edit-tx-settings-fee-input").fill("0.00009");
   await page.getByText("Save").click();
+
+  await expect(page.getByTestId("send-amount-btn-fee")).toBeVisible({
+    timeout: 10000,
+  });
   await page.getByText("Review Send").click({ force: true });
   await expect(page.getByText("You are sending")).toBeVisible({
     timeout: 200000,

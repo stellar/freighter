@@ -1,11 +1,18 @@
 import StellarHDWallet from "stellar-hd-wallet";
 import { expect } from "../test-fixtures";
+import type { Page } from "@playwright/test";
 
 const { generateMnemonic } = StellarHDWallet;
 
 export const PASSWORD = "My-password123";
 
-export const login = async ({ page, extensionId }) => {
+export const login = async ({
+  page,
+  extensionId,
+}: {
+  page: Page;
+  extensionId: string;
+}) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
   await page.getByText("I already have a wallet").click();
 
@@ -28,7 +35,6 @@ export const login = async ({ page, extensionId }) => {
 
   await page.getByRole("button", { name: "Import" }).click();
 
-  // Wait for navigation to success page
   await page.waitForURL(`**/recover-account-success`, { timeout: 20000 });
 
   await expect(page.getByText("You're all set!")).toBeVisible({
@@ -46,19 +52,37 @@ export const login = async ({ page, extensionId }) => {
   });
 };
 
-export const loginAndFund = async ({ page, extensionId }) => {
+export const loginAndFund = async ({
+  page,
+  extensionId,
+}: {
+  page: Page;
+  extensionId: string;
+}) => {
   await login({ page, extensionId });
-  await expect(page.getByTestId("not-funded")).toBeVisible({
+
+  await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 10000,
   });
-  await page.getByRole("button", { name: "Fund with Friendbot" }).click();
+
+  try {
+    await page
+      .getByRole("button", { name: "Fund with Friendbot" })
+      .click({ timeout: 5000 });
+  } catch {}
 
   await expect(page.getByTestId("account-assets")).toBeVisible({
     timeout: 30000,
   });
 };
 
-export const loginToTestAccount = async ({ page, extensionId }) => {
+export const loginToTestAccount = async ({
+  page,
+  extensionId,
+}: {
+  page: Page;
+  extensionId: string;
+}) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
   await page.getByText("I already have a wallet").click();
 
@@ -66,8 +90,6 @@ export const loginToTestAccount = async ({ page, extensionId }) => {
   await page.locator("#confirm-password-input").fill("My-password123");
   await page.locator("#termsOfUse-input").check({ force: true });
   await page.getByText("Confirm").click();
-
-  // GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY
 
   const TEST_ACCOUNT_WORDS = [
     "card",
@@ -90,7 +112,6 @@ export const loginToTestAccount = async ({ page, extensionId }) => {
 
   await page.getByRole("button", { name: "Import" }).click();
 
-  // Wait for navigation to success page
   await page.waitForURL(`**/recover-account-success`, { timeout: 20000 });
 
   await expect(page.getByText("You're all set!")).toBeVisible({

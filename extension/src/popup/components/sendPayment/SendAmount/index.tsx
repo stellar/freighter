@@ -89,7 +89,11 @@ export const SendAmount = ({
     isToken,
     transactionFee,
   } = transactionData;
-  const fee = transactionFee || recommendedFee;
+  // Preserve custom fee if set (check for null/undefined/empty string)
+  const fee =
+    transactionFee && transactionFee.trim() !== ""
+      ? transactionFee
+      : recommendedFee;
 
   const { state: sendAmountData, fetchData } = useGetSendAmountData(
     {
@@ -585,9 +589,7 @@ export const SendAmount = ({
               onSubmit={async ({ memo }: { memo: string }) => {
                 dispatch(saveMemo(memo));
                 setIsEditingMemo(false);
-                // Regenerate transaction XDR with new memo (now reads memo from Redux state inside fetchData)
                 await fetchSimulationData();
-                // Reopen review sheet after memo is saved and XDR is regenerated
                 setIsReviewingTx(true);
               }}
             />
@@ -617,7 +619,6 @@ export const SendAmount = ({
                 dispatch(saveTransactionFee(fee));
                 dispatch(saveTransactionTimeout(timeout));
                 setIsEditingSettings(false);
-                // Regenerate transaction XDR with new fee (now reads fee from Redux state inside fetchData)
                 await fetchSimulationData();
               }}
             />
@@ -635,7 +636,11 @@ export const SendAmount = ({
         {isReviewingTx ? (
           <ReviewTx
             assetIcon={assetIcon}
-            fee={fee}
+            fee={
+              transactionFee && transactionFee.trim() !== ""
+                ? transactionFee
+                : recommendedFee
+            }
             networkDetails={sendAmountData.data?.networkDetails!}
             onCancel={() => setIsReviewingTx(false)}
             onConfirm={goToNext}
