@@ -21,6 +21,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 4 : 0,
+  /* Fail the build if any test fails afte retries */
+  maxFailures: 1,
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
@@ -37,6 +39,10 @@ export default defineConfig({
         ...process.env,
         IS_PLAYWRIGHT: "true",
       },
+    },
+    viewport: {
+      width: 1280,
+      height: 720,
     },
   },
 
