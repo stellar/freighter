@@ -186,17 +186,6 @@ export const SendAmount = ({
     [isRecipientMuxed, isToken, contractSupportsMuxed],
   );
 
-  // Get memo button title - must be before conditional returns
-  const memoButtonTitle = React.useMemo(() => {
-    if (isMuxedAddressWithoutMemoSupport) {
-      return t("Memo is not supported for this operation");
-    }
-    if (isRecipientMuxed) {
-      return t("Memo is disabled for this transaction");
-    }
-    return undefined;
-  }, [isMuxedAddressWithoutMemoSupport, isRecipientMuxed, t]);
-
   // Get memo disabled message - must be before conditional returns
   const memoDisabledMessage = React.useMemo(() => {
     if (isMuxedAddressWithoutMemoSupport) {
@@ -416,7 +405,6 @@ export const SendAmount = ({
                   disabled={
                     isRecipientMuxed || isMuxedAddressWithoutMemoSupport
                   }
-                  title={memoButtonTitle}
                 >
                   {t("Memo")}
                 </Button>
