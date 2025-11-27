@@ -26,7 +26,7 @@ export interface CheckContractMuxedSupportParams {
  *
  * @param contractId - The contract ID to check
  * @param networkDetails - Network details
- * @returns Promise resolving to true if contract supports muxed addresses, false otherwise
+ * @returns Promise resolving to true if contract supports muxed addresses. false otherwise
  */
 export async function checkContractMuxedSupport(
   params: CheckContractMuxedSupportParams,
