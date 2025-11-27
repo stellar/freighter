@@ -15,15 +15,25 @@ interface EditMemoProps {
   memo: string;
   onClose: () => void;
   onSubmit: (args: FormValue) => void;
+  disabled?: boolean;
+  disabledMessage?: string;
 }
 
-export const EditMemo = ({ memo, onClose, onSubmit }: EditMemoProps) => {
+export const EditMemo = ({
+  memo,
+  onClose,
+  onSubmit,
+  disabled = false,
+  disabledMessage,
+}: EditMemoProps) => {
   const { t } = useTranslation();
   const initialValues: FormValue = {
     memo,
   };
   const handleSubmit = async (values: FormValue) => {
-    onSubmit(values);
+    if (!disabled) {
+      onSubmit(values);
+    }
   };
 
   return (
@@ -39,19 +49,30 @@ export const EditMemo = ({ memo, onClose, onSubmit }: EditMemoProps) => {
                     {({ field }: FieldProps) => (
                       <Input
                         data-testid="edit-memo-input"
-                        autoFocus
+                        autoFocus={!disabled}
                         fieldSize="md"
                         autoComplete="off"
                         id="memo"
                         placeholder={"Memo"}
                         {...field}
                         error={errors.memo}
+                        disabled={disabled}
                       />
                     )}
                   </Field>
-                  <div className="EditMemo__description">
-                    What is this transaction for? (optional)
-                  </div>
+                  {disabled && disabledMessage && (
+                    <div
+                      className="EditMemo__description"
+                      style={{ color: "var(--color-warning)" }}
+                    >
+                      {disabledMessage}
+                    </div>
+                  )}
+                  {!disabled && (
+                    <div className="EditMemo__description">
+                      What is this transaction for? (optional)
+                    </div>
+                  )}
                   <div className="EditMemo__actions">
                     <Button
                       type="button"
@@ -67,6 +88,7 @@ export const EditMemo = ({ memo, onClose, onSubmit }: EditMemoProps) => {
                       size="md"
                       isRounded
                       variant="secondary"
+                      disabled={disabled}
                     >
                       {t("Save")}
                     </Button>

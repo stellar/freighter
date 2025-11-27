@@ -244,6 +244,8 @@
   "Max Price": "Max Price",
   "Medium Threshold": "Medium Threshold",
   "Memo": "Memo",
+  "Memo is disabled for this transaction": "Memo is disabled for this transaction",
+  "Memo is not supported for this operation": "Memo is not supported for this operation",
   "Memo required": "Memo required",
   "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts": {
     ")": "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts.)"
@@ -260,6 +262,7 @@
   "Multiple assets have a similar code, please check the domain before adding": "Multiple assets have a similar code, please check the domain before adding.",
   "must be at least": "must be at least",
   "must be below": "must be below",
+  "Muxed address not supported": "Muxed address not supported",
   "Name": "Name",
   "Network": "Network",
   "Network fees": "Network fees",
@@ -404,6 +407,9 @@
     " Please try again with a different value": "This is not a valid contract id. Please try again with a different value."
   },
   "This site was flagged as malicious": "This site was flagged as malicious",
+  "This token does not support muxed address (M-) as a target destination": {
+    " Proceeding with this transaction could result in loss of the token": "This token does not support muxed address (M-) as a target destination. Proceeding with this transaction could result in loss of the token."
+  },
   "This transaction could not be completed": "This transaction could not be completed.",
   "This transaction is expected to fail": "This transaction is expected to fail",
   "This transaction was flagged as malicious": "This transaction was flagged as malicious",
