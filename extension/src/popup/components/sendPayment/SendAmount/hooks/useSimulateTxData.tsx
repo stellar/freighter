@@ -402,8 +402,9 @@ function useSimulateTxData({
           });
           // For Soroban transfers with muxed support, don't pass memo separately
           // (it's encoded in the muxed address)
+          // Send empty string instead of undefined to satisfy backend API requirement
           if (contractSupportsMuxed) {
-            sorobanMemo = undefined;
+            sorobanMemo = "";
           }
         } catch (error) {
           // If we can't determine muxed destination, use original destination

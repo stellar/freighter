@@ -13,6 +13,7 @@ import {
 import {
   getAssetFromCanonical,
   isMainnet,
+  isMuxedAccount,
   truncatedFedAddress,
   truncatedPublicKey,
 } from "helpers/stellar";
@@ -83,6 +84,7 @@ export const ReviewTx = ({
   const truncatedDest = federationAddress
     ? truncatedFedAddress(federationAddress)
     : truncatedPublicKey(destination);
+  const isRecipientMuxed = destination ? isMuxedAccount(destination) : false;
 
   if (simulationState.state === RequestState.ERROR) {
     return (
@@ -202,18 +204,20 @@ export const ReviewTx = ({
                   )}
                 </div>
                 <div className="ReviewTx__Details">
-                  <div className="ReviewTx__Details__Row">
-                    <div className="ReviewTx__Details__Row__Title">
-                      <Icon.File02 />
-                      Memo
+                  {!isRecipientMuxed && (
+                    <div className="ReviewTx__Details__Row">
+                      <div className="ReviewTx__Details__Row__Title">
+                        <Icon.File02 />
+                        Memo
+                      </div>
+                      <div
+                        className="ReviewTx__Details__Row__Value"
+                        data-testid="review-tx-memo"
+                      >
+                        {memo || "None"}
+                      </div>
                     </div>
-                    <div
-                      className="ReviewTx__Details__Row__Value"
-                      data-testid="review-tx-memo"
-                    >
-                      {memo || "None"}
-                    </div>
-                  </div>
+                  )}
                   <div className="ReviewTx__Details__Row">
                     <div className="ReviewTx__Details__Row__Title">
                       <Icon.Route />
