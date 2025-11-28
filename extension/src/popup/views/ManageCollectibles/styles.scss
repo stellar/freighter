@@ -1,0 +1,21 @@
+.ManageCollectibles {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  &__clipboard-button {
+    .Button {
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      border-top: 0;
+      border-bottom: 0;
+      border-right: 0;
+    }
+  }
+
+  &__input-wrapper {
+    .Input__container {
+      padding-right: 0;
+    }
+  }
+}

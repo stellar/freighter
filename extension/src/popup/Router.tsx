@@ -53,6 +53,7 @@ import { AdvancedSettings } from "popup/views/AdvancedSettings";
 import { About } from "popup/views/About";
 import { SendPayment } from "popup/views/SendPayment";
 import { ManageAssets } from "popup/views/ManageAssets";
+import { ManageCollectibles } from "popup/views/ManageCollectibles";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Swap } from "popup/views/Swap";
 import { ManageNetwork } from "popup/views/ManageNetwork";
@@ -239,6 +240,10 @@ export const Router = () => (
         <Route
           path={`${ROUTES.manageAssets}/*`}
           element={<ManageAssets />}
+        ></Route>
+        <Route
+          path={ROUTES.manageCollectibles}
+          element={<ManageCollectibles />}
         ></Route>
         <Route path={ROUTES.swap} element={<Swap />}></Route>
         <Route path={`${ROUTES.swap}/*`} element={<Swap />}></Route>

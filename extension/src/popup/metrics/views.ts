@@ -41,6 +41,7 @@ const routeToEventName = {
   [ROUTES.debug]: METRIC_NAMES.viewDebug,
   [ROUTES.integrationTest]: METRIC_NAMES.viewIntegrationTest,
   [ROUTES.sendPayment]: METRIC_NAMES.viewSendPayment,
+  [ROUTES.manageCollectibles]: METRIC_NAMES.viewManageCollectibles,
   [ROUTES.manageAssets]: METRIC_NAMES.viewManageAssets,
   [ROUTES.searchAsset]: METRIC_NAMES.viewSearchAsset,
   [ROUTES.assetVisibility]: METRIC_NAMES.viewAssetVisibility,
