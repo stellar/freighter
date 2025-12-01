@@ -648,7 +648,7 @@ test("SendPayment persists amount and asset when navigating to choose address", 
   await stubTokenPrices(page);
 
   test.slow();
-  await loginAndFund({ page, extensionId });
+  await loginToTestAccount({ page, extensionId });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -674,7 +674,7 @@ test("SendPayment resets amount when user selects new asset", async ({
   await stubTokenPrices(page);
 
   test.slow();
-  await loginAndFund({ page, extensionId });
+  await loginToTestAccount({ page, extensionId });
   await stubAccountBalancesE2e(page);
   await stubTokenPrices(page);
 
@@ -701,7 +701,7 @@ test("SendPayment resets state when navigating back to account", async ({
   await stubTokenPrices(page);
 
   test.slow();
-  await loginAndFund({ page, extensionId });
+  await loginToTestAccount({ page, extensionId });
   await stubAccountBalancesE2e(page);
   await stubTokenPrices(page);
 
@@ -739,7 +739,7 @@ test("Swap persists amount when navigating to choose source asset", async ({
   await stubTokenPrices(page);
 
   test.slow();
-  await loginAndFund({ page, extensionId });
+  await loginToTestAccount({ page, extensionId });
   await stubAccountBalancesE2e(page);
   await stubTokenPrices(page);
 
@@ -769,7 +769,7 @@ test("Swap resets amount when user selects new source asset", async ({
   await stubTokenPrices(page);
 
   test.slow();
-  await loginAndFund({ page, extensionId });
+  await loginToTestAccount({ page, extensionId });
   await stubAccountBalancesE2e(page);
   await stubTokenPrices(page);
 
@@ -797,7 +797,7 @@ test("Swap preserves amount when selecting destination asset", async ({
   await stubTokenPrices(page);
 
   test.slow();
-  await loginAndFund({ page, extensionId });
+  await loginToTestAccount({ page, extensionId });
   await stubAccountBalancesE2e(page);
   await stubTokenPrices(page);
 
@@ -825,7 +825,7 @@ test("Swap resets state when navigating back to account", async ({
   await stubTokenPrices(page);
 
   test.slow();
-  await loginAndFund({ page, extensionId });
+  await loginToTestAccount({ page, extensionId });
   await stubAccountBalancesE2e(page);
   await stubTokenPrices(page);
 
