@@ -638,6 +638,263 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   expect(accountBalancesRequestWasMade).toBeTruthy();
 });
 
+// Regression tests for state persistence fixes
+test("SendPayment persists amount and asset when navigating to choose address", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await loginAndFund({ page, extensionId });
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Select asset (e.g., click to change from XLM - note: actual asset selection depends on available assets)
+  // For this test, we'll use the amount input with default XLM
+  await page.getByTestId("send-amount-amount-input").fill("100");
+
+  // Verify amount is entered
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("100");
+
+  // Click to choose address
+  await page.getByTestId("address-tile").click();
+
+  // We're now on the address selection screen
+  await expect(page.getByTestId("send-to-input")).toBeVisible();
+
+  // Go back using the back button
+  await page.getByRole("button", { name: "" }).first().click(); // Back button (X icon)
+
+  // Verify we're back on the amount screen
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Verify amount persisted
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("100");
+});
+
+test("SendPayment resets amount when user selects new asset", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await loginAndFund({ page, extensionId });
+
+  // Stub token balances to have multiple assets available
+  await stubAccountBalancesE2e(page);
+  await stubTokenPrices(page);
+
+  await page.getByTestId("nav-link-send").click({ force: true });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Enter amount with default asset (XLM)
+  await page.getByTestId("send-amount-amount-input").fill("50");
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("50");
+
+  // Click on asset tile to change asset
+  await page.locator(".SendAmount__EditDestAsset").click();
+
+  // Select a different asset (USDC if available from stubbed balances)
+  await page.getByText("USDC").first().click({ force: true });
+
+  // Should be back on amount screen
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Verify amount was reset to 0 after selecting new asset
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("0");
+});
+
+test("SendPayment resets state when navigating back to account", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await loginAndFund({ page, extensionId });
+
+  await stubAccountBalancesE2e(page);
+  await stubTokenPrices(page);
+
+  await page.getByTestId("nav-link-send").click({ force: true });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Set up state: select asset, enter amount, choose address
+  await page.locator(".SendAmount__EditDestAsset").click();
+  await page.getByText("USDC").first().click({ force: true });
+
+  await page.getByTestId("send-amount-amount-input").fill("100");
+
+  await page.getByTestId("address-tile").click();
+  await page
+    .getByTestId("send-to-input")
+    .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
+  await page.getByText("Continue").click({ force: true });
+
+  // Now we're back on amount screen with USDC and amount 100
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Click main back button to exit to account (the < icon in header)
+  await page.getByRole("button").first().click(); // This should be the back to account button
+
+  // Should be back on account view
+  await expect(page.getByTestId("account-view")).toBeVisible();
+
+  // Re-enter send flow
+  await page.getByTestId("nav-link-send").click({ force: true });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Verify state was reset: amount should be 0
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("0");
+
+  // Verify asset reset to XLM (check for XLM text in the asset display)
+  await expect(page.getByText("XLM")).toBeVisible();
+});
+
+test("Swap persists amount when navigating to choose source asset", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await loginAndFund({ page, extensionId });
+
+  await stubAccountBalancesE2e(page);
+  await stubTokenPrices(page);
+
+  await page.getByTestId("nav-link-swap").click();
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+
+  // Enter amount
+  const amountInput = page.locator('input[type="text"]').first();
+  await amountInput.fill("100");
+  await expect(amountInput).toHaveValue("100");
+
+  // Click source asset tile to change it
+  await page.getByTestId("swap-src-asset-tile").click({ force: true });
+
+  // We should be on asset selection screen now
+  await expect(page.getByText("Swap from")).toBeVisible();
+
+  // Go back without selecting an asset
+  await page.getByRole("button").first().click();
+
+  // Should be back on swap amount screen
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+
+  // Verify amount persisted during navigation
+  await expect(amountInput).toHaveValue("100");
+});
+
+test("Swap resets amount when user selects new source asset", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await loginAndFund({ page, extensionId });
+
+  await stubAccountBalancesE2e(page);
+  await stubTokenPrices(page);
+
+  await page.getByTestId("nav-link-swap").click();
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+
+  // Enter amount with default source asset (XLM)
+  const amountInput = page.locator('input[type="text"]').first();
+  await amountInput.fill("50");
+  await expect(amountInput).toHaveValue("50");
+
+  // Click source asset tile
+  await page.getByTestId("swap-src-asset-tile").click({ force: true });
+
+  // Select USDC as new source asset
+  await page.getByText("USDC").first().click({ force: true });
+
+  // Should be back on swap amount screen
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+
+  // Verify amount was reset to 0 after selecting new source asset
+  await expect(amountInput).toHaveValue("0");
+});
+
+test("Swap preserves amount when selecting destination asset", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await loginAndFund({ page, extensionId });
+
+  await stubAccountBalancesE2e(page);
+  await stubTokenPrices(page);
+
+  await page.getByTestId("nav-link-swap").click();
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+
+  // Enter amount
+  const amountInput = page.locator('input[type="text"]').first();
+  await amountInput.fill("100");
+  await expect(amountInput).toHaveValue("100");
+
+  // Click destination asset tile
+  await page.getByTestId("swap-dst-asset-tile").click({ force: true });
+
+  // Select a destination asset (e.g., USDC)
+  await page.getByText("USDC").first().click({ force: true });
+
+  // Should be back on swap amount screen
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+
+  // Verify amount persisted (destination asset selection should not reset amount)
+  await expect(amountInput).toHaveValue("100");
+});
+
+test("Swap resets state when navigating back to account", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await loginAndFund({ page, extensionId });
+
+  await stubAccountBalancesE2e(page);
+  await stubTokenPrices(page);
+
+  await page.getByTestId("nav-link-swap").click();
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+
+  // Set up state: enter amount, select source and destination assets
+  const amountInput = page.locator('input[type="text"]').first();
+  await amountInput.fill("100");
+
+  await page.getByTestId("swap-src-asset-tile").click({ force: true });
+  await page.getByText("USDC").first().click({ force: true });
+
+  await page.getByTestId("swap-dst-asset-tile").click({ force: true });
+  await page
+    .getByText("AQUA")
+    .first()
+    .click({ force: true })
+    .catch(() =>
+      // Fallback if AQUA not available
+      page.getByText("USDC").nth(1).click({ force: true }),
+    );
+
+  // Now on swap screen with amount and assets selected
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+
+  // Click back button to exit to account
+  await page.getByRole("button").first().click();
+
+  // Should be back on account view
+  await expect(page.getByTestId("account-view")).toBeVisible();
+
+  // Re-enter swap flow
+  await page.getByTestId("nav-link-swap").click();
+  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+
+  // Verify state was reset: amount should be 0
+  const newAmountInput = page.locator('input[type="text"]').first();
+  await expect(newAmountInput).toHaveValue("0");
+
+  // Verify source asset reset to XLM
+  await expect(page.getByText("XLM").first()).toBeVisible();
+});
+
 test.afterAll(async ({ page, extensionId }) => {
   if (
     test.info().status !== test.info().expectedStatus &&
