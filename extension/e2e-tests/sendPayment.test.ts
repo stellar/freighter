@@ -642,6 +642,11 @@ test("SendPayment persists amount and asset when navigating to choose address", 
   page,
   extensionId,
 }) => {
+  await stubTokenDetails(page);
+  await stubAccountBalancesE2e(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+
   test.slow();
   await loginAndFund({ page, extensionId });
   await page.getByTestId("nav-link-send").click({ force: true });
@@ -653,7 +658,7 @@ test("SendPayment persists amount and asset when navigating to choose address", 
   await page.getByTestId("address-tile").click();
   await expect(page.getByTestId("send-to-input")).toBeVisible();
 
-  await page.getByRole("button").first().click();
+  await page.getByTestId("BackButton").click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("100");
@@ -663,6 +668,11 @@ test("SendPayment resets amount when user selects new asset", async ({
   page,
   extensionId,
 }) => {
+  await stubTokenDetails(page);
+  await stubAccountBalancesE2e(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+
   test.slow();
   await loginAndFund({ page, extensionId });
   await stubAccountBalancesE2e(page);
@@ -685,6 +695,11 @@ test("SendPayment resets state when navigating back to account", async ({
   page,
   extensionId,
 }) => {
+  await stubTokenDetails(page);
+  await stubAccountBalancesE2e(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+
   test.slow();
   await loginAndFund({ page, extensionId });
   await stubAccountBalancesE2e(page);
@@ -718,6 +733,11 @@ test("Swap persists amount when navigating to choose source asset", async ({
   page,
   extensionId,
 }) => {
+  await stubTokenDetails(page);
+  await stubAccountBalancesE2e(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+
   test.slow();
   await loginAndFund({ page, extensionId });
   await stubAccountBalancesE2e(page);
@@ -743,6 +763,11 @@ test("Swap resets amount when user selects new source asset", async ({
   page,
   extensionId,
 }) => {
+  await stubTokenDetails(page);
+  await stubAccountBalancesE2e(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+
   test.slow();
   await loginAndFund({ page, extensionId });
   await stubAccountBalancesE2e(page);
@@ -766,6 +791,11 @@ test("Swap preserves amount when selecting destination asset", async ({
   page,
   extensionId,
 }) => {
+  await stubTokenDetails(page);
+  await stubAccountBalancesE2e(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+
   test.slow();
   await loginAndFund({ page, extensionId });
   await stubAccountBalancesE2e(page);
@@ -789,6 +819,11 @@ test("Swap resets state when navigating back to account", async ({
   page,
   extensionId,
 }) => {
+  await stubTokenDetails(page);
+  await stubAccountBalancesE2e(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+
   test.slow();
   await loginAndFund({ page, extensionId });
   await stubAccountBalancesE2e(page);
