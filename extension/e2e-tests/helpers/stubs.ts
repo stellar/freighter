@@ -238,6 +238,77 @@ export const stubAccountBalancesE2e = async (page: Page) => {
   });
 };
 
+export const stubAccountBalancesWithUSDC = async (page: Page) => {
+  await page.route("**/account-balances/**", async (route) => {
+    const json = {
+      balances: {
+        native: {
+          token: {
+            type: "native",
+            code: "XLM",
+          },
+          total: "9697.8556678",
+          available: "9697.8556678",
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          minimumBalance: "1",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: "",
+            metadata: {
+              type: "",
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
+        },
+        "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
+          token: {
+            type: "credit_alphanum4",
+            code: "USDC",
+            issuer: {
+              key: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+            },
+          },
+          contractId: USDC_TOKEN_ADDRESS,
+          total: "1000.0000000",
+          available: "1000.0000000",
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          limit: "922337203685.4775807",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address:
+              "USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+            metadata: {
+              type: "",
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
+        },
+      },
+      isFunded: true,
+      subentryCount: 1,
+      error: {
+        horizon: null,
+        soroban: null,
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
 export const stubAccountHistory = async (page: Page) => {
   await page.route("**/account-history/**", async (route) => {
     const json = [

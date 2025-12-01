@@ -5,6 +5,7 @@ import { TEST_M_ADDRESS, TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 import {
   stubAccountBalances,
   stubAccountBalancesE2e,
+  stubAccountBalancesWithUSDC,
   stubAccountHistory,
   stubTokenDetails,
   stubTokenPrices,
@@ -643,7 +644,7 @@ test("SendPayment persists amount and asset when navigating to choose address", 
   extensionId,
 }) => {
   await stubTokenDetails(page);
-  await stubAccountBalancesE2e(page);
+  await stubAccountBalancesWithUSDC(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
 
@@ -669,14 +670,12 @@ test("SendPayment resets amount when user selects new asset", async ({
   extensionId,
 }) => {
   await stubTokenDetails(page);
-  await stubAccountBalancesE2e(page);
+  await stubAccountBalancesWithUSDC(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
-  await stubAccountBalancesE2e(page);
-  await stubTokenPrices(page);
 
   await page.getByTestId("nav-link-send").click({ force: true });
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -696,14 +695,12 @@ test("SendPayment resets state when navigating back to account", async ({
   extensionId,
 }) => {
   await stubTokenDetails(page);
-  await stubAccountBalancesE2e(page);
+  await stubAccountBalancesWithUSDC(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
-  await stubAccountBalancesE2e(page);
-  await stubTokenPrices(page);
 
   await page.getByTestId("nav-link-send").click({ force: true });
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -719,14 +716,14 @@ test("SendPayment resets state when navigating back to account", async ({
   await page.getByText("Continue").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-  await page.getByRole("button").first().click();
+  await page.getByTestId("BackButton").click();
 
   await expect(page.getByTestId("account-view")).toBeVisible();
 
   await page.getByTestId("nav-link-send").click({ force: true });
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("0");
-  await expect(page.getByText("XLM")).toBeVisible();
+  await expect(page.getByText("0 XLM")).toBeVisible();
 });
 
 test("Swap persists amount when navigating to choose source asset", async ({
@@ -734,14 +731,12 @@ test("Swap persists amount when navigating to choose source asset", async ({
   extensionId,
 }) => {
   await stubTokenDetails(page);
-  await stubAccountBalancesE2e(page);
+  await stubAccountBalancesWithUSDC(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
-  await stubAccountBalancesE2e(page);
-  await stubTokenPrices(page);
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
@@ -753,7 +748,7 @@ test("Swap persists amount when navigating to choose source asset", async ({
   await page.getByTestId("swap-src-asset-tile").click({ force: true });
   await expect(page.getByText("Swap from")).toBeVisible();
 
-  await page.getByRole("button").first().click();
+  await page.getByTestId("BackButton").click();
 
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
   await expect(amountInput).toHaveValue("100");
@@ -764,14 +759,12 @@ test("Swap resets amount when user selects new source asset", async ({
   extensionId,
 }) => {
   await stubTokenDetails(page);
-  await stubAccountBalancesE2e(page);
+  await stubAccountBalancesWithUSDC(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
-  await stubAccountBalancesE2e(page);
-  await stubTokenPrices(page);
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
@@ -792,14 +785,12 @@ test("Swap preserves amount when selecting destination asset", async ({
   extensionId,
 }) => {
   await stubTokenDetails(page);
-  await stubAccountBalancesE2e(page);
+  await stubAccountBalancesWithUSDC(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
-  await stubAccountBalancesE2e(page);
-  await stubTokenPrices(page);
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
@@ -820,14 +811,12 @@ test("Swap resets state when navigating back to account", async ({
   extensionId,
 }) => {
   await stubTokenDetails(page);
-  await stubAccountBalancesE2e(page);
+  await stubAccountBalancesWithUSDC(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
-  await stubAccountBalancesE2e(page);
-  await stubTokenPrices(page);
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
@@ -842,7 +831,7 @@ test("Swap resets state when navigating back to account", async ({
   await page.getByText("XLM").first().click({ force: true });
 
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
-  await page.getByRole("button").first().click();
+  await page.getByTestId("BackButton").click();
 
   await expect(page.getByTestId("account-view")).toBeVisible();
 
@@ -851,7 +840,7 @@ test("Swap resets state when navigating back to account", async ({
 
   const newAmountInput = page.locator('input[type="text"]').first();
   await expect(newAmountInput).toHaveValue("0");
-  await expect(page.getByText("XLM").first()).toBeVisible();
+  await expect(page.getByText("0 XLM").first()).toBeVisible();
 });
 
 test.afterAll(async ({ page, extensionId }) => {
