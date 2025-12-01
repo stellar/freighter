@@ -115,10 +115,7 @@ export const EditMemo = ({
                     )}
                   </Field>
                   {disabled && disabledMessage && (
-                    <div
-                      className="EditMemo__description"
-                      style={{ color: "var(--color-warning)" }}
-                    >
+                    <div className="EditMemo__description EditMemo__description--warning">
                       {disabledMessage}
                     </div>
                   )}
