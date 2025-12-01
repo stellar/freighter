@@ -390,16 +390,9 @@ export const SendAmount = ({
                   size="md"
                   isRounded
                   variant="tertiary"
-                  onClick={() =>
-                    !isRecipientMuxed &&
-                    !isMuxedAddressWithoutMemoSupport &&
-                    setIsEditingMemo(true)
-                  }
+                  onClick={() => setIsEditingMemo(true)}
                   icon={<Icon.File02 />}
                   iconPosition="left"
-                  disabled={
-                    isRecipientMuxed || isMuxedAddressWithoutMemoSupport
-                  }
                 >
                   {t("Memo")}
                 </Button>
