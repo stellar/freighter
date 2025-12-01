@@ -653,7 +653,7 @@ test("SendPayment persists amount and asset when navigating to choose address", 
   await page.getByTestId("address-tile").click();
   await expect(page.getByTestId("send-to-input")).toBeVisible();
 
-  await page.getByRole("button", { name: "" }).first().click();
+  await page.getByRole("button").first().click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("100");
