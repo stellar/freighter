@@ -6,6 +6,7 @@
   padding: pxToRem(12px) 0;
   align-items: center;
   justify-content: space-between;
+  position: relative;
 
   &__tabs {
     display: flex;
@@ -39,7 +40,7 @@
 
     // override the default AccountHeaderModal styles
     left: auto !important;
-    top: pxToRem(235px);
+    top: pxToRem(60px);
 
     &__item {
       color: var(--sds-clr-gray-12);

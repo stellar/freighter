@@ -5,6 +5,7 @@ import { Button, Input, Icon } from "@stellar/design-system";
 import { object as YupObject, string as YupString } from "yup";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { captureException } from "@sentry/browser";
 
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { navigateTo } from "popup/helpers/navigate";
@@ -68,7 +69,7 @@ export const ManageCollectibles = () => {
       navigateTo(ROUTES.account, navigate, `?tab=${TabsList[1]}`);
     } catch (error) {
       setAddCollectibleError("Unable to add collectible");
-      console.error(error);
+      captureException(`Failed to add collectible: ${JSON.stringify(error)}`);
     }
   };
 

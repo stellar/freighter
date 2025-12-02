@@ -1,4 +1,4 @@
-import { test, expect } from "./test-fixtures";
+import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
 import {
   stubAccountBalances,
@@ -128,6 +128,10 @@ test("Add a collectible to an account", async ({
   await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText(
     "Add Collectible",
   );
+  await expectPageToHaveScreenshot({
+    page,
+    screenshot: "add-collectible-page.png",
+  });
   await page
     .getByTestId("collectibleAddress")
     .fill("CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN");

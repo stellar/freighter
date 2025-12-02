@@ -392,8 +392,6 @@ describe("Account view", () => {
       </Wrapper>,
     );
 
-    console.log("screen.debug()", screen.debug(undefined, Infinity));
-
     await waitFor(() => {
       expect(
         screen.getByTestId("account-view-user-notification"),
