@@ -1129,7 +1129,6 @@ export const getAssetIcons = async ({
         if (!icon) {
           // if we don't have the icon, we try to get it from the token lists
           const tokenListIcon = await getIconFromTokenLists({
-            networkDetails,
             issuerId: key,
             contractId,
             code,
