@@ -98,8 +98,6 @@ function useGetCollectibles({ useCache = true }: { useCache?: boolean }) {
         collections: collectibles,
       } as Collectibles;
 
-      console.log("collectibles", payload);
-
       reduxDispatch(
         saveCollections({
           publicKey,
