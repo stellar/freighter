@@ -1,10 +1,10 @@
-import React, { useContext, useState } from "react";
+import React, { useEffect, useContext, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import classnames from "classnames";
 import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import {
   AccountTabsContext,
@@ -81,9 +81,23 @@ export const AccountTabs = () => {
   const [isManageCollectiblesOpen, setIsManageCollectiblesOpen] =
     useState(false);
   const isBackgroundActive = isManageAssetsOpen || isManageCollectiblesOpen;
+  const location = useLocation();
+  const queryParams = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search],
+  );
 
   const isTokensTab = activeTab === 0;
   const isCollectiblesTab = activeTab === 1;
+
+  useEffect(() => {
+    const queryParamTab = queryParams.get("tab");
+    const index = TabsList.findIndex((tab) => tab === queryParamTab);
+
+    if (index !== -1) {
+      setActiveTab(index);
+    }
+  }, [queryParams, setActiveTab]);
 
   const handleManageClick = () => {
     if (isTokensTab) {
@@ -122,7 +136,11 @@ export const AccountTabs = () => {
         className="AccountTabs__modal"
         isDropdownOpen={isManageAssetsOpen || isManageCollectiblesOpen}
         icon={
-          <div className="AccountTabs__manage-btn" onClick={handleManageClick}>
+          <div
+            className="AccountTabs__manage-btn"
+            onClick={handleManageClick}
+            data-testid={`account-tabs-manage-btn-${isTokensTab ? "assets" : "collectibles"}`}
+          >
             <Icon.Sliders01 />
           </div>
         }

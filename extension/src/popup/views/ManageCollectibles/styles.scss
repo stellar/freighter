@@ -1,3 +1,5 @@
+@use "../../styles/utils.scss" as *;
+
 .ManageCollectibles {
   display: flex;
   flex-direction: column;
@@ -17,5 +19,13 @@
     .Input__container {
       padding-right: 0;
     }
+  }
+
+  &__error-message {
+    align-items: center;
+    color: var(--sds-clr-red-11);
+    font-size: pxToRem(12px);
+    margin-top: pxToRem(6px);
+    text-align: center;
   }
 }

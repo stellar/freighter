@@ -360,6 +360,20 @@ export interface DismissMobileAppBannerMessage extends BaseMessage {
   type: SERVICE_TYPES.DISMISS_MOBILE_APP_BANNER;
 }
 
+export interface AddCollectibleMessage extends BaseMessage {
+  type: SERVICE_TYPES.ADD_COLLECTIBLE;
+  network: string;
+  publicKey: string;
+  collectibleAddress: string;
+  collectibleTokenId: string;
+}
+
+export interface GetCollectiblesMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_COLLECTIBLES;
+  publicKey: string;
+  network: string;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -416,5 +430,10 @@ export type ServiceMessageRequest =
   | GetIsAccountMismatchMessage
   | ChangeAssetVisibilityMessage
   | GetHiddenAssetsMessage
+<<<<<<< HEAD
   | GetMobileAppBannerDismissedMessage
   | DismissMobileAppBannerMessage;
+=======
+  | AddCollectibleMessage
+  | GetCollectiblesMessage;
+>>>>>>> b8f947a2 (add localstorage and caching; add tests)
