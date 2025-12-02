@@ -26,6 +26,7 @@ import {
   transactionSubmissionSelector,
   saveAmount,
   saveAsset,
+  saveIsToken,
   saveMemo,
   saveTransactionFee,
   saveTransactionTimeout,
@@ -261,6 +262,7 @@ export const SendAmount = ({
   const srcTitle = srcAsset.code;
   const goBackAction = () => {
     dispatch(saveAsset("native"));
+    dispatch(saveIsToken(false));
     dispatch(saveAmount("0"));
     dispatch(saveAmountUsd("0.00"));
     goBack();
