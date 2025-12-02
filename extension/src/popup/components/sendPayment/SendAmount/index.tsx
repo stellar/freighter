@@ -50,6 +50,7 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
 import { SimulateTxData } from "./hooks/useSimulateTxData";
 import { SlideupModal } from "popup/components/SlideupModal";
+import { MemoEditingContext } from "popup/constants/send-payment";
 
 import "../styles.scss";
 
@@ -111,6 +112,8 @@ export const SendAmount = ({
   const [isEditingMemo, setIsEditingMemo] = React.useState(false);
   const [isEditingSettings, setIsEditingSettings] = React.useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
+  const [memoEditingContext, setMemoEditingContext] =
+    React.useState<MemoEditingContext | null>(null);
 
   const handleContinue = async () => {
     const amount = inputType === "crypto" ? formik.values.amount : priceValue!;
@@ -307,7 +310,10 @@ export const SendAmount = ({
                   size="md"
                   isRounded
                   variant="tertiary"
-                  onClick={() => setIsEditingMemo(true)}
+                  onClick={() => {
+                    setMemoEditingContext(MemoEditingContext.SendPayment);
+                    setIsEditingMemo(true);
+                  }}
                   icon={<Icon.File02 />}
                   iconPosition="left"
                 >
@@ -578,19 +584,36 @@ export const SendAmount = ({
           <div className="EditMemoWrapper">
             <EditMemo
               memo={transactionData.memo || ""}
-              onClose={() => setIsEditingMemo(false)}
+              onClose={() => {
+                setIsEditingMemo(false);
+                // Reopen review sheet if user came from review flow
+                if (memoEditingContext === MemoEditingContext.Review) {
+                  setIsReviewingTx(true);
+                }
+                setMemoEditingContext(null);
+              }}
               onSubmit={async ({ memo }: { memo: string }) => {
                 dispatch(saveMemo(memo));
                 setIsEditingMemo(false);
                 // Regenerate transaction XDR with new memo (now reads memo from Redux state inside fetchData)
                 await fetchSimulationData();
-                // Reopen review sheet after memo is saved and XDR is regenerated
-                setIsReviewingTx(true);
+                // Reopen review sheet after memo is saved and XDR is regenerated only if user came from review flow
+                if (memoEditingContext === MemoEditingContext.Review) {
+                  setIsReviewingTx(true);
+                  setMemoEditingContext(null);
+                }
               }}
             />
           </div>
           <LoadingBackground
-            onClick={() => setIsEditingMemo(false)}
+            onClick={() => {
+              setIsEditingMemo(false);
+              // Reopen review sheet if user came from review flow
+              if (memoEditingContext === MemoEditingContext.Review) {
+                setIsReviewingTx(true);
+              }
+              setMemoEditingContext(null);
+            }}
             isActive={isEditingMemo}
           />
         </>
@@ -638,6 +661,7 @@ export const SendAmount = ({
             onConfirm={goToNext}
             onAddMemo={() => {
               setIsReviewingTx(false);
+              setMemoEditingContext(MemoEditingContext.Review);
               setIsEditingMemo(true);
             }}
             sendAmount={amount}
