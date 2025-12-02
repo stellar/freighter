@@ -19,6 +19,7 @@ import {
 } from "popup/helpers/searchAsset";
 import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
+import { tokensListsSelector } from "popup/ducks/cache";
 
 export const useTokenLookup = ({
   setAssetRows,
@@ -38,6 +39,7 @@ export const useTokenLookup = ({
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { assetsLists } = useSelector(settingsSelector);
+  const cachedTokenLists = useSelector(tokensListsSelector);
   const isAllowListVerificationEnabled =
     isMainnet(networkDetails) || isTestnet(networkDetails);
 
@@ -119,6 +121,7 @@ export const useTokenLookup = ({
           networkDetails,
           contractId,
           assetsLists,
+          cachedAssetLists: cachedTokenLists,
         });
 
         try {
@@ -154,6 +157,7 @@ export const useTokenLookup = ({
     },
     [
       assetsLists,
+      cachedTokenLists,
       isAllowListVerificationEnabled,
       networkDetails,
       publicKey,
