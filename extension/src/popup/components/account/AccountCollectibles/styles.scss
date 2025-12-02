@@ -1,0 +1,81 @@
+@use "../../../styles/utils.scss" as *;
+
+.AccountCollectibles {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(24px);
+  padding: pxToRem(24px) 0;
+
+  &__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: pxToRem(8px);
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
+    text-align: center;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(24px);
+  }
+
+  &__collection {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12px);
+
+    &__header {
+      color: var(--sds-clr-gray-11);
+      display: flex;
+      font-weight: var(--sds-fw-medium);
+      justify-content: space-between;
+      align-items: center;
+
+      &__name {
+        display: flex;
+        align-items: center;
+        gap: pxToRem(6px);
+      }
+    }
+
+    &__grid {
+      display: grid;
+      gap: pxToRem(12px);
+      grid-template-columns: repeat(auto-fill, pxToRem(150px));
+      font-size: 0;
+
+      &__item {
+        background-color: var(--sds-clr-gray-03);
+        aspect-ratio: 1/1;
+        border-radius: pxToRem(12px);
+        overflow: hidden;
+
+        &__placeholder {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+          width: 100%;
+          background-color: var(--sds-clr-gray-03);
+
+          svg {
+            height: pxToRem(48px);
+            width: pxToRem(48px);
+            color: var(--sds-clr-gray-11);
+          }
+        }
+
+        img {
+          height: 100%;
+          width: 100%;
+          object-fit: cover;
+        }
+      }
+    }
+  }
+}
