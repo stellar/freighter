@@ -192,9 +192,7 @@ test("Adding classic asset on Testnet", async ({ page, extensionId }) => {
   await page.getByTestId("BackButton").click();
   await expect(page.getByText("Your assets")).toBeVisible();
   await expect(page.getByTestId("ManageAssetCode")).toHaveText("USDC");
-  await expect(page.getByTestId("ManageAssetDomain")).toHaveText(
-    "Stellar Network", // It shows Stellar Network after adding the asset on 5.36.0 release
-  );
+  await expect(page.getByTestId("ManageAssetDomain")).toHaveText("centre.io");
   await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
   await page.getByText("Remove asset").click();
   await expect(
