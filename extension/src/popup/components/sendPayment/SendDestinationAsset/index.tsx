@@ -6,6 +6,8 @@ import { Icon, Loader, Notification } from "@stellar/design-system";
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
+  saveAmount,
+  saveAmountUsd,
   saveAsset,
   saveIsToken,
   transactionDataSelector,
@@ -124,6 +126,8 @@ export const SendDestinationAsset = ({
             onClickAsset={(canonical, isContract) => {
               dispatch(saveAsset(canonical));
               dispatch(saveIsToken(isContract));
+              dispatch(saveAmount("0"));
+              dispatch(saveAmountUsd("0.00"));
               goToNext();
             }}
           />

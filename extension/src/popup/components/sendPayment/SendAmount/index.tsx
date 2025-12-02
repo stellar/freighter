@@ -266,9 +266,6 @@ export const SendAmount = ({
     goBack();
   };
   const goToChooseAssetAction = () => {
-    dispatch(saveAsset("native"));
-    dispatch(saveAmount("0"));
-    dispatch(saveAmountUsd("0.00"));
     goToChooseAsset();
   };
 
