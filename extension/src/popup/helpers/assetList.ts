@@ -2,6 +2,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import {
   AssetsLists,
   AssetListReponseItem,
+  AssetListResponse,
 } from "@shared/constants/soroban/asset-list";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
 
@@ -13,14 +14,17 @@ export const splitVerifiedAssetCurrency = async ({
   networkDetails,
   assets,
   assetsListsDetails,
+  cachedAssetLists,
 }: {
   networkDetails: NetworkDetails;
   assets: ManageAssetCurrency[];
   assetsListsDetails: AssetsLists;
+  cachedAssetLists?: AssetListResponse[];
 }) => {
   const settledResponses = await getAssetLists({
     assetsListsDetails,
     networkDetails,
+    cachedAssetLists,
   });
   const nativeContractDetails = getNativeContractDetails(networkDetails);
 
@@ -71,18 +75,23 @@ export const splitVerifiedAssetCurrency = async ({
   };
 };
 
+interface GetAssetListsForAssetParams {
+  asset: ManageAssetCurrency;
+  assetsListsDetails: AssetsLists;
+  networkDetails: NetworkDetails;
+  cachedAssetLists?: AssetListResponse[];
+}
+
 export const getAssetListsForAsset = async ({
   asset,
   assetsListsDetails,
   networkDetails,
-}: {
-  asset: ManageAssetCurrency;
-  assetsListsDetails: AssetsLists;
-  networkDetails: NetworkDetails;
-}) => {
+  cachedAssetLists,
+}: GetAssetListsForAssetParams) => {
   const settledResponses = await getAssetLists({
     assetsListsDetails,
     networkDetails,
+    cachedAssetLists,
   });
 
   const validatedAssets = {} as Record<string, AssetListReponseItem[]>;
