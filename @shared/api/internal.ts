@@ -1881,8 +1881,10 @@ export const getMobileAppBannerDismissed = async (): Promise<boolean> => {
   return !!isDismissed;
 };
 
-export const dismissMobileAppBanner = async (): Promise<void> => {
-  const { error } = await sendMessageToBackground({
+export const dismissMobileAppBanner = async (): Promise<{
+  isDismissed: boolean;
+}> => {
+  const { isDismissed, error } = await sendMessageToBackground({
     activePublicKey: null,
     type: SERVICE_TYPES.DISMISS_MOBILE_APP_BANNER,
   });
@@ -1890,6 +1892,8 @@ export const dismissMobileAppBanner = async (): Promise<void> => {
   if (error) {
     throw new Error(error);
   }
+
+  return { isDismissed: !!isDismissed };
 };
 
 export const removeTokenId = async ({

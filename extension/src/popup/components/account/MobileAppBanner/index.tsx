@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import browser from "webextension-polyfill";
+import { captureException } from "@sentry/browser";
 
 import {
   getMobileAppBannerDismissed,
@@ -12,11 +12,6 @@ import { openTab } from "popup/helpers/navigate";
 import FreighterLogo from "popup/assets/logo-freighter-shadow.png";
 
 import "./styles.scss";
-
-// Check if browser storage is available (extension context, not fullscreen)
-const isStorageAvailable = (): boolean => {
-  return !!browser?.storage?.local;
-};
 
 export const MobileAppBanner = () => {
   const { t } = useTranslation();
@@ -29,27 +24,23 @@ export const MobileAppBanner = () => {
         const dismissed = await getMobileAppBannerDismissed();
         setIsDismissed(dismissed);
       } catch (error) {
-        console.error("Error checking banner dismissal status:", error);
+        captureException(error);
         setIsDismissed(false);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (isStorageAvailable()) {
-      checkDismissedStatus();
-    } else {
-      setIsLoading(false);
-    }
+    checkDismissedStatus();
   }, []);
 
   const handleDismiss = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await dismissMobileAppBanner();
-      setIsDismissed(true);
+      const { isDismissed } = await dismissMobileAppBanner();
+      setIsDismissed(isDismissed);
     } catch (error) {
-      console.error("Error dismissing banner:", error);
+      captureException(error);
     }
   };
 
@@ -57,8 +48,8 @@ export const MobileAppBanner = () => {
     openTab("https://www.freighter.app/#download");
   };
 
-  // Don't show banner if storage is not available (e.g., fullscreen mode) or if dismissed
-  if (!isStorageAvailable() || isLoading || isDismissed) {
+  // Don't show banner if loading or if dismissed
+  if (isLoading || isDismissed) {
     return null;
   }
 
