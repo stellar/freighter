@@ -123,6 +123,17 @@ function useGetAccountData(options: {
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
 
+      if (!isCustomNetwork(networkDetails)) {
+        const collectiblesResult = await fetchCollectibles({
+          publicKey,
+          networkDetails,
+          contracts: [],
+        });
+        payload.collectibles = collectiblesResult;
+        // Dispatch again to trigger re-render with collectibles
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      }
+
       if (isMainnetNetwork) {
         // now that the UI has renderered, on Mainnet, let's make an additional call to fetch the balances with the Blockaid scan results included
         try {
