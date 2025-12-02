@@ -16,7 +16,7 @@ export const searchAsset = async ({
 }: {
   asset: any;
   networkDetails: NetworkDetails;
-  signal: AbortSignal;
+  signal?: AbortSignal;
 }) => {
   const res = await fetch(
     `${getApiStellarExpertUrl(networkDetails)}/asset?search=${asset}`,
@@ -58,33 +58,44 @@ export type VerifiedTokenRecord = AssetListReponseItem & {
 export const getAssetLists = async ({
   assetsListsDetails,
   networkDetails,
+  cachedAssetLists,
 }: {
   assetsListsDetails: AssetsLists;
   networkDetails: NetworkDetails;
+  cachedAssetLists?: AssetListResponse[];
 }) => {
+  // If cached asset lists are provided and not empty, use them instead of fetching
+  if (cachedAssetLists?.length) {
+    // Convert cached data to the expected Promise.allSettled format
+    return cachedAssetLists.map((assetList) => ({
+      status: "fulfilled" as const,
+      value: assetList,
+    }));
+  }
+
   const network = networkDetails.network;
   const assetsListsDetailsByNetwork =
     assetsListsDetails[network as AssetsListKey];
 
-  const assetListsResponses = [] as AssetListResponse[];
-  for (const networkList of assetsListsDetailsByNetwork) {
-    const { url, isEnabled } = networkList;
+  const promiseArr = [];
+  for (const { url, isEnabled } of assetsListsDetailsByNetwork) {
+    if (!isEnabled) continue;
 
-    if (isEnabled) {
-      const fetchAndParse = async (): Promise<AssetListResponse> => {
-        const res = await fetch(url);
-        if (!res.ok) {
-          throw new Error(res.statusText);
-        }
-        return res.json();
-      };
+    const fetchAndParse = async (): Promise<AssetListResponse> => {
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error(res.statusText);
+      }
+      return res.json();
+    };
 
-      assetListsResponses.push(await fetchAndParse());
-    }
+    promiseArr.push(fetchAndParse());
   }
 
-  const settledResponses = await Promise.allSettled(assetListsResponses);
-  return settledResponses;
+  const promiseRes =
+    await Promise.allSettled<Promise<AssetListResponse>>(promiseArr);
+
+  return promiseRes;
 };
 
 export const getVerifiedTokens = async ({
@@ -92,15 +103,18 @@ export const getVerifiedTokens = async ({
   contractId,
   setIsSearching,
   assetsLists,
+  cachedAssetLists,
 }: {
   networkDetails: NetworkDetails;
   contractId: string;
   setIsSearching?: (isSearching: boolean) => void;
   assetsLists: AssetsLists;
+  cachedAssetLists?: AssetListResponse[];
 }) => {
-  const assetListsData = await getCombinedAssetListData({
+  const assetListsData: AssetListResponse[] = await getCombinedAssetListData({
     networkDetails,
     assetsLists,
+    cachedAssetLists,
   });
   const nativeContract = getNativeContractDetails(networkDetails);
 
