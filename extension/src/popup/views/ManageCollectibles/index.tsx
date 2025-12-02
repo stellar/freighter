@@ -180,7 +180,7 @@ export const ManageCollectibles = () => {
                               const pastedTokenId =
                                 await navigator.clipboard.readText();
                               setFieldValue(
-                                "collectibleAddress",
+                                "collectibleTokenId",
                                 pastedTokenId,
                               );
                             }}
