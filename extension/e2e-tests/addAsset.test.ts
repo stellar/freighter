@@ -195,7 +195,10 @@ test("Adding classic asset on Testnet", async ({ page, extensionId }) => {
   await page.getByTestId("BackButton").click();
   await expect(page.getByText("Your assets")).toBeVisible();
   await expect(page.getByTestId("ManageAssetCode")).toHaveText("USDC");
-  await expect(page.getByTestId("ManageAssetDomain")).toHaveText("centre.io");
+  // Wait for domain to be fetched and displayed (it may take a moment to load)
+  await expect(page.getByTestId("ManageAssetDomain")).toHaveText("centre.io", {
+    timeout: 30000,
+  });
   await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
   await page.getByText("Remove asset").click();
   await expect(
