@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useLocation } from "react-router-dom";
 import BigNumber from "bignumber.js";
+import { captureException } from "@sentry/browser";
 import { useFormik } from "formik";
 import { Button, Icon, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -201,7 +202,11 @@ export const SendAmount = ({
         setContractSupportsMuxed(supportsMuxed);
       } catch (error) {
         // On error, assume no support for safety
-        console.error("Error checking contract muxed support:", error);
+        captureException(error, {
+          extra: {
+            message: "Error checking contract muxed support",
+          },
+        });
         setContractSupportsMuxed(false);
       }
     };
