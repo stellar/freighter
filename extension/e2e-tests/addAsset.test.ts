@@ -7,10 +7,7 @@ import {
   stubTokenDetails,
   stubTokenPrices,
 } from "./helpers/stubs";
-
-// Helper function to avoid importing from extension source (which causes Node.js module resolution issues)
-const truncateString = (str: string, charCount = 4) =>
-  str ? `${str.slice(0, charCount)}…${str.slice(-charCount)}` : "";
+import { truncateString } from "../src/helpers/stellar";
 
 test("Adding and removing unverified Soroban token", async ({
   page,
@@ -195,10 +192,7 @@ test("Adding classic asset on Testnet", async ({ page, extensionId }) => {
   await page.getByTestId("BackButton").click();
   await expect(page.getByText("Your assets")).toBeVisible();
   await expect(page.getByTestId("ManageAssetCode")).toHaveText("USDC");
-  // Wait for domain to be fetched and displayed (it may take a moment to load)
-  await expect(page.getByTestId("ManageAssetDomain")).toHaveText("centre.io", {
-    timeout: 30000,
-  });
+  await expect(page.getByTestId("ManageAssetDomain")).toHaveText("centre.io");
   await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
   await page.getByText("Remove asset").click();
   await expect(
