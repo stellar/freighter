@@ -30,8 +30,8 @@
     "@docusaurus/preset-classic": "3.6.3",
     "@stellar/freighter-api": "latest",
     "clsx": "2.1.1",
-    "react": "19.0.0",
-    "react-dom": "19.0.0",
+    "react": "19.0.1",
+    "react-dom": "19.0.1",
     "react-is": "19.0.0",
     "styled-components": "6.1.14"
   },
