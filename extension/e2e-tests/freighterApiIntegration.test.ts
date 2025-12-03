@@ -211,6 +211,59 @@ test("should not sign auth entry when not allowed", async ({
   await expect(popup.getByText("Connection Request")).toBeVisible();
 });
 
+test("should sign auth entry for a selected account when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
+  await loginToTestAccount({ page, extensionId });
+
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  page.getByTestId("account-view-account-name").click();
+  page.getByText("Account 2").click();
+  await expect(page.getByTestId("account-header")).toBeVisible();
+  await allowDapp({ page });
+
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signAuthEntry",
+  );
+  await pageTwo.getByRole("textbox").first().fill(AUTH_ENTRY_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo
+    .getByRole("textbox")
+    .nth(2)
+    .fill("GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY");
+  await pageTwo.getByText("Sign Authorization Entry XDR").click();
+
+  const popupPromise = page.context().waitForEvent("page");
+  const popup = await popupPromise;
+
+  await expect(popup.getByText("Confirm Authorization").first()).toBeVisible();
+  await expect(popup.getByText("GDF3…ZEFY")).toBeVisible();
+
+  await popup.getByRole("button", { name: "Confirm" }).click();
+
+  await expect(pageTwo.getByRole("textbox").nth(4)).toHaveValue(
+    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+  );
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(
+    SIGNED_AUTH_ENTRY,
+  );
+});
 test("should sign message string when allowed", async ({
   page,
   extensionId,
