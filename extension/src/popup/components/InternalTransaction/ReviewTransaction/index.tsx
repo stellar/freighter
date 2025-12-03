@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+import { captureException } from "@sentry/browser";
 import { Button, Icon, Notification } from "@stellar/design-system";
 
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -118,7 +119,11 @@ export const ReviewTx = ({
         setContractSupportsMuxed(supportsMuxed);
       } catch (error) {
         // On error, assume no support for safety
-        console.error("Error checking contract muxed support:", error);
+        captureException(error, {
+          extra: {
+            message: "Error checking contract muxed support",
+          },
+        });
         setContractSupportsMuxed(false);
       }
     };
@@ -142,7 +147,11 @@ export const ReviewTx = ({
         setContractSupportsMuxed(supportsMuxed);
       } catch (error) {
         // On error, assume no support for safety
-        console.error("Error checking contract muxed support:", error);
+        captureException(error, {
+          extra: {
+            message: "Error checking contract muxed support",
+          },
+        });
         setContractSupportsMuxed(false);
       }
     };

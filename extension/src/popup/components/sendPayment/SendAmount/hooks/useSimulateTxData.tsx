@@ -417,7 +417,11 @@ function useSimulateTxData({
         } catch (error) {
           // If we can't determine muxed destination, use original destination
           // On error, assume no memo support for safety
-          console.error("Error determining muxed destination:", error);
+          captureException(error, {
+            extra: {
+              message: "Error determining muxed destination",
+            },
+          });
           sorobanMemo = "";
         }
       }
