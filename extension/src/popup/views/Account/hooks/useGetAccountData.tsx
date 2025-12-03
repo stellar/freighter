@@ -130,8 +130,6 @@ function useGetAccountData(options: {
           contracts: [],
         });
         payload.collectibles = collectiblesResult;
-        // Dispatch again to trigger re-render with collectibles
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       }
 
       if (isMainnetNetwork) {

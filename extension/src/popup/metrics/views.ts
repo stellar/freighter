@@ -70,65 +70,61 @@ const routeToEventName = {
   [ROUTES.wallets]: METRIC_NAMES.wallets,
 };
 
-// Defer registration to avoid circular dependency issues during module initialization
-// Register handlers after a microtask to ensure all modules are fully loaded
-Promise.resolve().then(() => {
-  registerHandler<AppState>(navigate, (_, a) => {
-    // Awkward, but gives us types on action payload
-    const action = a as ReturnType<typeof navigate>;
-    const { pathname, search } = action.payload.location;
+registerHandler<AppState>(navigate, (_, a) => {
+  // Awkward, but gives us types on action payload
+  const action = a as ReturnType<typeof navigate>;
+  const { pathname, search } = action.payload.location;
 
-    const eventName = routeToEventName[pathname as ROUTES];
+  const eventName = routeToEventName[pathname as ROUTES];
 
-    if (!eventName) {
-      throw new Error(`Didn't find a metric event name for path '${pathname}'`);
-    }
+  if (!eventName) {
+    throw new Error(`Didn't find a metric event name for path '${pathname}'`);
+  }
 
-    // "/sign-transaction" and "/grant-access" require additional metrics on loaded page
-    if (pathname === ROUTES.grantAccess) {
-      const { url } = parsedSearchParam(search);
-      const METRIC_OPTION_DOMAIN = {
-        domain: getUrlDomain(url),
-        subdomain: getUrlHostname(url),
-      };
+  // "/sign-transaction" and "/grant-access" require additional metrics on loaded page
+  if (pathname === ROUTES.grantAccess) {
+    const { url } = parsedSearchParam(search);
+    const METRIC_OPTION_DOMAIN = {
+      domain: getUrlDomain(url),
+      subdomain: getUrlHostname(url),
+    };
 
-      emitMetric(eventName, METRIC_OPTION_DOMAIN);
-    } else if (pathname === ROUTES.addToken) {
-      const { url } = parsedSearchParam(search);
-      const METRIC_OPTIONS = {
-        domain: getUrlDomain(url),
-        subdomain: getUrlHostname(url),
-      };
+    emitMetric(eventName, METRIC_OPTION_DOMAIN);
+  } else if (pathname === ROUTES.addToken) {
+    const { url } = parsedSearchParam(search);
+    const METRIC_OPTIONS = {
+      domain: getUrlDomain(url),
+      subdomain: getUrlHostname(url),
+    };
 
-      emitMetric(eventName, METRIC_OPTIONS);
-    } else if (pathname === ROUTES.signTransaction) {
-      const { url } = parsedSearchParam(search);
-      const info = getTransactionInfo(search);
+    emitMetric(eventName, METRIC_OPTIONS);
+  } else if (pathname === ROUTES.signTransaction) {
+    const { url } = parsedSearchParam(search);
+    const info = getTransactionInfo(search);
 
-      const { operations, operationTypes } = info;
-      const METRIC_OPTIONS = {
-        domain: getUrlDomain(url),
-        subdomain: getUrlHostname(url),
+    const { operations, operationTypes } = info;
+    const METRIC_OPTIONS = {
+      domain: getUrlDomain(url),
+      subdomain: getUrlHostname(url),
 
-        number_of_operations: operations.length,
-        operationTypes,
-      };
+      number_of_operations: operations.length,
+      operationTypes,
+    };
 
-      emitMetric(eventName, METRIC_OPTIONS);
-    } else if (
-      pathname === ROUTES.signAuthEntry ||
-      pathname === ROUTES.signMessage
-    ) {
-      const { url } = parsedSearchParam(search);
+    emitMetric(eventName, METRIC_OPTIONS);
+  } else if (
+    pathname === ROUTES.signAuthEntry ||
+    pathname === ROUTES.signMessage
+  ) {
+    const { url } = parsedSearchParam(search);
 
-      const METRIC_OPTIONS = {
-        domain: getUrlDomain(url),
-        subdomain: getUrlHostname(url),
-      };
+    const METRIC_OPTIONS = {
+      domain: getUrlDomain(url),
+      subdomain: getUrlHostname(url),
+    };
 
-      emitMetric(eventName, METRIC_OPTIONS);
-    } else {
-      emitMetric(eventName);
-    }
-  });
+    emitMetric(eventName, METRIC_OPTIONS);
+  } else {
+    emitMetric(eventName);
+  }
 });
