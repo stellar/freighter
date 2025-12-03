@@ -613,3 +613,36 @@ export const stubCollectiblesUnsuccessfulMetadata = async (page: Page) => {
     await route.fulfill({ json });
   });
 };
+
+export const stubMemoRequiredAccounts = async (
+  page: Page | BrowserContext,
+  memoRequiredAddress?: string,
+) => {
+  await page.route("**/explorer/directory**", async (route) => {
+    const url = route.request().url();
+    // Match the memo-required endpoint specifically by checking query params
+    const parsedUrl = new URL(url);
+    const tags = parsedUrl.searchParams.getAll("tag[]");
+    if (
+      tags.includes("memo-required") ||
+      url.includes("memo-required") ||
+      url.includes("tag[]=memo-required")
+    ) {
+      const json = {
+        _embedded: {
+          records: memoRequiredAddress
+            ? [
+                {
+                  address: memoRequiredAddress,
+                  tags: ["memo-required"],
+                },
+              ]
+            : [],
+        },
+      };
+      await route.fulfill({ json });
+    } else {
+      await route.continue();
+    }
+  });
+};

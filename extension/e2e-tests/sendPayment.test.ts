@@ -8,6 +8,7 @@ import {
   stubAccountHistory,
   stubTokenDetails,
   stubTokenPrices,
+  stubMemoRequiredAccounts,
 } from "./helpers/stubs";
 
 const MUXED_ACCOUNT_ADDRESS =
@@ -656,4 +657,439 @@ test.afterAll(async ({ page, extensionId }) => {
       timeout: 30000,
     });
   }
+});
+
+const MEMO_REQUIRED_ADDRESS =
+  "GA6SXIZIKLJHCZI2KEOBEUUOFMM4JUPPM2UTWX6STAWT25JWIEUFIMFF";
+
+// Reset environment variables before each memo-related test
+// This ensures IS_PLAYWRIGHT is set for memo validation bypass
+test.beforeEach(async ({ page }) => {
+  await page.evaluate(() => {
+    // Ensure IS_PLAYWRIGHT is set for memo validation bypass
+    (window as any).IS_PLAYWRIGHT = "true";
+  });
+});
+
+test("Send payment shows memo required warning when destination requires memo", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenDetails(page);
+  await stubTokenPrices(page);
+  await stubMemoRequiredAccounts(page, MEMO_REQUIRED_ADDRESS);
+
+  await loginToTestAccount({ page, extensionId });
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(MEMO_REQUIRED_ADDRESS);
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill("1");
+
+  // Click Review Send to trigger memo validation
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
+  await reviewSendButton.click({ force: true });
+
+  // Wait for review sheet to open - this happens after simulation completes
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
+
+  // Wait for the review transaction content to be ready (not in loading state)
+  // Check that AddMemoAction is visible (validation complete)
+  await expect(page.getByTestId("AddMemoAction")).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(page.getByText("Add Memo")).toBeVisible();
+});
+
+test("Send payment allows submission after adding memo to memo-required address", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenDetails(page);
+  await stubTokenPrices(page);
+  await stubMemoRequiredAccounts(page, MEMO_REQUIRED_ADDRESS);
+
+  await loginToTestAccount({ page, extensionId });
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(MEMO_REQUIRED_ADDRESS);
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill("1");
+
+  // Add memo from SendPayment page
+  await page.getByTestId("send-amount-btn-memo").click();
+  await page.getByTestId("edit-memo-input").fill("test memo");
+  await page.getByText("Save").click();
+
+  // Verify memo was saved and review modal doesn't auto-open
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  expect(await page.getByText("You are sending").isVisible()).toBeFalsy();
+
+  // Click Review Send - this triggers simulation and opens review sheet
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+
+  // Wait for button to be enabled (simulation not in progress) before clicking
+  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
+
+  // Click the button to start simulation and open review sheet
+  await reviewSendButton.click({ force: true });
+
+  // Wait for review sheet to open - this happens after simulation completes
+  // The simulation may take time, so we wait for the review sheet content
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
+
+  // Wait for the review transaction content to be ready (not in loading state)
+  // Check that either SubmitAction or AddMemoAction is visible (validation complete)
+  await expect(
+    page
+      .getByTestId("SubmitAction")
+      .or(page.getByTestId("AddMemoAction"))
+      .first(),
+  ).toBeVisible({
+    timeout: 15000,
+  });
+
+  // Wait for validation to complete - submit button should be enabled when done
+  // (memo already added, so no "Add Memo" button should appear)
+  await expect(page.getByTestId("SubmitAction")).toBeEnabled({
+    timeout: 5000,
+  });
+
+  // Verify review modal opens and "Add Memo" button is not visible (memo already added)
+  await expect(page.getByTestId("AddMemoAction")).not.toBeVisible();
+  await expect(page.getByTestId("review-tx-memo")).toHaveText("test memo");
+});
+
+test("Send payment returns to review modal after adding memo from review flow", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenDetails(page);
+  await stubTokenPrices(page);
+  await stubMemoRequiredAccounts(page, MEMO_REQUIRED_ADDRESS);
+
+  await loginToTestAccount({ page, extensionId });
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(MEMO_REQUIRED_ADDRESS);
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill("1");
+
+  // Click Review Send to open review modal
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
+  await reviewSendButton.click({ force: true });
+
+  // Wait for review sheet to open
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
+
+  // Wait for memo validation to complete - the "Add Memo" button appears when validation is done
+  await expect(page.getByTestId("AddMemoAction")).toBeVisible({
+    timeout: 10000,
+  });
+
+  // Click Add Memo from review modal
+  await page.getByTestId("AddMemoAction").click();
+
+  // Fill and save memo
+  await expect(page.getByTestId("edit-memo-input")).toBeVisible();
+  await page.getByTestId("edit-memo-input").fill("review memo");
+  await page.getByText("Save").click();
+
+  // Verify review modal is reopened after saving memo
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
+  await expect(page.getByTestId("AddMemoAction")).not.toBeVisible();
+  await expect(page.getByTestId("review-tx-memo")).toHaveText("review memo");
+});
+
+test("Send payment returns to review modal after cancelling memo editor from review flow", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenDetails(page);
+  await stubTokenPrices(page);
+  await stubMemoRequiredAccounts(page, MEMO_REQUIRED_ADDRESS);
+
+  await loginToTestAccount({ page, extensionId });
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(MEMO_REQUIRED_ADDRESS);
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill("1");
+
+  // Click Review Send to open review modal
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
+  await reviewSendButton.click({ force: true });
+
+  // Wait for review sheet to open
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
+
+  // Wait for memo validation to complete - the "Add Memo" button appears when validation is done
+  await expect(page.getByTestId("AddMemoAction")).toBeVisible({
+    timeout: 10000,
+  });
+
+  // Click Add Memo from review modal
+  await page.getByTestId("AddMemoAction").click();
+
+  // Cancel memo editor
+  await expect(page.getByTestId("edit-memo-input")).toBeVisible();
+  await page.getByText("Cancel").click();
+
+  // Verify review modal is reopened after cancelling and "Add Memo" button is still visible
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
+  await expect(page.getByTestId("AddMemoAction")).toBeVisible();
+});
+
+test("Send payment shows memo value directly when memo is added before review", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenDetails(page);
+  await stubTokenPrices(page);
+  await stubMemoRequiredAccounts(page, MEMO_REQUIRED_ADDRESS);
+
+  await loginToTestAccount({ page, extensionId });
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(MEMO_REQUIRED_ADDRESS);
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill("1");
+
+  // Add memo before going to review
+  await page.getByTestId("send-amount-btn-memo").click();
+  await page.getByTestId("edit-memo-input").fill("pre-review memo");
+  await page.getByText("Save").click();
+
+  // After saving memo, a simulation is triggered to regenerate XDR with the new memo
+  // Wait for the memo editor to close
+  await expect(page.getByTestId("edit-memo-input")).not.toBeVisible({
+    timeout: 5000,
+  });
+
+  // Wait for any loading overlays to disappear
+  await page.waitForTimeout(500);
+
+  // Wait for the simulation to complete before clicking Review Send
+  // Verify we're still on the send amount page
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Wait for the simulation to complete before clicking Review Send
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeEnabled({ timeout: 30000 });
+
+  // Click the button to start simulation and open review sheet
+  await reviewSendButton.click({ force: true });
+
+  // Wait for review sheet to open - this happens after simulation completes
+  // The simulation runs, then setIsReviewingTx(true) is called
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
+
+  // Wait for the review transaction content to be ready (not in loading state)
+  // Check that SubmitAction is visible (validation complete)
+  await expect(page.getByTestId("SubmitAction")).toBeVisible({
+    timeout: 15000,
+  });
+
+  // Wait for validation to complete - submit button should be enabled when done
+  await expect(page.getByTestId("SubmitAction")).toBeEnabled({
+    timeout: 5000,
+  });
+
+  // Verify review modal opens and shows memo directly, "Add Memo" button is not visible
+  await expect(page.getByTestId("AddMemoAction")).not.toBeVisible();
+  await expect(page.getByTestId("review-tx-memo")).toHaveText(
+    "pre-review memo",
+  );
+  // Verify the "Send to" button is visible (not "Add Memo")
+  await expect(page.getByTestId("SubmitAction")).toBeVisible();
+});
+
+test("Send payment shows Add Memo when switching from non-memo-required to memo-required address", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  const NON_MEMO_REQUIRED_ADDRESS =
+    "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
+
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenDetails(page);
+  await stubTokenPrices(page);
+  await stubMemoRequiredAccounts(page, MEMO_REQUIRED_ADDRESS);
+
+  await loginToTestAccount({ page, extensionId });
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // First, set a non-memo-required address
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(NON_MEMO_REQUIRED_ADDRESS);
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill("1");
+
+  // Go to review with non-memo-required address
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
+  await reviewSendButton.click({ force: true });
+
+  // Wait for review sheet to open
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
+
+  // Wait for validation to complete - submit button should be enabled when done
+  await expect(page.getByTestId("SubmitAction")).toBeEnabled({
+    timeout: 10000,
+  });
+
+  // Verify "Add Memo" button is not visible for non-memo-required address
+  await expect(page.getByTestId("AddMemoAction")).not.toBeVisible();
+
+  // Go back to change address
+  await page.getByText("Cancel").click();
+
+  // Change to memo-required address
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").clear();
+  await page.getByTestId("send-to-input").fill(MEMO_REQUIRED_ADDRESS);
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  // Make sure amount is still 1 XLM after switching addresses
+  await page.getByTestId("send-amount-amount-input").fill("1");
+
+  // Go to review again with memo-required address
+  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
+  await reviewSendButton.click({ force: true });
+
+  // Wait for review sheet to open
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
+
+  // Wait for memo validation to complete - the "Add Memo" button appears when validation is done
+  await expect(page.getByTestId("AddMemoAction")).toBeVisible({
+    timeout: 10000,
+  });
+});
+
+test("Send payment shows Add Memo after cancelling review and returning to memo-required address", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenDetails(page);
+  await stubTokenPrices(page);
+  await stubMemoRequiredAccounts(page, MEMO_REQUIRED_ADDRESS);
+
+  await loginToTestAccount({ page, extensionId });
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(MEMO_REQUIRED_ADDRESS);
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill("1");
+
+  // Go to review - should show "Add Memo" button
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
+  await reviewSendButton.click({ force: true });
+
+  // Wait for review sheet to open
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
+
+  // Wait for memo validation to complete - the "Add Memo" button appears when validation is done
+  await expect(page.getByTestId("AddMemoAction")).toBeVisible({
+    timeout: 10000,
+  });
+
+  // Cancel review
+  await page.getByText("Cancel").click();
+
+  // Verify we're back on the send amount page
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Go back to review again
+  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
+  await reviewSendButton.click({ force: true });
+
+  // Wait for review sheet to open
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
+
+  // Wait for memo validation to complete - the "Add Memo" button appears when validation is done
+  await expect(page.getByTestId("AddMemoAction")).toBeVisible({
+    timeout: 10000,
+  });
+  await expect(page.getByText("Add Memo")).toBeVisible();
 });

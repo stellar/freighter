@@ -1,11 +1,18 @@
 import StellarHDWallet from "stellar-hd-wallet";
+import { Page } from "@playwright/test";
 import { expect } from "../test-fixtures";
 
 const { generateMnemonic } = StellarHDWallet;
 
 export const PASSWORD = "My-password123";
 
-export const login = async ({ page, extensionId }) => {
+export const login = async ({
+  page,
+  extensionId,
+}: {
+  page: Page;
+  extensionId: string;
+}) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
   await page.getByText("I already have a wallet").click();
 
@@ -43,7 +50,13 @@ export const login = async ({ page, extensionId }) => {
   });
 };
 
-export const loginAndFund = async ({ page, extensionId }) => {
+export const loginAndFund = async ({
+  page,
+  extensionId,
+}: {
+  page: Page;
+  extensionId: string;
+}) => {
   await login({ page, extensionId });
   await expect(page.getByTestId("not-funded")).toBeVisible({
     timeout: 10000,
@@ -55,7 +68,13 @@ export const loginAndFund = async ({ page, extensionId }) => {
   });
 };
 
-export const loginToTestAccount = async ({ page, extensionId }) => {
+export const loginToTestAccount = async ({
+  page,
+  extensionId,
+}: {
+  page: Page;
+  extensionId: string;
+}) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
   await page.getByText("I already have a wallet").click();
 

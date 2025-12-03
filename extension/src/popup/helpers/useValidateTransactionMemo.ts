@@ -112,11 +112,37 @@ export const useValidateTransactionMemo = (incomingXdr?: string | null) => {
   /**
    * Determines if memo validation should be performed
    * Only validates on mainnet when the feature is enabled in preferences
+   * Can be bypassed for testing/CI by setting CI=true or IS_PLAYWRIGHT=true
    */
-  const shouldValidateMemo = useMemo(
-    () => !!(isMemoValidationEnabled && isMainnet(networkDetails)),
-    [isMemoValidationEnabled, networkDetails],
-  );
+  const shouldValidateMemo = useMemo(() => {
+    // Check for test/CI environment variables
+    // Note: In browser extensions, process.env may not be available at runtime
+    // We check both process.env (for build-time vars) and window (for runtime vars)
+    const isCI = process.env.CI === "true" || (window as any).CI === "true";
+    const isPlaywright =
+      process.env.IS_PLAYWRIGHT === "true" ||
+      (window as any).IS_PLAYWRIGHT === "true";
+    const bypassMainnetCheck = isCI || isPlaywright;
+
+    const shouldValidate = !!(
+      isMemoValidationEnabled &&
+      (isMainnet(networkDetails) || bypassMainnetCheck)
+    );
+
+    // Debug logging in development
+    if (!shouldValidate && isMemoValidationEnabled) {
+      console.log("Memo validation skipped:", {
+        isMemoValidationEnabled,
+        isMainnet: isMainnet(networkDetails),
+        bypassMainnetCheck,
+        isCI,
+        isPlaywright,
+        networkDetails: networkDetails?.networkName,
+      });
+    }
+
+    return shouldValidate;
+  }, [isMemoValidationEnabled, networkDetails]);
 
   // Start with true to prevent button from being enabled before validation completes
   // Reset to true whenever XDR changes to ensure we re-validate
