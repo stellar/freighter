@@ -73,6 +73,8 @@ import { modifyAssetsList } from "./handlers/modifyAssetsList";
 import { getIsAccountMismatch } from "./handlers/getIsAccountMismatch";
 import { changeAssetVisibility } from "./handlers/changeAssetVisibility";
 import { getHiddenAssets } from "./handlers/getHiddenAssets";
+import { getMobileAppBannerDismissed } from "./handlers/getMobileAppBannerDismissed";
+import { dismissMobileAppBanner } from "./handlers/dismissMobileAppBanner";
 import { loadBackendSettings } from "./handlers/loadBackendSettings";
 
 const numOfPublicKeysToCheck = 5;
@@ -467,6 +469,16 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.GET_HIDDEN_ASSETS: {
       return getHiddenAssets({
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.GET_MOBILE_APP_BANNER_DISMISSED: {
+      return getMobileAppBannerDismissed({
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.DISMISS_MOBILE_APP_BANNER: {
+      return dismissMobileAppBanner({
         localStore,
       });
     }
