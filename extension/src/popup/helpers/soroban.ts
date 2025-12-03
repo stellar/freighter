@@ -26,7 +26,60 @@ import { findAssetBalance, isSorobanBalance } from "./balance";
 import { getSdk } from "@shared/helpers/stellar";
 import { AssetType } from "@shared/api/types/account-balance";
 import { getNativeContractDetails } from "./searchAsset";
+import { isContractId } from "@shared/api/helpers/soroban";
 export { isContractId } from "@shared/api/helpers/soroban";
+
+/**
+ * Checks if a transaction is a Soroban transaction.
+ * A transaction is considered Soroban if:
+ * - The selected balance is a Soroban token (has a contractId), OR
+ * - The recipient address is a contract address, OR
+ * - The isToken flag is true and contractId exists, OR
+ * - The isInvokeHostFn flag is true (for history operations)
+ *
+ * @param params - Parameters object
+ * @param params.selectedBalance - The selected balance (can be undefined)
+ * @param params.recipientAddress - The recipient address (can be undefined)
+ * @param params.isToken - Flag indicating if this is a token transaction (can be undefined)
+ * @param params.contractId - Contract ID for the token (can be undefined)
+ * @param params.isInvokeHostFn - Flag indicating if this is an invoke host function operation (can be undefined)
+ * @returns True if the transaction is a Soroban transaction, false otherwise
+ */
+export const isSorobanTransaction = ({
+  selectedBalance,
+  recipientAddress,
+  isToken,
+  contractId,
+  isInvokeHostFn,
+}: {
+  selectedBalance?: AssetType;
+  recipientAddress?: string;
+  isToken?: boolean;
+  contractId?: string;
+  isInvokeHostFn?: boolean;
+}): boolean => {
+  // Check if it's an invoke host function operation (for history)
+  if (isInvokeHostFn) {
+    return true;
+  }
+
+  // Check if selected balance is a Soroban balance (has contractId)
+  if (selectedBalance && isSorobanBalance(selectedBalance)) {
+    return true;
+  }
+
+  // Check if recipient address is a contract address
+  if (recipientAddress && isContractId(recipientAddress)) {
+    return true;
+  }
+
+  // Check if isToken flag is true and contractId exists
+  if (isToken && contractId) {
+    return true;
+  }
+
+  return false;
+};
 
 export const SOROBAN_OPERATION_TYPES = [
   "invoke_host_function",

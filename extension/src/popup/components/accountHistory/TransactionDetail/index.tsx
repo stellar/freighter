@@ -7,7 +7,12 @@ import StellarLogo from "popup/assets/stellar-logo.png";
 
 import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
-import { stroopToXlm, truncatedPublicKey } from "helpers/stellar";
+import {
+  stroopToXlm,
+  truncatedPublicKey,
+  isMuxedAccount,
+} from "helpers/stellar";
+import { isSorobanTransaction } from "popup/helpers/soroban";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -53,7 +58,15 @@ export const TransactionDetail = ({
     .join(" ");
 
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
-  const { feeCharged, memo } = activeOperation.metadata;
+  const { feeCharged, memo, isInvokeHostFn, to } = activeOperation.metadata;
+
+  // Check if this is a Soroban transaction
+  const isSorobanTx = isSorobanTransaction({
+    isInvokeHostFn,
+  });
+
+  // Check if destination is muxed (only relevant for Soroban transactions)
+  const isDestinationMuxed = to ? isMuxedAccount(to) : false;
 
   const renderBody = (activeOperation: OperationDataRow) => {
     if (activeOperation.metadata.isInvokeHostFn) {
@@ -418,13 +431,15 @@ export const TransactionDetail = ({
             {stroopToXlm(feeCharged as string).toString()} XLM
           </div>
         </div>
-        {memo && (
+        {/* Hide memo row only for Soroban transactions with muxed addresses */}
+        {/* Normal transactions support M address + memo, so always show memo row */}
+        {!(isDestinationMuxed && isSorobanTx) && (
           <div className="Metadata">
             <div className="Metadata__label">
               <Icon.File02 />
               {t("Memo")}
             </div>
-            <div className="Metadata__value">{memo}</div>
+            <div className="Metadata__value">{memo || "None"}</div>
           </div>
         )}
       </div>
