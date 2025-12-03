@@ -115,13 +115,11 @@ export function useGetAssetDomainsWithBalances(getBalancesOptions: {
 
           const cachedHomeDomain =
             homeDomains[networkDetails.network]?.[issuer.key];
+
           if (useCache && cachedHomeDomain) {
             domain = cachedHomeDomain;
-          }
-          // Always fetch missing domains, even when using cache
-          // Only skip if explicitly cached as null (meaning we tried and it doesn't exist)
-          if (!domain && cachedHomeDomain !== null && issuer.key) {
-            if (!domainsToFetch.includes(issuer.key)) {
+          } else if (cachedHomeDomain !== null) {
+            if (issuer.key) {
               domainsToFetch.push(issuer.key);
             }
           }
@@ -183,25 +181,28 @@ export function useGetAssetDomainsWithBalances(getBalancesOptions: {
         });
       }
 
-      // Always backfill domains, even if fetch returned empty results
-      domains.forEach((domainObj) => {
-        const domainToAdd = {
-          ...domainObj,
-        };
-        if (!domainObj.domain && domainObj.issuer) {
-          const fetchedDomain = fetchedDomains[domainObj.issuer];
-          domainToAdd.domain = fetchedDomain || null;
-          // Save to cache even if domain is null (to avoid refetching)
-          reduxDispatch(
-            saveDomainForIssuer({
-              networkDetails,
-              homeDomains: { [domainObj.issuer]: domainToAdd.domain },
-            }),
-          );
-        }
+      if (Object.keys(fetchedDomains).length > 0) {
+        domains.forEach((domainObj) => {
+          const domainToAdd = {
+            ...domainObj,
+          };
+          if (!domainObj.domain) {
+            domainToAdd.domain = fetchedDomains[domainObj.issuer || ""] || null;
+            if (domainObj.issuer) {
+              reduxDispatch(
+                saveDomainForIssuer({
+                  networkDetails,
+                  homeDomains: { [domainObj.issuer]: domainToAdd.domain },
+                }),
+              );
+            }
+          }
 
-        backfilledDomains.push(domainToAdd);
-      });
+          backfilledDomains.push(domainToAdd);
+        });
+      } else {
+        backfilledDomains = domains;
+      }
 
       const payload = {
         type: AppDataType.RESOLVED,
