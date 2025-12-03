@@ -1129,7 +1129,6 @@ export const getAssetIcons = async ({
         if (!icon) {
           // if we don't have the icon, we try to get it from the token lists
           const tokenListIcon = await getIconFromTokenLists({
-            networkDetails,
             issuerId: key,
             contractId,
             code,
@@ -1867,6 +1866,34 @@ export const getTokenIds = async ({
   }
 
   return tokenIdList;
+};
+
+export const getMobileAppBannerDismissed = async (): Promise<boolean> => {
+  const { isDismissed, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_MOBILE_APP_BANNER_DISMISSED,
+  });
+
+  if (error) {
+    return false;
+  }
+
+  return !!isDismissed;
+};
+
+export const dismissMobileAppBanner = async (): Promise<{
+  isDismissed: boolean;
+}> => {
+  const { isDismissed, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.DISMISS_MOBILE_APP_BANNER,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return { isDismissed: !!isDismissed };
 };
 
 export const removeTokenId = async ({
