@@ -103,9 +103,6 @@ export const useValidateTransactionMemo = (incomingXdr?: string | null) => {
   const { isMemoValidationEnabled } = useSelector(settingsPreferencesSelector);
   const activePublicKey = useSelector(publicKeySelector);
   const [isValidatingMemo, setIsValidatingMemo] = useState(false);
-  const [localTransaction, setLocalTransaction] = useState<ReturnType<
-    typeof TransactionBuilder.fromXDR
-  > | null>(null);
   const [memoRequiredAccounts, setMemoRequiredAccounts] = useState<
     MemoRequiredAccount[]
   >([]);
@@ -115,11 +112,37 @@ export const useValidateTransactionMemo = (incomingXdr?: string | null) => {
   /**
    * Determines if memo validation should be performed
    * Only validates on mainnet when the feature is enabled in preferences
+   * Can be bypassed for testing/CI by setting CI=true or IS_PLAYWRIGHT=true
    */
-  const shouldValidateMemo = useMemo(
-    () => !!(isMemoValidationEnabled && isMainnet(networkDetails)),
-    [isMemoValidationEnabled, networkDetails],
-  );
+  const shouldValidateMemo = useMemo(() => {
+    // Check for test/CI environment variables
+    // Note: In browser extensions, process.env may not be available at runtime
+    // We check both process.env (for build-time vars) and window (for runtime vars)
+    const isCI = process.env.CI === "true" || (window as any).CI === "true";
+    const isPlaywright =
+      process.env.IS_PLAYWRIGHT === "true" ||
+      (window as any).IS_PLAYWRIGHT === "true";
+    const bypassMainnetCheck = isCI || isPlaywright;
+
+    const shouldValidate = !!(
+      isMemoValidationEnabled &&
+      (isMainnet(networkDetails) || bypassMainnetCheck)
+    );
+
+    // Debug logging in development
+    if (!shouldValidate && isMemoValidationEnabled) {
+      console.log("Memo validation skipped:", {
+        isMemoValidationEnabled,
+        isMainnet: isMainnet(networkDetails),
+        bypassMainnetCheck,
+        isCI,
+        isPlaywright,
+        networkDetails: networkDetails?.networkName,
+      });
+    }
+
+    return shouldValidate;
+  }, [isMemoValidationEnabled, networkDetails]);
 
   // Start with true to prevent button from being enabled before validation completes
   // Reset to true whenever XDR changes to ensure we re-validate
@@ -153,32 +176,27 @@ export const useValidateTransactionMemo = (incomingXdr?: string | null) => {
   }, [shouldValidateMemo, activePublicKey]);
 
   /**
-   * Effect to parse XDR and set initial memo validation state
-   * Runs when XDR, network, or validation settings change
+   * Effect to parse XDR, check for memo, and validate if memo is required
+   * Runs when XDR, network, validation settings, or memo-required accounts change
    */
   useEffect(() => {
     // Reset validation state when XDR changes to ensure fresh validation
     setIsMemoMissing(true);
     setIsValidatingMemo(false);
 
-    if (!shouldValidateMemo) {
+    if (!shouldValidateMemo || !xdr || !networkDetails) {
       setIsMemoMissing(false);
-      setLocalTransaction(null);
       return;
     }
 
-    if (!xdr || !networkDetails) {
-      setLocalTransaction(null);
-      setIsMemoMissing(false);
-      return;
-    }
+    let transaction: ReturnType<typeof TransactionBuilder.fromXDR> | null =
+      null;
 
     try {
-      const transaction = TransactionBuilder.fromXDR(
+      transaction = TransactionBuilder.fromXDR(
         xdr,
         networkDetails.networkPassphrase,
       );
-      setLocalTransaction(transaction);
 
       // Check if memo exists in transaction (check both type and value)
       const hasMemo =
@@ -187,85 +205,48 @@ export const useValidateTransactionMemo = (incomingXdr?: string | null) => {
         transaction.memo.value &&
         String(transaction.memo.value).trim() !== "";
 
-      // If memo exists, it's not missing - otherwise keep as true to trigger validation
       if (hasMemo) {
         setIsMemoMissing(false);
+        return;
       }
-      // If no memo, keep isMemoMissing as true so validation will run
+
+      // If no memo, check if memo is required
+      const checkIsMemoRequired = async () => {
+        setIsValidatingMemo(true);
+
+        try {
+          // Check cache first (memo-required accounts from API)
+          const isMemoRequiredFromCache = checkMemoRequiredFromCache(
+            transaction!,
+            memoRequiredAccounts,
+          );
+
+          // Also check SDK as fallback
+          const isMemoRequiredFromSDK = await checkMemoRequiredFromStellarSDK(
+            transaction!,
+            networkDetails.networkUrl,
+            networkDetails.networkPassphrase,
+          );
+
+          // If either method indicates memo is required, set it as missing
+          setIsMemoMissing(isMemoRequiredFromSDK || isMemoRequiredFromCache);
+        } catch (error) {
+          console.error("Error validating memo:", error);
+
+          // If there's any error, we assume the memo is missing to be safe
+          // so we prevent loss of funds due to a missing memo.
+          setIsMemoMissing(true);
+        } finally {
+          setIsValidatingMemo(false);
+        }
+      };
+
+      checkIsMemoRequired();
     } catch (error) {
       console.error("Error parsing transaction XDR:", error);
-      setLocalTransaction(null);
       setIsMemoMissing(false);
     }
-  }, [xdr, shouldValidateMemo, networkDetails]);
-
-  /**
-   * Effect to perform memo requirement validation
-   * Checks both cache and SDK methods to determine if memo is required
-   */
-  useEffect(() => {
-    if (!shouldValidateMemo) {
-      setIsMemoMissing(false);
-      return;
-    }
-
-    if (!localTransaction) {
-      return;
-    }
-
-    // Check if memo exists in transaction (check both type and value)
-    const hasMemo =
-      "memo" in localTransaction &&
-      localTransaction.memo.type !== "none" &&
-      localTransaction.memo.value &&
-      String(localTransaction.memo.value).trim() !== "";
-
-    // If memo exists, it's not missing
-    if (hasMemo) {
-      setIsMemoMissing(false);
-      return;
-    }
-
-    const checkIsMemoRequired = async () => {
-      setIsValidatingMemo(true);
-
-      try {
-        // Check cache first (memo-required accounts from API)
-        const isMemoRequiredFromCache = checkMemoRequiredFromCache(
-          localTransaction,
-          memoRequiredAccounts,
-        );
-
-        // Also check SDK as fallback
-        const isMemoRequiredFromSDK = await checkMemoRequiredFromStellarSDK(
-          localTransaction,
-          networkDetails.networkUrl,
-          networkDetails.networkPassphrase,
-        );
-
-        // If either method indicates memo is required, set it as missing
-        setIsMemoMissing(isMemoRequiredFromSDK || isMemoRequiredFromCache);
-      } catch (error) {
-        console.error("Error validating memo:", error);
-
-        // If there's any error, we assume the memo is missing to be safe
-        // so we prevent loss of funds due to a missing memo.
-        setIsMemoMissing(true);
-      } finally {
-        setIsValidatingMemo(false);
-      }
-    };
-
-    // Only run validation if we have memo-required accounts loaded or if we're checking via SDK
-    // This ensures we check against the API data when available
-    checkIsMemoRequired();
-  }, [
-    localTransaction,
-    memoRequiredAccounts,
-    shouldValidateMemo,
-    networkDetails.networkUrl,
-    networkDetails.networkPassphrase,
-  ]);
+  }, [xdr, shouldValidateMemo, networkDetails, memoRequiredAccounts]);
 
   return { isMemoMissing, isValidatingMemo };
 };

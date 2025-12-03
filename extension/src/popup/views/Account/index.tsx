@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
@@ -16,6 +16,7 @@ import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { isMainnet } from "helpers/stellar";
 
 import { AccountAssets } from "popup/components/account/AccountAssets";
+import { AccountCollectibles } from "popup/components/account/AccountCollectibles";
 import { AccountHeader } from "popup/components/account/AccountHeader";
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
@@ -28,6 +29,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
+import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 
 import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 import { useGetAccountHistoryData } from "./hooks/useGetAccountHistoryData";
@@ -35,6 +37,7 @@ import {
   useGetIcons,
   RequestState as IconsRequestState,
 } from "./hooks/useGetIcons";
+import { AccountTabsContext } from "./contexts/activeTabContext";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
@@ -46,6 +49,8 @@ export const Account = () => {
   const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const [selectedAsset, setSelectedAsset] = useState("");
+  const { activeTab } = useContext(AccountTabsContext);
+
   const isFullscreenModeEnabled = isFullscreenMode();
   const {
     state: accountData,
@@ -267,19 +272,29 @@ export const Account = () => {
             </div>
           )}
 
-          {resolvedData?.balances?.isFunded && !hasError && (
-            <div
-              className="AccountView__assets-wrapper"
-              data-testid="account-assets"
-            >
-              <AccountAssets
-                sortedBalances={resolvedData.balances.balances}
-                assetPrices={tokenPrices}
-                assetIcons={resolvedIcons}
-                setSelectedAsset={setSelectedAsset}
-              />
-            </div>
-          )}
+          <MultiPaneSlider
+            activeIndex={activeTab}
+            panes={[
+              resolvedData?.balances?.isFunded && !hasError && (
+                <div
+                  className="AccountView__assets-wrapper"
+                  data-testid="account-assets"
+                >
+                  <AccountAssets
+                    sortedBalances={resolvedData.balances.balances}
+                    assetPrices={tokenPrices}
+                    assetIcons={resolvedIcons}
+                    setSelectedAsset={setSelectedAsset}
+                  />
+                </div>
+              ),
+              <div data-testid="account-collectibles">
+                <AccountCollectibles
+                  collections={resolvedData?.collectibles?.collections || []}
+                />
+              </div>,
+            ]}
+          />
         </div>
       </View.Content>
       {!resolvedData?.balances?.isFunded &&

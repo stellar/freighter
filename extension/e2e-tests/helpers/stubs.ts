@@ -360,3 +360,289 @@ export const stubAccountHistory = async (page: Page) => {
     await route.fulfill({ json });
   });
 };
+
+export const stubCollectibles = async (page: Page) => {
+  await page.route("**/tokenMetadata/1", async (route) => {
+    const json = {
+      name: "Stellar Frog 1",
+      description: "This is a test frog",
+      image:
+        "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
+      attributes: [
+        {
+          traitType: "Background",
+          value: "Green",
+        },
+      ],
+      external_url: "https://nftcalendar.io/token/1",
+    };
+    await route.fulfill({ json });
+  });
+  await page.route("**/tokenMetadata/2", async (route) => {
+    const json = {
+      name: "Stellar Frog 2",
+      description: "This is a test frog 2",
+      image:
+        "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg",
+      attributes: [
+        {
+          traitType: "Background",
+          value: "Green",
+        },
+      ],
+      external_url: "https://nftcalendar.io/token/1",
+    };
+    await route.fulfill({ json });
+  });
+  await page.route("**/tokenMetadata/3", async (route) => {
+    const json = {
+      name: "Stellar Frog 3",
+      description: "This is a test frog 3",
+      image:
+        "https://nftcalendar.io/storage/uploads/events/2023/8/5kFeYwNfhpUST3TsSoLxm7FaGY1ljwLRgfZ5gQnV.jpg",
+      attributes: [
+        {
+          traitType: "Background",
+          value: "Blue",
+        },
+      ],
+      external_url: "https://nftcalendar.io/token/3",
+    };
+    await route.fulfill({ json });
+  });
+  await page.route("**/tokenMetadata/102510", async (route) => {
+    const json = {
+      name: "Soroban Domain 1",
+      description: "This is a test domain 1",
+      image:
+        "https://nftcalendar.io/storage/uploads/events/2025/7/Hdqv6YNVErVCmYlwobFVYfS5BiH19ferUgQova7Z.webp",
+      attributes: [
+        {
+          traitType: "Background",
+          value: "Green",
+        },
+      ],
+      external_url: "https://nftcalendar.io/token/102510",
+    };
+    await route.fulfill({ json });
+  });
+  await page.route("**/tokenMetadata/102589", async (route) => {
+    const json = {
+      name: "Soroban Domain 2",
+      description: "This is a test domain 2",
+      image:
+        "https://nftcalendar.io/storage/uploads/events/2025/7/MkaASwOL8VA3I5B2iIfCcNGT29vGBp4YZIJgmjzq.jpg",
+      attributes: [
+        {
+          traitType: "Background",
+          value: "Red",
+        },
+      ],
+      external_url: "https://nftcalendar.io/token/102589",
+    };
+    await route.fulfill({ json });
+  });
+  await page.route("**/tokenMetadata/111", async (route) => {
+    const json = {
+      name: "Future Monkey 1",
+      description: "This is a test monkey 1",
+      image:
+        "https://nftcalendar.io/storage/uploads/events/2025/3/oUfeUrSj3KcVnjColyfnS5ICYuqzDbiuqQP4qLIz.png",
+      attributes: [
+        {
+          traitType: "Background",
+          value: "Blue",
+        },
+      ],
+      external_url: "https://nftcalendar.io/token/111",
+    };
+    await route.fulfill({ json });
+  });
+  await page.route("**/collectibles**", async (route) => {
+    const json = {
+      data: {
+        collections: [
+          // Stellar Frogs Collection
+          {
+            collection: {
+              address:
+                "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA", // Using XLM contract address for testing
+              name: "Stellar Frogs",
+              symbol: "SFROG",
+              collectibles: [
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "1",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/1",
+                },
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "2",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/2",
+                },
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "3",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/3",
+                },
+              ],
+            },
+          },
+          // Soroban Domains Collection
+          {
+            collection: {
+              address: "CCCSorobanDomainsCollection",
+              name: "Soroban Domains",
+              symbol: "SDOM",
+              collectibles: [
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "102510",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/102510",
+                },
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "102589",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/102589",
+                },
+              ],
+            },
+          },
+          // Future Monkeys Collection
+          {
+            collection: {
+              address: "CCCFutureMonkeysCollection",
+              name: "Future Monkeys",
+              symbol: "FMONK",
+              collectibles: [
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "111",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/111",
+                },
+              ],
+            },
+          },
+        ],
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
+export const stubCollectiblesUnsuccessfulMetadata = async (page: Page) => {
+  await page.route("**/tokenMetadata/1", async (route) => {
+    const json = {
+      name: "Stellar Frog 1",
+      description: "This is a test frog",
+      image:
+        "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
+      attributes: [
+        {
+          traitType: "Background",
+          value: "Green",
+        },
+      ],
+      external_url: "https://nftcalendar.io/token/1",
+    };
+    await route.fulfill({ json });
+  });
+  await page.route("**/tokenMetadata/2", async (route) => {
+    const json = {
+      name: "Stellar Frog 2",
+      description: "This is a test frog 2",
+      image:
+        "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg",
+      attributes: [
+        {
+          traitType: "Background",
+          value: "Green",
+        },
+      ],
+      external_url: "https://nftcalendar.io/token/1",
+    };
+    await route.fulfill({ json });
+  });
+  await page.route("**/tokenMetadata/3", async (route) => {
+    const json = {};
+    await route.fulfill({ json, status: 404 });
+  });
+
+  await page.route("**/collectibles**", async (route) => {
+    const json = {
+      data: {
+        collections: [
+          // Stellar Frogs Collection
+          {
+            collection: {
+              address:
+                "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA", // Using XLM contract address for testing
+              name: "Stellar Frogs",
+              symbol: "SFROG",
+              collectibles: [
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "1",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/1",
+                },
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "2",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/2",
+                },
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "3",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/3",
+                },
+              ],
+            },
+          },
+        ],
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
+export const stubMemoRequiredAccounts = async (
+  page: Page | BrowserContext,
+  memoRequiredAddress?: string,
+) => {
+  await page.route("**/explorer/directory**", async (route) => {
+    const url = route.request().url();
+    // Match the memo-required endpoint specifically by checking query params
+    const parsedUrl = new URL(url);
+    const tags = parsedUrl.searchParams.getAll("tag[]");
+    if (
+      tags.includes("memo-required") ||
+      url.includes("memo-required") ||
+      url.includes("tag[]=memo-required")
+    ) {
+      const json = {
+        _embedded: {
+          records: memoRequiredAddress
+            ? [
+                {
+                  address: memoRequiredAddress,
+                  tags: ["memo-required"],
+                },
+              ]
+            : [],
+        },
+      };
+      await route.fulfill({ json });
+    } else {
+      await route.continue();
+    }
+  });
+};

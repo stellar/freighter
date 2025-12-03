@@ -1,4 +1,5 @@
 import StellarHDWallet from "stellar-hd-wallet";
+import { Page } from "@playwright/test";
 import { expect } from "../test-fixtures";
 import type { Page } from "@playwright/test";
 

@@ -21,16 +21,6 @@ export const test = base.extend<{
       locale: "en-US", // Set locale to English
     });
 
-    // Set accept-language header to English for all requests
-    await context.setExtraHTTPHeaders({
-      "Accept-Language": "en-US,en;q=0.9",
-    });
-
-    // Mock metrics endpoint to prevent fetch failures in tests
-    await context.route("**/api.amplitude.com/**", async (route) => {
-      await route.fulfill({ status: 200, body: JSON.stringify({}) });
-    });
-
     await use(context);
     await context.close();
   },

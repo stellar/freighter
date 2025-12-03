@@ -1,0 +1,17 @@
+@use "../../../styles/utils.scss" as *;
+
+.AccountTabs {
+  display: flex;
+  gap: pxToRem(12px);
+  padding: pxToRem(12px) 0;
+  text-transform: capitalize;
+
+  &__tab-item {
+    color: var(--sds-clr-gray-11);
+    cursor: pointer;
+    font-weight: var(--sds-fw-medium);
+    &--active {
+      color: var(--sds-clr-gray-12);
+    }
+  }
+}
