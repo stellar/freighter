@@ -34,6 +34,7 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { rejectAuthEntry, signEntry } from "popup/ducks/access";
+import { publicKeySelector } from "popup/ducks/accountServices";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { getSiteFavicon } from "popup/helpers/getSiteFavicon";
@@ -58,6 +59,7 @@ export const SignAuthEntry = () => {
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
   });
+  const publicKey = useSelector(publicKeySelector);
 
   const { state: signAuthEntryData, fetchData } =
     useGetSignAuthEntryData(accountToSign);
@@ -110,8 +112,6 @@ export const SignAuthEntry = () => {
       state: signAuthEntryData.state,
     });
   }
-
-  const publicKey = signAuthEntryData.data?.publicKey!;
 
   if (entryNetworkPassphrase && entryNetworkPassphrase !== networkPassphrase) {
     return (

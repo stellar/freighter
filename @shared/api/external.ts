@@ -68,34 +68,19 @@ export const submitToken = async (args: {
 
 export const submitTransaction = async (
   transactionXdr: string,
-  opts?:
-    | string
-    | {
-        accountToSign?: string;
-        networkPassphrase?: string;
-      },
-  accountToSign?: string,
+  opts?: {
+    address?: string;
+    networkPassphrase?: string;
+  },
 ): Promise<{
   signedTransaction: string;
   signerAddress: string;
   error?: FreighterApiError;
 }> => {
   let network;
-  let _accountToSign;
-  let networkPassphrase;
 
-  /* 
-  As of v1.3.0, this method now accepts an object as its second param. 
-  Previously, it accepted optional second and third string parameters.
-  This logic maintains backwards compatibility for older versions
-  */
-  if (typeof opts === "object") {
-    _accountToSign = opts.accountToSign;
-    networkPassphrase = opts.networkPassphrase;
-  } else {
-    network = opts;
-    _accountToSign = accountToSign;
-  }
+  const _accountToSign = opts?.address;
+  const networkPassphrase = opts?.networkPassphrase;
 
   let response;
   try {
