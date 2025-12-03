@@ -1075,12 +1075,31 @@ test("Send payment shows Add Memo after cancelling review and returning to memo-
   // Cancel review
   await page.getByText("Cancel").click();
 
+  // Wait for review sheet to close completely
+  await expect(page.getByText("You are sending")).not.toBeVisible({
+    timeout: 5000,
+  });
+
   // Verify we're back on the send amount page
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  // Go back to review again
-  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
-  await reviewSendButton.click({ force: true });
+  // Ensure amount is still set after cancelling
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("1");
+
+  // Wait a moment for UI to stabilize after modal closes
+  await page.waitForTimeout(300);
+
+  // Re-query the button after cancelling (button reference might be stale)
+  // Wait for button to be visible and enabled
+  await expect(page.getByTestId("send-amount-btn-continue")).toBeVisible({
+    timeout: 5000,
+  });
+  await expect(page.getByTestId("send-amount-btn-continue")).toBeEnabled({
+    timeout: 10000,
+  });
+
+  // Click the button to open review again
+  await page.getByTestId("send-amount-btn-continue").click({ force: true });
 
   // Wait for review sheet to open
   await expect(page.getByText("You are sending")).toBeVisible({
