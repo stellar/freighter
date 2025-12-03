@@ -34,6 +34,7 @@ jobs:
       - run: yarn && yarn build:freighter-api
       - name: Publish npm package
         run: |
+          cd @stellar/freighter-api
           npm publish --access public --tag beta
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
