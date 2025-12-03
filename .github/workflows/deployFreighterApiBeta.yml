@@ -26,6 +26,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          registry-url: "https://registry.npmjs.org"
+          always-auth: true
       - name: Version npm package
         run: |
           cd @stellar/freighter-api
