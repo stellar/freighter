@@ -251,6 +251,7 @@
     display: flex;
     margin-top: pxToRem(8px);
     gap: pxToRem(12px);
+    justify-content: center;
     padding-bottom: pxToRem(24px);
 
     &__column {
