@@ -26,6 +26,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          registry-url: "https://registry.npmjs.org"
+          always-auth: true
       - name: Version npm package
         run: |
           cd @stellar/freighter-api
@@ -34,6 +36,7 @@ jobs:
       - run: yarn && yarn build:freighter-api
       - name: Publish npm package
         run: |
+          cd @stellar/freighter-api
           npm publish --access public --tag beta
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
