@@ -179,9 +179,10 @@ const getBuiltTx = async (
       .addOperation(operation)
       .setTimeout(transactionTimeout);
 
-    // Don't add memo if destination is a muxed account (memo is encoded in the muxed address)
-    const isRecipientMuxed = isMuxedAccount(destination);
-    if (memo && !isRecipientMuxed) {
+    // For classic transactions, always add memo if provided
+    // Classic transactions support both muxed destination AND memo
+    // (Only Soroban transactions with muxed addresses encode memo in the address)
+    if (memo) {
       transaction.addMemo(Memo.text(memo));
     }
 

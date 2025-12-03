@@ -17,6 +17,7 @@ import {
   truncatedFedAddress,
   truncatedPublicKey,
 } from "helpers/stellar";
+import { isSorobanTransaction } from "popup/helpers/soroban";
 
 import { SimulateTxData } from "popup/components/sendPayment/SendAmount/hooks/useSimulateTxData";
 import { View } from "popup/basics/layout/View";
@@ -75,7 +76,7 @@ export const ReviewTx = ({
 
   const {
     hardwareWalletData: { status: hwStatus },
-    transactionData: { destination, memo, federationAddress },
+    transactionData: { destination, memo, federationAddress, isToken },
   } = submission;
 
   const asset = getAssetFromCanonical(srcAsset);
@@ -85,6 +86,12 @@ export const ReviewTx = ({
     ? truncatedFedAddress(federationAddress)
     : truncatedPublicKey(destination);
   const isRecipientMuxed = destination ? isMuxedAccount(destination) : false;
+
+  // Check if this is a Soroban transaction
+  const isSorobanTx = isSorobanTransaction({
+    recipientAddress: destination,
+    isToken,
+  });
 
   if (simulationState.state === RequestState.ERROR) {
     return (
@@ -204,7 +211,9 @@ export const ReviewTx = ({
                   )}
                 </div>
                 <div className="ReviewTx__Details">
-                  {!isRecipientMuxed && (
+                  {/* Hide memo row only for Soroban transactions with muxed addresses */}
+                  {/* Normal transactions support M address + memo */}
+                  {!(isRecipientMuxed && isSorobanTx) && (
                     <div className="ReviewTx__Details__Row">
                       <div className="ReviewTx__Details__Row__Title">
                         <Icon.File02 />

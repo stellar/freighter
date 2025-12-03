@@ -20,7 +20,11 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
-import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
+import {
+  getAssetDecimals,
+  getAvailableBalance,
+  isSorobanTransaction,
+} from "popup/helpers/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   cleanAmount,
@@ -148,6 +152,34 @@ export const SendAmount = ({
     [destination],
   );
 
+  // Get selected balance for Soroban check
+  const selectedBalance = React.useMemo(() => {
+    if (
+      !sendAmountData.data ||
+      sendAmountData.data.type === AppDataType.REROUTE ||
+      !("userBalances" in sendAmountData.data)
+    ) {
+      return undefined;
+    }
+    const sendData = sendAmountData.data;
+    return findAssetBalance(
+      sendData.userBalances.balances,
+      getAssetFromCanonical(asset),
+    );
+  }, [asset, sendAmountData.data]);
+
+  // Check if this is a Soroban transaction
+  const isSorobanTx = React.useMemo(
+    () =>
+      isSorobanTransaction({
+        selectedBalance,
+        recipientAddress: destination,
+        isToken,
+        contractId,
+      }),
+    [selectedBalance, destination, isToken, contractId],
+  );
+
   // Check if contract supports muxed addresses when sending custom token to M address
   // Must be before conditional returns
   React.useEffect(() => {
@@ -185,15 +217,17 @@ export const SendAmount = ({
   );
 
   // Get memo disabled message - must be before conditional returns
+  // Only disable memo for Soroban transactions with muxed addresses
+  // Classic transactions can have both muxed destination AND memo
   const memoDisabledMessage = React.useMemo(() => {
     if (isMuxedAddressWithoutMemoSupport) {
       return t("Memo is not supported for this operation");
     }
-    if (isRecipientMuxed) {
+    if (isRecipientMuxed && isSorobanTx) {
       return t("Memo is disabled for this transaction");
     }
     return undefined;
-  }, [isMuxedAddressWithoutMemoSupport, isRecipientMuxed, t]);
+  }, [isMuxedAddressWithoutMemoSupport, isRecipientMuxed, isSorobanTx, t]);
 
   const handleContinue = async () => {
     const amount = inputType === "crypto" ? formik.values.amount : priceValue!;
@@ -680,7 +714,10 @@ export const SendAmount = ({
                 dispatch(saveMemo(memo));
                 setIsEditingMemo(false);
               }}
-              disabled={isRecipientMuxed || isMuxedAddressWithoutMemoSupport}
+              disabled={
+                (isRecipientMuxed && isSorobanTx) ||
+                isMuxedAddressWithoutMemoSupport
+              }
               disabledMessage={memoDisabledMessage}
             />
           </div>
