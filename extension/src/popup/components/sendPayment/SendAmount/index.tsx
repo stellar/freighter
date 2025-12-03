@@ -180,16 +180,13 @@ export const SendAmount = ({
     [selectedBalance, destination, isToken, contractId],
   );
 
-  // Check if contract supports muxed addresses when sending custom token to M address
+  // Check if contract supports muxed addresses (Soroban mux support) for all custom tokens
+  // Tokens without Soroban mux support don't support memo at all (neither G nor M addresses)
+  // Tokens with Soroban mux support allow memo for G addresses, but memo is encoded in M addresses
   // Must be before conditional returns
   React.useEffect(() => {
     const checkContract = async () => {
       if (!isToken || !destination || !contractId || !networkDetails) {
-        setContractSupportsMuxed(null);
-        return;
-      }
-
-      if (!isRecipientMuxed) {
         setContractSupportsMuxed(null);
         return;
       }
@@ -208,26 +205,39 @@ export const SendAmount = ({
     };
 
     checkContract();
-  }, [isToken, destination, contractId, networkDetails, isRecipientMuxed]);
+  }, [isToken, destination, contractId, networkDetails]);
 
-  // Determine if M address + contract doesn't support muxed - must be before conditional returns
+  // Determine if contract doesn't support muxed (without Soroban mux support) - memo disabled for all addresses
+  // Or if M address + contract supports muxed (with Soroban mux support) - memo disabled (encoded in address)
   const isMuxedAddressWithoutMemoSupport = React.useMemo(
     () => isRecipientMuxed && isToken && contractSupportsMuxed === false,
     [isRecipientMuxed, isToken, contractSupportsMuxed],
   );
 
   // Get memo disabled message - must be before conditional returns
-  // Only disable memo for Soroban transactions with muxed addresses
-  // Classic transactions can have both muxed destination AND memo
+  // Tokens without Soroban mux support (contractSupportsMuxed === false): memo disabled for all addresses
+  // Tokens with Soroban mux support: memo disabled only for M addresses (encoded in address)
+  // Classic transactions: memo always allowed (even with M addresses)
   const memoDisabledMessage = React.useMemo(() => {
     if (isMuxedAddressWithoutMemoSupport) {
+      return t("Memo is not supported for this operation");
+    }
+    // Tokens without Soroban mux support don't support memo at all (for any address)
+    if (isToken && contractSupportsMuxed === false) {
       return t("Memo is not supported for this operation");
     }
     if (isRecipientMuxed && isSorobanTx) {
       return t("Memo is disabled for this transaction");
     }
     return undefined;
-  }, [isMuxedAddressWithoutMemoSupport, isRecipientMuxed, isSorobanTx, t]);
+  }, [
+    isMuxedAddressWithoutMemoSupport,
+    isToken,
+    contractSupportsMuxed,
+    isRecipientMuxed,
+    isSorobanTx,
+    t,
+  ]);
 
   const handleContinue = async () => {
     const amount = inputType === "crypto" ? formik.values.amount : priceValue!;
@@ -716,7 +726,8 @@ export const SendAmount = ({
               }}
               disabled={
                 (isRecipientMuxed && isSorobanTx) ||
-                isMuxedAddressWithoutMemoSupport
+                isMuxedAddressWithoutMemoSupport ||
+                (isToken && contractSupportsMuxed === false)
               }
               disabledMessage={memoDisabledMessage}
             />

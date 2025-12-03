@@ -81,6 +81,41 @@ export const isSorobanTransaction = ({
   return false;
 };
 
+/**
+ * Extracts contract ID from a token ID string.
+ * Token ID format:
+ * - "native" for XLM
+ * - "CODE:ISSUER" for classic tokens
+ * - Contract address for Soroban tokens
+ * - "SYMBOL:CONTRACTID" for Soroban tokens with symbol
+ *
+ * @param tokenId - The token identifier string
+ * @returns Contract ID if the token is a Soroban token, undefined otherwise
+ */
+export const getContractIdFromTokenId = (
+  tokenId: string,
+): string | undefined => {
+  if (tokenId === "native") {
+    return undefined;
+  }
+
+  // Check if tokenId itself is a contract ID
+  if (isContractId(tokenId)) {
+    return tokenId;
+  }
+
+  // Check if it's SYMBOL:CONTRACTID format (Soroban token)
+  // Split by : and check if the second part is a contract ID
+  const parts = tokenId.split(":");
+  if (parts.length === 2 && isContractId(parts[1])) {
+    // This is a Soroban token in SYMBOL:CONTRACTID format
+    return parts[1];
+  }
+
+  // Classic token format: CODE:ISSUER (no contract ID)
+  return undefined;
+};
+
 export const SOROBAN_OPERATION_TYPES = [
   "invoke_host_function",
   "invokeHostFunction",

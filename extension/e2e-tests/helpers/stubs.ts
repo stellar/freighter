@@ -613,3 +613,60 @@ export const stubCollectiblesUnsuccessfulMetadata = async (page: Page) => {
     await route.fulfill({ json });
   });
 };
+
+/**
+ * Stubs contract spec API to simulate Soroban mux support (SEP-23) or lack thereof
+ * @param page - Playwright page or browser context
+ * @param contractId - Contract ID to stub
+ * @param supportsMuxed - Whether the contract supports muxed addresses (Soroban mux support)
+ */
+export const stubContractSpec = async (
+  page: Page | BrowserContext,
+  contractId: string,
+  supportsMuxed: boolean = false,
+) => {
+  await page.route("**/token-spec/**", async (route) => {
+    const url = route.request().url();
+    // Check if this request is for the contract we're stubbing
+    if (!url.includes(`/token-spec/${contractId}`)) {
+      await route.continue();
+      return;
+    }
+
+    const spec = supportsMuxed
+      ? {
+          definitions: {
+            transfer: {
+              properties: {
+                args: {
+                  properties: {
+                    to_muxed: {
+                      type: "object",
+                    },
+                  },
+                  required: ["to_muxed"],
+                },
+              },
+            },
+          },
+        }
+      : {
+          definitions: {
+            transfer: {
+              properties: {
+                args: {
+                  properties: {
+                    to: {
+                      type: "object",
+                    },
+                  },
+                  required: ["to"],
+                },
+              },
+            },
+          },
+        };
+
+    await route.fulfill({ json: spec });
+  });
+};
