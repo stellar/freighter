@@ -90,6 +90,50 @@ test("should sign transaction when allowed", async ({
   await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(SIGNED_TX);
 });
 
+// TODO: once freighter-api is updated in npm to fix signing address, this test should be unskipped
+test.skip("should sign transaction for a specific account when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
+  await loginToTestAccount({ page, extensionId });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  page.getByTestId("account-view-account-name").click();
+  page.getByText("Account 2").click();
+  await expect(page.getByTestId("account-header")).toBeVisible();
+  await allowDapp({ page });
+
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signTransaction",
+  );
+  await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Sign Transaction XDR").click();
+
+  const txPopupPromise = page.context().waitForEvent("page");
+  const txPopup = await txPopupPromise;
+
+  await expect(txPopup.getByText("Confirm Transaction")).toBeVisible();
+  await expect(txPopup.getByText("GDF3…ZEFY")).toBeVisible();
+
+  await txPopup.getByRole("button", { name: "Confirm" }).click();
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(SIGNED_TX);
+});
+
 // TODO: Add domain not allowed to SignTransaction when warning is redesigned
 test("should not sign transaction when not allowed", async ({
   page,
@@ -404,6 +448,55 @@ test("should sign message json when allowed", async ({
   await expect(pageTwo.getByRole("textbox").nth(4)).toHaveValue(
     "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
   );
+});
+
+test("should sign message for a specific account when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
+  await loginToTestAccount({ page, extensionId });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  page.getByTestId("account-view-account-name").click();
+  page.getByText("Account 2").click();
+  await expect(page.getByTestId("account-header")).toBeVisible();
+  await allowDapp({ page });
+
+  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo
+    .getByRole("textbox")
+    .nth(2)
+    .fill("GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY");
+  await pageTwo.getByText("Sign Message").click();
+
+  const popupPromise = page.context().waitForEvent("page");
+  const popup = await popupPromise;
+
+  await expect(popup.getByText("Sign message")).toBeVisible();
+  await expect(popup.getByText("GDF3…ZEFY")).toBeVisible();
+
+  await popup.getByRole("button", { name: "Confirm" }).click();
+
+  await expect(pageTwo.getByRole("textbox").nth(4)).toHaveValue(
+    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+  );
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(SIGNED_MSG);
 });
 
 // unlike sign tx and add token, if a dapp is not allowed, it shows the connection request modal
