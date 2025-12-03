@@ -152,10 +152,6 @@ export interface ExternalRequestAuthEntry extends ExternalRequestBase {
   entryXdr: string;
 }
 
-export interface ExternalRequestAllowedStatus extends ExternalRequestBase {
-  publicKey?: string;
-}
-
 export type ExternalRequest =
   | ExternalRequestToken
   | ExternalRequestTx

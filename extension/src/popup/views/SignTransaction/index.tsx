@@ -114,8 +114,6 @@ export const SignTransaction = () => {
     accountToSign,
   );
 
-  console.log(accountToSign);
-
   const {
     isConfirming,
     isPasswordRequired,
