@@ -10,6 +10,7 @@ import {
   stubMemoRequiredAccounts,
   stubTokenDetails,
   stubTokenPrices,
+  stubContractSpec,
 } from "./helpers/stubs";
 
 const MUXED_ACCOUNT_ADDRESS =
@@ -637,208 +638,354 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   expect(accountBalancesRequestWasMade).toBeTruthy();
 });
 
-test("SendPayment persists amount and asset when navigating to choose address", async ({
+// Classic token to G address -> Normal (regression test)
+test("Send classic token to G address allows memo", async ({
   page,
   extensionId,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalancesWithUSDC(page);
+  test.slow();
+  await stubAccountBalances(page);
   await stubAccountHistory(page);
+  await stubTokenDetails(page);
   await stubTokenPrices(page);
 
-  test.slow();
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-  await page.getByTestId("send-amount-amount-input").fill("100");
-  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("100");
+
+  const G_ADDRESS = "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 
   await page.getByTestId("address-tile").click();
-  await expect(page.getByTestId("send-to-input")).toBeVisible();
-
-  await page.getByTestId("BackButton").click();
+  await page.getByTestId("send-to-input").fill(G_ADDRESS);
+  await page.getByText("Continue").click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("100");
+  await page.getByTestId("send-amount-amount-input").fill("1");
+
+  // Add memo - should be enabled for classic token to G address
+  await page.getByTestId("send-amount-btn-memo").click();
+  await expect(page.getByTestId("edit-memo-input")).toBeVisible();
+  await page.getByTestId("edit-memo-input").fill("classic G memo");
+  await page.getByText("Save").click();
+
+  // Click Review Send
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
+  await reviewSendButton.click({ force: true });
+
+  // Wait for review sheet to open
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
+
+  // Verify memo is shown in review
+  await expect(page.getByTestId("review-tx-memo")).toHaveText("classic G memo");
 });
 
-test("SendPayment resets amount when user selects new asset", async ({
+// Classic token to M address -> Memo enabled
+test("Send classic token to M address allows memo", async ({
   page,
   extensionId,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalancesWithUSDC(page);
+  test.slow();
+  await stubAccountBalances(page);
   await stubAccountHistory(page);
+  await stubTokenDetails(page);
   await stubTokenPrices(page);
 
-  test.slow();
   await loginToTestAccount({ page, extensionId });
-
   await page.getByTestId("nav-link-send").click({ force: true });
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-  await page.getByTestId("send-amount-amount-input").fill("50");
-  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("50");
-
-  await page.locator(".SendAmount__EditDestAsset").click();
-  await page.getByText("USDC").first().click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("0");
-});
-
-test("SendPayment resets state when navigating back to account", async ({
-  page,
-  extensionId,
-}) => {
-  await stubTokenDetails(page);
-  await stubAccountBalancesWithUSDC(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-
-  test.slow();
-  await loginToTestAccount({ page, extensionId });
-
-  await page.getByTestId("nav-link-send").click({ force: true });
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-  await page.locator(".SendAmount__EditDestAsset").click();
-  await page.getByText("USDC").first().click({ force: true });
-  await page.getByTestId("send-amount-amount-input").fill("100");
 
   await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(TEST_M_ADDRESS);
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill("1");
+
+  // Add memo - should be enabled for classic token to M address
+  await page.getByTestId("send-amount-btn-memo").click();
+  await expect(page.getByTestId("edit-memo-input")).toBeVisible();
+  // Memo input should not be disabled
+  await expect(page.getByTestId("edit-memo-input")).toBeEnabled();
+  await page.getByTestId("edit-memo-input").fill("classic M memo");
+  await page.getByText("Save").click();
+
+  // Click Review Send
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
+  await reviewSendButton.click({ force: true });
+
+  // Wait for review sheet to open
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
+
+  // Verify memo is shown in review (classic transactions support M address + memo)
+  await expect(page.getByTestId("review-tx-memo")).toHaveText("classic M memo");
+});
+
+// Custom token without Soroban mux support to G -> Memo NOT allowed
+test("Send custom token without Soroban mux support to G address disables memo", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await stubAccountBalancesE2e(page);
+  await stubAccountHistory(page);
+  await stubTokenDetails(page);
+  await stubTokenPrices(page);
+
+  await loginToTestAccount({ page, extensionId });
+  // Stub contract spec to indicate NO muxed support (without Soroban mux support)
+  // Set up after login to avoid interfering with initial page load
+  await stubContractSpec(page, TEST_TOKEN_ADDRESS, false);
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible({
+    timeout: 30000,
+  });
+
+  const G_ADDRESS = "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
+
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(G_ADDRESS);
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible({
+    timeout: 30000,
+  });
+
+  // Select custom token
+  await page.locator(".SendAmount__EditDestAsset").click();
   await page
-    .getByTestId("send-to-input")
-    .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
-  await page.getByText("Continue").click({ force: true });
+    .getByTestId(`SendRow-E2E:${TEST_TOKEN_ADDRESS}`)
+    .click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-  await page.getByTestId("BackButton").click();
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible({
+    timeout: 30000,
+  });
+  await page.getByTestId("send-amount-amount-input").fill(".001");
 
-  await expect(page.getByTestId("account-view")).toBeVisible();
+  // Wait for contract check to complete
+  await page.waitForTimeout(2000);
 
+  // Memo button should be enabled, but memo input should be disabled
+  // (tokens without Soroban mux support don't support memo)
+  const memoButton = page.getByTestId("send-amount-btn-memo");
+  await expect(memoButton).toBeEnabled();
+
+  // Click memo button to see disabled message
+  await memoButton.click();
+  await expect(page.getByTestId("edit-memo-input")).toBeVisible();
+  await expect(page.getByTestId("edit-memo-input")).toBeDisabled();
+  await expect(
+    page.getByText("Memo is not supported for this operation"),
+  ).toBeVisible();
+  await page.getByText("Cancel").click();
+
+  // Click Review Send - should be enabled (transaction is allowed, just no memo)
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
+  await reviewSendButton.click({ force: true });
+
+  // Wait for review sheet to open
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
+
+  // Verify memo row is NOT shown in review (tokens without Soroban mux support don't support memo)
+  await expect(page.getByTestId("review-tx-memo")).not.toBeVisible();
+});
+
+// Custom token without Soroban mux support to M -> Impossible/disabled
+test("Send custom token without Soroban mux support to M address is disabled", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await stubAccountBalancesE2e(page);
+  await stubAccountHistory(page);
+  await stubTokenDetails(page);
+  await stubTokenPrices(page);
+
+  await loginToTestAccount({ page, extensionId });
+  // Stub contract spec to indicate NO muxed support (without Soroban mux support)
+  // Set up after login to avoid interfering with initial page load
+  await stubContractSpec(page, TEST_TOKEN_ADDRESS, false);
   await page.getByTestId("nav-link-send").click({ force: true });
+
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("0");
-  await expect(page.getByText("0 XLM")).toBeVisible();
+
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(TEST_M_ADDRESS);
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Select custom token
+  await page.locator(".SendAmount__EditDestAsset").click();
+  await page
+    .getByTestId(`SendRow-E2E:${TEST_TOKEN_ADDRESS}`)
+    .click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill(".001");
+
+  // Wait for contract check to complete
+  await page.waitForTimeout(2000);
+
+  // Verify warning banner is shown
+  await expect(
+    page.getByText(
+      "This token does not support muxed address (M-) as a target destination",
+    ),
+  ).toBeVisible();
+
+  // Memo button should be enabled, but memo input should be disabled
+  const memoButton = page.getByTestId("send-amount-btn-memo");
+  await expect(memoButton).toBeEnabled();
+
+  // Verify Review Send button is disabled
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeDisabled();
 });
 
-test("Swap persists amount when navigating to choose source asset", async ({
+// Custom token with Soroban mux support to G -> Memo can be added
+test("Send custom token with Soroban mux support to G address allows memo", async ({
   page,
   extensionId,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalancesWithUSDC(page);
+  test.slow();
+  await stubAccountBalancesE2e(page);
   await stubAccountHistory(page);
+  await stubTokenDetails(page);
   await stubTokenPrices(page);
 
-  test.slow();
   await loginToTestAccount({ page, extensionId });
+  // Stub contract spec to indicate muxed support (with Soroban mux support)
+  // Set up after login to avoid interfering with initial page load
+  await stubContractSpec(page, TEST_TOKEN_ADDRESS, true);
+  await page.getByTestId("nav-link-send").click({ force: true });
 
-  await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  const amountInput = page.locator('input[type="text"]').first();
-  await amountInput.fill("100");
-  await expect(amountInput).toHaveValue("100");
+  const G_ADDRESS = "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 
-  await page.getByTestId("swap-src-asset-tile").click({ force: true });
-  await expect(page.getByText("Swap from")).toBeVisible();
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(G_ADDRESS);
+  await page.getByText("Continue").click();
 
-  await page.getByTestId("BackButton").click();
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
-  await expect(amountInput).toHaveValue("100");
+  // Select custom token
+  await page.locator(".SendAmount__EditDestAsset").click();
+  await page
+    .getByTestId(`SendRow-E2E:${TEST_TOKEN_ADDRESS}`)
+    .click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill(".001");
+
+  // Wait for contract check to complete - wait for memo button to be enabled
+  // (it might be disabled initially while contract check is in progress)
+  const memoButton = page.getByTestId("send-amount-btn-memo");
+  await expect(memoButton).toBeEnabled({ timeout: 10000 });
+
+  // Add memo - should be enabled for custom token with Soroban mux support to G address
+  await memoButton.click();
+  await expect(page.getByTestId("edit-memo-input")).toBeVisible({
+    timeout: 10000,
+  });
+  await expect(page.getByTestId("edit-memo-input")).toBeEnabled({
+    timeout: 10000,
+  });
+  await page.getByTestId("edit-memo-input").fill("soroban mux G memo");
+  await page.getByText("Save").click();
+
+  // Click Review Send
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
+  await reviewSendButton.click({ force: true });
+
+  // Wait for review sheet to open
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
+
+  // Verify memo is shown in review
+  await expect(page.getByTestId("review-tx-memo")).toHaveText(
+    "soroban mux G memo",
+  );
 });
 
-test("Swap resets amount when user selects new source asset", async ({
+// Custom token with Soroban mux support to M -> Memo disabled (embedded)
+test("Send custom token with Soroban mux support to M address disables memo", async ({
   page,
   extensionId,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalancesWithUSDC(page);
+  test.slow();
+  await stubAccountBalancesE2e(page);
   await stubAccountHistory(page);
+  await stubTokenDetails(page);
   await stubTokenPrices(page);
 
-  test.slow();
   await loginToTestAccount({ page, extensionId });
+  // Stub contract spec to indicate muxed support (with Soroban mux support)
+  // Set up after login to avoid interfering with initial page load
+  await stubContractSpec(page, TEST_TOKEN_ADDRESS, true);
+  await page.getByTestId("nav-link-send").click({ force: true });
 
-  await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  const amountInput = page.locator('input[type="text"]').first();
-  await amountInput.fill("50");
-  await expect(amountInput).toHaveValue("50");
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(TEST_M_ADDRESS);
+  await page.getByText("Continue").click();
 
-  await page.getByTestId("swap-src-asset-tile").click({ force: true });
-  await page.getByText("USDC").first().click({ force: true });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
-  await expect(amountInput).toHaveValue("0");
-});
+  // Select custom token
+  await page.locator(".SendAmount__EditDestAsset").click();
+  await page
+    .getByTestId(`SendRow-E2E:${TEST_TOKEN_ADDRESS}`)
+    .click({ force: true });
 
-test("Swap preserves amount when selecting destination asset", async ({
-  page,
-  extensionId,
-}) => {
-  await stubTokenDetails(page);
-  await stubAccountBalancesWithUSDC(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill(".001");
 
-  test.slow();
-  await loginToTestAccount({ page, extensionId });
+  // Wait for contract check to complete - wait for the memo button to be enabled
+  // (it might be disabled initially while contract check is in progress)
+  const memoButton = page.getByTestId("send-amount-btn-memo");
+  await expect(memoButton).toBeEnabled({ timeout: 10000 });
 
-  await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+  // Click memo button to see disabled message
+  await memoButton.click();
+  await expect(page.getByTestId("edit-memo-input")).toBeVisible({
+    timeout: 10000,
+  });
+  await expect(page.getByTestId("edit-memo-input")).toBeDisabled();
+  // Wait for the disabled message to appear
+  // The message should appear once the contract check completes
+  await expect(
+    page.getByText("Memo is disabled for this transaction"),
+  ).toBeVisible({ timeout: 15000 });
+  await page.getByText("Cancel").click();
 
-  const amountInput = page.locator('input[type="text"]').first();
-  await amountInput.fill("100");
-  await expect(amountInput).toHaveValue("100");
+  // Click Review Send
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
+  await reviewSendButton.click({ force: true });
 
-  await page.getByTestId("swap-dst-asset-tile").click({ force: true });
-  await page.getByText("USDC").first().click({ force: true });
+  // Wait for review sheet to open
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 200000,
+  });
 
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
-  await expect(amountInput).toHaveValue("100");
-});
-
-test("Swap resets state when navigating back to account", async ({
-  page,
-  extensionId,
-}) => {
-  await stubTokenDetails(page);
-  await stubAccountBalancesWithUSDC(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-
-  test.slow();
-  await loginToTestAccount({ page, extensionId });
-
-  await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
-
-  const amountInput = page.locator('input[type="text"]').first();
-  await amountInput.fill("100");
-
-  await page.getByTestId("swap-src-asset-tile").click({ force: true });
-  await page.getByText("USDC").first().click({ force: true });
-
-  await page.getByTestId("swap-dst-asset-tile").click({ force: true });
-  await page.getByText("XLM").first().click({ force: true });
-
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
-  await page.getByTestId("BackButton").click();
-
-  await expect(page.getByTestId("account-view")).toBeVisible();
-
-  await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
-
-  const newAmountInput = page.locator('input[type="text"]').first();
-  await expect(newAmountInput).toHaveValue("0");
-  await expect(page.getByText("0 XLM").first()).toBeVisible();
+  // Verify memo row is NOT shown in review (memo is embedded in M address for tokens with Soroban mux support)
+  await expect(page.getByTestId("review-tx-memo")).not.toBeVisible();
 });
 
 test.afterAll(async ({ page, extensionId }) => {

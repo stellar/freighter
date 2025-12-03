@@ -17,7 +17,11 @@ import {
   truncatedFedAddress,
   truncatedPublicKey,
 } from "helpers/stellar";
-import { isSorobanTransaction } from "popup/helpers/soroban";
+import {
+  isSorobanTransaction,
+  getContractIdFromTokenId,
+} from "popup/helpers/soroban";
+import { checkContractMuxedSupport } from "helpers/muxedAddress";
 
 import { SimulateTxData } from "popup/components/sendPayment/SendAmount/hooks/useSimulateTxData";
 import { View } from "popup/basics/layout/View";
@@ -77,6 +81,9 @@ export const ReviewTx = ({
   const isHardwareWallet = !!hardwareWalletType;
 
   const [activePaneIndex, setActivePaneIndex] = useState(0);
+  const [contractSupportsMuxed, setContractSupportsMuxed] = useState<
+    boolean | null
+  >(null);
 
   const {
     hardwareWalletData: { status: hwStatus },
@@ -99,10 +106,67 @@ export const ReviewTx = ({
     : truncatedPublicKey(destination);
   const isRecipientMuxed = destination ? isMuxedAccount(destination) : false;
 
+  // Extract contract ID from asset for custom tokens
+  const contractId = React.useMemo(() => {
+    if (!isToken) {
+      return undefined;
+    }
+    return getContractIdFromTokenId(srcAsset);
+  }, [isToken, srcAsset]);
+
+  // Check if contract supports muxed addresses (Soroban mux support) for custom tokens
+  React.useEffect(() => {
+    const checkContract = async () => {
+      if (!isToken || !destination || !contractId || !networkDetails) {
+        setContractSupportsMuxed(null);
+        return;
+      }
+
+      try {
+        const supportsMuxed = await checkContractMuxedSupport({
+          contractId,
+          networkDetails,
+        });
+        setContractSupportsMuxed(supportsMuxed);
+      } catch (error) {
+        // On error, assume no support for safety
+        console.error("Error checking contract muxed support:", error);
+        setContractSupportsMuxed(false);
+      }
+    };
+
+    checkContract();
+  }, [isToken, destination, contractId, networkDetails]);
+
+  // Check if contract supports muxed addresses (Soroban mux support) for custom tokens
+  React.useEffect(() => {
+    const checkContract = async () => {
+      if (!isToken || !destination || !contractId || !networkDetails) {
+        setContractSupportsMuxed(null);
+        return;
+      }
+
+      try {
+        const supportsMuxed = await checkContractMuxedSupport({
+          contractId,
+          networkDetails,
+        });
+        setContractSupportsMuxed(supportsMuxed);
+      } catch (error) {
+        // On error, assume no support for safety
+        console.error("Error checking contract muxed support:", error);
+        setContractSupportsMuxed(false);
+      }
+    };
+
+    checkContract();
+  }, [isToken, destination, contractId, networkDetails]);
+
   // Check if this is a Soroban transaction
   const isSorobanTx = isSorobanTransaction({
     recipientAddress: destination,
     isToken,
+    contractId,
   });
 
   if (simulationState.state === RequestState.ERROR) {
@@ -226,9 +290,14 @@ export const ReviewTx = ({
                   )}
                 </div>
                 <div className="ReviewTx__Details">
-                  {/* Hide memo row only for Soroban transactions with muxed addresses */}
-                  {/* Normal transactions support M address + memo */}
-                  {!(isRecipientMuxed && isSorobanTx) && (
+                  {/* Hide memo row for:
+                      - Soroban transactions with muxed addresses (memo encoded in address)
+                      - Tokens without Soroban mux support (contractSupportsMuxed === false) - no memo support
+                      Normal transactions support M address + memo */}
+                  {!(
+                    (isRecipientMuxed && isSorobanTx) ||
+                    (isToken && contractSupportsMuxed === false)
+                  ) && (
                     <div className="ReviewTx__Details__Row">
                       <div className="ReviewTx__Details__Row__Title">
                         <Icon.File02 />

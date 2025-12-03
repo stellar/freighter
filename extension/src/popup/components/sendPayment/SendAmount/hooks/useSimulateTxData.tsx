@@ -410,15 +410,24 @@ function useSimulateTxData({
             transactionMemo: memo,
             contractSupportsMuxed,
           });
-          // For Soroban transfers with muxed support, don't pass memo separately
-          // (it's encoded in the muxed address)
+          // Tokens without Soroban mux support don't support memo at all
+          // Tokens with Soroban mux support: memo is encoded in muxed address (if M address) or passed separately (if G address)
           // Send empty string instead of undefined to satisfy backend API requirement
-          if (contractSupportsMuxed) {
+          if (!contractSupportsMuxed) {
+            // Without Soroban mux support: no memo support
             sorobanMemo = "";
+          } else if (contractSupportsMuxed) {
+            // With Soroban mux support: memo encoded in muxed address if M address, otherwise passed separately
+            const isRecipientMuxed = isMuxedAccount(destination);
+            if (isRecipientMuxed) {
+              sorobanMemo = "";
+            }
           }
         } catch (error) {
           // If we can't determine muxed destination, use original destination
+          // On error, assume no memo support for safety
           console.error("Error determining muxed destination:", error);
+          sorobanMemo = "";
         }
       }
 
