@@ -287,3 +287,138 @@ export const mockSelector = <T,>(
 ) => {
   (selector as unknown as jest.Mock).mockImplementation(implementation);
 };
+
+export const mockCollectibles = [
+  // Stellar Frogs Collection
+  {
+    collection: {
+      address: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA", // Using XLM contract address for testing
+      name: "Stellar Frogs",
+      symbol: "SFROG",
+      collectibles: [
+        {
+          owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+          tokenId: "1",
+          tokenUri: "https://nftcalendar.io/token/1",
+          metadata: {
+            image:
+              "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
+            name: "Stellar Frog 1",
+            description: "This is a test frog",
+            attributes: [
+              {
+                traitType: "Background",
+                value: "Green",
+              },
+            ],
+          },
+        },
+        {
+          owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+          tokenId: "2",
+          tokenUri: "https://nftcalendar.io/token/2",
+          metadata: {
+            image:
+              "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg",
+            name: "Stellar Frog 2",
+            description: "This is a test frog",
+            attributes: [
+              {
+                traitType: "Background",
+                value: "Red",
+              },
+            ],
+          },
+        },
+        {
+          owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+          tokenId: "3",
+          tokenUri: "https://nftcalendar.io/token/3",
+          metadata: {
+            image:
+              "https://nftcalendar.io/storage/uploads/events/2023/8/5kFeYwNfhpUST3TsSoLxm7FaGY1ljwLRgfZ5gQnV.jpg",
+            name: "Stellar Frog 3",
+            description: "This is a test frog",
+            attributes: [
+              {
+                traitType: "Background",
+                value: "Blue",
+              },
+            ],
+          },
+        },
+      ],
+    },
+  },
+  // Soroban Domains Collection
+  {
+    collection: {
+      address: "CCCSorobanDomainsCollection",
+      name: "Soroban Domains",
+      symbol: "SDOM",
+      collectibles: [
+        {
+          owner: "CCCSorobanDomainsCollection",
+          tokenId: "102510",
+          tokenUri: "https://nftcalendar.io/token/102510",
+          metadata: {
+            image:
+              "https://nftcalendar.io/storage/uploads/events/2025/7/Hdqv6YNVErVCmYlwobFVYfS5BiH19ferUgQova7Z.webp",
+            name: "Soroban Domain 1",
+            description: "This is a test domain",
+            attributes: [
+              {
+                traitType: "Background",
+                value: "Green",
+              },
+            ],
+          },
+        },
+        {
+          owner: "CCCSorobanDomainsCollection",
+          tokenId: "102589",
+          tokenUri: "https://nftcalendar.io/token/102589",
+          metadata: {
+            image:
+              "https://nftcalendar.io/storage/uploads/events/2025/7/MkaASwOL8VA3I5B2iIfCcNGT29vGBp4YZIJgmjzq.jpg",
+            name: "Soroban Domain 2",
+            description: "This is a test domain",
+            attributes: [
+              {
+                traitType: "Background",
+                value: "Red",
+              },
+            ],
+          },
+        },
+      ],
+    },
+  },
+  // Future Monkeys Collection
+  {
+    collection: {
+      address: "CCCFutureMonkeysCollection",
+      name: "Future Monkeys",
+      symbol: "FMONK",
+      collectibles: [
+        {
+          owner: "CCCFutureMonkeysCollection",
+          tokenId: "111",
+          tokenUri: "https://nftcalendar.io/token/111",
+          metadata: {
+            image:
+              "https://nftcalendar.io/storage/uploads/events/2025/3/oUfeUrSj3KcVnjColyfnS5ICYuqzDbiuqQP4qLIz.png",
+            name: "Future Monkey 1",
+            description: "This is a test monkey",
+            attributes: [
+              {
+                traitType: "Background",
+                value: "Blue",
+              },
+            ],
+          },
+        },
+      ],
+    },
+  },
+];

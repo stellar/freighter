@@ -117,6 +117,7 @@ export interface Response {
   };
   hiddenAssets: Record<IssuerKey, AssetVisibility>;
   isOverwritingAccount: boolean;
+  isDismissed: boolean;
 }
 
 export interface MemoRequiredAccount {
@@ -402,4 +403,100 @@ export interface LedgerKeyAccounts {
   ledger_key_accounts: {
     [key: string]: LedgerKeyAccount;
   };
+}
+
+export interface AccountCollectionTrait {
+  name: string;
+  value: string;
+}
+
+export interface AccountCollectionItem {
+  collectionAddress: string;
+  collectionName: string;
+  tokenId: string;
+  name: string;
+  image: string;
+  description: string;
+  externalUrl: string;
+  traits: AccountCollectionTrait[];
+}
+
+export interface CollectibleResponse {
+  owner: string;
+  token_id: string;
+  token_uri: string;
+  metadata: CollectibleMetadata | null;
+}
+
+export interface Collectible {
+  owner: string;
+  tokenId: string;
+  tokenUri: string;
+  metadata: CollectibleMetadata | null;
+}
+
+/**
+ * Represents the JSON NFT metadata of a collectible
+ * @see https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0050.md#notes-on-name-symbol-and-token_uri
+ *
+ * @property {string} name - The name of the collectible
+ * @property {string} description - The description of the collectible
+ * @property {string} image - The image of the collectible
+ * @property {string} external_url - The external URL of the collectible
+ * @property {Object[]} attributes - The attributes of the collectible
+ */
+export type CollectibleMetadataResponse = {
+  name?: string;
+  description?: string;
+  image?: string;
+  external_url?: string;
+  attributes?: {
+    trait_type?: string;
+    value?: string | number;
+  }[];
+};
+
+export type CollectibleMetadata = {
+  name?: string;
+  description?: string;
+  image?: string;
+  externalUrl?: string;
+  attributes?: {
+    traitType?: string;
+    value?: string | number;
+  }[];
+};
+
+export interface CollectionResponse {
+  collection?: {
+    address: string;
+    name: string;
+    symbol: string;
+    collectibles: CollectibleResponse[];
+  };
+  error?: {
+    collection_address: string;
+    error_message: string;
+  };
+}
+
+export interface Collection {
+  collection?: {
+    address: string;
+    name: string;
+    symbol: string;
+    collectibles: Collectible[];
+  };
+  error?: {
+    collection_address: string;
+    error_message: string;
+  };
+}
+
+export interface CollectiblesResponse {
+  collections: CollectionResponse[];
+}
+
+export interface Collectibles {
+  collections: Collection[];
 }

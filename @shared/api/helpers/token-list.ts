@@ -53,10 +53,17 @@ export const schemaValidatedAssetList = async (
 export const getCombinedAssetListData = async ({
   networkDetails,
   assetsLists,
+  cachedAssetLists,
 }: {
   networkDetails: NetworkDetails;
   assetsLists: AssetsLists;
+  cachedAssetLists?: AssetListResponse[];
 }) => {
+  // If cached asset lists are provided and not empty, use them instead of fetching
+  if (cachedAssetLists?.length) {
+    return cachedAssetLists;
+  }
+
   let network = networkDetails.network;
 
   if (network === CUSTOM_NETWORK) {
@@ -86,9 +93,23 @@ export const getCombinedAssetListData = async ({
           res = await fetch(url);
         } catch (e) {
           captureException(`Failed to load asset list: ${url}`);
+          return null;
         }
 
-        return res?.json();
+        if (!res || !res.ok) {
+          const statusText = res?.status ? ` (${res.status})` : "";
+          captureException(`Failed to load asset list: ${url}${statusText}`);
+          return null;
+        }
+
+        try {
+          return await res.json();
+        } catch (e) {
+          captureException(
+            `Failed to parse asset list JSON: ${url} - ${JSON.stringify(e)}`,
+          );
+          return null;
+        }
       };
 
       promiseArr.push(fetchAndParse());
@@ -96,11 +117,11 @@ export const getCombinedAssetListData = async ({
   }
 
   const promiseRes =
-    await Promise.allSettled<Promise<AssetListResponse>>(promiseArr);
+    await Promise.allSettled<Promise<AssetListResponse | null>>(promiseArr);
 
   const assetListsData = [];
   for (const p of promiseRes) {
-    if (p.status === "fulfilled") {
+    if (p.status === "fulfilled" && p.value) {
       assetListsData.push(p.value);
     }
   }

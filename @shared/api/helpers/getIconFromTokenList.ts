@@ -2,7 +2,6 @@ import {
   AssetListReponseItem,
   AssetListResponse,
 } from "@shared/constants/soroban/asset-list";
-import { NetworkDetails } from "@shared/constants/stellar";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 
 import { sendMessageToBackground } from "./extensionMessaging";
@@ -14,7 +13,6 @@ export const getIconFromTokenLists = async ({
   code,
   assetsListsData,
 }: {
-  networkDetails: NetworkDetails;
   issuerId?: string;
   contractId?: string;
   code: string;
