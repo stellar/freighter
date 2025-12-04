@@ -14,10 +14,8 @@ import {
 import { isMainnet } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import {
-  settingsNetworkDetailsSelector,
-  overriddenBlockaidResponseSelector,
-} from "popup/ducks/settings";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { getDebugOverride } from "@shared/api/internal";
 import { SecurityLevel } from "popup/constants/blockaid";
 import { fetchJson } from "./fetch";
 
@@ -238,11 +236,16 @@ export const useScanAsset = (address: string) => {
  * In production, debug override is ignored
  */
 export const useIsAssetSuspicious = () => {
-  // Always call useSelector - hooks must be called unconditionally
-  const debugOverrideFromStore = useSelector(
-    overriddenBlockaidResponseSelector,
-  );
-  const debugOverride = getIsDev() ? debugOverrideFromStore : null;
+  const [debugOverride, setDebugOverride] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (getIsDev()) {
+      getDebugOverride()
+        .then(setDebugOverride)
+        .catch(() => setDebugOverride(null));
+    }
+  }, []);
+
   return (blockaidData?: BlockAidScanAssetResult | null) =>
     isAssetSuspicious(blockaidData, debugOverride);
 };
@@ -252,11 +255,16 @@ export const useIsAssetSuspicious = () => {
  * In production, debug override is ignored
  */
 export const useIsTxSuspicious = () => {
-  // Always call useSelector - hooks must be called unconditionally
-  const debugOverrideFromStore = useSelector(
-    overriddenBlockaidResponseSelector,
-  );
-  const debugOverride = getIsDev() ? debugOverrideFromStore : null;
+  const [debugOverride, setDebugOverride] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (getIsDev()) {
+      getDebugOverride()
+        .then(setDebugOverride)
+        .catch(() => setDebugOverride(null));
+    }
+  }, []);
+
   return (blockaidData?: BlockAidScanTxResult | null) =>
     isTxSuspicious(blockaidData, debugOverride);
 };
@@ -266,11 +274,16 @@ export const useIsTxSuspicious = () => {
  * In production, debug override is ignored
  */
 export const useShouldTreatAssetAsUnableToScan = () => {
-  // Always call useSelector - hooks must be called unconditionally
-  const debugOverrideFromStore = useSelector(
-    overriddenBlockaidResponseSelector,
-  );
-  const debugOverride = getIsDev() ? debugOverrideFromStore : null;
+  const [debugOverride, setDebugOverride] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (getIsDev()) {
+      getDebugOverride()
+        .then(setDebugOverride)
+        .catch(() => setDebugOverride(null));
+    }
+  }, []);
+
   return (blockaidData?: BlockAidScanAssetResult | null) =>
     shouldTreatAssetAsUnableToScan(blockaidData, debugOverride);
 };
@@ -280,11 +293,16 @@ export const useShouldTreatAssetAsUnableToScan = () => {
  * In production, debug override is ignored
  */
 export const useShouldTreatTxAsUnableToScan = () => {
-  // Always call useSelector - hooks must be called unconditionally
-  const debugOverrideFromStore = useSelector(
-    overriddenBlockaidResponseSelector,
-  );
-  const debugOverride = getIsDev() ? debugOverrideFromStore : null;
+  const [debugOverride, setDebugOverride] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (getIsDev()) {
+      getDebugOverride()
+        .then(setDebugOverride)
+        .catch(() => setDebugOverride(null));
+    }
+  }, []);
+
   return (blockaidData?: BlockAidScanTxResult | null) =>
     shouldTreatTxAsUnableToScan(blockaidData, debugOverride);
 };

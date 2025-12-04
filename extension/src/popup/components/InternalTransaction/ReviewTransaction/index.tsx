@@ -194,12 +194,11 @@ export const ReviewTx = ({
                   </div>
                 </div>
                 <div className="ReviewTx__Warnings">
-                  {simulationState.data?.scanResult !== undefined && (
-                    <BlockaidTxScanLabel
-                      scanResult={simulationState.data?.scanResult}
-                      onClick={() => setActivePaneIndex(1)}
-                    />
-                  )}
+                  {/* Always show BlockAid label - it handles unable to scan state internally */}
+                  <BlockaidTxScanLabel
+                    scanResult={simulationState.data?.scanResult}
+                    onClick={() => setActivePaneIndex(1)}
+                  />
                 </div>
                 <div className="ReviewTx__Details">
                   <div className="ReviewTx__Details__Row">

@@ -1,14 +1,10 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
 import { Button, Card, Text } from "@stellar/design-system";
+import { captureException } from "@sentry/browser";
 
 import { SecurityLevel } from "popup/constants/blockaid";
-import {
-  overriddenBlockaidResponseSelector,
-  setOverriddenBlockaidResponseAction,
-  clearOverriddenBlockaidResponseAction,
-} from "popup/ducks/settings";
+import { getDebugOverride, saveDebugOverride } from "@shared/api/internal";
 
 import "./Debug/styles.scss";
 
@@ -17,11 +13,25 @@ const isDev = process.env.DEV_EXTENSION === "true" || !process.env.PRODUCTION;
 
 export const Debug = () => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-  // Always call hooks, even if we return early
-  const overriddenBlockaidResponse = useSelector(
-    overriddenBlockaidResponseSelector,
-  );
+  const [overriddenBlockaidResponse, setOverriddenBlockaidResponse] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    const loadSavedState = async () => {
+      try {
+        const saved = await getDebugOverride();
+        setOverriddenBlockaidResponse(saved);
+      } catch (error) {
+        captureException(error);
+        setOverriddenBlockaidResponse(null);
+      }
+    };
+
+    if (isDev) {
+      loadSavedState();
+    }
+  }, []);
 
   if (!isDev) {
     return (
@@ -34,12 +44,26 @@ export const Debug = () => {
     );
   }
 
-  const handleSetOverride = (level: SecurityLevel) => {
-    dispatch(setOverriddenBlockaidResponseAction(level));
+  const handleSetOverride = async (level: SecurityLevel) => {
+    try {
+      const { overriddenBlockaidResponse: saved } = await saveDebugOverride({
+        overriddenBlockaidResponse: level,
+      });
+      setOverriddenBlockaidResponse(saved);
+    } catch (error) {
+      captureException(error);
+    }
   };
 
-  const handleClearOverride = () => {
-    dispatch(clearOverriddenBlockaidResponseAction());
+  const handleClearOverride = async () => {
+    try {
+      const { overriddenBlockaidResponse: saved } = await saveDebugOverride({
+        overriddenBlockaidResponse: null,
+      });
+      setOverriddenBlockaidResponse(saved);
+    } catch (error) {
+      captureException(error);
+    }
   };
 
   return (

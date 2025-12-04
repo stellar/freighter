@@ -32,13 +32,13 @@
   &__override-banner {
     padding: pxToRem(12px);
     margin-bottom: pxToRem(20px);
-    background-color: #fef3c7;
-    border: 1px solid #fcd34d;
+    background-color: var(--sds-clr-gray-2);
+    border: 1px solid var(--sds-clr-gray-6);
     border-radius: pxToRem(8px);
   }
 
   &__override-banner-text {
-    color: #92400e;
+    color: var(--sds-clr-gray-12);
   }
 
   &__buttons-container {

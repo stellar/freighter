@@ -353,6 +353,7 @@ const settingsSlice = createSlice({
       state.error = "";
     },
     saveSettings(state, action) {
+      const payload = action?.payload || { ...initialState };
       const {
         allowList,
         isDataSharingAllowed,
@@ -364,9 +365,7 @@ const settingsSlice = createSlice({
         assetsLists,
         isNonSSLEnabled,
         isHideDustEnabled,
-      } = action?.payload || {
-        ...initialState,
-      };
+      } = payload;
       state.allowList = allowList;
       state.isDataSharingAllowed = isDataSharingAllowed;
       state.networkDetails = networkDetails;
@@ -377,6 +376,8 @@ const settingsSlice = createSlice({
       state.assetsLists = assetsLists;
       state.isNonSSLEnabled = isNonSSLEnabled;
       state.isHideDustEnabled = isHideDustEnabled;
+      state.overriddenBlockaidResponse =
+        payload.overriddenBlockaidResponse ?? null;
       state.settingsState = SettingsState.SUCCESS;
     },
     saveBackendSettings(state, action) {
@@ -423,7 +424,10 @@ const settingsSlice = createSlice({
         isRpcHealthy,
         isSorobanPublicEnabled,
         isHideDustEnabled,
-      } = action?.payload || {
+        overriddenBlockaidResponse,
+      } = (action?.payload as typeof action.payload & {
+        overriddenBlockaidResponse?: string | null;
+      }) || {
         ...initialState,
       };
 
@@ -436,6 +440,7 @@ const settingsSlice = createSlice({
         isRpcHealthy,
         isSorobanPublicEnabled,
         isHideDustEnabled,
+        overriddenBlockaidResponse: overriddenBlockaidResponse ?? null,
       };
     });
     builder.addCase(saveExperimentalFeatures.pending, (state) => ({
