@@ -16,16 +16,15 @@ import {
   isMainnet,
   isMuxedAccount,
 } from "helpers/stellar";
-import { checkContractMuxedSupport } from "helpers/muxedAddress";
+import {
+  checkContractMuxedSupport,
+  getMemoDisabledState,
+} from "helpers/muxedAddress";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
-import {
-  getAssetDecimals,
-  getAvailableBalance,
-  isSorobanTransaction,
-} from "popup/helpers/soroban";
+import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   cleanAmount,
@@ -153,34 +152,6 @@ export const SendAmount = ({
     [destination],
   );
 
-  // Get selected balance for Soroban check
-  const selectedBalance = React.useMemo(() => {
-    if (
-      !sendAmountData.data ||
-      sendAmountData.data.type === AppDataType.REROUTE ||
-      !("userBalances" in sendAmountData.data)
-    ) {
-      return undefined;
-    }
-    const sendData = sendAmountData.data;
-    return findAssetBalance(
-      sendData.userBalances.balances,
-      getAssetFromCanonical(asset),
-    );
-  }, [asset, sendAmountData.data]);
-
-  // Check if this is a Soroban transaction
-  const isSorobanTx = React.useMemo(
-    () =>
-      isSorobanTransaction({
-        selectedBalance,
-        recipientAddress: destination,
-        isToken,
-        contractId,
-      }),
-    [selectedBalance, destination, isToken, contractId],
-  );
-
   // Check if contract supports muxed addresses (Soroban mux support) for all custom tokens
   // Tokens without Soroban mux support don't support memo at all (neither G nor M addresses)
   // Tokens with Soroban mux support allow memo for G addresses, but memo is encoded in M addresses
@@ -212,37 +183,26 @@ export const SendAmount = ({
     checkContract();
   }, [isToken, destination, contractId, networkDetails]);
 
-  // Determine if contract doesn't support muxed (without Soroban mux support) - memo disabled for all addresses
-  // Or if M address + contract supports muxed (with Soroban mux support) - memo disabled (encoded in address)
+  // Get memo disabled state using the helper
+  const memoDisabledState = React.useMemo(() => {
+    if (!destination) {
+      return { isMemoDisabled: false, memoDisabledMessage: undefined };
+    }
+    return getMemoDisabledState({
+      targetAddress: destination,
+      contractId,
+      networkDetails,
+      t,
+    });
+  }, [destination, contractId, networkDetails, t]);
+
+  const { isMemoDisabled, memoDisabledMessage } = memoDisabledState;
+
+  // Determine if contract doesn't support muxed (without Soroban mux support) - transaction should be disabled
   const isMuxedAddressWithoutMemoSupport = React.useMemo(
     () => isRecipientMuxed && isToken && contractSupportsMuxed === false,
     [isRecipientMuxed, isToken, contractSupportsMuxed],
   );
-
-  // Get memo disabled message - must be before conditional returns
-  // Tokens without Soroban mux support (contractSupportsMuxed === false): memo disabled for all addresses
-  // Tokens with Soroban mux support: memo disabled only for M addresses (encoded in address)
-  // Classic transactions: memo always allowed (even with M addresses)
-  const memoDisabledMessage = React.useMemo(() => {
-    if (isMuxedAddressWithoutMemoSupport) {
-      return t("Memo is not supported for this operation");
-    }
-    // Tokens without Soroban mux support don't support memo at all (for any address)
-    if (isToken && contractSupportsMuxed === false) {
-      return t("Memo is not supported for this operation");
-    }
-    if (isRecipientMuxed && isSorobanTx) {
-      return t("Memo is disabled for this transaction");
-    }
-    return undefined;
-  }, [
-    isMuxedAddressWithoutMemoSupport,
-    isToken,
-    contractSupportsMuxed,
-    isRecipientMuxed,
-    isSorobanTx,
-    t,
-  ]);
 
   const handleContinue = async () => {
     const amount = inputType === "crypto" ? formik.values.amount : priceValue!;
@@ -729,11 +689,7 @@ export const SendAmount = ({
                 dispatch(saveMemo(memo));
                 setIsEditingMemo(false);
               }}
-              disabled={
-                (isRecipientMuxed && isSorobanTx) ||
-                isMuxedAddressWithoutMemoSupport ||
-                (isToken && contractSupportsMuxed === false)
-              }
+              disabled={isMemoDisabled}
               disabledMessage={memoDisabledMessage}
             />
           </div>
