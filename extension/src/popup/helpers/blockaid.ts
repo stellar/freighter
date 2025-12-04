@@ -15,7 +15,7 @@ import { isMainnet } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { getDebugOverride } from "@shared/api/internal";
+import { getBlockaidOverrideState } from "@shared/api/internal";
 import { SecurityLevel } from "popup/constants/blockaid";
 import { fetchJson } from "./fetch";
 
@@ -228,71 +228,95 @@ export const useScanAsset = (address: string) => {
 };
 
 /**
- * Hook that returns isAssetSuspicious with debug override automatically applied
- * In production, debug override is ignored
+ * Hook that returns isAssetSuspicious with blockaid override state automatically applied
+ * In production, blockaid override state is ignored
  */
 export const useIsAssetSuspicious = () => {
-  const [debugOverride, setDebugOverride] = useState<string | null>(null);
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+  const isDev = getIsDev();
 
   useEffect(() => {
-    getDebugOverride()
-      .then(setDebugOverride)
-      .catch(() => setDebugOverride(null));
-  }, []);
+    if (!isDev) {
+      return;
+    }
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, [isDev]);
 
   return (blockaidData?: BlockAidScanAssetResult | null) =>
-    isAssetSuspicious(blockaidData, debugOverride);
+    isAssetSuspicious(blockaidData, blockaidOverrideState);
 };
 
 /**
- * Hook that returns isTxSuspicious with debug override automatically applied
- * In production, debug override is ignored
+ * Hook that returns isTxSuspicious with blockaid override state automatically applied
+ * In production, blockaid override state is ignored
  */
 export const useIsTxSuspicious = () => {
-  const [debugOverride, setDebugOverride] = useState<string | null>(null);
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+  const isDev = getIsDev();
 
   useEffect(() => {
-    getDebugOverride()
-      .then(setDebugOverride)
-      .catch(() => setDebugOverride(null));
-  }, []);
+    if (!isDev) {
+      return;
+    }
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, [isDev]);
 
   return (blockaidData?: BlockAidScanTxResult | null) =>
-    isTxSuspicious(blockaidData, debugOverride);
+    isTxSuspicious(blockaidData, blockaidOverrideState);
 };
 
 /**
- * Hook that returns shouldTreatAssetAsUnableToScan with debug override automatically applied
- * In production, debug override is ignored
+ * Hook that returns shouldTreatAssetAsUnableToScan with blockaid override state automatically applied
+ * In production, blockaid override state is ignored
  */
 export const useShouldTreatAssetAsUnableToScan = () => {
-  const [debugOverride, setDebugOverride] = useState<string | null>(null);
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+  const isDev = getIsDev();
 
   useEffect(() => {
-    getDebugOverride()
-      .then(setDebugOverride)
-      .catch(() => setDebugOverride(null));
-  }, []);
+    if (!isDev) {
+      return;
+    }
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, [isDev]);
 
   return (blockaidData?: BlockAidScanAssetResult | null) =>
-    shouldTreatAssetAsUnableToScan(blockaidData, debugOverride);
+    shouldTreatAssetAsUnableToScan(blockaidData, blockaidOverrideState);
 };
 
 /**
- * Hook that returns shouldTreatTxAsUnableToScan with debug override automatically applied
- * In production, debug override is ignored
+ * Hook that returns shouldTreatTxAsUnableToScan with blockaid override state automatically applied
+ * In production, blockaid override state is ignored
  */
 export const useShouldTreatTxAsUnableToScan = () => {
-  const [debugOverride, setDebugOverride] = useState<string | null>(null);
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+  const isDev = getIsDev();
 
   useEffect(() => {
-    getDebugOverride()
-      .then(setDebugOverride)
-      .catch(() => setDebugOverride(null));
-  }, []);
+    if (!isDev) {
+      return;
+    }
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, [isDev]);
 
   return (blockaidData?: BlockAidScanTxResult | null) =>
-    shouldTreatTxAsUnableToScan(blockaidData, debugOverride);
+    shouldTreatTxAsUnableToScan(blockaidData, blockaidOverrideState);
 };
 
 /**
@@ -316,27 +340,37 @@ export const isTxUnableToScan = (
 };
 
 /**
- * Determines if a security level should be considered suspicious based on debug override
- * @param debugOverride - The debug override security level
+ * Checks if we're in development mode
+ */
+const getIsDev = (): boolean => {
+  return process.env.DEV_EXTENSION === "true" || !process.env.PRODUCTION;
+};
+
+/**
+ * Determines if a security level should be considered suspicious based on blockaid override state
+ * @param blockaidOverrideState - The blockaid override state security level
  * @returns true if suspicious, false if not suspicious, null if no override or not in dev mode
  */
-const getSuspiciousFromDebugOverride = (
-  debugOverride?: string | null,
+const getSuspiciousFromBlockaidOverrideState = (
+  blockaidOverrideState?: string | null,
 ): boolean | null => {
-  if (!debugOverride) {
+  if (!getIsDev()) {
+    return null;
+  }
+  if (!blockaidOverrideState) {
     return null;
   }
 
-  if (debugOverride === SecurityLevel.UNABLE_TO_SCAN) {
+  if (blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN) {
     return false; // Unable to scan is not suspicious
   }
-  if (debugOverride === SecurityLevel.SAFE) {
+  if (blockaidOverrideState === SecurityLevel.SAFE) {
     return false;
   }
   // SUSPICIOUS or MALICIOUS - both are suspicious
   if (
-    debugOverride === SecurityLevel.SUSPICIOUS ||
-    debugOverride === SecurityLevel.MALICIOUS
+    blockaidOverrideState === SecurityLevel.SUSPICIOUS ||
+    blockaidOverrideState === SecurityLevel.MALICIOUS
   ) {
     return true;
   }
@@ -345,28 +379,26 @@ const getSuspiciousFromDebugOverride = (
 };
 
 /**
- * Checks if asset should be treated as unable to scan based on debug override
+ * Checks if asset should be treated as unable to scan based on blockaid override state
  */
 export const shouldTreatAssetAsUnableToScan = (
   blockaidData?: BlockAidScanAssetResult | null,
-  debugOverride?: string | null,
+  blockaidOverrideState?: string | null,
 ): boolean => {
-  // Check debug override first
-  if (debugOverride === SecurityLevel.UNABLE_TO_SCAN) {
+  if (getIsDev() && blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN) {
     return true;
   }
   return isAssetUnableToScan(blockaidData);
 };
 
 /**
- * Checks if transaction should be treated as unable to scan based on debug override
+ * Checks if transaction should be treated as unable to scan based on blockaid override state
  */
 export const shouldTreatTxAsUnableToScan = (
   blockaidData?: BlockAidScanTxResult | null,
-  debugOverride?: string | null,
+  blockaidOverrideState?: string | null,
 ): boolean => {
-  // Check debug override first
-  if (debugOverride === SecurityLevel.UNABLE_TO_SCAN) {
+  if (getIsDev() && blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN) {
     return true;
   }
   return isTxUnableToScan(blockaidData);
@@ -374,10 +406,11 @@ export const shouldTreatTxAsUnableToScan = (
 
 export const isAssetSuspicious = (
   blockaidData?: BlockAidScanAssetResult | null,
-  debugOverride?: string | null,
+  blockaidOverrideState?: string | null,
 ) => {
-  // Check debug override first (only in dev mode)
-  const overrideResult = getSuspiciousFromDebugOverride(debugOverride);
+  const overrideResult = getSuspiciousFromBlockaidOverrideState(
+    blockaidOverrideState,
+  );
   if (overrideResult !== null) {
     return overrideResult;
   }
@@ -394,10 +427,11 @@ export const isAssetSuspicious = (
 
 export const isTxSuspicious = (
   blockaidData?: BlockAidScanTxResult | null,
-  debugOverride?: string | null,
+  blockaidOverrideState?: string | null,
 ) => {
-  // Check debug override first (only in dev mode)
-  const overrideResult = getSuspiciousFromDebugOverride(debugOverride);
+  const overrideResult = getSuspiciousFromBlockaidOverrideState(
+    blockaidOverrideState,
+  );
   if (overrideResult !== null) {
     return overrideResult;
   }

@@ -4,7 +4,10 @@ import { Button, Card, Text } from "@stellar/design-system";
 import { captureException } from "@sentry/browser";
 
 import { SecurityLevel } from "popup/constants/blockaid";
-import { getDebugOverride, saveDebugOverride } from "@shared/api/internal";
+import {
+  getBlockaidOverrideState,
+  saveBlockaidOverrideState,
+} from "@shared/api/internal";
 
 import "./Debug/styles.scss";
 
@@ -20,7 +23,7 @@ export const Debug = () => {
   useEffect(() => {
     const loadSavedState = async () => {
       try {
-        const saved = await getDebugOverride();
+        const saved = await getBlockaidOverrideState();
         setOverriddenBlockaidResponse(saved);
       } catch (error) {
         captureException(error);
@@ -28,9 +31,7 @@ export const Debug = () => {
       }
     };
 
-    if (isDev) {
-      loadSavedState();
-    }
+    loadSavedState();
   }, []);
 
   if (!isDev) {
@@ -51,9 +52,10 @@ export const Debug = () => {
       console.log("[Debug] Calling saveDebugOverride with:", {
         overriddenBlockaidResponse: level,
       });
-      const { overriddenBlockaidResponse: saved } = await saveDebugOverride({
-        overriddenBlockaidResponse: level,
-      });
+      const { overriddenBlockaidResponse: saved } =
+        await saveBlockaidOverrideState({
+          overriddenBlockaidResponse: level,
+        });
       console.log("[Debug] saveDebugOverride returned:", saved);
       setOverriddenBlockaidResponse(saved);
       console.log("[Debug] State updated to:", saved);
@@ -68,9 +70,10 @@ export const Debug = () => {
     console.log("[Debug] isDev:", isDev);
     try {
       console.log("[Debug] Calling saveDebugOverride with null");
-      const { overriddenBlockaidResponse: saved } = await saveDebugOverride({
-        overriddenBlockaidResponse: null,
-      });
+      const { overriddenBlockaidResponse: saved } =
+        await saveBlockaidOverrideState({
+          overriddenBlockaidResponse: null,
+        });
       console.log("[Debug] saveDebugOverride returned:", saved);
       setOverriddenBlockaidResponse(saved);
       console.log("[Debug] State updated to:", saved);

@@ -1658,7 +1658,7 @@ export const saveExperimentalFeatures = async ({
   return response;
 };
 
-export const getDebugOverride = async (): Promise<string | null> => {
+export const getBlockaidOverrideState = async (): Promise<string | null> => {
   const response = (await sendMessageToBackground({
     activePublicKey: null,
     type: SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE,
@@ -1674,7 +1674,7 @@ export const getDebugOverride = async (): Promise<string | null> => {
   return response.overriddenBlockaidResponse ?? null;
 };
 
-export const saveDebugOverride = async ({
+export const saveBlockaidOverrideState = async ({
   overriddenBlockaidResponse,
 }: {
   overriddenBlockaidResponse: string | null;

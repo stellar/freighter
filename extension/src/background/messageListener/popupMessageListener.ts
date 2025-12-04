@@ -77,10 +77,10 @@ import { getMobileAppBannerDismissed } from "./handlers/getMobileAppBannerDismis
 import { dismissMobileAppBanner } from "./handlers/dismissMobileAppBanner";
 import { loadBackendSettings } from "./handlers/loadBackendSettings";
 import {
-  saveDebugOverride,
+  saveBlockaidOverrideState,
   SaveBlockaidDebugOverrideMessage,
 } from "./handlers/saveDebugOverride";
-import { getDebugOverride } from "./handlers/getDebugOverride";
+import { getBlockaidOverrideState } from "./handlers/getDebugOverride";
 
 const numOfPublicKeysToCheck = 5;
 
@@ -376,11 +376,14 @@ export const popupMessageListener = (
         "[popupMessageListener] SAVE_BLOCKAID_DEBUG_OVERRIDE received",
       );
       console.log("[popupMessageListener] Request:", request);
-      return saveDebugOverride({
+      return saveBlockaidOverrideState({
         request: request as SaveBlockaidDebugOverrideMessage,
         localStore,
       }).then((result) => {
-        console.log("[popupMessageListener] saveDebugOverride result:", result);
+        console.log(
+          "[popupMessageListener] saveBlockaidOverrideState result:",
+          result,
+        );
         console.log("[popupMessageListener] Returning:", result);
         return result;
       });
@@ -502,7 +505,7 @@ export const popupMessageListener = (
       });
     }
     case SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE: {
-      return getDebugOverride({
+      return getBlockaidOverrideState({
         localStore,
       });
     }

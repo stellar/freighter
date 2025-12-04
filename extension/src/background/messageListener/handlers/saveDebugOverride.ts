@@ -5,22 +5,35 @@ export interface SaveBlockaidDebugOverrideMessage {
   overriddenBlockaidResponse: string | null;
 }
 
-export const saveDebugOverride = async ({
+const getIsDev = (): boolean => {
+  return process.env.DEV_EXTENSION === "true" || !process.env.PRODUCTION;
+};
+
+export const saveBlockaidOverrideState = async ({
   request,
   localStore,
 }: {
   request: SaveBlockaidDebugOverrideMessage;
   localStore: DataStorageAccess;
 }) => {
-  console.log("[saveDebugOverride handler] Called with request:", request);
+  if (!getIsDev()) {
+    return { overriddenBlockaidResponse: null };
+  }
+
+  console.log(
+    "[saveBlockaidOverrideState handler] Called with request:",
+    request,
+  );
   const { overriddenBlockaidResponse } = request;
 
   if (overriddenBlockaidResponse === null) {
-    console.log("[saveDebugOverride handler] Removing from localStorage");
+    console.log(
+      "[saveBlockaidOverrideState handler] Removing from localStorage",
+    );
     await localStore.remove(OVERRIDDEN_BLOCKAID_RESPONSE_ID);
   } else {
     console.log(
-      "[saveDebugOverride handler] Saving to localStorage:",
+      "[saveBlockaidOverrideState handler] Saving to localStorage:",
       overriddenBlockaidResponse,
     );
     await localStore.setItem(
@@ -28,10 +41,13 @@ export const saveDebugOverride = async ({
       overriddenBlockaidResponse,
     );
     const saved = await localStore.getItem(OVERRIDDEN_BLOCKAID_RESPONSE_ID);
-    console.log("[saveDebugOverride handler] Verified saved value:", saved);
+    console.log(
+      "[saveBlockaidOverrideState handler] Verified saved value:",
+      saved,
+    );
   }
 
   const result = { overriddenBlockaidResponse };
-  console.log("[saveDebugOverride handler] Returning:", result);
+  console.log("[saveBlockaidOverrideState handler] Returning:", result);
   return result;
 };

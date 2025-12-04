@@ -21,7 +21,7 @@ import {
 import { isMainnet, isTestnet } from "helpers/stellar";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { getDebugOverride } from "@shared/api/internal";
+import { getBlockaidOverrideState } from "@shared/api/internal";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import {
   reportAssetWarning,
@@ -770,16 +770,22 @@ export const BlockaidTxScanLabel = ({
   const { t } = useTranslation();
   const shouldTreatAsUnableToScan = useShouldTreatTxAsUnableToScan();
   const isTxSuspiciousCheck = useIsTxSuspicious();
-  const [debugOverride, setDebugOverride] = useState<string | null>(null);
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+  const isDev = process.env.DEV_EXTENSION === "true" || !process.env.PRODUCTION;
 
   useEffect(() => {
-    getDebugOverride()
-      .then(setDebugOverride)
-      .catch(() => setDebugOverride(null));
-  }, []);
+    if (!isDev) {
+      return;
+    }
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, [isDev]);
 
-  // Handle unable to scan state (including debug override)
-  // This check must come first to ensure debug override is respected
+  // Handle unable to scan state (including blockaid override state)
+  // This check must come first to ensure blockaid override state is respected
   if (shouldTreatAsUnableToScan(scanResult)) {
     return (
       <div
@@ -791,7 +797,7 @@ export const BlockaidTxScanLabel = ({
           <div className="Icon">
             <Icon.InfoSquare className="WarningMessage__icon" />
           </div>
-          <p className="Message">{t("Unable to scan transaction")}</p>
+          <p className="Message">{t("Proceed with caution")}</p>
         </div>
         <div className="ScanLabel__Action">
           <Icon.ChevronRight />
@@ -801,14 +807,15 @@ export const BlockaidTxScanLabel = ({
   }
 
   // Early return if scanResult is null/undefined and not unable to scan
-  // The unable to scan check above handles both actual scan failures and debug override
+  // The unable to scan check above handles both actual scan failures and blockaid override state
   if (!scanResult && !shouldTreatAsUnableToScan(scanResult)) {
     return null;
   }
 
-  // Check debug override for malicious state (before checking actual scan result)
+  // Check blockaid override state for malicious state (before checking actual scan result)
   if (
-    debugOverride === SecurityLevel.MALICIOUS &&
+    isDev &&
+    blockaidOverrideState === SecurityLevel.MALICIOUS &&
     isTxSuspiciousCheck(scanResult)
   ) {
     return (
@@ -832,9 +839,10 @@ export const BlockaidTxScanLabel = ({
     );
   }
 
-  // Check debug override for suspicious state (before checking actual scan result)
+  // Check blockaid override state for suspicious state (before checking actual scan result)
   if (
-    debugOverride === SecurityLevel.SUSPICIOUS &&
+    isDev &&
+    blockaidOverrideState === SecurityLevel.SUSPICIOUS &&
     isTxSuspiciousCheck(scanResult)
   ) {
     return (
@@ -953,6 +961,7 @@ export const BlockAidTxScanExpanded = ({
   const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
 
   // Handle unable to scan state when there's no scan result or no validation warnings
+  // Also handle when override is set to UNABLE_TO_SCAN (even if scanResult exists)
   if (
     isUnableToScan &&
     (!scanResult ||
@@ -970,7 +979,7 @@ export const BlockAidTxScanExpanded = ({
           </div>
         </div>
         <div className="BlockaidDetailsExpanded__Title">
-          {t("Unable to scan")}
+          {t("Proceed with caution")}
         </div>
         <div className="BlockaidDetailsExpanded__SubTitle">
           {t(
@@ -978,6 +987,10 @@ export const BlockAidTxScanExpanded = ({
           )}
         </div>
         <div className="BlockaidDetailsExpanded__Details">
+          <div className="BlockaidDetailsExpanded__DetailRow">
+            <Icon.MinusCircle />
+            <span>{t("Unable to scan transaction")}</span>
+          </div>
           <BlockaidByLine address={""} />
         </div>
       </div>
@@ -1038,9 +1051,7 @@ export const BlockAidTxScanExpanded = ({
     if (isUnableToScan) {
       warnings.push({
         icon: <Icon.MinusCircle />,
-        text: t(
-          "We were unable to scan this transaction for security threats. Proceed with caution.",
-        ),
+        text: t("Unable to scan transaction"),
       });
     }
 
