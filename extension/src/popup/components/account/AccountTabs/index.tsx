@@ -104,8 +104,6 @@ export const AccountTabs = () => {
             return null;
           }
 
-          console.log("tab", tab);
-
           return (
             <div
               data-testid={`account-tab-${tab}`}

@@ -12,7 +12,7 @@ import {
  * This hook synchronizes the active tab with the URL query parameters.
  * If a "tab" query parameter is present in the URL, it will automatically
  * update the active tab to match that value (if it's a valid tab). This
- * is useful for opening the Account tab to a specific tab (like after adding a collectible)
+ * is useful for opening the Account view to a specific tab (like after adding a collectible)
  *
  * @returns {Object} An object containing:
  * @returns {TabsList} returns.activeTab - The currently active tab from the context
