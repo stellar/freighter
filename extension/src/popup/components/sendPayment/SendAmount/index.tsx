@@ -90,11 +90,7 @@ export const SendAmount = ({
     isToken,
     transactionFee,
   } = transactionData;
-  // Preserve custom fee if set (check for null/undefined/empty string)
-  const fee =
-    transactionFee && transactionFee.trim() !== ""
-      ? transactionFee
-      : recommendedFee;
+  const fee = transactionFee || recommendedFee;
 
   const { state: sendAmountData, fetchData } = useGetSendAmountData(
     {
@@ -629,7 +625,7 @@ export const SendAmount = ({
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
               onClose={() => setIsEditingSettings(false)}
-              onSubmit={async ({
+              onSubmit={({
                 fee,
                 timeout,
               }: {
@@ -639,7 +635,6 @@ export const SendAmount = ({
                 dispatch(saveTransactionFee(fee));
                 dispatch(saveTransactionTimeout(timeout));
                 setIsEditingSettings(false);
-                await fetchSimulationData();
               }}
             />
           </div>
@@ -656,11 +651,7 @@ export const SendAmount = ({
         {isReviewingTx ? (
           <ReviewTx
             assetIcon={assetIcon}
-            fee={
-              transactionFee && transactionFee.trim() !== ""
-                ? transactionFee
-                : recommendedFee
-            }
+            fee={fee}
             networkDetails={sendAmountData.data?.networkDetails!}
             onCancel={() => setIsReviewingTx(false)}
             onConfirm={goToNext}

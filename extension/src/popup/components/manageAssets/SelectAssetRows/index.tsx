@@ -1,7 +1,6 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Asset } from "stellar-sdk";
-import { useTranslation } from "react-i18next";
 
 import { AppDispatch } from "popup/App";
 import {
@@ -39,7 +38,6 @@ export const SelectAssetRows = ({
   balances,
   onSelect,
 }: SelectAssetRowsProps) => {
-  const { t } = useTranslation();
   const { assetSelect, soroswapTokens, transactionData } = useSelector(
     transactionSubmissionSelector,
   );
@@ -139,9 +137,7 @@ export const SelectAssetRows = ({
                     {code}
                   </div>
                   <div className="SelectAssetRows__domain">
-                    {formatDomain(domain || "") === "Stellar Network"
-                      ? t("Stellar Network")
-                      : formatDomain(domain || "")}
+                    {formatDomain(domain || "")}
                   </div>
                 </div>
                 {!hideBalances && (

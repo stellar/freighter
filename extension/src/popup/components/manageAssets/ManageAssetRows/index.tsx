@@ -446,7 +446,6 @@ export const ManageAssetRow = ({
   isSuspicious = false,
   contractId,
 }: AssetRowData) => {
-  const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
   // use the name unless the name is SAC, format "code:issuer"
@@ -482,9 +481,7 @@ export const ManageAssetRow = ({
           className="ManageAssetRows__domain"
           data-testid="ManageAssetDomain"
         >
-          {formatDomain(domain || "") === "Stellar Network"
-            ? t("Stellar Network")
-            : formatDomain(domain || "")}
+          {formatDomain(domain || "")}
         </div>
       </div>
     </>

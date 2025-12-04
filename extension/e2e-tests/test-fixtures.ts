@@ -35,6 +35,28 @@ export const test = base.extend<{
     await use(extensionId);
   },
   page: async ({ page }, use) => {
+    // Inject environment variable into browser context for memo validation bypass
+    await page.addInitScript(() => {
+      (window as any).IS_PLAYWRIGHT = "true";
+      try {
+        // Set i18next language preference to English
+        if (window.localStorage) {
+          window.localStorage.setItem("i18nextLng", "en");
+        }
+        // Override navigator.language for language detection
+        Object.defineProperty(navigator, "language", {
+          get: () => "en-US",
+          configurable: true,
+        });
+        Object.defineProperty(navigator, "languages", {
+          get: () => ["en-US", "en"],
+          configurable: true,
+        });
+      } catch (e) {
+        // Ignore security errors for extension pages
+      }
+    });
+
     if (!process.env.IS_INTEGRATION_MODE) {
       await page.route("*/**/testnet/asset-list/top50", async (route) => {
         const json = STELLAR_EXPERT_ASSET_LIST_JSON;
