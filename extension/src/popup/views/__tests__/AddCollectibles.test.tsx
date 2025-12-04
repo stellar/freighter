@@ -54,7 +54,9 @@ describe("AddCollectibles", () => {
     );
     await waitFor(() => {
       expect(screen.getByTestId("AddCollectibles")).toBeInTheDocument();
-      expect(screen.getByTestId("collectibleAddress")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("collectibleContractAddress"),
+      ).toBeInTheDocument();
       expect(screen.getByTestId("collectibleTokenId")).toBeInTheDocument();
       expect(screen.getByTestId("AddCollectibles__button")).toBeInTheDocument();
     });
@@ -83,7 +85,9 @@ describe("AddCollectibles", () => {
     );
     await waitFor(() => {
       expect(screen.getByTestId("AddCollectibles")).toBeInTheDocument();
-      const collectibleAddressInput = screen.getByTestId("collectibleAddress");
+      const collectibleAddressInput = screen.getByTestId(
+        "collectibleContractAddress",
+      );
       fireEvent.blur(collectibleAddressInput);
       fireEvent.click(screen.getByTestId("AddCollectibles__button"));
       expect(
@@ -115,7 +119,9 @@ describe("AddCollectibles", () => {
     );
     await waitFor(() => {
       expect(screen.getByTestId("AddCollectibles")).toBeInTheDocument();
-      const collectibleAddressInput = screen.getByTestId("collectibleAddress");
+      const collectibleAddressInput = screen.getByTestId(
+        "collectibleContractAddress",
+      );
       fireEvent.change(collectibleAddressInput, {
         target: { value: "invalid" },
       });

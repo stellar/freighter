@@ -19,16 +19,12 @@ describe("addCollectible", () => {
       localStore: mockDataStorage,
     });
     expect(result).toEqual({
-      collectiblesList: {
-        testnet: {
-          GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF: [
-            {
-              id: "C1234567890",
-              tokenIds: ["1234567890"],
-            },
-          ],
+      collectiblesList: [
+        {
+          id: "C1234567890",
+          tokenIds: ["1234567890"],
         },
-      },
+      ],
     });
   });
   it("should add a token id to an existing collectible contract", async () => {
@@ -55,16 +51,12 @@ describe("addCollectible", () => {
       localStore: mockDataStorage,
     });
     expect(result).toEqual({
-      collectiblesList: {
-        testnet: {
-          GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF: [
-            {
-              id: "C1234567890",
-              tokenIds: ["1234567890", "2345678901"],
-            },
-          ],
+      collectiblesList: [
+        {
+          id: "C1234567890",
+          tokenIds: ["1234567890", "2345678901"],
         },
-      },
+      ],
     });
   });
   it("should return an error if the collectible contract already exists", async () => {
@@ -118,24 +110,12 @@ describe("addCollectible", () => {
       localStore: mockDataStorage,
     });
     expect(result).toEqual({
-      collectiblesList: {
-        public: {
-          GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF: [
-            {
-              id: "C1234567890",
-              tokenIds: ["1234567890"],
-            },
-          ],
+      collectiblesList: [
+        {
+          id: "C1234567890",
+          tokenIds: ["1234567890"],
         },
-        testnet: {
-          GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF: [
-            {
-              id: "C1234567890",
-              tokenIds: ["1234567890"],
-            },
-          ],
-        },
-      },
+      ],
     });
   });
   it("should add a new collectible on a different public key", async () => {
@@ -162,22 +142,12 @@ describe("addCollectible", () => {
       localStore: mockDataStorage,
     });
     expect(result).toEqual({
-      collectiblesList: {
-        testnet: {
-          GCO3MRY77QAIXKHLNBBDWCJOTBJ3OKE6IUQSO362M6U2P62YXQWN2AEI: [
-            {
-              id: "C1234567890",
-              tokenIds: ["1234567890"],
-            },
-          ],
-          GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF: [
-            {
-              id: "C1234567890",
-              tokenIds: ["1234567890"],
-            },
-          ],
+      collectiblesList: [
+        {
+          id: "C1234567890",
+          tokenIds: ["1234567890"],
         },
-      },
+      ],
     });
   });
 });
