@@ -373,10 +373,7 @@ test("Send XLM payments to recent federated addresses", async ({
 
   await page.getByTestId("address-tile").click();
 
-  // Wait for recent addresses to load after navigation
-  await expect(page.getByText("Recents")).toBeVisible({
-    timeout: 10000,
-  });
+  await expect(page.getByText("Recents")).toBeVisible();
 
   await page.getByTestId("recent-address-button").click();
 
