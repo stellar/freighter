@@ -74,7 +74,7 @@ export const METRIC_NAMES = {
   swapSettingsTimeout: "loaded screen: swap settings timeout",
   swapConfirm: "loaded screen: swap confirm",
 
-  viewManageCollectibles: "loaded screen: manage collectibles",
+  viewAddCollectibles: "loaded screen: add collectibles",
   viewManageAssets: "loaded screen: manage assets",
   viewSearchAsset: "loaded screen: search asset",
   viewAssetVisibility: "loaded screen: asset visibility",

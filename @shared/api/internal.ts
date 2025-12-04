@@ -2152,12 +2152,12 @@ export const changeAssetVisibility = async ({
 export const addCollectible = async ({
   publicKey,
   network,
-  collectibleAddress,
+  collectibleContractAddress,
   collectibleTokenId,
 }: {
   publicKey: string;
   network: string;
-  collectibleAddress: string;
+  collectibleContractAddress: string;
   collectibleTokenId: string;
 }) => {
   let response = {
@@ -2171,7 +2171,7 @@ export const addCollectible = async ({
       activePublicKey: publicKey,
       publicKey,
       network,
-      collectibleAddress,
+      collectibleContractAddress,
       collectibleTokenId,
     });
   } catch (e) {

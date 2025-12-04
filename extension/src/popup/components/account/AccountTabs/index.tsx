@@ -46,12 +46,12 @@ const ManageAssetsModalContent = () => {
   );
 };
 
-const ManageCollectiblesModalContent = () => {
+const AddCollectiblesModalContent = () => {
   const { t } = useTranslation();
 
   return (
     <>
-      <Link to={ROUTES.manageCollectibles}>
+      <Link to={ROUTES.addCollectibles}>
         <div className="AccountTabs__modal__item">
           <div className="AccountTabs__modal__item__icon">
             <Icon.PlusSquare />
@@ -76,9 +76,8 @@ const ManageCollectiblesModalContent = () => {
 export const AccountTabs = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [isManageAssetsOpen, setIsManageAssetsOpen] = useState(false);
-  const [isManageCollectiblesOpen, setIsManageCollectiblesOpen] =
-    useState(false);
-  const isBackgroundActive = isManageAssetsOpen || isManageCollectiblesOpen;
+  const [isAddCollectiblesOpen, setIsAddCollectiblesOpen] = useState(false);
+  const isBackgroundActive = isManageAssetsOpen || isAddCollectiblesOpen;
 
   const { activeTab, setActiveTab } = useActiveTab();
 
@@ -89,7 +88,7 @@ export const AccountTabs = () => {
     if (isTokensTab) {
       setIsManageAssetsOpen(!isManageAssetsOpen);
     } else if (isCollectiblesTab) {
-      setIsManageCollectiblesOpen(!isManageCollectiblesOpen);
+      setIsAddCollectiblesOpen(!isAddCollectiblesOpen);
     }
   };
 
@@ -123,7 +122,7 @@ export const AccountTabs = () => {
 
       <AccountHeaderModal
         className="AccountTabs__modal"
-        isDropdownOpen={isManageAssetsOpen || isManageCollectiblesOpen}
+        isDropdownOpen={isManageAssetsOpen || isAddCollectiblesOpen}
         icon={
           <div
             className="AccountTabs__manage-btn"
@@ -136,7 +135,7 @@ export const AccountTabs = () => {
       >
         <>
           {isTokensTab && <ManageAssetsModalContent />}
-          {isCollectiblesTab && <ManageCollectiblesModalContent />}
+          {isCollectiblesTab && <AddCollectiblesModalContent />}
         </>
       </AccountHeaderModal>
 
@@ -145,7 +144,7 @@ export const AccountTabs = () => {
             <LoadingBackground
               onClick={() => {
                 setIsManageAssetsOpen(false);
-                setIsManageCollectiblesOpen(false);
+                setIsAddCollectiblesOpen(false);
               }}
               isActive={isBackgroundActive}
               isFullScreen

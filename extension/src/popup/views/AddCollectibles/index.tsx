@@ -20,25 +20,25 @@ import { addCollectible } from "@shared/api/internal";
 import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
 import {
   RequestState,
-  useGetManageCollectiblesData,
-} from "./hooks/useGetManageCollectiblesData";
+  useGetAddCollectiblesData,
+} from "./hooks/useGetAddCollectiblesData";
 
 import "./styles.scss";
 
 import { TabsList } from "../Account/contexts/activeTabContext";
 
 interface FormValues {
-  collectibleAddress: string;
+  collectibleContractAddress: string;
   collectibleTokenId: string;
 }
 const initialValues: FormValues = {
-  collectibleAddress: "",
+  collectibleContractAddress: "",
   collectibleTokenId: "",
 };
 
-export const ManageCollectibles = () => {
+export const AddCollectibles = () => {
   const { t } = useTranslation();
-  const { state, fetchData } = useGetManageCollectiblesData({});
+  const { state, fetchData } = useGetAddCollectiblesData({});
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const navigate = useNavigate();
@@ -52,7 +52,7 @@ export const ManageCollectibles = () => {
       const response = await addCollectible({
         publicKey: publicKey,
         network: networkDetails.network,
-        collectibleAddress: values.collectibleAddress,
+        collectibleContractAddress: values.collectibleContractAddress,
         collectibleTokenId: values.collectibleTokenId,
       });
 
@@ -73,8 +73,8 @@ export const ManageCollectibles = () => {
     }
   };
 
-  const validateManageCollectiblesSchema = YupObject().shape({
-    collectibleAddress: YupString()
+  const validateAddCollectiblesSchema = YupObject().shape({
+    collectibleContractAddress: YupString()
       .required(t("Collectible address is required"))
       .test("is-contract-id", t("Invalid address"), (value) =>
         isContractId(value),
@@ -107,17 +107,17 @@ export const ManageCollectibles = () => {
     <Formik
       initialValues={initialValues}
       onSubmit={handleSubmit}
-      validationSchema={validateManageCollectiblesSchema}
+      validationSchema={validateAddCollectiblesSchema}
     >
       {({ setFieldValue, touched, errors, dirty, isValid, isSubmitting }) => (
-        <Form className="ManageCollectibles" data-testid="ManageCollectibles">
+        <Form className="AddCollectibles" data-testid="AddCollectibles">
           <SubviewHeader title={t("Add Collectible")} />
           <View.Content hasNoTopPadding>
             <FormRows>
-              <Field name="collectibleAddress">
+              <Field name="collectibleContractAddress">
                 {({ field }: FieldProps) => (
                   <div
-                    className="ManageCollectibles__input-wrapper"
+                    className="AddCollectibles__input-wrapper"
                     data-testid="collectible-address-wrapper"
                   >
                     <Input
@@ -125,12 +125,12 @@ export const ManageCollectibles = () => {
                       fieldSize="md"
                       autoFocus
                       autoComplete="off"
-                      data-testid="collectibleAddress"
-                      id="collectibleAdress"
+                      data-testid="collectibleContractAddress"
+                      id="collectibleContractAddress"
                       placeholder={t("Collectible address")}
                       {...field}
                       rightElement={
-                        <div className="ManageCollectibles__clipboard-button">
+                        <div className="AddCollectibles__clipboard-button">
                           <Button
                             type="button"
                             size="md"
@@ -139,7 +139,7 @@ export const ManageCollectibles = () => {
                               const pastedCollectionAddress =
                                 await navigator.clipboard.readText();
                               setFieldValue(
-                                "collectibleAddress",
+                                "collectibleContractAddress",
                                 pastedCollectionAddress,
                               );
                             }}
@@ -149,8 +149,9 @@ export const ManageCollectibles = () => {
                         </div>
                       }
                       error={
-                        errors.collectibleAddress && touched.collectibleAddress
-                          ? errors.collectibleAddress
+                        errors.collectibleContractAddress &&
+                        touched.collectibleContractAddress
+                          ? errors.collectibleContractAddress
                           : ""
                       }
                     />
@@ -160,7 +161,7 @@ export const ManageCollectibles = () => {
               <Field name="collectibleTokenId">
                 {({ field }: FieldProps) => (
                   <div
-                    className="ManageCollectibles__input-wrapper"
+                    className="AddCollectibles__input-wrapper"
                     data-testid="collectible-token-id-wrapper"
                   >
                     <Input
@@ -172,7 +173,7 @@ export const ManageCollectibles = () => {
                       placeholder={t("Token ID")}
                       {...field}
                       rightElement={
-                        <div className="ManageCollectibles__clipboard-button">
+                        <div className="AddCollectibles__clipboard-button">
                           <Button
                             type="button"
                             size="md"
@@ -202,9 +203,9 @@ export const ManageCollectibles = () => {
             </FormRows>
           </View.Content>
           <View.Footer isInline>
-            <div className="ManageCollectibles__button-wrapper">
+            <div className="AddCollectibles__button-wrapper">
               <Button
-                data-testid="ManageCollectibles__button"
+                data-testid="AddCollectibles__button"
                 size="lg"
                 variant="secondary"
                 isFullWidth
@@ -213,10 +214,10 @@ export const ManageCollectibles = () => {
                 disabled={!(dirty && isValid)}
                 type="submit"
               >
-                {t("Enter details")}
+                {dirty && isValid ? t("Add to wallet") : t("Enter details")}
               </Button>
               {addCollectibleError && (
-                <div className="ManageCollectibles__error-message">
+                <div className="AddCollectibles__error-message">
                   {addCollectibleError}
                 </div>
               )}

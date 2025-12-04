@@ -1,6 +1,6 @@
 import React from "react";
 import { render, waitFor, screen, fireEvent } from "@testing-library/react";
-import * as UseGetManageCollectiblesData from "../ManageCollectibles/hooks/useGetManageCollectiblesData";
+import * as UseGetAddCollectiblesData from "../AddCollectibles/hooks/useGetAddCollectiblesData";
 
 import {
   TESTNET_NETWORK_DETAILS,
@@ -9,12 +9,12 @@ import {
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { Wrapper, mockAccounts } from "popup/__testHelpers__";
 import { ROUTES } from "popup/constants/routes";
-import { ManageCollectibles } from "../ManageCollectibles";
-import { RequestState } from "../ManageCollectibles/hooks/useGetManageCollectiblesData";
+import { AddCollectibles } from "../AddCollectibles";
+import { RequestState } from "../AddCollectibles/hooks/useGetAddCollectiblesData";
 
-describe("ManageCollectibles", () => {
+describe("AddCollectibles", () => {
   jest
-    .spyOn(UseGetManageCollectiblesData, "useGetManageCollectiblesData")
+    .spyOn(UseGetAddCollectiblesData, "useGetAddCollectiblesData")
     .mockImplementation(
       () =>
         ({
@@ -49,16 +49,14 @@ describe("ManageCollectibles", () => {
           },
         }}
       >
-        <ManageCollectibles />
+        <AddCollectibles />
       </Wrapper>,
     );
     await waitFor(() => {
-      expect(screen.getByTestId("ManageCollectibles")).toBeInTheDocument();
+      expect(screen.getByTestId("AddCollectibles")).toBeInTheDocument();
       expect(screen.getByTestId("collectibleAddress")).toBeInTheDocument();
       expect(screen.getByTestId("collectibleTokenId")).toBeInTheDocument();
-      expect(
-        screen.getByTestId("ManageCollectibles__button"),
-      ).toBeInTheDocument();
+      expect(screen.getByTestId("AddCollectibles__button")).toBeInTheDocument();
     });
   });
   it("shows error message if collectible address is not provided", async () => {
@@ -80,14 +78,14 @@ describe("ManageCollectibles", () => {
           },
         }}
       >
-        <ManageCollectibles />
+        <AddCollectibles />
       </Wrapper>,
     );
     await waitFor(() => {
-      expect(screen.getByTestId("ManageCollectibles")).toBeInTheDocument();
+      expect(screen.getByTestId("AddCollectibles")).toBeInTheDocument();
       const collectibleAddressInput = screen.getByTestId("collectibleAddress");
       fireEvent.blur(collectibleAddressInput);
-      fireEvent.click(screen.getByTestId("ManageCollectibles__button"));
+      fireEvent.click(screen.getByTestId("AddCollectibles__button"));
       expect(
         screen.getByTestId("collectible-address-wrapper"),
       ).toHaveTextContent("Collectible address is required");
@@ -112,16 +110,16 @@ describe("ManageCollectibles", () => {
           },
         }}
       >
-        <ManageCollectibles />
+        <AddCollectibles />
       </Wrapper>,
     );
     await waitFor(() => {
-      expect(screen.getByTestId("ManageCollectibles")).toBeInTheDocument();
+      expect(screen.getByTestId("AddCollectibles")).toBeInTheDocument();
       const collectibleAddressInput = screen.getByTestId("collectibleAddress");
       fireEvent.change(collectibleAddressInput, {
         target: { value: "invalid" },
       });
-      fireEvent.click(screen.getByTestId("ManageCollectibles__button"));
+      fireEvent.click(screen.getByTestId("AddCollectibles__button"));
       expect(
         screen.getByTestId("collectible-address-wrapper"),
       ).toHaveTextContent("Invalid address");
@@ -146,14 +144,14 @@ describe("ManageCollectibles", () => {
           },
         }}
       >
-        <ManageCollectibles />
+        <AddCollectibles />
       </Wrapper>,
     );
     await waitFor(() => {
-      expect(screen.getByTestId("ManageCollectibles")).toBeInTheDocument();
+      expect(screen.getByTestId("AddCollectibles")).toBeInTheDocument();
       const collectibleTokenIdInput = screen.getByTestId("collectibleTokenId");
       fireEvent.blur(collectibleTokenIdInput);
-      fireEvent.click(screen.getByTestId("ManageCollectibles__button"));
+      fireEvent.click(screen.getByTestId("AddCollectibles__button"));
       expect(
         screen.getByTestId("collectible-token-id-wrapper"),
       ).toHaveTextContent("Token ID is required");
@@ -178,16 +176,16 @@ describe("ManageCollectibles", () => {
           },
         }}
       >
-        <ManageCollectibles />
+        <AddCollectibles />
       </Wrapper>,
     );
     await waitFor(() => {
-      expect(screen.getByTestId("ManageCollectibles")).toBeInTheDocument();
+      expect(screen.getByTestId("AddCollectibles")).toBeInTheDocument();
       const collectibleTokenIdInput = screen.getByTestId("collectibleTokenId");
       fireEvent.change(collectibleTokenIdInput, {
         target: { value: " " },
       });
-      fireEvent.click(screen.getByTestId("ManageCollectibles__button"));
+      fireEvent.click(screen.getByTestId("AddCollectibles__button"));
       expect(
         screen.getByTestId("collectible-token-id-wrapper"),
       ).toHaveTextContent("Token ID cannot contain spaces");

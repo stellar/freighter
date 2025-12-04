@@ -9,22 +9,22 @@ import {
 import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
-interface ResolvedManageCollectiblesData {
+interface ResolvedAddCollectiblesData {
   type: AppDataType.RESOLVED;
   publicKey: string;
   networkDetails: NetworkDetails;
   applicationState: APPLICATION_STATE;
 }
 
-type ManageCollectiblesData = NeedsReRoute | ResolvedManageCollectiblesData;
+type AddCollectiblesData = NeedsReRoute | ResolvedAddCollectiblesData;
 
-function useGetManageCollectiblesData({
+function useGetAddCollectiblesData({
   useAppDataCache = true,
 }: {
   useAppDataCache?: boolean;
 }) {
   const [state, dispatch] = useReducer(
-    reducer<ManageCollectiblesData, unknown>,
+    reducer<AddCollectiblesData, unknown>,
     initialState,
   );
 
@@ -50,7 +50,7 @@ function useGetManageCollectiblesData({
       publicKey,
       applicationState: appData.account.applicationState,
       networkDetails,
-    } as ResolvedManageCollectiblesData;
+    } as ResolvedAddCollectiblesData;
 
     dispatch({ type: "FETCH_DATA_SUCCESS", payload });
     return payload;
@@ -61,4 +61,4 @@ function useGetManageCollectiblesData({
   };
 }
 
-export { useGetManageCollectiblesData, RequestState };
+export { useGetAddCollectiblesData, RequestState };

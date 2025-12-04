@@ -137,7 +137,7 @@ test("Add a collectible to an account", async ({
     .fill("CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN");
   await page.getByTestId("collectibleTokenId").fill("1");
 
-  await page.getByTestId("ManageCollectibles__button").click();
+  await page.getByTestId("AddCollectibles__button").click();
 
   // now check that the collectible is added
   await expect(page.getByText("Stellar Frogs")).toBeVisible();
