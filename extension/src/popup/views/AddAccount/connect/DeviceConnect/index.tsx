@@ -26,7 +26,7 @@ export const WalletErrorBlock = ({ error }: { error: string }) => {
     return null;
   }
   return (
-    <Notification variant="error" title="Error">
+    <Notification variant="error" title={t("Error")}>
       {t(error)}
     </Notification>
   );
@@ -81,7 +81,7 @@ export const DeviceConnect = () => {
           variant="secondary"
           onClick={() => window.close()}
         >
-          Done
+          {t("Done")}
         </Button>
       );
     }
@@ -102,17 +102,19 @@ export const DeviceConnect = () => {
     <>
       <FullscreenStyle />
       <div className="DeviceConnect">
-        <div className="DeviceConnect__header">Connect {walletType}</div>
+        <div className="DeviceConnect__header">
+          {t("Connect {walletType}", { walletType })}
+        </div>
         <div className="DeviceConnect__caption">
           {walletConnectSuccessful
-            ? t("You’re good to go!")
+            ? t("You're good to go!")
             : t("Connect device to computer")}
         </div>
         <div className="DeviceConnect__content__center">
           <img
             className="DeviceConnect__img"
             src={walletConnectSuccessful ? LedgerConnected : Ledger}
-            alt={walletType}
+            alt={t("Connect {walletType}", { walletType })}
           />
         </div>
 

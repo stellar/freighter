@@ -1,5 +1,6 @@
 import React from "react";
 import { Toggle } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import { AssetVisibility, IssuerKey } from "@shared/api/types";
 import {
@@ -95,6 +96,7 @@ export const ToggleAssetRow = ({
   name,
   isSuspicious = false,
 }: AssetRowData) => {
+  const { t } = useTranslation();
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
   const assetCode = name || code;
   const truncatedAssetCode =
@@ -116,7 +118,9 @@ export const ToggleAssetRow = ({
           className="ToggleAssetRows__domain"
           data-testid="ToggleAssetDomain"
         >
-          {formatDomain(domain || "")}
+          {formatDomain(domain || "") === "Stellar Network"
+            ? t("Stellar Network")
+            : formatDomain(domain || "")}
         </div>
       </div>
     </>

@@ -39,17 +39,17 @@ export const test = base.extend<{
     await page.addInitScript(() => {
       (window as any).IS_PLAYWRIGHT = "true";
       try {
-        // Set i18next language preference to English
+        // Set i18next language preference to Portuguese
         if (window.localStorage) {
-          window.localStorage.setItem("i18nextLng", "en");
+          window.localStorage.setItem("i18nextLng", "pt");
         }
         // Override navigator.language for language detection
         Object.defineProperty(navigator, "language", {
-          get: () => "en-US",
+          get: () => "pt-BR",
           configurable: true,
         });
         Object.defineProperty(navigator, "languages", {
-          get: () => ["en-US", "en"],
+          get: () => ["pt-BR", "pt"],
           configurable: true,
         });
       } catch (e) {

@@ -179,7 +179,7 @@ export const ChangeTrustInternal = ({
                   className="ChangeTrustInternal__TitleRow"
                   data-testid="ChangeTrustInternal__TitleRow"
                 >
-                  <img src={StellarLogo} alt="Stellar Logo" />
+                  <img src={StellarLogo} alt={t("Stellar Logo")} />
                   <div className="ChangeTrustInternal__TitleRow__Detail">
                     <span className="ChangeTrustInternal__TitleRow__Title">
                       {t("Confirm Transaction")}
@@ -251,7 +251,7 @@ export const ChangeTrustInternal = ({
                     </div>
                   </div>
                   <div className="ChangeTrustInternal__TransactionDetails__Title">
-                    <span>{t("Transaction Details")}</span>
+                    <span>{t("Transaction details")}</span>
                   </div>
                   <div className="ChangeTrustInternal__TransactionDetails__Summary">
                     <Summary

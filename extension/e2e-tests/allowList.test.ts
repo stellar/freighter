@@ -31,7 +31,7 @@ test("View Allow List selector", async ({ page, extensionId }) => {
   await page.reload();
   const title = page.getByTestId("AppHeaderPageTitle");
   await expect(title).toBeVisible();
-  await expect(title).toHaveText("Connected Apps");
+  await expect(title).toHaveText("Connected apps");
   await expect(page.getByText("docs.freighter.app")).toBeVisible();
 
   await expectPageToHaveScreenshot({
@@ -56,7 +56,7 @@ test("View Allow List selector", async ({ page, extensionId }) => {
 
   await page.getByTestId("account-view-account-name").click();
   await page.getByTestId("add-wallet").click();
-  await page.getByText("Create a new wallet").click();
+  await page.getByText("Create new wallet").click();
 
   await page.locator("#password-input").fill(PASSWORD);
   await page.getByText("Create New Address").click();

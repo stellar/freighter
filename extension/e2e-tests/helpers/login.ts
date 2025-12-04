@@ -1,6 +1,6 @@
 import StellarHDWallet from "stellar-hd-wallet";
-import { Page } from "@playwright/test";
 import { expect } from "../test-fixtures";
+import { Page } from "@playwright/test";
 
 const { generateMnemonic } = StellarHDWallet;
 
@@ -35,7 +35,7 @@ export const login = async ({
 
   await page.getByRole("button", { name: "Import" }).click();
 
-  await expect(page.getByText("You’re all set!")).toBeVisible({
+  await expect(page.getByText("You're all set!")).toBeVisible({
     timeout: 20000,
   });
 
@@ -105,7 +105,7 @@ export const loginToTestAccount = async ({
   }
 
   await page.getByRole("button", { name: "Import" }).click();
-  await expect(page.getByText("You’re all set!")).toBeVisible({
+  await expect(page.getByText("You're all set!")).toBeVisible({
     timeout: 20000,
   });
 

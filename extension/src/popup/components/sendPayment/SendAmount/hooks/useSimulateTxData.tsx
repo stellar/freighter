@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { useDispatch, useSelector, useStore } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import { captureException } from "@sentry/browser";
 import {
@@ -40,7 +40,7 @@ import {
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
 import { findAddressBalance } from "popup/helpers/balance";
-import { AppDispatch, AppState } from "popup/App";
+import { AppDispatch } from "popup/App";
 import { useScanTx } from "popup/helpers/blockaid";
 import { cleanAmount } from "popup/helpers/formatters";
 
@@ -311,7 +311,6 @@ function useSimulateTxData({
   isMainnet: boolean;
 }) {
   const reduxDispatch = useDispatch<AppDispatch>();
-  const store = useStore();
   const { asset, amount, transactionFee, memo } = useSelector(
     transactionDataSelector,
   );
@@ -335,14 +334,6 @@ function useSimulateTxData({
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      // Read memo and transactionFee from Redux state inside fetchData to get the latest values
-      const currentTransactionData = transactionDataSelector(
-        store.getState() as AppState,
-      );
-      const currentMemo = currentTransactionData.memo || memo;
-      const currentTransactionFee =
-        currentTransactionData.transactionFee || transactionFee;
-
       const payload = { transactionXdr: "" } as SimulateTxData;
       let destinationAccount = await getBaseAccount(destination);
 
@@ -391,19 +382,19 @@ function useSimulateTxData({
 
       const simResponse = await simulateTx({
         type: simParams.type,
-        recommendedFee: currentTransactionFee,
+        recommendedFee: transactionFee,
         options: {
           tokenPayment: {
             address: tokenAddress,
             publicKey,
-            memo: currentMemo,
+            memo,
             params: {
               amount: parsedAmount.toNumber(),
               publicKey,
               destination,
             },
             networkDetails,
-            transactionFee: currentTransactionFee,
+            transactionFee,
           },
         },
       });
@@ -429,13 +420,8 @@ function useSimulateTxData({
           isPathPayment,
           isSwap,
           transactionTimeout,
-          memo: simParamsMemo,
+          memo,
         } = simParams;
-        // Use memo from Redux state if simParams doesn't have one, otherwise use simParams memo
-        const memoToUse = simParamsMemo || currentMemo;
-        // Use currentTransactionFee (fresh from Redux) instead of simResponse.recommendedFee
-        // For classic transactions, simResponse.recommendedFee is just the recommendedFee we passed in
-        const feeToUse = currentTransactionFee || simResponse.recommendedFee;
         const transaction = await getBuiltTx(
           publicKey,
           {
@@ -450,10 +436,10 @@ function useSimulateTxData({
             isSwap,
             isFunded: destBalancesResult.isFunded!,
           },
-          feeToUse,
+          simResponse.recommendedFee,
           transactionTimeout,
           networkDetails,
-          memoToUse,
+          memo,
         );
         const xdr = transaction.build().toXDR();
         payload.transactionXdr = xdr;

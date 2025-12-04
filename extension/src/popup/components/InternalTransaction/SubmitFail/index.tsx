@@ -63,9 +63,7 @@ export const SubmitFail = () => {
         errorDetails.errorBlock = (
           <Notification variant="error" title={t("Network fees")}>
             <div>
-              {t(
-                "Fees can vary depending on the network congestion. Please try using the suggested fee and try again.",
-              )}{" "}
+              {`${t("Fees can vary depending on the network congestion.")} ${t("Please try using the suggested fee and try again.")} `}
               <Link
                 isUnderline
                 variant="secondary"
@@ -84,21 +82,21 @@ export const SubmitFail = () => {
         errorDetails.errorBlock = (
           <Notification
             variant="error"
-            title={t(
-              "Your account balance is not sufficient for this transaction. Please review the transaction and try again.",
-            )}
+            title={`${t(
+              "Your account balance is not sufficient for this transaction.",
+            )} ${t("Please review the transaction and try again.")}`}
           />
         );
         break;
       case RESULT_CODES.op_no_destination:
-        errorDetails.title = t("Destination account doesn’t exist");
+        errorDetails.title = t("Destination account doesn't exist");
         errorDetails.errorBlock = (
           <Notification
             variant="error"
-            title={t("The destination account doesn’t exist")}
+            title={t("The destination account doesn't exist")}
           >
             <div>
-              {t("Make sure it is a funded Stellar account and try again.")}{" "}
+              {`${t("Make sure it is a funded Stellar account and try again.")} `}
               <Link
                 isUnderline
                 variant="secondary"
@@ -120,13 +118,13 @@ export const SubmitFail = () => {
           <Notification
             variant="error"
             title={t(
-              "The destination account does not accept the asset you’re sending",
+              "The destination account does not accept the asset you're sending",
             )}
           >
             <div>
-              {t(
+              {`${t(
                 "The destination account must opt to accept this asset before receiving it.",
-              )}{" "}
+              )} `}
               <Link
                 isUnderline
                 variant="secondary"
@@ -145,7 +143,7 @@ export const SubmitFail = () => {
         errorDetails.errorBlock = (
           <Notification variant="error" title={t("Conversion rate")}>
             <div>
-              {t("Please check the new rate and try again.")}{" "}
+              {`${t("Please check the new rate and try again.")} `}
               <Link
                 isUnderline
                 variant="secondary"
@@ -164,9 +162,9 @@ export const SubmitFail = () => {
         errorDetails.errorBlock = (
           <Notification variant="error" title={t("New account")}>
             <div>
-              {t(
+              {`${t(
                 "To create a new account you need to send at least 1 XLM to it.",
-              )}{" "}
+              )} `}
               <Link
                 isUnderline
                 variant="secondary"
@@ -203,10 +201,10 @@ export const SubmitFail = () => {
         <div className="SubmitResult__content">
           <div className="SubmitResult__amount">{errDetails.title}</div>
           <div className="SubmitResult__icon SubmitResult__fail">
-            <img src={IconFail} alt="Icon Fail" />
+            <img src={IconFail} alt={t("Icon Fail")} />
           </div>
           <div className="SubmitResult__error-code">
-            {errDetails.status ? `Status ${errDetails.status}:` : ""}{" "}
+            {errDetails.status ? `${t("Status")} ${errDetails.status}: ` : ""}
             {errDetails.opError}
           </div>
         </div>

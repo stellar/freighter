@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button, Icon, Loader } from "@stellar/design-system";
 
 import { isCustomNetwork } from "@shared/helpers/stellar";
@@ -46,6 +47,7 @@ export const SendingTransaction = ({
   xdr,
   goBack,
 }: SendingTransactionProps) => {
+  const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
   const submission = useSelector(transactionSubmissionSelector);
@@ -146,10 +148,10 @@ export const SendingTransaction = ({
       {isVerifyAccountModalOpen ? (
         <EnterPassword
           accountAddress={publicKey}
-          description={
-            "Enter your account password to authorize this transaction."
-          }
-          confirmButtonTitle={"Submit"}
+          description={t(
+            "Enter your account password to authorize this transaction",
+          )}
+          confirmButtonTitle={t("Submit")}
           onConfirm={handleConfirm}
           onCancel={goBack}
         />
@@ -163,8 +165,9 @@ export const SendingTransaction = ({
                     className="SendingTransaction__Footer__Subtext"
                     data-testid="sending-transaction-footer-subtext"
                   >
-                    You can close this screen, your transaction should be
-                    complete in less than a minute.
+                    {t(
+                      "You can close this screen, your transaction should be complete in less than a minute.",
+                    )}
                   </div>
                   <Button
                     size="lg"
@@ -176,7 +179,7 @@ export const SendingTransaction = ({
                       window.close();
                     }}
                   >
-                    Close
+                    {t("Close")}
                   </Button>
                 </>
               )}
@@ -193,7 +196,7 @@ export const SendingTransaction = ({
                       )
                     }
                   >
-                    View transaction
+                    {t("View transaction")}
                   </Button>
                 </>
               ) : null}
@@ -213,7 +216,7 @@ export const SendingTransaction = ({
                       }, 100);
                     }}
                   >
-                    Done
+                    {t("Done")}
                   </Button>
                 </div>
               )}
@@ -225,12 +228,12 @@ export const SendingTransaction = ({
               {isLoading ? (
                 <>
                   <Loader size="2rem" />
-                  <span>{isSwap ? "Swapping" : "Sending"}</span>
+                  <span>{isSwap ? t("Swapping") : t("Sending")}</span>
                 </>
               ) : (
                 <>
                   <Icon.CheckCircle className="SendingTransaction__Title__Success" />
-                  <span>{isSwap ? "Swapped!" : "Sent!"}</span>
+                  <span>{isSwap ? t("Swapped!") : t("Sent!")}</span>
                 </>
               )}
             </div>
@@ -262,13 +265,13 @@ export const SendingTransaction = ({
                 {isLoading && (
                   <>
                     <span className="SendingTransaction__Summary__Description__Label">
-                      {amount} {srcAsset.code}{" "}
+                      {`${amount} ${srcAsset.code} `}
                     </span>
                     {isSwap && dstAsset ? (
                       <>
                         <span className="SendingTransaction__Summary__Description__Label Verb">
-                          to
-                        </span>{" "}
+                          {`${t("to")} `}
+                        </span>
                         <span className="SendingTransaction__Summary__Description__Label">
                           {destinationAmount} {dstAsset.code}
                         </span>
@@ -276,8 +279,8 @@ export const SendingTransaction = ({
                     ) : (
                       <>
                         <span className="SendingTransaction__Summary__Description__Label Verb">
-                          to
-                        </span>{" "}
+                          {`${t("to")} `}
+                        </span>
                         <span className="SendingTransaction__Summary__Description__Label">
                           {truncatedPublicKey(destination)}
                         </span>
@@ -288,13 +291,13 @@ export const SendingTransaction = ({
                 {isSuccess && (
                   <>
                     <span className="SendingTransaction__Summary__Description__Label">
-                      {amount} {srcAsset.code}{" "}
+                      {`${amount} ${srcAsset.code} `}
                     </span>
                     {isSwap && dstAsset ? (
                       <>
                         <span className="SendingTransaction__Summary__Description__Label Verb">
-                          was swapped to
-                        </span>{" "}
+                          {`${t("was swapped to")} `}
+                        </span>
                         <span className="SendingTransaction__Summary__Description__Label">
                           {destinationAmount} {dstAsset.code}
                         </span>
@@ -302,8 +305,8 @@ export const SendingTransaction = ({
                     ) : (
                       <>
                         <span className="SendingTransaction__Summary__Description__Label Verb">
-                          was sent to
-                        </span>{" "}
+                          {`${t("was sent to")} `}
+                        </span>
                         <span className="SendingTransaction__Summary__Description__Label">
                           {truncatedPublicKey(destination)}
                         </span>

@@ -101,7 +101,7 @@ export const EnterPassword = ({
                         isPassword
                         fieldSize="md"
                         autoComplete="off"
-                        placeholder={t("Enter Password")}
+                        placeholder={t("Enter password")}
                         onChange={(e) => {
                           e.stopPropagation();
                           const target = e.target as HTMLInputElement;

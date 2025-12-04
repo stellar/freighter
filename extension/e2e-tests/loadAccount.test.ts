@@ -27,7 +27,7 @@ test("Load accounts on standalone network", async ({
   await page.getByText("Settings").click();
   await page.getByText("Network").click();
   await page.getByText("Add custom network").click();
-  await expect(page.getByText("Add Custom Network")).toBeVisible();
+  await expect(page.getByText("Add custom network")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "network-form-page.png",
@@ -641,7 +641,7 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
   await expect(page.getByText("Wallets")).toBeVisible();
 
   await page.getByText("Add a wallet").click();
-  await page.getByText("Create a new wallet").click();
+  await page.getByText("Create new wallet").click();
   await page.locator("#password-input").fill(PASSWORD);
   await page.getByRole("button", { name: "Create New Address" }).click();
   await expect(page.getByTestId("account-assets")).toContainText("XLM");

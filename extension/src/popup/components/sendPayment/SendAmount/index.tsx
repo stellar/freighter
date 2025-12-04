@@ -288,7 +288,7 @@ export const SendAmount = ({
   return (
     <React.Fragment>
       <SubviewHeader
-        title={<span>Send</span>}
+        title={<span>{t("Send")}</span>}
         hasBackButton
         customBackAction={goBackAction}
       />
@@ -298,10 +298,12 @@ export const SendAmount = ({
             <div className="SendAmount__settings-row">
               <div className="SendAmount__settings-fee-display">
                 <span className="SendAmount__settings-fee-display__label">
-                  Fee:
+                  {t("Fee")}:
                 </span>
                 <span>
-                  {inputType === "crypto" ? `${fee} XLM` : recommendedFeeUsd}
+                  {inputType === "crypto"
+                    ? `${fee} ${t("XLM")}`
+                    : recommendedFeeUsd}
                 </span>
               </div>
               <div className="SendAmount__settings-options">
@@ -500,8 +502,9 @@ export const SendAmount = ({
                     <>
                       <Icon.AlertCircle />
                       <span>
-                        You don't have enough {parsedSourceAsset.code} in your
-                        account
+                        {t("You don't have enough {{asset}} in your account", {
+                          asset: parsedSourceAsset.code,
+                        })}
                       </span>
                     </>
                   )}
@@ -595,13 +598,8 @@ export const SendAmount = ({
               onSubmit={async ({ memo }: { memo: string }) => {
                 dispatch(saveMemo(memo));
                 setIsEditingMemo(false);
-                // Regenerate transaction XDR with new memo (now reads memo from Redux state inside fetchData)
                 await fetchSimulationData();
-                // Reopen review sheet after memo is saved and XDR is regenerated only if user came from review flow
-                if (memoEditingContext === MemoEditingContext.Review) {
-                  setIsReviewingTx(true);
-                  setMemoEditingContext(null);
-                }
+                setIsReviewingTx(true);
               }}
             />
           </div>
@@ -623,11 +621,11 @@ export const SendAmount = ({
           <div className="EditMemoWrapper">
             <EditSettings
               fee={fee}
-              title="Send Settings"
+              title={t("Send Settings")}
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
               onClose={() => setIsEditingSettings(false)}
-              onSubmit={async ({
+              onSubmit={({
                 fee,
                 timeout,
               }: {
@@ -637,8 +635,6 @@ export const SendAmount = ({
                 dispatch(saveTransactionFee(fee));
                 dispatch(saveTransactionTimeout(timeout));
                 setIsEditingSettings(false);
-                // Regenerate transaction XDR with new fee (now reads fee from Redux state inside fetchData)
-                await fetchSimulationData();
               }}
             />
           </div>
@@ -668,7 +664,7 @@ export const SendAmount = ({
             sendPriceUsd={priceValueUsd}
             simulationState={simulationState}
             srcAsset={asset}
-            title="You are sending"
+            title={t("You are sending")}
           />
         ) : (
           <></>

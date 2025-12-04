@@ -9,6 +9,7 @@ import {
   Text,
   TextProps,
 } from "@stellar/design-system";
+import i18n from "popup/helpers/localizationConfig";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 
@@ -91,7 +92,7 @@ export const getSwapIcons = ({
             size="md"
             variant="single"
             sourceOne={{
-              altText: "Swap source token logo",
+              altText: i18n.t("Swap source token logo"),
               image: sourceIcon,
             }}
           />
@@ -104,7 +105,7 @@ export const getSwapIcons = ({
             size="md"
             variant="single"
             sourceOne={{
-              altText: "Swap destination token logo",
+              altText: i18n.t("Swap destination token logo"),
               image: destIcon,
             }}
           />
@@ -127,7 +128,7 @@ export const getPaymentIcon = ({
       size="lg"
       variant="single"
       sourceOne={{
-        altText: "Payment token logo",
+        altText: i18n.t("Payment token logo"),
         image: destIcon,
       }}
     />
@@ -149,7 +150,7 @@ export const getTransferIcons = ({
         size="lg"
         variant="single"
         sourceOne={{
-          altText: "Stellar token logo",
+          altText: i18n.t("Stellar token logo"),
           image: StellarLogo,
         }}
       />
@@ -352,7 +353,7 @@ export const getRowDataByOpType = async (
         transactionFailed: true,
       },
       rowIcon: getRowIconByType("fail"),
-      rowText: "Transaction Failed",
+      rowText: i18n.t("Transaction Failed"),
     };
   }
 
@@ -443,7 +444,7 @@ export const getRowDataByOpType = async (
           });
 
     return {
-      action: isReceiving ? "Received" : "Sent",
+      action: isReceiving ? i18n.t("Received") : i18n.t("Sent"),
       actionIcon: isReceiving ? "received" : "sent",
       amount: formattedAmount,
       date,
@@ -475,7 +476,7 @@ export const getRowDataByOpType = async (
         isInvokeHostFn,
       },
       rowIcon: getRowIconByType("generic"),
-      rowText: "Contract Function",
+      rowText: i18n.t("Contract Function"),
     };
 
     if (!attrs) {
@@ -504,7 +505,7 @@ export const getRowDataByOpType = async (
       }${formattedTokenAmount} ${token.code}`;
 
       return {
-        action: isReceiving ? "Received" : "Minted",
+        action: isReceiving ? i18n.t("Received") : i18n.t("Minted"),
         actionIcon: isReceiving ? "received" : "generic",
         amount: formattedAmount,
         date,
@@ -582,7 +583,7 @@ export const getRowDataByOpType = async (
       const formattedAmount = `${paymentDifference}${nonLabelAmount} ${destAssetCode}`;
 
       return {
-        action: `${isReceiving ? "Received" : "Sent"}`,
+        action: isReceiving ? i18n.t("Received") : i18n.t("Sent"),
         actionIcon: isReceiving ? "received" : "sent",
         amount: formattedAmount,
         date,
@@ -604,7 +605,7 @@ export const getRowDataByOpType = async (
             </div>
           </div>
         ),
-        rowText: "Create Account",
+        rowText: i18n.t("Create Account"),
       };
     }
 
@@ -632,7 +633,7 @@ export const getRowDataByOpType = async (
             size="lg"
             variant="single"
             sourceOne={{
-              altText: "Asset logo",
+              altText: i18n.t("Asset logo"),
               image: destIcon,
             }}
           />

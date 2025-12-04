@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
 
 import {
@@ -29,15 +30,16 @@ export const TokenList = ({
   tokenPrices,
   onClickAsset,
 }: TokenListProps) => {
+  const { t } = useTranslation();
   return (
     <div className="TokenList__Assets">
       {!tokens.length ? (
         <div className="TokenList__Assets__empty">
-          You have no assets added. Get started by adding an asset.
+          {`${t("You have no assets added.")} ${t("Get started by adding an asset.")}`}
         </div>
       ) : (
         <>
-          <div className="TokenList__Assets__Header">Your Tokens</div>
+          <div className="TokenList__Assets__Header">{t("Your Tokens")}</div>
           {tokens
             .filter(
               (

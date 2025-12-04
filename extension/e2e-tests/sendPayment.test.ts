@@ -6,9 +6,9 @@ import {
   stubAccountBalances,
   stubAccountBalancesE2e,
   stubAccountHistory,
+  stubMemoRequiredAccounts,
   stubTokenDetails,
   stubTokenPrices,
-  stubMemoRequiredAccounts,
 } from "./helpers/stubs";
 
 const MUXED_ACCOUNT_ADDRESS =

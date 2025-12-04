@@ -49,33 +49,34 @@ interface AddWalletProps {
 }
 
 const AddWallet = ({ onBack }: AddWalletProps) => {
+  const { t } = useTranslation();
   const actions = [
     {
       icon: <Icon.Activity stroke="#99D52A" />,
       color: "lime",
-      title: "Create a new wallet",
-      description: "Create a wallet from your seed phrase.",
+      title: t("Create new wallet"),
+      description: t("Create a wallet from your seed phrase."),
       link: ROUTES.addAccount,
     },
     {
       icon: <Icon.Activity stroke="#D6409F" />,
       color: "purple",
-      title: "Import a Stellar secret key",
-      description: "Add a wallet using a secret key.",
+      title: t("Import Stellar Secret Key"),
+      description: t("Add a wallet using a secret key."),
       link: ROUTES.importAccount,
     },
     {
       icon: <Icon.ShieldPlus stroke="#3E63DD" />,
       color: "blue",
-      title: "Connect a hardware wallet",
-      description: "Add a wallet from a hardware wallet.",
+      title: t("Connect a hardware wallet"),
+      description: t("Add a wallet from a hardware wallet."),
       link: ROUTES.connectWallet,
     },
   ];
   return (
     <>
       <SubviewHeader
-        title="Add another wallet"
+        title={t("Add another wallet")}
         customBackAction={onBack}
         customBackIcon={<Icon.ArrowLeft />}
       />
@@ -147,7 +148,7 @@ const RenameWallet = ({
     <View.Content hasNoTopPadding>
       <div className="RenameWallet">
         <Card>
-          <p>Rename Wallet</p>
+          <p>{t("Rename Wallet")}</p>
           <Formik
             initialValues={initialValues}
             onSubmit={handleSubmit}
@@ -177,7 +178,7 @@ const RenameWallet = ({
                     )}
                   </Field>
                   <div className="RenameWallet__short-address">
-                    Address: {shortPublicKey}
+                    {t("Address")}: {shortPublicKey}
                   </div>
                   <div className="RenameWallet__actions">
                     <Button
@@ -245,7 +246,9 @@ const WalletRow = ({
   if (isFetchingTokenPrices && !accountValue) {
     subTitle = `${shortPublicKey} - ...`;
   }
-  const walletIdentifier = hardwareWalletType || isImported ? "Imported" : "";
+  const { t } = useTranslation();
+  const walletIdentifier =
+    hardwareWalletType || isImported ? t("Imported") : "";
   return (
     <div className="WalletRow">
       <div
@@ -278,7 +281,7 @@ const WalletRow = ({
         data-testid="wallet-row-options"
         onClick={() => setOptionsOpen(publicKey)}
       >
-        <img src={IconEllipsis} alt="wallet action options" />
+        <img src={IconEllipsis} alt={t("wallet action options")} />
       </div>
     </div>
   );
@@ -372,7 +375,7 @@ export const Wallets = () => {
   return (
     <React.Fragment>
       <SubviewHeader
-        title="Wallets"
+        title={t("Wallets")}
         customBackAction={() => navigateTo(ROUTES.account, navigate)}
         customBackIcon={<Icon.XClose />}
       />
@@ -432,7 +435,7 @@ export const Wallets = () => {
                       >
                         <div className="action-copy">
                           <div className="WalletRow__options-actions__label">
-                            Rename wallet
+                            {t("Rename Wallet")}
                           </div>
                           <Icon.Edit05 />
                         </div>
@@ -441,7 +444,7 @@ export const Wallets = () => {
                         <CopyText textToCopy={publicKey}>
                           <div className="action-copy">
                             <div className="WalletRow__options-actions__label">
-                              Copy address
+                              {t("Copy address")}
                             </div>
                             <Icon.Copy01 />
                           </div>
