@@ -27,7 +27,7 @@ test("Load accounts on standalone network", async ({
   await page.getByText("Settings").click();
   await page.getByText("Network").click();
   await page.getByText("Add custom network").click();
-  await expect(page.getByText("Add Custom Network")).toBeVisible();
+  await expect(page.getByText("Add custom network")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "network-form-page.png",

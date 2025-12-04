@@ -164,7 +164,7 @@ export const SearchAsset = () => {
 
   return (
     <>
-      <SubviewHeader title={t("Choose Asset")} />
+      <SubviewHeader title={t("Choose asset")} />
 
       <View.Content hasTopInput>
         <Formik initialValues={initialValues} onSubmit={() => {}}>

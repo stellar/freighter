@@ -189,7 +189,7 @@ describe("AssetTile", () => {
         "Select asset",
       );
       expect(screen.getByTestId("tile-secondary")).toHaveTextContent(
-        "Choose Asset",
+        "Choose asset",
       );
     });
 

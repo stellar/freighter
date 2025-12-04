@@ -61,7 +61,7 @@ export const AssetTile = ({
     <SelectionTile
       icon={<Icon.Activity />}
       primaryText={emptyLabel || t("Select asset")}
-      secondaryText={emptySubtext || t("Choose Asset")}
+      secondaryText={emptySubtext || t("Choose asset")}
       onClick={onClick}
       isEmpty
       testId={testId}

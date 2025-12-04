@@ -374,7 +374,7 @@ const BlockaidFeedbackForm = ({
                       variant="tertiary"
                       isFullWidth
                     >
-                      {t("Learn More")}
+                      {t("Learn more")}
                     </Button>
                     <Button
                       size="md"
@@ -617,7 +617,7 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
           values={{ url }}
         />
         {` ${t("For additional safety Freighter only works with websites that provide an SSL certificate by default.")} `}
-        {`${t("You may enable connection to domains that do not use an SSL certificate in Settings &gt; Security &gt; Advanced Settings.")} `}
+        {`${t("You may enable connection to domains that do not use an SSL certificate in Settings &gt; Security &gt; Advanced settings.")} `}
       </p>
     </WarningMessage>
   );

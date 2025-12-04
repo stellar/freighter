@@ -31,7 +31,7 @@ test("View Allow List selector", async ({ page, extensionId }) => {
   await page.reload();
   const title = page.getByTestId("AppHeaderPageTitle");
   await expect(title).toBeVisible();
-  await expect(title).toHaveText("Connected Apps");
+  await expect(title).toHaveText("Connected apps");
   await expect(page.getByText("docs.freighter.app")).toBeVisible();
 
   await expectPageToHaveScreenshot({

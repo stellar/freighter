@@ -38,7 +38,7 @@ export const Security = () => {
               href={ROUTES.manageAssetsLists}
               icon={<IconAssetList />}
             >
-              {t("Asset Lists")}
+              {t("Asset lists")}
             </ListNavLink>
             <ListNavLink
               href={ROUTES.displayBackupPhrase}
@@ -50,7 +50,7 @@ export const Security = () => {
               href={ROUTES.advancedSettings}
               icon={<Icon.LifeBuoy01 />}
             >
-              {t("Advanced Settings")}
+              {t("Advanced settings")}
             </ListNavLink>
             {/* <ListNavButtonLink
               handleClick={() => {

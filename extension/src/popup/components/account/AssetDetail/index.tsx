@@ -472,7 +472,7 @@ export const AssetDetail = ({
                 target="_blank"
                 rel="noreferrer"
               >
-                {t("Learn More")}
+                {t("Learn more")}
               </a>
             </div>
           </div>

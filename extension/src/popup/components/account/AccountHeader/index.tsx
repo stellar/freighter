@@ -288,7 +288,7 @@ export const AccountHeader = ({
                       }
                     >
                       <Text as="div" size="sm" weight="medium">
-                        {t("Connected Apps")}
+                        {t("Connected apps")}
                       </Text>
                       <div className="AccountHeader__options__item__icon">
                         <Icon.Link04 />

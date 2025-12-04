@@ -422,7 +422,7 @@ export const SignTransaction = () => {
                   onClick={() => setActivePaneIndex(2)}
                 >
                   <Icon.List />
-                  <span>{t("Transaction Details")}</span>
+                  <span>{t("Transaction details")}</span>
                 </div>
               </div>
             </div>,
@@ -445,7 +445,7 @@ export const SignTransaction = () => {
                     </div>
                   </div>
                   <div className="SignTransaction__TransactionDetails__Title">
-                    <span>{t("Transaction Details")}</span>
+                    <span>{t("Transaction details")}</span>
                   </div>
                   <div className="SignTransaction__TransactionDetails__Summary">
                     <Summary

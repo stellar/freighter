@@ -157,7 +157,7 @@ export const AdvancedSettings = () => {
 
   return isUnderstood ? (
     <>
-      <SubviewHeader title={t("Advanced Settings")} />
+      <SubviewHeader title={t("Advanced settings")} />
       <Formik
         initialValues={initialValues}
         onSubmit={handleSubmit}
@@ -198,7 +198,7 @@ export const AdvancedSettings = () => {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    {t("Learn More")}
+                    {t("Learn more")}
                   </a>
                 </>
               }

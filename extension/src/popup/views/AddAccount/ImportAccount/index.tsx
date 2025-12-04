@@ -111,7 +111,7 @@ export const ImportAccount = () => {
                       autoComplete="off"
                       id="password-input"
                       type="password"
-                      placeholder={t("Enter Password")}
+                      placeholder={t("Enter password")}
                       error={authError}
                       {...field}
                     />
