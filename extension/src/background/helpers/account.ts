@@ -21,11 +21,7 @@ import { getSorobanRpcUrl } from "@shared/helpers/soroban/sorobanRpcUrl";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
 import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
-import {
-  DataStorageAccess,
-  dataStorageAccess,
-  browserSessionStorage,
-} from "background/helpers/dataStorageAccess";
+import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { captureException } from "@sentry/browser";
 
@@ -207,16 +203,12 @@ export const getIsHashSigningEnabled = async ({
   localStore: DataStorageAccess;
 }) => (await localStore.getItem(IS_HASH_SIGNING_ENABLED_ID)) ?? false;
 
-export const getOverriddenBlockaidResponse = async (): Promise<
-  string | null
-> => {
-  // Only load from sessionStorage in dev mode
-  const isDev = process.env.DEV_EXTENSION === "true" || !process.env.PRODUCTION;
-  if (!isDev) {
-    return null;
-  }
-  const sessionStore = dataStorageAccess(browserSessionStorage);
-  return (await sessionStore.getItem(OVERRIDDEN_BLOCKAID_RESPONSE_ID)) ?? null;
+export const getOverriddenBlockaidResponse = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}): Promise<string | null> => {
+  return (await localStore.getItem(OVERRIDDEN_BLOCKAID_RESPONSE_ID)) ?? null;
 };
 
 // hardware wallet helpers

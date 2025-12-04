@@ -771,15 +771,12 @@ export const BlockaidTxScanLabel = ({
   const shouldTreatAsUnableToScan = useShouldTreatTxAsUnableToScan();
   const isTxSuspiciousCheck = useIsTxSuspicious();
   const [debugOverride, setDebugOverride] = useState<string | null>(null);
-  const isDev = process.env.DEV_EXTENSION === "true" || !process.env.PRODUCTION;
 
   useEffect(() => {
-    if (isDev) {
-      getDebugOverride()
-        .then(setDebugOverride)
-        .catch(() => setDebugOverride(null));
-    }
-  }, [isDev]);
+    getDebugOverride()
+      .then(setDebugOverride)
+      .catch(() => setDebugOverride(null));
+  }, []);
 
   // Handle unable to scan state (including debug override)
   // This check must come first to ensure debug override is respected
@@ -811,7 +808,6 @@ export const BlockaidTxScanLabel = ({
 
   // Check debug override for malicious state (before checking actual scan result)
   if (
-    isDev &&
     debugOverride === SecurityLevel.MALICIOUS &&
     isTxSuspiciousCheck(scanResult)
   ) {
@@ -838,7 +834,6 @@ export const BlockaidTxScanLabel = ({
 
   // Check debug override for suspicious state (before checking actual scan result)
   if (
-    isDev &&
     debugOverride === SecurityLevel.SUSPICIOUS &&
     isTxSuspiciousCheck(scanResult)
   ) {

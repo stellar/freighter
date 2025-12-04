@@ -8,12 +8,6 @@ export const getDebugOverride = async ({
 }): Promise<{
   overriddenBlockaidResponse: string | null;
 }> => {
-  // Only load from localStorage in dev mode
-  const isDev = process.env.DEV_EXTENSION === "true" || !process.env.PRODUCTION;
-  if (!isDev) {
-    return { overriddenBlockaidResponse: null };
-  }
-
   const value =
     (await localStore.getItem(OVERRIDDEN_BLOCKAID_RESPONSE_ID)) ?? null;
   return { overriddenBlockaidResponse: value };

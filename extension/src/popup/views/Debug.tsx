@@ -45,23 +45,37 @@ export const Debug = () => {
   }
 
   const handleSetOverride = async (level: SecurityLevel) => {
+    console.log("[Debug] handleSetOverride called with:", level);
+    console.log("[Debug] isDev:", isDev);
     try {
+      console.log("[Debug] Calling saveDebugOverride with:", {
+        overriddenBlockaidResponse: level,
+      });
       const { overriddenBlockaidResponse: saved } = await saveDebugOverride({
         overriddenBlockaidResponse: level,
       });
+      console.log("[Debug] saveDebugOverride returned:", saved);
       setOverriddenBlockaidResponse(saved);
+      console.log("[Debug] State updated to:", saved);
     } catch (error) {
+      console.error("[Debug] Error in handleSetOverride:", error);
       captureException(error);
     }
   };
 
   const handleClearOverride = async () => {
+    console.log("[Debug] handleClearOverride called");
+    console.log("[Debug] isDev:", isDev);
     try {
+      console.log("[Debug] Calling saveDebugOverride with null");
       const { overriddenBlockaidResponse: saved } = await saveDebugOverride({
         overriddenBlockaidResponse: null,
       });
+      console.log("[Debug] saveDebugOverride returned:", saved);
       setOverriddenBlockaidResponse(saved);
+      console.log("[Debug] State updated to:", saved);
     } catch (error) {
+      console.error("[Debug] Error in handleClearOverride:", error);
       captureException(error);
     }
   };

@@ -1684,7 +1684,7 @@ export const saveDebugOverride = async ({
     overriddenBlockaidResponse,
     type: SERVICE_TYPES.SAVE_BLOCKAID_DEBUG_OVERRIDE,
   })) as unknown as {
-    overriddenBlockaidResponse: string | null;
+    overriddenBlockaidResponse?: string | null;
     error?: string;
   };
 

@@ -29,7 +29,9 @@ export const loadSettings = async ({
   const isNonSSLEnabled = await getIsNonSSLEnabled({ localStore });
   const isHideDustEnabled = await getIsHideDustEnabled({ localStore });
   const { hiddenAssets } = await getHiddenAssets({ localStore });
-  const overriddenBlockaidResponse = await getOverriddenBlockaidResponse();
+  const overriddenBlockaidResponse = await getOverriddenBlockaidResponse({
+    localStore,
+  });
 
   return {
     allowList: await getAllowList({ localStore }),

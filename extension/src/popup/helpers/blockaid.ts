@@ -19,10 +19,6 @@ import { getDebugOverride } from "@shared/api/internal";
 import { SecurityLevel } from "popup/constants/blockaid";
 import { fetchJson } from "./fetch";
 
-// Only enable debug override in dev mode
-const getIsDev = () =>
-  process.env.DEV_EXTENSION === "true" || !process.env.PRODUCTION;
-
 export const ATTACK_TO_DISPLAY = {
   signature_farming:
     "A malicious RPC attempted to issue a raw transaction signature from the user.",
@@ -239,11 +235,9 @@ export const useIsAssetSuspicious = () => {
   const [debugOverride, setDebugOverride] = useState<string | null>(null);
 
   useEffect(() => {
-    if (getIsDev()) {
-      getDebugOverride()
-        .then(setDebugOverride)
-        .catch(() => setDebugOverride(null));
-    }
+    getDebugOverride()
+      .then(setDebugOverride)
+      .catch(() => setDebugOverride(null));
   }, []);
 
   return (blockaidData?: BlockAidScanAssetResult | null) =>
@@ -258,11 +252,9 @@ export const useIsTxSuspicious = () => {
   const [debugOverride, setDebugOverride] = useState<string | null>(null);
 
   useEffect(() => {
-    if (getIsDev()) {
-      getDebugOverride()
-        .then(setDebugOverride)
-        .catch(() => setDebugOverride(null));
-    }
+    getDebugOverride()
+      .then(setDebugOverride)
+      .catch(() => setDebugOverride(null));
   }, []);
 
   return (blockaidData?: BlockAidScanTxResult | null) =>
@@ -277,11 +269,9 @@ export const useShouldTreatAssetAsUnableToScan = () => {
   const [debugOverride, setDebugOverride] = useState<string | null>(null);
 
   useEffect(() => {
-    if (getIsDev()) {
-      getDebugOverride()
-        .then(setDebugOverride)
-        .catch(() => setDebugOverride(null));
-    }
+    getDebugOverride()
+      .then(setDebugOverride)
+      .catch(() => setDebugOverride(null));
   }, []);
 
   return (blockaidData?: BlockAidScanAssetResult | null) =>
@@ -296,11 +286,9 @@ export const useShouldTreatTxAsUnableToScan = () => {
   const [debugOverride, setDebugOverride] = useState<string | null>(null);
 
   useEffect(() => {
-    if (getIsDev()) {
-      getDebugOverride()
-        .then(setDebugOverride)
-        .catch(() => setDebugOverride(null));
-    }
+    getDebugOverride()
+      .then(setDebugOverride)
+      .catch(() => setDebugOverride(null));
   }, []);
 
   return (blockaidData?: BlockAidScanTxResult | null) =>
@@ -335,8 +323,7 @@ export const isTxUnableToScan = (
 const getSuspiciousFromDebugOverride = (
   debugOverride?: string | null,
 ): boolean | null => {
-  // Only check debug override in dev mode
-  if (!getIsDev() || !debugOverride) {
+  if (!debugOverride) {
     return null;
   }
 
@@ -364,8 +351,8 @@ export const shouldTreatAssetAsUnableToScan = (
   blockaidData?: BlockAidScanAssetResult | null,
   debugOverride?: string | null,
 ): boolean => {
-  // Check debug override first (only in dev mode)
-  if (getIsDev() && debugOverride === SecurityLevel.UNABLE_TO_SCAN) {
+  // Check debug override first
+  if (debugOverride === SecurityLevel.UNABLE_TO_SCAN) {
     return true;
   }
   return isAssetUnableToScan(blockaidData);
@@ -378,8 +365,8 @@ export const shouldTreatTxAsUnableToScan = (
   blockaidData?: BlockAidScanTxResult | null,
   debugOverride?: string | null,
 ): boolean => {
-  // Check debug override first (only in dev mode)
-  if (getIsDev() && debugOverride === SecurityLevel.UNABLE_TO_SCAN) {
+  // Check debug override first
+  if (debugOverride === SecurityLevel.UNABLE_TO_SCAN) {
     return true;
   }
   return isTxUnableToScan(blockaidData);
