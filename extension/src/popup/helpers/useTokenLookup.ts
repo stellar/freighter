@@ -160,6 +160,7 @@ export const useTokenLookup = ({
       assetsLists,
       cachedTokenLists,
       isAllowListVerificationEnabled,
+      isAssetSuspicious,
       networkDetails,
       publicKey,
       setAssetRows,
