@@ -1,21 +1,20 @@
-import React, { useEffect, useContext, useMemo, useState } from "react";
+import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import classnames from "classnames";
 import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-import {
-  AccountTabsContext,
-  TabsList,
-} from "popup/views/Account/contexts/activeTabContext";
+import { TabsList } from "popup/views/Account/contexts/activeTabContext";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 
 import { AccountHeaderModal } from "../AccountHeaderModal";
+import { useActiveTab } from "./hooks/useActiveTab";
+
 import "./styles.scss";
 
 const ManageAssetsModalContent = () => {
@@ -36,7 +35,7 @@ const ManageAssetsModalContent = () => {
       <Link to={ROUTES.manageAssets}>
         <div className="AccountTabs__modal__item">
           <div className="AccountTabs__modal__item__icon">
-            <Icon.EyeOff />
+            <Icon.Pencil01 />
           </div>
           <div className="AccountTabs__modal__item__title">
             {t("Manage tokens")}
@@ -75,29 +74,16 @@ const ManageCollectiblesModalContent = () => {
 };
 
 export const AccountTabs = () => {
-  const { activeTab, setActiveTab } = useContext(AccountTabsContext);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [isManageAssetsOpen, setIsManageAssetsOpen] = useState(false);
   const [isManageCollectiblesOpen, setIsManageCollectiblesOpen] =
     useState(false);
   const isBackgroundActive = isManageAssetsOpen || isManageCollectiblesOpen;
-  const location = useLocation();
-  const queryParams = useMemo(
-    () => new URLSearchParams(location.search),
-    [location.search],
-  );
 
-  const isTokensTab = activeTab === 0;
-  const isCollectiblesTab = activeTab === 1;
+  const { activeTab, setActiveTab } = useActiveTab();
 
-  useEffect(() => {
-    const queryParamTab = queryParams.get("tab");
-    const index = TabsList.findIndex((tab) => tab === queryParamTab);
-
-    if (index !== -1) {
-      setActiveTab(index);
-    }
-  }, [queryParams, setActiveTab]);
+  const isTokensTab = activeTab === TabsList.TOKENS;
+  const isCollectiblesTab = activeTab === TabsList.COLLECTIBLES;
 
   const handleManageClick = () => {
     if (isTokensTab) {
@@ -110,20 +96,25 @@ export const AccountTabs = () => {
   return (
     <div className="AccountTabs">
       <div className="AccountTabs__tabs">
-        {TabsList.map((tab, index) => {
-          if (tab === "collectibles" && isCustomNetwork(networkDetails)) {
+        {Object.values(TabsList).map((tab) => {
+          if (
+            tab === TabsList.COLLECTIBLES &&
+            isCustomNetwork(networkDetails)
+          ) {
             return null;
           }
+
+          console.log("tab", tab);
 
           return (
             <div
               data-testid={`account-tab-${tab}`}
               className={classnames("AccountTabs__tab-item", {
-                "AccountTabs__tab-item--active": activeTab === index,
+                "AccountTabs__tab-item--active": activeTab === tab,
               })}
               key={tab}
               onClick={() => {
-                setActiveTab(index);
+                setActiveTab(tab);
               }}
             >
               {tab}

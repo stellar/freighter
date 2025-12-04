@@ -10,7 +10,7 @@ export const addCollectible = async ({
   request: AddCollectibleMessage;
   localStore: DataStorageAccess;
 }) => {
-  const { network, publicKey, collectibleAddress, collectibleTokenId } =
+  const { network, publicKey, collectibleContractAddress, collectibleTokenId } =
     request;
 
   const collectibles = (await localStore.getItem(COLLECTIBLES_ID)) || {};
@@ -21,7 +21,7 @@ export const addCollectible = async ({
 
   // does collectible contract already exist?
   const collectibleContract = accountCollectibles.find(
-    (contract) => contract.id === collectibleAddress,
+    (contract) => contract.id === collectibleContractAddress,
   );
   if (collectibleContract?.tokenIds.includes(collectibleTokenId)) {
     return { error: "Collectible contract already exists" };
@@ -31,7 +31,7 @@ export const addCollectible = async ({
     collectibleContract.tokenIds.push(collectibleTokenId);
   } else {
     accountCollectibles.push({
-      id: collectibleAddress,
+      id: collectibleContractAddress,
       tokenIds: [collectibleTokenId],
     });
   }
@@ -44,5 +44,5 @@ export const addCollectible = async ({
     },
   });
 
-  return { collectiblesList: await localStore.getItem(COLLECTIBLES_ID) };
+  return { collectiblesList: accountCollectibles };
 };

@@ -66,7 +66,7 @@ export const ManageCollectibles = () => {
       // refetch collectibles to update the UI before we navigate away
       await fetchCollectibles({ publicKey, networkDetails });
 
-      navigateTo(ROUTES.account, navigate, `?tab=${TabsList[1]}`);
+      navigateTo(ROUTES.account, navigate, `?tab=${TabsList.COLLECTIBLES}`);
     } catch (error) {
       setAddCollectibleError("Unable to add collectible");
       captureException(`Failed to add collectible: ${JSON.stringify(error)}`);

@@ -364,7 +364,7 @@ export interface AddCollectibleMessage extends BaseMessage {
   type: SERVICE_TYPES.ADD_COLLECTIBLE;
   network: string;
   publicKey: string;
-  collectibleAddress: string;
+  collectibleContractAddress: string;
   collectibleTokenId: string;
 }
 
