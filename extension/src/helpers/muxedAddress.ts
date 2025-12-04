@@ -75,6 +75,60 @@ export async function checkContractMuxedSupport(
   }
 }
 
+export interface MemoDisabledStateParams {
+  targetAddress: string;
+  contractId?: string;
+  networkDetails?: NetworkDetails;
+  t: (key: string) => string;
+}
+
+export interface MemoDisabledState {
+  isMemoDisabled: boolean;
+  memoDisabledMessage?: string;
+}
+
+/**
+ * Determines if memo should be disabled for a transaction.
+ * Disables memo for all M addresses (memo is encoded in the address).
+ *
+ * @param params Parameters for determining memo disabled state
+ * @returns Object indicating if memo is disabled and optional message
+ */
+export function getMemoDisabledState(
+  params: MemoDisabledStateParams,
+): MemoDisabledState {
+  const { targetAddress, contractId, networkDetails, t } = params;
+
+  // Disable memo for all M addresses (memo is encoded in the address)
+  if (isMuxedAccount(targetAddress)) {
+    return {
+      isMemoDisabled: true,
+      memoDisabledMessage: t("Memo is disabled for this transaction"),
+    };
+  }
+
+  if (!contractId || !networkDetails) {
+    return { isMemoDisabled: false, memoDisabledMessage: undefined };
+  }
+
+  if (isContractId(targetAddress)) {
+    return {
+      isMemoDisabled: true,
+      memoDisabledMessage: t("Memo is not supported for this operation"),
+    };
+  }
+
+  if (!isValidStellarAddress(targetAddress) && !isMuxedAccount(targetAddress)) {
+    return {
+      isMemoDisabled: true,
+      memoDisabledMessage: t("Memo is not supported for this operation"),
+    };
+  }
+
+  // For Soroban transactions (custom tokens), memo is supported for G addresses
+  return { isMemoDisabled: false, memoDisabledMessage: undefined };
+}
+
 export interface DetermineMuxedDestinationParams {
   recipientAddress: string;
   transactionMemo?: string;

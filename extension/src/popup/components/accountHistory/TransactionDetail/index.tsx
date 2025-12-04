@@ -7,12 +7,8 @@ import StellarLogo from "popup/assets/stellar-logo.png";
 
 import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
-import {
-  stroopToXlm,
-  truncatedPublicKey,
-  isMuxedAccount,
-} from "helpers/stellar";
-import { isSorobanTransaction } from "popup/helpers/soroban";
+import { stroopToXlm, truncatedPublicKey } from "helpers/stellar";
+import { getMemoDisabledState } from "helpers/muxedAddress";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -37,6 +33,25 @@ export const TransactionDetail = ({
   networkDetails: NetworkDetails;
 }) => {
   const { t } = useTranslation();
+
+  // Get memo disabled state using the helper
+  // For history, we don't have contractId, so we pass undefined
+  // The helper will still correctly disable memo for M addresses
+  // Must be called before early return to satisfy React hooks rules
+  const memoDisabledState = React.useMemo(() => {
+    if (!activeOperation?.metadata?.to) {
+      return { isMemoDisabled: false, memoDisabledMessage: undefined };
+    }
+    return getMemoDisabledState({
+      targetAddress: activeOperation.metadata.to,
+      contractId: undefined, // Not available in history context
+      networkDetails,
+      t,
+    });
+  }, [activeOperation?.metadata?.to, networkDetails, t]);
+
+  const { isMemoDisabled } = memoDisabledState;
+
   if (!activeOperation) {
     return <></>;
   }
@@ -58,15 +73,7 @@ export const TransactionDetail = ({
     .join(" ");
 
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
-  const { feeCharged, memo, isInvokeHostFn, to } = activeOperation.metadata;
-
-  // Check if this is a Soroban transaction
-  const isSorobanTx = isSorobanTransaction({
-    isInvokeHostFn,
-  });
-
-  // Check if destination is muxed (only relevant for Soroban transactions)
-  const isDestinationMuxed = to ? isMuxedAccount(to) : false;
+  const { feeCharged, memo } = activeOperation.metadata;
 
   const renderBody = (activeOperation: OperationDataRow) => {
     if (activeOperation.metadata.isInvokeHostFn) {
@@ -431,9 +438,8 @@ export const TransactionDetail = ({
             {stroopToXlm(feeCharged as string).toString()} XLM
           </div>
         </div>
-        {/* Hide memo row only for Soroban transactions with muxed addresses */}
-        {/* Normal transactions support M address + memo, so always show memo row */}
-        {!(isDestinationMuxed && isSorobanTx) && (
+        {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
+        {!isMemoDisabled && (
           <div className="Metadata">
             <div className="Metadata__label">
               <Icon.File02 />

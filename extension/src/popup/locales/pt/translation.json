@@ -244,8 +244,6 @@
   "Max Price": "Max Price",
   "Medium Threshold": "Medium Threshold",
   "Memo": "Memo",
-  "Memo is disabled for this transaction": "O memo está desabilitado para esta transação",
-  "Memo is not supported for this operation": "Memo não é suportado para esta operação",
   "Memo required": "Memo required",
   "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts": {
     ")": "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts.)"

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { captureException } from "@sentry/browser";
 import { Button, Icon, Notification } from "@stellar/design-system";
 
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -14,15 +13,11 @@ import {
 import {
   getAssetFromCanonical,
   isMainnet,
-  isMuxedAccount,
   truncatedFedAddress,
   truncatedPublicKey,
 } from "helpers/stellar";
-import {
-  isSorobanTransaction,
-  getContractIdFromTokenId,
-} from "popup/helpers/soroban";
-import { checkContractMuxedSupport } from "helpers/muxedAddress";
+import { getContractIdFromTokenId } from "popup/helpers/soroban";
+import { getMemoDisabledState } from "helpers/muxedAddress";
 
 import { SimulateTxData } from "popup/components/sendPayment/SendAmount/hooks/useSimulateTxData";
 import { View } from "popup/basics/layout/View";
@@ -82,9 +77,6 @@ export const ReviewTx = ({
   const isHardwareWallet = !!hardwareWalletType;
 
   const [activePaneIndex, setActivePaneIndex] = useState(0);
-  const [contractSupportsMuxed, setContractSupportsMuxed] = useState<
-    boolean | null
-  >(null);
 
   const {
     hardwareWalletData: { status: hwStatus },
@@ -105,7 +97,6 @@ export const ReviewTx = ({
   const truncatedDest = federationAddress
     ? truncatedFedAddress(federationAddress)
     : truncatedPublicKey(destination);
-  const isRecipientMuxed = destination ? isMuxedAccount(destination) : false;
 
   // Extract contract ID from asset for custom tokens
   const contractId = React.useMemo(() => {
@@ -115,68 +106,20 @@ export const ReviewTx = ({
     return getContractIdFromTokenId(srcAsset);
   }, [isToken, srcAsset]);
 
-  // Check if contract supports muxed addresses (Soroban mux support) for custom tokens
-  React.useEffect(() => {
-    const checkContract = async () => {
-      if (!isToken || !destination || !contractId || !networkDetails) {
-        setContractSupportsMuxed(null);
-        return;
-      }
+  // Get memo disabled state using the helper
+  const memoDisabledState = React.useMemo(() => {
+    if (!destination) {
+      return { isMemoDisabled: false, memoDisabledMessage: undefined };
+    }
+    return getMemoDisabledState({
+      targetAddress: destination,
+      contractId,
+      networkDetails,
+      t,
+    });
+  }, [destination, contractId, networkDetails, t]);
 
-      try {
-        const supportsMuxed = await checkContractMuxedSupport({
-          contractId,
-          networkDetails,
-        });
-        setContractSupportsMuxed(supportsMuxed);
-      } catch (error) {
-        // On error, assume no support for safety
-        captureException(error, {
-          extra: {
-            message: "Error checking contract muxed support",
-          },
-        });
-        setContractSupportsMuxed(false);
-      }
-    };
-
-    checkContract();
-  }, [isToken, destination, contractId, networkDetails]);
-
-  // Check if contract supports muxed addresses (Soroban mux support) for custom tokens
-  React.useEffect(() => {
-    const checkContract = async () => {
-      if (!isToken || !destination || !contractId || !networkDetails) {
-        setContractSupportsMuxed(null);
-        return;
-      }
-
-      try {
-        const supportsMuxed = await checkContractMuxedSupport({
-          contractId,
-          networkDetails,
-        });
-        setContractSupportsMuxed(supportsMuxed);
-      } catch (error) {
-        // On error, assume no support for safety
-        captureException(error, {
-          extra: {
-            message: "Error checking contract muxed support",
-          },
-        });
-        setContractSupportsMuxed(false);
-      }
-    };
-
-    checkContract();
-  }, [isToken, destination, contractId, networkDetails]);
-
-  // Check if this is a Soroban transaction
-  const isSorobanTx = isSorobanTransaction({
-    recipientAddress: destination,
-    isToken,
-    contractId,
-  });
+  const { isMemoDisabled } = memoDisabledState;
 
   if (simulationState.state === RequestState.ERROR) {
     return (
@@ -299,14 +242,8 @@ export const ReviewTx = ({
                   )}
                 </div>
                 <div className="ReviewTx__Details">
-                  {/* Hide memo row for:
-                      - Soroban transactions with muxed addresses (memo encoded in address)
-                      - Tokens without Soroban mux support (contractSupportsMuxed === false) - no memo support
-                      Normal transactions support M address + memo */}
-                  {!(
-                    (isRecipientMuxed && isSorobanTx) ||
-                    (isToken && contractSupportsMuxed === false)
-                  ) && (
+                  {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
+                  {!isMemoDisabled && (
                     <div className="ReviewTx__Details__Row">
                       <div className="ReviewTx__Details__Row__Title">
                         <Icon.File02 />
