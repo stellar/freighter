@@ -16,9 +16,7 @@ export const test = base.extend<{
         `--headless=new`,
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
-        `--lang=en-US`, // Force English language for tests
       ],
-      locale: "en-US", // Set locale to English
     });
 
     await use(context);
@@ -37,28 +35,6 @@ export const test = base.extend<{
     await use(extensionId);
   },
   page: async ({ page }, use) => {
-    // Set language to English in localStorage before any page loads
-    // This needs to happen before the extension loads
-    await page.addInitScript(() => {
-      try {
-        // Set i18next language preference to English
-        if (window.localStorage) {
-          window.localStorage.setItem("i18nextLng", "en");
-        }
-        // Override navigator.language for language detection
-        Object.defineProperty(navigator, "language", {
-          get: () => "en-US",
-          configurable: true,
-        });
-        Object.defineProperty(navigator, "languages", {
-          get: () => ["en-US", "en"],
-          configurable: true,
-        });
-      } catch (e) {
-        // Ignore security errors for extension pages
-      }
-    });
-
     if (!process.env.IS_INTEGRATION_MODE) {
       await page.route("*/**/testnet/asset-list/top50", async (route) => {
         const json = STELLAR_EXPERT_ASSET_LIST_JSON;

@@ -91,6 +91,7 @@ export const loginToTestAccount = async ({
   await page.locator("#termsOfUse-input").check({ force: true });
   await page.getByText("Confirm").click();
 
+  // GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY
   const TEST_ACCOUNT_WORDS = [
     "card",
     "whip",
