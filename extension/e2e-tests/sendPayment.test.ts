@@ -6,9 +6,9 @@ import {
   stubAccountBalances,
   stubAccountBalancesE2e,
   stubAccountHistory,
+  stubMemoRequiredAccounts,
   stubTokenDetails,
   stubTokenPrices,
-  stubMemoRequiredAccounts,
 } from "./helpers/stubs";
 
 const MUXED_ACCOUNT_ADDRESS =
@@ -198,15 +198,9 @@ test("Send doesn't throw error when account is unfunded", async ({
   await page
     .getByTestId("send-to-input")
     .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
-
-  // Wait for address validation to complete (same as other send tests)
-  await expect(page.getByTestId("send-to-identicon")).toBeVisible();
-
   await page.getByText("Continue").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible({
-    timeout: 30000,
-  });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 });
 test("Send doesn't throw error when creating muxed account", async ({
   page,
@@ -221,13 +215,9 @@ test("Send doesn't throw error when creating muxed account", async ({
   await page.getByTestId("address-tile").click();
 
   await page.getByTestId("send-to-input").fill(MUXED_ACCOUNT_ADDRESS);
-
-  // Wait for validation to complete and the warning to appear
   await expect(
-    page.getByText("The destination account doesn't exist."),
-  ).toBeVisible({
-    timeout: 30000,
-  });
+    page.getByText("The destination account doesn’t exist."),
+  ).toBeVisible();
   await page.getByText("Continue").click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -248,13 +238,9 @@ test("Send can review formatted inputs", async ({ page, extensionId }) => {
   await page.getByTestId("address-tile").click();
 
   await page.getByTestId("send-to-input").fill(MUXED_ACCOUNT_ADDRESS);
-
-  // Wait for validation to complete and the warning to appear
   await expect(
-    page.getByText("The destination account doesn't exist."),
-  ).toBeVisible({
-    timeout: 30000,
-  });
+    page.getByText("The destination account doesn’t exist."),
+  ).toBeVisible();
   await page.getByText("Continue").click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -299,18 +285,9 @@ test("Send persists inputs and submits to network", async ({
   await page.getByTestId("send-amount-btn-memo").click();
   await page.getByTestId("edit-memo-input").fill("test memo");
   await page.getByText("Save").click();
-
-  await expect(page.getByTestId("send-amount-btn-memo")).toBeVisible({
-    timeout: 10000,
-  });
-
   await page.getByTestId("send-amount-btn-fee").click();
   await page.getByTestId("edit-tx-settings-fee-input").fill("0.00009");
   await page.getByText("Save").click();
-
-  await expect(page.getByTestId("send-amount-btn-fee")).toBeVisible({
-    timeout: 10000,
-  });
   await page.getByText("Review Send").click({ force: true });
   await expect(page.getByText("You are sending")).toBeVisible({
     timeout: 200000,
@@ -390,33 +367,13 @@ test("Send XLM payments to recent federated addresses", async ({
   });
 
   await page.getByText("Done").click();
-
-  // Wait for navigation back to account view
-  await expect(page.getByTestId("account-view")).toBeVisible();
-
-  // Wait a bit to ensure recent address is saved to storage
-  await page.waitForTimeout(2000);
-
   await page.getByTestId("nav-link-send").click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
   await page.getByTestId("address-tile").click();
 
-  // Wait for SendTo component to load (check for the input field)
-  await expect(page.getByTestId("send-to-input")).toBeVisible();
-
-  // Wait for the component to finish loading recent addresses
-  // The loader should disappear first
-  await page
-    .waitForSelector(".SendTo__loader", { state: "hidden", timeout: 10000 })
-    .catch(() => {});
-
-  // Wait for recent addresses to appear (more reliable than waiting for "Recents" text)
-  // Use a more flexible selector that waits for either the button or confirms it doesn't exist
-  await expect(page.getByTestId("recent-address-button")).toBeVisible({
-    timeout: 30000,
-  });
+  await expect(page.getByText("Recents")).toBeVisible();
 
   await page.getByTestId("recent-address-button").click();
 
@@ -469,9 +426,10 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
     timeout: 60000,
   });
 
-  const submitButton = page.getByTestId(`SubmitAction`);
-  await submitButton.scrollIntoViewIfNeeded();
-  await submitButton.click({ force: true, timeout: 60000 });
+  await expect(page.getByTestId("SubmitAction")).toBeVisible({
+    timeout: 60000,
+  });
+  await page.getByTestId(`SubmitAction`).click({ force: true, timeout: 60000 });
 
   let accountBalancesRequestWasMade = false;
   page.on("request", (request) => {
@@ -662,9 +620,10 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
     timeout: 60000,
   });
 
-  const submitButton = page.getByTestId(`SubmitAction`);
-  await submitButton.scrollIntoViewIfNeeded();
-  await submitButton.click({ force: true, timeout: 60000 });
+  await expect(page.getByTestId("SubmitAction")).toBeVisible({
+    timeout: 60000,
+  });
+  await page.getByTestId(`SubmitAction`).click({ force: true, timeout: 60000 });
 
   let accountBalancesRequestWasMade = false;
   page.on("request", (request) => {

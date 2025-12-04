@@ -35,8 +35,6 @@ export const login = async ({
 
   await page.getByRole("button", { name: "Import" }).click();
 
-  await page.waitForURL(`**/recover-account-success`, { timeout: 20000 });
-
   await expect(page.getByText("You're all set!")).toBeVisible({
     timeout: 20000,
   });
@@ -60,16 +58,10 @@ export const loginAndFund = async ({
   extensionId: string;
 }) => {
   await login({ page, extensionId });
-
-  await expect(page.getByTestId("account-view")).toBeVisible({
+  await expect(page.getByTestId("not-funded")).toBeVisible({
     timeout: 10000,
   });
-
-  try {
-    await page
-      .getByRole("button", { name: "Fund with Friendbot" })
-      .click({ timeout: 5000 });
-  } catch {}
+  await page.getByRole("button", { name: "Fund with Friendbot" }).click();
 
   await expect(page.getByTestId("account-assets")).toBeVisible({
     timeout: 30000,
@@ -92,6 +84,7 @@ export const loginToTestAccount = async ({
   await page.getByText("Confirm").click();
 
   // GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY
+
   const TEST_ACCOUNT_WORDS = [
     "card",
     "whip",
@@ -112,9 +105,6 @@ export const loginToTestAccount = async ({
   }
 
   await page.getByRole("button", { name: "Import" }).click();
-
-  await page.waitForURL(`**/recover-account-success`, { timeout: 20000 });
-
   await expect(page.getByText("You're all set!")).toBeVisible({
     timeout: 20000,
   });

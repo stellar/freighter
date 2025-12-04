@@ -7,6 +7,7 @@ import {
   stubTokenDetails,
   stubTokenPrices,
 } from "./helpers/stubs";
+import { truncateString } from "../src/helpers/stellar";
 
 test("Adding and removing unverified Soroban token", async ({
   page,
@@ -25,13 +26,32 @@ test("Adding and removing unverified Soroban token", async ({
   });
   await page.getByText("Add an asset").click({ force: true });
   await page.getByTestId("search-asset-input").fill(TEST_TOKEN_ADDRESS);
+  const notOnLists = page.getByTestId("not-asset-on-list");
+  const onLists = page.getByTestId("asset-on-list");
 
+  // Wait for either to be visible
   await Promise.race([
-    page.getByTestId("not-asset-on-list").waitFor({ state: "visible" }),
-    page.getByTestId("asset-on-list").waitFor({ state: "visible" }),
+    notOnLists.waitFor({ state: "visible" }),
+    onLists.waitFor({ state: "visible" }),
   ]);
 
-  await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");
+  if (await notOnLists.isVisible()) {
+    // Case 1: token is not on your lists
+    await expect(notOnLists).toHaveText("Not on your lists");
+    await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E");
+    await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");
+  } else if (await onLists.isVisible()) {
+    // Case 2: token is already on your lists
+    await expect(onLists).toHaveText("On your lists");
+    await expect(page.getByTestId("ManageAssetCode")).toHaveText(
+      truncateString(TEST_TOKEN_ADDRESS),
+    );
+    await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");
+  } else {
+    throw new Error(
+      "Expected token to be either on or not on lists, but neither was visible",
+    );
+  }
   await page.getByTestId("ManageAssetRowButton").click();
   await expect(page.getByTestId("ToggleToken__asset-code")).toHaveText(
     "E2E Token",
@@ -67,18 +87,11 @@ test("Adding and removing unverified Soroban token", async ({
     "Remove Token",
   );
   await page.getByRole("button", { name: "Confirm" }).click();
-
-  // Wait for navigation back to the manage assets page
-  await expect(page.getByText("Your assets")).toBeVisible({
-    timeout: 10000,
-  });
-
-  // Wait for the empty state message to appear
   await expect(
-    page.getByText("You have no assets added. Get started by adding an asset."),
-  ).toBeVisible({
-    timeout: 10000,
-  });
+    page.getByText(
+      "You have no assets added. Get started by adding an asset below.",
+    ),
+  ).toBeVisible();
 });
 
 // Skipping this test because on Testnet, stellar.expert's asset list is formatter incorrectly
@@ -179,13 +192,7 @@ test("Adding classic asset on Testnet", async ({ page, extensionId }) => {
   await page.getByTestId("BackButton").click();
   await expect(page.getByText("Your assets")).toBeVisible();
   await expect(page.getByTestId("ManageAssetCode")).toHaveText("USDC");
-
-  // Domain might not be available on Testnet, so check for either domain or "Stellar Network"
-  const domainText = await page.getByTestId("ManageAssetDomain").textContent();
-  expect(
-    domainText === "centre.io" || domainText === "Stellar Network",
-  ).toBeTruthy();
-
+  await expect(page.getByTestId("ManageAssetDomain")).toHaveText("centre.io");
   await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
   await page.getByText("Remove asset").click();
   await expect(
@@ -196,18 +203,11 @@ test("Adding classic asset on Testnet", async ({ page, extensionId }) => {
   ).toHaveText("Remove Trustline");
   await page.getByRole("button", { name: "Confirm" }).click();
   await page.getByText("Done").click();
-
-  // Wait for navigation back to the manage assets page
-  await expect(page.getByText("Your assets")).toBeVisible({
-    timeout: 10000,
-  });
-
-  // Wait for the empty state message to appear
   await expect(
-    page.getByText("You have no assets added. Get started by adding an asset."),
-  ).toBeVisible({
-    timeout: 10000,
-  });
+    page.getByText(
+      "You have no assets added. Get started by adding an asset below.",
+    ),
+  ).toBeVisible();
 });
 test.afterAll(async ({ page, extensionId }) => {
   if (
