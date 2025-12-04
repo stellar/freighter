@@ -265,13 +265,13 @@ export const SendingTransaction = ({
                 {isLoading && (
                   <>
                     <span className="SendingTransaction__Summary__Description__Label">
-                      {amount} {srcAsset.code}{" "}
+                      {`${amount} ${srcAsset.code} `}
                     </span>
                     {isSwap && dstAsset ? (
                       <>
                         <span className="SendingTransaction__Summary__Description__Label Verb">
-                          {t("to")}
-                        </span>{" "}
+                          {`${t("to")} `}
+                        </span>
                         <span className="SendingTransaction__Summary__Description__Label">
                           {destinationAmount} {dstAsset.code}
                         </span>
@@ -279,8 +279,8 @@ export const SendingTransaction = ({
                     ) : (
                       <>
                         <span className="SendingTransaction__Summary__Description__Label Verb">
-                          {t("to")}
-                        </span>{" "}
+                          {`${t("to")} `}
+                        </span>
                         <span className="SendingTransaction__Summary__Description__Label">
                           {truncatedPublicKey(destination)}
                         </span>
@@ -291,13 +291,13 @@ export const SendingTransaction = ({
                 {isSuccess && (
                   <>
                     <span className="SendingTransaction__Summary__Description__Label">
-                      {amount} {srcAsset.code}{" "}
+                      {`${amount} ${srcAsset.code} `}
                     </span>
                     {isSwap && dstAsset ? (
                       <>
                         <span className="SendingTransaction__Summary__Description__Label Verb">
-                          {t("was swapped to")}
-                        </span>{" "}
+                          {`${t("was swapped to")} `}
+                        </span>
                         <span className="SendingTransaction__Summary__Description__Label">
                           {destinationAmount} {dstAsset.code}
                         </span>
@@ -305,8 +305,8 @@ export const SendingTransaction = ({
                     ) : (
                       <>
                         <span className="SendingTransaction__Summary__Description__Label Verb">
-                          {t("was sent to")}
-                        </span>{" "}
+                          {`${t("was sent to")} `}
+                        </span>
                         <span className="SendingTransaction__Summary__Description__Label">
                           {truncatedPublicKey(destination)}
                         </span>

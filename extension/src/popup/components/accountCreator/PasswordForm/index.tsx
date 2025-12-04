@@ -152,7 +152,7 @@ export const PasswordForm = ({
                       label={
                         <div className="PasswordForm__tos__label">
                           <span>
-                            {t("I have read and agree to")}{" "}
+                            {`${t("I have read and agree to")} `}
                             <Link
                               variant="secondary"
                               href="https://stellar.org/terms-of-service"

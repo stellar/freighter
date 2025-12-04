@@ -192,7 +192,7 @@ export const SearchAsset = () => {
                     )}
                   </Field>
                   <SearchCopy>
-                    {t("powered by")}{" "}
+                    {`${t("powered by")} `}
                     <a
                       href="https://stellar.expert"
                       target="_blank"

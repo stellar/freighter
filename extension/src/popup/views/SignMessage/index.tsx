@@ -147,7 +147,7 @@ export const SignMessage = () => {
         header={`${t("Freighter is set to")} ${networkName}`}
       >
         <p>
-          {t("The requester expects you to sign this message on")}{" "}
+          {`${t("The requester expects you to sign this message on")} `}
           {blobNetworkPassphrase}.
         </p>
         <p>{t("Signing this message is not possible at the moment.")}</p>

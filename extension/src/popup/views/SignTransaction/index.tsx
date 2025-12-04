@@ -264,7 +264,7 @@ export const SignTransaction = () => {
         header={`${t("Freighter is set to")} ${networkName}`}
       >
         <p>
-          {t("The transaction you're trying to sign is on")}{" "}
+          {`${t("The transaction you're trying to sign is on")} `}
           {_networkPassphrase}.
         </p>
         <p>{t("Signing this transaction is not possible at the moment.")}</p>
@@ -399,11 +399,7 @@ export const SignTransaction = () => {
                     </div>
                     <div className="SignTransaction__Metadata__Value">
                       <span>
-                        {formatTokenAmount(
-                          new BigNumber(_fee),
-                          CLASSIC_ASSET_DECIMALS,
-                        )}{" "}
-                        XLM
+                        {`${formatTokenAmount(new BigNumber(_fee), CLASSIC_ASSET_DECIMALS)} XLM `}
                       </span>
                     </div>
                   </div>

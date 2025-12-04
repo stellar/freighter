@@ -96,7 +96,7 @@ export const SubmitFail = () => {
             title={t("The destination account doesn't exist")}
           >
             <div>
-              {t("Make sure it is a funded Stellar account and try again.")}{" "}
+              {`${t("Make sure it is a funded Stellar account and try again.")} `}
               <Link
                 isUnderline
                 variant="secondary"
@@ -122,9 +122,9 @@ export const SubmitFail = () => {
             )}
           >
             <div>
-              {t(
+              {`${t(
                 "The destination account must opt to accept this asset before receiving it.",
-              )}{" "}
+              )} `}
               <Link
                 isUnderline
                 variant="secondary"
@@ -143,7 +143,7 @@ export const SubmitFail = () => {
         errorDetails.errorBlock = (
           <Notification variant="error" title={t("Conversion rate")}>
             <div>
-              {t("Please check the new rate and try again.")}{" "}
+              {`${t("Please check the new rate and try again.")} `}
               <Link
                 isUnderline
                 variant="secondary"
@@ -162,9 +162,9 @@ export const SubmitFail = () => {
         errorDetails.errorBlock = (
           <Notification variant="error" title={t("New account")}>
             <div>
-              {t(
+              {`${t(
                 "To create a new account you need to send at least 1 XLM to it.",
-              )}{" "}
+              )} `}
               <Link
                 isUnderline
                 variant="secondary"

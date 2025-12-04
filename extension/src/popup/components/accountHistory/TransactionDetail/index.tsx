@@ -334,7 +334,7 @@ export const TransactionDetail = ({
               </div>
               <div className="TransactionDetailModal__title-details">
                 <div className="TransactionDetailModal__title invocation">
-                  {activeOperation.rowText} for{" "}
+                  {`${activeOperation.rowText} ${t("for")} `}
                   {activeOperation.metadata.destAssetCode}
                 </div>
                 <Text

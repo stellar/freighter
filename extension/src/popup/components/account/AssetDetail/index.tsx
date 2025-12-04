@@ -432,8 +432,8 @@ export const AssetDetail = ({
           <div className="AssetDetail__info-modal">
             <div className="AssetDetail__info-modal__total-box">
               <div className="AssetDetail__info-modal__asset-code">
-                <img src={StellarLogo} alt={t("Network icon")} />{" "}
-                <div>{canonical.code}</div>
+                <img src={StellarLogo} alt={t("Network icon")} />
+                <div>{` ${canonical.code}`}</div>
               </div>
               <div>{displayTotal}</div>
             </div>
@@ -449,11 +449,11 @@ export const AssetDetail = ({
                 selectedBalance?.available &&
                 selectedBalance?.total ? (
                   <div>
-                    {formatAmount(
+                    {`${formatAmount(
                       new BigNumber(balanceAvailable)
                         .minus(new BigNumber(selectedBalance?.total))
                         .toString(),
-                    )}{" "}
+                    )} `}
                     {canonical.code}
                   </div>
                 ) : null}
@@ -464,9 +464,9 @@ export const AssetDetail = ({
               </div>
             </div>
             <div className="AssetDetail__info-modal__footnote">
-              {t(
+              {`${t(
                 "* All Stellar accounts must maintain a minimum balance of lumens.",
-              )}{" "}
+              )} `}
               <a
                 href="https://developers.stellar.org/docs/glossary/minimum-balance/"
                 target="_blank"

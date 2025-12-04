@@ -122,7 +122,7 @@ export const SignAuthEntry = () => {
         header={`${t("Freighter is set to")} ${networkName}`}
       >
         <p>
-          {t("The requester expects you to sign this auth entry on")}{" "}
+          {`${t("The requester expects you to sign this auth entry on")} `}
           {entryNetworkPassphrase}.
         </p>
         <p>{t("Signing this authorization is not possible at the moment.")}</p>
