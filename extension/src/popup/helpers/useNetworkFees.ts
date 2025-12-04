@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { BASE_FEE } from "stellar-sdk";
+import { TFunction } from "i18next";
 
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { stroopToXlm } from "helpers/stellar";
@@ -11,6 +12,22 @@ export enum NetworkCongestion {
   MEDIUM = "Medium",
   HIGH = "High",
 }
+
+/**
+ * Translation map for network congestion levels
+ * This ensures translations are preserved and not deleted during build
+ */
+export const getNetworkCongestionTranslation = (
+  t: TFunction,
+  congestion: NetworkCongestion,
+): string => {
+  const congestionMap: Record<NetworkCongestion, string> = {
+    [NetworkCongestion.LOW]: t("Low"),
+    [NetworkCongestion.MEDIUM]: t("Medium"),
+    [NetworkCongestion.HIGH]: t("High"),
+  };
+  return congestionMap[congestion] || congestion;
+};
 
 export const useNetworkFees = () => {
   const { networkUrl, networkPassphrase } = useSelector(

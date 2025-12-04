@@ -6,59 +6,10 @@ const Dotenv = require("dotenv-webpack");
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 const SpeedMeasurePlugin = require("speed-measure-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
-const fs = require("fs");
-const path = require("path");
 
 const smp = new SpeedMeasurePlugin();
 
 const LOCALES = ["en", "pt"];
-
-// Cache for existing translations to avoid reading files multiple times
-const existingTranslationsCache = new Map();
-
-// Custom transform function that preserves existing translations
-// Only adds new keys, never overwrites existing values
-function preserveExistingTranslations(locale, namespace, key, value) {
-  const cacheKey = `${locale}:${namespace}`;
-
-  // Load existing translations into cache if not already loaded
-  if (!existingTranslationsCache.has(cacheKey)) {
-    const translationPath = path.join(
-      __dirname,
-      "src/popup/locales",
-      locale,
-      `${namespace}.json`,
-    );
-
-    let existingTranslations = {};
-    if (fs.existsSync(translationPath)) {
-      try {
-        const existingContent = fs.readFileSync(translationPath, "utf-8");
-        existingTranslations = JSON.parse(existingContent);
-      } catch (e) {
-        // If file is corrupted, start fresh
-        console.warn(
-          `Warning: Could not parse ${translationPath}, starting fresh`,
-        );
-      }
-    }
-    existingTranslationsCache.set(cacheKey, existingTranslations);
-  }
-
-  const existingTranslations = existingTranslationsCache.get(cacheKey);
-
-  // If key already exists, preserve its value
-  if (existingTranslations.hasOwnProperty(key)) {
-    return existingTranslations[key];
-  }
-
-  // For new keys, use the provided value (or empty string for non-EN locales)
-  if (locale === "en") {
-    return value || key; // Use key as default for EN
-  } else {
-    return ""; // Empty string for other locales (needs manual translation)
-  }
-}
 
 const prodConfig = (
   env = {
@@ -104,15 +55,7 @@ const prodConfig = (
                 ns: ["translation"],
                 output: "src/popup/locales/$LOCALE/$NAMESPACE.json",
                 sort: true,
-                useKeysAsDefaultValue: false,
-                defaultValue: (locale, namespace, key, value) => {
-                  return preserveExistingTranslations(
-                    locale,
-                    namespace,
-                    key,
-                    value,
-                  );
-                },
+                useKeysAsDefaultValue: true,
                 keepRemoved: true,
                 removeUnusedKeys: false,
                 keySeparator: false,

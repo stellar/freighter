@@ -4,6 +4,10 @@ import { Field, FieldProps, Formik, Form } from "formik";
 import { useTranslation } from "react-i18next";
 
 import { CongestionIndicator } from "../CongestionIndicator";
+import {
+  NetworkCongestion,
+  getNetworkCongestionTranslation,
+} from "popup/helpers/useNetworkFees";
 
 import "./styles.scss";
 
@@ -92,7 +96,10 @@ export const EditSettings = ({
                 </Field>
                 <div className="EditTxSettings__congestion">
                   <CongestionIndicator congestion={congestion} />
-                  {`${t(congestion)} ${t("congestion")}`}
+                  {`${getNetworkCongestionTranslation(
+                    t,
+                    congestion as NetworkCongestion,
+                  )} ${t("congestion")}`}
                 </div>
                 <Field name="timeout">
                   {({ field }: FieldProps) => (
