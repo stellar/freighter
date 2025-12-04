@@ -430,10 +430,7 @@ export type ServiceMessageRequest =
   | GetIsAccountMismatchMessage
   | ChangeAssetVisibilityMessage
   | GetHiddenAssetsMessage
-<<<<<<< HEAD
   | GetMobileAppBannerDismissedMessage
-  | DismissMobileAppBannerMessage;
-=======
+  | DismissMobileAppBannerMessage
   | AddCollectibleMessage
   | GetCollectiblesMessage;
->>>>>>> b8f947a2 (add localstorage and caching; add tests)
