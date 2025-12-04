@@ -265,7 +265,7 @@ export const AssetDetail = ({
                       >
                         <div className="action">
                           <div className="AssetDetail__options-actions__label">
-                            Copy address
+                            {t("Copy address")}
                           </div>
                           <Icon.Copy01 />
                         </div>

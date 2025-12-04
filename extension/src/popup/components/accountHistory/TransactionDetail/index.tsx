@@ -172,7 +172,7 @@ export const TransactionDetail = ({
                   size="lg"
                   variant="single"
                   sourceOne={{
-                    altText: "Payment asset",
+                    altText: t("Payment asset"),
                     image: destIcon,
                   }}
                 />
@@ -239,7 +239,7 @@ export const TransactionDetail = ({
                   size="lg"
                   variant="single"
                   sourceOne={{
-                    altText: "Swap source",
+                    altText: t("Swap source"),
                     image: sourceIcon,
                     backgroundColor: "transparent",
                   }}
@@ -256,7 +256,7 @@ export const TransactionDetail = ({
                   size="lg"
                   variant="single"
                   sourceOne={{
-                    altText: "Swap destination",
+                    altText: t("Swap destination"),
                     image: destIcon,
                   }}
                 />
@@ -398,19 +398,21 @@ export const TransactionDetail = ({
         <div className="Metadata">
           <div className="Metadata__label">
             <Icon.ClockCheck />
-            Status
+            {t("Status")}
           </div>
           <div
             className={`Metadata__value ${activeOperation.metadata.transactionFailed ? "failed" : "success"}`}
             data-testid="TransactionDetailModal__status"
           >
-            {activeOperation.metadata.transactionFailed ? "Failed" : "Success"}
+            {activeOperation.metadata.transactionFailed
+              ? t("Failed")
+              : t("Success")}
           </div>
         </div>
         <div className="Metadata">
           <div className="Metadata__label">
             <Icon.Route />
-            Fee
+            {t("Fee")}
           </div>
           <div className="Metadata__value">
             {stroopToXlm(feeCharged as string).toString()} XLM
@@ -420,7 +422,7 @@ export const TransactionDetail = ({
           <div className="Metadata">
             <div className="Metadata__label">
               <Icon.File02 />
-              Memo
+              {t("Memo")}
             </div>
             <div className="Metadata__value">{memo}</div>
           </div>
