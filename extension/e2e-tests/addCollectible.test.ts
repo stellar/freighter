@@ -133,7 +133,7 @@ test("Add a collectible to an account", async ({
     screenshot: "add-collectible-page.png",
   });
   await page
-    .getByTestId("collectibleAddress")
+    .getByTestId("collectibleContractAddress")
     .fill("CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN");
   await page.getByTestId("collectibleTokenId").fill("1");
 
