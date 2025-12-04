@@ -12,7 +12,7 @@ import { AssetType } from "@shared/api/types/account-balance";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
 import { formatTokenAmount } from "popup/helpers/soroban";
-import { isAssetSuspicious } from "popup/helpers/blockaid";
+import { useIsAssetSuspicious } from "popup/helpers/blockaid";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
@@ -189,6 +189,7 @@ export const AccountAssets = ({
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
+  const isAssetSuspicious = useIsAssetSuspicious();
 
   useEffect(() => {
     setAssetIcons(inputAssetIcons);

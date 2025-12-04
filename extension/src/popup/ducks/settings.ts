@@ -68,6 +68,10 @@ const experimentalFeaturesInitialState = {
   experimentalFeaturesState: SettingsState.IDLE,
 };
 
+const debugInitialState = {
+  overriddenBlockaidResponse: null as string | null,
+};
+
 const indexerInitialState: IndexerSettings = {
   settingsState: SettingsState.IDLE,
   isSorobanPublicEnabled: true,
@@ -79,6 +83,7 @@ const initialState = {
   ...settingsInitialState,
   ...indexerInitialState,
   ...experimentalFeaturesInitialState,
+  ...debugInitialState,
   assetsLists: DEFAULT_ASSETS_LISTS,
 };
 
@@ -383,6 +388,12 @@ const settingsSlice = createSlice({
       state.isRpcHealthy = isRpcHealthy;
       state.userNotification = userNotification;
     },
+    setOverriddenBlockaidResponse(state, action: PayloadAction<string | null>) {
+      state.overriddenBlockaidResponse = action.payload;
+    },
+    clearOverriddenBlockaidResponse(state) {
+      state.overriddenBlockaidResponse = null;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(
@@ -592,11 +603,17 @@ export const { clearSettingsError } = settingsSlice.actions;
 export const saveSettingsAction = settingsSlice.actions.saveSettings;
 export const saveBackendSettingsAction =
   settingsSlice.actions.saveBackendSettings;
+export const setOverriddenBlockaidResponseAction =
+  settingsSlice.actions.setOverriddenBlockaidResponse;
+export const clearOverriddenBlockaidResponseAction =
+  settingsSlice.actions.clearOverriddenBlockaidResponse;
 
 export const settingsSelector = (state: {
   settings: Settings &
     IndexerSettings &
-    ExperimentalFeatures & { assetsLists: AssetsLists };
+    ExperimentalFeatures & {
+      assetsLists: AssetsLists;
+    } & typeof debugInitialState;
 }) => state.settings;
 
 export const settingsDataSharingSelector = createSelector(
@@ -653,4 +670,9 @@ export const settingsStateSelector = createSelector(
 export const isNonSSLEnabledSelector = createSelector(
   settingsSelector,
   (settings) => !isMainnet(settings.networkDetails) || settings.isNonSSLEnabled,
+);
+
+export const overriddenBlockaidResponseSelector = createSelector(
+  settingsSelector,
+  (settings) => settings.overriddenBlockaidResponse,
 );

@@ -194,7 +194,7 @@ export const ReviewTx = ({
                   </div>
                 </div>
                 <div className="ReviewTx__Warnings">
-                  {simulationState.data?.scanResult && (
+                  {simulationState.data?.scanResult !== undefined && (
                     <BlockaidTxScanLabel
                       scanResult={simulationState.data?.scanResult}
                       onClick={() => setActivePaneIndex(1)}
@@ -241,7 +241,7 @@ export const ReviewTx = ({
                 </div>
               </>,
               <BlockAidTxScanExpanded
-                scanResult={simulationState.data?.scanResult!}
+                scanResult={simulationState.data?.scanResult}
                 onClose={() => setActivePaneIndex(0)}
               />,
             ]}

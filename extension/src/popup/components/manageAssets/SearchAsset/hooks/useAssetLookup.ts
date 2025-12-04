@@ -16,7 +16,7 @@ import { splitVerifiedAssetCurrency } from "popup/helpers/assetList";
 import { isContractId } from "popup/helpers/soroban";
 import { initialState, reducer } from "helpers/request";
 import { RequestState } from "constants/request";
-import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
+import { scanAsset, useIsAssetSuspicious } from "popup/helpers/blockaid";
 import { settingsSelector } from "popup/ducks/settings";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -61,6 +61,7 @@ const useAssetLookup = () => {
   const reduxDispatch = useDispatch<AppDispatch>();
   const { assetsLists } = useSelector(settingsSelector);
   const MAX_ASSETS_TO_SCAN = 10;
+  const isAssetSuspicious = useIsAssetSuspicious();
 
   const [state, dispatch] = useReducer(
     reducer<AssetLookupDetails, unknown>,

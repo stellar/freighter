@@ -4,7 +4,11 @@ import { initialState, reducer } from "helpers/request";
 import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
+import {
+  scanAsset,
+  useIsAssetSuspicious,
+  useShouldTreatAssetAsUnableToScan,
+} from "popup/helpers/blockaid";
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { FlaggedKeys } from "types/transactions";
@@ -47,6 +51,8 @@ function useGetChangeTrustData({
     reducer<ChangeTrustData, unknown>,
     initialState,
   );
+  const isAssetSuspiciousCheck = useIsAssetSuspicious();
+  const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -91,7 +97,10 @@ function useGetChangeTrustData({
           networkDetails,
         });
         payload.transactionXDR = transactionXDR;
-        payload.isAssetSuspicious = isAssetSuspicious(scannedAsset);
+        // Show warning if suspicious or unable to scan (including debug override)
+        payload.isAssetSuspicious =
+          isAssetSuspiciousCheck(scannedAsset) ||
+          shouldTreatAsUnableToScan(scannedAsset);
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
