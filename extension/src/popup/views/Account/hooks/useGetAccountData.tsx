@@ -50,7 +50,9 @@ function useGetAccountData(options: {
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(options);
   const { fetchData: fetchTokenPrices } = useGetTokenPrices();
-  const { fetchData: fetchCollectibles } = useGetCollectibles();
+  const { fetchData: fetchCollectibles } = useGetCollectibles({
+    useCache: true,
+  });
 
   const fetchData = async ({
     useAppDataCache = true,
@@ -133,7 +135,6 @@ function useGetAccountData(options: {
         const collectiblesResult = await fetchCollectibles({
           publicKey,
           networkDetails,
-          contracts: [],
         });
         payload.collectibles = collectiblesResult;
       }
