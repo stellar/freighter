@@ -7,8 +7,9 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import {
   scanAsset,
   useIsAssetSuspicious,
-  useShouldTreatAssetAsUnableToScan,
+  shouldTreatAssetAsUnableToScan,
 } from "popup/helpers/blockaid";
+import { getBlockaidOverrideState } from "@shared/api/internal";
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { FlaggedKeys } from "types/transactions";
@@ -25,6 +26,7 @@ export interface ChangeTrustData {
   scanResult: BlockAidScanAssetResult;
   transactionXDR: string;
   isAssetSuspicious: boolean;
+  isAssetUnableToScan: boolean;
   isAssetVerified: boolean;
 }
 
@@ -52,7 +54,6 @@ function useGetChangeTrustData({
     initialState,
   );
   const isAssetSuspiciousCheck = useIsAssetSuspicious();
-  const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -97,10 +98,14 @@ function useGetChangeTrustData({
           networkDetails,
         });
         payload.transactionXDR = transactionXDR;
-        // Show warning if suspicious or unable to scan (including debug override)
-        payload.isAssetSuspicious =
-          isAssetSuspiciousCheck(scannedAsset) ||
-          shouldTreatAsUnableToScan(scannedAsset);
+        // Check suspicious and unable to scan separately
+        payload.isAssetSuspicious = isAssetSuspiciousCheck(scannedAsset);
+        // Get override state directly to ensure it's checked
+        const blockaidOverrideState = await getBlockaidOverrideState();
+        payload.isAssetUnableToScan = shouldTreatAssetAsUnableToScan(
+          scannedAsset,
+          blockaidOverrideState,
+        );
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

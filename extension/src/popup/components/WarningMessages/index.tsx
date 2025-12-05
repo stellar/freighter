@@ -463,11 +463,13 @@ export const BlockaidByLine = ({
 interface BlockaidAssetWarningProps {
   blockaidData: BlockAidScanAssetResult | null | undefined;
   onClick: () => void;
+  messageKey?: string; // Optional translation key for custom message
 }
 
 export const BlockaidAssetWarning = ({
   blockaidData,
   onClick,
+  messageKey = "Unable to scan token",
 }: BlockaidAssetWarningProps) => {
   const { t } = useTranslation();
   const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
@@ -484,7 +486,7 @@ export const BlockaidAssetWarning = ({
           <div className="Icon">
             <Icon.InfoSquare className="WarningMessage__icon" />
           </div>
-          <p className="Message">{t("Unable to scan token")}</p>
+          <p className="Message">{t(messageKey)}</p>
         </div>
         <div className="ScanLabel__Action">
           <Icon.ChevronRight />
@@ -545,6 +547,83 @@ interface BlockAidAssetScanExpandedProps {
   onClose?: () => void;
 }
 
+interface SwapAssetScanExpandedProps {
+  srcAssetScanResult: BlockAidScanAssetResult | null | undefined;
+  dstAssetScanResult: BlockAidScanAssetResult | null | undefined;
+  srcAssetAddress: string | null;
+  dstAssetAddress: string | null;
+  onClose?: () => void;
+}
+
+export const SwapAssetScanExpanded = ({
+  srcAssetScanResult,
+  dstAssetScanResult,
+  srcAssetAddress,
+  dstAssetAddress,
+  onClose,
+}: SwapAssetScanExpandedProps) => {
+  const { t } = useTranslation();
+  const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
+
+  const isSrcUnableToScan =
+    srcAssetAddress && shouldTreatAsUnableToScan(srcAssetScanResult);
+  const isDstUnableToScan =
+    dstAssetAddress && shouldTreatAsUnableToScan(dstAssetScanResult);
+
+  const warnings: Array<{ icon: React.ReactNode; text: string }> = [];
+
+  // Add source token warning if unable to scan
+  if (isSrcUnableToScan) {
+    warnings.push({
+      icon: <Icon.MinusCircle />,
+      text: t("Unable to scan source token"),
+    });
+  }
+
+  // Add destination token warning if unable to scan
+  if (isDstUnableToScan) {
+    warnings.push({
+      icon: <Icon.MinusCircle />,
+      text: t("Unable to scan destination token"),
+    });
+  }
+
+  // If no warnings, return null
+  if (warnings.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="BlockaidDetailsExpanded">
+      <div className="BlockaidDetailsExpanded__Header">
+        <div className="WarningMark">
+          <Icon.AlertTriangle />
+        </div>
+        <div className="Close" onClick={onClose}>
+          <Icon.X />
+        </div>
+      </div>
+      <div className="BlockaidDetailsExpanded__Title">
+        {t("Proceed with caution")}
+      </div>
+      <div className="BlockaidDetailsExpanded__SubTitle">
+        {t(
+          "We were unable to scan this transaction for security threats. Proceed with caution.",
+        )}
+      </div>
+      <div className="BlockaidDetailsExpanded__Details">
+        {warnings.map((warning, index) => (
+          <div key={index} className="BlockaidDetailsExpanded__DetailRow">
+            {warning.icon}
+            <span>{warning.text}</span>
+          </div>
+        ))}
+        <BlockaidByLine address={""} />
+      </div>
+    </div>
+  );
+};
+
 export const BlockAidAssetScanExpanded = ({
   scanResult,
   onClose,
@@ -565,7 +644,7 @@ export const BlockAidAssetScanExpanded = ({
           </div>
         </div>
         <div className="BlockaidDetailsExpanded__Title">
-          {t("Unable to scan")}
+          {t("Proceed with caution")}
         </div>
         <div className="BlockaidDetailsExpanded__SubTitle">
           {t(
@@ -573,6 +652,10 @@ export const BlockAidAssetScanExpanded = ({
           )}
         </div>
         <div className="BlockaidDetailsExpanded__Details">
+          <div className="BlockaidDetailsExpanded__DetailRow">
+            <Icon.MinusCircle />
+            <span>{t("Unable to scan token")}</span>
+          </div>
           <BlockaidByLine address={""} />
         </div>
       </div>
@@ -960,14 +1043,9 @@ export const BlockAidTxScanExpanded = ({
 
   const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
 
-  // Handle unable to scan state when there's no scan result or no validation warnings
-  // Also handle when override is set to UNABLE_TO_SCAN (even if scanResult exists)
-  if (
-    isUnableToScan &&
-    (!scanResult ||
-      !scanResult.validation ||
-      !("result_type" in scanResult.validation))
-  ) {
+  // Handle unable to scan state - use same logic as BlockaidTxScanLabel
+  // If unable to scan (including override), show unable to scan view
+  if (isUnableToScan) {
     return (
       <div className="BlockaidDetailsExpanded">
         <div className="BlockaidDetailsExpanded__Header">

@@ -24,7 +24,13 @@ import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import {
   BlockaidTxScanLabel,
   BlockAidTxScanExpanded,
+  BlockaidAssetWarning,
+  SwapAssetScanExpanded,
 } from "popup/components/WarningMessages";
+import {
+  useScanAsset,
+  useShouldTreatAssetAsUnableToScan,
+} from "popup/helpers/blockaid";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
@@ -71,6 +77,10 @@ export const ReviewTx = ({
   const isHardwareWallet = !!hardwareWalletType;
 
   const [activePaneIndex, setActivePaneIndex] = useState(0);
+  const [expandedAssetScan, setExpandedAssetScan] = useState<{
+    type: "source" | "destination";
+    scanResult: any;
+  } | null>(null);
 
   const {
     hardwareWalletData: { status: hwStatus },
@@ -83,6 +93,30 @@ export const ReviewTx = ({
   const truncatedDest = federationAddress
     ? truncatedFedAddress(federationAddress)
     : truncatedPublicKey(destination);
+
+  // Scan source asset if not XLM
+  const srcAssetAddress =
+    srcAsset !== "native" && asset.issuer ? asset.issuer : null;
+  const { scannedAsset: srcAssetScanResult } = useScanAsset(
+    srcAssetAddress || "",
+  );
+
+  // Scan destination asset if not XLM
+  const dstAssetAddress =
+    dstAsset && dstAsset.canonical !== "native" && dest?.issuer
+      ? dest.issuer
+      : null;
+  const { scannedAsset: dstAssetScanResult } = useScanAsset(
+    dstAssetAddress || "",
+  );
+
+  // Check if source or destination tokens are unable to scan
+  const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
+  const isSrcUnableToScan =
+    srcAssetAddress && shouldTreatAsUnableToScan(srcAssetScanResult);
+  const isDstUnableToScan =
+    dstAssetAddress && shouldTreatAsUnableToScan(dstAssetScanResult);
+  const showSwapWarning = isSrcUnableToScan || isDstUnableToScan;
 
   if (simulationState.state === RequestState.ERROR) {
     return (
@@ -194,11 +228,39 @@ export const ReviewTx = ({
                   </div>
                 </div>
                 <div className="ReviewTx__Warnings">
-                  {/* Always show BlockAid label - it handles unable to scan state internally */}
-                  <BlockaidTxScanLabel
-                    scanResult={simulationState.data?.scanResult}
-                    onClick={() => setActivePaneIndex(1)}
-                  />
+                  {/* For swaps: show single "Proceed with caution" banner if any token is unable to scan */}
+                  {showSwapWarning ? (
+                    <BlockaidAssetWarning
+                      blockaidData={
+                        isSrcUnableToScan
+                          ? srcAssetScanResult
+                          : dstAssetScanResult
+                      }
+                      onClick={() => {
+                        setExpandedAssetScan({
+                          type: isSrcUnableToScan ? "source" : "destination",
+                          scanResult: isSrcUnableToScan
+                            ? srcAssetScanResult
+                            : dstAssetScanResult,
+                        });
+                        setActivePaneIndex(1);
+                      }}
+                      messageKey="Proceed with caution"
+                    />
+                  ) : null}
+                  {/* Show transaction warning only if both assets are XLM or if no swap warnings */}
+                  {!showSwapWarning &&
+                    !srcAssetAddress &&
+                    !dstAssetAddress &&
+                    simulationState.data?.scanResult && (
+                      <BlockaidTxScanLabel
+                        scanResult={simulationState.data?.scanResult}
+                        onClick={() => {
+                          setExpandedAssetScan(null);
+                          setActivePaneIndex(1);
+                        }}
+                      />
+                    )}
                 </div>
                 <div className="ReviewTx__Details">
                   <div className="ReviewTx__Details__Row">
@@ -239,10 +301,23 @@ export const ReviewTx = ({
                   </div>
                 </div>
               </>,
-              <BlockAidTxScanExpanded
-                scanResult={simulationState.data?.scanResult}
-                onClose={() => setActivePaneIndex(0)}
-              />,
+              expandedAssetScan || showSwapWarning ? (
+                <SwapAssetScanExpanded
+                  srcAssetScanResult={srcAssetScanResult}
+                  dstAssetScanResult={dstAssetScanResult}
+                  srcAssetAddress={srcAssetAddress}
+                  dstAssetAddress={dstAssetAddress}
+                  onClose={() => {
+                    setExpandedAssetScan(null);
+                    setActivePaneIndex(0);
+                  }}
+                />
+              ) : (
+                <BlockAidTxScanExpanded
+                  scanResult={simulationState.data?.scanResult}
+                  onClose={() => setActivePaneIndex(0)}
+                />
+              ),
             ]}
           />
           <div className="ReviewTx__Actions">
