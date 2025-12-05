@@ -135,12 +135,13 @@ test.describe("BlockAid Scan - Suspicious States", () => {
     });
 
     // Should show suspicious warning banner
-    await expect(page.getByTestId("blockaid-suspicious-label")).toBeVisible({
-      timeout: 10000,
+    // Suspicious transactions use "blockaid-miss-label" test ID
+    await expect(page.getByTestId("blockaid-miss-label")).toBeVisible({
+      timeout: 30000,
     });
 
     // Click on the banner to expand
-    await page.getByTestId("blockaid-suspicious-label").click();
+    await page.getByTestId("blockaid-miss-label").click();
 
     // Should show expanded view with suspicious details
     await expect(

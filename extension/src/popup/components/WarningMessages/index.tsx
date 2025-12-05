@@ -29,6 +29,7 @@ import {
   useShouldTreatAssetAsUnableToScan,
   useShouldTreatTxAsUnableToScan,
   useIsTxSuspicious,
+  useIsAssetSuspicious,
 } from "popup/helpers/blockaid";
 import { SecurityLevel } from "popup/constants/blockaid";
 
@@ -564,27 +565,54 @@ export const SwapAssetScanExpanded = ({
 }: SwapAssetScanExpandedProps) => {
   const { t } = useTranslation();
   const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
+  const isAssetSuspiciousCheck = useIsAssetSuspicious();
 
   const isSrcUnableToScan =
     srcAssetAddress && shouldTreatAsUnableToScan(srcAssetScanResult);
   const isDstUnableToScan =
     dstAssetAddress && shouldTreatAsUnableToScan(dstAssetScanResult);
+  const isSrcSuspicious =
+    srcAssetAddress && isAssetSuspiciousCheck(srcAssetScanResult);
+  const isDstSuspicious =
+    dstAssetAddress && isAssetSuspiciousCheck(dstAssetScanResult);
 
   const warnings: Array<{ icon: React.ReactNode; text: string }> = [];
 
-  // Add source token warning if unable to scan
+  // Add source token warning if unable to scan or suspicious/malicious
   if (isSrcUnableToScan) {
     warnings.push({
       icon: <Icon.MinusCircle />,
       text: t("Unable to scan source token"),
     });
+  } else if (isSrcSuspicious && srcAssetScanResult) {
+    const resultType = srcAssetScanResult.result_type;
+    const features = srcAssetScanResult.features || [];
+    // Add feature descriptions as warnings
+    features.forEach((feature) => {
+      warnings.push({
+        icon:
+          resultType === "Malicious" ? <Icon.XCircle /> : <Icon.MinusCircle />,
+        text: feature.description,
+      });
+    });
   }
 
-  // Add destination token warning if unable to scan
+  // Add destination token warning if unable to scan or suspicious/malicious
   if (isDstUnableToScan) {
     warnings.push({
       icon: <Icon.MinusCircle />,
       text: t("Unable to scan destination token"),
+    });
+  } else if (isDstSuspicious && dstAssetScanResult) {
+    const resultType = dstAssetScanResult.result_type;
+    const features = dstAssetScanResult.features || [];
+    // Add feature descriptions as warnings
+    features.forEach((feature) => {
+      warnings.push({
+        icon:
+          resultType === "Malicious" ? <Icon.XCircle /> : <Icon.MinusCircle />,
+        text: feature.description,
+      });
     });
   }
 
@@ -596,28 +624,75 @@ export const SwapAssetScanExpanded = ({
   return (
     <div className="BlockaidDetailsExpanded">
       <div className="BlockaidDetailsExpanded__Header">
-        <div className="WarningMark">
-          <Icon.AlertTriangle />
+        <div
+          className={
+            isSrcSuspicious || isDstSuspicious
+              ? isSrcSuspicious &&
+                srcAssetScanResult?.result_type === "Malicious"
+                ? "WarningMarkError"
+                : isDstSuspicious &&
+                    dstAssetScanResult?.result_type === "Malicious"
+                  ? "WarningMarkError"
+                  : "WarningMark"
+              : "WarningMark"
+          }
+        >
+          {isSrcSuspicious || isDstSuspicious ? (
+            isSrcSuspicious &&
+            srcAssetScanResult?.result_type === "Malicious" ? (
+              <Icon.AlertOctagon />
+            ) : isDstSuspicious &&
+              dstAssetScanResult?.result_type === "Malicious" ? (
+              <Icon.AlertOctagon />
+            ) : (
+              <Icon.AlertTriangle />
+            )
+          ) : (
+            <Icon.AlertTriangle />
+          )}
         </div>
         <div className="Close" onClick={onClose}>
           <Icon.X />
         </div>
       </div>
       <div className="BlockaidDetailsExpanded__Title">
-        {t("Proceed with caution")}
+        {isSrcSuspicious || isDstSuspicious
+          ? isSrcSuspicious && srcAssetScanResult?.result_type === "Malicious"
+            ? t("Do not proceed")
+            : isDstSuspicious && dstAssetScanResult?.result_type === "Malicious"
+              ? t("Do not proceed")
+              : t("Warning")
+          : t("Proceed with caution")}
       </div>
       <div className="BlockaidDetailsExpanded__SubTitle">
-        {t(
-          "We were unable to scan this transaction for security threats. Proceed with caution.",
-        )}
+        {isSrcSuspicious || isDstSuspicious
+          ? t(
+              "This transaction does not appear safe for the following reasons.",
+            )
+          : t(
+              "We were unable to scan this transaction for security threats. Proceed with caution.",
+            )}
       </div>
       <div className="BlockaidDetailsExpanded__Details">
-        {warnings.map((warning, index) => (
-          <div key={index} className="BlockaidDetailsExpanded__DetailRow">
-            {warning.icon}
-            <span>{warning.text}</span>
-          </div>
-        ))}
+        {warnings.map((warning, index) => {
+          const isErrorRow =
+            warning.icon &&
+            React.isValidElement(warning.icon) &&
+            warning.icon.type === Icon.XCircle;
+          return (
+            <div
+              key={index}
+              className={
+                isErrorRow
+                  ? "BlockaidDetailsExpanded__DetailRowError"
+                  : "BlockaidDetailsExpanded__DetailRow"
+              }
+            >
+              {warning.icon}
+              <span>{warning.text}</span>
+            </div>
+          );
+        })}
         <BlockaidByLine address={""} />
       </div>
     </div>

@@ -123,6 +123,7 @@
   "Disabled": "Disabled",
   "Disconnect all": "Disconnect all",
   "Discover": "Discover",
+  "Do not proceed": "Do not proceed",
   "Do this later": "Do this later",
   "Done": "Done",
   "Download on iOS or Android today": "Baixe no iOS ou Android hoje",
@@ -417,6 +418,7 @@
   },
   "This site was flagged as malicious": "This site was flagged as malicious",
   "This transaction could not be completed": "This transaction could not be completed.",
+  "This transaction does not appear safe for the following reasons": "This transaction does not appear safe for the following reasons.",
   "This transaction is expected to fail": "This transaction is expected to fail",
   "This transaction was flagged as malicious": "This transaction was flagged as malicious",
   "This transaction was flagged as suspicious": "This transaction was flagged as suspicious",
@@ -461,6 +463,7 @@
   "View on": "View on",
   "View options": "View options",
   "Wallet Address": "Wallet Address",
+  "Warning": "Warning",
   "wasm": "wasm",
   "Wasm Hash": "Wasm Hash",
   "We were unable to scan this token for security threats": {
