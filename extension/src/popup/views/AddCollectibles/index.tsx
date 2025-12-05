@@ -75,7 +75,7 @@ export const AddCollectibles = () => {
 
   const validateAddCollectiblesSchema = YupObject().shape({
     collectibleContractAddress: YupString()
-      .required(t("Collectible address is required"))
+      .required(t("Collection address is required"))
       .test("is-contract-id", t("Invalid address"), (value) =>
         isContractId(value),
       ),
@@ -127,7 +127,7 @@ export const AddCollectibles = () => {
                       autoComplete="off"
                       data-testid="collectibleContractAddress"
                       id="collectibleContractAddress"
-                      placeholder={t("Collectible address")}
+                      placeholder={t("Collection address")}
                       {...field}
                       rightElement={
                         <div className="AddCollectibles__clipboard-button">
