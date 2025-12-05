@@ -368,6 +368,19 @@ export interface DismissMobileAppBannerMessage extends BaseMessage {
 export interface GetBlockaidDebugOverrideMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE;
 }
+export interface AddCollectibleMessage extends BaseMessage {
+  type: SERVICE_TYPES.ADD_COLLECTIBLE;
+  network: string;
+  publicKey: string;
+  collectibleContractAddress: string;
+  collectibleTokenId: string;
+}
+
+export interface GetCollectiblesMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_COLLECTIBLES;
+  publicKey: string;
+  network: string;
+}
 
 export type ServiceMessageRequest =
   | FundAccountMessage
@@ -429,3 +442,5 @@ export type ServiceMessageRequest =
   | GetMobileAppBannerDismissedMessage
   | DismissMobileAppBannerMessage
   | GetBlockaidDebugOverrideMessage;
+  | AddCollectibleMessage
+  | GetCollectiblesMessage;

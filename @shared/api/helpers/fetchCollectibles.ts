@@ -70,7 +70,7 @@ const fetchCollectibleMetadata = async (tokenUri: string) => {
  * });
  * ```
  */
-export const getCollectibles = async ({
+export const fetchCollectibles = async ({
   publicKey,
   contracts,
   networkDetails,

@@ -1,10 +1,14 @@
 import { useReducer } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import { initialState, reducer } from "helpers/request";
 import { Collectibles } from "@shared/api/types/types";
-import { getCollectibles } from "@shared/api/helpers/getCollectibles";
+import { fetchCollectibles } from "@shared/api/helpers/fetchCollectibles";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { captureException } from "@sentry/browser";
+import { getCollectibles } from "@shared/api/internal";
+import { AppDispatch } from "popup/App";
+import { saveCollections, collectionsSelector } from "popup/ducks/cache";
 
 const preloadImages = async (images: string[]) => {
   const promises = images.map((url) => {
@@ -22,49 +26,93 @@ const preloadImages = async (images: string[]) => {
   }
 };
 
-function useGetCollectibles() {
+function useGetCollectibles({ useCache = true }: { useCache?: boolean }) {
   const [state, dispatch] = useReducer(
     reducer<Collectibles, unknown>,
     initialState,
   );
+  const reduxDispatch = useDispatch<AppDispatch>();
+  const cachedCollections = useSelector(collectionsSelector);
   const fetchData = async ({
     publicKey,
     networkDetails,
-    contracts,
   }: {
     publicKey: string;
     networkDetails: NetworkDetails;
-    contracts: { id: string; token_ids: string[] }[];
   }) => {
     dispatch({ type: "FETCH_DATA_START" });
 
-    const collectibles = await getCollectibles({
+    const cachedCollectionsData =
+      cachedCollections[networkDetails.network]?.[publicKey];
+
+    if (useCache && cachedCollectionsData) {
+      const payload = {
+        collections: cachedCollectionsData,
+      };
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      return payload;
+    }
+
+    const storedCollectibles = await getCollectibles({
       publicKey,
-      contracts,
-      networkDetails,
+      network: networkDetails.network,
     });
 
-    const images: string[] = [];
-
-    collectibles.forEach((collection) => {
-      const collectionList = collection.collection || { collectibles: [] };
-      collectionList.collectibles.forEach((item) => {
-        if (item.metadata?.image) {
-          images.push(item.metadata.image);
-        }
+    if (storedCollectibles.error) {
+      dispatch({
+        type: "FETCH_DATA_ERROR",
+        payload: { error: storedCollectibles.error },
       });
-    });
+      return { collections: [] } as Collectibles;
+    }
 
-    // to prevent the images from flickering, we preload the images before rendering them
-    await preloadImages(images);
+    const contracts = storedCollectibles.collectiblesList.map(
+      (collectible) => ({
+        id: collectible.id,
+        token_ids: collectible.tokenIds,
+      }),
+    );
 
-    const payload = {
-      collections: collectibles,
-    } as Collectibles;
+    try {
+      const collectibles = await fetchCollectibles({
+        publicKey,
+        contracts,
+        networkDetails,
+      });
 
-    dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      const images: string[] = [];
 
-    return payload;
+      collectibles.forEach((collection) => {
+        const collectionList = collection.collection || { collectibles: [] };
+        collectionList.collectibles.forEach((item) => {
+          if (item.metadata?.image) {
+            images.push(item.metadata.image);
+          }
+        });
+      });
+
+      // to prevent the images from flickering, we preload the images before rendering them
+      await preloadImages(images);
+
+      const payload = {
+        collections: collectibles,
+      } as Collectibles;
+
+      reduxDispatch(
+        saveCollections({
+          publicKey,
+          networkDetails,
+          collections: payload.collections,
+        }),
+      );
+
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+
+      return payload;
+    } catch (error) {
+      dispatch({ type: "FETCH_DATA_ERROR", payload: error });
+      return { collections: [] } as Collectibles;
+    }
   };
 
   return { state, fetchData };

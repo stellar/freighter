@@ -37,7 +37,7 @@ import {
   useGetIcons,
   RequestState as IconsRequestState,
 } from "./hooks/useGetIcons";
-import { AccountTabsContext } from "./contexts/activeTabContext";
+import { AccountTabsContext, TabsList } from "./contexts/activeTabContext";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
@@ -271,7 +271,7 @@ export const Account = () => {
           )}
 
           <MultiPaneSlider
-            activeIndex={activeTab}
+            activeIndex={Object.values(TabsList).indexOf(activeTab)}
             panes={[
               resolvedData?.balances?.isFunded && !hasError && (
                 <div

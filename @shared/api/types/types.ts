@@ -118,6 +118,7 @@ export interface Response {
   hiddenAssets: Record<IssuerKey, AssetVisibility>;
   isOverwritingAccount: boolean;
   isDismissed: boolean;
+  collectiblesList: CollectibleContract[];
 }
 
 export interface MemoRequiredAccount {
@@ -499,4 +500,9 @@ export interface CollectiblesResponse {
 
 export interface Collectibles {
   collections: Collection[];
+}
+
+export interface CollectibleContract {
+  id: string;
+  tokenIds: string[];
 }

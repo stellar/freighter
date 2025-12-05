@@ -81,6 +81,8 @@ import {
   SaveBlockaidDebugOverrideMessage,
 } from "./handlers/saveDebugOverride";
 import { getBlockaidOverrideState } from "./handlers/getDebugOverride";
+import { addCollectible } from "./handlers/addCollectible";
+import { getCollectibles } from "./handlers/getCollectibles";
 
 const numOfPublicKeysToCheck = 5;
 
@@ -498,6 +500,19 @@ export const popupMessageListener = (
         localStore,
       });
     }
+    case SERVICE_TYPES.ADD_COLLECTIBLE: {
+      return addCollectible({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.GET_COLLECTIBLES: {
+      return getCollectibles({
+        request,
+        localStore,
+      });
+    }
+
     default:
       return { error: "Message type not supported" };
   }

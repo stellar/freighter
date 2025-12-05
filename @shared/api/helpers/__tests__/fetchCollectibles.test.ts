@@ -1,4 +1,4 @@
-import { getCollectibles } from "../getCollectibles";
+import { fetchCollectibles } from "../fetchCollectibles";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { INDEXER_V2_URL } from "@shared/constants/mercury";
 
@@ -64,7 +64,7 @@ describe("getCollectibles", () => {
       });
     });
 
-    const collectibles = await getCollectibles({
+    const collectibles = await fetchCollectibles({
       publicKey: "G1",
       contracts: [{ id: "C1", token_ids: ["1"] }],
       networkDetails: TESTNET_NETWORK_DETAILS,
@@ -133,7 +133,7 @@ describe("getCollectibles", () => {
         json: () => Promise.resolve({}),
       });
     });
-    const collectibles = await getCollectibles({
+    const collectibles = await fetchCollectibles({
       publicKey: "G1",
       contracts: [{ id: "C1", token_ids: ["1"] }],
       networkDetails: TESTNET_NETWORK_DETAILS,
