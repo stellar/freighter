@@ -10,14 +10,16 @@ import {
 } from "./helpers/stubs";
 
 test.describe("BlockAid Scan - Suspicious States", () => {
-  // NOTE: These tests require mainnet environment because scanAsset returns {} on testnet
-  // before making the fetch call, so the mock never gets hit. The "unable to scan" tests
-  // work because {} is treated as unable to scan, but malicious/suspicious need real scan results.
-  test.skip("Add asset shows suspicious warning when scan detects suspicious asset", async ({
+  test("Add asset shows suspicious warning when scan detects suspicious asset", async ({
     page,
     extensionId,
   }) => {
     test.slow();
+    // Set IS_PLAYWRIGHT flag so scanAsset proceeds even on testnet for e2e testing
+    await page.addInitScript(() => {
+      // @ts-ignore
+      window.IS_PLAYWRIGHT = "true";
+    });
     await stubTokenDetails(page);
     await stubScanAssetSuspicious(page);
     // Mock mainnet check - asset scanning only works on mainnet
@@ -99,7 +101,7 @@ test.describe("BlockAid Scan - Suspicious States", () => {
     ).toBeVisible();
   });
 
-  test.skip("Send payment shows suspicious warning when scan detects suspicious transaction", async ({
+  test("Send payment shows suspicious warning when scan detects suspicious transaction", async ({
     page,
     extensionId,
   }) => {
@@ -148,11 +150,16 @@ test.describe("BlockAid Scan - Suspicious States", () => {
     ).toBeVisible();
   });
 
-  test.skip("Swap shows suspicious warning when scan detects suspicious tokens", async ({
+  test("Swap shows suspicious warning when scan detects suspicious tokens", async ({
     page,
     extensionId,
   }) => {
     test.slow();
+    // Set IS_PLAYWRIGHT flag so scanAsset proceeds even on testnet for e2e testing
+    await page.addInitScript(() => {
+      // @ts-ignore
+      window.IS_PLAYWRIGHT = "true";
+    });
     const USDC_ISSUER =
       "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
 

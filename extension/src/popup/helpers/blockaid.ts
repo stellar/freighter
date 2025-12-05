@@ -176,7 +176,10 @@ export const scanAsset = async (
   signal?: AbortSignal,
 ): Promise<BlockAidScanAssetResult | null> => {
   try {
-    if (!isMainnet(networkDetails)) {
+    // Allow scanning in test environment (Playwright) even on testnet for e2e testing
+    const isTestEnv =
+      typeof window !== "undefined" && (window as any).IS_PLAYWRIGHT === "true";
+    if (!isMainnet(networkDetails) && !isTestEnv) {
       /* Scanning assets is only supported on Mainnet */
       return {} as BlockAidScanAssetResult;
     }

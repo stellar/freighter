@@ -31,6 +31,7 @@ import {
   useScanAsset,
   useShouldTreatAssetAsUnableToScan,
   useShouldTreatTxAsUnableToScan,
+  useIsAssetSuspicious,
 } from "popup/helpers/blockaid";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
@@ -111,14 +112,23 @@ export const ReviewTx = ({
     dstAssetAddress || "",
   );
 
-  // Check if source or destination tokens are unable to scan
+  // Check if source or destination tokens are unable to scan or suspicious/malicious
   const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
   const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
+  const isAssetSuspiciousCheck = useIsAssetSuspicious();
   const isSrcUnableToScan =
     srcAssetAddress && shouldTreatAsUnableToScan(srcAssetScanResult);
   const isDstUnableToScan =
     dstAssetAddress && shouldTreatAsUnableToScan(dstAssetScanResult);
-  const showSwapWarning = isSrcUnableToScan || isDstUnableToScan;
+  const isSrcSuspicious =
+    srcAssetAddress && isAssetSuspiciousCheck(srcAssetScanResult);
+  const isDstSuspicious =
+    dstAssetAddress && isAssetSuspiciousCheck(dstAssetScanResult);
+  const showSwapWarning =
+    isSrcUnableToScan ||
+    isDstUnableToScan ||
+    isSrcSuspicious ||
+    isDstSuspicious;
 
   // Check if transaction scan is unable to scan (only for non-swap, XLM-only transactions)
   const isXlmOnlyTransaction =
@@ -245,24 +255,32 @@ export const ReviewTx = ({
                   </div>
                 </div>
                 <div className="ReviewTx__Warnings">
-                  {/* For swaps: show single "Proceed with caution" banner if any token is unable to scan */}
+                  {/* For swaps: show warning banner if any token is unable to scan or suspicious/malicious */}
                   {showSwapWarning ? (
                     <BlockaidAssetWarning
                       blockaidData={
-                        isSrcUnableToScan
+                        isSrcUnableToScan || isSrcSuspicious
                           ? srcAssetScanResult
                           : dstAssetScanResult
                       }
                       onClick={() => {
                         setExpandedAssetScan({
-                          type: isSrcUnableToScan ? "source" : "destination",
-                          scanResult: isSrcUnableToScan
-                            ? srcAssetScanResult
-                            : dstAssetScanResult,
+                          type:
+                            isSrcUnableToScan || isSrcSuspicious
+                              ? "source"
+                              : "destination",
+                          scanResult:
+                            isSrcUnableToScan || isSrcSuspicious
+                              ? srcAssetScanResult
+                              : dstAssetScanResult,
                         });
                         setActivePaneIndex(1);
                       }}
-                      messageKey="Proceed with caution"
+                      messageKey={
+                        isSrcUnableToScan || isDstUnableToScan
+                          ? "Proceed with caution"
+                          : undefined
+                      }
                     />
                   ) : null}
                   {/* Show transaction warning only if both assets are XLM or if no swap warnings */}
