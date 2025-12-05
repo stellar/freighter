@@ -7,7 +7,6 @@ import {
   stubTokenDetails,
   stubTokenPrices,
   stubCollectibles,
-  stubAllExternalApis,
 } from "./helpers/stubs";
 
 test("Add a collectible to an account", async ({
@@ -19,109 +18,105 @@ test("Add a collectible to an account", async ({
     owner: "",
     contracts: [] as { id: string; token_ids: string[] }[],
   };
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+  await stubCollectibles(page);
 
-  const stubOverrides = async () => {
-    await stubAllExternalApis(page, context);
-    await stubTokenDetails(page);
-    await stubAccountBalances(page);
-    await stubAccountHistory(page);
-    await stubTokenPrices(page);
-    await stubScanDapp(context);
-    await stubCollectibles(page);
+  await page.route("**/collectibles**", async (route) => {
+    const postData = JSON.parse(route.request().postData() || "{}");
+    const { owner, contracts } = postData as {
+      owner: string;
+      contracts: { id: string; token_ids: string[] }[];
+    };
 
-    await page.route("**/collectibles**", async (route) => {
-      const postData = JSON.parse(route.request().postData() || "{}");
-      const { owner, contracts } = postData as {
-        owner: string;
-        contracts: { id: string; token_ids: string[] }[];
+    if (owner && contracts.length > 0) {
+      collectiblesParams = {
+        owner,
+        contracts,
       };
+    }
 
-      if (owner && contracts.length > 0) {
-        collectiblesParams = {
-          owner,
-          contracts,
-        };
-      }
-
-      const json = {
-        data: {
-          collections: [
-            // Stellar Frogs Collection
-            {
-              collection: {
-                address:
-                  "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN", // Using XLM contract address for testing
-                name: "Stellar Frogs",
-                symbol: "SFROG",
-                collectibles: [
-                  {
-                    owner:
-                      "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-                    token_id: "1",
-                    token_uri: "https://nftcalendar.io/tokenMetadata/1",
-                  },
-                  {
-                    owner:
-                      "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-                    token_id: "2",
-                    token_uri: "https://nftcalendar.io/tokenMetadata/2",
-                  },
-                  {
-                    owner:
-                      "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-                    token_id: "3",
-                    token_uri: "https://nftcalendar.io/tokenMetadata/3",
-                  },
-                ],
-              },
+    const json = {
+      data: {
+        collections: [
+          // Stellar Frogs Collection
+          {
+            collection: {
+              address:
+                "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA", // Using XLM contract address for testing
+              name: "Stellar Frogs",
+              symbol: "SFROG",
+              collectibles: [
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "1",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/1",
+                },
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "2",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/2",
+                },
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "3",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/3",
+                },
+              ],
             },
-            // Soroban Domains Collection
-            {
-              collection: {
-                address: "CCCSorobanDomainsCollection",
-                name: "Soroban Domains",
-                symbol: "SDOM",
-                collectibles: [
-                  {
-                    owner:
-                      "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-                    token_id: "102510",
-                    token_uri: "https://nftcalendar.io/tokenMetadata/102510",
-                  },
-                  {
-                    owner:
-                      "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-                    token_id: "102589",
-                    token_uri: "https://nftcalendar.io/tokenMetadata/102589",
-                  },
-                ],
-              },
+          },
+          // Soroban Domains Collection
+          {
+            collection: {
+              address: "CCCSorobanDomainsCollection",
+              name: "Soroban Domains",
+              symbol: "SDOM",
+              collectibles: [
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "102510",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/102510",
+                },
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "102589",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/102589",
+                },
+              ],
             },
-            // Future Monkeys Collection
-            {
-              collection: {
-                address: "CCCFutureMonkeysCollection",
-                name: "Future Monkeys",
-                symbol: "FMONK",
-                collectibles: [
-                  {
-                    owner:
-                      "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-                    token_id: "111",
-                    token_uri: "https://nftcalendar.io/tokenMetadata/111",
-                  },
-                ],
-              },
+          },
+          // Future Monkeys Collection
+          {
+            collection: {
+              address: "CCCFutureMonkeysCollection",
+              name: "Future Monkeys",
+              symbol: "FMONK",
+              collectibles: [
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "111",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/111",
+                },
+              ],
             },
-          ],
-        },
-      };
-      await route.fulfill({ json });
-    });
-  };
+          },
+        ],
+      },
+    };
+    await route.fulfill({ json });
+  });
 
   test.slow();
-  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await loginToTestAccount({ page, extensionId });
   await page.getByTestId("network-selector-open").click();
   await page.getByText("Main Net").click();
 

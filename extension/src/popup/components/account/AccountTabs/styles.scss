@@ -15,11 +15,8 @@
   }
 
   &__tab-item {
-    align-items: center;
-    gap: pxToRem(4px);
     color: var(--sds-clr-gray-11);
     cursor: pointer;
-    display: flex;
     font-weight: var(--sds-fw-medium);
     &:hover {
       color: var(--sds-clr-gray-12);
@@ -39,11 +36,11 @@
 
   &__modal {
     width: pxToRem(210px);
-    right: pxToRem(20px);
+    right: pxToRem(24px);
 
     // override the default AccountHeaderModal styles
     left: auto !important;
-    top: pxToRem(30px);
+    top: pxToRem(60px);
 
     &__item {
       color: var(--sds-clr-gray-12);

@@ -16,7 +16,7 @@ import { INDEXER_V2_URL } from "@shared/constants/mercury";
  * @param {string} tokenUri - The URI where the collectible metadata is hosted
  * @returns {Promise<CollectibleMetadata | null>} The collectible metadata object, or null if the fetch fails or the response is invalid
  */
-export const fetchCollectibleMetadata = async (tokenUri: string) => {
+const fetchCollectibleMetadata = async (tokenUri: string) => {
   let metadata: CollectibleMetadata | null = {
     name: "",
     description: "",
@@ -39,17 +39,7 @@ export const fetchCollectibleMetadata = async (tokenUri: string) => {
     metadata.name = data.name;
     metadata.description = data.description;
     metadata.externalUrl = data.external_url;
-    metadata.attributes = (data.attributes || [])
-      .map((attr) => {
-        if (attr.trait_type && attr.value) {
-          return {
-            traitType: attr.trait_type,
-            value: attr.value,
-          };
-        }
-        return null;
-      })
-      .filter((attr) => attr !== null);
+    metadata.attributes = data.attributes;
     metadata.image = data.image;
 
     return metadata;
@@ -62,8 +52,8 @@ export const fetchCollectibleMetadata = async (tokenUri: string) => {
 
 /**
  * Fetches collectibles (NFTs) for a given account from Freighter BE v2.
- * This function queries the API and enriches each collectible with metadata
- * fetched from its token URI. The API filters collectibles by owner.
+ * This function queries the API, filters collectibles by owner,
+ * and enriches each collectible with metadata fetched from its token URI.
  *
  * @param {Object} params - The parameters object
  * @param {string} params.publicKey - The public key of the account to fetch collectibles for
@@ -73,7 +63,7 @@ export const fetchCollectibleMetadata = async (tokenUri: string) => {
  *
  * @example
  * ```typescript
- * const collectibles = await fetchCollectibles({
+ * const collectibles = await getCollectibles({
  *   publicKey: "GABC...",
  *   contracts: [{ id: "C123...", token_ids: ["1", "2"] }],
  *   networkDetails: { network: "testnet", ... }
@@ -118,7 +108,11 @@ export const fetchCollectibles = async ({
     for (let i = 0; i < data.collections.length; i++) {
       const { collection } = data.collections[i];
       if (collection) {
-        if (collection.collectibles.length > 0) {
+        const filteredCollectibles = collection.collectibles.filter(
+          (collectible) => collectible.owner === publicKey,
+        );
+
+        if (filteredCollectibles.length > 0) {
           // for each collectible, fetch the metadata from the token URI
           fetchedCollections.push({
             collection: {
@@ -126,13 +120,11 @@ export const fetchCollectibles = async ({
               name: collection.name,
               symbol: collection.symbol,
               collectibles: await Promise.all(
-                collection.collectibles.map(async (collectible) => {
+                filteredCollectibles.map(async (collectible) => {
                   const metadata = await fetchCollectibleMetadata(
                     collectible.token_uri,
                   );
                   return {
-                    collectionAddress: collection.address,
-                    collectionName: collection.name,
                     metadata,
                     owner: collectible.owner,
                     tokenUri: collectible.token_uri,
@@ -140,16 +132,6 @@ export const fetchCollectibles = async ({
                   };
                 }),
               ),
-            },
-          });
-        }
-      } else {
-        const { error } = data.collections[i];
-        if (error) {
-          fetchedCollections.push({
-            error: {
-              collectionAddress: error.collection_address,
-              errorMessage: error.error_message,
             },
           });
         }

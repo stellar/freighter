@@ -862,7 +862,6 @@ export const getIndexerAccountHistory = async ({
     const url = new URL(
       `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}&is_failed_included=true`,
     );
-
     const response = await fetch(url.href);
 
     const data = await response.json();
@@ -1967,71 +1966,6 @@ export const modifyAssetsList = async ({
   return { assetsLists: response.assetsLists, error: response.error };
 };
 
-export const simulateSendCollectible = async (args: {
-  collectionAddress: string;
-  publicKey: string;
-  params: {
-    publicKey: string;
-    destination: string;
-    collectionAddress: string;
-    tokenId: number;
-  };
-  networkDetails: NetworkDetails;
-  transactionFee: string;
-}): Promise<{
-  ok: boolean;
-  response: {
-    preparedTransaction: string;
-    simulationResponse: SorobanRpc.Api.SimulateTransactionSuccessResponse;
-  };
-}> => {
-  const {
-    collectionAddress,
-    publicKey,
-    params,
-    networkDetails,
-    transactionFee,
-  } = args;
-  if (!networkDetails.sorobanRpcUrl) {
-    throw new SorobanRpcNotSupportedError();
-  }
-  const server = stellarSdkServer(
-    networkDetails.networkUrl,
-    networkDetails.networkPassphrase,
-  );
-  const Sdk = getSdk(networkDetails.networkPassphrase);
-  const sourceAccount = await server.loadAccount(publicKey);
-  const builder = new Sdk.TransactionBuilder(sourceAccount, {
-    fee: xlmToStroop(transactionFee).toFixed(),
-    networkPassphrase: networkDetails.networkPassphrase,
-  });
-
-  const sendCollectibleParams = [
-    new Address(publicKey).toScVal(), // from
-    new Address(params.destination).toScVal(), // to
-    xdr.ScVal.scvU32(params.tokenId), // token id
-  ];
-  const transaction = transfer(
-    collectionAddress,
-    sendCollectibleParams,
-    undefined,
-    builder,
-  );
-
-  const simulationResponse = (await simulateTransaction({
-    xdr: transaction.toXDR(),
-    networkDetails: networkDetails,
-  })) as {
-    ok: boolean;
-    response: {
-      preparedTransaction: string;
-      simulationResponse: SorobanRpc.Api.SimulateTransactionSuccessResponse;
-    };
-  };
-
-  return simulationResponse;
-};
-
 export const simulateTokenTransfer = async (args: {
   address: string;
   publicKey: string;
@@ -2070,7 +2004,7 @@ export const simulateTokenTransfer = async (args: {
 
     const transferParams = [
       new Address(publicKey).toScVal(), // from
-      new Address(params.destination).toScVal(), // to (may be muxed address)
+      new Address(address).toScVal(), // to
       new XdrLargeInt("i128", params.amount).toI128(), // amount
     ];
     const transaction = transfer(address, transferParams, memo, builder);
@@ -2095,33 +2029,22 @@ export const simulateTokenTransfer = async (args: {
     };
   }
 
-  // Build request body - ensure memo is a string (empty string if undefined/null for muxed addresses)
-  const requestBody: {
-    address: string;
-    pub_key: string;
-    memo: string;
-    params: {
-      publicKey: string;
-      destination: string;
-      amount: number;
-    };
-    network_url: string;
-    network_passphrase: string;
-  } = {
-    address,
-    pub_key: publicKey,
-    memo: memo || "", // Backend requires memo as string, use empty string if undefined
-    params,
-    network_url: networkDetails.sorobanRpcUrl!,
-    network_passphrase: networkDetails.networkPassphrase,
-  };
-
   const options = {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(requestBody),
+    body: JSON.stringify({
+      address,
+
+      pub_key: publicKey,
+      memo,
+      params,
+
+      network_url: networkDetails.sorobanRpcUrl,
+
+      network_passphrase: networkDetails.networkPassphrase,
+    }),
   };
   const res = await fetch(`${INDEXER_URL}/simulate-token-transfer`, options);
   const response = await res.json();
@@ -2282,44 +2205,4 @@ export const getCollectibles = async ({
   }
 
   return response;
-};
-
-export const changeCollectibleVisibility = async ({
-  collectibleKey,
-  collectibleVisibility,
-  activePublicKey,
-}: {
-  collectibleKey: string;
-  collectibleVisibility: AssetVisibility;
-  activePublicKey: string;
-}) => {
-  const response = await sendMessageToBackground({
-    type: SERVICE_TYPES.CHANGE_COLLECTIBLE_VISIBILITY,
-    collectibleVisibility: {
-      collectible: collectibleKey,
-      visibility: collectibleVisibility,
-    },
-    activePublicKey,
-  });
-
-  return {
-    hiddenCollectibles: response?.hiddenCollectibles || {},
-    error: response?.error || "",
-  };
-};
-
-export const getHiddenCollectibles = async ({
-  activePublicKey,
-}: {
-  activePublicKey: string;
-}) => {
-  const response = await sendMessageToBackground({
-    type: SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES,
-    activePublicKey,
-  });
-
-  return {
-    hiddenCollectibles: response?.hiddenCollectibles || {},
-    error: response?.error || "",
-  };
 };

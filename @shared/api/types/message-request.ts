@@ -4,12 +4,7 @@ import browser from "webextension-polyfill";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { NetworkDetails } from "@shared/constants/stellar";
-import {
-  AssetVisibility,
-  BalanceToMigrate,
-  IssuerKey,
-  CollectibleKey,
-} from "./types";
+import { AssetVisibility, BalanceToMigrate, IssuerKey } from "./types";
 import { AssetsListItem } from "@shared/constants/soroban/asset-list";
 
 export interface TokenToAdd {
@@ -379,18 +374,6 @@ export interface GetCollectiblesMessage extends BaseMessage {
   network: string;
 }
 
-export interface ChangeCollectibleVisibilityMessage extends BaseMessage {
-  type: SERVICE_TYPES.CHANGE_COLLECTIBLE_VISIBILITY;
-  collectibleVisibility: {
-    collectible: CollectibleKey;
-    visibility: AssetVisibility;
-  };
-}
-
-export interface GetHiddenCollectiblesMessage extends BaseMessage {
-  type: SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES;
-}
-
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -450,6 +433,4 @@ export type ServiceMessageRequest =
   | GetMobileAppBannerDismissedMessage
   | DismissMobileAppBannerMessage
   | AddCollectibleMessage
-  | GetCollectiblesMessage
-  | ChangeCollectibleVisibilityMessage
-  | GetHiddenCollectiblesMessage;
+  | GetCollectiblesMessage;
