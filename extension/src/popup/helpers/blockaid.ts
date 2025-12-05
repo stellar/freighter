@@ -174,7 +174,7 @@ export const scanAsset = async (
   address: string,
   networkDetails: NetworkDetails,
   signal?: AbortSignal,
-) => {
+): Promise<BlockAidScanAssetResult | null> => {
   try {
     if (!isMainnet(networkDetails)) {
       /* Scanning assets is only supported on Mainnet */
@@ -189,13 +189,13 @@ export const scanAsset = async (
       Sentry.captureException(response.error || "Failed to scan asset");
       emitMetric(METRIC_NAMES.blockaidAssetScan);
       // Return null to indicate unable to scan
-      return null as unknown as BlockAidScanAssetResult;
+      return null;
     }
 
     emitMetric(METRIC_NAMES.blockaidAssetScan);
     if (!response.data) {
       // Return null to indicate unable to scan
-      return null as unknown as BlockAidScanAssetResult;
+      return null;
     }
     return response.data;
   } catch (err) {
@@ -203,14 +203,13 @@ export const scanAsset = async (
     Sentry.captureException(err);
   }
   // Return null to indicate unable to scan
-  return null as unknown as BlockAidScanAssetResult;
+  return null;
 };
 
 export const useScanAsset = (address: string) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const [scannedAssetStatus, setScannedAssetStatus] = useState(
-    {} as BlockAidScanAssetResult,
-  );
+  const [scannedAssetStatus, setScannedAssetStatus] =
+    useState<BlockAidScanAssetResult | null>(null);
 
   useEffect(() => {
     const fetchScanAssetStatus = async () => {
