@@ -115,6 +115,7 @@ export function useGetAssetDomainsWithBalances(getBalancesOptions: {
 
           const cachedHomeDomain =
             homeDomains[networkDetails.network]?.[issuer.key];
+
           if (useCache && cachedHomeDomain) {
             domain = cachedHomeDomain;
           } else if (cachedHomeDomain !== null) {

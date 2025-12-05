@@ -24,6 +24,10 @@ import {
 import { computeDestMinWithSlippage } from "helpers/transaction";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { getBaseAccount } from "popup/helpers/account";
+import {
+  determineMuxedDestination,
+  checkContractMuxedSupport,
+} from "helpers/muxedAddress";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import {
   CLASSIC_ASSET_DECIMALS,
@@ -175,6 +179,9 @@ const getBuiltTx = async (
       .addOperation(operation)
       .setTimeout(transactionTimeout);
 
+    // For classic transactions, always add memo if provided
+    // Classic transactions support both muxed destination AND memo
+    // (Only Soroban transactions with muxed addresses encode memo in the address)
     if (memo) {
       transaction.addMemo(Memo.text(memo));
     }
@@ -380,6 +387,48 @@ function useSimulateTxData({
         Number("decimals" in assetBalance ? assetBalance.decimals : 7),
       );
 
+      // For Soroban transfers, check if contract supports muxed and determine final destination
+      let finalDestination = destination;
+      let sorobanMemo = memo;
+      if (simParams.type === "soroban") {
+        try {
+          const contractSupportsMuxed = await checkContractMuxedSupport({
+            contractId: tokenAddress,
+            networkDetails,
+          });
+          finalDestination = determineMuxedDestination({
+            recipientAddress: destination,
+            transactionMemo: memo,
+            contractSupportsMuxed,
+          });
+          // Tokens without Soroban mux support don't support memo at all
+          // Tokens with Soroban mux support: memo is encoded in muxed address (if M address or if G address + memo creates muxed)
+          // Send empty string instead of undefined to satisfy backend API requirement
+          if (!contractSupportsMuxed) {
+            // Without Soroban mux support: no memo support
+            sorobanMemo = "";
+          } else {
+            // With Soroban mux support: check if final destination is muxed (memo encoded in address)
+            // If finalDestination is muxed, memo is already encoded in the address, so don't pass it separately
+            const isFinalDestinationMuxed = isMuxedAccount(finalDestination);
+            if (isFinalDestinationMuxed) {
+              sorobanMemo = "";
+            }
+            // If finalDestination is not muxed, sorobanMemo should remain as the memo value
+            // (This handles the case where contract supports muxed but we're sending to a G address without memo)
+          }
+        } catch (error) {
+          // If we can't determine muxed destination, use original destination
+          // On error, assume no memo support for safety
+          captureException(error, {
+            extra: {
+              message: "Error determining muxed destination",
+            },
+          });
+          sorobanMemo = "";
+        }
+      }
+
       const simResponse = await simulateTx({
         type: simParams.type,
         recommendedFee: transactionFee,
@@ -387,11 +436,11 @@ function useSimulateTxData({
           tokenPayment: {
             address: tokenAddress,
             publicKey,
-            memo,
+            memo: sorobanMemo,
             params: {
               amount: parsedAmount.toNumber(),
               publicKey,
-              destination,
+              destination: finalDestination,
             },
             networkDetails,
             transactionFee,
