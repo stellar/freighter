@@ -47,9 +47,6 @@ export const initContentScriptMessageListener = () => {
 
 export const initExtensionMessageListener = () => {
   browser?.runtime?.onMessage?.addListener(async (request, sender) => {
-    console.log("[background] Message received:", request);
-    const req = request as ExternalRequest | Response;
-    console.log("[background] Message type:", req?.type);
     const sessionStore = await buildStore();
     const localStore = dataStorageAccess(browserLocalStorage);
     const localKeyStore = new BrowserStorageKeyStore();
@@ -61,10 +58,10 @@ export const initExtensionMessageListener = () => {
     });
     keyManager.registerEncrypter(ScryptEncrypter);
     // todo this is kinda ugly
+    const req = request as ExternalRequest | Response;
     let res;
 
     if (Object.values(SERVICE_TYPES).includes(req.type as SERVICE_TYPES)) {
-      console.log("[background] Routing to popupMessageListener");
       res = await popupMessageListener(
         req as ServiceMessageRequest,
         sessionStore,
@@ -72,24 +69,20 @@ export const initExtensionMessageListener = () => {
         keyManager,
         sessionTimer,
       );
-      console.log("[background] popupMessageListener returned:", res);
     }
     if (
       Object.values(EXTERNAL_SERVICE_TYPES).includes(
         req.type as EXTERNAL_SERVICE_TYPES,
       )
     ) {
-      console.log("[background] Routing to freighterApiMessageListener");
       res = await freighterApiMessageListener(
         req as ExternalRequest,
         sender,
         sessionStore,
         localStore,
       );
-      console.log("[background] freighterApiMessageListener returned:", res);
     }
 
-    console.log("[background] Returning response:", res);
     return res;
   });
 };

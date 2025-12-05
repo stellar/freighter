@@ -30,41 +30,17 @@ export const redirectMessagesToBackground = () => {
         return;
       }
       // Forward the message on to Background
-      let res: any = { error: "Unable to send message to extension" };
+      let res = { error: "Unable to send message to extension" };
       try {
-        console.log(
-          "[redirectMessagesToBackground] Forwarding message to background:",
-          event.data,
-        );
         res = await browser.runtime.sendMessage(event.data);
-        console.log("[redirectMessagesToBackground] Background response:", res);
-        console.log(
-          "[redirectMessagesToBackground] Background response type:",
-          typeof res,
-        );
-        console.log(
-          "[redirectMessagesToBackground] Background response keys:",
-          res ? Object.keys(res) : "null/undefined",
-        );
       } catch (e) {
-        console.error("[redirectMessagesToBackground] Error:", e);
+        console.error(e);
       }
       // Send the response back to Freighter API
-      // If res is undefined, use empty object to avoid losing the response structure
-      const responseToSend = {
-        source: EXTERNAL_MSG_RESPONSE,
-        messagedId,
-        ...(res || {}),
-      };
-      console.log(
-        "[redirectMessagesToBackground] Sending response:",
-        responseToSend,
+      window.postMessage(
+        { source: EXTERNAL_MSG_RESPONSE, messagedId, ...res },
+        window.location.origin,
       );
-      console.log(
-        "[redirectMessagesToBackground] Response keys:",
-        Object.keys(responseToSend),
-      );
-      window.postMessage(responseToSend, window.location.origin);
     },
     false,
   );

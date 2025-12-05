@@ -30,6 +30,7 @@ import {
 import {
   useScanAsset,
   useShouldTreatAssetAsUnableToScan,
+  useShouldTreatTxAsUnableToScan,
 } from "popup/helpers/blockaid";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
@@ -112,11 +113,27 @@ export const ReviewTx = ({
 
   // Check if source or destination tokens are unable to scan
   const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
+  const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
   const isSrcUnableToScan =
     srcAssetAddress && shouldTreatAsUnableToScan(srcAssetScanResult);
   const isDstUnableToScan =
     dstAssetAddress && shouldTreatAsUnableToScan(dstAssetScanResult);
   const showSwapWarning = isSrcUnableToScan || isDstUnableToScan;
+
+  // Check if transaction scan is unable to scan (only for non-swap, XLM-only transactions)
+  const isXlmOnlyTransaction =
+    !showSwapWarning && !srcAssetAddress && !dstAssetAddress;
+  const txScanResult = simulationState.data?.scanResult;
+  const isTxUnableToScan =
+    isXlmOnlyTransaction && shouldTreatTxAsUnableToScan(txScanResult);
+
+  // Determine if transaction warning should be shown
+  const hasSimulationData = !!simulationState.data;
+  const hasScanResult = txScanResult !== undefined;
+  const shouldShowTxWarning =
+    isXlmOnlyTransaction &&
+    hasSimulationData &&
+    (hasScanResult || isTxUnableToScan);
 
   if (simulationState.state === RequestState.ERROR) {
     return (
@@ -249,18 +266,16 @@ export const ReviewTx = ({
                     />
                   ) : null}
                   {/* Show transaction warning only if both assets are XLM or if no swap warnings */}
-                  {!showSwapWarning &&
-                    !srcAssetAddress &&
-                    !dstAssetAddress &&
-                    simulationState.data?.scanResult && (
-                      <BlockaidTxScanLabel
-                        scanResult={simulationState.data?.scanResult}
-                        onClick={() => {
-                          setExpandedAssetScan(null);
-                          setActivePaneIndex(1);
-                        }}
-                      />
-                    )}
+                  {/* Always render BlockaidTxScanLabel when simulationState.data exists - it handles null scanResult internally */}
+                  {shouldShowTxWarning && (
+                    <BlockaidTxScanLabel
+                      scanResult={txScanResult}
+                      onClick={() => {
+                        setExpandedAssetScan(null);
+                        setActivePaneIndex(1);
+                      }}
+                    />
+                  )}
                 </div>
                 <div className="ReviewTx__Details">
                   <div className="ReviewTx__Details__Row">
@@ -314,7 +329,7 @@ export const ReviewTx = ({
                 />
               ) : (
                 <BlockAidTxScanExpanded
-                  scanResult={simulationState.data?.scanResult}
+                  scanResult={txScanResult}
                   onClose={() => setActivePaneIndex(0)}
                 />
               ),

@@ -474,7 +474,7 @@ export const BlockaidAssetWarning = ({
   const { t } = useTranslation();
   const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
 
-  // Handle unable to scan state (including debug override)
+  // Handle unable to scan state
   if (shouldTreatAsUnableToScan(blockaidData)) {
     return (
       <div
@@ -631,8 +631,12 @@ export const BlockAidAssetScanExpanded = ({
   const { t } = useTranslation();
   const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
 
-  // Handle unable to scan state (including debug override)
-  if (shouldTreatAsUnableToScan(scanResult)) {
+  // Check if asset is unable to scan
+  const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
+  const hasScanResult = scanResult && scanResult.result_type;
+
+  // Handle unable to scan state
+  if (isUnableToScan) {
     return (
       <div className="BlockaidDetailsExpanded">
         <div className="BlockaidDetailsExpanded__Header">
@@ -662,14 +666,13 @@ export const BlockAidAssetScanExpanded = ({
     );
   }
 
-  if (!scanResult || !scanResult.result_type) {
+  if (!hasScanResult) {
     // This should be handled by the unable to scan check above, but TypeScript needs this
     return null;
   }
 
   const { result_type, features } = scanResult;
   const _features = features || [];
-  const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
 
   // Build warnings list - include "unable to scan" when there are other warnings
   const warnings: Array<{ icon: React.ReactNode; text: string }> = [];
@@ -853,9 +856,7 @@ export const BlockaidTxScanLabel = ({
   const { t } = useTranslation();
   const shouldTreatAsUnableToScan = useShouldTreatTxAsUnableToScan();
   const isTxSuspiciousCheck = useIsTxSuspicious();
-  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
-    string | null
-  >(null);
+  const [blockaidState, setBlockaidState] = useState<string | null>(null);
   const isDev = process.env.DEV_EXTENSION === "true" || !process.env.PRODUCTION;
 
   useEffect(() => {
@@ -863,13 +864,24 @@ export const BlockaidTxScanLabel = ({
       return;
     }
     getBlockaidOverrideState()
-      .then(setBlockaidOverrideState)
-      .catch(() => setBlockaidOverrideState(null));
+      .then(setBlockaidState)
+      .catch(() => setBlockaidState(null));
   }, [isDev]);
 
-  // Handle unable to scan state (including blockaid override state)
-  // This check must come first to ensure blockaid override state is respected
-  if (shouldTreatAsUnableToScan(scanResult)) {
+  // Extract complex conditions for readability
+  const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
+  const hasScanResult = !!scanResult;
+  const isMalicious =
+    isDev &&
+    blockaidState === SecurityLevel.MALICIOUS &&
+    isTxSuspiciousCheck(scanResult);
+  const isSuspicious =
+    isDev &&
+    blockaidState === SecurityLevel.SUSPICIOUS &&
+    isTxSuspiciousCheck(scanResult);
+
+  // Handle unable to scan state
+  if (isUnableToScan) {
     return (
       <div
         className="ScanLabel ScanMiss"
@@ -890,17 +902,12 @@ export const BlockaidTxScanLabel = ({
   }
 
   // Early return if scanResult is null/undefined and not unable to scan
-  // The unable to scan check above handles both actual scan failures and blockaid override state
-  if (!scanResult && !shouldTreatAsUnableToScan(scanResult)) {
+  if (!hasScanResult && !isUnableToScan) {
     return null;
   }
 
-  // Check blockaid override state for malicious state (before checking actual scan result)
-  if (
-    isDev &&
-    blockaidOverrideState === SecurityLevel.MALICIOUS &&
-    isTxSuspiciousCheck(scanResult)
-  ) {
+  // Check if transaction is malicious
+  if (isMalicious) {
     return (
       <div
         className="ScanLabel ScanMalicious"
@@ -922,12 +929,8 @@ export const BlockaidTxScanLabel = ({
     );
   }
 
-  // Check blockaid override state for suspicious state (before checking actual scan result)
-  if (
-    isDev &&
-    blockaidOverrideState === SecurityLevel.SUSPICIOUS &&
-    isTxSuspiciousCheck(scanResult)
-  ) {
+  // Check if transaction is suspicious
+  if (isSuspicious) {
     return (
       <div
         className="ScanLabel ScanMiss"
@@ -1044,7 +1047,6 @@ export const BlockAidTxScanExpanded = ({
   const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
 
   // Handle unable to scan state - use same logic as BlockaidTxScanLabel
-  // If unable to scan (including override), show unable to scan view
   if (isUnableToScan) {
     return (
       <div className="BlockaidDetailsExpanded">

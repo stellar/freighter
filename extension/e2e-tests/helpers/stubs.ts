@@ -59,6 +59,36 @@ export const stubScanDapp = async (context: BrowserContext) => {
   });
 };
 
+/**
+ * Stubs scan-asset endpoint to return "unable to scan" response (null data)
+ * This simulates when BlockAid cannot scan an asset
+ */
+export const stubScanAssetUnableToScan = async (
+  page: Page | BrowserContext,
+) => {
+  await page.route("**/scan-asset**", async (route) => {
+    const json = {
+      data: null,
+      error: null,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+/**
+ * Stubs scan-tx endpoint to return "unable to scan" response (null data)
+ * This simulates when BlockAid cannot scan a transaction
+ */
+export const stubScanTxUnableToScan = async (page: Page | BrowserContext) => {
+  await page.route("**/scan-tx**", async (route) => {
+    const json = {
+      data: null,
+      error: null,
+    };
+    await route.fulfill({ json });
+  });
+};
+
 export const stubIsSac = async (page: Page | BrowserContext) => {
   await page.route("**/is-sac-contract**", async (route) => {
     const json = {
