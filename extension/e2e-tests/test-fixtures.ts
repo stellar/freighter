@@ -1,7 +1,7 @@
 import { test as base, chromium, BrowserContext, Page } from "@playwright/test";
 import path from "path";
 
-import { STELLAR_EXPERT_ASSET_LIST_JSON } from "./helpers/stubs.ts";
+import { STELLAR_EXPERT_ASSET_LIST_JSON } from "./helpers/stubs";
 
 export const test = base.extend<{
   context: BrowserContext;
@@ -35,6 +35,11 @@ export const test = base.extend<{
     await use(extensionId);
   },
   page: async ({ page }, use) => {
+    // Inject environment variable into browser context for memo validation bypass
+    await page.addInitScript(() => {
+      (window as any).IS_PLAYWRIGHT = "true";
+    });
+
     if (!process.env.IS_INTEGRATION_MODE) {
       await page.route("*/**/testnet/asset-list/top50", async (route) => {
         const json = STELLAR_EXPERT_ASSET_LIST_JSON;
