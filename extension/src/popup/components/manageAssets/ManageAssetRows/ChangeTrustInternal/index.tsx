@@ -13,6 +13,7 @@ import {
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import { View } from "popup/basics/layout/View";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { Summary } from "popup/views/SignTransaction/Preview/Summary";
 import { Details } from "popup/views/SignTransaction/Preview/Details";
@@ -183,6 +184,13 @@ export const ChangeTrustInternal = ({
                     onClick={() => setActivePaneIndex(2)}
                   />
                 )}
+                {state.data.isAssetUnableToScan && (
+                  <BlockaidAssetWarning
+                    blockaidData={state.data.scanResult}
+                    onClick={() => setActivePaneIndex(2)}
+                    messageKey="Proceed with caution"
+                  />
+                )}
                 {trustlineChanges.length > 0 && (
                   <Trustline operations={trustlineChanges} icons={icons} />
                 )}
@@ -257,10 +265,12 @@ export const ChangeTrustInternal = ({
                 </div>
               </div>
             </div>,
-            <BlockAidAssetScanExpanded
-              scanResult={state.data.scanResult}
-              onClose={() => setActivePaneIndex(0)}
-            />,
+            <View.Content hasNoTopPadding>
+              <BlockAidAssetScanExpanded
+                scanResult={state.data.scanResult}
+                onClose={() => setActivePaneIndex(0)}
+              />
+            </View.Content>,
           ]}
         />
       )}

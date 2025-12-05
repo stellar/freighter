@@ -254,6 +254,11 @@ export interface LoadBackendSettingsMessage extends BaseMessage {
   type: SERVICE_TYPES.LOAD_BACKEND_SETTINGS;
 }
 
+export interface SaveBlockaidDebugOverrideMessage extends BaseMessage {
+  type: SERVICE_TYPES.SAVE_BLOCKAID_DEBUG_OVERRIDE;
+  overriddenBlockaidResponse: string | null;
+}
+
 export interface GetCachedAssetIconListMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_CACHED_ASSET_ICON_LIST;
 }
@@ -360,6 +365,9 @@ export interface DismissMobileAppBannerMessage extends BaseMessage {
   type: SERVICE_TYPES.DISMISS_MOBILE_APP_BANNER;
 }
 
+export interface GetBlockaidDebugOverrideMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE;
+}
 export interface AddCollectibleMessage extends BaseMessage {
   type: SERVICE_TYPES.ADD_COLLECTIBLE;
   network: string;
@@ -410,6 +418,7 @@ export type ServiceMessageRequest =
   | SaveAllowListMessage
   | SaveSettingsMessage
   | SaveExperimentalFeaturesMessage
+  | SaveBlockaidDebugOverrideMessage
   | LoadSettingsMessage
   | LoadBackendSettingsMessage
   | GetCachedAssetIconListMessage
@@ -432,5 +441,6 @@ export type ServiceMessageRequest =
   | GetHiddenAssetsMessage
   | GetMobileAppBannerDismissedMessage
   | DismissMobileAppBannerMessage
+  | GetBlockaidDebugOverrideMessage;
   | AddCollectibleMessage
   | GetCollectiblesMessage;

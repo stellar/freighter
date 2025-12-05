@@ -36,7 +36,11 @@ import { View } from "popup/basics/layout/View";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { useTokenLookup } from "popup/helpers/useTokenLookup";
 import { isContractId } from "popup/helpers/soroban";
-import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
+import {
+  scanAsset,
+  useIsAssetSuspicious,
+  useShouldTreatAssetAsUnableToScan,
+} from "popup/helpers/blockaid";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
@@ -74,9 +78,10 @@ export const AddToken = () => {
   const [isVerifiedToken, setIsVerifiedToken] = useState(false);
   const [isVerificationInfoShowing, setIsVerificationInfoShowing] =
     useState(false);
-  const [blockaidData, setBlockaidData] = useState<
-    BlockAidScanAssetResult | undefined
-  >(undefined);
+  const [blockaidData, setBlockaidData] =
+    useState<BlockAidScanAssetResult | null>(null);
+  const isAssetSuspicious = useIsAssetSuspicious();
+  const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
   const [errorMessage, setErrorMessage] = useState("");
   const [activePaneIndex, setActivePaneIndex] = useState(0);
 
@@ -143,7 +148,12 @@ export const AddToken = () => {
         networkDetails,
       );
 
-      if (isAssetSuspicious(scannedAsset)) {
+      // Show Blockaid warning if suspicious or unable to scan (including debug override)
+      if (
+        scannedAsset &&
+        (isAssetSuspicious(scannedAsset) ||
+          shouldTreatAsUnableToScan(scannedAsset))
+      ) {
         setBlockaidData(scannedAsset);
       }
     };

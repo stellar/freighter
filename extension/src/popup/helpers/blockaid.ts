@@ -15,6 +15,9 @@ import { isMainnet } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { getBlockaidOverrideState } from "@shared/api/internal";
+import { isDev } from "@shared/helpers/dev";
+import { SecurityLevel } from "popup/constants/blockaid";
 import { fetchJson } from "./fetch";
 
 export const ATTACK_TO_DISPLAY = {
@@ -108,6 +111,13 @@ export const useScanTx = () => {
         error: string | null;
       }>(`${INDEXER_URL}/scan-tx`, options);
 
+      // If there's an error or no data, treat as unable to scan
+      if (response.error || !response.data) {
+        emitMetric(METRIC_NAMES.blockaidTxScan);
+        setLoading(false);
+        return null;
+      }
+
       setData(response.data);
       emitMetric(METRIC_NAMES.blockaidTxScan);
       setLoading(false);
@@ -164,9 +174,12 @@ export const scanAsset = async (
   address: string,
   networkDetails: NetworkDetails,
   signal?: AbortSignal,
-) => {
+): Promise<BlockAidScanAssetResult | null> => {
   try {
-    if (!isMainnet(networkDetails)) {
+    // Allow scanning in test environment (Playwright) even on testnet for e2e testing
+    const isTestEnv =
+      typeof window !== "undefined" && (window as any).IS_PLAYWRIGHT === "true";
+    if (!isMainnet(networkDetails) && !isTestEnv) {
       /* Scanning assets is only supported on Mainnet */
       return {} as BlockAidScanAssetResult;
     }
@@ -177,25 +190,29 @@ export const scanAsset = async (
 
     if (!res.ok || response.error) {
       Sentry.captureException(response.error || "Failed to scan asset");
+      emitMetric(METRIC_NAMES.blockaidAssetScan);
+      // Return null to indicate unable to scan
+      return null;
     }
 
     emitMetric(METRIC_NAMES.blockaidAssetScan);
     if (!response.data) {
-      return {} as BlockAidScanAssetResult;
+      // Return null to indicate unable to scan
+      return null;
     }
     return response.data;
   } catch (err) {
     console.error("Failed to scan asset");
     Sentry.captureException(err);
   }
-  return {} as BlockAidScanAssetResult;
+  // Return null to indicate unable to scan
+  return null;
 };
 
 export const useScanAsset = (address: string) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const [scannedAssetStatus, setScannedAssetStatus] = useState(
-    {} as BlockAidScanAssetResult,
-  );
+  const [scannedAssetStatus, setScannedAssetStatus] =
+    useState<BlockAidScanAssetResult | null>(null);
 
   useEffect(() => {
     const fetchScanAssetStatus = async () => {
@@ -213,19 +230,218 @@ export const useScanAsset = (address: string) => {
   };
 };
 
-export const isAssetSuspicious = (blockaidData?: BlockAidScanAssetResult) => {
+/**
+ * Hook that returns isAssetSuspicious with blockaid override state automatically applied
+ * In production, blockaid override state is ignored
+ */
+export const useIsAssetSuspicious = () => {
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    if (!isDev) {
+      return;
+    }
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, []);
+
+  return (blockaidData?: BlockAidScanAssetResult | null) =>
+    isAssetSuspicious(blockaidData, blockaidOverrideState);
+};
+
+/**
+ * Hook that returns isTxSuspicious with blockaid override state automatically applied
+ * In production, blockaid override state is ignored
+ */
+export const useIsTxSuspicious = () => {
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    if (!isDev) {
+      return;
+    }
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, []);
+
+  return (blockaidData?: BlockAidScanTxResult | null) =>
+    isTxSuspicious(blockaidData, blockaidOverrideState);
+};
+
+/**
+ * Hook that returns shouldTreatAssetAsUnableToScan with blockaid override state automatically applied
+ * In production, blockaid override state is ignored
+ */
+export const useShouldTreatAssetAsUnableToScan = () => {
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    if (!isDev) {
+      return;
+    }
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, []);
+
+  return (blockaidData?: BlockAidScanAssetResult | null) =>
+    shouldTreatAssetAsUnableToScan(blockaidData, blockaidOverrideState);
+};
+
+/**
+ * Hook that returns shouldTreatTxAsUnableToScan with blockaid override state automatically applied
+ * In production, blockaid override state is ignored
+ */
+export const useShouldTreatTxAsUnableToScan = () => {
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    if (!isDev) {
+      return;
+    }
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, []);
+
+  return (blockaidData?: BlockAidScanTxResult | null) =>
+    shouldTreatTxAsUnableToScan(blockaidData, blockaidOverrideState);
+};
+
+/**
+ * Checks if an asset scan result indicates the scan was unable to complete
+ * Returns true if blockaidData is null/undefined or empty object without result_type
+ */
+export const isAssetUnableToScan = (
+  blockaidData?: BlockAidScanAssetResult | null,
+): boolean => {
+  return !blockaidData || !blockaidData.result_type;
+};
+
+/**
+ * Checks if a transaction scan result indicates the scan was unable to complete
+ * Returns true if blockaidData is null/undefined
+ */
+export const isTxUnableToScan = (
+  blockaidData?: BlockAidScanTxResult | null,
+): boolean => {
+  return !blockaidData;
+};
+
+/**
+ * Checks if we're in development mode
+ */
+
+/**
+ * Determines if a security level should be considered suspicious based on blockaid override state
+ * @param blockaidOverrideState - The blockaid override state security level
+ * @returns true if suspicious, false if not suspicious, null if no override or not in dev mode
+ */
+const getSuspiciousFromBlockaidOverrideState = (
+  blockaidOverrideState?: string | null,
+): boolean | null => {
+  if (!isDev) {
+    return null;
+  }
+  if (!blockaidOverrideState) {
+    return null;
+  }
+
+  if (blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN) {
+    return false; // Unable to scan is not suspicious
+  }
+  if (blockaidOverrideState === SecurityLevel.SAFE) {
+    return false;
+  }
+  // SUSPICIOUS or MALICIOUS - both are suspicious
+  if (
+    blockaidOverrideState === SecurityLevel.SUSPICIOUS ||
+    blockaidOverrideState === SecurityLevel.MALICIOUS
+  ) {
+    return true;
+  }
+
+  return null;
+};
+
+/**
+ * Checks if asset should be treated as unable to scan based on blockaid override state
+ */
+export const shouldTreatAssetAsUnableToScan = (
+  blockaidData?: BlockAidScanAssetResult | null,
+  blockaidOverrideState?: string | null,
+): boolean => {
+  if (isDev && blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN) {
+    return true;
+  }
+  return isAssetUnableToScan(blockaidData);
+};
+
+/**
+ * Checks if transaction should be treated as unable to scan based on blockaid override state
+ */
+export const shouldTreatTxAsUnableToScan = (
+  blockaidData?: BlockAidScanTxResult | null,
+  blockaidOverrideState?: string | null,
+): boolean => {
+  if (isDev && blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN) {
+    return true;
+  }
+  return isTxUnableToScan(blockaidData);
+};
+
+export const isAssetSuspicious = (
+  blockaidData?: BlockAidScanAssetResult | null,
+  blockaidOverrideState?: string | null,
+) => {
+  const overrideResult = getSuspiciousFromBlockaidOverrideState(
+    blockaidOverrideState,
+  );
+  if (overrideResult !== null) {
+    return overrideResult;
+  }
+
+  // If unable to scan, treat as benign (not suspicious)
+  if (isAssetUnableToScan(blockaidData)) {
+    return false;
+  }
   if (!blockaidData || !blockaidData.result_type) {
     return false;
   }
   return blockaidData.result_type !== "Benign";
 };
 
-export const isTxSuspicious = (blockaidData: BlockAidScanTxResult) => {
-  const { simulation, validation } = blockaidData;
+export const isTxSuspicious = (
+  blockaidData?: BlockAidScanTxResult | null,
+  blockaidOverrideState?: string | null,
+) => {
+  const overrideResult = getSuspiciousFromBlockaidOverrideState(
+    blockaidOverrideState,
+  );
+  if (overrideResult !== null) {
+    return overrideResult;
+  }
+
+  // If unable to scan, treat as benign (not suspicious)
+  if (isTxUnableToScan(blockaidData)) {
+    return false;
+  }
 
   if (!blockaidData) {
     return false;
   }
+
+  const { simulation, validation } = blockaidData;
 
   if (simulation && "error" in simulation) {
     return true;

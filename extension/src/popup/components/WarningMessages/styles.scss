@@ -699,6 +699,9 @@
     margin: pxToRem(16px) 0;
     font-size: pxToRem(20px);
     font-weight: 500;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
   }
 
   &__SubTitle {
@@ -706,6 +709,8 @@
     font-weight: 500;
     margin-bottom: pxToRem(16px);
     color: var(--sds-clr-gray-11);
+    text-align: center;
+    width: 100%;
   }
 
   &__Details {
@@ -725,6 +730,10 @@
 
   &__DetailRow {
     display: flex;
+
+    &:first-child {
+      margin-top: pxToRem(8px);
+    }
 
     &:not(:last-child) {
       margin-bottom: pxToRem(8px);
