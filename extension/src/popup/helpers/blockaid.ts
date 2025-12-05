@@ -16,6 +16,7 @@ import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { getBlockaidOverrideState } from "@shared/api/internal";
+import { isDev } from "@shared/helpers/dev";
 import { SecurityLevel } from "popup/constants/blockaid";
 import { fetchJson } from "./fetch";
 
@@ -235,7 +236,6 @@ export const useIsAssetSuspicious = () => {
   const [blockaidOverrideState, setBlockaidOverrideState] = useState<
     string | null
   >(null);
-  const isDev = getIsDev();
 
   useEffect(() => {
     if (!isDev) {
@@ -244,7 +244,7 @@ export const useIsAssetSuspicious = () => {
     getBlockaidOverrideState()
       .then(setBlockaidOverrideState)
       .catch(() => setBlockaidOverrideState(null));
-  }, [isDev]);
+  }, []);
 
   return (blockaidData?: BlockAidScanAssetResult | null) =>
     isAssetSuspicious(blockaidData, blockaidOverrideState);
@@ -258,7 +258,6 @@ export const useIsTxSuspicious = () => {
   const [blockaidOverrideState, setBlockaidOverrideState] = useState<
     string | null
   >(null);
-  const isDev = getIsDev();
 
   useEffect(() => {
     if (!isDev) {
@@ -267,7 +266,7 @@ export const useIsTxSuspicious = () => {
     getBlockaidOverrideState()
       .then(setBlockaidOverrideState)
       .catch(() => setBlockaidOverrideState(null));
-  }, [isDev]);
+  }, []);
 
   return (blockaidData?: BlockAidScanTxResult | null) =>
     isTxSuspicious(blockaidData, blockaidOverrideState);
@@ -281,7 +280,6 @@ export const useShouldTreatAssetAsUnableToScan = () => {
   const [blockaidOverrideState, setBlockaidOverrideState] = useState<
     string | null
   >(null);
-  const isDev = getIsDev();
 
   useEffect(() => {
     if (!isDev) {
@@ -290,7 +288,7 @@ export const useShouldTreatAssetAsUnableToScan = () => {
     getBlockaidOverrideState()
       .then(setBlockaidOverrideState)
       .catch(() => setBlockaidOverrideState(null));
-  }, [isDev]);
+  }, []);
 
   return (blockaidData?: BlockAidScanAssetResult | null) =>
     shouldTreatAssetAsUnableToScan(blockaidData, blockaidOverrideState);
@@ -304,7 +302,6 @@ export const useShouldTreatTxAsUnableToScan = () => {
   const [blockaidOverrideState, setBlockaidOverrideState] = useState<
     string | null
   >(null);
-  const isDev = getIsDev();
 
   useEffect(() => {
     if (!isDev) {
@@ -313,7 +310,7 @@ export const useShouldTreatTxAsUnableToScan = () => {
     getBlockaidOverrideState()
       .then(setBlockaidOverrideState)
       .catch(() => setBlockaidOverrideState(null));
-  }, [isDev]);
+  }, []);
 
   return (blockaidData?: BlockAidScanTxResult | null) =>
     shouldTreatTxAsUnableToScan(blockaidData, blockaidOverrideState);
@@ -342,9 +339,6 @@ export const isTxUnableToScan = (
 /**
  * Checks if we're in development mode
  */
-const getIsDev = (): boolean => {
-  return process.env.DEV_EXTENSION === "true" || !process.env.PRODUCTION;
-};
 
 /**
  * Determines if a security level should be considered suspicious based on blockaid override state
@@ -354,7 +348,7 @@ const getIsDev = (): boolean => {
 const getSuspiciousFromBlockaidOverrideState = (
   blockaidOverrideState?: string | null,
 ): boolean | null => {
-  if (!getIsDev()) {
+  if (!isDev) {
     return null;
   }
   if (!blockaidOverrideState) {
@@ -385,7 +379,7 @@ export const shouldTreatAssetAsUnableToScan = (
   blockaidData?: BlockAidScanAssetResult | null,
   blockaidOverrideState?: string | null,
 ): boolean => {
-  if (getIsDev() && blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN) {
+  if (isDev && blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN) {
     return true;
   }
   return isAssetUnableToScan(blockaidData);
@@ -398,7 +392,7 @@ export const shouldTreatTxAsUnableToScan = (
   blockaidData?: BlockAidScanTxResult | null,
   blockaidOverrideState?: string | null,
 ): boolean => {
-  if (getIsDev() && blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN) {
+  if (isDev && blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN) {
     return true;
   }
   return isTxUnableToScan(blockaidData);

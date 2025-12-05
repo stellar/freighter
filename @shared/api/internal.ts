@@ -69,7 +69,8 @@ import {
   NetworkDetails,
   NETWORKS,
 } from "../constants/stellar";
-import { SERVICE_TYPES, DEV_EXTENSION } from "../constants/services";
+import { SERVICE_TYPES } from "../constants/services";
+import { isDev } from "../helpers/dev";
 import { SorobanRpcNotSupportedError } from "../constants/errors";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
@@ -1660,7 +1661,7 @@ export const saveExperimentalFeatures = async ({
 
 export const getBlockaidOverrideState = async (): Promise<string | null> => {
   // Only allow override state in dev mode
-  if (DEV_EXTENSION !== "true" || process.env.PRODUCTION === "true") {
+  if (!isDev) {
     return null;
   }
 

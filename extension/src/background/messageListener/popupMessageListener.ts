@@ -372,20 +372,9 @@ export const popupMessageListener = (
       return loadBackendSettings();
     }
     case SERVICE_TYPES.SAVE_BLOCKAID_DEBUG_OVERRIDE: {
-      console.log(
-        "[popupMessageListener] SAVE_BLOCKAID_DEBUG_OVERRIDE received",
-      );
-      console.log("[popupMessageListener] Request:", request);
       return saveBlockaidOverrideState({
         request: request as SaveBlockaidDebugOverrideMessage,
         localStore,
-      }).then((result) => {
-        console.log(
-          "[popupMessageListener] saveBlockaidOverrideState result:",
-          result,
-        );
-        console.log("[popupMessageListener] Returning:", result);
-        return result;
       });
     }
     case SERVICE_TYPES.GET_CACHED_ASSET_ICON_LIST: {

@@ -1,9 +1,6 @@
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { OVERRIDDEN_BLOCKAID_RESPONSE_ID } from "constants/localStorageTypes";
-
-const getIsDev = (): boolean => {
-  return process.env.DEV_EXTENSION === "true" || !process.env.PRODUCTION;
-};
+import { isDev } from "@shared/helpers/dev";
 
 export const getBlockaidOverrideState = async ({
   localStore,
@@ -12,7 +9,7 @@ export const getBlockaidOverrideState = async ({
 }): Promise<{
   overriddenBlockaidResponse: string | null;
 }> => {
-  if (!getIsDev()) {
+  if (!isDev) {
     return { overriddenBlockaidResponse: null };
   }
 
