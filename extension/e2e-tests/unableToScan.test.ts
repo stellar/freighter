@@ -233,23 +233,36 @@ test.describe("Unable to Scan States", () => {
       const sourceAsset = url.searchParams.get("source_asset_code");
       const destAsset = url.searchParams.get("destination_asset_code");
 
-      // Return a valid path for XLM <-> USDC swaps
+      // Helper to create asset object: native or credit_alphanum4
+      const createAssetObject = (assetCode: string | null, issuer: string) => {
+        const isNative = assetCode === "native" || assetCode === null;
+        return isNative
+          ? {
+              asset_type: "native",
+              asset_code: undefined,
+              asset_issuer: undefined,
+            }
+          : {
+              asset_type: "credit_alphanum4",
+              asset_code: assetCode,
+              asset_issuer: issuer,
+            };
+      };
+
+      const source = createAssetObject(sourceAsset, USDC_ISSUER);
+      const destination = createAssetObject(destAsset, USDC_ISSUER);
+
+      // Return a valid path for swaps
       const json = {
         _embedded: {
           records: [
             {
-              source_asset_type:
-                sourceAsset === "native" ? "native" : "credit_alphanum4",
-              source_asset_code:
-                sourceAsset === "native" ? undefined : sourceAsset,
-              source_asset_issuer:
-                sourceAsset === "native" ? undefined : USDC_ISSUER,
-              destination_asset_type:
-                destAsset === "native" ? "native" : "credit_alphanum4",
-              destination_asset_code:
-                destAsset === "native" ? undefined : destAsset,
-              destination_asset_issuer:
-                destAsset === "native" ? undefined : USDC_ISSUER,
+              source_asset_type: source.asset_type,
+              source_asset_code: source.asset_code,
+              source_asset_issuer: source.asset_issuer,
+              destination_asset_type: destination.asset_type,
+              destination_asset_code: destination.asset_code,
+              destination_asset_issuer: destination.asset_issuer,
               destination_amount: "0.95",
               path: [],
             },
