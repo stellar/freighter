@@ -23,7 +23,7 @@ export interface NewAssetFlags {
 export interface ChangeTrustData {
   asset: NewAssetFlags;
   flaggedKeys: FlaggedKeys;
-  scanResult: BlockAidScanAssetResult;
+  scanResult: BlockAidScanAssetResult | null;
   transactionXDR: string;
   isAssetSuspicious: boolean;
   isAssetUnableToScan: boolean;

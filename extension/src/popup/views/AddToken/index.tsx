@@ -78,9 +78,8 @@ export const AddToken = () => {
   const [isVerifiedToken, setIsVerifiedToken] = useState(false);
   const [isVerificationInfoShowing, setIsVerificationInfoShowing] =
     useState(false);
-  const [blockaidData, setBlockaidData] = useState<
-    BlockAidScanAssetResult | undefined
-  >(undefined);
+  const [blockaidData, setBlockaidData] =
+    useState<BlockAidScanAssetResult | null>(null);
   const isAssetSuspicious = useIsAssetSuspicious();
   const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
   const [errorMessage, setErrorMessage] = useState("");
@@ -151,8 +150,9 @@ export const AddToken = () => {
 
       // Show Blockaid warning if suspicious or unable to scan (including debug override)
       if (
-        isAssetSuspicious(scannedAsset) ||
-        shouldTreatAsUnableToScan(scannedAsset)
+        scannedAsset &&
+        (isAssetSuspicious(scannedAsset) ||
+          shouldTreatAsUnableToScan(scannedAsset))
       ) {
         setBlockaidData(scannedAsset);
       }

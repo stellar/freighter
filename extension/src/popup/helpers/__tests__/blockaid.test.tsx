@@ -30,6 +30,7 @@ describe("BlockAid Helper Functions", () => {
   });
 
   afterEach(() => {
+    jest.resetModules();
     process.env = originalEnv;
   });
 
@@ -111,8 +112,13 @@ describe("BlockAid Helper Functions", () => {
     it("should ignore debug override in production mode", () => {
       process.env.DEV_EXTENSION = "false";
       process.env.PRODUCTION = "true";
+      jest.resetModules();
+      jest.doMock("@shared/helpers/dev", () => ({
+        isDev: false,
+      }));
+      const { shouldTreatAssetAsUnableToScan: testFn } = require("../blockaid");
       expect(
-        shouldTreatAssetAsUnableToScan(
+        testFn(
           { result_type: "Benign" } as BlockAidScanAssetResult,
           SecurityLevel.UNABLE_TO_SCAN,
         ),
@@ -159,8 +165,13 @@ describe("BlockAid Helper Functions", () => {
     it("should ignore debug override in production mode", () => {
       process.env.DEV_EXTENSION = "false";
       process.env.PRODUCTION = "true";
+      jest.resetModules();
+      jest.doMock("@shared/helpers/dev", () => ({
+        isDev: false,
+      }));
+      const { shouldTreatTxAsUnableToScan: testFn } = require("../blockaid");
       expect(
-        shouldTreatTxAsUnableToScan(
+        testFn(
           { simulation: {} } as BlockAidScanTxResult,
           SecurityLevel.UNABLE_TO_SCAN,
         ),
@@ -247,8 +258,13 @@ describe("BlockAid Helper Functions", () => {
     it("should ignore debug override in production mode", () => {
       process.env.DEV_EXTENSION = "false";
       process.env.PRODUCTION = "true";
+      jest.resetModules();
+      jest.doMock("@shared/helpers/dev", () => ({
+        isDev: false,
+      }));
+      const { isAssetSuspicious: testFn } = require("../blockaid");
       expect(
-        isAssetSuspicious(
+        testFn(
           { result_type: "Benign" } as BlockAidScanAssetResult,
           SecurityLevel.MALICIOUS,
         ),
@@ -364,8 +380,13 @@ describe("BlockAid Helper Functions", () => {
     it("should ignore debug override in production mode", () => {
       process.env.DEV_EXTENSION = "false";
       process.env.PRODUCTION = "true";
+      jest.resetModules();
+      jest.doMock("@shared/helpers/dev", () => ({
+        isDev: false,
+      }));
+      const { isTxSuspicious: testFn } = require("../blockaid");
       expect(
-        isTxSuspicious(
+        testFn(
           {
             validation: { result_type: "Benign" },
           } as BlockAidScanTxResult,
@@ -403,6 +424,12 @@ describe("BlockAid Helper Functions", () => {
     it("should ignore debug override in production mode", () => {
       process.env.DEV_EXTENSION = "false";
       process.env.PRODUCTION = "true";
+      jest.resetModules();
+      jest.doMock("@shared/helpers/dev", () => ({
+        isDev: false,
+      }));
+
+      const { useIsAssetSuspicious: testHook } = require("../blockaid");
 
       const store = makeDummyStore({
         settings: {
@@ -414,7 +441,7 @@ describe("BlockAid Helper Functions", () => {
         <Provider store={store}>{children}</Provider>
       );
 
-      const { result } = renderHook(() => useIsAssetSuspicious(), {
+      const { result } = renderHook(() => testHook(), {
         wrapper: Wrapper,
       });
 
@@ -477,6 +504,12 @@ describe("BlockAid Helper Functions", () => {
     it("should ignore debug override in production mode", () => {
       process.env.DEV_EXTENSION = "false";
       process.env.PRODUCTION = "true";
+      jest.resetModules();
+      jest.doMock("@shared/helpers/dev", () => ({
+        isDev: false,
+      }));
+
+      const { useIsTxSuspicious: testHook } = require("../blockaid");
 
       const store = makeDummyStore({
         settings: {
@@ -488,7 +521,7 @@ describe("BlockAid Helper Functions", () => {
         <Provider store={store}>{children}</Provider>
       );
 
-      const { result } = renderHook(() => useIsTxSuspicious(), {
+      const { result } = renderHook(() => testHook(), {
         wrapper: Wrapper,
       });
 
@@ -528,6 +561,14 @@ describe("BlockAid Helper Functions", () => {
     it("should ignore debug override in production mode", () => {
       process.env.DEV_EXTENSION = "false";
       process.env.PRODUCTION = "true";
+      jest.resetModules();
+      jest.doMock("@shared/helpers/dev", () => ({
+        isDev: false,
+      }));
+
+      const {
+        useShouldTreatAssetAsUnableToScan: testHook,
+      } = require("../blockaid");
 
       const store = makeDummyStore({
         settings: {
@@ -539,7 +580,7 @@ describe("BlockAid Helper Functions", () => {
         <Provider store={store}>{children}</Provider>
       );
 
-      const { result } = renderHook(() => useShouldTreatAssetAsUnableToScan(), {
+      const { result } = renderHook(() => testHook(), {
         wrapper: Wrapper,
       });
 
@@ -577,6 +618,14 @@ describe("BlockAid Helper Functions", () => {
     it("should ignore debug override in production mode", () => {
       process.env.DEV_EXTENSION = "false";
       process.env.PRODUCTION = "true";
+      jest.resetModules();
+      jest.doMock("@shared/helpers/dev", () => ({
+        isDev: false,
+      }));
+
+      const {
+        useShouldTreatTxAsUnableToScan: testHook,
+      } = require("../blockaid");
 
       const store = makeDummyStore({
         settings: {
@@ -588,7 +637,7 @@ describe("BlockAid Helper Functions", () => {
         <Provider store={store}>{children}</Provider>
       );
 
-      const { result } = renderHook(() => useShouldTreatTxAsUnableToScan(), {
+      const { result } = renderHook(() => testHook(), {
         wrapper: Wrapper,
       });
 
