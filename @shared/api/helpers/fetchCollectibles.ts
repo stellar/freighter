@@ -39,7 +39,17 @@ const fetchCollectibleMetadata = async (tokenUri: string) => {
     metadata.name = data.name;
     metadata.description = data.description;
     metadata.externalUrl = data.external_url;
-    metadata.attributes = data.attributes;
+    metadata.attributes = (data.attributes || [])
+      .map((attr) => {
+        if (attr.trait_type && attr.value) {
+          return {
+            traitType: attr.trait_type,
+            value: attr.value,
+          };
+        }
+        return null;
+      })
+      .filter((attr) => attr !== null);
     metadata.image = data.image;
 
     return metadata;
@@ -125,6 +135,7 @@ export const fetchCollectibles = async ({
                     collectible.token_uri,
                   );
                   return {
+                    collectionName: collection.name,
                     metadata,
                     owner: collectible.owner,
                     tokenUri: collectible.token_uri,

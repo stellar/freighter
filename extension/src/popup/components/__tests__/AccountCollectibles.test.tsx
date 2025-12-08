@@ -107,6 +107,7 @@ describe("AccountCollectibles", () => {
           symbol: "SFROG",
           collectibles: [
             {
+              collectionName: "Stellar Frogs",
               owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
               tokenId: "1",
               tokenUri:
@@ -125,6 +126,7 @@ describe("AccountCollectibles", () => {
               },
             },
             {
+              collectionName: "Stellar Frogs",
               owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
               tokenId: "2",
               tokenUri: "https://nftcalendar.io/token/2",
@@ -142,6 +144,7 @@ describe("AccountCollectibles", () => {
               },
             },
             {
+              collectionName: "Stellar Frogs",
               owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
               tokenId: "3",
               tokenUri: "https://nftcalendar.io/token/3",

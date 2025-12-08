@@ -297,6 +297,7 @@ export const mockCollectibles = [
       symbol: "SFROG",
       collectibles: [
         {
+          collectionName: "Stellar Frogs",
           owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
           tokenId: "1",
           tokenUri: "https://nftcalendar.io/token/1",
@@ -314,6 +315,7 @@ export const mockCollectibles = [
           },
         },
         {
+          collectionName: "Stellar Frogs",
           owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
           tokenId: "2",
           tokenUri: "https://nftcalendar.io/token/2",
@@ -331,6 +333,7 @@ export const mockCollectibles = [
           },
         },
         {
+          collectionName: "Stellar Frogs",
           owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
           tokenId: "3",
           tokenUri: "https://nftcalendar.io/token/3",
@@ -358,6 +361,7 @@ export const mockCollectibles = [
       symbol: "SDOM",
       collectibles: [
         {
+          collectionName: "Soroban Domains",
           owner: "CCCSorobanDomainsCollection",
           tokenId: "102510",
           tokenUri: "https://nftcalendar.io/token/102510",
@@ -375,6 +379,7 @@ export const mockCollectibles = [
           },
         },
         {
+          collectionName: "Soroban Domains",
           owner: "CCCSorobanDomainsCollection",
           tokenId: "102589",
           tokenUri: "https://nftcalendar.io/token/102589",
@@ -402,6 +407,7 @@ export const mockCollectibles = [
       symbol: "FMONK",
       collectibles: [
         {
+          collectionName: "Future Monkeys",
           owner: "CCCFutureMonkeysCollection",
           tokenId: "111",
           tokenUri: "https://nftcalendar.io/token/111",
