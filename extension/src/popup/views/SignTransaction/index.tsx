@@ -146,7 +146,7 @@ export const SignTransaction = () => {
 
   // Check if memo is required based on flaggedKeys (populated by background script)
   // flaggedKeys is already validated when the transaction is received, so no need to re-validate
-  const isMemoRequired = Object.values(flaggedKeys).some(
+  const isMemoRequiredMissing = Object.values(flaggedKeys).some(
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
 
@@ -186,13 +186,13 @@ export const SignTransaction = () => {
   }, []);
 
   useEffect(() => {
-    if (isMemoRequired) {
+    if (isMemoRequiredMissing) {
       emitMetric(METRIC_NAMES.signTransactionMemoRequired);
     }
-  }, [isMemoRequired]);
+  }, [isMemoRequiredMissing]);
 
   // Disable submit when memo is missing or domain not allowed
-  const isSubmitDisabled = isMemoRequired || !isDomainListedAllowed;
+  const isSubmitDisabled = isMemoRequiredMissing || !isDomainListedAllowed;
 
   if (
     signTxState.state === RequestState.IDLE ||
@@ -251,7 +251,7 @@ export const SignTransaction = () => {
         header={`${t("Freighter is set to")} ${networkName}`}
       >
         <p>
-          {`${t("The transaction you’re trying to sign is on")} `}
+          {t("The transaction you’re trying to sign is on")}{" "}
           {_networkPassphrase}.
         </p>
         <p>{t("Signing this transaction is not possible at the moment.")}</p>
@@ -265,16 +265,12 @@ export const SignTransaction = () => {
 
   const { currentAccount } = signTxState.data?.signFlowState!;
 
-  // Check if user has enough XLM for the fee - skip warning if balances unavailable
-  const balances = signTxState.data?.balances;
-  const hasEnoughXlm = balances
-    ? balances.balances.some(
-        (balance) =>
-          "token" in balance &&
-          balance.token.code === "XLM" &&
-          (balance as NativeAsset).available.gt(stroopToXlm(_fee as string)),
-      )
-    : true; // If balances unavailable, assume user can proceed
+  const hasEnoughXlm = signTxState.data?.balances.balances.some(
+    (balance) =>
+      "token" in balance &&
+      balance.token.code === "XLM" &&
+      (balance as NativeAsset).available.gt(stroopToXlm(_fee as string)),
+  );
 
   if (
     currentAccount.publicKey &&
@@ -337,7 +333,7 @@ export const SignTransaction = () => {
                   <img
                     className="PunycodedDomain__favicon"
                     src={favicon}
-                    alt={t("Site favicon")}
+                    alt="Site favicon"
                   />
                   <div className="SignTransaction__TitleRow__Detail">
                     <span className="SignTransaction__TitleRow__Title">
@@ -357,7 +353,7 @@ export const SignTransaction = () => {
                 {!isDomainListedAllowed && (
                   <DomainNotAllowedWarningMessage domain={domain} />
                 )}
-                {isMemoRequired && (
+                {isMemoRequiredMissing && (
                   <MemoRequiredLabel onClick={() => setActivePaneIndex(3)} />
                 )}
                 {assetDiffs && (
@@ -389,14 +385,18 @@ export const SignTransaction = () => {
                     </div>
                     <div className="SignTransaction__Metadata__Value">
                       <span>
-                        {`${formatTokenAmount(new BigNumber(_fee), CLASSIC_ASSET_DECIMALS)} XLM `}
+                        {formatTokenAmount(
+                          new BigNumber(_fee),
+                          CLASSIC_ASSET_DECIMALS,
+                        )}{" "}
+                        XLM
                       </span>
                     </div>
                   </div>
                   <div className="SignTransaction__Metadata__Row">
                     <div className="SignTransaction__Metadata__Label">
                       <Icon.File02 />
-                      <span>{t("Memo")}</span>
+                      <span>Memo</span>
                     </div>
                     <div className="SignTransaction__Metadata__Value">
                       <span>
@@ -462,7 +462,7 @@ export const SignTransaction = () => {
                   <Details
                     operations={_tx.operations}
                     flaggedKeys={flaggedKeys}
-                    isMemoRequired={isMemoRequired}
+                    isMemoRequired={isMemoRequiredMissing}
                   />
                 </div>
               </div>
@@ -493,7 +493,7 @@ export const SignTransaction = () => {
                     </div>
                     <div>
                       {t(
-                        "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign.",
+                        "A destination account requires the use of the memo field which is not present in the transaction you're about to sign.",
                       )}
                     </div>
                     <div>
@@ -625,7 +625,6 @@ interface TrustlineProps {
 }
 
 export const Trustline = ({ operations, icons }: TrustlineProps) => {
-  const { t } = useTranslation();
   const renderTrustlineChanges = (operation: Operation.ChangeTrust) => {
     const { line, limit } = operation;
     const isRemoveTrustline = new BigNumber(limit).isZero();
@@ -669,12 +668,12 @@ export const Trustline = ({ operations, icons }: TrustlineProps) => {
           {isRemoveTrustline ? (
             <>
               <Icon.MinusCircle />
-              <span>{t("Remove Trustline")}</span>
+              <span>Remove Trustline</span>
             </>
           ) : (
             <>
               <Icon.PlusCircle />
-              <span>{t("Add Trustline")}</span>
+              <span>Add Trustline</span>
             </>
           )}
         </div>

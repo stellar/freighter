@@ -176,12 +176,7 @@ export const useValidateTransactionMemo = (incomingXdr?: string | null) => {
     setIsMemoMissing(true);
     setIsValidatingMemo(false);
 
-    if (
-      !shouldValidateMemo ||
-      !xdr ||
-      !networkDetails ||
-      memoRequiredAccounts.length === 0
-    ) {
+    if (!shouldValidateMemo || !xdr || !networkDetails) {
       setIsMemoMissing(false);
       return;
     }

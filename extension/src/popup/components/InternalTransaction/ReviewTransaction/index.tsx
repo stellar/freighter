@@ -16,12 +16,8 @@ import {
   truncatedFedAddress,
   truncatedPublicKey,
 } from "helpers/stellar";
-import { getContractIdFromTransactionData } from "popup/helpers/soroban";
-import {
-  checkIsMuxedSupported,
-  getMemoDisabledState,
-} from "helpers/muxedAddress";
-import { SimulateTxData } from "popup/components/send/SendAmount/hooks/useSimulateTxData";
+
+import { SimulateTxData } from "popup/components/sendPayment/SendAmount/hooks/useSimulateTxData";
 import { View } from "popup/basics/layout/View";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
@@ -35,7 +31,6 @@ import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { CopyValue } from "popup/components/CopyValue";
 import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
-import { CollectibleInfoImage } from "popup/components/account/CollectibleInfo";
 
 import "./styles.scss";
 
@@ -83,14 +78,7 @@ export const ReviewTx = ({
 
   const {
     hardwareWalletData: { status: hwStatus },
-    transactionData: {
-      destination,
-      memo,
-      federationAddress,
-      isToken,
-      isCollectible,
-      collectibleData,
-    },
+    transactionData: { destination, memo, federationAddress },
   } = submission;
 
   // Validate memo requirements using the transaction XDR
@@ -107,68 +95,6 @@ export const ReviewTx = ({
   const truncatedDest = federationAddress
     ? truncatedFedAddress(federationAddress)
     : truncatedPublicKey(destination);
-
-  // Extract contract ID from asset for custom tokens
-  const contractId = React.useMemo(
-    () =>
-      getContractIdFromTransactionData({
-        isCollectible,
-        collectionAddress: collectibleData.collectionAddress,
-        isToken,
-        asset: srcAsset,
-        networkDetails,
-      }),
-    [
-      isToken,
-      isCollectible,
-      collectibleData.collectionAddress,
-      srcAsset,
-      networkDetails,
-    ],
-  );
-
-  // Check if contract supports muxed addresses
-  const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
-    boolean | null
-  >(null);
-
-  React.useEffect(() => {
-    const checkContract = async () => {
-      if ((!isToken && !isCollectible) || !contractId || !networkDetails) {
-        setContractSupportsMuxed(null);
-        return;
-      }
-
-      try {
-        const supportsMuxed = await checkIsMuxedSupported({
-          contractId,
-          networkDetails,
-        });
-        setContractSupportsMuxed(supportsMuxed);
-      } catch (error) {
-        // On error, assume no support for safety
-        setContractSupportsMuxed(false);
-      }
-    };
-
-    checkContract();
-  }, [isToken, isCollectible, contractId, networkDetails]);
-
-  // Get memo disabled state using the helper
-  const memoDisabledState = React.useMemo(() => {
-    if (!destination) {
-      return { isMemoDisabled: false, memoDisabledMessage: undefined };
-    }
-    return getMemoDisabledState({
-      targetAddress: destination,
-      contractId,
-      contractSupportsMuxed,
-      networkDetails,
-      t,
-    });
-  }, [destination, contractId, contractSupportsMuxed, networkDetails, t]);
-
-  const { isMemoDisabled } = memoDisabledState;
 
   if (simulationState.state === RequestState.ERROR) {
     return (
@@ -216,54 +142,24 @@ export const ReviewTx = ({
                   <p>{title}</p>
                   <div className="ReviewTx__SendSummary">
                     <div className="ReviewTx__SendAsset">
-                      {isCollectible ? (
-                        <div className="ReviewTx__SendAsset__Collectible">
-                          <CollectibleInfoImage
-                            image={collectibleData.image}
-                            name={collectibleData.name}
-                            isSmall
-                          />
-                        </div>
-                      ) : (
-                        <AssetIcon
-                          assetIcons={assetIcons}
-                          code={asset.code}
-                          issuerKey={asset.issuer}
-                          icon={assetIcon}
-                          isSuspicious={false}
-                        />
-                      )}
+                      <AssetIcon
+                        assetIcons={assetIcons}
+                        code={asset.code}
+                        issuerKey={asset.issuer}
+                        icon={assetIcon}
+                        isSuspicious={false}
+                      />
                       <div
                         className="ReviewTx__SendAssetDetails"
                         data-testid="review-tx-send-amount"
                       >
-                        {isCollectible ? (
-                          <div className="ReviewTx__SendAsset__Collectible__label">
-                            <div
-                              className="ReviewTx__SendAsset__Collectible__label__name"
-                              data-testid="review-tx-send-asset-collectible-name"
-                            >
-                              {collectibleData.name}
-                            </div>
-                            <div
-                              className="ReviewTx__SendAsset__Collectible__label__id"
-                              data-testid="review-tx-send-asset-collectible-collection-name"
-                            >
-                              {collectibleData.collectionName} #
-                              {collectibleData.tokenId}
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <span>
-                              {sendAmount} {asset.code}
-                            </span>
-                            {isMainnet(networkDetails) && sendPriceUsd && (
-                              <span className="ReviewTx__SendAssetDetails__price">
-                                {`$${sendPriceUsd}`}
-                              </span>
-                            )}
-                          </>
+                        <span>
+                          {sendAmount} {asset.code}
+                        </span>
+                        {isMainnet(networkDetails) && sendPriceUsd && (
+                          <span className="ReviewTx__SendAssetDetails__price">
+                            {`$${sendPriceUsd}`}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -301,10 +197,7 @@ export const ReviewTx = ({
                       ) : (
                         <>
                           <IdenticonImg publicKey={destination} />
-                          <div
-                            className="ReviewTx__SendDestinationDetails"
-                            data-testid="review-tx-send-destination-address"
-                          >
+                          <div className="ReviewTx__SendDestinationDetails">
                             {truncatedDest}
                           </div>
                         </>
@@ -324,25 +217,22 @@ export const ReviewTx = ({
                   )}
                 </div>
                 <div className="ReviewTx__Details">
-                  {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
-                  {!isMemoDisabled && (
-                    <div className="ReviewTx__Details__Row">
-                      <div className="ReviewTx__Details__Row__Title">
-                        <Icon.File02 />
-                        {t("Memo")}
-                      </div>
-                      <div
-                        className="ReviewTx__Details__Row__Value"
-                        data-testid="review-tx-memo"
-                      >
-                        {memo || t("None")}
-                      </div>
+                  <div className="ReviewTx__Details__Row">
+                    <div className="ReviewTx__Details__Row__Title">
+                      <Icon.File02 />
+                      {t("Memo")}
                     </div>
-                  )}
+                    <div
+                      className="ReviewTx__Details__Row__Value"
+                      data-testid="review-tx-memo"
+                    >
+                      {memo || t("None")}
+                    </div>
+                  </div>
                   <div className="ReviewTx__Details__Row">
                     <div className="ReviewTx__Details__Row__Title">
                       <Icon.Route />
-                      {t("Fee")}
+                      Fee
                     </div>
                     <div
                       className="ReviewTx__Details__Row__Value"
@@ -354,7 +244,7 @@ export const ReviewTx = ({
                   <div className="ReviewTx__Details__Row">
                     <div className="ReviewTx__Details__Row__Title">
                       <Icon.FileCode02 />
-                      {t("XDR")}
+                      XDR
                     </div>
                     <div className="ReviewTx__Details__Row__Value">
                       <CopyValue
@@ -444,7 +334,7 @@ export const ReviewTx = ({
                 onCancel();
               }}
             >
-              {t("Cancel")}
+              Cancel
             </Button>
           </div>
         </div>
