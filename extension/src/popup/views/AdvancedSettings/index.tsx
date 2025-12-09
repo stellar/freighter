@@ -171,15 +171,11 @@ export const AdvancedSettings = () => {
               isLoading={isLoading}
               isToggled={initialValues.isExperimentalModeEnabledValue}
               toggleId="isExperimentalModeEnabledValue"
-              description={
-                t(
-                  "Use experimental API’s and connect to the Futurenet, a test network.",
-                ) +
-                " " +
-                t(
-                  "Please proceed at your own risk as you may be interacting with schemas that are untested and still changing.",
-                )
-              }
+              description={`${t(
+                "Use experimental API's and connect to the Futurenet, a test network.",
+              )} ${t(
+                "Please proceed at your own risk as you may be interacting with schemas that are untested and still changing.",
+              )}`}
             />
             <AdvancedSettingFeature
               title={t("Enable Blind Signing on Ledger")}
