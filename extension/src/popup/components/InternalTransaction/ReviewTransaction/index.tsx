@@ -26,11 +26,13 @@ import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import {
   BlockaidTxScanLabel,
   BlockAidTxScanExpanded,
+  MemoRequiredLabel,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { CopyValue } from "popup/components/CopyValue";
+import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
 
 import "./styles.scss";
 
@@ -51,6 +53,7 @@ interface ReviewTxProps {
   title: string;
   onConfirm: () => void;
   onCancel: () => void;
+  onAddMemo?: () => void;
 }
 
 export const ReviewTx = ({
@@ -65,6 +68,7 @@ export const ReviewTx = ({
   title,
   onConfirm,
   onCancel,
+  onAddMemo,
 }: ReviewTxProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -78,6 +82,14 @@ export const ReviewTx = ({
     hardwareWalletData: { status: hwStatus },
     transactionData: { destination, memo, federationAddress, isToken },
   } = submission;
+
+  // Validate memo requirements using the transaction XDR
+  const transactionXdr = simulationState.data?.transactionXdr;
+  const { isMemoMissing: isRequiredMemoMissing, isValidatingMemo } =
+    useValidateTransactionMemo(transactionXdr);
+
+  // Disable button while validating or if memo is missing
+  const isSubmitDisabled = isRequiredMemoMissing || isValidatingMemo;
 
   const asset = getAssetFromCanonical(srcAsset);
   const dest = dstAsset ? getAssetFromCanonical(dstAsset.canonical) : null;
@@ -225,6 +237,9 @@ export const ReviewTx = ({
                       onClick={() => setActivePaneIndex(1)}
                     />
                   )}
+                  {isRequiredMemoMissing && !isValidatingMemo && (
+                    <MemoRequiredLabel onClick={() => setActivePaneIndex(2)} />
+                  )}
                 </div>
                 <div className="ReviewTx__Details">
                   {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
@@ -272,29 +287,76 @@ export const ReviewTx = ({
                 scanResult={simulationState.data?.scanResult!}
                 onClose={() => setActivePaneIndex(0)}
               />,
+              <div className="ReviewTx__MemoDetails">
+                <div className="ReviewTx__MemoDetails__Header">
+                  <div className="ReviewTx__MemoDetails__Header__Icon">
+                    <Icon.InfoOctagon className="WarningMessage__icon" />
+                  </div>
+                  <div
+                    className="ReviewTx__MemoDetails__Header__Close"
+                    onClick={() => setActivePaneIndex(0)}
+                  >
+                    <Icon.X />
+                  </div>
+                </div>
+                <div className="ReviewTx__MemoDetails__Title">
+                  <span>{t("Memo is required")}</span>
+                </div>
+                <div className="ReviewTx__MemoDetails__Content">
+                  <div className="ReviewTx__MemoDetails__Text">
+                    {t(
+                      "Some destination accounts on the Stellar network require a memo to identify your payment.",
+                    )}
+                  </div>
+                  <div className="ReviewTx__MemoDetails__Text">
+                    {t(
+                      "If a required memo is missing or incorrect, your funds may not reach the intended recipient.",
+                    )}
+                  </div>
+                </div>
+              </div>,
             ]}
           />
           <div className="ReviewTx__Actions">
-            <Button
-              size="lg"
-              isFullWidth
-              isRounded
-              variant="secondary"
-              data-testid="SubmitAction"
-              onClick={(e) => {
-                e.preventDefault();
-                onConfirmTx();
-              }}
-            >
-              {dstAsset && dest
-                ? `Swap ${asset.code} to ${dest.code}`
-                : `Send to ${truncatedDest}`}
-            </Button>
+            {isRequiredMemoMissing && !isValidatingMemo && onAddMemo ? (
+              <Button
+                size="lg"
+                isFullWidth
+                isRounded
+                variant="secondary"
+                data-testid="AddMemoAction"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onAddMemo();
+                }}
+              >
+                {t("Add Memo")}
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                isFullWidth
+                isRounded
+                variant="secondary"
+                data-testid="SubmitAction"
+                disabled={isSubmitDisabled}
+                isLoading={isValidatingMemo}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onConfirmTx();
+                }}
+              >
+                {dstAsset && dest
+                  ? `Swap ${asset.code} to ${dest.code}`
+                  : `Send to ${truncatedDest}`}
+              </Button>
+            )}
             <Button
               size="lg"
               isFullWidth
               isRounded
               variant="tertiary"
+              disabled={isValidatingMemo}
               onClick={(e) => {
                 e.preventDefault();
                 onCancel();

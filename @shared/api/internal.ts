@@ -57,6 +57,7 @@ import {
   ApiTokenPrices,
   HorizonOperation,
   UserNotification,
+  CollectibleContract,
 } from "./types";
 import {
   AccountBalancesInterface,
@@ -2157,4 +2158,62 @@ export const changeAssetVisibility = async ({
   });
 
   return { hiddenAssets: response.hiddenAssets, error: response.error };
+};
+
+export const addCollectible = async ({
+  publicKey,
+  network,
+  collectibleContractAddress,
+  collectibleTokenId,
+}: {
+  publicKey: string;
+  network: string;
+  collectibleContractAddress: string;
+  collectibleTokenId: string;
+}) => {
+  let response = {
+    error: "",
+    collectiblesList: [] as CollectibleContract[],
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      type: SERVICE_TYPES.ADD_COLLECTIBLE,
+      activePublicKey: publicKey,
+      publicKey,
+      network,
+      collectibleContractAddress,
+      collectibleTokenId,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
+};
+
+export const getCollectibles = async ({
+  publicKey,
+  network,
+}: {
+  publicKey: string;
+  network: string;
+}) => {
+  let response = {
+    error: "",
+    collectiblesList: [] as CollectibleContract[],
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      type: SERVICE_TYPES.GET_COLLECTIBLES,
+      activePublicKey: publicKey,
+      publicKey,
+      network,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
 };

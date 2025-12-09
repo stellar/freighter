@@ -4,6 +4,7 @@ import { Field, FieldProps, Form, Formik } from "formik";
 import { useTranslation } from "react-i18next";
 
 import { View } from "popup/basics/layout/View";
+import { useValidateMemo } from "popup/helpers/useValidateMemo";
 
 import "./styles.scss";
 
@@ -27,6 +28,9 @@ export const EditMemo = ({
   disabledMessage,
 }: EditMemoProps) => {
   const { t } = useTranslation();
+  const [localMemo, setLocalMemo] = React.useState(memo);
+  const { error: memoError } = useValidateMemo(localMemo);
+
   const initialValues: FormValue = {
     memo,
   };
@@ -35,6 +39,56 @@ export const EditMemo = ({
       onSubmit(values);
     }
   };
+
+  const handleFieldChange = (value: string) => {
+    setLocalMemo(value);
+  };
+
+  const renderField = ({ field }: FieldProps) => (
+    <Input
+      data-testid="edit-memo-input"
+      autoFocus
+      fieldSize="md"
+      autoComplete="off"
+      id="memo"
+      placeholder={t("Type your memo")}
+      {...field}
+      onChange={(e) => {
+        field.onChange(e);
+        handleFieldChange(e.target.value);
+      }}
+      error={memoError}
+    />
+  );
+
+  const renderForm = () => (
+    <Form className="EditMemo__form">
+      <Field name="memo">{renderField}</Field>
+      <div className="EditMemo__description">
+        {t("What is this transaction for? (optional)")}
+      </div>
+      <div className="EditMemo__actions">
+        <Button
+          type="button"
+          size="md"
+          isRounded
+          variant="tertiary"
+          onClick={onClose}
+        >
+          {t("Cancel")}
+        </Button>
+        <Button
+          type="submit"
+          size="md"
+          isRounded
+          variant="secondary"
+          disabled={!!memoError}
+        >
+          {t("Save")}
+        </Button>
+      </div>
+    </Form>
+  );
 
   return (
     <View.Content hasNoTopPadding>

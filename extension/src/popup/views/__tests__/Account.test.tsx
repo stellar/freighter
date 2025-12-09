@@ -25,6 +25,7 @@ import * as GetIconFromTokenList from "@shared/api/helpers/getIconFromTokenList"
 import * as GetIconUrlFromIssuer from "@shared/api/helpers/getIconUrlFromIssuer";
 import * as RouteHelpers from "popup/helpers/route";
 import * as GetLedgerKeyAccounts from "@shared/api/helpers/getLedgerKeyAccounts";
+import * as UseGetCollectibles from "helpers/hooks/useGetCollectibles";
 
 import {
   Wrapper,
@@ -123,6 +124,14 @@ jest
 jest
   .spyOn(ApiInternal, "getTokenPrices")
   .mockImplementation(() => Promise.resolve(mockPrices));
+
+jest.spyOn(UseGetCollectibles, "useGetCollectibles").mockImplementation(
+  () =>
+    ({
+      state: { collections: [] },
+      fetchData: () => Promise.resolve({ collections: [] }),
+    }) as any,
+);
 
 jest
   .spyOn(ExtensionMessaging, "sendMessageToBackground")
@@ -557,6 +566,11 @@ describe("Account view", () => {
     await waitFor(() => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(4);
+
+      expect(screen.getByTestId("account-tab-tokens")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("account-tab-collectibles"),
+      ).toBeInTheDocument();
 
       // fetches and displays icon from background cache
       expect(
