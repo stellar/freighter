@@ -4,3 +4,8 @@ export enum STEPS {
   PAYMENT_CONFIRM = "payment-confirmation",
   SET_DESTINATION_ASSET = "set-destination-asset",
 }
+
+export enum MemoEditingContext {
+  Review = "review",
+  SendPayment = "sendPayment",
+}
