@@ -118,7 +118,7 @@ export const SubmitFail = () => {
           <Notification
             variant="error"
             title={t(
-              "The destination account does not accept the asset you're sending",
+              "The destination account does not accept the asset you’re sending",
             )}
           >
             <div>

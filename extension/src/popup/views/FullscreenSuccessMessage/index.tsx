@@ -45,7 +45,7 @@ export const FullscreenSuccessMessage = () => {
         <div className="FullscreenSuccessMessage">
           <Onboarding layout="half">
             <OnboardingModal
-              headerText={t("You're all set!")}
+              headerText={t("You’re all set!")}
               bodyText={
                 <div className="FullscreenSuccessMessage__text">
                   <Text as="p" size="md">
@@ -63,7 +63,7 @@ export const FullscreenSuccessMessage = () => {
                   </div>
                   <div className="FullscreenSuccessMessage__infoBlock__row__text">
                     {t(
-                      "Always check the domain of websites you're using Freighter with",
+                      "Always check the domain of websites you’re using Freighter with",
                     )}
                   </div>
                 </div>

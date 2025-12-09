@@ -124,7 +124,7 @@ export const ImportAccount = () => {
                       autoComplete="off"
                       id="authorization-input"
                       label={t(
-                        "I'm aware Freighter can't recover the imported  secret key",
+                        "I’m aware Freighter can’t recover the imported  secret key",
                       )}
                       {...field}
                     />

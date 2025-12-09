@@ -180,7 +180,7 @@ export const BackupPhraseWarningMessage = () => {
           <div className="WarningMessage__backup__tips__icon">
             <Icon.EyeOff />
           </div>
-          <span>{t("Don't share this phrase with anyone")}</span>
+          <span>{t("Don’t share this phrase with anyone")}</span>
         </div>
         <div className="WarningMessage__backup__tips__row">
           <div className="WarningMessage__backup__tips__icon">

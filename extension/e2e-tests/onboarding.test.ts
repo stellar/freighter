@@ -62,7 +62,7 @@ test("Create new wallet", async ({ page }) => {
     await page.getByLabel(words[i]).check({ force: true });
   }
   await page.getByTestId("display-mnemonic-phrase-confirm-btn").click();
-  await expect(page.getByText("You're all set!")).toBeVisible();
+  await expect(page.getByText("You’re all set!")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-create-complete-page.png",
@@ -111,7 +111,7 @@ test("Import 12 word wallet", async ({ page }) => {
 
   await page.getByRole("button", { name: "Import" }).click();
 
-  await expect(page.getByText("You're all set!")).toBeVisible();
+  await expect(page.getByText("You’re all set!")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-import-complete-page.png",
@@ -171,7 +171,7 @@ test("Import 12 word wallet by pasting", async ({ page, context }) => {
 
   await page.getByRole("button", { name: "Import" }).click();
 
-  await expect(page.getByText("You're all set!")).toBeVisible();
+  await expect(page.getByText("You’re all set!")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-import-complete-page.png",
@@ -236,7 +236,7 @@ test("Import 24 word wallet", async ({ page }) => {
 
   await page.getByRole("button", { name: "Import" }).click();
 
-  await expect(page.getByText("You're all set!")).toBeVisible();
+  await expect(page.getByText("You’re all set!")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-import-complete-page.png",
@@ -308,7 +308,7 @@ test("Import 24 word wallet by pasting", async ({ page, context }) => {
 
   await page.getByRole("button", { name: "Import" }).click();
 
-  await expect(page.getByText("You're all set!")).toBeVisible();
+  await expect(page.getByText("You’re all set!")).toBeVisible();
   await expectPageToHaveScreenshot({
     page,
     screenshot: "wallet-import-complete-page.png",
@@ -423,7 +423,7 @@ test("Logout and create new account", async ({ page, extensionId }) => {
   await newPage.getByText("Confirm").click();
 
   await newPage.getByText("Do this later").click();
-  await expect(newPage.getByText("You're all set!")).toBeVisible();
+  await expect(newPage.getByText("You’re all set!")).toBeVisible();
 
   await newPage.goto(`chrome-extension://${extensionId}/index.html#/`);
   await expect(newPage.getByTestId("account-view")).toBeVisible({
@@ -502,7 +502,7 @@ test("Logout and import new account", async ({ page, extensionId }) => {
 
   await newPage.getByRole("button", { name: "Import" }).click();
 
-  await expect(newPage.getByText("You're all set!")).toBeVisible({
+  await expect(newPage.getByText("You’re all set!")).toBeVisible({
     timeout: 20000,
   });
 

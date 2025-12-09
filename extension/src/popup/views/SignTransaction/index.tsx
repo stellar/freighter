@@ -488,7 +488,7 @@ export const SignTransaction = () => {
                     </div>
                     <div>
                       {t(
-                        "A destination account requires the use of the memo field which is not present in the transaction you're about to sign.",
+                        "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign.",
                       )}
                     </div>
                     <div>

@@ -63,7 +63,7 @@ export const MnemonicPhrase = ({
                 </Text>
                 <Text as="p" size="md">
                   {t(
-                    "For your security, we'll check if you got it right in the next step.",
+                    "For your security, we’ll check if you got it right in the next step.",
                   )}
                 </Text>
               </>

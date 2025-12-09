@@ -173,7 +173,7 @@ export const AdvancedSettings = () => {
               toggleId="isExperimentalModeEnabledValue"
               description={
                 t(
-                  "Use experimental API's and connect to the Futurenet, a test network.",
+                  "Use experimental API’s and connect to the Futurenet, a test network.",
                 ) +
                 " " +
                 t(
