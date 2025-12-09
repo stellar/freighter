@@ -27,3 +27,4 @@ export const HIDDEN_ASSETS = "hiddenAssets";
 export const TEMPORARY_STORE_ID = "temporaryStore";
 export const TEMPORARY_STORE_EXTRA_ID = "temporaryStoreExtra";
 export const MOBILE_APP_BANNER_DISMISSED = "mobileAppBannerDismissed";
+export const COLLECTIBLES_ID = "collectibles";
