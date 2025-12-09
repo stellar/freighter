@@ -586,6 +586,17 @@
   }
 }
 
+.ScanWarning {
+  color: var(--sds-clr-amber-11);
+  background-color: var(--sds-clr-amber-03);
+
+  .Icon {
+    .WarningMessage__icon {
+      color: var(--sds-clr-amber-11);
+    }
+  }
+}
+
 .BlockaidWarningModal {
   height: 100vh;
   width: 100vw;

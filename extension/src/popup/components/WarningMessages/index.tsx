@@ -673,6 +673,27 @@ export const BlockAidSiteScanLabel = ({
   return <React.Fragment />;
 };
 
+export const MemoRequiredLabel = ({ onClick }: { onClick: () => void }) => {
+  const { t } = useTranslation();
+  return (
+    <div
+      className="ScanLabel ScanWarning"
+      data-testid="memo-required-label"
+      onClick={onClick}
+    >
+      <div className="ScanLabel__Info">
+        <div className="Icon">
+          <Icon.InfoSquare className="WarningMessage__icon" />
+        </div>
+        <p className="Message">{t("Memo required")}</p>
+      </div>
+      <div className="ScanLabel__Action">
+        <Icon.ChevronRight />
+      </div>
+    </div>
+  );
+};
+
 export const BlockaidTxScanLabel = ({
   scanResult,
   onClick,

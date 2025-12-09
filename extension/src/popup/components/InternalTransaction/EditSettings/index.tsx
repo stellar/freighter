@@ -56,8 +56,8 @@ export const EditSettings = ({
                       fieldSize="md"
                       autoComplete="off"
                       id="fee"
-                      placeholder={"Fee"}
-                      label="Transaction Fee"
+                      placeholder={t("Fee")}
+                      label={t("Transaction Fee")}
                       {...field}
                       error={errors.fee}
                       onChange={(e) => {
@@ -92,7 +92,7 @@ export const EditSettings = ({
                 </Field>
                 <div className="EditTxSettings__congestion">
                   <CongestionIndicator congestion={congestion} />
-                  {congestion} congestion
+                  {congestion} {t("congestion")}
                 </div>
                 <Field name="timeout">
                   {({ field }: FieldProps) => (
@@ -101,8 +101,8 @@ export const EditSettings = ({
                       fieldSize="md"
                       autoComplete="off"
                       id="timeout"
-                      placeholder={"Timeout"}
-                      label="Timeout (seconds)"
+                      placeholder={t("Timeout")}
+                      label={t("Timeout (seconds)")}
                       {...field}
                       error={errors.timeout}
                       onChange={(e) => {
