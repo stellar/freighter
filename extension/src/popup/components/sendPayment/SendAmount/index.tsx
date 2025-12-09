@@ -26,6 +26,7 @@ import {
   transactionSubmissionSelector,
   saveAmount,
   saveAsset,
+  saveIsToken,
   saveMemo,
   saveTransactionFee,
   saveTransactionTimeout,
@@ -264,14 +265,12 @@ export const SendAmount = ({
   const srcTitle = srcAsset.code;
   const goBackAction = () => {
     dispatch(saveAsset("native"));
+    dispatch(saveIsToken(false));
     dispatch(saveAmount("0"));
     dispatch(saveAmountUsd("0.00"));
     goBack();
   };
   const goToChooseAssetAction = () => {
-    dispatch(saveAsset("native"));
-    dispatch(saveAmount("0"));
-    dispatch(saveAmountUsd("0.00"));
     goToChooseAsset();
   };
 
@@ -570,12 +569,7 @@ export const SendAmount = ({
                 <AddressTile
                   address={destination}
                   federationAddress={federationAddress}
-                  onClick={() => {
-                    dispatch(saveAsset("native"));
-                    dispatch(saveAmount("0"));
-                    dispatch(saveAmountUsd("0.00"));
-                    goToChooseDest();
-                  }}
+                  onClick={goToChooseDest}
                 />
               </div>
             </form>
@@ -598,8 +592,13 @@ export const SendAmount = ({
               onSubmit={async ({ memo }: { memo: string }) => {
                 dispatch(saveMemo(memo));
                 setIsEditingMemo(false);
+                // Regenerate transaction XDR with new memo (now reads memo from Redux state inside fetchData)
                 await fetchSimulationData();
-                setIsReviewingTx(true);
+                // Reopen review sheet after memo is saved and XDR is regenerated only if user came from review flow
+                if (memoEditingContext === MemoEditingContext.Review) {
+                  setIsReviewingTx(true);
+                  setMemoEditingContext(null);
+                }
               }}
             />
           </div>
@@ -625,7 +624,7 @@ export const SendAmount = ({
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
               onClose={() => setIsEditingSettings(false)}
-              onSubmit={({
+              onSubmit={async ({
                 fee,
                 timeout,
               }: {
@@ -635,6 +634,8 @@ export const SendAmount = ({
                 dispatch(saveTransactionFee(fee));
                 dispatch(saveTransactionTimeout(timeout));
                 setIsEditingSettings(false);
+                // Regenerate transaction XDR with new fee (now reads fee from Redux state inside fetchData)
+                await fetchSimulationData();
               }}
             />
           </div>

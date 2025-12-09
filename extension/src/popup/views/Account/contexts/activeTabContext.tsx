@@ -1,14 +1,17 @@
 import React, { createContext, useState } from "react";
 
-export const TabsList = ["tokens", "collectibles"] as const;
+export enum TabsList {
+  TOKENS = "tokens",
+  COLLECTIBLES = "collectibles",
+}
 
 interface AccountTabsContextType {
-  activeTab: number;
-  setActiveTab: (tab: number) => void;
+  activeTab: TabsList;
+  setActiveTab: (tab: TabsList) => void;
 }
 
 export const AccountTabsContext = createContext<AccountTabsContextType>({
-  activeTab: 0,
+  activeTab: TabsList.TOKENS,
   setActiveTab: () => {},
 });
 
@@ -17,7 +20,7 @@ export const ActiveTabProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(TabsList.TOKENS);
   return (
     <AccountTabsContext.Provider value={{ activeTab, setActiveTab }}>
       {children}

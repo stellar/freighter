@@ -8,6 +8,7 @@ import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   saveAmount,
+  saveAmountUsd,
   saveAsset,
   saveIsToken,
   transactionDataSelector,
@@ -109,11 +110,7 @@ export const SendDestinationAsset = ({
       <SubviewHeader
         title={<span>{t("Send")}</span>}
         hasBackButton
-        customBackAction={() => {
-          dispatch(saveAsset("native"));
-          dispatch(saveAmount("0"));
-          goBack();
-        }}
+        customBackAction={goBack}
         customBackIcon={<Icon.X />}
       />
       <View.Content hasNoTopPadding>
@@ -131,6 +128,8 @@ export const SendDestinationAsset = ({
             onClickAsset={(canonical, isContract) => {
               dispatch(saveAsset(canonical));
               dispatch(saveIsToken(isContract));
+              dispatch(saveAmount("0"));
+              dispatch(saveAmountUsd("0.00"));
               goToNext();
             }}
           />

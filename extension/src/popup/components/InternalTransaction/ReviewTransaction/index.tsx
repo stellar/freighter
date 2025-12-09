@@ -319,8 +319,8 @@ export const ReviewTx = ({
                 }}
               >
                 {dstAsset && dest
-                  ? `${t("Swap")} ${asset.code} ${t("to")} ${dest.code}`
-                  : `${t("Send to")} ${truncatedDest}`}
+                  ? `Swap ${asset.code} to ${dest.code}`
+                  : `Send to ${truncatedDest}`}
               </Button>
             )}
             <Button

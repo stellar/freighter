@@ -96,10 +96,7 @@ export const EditSettings = ({
                 </Field>
                 <div className="EditTxSettings__congestion">
                   <CongestionIndicator congestion={congestion} />
-                  {`${getNetworkCongestionTranslation(
-                    t,
-                    congestion as NetworkCongestion,
-                  )} ${t("congestion")}`}
+                  {congestion} {t("congestion")}
                 </div>
                 <Field name="timeout">
                   {({ field }: FieldProps) => (
@@ -108,7 +105,7 @@ export const EditSettings = ({
                       fieldSize="md"
                       autoComplete="off"
                       id="timeout"
-                      placeholder={t("Timeout (seconds)")}
+                      placeholder={t("Timeout")}
                       label={t("Timeout (seconds)")}
                       {...field}
                       error={errors.timeout}

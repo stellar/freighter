@@ -50,16 +50,16 @@ export const Summary = (props: SummaryProps) => {
         </div>
         <p className="TxInfoBlock__value">{props.sequenceNumber}</p>
       </div>
-      {props.memo && props.memo.value && (
-        <div className="TxInfoBlock" data-testid="MemoBlock">
-          <div className="TxInfoBlock__title">
-            <p>{t("Memo")}</p>
-          </div>
-          <p className="TxInfoBlock__value">{`${props.memo.value} (${getMemoLabel(
-            props.memo.type,
-          )})`}</p>
+      <div className="TxInfoBlock" data-testid="MemoBlock">
+        <div className="TxInfoBlock__title">
+          <p>{t("Memo")}</p>
         </div>
-      )}
+        <p className="TxInfoBlock__value">
+          {props.memo && props.memo.value
+            ? `${props.memo.value} (${getMemoLabel(props.memo.type)})`
+            : `${t("None")} (${getMemoLabel("none")})`}
+        </p>
+      </div>
       <div className="TxInfoBlock">
         <div className="TxInfoBlock__title">
           <p>{t("XDR")}</p>

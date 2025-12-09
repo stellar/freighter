@@ -13,6 +13,8 @@ import { SwapAmount } from "popup/components/swap/SwapAmount";
 import { AppDispatch } from "popup/App";
 import {
   resetSubmission,
+  saveAmount,
+  saveAmountUsd,
   saveAsset,
   saveDestinationAsset,
   saveIsToken,
@@ -102,7 +104,11 @@ export const Swap = () => {
           <SwapAmount
             inputType={inputType}
             setInputType={setInputType}
-            goBack={() => navigateTo(ROUTES.account, navigate)}
+            goBack={() => {
+              dispatch(resetSubmission());
+              dispatch(resetSimulation());
+              navigateTo(ROUTES.account, navigate);
+            }}
             goToEditSrc={() => setActiveStep(STEPS.SET_FROM_ASSET)}
             goToEditDst={() => setActiveStep(STEPS.SET_DST_ASSET)}
             goToNext={() => setActiveStep(STEPS.SWAP_CONFIRM)}
@@ -133,6 +139,8 @@ export const Swap = () => {
             onClickAsset={(canonical: string, isContract: boolean) => {
               dispatch(saveAsset(canonical));
               dispatch(saveIsToken(isContract));
+              dispatch(saveAmount("0"));
+              dispatch(saveAmountUsd("0.00"));
               setActiveStep(STEPS.AMOUNT);
             }}
           />

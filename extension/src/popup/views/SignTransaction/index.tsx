@@ -37,7 +37,6 @@ import {
 } from "helpers/stellar";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
-import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
 import { openTab } from "popup/helpers/navigate";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -143,23 +142,11 @@ export const SignTransaction = () => {
 
   const memo = decodedMemo?.value;
 
-  // Use the hook to validate memo requirements
-  const { isMemoMissing: isMemoMissingFromHook, isValidatingMemo } =
-    useValidateTransactionMemo(transactionXdr);
-
-  const flaggedKeyValues = Object.values(flaggedKeys);
-  const isMemoRequiredFromFlaggedKeys = flaggedKeyValues.some(
+  // Check if memo is required based on flaggedKeys (populated by background script)
+  // flaggedKeys is already validated when the transaction is received, so no need to re-validate
+  const isMemoRequired = Object.values(flaggedKeys).some(
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
-
-  // Combine both validation methods - use hook result if available, fallback to flaggedKeys
-  // isRequiredMemoMissing matches mobile app naming convention
-  const isRequiredMemoMissing = isValidatingMemo
-    ? isMemoRequiredFromFlaggedKeys
-    : isMemoMissingFromHook || isMemoRequiredFromFlaggedKeys;
-
-  // Keep isMemoRequired for backward compatibility with existing components
-  const isMemoRequired = isRequiredMemoMissing;
 
   const resolveFederatedAddress = useCallback(async (inputDest: string) => {
     let resolvedPublicKey;
@@ -202,10 +189,8 @@ export const SignTransaction = () => {
     }
   }, [isMemoRequired]);
 
-  // Disable submit when memo is missing, validating, or domain not allowed
-  // Matches mobile app pattern: disabled={!!isMemoMissing || isSigning || !!isValidatingMemo}
-  const isSubmitDisabled =
-    isRequiredMemoMissing || isValidatingMemo || !isDomainListedAllowed;
+  // Disable submit when memo is missing or domain not allowed
+  const isSubmitDisabled = isMemoRequired || !isDomainListedAllowed;
 
   if (
     signTxState.state === RequestState.IDLE ||
@@ -367,7 +352,7 @@ export const SignTransaction = () => {
                 {!isDomainListedAllowed && (
                   <DomainNotAllowedWarningMessage domain={domain} />
                 )}
-                {isRequiredMemoMissing && !isValidatingMemo && (
+                {isMemoRequired && (
                   <MemoRequiredLabel onClick={() => setActivePaneIndex(3)} />
                 )}
                 {assetDiffs && (
@@ -406,7 +391,7 @@ export const SignTransaction = () => {
                   <div className="SignTransaction__Metadata__Row">
                     <div className="SignTransaction__Metadata__Label">
                       <Icon.File02 />
-                      <span>Memo</span>
+                      <span>{t("Memo")}</span>
                     </div>
                     <div className="SignTransaction__Metadata__Value">
                       <span>
@@ -445,7 +430,7 @@ export const SignTransaction = () => {
                     </div>
                   </div>
                   <div className="SignTransaction__TransactionDetails__Title">
-                    <span>{t("Transaction details")}</span>
+                    <span>{t("Transaction Details")}</span>
                   </div>
                   <div className="SignTransaction__TransactionDetails__Summary">
                     <Summary
@@ -541,7 +526,7 @@ export const SignTransaction = () => {
                   isFullWidth
                   isRounded
                   size="lg"
-                  isLoading={isConfirming || isValidatingMemo}
+                  isLoading={isConfirming}
                   onClick={() => handleApprove()}
                   className={`SignTransaction__Action__ConfirmAnyway ${btnIsDestructive ? "" : "Warning"}`}
                 >
@@ -566,7 +551,7 @@ export const SignTransaction = () => {
                   isFullWidth
                   isRounded
                   size="lg"
-                  isLoading={isConfirming || isValidatingMemo}
+                  isLoading={isConfirming}
                   onClick={() => handleApprove()}
                 >
                   {t("Confirm")}
