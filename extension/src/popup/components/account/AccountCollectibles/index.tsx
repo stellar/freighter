@@ -3,9 +3,9 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 
-import { Collection, Collectible } from "@shared/api/types/types";
+import { Collection } from "@shared/api/types/types";
 
-import { CollectibleDetail } from "../CollectibleDetail";
+import { CollectibleDetail, SelectedCollectible } from "../CollectibleDetail";
 
 import "./styles.scss";
 
@@ -14,7 +14,7 @@ const CollectionsList = ({
   handleItemClick,
 }: {
   collections: Collection[];
-  handleItemClick: (collectible: Collectible) => void;
+  handleItemClick: (collectible: SelectedCollectible) => void;
 }) => {
   const { t } = useTranslation();
 
@@ -79,7 +79,12 @@ const CollectionsList = ({
             return (
               <div
                 className="AccountCollectibles__collection__grid__item"
-                onClick={() => handleItemClick(item)}
+                onClick={() =>
+                  handleItemClick({
+                    collectionAddress: collection.address,
+                    tokenId: item.tokenId,
+                  })
+                }
                 key={item.tokenId}
               >
                 <img
@@ -98,7 +103,7 @@ const CollectionsList = ({
 
 interface AccountCollectiblesProps {
   collections: Collection[];
-  onClickCollectible?: (selectedCollectible: Collectible) => void;
+  onClickCollectible?: (selectedCollectible: SelectedCollectible) => void;
 }
 
 export const AccountCollectibles = ({
@@ -106,14 +111,14 @@ export const AccountCollectibles = ({
 }: AccountCollectiblesProps) => {
   const { t } = useTranslation();
   const [selectedCollectible, setSelectedCollectible] =
-    useState<Collectible | null>(null);
+    useState<SelectedCollectible | null>(null);
 
   return (
     <div className="AccountCollectibles" data-testid="account-collectibles">
       {collections.length ? (
         <CollectionsList
           collections={collections}
-          handleItemClick={(selectedCollectibleItem: Collectible) =>
+          handleItemClick={(selectedCollectibleItem: SelectedCollectible) =>
             setSelectedCollectible(selectedCollectibleItem)
           }
         />
@@ -127,7 +132,6 @@ export const AccountCollectibles = ({
         createPortal(
           <CollectibleDetail
             selectedCollectible={selectedCollectible}
-            collectionName={selectedCollectible?.collectionName || ""}
             handleItemClose={() => setSelectedCollectible(null)}
           />,
           document.querySelector("#modal-root")!,

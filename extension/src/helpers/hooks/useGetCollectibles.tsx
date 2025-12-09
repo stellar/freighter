@@ -26,7 +26,13 @@ const preloadImages = async (images: string[]) => {
   }
 };
 
-function useGetCollectibles({ useCache = true }: { useCache?: boolean }) {
+function useGetCollectibles({
+  useCache = true,
+  refreshCollectibles,
+}: {
+  useCache?: boolean;
+  refreshCollectibles?: { id: string; tokenIds: string[] }[];
+}) {
   const [state, dispatch] = useReducer(
     reducer<Collectibles, unknown>,
     initialState,
@@ -66,14 +72,16 @@ function useGetCollectibles({ useCache = true }: { useCache?: boolean }) {
       return { collections: [] } as Collectibles;
     }
 
-    const contracts = storedCollectibles.collectiblesList.map(
-      (collectible) => ({
+    try {
+      const collectiblesList =
+        refreshCollectibles && refreshCollectibles.length > 0
+          ? refreshCollectibles
+          : storedCollectibles.collectiblesList;
+
+      const contracts = collectiblesList.map((collectible) => ({
         id: collectible.id,
         token_ids: collectible.tokenIds,
-      }),
-    );
-
-    try {
+      }));
       const collectibles = await fetchCollectibles({
         publicKey,
         contracts,

@@ -3,8 +3,52 @@
 .CollectibleDetail {
   background: var(--sds-clr-gray-01);
   position: relative;
-  height: 100%;
   width: 100vw;
+
+  &__header__right-button {
+    cursor: pointer;
+    width: pxToRem(20px);
+    height: pxToRem(20px);
+    stroke: var(--sds-clr-gray-011);
+
+    &__trigger {
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+
+    &__popover-content {
+      background: var(--sds-clr-gray-01);
+      border-radius: pxToRem(6px);
+      border: 1px solid var(--sds-clr-gray-06);
+      padding: pxToRem(4px);
+      width: pxToRem(210px);
+      z-index: calc(var(--z-index-tooltip) + 1);
+
+      &__item {
+        display: flex;
+        gap: pxToRem(8px);
+        align-items: center;
+        padding: pxToRem(6px) pxToRem(8px);
+        cursor: pointer;
+
+        &:hover {
+          background: var(--sds-clr-gray-04);
+        }
+
+        &__icon {
+          stroke: var(--sds-clr-gray-09);
+        }
+
+        &__label {
+          color: var(--sds-clr-gray-12);
+          font-size: pxToRem(14px);
+          font-weight: var(--sds-fw-medium);
+          line-height: pxToRem(20px);
+        }
+      }
+    }
+  }
 
   &__content {
     align-items: center;
@@ -57,7 +101,7 @@
     &__label {
       color: var(--sds-clr-gray-11);
       font-size: pxToRem(14px);
-      font-weight: 500;
+      font-weight: var(--sds-fw-medium);
       line-height: pxToRem(20px);
     }
 
@@ -67,23 +111,48 @@
     }
   }
 
-  &__attribute {
+  &__attributes__list {
     display: flex;
-    flex-direction: row;
+    flex-wrap: wrap;
     gap: pxToRem(12px);
   }
 
+  &__attribute {
+    align-items: center;
+    background: var(--sds-clr-gray-02);
+    border-radius: pxToRem(16px);
+    display: flex;
+    flex-direction: column;
+    padding: pxToRem(12px) pxToRem(24px);
+    width: pxToRem(134px);
+  }
+
   &__attribute__trait {
-    color: var(--sds-clr-gray-12);
+    color: var(--sds-clr-gray-11);
     font-size: pxToRem(12px);
-    font-weight: 500;
+    font-weight: var(--sds-fw-medium);
     line-height: pxToRem(18px);
+    max-width: 100%;
+    overflow: scroll;
   }
 
   &__attribute__value {
-    color: var(--sds-clr-gray-11);
+    color: var(--sds-clr-gray-12);
     font-size: pxToRem(12px);
-    font-weight: 500;
+    font-weight: var(--sds-fw-medium);
     line-height: pxToRem(18px);
+    max-width: 100%;
+    overflow: scroll;
+  }
+
+  &__footer__buttons {
+    display: flex;
+    flex-direction: row;
+    gap: pxToRem(12px);
+    width: 100%;
+
+    &__icon {
+      stroke: var(--sds-clr-gray-09) !important;
+    }
   }
 }

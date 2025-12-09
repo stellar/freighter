@@ -127,6 +127,7 @@ export const fetchCollectibles = async ({
           fetchedCollections.push({
             collection: {
               address: collection.address,
+
               name: collection.name,
               symbol: collection.symbol,
               collectibles: await Promise.all(
@@ -135,6 +136,7 @@ export const fetchCollectibles = async ({
                     collectible.token_uri,
                   );
                   return {
+                    collectionAddress: collection.address,
                     collectionName: collection.name,
                     metadata,
                     owner: collectible.owner,

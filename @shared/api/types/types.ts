@@ -430,6 +430,7 @@ export interface CollectibleResponse {
 }
 
 export interface Collectible {
+  collectionAddress: string;
   collectionName: string;
   owner: string;
   tokenId: string;
