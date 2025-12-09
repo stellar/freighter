@@ -1,5 +1,7 @@
-import { test, expect } from "./test-fixtures-pt";
+import { test, expect } from "./test-fixtures";
 import { loginToTestAccountPT } from "./helpers/login-pt";
+
+test.use({ language: "pt" });
 
 test.beforeEach(async ({ page, extensionId }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
