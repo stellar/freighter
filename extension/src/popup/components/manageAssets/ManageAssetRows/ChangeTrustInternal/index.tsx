@@ -11,7 +11,6 @@ import {
   xlmToStroop,
 } from "helpers/stellar";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import StellarLogo from "popup/assets/stellar-logo.png";
@@ -84,13 +83,6 @@ export const ChangeTrustInternal = ({
     recommendedFee: BASE_FEE,
   });
 
-  // Get XDR early for hook (may be undefined if state not ready)
-  const xdr = state.data?.transactionXDR;
-
-  // Use the hook to validate memo requirements - must be called before early returns
-  const { isMemoMissing: isMemoMissingFromHook, isValidatingMemo } =
-    useValidateTransactionMemo(xdr);
-
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -150,15 +142,11 @@ export const ChangeTrustInternal = ({
     sequence = transaction.sequence;
   }
 
-  const flaggedKeyValues = Object.values(flaggedKeys);
-  const isMemoRequiredFromFlaggedKeys = flaggedKeyValues.some(
+  // Check if memo is required based on flaggedKeys (populated by background script)
+  // flaggedKeys is already validated when the transaction is built, so no need to re-validate
+  const isMemoRequiredMissing = Object.values(flaggedKeys).some(
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
-
-  // Combine both validation methods - use hook result if available, fallback to flaggedKeys
-  const isMemoRequired = isValidatingMemo
-    ? isMemoRequiredFromFlaggedKeys
-    : isMemoMissingFromHook || isMemoRequiredFromFlaggedKeys;
   const operations = transaction.operations;
   const trustlineChanges = transaction.operations.filter(
     (op) => op.type === "changeTrust",
@@ -267,7 +255,7 @@ export const ChangeTrustInternal = ({
                   <Details
                     operations={operations}
                     flaggedKeys={flaggedKeys}
-                    isMemoRequired={isMemoRequired}
+                    isMemoRequired={isMemoRequiredMissing}
                   />
                 </div>
               </div>

@@ -69,6 +69,10 @@ const checkMemoRequiredFromStellarSDK = async (
     await server.checkMemoRequired(transaction as any);
     return false;
   } catch (e: any) {
+    // The Stellar SDK throws an error when a memo is required, and the error
+    // object contains an "accountId" property to identify the account requiring the memo.
+    // We check for this property to distinguish between "memo required" errors and
+    // other types of errors (e.g., network failures, parsing errors).
     if ("accountId" in e) {
       return true;
     }
@@ -128,18 +132,6 @@ export const useValidateTransactionMemo = (incomingXdr?: string | null) => {
       isMemoValidationEnabled &&
       (isMainnet(networkDetails) || bypassMainnetCheck)
     );
-
-    // Debug logging in development
-    if (!shouldValidate && isMemoValidationEnabled) {
-      console.log("Memo validation skipped:", {
-        isMemoValidationEnabled,
-        isMainnet: isMainnet(networkDetails),
-        bypassMainnetCheck,
-        isCI,
-        isPlaywright,
-        networkDetails: networkDetails?.networkName,
-      });
-    }
 
     return shouldValidate;
   }, [isMemoValidationEnabled, networkDetails]);
@@ -220,6 +212,11 @@ export const useValidateTransactionMemo = (incomingXdr?: string | null) => {
             transaction!,
             memoRequiredAccounts,
           );
+
+          if (isMemoRequiredFromCache) {
+            setIsMemoMissing(true);
+            return;
+          }
 
           // Also check SDK as fallback
           const isMemoRequiredFromSDK = await checkMemoRequiredFromStellarSDK(
