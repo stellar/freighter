@@ -125,4 +125,68 @@
     display: flex;
     flex-direction: column;
   }
+
+  &__MemoDetails {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 0 1rem;
+
+    &__Header {
+      display: flex;
+      justify-content: space-between;
+      margin: pxToRem(12px) 0;
+
+      &__Icon {
+        display: flex;
+        width: 40px;
+        height: 40px;
+        padding: 7.5px;
+        justify-content: center;
+        align-items: center;
+        aspect-ratio: 1/1;
+        border-radius: 8px;
+        background: var(--sds-clr-red-03);
+
+        svg {
+          width: 25px;
+          height: 25px;
+          color: var(--sds-clr-red-11);
+        }
+      }
+
+      &__Close {
+        display: flex;
+        width: 32px;
+        height: 32px;
+        justify-content: center;
+        align-items: center;
+        border-radius: 1000px;
+        background: var(--sds-clr-gray-03);
+        color: var(--sds-clr-gray-09);
+        cursor: pointer;
+      }
+    }
+
+    &__Title {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      margin: pxToRem(12px) 0;
+      font-size: pxToRem(20px);
+      font-weight: var(--font-weight-medium);
+    }
+
+    &__Content {
+      display: flex;
+      flex-direction: column;
+      gap: pxToRem(24px);
+    }
+
+    &__Text {
+      color: var(--sds-clr-gray-11);
+      font-size: pxToRem(14px);
+      line-height: 1.5rem;
+    }
+  }
 }
