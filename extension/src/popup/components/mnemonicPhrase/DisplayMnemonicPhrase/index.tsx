@@ -40,7 +40,7 @@ export const DisplayMnemonicPhrase = ({
           setIsConfirmed(true);
         }}
       >
-        {t("I've saved my phrase somewhere safe")}
+        {t("I’ve saved my phrase somewhere safe")}
       </Button>
     </OnboardingModal>
   );

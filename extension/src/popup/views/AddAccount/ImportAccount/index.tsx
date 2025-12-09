@@ -85,7 +85,7 @@ export const ImportAccount = () => {
                   title={t("Read before importing your key")}
                 >
                   {t(
-                    `${t("Freighter can't recover your imported secret key using your recovery phrase.")} ${t("Storing your secret key is your responsibility.")} ${t("Freighter will never ask for your secret key outside of the extension.")}`,
+                    `${t("Freighter can’t recover your imported secret key using your recovery phrase.")} ${t("Storing your secret key is your responsibility.")} ${t("Freighter will never ask for your secret key outside of the extension.")}`,
                   )}
                 </Notification>
               </div>

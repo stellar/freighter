@@ -66,7 +66,7 @@ export const ConfirmMigration = () => {
                   <div>{t("Migrating...")}</div>
                 </Heading>
                 <Text as="div" size="md" className="MigrationParagraph">
-                  {t("Please don't close this window.")}
+                  {t("Please don’t close this window.")}
                 </Text>
               </div>
             ) : (
@@ -83,7 +83,7 @@ export const ConfirmMigration = () => {
                     )}`}
                   </MigrationParagraph>
                   <Notification title={t("Important")} variant="warning">
-                    {`${t("One of your accounts is a signer for another account.")} ${t("Freighter won't migrate signing settings.")} ${t("For your safety, Freighter won't merge accounts with signature set up so you can still control it.")}`}
+                    {`${t("One of your accounts is a signer for another account.")} ${t("Freighter won’t migrate signing settings.")} ${t("For your safety, Freighter won’t merge accounts with signature set up so you can still control it.")}`}
                   </Notification>
                 </MigrationBody>
 

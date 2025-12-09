@@ -90,7 +90,7 @@ export const Settings = () => {
                 }
                 isExternal
               >
-                {t("What's new")}
+                {t("What’s new")}
               </ListNavLink>
             </div>
             <div className="Settings__row">
