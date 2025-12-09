@@ -324,6 +324,8 @@ export const mockCollectibles = [
           tokenId: "2",
           tokenUri: "https://nftcalendar.io/token/2",
           metadata: {
+            externalUrl: "https://nftcalendar.io/external/2",
+
             image:
               "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg",
             name: "Stellar Frog 2",

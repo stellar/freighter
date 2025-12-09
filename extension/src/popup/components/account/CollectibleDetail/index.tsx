@@ -82,7 +82,10 @@ export const CollectibleDetail = ({
           customBackAction={handleItemClose}
           rightButton={
             <Popover>
-              <div className="CollectibleDetail__header__right-button">
+              <div
+                className="CollectibleDetail__header__right-button"
+                data-testid="CollectibleDetail__header__right-button"
+              >
                 <PopoverTrigger className="CollectibleDetail__header__right-button__trigger">
                   <Icon.DotsHorizontal className="CollectibleDetail__header__right-button__icon" />
                 </PopoverTrigger>
@@ -258,6 +261,7 @@ export const CollectibleDetail = ({
           <div className="CollectibleDetail__footer__buttons">
             {collectible.metadata?.externalUrl && (
               <Button
+                data-testid="CollectibleDetail__footer__buttons__view"
                 isRounded
                 isFullWidth
                 variant="secondary"

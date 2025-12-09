@@ -1,5 +1,6 @@
 import React from "react";
 import { render, waitFor, screen, within } from "@testing-library/react";
+import browser from "webextension-polyfill";
 
 import { CollectibleDetail } from "popup/components/account/CollectibleDetail";
 import {
@@ -16,6 +17,17 @@ import {
   mockCollectibles,
 } from "../../__testHelpers__";
 import { Collection } from "@shared/api/types/types";
+
+jest.mock("webextension-polyfill", () => ({
+  tabs: {
+    create: jest.fn(),
+  },
+}));
+
+const newTabSpy = jest
+  .spyOn(browser.tabs, "create")
+  // @ts-ignore
+  .mockImplementation(() => Promise.resolve());
 
 describe("CollectibleDetail", () => {
   it("renders collectible detail", async () => {
@@ -483,5 +495,54 @@ describe("CollectibleDetail", () => {
     expect(screen.getByTestId("CollectibleDetail__description")).toBeDefined();
     expect(screen.getByTestId("CollectibleDetail__base-info")).toBeDefined();
     expect(screen.queryByTestId("CollectibleDetail__attributes")).toBeNull();
+  });
+  it("views collectible in new tab", async () => {
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey:
+              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+            isSorobanPublicEnabled: true,
+            isRpcHealthy: true,
+            userNotification: {
+              enabled: false,
+              message: "",
+            },
+          },
+          cache: {
+            collections: {
+              [TESTNET_NETWORK_DETAILS.network]: {
+                [TEST_PUBLIC_KEY]: mockCollectibles,
+              },
+            },
+          },
+        }}
+      >
+        <CollectibleDetail
+          selectedCollectible={{
+            collectionAddress:
+              "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+            tokenId: "2",
+          }}
+          handleItemClose={() => {}}
+        />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("CollectibleDetail"));
+    await screen
+      .getByTestId("CollectibleDetail__footer__buttons__view")
+      .click();
+    expect(newTabSpy).toHaveBeenCalledWith({
+      url: "https://nftcalendar.io/external/2",
+    });
   });
 });
