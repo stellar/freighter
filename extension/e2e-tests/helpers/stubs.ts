@@ -461,7 +461,6 @@ export const stubCollectibles = async (page: Page) => {
         },
       ];
     }
-    console.log(tokenMetadataCount);
     tokenMetadataCount++;
     await route.fulfill({ json });
   });
