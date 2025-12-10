@@ -591,12 +591,8 @@
   "was swapped to": "was swapped to",
   "wasm": "wasm",
   "Wasm Hash": "Wasm Hash",
-  "We were unable to scan this token for security threats": {
-    " Proceed with caution": "We were unable to scan this token for security threats. Proceed with caution."
-  },
-  "We were unable to scan this transaction for security threats": {
-    " Proceed with caution": "We were unable to scan this transaction for security threats. Proceed with caution."
-  },
+  "We were unable to scan this token for security threats": "We were unable to scan this token for security threats",
+  "We were unable to scan this transaction for security threats": "We were unable to scan this transaction for security threats",
   "WEBSITE CONNECTION IS NOT SECURE": "WEBSITE CONNECTION IS NOT SECURE",
   "Welcome back": "Welcome back",
   "What is this transaction for? (optional)": "What is this transaction for? (optional)",
