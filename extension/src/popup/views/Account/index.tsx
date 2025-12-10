@@ -228,7 +228,7 @@ export const Account = () => {
                 title={t("Soroban RPC is temporarily experiencing issues")}
                 variant="primary"
               >
-                {t("Some features may be disabled at this time.")}
+                {t("Some features may be disabled at this time")}
               </Notification>
             </div>
           )}
@@ -263,9 +263,11 @@ export const Account = () => {
                 title={t("You are in fullscreen mode")}
                 variant="primary"
               >
-                {t(
-                  "Note that you will need to reload this tab to load any account changes that happen outside this session. For your own safety, please close this window when you are done.",
-                )}
+                {`${t(
+                  "Note that you will need to reload this tab to load any account changes that happen outside this session.",
+                )} ${t(
+                  "For your own safety, please close this window when you are done.",
+                )}`}
               </Notification>
             </div>
           )}

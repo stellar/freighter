@@ -66,7 +66,7 @@ export const AccountDoesntExistWarning = () => {
         title={t("The destination account doesn’t exist")}
       >
         <div>
-          {t("Send at least 1 XLM to create account.")}{" "}
+          {`${t("Send at least 1 XLM to create account.")} `}
           <Link
             variant="secondary"
             href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
@@ -91,7 +91,7 @@ const InvalidAddressWarning = () => {
         icon={<Icon.InfoOctagon />}
         title={t("INVALID STELLAR ADDRESS")}
       >
-        {t("Addresses are uppercase and begin with letters “G“, “M“, or “C“.")}
+        {t(`Addresses are uppercase and begin with letters "G", "M", or "C"`)}
       </Notification>
     </div>
   );
@@ -199,7 +199,7 @@ export const SendTo = ({
   return (
     <React.Fragment>
       <SubviewHeader
-        title="Send"
+        title={t("Send")}
         customBackAction={goBack}
         customBackIcon={<Icon.X />}
       />
@@ -229,7 +229,7 @@ export const SendTo = ({
               title={
                 sendDataState.error instanceof Error
                   ? sendDataState.error.message
-                  : "Unknown error occured"
+                  : t("Unknown error occured")
               }
             />
           ) : (

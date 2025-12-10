@@ -7,9 +7,9 @@ import {
   stubAccountBalancesE2e,
   stubAccountBalancesWithUSDC,
   stubAccountHistory,
+  stubMemoRequiredAccounts,
   stubTokenDetails,
   stubTokenPrices,
-  stubMemoRequiredAccounts,
 } from "./helpers/stubs";
 
 const MUXED_ACCOUNT_ADDRESS =

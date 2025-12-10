@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { STEPS } from "popup/constants/swap";
 import { emitMetric } from "helpers/metrics";
@@ -25,6 +26,7 @@ import { resetSimulation } from "popup/ducks/token-payment";
 import { getAssetFromCanonical } from "helpers/stellar";
 
 export const Swap = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -85,7 +87,7 @@ export const Swap = () => {
         emitMetric(METRIC_NAMES.swapTo);
         return (
           <SwapAsset
-            title="Swap to"
+            title={t("Swap to")}
             hiddenAssets={[transactionData.asset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
             onClickAsset={(canonical: string, isContract: boolean) => {
@@ -131,7 +133,7 @@ export const Swap = () => {
         emitMetric(METRIC_NAMES.swapFrom);
         return (
           <SwapAsset
-            title="Swap from"
+            title={t("Swap from")}
             hiddenAssets={[transactionData.destinationAsset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
             onClickAsset={(canonical: string, isContract: boolean) => {
