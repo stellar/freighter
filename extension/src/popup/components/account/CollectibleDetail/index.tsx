@@ -16,7 +16,7 @@ import {
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { collectionsSelector } from "popup/ducks/cache";
-import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
+import { useCollectibleDetail } from "./hooks/useCollectibleDetail";
 
 import "./styles.scss";
 
@@ -46,10 +46,9 @@ export const CollectibleDetail = ({
   const collectible = collectionData?.collection?.collectibles?.find(
     (collectible) => collectible.tokenId === selectedCollectible.tokenId,
   );
-  const { fetchData: fetchCollectibles } = useGetCollectibles({
-    useCache: false,
-  });
+  const { fetchData: fetchCollectibleMetadata } = useCollectibleDetail();
   const [isRefreshingMetadata, setIsRefreshingMetadata] = useState(false);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   if (!collectible) {
     return (
@@ -70,8 +69,13 @@ export const CollectibleDetail = ({
 
   const handleRefreshMetadata = async () => {
     setIsRefreshingMetadata(true);
-    await fetchCollectibles({ publicKey, networkDetails });
+    await fetchCollectibleMetadata({
+      collectionAddress: selectedCollectible.collectionAddress,
+      tokenId: selectedCollectible.tokenId,
+      tokenUri: collectible.tokenUri || "",
+    });
     setIsRefreshingMetadata(false);
+    setIsPopoverOpen(false);
   };
 
   return (
@@ -81,12 +85,15 @@ export const CollectibleDetail = ({
           title={name}
           customBackAction={handleItemClose}
           rightButton={
-            <Popover>
+            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
               <div
                 className="CollectibleDetail__header__right-button"
                 data-testid="CollectibleDetail__header__right-button"
               >
-                <PopoverTrigger className="CollectibleDetail__header__right-button__trigger">
+                <PopoverTrigger
+                  className="CollectibleDetail__header__right-button__trigger"
+                  onClick={() => setIsPopoverOpen(true)}
+                >
                   <Icon.DotsHorizontal className="CollectibleDetail__header__right-button__icon" />
                 </PopoverTrigger>
                 <PopoverContent

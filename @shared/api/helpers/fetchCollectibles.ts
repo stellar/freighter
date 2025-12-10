@@ -16,7 +16,7 @@ import { INDEXER_V2_URL } from "@shared/constants/mercury";
  * @param {string} tokenUri - The URI where the collectible metadata is hosted
  * @returns {Promise<CollectibleMetadata | null>} The collectible metadata object, or null if the fetch fails or the response is invalid
  */
-const fetchCollectibleMetadata = async (tokenUri: string) => {
+export const fetchCollectibleMetadata = async (tokenUri: string) => {
   let metadata: CollectibleMetadata | null = {
     name: "",
     description: "",
