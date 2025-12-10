@@ -1,29 +1,28 @@
-import React, { ReactNode } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Icon, Text } from "@stellar/design-system";
+import { Asset, Button, Icon, Text } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 
 import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
-import { stroopToXlm } from "helpers/stellar";
-import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import { stroopToXlm, truncatedPublicKey } from "helpers/stellar";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import {
-  AssetDiffSummary,
   getActionIconByType,
+  getPaymentIcon,
+  getSwapIcons,
   OperationDataRow,
 } from "popup/views/AccountHistory/hooks/useGetHistoryData";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
-import { getMemoDisabledState } from "helpers/muxedAddress";
+import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 
 import "./styles.scss";
-import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
 
 export const TransactionDetail = ({
   activeOperation,
@@ -33,25 +32,6 @@ export const TransactionDetail = ({
   networkDetails: NetworkDetails;
 }) => {
   const { t } = useTranslation();
-  // Get memo disabled state using the helper
-  // For history, we don't have contractId, so we pass undefined
-  // The helper will still correctly disable memo for M addresses
-  // Must be called before early return to satisfy React hooks rules
-  const memoDisabledState = React.useMemo(() => {
-    if (!activeOperation?.metadata?.to) {
-      return { isMemoDisabled: false, memoDisabledMessage: undefined };
-    }
-    return getMemoDisabledState({
-      targetAddress: activeOperation.metadata.to,
-      contractId: undefined, // Not available in history context
-      contractSupportsMuxed: undefined,
-      networkDetails,
-      t,
-    });
-  }, [activeOperation?.metadata?.to, networkDetails, t]);
-
-  const { isMemoDisabled } = memoDisabledState;
-
   if (!activeOperation) {
     return <></>;
   }
@@ -75,275 +55,337 @@ export const TransactionDetail = ({
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
   const { feeCharged, memo } = activeOperation.metadata;
 
-  // Type interfaces for metadata parameters
-  interface PaymentMetadata {
-    to?: string;
-    from?: string;
-    nonLabelAmount: string;
-    destIcon?: string;
-    destAssetCode: string;
-    isReceiving: boolean;
-  }
-
-  interface CollectibleTransferMetadata {
-    to?: string;
-    from?: string;
-    amount: string;
-    destIcon?: string;
-    destAssetCode: string;
-    isReceiving: boolean;
-  }
-
-  interface SwapMetadata {
-    formattedSrcAmount: string;
-    srcAssetCode: string;
-    nonLabelAmount: string;
-    destAssetCode: string;
-  }
-
-  interface CreateAccountMetadata {
-    to?: string;
-    from?: string;
-    nonLabelAmount: string;
-    isReceiving: boolean;
-  }
-
-  // Normalization helper functions
-  const normalizePaymentToAssetDiffs = (
-    metadata: PaymentMetadata,
-  ): AssetDiffSummary[] => {
-    const { to, from, nonLabelAmount, destIcon, destAssetCode, isReceiving } =
-      metadata;
-
-    return [
-      {
-        assetCode: destAssetCode,
-        assetIssuer: null,
-        decimals: CLASSIC_ASSET_DECIMALS,
-        amount: nonLabelAmount,
-        isCredit: isReceiving,
-        destination: isReceiving ? from : to,
-        icon: destIcon,
-      },
-    ];
-  };
-
-  const normalizeCollectibleTransferToAssetDiffs = (
-    metadata: CollectibleTransferMetadata,
-  ): AssetDiffSummary[] => {
-    const { to, from, amount, destIcon, destAssetCode, isReceiving } = metadata;
-
-    return [
-      {
-        assetCode: destAssetCode,
-        assetIssuer: null,
-        decimals: CLASSIC_ASSET_DECIMALS,
-        amount,
-        isCredit: isReceiving,
-        destination: isReceiving ? from : to,
-        icon: destIcon,
-      },
-    ];
-  };
-
-  const normalizeSwapToAssetDiffs = (
-    metadata: SwapMetadata,
-  ): AssetDiffSummary[] => {
-    const { formattedSrcAmount, srcAssetCode, nonLabelAmount, destAssetCode } =
-      metadata;
-
-    return [
-      // Debit: What was sent
-      {
-        assetCode: srcAssetCode,
-        assetIssuer: null,
-        decimals: 7,
-        amount: formattedSrcAmount,
-        isCredit: false,
-      },
-      // Credit: What was received
-      {
-        assetCode: destAssetCode,
-        assetIssuer: null,
-        decimals: 7,
-        amount: nonLabelAmount,
-        isCredit: true,
-      },
-    ];
-  };
-
-  const normalizeCreateAccountToAssetDiffs = (
-    metadata: CreateAccountMetadata,
-  ): AssetDiffSummary[] => {
-    const { to, from, nonLabelAmount, isReceiving } = metadata;
-
-    return [
-      {
-        assetCode: "XLM",
-        assetIssuer: null,
-        decimals: 7,
-        amount: nonLabelAmount,
-        isCredit: isReceiving,
-        destination: isReceiving ? from : to,
-        icon: StellarLogo,
-      },
-    ];
-  };
-
-  // Unified rendering component for all credit/debit displays
-  const renderCreditDebits = (
-    creditDebits: AssetDiffSummary[],
-    shouldShowToFrom: boolean,
-    toFromAddress: string | undefined,
-    isReceiving: boolean,
-    isCollectibleTransfer: boolean,
-  ) => {
-    if (!creditDebits || creditDebits.length === 0) {
-      return null;
-    }
-
-    return (
-      <div className="TransactionDetailModal__asset-diffs">
-        {creditDebits.map((diff: AssetDiffSummary, index: number) => {
-          return (
-            <div key={index} className="AssetDiff__row">
-              <div
-                className={`AssetDiff__label ${diff.isCredit ? "credit" : "debit"}`}
-              >
-                {diff.isCredit ? (
-                  <Icon.ArrowCircleDown />
-                ) : (
-                  <Icon.ArrowCircleUp />
-                )}
-                <span>{diff.isCredit ? "Received" : "Sent"}</span>
-              </div>
-              <div
-                className={`AssetDiff__value ${diff.isCredit ? "credit" : "debit"}`}
-                data-testid={`AssetDiff__amount-${index}`}
-              >
-                {isCollectibleTransfer ? "" : diff.isCredit ? "+" : "-"}
-                {diff.amount} {diff.assetCode}
-              </div>
-            </div>
-          );
-        })}
-        {shouldShowToFrom && toFromAddress && (
-          <div className="AssetDiff__to-from">
-            <div className="AssetDiff__label">
-              <Icon.User01 />
-              <span>{isReceiving ? "From" : "To"}</span>
-            </div>
-            <div
-              className="AssetDiff__value"
-              data-testid="AssetDiff__to-from-address"
-            >
-              <KeyIdenticon publicKey={toFromAddress} isSmall />
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   const renderBody = (activeOperation: OperationDataRow) => {
-    // Normalize all operation types into unified structure
-    let creditDebits: AssetDiffSummary[] = [];
-
-    if (
-      activeOperation.metadata.isInvokeHostFn &&
-      activeOperation.metadata.hasAssetDiffs &&
-      activeOperation.metadata.assetDiffs
-    ) {
-      creditDebits = activeOperation.metadata.assetDiffs;
-    } else if (activeOperation.metadata.isCollectibleTransfer) {
-      creditDebits = normalizeCollectibleTransferToAssetDiffs(
-        activeOperation.metadata as CollectibleTransferMetadata,
-      );
-    } else if (activeOperation.metadata.isPayment) {
-      creditDebits = normalizePaymentToAssetDiffs(
-        activeOperation.metadata as PaymentMetadata,
-      );
-    } else if (activeOperation.metadata.isSwap) {
-      creditDebits = normalizeSwapToAssetDiffs(
-        activeOperation.metadata as SwapMetadata,
-      );
-    } else if (
-      activeOperation.metadata.type ===
-      Horizon.HorizonApi.OperationResponseType.createAccount
-    ) {
-      creditDebits = normalizeCreateAccountToAssetDiffs(
-        activeOperation.metadata as CreateAccountMetadata,
-      );
-    }
-
-    // Determine title based on operation type
-    let title: string | ReactNode;
-    if (
-      activeOperation.metadata.isInvokeHostFn &&
-      (activeOperation.metadata.isTokenTransfer ||
-        activeOperation.metadata.isTokenMint)
-    ) {
-      title = `${activeOperation.action} ${activeOperation.rowText}`;
-    } else if (activeOperation.metadata.isCollectibleTransfer) {
-      title = `${t("Sent Collectible")}`;
-    } else if (activeOperation.metadata.isSwap) {
-      title = `${activeOperation.action} ${activeOperation.metadata.srcAssetCode} to ${activeOperation.metadata.destAssetCode}`;
-    } else if (activeOperation.metadata.isPayment) {
-      title = `${activeOperation.action} ${activeOperation.rowText}`;
-    } else if (
-      activeOperation.metadata.type ===
-      Horizon.HorizonApi.OperationResponseType.changeTrust
-    ) {
-      title = `${activeOperation.rowText} ${t("for")} ${activeOperation.metadata.destAssetCode}`;
-    } else {
-      title = activeOperation.rowText;
-    }
-
-    const shouldShowToFrom = creditDebits.length === 1;
-    const toFromAddress = shouldShowToFrom
-      ? creditDebits[0].destination
-      : undefined;
-    const isReceiving = shouldShowToFrom ? creditDebits[0].isCredit : false;
-    return (
-      <>
-        <div className="TransactionDetailModal__title-row">
-          <div className="TransactionDetailModal__icon">
-            {activeOperation.rowIcon}
-          </div>
-          <div className="TransactionDetailModal__title-details">
-            <div
-              className="TransactionDetailModal__title"
-              data-testid="TransactionDetailModal__title"
-            >
-              {title}
+    if (activeOperation.metadata.isInvokeHostFn) {
+      const {
+        destAssetCode,
+        isTokenMint,
+        isTokenTransfer,
+        nonLabelAmount,
+        to,
+      } = activeOperation.metadata;
+      const title =
+        isTokenTransfer || isTokenMint ? (
+          <>
+            {`${activeOperation.action} `}
+            {activeOperation.rowText}
+          </>
+        ) : (
+          activeOperation.action
+        );
+      return (
+        <>
+          <div className="TransactionDetailModal__title-row">
+            <div className="TransactionDetailModal__icon">
+              {activeOperation.rowIcon}
             </div>
-            <Text
-              as="div"
-              size="xs"
-              weight="regular"
-              addlClassName="TransactionDetailModal__subtitle"
-            >
-              <>
-                {getActionIconByType(activeOperation.actionIcon)}
-                <div
-                  className="TransactionDetailModal__subtitle-date"
-                  data-testid="TransactionDetailModal__subtitle-date"
-                >
-                  {createdAtDateStr} &bull; {createdAtTime}
-                </div>
-              </>
-            </Text>
+            <div className="TransactionDetailModal__title-details">
+              <div className="TransactionDetailModal__title invocation">
+                {title}
+              </div>
+              <Text
+                as="div"
+                size="xs"
+                weight="regular"
+                addlClassName="TransactionDetailModal__subtitle"
+              >
+                <>
+                  {getActionIconByType(activeOperation.actionIcon)}
+                  <div className="TransactionDetailModal__subtitle-date">
+                    {createdAtDateStr} &bull; {createdAtTime}
+                  </div>
+                </>
+              </Text>
+            </div>
           </div>
-        </div>
-        {renderCreditDebits(
-          creditDebits,
-          shouldShowToFrom,
-          toFromAddress,
-          isReceiving,
-          activeOperation.metadata.isCollectibleTransfer || false,
-        )}
-      </>
-    );
+          {isTokenTransfer && (
+            <div className="TransactionDetailModal__body transfer">
+              <div className="Send__src">
+                <div className="Send__src__amount">{nonLabelAmount}</div>
+                <div className="Send__src__icon">
+                  {getPaymentIcon({ destAssetCode })}
+                </div>
+              </div>
+              <div className="Send__direction">
+                <Icon.ChevronDownDouble />
+              </div>
+              <div className="Send__dst">
+                <div className="Send__dst__amount">
+                  {truncatedPublicKey(to)}
+                </div>
+                <div className="Send__dst__icon">
+                  <IdenticonImg publicKey={to} />
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      );
+    }
+
+    if (activeOperation.metadata.isPayment) {
+      const { destIcon, destAssetCode, to, nonLabelAmount } =
+        activeOperation.metadata;
+
+      return (
+        <>
+          <div className="TransactionDetailModal__title-row">
+            <div className="TransactionDetailModal__icon">
+              {getPaymentIcon({ destIcon, destAssetCode })}
+            </div>
+            <div className="TransactionDetailModal__title-details">
+              <div
+                className="TransactionDetailModal__title swap"
+                data-testid="TransactionDetailModal__title"
+              >
+                {`${activeOperation.action} `}
+                {activeOperation.rowText}
+              </div>
+              <Text
+                as="div"
+                size="xs"
+                weight="regular"
+                addlClassName="TransactionDetailModal__subtitle"
+              >
+                <>
+                  {getActionIconByType(activeOperation.actionIcon)}
+                  <div
+                    className="TransactionDetailModal__subtitle-date"
+                    data-testid="TransactionDetailModal__subtitle-date"
+                  >
+                    {createdAtDateStr} &bull; {createdAtTime}
+                  </div>
+                </>
+              </Text>
+            </div>
+          </div>
+          <div className="TransactionDetailModal__body send">
+            <div className="Send__src">
+              <div
+                className="Send__src__amount"
+                data-testid="TransactionDetailModal__src-amount"
+              >
+                {nonLabelAmount}
+              </div>
+              <div className="Send__src__icon">
+                <Asset
+                  size="lg"
+                  variant="single"
+                  sourceOne={{
+                    altText: t("Payment asset"),
+                    image: destIcon,
+                  }}
+                />
+              </div>
+            </div>
+            <div className="Send__direction">
+              <Icon.ChevronDownDouble />
+            </div>
+            <div className="Send__dst">
+              <div
+                className="Send__dst__amount"
+                data-testid="TransactionDetailModal__dst-amount"
+              >
+                {truncatedPublicKey(to)}
+              </div>
+              <div className="Send__dst__icon">
+                <IdenticonImg publicKey={to} />
+              </div>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    if (activeOperation.metadata.isSwap) {
+      const {
+        destIcon,
+        formattedSrcAmount,
+        srcAssetCode,
+        sourceIcon,
+        nonLabelAmount,
+      } = activeOperation.metadata;
+      return (
+        <>
+          <div className="TransactionDetailModal__title-row">
+            <div className="TransactionDetailModal__icon">
+              {getSwapIcons({ destIcon, srcAssetCode, sourceIcon })}
+            </div>
+            <div className="TransactionDetailModal__title-details">
+              <div className="TransactionDetailModal__title swap">
+                {`${activeOperation.action} `}
+                {activeOperation.rowText}
+              </div>
+              <Text
+                as="div"
+                size="xs"
+                weight="regular"
+                addlClassName="TransactionDetailModal__subtitle"
+              >
+                <>
+                  {getActionIconByType(activeOperation.actionIcon)}
+                  <div className="TransactionDetailModal__subtitle-date">
+                    {createdAtDateStr} &bull; {createdAtTime}
+                  </div>
+                </>
+              </Text>
+            </div>
+          </div>
+          <div className="TransactionDetailModal__body swap">
+            <div className="Swap__src">
+              <div className="Swap__src__amount">{formattedSrcAmount}</div>
+              <div className="Swap__src__icon">
+                <Asset
+                  size="lg"
+                  variant="single"
+                  sourceOne={{
+                    altText: t("Swap source"),
+                    image: sourceIcon,
+                    backgroundColor: "transparent",
+                  }}
+                />
+              </div>
+            </div>
+            <div className="Swap__direction">
+              <Icon.ChevronDownDouble />
+            </div>
+            <div className="Swap__dst">
+              <div className="Swap__dst__amount">{nonLabelAmount}</div>
+              <div className="Swap__dst__icon">
+                <Asset
+                  size="lg"
+                  variant="single"
+                  sourceOne={{
+                    altText: t("Swap destination"),
+                    image: destIcon,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    switch (activeOperation.metadata.type) {
+      case Horizon.HorizonApi.OperationResponseType.createAccount: {
+        const { nonLabelAmount, to } = activeOperation.metadata;
+        return (
+          <>
+            <div className="TransactionDetailModal__title-row">
+              <div className="TransactionDetailModal__icon">
+                {activeOperation.rowIcon}
+              </div>
+              <div className="TransactionDetailModal__title-details">
+                <div className="TransactionDetailModal__title invocation">
+                  {activeOperation.rowText}
+                </div>
+                <Text
+                  as="div"
+                  size="xs"
+                  weight="regular"
+                  addlClassName="TransactionDetailModal__subtitle"
+                >
+                  <>
+                    {getActionIconByType(activeOperation.actionIcon)}
+                    <div className="TransactionDetailModal__subtitle-date">
+                      {createdAtDateStr} &bull; {createdAtTime}
+                    </div>
+                  </>
+                </Text>
+              </div>
+            </div>
+            <div className="TransactionDetailModal__body send">
+              <div className="Send__src">
+                <div className="Send__src__amount">{nonLabelAmount}</div>
+                <div className="Send__src__icon">
+                  <Asset
+                    size="lg"
+                    variant="single"
+                    sourceOne={{
+                      altText: t("Stellar token logo"),
+                      image: StellarLogo,
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="Send__direction">
+                <Icon.ChevronDownDouble />
+              </div>
+              <div className="Send__dst">
+                <div className="Send__dst__amount">
+                  {truncatedPublicKey(to)}
+                </div>
+                <div className="Send__dst__icon">
+                  <IdenticonImg publicKey={to} />
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      }
+
+      case Horizon.HorizonApi.OperationResponseType.changeTrust: {
+        return (
+          <>
+            <div className="TransactionDetailModal__title-row">
+              <div className="TransactionDetailModal__icon">
+                {activeOperation.rowIcon}
+              </div>
+              <div className="TransactionDetailModal__title-details">
+                <div className="TransactionDetailModal__title invocation">
+                  {`${activeOperation.rowText} ${t("for")} `}
+                  {activeOperation.metadata.destAssetCode}
+                </div>
+                <Text
+                  as="div"
+                  size="xs"
+                  weight="regular"
+                  addlClassName="TransactionDetailModal__subtitle"
+                >
+                  <>
+                    {getActionIconByType(activeOperation.actionIcon)}
+                    <div className="TransactionDetailModal__subtitle-date">
+                      {createdAtDateStr} &bull; {createdAtTime}
+                    </div>
+                  </>
+                </Text>
+              </div>
+            </div>
+          </>
+        );
+      }
+
+      default: {
+        return (
+          <>
+            <div className="TransactionDetailModal__title-row">
+              <div className="TransactionDetailModal__icon">
+                {activeOperation.rowIcon}
+              </div>
+              <div className="TransactionDetailModal__title-details">
+                <div className="TransactionDetailModal__title invocation">
+                  {activeOperation.rowText}
+                </div>
+                <Text
+                  as="div"
+                  size="xs"
+                  weight="regular"
+                  addlClassName="TransactionDetailModal__subtitle"
+                >
+                  <>
+                    {getActionIconByType(activeOperation.actionIcon)}
+                    <div className="TransactionDetailModal__subtitle-date">
+                      {createdAtDateStr} &bull; {createdAtTime}
+                    </div>
+                  </>
+                </Text>
+              </div>
+            </div>
+          </>
+        );
+      }
+    }
   };
 
   return (
@@ -376,14 +418,13 @@ export const TransactionDetail = ({
             {stroopToXlm(feeCharged as string).toString()} XLM
           </div>
         </div>
-        {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
-        {!isMemoDisabled && (
+        {memo && (
           <div className="Metadata">
             <div className="Metadata__label">
               <Icon.File02 />
               {t("Memo")}
             </div>
-            <div className="Metadata__value">{memo || t("None")}</div>
+            <div className="Metadata__value">{memo}</div>
           </div>
         )}
       </div>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import classnames from "classnames";
 import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -90,6 +91,11 @@ export const AccountTabs = () => {
     } else if (isCollectiblesTab) {
       setIsAddCollectiblesOpen(!isAddCollectiblesOpen);
     }
+  };
+
+  const tabLabels: Record<string, string> = {
+    tokens: t("Tokens"),
+    collectibles: t("Collectibles"),
   };
 
   return (

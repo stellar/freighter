@@ -144,7 +144,7 @@ export const ChangeTrustInternal = ({
 
   // Check if memo is required based on flaggedKeys (populated by background script)
   // flaggedKeys is already validated when the transaction is built, so no need to re-validate
-  const isMemoRequiredMissing = Object.values(flaggedKeys).some(
+  const isMemoRequired = Object.values(flaggedKeys).some(
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
   const operations = transaction.operations;
@@ -167,7 +167,7 @@ export const ChangeTrustInternal = ({
                   className="ChangeTrustInternal__TitleRow"
                   data-testid="ChangeTrustInternal__TitleRow"
                 >
-                  <img src={StellarLogo} alt="Stellar Logo" />
+                  <img src={StellarLogo} alt={t("Stellar Logo")} />
                   <div className="ChangeTrustInternal__TitleRow__Detail">
                     <span className="ChangeTrustInternal__TitleRow__Title">
                       {t("Confirm Transaction")}
@@ -255,7 +255,7 @@ export const ChangeTrustInternal = ({
                   <Details
                     operations={operations}
                     flaggedKeys={flaggedKeys}
-                    isMemoRequired={isMemoRequiredMissing}
+                    isMemoRequired={isMemoRequired}
                   />
                 </div>
               </div>
@@ -313,7 +313,7 @@ export const ChangeTrustInternal = ({
                 >
                   <div className="action-copy">
                     <div className="ChangeTrustInternal__options-actions__label">
-                      Fee: {`${fee} XLM`}
+                      {t("Fee")}: {`${fee} XLM`}
                     </div>
                     <Icon.Route />
                   </div>
@@ -326,7 +326,7 @@ export const ChangeTrustInternal = ({
                 >
                   <div className="action-copy">
                     <div className="ChangeTrustInternal__options-actions__label">
-                      Timeout: {`${timeout}(s)`}
+                      {t("Timeout (seconds)")}: {`${timeout}(s)`}
                     </div>
                     <Icon.Clock />
                   </div>
@@ -337,7 +337,7 @@ export const ChangeTrustInternal = ({
                 >
                   <div className="action-copy">
                     <div className="ChangeTrustInternal__options-actions__label">
-                      Memo
+                      {t("Memo")}
                     </div>
                     <Icon.File02 />
                   </div>
