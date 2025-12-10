@@ -6,10 +6,10 @@ import {
   stubAccountBalances,
   stubAccountBalancesE2e,
   stubAccountHistory,
-  stubTokenDetails,
-  stubTokenPrices,
   stubContractSpec,
   stubMemoRequiredAccounts,
+  stubTokenDetails,
+  stubTokenPrices,
 } from "./helpers/stubs";
 
 const MUXED_ACCOUNT_ADDRESS =

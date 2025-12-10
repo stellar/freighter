@@ -1,6 +1,7 @@
 import React from "react";
 import { Icon } from "@stellar/design-system";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import "./styles.scss";
 
@@ -19,6 +20,7 @@ export const BackButton = ({
   hasBackCopy,
   customButtonComponent,
 }: BackButtonProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -41,7 +43,7 @@ export const BackButton = ({
       onClick={handleClick}
     >
       {customBackIcon || <Icon.ArrowLeft />}
-      {hasBackCopy ? <div className="BackButton__copy">Back</div> : null}
+      {hasBackCopy ? <div className="BackButton__copy">{t("Back")}</div> : null}
     </div>
   );
 };

@@ -137,13 +137,16 @@ export const DomainNotAllowedWarningMessage = ({
 }: {
   domain: string;
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="ScanLabel ScanMiss">
       <div className="ScanLabel__Info">
         <div className="Icon">
           <Icon.InfoSquare className="WarningMessage__icon" />
         </div>
-        <p className="Message">{`${domain} is not currently connected to Freighter`}</p>
+        <p className="Message">
+          {t("{{domain}} is not currently connected to Freighter", { domain })}
+        </p>
       </div>
     </div>
   );
@@ -155,7 +158,7 @@ export const BackupPhraseWarningMessage = () => {
   return (
     <div className="WarningMessage__backup">
       <span className="WarningMessage__backup__description">
-        {t("Keep your recovery phrase in a safe and secure place.")}
+        {t("Keep your recovery phrase in a safe and secure place")}
       </span>
       <span className="WarningMessage__backup__description">
         {t(
@@ -168,21 +171,23 @@ export const BackupPhraseWarningMessage = () => {
             <Icon.Lock01 />
           </div>
           <span>
-            Your recovery phrase gives you full access to your wallets and funds
+            {t(
+              "Your recovery phrase gives you full access to your wallets and funds",
+            )}
           </span>
         </div>
         <div className="WarningMessage__backup__tips__row">
           <div className="WarningMessage__backup__tips__icon">
             <Icon.EyeOff />
           </div>
-          <span>Don't share this phrase with anyone</span>
+          <span>{t("Don’t share this phrase with anyone")}</span>
         </div>
         <div className="WarningMessage__backup__tips__row">
           <div className="WarningMessage__backup__tips__icon">
             <Icon.XSquare />
           </div>
           <span>
-            Stellar Development Foundation will never ask for your phrase
+            {t("Stellar Development Foundation will never ask for your phrase")}
           </span>
         </div>
       </div>
@@ -197,7 +202,8 @@ export const AssetListWarning = ({
   isVerified: boolean;
   onClick: () => void;
 }) => {
-  const title = isVerified ? "On your lists" : "Not on your lists";
+  const { t } = useTranslation();
+  const title = isVerified ? t("On your lists") : t("Not on your lists");
   return (
     <div className="ScanLabel ScanMiss" onClick={onClick}>
       <div className="ScanLabel__Info">
@@ -222,9 +228,10 @@ export const AssetListWarningExpanded = ({
   isVerified,
   onClose,
 }: AssetListWarningExpandedProps) => {
+  const { t } = useTranslation();
   const title = isVerified
-    ? "This asset is on your lists"
-    : "This asset is not on your lists";
+    ? t("This asset is on your lists")
+    : t("This asset is not on your lists");
 
   return (
     <div className="BlockaidDetailsExpanded">
@@ -238,8 +245,7 @@ export const AssetListWarningExpanded = ({
       </div>
       <div className="BlockaidDetailsExpanded__Title">{title}</div>
       <div className="BlockaidDetailsExpanded__SubTitle">
-        Freighter uses asset lists to check assets you interact with. You can
-        define your own assets lists in Settings.
+        {`${t("Freighter uses asset lists to check assets you interact with.")} ${t("You can define your own assets lists in Settings.")}`}
       </div>
     </div>
   );
@@ -354,8 +360,8 @@ const BlockaidFeedbackForm = ({
                           className="BlockaidFeedback__details"
                           fieldSize="md"
                           id="textarea"
-                          label="Feedback"
-                          placeholder="Additional details"
+                          label={t("Feedback")}
+                          placeholder={t("Additional details")}
                         />
                       )}
                     </Field>
@@ -423,7 +429,7 @@ export const BlockaidByLine = ({
               </clipPath>
             </defs>
           </svg>
-          <span>Blockaid</span>
+          <span>{t("Blockaid")}</span>
         </Text>
       </div>
       {isMainnet(networkDetails) || isTestnet(networkDetails) ? (
@@ -465,20 +471,21 @@ export const BlockaidAssetWarning = ({
   blockaidData,
   onClick,
 }: BlockaidAssetWarningProps) => {
+  const { t } = useTranslation();
   const renderHeader = (
     result_type: BlockAidScanAssetResult["result_type"],
   ) => {
     switch (result_type) {
       case "Spam": {
-        return "This asset was flagged as spam";
+        return t("This asset was flagged as spam");
       }
 
       case "Malicious": {
-        return "This asset was flagged as malicious";
+        return t("This asset was flagged as malicious");
       }
 
       default: {
-        return "This asset was flagged as suspicious";
+        return t("This asset was flagged as suspicious");
       }
     }
   };
@@ -517,6 +524,7 @@ export const BlockAidAssetScanExpanded = ({
   scanResult,
   onClose,
 }: BlockAidAssetScanExpandedProps) => {
+  const { t } = useTranslation();
   const { result_type, features } = scanResult;
   const _features = features || [];
 
@@ -526,25 +534,28 @@ export const BlockAidAssetScanExpanded = ({
     switch (result_type) {
       case "Spam": {
         return {
-          title: "Warning",
-          description:
+          title: t("Warning"),
+          description: t(
             "This asset has been flagged as spam for the following reasons.",
+          ),
         };
       }
 
       case "Malicious": {
         return {
-          title: "Do not proceed",
-          description:
+          title: t("Do not proceed"),
+          description: t(
             "This asset has been flagged as malicious for the following reasons.",
+          ),
         };
       }
 
       default: {
         return {
-          title: "Warning",
-          description:
+          title: t("Warning"),
+          description: t(
             "This asset has been flagged as suspicious for the following reasons.",
+          ),
         };
       }
     }
@@ -599,13 +610,14 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
       header={t("WEBSITE CONNECTION IS NOT SECURE")}
     >
       <p className="SslWarningText">
-        <Trans domain={url}>
-          The website <strong>{url}</strong> does not use an SSL certificate.
-          For additional safety Freighter only works with websites that provide
-          an SSL certificate by default. You may enable connection to domains
-          that do not use an SSL certificate in Settings &gt; Security &gt;
-          Advanced Settings.
-        </Trans>
+        <Trans
+          domain={url}
+          i18nKey="The website <1>{url}</1> does not use an SSL certificate."
+          components={[<strong key="0">{url}</strong>]}
+          values={{ url }}
+        />
+        {` ${t("For additional safety Freighter only works with websites that provide an SSL certificate by default.")} `}
+        {`${t("You may enable connection to domains that do not use an SSL certificate in Settings &gt; Security &gt; Advanced settings.")} `}
       </p>
     </WarningMessage>
   );
@@ -761,7 +773,7 @@ export const BlockaidTxScanLabel = ({
                 <Icon.InfoSquare className="WarningMessage__icon" />
               </div>
               <p className="Message">
-                {"This transaction was flagged as suspicious"}
+                {t("This transaction was flagged as suspicious")}
               </p>
             </div>
             <div className="ScanLabel__Action">
@@ -787,6 +799,7 @@ export const BlockAidTxScanExpanded = ({
   scanResult,
   onClose,
 }: BlockAidTxScanExpandedProps) => {
+  const { t } = useTranslation();
   const { simulation, validation } = scanResult;
 
   if (simulation && "error" in simulation) {
@@ -800,9 +813,9 @@ export const BlockAidTxScanExpanded = ({
             <Icon.X />
           </div>
         </div>
-        <div className="BlockaidDetailsExpanded__Title">Warning</div>
+        <div className="BlockaidDetailsExpanded__Title">{t("Warning")}</div>
         <div className="BlockaidDetailsExpanded__SubTitle">
-          This transaction is expected to fail for the following reasons.
+          {t("This transaction is expected to fail for the following reasons.")}
         </div>
         <div className="BlockaidDetailsExpanded__Details">
           <div className="BlockaidDetailsExpanded__DetailRow">
@@ -828,9 +841,13 @@ export const BlockAidTxScanExpanded = ({
                 <Icon.X />
               </div>
             </div>
-            <div className="BlockaidDetailsExpanded__Title">Do not proceed</div>
+            <div className="BlockaidDetailsExpanded__Title">
+              {t("Do not proceed")}
+            </div>
             <div className="BlockaidDetailsExpanded__SubTitle">
-              This transaction does not appear safe for the following reasons.
+              {t(
+                "This transaction does not appear safe for the following reasons",
+              )}
             </div>
             <div className="BlockaidDetailsExpanded__Details">
               <div className="BlockaidDetailsExpanded__DetailRowError">
@@ -855,10 +872,12 @@ export const BlockAidTxScanExpanded = ({
               </div>
             </div>
             <div className="BlockaidDetailsExpanded__Title">
-              Suspicious Request
+              {t("Suspicious Request")}
             </div>
             <div className="BlockaidDetailsExpanded__SubTitle">
-              This transaction does not appear safe for the following reasons.
+              {t(
+                "This transaction does not appear safe for the following reasons.",
+              )}
             </div>
             <div className="BlockaidDetailsExpanded__Details">
               <div className="BlockaidDetailsExpanded__DetailRow">

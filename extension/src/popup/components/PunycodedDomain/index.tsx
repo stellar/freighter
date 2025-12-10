@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 import { getPunycodedDomain } from "helpers/urls";
 import { getSiteFavicon } from "popup/helpers/getSiteFavicon";
@@ -15,6 +16,7 @@ export const PunycodedDomain = ({
   title?: string;
   isRow?: boolean;
 }) => {
+  const { t } = useTranslation();
   const punycodedDomain = getPunycodedDomain(domain);
   const isDomainValid = punycodedDomain === domain;
 
@@ -30,7 +32,7 @@ export const PunycodedDomain = ({
         <img
           className="PunycodedDomain__favicon"
           src={favicon}
-          alt="Site favicon"
+          alt={t("Site favicon")}
         />
       </div>
       <div className="PunycodedDomain__domain">

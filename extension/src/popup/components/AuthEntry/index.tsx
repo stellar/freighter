@@ -35,7 +35,7 @@ export const AuthEntries = ({ invocations }: AuthEntriesProps) => {
         }
         case "sac":
         case "wasm": {
-          return <span>Contract creation</span>;
+          return <span>{t("Contract creation")}</span>;
         }
         default: {
           return null;
@@ -93,7 +93,7 @@ export const AuthEntries = ({ invocations }: AuthEntriesProps) => {
             <React.Fragment key={detail.asset}>
               <div className="AuthEntry__TitleRow">
                 <Icon.CodeSnippet01 />
-                <span>Contract Creation</span>
+                <span>{t("Contract creation")}</span>
               </div>
               <div className="AuthEntry__InfoBlock">
                 <KeyValueList
@@ -113,7 +113,7 @@ export const AuthEntries = ({ invocations }: AuthEntriesProps) => {
                 data-testid="AuthEntry__CreateWasmInvocation"
               >
                 <Icon.CodeSnippet01 />
-                <span>Contract Creation</span>
+                <span>{t("Contract creation")}</span>
               </div>
               <div className="AuthEntry__InfoBlock">
                 <KeyValueList
@@ -183,7 +183,7 @@ export const AuthEntries = ({ invocations }: AuthEntriesProps) => {
     <div className="AuthEntries">
       <div className="AuthEntries__TitleRow">
         <Icon.Key01 />
-        <span>Authorizations</span>
+        <span>{t("Authorizations")}</span>
       </div>
       {invocations.map((invocation) => (
         <React.Fragment key={invocation.toXDR("raw").toString()}>

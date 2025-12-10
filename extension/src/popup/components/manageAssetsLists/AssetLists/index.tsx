@@ -65,7 +65,7 @@ export const AssetLists = ({
 
   return (
     <>
-      <SubviewHeader title="Asset Lists" />
+      <SubviewHeader title={t("Asset lists")} />
       <View.Content hasNoTopPadding>
         <div className="ManageAssetsLists__select-wrapper">
           <Select

@@ -2,6 +2,7 @@ import { captureException } from "@sentry/browser";
 import { View } from "popup/basics/layout/View";
 import React, { Component } from "react";
 import { useTranslation } from "react-i18next";
+import i18n from "popup/helpers/localizationConfig";
 
 import IconFail from "popup/assets/icon-fail.svg";
 import { Button } from "@stellar/design-system";
@@ -31,7 +32,7 @@ export class ErrorBoundary extends Component<
     if (this.state.hasError) {
       return (
         <UnhandledError
-          errorMessage="An unexpected error has occurred"
+          errorMessage={i18n.t("An unexpected error has occurred")}
           errorString={this.state.errorString}
         />
       );
@@ -53,12 +54,12 @@ export const UnhandledError = ({
       <View.AppHeader pageTitle={t("Error")} />
       <View.Content>
         <div className="UnexpectedError__content">
-          <div className="UnexpectedError__amount">Unexpected Error</div>
+          <div className="UnexpectedError__amount">{t("Unexpected Error")}</div>
           <div className="UnexpectedError__icon UnexpectedError__fail">
-            <img src={IconFail} alt="Icon Fail" />
+            <img src={IconFail} alt={t("Icon Fail")} />
           </div>
         </div>
-        <div className="UnexpectedError__error-block">{errorMessage}</div>
+        <div className="UnexpectedError__error-block">{t(errorMessage)}</div>
         <div className="UnexpectedError__error-string">{errorString}</div>
       </View.Content>
       <View.Footer>

@@ -118,7 +118,7 @@ export const ChooseAsset = ({
           {!domainState.data?.domains.length ? (
             <div className="ChooseAsset__empty">
               <p>
-                You have no assets added. Get started by adding an asset below.
+                {`${t("You have no assets added.")} ${t("Get started by adding an asset.")}`}
               </p>
             </div>
           ) : (

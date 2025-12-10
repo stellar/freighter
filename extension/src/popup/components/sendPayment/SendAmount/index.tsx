@@ -377,7 +377,7 @@ export const SendAmount = ({
   return (
     <React.Fragment>
       <SubviewHeader
-        title={<span>Send</span>}
+        title={<span>{t("Send")}</span>}
         hasBackButton
         customBackAction={goBackAction}
       />
@@ -387,10 +387,12 @@ export const SendAmount = ({
             <div className="SendAmount__settings-row">
               <div className="SendAmount__settings-fee-display">
                 <span className="SendAmount__settings-fee-display__label">
-                  Fee:
+                  {t("Fee")}:
                 </span>
                 <span>
-                  {inputType === "crypto" ? `${fee} XLM` : recommendedFeeUsd}
+                  {inputType === "crypto"
+                    ? `${fee} ${t("XLM")}`
+                    : recommendedFeeUsd}
                 </span>
               </div>
               <div className="SendAmount__settings-options">
@@ -603,8 +605,9 @@ export const SendAmount = ({
                     <>
                       <Icon.AlertCircle />
                       <span>
-                        You don't have enough {parsedSourceAsset.code} in your
-                        account
+                        {t("You don’t have enough {{asset}} in your account", {
+                          asset: parsedSourceAsset.code,
+                        })}
                       </span>
                     </>
                   )}
@@ -723,7 +726,7 @@ export const SendAmount = ({
           <div className="EditMemoWrapper">
             <EditSettings
               fee={fee}
-              title="Send Settings"
+              title={t("Send Settings")}
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
               onClose={() => setIsEditingSettings(false)}
@@ -768,7 +771,7 @@ export const SendAmount = ({
             sendPriceUsd={priceValueUsd}
             simulationState={simulationState}
             srcAsset={asset}
-            title="You are sending"
+            title={t("You are sending")}
           />
         ) : (
           <></>

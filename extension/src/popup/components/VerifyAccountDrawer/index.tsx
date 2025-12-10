@@ -34,7 +34,7 @@ export const VerifyAccountDrawer = ({
         <EnterPassword
           accountAddress={publicKey}
           description={t(
-            "Enter your account password to authorize this transaction.",
+            "Enter your account password to authorize this transaction",
           )}
           confirmButtonTitle={t("Submit")}
           onConfirm={handleConfirm}

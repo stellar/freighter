@@ -114,7 +114,7 @@ export const VerifyAccount = ({
           description={
             isApproval
               ? undefined
-              : t("Enter your account password to authorize this transaction.")
+              : t("Enter your account password to authorize this transaction")
           }
           confirmButtonTitle={isApproval ? undefined : t("Submit")}
           onConfirm={handleConfirm}
