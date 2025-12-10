@@ -79,9 +79,19 @@ const prodConfig = (
               options: {
                 createOldCatalogs: false,
                 locales: LOCALES,
+                defaultNamespace: "translation",
+                ns: ["translation"],
                 output: "src/popup/locales/$LOCALE/$NAMESPACE.json",
                 sort: true,
                 useKeysAsDefaultValue: true,
+                keepRemoved: true,
+                removeUnusedKeys: false,
+                keySeparator: false,
+                nsSeparator: false,
+                func: {
+                  list: ["t", "i18next.t", "i18n.t"],
+                  extensions: [".ts", ".tsx"],
+                },
               },
             }),
           ]

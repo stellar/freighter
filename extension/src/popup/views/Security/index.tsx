@@ -26,7 +26,7 @@ export const Security = () => {
 
   return (
     <React.Fragment>
-      <SubviewHeader title="Security" />
+      <SubviewHeader title={t("Security")} />
       <View.Content hasNoTopPadding>
         <div className="Security">
           <ListNavLinkWrapper>

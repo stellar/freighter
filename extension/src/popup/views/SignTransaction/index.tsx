@@ -146,7 +146,7 @@ export const SignTransaction = () => {
 
   // Check if memo is required based on flaggedKeys (populated by background script)
   // flaggedKeys is already validated when the transaction is received, so no need to re-validate
-  const isMemoRequiredMissing = Object.values(flaggedKeys).some(
+  const isMemoRequired = Object.values(flaggedKeys).some(
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
 
@@ -186,13 +186,13 @@ export const SignTransaction = () => {
   }, []);
 
   useEffect(() => {
-    if (isMemoRequiredMissing) {
+    if (isMemoRequired) {
       emitMetric(METRIC_NAMES.signTransactionMemoRequired);
     }
-  }, [isMemoRequiredMissing]);
+  }, [isMemoRequired]);
 
   // Disable submit when memo is missing or domain not allowed
-  const isSubmitDisabled = isMemoRequiredMissing || !isDomainListedAllowed;
+  const isSubmitDisabled = isMemoRequired || !isDomainListedAllowed;
 
   if (
     signTxState.state === RequestState.IDLE ||
@@ -251,7 +251,7 @@ export const SignTransaction = () => {
         header={`${t("Freighter is set to")} ${networkName}`}
       >
         <p>
-          {t("The transaction you’re trying to sign is on")}{" "}
+          {`${t("The transaction you’re trying to sign is on")} `}
           {_networkPassphrase}.
         </p>
         <p>{t("Signing this transaction is not possible at the moment.")}</p>
@@ -333,7 +333,7 @@ export const SignTransaction = () => {
                   <img
                     className="PunycodedDomain__favicon"
                     src={favicon}
-                    alt="Site favicon"
+                    alt={t("Site favicon")}
                   />
                   <div className="SignTransaction__TitleRow__Detail">
                     <span className="SignTransaction__TitleRow__Title">
@@ -353,7 +353,7 @@ export const SignTransaction = () => {
                 {!isDomainListedAllowed && (
                   <DomainNotAllowedWarningMessage domain={domain} />
                 )}
-                {isMemoRequiredMissing && (
+                {isMemoRequired && (
                   <MemoRequiredLabel onClick={() => setActivePaneIndex(3)} />
                 )}
                 {assetDiffs && (
@@ -385,18 +385,14 @@ export const SignTransaction = () => {
                     </div>
                     <div className="SignTransaction__Metadata__Value">
                       <span>
-                        {formatTokenAmount(
-                          new BigNumber(_fee),
-                          CLASSIC_ASSET_DECIMALS,
-                        )}{" "}
-                        XLM
+                        {`${formatTokenAmount(new BigNumber(_fee), CLASSIC_ASSET_DECIMALS)} XLM `}
                       </span>
                     </div>
                   </div>
                   <div className="SignTransaction__Metadata__Row">
                     <div className="SignTransaction__Metadata__Label">
                       <Icon.File02 />
-                      <span>Memo</span>
+                      <span>{t("Memo")}</span>
                     </div>
                     <div className="SignTransaction__Metadata__Value">
                       <span>
@@ -462,7 +458,7 @@ export const SignTransaction = () => {
                   <Details
                     operations={_tx.operations}
                     flaggedKeys={flaggedKeys}
-                    isMemoRequired={isMemoRequiredMissing}
+                    isMemoRequired={isMemoRequired}
                   />
                 </div>
               </div>
@@ -493,7 +489,7 @@ export const SignTransaction = () => {
                     </div>
                     <div>
                       {t(
-                        "A destination account requires the use of the memo field which is not present in the transaction you're about to sign.",
+                        "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign.",
                       )}
                     </div>
                     <div>
@@ -625,6 +621,7 @@ interface TrustlineProps {
 }
 
 export const Trustline = ({ operations, icons }: TrustlineProps) => {
+  const { t } = useTranslation();
   const renderTrustlineChanges = (operation: Operation.ChangeTrust) => {
     const { line, limit } = operation;
     const isRemoveTrustline = new BigNumber(limit).isZero();
@@ -668,12 +665,12 @@ export const Trustline = ({ operations, icons }: TrustlineProps) => {
           {isRemoveTrustline ? (
             <>
               <Icon.MinusCircle />
-              <span>Remove Trustline</span>
+              <span>{t("Remove Trustline")}</span>
             </>
           ) : (
             <>
               <Icon.PlusCircle />
-              <span>Add Trustline</span>
+              <span>{t("Add Trustline")}</span>
             </>
           )}
         </div>

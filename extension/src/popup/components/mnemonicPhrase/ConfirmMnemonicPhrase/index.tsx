@@ -102,7 +102,7 @@ export const ConfirmMnemonicPhrase = ({
     <div className="ConfirmMnemonicPhrase">
       <OnboardingModal
         data-testid="confirm-mnemonic-phrase"
-        headerText="Confirm Your Recovery Phrase"
+        headerText={t("Confirm Your Recovery Phrase")}
         bodyText={
           <>
             <Text as="p" size="md">

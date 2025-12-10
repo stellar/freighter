@@ -96,7 +96,7 @@ export const MigrationReviewDescription = ({
   const { t } = useTranslation();
   return (
     <section className="MigrationReviewDescription">
-      {t(description)}:{" "}
+      {`${t(description)}: `}
       <MigrationReviewHighlight text={`${highlight} ${t("XLM")}`} />
     </section>
   );

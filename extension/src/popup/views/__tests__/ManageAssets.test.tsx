@@ -461,7 +461,7 @@ describe.skip("Manage assets", () => {
     await waitFor(() => {
       screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Choose Asset",
+        "Choose asset",
       );
 
       const searchInput = screen.getByTestId("search-asset-input");
@@ -712,7 +712,7 @@ describe.skip("Manage assets", () => {
     await waitFor(() => {
       screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Choose Asset",
+        "Choose asset",
       );
 
       const searchInput = screen.getByTestId("search-asset-input");
@@ -777,7 +777,7 @@ describe.skip("Manage assets", () => {
     await waitFor(() => {
       screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Choose Asset",
+        "Choose asset",
       );
 
       const searchInput = screen.getByTestId("search-asset-input");

@@ -114,9 +114,7 @@ export const AddToken = () => {
   useEffect(() => {
     if (!isContractId(contractId)) {
       setErrorMessage(
-        t(
-          "This is not a valid contract id. Please try again with a different value.",
-        ),
+        `${t("This is not a valid contract id.")} ${t("Please try again with a different value.")}`,
       );
       return;
     }
@@ -338,7 +336,7 @@ export const AddToken = () => {
                         size="lg"
                         variant="single"
                         sourceOne={{
-                          altText: "Add token logo",
+                          altText: t("Add token logo"),
                           image: assetIcon,
                           backgroundColor: "transparent",
                         }}
@@ -406,13 +404,15 @@ export const AddToken = () => {
                 )}
 
                 <div className="AddToken__Description">
-                  Allow token to be displayed and used with this wallet address
+                  {t(
+                    "Allow token to be displayed and used with this wallet address",
+                  )}
                 </div>
                 <div className="AddToken__Metadata">
                   <div className="AddToken__Metadata__Row">
                     <div className="AddToken__Metadata__Label">
                       <Icon.Wallet01 />
-                      <span>Wallet</span>
+                      <span>{t("Wallet")}</span>
                     </div>
                     <div className="AddToken__Metadata__Value">
                       <KeyIdenticon publicKey={state.data.account.publicKey} />
