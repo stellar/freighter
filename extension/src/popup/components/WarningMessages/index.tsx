@@ -675,9 +675,7 @@ export const SwapAssetScanExpanded = ({
           ? t(
               "This transaction does not appear safe for the following reasons.",
             )
-          : t(
-              "We were unable to scan this transaction for security threats. Proceed with caution.",
-            )}
+          : `${t("We were unable to scan this transaction for security threats")}. ${t("Proceed with caution")}`}
       </div>
       <div className="BlockaidDetailsExpanded__Details">
         {warnings.map((warning, index) => {
@@ -732,9 +730,7 @@ export const BlockAidAssetScanExpanded = ({
           {t("Proceed with caution")}
         </div>
         <div className="BlockaidDetailsExpanded__SubTitle">
-          {t(
-            "We were unable to scan this token for security threats. Proceed with caution.",
-          )}
+          {`${t("We were unable to scan this token for security threats")}. ${t("Proceed with caution")}`}
         </div>
         <div className="BlockaidDetailsExpanded__Details">
           <div className="BlockaidDetailsExpanded__DetailRow">
@@ -771,9 +767,7 @@ export const BlockAidAssetScanExpanded = ({
   if (isUnableToScan) {
     warnings.push({
       icon: <Icon.MinusCircle />,
-      text: t(
-        "We were unable to scan this token for security threats. Proceed with caution.",
-      ),
+      text: `${t("We were unable to scan this token for security threats")}. ${t("Proceed with caution")}`,
     });
   }
 
@@ -1168,9 +1162,7 @@ export const BlockAidTxScanExpanded = ({
           {t("Proceed with caution")}
         </div>
         <div className="BlockaidDetailsExpanded__SubTitle">
-          {t(
-            "We were unable to scan this transaction for security threats. Proceed with caution.",
-          )}
+          {`${t("We were unable to scan this transaction for security threats")}. ${t("Proceed with caution")}`}
         </div>
         <div className="BlockaidDetailsExpanded__Details">
           <div className="BlockaidDetailsExpanded__DetailRow">
