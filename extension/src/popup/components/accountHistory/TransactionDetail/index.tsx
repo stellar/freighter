@@ -45,6 +45,7 @@ export const TransactionDetail = ({
     return getMemoDisabledState({
       targetAddress: activeOperation.metadata.to,
       contractId: undefined, // Not available in history context
+      contractSupportsMuxed: undefined,
       networkDetails,
       t,
     });

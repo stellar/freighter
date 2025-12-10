@@ -17,14 +17,18 @@ import {
   isMuxedAccount,
 } from "helpers/stellar";
 import {
-  checkContractMuxedSupport,
+  checkIsMuxedSupported,
   getMemoDisabledState,
 } from "helpers/muxedAddress";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
-import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
+import {
+  getAssetDecimals,
+  getAvailableBalance,
+  getContractIdFromTokenId,
+} from "popup/helpers/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   cleanAmount,
@@ -44,7 +48,7 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { Loading } from "popup/components/Loading";
 import { TX_SEND_MAX } from "popup/constants/transaction";
-import { findAssetBalance } from "popup/helpers/balance";
+import { getBalanceByAsset, getBalanceByKey } from "popup/helpers/balance";
 
 import { RequestState, State } from "constants/request";
 import { openTab } from "popup/helpers/navigate";
@@ -124,29 +128,19 @@ export const SendAmount = ({
   const [isEditingMemo, setIsEditingMemo] = React.useState(false);
   const [isEditingSettings, setIsEditingSettings] = React.useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
+  const [memoEditingContext, setMemoEditingContext] =
+    React.useState<MemoEditingContext | null>(null);
   const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
     boolean | null
   >(null);
 
   // Get contract ID for custom tokens - must be before conditional returns
   const contractId = React.useMemo(() => {
-    if (
-      !sendAmountData.data ||
-      sendAmountData.data.type === AppDataType.REROUTE ||
-      !("userBalances" in sendAmountData.data)
-    ) {
+    if (!isToken) {
       return undefined;
     }
-    const sendData = sendAmountData.data;
-    const assetBalance = findAssetBalance(
-      sendData.userBalances.balances,
-      getAssetFromCanonical(asset),
-    );
-    if (isToken && assetBalance && "contractId" in assetBalance) {
-      return assetBalance.contractId;
-    }
-    return undefined;
-  }, [isToken, asset, sendAmountData.data]);
+    return getContractIdFromTokenId(asset);
+  }, [isToken, asset]);
 
   // Check if recipient is muxed - must be before conditional returns
   const isRecipientMuxed = React.useMemo(
@@ -166,7 +160,7 @@ export const SendAmount = ({
       }
 
       try {
-        const supportsMuxed = await checkContractMuxedSupport({
+        const supportsMuxed = await checkIsMuxedSupported({
           contractId,
           networkDetails,
         });
@@ -193,10 +187,11 @@ export const SendAmount = ({
     return getMemoDisabledState({
       targetAddress: destination,
       contractId,
+      contractSupportsMuxed,
       networkDetails,
       t,
     });
-  }, [destination, contractId, networkDetails, t]);
+  }, [destination, contractId, contractSupportsMuxed, networkDetails, t]);
 
   const { isMemoDisabled, memoDisabledMessage } = memoDisabledState;
 
@@ -311,10 +306,15 @@ export const SendAmount = ({
 
   const sendData = sendAmountData.data!;
   const assetIcon = sendData.icons[asset];
-  const assetBalance = findAssetBalance(
-    sendData.userBalances.balances,
-    srcAsset,
-  );
+  // Use getBalanceByKey for tokens (contract ID), getBalanceByAsset for classic assets
+  const assetBalance =
+    isToken && contractId
+      ? getBalanceByKey(
+          contractId,
+          sendData.userBalances.balances,
+          networkDetails,
+        )
+      : getBalanceByAsset(srcAsset, sendData.userBalances.balances);
   const prices = sendData.tokenPrices;
   const assetPrice = prices[asset] && prices[asset].currentPrice;
   const xlmPrice = prices["native"]?.currentPrice;
@@ -454,7 +454,7 @@ export const SendAmount = ({
                 title={t("Muxed address not supported")}
               >
                 {t(
-                  "This token does not support muxed address (M-) as a target destination. Proceeding with this transaction could result in loss of the token.",
+                  "This token does not support muxed address (M-) as a target destination.",
                 )}
               </Notification>
             </div>

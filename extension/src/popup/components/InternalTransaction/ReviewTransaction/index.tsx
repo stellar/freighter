@@ -114,6 +114,7 @@ export const ReviewTx = ({
     return getMemoDisabledState({
       targetAddress: destination,
       contractId,
+      contractSupportsMuxed: undefined,
       networkDetails,
       t,
     });

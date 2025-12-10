@@ -9,7 +9,9 @@ import {
   isValidStellarAddress,
   createMuxedAccount,
   getBaseAccount,
+  isFederationAddress,
 } from "helpers/stellar";
+import { StrKey } from "stellar-sdk";
 
 export interface CheckContractMuxedSupportParams {
   contractId: string;
@@ -28,7 +30,7 @@ export interface CheckContractMuxedSupportParams {
  * @param networkDetails - Network details
  * @returns Promise resolving to true if contract supports muxed addresses. false otherwise
  */
-export async function checkContractMuxedSupport(
+export async function checkIsMuxedSupported(
   params: CheckContractMuxedSupportParams,
 ): Promise<boolean> {
   const { contractId, networkDetails } = params;
@@ -63,7 +65,6 @@ export async function checkContractMuxedSupport(
       return true;
     }
 
-    // Also check if to_muxed is in the required array (even if property doesn't exist)
     if (Array.isArray(required) && required.includes("to_muxed")) {
       return true;
     }
@@ -78,6 +79,7 @@ export async function checkContractMuxedSupport(
 export interface MemoDisabledStateParams {
   targetAddress: string;
   contractId?: string;
+  contractSupportsMuxed?: boolean | null;
   networkDetails?: NetworkDetails;
   t: (key: string) => string;
 }
@@ -97,7 +99,7 @@ export interface MemoDisabledState {
 export function getMemoDisabledState(
   params: MemoDisabledStateParams,
 ): MemoDisabledState {
-  const { targetAddress, contractId, networkDetails, t } = params;
+  const { targetAddress, contractId, contractSupportsMuxed, t } = params;
 
   // Disable memo for all M addresses (memo is encoded in the address)
   if (isMuxedAccount(targetAddress)) {
@@ -107,7 +109,23 @@ export function getMemoDisabledState(
     };
   }
 
-  if (!contractId || !networkDetails) {
+  if (!contractId) {
+    return { isMemoDisabled: false, memoDisabledMessage: undefined };
+  }
+
+  // For tokens without Soroban mux support, disable memo
+  // If contractSupportsMuxed is null, we're still checking, so don't disable yet
+  // Only disable when explicitly false
+  if (contractSupportsMuxed === false) {
+    return {
+      isMemoDisabled: true,
+      memoDisabledMessage: t("Memo is not supported for this operation"),
+    };
+  }
+
+  // If contractSupportsMuxed is null, we're still checking - allow memo for now
+  // (will be disabled once check completes if contractSupportsMuxed === false)
+  if (contractSupportsMuxed === null) {
     return { isMemoDisabled: false, memoDisabledMessage: undefined };
   }
 
@@ -148,8 +166,13 @@ export function determineMuxedDestination(
 ): string {
   const { recipientAddress, transactionMemo, contractSupportsMuxed } = params;
 
+  // Check specifically for G address (Ed25519 public key)
+  // Must exclude M addresses, contract IDs, and federation addresses
   const isRecipientGAddress =
-    isValidStellarAddress(recipientAddress) && !isContractId(recipientAddress);
+    StrKey.isValidEd25519PublicKey(recipientAddress) &&
+    !isMuxedAccount(recipientAddress) &&
+    !isContractId(recipientAddress) &&
+    !isFederationAddress(recipientAddress);
   const isRecipientAlreadyMuxed = isMuxedAccount(recipientAddress);
   const hasValidMemo =
     transactionMemo &&
