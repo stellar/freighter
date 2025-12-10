@@ -127,7 +127,6 @@ export const fetchCollectibles = async ({
           fetchedCollections.push({
             collection: {
               address: collection.address,
-
               name: collection.name,
               symbol: collection.symbol,
               collectibles: await Promise.all(

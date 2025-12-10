@@ -92,9 +92,9 @@
   "Clear Flags": "Clear Flags",
   "Close": "Close",
   "Coinbase Logo": "Coinbase Logo",
-  "Collectibles": "Collectibles",
   "Collectible not found": "Collectible not found",
   "Collectible Traits": "Collectible Traits",
+  "Collectibles": "Collectibles",
   "Collection": "Collection",
   "Collection address": "Collection address",
   "Collection address is required": "Collection address is required",
@@ -404,8 +404,8 @@
   "Received": "Received",
   "Recents": "Recents",
   "Recovery Phrase": "Recovery Phrase",
-  "Remember, Freighter will now display accounts related to the new backup phrase that was just created.": "Remember, Freighter will now display accounts related to the new backup phrase that was just created.",
   "Refresh metadata": "Refresh metadata",
+  "Remember, Freighter will now display accounts related to the new backup phrase that was just created.": "Remember, Freighter will now display accounts related to the new backup phrase that was just created.",
   "Remove": "Remove",
   "Remove asset": "Remove asset",
   "Remove List": "Remove List",
@@ -594,6 +594,7 @@
   "View on stellar": {
     "expert": "View on stellar.expert"
   },
+  "View on stellar.expert": "View on stellar.expert",
   "View options": "View options",
   "View transaction": "View transaction",
   "Wallet": "Wallet",
