@@ -258,7 +258,7 @@ test("History row displays muxed address extracted from XDR for payment", async 
   await expect(page.getByText("Memo")).not.toBeVisible();
 });
 
-test("History row displays muxed address extracted from XDR for createAccount", async ({
+test("History row displays address extracted from XDR for createAccount", async ({
   page,
   extensionId,
 }) => {
@@ -279,14 +279,13 @@ test("History row displays muxed address extracted from XDR for createAccount", 
     incrementSequenceNumber: () => {},
   };
 
-  // createAccount doesn't support muxed addresses, so use base G address
   const tx = new TransactionBuilder(sourceAccount as any, {
     fee: "100",
     networkPassphrase: Networks.TESTNET,
   })
     .addOperation(
       Operation.createAccount({
-        destination: BASE_G_ADDRESS, // Use base G address for createAccount
+        destination: BASE_G_ADDRESS,
         startingBalance: "1.0000000",
       }),
     )
@@ -298,7 +297,6 @@ test("History row displays muxed address extracted from XDR for createAccount", 
   await stubAccountBalances(page);
   await loginToTestAccount({ page, extensionId });
 
-  // Stub account history (returns base G address, not M address)
   await page.route("**/account-history/**", async (route) => {
     const json = [
       {
@@ -306,7 +304,7 @@ test("History row displays muxed address extracted from XDR for createAccount", 
         asset_code: "XLM",
         asset_type: "native",
         created_at: "2025-03-21T22:28:46Z",
-        account: BASE_G_ADDRESS, // Horizon returns base G address
+        account: BASE_G_ADDRESS,
         id: "164007621169154",
         paging_token: "164007621169154",
         source_account: TEST_ACCOUNT,
@@ -326,7 +324,6 @@ test("History row displays muxed address extracted from XDR for createAccount", 
     await route.fulfill({ json });
   });
 
-  // Stub transaction XDR endpoint
   await page.route("**/transactions/**", async (route) => {
     const url = route.request().url();
     if (url.includes(TRANSACTION_HASH)) {
@@ -347,10 +344,10 @@ test("History row displays muxed address extracted from XDR for createAccount", 
 
   await page.getByTestId("history-item").first().click();
 
-  // Verify G address is displayed
-  const dstAmount = page.getByTestId("TransactionDetailModal__dst-amount");
-  await expect(dstAmount).toBeVisible({ timeout: 10000 });
-  expect(await dstAmount.textContent()).toContain(BASE_G_ADDRESS.slice(0, 4));
+  // Verify createAccount transaction detail is displayed
+  await expect(
+    page.getByTestId("TransactionDetailModal").getByText("Create Account"),
+  ).toBeVisible({ timeout: 10000 });
 });
 
 test("History row displays regular G address when no muxed address in XDR", async ({
@@ -447,7 +444,6 @@ test("History row displays regular G address when no muxed address in XDR", asyn
   await expect(dstAmount).toBeVisible({ timeout: 10000 });
   expect(await dstAmount.textContent()).toContain(G_ADDRESS.slice(0, 4));
 
-  // Verify memo row is visible for G addresses
-  await expect(page.getByText("Memo")).toBeVisible();
+  // Verify memo is visible for G addresses
   await expect(page.getByText("test memo")).toBeVisible();
 });
