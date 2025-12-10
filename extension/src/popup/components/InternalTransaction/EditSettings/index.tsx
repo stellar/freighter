@@ -4,10 +4,6 @@ import { Field, FieldProps, Formik, Form } from "formik";
 import { useTranslation } from "react-i18next";
 
 import { CongestionIndicator } from "../CongestionIndicator";
-import {
-  NetworkCongestion,
-  getNetworkCongestionTranslation,
-} from "popup/helpers/useNetworkFees";
 
 import "./styles.scss";
 

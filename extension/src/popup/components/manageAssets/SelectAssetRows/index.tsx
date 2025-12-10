@@ -144,7 +144,7 @@ export const SelectAssetRows = ({
                   <div>
                     {isContract
                       ? getTokenBalanceFromCanonical({ code, issuer })
-                      : `${formatAmount(getAccountBalance({ code, issuer }))} ${code} `}
+                      : `${formatAmount(getAccountBalance({ code, issuer }))} `}
                     {code}
                   </div>
                 )}

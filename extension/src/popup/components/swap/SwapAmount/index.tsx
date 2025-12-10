@@ -324,7 +324,7 @@ export const SwapAmount = ({
                   variant="tertiary"
                   onClick={() => setIsEditingSlippage(true)}
                 >
-                  {`${t("Allowed Slippage")}: ${allowedSlippage}%`}
+                  {`${t("Slippage")}: ${allowedSlippage}%`}
                 </Button>
                 <Button
                   type="button"

@@ -30,7 +30,7 @@ export const PluginWallet = () => {
   return (
     <>
       <SubviewHeader
-        title={t("Connect {walletType}", { walletType })}
+        title={t("Connect with {walletType}", { walletType })}
         hasBackButton={true}
         customBackAction={() => navigateTo(ROUTES.connectWallet, navigate)}
       />

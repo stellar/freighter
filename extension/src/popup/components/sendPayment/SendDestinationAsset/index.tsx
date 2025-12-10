@@ -73,7 +73,7 @@ export const SendDestinationAsset = ({
     return (
       <div className="ChooseAsset___fail">
         <Notification variant="error" title={t("Failed to fetch assets.")}>
-          {t("An error occurred")}
+          {t("An unknown error has occurred.")}
         </Notification>
       </div>
     );
