@@ -2,7 +2,7 @@ import { useReducer } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { initialState, reducer } from "helpers/request";
-import { CollectibleMetadata, Collectibles } from "@shared/api/types/types";
+import { CollectibleMetadata } from "@shared/api/types/types";
 import { fetchCollectibleMetadata } from "@shared/api/helpers/fetchCollectibles";
 import { captureException } from "@sentry/browser";
 import { AppDispatch } from "popup/App";
@@ -36,7 +36,7 @@ import { publicKeySelector } from "popup/ducks/accountServices";
  */
 function useCollectibleDetail() {
   const [state, dispatch] = useReducer(
-    reducer<Collectibles, unknown>,
+    reducer<CollectibleMetadata, unknown>,
     initialState,
   );
   const reduxDispatch = useDispatch<AppDispatch>();
@@ -75,44 +75,45 @@ function useCollectibleDetail() {
 
     try {
       metadata = await fetchCollectibleMetadata(tokenUri);
+
+      if (metadata) {
+        const cachedCollectionsData = [
+          ...(cachedCollections[networkDetails.network]?.[publicKey] || []),
+        ];
+
+        // replace the collectible with the new metadata
+        const newCachedCollectionsData = cachedCollectionsData.map((c) => {
+          if (c.collection?.address === collectionAddress) {
+            return {
+              ...c,
+              collection: {
+                ...c.collection!,
+                collectibles: c.collection!.collectibles.map(
+                  (collectionCollectible) => {
+                    if (collectionCollectible.tokenId === tokenId) {
+                      return { ...collectionCollectible, metadata };
+                    }
+                    return collectionCollectible;
+                  },
+                ),
+              },
+            };
+          }
+          return c;
+        });
+
+        reduxDispatch(
+          saveCollections({
+            publicKey,
+            networkDetails,
+            collections: newCachedCollectionsData,
+          }),
+        );
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload: metadata });
+      }
     } catch (error) {
       captureException(error);
       dispatch({ type: "FETCH_DATA_ERROR", payload: { error } });
-    }
-
-    if (metadata) {
-      const cachedCollectionsData = [
-        ...(cachedCollections[networkDetails.network]?.[publicKey] || []),
-      ];
-
-      // replace the collectible with the new metadata
-      const newCachedCollectionsData = cachedCollectionsData.map((c) => {
-        if (c.collection?.address === collectionAddress) {
-          return {
-            ...c,
-            collection: {
-              ...c.collection!,
-              collectibles: c.collection!.collectibles.map(
-                (collectionCollectible) => {
-                  if (collectionCollectible.tokenId === tokenId) {
-                    return { ...collectionCollectible, metadata };
-                  }
-                  return collectionCollectible;
-                },
-              ),
-            },
-          };
-        }
-        return c;
-      });
-
-      reduxDispatch(
-        saveCollections({
-          publicKey,
-          networkDetails,
-          collections: newCachedCollectionsData,
-        }),
-      );
     }
   };
 

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Button, Icon, Notification } from "@stellar/design-system";
 
+import { RequestState } from "constants/request";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
@@ -46,8 +47,7 @@ export const CollectibleDetail = ({
   const collectible = collectionData?.collection?.collectibles?.find(
     (collectible) => collectible.tokenId === selectedCollectible.tokenId,
   );
-  const { fetchData: fetchCollectibleMetadata } = useCollectibleDetail();
-  const [isRefreshingMetadata, setIsRefreshingMetadata] = useState(false);
+  const { state, fetchData: fetchCollectibleMetadata } = useCollectibleDetail();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   if (!collectible) {
@@ -68,13 +68,11 @@ export const CollectibleDetail = ({
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
   const handleRefreshMetadata = async () => {
-    setIsRefreshingMetadata(true);
     await fetchCollectibleMetadata({
       collectionAddress: selectedCollectible.collectionAddress,
       tokenId: selectedCollectible.tokenId,
       tokenUri: collectible.tokenUri || "",
     });
-    setIsRefreshingMetadata(false);
     setIsPopoverOpen(false);
   };
 
@@ -133,7 +131,7 @@ export const CollectibleDetail = ({
             </Popover>
           }
         />
-        {isRefreshingMetadata ? (
+        {state.state === RequestState.LOADING ? (
           <Loading />
         ) : (
           <View.Content>
