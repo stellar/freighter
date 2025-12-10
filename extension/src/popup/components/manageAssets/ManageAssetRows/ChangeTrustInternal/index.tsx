@@ -129,20 +129,23 @@ export const ChangeTrustInternal = ({
   }
 
   const canonical = getCanonicalFromAsset(asset.code, asset.issuer);
-  const xdr = state.data.transactionXDR;
+  // After early returns, we know state.data is defined, so xdr is defined
+  const xdrDefined = state.data.transactionXDR;
   const flaggedKeys = state.data.flaggedKeys;
   const icons = { [canonical]: asset.image };
 
   let sequence = "";
   const transaction = TransactionBuilder.fromXDR(
-    xdr,
+    xdrDefined,
     networkDetails.networkPassphrase,
   ) as Transaction;
   if (!("innerTransaction" in transaction)) {
     sequence = transaction.sequence;
   }
-  const flaggedKeyValues = Object.values(flaggedKeys);
-  const isMemoRequired = flaggedKeyValues.some(
+
+  // Check if memo is required based on flaggedKeys (populated by background script)
+  // flaggedKeys is already validated when the transaction is built, so no need to re-validate
+  const isMemoRequiredMissing = Object.values(flaggedKeys).some(
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
   const operations = transaction.operations;
@@ -168,7 +171,7 @@ export const ChangeTrustInternal = ({
                   <img src={StellarLogo} alt="Stellar Logo" />
                   <div className="ChangeTrustInternal__TitleRow__Detail">
                     <span className="ChangeTrustInternal__TitleRow__Title">
-                      Confirm Transaction
+                      {t("Confirm Transaction")}
                     </span>
                     <span
                       className="SignTransaction__TitleRow__Domain"
@@ -198,7 +201,7 @@ export const ChangeTrustInternal = ({
                   <div className="ChangeTrustInternal__Metadata__Row">
                     <div className="ChangeTrustInternal__Metadata__Label">
                       <Icon.Wallet01 />
-                      <span>Wallet</span>
+                      <span>{t("Wallet")}</span>
                     </div>
                     <div className="ChangeTrustInternal__Metadata__Value">
                       <KeyIdenticon publicKey={publicKey} />
@@ -210,7 +213,7 @@ export const ChangeTrustInternal = ({
                       data-testid="ChangeTrustInternal__Metadata__Label__Fee"
                     >
                       <Icon.Route />
-                      <span>Fee</span>
+                      <span>{t("Fee")}</span>
                     </div>
                     <div
                       className="ChangeTrustInternal__Metadata__Value"
@@ -225,7 +228,7 @@ export const ChangeTrustInternal = ({
                   onClick={() => setActivePaneIndex(1)}
                 >
                   <Icon.List />
-                  <span>Transaction details</span>
+                  <span>{t("Transaction details")}</span>
                 </div>
               </div>
             </div>,
@@ -244,14 +247,14 @@ export const ChangeTrustInternal = ({
                     </div>
                   </div>
                   <div className="ChangeTrustInternal__TransactionDetails__Title">
-                    <span>Transaction Details</span>
+                    <span>{t("Transaction Details")}</span>
                   </div>
                   <div className="ChangeTrustInternal__TransactionDetails__Summary">
                     <Summary
                       sequenceNumber={sequence}
                       fee={xlmToStroop(fee).toString()}
                       memo={{ value: memo, type: "text" }}
-                      xdr={xdr}
+                      xdr={xdrDefined}
                       operationNames={operations.map(
                         (op) => OPERATION_TYPES[op.type] || op.type,
                       )}
@@ -260,7 +263,7 @@ export const ChangeTrustInternal = ({
                   <Details
                     operations={operations}
                     flaggedKeys={flaggedKeys}
-                    isMemoRequired={isMemoRequired}
+                    isMemoRequired={isMemoRequiredMissing}
                   />
                 </div>
               </div>

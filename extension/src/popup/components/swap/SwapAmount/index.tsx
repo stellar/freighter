@@ -15,7 +15,6 @@ import {
   saveAllowedSlippage,
   saveAmount,
   saveAmountUsd,
-  saveAsset,
   saveTransactionFee,
   saveTransactionTimeout,
   transactionDataSelector,
@@ -295,9 +294,6 @@ export const SwapAmount = ({
       ));
 
   const goToEditSrcAction = () => {
-    dispatch(saveAsset("native"));
-    dispatch(saveAmount("0"));
-    dispatch(saveAmountUsd("0.00"));
     goToEditSrc();
   };
 
