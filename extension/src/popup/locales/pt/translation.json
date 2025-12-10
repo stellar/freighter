@@ -404,9 +404,7 @@
     " Please try again with a different value": "This is not a valid contract id. Please try again with a different value."
   },
   "This site was flagged as malicious": "This site was flagged as malicious",
-  "This token does not support muxed address (M-) as a target destination": {
-    " Proceeding with this transaction could result in loss of the token": "This token does not support muxed address (M-) as a target destination. Proceeding with this transaction could result in loss of the token."
-  },
+  "This token does not support muxed address (M-) as a target destination": "This token does not support muxed address (M-) as a target destination.",
   "This transaction could not be completed": "This transaction could not be completed.",
   "This transaction is expected to fail": "This transaction is expected to fail",
   "This transaction was flagged as malicious": "This transaction was flagged as malicious",

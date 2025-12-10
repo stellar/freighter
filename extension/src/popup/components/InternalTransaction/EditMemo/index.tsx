@@ -44,52 +44,6 @@ export const EditMemo = ({
     setLocalMemo(value);
   };
 
-  const renderField = ({ field }: FieldProps) => (
-    <Input
-      data-testid="edit-memo-input"
-      autoFocus
-      fieldSize="md"
-      autoComplete="off"
-      id="memo"
-      placeholder={t("Type your memo")}
-      {...field}
-      onChange={(e) => {
-        field.onChange(e);
-        handleFieldChange(e.target.value);
-      }}
-      error={memoError}
-    />
-  );
-
-  const renderForm = () => (
-    <Form className="EditMemo__form">
-      <Field name="memo">{renderField}</Field>
-      <div className="EditMemo__description">
-        {t("What is this transaction for? (optional)")}
-      </div>
-      <div className="EditMemo__actions">
-        <Button
-          type="button"
-          size="md"
-          isRounded
-          variant="tertiary"
-          onClick={onClose}
-        >
-          {t("Cancel")}
-        </Button>
-        <Button
-          type="submit"
-          size="md"
-          isRounded
-          variant="secondary"
-          disabled={!!memoError}
-        >
-          {t("Save")}
-        </Button>
-      </div>
-    </Form>
-  );
-
   return (
     <View.Content hasNoTopPadding>
       <div className="EditMemo">
@@ -107,9 +61,13 @@ export const EditMemo = ({
                         fieldSize="md"
                         autoComplete="off"
                         id="memo"
-                        placeholder={"Memo"}
+                        placeholder={t("Type your memo")}
                         {...field}
-                        error={errors.memo}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          handleFieldChange(e.target.value);
+                        }}
+                        error={memoError || errors.memo}
                         disabled={disabled}
                       />
                     )}
@@ -121,7 +79,7 @@ export const EditMemo = ({
                   )}
                   {!disabled && (
                     <div className="EditMemo__description">
-                      What is this transaction for? (optional)
+                      {t("What is this transaction for? (optional)")}
                     </div>
                   )}
                   <div className="EditMemo__actions">
@@ -139,7 +97,7 @@ export const EditMemo = ({
                       size="md"
                       isRounded
                       variant="secondary"
-                      disabled={disabled}
+                      disabled={disabled || !!memoError}
                     >
                       {t("Save")}
                     </Button>

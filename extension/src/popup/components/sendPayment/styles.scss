@@ -66,7 +66,7 @@
   }
 
   &__warning-banner {
-    padding: 16px;
+    padding: pxToRem(16px);
   }
 
   &__btn-set-max {

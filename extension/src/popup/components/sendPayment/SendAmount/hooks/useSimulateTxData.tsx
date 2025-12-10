@@ -26,7 +26,7 @@ import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { getBaseAccount } from "popup/helpers/account";
 import {
   determineMuxedDestination,
-  checkContractMuxedSupport,
+  checkIsMuxedSupported,
 } from "helpers/muxedAddress";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import {
@@ -401,30 +401,22 @@ function useSimulateTxData({
       let sorobanMemo = memo;
       if (simParams.type === "soroban") {
         try {
-          const contractSupportsMuxed = await checkContractMuxedSupport({
+          const contractSupportsMuxed = await checkIsMuxedSupported({
             contractId: tokenAddress,
             networkDetails,
           });
-          finalDestination = determineMuxedDestination({
-            recipientAddress: destination,
-            transactionMemo: memo,
-            contractSupportsMuxed,
-          });
-          // Tokens without Soroban mux support don't support memo at all
-          // Tokens with Soroban mux support: memo is encoded in muxed address (if M address or if G address + memo creates muxed)
-          // Send empty string instead of undefined to satisfy backend API requirement
-          if (!contractSupportsMuxed) {
-            // Without Soroban mux support: no memo support
-            sorobanMemo = "";
-          } else {
-            // With Soroban mux support: check if final destination is muxed (memo encoded in address)
-            // If finalDestination is muxed, memo is already encoded in the address, so don't pass it separately
+          if (contractSupportsMuxed) {
+            finalDestination = determineMuxedDestination({
+              recipientAddress: destination,
+              transactionMemo: memo,
+              contractSupportsMuxed,
+            });
             const isFinalDestinationMuxed = isMuxedAccount(finalDestination);
             if (isFinalDestinationMuxed) {
               sorobanMemo = "";
             }
-            // If finalDestination is not muxed, sorobanMemo should remain as the memo value
-            // (This handles the case where contract supports muxed but we're sending to a G address without memo)
+          } else {
+            sorobanMemo = "";
           }
         } catch (error) {
           // If we can't determine muxed destination, use original destination
