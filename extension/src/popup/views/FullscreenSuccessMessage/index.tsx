@@ -31,7 +31,7 @@ export const FullscreenSuccessMessage = () => {
         </div>
         <div className="FullscreenSuccessMessage__pin__row">
           <div className="FullscreenSuccessMessage__pin__row__logo">
-            <img src={LogoWelcome} alt="Freighter logo" />
+            <img src={LogoWelcome} alt={t("Freighter logo")} />
           </div>
           <div className="FullscreenSuccessMessage__pin__row__text">
             {t("Freighter - Stellar Wallet")}
@@ -63,7 +63,7 @@ export const FullscreenSuccessMessage = () => {
                   </div>
                   <div className="FullscreenSuccessMessage__infoBlock__row__text">
                     {t(
-                      "Always check the domain of websites you're using Freighter with",
+                      "Always check the domain of websites you’re using Freighter with",
                     )}
                   </div>
                 </div>

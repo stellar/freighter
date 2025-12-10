@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { ClassicAsset, NativeAsset } from "@shared/api/types/account-balance";
@@ -29,6 +30,7 @@ export const AssetNetworkInfo = ({
   assetDomain,
   contractId,
 }: AssetNetworkInfoProps) => {
+  const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [networkIconUrl, setNetworkIconUrl] = useState("");
 
@@ -56,7 +58,9 @@ export const AssetNetworkInfo = ({
 
   const decideNetworkIcon = () => {
     if (networkIconUrl || assetType === "native") {
-      return <img src={networkIconUrl || StellarLogo} alt="Network icon" />;
+      return (
+        <img src={networkIconUrl || StellarLogo} alt={t("Network icon")} />
+      );
     }
     if (!assetDomain) {
       return null;

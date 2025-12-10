@@ -17,6 +17,7 @@ import { SoroswapToken } from "@shared/api/types";
 import { buildSorobanServer } from "@shared/helpers/soroban/server";
 import { isTestnet, xlmToStroop } from "helpers/stellar";
 import { parseTokenAmount, formatTokenAmount } from "popup/helpers/soroban";
+import i18n from "popup/helpers/localizationConfig";
 
 /*
  * getSoroswapTokens
@@ -56,7 +57,7 @@ export const soroswapGetBestPath = async ({
 }: SoroswapGetBestPathParams) => {
   // For Freighter's purposes, we only support Testnet. Therefore, we error if this is called by another network
   if (!isTestnet(networkDetails)) {
-    throw Error("Network not supported");
+    throw Error(i18n.t("Network not supported"));
   }
 
   // We can default to Testnet as we only support Testnet, but for your purposes, you may configure this to any network you'd like.
@@ -79,7 +80,7 @@ export const soroswapGetBestPath = async ({
   });
 
   if (!sourceTokenDetails || !destTokenDetails) {
-    throw Error("Source token not found");
+    throw Error(i18n.t("Source token not found"));
   }
 
   // Here we start interacting with `soroswap-router-sdk`

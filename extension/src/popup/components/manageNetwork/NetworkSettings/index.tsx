@@ -93,7 +93,7 @@ export const NetworkSettings = () => {
           <Select
             fieldSize="md"
             id="select"
-            label="Current Network"
+            label={t("Current Network")}
             className="NetworkSettings__select"
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
               dispatch(changeNetwork({ networkName: e.target.value }));

@@ -247,7 +247,7 @@ export const AssetDetail = ({
                 className="AssetDetail__options"
                 onClick={() => setOptionsOpen(true)}
               >
-                <img src={IconEllipsis} alt="asset options" />
+                <img src={IconEllipsis} alt={t("asset options")} />
               </div>
               {optionsOpen ? (
                 <div
@@ -265,7 +265,7 @@ export const AssetDetail = ({
                       >
                         <div className="action">
                           <div className="AssetDetail__options-actions__label">
-                            Copy address
+                            {t("Copy address")}
                           </div>
                           <Icon.Copy01 />
                         </div>
@@ -302,7 +302,7 @@ export const AssetDetail = ({
             {assetIconUrl ? (
               <img
                 src={assetIconUrl}
-                alt="Network icon"
+                alt={t("Network icon")}
                 data-testid="AssetDetail__icon"
               />
             ) : null}
@@ -353,14 +353,14 @@ export const AssetDetail = ({
             >
               <div className="AssetDetail__balance-label">
                 <Icon.Coins01 />
-                Balance
+                {t("Balance")}
               </div>
               <div>{displayTotal}</div>
             </div>
             <div className="AssetDetail__balance-value">
               <div className="AssetDetail__balance-label">
                 <Icon.BankNote02 />
-                Value
+                {t("Value")}
               </div>
               <div>
                 {assetPrice && assetPrice.currentPrice
@@ -432,8 +432,8 @@ export const AssetDetail = ({
           <div className="AssetDetail__info-modal">
             <div className="AssetDetail__info-modal__total-box">
               <div className="AssetDetail__info-modal__asset-code">
-                <img src={StellarLogo} alt="Network icon" />{" "}
-                <div>{canonical.code}</div>
+                <img src={StellarLogo} alt={t("Network icon")} />
+                <div>{` ${canonical.code}`}</div>
               </div>
               <div>{displayTotal}</div>
             </div>
@@ -449,11 +449,11 @@ export const AssetDetail = ({
                 selectedBalance?.available &&
                 selectedBalance?.total ? (
                   <div>
-                    {formatAmount(
+                    {`${formatAmount(
                       new BigNumber(balanceAvailable)
                         .minus(new BigNumber(selectedBalance?.total))
                         .toString(),
-                    )}{" "}
+                    )} `}
                     {canonical.code}
                   </div>
                 ) : null}
@@ -464,15 +464,15 @@ export const AssetDetail = ({
               </div>
             </div>
             <div className="AssetDetail__info-modal__footnote">
-              {t(
+              {`${t(
                 "* All Stellar accounts must maintain a minimum balance of lumens.",
-              )}{" "}
+              )} `}
               <a
                 href="https://developers.stellar.org/docs/glossary/minimum-balance/"
                 target="_blank"
                 rel="noreferrer"
               >
-                {t("Learn More")}
+                {t("Learn more")}
               </a>
             </div>
           </div>
