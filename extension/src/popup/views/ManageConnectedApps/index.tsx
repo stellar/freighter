@@ -125,7 +125,7 @@ export const ManageConnectedApps = () => {
 
   return (
     <React.Fragment>
-      <SubviewHeader title={t("Connected Apps")} customBackIcon={<Icon.X />} />
+      <SubviewHeader title={t("Connected apps")} customBackIcon={<Icon.X />} />
       <View.Content hasNoTopPadding>
         <div className="ManageConnectedApps">
           <div className="ManageConnectedApps__select-wrapper">

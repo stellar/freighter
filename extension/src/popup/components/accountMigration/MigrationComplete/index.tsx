@@ -89,9 +89,7 @@ export const MigrationComplete = () => {
       <MigrationReviewHeader>
         <MigrationHeader>{t("Migration complete")}</MigrationHeader>
         <MigrationParagraph>
-          {t(
-            "Remember, Freighter will now display accounts related to the new backup phrase that was just created. Use this backup phrase from now on to use your new accounts. If you have accounts that were not merged, keep and use your old backup phrase to access them.",
-          )}
+          {`${t("Remember, Freighter will now display accounts related to the new backup phrase that was just created.")} ${t("Use this backup phrase from now on to use your new accounts.")} ${t("If you have accounts that were not merged, keep and use your old backup phrase to access them.")}`}
         </MigrationParagraph>
       </MigrationReviewHeader>
       <AccountListItems migratedAccounts={migratedAccounts} />

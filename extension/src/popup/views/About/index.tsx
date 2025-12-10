@@ -29,11 +29,11 @@ export const About = () => {
 
   return (
     <React.Fragment>
-      <SubviewHeader title="About" />
+      <SubviewHeader title={t("About")} />
       <View.Content hasNoTopPadding>
         <div className="About">
           <div>
-            <img alt="Freighter logo" src={FreighterLogo} />
+            <img alt={t("Freighter logo")} src={FreighterLogo} />
           </div>
           <div className="About__body">
             <div className="About__info">

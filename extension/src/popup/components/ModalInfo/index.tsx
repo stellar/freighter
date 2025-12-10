@@ -33,7 +33,7 @@ const PillCopy = ({ pillType }: PillyCopyProps) => {
   if (pillType === "Trustline") {
     return (
       <>
-        <img src={IconShieldPlus} alt="Add trustline icon" />
+        <img src={IconShieldPlus} alt={t("Add trustline icon")} />
         <div>{t("Add Asset trustline")}</div>
       </>
     );
@@ -116,27 +116,30 @@ export const DomainScanModalInfo = ({
   isMalicious,
   scanStatus,
   onClick,
-}: DomainScanModalInfoProps) => (
-  <div className="ModalInfo--card GrantAccess">
-    <>
-      <PunycodedDomain domain={domain} />
-      <div className="ModalInfo--connection-request">
-        <div className="ModalInfo--connection-request-pill">
-          <Icon.Link01 />
-          <p>Connection Request</p>
+}: DomainScanModalInfoProps) => {
+  const { t } = useTranslation();
+  return (
+    <div className="ModalInfo--card GrantAccess">
+      <>
+        <PunycodedDomain domain={domain} />
+        <div className="ModalInfo--connection-request">
+          <div className="ModalInfo--connection-request-pill">
+            <Icon.Link01 />
+            <p>{t("Connection Request")}</p>
+          </div>
         </div>
-      </div>
-      <div className="ModalInfo--connection-request-scan-label">
-        {scanStatus && (
-          <BlockAidSiteScanLabel
-            isMalicious={isMalicious}
-            status={scanStatus}
-            onClick={onClick}
-          />
-        )}
-      </div>
-      <div className="ModalInfo--subject">{subject}</div>
-      {children}
-    </>
-  </div>
-);
+        <div className="ModalInfo--connection-request-scan-label">
+          {scanStatus && (
+            <BlockAidSiteScanLabel
+              isMalicious={isMalicious}
+              status={scanStatus}
+              onClick={onClick}
+            />
+          )}
+        </div>
+        <div className="ModalInfo--subject">{subject}</div>
+        {children}
+      </>
+    </div>
+  );
+};

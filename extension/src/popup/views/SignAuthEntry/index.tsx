@@ -122,7 +122,7 @@ export const SignAuthEntry = () => {
         header={`${t("Freighter is set to")} ${networkName}`}
       >
         <p>
-          {t("The requester expects you to sign this auth entry on")}{" "}
+          {`${t("The requester expects you to sign this auth entry on")} `}
           {entryNetworkPassphrase}.
         </p>
         <p>{t("Signing this authorization is not possible at the moment.")}</p>
@@ -164,7 +164,7 @@ export const SignAuthEntry = () => {
               <img
                 className="PunycodedDomain__favicon"
                 src={favicon}
-                alt="Site favicon"
+                alt={t("Site favicon")}
               />
               <div className="SignAuthEntry__TitleRow__Detail">
                 <span className="SignAuthEntry__TitleRow__Title">
@@ -182,7 +182,7 @@ export const SignAuthEntry = () => {
               <div className="SignAuthEntry__Metadata__Row">
                 <div className="SignAuthEntry__Metadata__Label">
                   <Icon.Wallet01 />
-                  <span>Wallet</span>
+                  <span>{t("Wallet")}</span>
                 </div>
                 <div className="SignAuthEntry__Metadata__Value">
                   <KeyIdenticon publicKey={publicKey} />

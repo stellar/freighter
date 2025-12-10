@@ -157,7 +157,7 @@ export const AdvancedSettings = () => {
 
   return isUnderstood ? (
     <>
-      <SubviewHeader title={t("Advanced Settings")} />
+      <SubviewHeader title={t("Advanced settings")} />
       <Formik
         initialValues={initialValues}
         onSubmit={handleSubmit}
@@ -171,9 +171,11 @@ export const AdvancedSettings = () => {
               isLoading={isLoading}
               isToggled={initialValues.isExperimentalModeEnabledValue}
               toggleId="isExperimentalModeEnabledValue"
-              description={t(
-                "Use experimental API’s and connect to the Futurenet, a test network. Please proceed at your own risk as you may be interacting with schemas that are untested and still changing.",
-              )}
+              description={`${t(
+                "Use experimental API's and connect to the Futurenet, a test network.",
+              )} ${t(
+                "Please proceed at your own risk as you may be interacting with schemas that are untested and still changing.",
+              )}`}
             />
             <AdvancedSettingFeature
               title={t("Enable Blind Signing on Ledger")}
@@ -182,15 +184,17 @@ export const AdvancedSettings = () => {
               toggleId="isHashSigningEnabledValue"
               description={
                 <>
-                  {t(
-                    "This can be used to sign arbitrary transaction hashes without having to decode them first. Ledger will not display the transaction details in the device display prior to signing so make sure you only interact with applications you know and trust.",
-                  )}{" "}
+                  {`${t(
+                    "This can be used to sign arbitrary transaction hashes without having to decode them first.",
+                  )} ${t(
+                    "Ledger will not display the transaction details in the device display prior to signing so make sure you only interact with applications you know and trust.",
+                  )} `}
                   <a
                     href="https://www.ledger.com/academy/enable-blind-signing-why-when-and-how-to-stay-safe/"
                     target="_blank"
                     rel="noreferrer"
                   >
-                    {t("Learn More")}
+                    {t("Learn more")}
                   </a>
                 </>
               }
@@ -200,9 +204,7 @@ export const AdvancedSettings = () => {
               isLoading={isLoading}
               isToggled={initialValues.isNonSSLEnabledValue}
               toggleId="isNonSSLEnabledValue"
-              description={t(
-                "Allow Freighter to connect to domains that do not have an SSL certificate on Mainnet. SSL certificates provide an encrypted network connection and also provide proof of ownership of the domain. Use caution when connecting to domains without an SSL certificate.",
-              )}
+              description={`${t("Allow Freighter to connect to domains that do not have an SSL certificate on Mainnet.")} ${t("SSL certificates provide an encrypted network connection and also provide proof of ownership of the domain.")} ${t("Use caution when connecting to domains without an SSL certificate.")}`}
             />
           </Form>
         </View.Content>
@@ -215,9 +217,7 @@ export const AdvancedSettings = () => {
         <div className="AdvancedSettings__column">
           <Notification
             variant="warning"
-            title={t(
-              "Advanced settings are not recommended for new or unexperienced users. Enabling these may impact the security of your wallets and result in loss of funds. Only utilize these features if you can understand and manage the potential security risks.",
-            )}
+            title={`${t("Advanced settings are not recommended for new or unexperienced users")} ${t("Enabling these may impact the security of your wallets and result in loss of funds")} ${t("Only utilize these features if you can understand and manage the potential security risks")}`}
           />
           <div className="AdvancedSettings__understood-buttons">
             <Button

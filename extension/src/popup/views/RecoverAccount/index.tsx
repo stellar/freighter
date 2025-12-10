@@ -237,7 +237,7 @@ export const RecoverAccount = () => {
                     <Onboarding layout="half">
                       <OnboardingModal
                         data-testid="confirm-mnemonic-phrase"
-                        headerText="Import wallet from recovery phrase"
+                        headerText={t("Import wallet from recovery phrase")}
                         bodyText={
                           <>
                             <Text as="p" size="md">
