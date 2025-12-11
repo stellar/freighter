@@ -88,9 +88,7 @@ test("Adding and removing unverified Soroban token", async ({
   );
   await page.getByRole("button", { name: "Confirm" }).click();
   await expect(
-    page.getByText(
-      "You have no assets added. Get started by adding an asset below.",
-    ),
+    page.getByText("You have no assets added. Get started by adding an asset."),
   ).toBeVisible();
 });
 
