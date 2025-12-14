@@ -11,7 +11,7 @@ describe("getCollectibles", () => {
       external_url: "https://nftcalendar.io",
       attributes: [
         {
-          traitType: "Trait Type",
+          trait_type: "Trait Type",
           value: "Trait Value",
         },
       ],
@@ -78,6 +78,8 @@ describe("getCollectibles", () => {
           symbol: "SYM",
           collectibles: [
             {
+              collectionAddress: "C1",
+              collectionName: "C1",
               metadata: {
                 name: "Collectible Name",
                 description: "Collectible Description",
@@ -147,6 +149,8 @@ describe("getCollectibles", () => {
           symbol: "SYM",
           collectibles: [
             {
+              collectionAddress: "C1",
+              collectionName: "C1",
               metadata: null,
               owner: "G1",
               tokenId: "1",

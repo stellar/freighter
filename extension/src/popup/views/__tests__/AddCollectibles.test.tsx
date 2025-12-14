@@ -88,11 +88,12 @@ describe("AddCollectibles", () => {
       const collectibleAddressInput = screen.getByTestId(
         "collectibleContractAddress",
       );
+
       fireEvent.blur(collectibleAddressInput);
       fireEvent.click(screen.getByTestId("AddCollectibles__button"));
       expect(
         screen.getByTestId("collectible-address-wrapper"),
-      ).toHaveTextContent("Collectible address is required");
+      ).toHaveTextContent("Collection address is required");
     });
   });
   it("shows error message if collectible address is invalid", async () => {

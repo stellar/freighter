@@ -1,12 +1,21 @@
-import React from "react";
+import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 
 import { Collection } from "@shared/api/types/types";
 
+import { CollectibleDetail, SelectedCollectible } from "../CollectibleDetail";
+
 import "./styles.scss";
 
-const CollectionsList = ({ collections }: { collections: Collection[] }) => {
+const CollectionsList = ({
+  collections,
+  handleItemClick,
+}: {
+  collections: Collection[];
+  handleItemClick: (collectible: SelectedCollectible) => void;
+}) => {
   const { t } = useTranslation();
 
   // every collection has an error, so nothing to render
@@ -70,6 +79,12 @@ const CollectionsList = ({ collections }: { collections: Collection[] }) => {
             return (
               <div
                 className="AccountCollectibles__collection__grid__item"
+                onClick={() =>
+                  handleItemClick({
+                    collectionAddress: collection.address,
+                    tokenId: item.tokenId,
+                  })
+                }
                 key={item.tokenId}
               >
                 <img
@@ -86,30 +101,41 @@ const CollectionsList = ({ collections }: { collections: Collection[] }) => {
   });
 };
 
-export interface SelectedCollectible {
-  collectionAddress: string;
-  tokenId: string;
-}
-
 interface AccountCollectiblesProps {
   collections: Collection[];
-  onClickCollectible?: (collectible: SelectedCollectible) => void;
+  onClickCollectible?: (selectedCollectible: SelectedCollectible) => void;
 }
 
 export const AccountCollectibles = ({
   collections,
 }: AccountCollectiblesProps) => {
   const { t } = useTranslation();
+  const [selectedCollectible, setSelectedCollectible] =
+    useState<SelectedCollectible | null>(null);
+
   return (
     <div className="AccountCollectibles" data-testid="account-collectibles">
       {collections.length ? (
-        <CollectionsList collections={collections} />
+        <CollectionsList
+          collections={collections}
+          handleItemClick={(selectedCollectibleItem: SelectedCollectible) =>
+            setSelectedCollectible(selectedCollectibleItem)
+          }
+        />
       ) : (
         <div className="AccountCollectibles__empty">
           <Icon.Grid01 />
           <span>{t("No collectibles yet")}</span>
         </div>
       )}
+      {selectedCollectible &&
+        createPortal(
+          <CollectibleDetail
+            selectedCollectible={selectedCollectible}
+            handleItemClose={() => setSelectedCollectible(null)}
+          />,
+          document.querySelector("#modal-root")!,
+        )}
     </div>
   );
 };
