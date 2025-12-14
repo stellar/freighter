@@ -82,6 +82,7 @@ export const CollectibleDetail = ({
         <SubviewHeader
           title={name}
           customBackAction={handleItemClose}
+          customBackIcon={<Icon.X />}
           rightButton={
             <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
               <div
@@ -89,6 +90,7 @@ export const CollectibleDetail = ({
                 data-testid="CollectibleDetail__header__right-button"
               >
                 <PopoverTrigger
+                  asChild
                   className="CollectibleDetail__header__right-button__trigger"
                   onClick={() => setIsPopoverOpen(true)}
                 >

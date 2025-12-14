@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
+import React, { useEffect, useRef, useContext } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
@@ -18,7 +18,6 @@ import { isMainnet } from "helpers/stellar";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountCollectibles } from "popup/components/account/AccountCollectibles";
 import { AccountHeader } from "popup/components/account/AccountHeader";
-import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
@@ -50,7 +49,6 @@ export const Account = () => {
   const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const collections = useSelector(collectionsSelector);
-  const [selectedAsset, setSelectedAsset] = useState("");
   const { activeTab } = useContext(AccountTabsContext);
 
   const isFullscreenModeEnabled = isFullscreenMode();
@@ -154,26 +152,6 @@ export const Account = () => {
       ? iconsData?.data?.icons
       : {};
 
-  if (
-    !hasError &&
-    selectedAsset &&
-    accountData.data.type === AppDataType.RESOLVED
-  ) {
-    return (
-      <AssetDetail
-        accountBalances={accountData.data.balances}
-        historyData={historyData.data}
-        networkDetails={accountData.data.networkDetails}
-        publicKey={accountData.data.publicKey}
-        selectedAsset={selectedAsset}
-        setSelectedAsset={setSelectedAsset}
-        subentryCount={accountData.data.balances.subentryCount}
-        tokenPrices={accountData.data.tokenPrices}
-        assetIcons={resolvedIcons}
-      />
-    );
-  }
-
   const tokenPrices = resolvedData?.tokenPrices || {};
   const balances = resolvedData?.balances.balances!;
   const totalBalanceUsd = getTotalUsd(tokenPrices, balances);
@@ -209,7 +187,7 @@ export const Account = () => {
         roundedTotalBalanceUsd={roundedTotalBalanceUsd}
         isFunded={!!resolvedData?.balances?.isFunded}
       />
-      <View.Content hasNoTopPadding>
+      <View.Content hasNoTopPadding hasNoBottomPadding>
         <div className="AccountView" data-testid="account-view">
           {hasError && (
             <div className="AccountView__fetch-fail">
@@ -283,10 +261,10 @@ export const Account = () => {
                   data-testid="account-assets"
                 >
                   <AccountAssets
-                    sortedBalances={resolvedData.balances.balances}
+                    balances={resolvedData.balances}
+                    historyData={historyData.data}
                     assetPrices={tokenPrices}
                     assetIcons={resolvedIcons}
-                    setSelectedAsset={setSelectedAsset}
                   />
                 </div>
               ),

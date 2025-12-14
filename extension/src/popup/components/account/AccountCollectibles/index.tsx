@@ -1,22 +1,22 @@
 import React, { useState } from "react";
-import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 
 import { Collection } from "@shared/api/types/types";
-
+import {
+  ScreenReaderOnly,
+  Sheet,
+  SheetContent,
+  SheetTitle,
+} from "popup/basics/shadcn/Sheet";
 import { CollectibleDetail, SelectedCollectible } from "../CollectibleDetail";
 
 import "./styles.scss";
 
-const CollectionsList = ({
-  collections,
-  handleItemClick,
-}: {
-  collections: Collection[];
-  handleItemClick: (collectible: SelectedCollectible) => void;
-}) => {
+const CollectionsList = ({ collections }: { collections: Collection[] }) => {
   const { t } = useTranslation();
+  const [selectedCollectible, setSelectedCollectible] =
+    useState<SelectedCollectible | null>(null);
 
   // every collection has an error, so nothing to render
   if (collections.every((collection) => collection.error)) {
@@ -77,22 +77,44 @@ const CollectionsList = ({
               );
             }
             return (
-              <div
-                className="AccountCollectibles__collection__grid__item"
-                onClick={() =>
-                  handleItemClick({
-                    collectionAddress: collection.address,
-                    tokenId: item.tokenId,
-                  })
-                }
+              <Sheet
+                open={selectedCollectible?.tokenId === item.tokenId}
                 key={item.tokenId}
               >
-                <img
-                  data-testid="account-collectible-image"
-                  src={item.metadata?.image}
-                  alt={item.tokenId}
-                />
-              </div>
+                <div
+                  className="AccountCollectibles__collection__grid__item"
+                  onClick={() =>
+                    setSelectedCollectible({
+                      collectionAddress: collection.address,
+                      tokenId: item.tokenId,
+                    })
+                  }
+                  key={item.tokenId}
+                >
+                  <img
+                    data-testid="account-collectible-image"
+                    src={item.metadata?.image}
+                    alt={item.tokenId}
+                  />
+                </div>
+                <SheetContent
+                  aria-describedby={undefined}
+                  side="bottom"
+                  className="AccountCollectibles__collectible-detail__sheet"
+                  onOpenAutoFocus={(e) => e.preventDefault()}
+                >
+                  <ScreenReaderOnly>
+                    <SheetTitle>{item.tokenId}</SheetTitle>
+                  </ScreenReaderOnly>
+                  <CollectibleDetail
+                    selectedCollectible={{
+                      collectionAddress: collection.address,
+                      tokenId: item.tokenId,
+                    }}
+                    handleItemClose={() => setSelectedCollectible(null)}
+                  />
+                </SheetContent>
+              </Sheet>
             );
           })}
         </div>
@@ -110,32 +132,17 @@ export const AccountCollectibles = ({
   collections,
 }: AccountCollectiblesProps) => {
   const { t } = useTranslation();
-  const [selectedCollectible, setSelectedCollectible] =
-    useState<SelectedCollectible | null>(null);
 
   return (
     <div className="AccountCollectibles" data-testid="account-collectibles">
       {collections.length ? (
-        <CollectionsList
-          collections={collections}
-          handleItemClick={(selectedCollectibleItem: SelectedCollectible) =>
-            setSelectedCollectible(selectedCollectibleItem)
-          }
-        />
+        <CollectionsList collections={collections} />
       ) : (
         <div className="AccountCollectibles__empty">
           <Icon.Grid01 />
           <span>{t("No collectibles yet")}</span>
         </div>
       )}
-      {selectedCollectible &&
-        createPortal(
-          <CollectibleDetail
-            selectedCollectible={selectedCollectible}
-            handleItemClose={() => setSelectedCollectible(null)}
-          />,
-          document.querySelector("#modal-root")!,
-        )}
     </div>
   );
 };
