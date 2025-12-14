@@ -89,9 +89,7 @@ test.skip("Adding and removing unverified Soroban token", async ({
   );
   await page.getByRole("button", { name: "Confirm" }).click();
   await expect(
-    page.getByText(
-      "You have no assets added. Get started by adding an asset below.",
-    ),
+    page.getByText("You have no assets added. Get started by adding an asset."),
   ).toBeVisible();
 });
 
@@ -207,9 +205,7 @@ test.skip("Adding classic asset on Testnet", async ({ page, extensionId }) => {
   await page.getByRole("button", { name: "Confirm" }).click();
   await page.getByText("Done").click();
   await expect(
-    page.getByText(
-      "You have no assets added. Get started by adding an asset below.",
-    ),
+    page.getByText("You have no assets added. Get started by adding an asset."),
   ).toBeVisible();
 });
 test.afterAll(async ({ page, extensionId }) => {
