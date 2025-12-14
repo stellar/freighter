@@ -6,26 +6,6 @@
   gap: pxToRem(24px);
   padding: pxToRem(24px) 0;
 
-  &__toggle-hidden {
-    display: flex;
-    align-items: center;
-    gap: pxToRem(8px);
-    color: var(--sds-clr-gray-11);
-    font-size: pxToRem(14px);
-    font-weight: var(--sds-fw-medium);
-    cursor: pointer;
-    padding: pxToRem(8px) 0;
-
-    &:hover {
-      color: var(--sds-clr-gray-12);
-    }
-
-    svg {
-      width: pxToRem(16px);
-      height: pxToRem(16px);
-    }
-  }
-
   &__empty {
     display: flex;
     align-items: center;
@@ -70,18 +50,33 @@
       font-size: 0;
 
       &__item {
+        background-color: var(--sds-clr-gray-03);
         cursor: pointer;
         aspect-ratio: 1/1;
+        border-radius: pxToRem(12px);
         overflow: hidden;
 
-        &--hidden {
-          opacity: 0.5;
+        &__placeholder {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+          width: 100%;
+          background-color: var(--sds-clr-gray-03);
+
+          svg {
+            height: pxToRem(48px);
+            width: pxToRem(48px);
+            color: var(--sds-clr-gray-11);
+          }
+        }
+
+        img {
+          height: 100%;
+          width: 100%;
+          object-fit: cover;
         }
       }
     }
-  }
-
-  &__collectible-detail__sheet {
-    z-index: var(--z-index-modal);
   }
 }

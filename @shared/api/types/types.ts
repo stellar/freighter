@@ -28,7 +28,6 @@ export interface UserInfo {
 export type MigratableAccount = Account & { keyIdIndex: number };
 
 export type IssuerKey = string; // {assetCode}:{issuer/contract ID} issuer pub key for classic, contract ID for tokens
-export type CollectibleKey = string; // {collectionAddress}:{tokenId}
 export type AssetVisibility = "visible" | "hidden";
 
 export interface AllowList {
@@ -117,11 +116,6 @@ export interface Response {
     visibility: AssetVisibility;
   };
   hiddenAssets: Record<IssuerKey, AssetVisibility>;
-  collectibleVisibility: {
-    collectible: CollectibleKey;
-    visibility: AssetVisibility;
-  };
-  hiddenCollectibles: Record<CollectibleKey, AssetVisibility>;
   isOverwritingAccount: boolean;
   isDismissed: boolean;
   collectiblesList: CollectibleContract[];
@@ -320,18 +314,7 @@ export interface SorobanBalance {
 
 export type TokenBalances = SorobanBalance[];
 
-export interface AssetBalanceChange {
-  asset_type: string;
-  asset_code?: string;
-  asset_issuer?: string;
-  type: string;
-  from: string;
-  to: string;
-  amount: string;
-}
-
 export type HorizonOperation = Horizon.ServerApi.OperationRecord & {
-  asset_balance_changes?: AssetBalanceChange[];
   account: string;
   amount?: string;
   starting_balance?: string;
@@ -446,17 +429,7 @@ export interface CollectibleResponse {
   metadata: CollectibleMetadata | null;
 }
 
-/**
- * Represents a single collectible tracked by the wallet.
- *
- * @property {boolean} [isUserStored] - Indicates how this collectible entered the
- * wallet. Set to `true` when the collectible was explicitly added or pinned by
- * the user (for example, via an "Add collectible" action). Leave undefined or
- * `false` when the collectible is only present because it was discovered or
- * cached from transaction history or external scans.
- */
 export interface Collectible {
-  isUserStored?: boolean;
   collectionAddress: string;
   collectionName: string;
   owner: string;
@@ -518,8 +491,8 @@ export interface Collection {
     collectibles: Collectible[];
   };
   error?: {
-    collectionAddress: string;
-    errorMessage: string;
+    collection_address: string;
+    error_message: string;
   };
 }
 

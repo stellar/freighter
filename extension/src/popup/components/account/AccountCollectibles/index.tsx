@@ -1,181 +1,126 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 
 import { Collection } from "@shared/api/types/types";
-import {
-  ScreenReaderOnly,
-  Sheet,
-  SheetContent,
-  SheetTitle,
-} from "popup/basics/shadcn/Sheet";
+
 import { CollectibleDetail, SelectedCollectible } from "../CollectibleDetail";
-import { CollectibleInfoImage } from "../CollectibleInfo";
 
 import "./styles.scss";
 
 const CollectionsList = ({
   collections,
-  showHidden,
-  isCollectibleHidden,
-  onCloseCollectible,
+  handleItemClick,
 }: {
   collections: Collection[];
-  showHidden: boolean;
-  isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
-  onCloseCollectible: () => void;
+  handleItemClick: (collectible: SelectedCollectible) => void;
 }) => {
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [detailData, setDetailData] = useState<SelectedCollectible | null>(
-    null,
-  );
+  const { t } = useTranslation();
 
-  const handleOpenCollectible = (collectible: SelectedCollectible) => {
-    setDetailData(collectible);
-    setIsDetailOpen(true);
-  };
+  // every collection has an error, so nothing to render
+  if (collections.every((collection) => collection.error)) {
+    return (
+      <div className="AccountCollectibles__empty">
+        <Icon.Grid01 />
+        <span>{t("Error loading collectibles")}</span>
+      </div>
+    );
+  }
 
-  const handleCloseCollectible = () => {
-    setIsDetailOpen(false);
-    onCloseCollectible();
-  };
-
-  const handleAnimationEnd = () => {
-    if (!isDetailOpen) {
-      setDetailData(null);
+  return collections.map(({ collection, error }) => {
+    // if the collection is missing or has an error, skip rendering
+    if (error || !collection) {
+      return null;
     }
-  };
 
-  return (
-    <>
-      {collections.map(({ collection, error }) => {
-        // if the collection is missing or has an error, skip rendering
-        if (error || !collection) {
-          return null;
-        }
-
-        // filter collectibles based on showHidden toggle
-        const collectiblesToShow = showHidden
-          ? collection.collectibles.filter((item) =>
-              isCollectibleHidden(collection.address, item.tokenId),
-            )
-          : collection.collectibles.filter(
-              (item) => !isCollectibleHidden(collection.address, item.tokenId),
-            );
-
-        // if no collectibles to show, don't render the collection
-        if (collectiblesToShow.length === 0) {
-          return null;
-        }
-
-        return (
+    // render the collection we do have
+    return (
+      <div
+        className="AccountCollectibles__collection"
+        key={collection.address}
+        data-testid="account-collectible"
+      >
+        <div className="AccountCollectibles__collection__header">
           <div
-            className="AccountCollectibles__collection"
-            key={collection.address}
-            data-testid="account-collectible"
+            className="AccountCollectibles__collection__header__name"
+            data-testid="account-collection-name"
           >
-            <div className="AccountCollectibles__collection__header">
-              <div
-                className="AccountCollectibles__collection__header__name"
-                data-testid="account-collection-name"
-              >
-                <Icon.Grid01 />
-                {collection.name}
-              </div>
-              <div
-                className="AccountCollectibles__collection__header__count"
-                data-testid="account-collection-count"
-              >
-                {collectiblesToShow.length}
-              </div>
-            </div>
-            <div
-              className="AccountCollectibles__collection__grid"
-              data-testid="account-collection-grid"
-            >
-              {collectiblesToShow.map((item) => (
+            <Icon.Grid01 />
+            {collection.name}
+          </div>
+          <div
+            className="AccountCollectibles__collection__header__count"
+            data-testid="account-collection-count"
+          >
+            {collection.collectibles.length}
+          </div>
+        </div>
+        <div
+          className="AccountCollectibles__collection__grid"
+          data-testid="account-collection-grid"
+        >
+          {collection.collectibles.map((item) => {
+            if (!item.metadata) {
+              return (
                 <div
-                  className={`AccountCollectibles__collection__grid__item${
-                    showHidden
-                      ? " AccountCollectibles__collection__grid__item--hidden"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    handleOpenCollectible({
-                      collectionAddress: collection.address,
-                      tokenId: item.tokenId,
-                    })
-                  }
+                  className="AccountCollectibles__collection__grid__item"
                   key={item.tokenId}
                 >
-                  <CollectibleInfoImage
-                    image={item.metadata?.image}
-                    name={item.tokenId}
-                  />
+                  <div
+                    className="AccountCollectibles__collection__grid__item__placeholder"
+                    data-testid="account-collectible-placeholder"
+                  >
+                    <Icon.Image01 />
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        );
-      })}
-
-      {/* Sheet rendered outside the map to persist during close animation */}
-      <Sheet
-        open={isDetailOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            handleCloseCollectible();
-          }
-        }}
-      >
-        <SheetContent
-          aria-describedby={undefined}
-          side="bottom"
-          className="AccountCollectibles__collectible-detail__sheet"
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          onAnimationEnd={handleAnimationEnd}
-        >
-          <ScreenReaderOnly>
-            <SheetTitle>{detailData?.tokenId || ""}</SheetTitle>
-          </ScreenReaderOnly>
-          {detailData && (
-            <CollectibleDetail
-              selectedCollectible={detailData}
-              handleItemClose={handleCloseCollectible}
-              isHidden={showHidden}
-            />
-          )}
-        </SheetContent>
-      </Sheet>
-    </>
-  );
+              );
+            }
+            return (
+              <div
+                className="AccountCollectibles__collection__grid__item"
+                onClick={() =>
+                  handleItemClick({
+                    collectionAddress: collection.address,
+                    tokenId: item.tokenId,
+                  })
+                }
+                key={item.tokenId}
+              >
+                <img
+                  data-testid="account-collectible-image"
+                  src={item.metadata?.image}
+                  alt={item.tokenId}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  });
 };
 
 interface AccountCollectiblesProps {
   collections: Collection[];
-  refreshHiddenCollectibles: () => Promise<void>;
-  isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
   onClickCollectible?: (selectedCollectible: SelectedCollectible) => void;
 }
 
 export const AccountCollectibles = ({
   collections,
-  refreshHiddenCollectibles,
-  isCollectibleHidden,
 }: AccountCollectiblesProps) => {
   const { t } = useTranslation();
-
-  // Check if there are any valid collections with collectibles
-  const hasValidCollections = collections.some((c) => c.collection && !c.error);
+  const [selectedCollectible, setSelectedCollectible] =
+    useState<SelectedCollectible | null>(null);
 
   return (
     <div className="AccountCollectibles" data-testid="account-collectibles">
-      {hasValidCollections ? (
+      {collections.length ? (
         <CollectionsList
           collections={collections}
-          showHidden={false}
-          isCollectibleHidden={isCollectibleHidden}
-          onCloseCollectible={refreshHiddenCollectibles}
+          handleItemClick={(selectedCollectibleItem: SelectedCollectible) =>
+            setSelectedCollectible(selectedCollectibleItem)
+          }
         />
       ) : (
         <div className="AccountCollectibles__empty">
@@ -183,6 +128,14 @@ export const AccountCollectibles = ({
           <span>{t("No collectibles yet")}</span>
         </div>
       )}
+      {selectedCollectible &&
+        createPortal(
+          <CollectibleDetail
+            selectedCollectible={selectedCollectible}
+            handleItemClose={() => setSelectedCollectible(null)}
+          />,
+          document.querySelector("#modal-root")!,
+        )}
     </div>
   );
 };

@@ -1,66 +1,12 @@
 import React from "react";
 import { render, waitFor, screen, within } from "@testing-library/react";
 
-import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import { AccountCollectibles } from "popup/components/account/AccountCollectibles";
-import { mockAccounts, mockCollectibles, Wrapper } from "../../__testHelpers__";
-import {
-  TESTNET_NETWORK_DETAILS,
-  DEFAULT_NETWORKS,
-} from "@shared/constants/stellar";
-import { ROUTES } from "popup/constants/routes";
-
-// Mock functions for hidden collectibles
-const mockRefreshHiddenCollectibles = jest.fn().mockResolvedValue(undefined);
-const mockIsCollectibleHidden = jest.fn().mockReturnValue(false);
+import { mockCollectibles } from "../../__testHelpers__";
 
 describe("AccountCollectibles", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
   it("renders collectibles", async () => {
-    render(
-      <Wrapper
-        routes={[ROUTES.account]}
-        state={{
-          auth: {
-            error: null,
-            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
-            publicKey:
-              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
-            allAccounts: mockAccounts,
-          },
-          settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
-            networksList: DEFAULT_NETWORKS,
-            isHideDustEnabled: false,
-          },
-          cache: {
-            balanceData: {
-              [TESTNET_NETWORK_DETAILS.network]: {
-                G1: {
-                  balances: {},
-                },
-              },
-            },
-            icons: {},
-            homeDomains: {},
-            tokenLists: [],
-            tokenDetails: {},
-            historyData: {},
-            tokenPrices: {},
-            collections: {},
-          },
-        }}
-      >
-        <AccountCollectibles
-          collections={mockCollectibles}
-          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
-          isCollectibleHidden={mockIsCollectibleHidden}
-        />
-      </Wrapper>,
-    );
+    render(<AccountCollectibles collections={mockCollectibles} />);
     await waitFor(() => screen.getByTestId("account-collectibles"));
     expect(screen.getByTestId("account-collectibles")).toBeDefined();
     expect(screen.queryAllByTestId("account-collectible")).toHaveLength(3);
@@ -134,102 +80,26 @@ describe("AccountCollectibles", () => {
     );
   });
   it("renders empty state", async () => {
-    render(
-      <Wrapper
-        routes={[ROUTES.account]}
-        state={{
-          auth: {
-            error: null,
-            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
-            publicKey:
-              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
-            allAccounts: mockAccounts,
-          },
-          settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
-            networksList: DEFAULT_NETWORKS,
-            isHideDustEnabled: false,
-          },
-          cache: {
-            balanceData: {
-              [TESTNET_NETWORK_DETAILS.network]: {
-                G1: {
-                  balances: {},
-                },
-              },
-            },
-            icons: {},
-            homeDomains: {},
-            tokenLists: [],
-            tokenDetails: {},
-            historyData: {},
-            tokenPrices: {},
-            collections: {},
-          },
-        }}
-      >
-        <AccountCollectibles
-          collections={[]}
-          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
-          isCollectibleHidden={mockIsCollectibleHidden}
-        />
-      </Wrapper>,
-    );
+    render(<AccountCollectibles collections={[]} />);
     await waitFor(() => screen.getByTestId("account-collectibles"));
     expect(screen.getByTestId("account-collectibles")).toBeDefined();
     expect(screen.getByText("No collectibles yet")).toBeDefined();
   });
   it("renders error state", async () => {
     render(
-      <Wrapper
-        routes={[ROUTES.account]}
-        state={{
-          auth: {
-            error: null,
-            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
-            publicKey:
-              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
-            allAccounts: mockAccounts,
-          },
-          settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
-            networksList: DEFAULT_NETWORKS,
-            isHideDustEnabled: false,
-          },
-          cache: {
-            balanceData: {
-              [TESTNET_NETWORK_DETAILS.network]: {
-                G1: {
-                  balances: {},
-                },
-              },
-            },
-            icons: {},
-            homeDomains: {},
-            tokenLists: [],
-            tokenDetails: {},
-            historyData: {},
-            tokenPrices: {},
-            collections: {},
-          },
-        }}
-      >
-        <AccountCollectibles
-          collections={[
-            { error: { collectionAddress: "test", errorMessage: "test" } },
-          ]}
-          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
-          isCollectibleHidden={mockIsCollectibleHidden}
-        />
-      </Wrapper>,
+      <AccountCollectibles
+        collections={[
+          { error: { collection_address: "test", error_message: "test" } },
+        ]}
+      />,
     );
     await waitFor(() => screen.getByTestId("account-collectibles"));
     expect(screen.getByTestId("account-collectibles")).toBeDefined();
-    expect(screen.getByText("No collectibles yet")).toBeDefined();
+    expect(screen.getByText("Error loading collectibles")).toBeDefined();
   });
   it("renders some collectibles and omits the ones with an error", async () => {
     const partialMockCollectibles = [
-      { error: { collectionAddress: "test", errorMessage: "test" } },
+      { error: { collection_address: "test", error_message: "test" } },
       {
         collection: {
           address: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA", // Using XLM contract address for testing
@@ -240,7 +110,7 @@ describe("AccountCollectibles", () => {
               collectionAddress:
                 "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
               collectionName: "Stellar Frogs",
-              owner: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+              owner: "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
               tokenId: "1",
               tokenUri:
                 "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
@@ -261,7 +131,7 @@ describe("AccountCollectibles", () => {
               collectionName: "Stellar Frogs",
               collectionAddress:
                 "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
-              owner: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+              owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
               tokenId: "2",
               tokenUri: "https://nftcalendar.io/token/2",
               metadata: {
@@ -281,7 +151,7 @@ describe("AccountCollectibles", () => {
               collectionName: "Stellar Frogs",
               collectionAddress:
                 "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
-              owner: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+              owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
               tokenId: "3",
               tokenUri: "https://nftcalendar.io/token/3",
               metadata: {
@@ -301,47 +171,7 @@ describe("AccountCollectibles", () => {
         },
       },
     ];
-    render(
-      <Wrapper
-        routes={[ROUTES.account]}
-        state={{
-          auth: {
-            error: null,
-            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
-            publicKey:
-              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
-            allAccounts: mockAccounts,
-          },
-          settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
-            networksList: DEFAULT_NETWORKS,
-            isHideDustEnabled: false,
-          },
-          cache: {
-            balanceData: {
-              [TESTNET_NETWORK_DETAILS.network]: {
-                G1: {
-                  balances: {},
-                },
-              },
-            },
-            icons: {},
-            homeDomains: {},
-            tokenLists: [],
-            tokenDetails: {},
-            historyData: {},
-            tokenPrices: {},
-            collections: {},
-          },
-        }}
-      >
-        <AccountCollectibles
-          collections={partialMockCollectibles}
-          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
-          isCollectibleHidden={mockIsCollectibleHidden}
-        />
-      </Wrapper>,
-    );
+    render(<AccountCollectibles collections={partialMockCollectibles} />);
     await waitFor(() => screen.getByTestId("account-collectibles"));
     expect(screen.getByTestId("account-collectibles")).toBeDefined();
     expect(screen.queryByText("Error loading collectibles")).toBeNull();

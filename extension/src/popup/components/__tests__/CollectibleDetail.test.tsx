@@ -232,17 +232,8 @@ describe("CollectibleDetail", () => {
     expect(screen.getByTestId("CollectibleDetail__attributes")).toBeDefined();
     expect(screen.getByTestId("CollectibleDetail__base-info")).toBeDefined();
     expect(
-      within(
-        screen.getByTestId("CollectibleDetail__base-info__row__name"),
-      ).getByTestId("CollectibleDetail__base-info__row__name__label")
-        .textContent,
-    ).toBe("Name");
-    expect(
-      within(
-        screen.getByTestId("CollectibleDetail__base-info__row__name"),
-      ).getByTestId("CollectibleDetail__base-info__row__name__value")
-        .textContent,
-    ).toBe("Token #2");
+      screen.queryByTestId("CollectibleDetail__base-info__row__name"),
+    ).toBeNull();
   });
   it("renders collectible detail with no collection name", async () => {
     render(
@@ -328,19 +319,9 @@ describe("CollectibleDetail", () => {
     expect(screen.getByTestId("CollectibleDetail__description")).toBeDefined();
     expect(screen.getByTestId("CollectibleDetail__attributes")).toBeDefined();
     expect(screen.getByTestId("CollectibleDetail__base-info")).toBeDefined();
-
     expect(
-      within(
-        screen.getByTestId("CollectibleDetail__base-info__row__collectionName"),
-      ).getByTestId("CollectibleDetail__base-info__row__collectionName__label")
-        .textContent,
-    ).toBe("Collection");
-    expect(
-      within(
-        screen.getByTestId("CollectibleDetail__base-info__row__collectionName"),
-      ).getByTestId("CollectibleDetail__base-info__row__collectionName__value")
-        .textContent,
-    ).toBe("Stellar Frogs");
+      screen.queryByTestId("CollectibleDetail__base-info__row__collectionName"),
+    ).toBeNull();
   });
   it("renders collectible detail with no metadata description", async () => {
     render(
@@ -429,15 +410,8 @@ describe("CollectibleDetail", () => {
     expect(screen.getByTestId("CollectibleDetail__attributes")).toBeDefined();
     expect(screen.getByTestId("CollectibleDetail__base-info")).toBeDefined();
     expect(
-      within(screen.getByTestId("CollectibleDetail__description")).getByTestId(
-        "CollectibleDetail__description__label",
-      ).textContent,
-    ).toBe("Description");
-    expect(
-      within(screen.getByTestId("CollectibleDetail__description")).getByTestId(
-        "CollectibleDetail__description__value",
-      ).textContent,
-    ).toBe("No description available");
+      screen.queryByTestId("CollectibleDetail__base-info__row__description"),
+    ).toBeNull();
   });
   it("renders collectible detail with no attributes", async () => {
     render(
@@ -570,147 +544,5 @@ describe("CollectibleDetail", () => {
     expect(newTabSpy).toHaveBeenCalledWith({
       url: "https://nftcalendar.io/external/2",
     });
-  });
-  it("shows 'This collectible is hidden' notification when isHidden is true", async () => {
-    render(
-      <Wrapper
-        routes={[ROUTES.account]}
-        state={{
-          auth: {
-            error: null,
-            applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
-            publicKey:
-              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
-            allAccounts: mockAccounts,
-          },
-          settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
-            networksList: DEFAULT_NETWORKS,
-            isSorobanPublicEnabled: true,
-            isRpcHealthy: true,
-            userNotification: {
-              enabled: false,
-              message: "",
-            },
-          },
-          cache: {
-            collections: {
-              [TESTNET_NETWORK_DETAILS.network]: {
-                [TEST_PUBLIC_KEY]: mockCollectibles,
-              },
-            },
-          },
-        }}
-      >
-        <CollectibleDetail
-          selectedCollectible={{
-            collectionAddress:
-              "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
-            tokenId: "2",
-          }}
-          handleItemClose={() => {}}
-          isHidden={true}
-        />
-      </Wrapper>,
-    );
-    await waitFor(() => screen.getByTestId("CollectibleDetail"));
-
-    // Should show the hidden notification
-    expect(screen.getByText("This collectible is hidden")).toBeDefined();
-  });
-  it("does not show hidden notification when isHidden is false", async () => {
-    render(
-      <Wrapper
-        routes={[ROUTES.account]}
-        state={{
-          auth: {
-            error: null,
-            applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
-            publicKey:
-              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
-            allAccounts: mockAccounts,
-          },
-          settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
-            networksList: DEFAULT_NETWORKS,
-            isSorobanPublicEnabled: true,
-            isRpcHealthy: true,
-            userNotification: {
-              enabled: false,
-              message: "",
-            },
-          },
-          cache: {
-            collections: {
-              [TESTNET_NETWORK_DETAILS.network]: {
-                [TEST_PUBLIC_KEY]: mockCollectibles,
-              },
-            },
-          },
-        }}
-      >
-        <CollectibleDetail
-          selectedCollectible={{
-            collectionAddress:
-              "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
-            tokenId: "2",
-          }}
-          handleItemClose={() => {}}
-          isHidden={false}
-        />
-      </Wrapper>,
-    );
-    await waitFor(() => screen.getByTestId("CollectibleDetail"));
-
-    // Should not show the hidden notification
-    expect(screen.queryByText("This collectible is hidden")).toBeNull();
-  });
-  it("renders menu button for hide/show functionality", async () => {
-    render(
-      <Wrapper
-        routes={[ROUTES.account]}
-        state={{
-          auth: {
-            error: null,
-            applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
-            publicKey:
-              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
-            allAccounts: mockAccounts,
-          },
-          settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
-            networksList: DEFAULT_NETWORKS,
-            isSorobanPublicEnabled: true,
-            isRpcHealthy: true,
-            userNotification: {
-              enabled: false,
-              message: "",
-            },
-          },
-          cache: {
-            collections: {
-              [TESTNET_NETWORK_DETAILS.network]: {
-                [TEST_PUBLIC_KEY]: mockCollectibles,
-              },
-            },
-          },
-        }}
-      >
-        <CollectibleDetail
-          selectedCollectible={{
-            collectionAddress:
-              "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
-            tokenId: "2",
-          }}
-          handleItemClose={() => {}}
-        />
-      </Wrapper>,
-    );
-    await waitFor(() => screen.getByTestId("CollectibleDetail"));
-
-    // Should have the menu button for additional actions
-    expect(
-      screen.getByTestId("CollectibleDetail__header__right-button"),
-    ).toBeDefined();
   });
 });

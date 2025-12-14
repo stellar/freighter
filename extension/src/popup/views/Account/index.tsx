@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useContext } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
@@ -18,7 +18,7 @@ import { isMainnet } from "helpers/stellar";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountCollectibles } from "popup/components/account/AccountCollectibles";
 import { AccountHeader } from "popup/components/account/AccountHeader";
-import { useHiddenCollectibles } from "popup/components/account/hooks/useHiddenCollectibles";
+import { AssetDetail } from "popup/components/account/AssetDetail";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
@@ -30,6 +30,7 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
+import { collectionsSelector } from "popup/ducks/cache";
 
 import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 import { useGetAccountHistoryData } from "./hooks/useGetAccountHistoryData";
@@ -48,6 +49,8 @@ export const Account = () => {
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
+  const collections = useSelector(collectionsSelector);
+  const [selectedAsset, setSelectedAsset] = useState("");
   const { activeTab } = useContext(AccountTabsContext);
 
   const isFullscreenModeEnabled = isFullscreenMode();
@@ -63,8 +66,6 @@ export const Account = () => {
     useGetAccountHistoryData();
 
   const { state: iconsData, fetchData: fetchIconsData } = useGetIcons();
-  const { refreshHiddenCollectibles, isCollectibleHidden } =
-    useHiddenCollectibles();
 
   const previousAccountBalancesRef = useRef<AccountBalances | null>(null);
 
@@ -153,6 +154,26 @@ export const Account = () => {
       ? iconsData?.data?.icons
       : {};
 
+  if (
+    !hasError &&
+    selectedAsset &&
+    accountData.data.type === AppDataType.RESOLVED
+  ) {
+    return (
+      <AssetDetail
+        accountBalances={accountData.data.balances}
+        historyData={historyData.data}
+        networkDetails={accountData.data.networkDetails}
+        publicKey={accountData.data.publicKey}
+        selectedAsset={selectedAsset}
+        setSelectedAsset={setSelectedAsset}
+        subentryCount={accountData.data.balances.subentryCount}
+        tokenPrices={accountData.data.tokenPrices}
+        assetIcons={resolvedIcons}
+      />
+    );
+  }
+
   const tokenPrices = resolvedData?.tokenPrices || {};
   const balances = resolvedData?.balances.balances!;
   const totalBalanceUsd = getTotalUsd(tokenPrices, balances);
@@ -187,10 +208,8 @@ export const Account = () => {
         }}
         roundedTotalBalanceUsd={roundedTotalBalanceUsd}
         isFunded={!!resolvedData?.balances?.isFunded}
-        refreshHiddenCollectibles={refreshHiddenCollectibles}
-        isCollectibleHidden={isCollectibleHidden}
       />
-      <View.Content hasNoPadding>
+      <View.Content hasNoTopPadding>
         <div className="AccountView" data-testid="account-view">
           {hasError && (
             <div className="AccountView__fetch-fail">
@@ -264,18 +283,20 @@ export const Account = () => {
                   data-testid="account-assets"
                 >
                   <AccountAssets
-                    balances={resolvedData.balances}
-                    historyData={historyData.data}
+                    sortedBalances={resolvedData.balances.balances}
                     assetPrices={tokenPrices}
                     assetIcons={resolvedIcons}
+                    setSelectedAsset={setSelectedAsset}
                   />
                 </div>
               ),
               <div data-testid="account-collectibles">
                 <AccountCollectibles
-                  collections={accountData.data?.collectibles.collections || []}
-                  refreshHiddenCollectibles={refreshHiddenCollectibles}
-                  isCollectibleHidden={isCollectibleHidden}
+                  collections={
+                    collections[resolvedData?.networkDetails?.network || ""]?.[
+                      resolvedData?.publicKey || ""
+                    ] || []
+                  }
                 />
               </div>,
             ]}

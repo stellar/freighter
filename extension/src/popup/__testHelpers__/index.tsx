@@ -39,11 +39,6 @@ export const makeDummyStore = (state: any) =>
     middleware: (defaults) => defaults({ serializableCheck: false }),
   });
 
-// Store reference for mocking in tests
-let testStore: ReturnType<typeof makeDummyStore> | null = null;
-
-export const getTestStore = () => testStore;
-
 export const Wrapper: React.FunctionComponent<any> = ({
   children,
   state,
@@ -53,20 +48,21 @@ export const Wrapper: React.FunctionComponent<any> = ({
   state: {};
   routes?: string[];
 }) => {
-  const store = makeDummyStore({
-    auth: {
-      allAccounts: ["G123"],
-      publicKey: "G123",
-      applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
-    },
-    transactionSubmission: transactionSubmissionInitialState,
-    ...state,
-  });
-  testStore = store;
-
   return (
     <MemoryRouter initialEntries={routes || []}>
-      <Provider store={store}>{children}</Provider>
+      <Provider
+        store={makeDummyStore({
+          auth: {
+            allAccounts: ["G123"],
+            publicKey: "G123",
+            applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+          },
+          transactionSubmission: transactionSubmissionInitialState,
+          ...state,
+        })}
+      >
+        {children}
+      </Provider>
     </MemoryRouter>
   );
 };
@@ -375,7 +371,7 @@ export const mockCollectibles = [
         {
           collectionAddress: "CCCSorobanDomainsCollection",
           collectionName: "Soroban Domains",
-          owner: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+          owner: "CCCSorobanDomainsCollection",
           tokenId: "102510",
           tokenUri: "https://nftcalendar.io/token/102510",
           metadata: {
@@ -394,7 +390,7 @@ export const mockCollectibles = [
         {
           collectionAddress: "CCCSorobanDomainsCollection",
           collectionName: "Soroban Domains",
-          owner: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+          owner: "CCCSorobanDomainsCollection",
           tokenId: "102589",
           tokenUri: "https://nftcalendar.io/token/102589",
           metadata: {
@@ -423,7 +419,7 @@ export const mockCollectibles = [
         {
           collectionAddress: "CCCFutureMonkeysCollection",
           collectionName: "Future Monkeys",
-          owner: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+          owner: "CCCFutureMonkeysCollection",
           tokenId: "111",
           tokenUri: "https://nftcalendar.io/token/111",
           metadata: {
