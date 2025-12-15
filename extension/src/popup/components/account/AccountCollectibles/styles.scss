@@ -79,4 +79,8 @@
       }
     }
   }
+
+  &__collectible-detail__sheet {
+    z-index: var(--z-index-modal);
+  }
 }
