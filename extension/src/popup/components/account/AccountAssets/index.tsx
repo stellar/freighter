@@ -7,13 +7,20 @@ import isEqual from "lodash/isEqual";
 
 import { ApiTokenPrices, AssetIcons, Balance } from "@shared/api/types";
 import { retryAssetIcon } from "@shared/api/internal";
-import { AssetType } from "@shared/api/types/account-balance";
+import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
 import { formatTokenAmount } from "popup/helpers/soroban";
 import { isAssetSuspicious } from "popup/helpers/blockaid";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+
+import {
+  ScreenReaderOnly,
+  Sheet,
+  SheetContent,
+  SheetTitle,
+} from "popup/basics/shadcn/Sheet";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -22,8 +29,10 @@ import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import ImageMissingIcon from "popup/assets/image-missing.svg?react";
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
 import { getPriceDeltaColor } from "popup/helpers/balance";
+import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
 
 import "./styles.scss";
+import { AssetDetail } from "../AssetDetail";
 
 const getIsXlm = (code: string) => code === "XLM";
 
@@ -175,20 +184,21 @@ export const AssetIcon = memo(
 
 interface AccountAssetsProps {
   assetIcons: AssetIcons;
-  sortedBalances: AssetType[];
+  balances: AccountBalances;
+  historyData: AccountHistoryData | null;
   assetPrices?: ApiTokenPrices;
-  setSelectedAsset?: (selectedAsset: string) => void;
 }
 
 export const AccountAssets = ({
   assetIcons: inputAssetIcons,
-  sortedBalances,
+  balances,
   assetPrices,
-  setSelectedAsset,
+  historyData,
 }: AccountAssetsProps) => {
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<string>("");
 
   useEffect(() => {
     setAssetIcons(inputAssetIcons);
@@ -221,9 +231,7 @@ export const AccountAssets = ({
   };
 
   const handleClick = (code: string) => {
-    if (setSelectedAsset) {
-      setSelectedAsset(getIsXlm(code) ? "native" : code);
-    }
+    setSelectedAsset(getIsXlm(code) ? "native" : code);
   };
 
   const getLPShareCode = (reserves: Horizon.HorizonApi.Reserve[]) => {
@@ -246,7 +254,7 @@ export const AccountAssets = ({
 
   return (
     <>
-      {sortedBalances.map((rb) => {
+      {balances.balances.map((rb) => {
         let isLP = false;
         let issuer = {
           key: "",
@@ -281,80 +289,98 @@ export const AccountAssets = ({
             : rb.total.toFixed();
 
         return (
-          <div
-            data-testid="account-assets-item"
-            className={`AccountAssets__asset ${
-              setSelectedAsset && !isLP
-                ? "AccountAssets__asset--has-detail"
-                : ""
-            }`}
-            key={canonicalAsset}
-            onClick={isLP ? () => null : () => handleClick(canonicalAsset)}
-          >
-            <div className="AccountAssets__copy-left">
-              <AssetIcon
-                assetIcons={assetIcons}
-                code={code}
-                issuerKey={issuer?.key}
-                retryAssetIconFetch={retryAssetIconFetch}
-                isLPShare={"liquidityPoolId" in rb && !!rb.liquidityPoolId}
-                isSuspicious={isSuspicious}
-              />
-              <div className="asset-native-value">
-                <span className="asset-code">{code}</span>
-                <div className="asset-native-amount" data-testid="asset-amount">
-                  {formatAmount(amountVal)}
+          <Sheet open={selectedAsset === canonicalAsset} key={canonicalAsset}>
+            <div
+              data-testid="account-assets-item"
+              className={`AccountAssets__asset ${
+                !isLP ? "AccountAssets__asset--has-detail" : ""
+              }`}
+              onClick={isLP ? () => null : () => handleClick(canonicalAsset)}
+            >
+              <div className="AccountAssets__copy-left">
+                <AssetIcon
+                  assetIcons={assetIcons}
+                  code={code}
+                  issuerKey={issuer?.key}
+                  retryAssetIconFetch={retryAssetIconFetch}
+                  isLPShare={"liquidityPoolId" in rb && !!rb.liquidityPoolId}
+                  isSuspicious={isSuspicious}
+                />
+                <div className="asset-native-value">
+                  <span className="asset-code">{code}</span>
+                  <div
+                    className="asset-native-amount"
+                    data-testid="asset-amount"
+                  >
+                    {formatAmount(amountVal)}
+                  </div>
                 </div>
               </div>
-            </div>
-            {assetPrice ? (
-              <div className="AccountAssets__copy-right">
-                <div
-                  className="asset-usd-amount"
-                  data-testid={`asset-amount-${canonicalAsset}`}
-                >
-                  $
-                  {formatAmount(
-                    roundUsdValue(
-                      new BigNumber(assetPrice.currentPrice)
-                        .multipliedBy(rb.total)
-                        .toString(),
-                    ),
-                  )}
-                </div>
-                {assetPrice.percentagePriceChange24h ? (
+              {assetPrice ? (
+                <div className="AccountAssets__copy-right">
                   <div
-                    data-testid={`asset-price-delta-${canonicalAsset}`}
-                    className={`asset-value-delta ${getPriceDeltaColor(
-                      new BigNumber(
-                        roundUsdValue(assetPrice.percentagePriceChange24h),
+                    className="asset-usd-amount"
+                    data-testid={`asset-amount-${canonicalAsset}`}
+                  >
+                    $
+                    {formatAmount(
+                      roundUsdValue(
+                        new BigNumber(assetPrice.currentPrice)
+                          .multipliedBy(rb.total)
+                          .toString(),
                       ),
                     )}
+                  </div>
+                  {assetPrice.percentagePriceChange24h ? (
+                    <div
+                      data-testid={`asset-price-delta-${canonicalAsset}`}
+                      className={`asset-value-delta ${getPriceDeltaColor(
+                        new BigNumber(
+                          roundUsdValue(assetPrice.percentagePriceChange24h),
+                        ),
+                      )}
                     `}
-                  >
-                    {formatAmount(
-                      roundUsdValue(assetPrice.percentagePriceChange24h),
-                    )}
-                    %
-                  </div>
-                ) : (
-                  <div
-                    data-testid={`asset-price-delta-${canonicalAsset}`}
-                    className="asset-value-delta"
-                  >
-                    --
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div
-                data-testid={`asset-price-delta-${canonicalAsset}`}
-                className="asset-value-delta"
-              >
-                --
-              </div>
-            )}
-          </div>
+                    >
+                      {formatAmount(
+                        roundUsdValue(assetPrice.percentagePriceChange24h),
+                      )}
+                      %
+                    </div>
+                  ) : (
+                    <div
+                      data-testid={`asset-price-delta-${canonicalAsset}`}
+                      className="asset-value-delta"
+                    >
+                      --
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div
+                  data-testid={`asset-price-delta-${canonicalAsset}`}
+                  className="asset-value-delta"
+                >
+                  --
+                </div>
+              )}
+            </div>
+            <SheetContent
+              onOpenAutoFocus={(e) => e.preventDefault()}
+              aria-describedby={undefined}
+              side="bottom"
+              className="AccountAssets__asset-detail__wrapper"
+            >
+              <ScreenReaderOnly>
+                <SheetTitle>{canonicalAsset}</SheetTitle>
+              </ScreenReaderOnly>
+              <AssetDetail
+                accountBalances={balances}
+                historyData={historyData}
+                selectedAsset={canonicalAsset}
+                handleClose={() => setSelectedAsset("")}
+              />
+            </SheetContent>
+          </Sheet>
         );
       })}
     </>
