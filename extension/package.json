@@ -1,6 +1,6 @@
 {
   "name": "extension",
-  "version": "5.36.1",
+  "version": "5.36.2",
   "license": "Apache-2.0",
   "prettier": "../.prettierrc.yaml",
   "scripts": {
@@ -22,7 +22,7 @@
     "@shared/api": "1.0.0",
     "@shared/constants": "1.0.0",
     "@shared/helpers": "1.0.0",
-    "@stellar/design-system": "3.1.1",
+    "@stellar/design-system": "3.2.7",
     "@stellar/typescript-wallet-sdk-km": "1.9.0",
     "@testing-library/react": "16.3.0",
     "@testing-library/user-event": "14.6.1",
@@ -66,9 +66,9 @@
     "prop-types": "15.8.1",
     "punycode": "2.3.1",
     "qrcode.react": "4.2.0",
-    "react": "19.0.1",
+    "react": "19.0.3",
     "react-copy-to-clipboard": "5.1.0",
-    "react-dom": "19.0.1",
+    "react-dom": "19.0.3",
     "react-json-pretty": "2.2.0",
     "react-redux": "9.2.0",
     "react-router-dom": "7.5.1",

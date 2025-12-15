@@ -3321,7 +3321,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@floating-ui/dom@npm:^1.6.13":
+"@floating-ui/dom@npm:^1.7.4":
   version: 1.7.4
   resolution: "@floating-ui/dom@npm:1.7.4"
   dependencies:
@@ -4814,29 +4814,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stellar/design-system@npm:3.1.1":
-  version: 3.1.1
-  resolution: "@stellar/design-system@npm:3.1.1"
+"@stellar/design-system@npm:3.2.7":
+  version: 3.2.7
+  resolution: "@stellar/design-system@npm:3.2.7"
   dependencies:
-    "@floating-ui/dom": "npm:^1.6.13"
-    bignumber.js: "npm:^9.1.2"
+    "@floating-ui/dom": "npm:^1.7.4"
+    bignumber.js: "npm:^9.3.1"
     lodash: "npm:^4.17.21"
-    react-copy-to-clipboard: "npm:^5.1.0"
+    react-copy-to-clipboard-ts: "npm:^1.3.0"
     tslib: "npm:^2.8.1"
   peerDependencies:
     react: ">=18.x"
     react-dom: ">=18.x"
-  checksum: 10c0/d2c58a3ef651cfe45c9b8a02788b2a3419b109aaa91bab32592a64588f9b0f799455bee8c21d7b5aa85999125dc5cf509baf6d00883e7b0bde01f9d4bff2e49f
-  languageName: node
-  linkType: hard
-
-"@stellar/freighter-api@npm:6.0.1":
-  version: 6.0.1
-  resolution: "@stellar/freighter-api@npm:6.0.1"
-  dependencies:
-    buffer: "npm:6.0.3"
-    semver: "npm:7.7.1"
-  checksum: 10c0/52b27ee420c6b1b4ea535dce214492f832c7c69a6af5d956607653503e16d783c3807136e7ab84c44806cd5a50a31416b1ebe3b3a475ad7843d714c47d19d82d
+  checksum: 10c0/c0ccdf71381f56b03f0fb36a7e1049220251ad8d0239139be9fcb28c012d8839ab2de198a9fab81a5b7f2a01e13254268bc53f98fad9a2c4445686b568f96cf9
   languageName: node
   linkType: hard
 
@@ -4844,6 +4834,16 @@ __metadata:
   version: 2.0.0
   resolution: "@stellar/freighter-api@npm:2.0.0"
   checksum: 10c0/ff3379a89f001930504e129d04b6b8d408b120b6a5c39c25bbf927cf7a1dc66381baeb877610049492055fffe2a91ac877d253ad73521079a74895cc1e97d996
+  languageName: node
+  linkType: hard
+
+"@stellar/freighter-api@npm:latest":
+  version: 6.0.1
+  resolution: "@stellar/freighter-api@npm:6.0.1"
+  dependencies:
+    buffer: "npm:6.0.3"
+    semver: "npm:7.7.1"
+  checksum: 10c0/52b27ee420c6b1b4ea535dce214492f832c7c69a6af5d956607653503e16d783c3807136e7ab84c44806cd5a50a31416b1ebe3b3a475ad7843d714c47d19d82d
   languageName: node
   linkType: hard
 
@@ -8417,7 +8417,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"copy-to-clipboard@npm:^3.3.1":
+"copy-to-clipboard@npm:^3.3.1, copy-to-clipboard@npm:^3.3.3":
   version: 3.3.3
   resolution: "copy-to-clipboard@npm:3.3.3"
   dependencies:
@@ -9358,11 +9358,11 @@ __metadata:
     "@docusaurus/core": "npm:3.6.3"
     "@docusaurus/preset-classic": "npm:3.6.3"
     "@lavamoat/allow-scripts": "npm:3.3.2"
-    "@stellar/freighter-api": "npm:6.0.1"
+    "@stellar/freighter-api": "npm:latest"
     clsx: "npm:2.1.1"
-    react: "npm:19.0.1"
-    react-dom: "npm:19.0.1"
-    react-is: "npm:19.0.1"
+    react: "npm:19.0.3"
+    react-dom: "npm:19.0.3"
+    react-is: "npm:19.0.3"
     styled-components: "npm:6.1.14"
   languageName: unknown
   linkType: soft
@@ -10660,7 +10660,7 @@ __metadata:
     "@shared/api": "npm:1.0.0"
     "@shared/constants": "npm:1.0.0"
     "@shared/helpers": "npm:1.0.0"
-    "@stellar/design-system": "npm:3.1.1"
+    "@stellar/design-system": "npm:3.2.7"
     "@stellar/typescript-wallet-sdk-km": "npm:1.9.0"
     "@svgr/webpack": "npm:8.1.0"
     "@testing-library/react": "npm:16.3.0"
@@ -10712,9 +10712,9 @@ __metadata:
     prop-types: "npm:15.8.1"
     punycode: "npm:2.3.1"
     qrcode.react: "npm:4.2.0"
-    react: "npm:19.0.1"
+    react: "npm:19.0.3"
     react-copy-to-clipboard: "npm:5.1.0"
-    react-dom: "npm:19.0.1"
+    react-dom: "npm:19.0.3"
     react-json-pretty: "npm:2.2.0"
     react-redux: "npm:9.2.0"
     react-router-dom: "npm:7.5.1"
@@ -18509,7 +18509,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-copy-to-clipboard@npm:5.1.0, react-copy-to-clipboard@npm:^5.1.0":
+"react-copy-to-clipboard-ts@npm:^1.3.0":
+  version: 1.3.0
+  resolution: "react-copy-to-clipboard-ts@npm:1.3.0"
+  dependencies:
+    copy-to-clipboard: "npm:^3.3.3"
+  peerDependencies:
+    react: ">=18.0.0"
+  checksum: 10c0/e6ecbbc7d95fc089b158d149d0ff5f19500db511bb4bb645ea668c0462dde8c00ca281ef1ab66aee9badc5c2a6684d09e8071b2ed3a6ebc7125ee889b7c41c48
+  languageName: node
+  linkType: hard
+
+"react-copy-to-clipboard@npm:5.1.0":
   version: 5.1.0
   resolution: "react-copy-to-clipboard@npm:5.1.0"
   dependencies:
@@ -18553,14 +18564,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-dom@npm:19.0.1":
-  version: 19.0.1
-  resolution: "react-dom@npm:19.0.1"
+"react-dom@npm:19.0.3":
+  version: 19.0.3
+  resolution: "react-dom@npm:19.0.3"
   dependencies:
     scheduler: "npm:^0.25.0"
   peerDependencies:
-    react: ^19.0.1
-  checksum: 10c0/e9286a106bd33976c533db6f9df56e8d9dd56ae49abb16c0720d26968a1f5ec6f17ed7f38150fa054b68c25bcbde00be8f3a9efa193554a8bfacb47f73ca603b
+    react: ^19.0.3
+  checksum: 10c0/67e34b1928954daf6fc4f4c2063b0f8f430218fee26c3ac8b3d8778d072318563027bcb9a2c782f5a2c14b11ca321639d6ff14d04d52d4617bc982fcd173a150
   languageName: node
   linkType: hard
 
@@ -18632,10 +18643,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-is@npm:19.0.1":
-  version: 19.0.1
-  resolution: "react-is@npm:19.0.1"
-  checksum: 10c0/db6323aabf75864527e275cd4ba7c1a2a98651acdb8e78de8933c8060285becd63314ba7c8810aab4821c8a6c68f728fd215b90c595036ad2a2606577733a338
+"react-is@npm:19.0.3":
+  version: 19.0.3
+  resolution: "react-is@npm:19.0.3"
+  checksum: 10c0/3ab33831b4183b4b8776d74e3639867cdfb2dc979350f4e5f4acb3f422a2de739beb560d21614e0edc66d160a766af1f972d33aede2f686ec9ce4caffe89d117
   languageName: node
   linkType: hard
 
@@ -18800,10 +18811,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react@npm:19.0.1":
-  version: 19.0.1
-  resolution: "react@npm:19.0.1"
-  checksum: 10c0/bc2e2e86ea4e67235f1adb329363bf1c998b3fed0842116614cbef6ae162d0a70227eda4cfed6d28cb95b2ad8b507a0894ed9af26f7f6cd635797585be2fb16c
+"react@npm:19.0.3":
+  version: 19.0.3
+  resolution: "react@npm:19.0.3"
+  checksum: 10c0/39c41b46e719650d0b10763d66d606a6251049e81dd805935f5ed5bfb19eca85a0786a6864767f4d4e4ae721608ae24a0c655c526a8d018e56bc262b34886a36
   languageName: node
   linkType: hard
 
