@@ -166,4 +166,10 @@ $loader-light-color: #444961;
       }
     }
   }
+
+  &__asset-detail__wrapper {
+    background: var(--sds-clr-gray-01);
+    height: 100%;
+    width: 100%;
+  }
 }

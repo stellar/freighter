@@ -23,7 +23,7 @@
       border: 1px solid var(--sds-clr-gray-06);
       padding: pxToRem(4px);
       width: pxToRem(210px);
-      z-index: calc(var(--z-index-tooltip) + 1);
+      z-index: calc(var(--z-index-modal) + 1);
 
       &__item {
         display: flex;
