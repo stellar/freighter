@@ -640,6 +640,48 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   expect(accountBalancesRequestWasMade).toBeTruthy();
 });
 
+test("SendPayment persists amount and asset when navigating to choose address", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await stubAccountBalancesE2e(page);
+  await stubAccountHistory(page);
+  await stubTokenDetails(page);
+  await stubTokenPrices(page);
+
+  await loginToTestAccount({ page, extensionId });
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Fill in amount
+  await page.getByTestId("send-amount-amount-input").fill("1.5");
+
+  // Select a custom token asset
+  await page.locator(".SendAmount__EditDestAsset").click();
+  await page
+    .getByTestId(`SendRow-E2E:${TEST_TOKEN_ADDRESS}`)
+    .click({ force: true });
+
+  // Verify asset is selected
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Navigate to choose address
+  await page.getByTestId("address-tile").click();
+
+  // Fill address and continue
+  const G_ADDRESS = "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
+  await page.getByTestId("send-to-input").fill(G_ADDRESS);
+  await page.getByText("Continue").click();
+
+  // Verify amount and asset persisted after navigating back
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("1.5");
+  // Verify custom token is still selected (check that asset selector shows the token)
+  await expect(page.locator(".SendAmount__EditDestAsset")).toBeVisible();
+});
+
 // Classic token to G address -> Normal (regression test)
 test("Send classic token to G address allows memo", async ({
   page,
