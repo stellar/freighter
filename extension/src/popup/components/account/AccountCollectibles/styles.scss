@@ -51,6 +51,7 @@
 
       &__item {
         background-color: var(--sds-clr-gray-03);
+        cursor: pointer;
         aspect-ratio: 1/1;
         border-radius: pxToRem(12px);
         overflow: hidden;
@@ -77,5 +78,9 @@
         }
       }
     }
+  }
+
+  &__collectible-detail__sheet {
+    z-index: var(--z-index-modal);
   }
 }

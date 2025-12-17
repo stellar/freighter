@@ -101,7 +101,13 @@ const commonConfig = (
         use: ["@svgr/webpack"],
       },
       {
+        test: /tailwind.css$/i,
+        include: path.resolve(__dirname, "./src/popup/styles/vendor/"),
+        use: ["style-loader", "css-loader", "postcss-loader"],
+      },
+      {
         test: /\.(css|sass|scss)$/,
+        exclude: path.resolve(__dirname, "./src/popup/styles/vendor/"),
         use: [
           MiniCssExtractPlugin.loader,
           {

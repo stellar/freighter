@@ -297,7 +297,10 @@ export const mockCollectibles = [
       symbol: "SFROG",
       collectibles: [
         {
-          owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+          collectionAddress:
+            "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+          collectionName: "Stellar Frogs",
+          owner: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
           tokenId: "1",
           tokenUri: "https://nftcalendar.io/token/1",
           metadata: {
@@ -314,10 +317,15 @@ export const mockCollectibles = [
           },
         },
         {
-          owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+          collectionAddress:
+            "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+          collectionName: "Stellar Frogs",
+          owner: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
           tokenId: "2",
           tokenUri: "https://nftcalendar.io/token/2",
           metadata: {
+            externalUrl: "https://nftcalendar.io/external/2",
+
             image:
               "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg",
             name: "Stellar Frog 2",
@@ -331,7 +339,10 @@ export const mockCollectibles = [
           },
         },
         {
-          owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+          collectionAddress:
+            "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWM3",
+          collectionName: "Stellar Frogs",
+          owner: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
           tokenId: "3",
           tokenUri: "https://nftcalendar.io/token/3",
           metadata: {
@@ -358,6 +369,8 @@ export const mockCollectibles = [
       symbol: "SDOM",
       collectibles: [
         {
+          collectionAddress: "CCCSorobanDomainsCollection",
+          collectionName: "Soroban Domains",
           owner: "CCCSorobanDomainsCollection",
           tokenId: "102510",
           tokenUri: "https://nftcalendar.io/token/102510",
@@ -375,6 +388,8 @@ export const mockCollectibles = [
           },
         },
         {
+          collectionAddress: "CCCSorobanDomainsCollection",
+          collectionName: "Soroban Domains",
           owner: "CCCSorobanDomainsCollection",
           tokenId: "102589",
           tokenUri: "https://nftcalendar.io/token/102589",
@@ -402,6 +417,8 @@ export const mockCollectibles = [
       symbol: "FMONK",
       collectibles: [
         {
+          collectionAddress: "CCCFutureMonkeysCollection",
+          collectionName: "Future Monkeys",
           owner: "CCCFutureMonkeysCollection",
           tokenId: "111",
           tokenUri: "https://nftcalendar.io/token/111",
