@@ -18,6 +18,12 @@ export const LeaveFeedback = () => {
         <ListNavLinkWrapper>
           <ListNavLink
             icon={<Icon.Link01 />}
+            href="https://forms.gle/2KoaeTVQZJ6JutRYA"
+          >
+            {t("Share feedback via form")}
+          </ListNavLink>
+          <ListNavLink
+            icon={<Icon.Link01 />}
             href="https://discord.gg/zcdNVJUYqN"
           >
             {t("Join community Discord")}

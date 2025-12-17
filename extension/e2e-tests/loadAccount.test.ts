@@ -735,6 +735,74 @@ test("Loads collectibles data with successful metadata", async ({
   expect(await imgs[5].getAttribute("src")).toBe(
     "https://nftcalendar.io/storage/uploads/events/2025/3/oUfeUrSj3KcVnjColyfnS5ICYuqzDbiuqQP4qLIz.png",
   );
+
+  // view collectible detail
+  await imgs[0].click();
+  await expect(page.getByTestId("CollectibleDetail__base-info")).toBeVisible();
+  await expect(
+    page.getByTestId("CollectibleDetail__description"),
+  ).toBeVisible();
+
+  await expect(page.getByTestId("CollectibleDetail__attributes")).toBeVisible();
+  await expect(page.getByTestId("CollectibleDetail__image")).toBeVisible();
+
+  await expect(
+    page.getByTestId("CollectibleDetail__image").locator("img"),
+  ).toHaveAttribute(
+    "src",
+    "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
+  );
+  await expect(
+    page.getByTestId("CollectibleDetail__base-info__row__name__label"),
+  ).toHaveText("Name");
+  await expect(
+    page.getByTestId("CollectibleDetail__base-info__row__name__value"),
+  ).toHaveText("Stellar Frog 1");
+  await expect(
+    page.getByTestId(
+      "CollectibleDetail__base-info__row__collectionName__label",
+    ),
+  ).toHaveText("Collection");
+  await expect(
+    page.getByTestId(
+      "CollectibleDetail__base-info__row__collectionName__value",
+    ),
+  ).toHaveText("Stellar Frogs");
+  await expect(
+    page.getByTestId("CollectibleDetail__description__label"),
+  ).toHaveText("Description");
+  await expect(
+    page.getByTestId("CollectibleDetail__description__value"),
+  ).toHaveText("This is a test frog");
+  await expect(
+    page.getByTestId("CollectibleDetail__attributes__label"),
+  ).toHaveText("Collectible Traits");
+  await expect(
+    page.getByTestId("CollectibleDetail__attribute__value"),
+  ).toHaveText("Green");
+  await expect(
+    page.getByTestId("CollectibleDetail__attribute__trait"),
+  ).toHaveText("Background");
+
+  // refresh metadata and test for updated data
+  await page.getByTestId("CollectibleDetail__header__right-button").click();
+  await page.getByText("Refresh metadata").click();
+
+  await expect(
+    page.getByTestId("CollectibleDetail__image").locator("img"),
+  ).toHaveAttribute(
+    "src",
+    "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg",
+  );
+  await expect(
+    page.getByTestId("CollectibleDetail__base-info__row__name__value"),
+  ).toHaveText("Stellar Frog 1 (updated)");
+  await expect(
+    page.getByTestId("CollectibleDetail__description__value"),
+  ).toHaveText("This is a test frog (updated)");
+  await expect(
+    page.getByTestId("CollectibleDetail__attribute__value"),
+  ).toHaveText("Green (updated)");
 });
 
 test("Loads collectibles data with unsuccessful metadata", async ({

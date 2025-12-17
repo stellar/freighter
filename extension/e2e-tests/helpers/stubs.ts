@@ -635,6 +635,8 @@ export const stubAccountHistory = async (page: Page) => {
 };
 
 export const stubCollectibles = async (page: Page) => {
+  let tokenMetadataCount = 0;
+
   await page.route("**/tokenMetadata/1", async (route) => {
     const json = {
       name: "Stellar Frog 1",
@@ -643,12 +645,25 @@ export const stubCollectibles = async (page: Page) => {
         "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
       attributes: [
         {
-          traitType: "Background",
+          trait_type: "Background",
           value: "Green",
         },
       ],
       external_url: "https://nftcalendar.io/token/1",
     };
+    if (tokenMetadataCount > 1) {
+      json.name = "Stellar Frog 1 (updated)";
+      json.description = "This is a test frog (updated)";
+      json.image =
+        "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg";
+      json.attributes = [
+        {
+          trait_type: "Background",
+          value: "Green (updated)",
+        },
+      ];
+    }
+    tokenMetadataCount++;
     await route.fulfill({ json });
   });
   await page.route("**/tokenMetadata/2", async (route) => {
@@ -659,7 +674,7 @@ export const stubCollectibles = async (page: Page) => {
         "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg",
       attributes: [
         {
-          traitType: "Background",
+          trait_type: "Background",
           value: "Green",
         },
       ],
@@ -675,7 +690,7 @@ export const stubCollectibles = async (page: Page) => {
         "https://nftcalendar.io/storage/uploads/events/2023/8/5kFeYwNfhpUST3TsSoLxm7FaGY1ljwLRgfZ5gQnV.jpg",
       attributes: [
         {
-          traitType: "Background",
+          trait_type: "Background",
           value: "Blue",
         },
       ],
@@ -691,7 +706,7 @@ export const stubCollectibles = async (page: Page) => {
         "https://nftcalendar.io/storage/uploads/events/2025/7/Hdqv6YNVErVCmYlwobFVYfS5BiH19ferUgQova7Z.webp",
       attributes: [
         {
-          traitType: "Background",
+          trait_type: "Background",
           value: "Green",
         },
       ],
@@ -707,7 +722,7 @@ export const stubCollectibles = async (page: Page) => {
         "https://nftcalendar.io/storage/uploads/events/2025/7/MkaASwOL8VA3I5B2iIfCcNGT29vGBp4YZIJgmjzq.jpg",
       attributes: [
         {
-          traitType: "Background",
+          trait_type: "Background",
           value: "Red",
         },
       ],
@@ -723,7 +738,7 @@ export const stubCollectibles = async (page: Page) => {
         "https://nftcalendar.io/storage/uploads/events/2025/3/oUfeUrSj3KcVnjColyfnS5ICYuqzDbiuqQP4qLIz.png",
       attributes: [
         {
-          traitType: "Background",
+          trait_type: "Background",
           value: "Blue",
         },
       ],

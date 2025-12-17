@@ -107,7 +107,10 @@ describe("AccountCollectibles", () => {
           symbol: "SFROG",
           collectibles: [
             {
-              owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+              collectionAddress:
+                "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+              collectionName: "Stellar Frogs",
+              owner: "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
               tokenId: "1",
               tokenUri:
                 "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
@@ -125,6 +128,9 @@ describe("AccountCollectibles", () => {
               },
             },
             {
+              collectionName: "Stellar Frogs",
+              collectionAddress:
+                "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
               owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
               tokenId: "2",
               tokenUri: "https://nftcalendar.io/token/2",
@@ -142,6 +148,9 @@ describe("AccountCollectibles", () => {
               },
             },
             {
+              collectionName: "Stellar Frogs",
+              collectionAddress:
+                "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
               owner: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
               tokenId: "3",
               tokenUri: "https://nftcalendar.io/token/3",

@@ -3,7 +3,6 @@ import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import classnames from "classnames";
 import { Icon } from "@stellar/design-system";
-import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 
@@ -75,6 +74,7 @@ const AddCollectiblesModalContent = () => {
 };
 
 export const AccountTabs = () => {
+  const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [isManageAssetsOpen, setIsManageAssetsOpen] = useState(false);
   const [isAddCollectiblesOpen, setIsAddCollectiblesOpen] = useState(false);
@@ -120,7 +120,7 @@ export const AccountTabs = () => {
                 setActiveTab(tab);
               }}
             >
-              {tab}
+              {tabLabels[tab]}
             </div>
           );
         })}

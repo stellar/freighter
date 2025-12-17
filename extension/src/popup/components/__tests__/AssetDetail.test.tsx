@@ -47,6 +47,7 @@ describe("AssetDetail", () => {
       .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockBalances));
     const props = {
+      handleClose: () => null,
       accountBalances: {
         balances: [
           {
@@ -75,18 +76,9 @@ describe("AssetDetail", () => {
           type_i: 1,
         },
       ] as any,
-      publicKey: "G1",
-      url: "example.com",
-      networkDetails: TESTNET_NETWORK_DETAILS,
       selectedAsset: "native",
-      setSelectedAsset: () => null,
       setIsDetailViewShowing: () => null,
-      subentryCount: 0,
       historyData: mockHistoryData,
-      assetIcons: {
-        "BAZ:GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF":
-          "test-img-src",
-      },
     };
 
     render(
@@ -112,6 +104,7 @@ describe("AssetDetail", () => {
   });
   it("should hide dust payment if configured", async () => {
     const props = {
+      handleClose: () => null,
       accountBalances: {
         balances: [
           {
@@ -142,18 +135,9 @@ describe("AssetDetail", () => {
           type_i: 1,
         },
       ] as any,
-      publicKey: "G1",
-      url: "example.com",
-      networkDetails: TESTNET_NETWORK_DETAILS,
       selectedAsset: "native",
-      setSelectedAsset: () => null,
       setIsDetailViewShowing: () => null,
-      subentryCount: 0,
       historyData: mockHistoryData,
-      assetIcons: {
-        "BAZ:GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF":
-          "test-img-src",
-      },
     };
 
     render(
@@ -180,6 +164,7 @@ describe("AssetDetail", () => {
   });
   it("should not hide dust payment if not configured", async () => {
     const props = {
+      handleClose: () => null,
       accountBalances: {
         balances: [
           {
@@ -210,18 +195,9 @@ describe("AssetDetail", () => {
           type_i: 1,
         },
       ] as any,
-      publicKey: "G1",
-      url: "example.com",
-      networkDetails: TESTNET_NETWORK_DETAILS,
       selectedAsset: "native",
-      setSelectedAsset: () => null,
       setIsDetailViewShowing: () => null,
-      subentryCount: 0,
       historyData: mockHistoryData,
-      assetIcons: {
-        "BAZ:GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF":
-          "test-img-src",
-      },
     };
 
     render(
@@ -248,6 +224,7 @@ describe("AssetDetail", () => {
   });
   it("should display all balances", async () => {
     const props = {
+      handleClose: () => null,
       accountBalances: {
         balances: [
           {
@@ -281,19 +258,10 @@ describe("AssetDetail", () => {
         icons: {},
       } as any,
       assetOperations: [] as any,
-      publicKey: "G1",
-      url: "example.com",
-      networkDetails: TESTNET_NETWORK_DETAILS,
       selectedAsset:
         "BAZ:GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
-      setSelectedAsset: () => null,
       setIsDetailViewShowing: () => null,
-      subentryCount: 0,
       historyData: mockHistoryData,
-      assetIcons: {
-        "BAZ:GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF":
-          "test-img-src",
-      },
     };
 
     render(
@@ -308,6 +276,21 @@ describe("AssetDetail", () => {
           },
           settings: {
             networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+          cache: {
+            icons: {
+              "BAZ:GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF":
+                "test-img-src",
+            },
+            tokenPrices: {
+              G1: {
+                "BAZ:GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF":
+                  {
+                    price: 1,
+                    timestamp: 1718236800,
+                  },
+              },
+            },
           },
         }}
       >
@@ -327,6 +310,7 @@ describe("AssetDetail", () => {
   describe("Action Buttons", () => {
     it("should show both send and swap buttons for native asset with balance", async () => {
       const props = {
+        handleClose: () => null,
         accountBalances: {
           balances: [
             {
@@ -337,13 +321,9 @@ describe("AssetDetail", () => {
           ],
         } as any,
         assetOperations: [] as any,
-        publicKey: "G1",
-        networkDetails: TESTNET_NETWORK_DETAILS,
         selectedAsset: "native",
         setSelectedAsset: () => null,
-        subentryCount: 0,
         historyData: mockHistoryData,
-        assetIcons: {},
       };
 
       render(
@@ -372,6 +352,7 @@ describe("AssetDetail", () => {
 
     it("should not show send button when balance is 0", async () => {
       const props = {
+        handleClose: () => null,
         accountBalances: {
           balances: [
             {
@@ -382,13 +363,8 @@ describe("AssetDetail", () => {
           ],
         } as any,
         assetOperations: [] as any,
-        publicKey: "G1",
-        networkDetails: TESTNET_NETWORK_DETAILS,
         selectedAsset: "native",
-        setSelectedAsset: () => null,
-        subentryCount: 0,
         historyData: mockHistoryData,
-        assetIcons: {},
       };
 
       render(
@@ -419,6 +395,7 @@ describe("AssetDetail", () => {
       const contractId =
         "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4";
       const props = {
+        handleClose: () => null,
         accountBalances: {
           balances: [
             {
@@ -432,13 +409,8 @@ describe("AssetDetail", () => {
           ],
         } as any,
         assetOperations: [] as any,
-        publicKey: "G1",
-        networkDetails: TESTNET_NETWORK_DETAILS,
         selectedAsset: `USDC:${contractId}`,
-        setSelectedAsset: () => null,
-        subentryCount: 0,
         historyData: mockHistoryData,
-        assetIcons: {},
       };
 
       render(
@@ -467,6 +439,7 @@ describe("AssetDetail", () => {
 
     it("should show both buttons for classic asset with balance", async () => {
       const props = {
+        handleClose: () => null,
         accountBalances: {
           balances: [
             {
@@ -483,14 +456,9 @@ describe("AssetDetail", () => {
           ],
         } as any,
         assetOperations: [] as any,
-        publicKey: "G1",
-        networkDetails: TESTNET_NETWORK_DETAILS,
         selectedAsset:
           "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
-        setSelectedAsset: () => null,
-        subentryCount: 0,
         historyData: mockHistoryData,
-        assetIcons: {},
       };
 
       render(
@@ -521,6 +489,7 @@ describe("AssetDetail", () => {
       const liquidityPoolId =
         "67260c4c1807b262ff851b0a3fe141194936bb0215b2f77447f1df11998eabb9";
       const props = {
+        handleClose: () => null,
         accountBalances: {
           balances: [
             {
@@ -543,13 +512,8 @@ describe("AssetDetail", () => {
           ],
         } as any,
         assetOperations: [] as any,
-        publicKey: "G1",
-        networkDetails: TESTNET_NETWORK_DETAILS,
         selectedAsset: `${liquidityPoolId}:lp`,
-        setSelectedAsset: () => null,
-        subentryCount: 0,
         historyData: mockHistoryData,
-        assetIcons: {},
       };
 
       render(
@@ -580,6 +544,7 @@ describe("AssetDetail", () => {
       const liquidityPoolId =
         "67260c4c1807b262ff851b0a3fe141194936bb0215b2f77447f1df11998eabb9";
       const props = {
+        handleClose: () => null,
         accountBalances: {
           balances: [
             {
@@ -602,13 +567,8 @@ describe("AssetDetail", () => {
           ],
         } as any,
         assetOperations: [] as any,
-        publicKey: "G1",
-        networkDetails: TESTNET_NETWORK_DETAILS,
         selectedAsset: `${liquidityPoolId}:lp`,
-        setSelectedAsset: () => null,
-        subentryCount: 0,
         historyData: mockHistoryData,
-        assetIcons: {},
       };
 
       render(
@@ -623,6 +583,13 @@ describe("AssetDetail", () => {
             },
             settings: {
               networkDetails: TESTNET_NETWORK_DETAILS,
+            },
+            cache: {
+              icons: {
+                "BAZ:GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF":
+                  "test-img-src",
+              },
+              tokenPrices: {},
             },
           }}
         >
