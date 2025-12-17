@@ -64,7 +64,7 @@ import {
 } from "helpers/muxedAddress";
 import { captureException } from "@sentry/browser";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { getNativeContractDetails } from "popup/helpers/searchAsset";
+import { getContractIdFromTokenId } from "popup/helpers/soroban";
 
 const DEFAULT_INPUT_WIDTH = 25;
 
@@ -131,11 +131,11 @@ export const SendAmount = ({
 
   // Get contract ID for custom tokens - must be before conditional returns
   const contractId = React.useMemo(() => {
-    if (!isToken) {
+    if (!isToken || !asset) {
       return undefined;
     }
-    return getNativeContractDetails(networkDetails).contract;
-  }, [isToken, asset]);
+    return getContractIdFromTokenId(asset, networkDetails);
+  }, [isToken, asset, networkDetails]);
 
   // Check if recipient is muxed - must be before conditional returns
   const isRecipientMuxed = React.useMemo(

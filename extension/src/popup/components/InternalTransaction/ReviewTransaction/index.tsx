@@ -17,7 +17,10 @@ import {
   truncatedPublicKey,
 } from "helpers/stellar";
 import { getContractIdFromTokenId } from "popup/helpers/soroban";
-import { getMemoDisabledState } from "helpers/muxedAddress";
+import {
+  checkIsMuxedSupported,
+  getMemoDisabledState,
+} from "helpers/muxedAddress";
 import { SimulateTxData } from "popup/components/sendPayment/SendAmount/hooks/useSimulateTxData";
 import { View } from "popup/basics/layout/View";
 import { AssetIcon } from "popup/components/account/AccountAssets";
@@ -103,7 +106,34 @@ export const ReviewTx = ({
       return undefined;
     }
     return getContractIdFromTokenId(srcAsset, networkDetails);
-  }, [isToken, srcAsset]);
+  }, [isToken, srcAsset, networkDetails]);
+
+  // Check if contract supports muxed addresses
+  const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
+    boolean | null
+  >(null);
+
+  React.useEffect(() => {
+    const checkContract = async () => {
+      if (!isToken || !contractId || !networkDetails) {
+        setContractSupportsMuxed(null);
+        return;
+      }
+
+      try {
+        const supportsMuxed = await checkIsMuxedSupported({
+          contractId,
+          networkDetails,
+        });
+        setContractSupportsMuxed(supportsMuxed);
+      } catch (error) {
+        // On error, assume no support for safety
+        setContractSupportsMuxed(false);
+      }
+    };
+
+    checkContract();
+  }, [isToken, contractId, networkDetails]);
 
   // Get memo disabled state using the helper
   const memoDisabledState = React.useMemo(() => {
@@ -113,11 +143,11 @@ export const ReviewTx = ({
     return getMemoDisabledState({
       targetAddress: destination,
       contractId,
-      contractSupportsMuxed: undefined,
+      contractSupportsMuxed,
       networkDetails,
       t,
     });
-  }, [destination, contractId, networkDetails, t]);
+  }, [destination, contractId, contractSupportsMuxed, networkDetails, t]);
 
   const { isMemoDisabled } = memoDisabledState;
 

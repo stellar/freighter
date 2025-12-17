@@ -705,16 +705,35 @@ export const stubCollectiblesUnsuccessfulMetadata = async (page: Page) => {
  * @param page - Playwright page or browser context
  * @param contractId - Contract ID to stub
  * @param supportsMuxed - Whether the contract supports muxed addresses (Soroban mux support)
+ *   - true: Contract has to_muxed parameter -> memo IS supported
+ *   - false: Contract only has 'to' parameter (no to_muxed) -> memo is NOT supported
  */
 export const stubContractSpec = async (
   page: Page | BrowserContext,
   contractId: string,
   supportsMuxed: boolean = false,
 ) => {
-  await page.route("**/token-spec/**", async (route) => {
+  // Route pattern should match: {INDEXER_URL}/contract-spec/{contractId}?network={network}
+  await page.route("**/contract-spec/**", async (route) => {
     const url = route.request().url();
-    // Check if this request is for the contract we're stubbing
-    if (!url.includes(`/token-spec/${contractId}`)) {
+    try {
+      const urlObj = new URL(url);
+      const urlPath = urlObj.pathname;
+      // Match /contract-spec/{contractId} pattern (with optional query params)
+      // The URL format is: {INDEXER_URL}/contract-spec/{contractId}?network={network}
+      const contractSpecMatch = urlPath.match(/\/contract-spec\/([^/?]+)/);
+      if (!contractSpecMatch || contractSpecMatch[1] !== contractId) {
+        await route.continue();
+        return;
+      }
+
+      // Ensure we're handling GET requests (contract-spec is a GET endpoint)
+      if (route.request().method() !== "GET") {
+        await route.continue();
+        return;
+      }
+    } catch (e) {
+      // If URL parsing fails, continue
       await route.continue();
       return;
     }
@@ -753,7 +772,48 @@ export const stubContractSpec = async (
           },
         };
 
-    await route.fulfill({ json: spec });
+    // Return wrapped in data property to match backend response format
+    // Extension expects { data, error } format from INDEXER_URL/contract-spec endpoint
+    await route.fulfill({ json: { data: spec, error: null } });
+  });
+};
+
+/**
+ * Stubs the simulate-token-transfer endpoint for Soroban token transfers
+ * @param page - Playwright page or browser context
+ */
+export const stubSimulateTokenTransfer = async (
+  page: Page | BrowserContext,
+) => {
+  await page.route("**/simulate-token-transfer", async (route) => {
+    if (route.request().method() !== "POST") {
+      await route.continue();
+      return;
+    }
+
+    // Return a successful simulation response matching backend format
+    // Backend returns: { simulationResponse: {...}, preparedTransaction: "..." }
+    const json = {
+      simulationResponse: {
+        minResourceFee: "100",
+        results: [],
+        cost: {
+          cpuInsns: "100",
+          memBytes: "100",
+        },
+        transactionData: "",
+        events: [],
+        returnValue: "",
+        auth: [],
+        footprint: {
+          readOnly: [],
+          readWrite: [],
+        },
+      },
+      preparedTransaction: "AAAAAgAAAAC8J8h+HyYyP4AAAAA=", // Mock XDR
+    };
+
+    await route.fulfill({ json, status: 200 });
   });
 };
 
