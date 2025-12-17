@@ -700,35 +700,86 @@ export const stubCollectiblesUnsuccessfulMetadata = async (page: Page) => {
   });
 };
 
-export const stubMemoRequiredAccounts = async (
+/**
+ * Stubs contract spec API to simulate Soroban mux support (SEP-23) or lack thereof
+ * @param page - Playwright page or browser context
+ * @param contractId - Contract ID to stub
+ * @param supportsMuxed - Whether the contract supports muxed addresses (Soroban mux support)
+ */
+export const stubContractSpec = async (
   page: Page | BrowserContext,
-  memoRequiredAddress?: string,
+  contractId: string,
+  supportsMuxed: boolean = false,
 ) => {
-  await page.route("**/explorer/directory**", async (route) => {
+  await page.route("**/token-spec/**", async (route) => {
     const url = route.request().url();
-    // Match the memo-required endpoint specifically by checking query params
-    const parsedUrl = new URL(url);
-    const tags = parsedUrl.searchParams.getAll("tag[]");
-    if (
-      tags.includes("memo-required") ||
-      url.includes("memo-required") ||
-      url.includes("tag[]=memo-required")
-    ) {
+    // Check if this request is for the contract we're stubbing
+    if (!url.includes(`/token-spec/${contractId}`)) {
+      await route.continue();
+      return;
+    }
+
+    const spec = supportsMuxed
+      ? {
+          definitions: {
+            transfer: {
+              properties: {
+                args: {
+                  properties: {
+                    to_muxed: {
+                      type: "object",
+                    },
+                  },
+                  required: ["to_muxed"],
+                },
+              },
+            },
+          },
+        }
+      : {
+          definitions: {
+            transfer: {
+              properties: {
+                args: {
+                  properties: {
+                    to: {
+                      type: "object",
+                    },
+                  },
+                  required: ["to"],
+                },
+              },
+            },
+          },
+        };
+
+    await route.fulfill({ json: spec });
+  });
+};
+
+/**
+ * Stubs the memo-required accounts API endpoint
+ * @param page - Playwright page
+ * @param memoRequiredAddress - Address that requires a memo
+ */
+export const stubMemoRequiredAccounts = async (
+  page: Page,
+  memoRequiredAddress: string,
+) => {
+  await page.route(
+    "**/api.stellar.expert/explorer/directory**",
+    async (route) => {
       const json = {
         _embedded: {
-          records: memoRequiredAddress
-            ? [
-                {
-                  address: memoRequiredAddress,
-                  tags: ["memo-required"],
-                },
-              ]
-            : [],
+          records: [
+            {
+              address: memoRequiredAddress,
+              tags: ["memo-required"],
+            },
+          ],
         },
       };
       await route.fulfill({ json });
-    } else {
-      await route.continue();
-    }
-  });
+    },
+  );
 };

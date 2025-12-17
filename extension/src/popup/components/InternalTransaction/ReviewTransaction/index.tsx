@@ -16,7 +16,8 @@ import {
   truncatedFedAddress,
   truncatedPublicKey,
 } from "helpers/stellar";
-
+import { getContractIdFromTokenId } from "popup/helpers/soroban";
+import { getMemoDisabledState } from "helpers/muxedAddress";
 import { SimulateTxData } from "popup/components/sendPayment/SendAmount/hooks/useSimulateTxData";
 import { View } from "popup/basics/layout/View";
 import { AssetIcon } from "popup/components/account/AccountAssets";
@@ -78,7 +79,7 @@ export const ReviewTx = ({
 
   const {
     hardwareWalletData: { status: hwStatus },
-    transactionData: { destination, memo, federationAddress },
+    transactionData: { destination, memo, federationAddress, isToken },
   } = submission;
 
   // Validate memo requirements using the transaction XDR
@@ -95,6 +96,30 @@ export const ReviewTx = ({
   const truncatedDest = federationAddress
     ? truncatedFedAddress(federationAddress)
     : truncatedPublicKey(destination);
+
+  // Extract contract ID from asset for custom tokens
+  const contractId = React.useMemo(() => {
+    if (!isToken) {
+      return undefined;
+    }
+    return getContractIdFromTokenId(srcAsset, networkDetails);
+  }, [isToken, srcAsset]);
+
+  // Get memo disabled state using the helper
+  const memoDisabledState = React.useMemo(() => {
+    if (!destination) {
+      return { isMemoDisabled: false, memoDisabledMessage: undefined };
+    }
+    return getMemoDisabledState({
+      targetAddress: destination,
+      contractId,
+      contractSupportsMuxed: undefined,
+      networkDetails,
+      t,
+    });
+  }, [destination, contractId, networkDetails, t]);
+
+  const { isMemoDisabled } = memoDisabledState;
 
   if (simulationState.state === RequestState.ERROR) {
     return (
@@ -217,18 +242,21 @@ export const ReviewTx = ({
                   )}
                 </div>
                 <div className="ReviewTx__Details">
-                  <div className="ReviewTx__Details__Row">
-                    <div className="ReviewTx__Details__Row__Title">
-                      <Icon.File02 />
-                      {t("Memo")}
+                  {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
+                  {!isMemoDisabled && (
+                    <div className="ReviewTx__Details__Row">
+                      <div className="ReviewTx__Details__Row__Title">
+                        <Icon.File02 />
+                        {t("Memo")}
+                      </div>
+                      <div
+                        className="ReviewTx__Details__Row__Value"
+                        data-testid="review-tx-memo"
+                      >
+                        {memo || t("None")}
+                      </div>
                     </div>
-                    <div
-                      className="ReviewTx__Details__Row__Value"
-                      data-testid="review-tx-memo"
-                    >
-                      {memo || t("None")}
-                    </div>
-                  </div>
+                  )}
                   <div className="ReviewTx__Details__Row">
                     <div className="ReviewTx__Details__Row__Title">
                       <Icon.Route />
