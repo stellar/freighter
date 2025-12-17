@@ -756,3 +756,30 @@ export const stubContractSpec = async (
     await route.fulfill({ json: spec });
   });
 };
+
+/**
+ * Stubs the memo-required accounts API endpoint
+ * @param page - Playwright page
+ * @param memoRequiredAddress - Address that requires a memo
+ */
+export const stubMemoRequiredAccounts = async (
+  page: Page,
+  memoRequiredAddress: string,
+) => {
+  await page.route(
+    "**/api.stellar.expert/explorer/directory**",
+    async (route) => {
+      const json = {
+        _embedded: {
+          records: [
+            {
+              address: memoRequiredAddress,
+              tags: ["memo-required"],
+            },
+          ],
+        },
+      };
+      await route.fulfill({ json });
+    },
+  );
+};

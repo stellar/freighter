@@ -7,6 +7,7 @@ import {
   stubAccountBalancesE2e,
   stubAccountBalancesWithUSDC,
   stubAccountHistory,
+  stubContractSpec,
   stubMemoRequiredAccounts,
   stubTokenDetails,
   stubTokenPrices,
