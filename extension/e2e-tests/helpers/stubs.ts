@@ -919,3 +919,26 @@ export const stubMemoRequiredAccounts = async (
     }
   });
 };
+
+/**
+ * Creates an asset object for Horizon API path payment responses.
+ * Converts asset codes to the format expected by Horizon's path payment endpoint.
+ *
+ * @param assetCode - The asset code (e.g., "USDC", "native", or null)
+ * @param issuer - The issuer address for non-native assets
+ * @returns An object with asset_type, asset_code, and asset_issuer properties
+ */
+export const createAssetObject = (assetCode: string | null, issuer: string) => {
+  const isNative = assetCode === "native" || assetCode === null;
+  return isNative
+    ? {
+        asset_type: "native",
+        asset_code: undefined,
+        asset_issuer: undefined,
+      }
+    : {
+        asset_type: "credit_alphanum4",
+        asset_code: assetCode,
+        asset_issuer: issuer,
+      };
+};

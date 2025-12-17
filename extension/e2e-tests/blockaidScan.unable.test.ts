@@ -7,6 +7,7 @@ import {
   stubTokenPrices,
   stubScanAssetUnableToScan,
   stubScanTxUnableToScan,
+  createAssetObject,
 } from "./helpers/stubs";
 
 test.describe("BlockAid Scan - Unable to Scan States", () => {
@@ -232,22 +233,6 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
       const url = new URL(route.request().url());
       const sourceAsset = url.searchParams.get("source_asset_code");
       const destAsset = url.searchParams.get("destination_asset_code");
-
-      // Helper to create asset object: native or credit_alphanum4
-      const createAssetObject = (assetCode: string | null, issuer: string) => {
-        const isNative = assetCode === "native" || assetCode === null;
-        return isNative
-          ? {
-              asset_type: "native",
-              asset_code: undefined,
-              asset_issuer: undefined,
-            }
-          : {
-              asset_type: "credit_alphanum4",
-              asset_code: assetCode,
-              asset_issuer: issuer,
-            };
-      };
 
       const source = createAssetObject(sourceAsset, USDC_ISSUER);
       const destination = createAssetObject(destAsset, USDC_ISSUER);
