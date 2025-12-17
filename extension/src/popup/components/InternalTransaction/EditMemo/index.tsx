@@ -48,7 +48,7 @@ export const EditMemo = ({
     <View.Content hasNoTopPadding>
       <div className="EditMemo">
         <Card>
-          <p>Memo</p>
+          <p>{t("Memo")}</p>
           <Formik initialValues={initialValues} onSubmit={handleSubmit}>
             {({ errors }) => (
               <>
