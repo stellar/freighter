@@ -24,16 +24,13 @@ import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import {
   BlockaidTxScanLabel,
   BlockAidTxScanExpanded,
-  BlockaidAssetWarning,
-  SwapAssetScanExpanded,
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
 import {
-  useScanAsset,
-  useShouldTreatAssetAsUnableToScan,
   useShouldTreatTxAsUnableToScan,
-  useIsAssetSuspicious,
+  useScanAsset,
 } from "popup/helpers/blockaid";
+import { BlockAidScanTxResult } from "@shared/api/types";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
@@ -41,6 +38,50 @@ import { CopyValue } from "popup/components/CopyValue";
 import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
 
 import "./styles.scss";
+
+type WarningType =
+  | "unable-to-scan"
+  | "malicious"
+  | "suspicious"
+  | "error"
+  | null;
+
+/**
+ * Determines warning type from transaction scan result
+ */
+const getTransactionWarningType = (
+  txScanResult: BlockAidScanTxResult | null | undefined,
+  isUnableToScan: boolean,
+): WarningType => {
+  if (!txScanResult) {
+    return isUnableToScan ? "unable-to-scan" : null;
+  }
+
+  const { simulation, validation } = txScanResult;
+
+  // Handle simulation error
+  if (simulation && "error" in simulation) {
+    return "error";
+  }
+
+  // Handle validation result
+  if (validation && "result_type" in validation) {
+    const resultType = validation.result_type;
+    if (resultType === "Malicious") {
+      return "malicious";
+    }
+    if (resultType === "Warning") {
+      return "suspicious";
+    }
+  }
+
+  // Handle unable to scan
+  if (isUnableToScan) {
+    return "unable-to-scan";
+  }
+
+  return null;
+};
 
 interface ReviewTxProps {
   assetIcon: string | null;
@@ -83,10 +124,6 @@ export const ReviewTx = ({
   const isHardwareWallet = !!hardwareWalletType;
 
   const [activePaneIndex, setActivePaneIndex] = useState(0);
-  const [expandedAssetScan, setExpandedAssetScan] = useState<{
-    type: "source" | "destination";
-    scanResult: any;
-  } | null>(null);
 
   const {
     hardwareWalletData: { status: hwStatus },
@@ -108,54 +145,50 @@ export const ReviewTx = ({
     ? truncatedFedAddress(federationAddress)
     : truncatedPublicKey(destination);
 
-  // Scan source asset if not XLM
+  // Scan transaction
+  const txScanResult = simulationState.data?.scanResult;
+  const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
+
+  // Scan source and destination tokens separately (for swaps)
   const srcAssetAddress =
     srcAsset !== "native" && asset.issuer ? asset.issuer : null;
-  const { scannedAsset: srcAssetScanResult } = useScanAsset(
-    srcAssetAddress || "",
-  );
-
-  // Scan destination asset if not XLM
   const dstAssetAddress =
     dstAsset && dstAsset.canonical !== "native" && dest?.issuer
       ? dest.issuer
       : null;
+  const { scannedAsset: srcAssetScanResult } = useScanAsset(
+    srcAssetAddress || "",
+  );
   const { scannedAsset: dstAssetScanResult } = useScanAsset(
     dstAssetAddress || "",
   );
 
-  // Check if source or destination tokens are unable to scan or suspicious/malicious
-  const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
-  const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
-  const isAssetSuspiciousCheck = useIsAssetSuspicious();
-  const isSrcUnableToScan =
-    srcAssetAddress && shouldTreatAsUnableToScan(srcAssetScanResult);
-  const isDstUnableToScan =
-    dstAssetAddress && shouldTreatAsUnableToScan(dstAssetScanResult);
-  const isSrcSuspicious =
-    srcAssetAddress && isAssetSuspiciousCheck(srcAssetScanResult);
-  const isDstSuspicious =
-    dstAssetAddress && isAssetSuspiciousCheck(dstAssetScanResult);
-  const showSwapWarning =
-    isSrcUnableToScan ||
-    isDstUnableToScan ||
-    isSrcSuspicious ||
-    isDstSuspicious;
+  // Compute warning state once - used by both label and expanded components
+  const isUnableToScan = shouldTreatTxAsUnableToScan(txScanResult);
+  const hasScanResult = !!txScanResult;
 
-  // Check if transaction scan is unable to scan (only for non-swap, XLM-only transactions)
-  const isXlmOnlyTransaction =
-    !showSwapWarning && !srcAssetAddress && !dstAssetAddress;
-  const txScanResult = simulationState.data?.scanResult;
-  const isTxUnableToScan =
-    isXlmOnlyTransaction && shouldTreatTxAsUnableToScan(txScanResult);
+  // Determine malicious/suspicious from scan result (not dev-only)
+  const isMalicious =
+    txScanResult?.validation &&
+    "result_type" in txScanResult.validation &&
+    txScanResult.validation.result_type === "Malicious";
+  const isSuspicious =
+    txScanResult?.validation &&
+    "result_type" in txScanResult.validation &&
+    txScanResult.validation.result_type === "Warning";
+
+  // Determine warning type
+  const warningType = getTransactionWarningType(txScanResult, isUnableToScan);
 
   // Determine if transaction warning should be shown
   const hasSimulationData = !!simulationState.data;
-  const hasScanResult = txScanResult !== undefined;
   const shouldShowTxWarning =
-    isXlmOnlyTransaction &&
     hasSimulationData &&
-    (hasScanResult || isTxUnableToScan);
+    (hasScanResult ||
+      isUnableToScan ||
+      isMalicious ||
+      isSuspicious ||
+      warningType !== null);
 
   if (simulationState.state === RequestState.ERROR) {
     return (
@@ -267,43 +300,10 @@ export const ReviewTx = ({
                   </div>
                 </div>
                 <div className="ReviewTx__Warnings">
-                  {/* For swaps: show warning banner if any token is unable to scan or suspicious/malicious */}
-                  {showSwapWarning ? (
-                    <BlockaidAssetWarning
-                      blockaidData={
-                        isSrcUnableToScan || isSrcSuspicious
-                          ? srcAssetScanResult
-                          : dstAssetScanResult
-                      }
-                      onClick={() => {
-                        setExpandedAssetScan({
-                          type:
-                            isSrcUnableToScan || isSrcSuspicious
-                              ? "source"
-                              : "destination",
-                          scanResult:
-                            isSrcUnableToScan || isSrcSuspicious
-                              ? srcAssetScanResult
-                              : dstAssetScanResult,
-                        });
-                        setActivePaneIndex(1);
-                      }}
-                      messageKey={
-                        isSrcUnableToScan || isDstUnableToScan
-                          ? "Proceed with caution"
-                          : undefined
-                      }
-                    />
-                  ) : null}
-                  {/* Show transaction warning only if both assets are XLM or if no swap warnings */}
-                  {/* Always render BlockaidTxScanLabel when simulationState.data exists - it handles null scanResult internally */}
                   {shouldShowTxWarning && (
                     <BlockaidTxScanLabel
                       scanResult={txScanResult}
-                      onClick={() => {
-                        setExpandedAssetScan(null);
-                        setActivePaneIndex(1);
-                      }}
+                      onClick={() => setActivePaneIndex(1)}
                     />
                   )}
                   {isRequiredMemoMissing && !isValidatingMemo && (
@@ -349,23 +349,14 @@ export const ReviewTx = ({
                   </div>
                 </div>
               </>,
-              expandedAssetScan || showSwapWarning ? (
-                <SwapAssetScanExpanded
-                  srcAssetScanResult={srcAssetScanResult}
-                  dstAssetScanResult={dstAssetScanResult}
-                  srcAssetAddress={srcAssetAddress}
-                  dstAssetAddress={dstAssetAddress}
-                  onClose={() => {
-                    setExpandedAssetScan(null);
-                    setActivePaneIndex(0);
-                  }}
-                />
-              ) : (
-                <BlockAidTxScanExpanded
-                  scanResult={txScanResult}
-                  onClose={() => setActivePaneIndex(0)}
-                />
-              ),
+              <BlockAidTxScanExpanded
+                scanResult={txScanResult}
+                srcAssetScanResult={srcAssetScanResult}
+                dstAssetScanResult={dstAssetScanResult}
+                srcAssetAddress={srcAssetAddress}
+                dstAssetAddress={dstAssetAddress}
+                onClose={() => setActivePaneIndex(0)}
+              />,
             ]}
           />
           <div className="ReviewTx__Actions">

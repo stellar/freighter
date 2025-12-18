@@ -1134,20 +1134,177 @@ export const BlockaidTxScanLabel = ({
 
 interface BlockAidTxScanExpandedProps {
   scanResult: BlockAidScanTxResult | null | undefined;
+  srcAssetScanResult?: BlockAidScanAssetResult | null;
+  dstAssetScanResult?: BlockAidScanAssetResult | null;
+  srcAssetAddress?: string | null;
+  dstAssetAddress?: string | null;
   onClose?: () => void;
 }
 
+interface WarningInfo {
+  warnings: Array<{ icon: React.ReactNode; text: string }>;
+  isMalicious: boolean;
+  isSuspicious: boolean;
+}
+
+/**
+ * Gets warnings for swap transactions by checking source and destination tokens
+ */
+const getSwapWarnings = (
+  srcAssetScanResult: BlockAidScanAssetResult | null | undefined,
+  dstAssetScanResult: BlockAidScanAssetResult | null | undefined,
+  srcAssetAddress: string | null | undefined,
+  dstAssetAddress: string | null | undefined,
+  shouldTreatAssetAsUnableToScan: (
+    result: BlockAidScanAssetResult | null | undefined,
+  ) => boolean,
+  isAssetSuspiciousCheck: (
+    result: BlockAidScanAssetResult | null | undefined,
+  ) => boolean,
+  t: (key: string) => string,
+): WarningInfo => {
+  const warnings: Array<{ icon: React.ReactNode; text: string }> = [];
+  let isMalicious = false;
+  let isSuspicious = false;
+
+  // Check source token
+  if (srcAssetAddress) {
+    const isSrcUnableToScan =
+      shouldTreatAssetAsUnableToScan(srcAssetScanResult);
+    const isSrcSuspicious = isAssetSuspiciousCheck(srcAssetScanResult);
+
+    if (isSrcUnableToScan) {
+      warnings.push({
+        icon: <Icon.MinusCircle />,
+        text: t("Unable to scan source token"),
+      });
+    } else if (isSrcSuspicious && srcAssetScanResult) {
+      const resultType = srcAssetScanResult.result_type;
+      if (resultType === "Malicious") {
+        isMalicious = true;
+      } else {
+        isSuspicious = true;
+      }
+
+      const features = srcAssetScanResult.features || [];
+      features.forEach((feature: { description: string }) => {
+        warnings.push({
+          icon:
+            resultType === "Malicious" ? (
+              <Icon.XCircle />
+            ) : (
+              <Icon.MinusCircle />
+            ),
+          text: feature.description,
+        });
+      });
+    }
+  }
+
+  // Check destination token
+  if (dstAssetAddress) {
+    const isDstUnableToScan =
+      shouldTreatAssetAsUnableToScan(dstAssetScanResult);
+    const isDstSuspicious = isAssetSuspiciousCheck(dstAssetScanResult);
+
+    if (isDstUnableToScan) {
+      warnings.push({
+        icon: <Icon.MinusCircle />,
+        text: t("Unable to scan destination token"),
+      });
+    } else if (isDstSuspicious && dstAssetScanResult) {
+      const resultType = dstAssetScanResult.result_type;
+      if (resultType === "Malicious") {
+        isMalicious = true;
+      } else {
+        isSuspicious = true;
+      }
+
+      const features = dstAssetScanResult.features || [];
+      features.forEach((feature: { description: string }) => {
+        warnings.push({
+          icon:
+            resultType === "Malicious" ? (
+              <Icon.XCircle />
+            ) : (
+              <Icon.MinusCircle />
+            ),
+          text: feature.description,
+        });
+      });
+    }
+  }
+
+  return { warnings, isMalicious, isSuspicious };
+};
+
+/**
+ * Gets warnings for regular transactions by checking transaction-level scan results
+ */
+const getTransactionWarnings = (
+  scanResult: BlockAidScanTxResult,
+  isTxUnableToScan: boolean,
+  t: (key: string) => string,
+): WarningInfo => {
+  const warnings: Array<{ icon: React.ReactNode; text: string }> = [];
+  let isMalicious = false;
+  let isSuspicious = false;
+  const { simulation, validation } = scanResult;
+
+  if (simulation && "error" in simulation) {
+    warnings.push({
+      icon: <Icon.MinusCircle />,
+      text: simulation.error,
+    });
+  }
+
+  if (validation && "result_type" in validation) {
+    if (validation.description) {
+      warnings.push({
+        icon:
+          validation.result_type === "Malicious" ? (
+            <Icon.XCircle />
+          ) : (
+            <Icon.MinusCircle />
+          ),
+        text: validation.description,
+      });
+
+      if (validation.result_type === "Malicious") {
+        isMalicious = true;
+      } else if (validation.result_type === "Warning") {
+        isSuspicious = true;
+      }
+    }
+  }
+
+  if (isTxUnableToScan && warnings.length === 0) {
+    warnings.push({
+      icon: <Icon.MinusCircle />,
+      text: t("Unable to scan transaction"),
+    });
+  }
+
+  return { warnings, isMalicious, isSuspicious };
+};
+
 export const BlockAidTxScanExpanded = ({
   scanResult,
+  srcAssetScanResult,
+  dstAssetScanResult,
+  srcAssetAddress,
+  dstAssetAddress,
   onClose,
 }: BlockAidTxScanExpandedProps) => {
   const { t } = useTranslation();
-  const shouldTreatAsUnableToScan = useShouldTreatTxAsUnableToScan();
+  const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
+  const shouldTreatAssetAsUnableToScan = useShouldTreatAssetAsUnableToScan();
+  const isAssetSuspiciousCheck = useIsAssetSuspicious();
 
-  const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
+  const isTxUnableToScan = shouldTreatTxAsUnableToScan(scanResult);
 
-  // Handle unable to scan state - use same logic as BlockaidTxScanLabel
-  if (isUnableToScan) {
+  // Handle transaction unable to scan
+  if (isTxUnableToScan && !scanResult) {
     return (
       <div className="BlockaidDetailsExpanded">
         <div className="BlockaidDetailsExpanded__Header">
@@ -1179,132 +1336,100 @@ export const BlockAidTxScanExpanded = ({
     return null;
   }
 
-  const { simulation, validation } = scanResult;
+  // Determine if this is a swap (both source and destination assets exist)
+  const isSwap = !!(srcAssetAddress && dstAssetAddress);
 
-  if (simulation && "error" in simulation) {
+  // Get warnings based on transaction type
+  const { warnings, isMalicious, isSuspicious } = isSwap
+    ? getSwapWarnings(
+        srcAssetScanResult,
+        dstAssetScanResult,
+        srcAssetAddress,
+        dstAssetAddress,
+        shouldTreatAssetAsUnableToScan,
+        isAssetSuspiciousCheck,
+        t,
+      )
+    : getTransactionWarnings(scanResult, isTxUnableToScan, t);
+
+  // If no warnings, return null
+  if (warnings.length === 0) {
+    return null;
+  }
+
+  // Determine warning type based on content
+  const warningType = isMalicious
+    ? "malicious"
+    : isSuspicious
+      ? "suspicious"
+      : "unable-to-scan";
+
+  if (warningType === "malicious") {
     return (
       <div className="BlockaidDetailsExpanded">
         <div className="BlockaidDetailsExpanded__Header">
-          <div className="WarningMark">
-            <Icon.AlertTriangle />
+          <div className="WarningMarkError">
+            <Icon.AlertOctagon />
           </div>
           <div className="Close" onClick={onClose}>
             <Icon.X />
           </div>
         </div>
-        <div className="BlockaidDetailsExpanded__Title">{t("Warning")}</div>
+        <div className="BlockaidDetailsExpanded__Title">
+          {t("Do not proceed")}
+        </div>
         <div className="BlockaidDetailsExpanded__SubTitle">
-          {t("This transaction is expected to fail for the following reasons.")}
+          {t("This transaction does not appear safe for the following reasons")}
         </div>
         <div className="BlockaidDetailsExpanded__Details">
-          <div className="BlockaidDetailsExpanded__DetailRow">
-            <Icon.MinusCircle />
-            <span>{simulation.error}</span>
-          </div>
+          {warnings.map((warning, index) => (
+            <div
+              key={index}
+              className={
+                warning.icon &&
+                React.isValidElement(warning.icon) &&
+                warning.icon.type === Icon.XCircle
+                  ? "BlockaidDetailsExpanded__DetailRowError"
+                  : "BlockaidDetailsExpanded__DetailRow"
+              }
+            >
+              {warning.icon}
+              <span>{warning.text}</span>
+            </div>
+          ))}
           <BlockaidByLine address={""} />
         </div>
       </div>
     );
   }
 
-  if (validation && "result_type" in validation) {
-    const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
-    const warnings: Array<{ icon: React.ReactNode; text: string }> = [];
-
-    // Add validation warning
-    if (validation.description) {
-      warnings.push({
-        icon:
-          validation.result_type === "Malicious" ? (
-            <Icon.XCircle />
-          ) : (
-            <Icon.MinusCircle />
-          ),
-        text: validation.description,
-      });
-    }
-
-    // Always add "unable to scan" message as a line when unable to scan
-    // This ensures the message is shown even when BlockAid returns no other warnings
-    if (isUnableToScan) {
-      warnings.push({
-        icon: <Icon.MinusCircle />,
-        text: t("Unable to scan transaction"),
-      });
-    }
-
-    switch (validation.result_type) {
-      case "Malicious": {
-        return (
-          <div className="BlockaidDetailsExpanded">
-            <div className="BlockaidDetailsExpanded__Header">
-              <div className="WarningMarkError">
-                <Icon.AlertOctagon />
-              </div>
-              <div className="Close" onClick={onClose}>
-                <Icon.X />
-              </div>
-            </div>
-            <div className="BlockaidDetailsExpanded__Title">
-              {t("Do not proceed")}
-            </div>
-            <div className="BlockaidDetailsExpanded__SubTitle">
-              {t(
-                "This transaction does not appear safe for the following reasons",
-              )}
-            </div>
-            <div className="BlockaidDetailsExpanded__Details">
-              {warnings.map((warning, index) => (
-                <div
-                  key={index}
-                  className="BlockaidDetailsExpanded__DetailRowError"
-                >
-                  {warning.icon}
-                  <span>{warning.text}</span>
-                </div>
-              ))}
-              <BlockaidByLine address={""} />
-            </div>
+  return (
+    <div className="BlockaidDetailsExpanded">
+      <div className="BlockaidDetailsExpanded__Header">
+        <div className="WarningMark">
+          <Icon.AlertTriangle />
+        </div>
+        <div className="Close" onClick={onClose}>
+          <Icon.X />
+        </div>
+      </div>
+      <div className="BlockaidDetailsExpanded__Title">
+        {warningType === "suspicious"
+          ? t("Suspicious Request")
+          : t("Proceed with caution")}
+      </div>
+      <div className="BlockaidDetailsExpanded__SubTitle">
+        {t("This transaction does not appear safe for the following reasons.")}
+      </div>
+      <div className="BlockaidDetailsExpanded__Details">
+        {warnings.map((warning, index) => (
+          <div key={index} className="BlockaidDetailsExpanded__DetailRow">
+            {warning.icon}
+            <span>{warning.text}</span>
           </div>
-        );
-      }
-
-      case "Warning": {
-        return (
-          <div className="BlockaidDetailsExpanded">
-            <div className="BlockaidDetailsExpanded__Header">
-              <div className="WarningMark">
-                <Icon.AlertTriangle />
-              </div>
-              <div className="Close" onClick={onClose}>
-                <Icon.X />
-              </div>
-            </div>
-            <div className="BlockaidDetailsExpanded__Title">
-              {t("Suspicious Request")}
-            </div>
-            <div className="BlockaidDetailsExpanded__SubTitle">
-              {t(
-                "This transaction does not appear safe for the following reasons.",
-              )}
-            </div>
-            <div className="BlockaidDetailsExpanded__Details">
-              {warnings.map((warning, index) => (
-                <div key={index} className="BlockaidDetailsExpanded__DetailRow">
-                  {warning.icon}
-                  <span>{warning.text}</span>
-                </div>
-              ))}
-            </div>
-            <BlockaidByLine address={""} />
-          </div>
-        );
-      }
-
-      case "Benign":
-      default:
-    }
-  }
-
-  return <></>;
+        ))}
+      </div>
+      <BlockaidByLine address={""} />
+    </div>
+  );
 };

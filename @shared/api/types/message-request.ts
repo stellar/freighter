@@ -441,6 +441,6 @@ export type ServiceMessageRequest =
   | GetHiddenAssetsMessage
   | GetMobileAppBannerDismissedMessage
   | DismissMobileAppBannerMessage
-  | GetBlockaidDebugOverrideMessage;
+  | GetBlockaidDebugOverrideMessage
   | AddCollectibleMessage
   | GetCollectiblesMessage;

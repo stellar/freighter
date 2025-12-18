@@ -240,9 +240,6 @@ export const useIsAssetSuspicious = () => {
   >(null);
 
   useEffect(() => {
-    if (!isDev) {
-      return;
-    }
     getBlockaidOverrideState()
       .then(setBlockaidOverrideState)
       .catch(() => setBlockaidOverrideState(null));
@@ -262,9 +259,6 @@ export const useIsTxSuspicious = () => {
   >(null);
 
   useEffect(() => {
-    if (!isDev) {
-      return;
-    }
     getBlockaidOverrideState()
       .then(setBlockaidOverrideState)
       .catch(() => setBlockaidOverrideState(null));
@@ -284,9 +278,6 @@ export const useShouldTreatAssetAsUnableToScan = () => {
   >(null);
 
   useEffect(() => {
-    if (!isDev) {
-      return;
-    }
     getBlockaidOverrideState()
       .then(setBlockaidOverrideState)
       .catch(() => setBlockaidOverrideState(null));
@@ -306,9 +297,6 @@ export const useShouldTreatTxAsUnableToScan = () => {
   >(null);
 
   useEffect(() => {
-    if (!isDev) {
-      return;
-    }
     getBlockaidOverrideState()
       .then(setBlockaidOverrideState)
       .catch(() => setBlockaidOverrideState(null));
