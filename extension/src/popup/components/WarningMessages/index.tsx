@@ -672,9 +672,7 @@ export const SwapAssetScanExpanded = ({
       </div>
       <div className="BlockaidDetailsExpanded__SubTitle">
         {isSrcSuspicious || isDstSuspicious
-          ? t(
-              "This transaction does not appear safe for the following reasons.",
-            )
+          ? `${t("This transaction does not appear safe for the following reasons")}:`
           : `${t("We were unable to scan this transaction for security threats")}. ${t("Proceed with caution")}`}
       </div>
       <div className="BlockaidDetailsExpanded__Details">
@@ -1357,6 +1355,7 @@ export const BlockAidTxScanExpanded = ({
         </div>
         <div className="BlockaidDetailsExpanded__SubTitle">
           {t("This transaction does not appear safe for the following reasons")}
+          :
         </div>
         <div className="BlockaidDetailsExpanded__Details">
           {warnings.map((warning, index) => (
@@ -1396,7 +1395,7 @@ export const BlockAidTxScanExpanded = ({
           : t("Proceed with caution")}
       </div>
       <div className="BlockaidDetailsExpanded__SubTitle">
-        {t("This transaction does not appear safe for the following reasons.")}
+        {t("This transaction does not appear safe for the following reasons")}:
       </div>
       <div className="BlockaidDetailsExpanded__Details">
         {warnings.map((warning, index) => (
