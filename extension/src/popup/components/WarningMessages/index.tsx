@@ -730,7 +730,7 @@ export const BlockAidAssetScanExpanded = ({
           {t("Proceed with caution")}
         </div>
         <div className="BlockaidDetailsExpanded__SubTitle">
-          {`${t("We were unable to scan this token for security threats")}. ${t("Proceed with caution")}`}
+          {t("This token does not appear safe for the following reasons")}:
         </div>
         <div className="BlockaidDetailsExpanded__Details">
           <div className="BlockaidDetailsExpanded__DetailRow">
@@ -767,7 +767,7 @@ export const BlockAidAssetScanExpanded = ({
   if (isUnableToScan) {
     warnings.push({
       icon: <Icon.MinusCircle />,
-      text: `${t("We were unable to scan this token for security threats")}. ${t("Proceed with caution")}`,
+      text: t("Unable to scan token"),
     });
   }
 
