@@ -936,6 +936,42 @@ export const stubMemoRequiredAccounts = async (
 };
 
 /**
+ * Stubs Stellar Expert asset search API for asset search by issuer address
+ * Returns asset information when searching for an asset by issuer
+ */
+export const stubAssetSearch = async (page: Page | BrowserContext) => {
+  await page.route("**/asset?search=**", async (route) => {
+    const url = route.request().url();
+    const parsedUrl = new URL(url);
+    const searchParam = parsedUrl.searchParams.get("search");
+
+    // If searching by issuer address (valid Stellar public key format)
+    if (
+      searchParam &&
+      searchParam.length === 56 &&
+      searchParam.startsWith("G")
+    ) {
+      const json = {
+        _embedded: {
+          records: [
+            {
+              asset: `TEST-${searchParam}`,
+              domain: "test.example.com",
+              tomlInfo: {
+                image: "",
+              },
+            },
+          ],
+        },
+      };
+      await route.fulfill({ json });
+    } else {
+      await route.continue();
+    }
+  });
+};
+
+/**
  * Creates an asset object for Horizon API path payment responses.
  * Converts asset codes to the format expected by Horizon's path payment endpoint.
  *

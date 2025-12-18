@@ -8,6 +8,7 @@ import {
   stubScanAssetSafe,
   stubScanTxSafe,
   createAssetObject,
+  stubAssetSearch,
 } from "./helpers/stubs";
 
 test.describe("BlockAid Scan - Safe States (No Override)", () => {
@@ -23,6 +24,7 @@ test.describe("BlockAid Scan - Safe States (No Override)", () => {
     });
     await stubTokenDetails(page);
     await stubScanAssetSafe(page);
+    await stubAssetSearch(page);
     // Mock mainnet check - asset scanning only works on mainnet
     // We need to mock account-balances to simulate mainnet so scanAsset proceeds
     await page.route("**/account-balances/*", async (route) => {

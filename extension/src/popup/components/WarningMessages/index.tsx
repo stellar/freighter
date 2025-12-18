@@ -1242,13 +1242,28 @@ const getSwapWarnings = (
  * Gets warnings for regular transactions by checking transaction-level scan results
  */
 const getTransactionWarnings = (
-  scanResult: BlockAidScanTxResult,
+  scanResult: BlockAidScanTxResult | null | undefined,
   isTxUnableToScan: boolean,
   t: (key: string) => string,
 ): WarningInfo => {
   const warnings: Array<{ icon: React.ReactNode; text: string }> = [];
   let isMalicious = false;
   let isSuspicious = false;
+
+  // If unable to scan, return unable to scan warning
+  if (isTxUnableToScan) {
+    warnings.push({
+      icon: <Icon.MinusCircle />,
+      text: t("Unable to scan transaction"),
+    });
+    return { warnings, isMalicious, isSuspicious };
+  }
+
+  // If no scan result, return empty warnings
+  if (!scanResult) {
+    return { warnings, isMalicious, isSuspicious };
+  }
+
   const { simulation, validation } = scanResult;
 
   if (simulation && "error" in simulation) {
@@ -1278,13 +1293,6 @@ const getTransactionWarnings = (
     }
   }
 
-  if (isTxUnableToScan && warnings.length === 0) {
-    warnings.push({
-      icon: <Icon.MinusCircle />,
-      text: t("Unable to scan transaction"),
-    });
-  }
-
   return { warnings, isMalicious, isSuspicious };
 };
 
@@ -1303,43 +1311,12 @@ export const BlockAidTxScanExpanded = ({
 
   const isTxUnableToScan = shouldTreatTxAsUnableToScan(scanResult);
 
-  // Handle transaction unable to scan
-  if (isTxUnableToScan && !scanResult) {
-    return (
-      <div className="BlockaidDetailsExpanded">
-        <div className="BlockaidDetailsExpanded__Header">
-          <div className="WarningMark">
-            <Icon.AlertTriangle />
-          </div>
-          <div className="Close" onClick={onClose}>
-            <Icon.X />
-          </div>
-        </div>
-        <div className="BlockaidDetailsExpanded__Title">
-          {t("Proceed with caution")}
-        </div>
-        <div className="BlockaidDetailsExpanded__SubTitle">
-          {`${t("We were unable to scan this transaction for security threats")}. ${t("Proceed with caution")}`}
-        </div>
-        <div className="BlockaidDetailsExpanded__Details">
-          <div className="BlockaidDetailsExpanded__DetailRow">
-            <Icon.MinusCircle />
-            <span>{t("Unable to scan transaction")}</span>
-          </div>
-          <BlockaidByLine address={""} />
-        </div>
-      </div>
-    );
-  }
-
-  if (!scanResult) {
-    return null;
-  }
-
-  // Determine if this is a swap (both source and destination assets exist)
-  const isSwap = !!(srcAssetAddress && dstAssetAddress);
+  // Determine if this is a swap (destination asset exists, source can be native)
+  const isSwap = !!dstAssetAddress;
 
   // Get warnings based on transaction type
+  // For swaps: check token scans (even if transaction scan failed)
+  // For sends: check transaction scan (handles null scanResult)
   const { warnings, isMalicious, isSuspicious } = isSwap
     ? getSwapWarnings(
         srcAssetScanResult,
@@ -1352,7 +1329,7 @@ export const BlockAidTxScanExpanded = ({
       )
     : getTransactionWarnings(scanResult, isTxUnableToScan, t);
 
-  // If no warnings, return null
+  // Early return if no warnings
   if (warnings.length === 0) {
     return null;
   }

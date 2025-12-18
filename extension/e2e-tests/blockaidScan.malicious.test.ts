@@ -8,6 +8,7 @@ import {
   stubScanAssetMalicious,
   stubScanTxMalicious,
   createAssetObject,
+  stubAssetSearch,
 } from "./helpers/stubs";
 
 test.describe("BlockAid Scan - Malicious States", () => {
@@ -23,6 +24,7 @@ test.describe("BlockAid Scan - Malicious States", () => {
     });
     await stubTokenDetails(page);
     await stubScanAssetMalicious(page);
+    await stubAssetSearch(page);
     // Mock mainnet check - asset scanning only works on mainnet
     // We need to mock account-balances to simulate mainnet so scanAsset proceeds
     await page.route("**/account-balances/*", async (route) => {

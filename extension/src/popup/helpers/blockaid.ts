@@ -170,6 +170,23 @@ type ReportAssetWarningResponse = { data: number; error: string };
 
 type ReportTransactionWarningResponse = { data: number; error: string };
 
+/**
+ * Formats asset address for Blockaid scanning (similar to freighter-mobile's formatAddress)
+ * Returns `${tokenCode}-${tokenIssuer}` if issuer exists, otherwise just `tokenCode`
+ * @param tokenCode - Asset code (e.g., "USDC", "XLM")
+ * @param tokenIssuer - Optional asset issuer public key
+ * @returns Formatted address string
+ */
+export const formatAssetAddress = (
+  tokenCode: string,
+  tokenIssuer?: string,
+): string => {
+  if (tokenIssuer) {
+    return `${tokenCode}-${tokenIssuer}`;
+  }
+  return tokenCode;
+};
+
 export const scanAsset = async (
   address: string,
   networkDetails: NetworkDetails,

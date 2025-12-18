@@ -29,6 +29,7 @@ import {
 import {
   useShouldTreatTxAsUnableToScan,
   useScanAsset,
+  formatAssetAddress,
 } from "popup/helpers/blockaid";
 import { BlockAidScanTxResult } from "@shared/api/types";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
@@ -150,11 +151,14 @@ export const ReviewTx = ({
   const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
 
   // Scan source and destination tokens separately (for swaps)
+  // Format as code-issuer for classic assets (scanAsset expects this format)
   const srcAssetAddress =
-    srcAsset !== "native" && asset.issuer ? asset.issuer : null;
+    srcAsset !== "native" && asset.issuer && asset.code
+      ? formatAssetAddress(asset.code, asset.issuer)
+      : null;
   const dstAssetAddress =
-    dstAsset && dstAsset.canonical !== "native" && dest?.issuer
-      ? dest.issuer
+    dstAsset && dstAsset.canonical !== "native" && dest?.issuer && dest?.code
+      ? formatAssetAddress(dest.code, dest.issuer)
       : null;
   const { scannedAsset: srcAssetScanResult } = useScanAsset(
     srcAssetAddress || "",

@@ -8,6 +8,7 @@ import {
   stubScanAssetSuspicious,
   stubScanTxSuspicious,
   createAssetObject,
+  stubAssetSearch,
 } from "./helpers/stubs";
 
 test.describe("BlockAid Scan - Suspicious States", () => {
@@ -23,6 +24,7 @@ test.describe("BlockAid Scan - Suspicious States", () => {
     });
     await stubTokenDetails(page);
     await stubScanAssetSuspicious(page);
+    await stubAssetSearch(page);
     // Mock mainnet check - asset scanning only works on mainnet
     // We need to mock account-balances to simulate mainnet so scanAsset proceeds
     await page.route("**/account-balances/*", async (route) => {
