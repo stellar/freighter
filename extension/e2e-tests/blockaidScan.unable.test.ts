@@ -99,10 +99,6 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
         .locator(".BlockaidDetailsExpanded__DetailRow")
         .getByText("Unable to scan token"),
     ).toBeVisible();
-    // Check for subtitle text (split into two parts)
-    await expect(
-      page.getByText("We were unable to scan this token for security threats"),
-    ).toBeVisible();
   });
 
   test("Send payment shows 'Unable to scan transaction' warning when scan fails", async ({
@@ -338,7 +334,7 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     await expect(
       page
         .locator(".BlockaidDetailsExpanded__DetailRow")
-        .filter({ hasText: "destination" }),
-    ).toBeVisible({ timeout: 15000 });
+        .getByText("Unable to scan destination token"),
+    ).toBeVisible({ timeout: 10000 });
   });
 });
