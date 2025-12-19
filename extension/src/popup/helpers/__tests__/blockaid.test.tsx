@@ -4,13 +4,9 @@ import { renderHook } from "@testing-library/react";
 import {
   isAssetUnableToScan,
   isTxUnableToScan,
-  shouldTreatAssetAsUnableToScan,
   shouldTreatTxAsUnableToScan,
-  isAssetSuspicious,
   isTxSuspicious,
-  useIsAssetSuspicious,
   useIsTxSuspicious,
-  useShouldTreatAssetAsUnableToScan,
   useShouldTreatTxAsUnableToScan,
 } from "../blockaid";
 import { SecurityLevel } from "popup/constants/blockaid";
@@ -73,59 +69,6 @@ describe("BlockAid Helper Functions", () => {
     });
   });
 
-  describe("shouldTreatAssetAsUnableToScan", () => {
-    beforeEach(() => {
-      process.env.DEV_EXTENSION = "true";
-    });
-
-    it("should return true when debug override is UNABLE_TO_SCAN (dev mode)", () => {
-      expect(
-        shouldTreatAssetAsUnableToScan(
-          { result_type: "Benign" } as BlockAidScanAssetResult,
-          SecurityLevel.UNABLE_TO_SCAN,
-        ),
-      ).toBe(true);
-    });
-
-    it("should return false when debug override is not UNABLE_TO_SCAN (dev mode)", () => {
-      expect(
-        shouldTreatAssetAsUnableToScan(
-          { result_type: "Benign" } as BlockAidScanAssetResult,
-          SecurityLevel.SAFE,
-        ),
-      ).toBe(false);
-    });
-
-    it("should return true when blockaidData is unable to scan (no override)", () => {
-      expect(shouldTreatAssetAsUnableToScan(null, null)).toBe(true);
-    });
-
-    it("should return false when blockaidData is valid (no override)", () => {
-      expect(
-        shouldTreatAssetAsUnableToScan(
-          { result_type: "Benign" } as BlockAidScanAssetResult,
-          null,
-        ),
-      ).toBe(false);
-    });
-
-    it("should ignore debug override in production mode", () => {
-      process.env.DEV_EXTENSION = "false";
-      process.env.PRODUCTION = "true";
-      jest.resetModules();
-      jest.doMock("@shared/helpers/dev", () => ({
-        isDev: false,
-      }));
-      const { shouldTreatAssetAsUnableToScan: testFn } = require("../blockaid");
-      expect(
-        testFn(
-          { result_type: "Benign" } as BlockAidScanAssetResult,
-          SecurityLevel.UNABLE_TO_SCAN,
-        ),
-      ).toBe(false);
-    });
-  });
-
   describe("shouldTreatTxAsUnableToScan", () => {
     beforeEach(() => {
       process.env.DEV_EXTENSION = "true";
@@ -174,99 +117,6 @@ describe("BlockAid Helper Functions", () => {
         testFn(
           { simulation: {} } as BlockAidScanTxResult,
           SecurityLevel.UNABLE_TO_SCAN,
-        ),
-      ).toBe(false);
-    });
-  });
-
-  describe("isAssetSuspicious", () => {
-    beforeEach(() => {
-      process.env.DEV_EXTENSION = "true";
-    });
-
-    describe("with debug override (dev mode)", () => {
-      it("should return false when override is UNABLE_TO_SCAN", () => {
-        expect(
-          isAssetSuspicious(
-            { result_type: "Malicious" } as BlockAidScanAssetResult,
-            SecurityLevel.UNABLE_TO_SCAN,
-          ),
-        ).toBe(false);
-      });
-
-      it("should return false when override is SAFE", () => {
-        expect(
-          isAssetSuspicious(
-            { result_type: "Malicious" } as BlockAidScanAssetResult,
-            SecurityLevel.SAFE,
-          ),
-        ).toBe(false);
-      });
-
-      it("should return true when override is SUSPICIOUS", () => {
-        expect(
-          isAssetSuspicious(
-            { result_type: "Benign" } as BlockAidScanAssetResult,
-            SecurityLevel.SUSPICIOUS,
-          ),
-        ).toBe(true);
-      });
-
-      it("should return true when override is MALICIOUS", () => {
-        expect(
-          isAssetSuspicious(
-            { result_type: "Benign" } as BlockAidScanAssetResult,
-            SecurityLevel.MALICIOUS,
-          ),
-        ).toBe(true);
-      });
-    });
-
-    describe("without debug override", () => {
-      it("should return false when unable to scan", () => {
-        expect(isAssetSuspicious(null, null)).toBe(false);
-      });
-
-      it("should return false when result_type is Benign", () => {
-        expect(
-          isAssetSuspicious(
-            { result_type: "Benign" } as BlockAidScanAssetResult,
-            null,
-          ),
-        ).toBe(false);
-      });
-
-      it("should return true when result_type is not Benign", () => {
-        expect(
-          isAssetSuspicious(
-            { result_type: "Malicious" } as BlockAidScanAssetResult,
-            null,
-          ),
-        ).toBe(true);
-      });
-
-      it("should return true when result_type is Warning", () => {
-        expect(
-          isAssetSuspicious(
-            { result_type: "Warning" } as BlockAidScanAssetResult,
-            null,
-          ),
-        ).toBe(true);
-      });
-    });
-
-    it("should ignore debug override in production mode", () => {
-      process.env.DEV_EXTENSION = "false";
-      process.env.PRODUCTION = "true";
-      jest.resetModules();
-      jest.doMock("@shared/helpers/dev", () => ({
-        isDev: false,
-      }));
-      const { isAssetSuspicious: testFn } = require("../blockaid");
-      expect(
-        testFn(
-          { result_type: "Benign" } as BlockAidScanAssetResult,
-          SecurityLevel.MALICIOUS,
         ),
       ).toBe(false);
     });
@@ -396,84 +246,6 @@ describe("BlockAid Helper Functions", () => {
     });
   });
 
-  describe("useIsAssetSuspicious hook", () => {
-    beforeEach(() => {
-      process.env.DEV_EXTENSION = "true";
-    });
-
-    it("should use debug override from Redux store (dev mode)", () => {
-      const store = makeDummyStore({
-        settings: {
-          overriddenBlockaidResponse: SecurityLevel.MALICIOUS,
-        },
-      });
-
-      const Wrapper = ({ children }: { children: React.ReactNode }) => (
-        <Provider store={store}>{children}</Provider>
-      );
-
-      const { result } = renderHook(() => useIsAssetSuspicious(), {
-        wrapper: Wrapper,
-      });
-
-      expect(
-        result.current({ result_type: "Benign" } as BlockAidScanAssetResult),
-      ).toBe(true);
-    });
-
-    it("should ignore debug override in production mode", () => {
-      process.env.DEV_EXTENSION = "false";
-      process.env.PRODUCTION = "true";
-      jest.resetModules();
-      jest.doMock("@shared/helpers/dev", () => ({
-        isDev: false,
-      }));
-
-      const { useIsAssetSuspicious: testHook } = require("../blockaid");
-
-      const store = makeDummyStore({
-        settings: {
-          overriddenBlockaidResponse: SecurityLevel.MALICIOUS,
-        },
-      });
-
-      const Wrapper = ({ children }: { children: React.ReactNode }) => (
-        <Provider store={store}>{children}</Provider>
-      );
-
-      const { result } = renderHook(() => testHook(), {
-        wrapper: Wrapper,
-      });
-
-      expect(
-        result.current({ result_type: "Benign" } as BlockAidScanAssetResult),
-      ).toBe(false);
-    });
-
-    it("should work without debug override", () => {
-      const store = makeDummyStore({
-        settings: {
-          overriddenBlockaidResponse: null,
-        },
-      });
-
-      const Wrapper = ({ children }: { children: React.ReactNode }) => (
-        <Provider store={store}>{children}</Provider>
-      );
-
-      const { result } = renderHook(() => useIsAssetSuspicious(), {
-        wrapper: Wrapper,
-      });
-
-      expect(
-        result.current({ result_type: "Malicious" } as BlockAidScanAssetResult),
-      ).toBe(true);
-      expect(
-        result.current({ result_type: "Benign" } as BlockAidScanAssetResult),
-      ).toBe(false);
-    });
-  });
-
   describe("useIsTxSuspicious hook", () => {
     beforeEach(() => {
       process.env.DEV_EXTENSION = "true";
@@ -529,63 +301,6 @@ describe("BlockAid Helper Functions", () => {
         result.current({
           validation: { result_type: "Benign" },
         } as BlockAidScanTxResult),
-      ).toBe(false);
-    });
-  });
-
-  describe("useShouldTreatAssetAsUnableToScan hook", () => {
-    beforeEach(() => {
-      process.env.DEV_EXTENSION = "true";
-    });
-
-    it("should use debug override from Redux store (dev mode)", () => {
-      const store = makeDummyStore({
-        settings: {
-          overriddenBlockaidResponse: SecurityLevel.UNABLE_TO_SCAN,
-        },
-      });
-
-      const Wrapper = ({ children }: { children: React.ReactNode }) => (
-        <Provider store={store}>{children}</Provider>
-      );
-
-      const { result } = renderHook(() => useShouldTreatAssetAsUnableToScan(), {
-        wrapper: Wrapper,
-      });
-
-      expect(
-        result.current({ result_type: "Benign" } as BlockAidScanAssetResult),
-      ).toBe(true);
-    });
-
-    it("should ignore debug override in production mode", () => {
-      process.env.DEV_EXTENSION = "false";
-      process.env.PRODUCTION = "true";
-      jest.resetModules();
-      jest.doMock("@shared/helpers/dev", () => ({
-        isDev: false,
-      }));
-
-      const {
-        useShouldTreatAssetAsUnableToScan: testHook,
-      } = require("../blockaid");
-
-      const store = makeDummyStore({
-        settings: {
-          overriddenBlockaidResponse: SecurityLevel.UNABLE_TO_SCAN,
-        },
-      });
-
-      const Wrapper = ({ children }: { children: React.ReactNode }) => (
-        <Provider store={store}>{children}</Provider>
-      );
-
-      const { result } = renderHook(() => testHook(), {
-        wrapper: Wrapper,
-      });
-
-      expect(
-        result.current({ result_type: "Benign" } as BlockAidScanAssetResult),
       ).toBe(false);
     });
   });

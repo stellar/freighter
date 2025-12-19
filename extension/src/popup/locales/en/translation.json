@@ -541,6 +541,7 @@
   "This token does not appear safe for the following reasons": "This token does not appear safe for the following reasons",
   "This transaction could not be completed.": "This transaction could not be completed.",
   "This transaction does not appear safe for the following reasons": "This transaction does not appear safe for the following reasons",
+  "This transaction does not appear safe for the following reasons.": "This transaction does not appear safe for the following reasons.",
   "This transaction is expected to fail": "This transaction is expected to fail",
   "This transaction is expected to fail for the following reasons.": "This transaction is expected to fail for the following reasons.",
   "This transaction was flagged as malicious": "This transaction was flagged as malicious",

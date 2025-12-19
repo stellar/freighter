@@ -940,14 +940,11 @@ export const BlockAidTxScanExpanded = ({
 }: BlockAidTxScanExpandedProps) => {
   const { t } = useTranslation();
   const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
-  const shouldTreatAssetAsUnableToScan = useShouldTreatAssetAsUnableToScan();
 
-  // Determine if this is an asset or transaction scan result
-  const isAssetResult =
-    scanResult && "result_type" in scanResult && !("simulation" in scanResult);
-  const isUnableToScan = isAssetResult
-    ? shouldTreatAssetAsUnableToScan(scanResult as BlockAidScanAssetResult)
-    : shouldTreatTxAsUnableToScan(scanResult as BlockAidScanTxResult);
+  // Always use transaction-based unable to scan logic
+  const isUnableToScan = shouldTreatTxAsUnableToScan(
+    scanResult as BlockAidScanTxResult,
+  );
 
   // Get warnings from scan result (handles both asset and transaction)
   const { warnings, isMalicious, isSuspicious } = getScanWarnings(
@@ -1024,11 +1021,7 @@ export const BlockAidTxScanExpanded = ({
           : t("Proceed with caution")}
       </div>
       <div className="BlockaidDetailsExpanded__SubTitle">
-        {isAssetResult
-          ? t("This token does not appear safe for the following reasons") + ":"
-          : t(
-              "This transaction does not appear safe for the following reasons",
-            ) + ":"}
+        {t("This transaction does not appear safe for the following reasons.")}
       </div>
       <div className="BlockaidDetailsExpanded__Details">
         {warnings.map((warning, index) => (
