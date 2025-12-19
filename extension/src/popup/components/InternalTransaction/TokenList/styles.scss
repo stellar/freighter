@@ -19,12 +19,16 @@
     flex-direction: column;
     margin-top: pxToRem(32px);
 
+    &--no-header {
+      margin-top: pxToRem(12px);
+    }
+
     &__empty {
       display: flex;
       justify-content: center;
       height: 100%;
       width: 100%;
-      color: var(--clr-text-secondary);
+      color: var(--sds-clr-gray-11);
       text-align: center;
       font-size: pxToRem(12px);
     }
