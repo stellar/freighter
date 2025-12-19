@@ -55,6 +55,27 @@
         aspect-ratio: 1/1;
         border-radius: pxToRem(12px);
         overflow: hidden;
+
+        &__placeholder {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+          width: 100%;
+          background-color: var(--sds-clr-gray-03);
+
+          svg {
+            height: pxToRem(48px);
+            width: pxToRem(48px);
+            color: var(--sds-clr-gray-11);
+          }
+        }
+
+        img {
+          height: 100%;
+          width: 100%;
+          object-fit: cover;
+        }
       }
     }
   }

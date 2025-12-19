@@ -441,14 +441,6 @@ interface TransactionData {
   isMergeSelected: boolean;
   balancesToMigrate: BalanceToMigrate[];
   isSoroswap: boolean;
-  isCollectible: boolean;
-  collectibleData: {
-    collectionName: string;
-    collectionAddress: string;
-    tokenId: number | null;
-    name: string;
-    image: string;
-  };
 }
 
 interface HardwareWalletData {
@@ -502,14 +494,6 @@ export const initialState: InitialState = {
     destinationIcon: "",
     path: [],
     allowedSlippage: "1",
-    isCollectible: false,
-    collectibleData: {
-      collectionName: "",
-      collectionAddress: "",
-      tokenId: null,
-      name: "",
-      image: "",
-    },
     isToken: false,
     isMergeSelected: false,
     balancesToMigrate: [] as BalanceToMigrate[],
@@ -579,30 +563,6 @@ const transactionSubmissionSlice = createSlice({
     saveIsToken: (state, action) => {
       state.transactionData.isToken = action.payload;
     },
-    saveIsCollectible: (state, action) => {
-      state.transactionData.isCollectible = action.payload;
-      if (!action.payload) {
-        // reset the collectible form data if a collectible is not selected
-        state.transactionData.collectibleData.collectionAddress = "";
-        state.transactionData.collectibleData.tokenId = null;
-        state.transactionData.collectibleData.name = "";
-      }
-    },
-    saveCollectibleData: (
-      state,
-      action: {
-        payload: {
-          collectionName: string;
-          collectionAddress: string;
-          tokenId: number;
-          name: string;
-          image: string;
-        };
-      },
-    ) => {
-      state.transactionData.collectibleData = action.payload;
-    },
-
     saveSimulation: (state, action) => {
       state.transactionSimulation = action.payload;
     },
@@ -759,8 +719,6 @@ export const {
   saveIsSoroswap,
   saveAllowedSlippage,
   saveIsToken,
-  saveIsCollectible,
-  saveCollectibleData,
   saveSimulation,
   startHwConnect,
   startHwSign,

@@ -1,9 +1,3 @@
-/**
- * @fileoverview AccountTabs component provides tab navigation and asset management
- * functionality for the account view. It includes tabs for tokens and collectibles,
- * with modal dialogs for managing assets and adding collectibles.
- */
-
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -23,66 +17,6 @@ import { useActiveTab } from "./hooks/useActiveTab";
 
 import "./styles.scss";
 
-/**
- * TabButtons component renders the tab navigation buttons for switching between
- * tokens and collectibles views. Hides the collectibles tab on custom networks.
- *
- * @param {Object} props - Component props
- * @param {boolean} [props.isIncludingIcons] - Whether to display icons alongside tab labels (used in Send flow)
- * @returns {JSX.Element} Rendered tab buttons
- */
-export const TabButtons = ({
-  isIncludingIcons,
-}: {
-  isIncludingIcons?: boolean;
-}) => {
-  const { t } = useTranslation();
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { activeTab, setActiveTab } = useActiveTab();
-
-  const tabLabels: Record<string, string> = {
-    tokens: t("Tokens"),
-    collectibles: t("Collectibles"),
-  };
-
-  const tabIcons: Record<string, React.ReactNode> = {
-    tokens: <Icon.Coins03 />,
-    collectibles: <Icon.Image01 />,
-  };
-
-  return (
-    <>
-      {Object.values(TabsList).map((tab) => {
-        if (tab === TabsList.COLLECTIBLES && isCustomNetwork(networkDetails)) {
-          return null;
-        }
-
-        return (
-          <div
-            data-testid={`account-tab-${tab}`}
-            className={classnames("AccountTabs__tab-item", {
-              "AccountTabs__tab-item--active": activeTab === tab,
-            })}
-            key={tab}
-            onClick={() => {
-              setActiveTab(tab);
-            }}
-          >
-            {isIncludingIcons && tabIcons[tab]}
-            {tabLabels[tab]}
-          </div>
-        );
-      })}
-    </>
-  );
-};
-
-/**
- * ManageAssetsModalContent component renders the content for the manage assets modal,
- * providing links to add tokens and manage existing tokens.
- *
- * @returns {JSX.Element} Modal content with links to asset management routes
- */
 const ManageAssetsModalContent = () => {
   const { t } = useTranslation();
 
@@ -112,12 +46,6 @@ const ManageAssetsModalContent = () => {
   );
 };
 
-/**
- * AddCollectiblesModalContent component renders the content for the add collectibles modal,
- * providing a link to manually add collectibles.
- *
- * @returns {JSX.Element} Modal content with link to add collectibles route
- */
 const AddCollectiblesModalContent = () => {
   const { t } = useTranslation();
 
@@ -145,27 +73,18 @@ const AddCollectiblesModalContent = () => {
   );
 };
 
-/**
- * AccountTabs component is the main container for account tab navigation and asset management.
- * It manages the state of tab selection and modal dialogs for managing assets and collectibles.
- * Displays a loading background overlay when modals are open.
- *
- * @returns {JSX.Element} Account tabs component with navigation and management modals
- */
 export const AccountTabs = () => {
+  const { t } = useTranslation();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [isManageAssetsOpen, setIsManageAssetsOpen] = useState(false);
   const [isAddCollectiblesOpen, setIsAddCollectiblesOpen] = useState(false);
   const isBackgroundActive = isManageAssetsOpen || isAddCollectiblesOpen;
 
-  const { activeTab } = useActiveTab();
+  const { activeTab, setActiveTab } = useActiveTab();
 
   const isTokensTab = activeTab === TabsList.TOKENS;
   const isCollectiblesTab = activeTab === TabsList.COLLECTIBLES;
 
-  /**
-   * Handles the click event on the manage button, toggling the appropriate modal
-   * based on the currently active tab.
-   */
   const handleManageClick = () => {
     if (isTokensTab) {
       setIsManageAssetsOpen(!isManageAssetsOpen);
@@ -174,10 +93,37 @@ export const AccountTabs = () => {
     }
   };
 
+  const tabLabels: Record<string, string> = {
+    tokens: t("Tokens"),
+    collectibles: t("Collectibles"),
+  };
+
   return (
     <div className="AccountTabs">
       <div className="AccountTabs__tabs">
-        <TabButtons />
+        {Object.values(TabsList).map((tab) => {
+          if (
+            tab === TabsList.COLLECTIBLES &&
+            isCustomNetwork(networkDetails)
+          ) {
+            return null;
+          }
+
+          return (
+            <div
+              data-testid={`account-tab-${tab}`}
+              className={classnames("AccountTabs__tab-item", {
+                "AccountTabs__tab-item--active": activeTab === tab,
+              })}
+              key={tab}
+              onClick={() => {
+                setActiveTab(tab);
+              }}
+            >
+              {tabLabels[tab]}
+            </div>
+          );
+        })}
       </div>
 
       <AccountHeaderModal
