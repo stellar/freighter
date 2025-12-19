@@ -51,7 +51,7 @@ import { Preferences } from "popup/views/Preferences";
 import { Security } from "popup/views/Security";
 import { AdvancedSettings } from "popup/views/AdvancedSettings";
 import { About } from "popup/views/About";
-import { Send } from "popup/views/Send";
+import { SendPayment } from "popup/views/SendPayment";
 import { ManageAssets } from "popup/views/ManageAssets";
 import { AddCollectibles } from "popup/views/AddCollectibles";
 import { VerifyAccount } from "popup/views/VerifyAccount";
@@ -235,11 +235,7 @@ export const Router = () => (
         ></Route>
         <Route
           path={`${ROUTES.sendPayment}/*`}
-          element={
-            <ActiveTabProvider>
-              <Send />
-            </ActiveTabProvider>
-          }
+          element={<SendPayment />}
         ></Route>
         <Route
           path={`${ROUTES.manageAssets}/*`}

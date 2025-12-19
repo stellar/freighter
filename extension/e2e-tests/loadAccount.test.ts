@@ -688,7 +688,7 @@ test("Loads collectibles data with successful metadata", async ({
   await stubAccountHistory(page);
   await stubTokenPrices(page);
   await stubScanDapp(context);
-  await stubCollectibles(page, true);
+  await stubCollectibles(page);
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
@@ -803,27 +803,6 @@ test("Loads collectibles data with successful metadata", async ({
   await expect(
     page.getByTestId("CollectibleDetail__attribute__value"),
   ).toHaveText("Green (updated)");
-
-  // test that the send button navigates to the send payment page
-  await page.getByTestId("CollectibleDetail__footer__buttons__send").click();
-  await expect(page.getByTestId("SelectedCollectible")).toBeVisible();
-  await expect(
-    page.getByTestId("SelectedCollectible__base-info__row__name__value"),
-  ).toHaveText("Stellar Frog 1 (updated)");
-  await expect(
-    page.getByTestId(
-      "SelectedCollectible__base-info__row__collectionName__value",
-    ),
-  ).toHaveText("Stellar Frogs");
-  await expect(
-    page.getByTestId("SelectedCollectible__base-info__row__tokenId__value"),
-  ).toHaveText("1");
-  await expect(
-    page.getByTestId("SelectedCollectible__image").locator("img"),
-  ).toHaveAttribute(
-    "src",
-    "https://nftcalendar.io/storage/uploads/2024/06/02/pepe-the-bot_ml4cWknXFrF3K3U1.jpeg",
-  );
 });
 
 test("Loads collectibles data with unsuccessful metadata", async ({
