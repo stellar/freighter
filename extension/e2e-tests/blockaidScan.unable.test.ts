@@ -12,7 +12,7 @@ import {
 } from "./helpers/stubs";
 
 test.describe("BlockAid Scan - Unable to Scan States", () => {
-  test("Add asset shows 'Unable to scan token' warning when scan fails", async ({
+  test("Add asset shows 'Unable to scan transaction' warning when scan fails", async ({
     page,
     extensionId,
   }) => {
@@ -82,7 +82,7 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
       await page.waitForTimeout(2000);
     }
 
-    // Should show "Unable to scan token" banner (test ID)
+    // Should show "Unable to scan transaction" banner (test ID)
     // Note: On testnet, scanAsset returns {} which should be treated as unable to scan
     // The warning should appear in ChangeTrustInternal when isAssetUnableToScan is true
     await expect(page.getByTestId("blockaid-unable-to-scan-label")).toBeVisible(
@@ -92,12 +92,12 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     // Click on the banner to expand
     await page.getByTestId("blockaid-unable-to-scan-label").click();
 
-    // Should show expanded view with "Unable to scan token" detail inside the BlockAid box
+    // Should show expanded view with "Unable to scan transaction" detail inside the BlockAid box
     // The text appears in a detail row inside BlockaidDetailsExpanded
     await expect(
       page
         .locator(".BlockaidDetailsExpanded__DetailRow")
-        .getByText("Unable to scan token"),
+        .getByText("Unable to scan transaction"),
     ).toBeVisible();
   });
 
@@ -157,7 +157,7 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     ).toBeVisible();
   });
 
-  test("Swap shows 'Unable to scan source/destination token' warnings when scans fail", async ({
+  test("Swap shows 'Unable to scan transaction' warning when transaction scan fails", async ({
     page,
     extensionId,
   }) => {
@@ -182,7 +182,7 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
             total: "100",
             limit: "922337203685.4775807",
             available: "100",
-            blockaidData: null, // Unable to scan
+            blockaidData: null, // Unable to scan (not used anymore since we only scan transactions)
           },
           native: {
             token: {
@@ -252,9 +252,7 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     await stubAccountHistory(page);
     await stubTokenDetails(page);
     await stubTokenPrices(page);
-    await stubScanAssetUnableToScan(page);
-    // Transaction scan should be unable to scan to trigger the check
-    // For swaps, it will then check token scans and show token-specific warnings
+    // Transaction scan should be unable to scan
     await stubScanTxUnableToScan(page);
     await loginToTestAccount({ page, extensionId });
 
@@ -327,14 +325,11 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     // Wait a bit more for the content to render
     await page.waitForTimeout(2000);
 
-    // Should show expanded view with token-specific warnings inside the BlockAid box
-    // BlockAidTxScanExpanded shows detail rows for source/destination tokens
-    // Since we're swapping XLM (native) -> USDC, only USDC should show "Unable to scan destination token"
-    // Check for any detail row that contains "destination" and "token" or "Unable to scan"
+    // Should show expanded view with "Unable to scan transaction" warning
     await expect(
       page
         .locator(".BlockaidDetailsExpanded__DetailRow")
-        .getByText("Unable to scan destination token"),
+        .getByText("Unable to scan transaction"),
     ).toBeVisible({ timeout: 10000 });
   });
 });

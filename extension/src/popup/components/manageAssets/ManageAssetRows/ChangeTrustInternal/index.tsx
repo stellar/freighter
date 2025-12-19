@@ -20,7 +20,7 @@ import { Details } from "popup/views/SignTransaction/Preview/Details";
 import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 import { Trustline } from "popup/views/SignTransaction";
 import {
-  BlockAidAssetScanExpanded,
+  BlockAidTxScanExpanded,
   BlockaidAssetWarning,
 } from "popup/components/WarningMessages";
 import { useGetChangeTrustData } from "./hooks/useChangeTrustData";
@@ -269,7 +269,7 @@ export const ChangeTrustInternal = ({
               </div>
             </div>,
             <View.Content hasNoTopPadding>
-              <BlockAidAssetScanExpanded
+              <BlockAidTxScanExpanded
                 scanResult={state.data.scanResult}
                 onClose={() => setActivePaneIndex(0)}
               />

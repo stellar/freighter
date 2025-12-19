@@ -29,7 +29,6 @@ import {
   useShouldTreatAssetAsUnableToScan,
   useShouldTreatTxAsUnableToScan,
   useIsTxSuspicious,
-  useIsAssetSuspicious,
 } from "popup/helpers/blockaid";
 import { SecurityLevel } from "popup/constants/blockaid";
 
@@ -476,7 +475,7 @@ interface BlockaidAssetWarningProps {
 export const BlockaidAssetWarning = ({
   blockaidData,
   onClick,
-  messageKey = "Unable to scan token",
+  messageKey = "Unable to scan transaction",
 }: BlockaidAssetWarningProps) => {
   const { t } = useTranslation();
   const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
@@ -544,294 +543,6 @@ export const BlockaidAssetWarning = ({
       </div>
       <div className="ScanLabel__Action">
         <Icon.ChevronRight />
-      </div>
-    </div>
-  );
-};
-
-interface BlockAidAssetScanExpandedProps {
-  scanResult: BlockAidScanAssetResult | null | undefined;
-  onClose?: () => void;
-}
-
-interface SwapAssetScanExpandedProps {
-  srcAssetScanResult: BlockAidScanAssetResult | null | undefined;
-  dstAssetScanResult: BlockAidScanAssetResult | null | undefined;
-  srcAssetAddress: string | null;
-  dstAssetAddress: string | null;
-  onClose?: () => void;
-}
-
-export const SwapAssetScanExpanded = ({
-  srcAssetScanResult,
-  dstAssetScanResult,
-  srcAssetAddress,
-  dstAssetAddress,
-  onClose,
-}: SwapAssetScanExpandedProps) => {
-  const { t } = useTranslation();
-  const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
-  const isAssetSuspiciousCheck = useIsAssetSuspicious();
-
-  const isSrcUnableToScan =
-    srcAssetAddress && shouldTreatAsUnableToScan(srcAssetScanResult);
-  const isDstUnableToScan =
-    dstAssetAddress && shouldTreatAsUnableToScan(dstAssetScanResult);
-  const isSrcSuspicious =
-    srcAssetAddress && isAssetSuspiciousCheck(srcAssetScanResult);
-  const isDstSuspicious =
-    dstAssetAddress && isAssetSuspiciousCheck(dstAssetScanResult);
-
-  const warnings: Array<{ icon: React.ReactNode; text: string }> = [];
-
-  // Add source token warning if unable to scan or suspicious/malicious
-  if (isSrcUnableToScan) {
-    warnings.push({
-      icon: <Icon.MinusCircle />,
-      text: t("Unable to scan source token"),
-    });
-  } else if (isSrcSuspicious && srcAssetScanResult) {
-    const resultType = srcAssetScanResult.result_type;
-    const features = srcAssetScanResult.features || [];
-    // Add feature descriptions as warnings
-    features.forEach((feature) => {
-      warnings.push({
-        icon:
-          resultType === "Malicious" ? <Icon.XCircle /> : <Icon.MinusCircle />,
-        text: feature.description,
-      });
-    });
-  }
-
-  // Add destination token warning if unable to scan or suspicious/malicious
-  if (isDstUnableToScan) {
-    warnings.push({
-      icon: <Icon.MinusCircle />,
-      text: t("Unable to scan destination token"),
-    });
-  } else if (isDstSuspicious && dstAssetScanResult) {
-    const resultType = dstAssetScanResult.result_type;
-    const features = dstAssetScanResult.features || [];
-    // Add feature descriptions as warnings
-    features.forEach((feature) => {
-      warnings.push({
-        icon:
-          resultType === "Malicious" ? <Icon.XCircle /> : <Icon.MinusCircle />,
-        text: feature.description,
-      });
-    });
-  }
-
-  // If no warnings, return null
-  if (warnings.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="BlockaidDetailsExpanded">
-      <div className="BlockaidDetailsExpanded__Header">
-        <div
-          className={
-            isSrcSuspicious || isDstSuspicious
-              ? isSrcSuspicious &&
-                srcAssetScanResult?.result_type === "Malicious"
-                ? "WarningMarkError"
-                : isDstSuspicious &&
-                    dstAssetScanResult?.result_type === "Malicious"
-                  ? "WarningMarkError"
-                  : "WarningMark"
-              : "WarningMark"
-          }
-        >
-          {isSrcSuspicious || isDstSuspicious ? (
-            isSrcSuspicious &&
-            srcAssetScanResult?.result_type === "Malicious" ? (
-              <Icon.AlertOctagon />
-            ) : isDstSuspicious &&
-              dstAssetScanResult?.result_type === "Malicious" ? (
-              <Icon.AlertOctagon />
-            ) : (
-              <Icon.AlertTriangle />
-            )
-          ) : (
-            <Icon.AlertTriangle />
-          )}
-        </div>
-        <div className="Close" onClick={onClose}>
-          <Icon.X />
-        </div>
-      </div>
-      <div className="BlockaidDetailsExpanded__Title">
-        {isSrcSuspicious || isDstSuspicious
-          ? isSrcSuspicious && srcAssetScanResult?.result_type === "Malicious"
-            ? t("Do not proceed")
-            : isDstSuspicious && dstAssetScanResult?.result_type === "Malicious"
-              ? t("Do not proceed")
-              : t("Warning")
-          : t("Proceed with caution")}
-      </div>
-      <div className="BlockaidDetailsExpanded__SubTitle">
-        {isSrcSuspicious || isDstSuspicious
-          ? `${t("This transaction does not appear safe for the following reasons")}:`
-          : `${t("We were unable to scan this transaction for security threats")}. ${t("Proceed with caution")}`}
-      </div>
-      <div className="BlockaidDetailsExpanded__Details">
-        {warnings.map((warning, index) => {
-          const isErrorRow =
-            warning.icon &&
-            React.isValidElement(warning.icon) &&
-            warning.icon.type === Icon.XCircle;
-          return (
-            <div
-              key={index}
-              className={
-                isErrorRow
-                  ? "BlockaidDetailsExpanded__DetailRowError"
-                  : "BlockaidDetailsExpanded__DetailRow"
-              }
-            >
-              {warning.icon}
-              <span>{warning.text}</span>
-            </div>
-          );
-        })}
-        <BlockaidByLine address={""} />
-      </div>
-    </div>
-  );
-};
-
-export const BlockAidAssetScanExpanded = ({
-  scanResult,
-  onClose,
-}: BlockAidAssetScanExpandedProps) => {
-  const { t } = useTranslation();
-  const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
-
-  // Check if asset is unable to scan
-  const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
-  const hasScanResult = scanResult && scanResult.result_type;
-
-  // Handle unable to scan state
-  if (isUnableToScan) {
-    return (
-      <div className="BlockaidDetailsExpanded">
-        <div className="BlockaidDetailsExpanded__Header">
-          <div className="WarningMark">
-            <Icon.AlertTriangle />
-          </div>
-          <div className="Close" onClick={onClose}>
-            <Icon.X />
-          </div>
-        </div>
-        <div className="BlockaidDetailsExpanded__Title">
-          {t("Proceed with caution")}
-        </div>
-        <div className="BlockaidDetailsExpanded__SubTitle">
-          {t("This token does not appear safe for the following reasons")}:
-        </div>
-        <div className="BlockaidDetailsExpanded__Details">
-          <div className="BlockaidDetailsExpanded__DetailRow">
-            <Icon.MinusCircle />
-            <span>{t("Unable to scan token")}</span>
-          </div>
-          <BlockaidByLine address={""} />
-        </div>
-      </div>
-    );
-  }
-
-  if (!hasScanResult) {
-    // This should be handled by the unable to scan check above, but TypeScript needs this
-    return null;
-  }
-
-  const { result_type, features } = scanResult;
-  const _features = features || [];
-
-  // Build warnings list - include "unable to scan" when there are other warnings
-  const warnings: Array<{ icon: React.ReactNode; text: string }> = [];
-
-  // Add feature warnings
-  _features.forEach((feature) => {
-    warnings.push({
-      icon: <Icon.MinusCircle />,
-      text: feature.description,
-    });
-  });
-
-  // Always add "unable to scan" message as a line when unable to scan
-  // This ensures the message is shown even when BlockAid returns no other warnings
-  if (isUnableToScan) {
-    warnings.push({
-      icon: <Icon.MinusCircle />,
-      text: t("Unable to scan token"),
-    });
-  }
-
-  const renderDetails = (
-    result_type: BlockAidScanAssetResult["result_type"],
-  ) => {
-    switch (result_type) {
-      case "Spam": {
-        return {
-          title: t("Warning"),
-          description: t(
-            "This asset has been flagged as spam for the following reasons.",
-          ),
-        };
-      }
-
-      case "Malicious": {
-        return {
-          title: t("Do not proceed"),
-          description: t(
-            "This asset has been flagged as malicious for the following reasons.",
-          ),
-        };
-      }
-
-      default: {
-        return {
-          title: t("Warning"),
-          description: t(
-            "This asset has been flagged as suspicious for the following reasons.",
-          ),
-        };
-      }
-    }
-  };
-
-  const { title, description } = renderDetails(result_type);
-  const warningType =
-    result_type === "Spam" || result_type === "Warning"
-      ? {
-          class: "WarningMark",
-          icon: <Icon.AlertTriangle />,
-        }
-      : {
-          class: "WarningMarkError",
-          icon: <Icon.AlertOctagon />,
-        };
-
-  return (
-    <div className="BlockaidDetailsExpanded">
-      <div className="BlockaidDetailsExpanded__Header">
-        <div className={warningType.class}>{warningType.icon}</div>
-        <div className="Close" onClick={onClose}>
-          <Icon.X />
-        </div>
-      </div>
-      <div className="BlockaidDetailsExpanded__Title">{title}</div>
-      <div className="BlockaidDetailsExpanded__SubTitle">{description}</div>
-      <div className="BlockaidDetailsExpanded__Details">
-        {warnings.map((warning, index) => (
-          <div className="BlockaidDetailsExpanded__DetailRow" key={index}>
-            {warning.icon}
-            <span>{warning.text}</span>
-          </div>
-        ))}
-        <BlockaidByLine address={""} />
       </div>
     </div>
   );
@@ -1131,11 +842,7 @@ export const BlockaidTxScanLabel = ({
 };
 
 interface BlockAidTxScanExpandedProps {
-  scanResult: BlockAidScanTxResult | null | undefined;
-  srcAssetScanResult?: BlockAidScanAssetResult | null;
-  dstAssetScanResult?: BlockAidScanAssetResult | null;
-  srcAssetAddress?: string | null;
-  dstAssetAddress?: string | null;
+  scanResult: BlockAidScanTxResult | BlockAidScanAssetResult | null | undefined;
   onClose?: () => void;
 }
 
@@ -1146,102 +853,11 @@ interface WarningInfo {
 }
 
 /**
- * Gets warnings for swap transactions by checking source and destination tokens
+ * Gets warnings for transactions and assets by checking scan results
  */
-const getSwapWarnings = (
-  srcAssetScanResult: BlockAidScanAssetResult | null | undefined,
-  dstAssetScanResult: BlockAidScanAssetResult | null | undefined,
-  srcAssetAddress: string | null | undefined,
-  dstAssetAddress: string | null | undefined,
-  shouldTreatAssetAsUnableToScan: (
-    result: BlockAidScanAssetResult | null | undefined,
-  ) => boolean,
-  isAssetSuspiciousCheck: (
-    result: BlockAidScanAssetResult | null | undefined,
-  ) => boolean,
-  t: (key: string) => string,
-): WarningInfo => {
-  const warnings: Array<{ icon: React.ReactNode; text: string }> = [];
-  let isMalicious = false;
-  let isSuspicious = false;
-
-  // Check source token
-  if (srcAssetAddress) {
-    const isSrcUnableToScan =
-      shouldTreatAssetAsUnableToScan(srcAssetScanResult);
-    const isSrcSuspicious = isAssetSuspiciousCheck(srcAssetScanResult);
-
-    if (isSrcUnableToScan) {
-      warnings.push({
-        icon: <Icon.MinusCircle />,
-        text: t("Unable to scan source token"),
-      });
-    } else if (isSrcSuspicious && srcAssetScanResult) {
-      const resultType = srcAssetScanResult.result_type;
-      if (resultType === "Malicious") {
-        isMalicious = true;
-      } else {
-        isSuspicious = true;
-      }
-
-      const features = srcAssetScanResult.features || [];
-      features.forEach((feature: { description: string }) => {
-        warnings.push({
-          icon:
-            resultType === "Malicious" ? (
-              <Icon.XCircle />
-            ) : (
-              <Icon.MinusCircle />
-            ),
-          text: feature.description,
-        });
-      });
-    }
-  }
-
-  // Check destination token
-  if (dstAssetAddress) {
-    const isDstUnableToScan =
-      shouldTreatAssetAsUnableToScan(dstAssetScanResult);
-    const isDstSuspicious = isAssetSuspiciousCheck(dstAssetScanResult);
-
-    if (isDstUnableToScan) {
-      warnings.push({
-        icon: <Icon.MinusCircle />,
-        text: t("Unable to scan destination token"),
-      });
-    } else if (isDstSuspicious && dstAssetScanResult) {
-      const resultType = dstAssetScanResult.result_type;
-      if (resultType === "Malicious") {
-        isMalicious = true;
-      } else {
-        isSuspicious = true;
-      }
-
-      const features = dstAssetScanResult.features || [];
-      features.forEach((feature: { description: string }) => {
-        warnings.push({
-          icon:
-            resultType === "Malicious" ? (
-              <Icon.XCircle />
-            ) : (
-              <Icon.MinusCircle />
-            ),
-          text: feature.description,
-        });
-      });
-    }
-  }
-
-  return { warnings, isMalicious, isSuspicious };
-};
-
-/**
- * Gets warnings for regular transactions by checking transaction-level scan results
- */
-const getTransactionWarnings = (
-  scanResult: BlockAidScanTxResult | null | undefined,
-  isTxUnableToScan: boolean,
+const getScanWarnings = (
+  scanResult: BlockAidScanTxResult | BlockAidScanAssetResult | null | undefined,
+  isUnableToScan: boolean,
   t: (key: string) => string,
 ): WarningInfo => {
   const warnings: Array<{ icon: React.ReactNode; text: string }> = [];
@@ -1249,7 +865,7 @@ const getTransactionWarnings = (
   let isSuspicious = false;
 
   // If unable to scan, return unable to scan warning
-  if (isTxUnableToScan) {
+  if (isUnableToScan) {
     warnings.push({
       icon: <Icon.MinusCircle />,
       text: t("Unable to scan transaction"),
@@ -1262,32 +878,56 @@ const getTransactionWarnings = (
     return { warnings, isMalicious, isSuspicious };
   }
 
-  const { simulation, validation } = scanResult;
+  // Handle transaction scan results
+  if ("simulation" in scanResult || "validation" in scanResult) {
+    const txResult = scanResult as BlockAidScanTxResult;
+    const { simulation, validation } = txResult;
 
-  if (simulation && "error" in simulation) {
-    warnings.push({
-      icon: <Icon.MinusCircle />,
-      text: simulation.error,
-    });
-  }
+    if (simulation && "error" in simulation) {
+      warnings.push({
+        icon: <Icon.MinusCircle />,
+        text: simulation.error,
+      });
+    }
 
-  if (validation && "result_type" in validation) {
-    if (validation.description) {
+    if (validation && "result_type" in validation) {
+      if (validation.description) {
+        warnings.push({
+          icon:
+            validation.result_type === "Malicious" ? (
+              <Icon.XCircle />
+            ) : (
+              <Icon.MinusCircle />
+            ),
+          text: validation.description,
+        });
+
+        if (validation.result_type === "Malicious") {
+          isMalicious = true;
+        } else if (validation.result_type === "Warning") {
+          isSuspicious = true;
+        }
+      }
+    }
+  } else {
+    // Handle asset scan results
+    const assetResult = scanResult as BlockAidScanAssetResult;
+    const { result_type, features } = assetResult;
+    const _features = features || [];
+
+    // Add feature warnings
+    _features.forEach((feature) => {
       warnings.push({
         icon:
-          validation.result_type === "Malicious" ? (
-            <Icon.XCircle />
-          ) : (
-            <Icon.MinusCircle />
-          ),
-        text: validation.description,
+          result_type === "Malicious" ? <Icon.XCircle /> : <Icon.MinusCircle />,
+        text: feature.description,
       });
+    });
 
-      if (validation.result_type === "Malicious") {
-        isMalicious = true;
-      } else if (validation.result_type === "Warning") {
-        isSuspicious = true;
-      }
+    if (result_type === "Malicious") {
+      isMalicious = true;
+    } else if (result_type === "Warning" || result_type === "Spam") {
+      isSuspicious = true;
     }
   }
 
@@ -1296,36 +936,25 @@ const getTransactionWarnings = (
 
 export const BlockAidTxScanExpanded = ({
   scanResult,
-  srcAssetScanResult,
-  dstAssetScanResult,
-  srcAssetAddress,
-  dstAssetAddress,
   onClose,
 }: BlockAidTxScanExpandedProps) => {
   const { t } = useTranslation();
   const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
   const shouldTreatAssetAsUnableToScan = useShouldTreatAssetAsUnableToScan();
-  const isAssetSuspiciousCheck = useIsAssetSuspicious();
 
-  const isTxUnableToScan = shouldTreatTxAsUnableToScan(scanResult);
+  // Determine if this is an asset or transaction scan result
+  const isAssetResult =
+    scanResult && "result_type" in scanResult && !("simulation" in scanResult);
+  const isUnableToScan = isAssetResult
+    ? shouldTreatAssetAsUnableToScan(scanResult as BlockAidScanAssetResult)
+    : shouldTreatTxAsUnableToScan(scanResult as BlockAidScanTxResult);
 
-  // Determine if this is a swap (destination asset exists, source can be native)
-  const isSwap = !!dstAssetAddress;
-
-  // Get warnings based on transaction type
-  // For swaps: check token scans (even if transaction scan failed)
-  // For sends: check transaction scan (handles null scanResult)
-  const { warnings, isMalicious, isSuspicious } = isSwap
-    ? getSwapWarnings(
-        srcAssetScanResult,
-        dstAssetScanResult,
-        srcAssetAddress,
-        dstAssetAddress,
-        shouldTreatAssetAsUnableToScan,
-        isAssetSuspiciousCheck,
-        t,
-      )
-    : getTransactionWarnings(scanResult, isTxUnableToScan, t);
+  // Get warnings from scan result (handles both asset and transaction)
+  const { warnings, isMalicious, isSuspicious } = getScanWarnings(
+    scanResult,
+    isUnableToScan,
+    t,
+  );
 
   // Early return if no warnings
   if (warnings.length === 0) {
@@ -1395,7 +1024,11 @@ export const BlockAidTxScanExpanded = ({
           : t("Proceed with caution")}
       </div>
       <div className="BlockaidDetailsExpanded__SubTitle">
-        {t("This transaction does not appear safe for the following reasons")}:
+        {isAssetResult
+          ? t("This token does not appear safe for the following reasons") + ":"
+          : t(
+              "This transaction does not appear safe for the following reasons",
+            ) + ":"}
       </div>
       <div className="BlockaidDetailsExpanded__Details">
         {warnings.map((warning, index) => (

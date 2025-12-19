@@ -104,9 +104,12 @@ test.describe("BlockAid Scan - Malicious States", () => {
     ).toBeVisible();
 
     // Should show warning detail rows from features
+    // For malicious assets, the detail row uses BlockaidDetailsExpanded__DetailRowError class
     await expect(
       page
-        .locator(".BlockaidDetailsExpanded__DetailRow")
+        .locator(
+          ".BlockaidDetailsExpanded__DetailRow, .BlockaidDetailsExpanded__DetailRowError",
+        )
         .getByText(/A malicious transaction causes a transfer/),
     ).toBeVisible();
   });

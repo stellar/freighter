@@ -26,11 +26,7 @@ import {
   BlockAidTxScanExpanded,
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
-import {
-  useShouldTreatTxAsUnableToScan,
-  useScanAsset,
-  formatAssetAddress,
-} from "popup/helpers/blockaid";
+import { useShouldTreatTxAsUnableToScan } from "popup/helpers/blockaid";
 import { BlockAidScanTxResult } from "@shared/api/types";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
@@ -149,23 +145,6 @@ export const ReviewTx = ({
   // Scan transaction
   const txScanResult = simulationState.data?.scanResult;
   const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
-
-  // Scan source and destination tokens separately (for swaps)
-  // Format as code-issuer for classic assets (scanAsset expects this format)
-  const srcAssetAddress =
-    srcAsset !== "native" && asset.issuer && asset.code
-      ? formatAssetAddress(asset.code, asset.issuer)
-      : null;
-  const dstAssetAddress =
-    dstAsset && dstAsset.canonical !== "native" && dest?.issuer && dest?.code
-      ? formatAssetAddress(dest.code, dest.issuer)
-      : null;
-  const { scannedAsset: srcAssetScanResult } = useScanAsset(
-    srcAssetAddress || "",
-  );
-  const { scannedAsset: dstAssetScanResult } = useScanAsset(
-    dstAssetAddress || "",
-  );
 
   // Compute warning state once - used by both label and expanded components
   const isUnableToScan = shouldTreatTxAsUnableToScan(txScanResult);
@@ -355,10 +334,6 @@ export const ReviewTx = ({
               </>,
               <BlockAidTxScanExpanded
                 scanResult={txScanResult}
-                srcAssetScanResult={srcAssetScanResult}
-                dstAssetScanResult={dstAssetScanResult}
-                srcAssetAddress={srcAssetAddress}
-                dstAssetAddress={dstAssetAddress}
                 onClose={() => setActivePaneIndex(0)}
               />,
             ]}
