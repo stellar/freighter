@@ -2,6 +2,8 @@
 
 .CollectibleInfo {
   &__image {
+    width: pxToRem(160px);
+    height: pxToRem(160px);
     border-radius: pxToRem(24px);
     margin-bottom: pxToRem(12px);
     overflow: hidden;
@@ -17,10 +19,6 @@
       height: 100%;
       border-radius: pxToRem(0);
       margin: 0;
-    }
-
-    &--history {
-      border-radius: pxToRem(6px);
     }
 
     &__placeholder {

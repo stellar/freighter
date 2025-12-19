@@ -93,8 +93,6 @@ export function useGetDestAssetData(getBalancesOptions: {
         });
 
         payload.collectibles = collectiblesResult;
-      } else {
-        payload.collectibles = { collections: [] };
       }
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;

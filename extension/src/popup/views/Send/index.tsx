@@ -1,8 +1,7 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Notification } from "@stellar/design-system";
-import { useTranslation } from "react-i18next";
+import { StrKey } from "stellar-sdk";
 
 import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/send-payment";
@@ -15,6 +14,9 @@ import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitT
 import {
   isPathPaymentSelector,
   resetSubmission,
+  saveAsset,
+  saveDestination,
+  saveFederationAddress,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
@@ -26,11 +28,6 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { TabsList } from "../Account/contexts/activeTabContext";
 import { navigateTo } from "popup/helpers/navigate";
-import { RequestState } from "constants/request";
-import { View } from "popup/basics/layout/View";
-
-import { useSendQueryParams } from "./hooks/useSendQueryParams";
-import { InputWidthProvider } from "./contexts/inputWidthContext";
 
 /* 
   Send handles sending both tokens (classic and Soroban) and collectibles to an external destination (G, M, or C account).
@@ -38,13 +35,13 @@ import { InputWidthProvider } from "./contexts/inputWidthContext";
 */
 export const Send = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const submission = useSelector(transactionSubmissionSelector);
   const isPathPayment = useSelector(isPathPaymentSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
   const { recommendedFee, networkCongestion } = useNetworkFees();
-  const { t } = useTranslation();
 
   const {
     transactionData: {
@@ -111,44 +108,52 @@ export const Send = () => {
   const [activeStep, setActiveStep] = React.useState(STEPS.AMOUNT);
 
   // Handle query params and set defaults on mount
-  // This is used to pre-populate the destination, asset and/or collectible data if they are provided in the query params.
-  useSendQueryParams();
+  // This is used to pre-populate the destination and asset if they are provided in the query params.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const destinationParam = params.get("destination");
+    const assetParam = params.get("asset");
+
+    // Pre-populate destination if provided and valid
+    if (destinationParam) {
+      const isValidDestination =
+        StrKey.isValidEd25519PublicKey(destinationParam) ||
+        isContractId(destinationParam);
+
+      if (isValidDestination) {
+        dispatch(saveDestination(destinationParam));
+        dispatch(saveFederationAddress("")); // Reset federation address
+      }
+    }
+
+    // Pre-populate asset if provided and valid, otherwise default to native
+    if (assetParam) {
+      try {
+        getAssetFromCanonical(assetParam);
+        dispatch(saveAsset(assetParam));
+      } catch {
+        // Invalid asset param, ignore and use default
+        if (!srcAsset) {
+          dispatch(saveAsset("native"));
+        }
+      }
+    } else if (!srcAsset) {
+      // Set default asset to native if not already set
+      dispatch(saveAsset("native"));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const renderStep = (step: STEPS) => {
     switch (step) {
       case STEPS.PAYMENT_CONFIRM: {
         emitMetric(METRIC_NAMES.sendPaymentConfirm);
-        let xdr = "";
-
-        // based on the type of Send, we need to get the XDR from the appropriate simulation state
-        if (isCollectible) {
-          if (collectibleSimulationState.state === RequestState.SUCCESS) {
-            xdr = collectibleSimulationState.data.transactionXdr;
-          }
-        } else {
-          if (paymentSimulationState.state === RequestState.SUCCESS) {
-            xdr = paymentSimulationState.data.transactionXdr;
-          }
-        }
-
-        if (!xdr) {
-          return (
-            <View.Content hasNoTopPadding>
-              <Notification
-                variant="error"
-                title={t("Failed to simulate transaction")}
-              >
-                {t(
-                  "An unknown error has occured while simulating this transaction.",
-                )}
-              </Notification>
-            </View.Content>
-          );
-        }
-
         return (
           <TransactionConfirm
-            xdr={xdr}
+            xdr={
+              isCollectible
+                ? collectibleSimulationState.data?.transactionXdr!
+                : paymentSimulationState.data?.transactionXdr!
+            }
             goBack={() => setActiveStep(STEPS.AMOUNT)}
           />
         );
@@ -206,5 +211,5 @@ export const Send = () => {
     }
   };
 
-  return <InputWidthProvider>{renderStep(activeStep)}</InputWidthProvider>;
+  return renderStep(activeStep);
 };

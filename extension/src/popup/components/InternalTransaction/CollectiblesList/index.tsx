@@ -1,18 +1,13 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { Collectibles } from "@shared/api/types";
-import { publicKeySelector } from "popup/ducks/accountServices";
 import {
   CollectibleInfoImage,
   getCollectibleName,
 } from "popup/components/account/CollectibleInfo";
-import { getUserCollections } from "popup/helpers/collectibles";
 
 import "./styles.scss";
-
-/* UI for displaying a vertical list of clickable collectibles */
 
 export const CollectiblesList = ({
   collectibles,
@@ -28,13 +23,7 @@ export const CollectiblesList = ({
   }) => void;
 }) => {
   const { t } = useTranslation();
-  const publicKey = useSelector(publicKeySelector);
-  const userCollectibles = getUserCollections({
-    collections: collectibles.collections,
-    publicKey,
-  });
-
-  if (!userCollectibles.length) {
+  if (!collectibles.collections.length) {
     return (
       <div className="CollectiblesList__empty">
         {`${t("You have no collectibles added.")} ${t("Get started by adding a collectible.")}`}
@@ -42,12 +31,14 @@ export const CollectiblesList = ({
     );
   }
 
-  const flattenedCollections = userCollectibles.flatMap((collection) => {
-    if (collection.collection) {
-      return collection.collection.collectibles;
-    }
-    return [];
-  });
+  const flattenedCollections = collectibles.collections.flatMap(
+    (collection) => {
+      if (collection.collection) {
+        return collection.collection.collectibles;
+      }
+      return [];
+    },
+  );
 
   return (
     <div className="CollectiblesList__collections">
@@ -58,7 +49,7 @@ export const CollectiblesList = ({
         return (
           <div
             className="CollectiblesList__collection"
-            key={`${collection.collectionAddress}-${collection.tokenId}`}
+            key={title}
             onClick={() =>
               onClickCollectible({
                 collectionName: collection.collectionName,

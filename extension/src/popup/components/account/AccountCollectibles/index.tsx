@@ -12,6 +12,7 @@ import {
 import { CollectibleDetail, SelectedCollectible } from "../CollectibleDetail";
 
 import "./styles.scss";
+import { CollectibleInfoImage } from "../CollectibleInfo";
 
 const CollectionsList = ({ collections }: { collections: Collection[] }) => {
   const { t } = useTranslation();
@@ -61,21 +62,6 @@ const CollectionsList = ({ collections }: { collections: Collection[] }) => {
           data-testid="account-collection-grid"
         >
           {collection.collectibles.map((item) => {
-            if (!item.metadata) {
-              return (
-                <div
-                  className="AccountCollectibles__collection__grid__item"
-                  key={item.tokenId}
-                >
-                  <div
-                    className="AccountCollectibles__collection__grid__item__placeholder"
-                    data-testid="account-collectible-placeholder"
-                  >
-                    <Icon.Image01 />
-                  </div>
-                </div>
-              );
-            }
             return (
               <Sheet
                 open={selectedCollectible?.tokenId === item.tokenId}
@@ -91,10 +77,9 @@ const CollectionsList = ({ collections }: { collections: Collection[] }) => {
                   }
                   key={item.tokenId}
                 >
-                  <img
-                    data-testid="account-collectible-image"
-                    src={item.metadata?.image}
-                    alt={item.tokenId}
+                  <CollectibleInfoImage
+                    image={item.metadata?.image}
+                    name={item.tokenId}
                   />
                 </div>
                 <SheetContent
