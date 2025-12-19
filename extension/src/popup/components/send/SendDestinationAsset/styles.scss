@@ -1,0 +1,13 @@
+@use "../../../styles/utils.scss" as *;
+
+.SendDestinationAsset {
+  display: flex;
+  flex-direction: column;
+
+  &__tab-buttons {
+    display: flex;
+    font-size: pxToRem(14);
+    line-height: pxToRem(20);
+    gap: pxToRem(16);
+  }
+}

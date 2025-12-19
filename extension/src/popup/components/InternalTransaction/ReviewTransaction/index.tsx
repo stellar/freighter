@@ -17,7 +17,7 @@ import {
   truncatedPublicKey,
 } from "helpers/stellar";
 
-import { SimulateTxData } from "popup/components/sendPayment/SendAmount/hooks/useSimulateTxData";
+import { SimulateTxData } from "popup/components/send/SendAmount/hooks/useSimulateTxData";
 import { View } from "popup/basics/layout/View";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
@@ -31,6 +31,7 @@ import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { CopyValue } from "popup/components/CopyValue";
 import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
+import { CollectibleInfoImage } from "popup/components/account/CollectibleInfo";
 
 import "./styles.scss";
 
@@ -78,7 +79,13 @@ export const ReviewTx = ({
 
   const {
     hardwareWalletData: { status: hwStatus },
-    transactionData: { destination, memo, federationAddress },
+    transactionData: {
+      destination,
+      memo,
+      federationAddress,
+      isCollectible,
+      collectibleData,
+    },
   } = submission;
 
   // Validate memo requirements using the transaction XDR
@@ -142,24 +149,54 @@ export const ReviewTx = ({
                   <p>{title}</p>
                   <div className="ReviewTx__SendSummary">
                     <div className="ReviewTx__SendAsset">
-                      <AssetIcon
-                        assetIcons={assetIcons}
-                        code={asset.code}
-                        issuerKey={asset.issuer}
-                        icon={assetIcon}
-                        isSuspicious={false}
-                      />
+                      {isCollectible ? (
+                        <div className="ReviewTx__SendAsset__Collectible">
+                          <CollectibleInfoImage
+                            image={collectibleData.image}
+                            name={collectibleData.name}
+                            isSmall
+                          />
+                        </div>
+                      ) : (
+                        <AssetIcon
+                          assetIcons={assetIcons}
+                          code={asset.code}
+                          issuerKey={asset.issuer}
+                          icon={assetIcon}
+                          isSuspicious={false}
+                        />
+                      )}
                       <div
                         className="ReviewTx__SendAssetDetails"
                         data-testid="review-tx-send-amount"
                       >
-                        <span>
-                          {sendAmount} {asset.code}
-                        </span>
-                        {isMainnet(networkDetails) && sendPriceUsd && (
-                          <span className="ReviewTx__SendAssetDetails__price">
-                            {`$${sendPriceUsd}`}
-                          </span>
+                        {isCollectible ? (
+                          <div className="ReviewTx__SendAsset__Collectible__label">
+                            <div
+                              className="ReviewTx__SendAsset__Collectible__label__name"
+                              data-testid="review-tx-send-asset-collectible-name"
+                            >
+                              {collectibleData.name}
+                            </div>
+                            <div
+                              className="ReviewTx__SendAsset__Collectible__label__id"
+                              data-testid="review-tx-send-asset-collectible-collection-name"
+                            >
+                              {collectibleData.collectionName} #
+                              {collectibleData.tokenId}
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <span>
+                              {sendAmount} {asset.code}
+                            </span>
+                            {isMainnet(networkDetails) && sendPriceUsd && (
+                              <span className="ReviewTx__SendAssetDetails__price">
+                                {`$${sendPriceUsd}`}
+                              </span>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
@@ -197,7 +234,10 @@ export const ReviewTx = ({
                       ) : (
                         <>
                           <IdenticonImg publicKey={destination} />
-                          <div className="ReviewTx__SendDestinationDetails">
+                          <div
+                            className="ReviewTx__SendDestinationDetails"
+                            data-testid="review-tx-send-destination-address"
+                          >
                             {truncatedDest}
                           </div>
                         </>

@@ -15,8 +15,11 @@
   }
 
   &__tab-item {
+    align-items: center;
+    gap: pxToRem(4px);
     color: var(--sds-clr-gray-11);
     cursor: pointer;
+    display: flex;
     font-weight: var(--sds-fw-medium);
     &:hover {
       color: var(--sds-clr-gray-12);
