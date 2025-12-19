@@ -8,7 +8,6 @@ import {
   isMuxedAccount,
   isValidStellarAddress,
   createMuxedAccount,
-  getBaseAccount,
   isFederationAddress,
 } from "helpers/stellar";
 import { StrKey } from "stellar-sdk";
@@ -114,8 +113,8 @@ export function getMemoDisabledState(
   }
 
   // For tokens without Soroban mux support, disable memo
-  // If contractSupportsMuxed is null, we're still checking, so don't disable yet
-  // Only disable when explicitly false
+  // If contractSupportsMuxed is null, we're still checking, so disable memo until check completes
+  // Only allow when explicitly true
   if (contractSupportsMuxed === false) {
     return {
       isMemoDisabled: true,
@@ -123,10 +122,12 @@ export function getMemoDisabledState(
     };
   }
 
-  // If contractSupportsMuxed is null, we're still checking - allow memo for now
-  // (will be disabled once check completes if contractSupportsMuxed === false)
+  // If contractSupportsMuxed is null, we're still checking - disable memo until check completes
   if (contractSupportsMuxed === null) {
-    return { isMemoDisabled: false, memoDisabledMessage: undefined };
+    return {
+      isMemoDisabled: true,
+      memoDisabledMessage: t("Memo is not supported for this operation"),
+    };
   }
 
   if (isContractId(targetAddress)) {
@@ -192,33 +193,13 @@ export function determineMuxedDestination(
       return recipientAddress;
     }
 
-    if (isRecipientAlreadyMuxed && hasValidMemo) {
-      const baseAccount = getBaseAccount(recipientAddress);
-      if (
-        baseAccount &&
-        isValidStellarAddress(baseAccount) &&
-        !isContractId(baseAccount)
-      ) {
-        const muxedWithNewMemo = createMuxedAccount(
-          baseAccount,
-          transactionMemo,
-        );
-        return muxedWithNewMemo || recipientAddress;
-      }
-    }
-
-    if (isRecipientAlreadyMuxed && !hasValidMemo) {
+    // M addresses already have memo encoded - never overwrite it
+    // Return the M address as-is regardless of transactionMemo
+    if (isRecipientAlreadyMuxed) {
       return recipientAddress;
     }
   } else if (isRecipientAlreadyMuxed) {
-    const baseAccount = getBaseAccount(recipientAddress);
-    if (
-      baseAccount &&
-      isValidStellarAddress(baseAccount) &&
-      !isContractId(baseAccount)
-    ) {
-      return baseAccount;
-    }
+    // Contract does not support muxed addresses - M addresses are not allowed
     throw new Error(
       "This contract does not support muxed addresses. Please use a regular address (G... or C...).",
     );
