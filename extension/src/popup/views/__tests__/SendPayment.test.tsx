@@ -18,7 +18,7 @@ import {
 
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
-import { Send } from "popup/views/Send";
+import { SendPayment } from "popup/views/SendPayment";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
 import * as CheckSuspiciousAsset from "popup/helpers/checkForSuspiciousAsset";
 import * as tokenPaymentActions from "popup/ducks/token-payment";
@@ -125,7 +125,7 @@ jest.mock("react-router-dom", () => {
 
 const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 
-describe.skip("Send", () => {
+describe.skip("SendPayment", () => {
   beforeEach(() => {
     jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
       return {
@@ -164,7 +164,7 @@ describe.skip("Send", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <Send />
+        <SendPayment />
       </Wrapper>,
     );
     await waitFor(() => {
@@ -275,7 +275,7 @@ describe.skip("Send", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <Send />
+        <SendPayment />
       </Wrapper>,
     );
 
@@ -314,7 +314,7 @@ describe.skip("Send", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <Send />
+        <SendPayment />
       </Wrapper>,
     );
 
@@ -348,7 +348,7 @@ describe.skip("Send", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <Send />
+        <SendPayment />
       </Wrapper>,
     );
 
@@ -382,7 +382,7 @@ describe.skip("Send", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <Send />
+        <SendPayment />
       </Wrapper>,
     );
 
@@ -417,7 +417,7 @@ describe.skip("Send", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <Send />
+        <SendPayment />
       </Wrapper>,
     );
 
@@ -452,7 +452,7 @@ describe.skip("Send", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <Send />
+        <SendPayment />
       </Wrapper>,
     );
 
@@ -487,7 +487,7 @@ describe.skip("Send", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <Send />
+        <SendPayment />
       </Wrapper>,
     );
 
@@ -526,7 +526,7 @@ describe.skip("Send", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <Send />
+        <SendPayment />
       </Wrapper>,
     );
 
@@ -566,7 +566,7 @@ describe.skip("Send", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <Send />
+        <SendPayment />
       </Wrapper>,
     );
 
@@ -611,7 +611,7 @@ describe.skip("Send", () => {
             tokenPaymentSimulation: tokenPaymentActions.initialState,
           }}
         >
-          <Send />
+          <SendPayment />
         </Wrapper>,
       );
 
@@ -671,7 +671,7 @@ describe.skip("Send", () => {
             tokenPaymentSimulation: tokenPaymentActions.initialState,
           }}
         >
-          <Send />
+          <SendPayment />
         </Wrapper>,
       );
 
@@ -741,7 +741,7 @@ describe.skip("Send", () => {
             tokenPaymentSimulation: tokenPaymentActions.initialState,
           }}
         >
-          <Send />
+          <SendPayment />
         </Wrapper>,
       );
 
@@ -809,7 +809,7 @@ describe.skip("Send", () => {
             tokenPaymentSimulation: tokenPaymentActions.initialState,
           }}
         >
-          <Send />
+          <SendPayment />
         </Wrapper>,
       );
 
@@ -876,7 +876,7 @@ const testPaymentFlow = async (
         tokenPaymentSimulation: tokenPaymentActions.initialState,
       }}
     >
-      <Send />
+      <SendPayment />
     </Wrapper>,
   );
 
