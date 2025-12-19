@@ -336,6 +336,34 @@ export const ReviewTx = ({
                 scanResult={txScanResult}
                 onClose={() => setActivePaneIndex(0)}
               />,
+              <div className="ReviewTx__MemoDetails">
+                <div className="ReviewTx__MemoDetails__Header">
+                  <div className="ReviewTx__MemoDetails__Header__Icon">
+                    <Icon.InfoOctagon className="WarningMessage__icon" />
+                  </div>
+                  <div
+                    className="ReviewTx__MemoDetails__Header__Close"
+                    onClick={() => setActivePaneIndex(0)}
+                  >
+                    <Icon.X />
+                  </div>
+                </div>
+                <div className="ReviewTx__MemoDetails__Title">
+                  <span>{t("Memo is required")}</span>
+                </div>
+                <div className="ReviewTx__MemoDetails__Content">
+                  <div className="ReviewTx__MemoDetails__Text">
+                    {t(
+                      "Some destination accounts on the Stellar network require a memo to identify your payment.",
+                    )}
+                  </div>
+                  <div className="ReviewTx__MemoDetails__Text">
+                    {t(
+                      "If a required memo is missing or incorrect, your funds may not reach the intended recipient.",
+                    )}
+                  </div>
+                </div>
+              </div>,
             ]}
           />
           <div className="ReviewTx__Actions">
