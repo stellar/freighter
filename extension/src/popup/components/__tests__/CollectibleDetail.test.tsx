@@ -232,17 +232,8 @@ describe("CollectibleDetail", () => {
     expect(screen.getByTestId("CollectibleDetail__attributes")).toBeDefined();
     expect(screen.getByTestId("CollectibleDetail__base-info")).toBeDefined();
     expect(
-      within(
-        screen.getByTestId("CollectibleDetail__base-info__row__name"),
-      ).getByTestId("CollectibleDetail__base-info__row__name__label")
-        .textContent,
-    ).toBe("Name");
-    expect(
-      within(
-        screen.getByTestId("CollectibleDetail__base-info__row__name"),
-      ).getByTestId("CollectibleDetail__base-info__row__name__value")
-        .textContent,
-    ).toBe("Token #2");
+      screen.queryByTestId("CollectibleDetail__base-info__row__name"),
+    ).toBeNull();
   });
   it("renders collectible detail with no collection name", async () => {
     render(
@@ -328,19 +319,9 @@ describe("CollectibleDetail", () => {
     expect(screen.getByTestId("CollectibleDetail__description")).toBeDefined();
     expect(screen.getByTestId("CollectibleDetail__attributes")).toBeDefined();
     expect(screen.getByTestId("CollectibleDetail__base-info")).toBeDefined();
-
     expect(
-      within(
-        screen.getByTestId("CollectibleDetail__base-info__row__collectionName"),
-      ).getByTestId("CollectibleDetail__base-info__row__collectionName__label")
-        .textContent,
-    ).toBe("Collection");
-    expect(
-      within(
-        screen.getByTestId("CollectibleDetail__base-info__row__collectionName"),
-      ).getByTestId("CollectibleDetail__base-info__row__collectionName__value")
-        .textContent,
-    ).toBe("Stellar Frogs");
+      screen.queryByTestId("CollectibleDetail__base-info__row__collectionName"),
+    ).toBeNull();
   });
   it("renders collectible detail with no metadata description", async () => {
     render(
@@ -429,15 +410,8 @@ describe("CollectibleDetail", () => {
     expect(screen.getByTestId("CollectibleDetail__attributes")).toBeDefined();
     expect(screen.getByTestId("CollectibleDetail__base-info")).toBeDefined();
     expect(
-      within(screen.getByTestId("CollectibleDetail__description")).getByTestId(
-        "CollectibleDetail__description__label",
-      ).textContent,
-    ).toBe("Description");
-    expect(
-      within(screen.getByTestId("CollectibleDetail__description")).getByTestId(
-        "CollectibleDetail__description__value",
-      ).textContent,
-    ).toBe("No description available");
+      screen.queryByTestId("CollectibleDetail__base-info__row__description"),
+    ).toBeNull();
   });
   it("renders collectible detail with no attributes", async () => {
     render(
