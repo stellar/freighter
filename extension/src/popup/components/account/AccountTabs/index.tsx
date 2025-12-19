@@ -174,11 +174,6 @@ export const AccountTabs = () => {
     }
   };
 
-  const tabLabels: Record<string, string> = {
-    tokens: t("Tokens"),
-    collectibles: t("Collectibles"),
-  };
-
   return (
     <div className="AccountTabs">
       <div className="AccountTabs__tabs">
