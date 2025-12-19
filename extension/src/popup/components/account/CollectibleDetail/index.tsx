@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Button, Icon, Notification } from "@stellar/design-system";
+import { useNavigate } from "react-router-dom";
 
 import { RequestState } from "constants/request";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
-import { openTab } from "popup/helpers/navigate";
+import { navigateTo, openTab } from "popup/helpers/navigate";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import {
   Popover,
@@ -17,9 +18,20 @@ import {
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { collectionsSelector } from "popup/ducks/cache";
-import { useCollectibleDetail } from "./hooks/useCollectibleDetail";
+import { ROUTES } from "popup/constants/routes";
 
+import { useCollectibleDetail } from "./hooks/useCollectibleDetail";
+import {
+  getCollectibleName,
+  CollectibleInfo,
+  CollectibleInfoBlock,
+  CollectibleDescription,
+} from "../CollectibleInfo";
 import "./styles.scss";
+import {
+  saveCollectibleData,
+  saveIsCollectible,
+} from "popup/ducks/transactionSubmission";
 
 export interface SelectedCollectible {
   collectionAddress: string;
@@ -37,6 +49,8 @@ export const CollectibleDetail = ({
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const collections = useSelector(collectionsSelector);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const collectionData = collections[networkDetails?.network || ""]?.[
     publicKey || ""
   ]?.find(
@@ -60,7 +74,10 @@ export const CollectibleDetail = ({
     );
   }
 
-  const name = collectible.metadata?.name || selectedCollectible.tokenId;
+  const name = getCollectibleName(
+    collectible.metadata?.name,
+    selectedCollectible.tokenId,
+  );
 
   const attributes = collectible.metadata?.attributes || [];
   const hasAttributes = Array.isArray(attributes) && attributes.length > 0;
@@ -74,6 +91,21 @@ export const CollectibleDetail = ({
       tokenUri: collectible.tokenUri || "",
     });
     setIsPopoverOpen(false);
+  };
+
+  const handleSendCollectible = () => {
+    // prepopulate the collectible data in the redux state before navigating to the send flow
+    dispatch(saveIsCollectible(true));
+    dispatch(
+      saveCollectibleData({
+        collectionName: collectionData?.collection?.name || "",
+        collectionAddress: selectedCollectible.collectionAddress,
+        tokenId: Number(selectedCollectible.tokenId),
+        name: collectible.metadata?.name || "",
+        image: collectible.metadata?.image || "",
+      }),
+    );
+    navigateTo(ROUTES.sendPayment, navigate);
   };
 
   return (
@@ -138,102 +170,24 @@ export const CollectibleDetail = ({
         ) : (
           <View.Content>
             <div className="CollectibleDetail__content">
-              {collectible.metadata?.image && (
-                <div
-                  className="CollectibleDetail__image"
-                  data-testid="CollectibleDetail__image"
-                >
-                  <img src={collectible.metadata?.image} alt={name} />
-                </div>
-              )}
-              <div
-                className="CollectibleDetail__base-info CollectibleDetail__block"
-                data-testid="CollectibleDetail__base-info"
-              >
-                {collectible.metadata?.name && (
-                  <div
-                    className="CollectibleDetail__base-info__row"
-                    data-testid="CollectibleDetail__base-info__row__name"
-                  >
-                    <div
-                      className="CollectibleDetail__block__label"
-                      data-testid="CollectibleDetail__base-info__row__name__label"
-                    >
-                      {t("Name")}
-                    </div>
-                    <div
-                      className="CollectibleDetail__block__value"
-                      data-testid="CollectibleDetail__base-info__row__name__value"
-                    >
-                      {name}
-                    </div>
-                  </div>
-                )}
-                {collectible.collectionName && (
-                  <div
-                    className="CollectibleDetail__base-info__row"
-                    data-testid="CollectibleDetail__base-info__row__collectionName"
-                  >
-                    <div
-                      className="CollectibleDetail__block__label"
-                      data-testid="CollectibleDetail__base-info__row__collectionName__label"
-                    >
-                      {t("Collection")}
-                    </div>
-                    <div
-                      className="CollectibleDetail__block__value"
-                      data-testid="CollectibleDetail__base-info__row__collectionName__value"
-                    >
-                      {collectible.collectionName}
-                    </div>
-                  </div>
-                )}
-                {collectible.tokenId && (
-                  <div
-                    className="CollectibleDetail__base-info__row"
-                    data-testid="CollectibleDetail__base-info__row__tokenId"
-                  >
-                    <div
-                      className="CollectibleDetail__block__label"
-                      data-testid="CollectibleDetail__base-info__row__tokenId__label"
-                    >
-                      {t("Token ID")}
-                    </div>
-                    <div
-                      className="CollectibleDetail__block__value"
-                      data-testid="CollectibleDetail__base-info__row__tokenId__value"
-                    >
-                      {collectible.tokenId}
-                    </div>
-                  </div>
-                )}
-              </div>
-              {collectible.metadata?.description && (
-                <div
-                  className="CollectibleDetail__description CollectibleDetail__block"
-                  data-testid="CollectibleDetail__description"
-                >
-                  <div
-                    className="CollectibleDetail__block__label"
-                    data-testid="CollectibleDetail__description__label"
-                  >
-                    {t("Description")}
-                  </div>
-                  <div
-                    className="CollectibleDetail__block__value"
-                    data-testid="CollectibleDetail__description__value"
-                  >
-                    {collectible.metadata?.description}
-                  </div>
-                </div>
-              )}
+              <CollectibleInfo
+                name={name}
+                collectionName={collectionData?.collection?.name || ""}
+                tokenId={selectedCollectible.tokenId}
+                image={collectible.metadata?.image}
+                dataTestIdBase="CollectibleDetail"
+              />
+              <CollectibleDescription
+                description={collectible.metadata?.description || ""}
+                dataTestIdBase="CollectibleDetail"
+              />
               {hasAttributes && (
-                <div
-                  className="CollectibleDetail__attributes CollectibleDetail__block"
+                <CollectibleInfoBlock
+                  className="CollectibleDetail__attributes"
                   data-testid="CollectibleDetail__attributes"
                 >
                   <div
-                    className="CollectibleDetail__block__label"
+                    className="CollectibleDetail__attributes__label"
                     data-testid="CollectibleDetail__attributes__label"
                   >
                     {t("Collectible Traits")}
@@ -259,7 +213,7 @@ export const CollectibleDetail = ({
                       </div>
                     ))}
                   </div>
-                </div>
+                </CollectibleInfoBlock>
               )}
             </div>
           </View.Content>
@@ -285,7 +239,14 @@ export const CollectibleDetail = ({
               </Button>
             )}
 
-            <Button isFullWidth isRounded variant="secondary" size="lg">
+            <Button
+              data-testid="CollectibleDetail__footer__buttons__send"
+              isFullWidth
+              isRounded
+              variant="secondary"
+              size="lg"
+              onClick={handleSendCollectible}
+            >
               {t("Send")}
             </Button>
           </div>

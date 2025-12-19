@@ -7,9 +7,9 @@ import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/send-payment";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { SendTo } from "popup/components/sendPayment/SendTo";
-import { SendAmount } from "popup/components/sendPayment/SendAmount";
-import { SendDestinationAsset } from "popup/components/sendPayment/SendDestinationAsset";
+import { SendTo } from "popup/components/send/SendTo";
+import { SendAmount } from "popup/components/send/SendAmount";
+import { SendDestinationAsset } from "popup/components/send/SendDestinationAsset";
 import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitTransaction";
 import {
   isPathPaymentSelector,
@@ -21,12 +21,19 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
 import { isContractId } from "popup/helpers/soroban";
-import { useSimulateTxData } from "popup/components/sendPayment/SendAmount/hooks/useSimulateTxData";
+import { useSimulateTxData } from "popup/components/send/SendAmount/hooks/useSimulateTxData";
+import { useSimulateTxData as useSimulateCollectibleTxData } from "popup/components/sendCollectible/SelectedCollectible/hooks/useSimulateTxData";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { TabsList } from "../Account/contexts/activeTabContext";
+import { navigateTo } from "popup/helpers/navigate";
 
-export const SendPayment = () => {
+/* 
+  Send handles sending both tokens (classic and Soroban) and collectibles to an external destination (G, M, or C account).
+  This flow entails selecting an item, selecting a destination, adjusting fees and memos, reviewing the transaction, and submitting the transaction.
+*/
+export const Send = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
@@ -50,12 +57,13 @@ export const SendPayment = () => {
       path,
       isToken,
       isSoroswap,
+      isCollectible,
     },
     transactionSimulation,
   } = submission;
 
+  /* Construct simulation parameters for an asset payment */
   const asset = getAssetFromCanonical(srcAsset);
-
   const simParams =
     isToken || isSoroswap || isContractId(destination)
       ? {
@@ -76,19 +84,31 @@ export const SendPayment = () => {
           transactionFee: transactionFee || recommendedFee,
           transactionTimeout,
         };
-  const { state: simulationState, fetchData } = useSimulateTxData({
-    publicKey,
-    destination,
-    networkDetails,
-    destAsset: getAssetFromCanonical(destinationAsset || "native"),
-    sourceAsset: asset,
-    simParams,
-    isMainnet: isMainnet(networkDetails),
-  });
+
+  /* Hook used to simulate a possible token transaction */
+  const { state: paymentSimulationState, fetchData: fetchPaymentData } =
+    useSimulateTxData({
+      publicKey,
+      destination,
+      networkDetails,
+      destAsset: getAssetFromCanonical(destinationAsset || "native"),
+      sourceAsset: asset,
+      simParams,
+      isMainnet: isMainnet(networkDetails),
+    });
+
+  /* Hook used to simulate a possible collectible transaction */
+  const { state: collectibleSimulationState, fetchData: fetchCollectibleData } =
+    useSimulateCollectibleTxData({
+      publicKey,
+      destination,
+      networkDetails,
+    });
 
   const [activeStep, setActiveStep] = React.useState(STEPS.AMOUNT);
 
   // Handle query params and set defaults on mount
+  // This is used to pre-populate the destination and asset if they are provided in the query params.
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const destinationParam = params.get("destination");
@@ -129,7 +149,11 @@ export const SendPayment = () => {
         emitMetric(METRIC_NAMES.sendPaymentConfirm);
         return (
           <TransactionConfirm
-            xdr={simulationState.data?.transactionXdr!}
+            xdr={
+              isCollectible
+                ? collectibleSimulationState.data?.transactionXdr!
+                : paymentSimulationState.data?.transactionXdr!
+            }
             goBack={() => setActiveStep(STEPS.AMOUNT)}
           />
         );
@@ -140,13 +164,27 @@ export const SendPayment = () => {
           <SendAmount
             goBack={() => {
               dispatch(resetSubmission());
-              navigate(ROUTES.account);
+              if (isCollectible) {
+                navigateTo(
+                  ROUTES.sendPayment,
+                  navigate,
+                  `?tab=${TabsList.COLLECTIBLES}`,
+                );
+              } else {
+                navigateTo(ROUTES.account, navigate);
+              }
             }}
             goToNext={() => setActiveStep(STEPS.PAYMENT_CONFIRM)}
             goToChooseDest={() => setActiveStep(STEPS.DESTINATION)}
             goToChooseAsset={() => setActiveStep(STEPS.SET_DESTINATION_ASSET)}
-            fetchSimulationData={fetchData}
-            simulationState={simulationState}
+            fetchSimulationData={
+              isCollectible ? fetchCollectibleData : fetchPaymentData
+            }
+            simulationState={
+              isCollectible
+                ? collectibleSimulationState
+                : paymentSimulationState
+            }
             recommendedFee={recommendedFee}
             networkCongestion={networkCongestion}
           />
@@ -157,7 +195,6 @@ export const SendPayment = () => {
           <SendDestinationAsset
             goBack={() => setActiveStep(STEPS.AMOUNT)}
             goToNext={() => setActiveStep(STEPS.AMOUNT)}
-            goToDestination={() => setActiveStep(STEPS.DESTINATION)}
           />
         );
       }
