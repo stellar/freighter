@@ -10,6 +10,7 @@ import {
   stubTokenPrices,
   stubSubmitTx,
   stubCollectiblesUnsuccessfulMetadata,
+  stubFeeStats,
 } from "./helpers/stubs";
 import { test, expect } from "./test-fixtures";
 
@@ -27,11 +28,15 @@ test("Send collectible with metadata", async ({
   await stubSimulateSendCollectible(page);
   await stubScanTx(page);
   await stubSubmitTx(page);
+  await stubFeeStats(page);
 
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
+    "0.00001 XLM",
+  );
   await page.getByTestId("send-amount-edit-dest-asset").click();
   await page.getByTestId("account-tab-collectibles").click();
   await page.getByText("Stellar Frog 1").click();
@@ -64,6 +69,10 @@ test("Send collectible with metadata", async ({
   await page.getByText("Review Send").scrollIntoViewIfNeeded();
   await page.getByText("Review Send").click({ force: true });
 
+  // validate that fee is updated in the review screen to include minimum resource fee
+  await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
+    "0.00002 XLM",
+  );
   await expect(page.getByText("You are sending")).toBeVisible();
 
   await expect(
@@ -102,11 +111,15 @@ test("Send collectible without metadata", async ({
   await stubSimulateSendCollectible(page);
   await stubScanTx(page);
   await stubSubmitTx(page);
+  await stubFeeStats(page);
 
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
+    "0.00001 XLM",
+  );
   await page.getByTestId("send-amount-edit-dest-asset").click();
   await page.getByTestId("account-tab-collectibles").click();
   await page.getByText("Stellar Frogs").click();
@@ -135,6 +148,11 @@ test("Send collectible without metadata", async ({
 
   await page.getByText("Review Send").scrollIntoViewIfNeeded();
   await page.getByText("Review Send").click();
+
+  // validate that fee is updated in the review screen to include minimum resource fee
+  await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
+    "0.00002 XLM",
+  );
 
   await expect(page.getByText("You are sending")).toBeVisible();
 

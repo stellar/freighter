@@ -207,6 +207,9 @@ export const SendAmount = ({
   };
 
   const handleContinue = async () => {
+    if (!transactionFee) {
+      dispatch(saveTransactionFee(fee));
+    }
     await fetchSimulationData();
     setIsReviewingTx(true);
   };
@@ -397,7 +400,7 @@ export const SendAmount = ({
                 <span className="SendAmount__settings-fee-display__label">
                   {t("Fee")}:
                 </span>
-                <span>
+                <span data-testid="send-amount-fee-display">
                   {inputType === "crypto"
                     ? `${fee} ${t("XLM")}`
                     : recommendedFeeUsd}

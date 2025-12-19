@@ -883,3 +883,46 @@ export const stubSubmitTx = async (page: Page) => {
     await route.fulfill({ json });
   });
 };
+
+export const stubFeeStats = async (page: Page) => {
+  await page.route("**/fee_stats", async (route) => {
+    const json = {
+      last_ledger: "60377558",
+      last_ledger_base_fee: "100",
+      ledger_capacity_usage: "1.06",
+      fee_charged: {
+        max: "179360",
+        min: "100",
+        mode: "100",
+        p10: "100",
+        p20: "100",
+        p30: "100",
+        p40: "100",
+        p50: "100",
+        p60: "27565",
+        p70: "27644",
+        p80: "27644",
+        p90: "27644",
+        p95: "27644",
+        p99: "62292",
+      },
+      max_fee: {
+        max: "121200000",
+        min: "100",
+        mode: "100",
+        p10: "101",
+        p20: "2823",
+        p30: "21009",
+        p40: "46875",
+        p50: "46875",
+        p60: "46875",
+        p70: "46875",
+        p80: "100000",
+        p90: "1000000",
+        p95: "2000001",
+        p99: "10000000",
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
