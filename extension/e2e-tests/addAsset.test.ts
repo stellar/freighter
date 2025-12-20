@@ -82,7 +82,7 @@ test.skip("Adding and removing unverified Soroban token", async ({
   await page.getByTestId("ManageAssetRowButton__ellipsis-E2E").click();
   await page.getByText("Remove asset").click();
   await expect(page.getByTestId("ToggleToken__asset-code")).toHaveText(
-    "CBVX…HWXJ",
+    truncateString(TEST_TOKEN_ADDRESS),
   );
   await expect(page.getByTestId("ToggleToken__asset-add-remove")).toHaveText(
     "Remove Token",
