@@ -96,6 +96,8 @@ function useSubmitTxData({
           sourceAsset: sourceAsset.code,
         });
 
+        // After successful submission, re-fetch balances and collectibles to get their latest values
+
         const balancesResult = await fetchBalances(
           publicKey,
           isMainnet(networkDetails),

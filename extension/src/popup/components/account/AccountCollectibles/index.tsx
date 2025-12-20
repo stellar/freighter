@@ -61,47 +61,45 @@ const CollectionsList = ({ collections }: { collections: Collection[] }) => {
           className="AccountCollectibles__collection__grid"
           data-testid="account-collection-grid"
         >
-          {collection.collectibles.map((item) => {
-            return (
-              <Sheet
-                open={selectedCollectible?.tokenId === item.tokenId}
+          {collection.collectibles.map((item) => (
+            <Sheet
+              open={selectedCollectible?.tokenId === item.tokenId}
+              key={item.tokenId}
+            >
+              <div
+                className="AccountCollectibles__collection__grid__item"
+                onClick={() =>
+                  setSelectedCollectible({
+                    collectionAddress: collection.address,
+                    tokenId: item.tokenId,
+                  })
+                }
                 key={item.tokenId}
               >
-                <div
-                  className="AccountCollectibles__collection__grid__item"
-                  onClick={() =>
-                    setSelectedCollectible({
-                      collectionAddress: collection.address,
-                      tokenId: item.tokenId,
-                    })
-                  }
-                  key={item.tokenId}
-                >
-                  <CollectibleInfoImage
-                    image={item.metadata?.image}
-                    name={item.tokenId}
-                  />
-                </div>
-                <SheetContent
-                  aria-describedby={undefined}
-                  side="bottom"
-                  className="AccountCollectibles__collectible-detail__sheet"
-                  onOpenAutoFocus={(e) => e.preventDefault()}
-                >
-                  <ScreenReaderOnly>
-                    <SheetTitle>{item.tokenId}</SheetTitle>
-                  </ScreenReaderOnly>
-                  <CollectibleDetail
-                    selectedCollectible={{
-                      collectionAddress: collection.address,
-                      tokenId: item.tokenId,
-                    }}
-                    handleItemClose={() => setSelectedCollectible(null)}
-                  />
-                </SheetContent>
-              </Sheet>
-            );
-          })}
+                <CollectibleInfoImage
+                  image={item.metadata?.image}
+                  name={item.tokenId}
+                />
+              </div>
+              <SheetContent
+                aria-describedby={undefined}
+                side="bottom"
+                className="AccountCollectibles__collectible-detail__sheet"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+              >
+                <ScreenReaderOnly>
+                  <SheetTitle>{item.tokenId}</SheetTitle>
+                </ScreenReaderOnly>
+                <CollectibleDetail
+                  selectedCollectible={{
+                    collectionAddress: collection.address,
+                    tokenId: item.tokenId,
+                  }}
+                  handleItemClose={() => setSelectedCollectible(null)}
+                />
+              </SheetContent>
+            </Sheet>
+          ))}
         </div>
       </div>
     );

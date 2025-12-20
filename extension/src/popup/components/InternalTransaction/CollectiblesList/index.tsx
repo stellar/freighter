@@ -9,6 +9,8 @@ import {
 
 import "./styles.scss";
 
+/* UI for displaying a vertical list of clickable collectibles */
+
 export const CollectiblesList = ({
   collectibles,
   onClickCollectible,

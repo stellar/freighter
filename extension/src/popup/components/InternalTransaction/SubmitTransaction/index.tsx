@@ -149,7 +149,7 @@ export const SendingTransaction = ({
   }
 
   const summaryDescriptionLabel = isCollectible
-    ? `${collectibleData.name || `Token #${collectibleData.tokenId}`}`
+    ? collectibleData.name
     : `${amount} ${srcAsset.code} `;
 
   return (
