@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { Button, Icon, Notification } from "@stellar/design-system";
 import { useNavigate } from "react-router-dom";
 
@@ -28,10 +28,6 @@ import {
   CollectibleDescription,
 } from "../CollectibleInfo";
 import "./styles.scss";
-import {
-  saveCollectibleData,
-  saveIsCollectible,
-} from "popup/ducks/transactionSubmission";
 
 export interface SelectedCollectible {
   collectionAddress: string;
@@ -50,7 +46,6 @@ export const CollectibleDetail = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const collections = useSelector(collectionsSelector);
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const collectionData = collections[networkDetails?.network || ""]?.[
     publicKey || ""
   ]?.find(
@@ -94,18 +89,10 @@ export const CollectibleDetail = ({
   };
 
   const handleSendCollectible = () => {
-    // prepopulate the collectible data in the redux state before navigating to the send flow
-    dispatch(saveIsCollectible(true));
-    dispatch(
-      saveCollectibleData({
-        collectionName: collectionData?.collection?.name || "",
-        collectionAddress: selectedCollectible.collectionAddress,
-        tokenId: Number(selectedCollectible.tokenId),
-        name: collectible.metadata?.name || "",
-        image: collectible.metadata?.image || "",
-      }),
-    );
-    navigateTo(ROUTES.sendPayment, navigate);
+    // add the collectible data to the query params. They will be used to pre-populate the collectible data in the send flow.
+    const queryParams = `?collection_address=${encodeURIComponent(selectedCollectible.collectionAddress)}&collectible_token_id=${encodeURIComponent(selectedCollectible.tokenId)}`;
+
+    navigateTo(ROUTES.sendPayment, navigate, queryParams);
   };
 
   return (

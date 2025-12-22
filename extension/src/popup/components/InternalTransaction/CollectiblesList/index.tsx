@@ -51,7 +51,7 @@ export const CollectiblesList = ({
         return (
           <div
             className="CollectiblesList__collection"
-            key={title}
+            key={`${collection.collectionAddress}-${collection.tokenId}`}
             onClick={() =>
               onClickCollectible({
                 collectionName: collection.collectionName,

@@ -1,7 +1,7 @@
 import { useReducer } from "react";
 
 import { initialState, isError, reducer } from "helpers/request";
-import { ApiTokenPrices, AssetIcons } from "@shared/api/types";
+import { ApiTokenPrices, AssetIcons, Collectibles } from "@shared/api/types";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { isContractId } from "popup/helpers/soroban";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
@@ -15,6 +15,8 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { isMainnet } from "helpers/stellar";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
+import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
+import { isCustomNetwork } from "@shared/helpers/stellar";
 
 export interface ResolvedSendAmountData {
   type: AppDataType.RESOLVED;
@@ -48,6 +50,9 @@ function useGetSendAmountData(
   const { fetchData: fetchTokenPrices } = useGetTokenPrices();
   const { fetchData: fetchAssetDomains } =
     useGetAssetDomainsWithBalances(options);
+  const { fetchData: fetchCollectibles } = useGetCollectibles({
+    useCache: true,
+  });
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -80,6 +85,7 @@ function useGetSendAmountData(
       }
 
       let tokenPrices = {} as ApiTokenPrices;
+      let collectibleData = {} as Collectibles;
 
       if (_isMainnet) {
         const fetchedTokenPrices = await fetchTokenPrices({
@@ -89,6 +95,13 @@ function useGetSendAmountData(
         });
 
         tokenPrices = fetchedTokenPrices.tokenPrices || {};
+      }
+
+      if (!isCustomNetwork(userDomains.networkDetails)) {
+        collectibleData = await fetchCollectibles({
+          publicKey: userDomains.publicKey,
+          networkDetails: userDomains.networkDetails,
+        });
       }
 
       const payload = {
@@ -101,6 +114,7 @@ function useGetSendAmountData(
         icons: userDomains.balances.icons || {},
         domains: userDomains.domains,
         tokenPrices,
+        collectibleData,
       } as ResolvedSendAmountData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
