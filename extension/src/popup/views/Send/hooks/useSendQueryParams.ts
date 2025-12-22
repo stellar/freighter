@@ -35,8 +35,10 @@ const findCollectibleData = ({
     (collection) => collection.collection?.address === collectionAddress,
   );
 
-  return foundCollection?.collection?.collectibles.find(
-    (collectible) => collectible.tokenId === tokenId,
+  return (
+    foundCollection?.collection?.collectibles.find(
+      (collectible) => collectible.tokenId === tokenId,
+    ) || null
   );
 };
 
@@ -59,24 +61,26 @@ export function useSendQueryParams() {
       const collectibleTokenIdParam = params.get("collectible_token_id");
 
       if (collectionAddressParam && collectibleTokenIdParam) {
-        const collectibleata = findCollectibleData({
+        const foundCollectible = findCollectibleData({
           collectionAddress: collectionAddressParam,
           tokenId: collectibleTokenIdParam,
           collections:
             collectibleData?.[networkDetails.network]?.[publicKey] || [],
         });
 
-        dispatch(saveIsCollectible(true));
-        dispatch(
-          saveCollectibleData({
-            collectionAddress: collectionAddressParam,
-            tokenId: Number(collectibleTokenIdParam),
-            name: collectibleata?.metadata?.name || "",
-            collectionName: collectibleata?.collectionName || "",
-            image: collectibleata?.metadata?.image || "",
-          }),
-        );
-        return; // stop the execution of the hook as we are dealing with a collectible, not a token
+        if (foundCollectible) {
+          dispatch(saveIsCollectible(true));
+          dispatch(
+            saveCollectibleData({
+              collectionAddress: collectionAddressParam,
+              tokenId: Number(collectibleTokenIdParam),
+              name: foundCollectible?.metadata?.name || "",
+              collectionName: foundCollectible?.collectionName || "",
+              image: foundCollectible?.metadata?.image || "",
+            }),
+          );
+          return; // stop the execution of the hook as we are dealing with a collectible, not a token
+        }
       }
 
       // Pre-populate destination if provided and valid
