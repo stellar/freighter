@@ -7,7 +7,10 @@ import {
   stubTokenDetails,
   stubTokenPrices,
 } from "./helpers/stubs";
-import { truncateString } from "../src/helpers/stellar";
+
+// Helper function to avoid importing from extension source (which causes Node.js module resolution issues)
+const truncateString = (str: string, charCount = 4) =>
+  str ? `${str.slice(0, charCount)}…${str.slice(-charCount)}` : "";
 
 // Skipping this test because Playwright erroneously is unable to click the "Confirm" button
 test.skip("Adding and removing unverified Soroban token", async ({

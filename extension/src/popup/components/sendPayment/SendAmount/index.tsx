@@ -3,14 +3,18 @@ import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useLocation } from "react-router-dom";
 import BigNumber from "bignumber.js";
 import { useFormik } from "formik";
-import { Button, Icon } from "@stellar/design-system";
+import { Button, Icon, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
-import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  isMainnet,
+  isMuxedAccount,
+} from "helpers/stellar";
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
@@ -34,7 +38,7 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { Loading } from "popup/components/Loading";
 import { TX_SEND_MAX } from "popup/constants/transaction";
-import { findAssetBalance } from "popup/helpers/balance";
+import { getBalanceByAsset, getBalanceByKey } from "popup/helpers/balance";
 
 import { RequestState, State } from "constants/request";
 import { openTab } from "popup/helpers/navigate";
@@ -54,6 +58,13 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { MemoEditingContext } from "popup/constants/send-payment";
 
 import "../styles.scss";
+import {
+  checkIsMuxedSupported,
+  getMemoDisabledState,
+} from "helpers/muxedAddress";
+import { captureException } from "@sentry/browser";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { getContractIdFromTokenId } from "popup/helpers/soroban";
 
 const DEFAULT_INPUT_WIDTH = 25;
 
@@ -81,6 +92,7 @@ export const SendAmount = ({
   const dispatch = useDispatch<AppDispatch>();
   const runAfterUpdate = useRunAfterUpdate();
   const { transactionData } = useSelector(transactionSubmissionSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const {
     amount,
     amountUsd,
@@ -113,6 +125,76 @@ export const SendAmount = ({
   const [isEditingMemo, setIsEditingMemo] = React.useState(false);
   const [isEditingSettings, setIsEditingSettings] = React.useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
+  const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
+    boolean | null
+  >(null);
+
+  // Get contract ID for custom tokens - must be before conditional returns
+  const contractId = React.useMemo(() => {
+    if (!isToken || !asset) {
+      return undefined;
+    }
+    return getContractIdFromTokenId(asset, networkDetails);
+  }, [isToken, asset, networkDetails]);
+
+  // Check if recipient is muxed - must be before conditional returns
+  const isRecipientMuxed = React.useMemo(
+    () => (destination ? isMuxedAccount(destination) : false),
+    [destination],
+  );
+
+  // Check if contract supports muxed addresses (Soroban mux support) for all custom tokens
+  // Tokens without Soroban mux support don't support memo at all (neither G nor M addresses)
+  // Tokens with Soroban mux support allow memo for G addresses, but memo is encoded in M addresses
+  // Must be before conditional returns
+  React.useEffect(() => {
+    const checkContract = async () => {
+      if (!isToken || !destination || !contractId || !networkDetails) {
+        setContractSupportsMuxed(null);
+        return;
+      }
+
+      try {
+        const supportsMuxed = await checkIsMuxedSupported({
+          contractId,
+          networkDetails,
+        });
+        setContractSupportsMuxed(supportsMuxed);
+      } catch (error) {
+        // On error, assume no support for safety
+        captureException(error, {
+          extra: {
+            message: "Error checking contract muxed support",
+          },
+        });
+        setContractSupportsMuxed(false);
+      }
+    };
+
+    checkContract();
+  }, [isToken, destination, contractId, networkDetails]);
+
+  // Get memo disabled state using the helper
+  const memoDisabledState = React.useMemo(() => {
+    if (!destination) {
+      return { isMemoDisabled: false, memoDisabledMessage: undefined };
+    }
+    return getMemoDisabledState({
+      targetAddress: destination,
+      contractId,
+      contractSupportsMuxed,
+      networkDetails,
+      t,
+    });
+  }, [destination, contractId, contractSupportsMuxed, networkDetails, t]);
+
+  const { isMemoDisabled, memoDisabledMessage } = memoDisabledState;
+
+  // Determine if contract doesn't support muxed (without Soroban mux support) - transaction should be disabled
+  const isMuxedAddressWithoutMemoSupport = React.useMemo(
+    () => isRecipientMuxed && isToken && contractSupportsMuxed === false,
+    [isRecipientMuxed, isToken, contractSupportsMuxed],
+  );
   const [memoEditingContext, setMemoEditingContext] =
     React.useState<MemoEditingContext | null>(null);
 
@@ -221,10 +303,16 @@ export const SendAmount = ({
 
   const sendData = sendAmountData.data!;
   const assetIcon = sendData.icons[asset];
-  const assetBalance = findAssetBalance(
-    sendData.userBalances.balances,
-    srcAsset,
-  );
+
+  // Use getBalanceByKey for tokens (contract ID), getBalanceByAsset for classic assets
+  const assetBalance =
+    isToken && contractId
+      ? getBalanceByKey(
+          contractId,
+          sendData.userBalances.balances,
+          networkDetails,
+        )
+      : getBalanceByAsset(srcAsset, sendData.userBalances.balances);
   const prices = sendData.tokenPrices;
   const assetPrice = prices[asset] && prices[asset].currentPrice;
   const xlmPrice = prices["native"]?.currentPrice;
@@ -339,7 +427,8 @@ export const SendAmount = ({
                   new BigNumber(formik.values.amount).isZero()) ||
                 (inputType === "fiat" &&
                   new BigNumber(formik.values.amountUsd).isZero()) ||
-                isAmountTooHigh
+                isAmountTooHigh ||
+                isMuxedAddressWithoutMemoSupport
               }
               isLoading={simulationState.state === RequestState.LOADING}
               data-testid="send-amount-btn-continue"
@@ -357,6 +446,19 @@ export const SendAmount = ({
         }
       >
         <div className="SendAmount">
+          {isMuxedAddressWithoutMemoSupport && (
+            <div className="SendAmount__warning-banner">
+              <Notification
+                variant="error"
+                icon={<Icon.AlertCircle />}
+                title={t("Muxed address not supported")}
+              >
+                {t(
+                  "This token does not support muxed address (M-) as a target destination.",
+                )}
+              </Notification>
+            </div>
+          )}
           <div className="SendAmount__content">
             <form>
               <div className="SendAmount__simplebar__content">
@@ -600,6 +702,8 @@ export const SendAmount = ({
                   setMemoEditingContext(null);
                 }
               }}
+              disabled={isMemoDisabled}
+              disabledMessage={memoDisabledMessage}
             />
           </div>
           <LoadingBackground

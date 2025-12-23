@@ -16,10 +16,9 @@ import {
 import { HorizonOperation, SorobanBalance } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
-  ArgsForTransferInvocation,
+  ArgsForTokenInvocation,
   SorobanTokenInterface,
-  HostFnInvocationArgs,
-  SorobanCollectibleInterface,
+  TokenInvocationArgs,
 } from "@shared/constants/soroban/token";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
@@ -27,7 +26,6 @@ import { findAssetBalance, isSorobanBalance } from "./balance";
 import { getSdk } from "@shared/helpers/stellar";
 import { AssetType } from "@shared/api/types/account-balance";
 import { getNativeContractDetails } from "./searchAsset";
-import { getTokenDetails } from "@shared/api/internal";
 import { isContractId } from "@shared/api/helpers/soroban";
 export { isContractId } from "@shared/api/helpers/soroban";
 
@@ -39,47 +37,6 @@ export const SOROBAN_OPERATION_TYPES = [
 // All assets on the classic side have 7 decimals
 // https://developers.stellar.org/docs/fundamentals-and-concepts/stellar-data-structures/assets#amount-precision
 export const CLASSIC_ASSET_DECIMALS = 7;
-
-/**
- * Gets the correct decimals for an asset.
- * For Soroban contracts, fetches decimals via RPC.
- * For native XLM and classic assets, returns CLASSIC_ASSET_DECIMALS (7) without throwing.
- *
- * @throws Error if the RPC call succeeds but returns no decimals (only for Soroban contracts)
- * @param params - Parameters object
- * @param params.assetIssuer - The asset issuer (contract ID for Soroban, issuer address for classic, null for native)
- * @param params.publicKey - The public key for the account
- * @param params.networkDetails - Network configuration details
- * @returns The number of decimals for the asset
- */
-export const getDecimalsForAsset = async ({
-  assetIssuer,
-  publicKey,
-  networkDetails,
-}: {
-  assetIssuer: string | null;
-  publicKey: string;
-  networkDetails: NetworkDetails;
-}): Promise<number> => {
-  // For Soroban contracts, fetch decimals via RPC
-  if (assetIssuer && isContractId(assetIssuer)) {
-    const tokenDetails = await getTokenDetails({
-      contractId: assetIssuer,
-      publicKey,
-      networkDetails,
-    });
-
-    if (tokenDetails && tokenDetails.decimals !== undefined) {
-      return tokenDetails.decimals;
-    }
-
-    // If API call succeeded but no decimals returned, throw
-    throw new Error(`Unable to fetch decimals for contract ${assetIssuer}`);
-  }
-
-  // For native XLM and classic assets, return standard decimals
-  return CLASSIC_ASSET_DECIMALS;
-};
 
 /**
  * Checks if a transaction is a Soroban transaction.
@@ -131,78 +88,6 @@ export const isSorobanTransaction = ({
   }
 
   return false;
-};
-
-/**
- * Extracts the contract ID from transaction data.
- *
- * This function determines which contract ID to use based on the transaction type:
- * - For collectibles: returns the collection address
- * - For tokens: extracts contract ID from the token ID using getContractIdFromTokenId
- * - For other types: returns undefined
- *
- * @param params - Parameters object
- * @param params.isCollectible - Whether this transaction involves a collectible (NFT)
- * @param params.collectionAddress - The contract address of the collectible collection
- * @param params.isToken - Whether this transaction involves a Soroban token
- * @param params.asset - The asset identifier (token ID or symbol:contractId format)
- * @param params.networkDetails - Network configuration details for resolving contract IDs
- * @returns The contract ID if available, undefined otherwise
- *
- * @example
- * // For a collectible transaction
- * getContractIdFromTransactionData({
- *   isCollectible: true,
- *   collectionAddress: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
- *   isToken: false,
- *   asset: "",
- *   networkDetails: testnetDetails
- * })
- * // Returns: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4"
- *
- * @example
- * // For a token transaction
- * getContractIdFromTransactionData({
- *   isCollectible: false,
- *   collectionAddress: "",
- *   isToken: true,
- *   asset: "USDC:CAQEEHVUG3D5YACMWVYGG7XQNQB3O6T6PK6TPZSDP75H3PVY7KDUMQQ",
- *   networkDetails: testnetDetails
- * })
- * // Returns: "CAQEEHVUG3D5YACMWVYGG7XQNQB3O6T6PK6TPZSDP75H3PVY7KDUMQQ"
- *
- * @example
- * // For a non-token, non-collectible transaction
- * getContractIdFromTransactionData({
- *   isCollectible: false,
- *   collectionAddress: "",
- *   isToken: false,
- *   asset: "native",
- *   networkDetails: testnetDetails
- * })
- * // Returns: undefined
- */
-export const getContractIdFromTransactionData = ({
-  isCollectible,
-  collectionAddress,
-  isToken,
-  asset,
-  networkDetails,
-}: {
-  isCollectible: boolean;
-  collectionAddress: string;
-  isToken: boolean;
-  asset: string;
-  networkDetails: NetworkDetails;
-}) => {
-  if (isCollectible && collectionAddress) {
-    return collectionAddress;
-  }
-
-  if (!isToken || !asset) {
-    return undefined;
-  }
-  return getContractIdFromTokenId(asset, networkDetails);
 };
 
 /**
@@ -363,30 +248,16 @@ export const addressToString = (address: xdr.ScAddress) => {
 export const getArgsForTokenInvocation = (
   fnName: string,
   args: xdr.ScVal[],
-): ArgsForTransferInvocation => {
-  let tokenId: number | undefined;
-  let amount: bigint | number | undefined;
+): ArgsForTokenInvocation => {
+  let amount: bigint | number;
   let from = "";
   let to = "";
-  const thirdArgType = args[2].switch();
 
   switch (fnName) {
     case SorobanTokenInterface.transfer:
-    case SorobanCollectibleInterface.transfer:
-      // both SEP-41 & SEP-50 tokens use the transfer method
-      // with different signatures. Without parsing the token spec,
-      // we can guess that the contract is either a token or a collectible
-      // by the type of the 3rd argument.
-      // Token transfer - (from: Address, to: Address, amount: i128)
-      // Collectible transfer - (from: Address, to: Address, tokenId: u32)
-      if (thirdArgType === xdr.ScValType.scvI128()) {
-        amount = scValToNative(args[2]);
-      }
-      if (thirdArgType === xdr.ScValType.scvU32()) {
-        tokenId = scValToNative(args[2]);
-      }
       from = addressToString(args[0].address());
       to = addressToString(args[1].address());
+      amount = scValToNative(args[2]);
       break;
     case SorobanTokenInterface.mint:
       to = addressToString(args[0].address());
@@ -396,15 +267,15 @@ export const getArgsForTokenInvocation = (
       amount = BigInt(0);
   }
 
-  return { from, to, amount, tokenId };
+  return { from, to, amount };
 };
 
 const isSorobanOp = (operation: HorizonOperation) =>
   SOROBAN_OPERATION_TYPES.includes(operation.type);
 
-export const getInvocationArgsFromInvokeHostFn = (
+export const getTokenInvocationArgs = (
   hostFn: Operation.InvokeHostFunction,
-): HostFnInvocationArgs | null => {
+): TokenInvocationArgs | null => {
   if (!hostFn?.func?.invokeContract) {
     return null;
   }
@@ -424,13 +295,12 @@ export const getInvocationArgsFromInvokeHostFn = (
 
   if (
     fnName !== SorobanTokenInterface.transfer &&
-    fnName !== SorobanTokenInterface.mint &&
-    fnName !== SorobanCollectibleInterface.transfer
+    fnName !== SorobanTokenInterface.mint
   ) {
     return null;
   }
 
-  let opArgs;
+  let opArgs: ArgsForTokenInvocation;
 
   try {
     opArgs = getArgsForTokenInvocation(fnName, args);
@@ -460,7 +330,7 @@ export const getAttrsFromSorobanHorizonOp = (
 
   const invokeHostFn = txEnvelope.operations[0]; // only one op per tx in Soroban right now
 
-  return getInvocationArgsFromInvokeHostFn(invokeHostFn);
+  return getTokenInvocationArgs(invokeHostFn);
 };
 
 export interface InvocationTree {

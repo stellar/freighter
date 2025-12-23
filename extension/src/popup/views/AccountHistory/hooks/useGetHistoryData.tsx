@@ -30,30 +30,16 @@ import {
 } from "helpers/hooks/useGetAppData";
 import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import {
-  AssetIcons,
-  Collectible,
-  HorizonOperation,
-  TokenBalance,
-} from "@shared/api/types";
+import { AssetIcons, HorizonOperation, TokenBalance } from "@shared/api/types";
 import { OPERATION_TYPES } from "constants/transaction";
-import {
-  capitalize,
-  formatAmount,
-  trimTrailingZeros,
-} from "popup/helpers/formatters";
+import { capitalize, formatAmount } from "popup/helpers/formatters";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
   formatTokenAmount,
   getAttrsFromSorobanHorizonOp,
-  CLASSIC_ASSET_DECIMALS,
 } from "popup/helpers/soroban";
-import { isContractId } from "@shared/api/helpers/soroban";
-import {
-  SorobanCollectibleInterface,
-  SorobanTokenInterface,
-} from "@shared/constants/soroban/token";
+import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 import { getBalanceByKey } from "popup/helpers/balance";
 import { AssetType } from "@shared/api/types/account-balance";
 import {
@@ -64,20 +50,10 @@ import {
   homeDomainsSelector,
   saveDomainForIssuer,
   saveIconsForBalances,
-  tokensListsSelector,
 } from "popup/ducks/cache";
 import { getAssetDomains } from "@shared/api/internal";
 import { AppDispatch } from "popup/App";
-import { captureException } from "@sentry/browser";
-import {
-  CollectibleInfoImage,
-  getCollectibleName,
-} from "popup/components/account/CollectibleInfo";
-import { AssetListResponse } from "@shared/constants/soroban/asset-list";
-import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
-import IconSoroban from "popup/assets/icon-soroban.svg?react";
-import { batchFetchCollectibles } from "helpers/utils/collectibles/collectiblesBatchFetcher";
-import { ContractIdentifier } from "helpers/utils/collectibles/collectiblesCache";
+import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
 export type HistorySection = {
   monthYear: string; // in format {month}:{year}
@@ -165,11 +141,9 @@ export const getPaymentIcon = ({
 export const getTransferIcons = ({
   isNative,
   isReceiving,
-  icon,
 }: {
   isNative: boolean;
   isReceiving: boolean;
-  icon: string | null;
 }) => (
   <>
     {isNative && (
@@ -184,18 +158,7 @@ export const getTransferIcons = ({
     )}
     {!isNative && (
       <div className="HistoryItem__icon__bordered">
-        {icon ? (
-          <AssetSds
-            size="lg"
-            variant="single"
-            sourceOne={{
-              altText: i18n.t("Token logo"),
-              image: icon,
-            }}
-          />
-        ) : (
-          <IconSoroban />
-        )}
+        <Icon.User01 />
       </div>
     )}
     {isReceiving && (
@@ -209,21 +172,6 @@ export const getTransferIcons = ({
       </div>
     )}
   </>
-);
-
-export const getCollectibleIcon = ({
-  collectible,
-}: {
-  collectible: Collectible;
-}) => (
-  <div className="HistoryItem__icon__rounded">
-    <CollectibleInfoImage
-      image={collectible.metadata?.image}
-      name={collectible.tokenId}
-      isSmall
-      isHistory
-    />
-  </div>
 );
 
 export const getRowIconByType = (iconType: string) => {
@@ -289,17 +237,30 @@ export const getActionIconByType = (iconType: string) => {
  * This is needed because Horizon API returns base G address for M addresses
  */
 const extractDestinationFromXDR = async (
-  txEnvelopeXdr: string,
+  transactionHash: string,
   networkDetails: NetworkDetails,
   fallbackTo: string,
 ): Promise<string> => {
-  if (!txEnvelopeXdr) {
+  if (!transactionHash) {
     return fallbackTo;
   }
 
   try {
+    const server = stellarSdkServer(
+      networkDetails.networkUrl,
+      networkDetails.networkPassphrase,
+    );
+    const transaction = await server
+      .transactions()
+      .transaction(transactionHash)
+      .call();
+
+    if (!transaction || !transaction.envelope_xdr) {
+      return fallbackTo;
+    }
+
     const tx = TransactionBuilder.fromXDR(
-      txEnvelopeXdr,
+      transaction.envelope_xdr,
       networkDetails.networkPassphrase,
     );
 
@@ -328,7 +289,7 @@ const extractDestinationFromXDR = async (
     // For now, we'll rely on the fallback (attrs.to) which should already have the correct address
     // since Soroban operations preserve muxed addresses in their arguments
   } catch (error) {
-    captureException(`Failed to parse XDR for destination address: ${error}`);
+    console.error("Failed to parse XDR for destination address", error);
   }
 
   return fallbackTo;
@@ -356,162 +317,26 @@ const getIconUrl = async ({
   networkDetails,
   homeDomains,
   icons,
-  cachedTokenLists,
 }: {
   key: string;
   code: string;
   networkDetails: NetworkDetails;
   homeDomains: { [assetIssuer: string]: string | null };
   icons: AssetIcons;
-  cachedTokenLists: AssetListResponse[];
 }) => {
   let iconUrl = icons[getCanonicalFromAsset(code, key)];
   if (!iconUrl && iconUrl !== null) {
-    if (cachedTokenLists.length > 0) {
-      const { icon } = await getIconFromTokenLists({
-        issuerId: key,
-        code,
-        assetsListsData: cachedTokenLists,
-      });
-      if (icon) {
-        iconUrl = icon;
-      }
-    } else if (!isContractId(key)) {
-      const homeDomain = homeDomains[key || ""] || "";
-      iconUrl = await getIconUrlFromIssuer({
-        key: key || "",
-        code: code || "",
-        networkDetails,
-        homeDomain,
-      });
-    }
+    const homeDomain = homeDomains[key || ""] || "";
+    iconUrl = await getIconUrlFromIssuer({
+      key: key || "",
+      code: code || "",
+      networkDetails,
+      homeDomain,
+    });
   }
 
   icons[getCanonicalFromAsset(code, key)] = iconUrl || null;
   return iconUrl;
-};
-
-export interface AssetDiffSummary {
-  assetCode: string;
-  assetIssuer: string | null;
-  decimals: number;
-  amount: string;
-  isCredit: boolean;
-  destination?: string; // The destination public key for debits
-  icon?: string; // Asset icon URL
-
-  // For payment/createAccount flows
-  sourcePublicKey?: string; // The sending public key
-
-  // For swap flows
-  sourceAmount?: string;
-  sourceAssetCode?: string;
-  sourceIcon?: string;
-}
-
-/**
- * Processes asset_balance_changes for a given public key and returns summaries for each asset
- * @returns Array of asset diff summaries, or empty array if none
- */
-const processAssetBalanceChanges = async (
-  operation: HorizonOperation,
-  publicKey: string,
-  networkDetails: NetworkDetails,
-  homeDomains: { [assetIssuer: string]: string | null },
-  icons: AssetIcons,
-  fetchTokenDetails: (args: {
-    contractId: string;
-    publicKey: string;
-    networkDetails: NetworkDetails;
-  }) => Promise<TokenDetailsResponse | Error>,
-  cachedTokenLists: AssetListResponse[],
-): Promise<AssetDiffSummary[]> => {
-  if (
-    !operation.asset_balance_changes ||
-    operation.asset_balance_changes.length === 0
-  ) {
-    return [];
-  }
-
-  const results: AssetDiffSummary[] = [];
-
-  for (const change of operation.asset_balance_changes) {
-    // Filter to only changes involving this public key
-    if (change.from !== publicKey && change.to !== publicKey) {
-      continue;
-    }
-
-    // Extract asset info - handle native XLM specially
-    let assetCode: string;
-    let assetIssuer: string | null = null;
-
-    if (change.asset_type === "native") {
-      assetCode = "XLM";
-      assetIssuer = null;
-    } else {
-      assetCode = change.asset_code || "";
-      assetIssuer = change.asset_issuer || null;
-    }
-
-    // Determine if this is a credit (receiving) or debit (sending)
-    const isCredit = change.to === publicKey;
-    // Destination is the counterparty (from for credits, to for debits)
-    const destination = isCredit ? change.from : change.to;
-
-    // Get asset icon
-    const icon =
-      assetCode === "XLM"
-        ? StellarLogo
-        : await getIconUrl({
-            key: assetIssuer || "",
-            code: assetCode,
-            networkDetails,
-            homeDomains,
-            icons,
-            cachedTokenLists,
-          });
-
-    // Fetch decimals based on whether it's a Soroban contract
-    let decimals: number;
-
-    // For Soroban contracts, fetch decimals using cached function
-    if (assetIssuer && isContractId(assetIssuer)) {
-      try {
-        const tokenDetailsResponse = await fetchTokenDetails({
-          contractId: assetIssuer,
-          publicKey,
-          networkDetails,
-        });
-
-        if (
-          !tokenDetailsResponse ||
-          isError<TokenDetailsResponse>(tokenDetailsResponse)
-        ) {
-          continue; // Skip this asset if we can't fetch details
-        }
-
-        decimals = tokenDetailsResponse.decimals;
-      } catch (error) {
-        continue; // Skip this asset and move to the next one
-      }
-    } else {
-      // For native XLM and classic assets, use standard decimals
-      decimals = CLASSIC_ASSET_DECIMALS;
-    }
-
-    results.push({
-      assetCode,
-      assetIssuer,
-      decimals,
-      amount: trimTrailingZeros(change.amount),
-      isCredit,
-      destination:
-        destination && destination !== publicKey ? destination : undefined,
-      icon,
-    });
-  }
-
-  return results;
 };
 
 export interface OperationDataRow {
@@ -527,9 +352,6 @@ export interface OperationDataRow {
   rowText: ReactNode;
 }
 
-// Map key format: "contractId:tokenId"
-export type CollectibleLookupMap = Map<string, Collectible>;
-
 export const getRowDataByOpType = async (
   publicKey: string,
   balances: AssetType[],
@@ -542,8 +364,6 @@ export const getRowDataByOpType = async (
     networkDetails: NetworkDetails;
   }) => Promise<TokenDetailsResponse | Error>,
   homeDomains: { [assetIssuer: string]: string | null },
-  collectibleLookup: CollectibleLookupMap,
-  cachedTokenLists: AssetListResponse[],
 ): Promise<OperationDataRow> => {
   const {
     account,
@@ -553,7 +373,6 @@ export const getRowDataByOpType = async (
     created_at: createdAt,
     id,
     to,
-    to_muxed,
     from,
     starting_balance: startingBalance,
     type,
@@ -570,7 +389,7 @@ export const getRowDataByOpType = async (
     operation_count: operationCount,
     fee_charged,
     memo,
-    envelope_xdr: txEnvelopeXdr,
+    hash: transactionHash,
   } = transaction_attr;
 
   const date = new Date(Date.parse(createdAt))
@@ -619,10 +438,12 @@ export const getRowDataByOpType = async (
     "source_amount" in operation ? operation.source_amount : null;
 
   if (isSwap) {
-    const nonLabelAmount = formatAmount(new BigNumber(amount!).toString());
-    const formattedAmount = `+${nonLabelAmount} ${destAssetCode}`;
+    const nonLabelAmount = `${formatAmount(
+      new BigNumber(amount!).toString(),
+    )} ${destAssetCode}`;
+    const formattedAmount = `+${nonLabelAmount}`;
     const formattedSrcAmount = srcAmount
-      ? formatAmount(new BigNumber(srcAmount).toString())
+      ? `${formatAmount(new BigNumber(srcAmount).toString())} ${srcAssetCode}`
       : null;
 
     const destIcon =
@@ -634,7 +455,6 @@ export const getRowDataByOpType = async (
             networkDetails,
             homeDomains,
             icons,
-            cachedTokenLists,
           });
     const sourceIcon =
       srcAssetCode === "XLM"
@@ -645,7 +465,6 @@ export const getRowDataByOpType = async (
             networkDetails,
             homeDomains,
             icons,
-            cachedTokenLists,
           });
 
     return {
@@ -656,7 +475,6 @@ export const getRowDataByOpType = async (
       id,
       metadata: {
         ...baseMetadata,
-        destAssetCode,
         destIcon,
         destMinAmount: destAssetCode,
         formattedSrcAmount,
@@ -669,9 +487,7 @@ export const getRowDataByOpType = async (
       rowText: (
         <div className="HistoryItem__description__swap-label">
           <span>{srcAssetCode}</span>
-          <span className="HistoryItem__description__swap-label__separator">
-            {i18n.t("to")}
-          </span>
+          <Icon.ArrowRight className="swap-label-direction" />
           <span>{destAssetCode}</span>
         </div>
       ),
@@ -679,14 +495,19 @@ export const getRowDataByOpType = async (
   }
 
   if (isPayment) {
-    const destination = to_muxed || to || "";
-    const sender = from || "";
-
+    // Extract destination from XDR to get muxed address if present
+    const actualDestination = await extractDestinationFromXDR(
+      transactionHash,
+      networkDetails,
+      to || "",
+    );
     // default to Sent if a payment to self
-    const isReceiving = destination === publicKey && sender !== publicKey;
+    const isReceiving = actualDestination === publicKey && from !== publicKey;
     const paymentDifference = isReceiving ? "+" : "-";
-    const nonLabelAmount = formatAmount(new BigNumber(amount!).toString());
-    const formattedAmount = `${paymentDifference}${nonLabelAmount} ${destAssetCode}`;
+    const nonLabelAmount = `${formatAmount(
+      new BigNumber(amount!).toString(),
+    )} ${destAssetCode}`;
+    const formattedAmount = `${paymentDifference}${nonLabelAmount}`;
 
     const destIcon =
       destAssetCode === "XLM"
@@ -697,7 +518,6 @@ export const getRowDataByOpType = async (
             networkDetails,
             homeDomains,
             icons,
-            cachedTokenLists,
           });
 
     return {
@@ -714,14 +534,14 @@ export const getRowDataByOpType = async (
         isPayment,
         isReceiving,
         nonLabelAmount,
-        to: destination,
-        from: sender,
+        to: actualDestination,
       },
       rowText: destAssetCode,
     };
   }
 
   if (isInvokeHostFn) {
+    const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
     const genericInvocation = {
       action: "Interacted",
       actionIcon: "contractInteraction",
@@ -736,47 +556,6 @@ export const getRowDataByOpType = async (
       rowText: i18n.t("Contract Function"),
     };
 
-    const assetDiffs = await processAssetBalanceChanges(
-      operation,
-      publicKey,
-      networkDetails,
-      homeDomains,
-      icons,
-      fetchTokenDetails,
-      cachedTokenLists,
-    );
-
-    if (assetDiffs.length > 0) {
-      // Use first asset diff for the row display amount
-      const primaryDiff = assetDiffs[0];
-      const paymentDifference = primaryDiff.isCredit ? "+" : "-";
-      const formattedAmount =
-        assetDiffs.length > 1
-          ? "Multiple"
-          : `${paymentDifference}${primaryDiff.amount} ${primaryDiff.assetCode}`;
-
-      const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
-      const isTokenTransfer = attrs?.fnName === SorobanTokenInterface.transfer;
-      const isTokenMint = attrs?.fnName === SorobanTokenInterface.mint;
-
-      return {
-        ...genericInvocation,
-        amount: formattedAmount,
-        metadata: {
-          ...genericInvocation.metadata,
-          hasAssetDiffs: true,
-          assetDiffs,
-          isReceiving: primaryDiff.isCredit,
-          isTokenTransfer,
-          isTokenMint,
-          to: primaryDiff.destination,
-          nonLabelAmount: primaryDiff.amount,
-          destAssetCode: primaryDiff.assetCode,
-        },
-      };
-    }
-
-    const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
     if (!attrs) {
       return genericInvocation;
     }
@@ -794,9 +573,10 @@ export const getRowDataByOpType = async (
       }
 
       const { token, decimals } = assetBalance as TokenBalance;
-      const formattedTokenAmount = attrs.amount
-        ? formatTokenAmount(new BigNumber(attrs.amount), decimals)
-        : "";
+      const formattedTokenAmount = formatTokenAmount(
+        new BigNumber(attrs.amount),
+        decimals,
+      );
       const formattedAmount = `${
         isReceiving ? "+" : ""
       }${formattedTokenAmount} ${token.code}`;
@@ -817,117 +597,60 @@ export const getRowDataByOpType = async (
       };
     }
 
-    if (
-      attrs.fnName === SorobanTokenInterface.transfer ||
-      attrs.fnName === SorobanCollectibleInterface.transfer
-    ) {
-      // Extract destination from XDR for Soroban transfers (may be muxed)
-      // Note: For Soroban, the destination is in contract args, so we use attrs.to as fallback
-      const actualDestination = await extractDestinationFromXDR(
-        txEnvelopeXdr,
-        networkDetails,
-        attrs.to || "",
-      );
-
-      const isReceiving =
-        actualDestination === publicKey && attrs.from !== publicKey;
-
-      // if the amount is present, we can surmise this is a token transfer
-      if (attrs.amount) {
-        try {
-          const tokenDetailsResponse = await fetchTokenDetails({
-            contractId: attrs.contractId,
-            publicKey,
-            networkDetails,
-          });
-
-          if (
-            !tokenDetailsResponse ||
-            isError<TokenDetailsResponse>(tokenDetailsResponse)
-          ) {
-            return genericInvocation;
-          }
-
-          const { symbol, decimals } = tokenDetailsResponse!;
-          const isNative = symbol === "native";
-          const code = isNative ? "XLM" : symbol;
-          const formattedTokenAmount = formatTokenAmount(
-            new BigNumber(attrs.amount),
-            decimals,
-          );
-
-          const paymentDifference = isReceiving ? "+" : "-";
-          const formattedAmount = `${paymentDifference}${formattedTokenAmount} ${code}`;
-          const icon = await getIconUrl({
-            key: assetIssuer || "",
-            code: destAssetCode || "",
-            networkDetails,
-            homeDomains,
-            icons,
-            cachedTokenLists,
-          });
-
-          return {
-            action: isReceiving ? "Received" : "Sent",
-            actionIcon: isReceiving ? "received" : "sent",
-            amount: formattedAmount,
-            date,
-            id,
-            metadata: {
-              ...baseMetadata,
-              destAssetCode: code,
-              isInvokeHostFn,
-              isTokenTransfer: true,
-              nonLabelAmount: `${formattedTokenAmount} ${code}`,
-              to: actualDestination,
-            },
-            rowIcon: getTransferIcons({ isNative, isReceiving, icon }),
-            rowText: code,
-          };
-        } catch (error) {
-          return genericInvocation;
-        }
-      }
-
-      // otherwise, we treat this as a collectible transfer
+    if (attrs.fnName === SorobanTokenInterface.transfer) {
       try {
-        // if the tokenId is not present, we can't fetch the collectible; return generic invocation
-        if (!attrs.tokenId) {
+        const tokenDetailsResponse = await fetchTokenDetails({
+          contractId: attrs.contractId,
+          publicKey,
+          networkDetails,
+        });
+
+        if (
+          !tokenDetailsResponse ||
+          isError<TokenDetailsResponse>(tokenDetailsResponse)
+        ) {
           return genericInvocation;
         }
 
-        // Look up collectible from pre-fetched batch data
-        const lookupKey = `${attrs.contractId}:${attrs.tokenId.toString()}`;
-        const collectible = collectibleLookup.get(lookupKey);
+        const { symbol, decimals } = tokenDetailsResponse!;
+        const isNative = symbol === "native";
+        const code = isNative ? "XLM" : symbol;
+        const formattedTokenAmount = formatTokenAmount(
+          new BigNumber(attrs.amount),
+          decimals,
+        );
 
-        if (!collectible) {
-          return genericInvocation;
-        }
+        // Extract destination from XDR for Soroban transfers (may be muxed)
+        // Note: For Soroban, the destination is in contract args, so we use attrs.to as fallback
+        const actualDestination = await extractDestinationFromXDR(
+          transactionHash,
+          networkDetails,
+          attrs.to || "",
+        );
+
+        const isReceiving =
+          actualDestination === publicKey && attrs.from !== publicKey;
+        const paymentDifference = isReceiving ? "+" : "-";
+        const formattedAmount = `${paymentDifference}${formattedTokenAmount} ${code}`;
 
         return {
           action: isReceiving ? "Received" : "Sent",
           actionIcon: isReceiving ? "received" : "sent",
-          amount: `#${collectible.tokenId}`,
+          amount: formattedAmount,
           date,
           id,
           metadata: {
             ...baseMetadata,
+            destAssetCode: code,
             isInvokeHostFn,
-            isCollectibleTransfer: true,
+            isTokenTransfer: true,
+            nonLabelAmount: formattedTokenAmount,
             to: actualDestination,
-            amount: `#${collectible.tokenId}`,
-            collectionName: collectible.collectionName,
-            collectionTokenId: collectible.tokenId,
-            collectibleName: getCollectibleName(
-              collectible.metadata?.name,
-              collectible.tokenId,
-            ),
           },
-          rowIcon: getCollectibleIcon({ collectible }),
-          rowText: collectible.collectionName || "Collectible",
+          rowIcon: getTransferIcons({ isNative, isReceiving }),
+          rowText: code,
         };
-      } catch (e) {
-        captureException(`Error fetching collectibles: ${e}`);
+      } catch (error) {
         return genericInvocation;
       }
     }
@@ -943,7 +666,7 @@ export const getRowDataByOpType = async (
 
       // Extract destination from XDR for createAccount (may be muxed if sent to muxed address)
       const actualDestination = await extractDestinationFromXDR(
-        txEnvelopeXdr,
+        transactionHash,
         networkDetails,
         account || "",
       );
@@ -965,7 +688,6 @@ export const getRowDataByOpType = async (
           isReceiving,
           nonLabelAmount,
           to: actualDestination,
-          from,
         },
         rowIcon: (
           <div className="HistoryItem__icon__bordered">
@@ -989,7 +711,6 @@ export const getRowDataByOpType = async (
         networkDetails,
         homeDomains,
         icons,
-        cachedTokenLists,
       });
 
       return {
@@ -1039,8 +760,7 @@ export const getRowDataByOpType = async (
 };
 
 /**
- * Fetches home domains for asset issuers that are needed for displaying operation icons,
- * and also collects and fetches collectible contracts needed for collectible transfers.
+ * Fetches home domains for asset issuers that are needed for displaying operation icons.
  *
  * This function analyzes a list of Horizon operations to identify asset issuers that require
  * home domains for icon display. It only processes operations that need icons (payments, swaps,
@@ -1049,25 +769,17 @@ export const getRowDataByOpType = async (
  * After collecting all missing domains, it fetches them in a single batch and updates the
  * homeDomains cache object.
  *
- * Additionally, it identifies collectible transfer operations and batch fetches the needed
- * collectible contracts and token IDs.
- *
  * @param {HorizonOperation[]} operations - Array of Horizon operations to analyze
  * @param {NetworkDetails} networkDetails - Network configuration details
- * @param {string} publicKey - The public key of the account
  * @param {{ [assetIssuer: string]: string | null }} homeDomains - Cache object mapping asset issuer keys to their home domains
- * @returns {Promise<{ homeDomains: { [assetIssuer: string]: string | null }, collectibleLookup: CollectibleLookupMap }>} Object containing updated homeDomains and collectible lookup map
+ * @returns {Promise<{ [assetIssuer: string]: string | null }>} The updated homeDomains object with newly fetched domains
  */
-export const getOperationDependencies = async (
+export const getHomeDomainsForOperations = async (
   operations: HorizonOperation[],
   networkDetails: NetworkDetails,
-  publicKey: string,
   homeDomains: { [assetIssuer: string]: string | null },
 ) => {
   const domainsToFetch = new Set<string>();
-  // Collect all collectible contract IDs and token IDs for batch fetching
-  const collectibleContracts = new Map<string, Set<string>>();
-
   for (const operation of operations) {
     const { asset_issuer: assetIssuer } = operation;
     const sourceAssetIssuer =
@@ -1087,24 +799,6 @@ export const getOperationDependencies = async (
         domainsToFetch.add(sourceAssetIssuer);
       }
     }
-
-    // Collect collectible contracts in the same loop
-    if (operation.type_i === 24) {
-      const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
-      if (
-        attrs &&
-        attrs.fnName === SorobanCollectibleInterface.transfer &&
-        attrs.tokenId &&
-        !attrs.amount
-      ) {
-        const contractId = attrs.contractId;
-        const tokenId = attrs.tokenId.toString();
-        if (!collectibleContracts.has(contractId)) {
-          collectibleContracts.set(contractId, new Set());
-        }
-        collectibleContracts.get(contractId)!.add(tokenId);
-      }
-    }
   }
 
   const domainsArr = Array.from(domainsToFetch);
@@ -1119,42 +813,7 @@ export const getOperationDependencies = async (
     });
   }
 
-  // Batch fetch all collectibles
-  const collectibleLookup: CollectibleLookupMap = new Map();
-  if (collectibleContracts.size > 0) {
-    const contractsToFetch: ContractIdentifier[] = Array.from(
-      collectibleContracts.entries(),
-    ).map(([contractId, tokenIds]) => ({
-      id: contractId,
-      token_ids: Array.from(tokenIds),
-    }));
-
-    try {
-      const batchResult = await batchFetchCollectibles({
-        publicKey,
-        networkDetails,
-        contracts: contractsToFetch,
-      });
-
-      // Build lookup map: "contractId:tokenId" -> Collectible
-      for (const collection of batchResult.collections) {
-        const contractId =
-          collection.collection?.address || collection.error?.collectionAddress;
-        if (!contractId) continue;
-
-        const collectibles = collection.collection?.collectibles || [];
-        for (const collectible of collectibles) {
-          const lookupKey = `${contractId}:${collectible.tokenId}`;
-          collectibleLookup.set(lookupKey, collectible);
-        }
-      }
-    } catch (error) {
-      captureException(`Error batch fetching collectibles: ${error}`);
-      // Continue with empty lookup map - operations will fall back to generic invocation
-    }
-  }
-
-  return { homeDomains, collectibleLookup };
+  return homeDomains;
 };
 
 const createHistorySections = async (
@@ -1170,20 +829,16 @@ const createHistorySections = async (
     networkDetails: NetworkDetails;
   }) => Promise<TokenDetailsResponse | Error>,
   homeDomains: { [assetIssuer: string]: string | null },
-  cachedTokenLists: AssetListResponse[],
 ) => {
   /* 
     To prevent multiple requests for home domains as we build each row, 
     we iterate through the operations and collect the asset issuers that need home domains in a single request.
-    Also collect and fetch needed collectible contracts.
   */
-  const { homeDomains: fetchedHomeDomains, collectibleLookup } =
-    await getOperationDependencies(
-      operations,
-      networkDetails,
-      publicKey,
-      homeDomains,
-    );
+  const fetchedHomeDomains = await getHomeDomainsForOperations(
+    operations,
+    networkDetails,
+    homeDomains,
+  );
   return operations.reduce(
     async (
       sectionsPromise: Promise<HistorySection[]>,
@@ -1215,8 +870,6 @@ const createHistorySections = async (
         icons,
         fetchTokenDetails,
         fetchedHomeDomains,
-        collectibleLookup,
-        cachedTokenLists,
       );
 
       if (isDustPayment && isHideDustEnabled) {
@@ -1279,7 +932,6 @@ function useGetHistoryData(
   const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
   const { fetchData: fetchHistory } = useGetHistory();
   const { fetchData: fetchTokenDetails } = useTokenDetails();
-  const cachedTokenLists = useSelector(tokensListsSelector);
   const homeDomains = useSelector(homeDomainsSelector);
   const reduxDispatch = useDispatch<AppDispatch>();
 
@@ -1342,7 +994,6 @@ function useGetHistoryData(
           historyOptions.isHideDustEnabled,
           fetchTokenDetails,
           cachedHomeDomains,
-          cachedTokenLists,
         ),
       } as ResolvedData;
 

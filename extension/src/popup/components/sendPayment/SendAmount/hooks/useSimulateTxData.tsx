@@ -43,6 +43,10 @@ import { findAddressBalance } from "popup/helpers/balance";
 import { AppDispatch, AppState } from "popup/App";
 import { useScanTx } from "popup/helpers/blockaid";
 import { cleanAmount } from "popup/helpers/formatters";
+import {
+  checkIsMuxedSupported,
+  determineMuxedDestination,
+} from "helpers/muxedAddress";
 
 interface SimClassic {
   type: "classic";
@@ -379,7 +383,6 @@ function useSimulateTxData({
       if (!assetBalance) {
         throw new Error("asset balance not found");
       }
-
       const tokenAddress =
         assetAddress === "native"
           ? Asset.native().contractId(networkDetails.networkPassphrase)
@@ -389,6 +392,32 @@ function useSimulateTxData({
         Number("decimals" in assetBalance ? assetBalance.decimals : 7),
       );
 
+      // For Soroban transfers, check if contract supports muxed and determine final destination
+      let finalDestination = destination;
+      let sorobanMemo = memo;
+      if (simParams.type === "soroban") {
+        try {
+          const contractSupportsMuxed = await checkIsMuxedSupported({
+            contractId: tokenAddress,
+            networkDetails,
+          });
+          finalDestination = determineMuxedDestination({
+            recipientAddress: destination,
+            transactionMemo: memo,
+            contractSupportsMuxed,
+          });
+          // For Soroban transfers with muxed support, don't pass memo separately
+          // (it's encoded in the muxed address)
+          // Send empty string instead of undefined to satisfy backend API requirement
+          if (contractSupportsMuxed) {
+            sorobanMemo = "";
+          }
+        } catch (error) {
+          // If we can't determine muxed destination, use original destination
+          console.error("Error determining muxed destination:", error);
+        }
+      }
+
       const simResponse = await simulateTx({
         type: simParams.type,
         recommendedFee: currentTransactionFee,
@@ -396,11 +425,11 @@ function useSimulateTxData({
           tokenPayment: {
             address: tokenAddress,
             publicKey,
-            memo: currentMemo,
+            memo: sorobanMemo,
             params: {
               amount: parsedAmount.toNumber(),
               publicKey,
-              destination,
+              destination: finalDestination,
             },
             networkDetails,
             transactionFee: currentTransactionFee,
