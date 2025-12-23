@@ -2004,7 +2004,7 @@ export const simulateTokenTransfer = async (args: {
 
     const transferParams = [
       new Address(publicKey).toScVal(), // from
-      new Address(address).toScVal(), // to
+      new Address(params.destination).toScVal(), // to (may be muxed address)
       new XdrLargeInt("i128", params.amount).toI128(), // amount
     ];
     const transaction = transfer(address, transferParams, memo, builder);
@@ -2029,22 +2029,33 @@ export const simulateTokenTransfer = async (args: {
     };
   }
 
+  // Build request body - ensure memo is a string (empty string if undefined/null for muxed addresses)
+  const requestBody: {
+    address: string;
+    pub_key: string;
+    memo: string;
+    params: {
+      publicKey: string;
+      destination: string;
+      amount: number;
+    };
+    network_url: string;
+    network_passphrase: string;
+  } = {
+    address,
+    pub_key: publicKey,
+    memo: memo || "", // Backend requires memo as string, use empty string if undefined
+    params,
+    network_url: networkDetails.sorobanRpcUrl!,
+    network_passphrase: networkDetails.networkPassphrase,
+  };
+
   const options = {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      address,
-
-      pub_key: publicKey,
-      memo,
-      params,
-
-      network_url: networkDetails.sorobanRpcUrl,
-
-      network_passphrase: networkDetails.networkPassphrase,
-    }),
+    body: JSON.stringify(requestBody),
   };
   const res = await fetch(`${INDEXER_URL}/simulate-token-transfer`, options);
   const response = await res.json();

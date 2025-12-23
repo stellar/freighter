@@ -26,6 +26,7 @@ import { findAssetBalance, isSorobanBalance } from "./balance";
 import { getSdk } from "@shared/helpers/stellar";
 import { AssetType } from "@shared/api/types/account-balance";
 import { getNativeContractDetails } from "./searchAsset";
+import { isContractId } from "@shared/api/helpers/soroban";
 export { isContractId } from "@shared/api/helpers/soroban";
 
 export const SOROBAN_OPERATION_TYPES = [
@@ -36,6 +37,94 @@ export const SOROBAN_OPERATION_TYPES = [
 // All assets on the classic side have 7 decimals
 // https://developers.stellar.org/docs/fundamentals-and-concepts/stellar-data-structures/assets#amount-precision
 export const CLASSIC_ASSET_DECIMALS = 7;
+
+/**
+ * Checks if a transaction is a Soroban transaction.
+ * A transaction is considered Soroban if:
+ * - The selected balance is a Soroban token (has a contractId), OR
+ * - The recipient address is a contract address, OR
+ * - The isToken flag is true and contractId exists, OR
+ * - The isInvokeHostFn flag is true (for history operations)
+ *
+ * @param params - Parameters object
+ * @param params.selectedBalance - The selected balance (can be undefined)
+ * @param params.recipientAddress - The recipient address (can be undefined)
+ * @param params.isToken - Flag indicating if this is a token transaction (can be undefined)
+ * @param params.contractId - Contract ID for the token (can be undefined)
+ * @param params.isInvokeHostFn - Flag indicating if this is an invoke host function operation (can be undefined)
+ * @returns True if the transaction is a Soroban transaction, false otherwise
+ */
+export const isSorobanTransaction = ({
+  selectedBalance,
+  recipientAddress,
+  isToken,
+  contractId,
+  isInvokeHostFn,
+}: {
+  selectedBalance?: AssetType;
+  recipientAddress?: string;
+  isToken?: boolean;
+  contractId?: string;
+  isInvokeHostFn?: boolean;
+}): boolean => {
+  // Check if it's an invoke host function operation (for history)
+  if (isInvokeHostFn) {
+    return true;
+  }
+
+  // Check if selected balance is a Soroban balance (has contractId)
+  if (selectedBalance && isSorobanBalance(selectedBalance)) {
+    return true;
+  }
+
+  // Check if recipient address is a contract address
+  if (recipientAddress && isContractId(recipientAddress)) {
+    return true;
+  }
+
+  // Check if isToken flag is true and contractId exists
+  if (isToken && contractId) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
+ * Extracts contract ID from a token ID string.
+ * Token ID format:
+ * - "native" for XLM
+ * - "CODE:ISSUER" for classic tokens
+ * - Contract address for Soroban tokens
+ * - "SYMBOL:CONTRACTID" for Soroban tokens with symbol
+ *
+ * @param tokenId - The token identifier string
+ * @returns Contract ID if the token is a Soroban token, undefined otherwise
+ */
+export const getContractIdFromTokenId = (
+  tokenId: string,
+  networkDetails: NetworkDetails,
+): string | undefined => {
+  if (tokenId === "native") {
+    return getNativeContractDetails(networkDetails).contract;
+  }
+
+  // Check if tokenId itself is a contract ID
+  if (isContractId(tokenId)) {
+    return tokenId;
+  }
+
+  // Check if it's SYMBOL:CONTRACTID format (Soroban token)
+  // Split by : and check if the second part is a contract ID
+  const parts = tokenId.split(":");
+  if (parts.length === 2 && isContractId(parts[1])) {
+    // This is a Soroban token in SYMBOL:CONTRACTID format
+    return parts[1];
+  }
+
+  // Classic token format: CODE:ISSUER (no contract ID)
+  return undefined;
+};
 
 export const getAssetDecimals = (
   asset: string,
