@@ -118,12 +118,12 @@
   }
 
   &__body {
-    margin-top: pxToRem(24px);
+    margin-top: pxToRem(12px);
 
     &.swap {
       display: flex;
       flex-direction: column;
-      padding: pxToRem(24px);
+      padding: pxToRem(12px) pxToRem(16px);
       border-radius: pxToRem(16px);
       background: var(--sds-clr-gray-03);
 
@@ -137,7 +137,7 @@
           width: 2rem;
           border-radius: 2rem;
           border: 1px solid var(--sds-clr-gray-06);
-          margin: pxToRem(24px) 0;
+          margin: pxToRem(12px) 0;
         }
         &__src,
         &__dst {
@@ -151,7 +151,7 @@
     &.send {
       display: flex;
       flex-direction: column;
-      padding: pxToRem(24px);
+      padding: pxToRem(12px) pxToRem(16px);
       border-radius: pxToRem(16px);
       background: var(--sds-clr-gray-03);
 
@@ -165,7 +165,7 @@
           width: 2rem;
           border-radius: 2rem;
           border: 1px solid var(--sds-clr-gray-06);
-          margin: pxToRem(24px) 0;
+          margin: pxToRem(12px) 0;
         }
         &__src,
         &__dst {
@@ -189,7 +189,7 @@
     &.transfer {
       display: flex;
       flex-direction: column;
-      padding: pxToRem(24px);
+      padding: pxToRem(12px) pxToRem(16px);
       border-radius: pxToRem(16px);
       background: var(--sds-clr-gray-03);
 
@@ -203,7 +203,7 @@
           width: 2rem;
           border-radius: 2rem;
           border: 1px solid var(--sds-clr-gray-06);
-          margin: pxToRem(24px) 0;
+          margin: pxToRem(12px) 0;
         }
         &__src,
         &__dst {
@@ -245,10 +245,10 @@
   &__metadata {
     display: flex;
     flex-direction: column;
-    padding: pxToRem(24px);
+    padding: pxToRem(12px) pxToRem(16px);
     border-radius: pxToRem(16px);
     background: var(--sds-clr-gray-03);
-    margin: pxToRem(24px) 0;
+    margin: pxToRem(12px) 0;
 
     .Metadata {
       display: flex;
@@ -287,22 +287,109 @@
     }
   }
 
-  &__body.transfer {
-    .AssetDiff__transfer {
+  &__asset-diffs {
+    display: flex;
+    flex-direction: column;
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background: var(--sds-clr-gray-03);
+    margin-top: pxToRem(12px);
+
+    .AssetDiff__row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      &:not(:last-child) {
+        margin-bottom: pxToRem(12px);
+        padding-bottom: pxToRem(12px);
+        border-bottom: 1px solid var(--sds-clr-gray-06);
+      }
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    .AssetDiff__label {
+      display: flex;
+      align-items: center;
+      color: var(--sds-clr-gray-11);
+
+      svg {
+        margin-right: pxToRem(6px);
+      }
+
+      &.credit svg {
+        color: var(--sds-clr-green-11);
+      }
+
+      &.debit svg {
+        color: var(--sds-clr-red-11);
+      }
+    }
+
+    .AssetDiff__value {
+      font-weight: var(--sds-font-weight-medium);
+
+      &.credit {
+        color: var(--sds-clr-green-11);
+      }
+
+      &.debit {
+        color: var(--sds-clr-red-11);
+      }
+    }
+
+    .AssetDiff__swap-row {
       display: flex;
       flex-direction: column;
 
       &:not(:last-child) {
-        margin-bottom: pxToRem(24px);
-        padding-bottom: pxToRem(24px);
+        margin-bottom: pxToRem(12px);
+        padding-bottom: pxToRem(12px);
         border-bottom: 1px solid var(--sds-clr-gray-06);
       }
     }
 
-    .Send__dst__label {
-      font-size: var(--sds-font-size-sm);
+    .AssetDiff__swap-src,
+    .AssetDiff__swap-dst {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .AssetDiff__swap-direction {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       color: var(--sds-clr-gray-11);
-      margin-top: pxToRem(4px);
+      height: 2rem;
+      width: 2rem;
+      border-radius: 2rem;
+      border: 1px solid var(--sds-clr-gray-06);
+      margin: pxToRem(24px) 0;
+    }
+
+    .AssetDiff__to-from {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .AssetDiff__label {
+        display: flex;
+        align-items: center;
+        color: var(--sds-clr-gray-11);
+
+        svg {
+          margin-right: pxToRem(6px);
+        }
+      }
+
+      .AssetDiff__value {
+        display: flex;
+        align-items: center;
+      }
     }
   }
 }
