@@ -36,7 +36,6 @@ import { capitalize, formatAmount } from "popup/helpers/formatters";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
-  CLASSIC_ASSET_DECIMALS,
   formatTokenAmount,
   getAttrsFromSorobanHorizonOp,
 } from "popup/helpers/soroban";
@@ -334,104 +333,76 @@ export interface AssetDiffSummary {
   isCredit: boolean;
   destination?: string; // The destination public key for debits
   icon?: string; // Asset icon URL
+
+  // For payment/createAccount flows
+  sourcePublicKey?: string; // The sending public key
+
+  // For swap flows
+  sourceAmount?: string;
+  sourceAssetCode?: string;
+  sourceIcon?: string;
 }
 
 /**
- * Processes asset_diffs for a given public key and returns summaries for each asset
- * Also finds destination public keys for debits by matching with credits in other accounts
- * @returns Array of asset diff summaries, or empty array if none/no net changes
+ * Processes asset_balance_changes for a given public key and returns summaries for each asset
+ * @returns Array of asset diff summaries, or empty array if none
  */
-const processAssetDiffs = async (
+const processAssetBalanceChanges = async (
   operation: HorizonOperation,
   publicKey: string,
   networkDetails: NetworkDetails,
   homeDomains: { [assetIssuer: string]: string | null },
   icons: AssetIcons,
 ): Promise<AssetDiffSummary[]> => {
-  if (!operation.asset_diffs || !operation.asset_diffs[publicKey]) {
+  // Helper to trim trailing zeros from amount strings
+  const trimTrailingZeros = (amount: string): string => {
+    if (!amount.includes(".")) {
+      return amount;
+    }
+
+    let trimmed = amount;
+    while (trimmed.endsWith("0")) {
+      trimmed = trimmed.substring(0, trimmed.length - 1);
+    }
+
+    if (trimmed.endsWith(".")) {
+      trimmed = trimmed.substring(0, trimmed.length - 1);
+    }
+
+    return trimmed;
+  };
+
+  if (
+    !operation.asset_balance_changes ||
+    operation.asset_balance_changes.length === 0
+  ) {
     return [];
   }
 
-  const diffs = operation.asset_diffs[publicKey];
   const results: AssetDiffSummary[] = [];
 
-  for (const diff of diffs) {
-    let assetCode: string;
-    let assetIssuer: string | null = null;
-    let decimals: number;
-
-    if (diff.asset_type === "NATIVE") {
-      assetCode = "XLM";
-      decimals = CLASSIC_ASSET_DECIMALS;
-    } else if (diff.asset_type === "ASSET" && "code" in diff.asset) {
-      assetCode = diff.asset.code || "";
-      assetIssuer = "issuer" in diff.asset ? diff.asset.issuer || null : null;
-      decimals =
-        "decimals" in diff.asset
-          ? (diff.asset.decimals as number) || CLASSIC_ASSET_DECIMALS
-          : CLASSIC_ASSET_DECIMALS;
-    } else if (diff.asset_type === "CONTRACT") {
-      assetCode = "code" in diff.asset ? diff.asset.code || "" : "";
-      assetIssuer = "issuer" in diff.asset ? diff.asset.issuer || null : null;
-      decimals =
-        "decimals" in diff.asset
-          ? (diff.asset.decimals as number) || CLASSIC_ASSET_DECIMALS
-          : CLASSIC_ASSET_DECIMALS;
-
-      if (!assetCode) {
-        continue;
-      }
-    } else {
+  for (const change of operation.asset_balance_changes) {
+    // Filter to only changes involving this public key
+    if (change.from !== publicKey && change.to !== publicKey) {
       continue;
     }
 
-    const inAmount = diff.in?.raw_value
-      ? new BigNumber(diff.in.raw_value)
-      : new BigNumber(0);
-    const outAmount = diff.out?.raw_value
-      ? new BigNumber(diff.out.raw_value)
-      : new BigNumber(0);
+    // Extract asset info - handle native XLM specially
+    let assetCode: string;
+    let assetIssuer: string | null = null;
 
-    const isCredit = inAmount.isGreaterThan(0);
-    const amount = isCredit ? inAmount : outAmount;
-    const formattedAmount = formatTokenAmount(amount, decimals);
-
-    // Find destination for debits
-    let destination: string | undefined;
-    if (!isCredit && operation.asset_diffs) {
-      // For debits, find a matching credit in another account
-      for (const [otherPublicKey, otherDiffs] of Object.entries(
-        operation.asset_diffs,
-      )) {
-        if (otherPublicKey === publicKey) continue;
-
-        const otherDiffArray = Array.isArray(otherDiffs)
-          ? otherDiffs
-          : [otherDiffs];
-        for (const otherDiff of otherDiffArray) {
-          // Check if this is a matching credit
-          const otherAssetCode =
-            otherDiff.asset_type === "NATIVE"
-              ? "XLM"
-              : "code" in otherDiff.asset
-                ? otherDiff.asset.code
-                : "";
-
-          if (otherAssetCode === assetCode) {
-            const otherInAmount = otherDiff.in?.raw_value
-              ? new BigNumber(otherDiff.in.raw_value)
-              : new BigNumber(0);
-
-            // If it's a credit with matching amount, this is the destination
-            if (otherInAmount.isGreaterThan(0) && otherInAmount.eq(amount)) {
-              destination = otherPublicKey;
-              break;
-            }
-          }
-        }
-        if (destination) break;
-      }
+    if (change.asset_type === "native") {
+      assetCode = "XLM";
+      assetIssuer = null;
+    } else {
+      assetCode = change.asset_code || "";
+      assetIssuer = change.asset_issuer || null;
     }
+
+    // Determine if this is a credit (receiving) or debit (sending)
+    const isCredit = change.to === publicKey;
+    // Destination is the counterparty (from for credits, to for debits)
+    const destination = isCredit ? change.from : change.to;
 
     // Get asset icon
     const icon =
@@ -448,10 +419,11 @@ const processAssetDiffs = async (
     results.push({
       assetCode,
       assetIssuer,
-      decimals,
-      amount: formattedAmount,
+      decimals: 7, // Can be extracted if needed from asset lookup
+      amount: trimTrailingZeros(change.amount),
       isCredit,
-      destination,
+      destination:
+        destination && destination !== publicKey ? destination : undefined,
       icon,
     });
   }
@@ -675,7 +647,7 @@ export const getRowDataByOpType = async (
       rowText: i18n.t("Contract Function"),
     };
 
-    const assetDiffs = await processAssetDiffs(
+    const assetDiffs = await processAssetBalanceChanges(
       operation,
       publicKey,
       networkDetails,
@@ -687,7 +659,10 @@ export const getRowDataByOpType = async (
       // Use first asset diff for the row display amount
       const primaryDiff = assetDiffs[0];
       const paymentDifference = primaryDiff.isCredit ? "+" : "-";
-      const formattedAmount = `${paymentDifference}${primaryDiff.amount} ${primaryDiff.assetCode}`;
+      const formattedAmount =
+        assetDiffs.length > 1
+          ? "multiple"
+          : `${paymentDifference}${primaryDiff.amount} ${primaryDiff.assetCode}`;
 
       const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
       const isTokenTransfer = attrs?.fnName === SorobanTokenInterface.transfer;
