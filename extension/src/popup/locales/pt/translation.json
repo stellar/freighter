@@ -323,7 +323,6 @@
   "Medium": "Média",
   "Medium Threshold": "Limite Médio",
   "Memo": "Memo",
-<<<<<<< HEAD
   "Memo is disabled for this transaction": "Memo está desabilitado para esta transação",
   "Memo is not supported for this operation": "Memo não é suportado para esta operação",
   "Memo is required": "Memo é obrigatório",
@@ -428,94 +427,6 @@
   "Review swap": "Revisar troca",
   "Review transaction on device": "Revisar transação no dispositivo",
   "Running integration tests ...": "Executando testes de integração ...",
-=======
-  "Memo required": "Memo required",
-  "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts": {
-    ")": "Merge accounts after migrating (your funding lumens used to fund the current accounts will be sent to the new ones - you lose access to the current accounts.)"
-  },
-  "Migrated": "Migrated",
-  "Migrating": {
-    "": "Migrating..."
-  },
-  "Migration complete": "Migration complete",
-  "Min Amount A": "Min Amount A",
-  "Min Amount B": "Min Amount B",
-  "Min Price": "Min Price",
-  "Multiple assets": "Multiple assets",
-  "Multiple assets have a similar code, please check the domain before adding": "Multiple assets have a similar code, please check the domain before adding.",
-  "must be at least": "must be at least",
-  "must be below": "must be below",
-  "Name": "Name",
-  "Network": "Network",
-  "Network fees": "Network fees",
-  "Network is in use": "Network is in use",
-  "Network settings": "Network settings",
-  "Network Settings": "Network Settings",
-  "Never disclose your recovery phrase! If you do, someone will be able to access your wallet": "Never disclose your recovery phrase! If you do, someone will be able to access your wallet.",
-  "NEVER share this phrase with anyone": "NEVER share this phrase with anyone",
-  "Nevermind, cancel": "Nevermind, cancel",
-  "New account": "New account",
-  "New password": "New password",
-  "No collectibles yet": "No collectibles yet",
-  "No connected apps found": "No connected apps found",
-  "No one from Stellar Development Foundation will ever ask for your recovery phrase": "No one from Stellar Development Foundation will ever ask for your recovery phrase",
-  "No transactions to show": "No transactions to show",
-  "Not enough lumens": "Not enough lumens",
-  "Not funded": "Not funded",
-  "Not migrated": "Not migrated",
-  "Note that you will need to reload this tab to load any account changes that happen outside this session": {
-    " For your own safety, please close this window when you are done": "Note that you will need to reload this tab to load any account changes that happen outside this session. For your own safety, please close this window when you are done."
-  },
-  "Offer ID": "Offer ID",
-  "One of your accounts is a signer for another account": {
-    " Freighter won’t migrate signing settings": {
-      " For your safety, Freighter won’t merge accounts with signature set up so you can still control it": "One of your accounts is a signer for another account. Freighter won’t migrate signing settings. For your safety, Freighter won’t merge accounts with signature set up so you can still control it."
-    }
-  },
-  "One or more operations in this transaction failed": "One or more operations in this transaction failed.",
-  "Only accounts ready for migration will be migrated": "Only accounts ready for migration will be migrated.",
-  "Open": "Open",
-  "Operation": "Operation",
-  "Operations": "Operations",
-  "Optional": "Optional",
-  "Order is incorrect, try again": "Order is incorrect, try again",
-  "Passphrase": "Passphrase",
-  "Paths": "Paths",
-  "Pin Freighter to the toolbar": "Pin Freighter to the toolbar",
-  "Please check if the network information is correct and try again": {
-    " Alternatively, this network may not be operational": "Please check if the network information is correct and try again. Alternatively, this network may not be operational."
-  },
-  "Please check the new rate and try again": "Please check the new rate and try again.",
-  "Please don’t close this window": "Please don’t close this window",
-  "Please note the following message": "Please note the following message",
-  "Please select a different network before removing it": "Please select a different network before removing it.",
-  "Please select each word in the same order you have them noted to confirm you got them right": "Please select each word in the same order you have them noted to confirm you got them right.",
-  "powered by": "powered by",
-  "Powered by ": "Powered by ",
-  "Pre Auth Transaction": "Pre Auth Transaction",
-  "Predicate": "Predicate",
-  "Preferences": "Preferences",
-  "Price": "Price",
-  "Privacy Policy": "Privacy Policy",
-  "Read before importing your key": "Read before importing your key",
-  "Ready to migrate": "Ready to migrate",
-  "Recents": "Recents",
-  "Recovery Phrase": "Recovery Phrase",
-  "Remember, Freighter will now display accounts related to the new backup phrase that was just created": {
-    " Use this backup phrase from now on to use your new accounts": {
-      " If you have accounts that were not merged, keep and use your old backup phrase to access them": "Remember, Freighter will now display accounts related to the new backup phrase that was just created. Use this backup phrase from now on to use your new accounts. If you have accounts that were not merged, keep and use your old backup phrase to access them."
-    }
-  },
-  "Remove": "Remove",
-  "Remove asset": "Remove asset",
-  "Remove List": "Remove List",
-  "Report issue on Github": "Report issue on Github",
-  "Reserved Balance*": "Reserved Balance*",
-  "Review accounts to migrate": "Review accounts to migrate",
-  "Review Send": "Review Send",
-  "Review swap": "Review swap",
-  "Review transaction on device": "Review transaction on device",
->>>>>>> 22463e61 (Feature/collectibles home tab (#2405))
   "Salt": "Salt",
   "Save": "Salvar",
   "Save failed!": "Falha ao salvar!",
