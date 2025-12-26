@@ -675,11 +675,18 @@ export const BlockaidTxScanLabel = ({
 
   // Extract complex conditions for readability
   const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
-  const hasScanResult = !!scanResult;
-  // Check if override state is forcing malicious/suspicious (dev mode only)
+
+  // Check override state (takes precedence, dev mode only)
   const isMaliciousOverride = blockaidOverrideState === SecurityLevel.MALICIOUS;
   const isSuspiciousOverride =
     blockaidOverrideState === SecurityLevel.SUSPICIOUS;
+
+  // Check actual scan result for malicious/suspicious (normal cases)
+  const { isMalicious, isSuspicious } = getScanResultSecurityFlags(scanResult);
+
+  // Override takes precedence, otherwise use actual scan result
+  const isMaliciousFinal = isMaliciousOverride || isMalicious;
+  const isSuspiciousFinal = isSuspiciousOverride || isSuspicious;
 
   // Handle unable to scan state
   if (isUnableToScan) {
@@ -702,13 +709,8 @@ export const BlockaidTxScanLabel = ({
     );
   }
 
-  // Early return if scanResult is null/undefined and not unable to scan
-  if (!hasScanResult && !isUnableToScan) {
-    return null;
-  }
-
-  // Check if override state is forcing malicious (dev mode only)
-  if (isMaliciousOverride) {
+  // Check malicious (override or actual scan result)
+  if (isMaliciousFinal) {
     return (
       <div
         className="ScanLabel ScanMalicious"
@@ -730,8 +732,8 @@ export const BlockaidTxScanLabel = ({
     );
   }
 
-  // Check if override state is forcing suspicious (dev mode only)
-  if (isSuspiciousOverride) {
+  // Check suspicious (override or actual scan result)
+  if (isSuspiciousFinal) {
     return (
       <div
         className="ScanLabel ScanMiss"
@@ -753,13 +755,8 @@ export const BlockaidTxScanLabel = ({
     );
   }
 
-  if (!scanResult) {
-    return null;
-  }
-
-  const { simulation, validation } = scanResult;
-
-  if (simulation && "error" in simulation) {
+  // Handle simulation errors
+  if (scanResult?.simulation && "error" in scanResult.simulation) {
     const header = t("This transaction is expected to fail");
     return (
       <div
@@ -780,57 +777,8 @@ export const BlockaidTxScanLabel = ({
     );
   }
 
-  if (validation && "result_type" in validation) {
-    switch (validation.result_type) {
-      case "Malicious": {
-        return (
-          <div
-            className="ScanLabel ScanMalicious"
-            data-testid="blockaid-malicious-label"
-            onClick={onClick}
-          >
-            <div className="ScanLabel__Info">
-              <div className="Icon">
-                <Icon.InfoSquare className="WarningMessage__icon" />
-              </div>
-              <p className="Message">
-                {t("This transaction was flagged as malicious")}
-              </p>
-            </div>
-            <div className="ScanLabel__Action">
-              <Icon.ChevronRight />
-            </div>
-          </div>
-        );
-      }
-
-      case "Warning": {
-        return (
-          <div
-            className="ScanLabel ScanMiss"
-            data-testid="blockaid-miss-label"
-            onClick={onClick}
-          >
-            <div className="ScanLabel__Info">
-              <div className="Icon">
-                <Icon.InfoSquare className="WarningMessage__icon" />
-              </div>
-              <p className="Message">
-                {t("This transaction was flagged as suspicious")}
-              </p>
-            </div>
-            <div className="ScanLabel__Action">
-              <Icon.ChevronRight />
-            </div>
-          </div>
-        );
-      }
-
-      case "Benign":
-      default:
-    }
-  }
-  return <></>;
+  // No warnings to display
+  return null;
 };
 
 interface BlockAidScanExpandedProps {
@@ -845,6 +793,46 @@ interface WarningInfo {
 }
 
 /**
+ * Checks if a scan result is malicious or suspicious based on its result_type
+ * Handles both transaction and asset scan results
+ */
+const getScanResultSecurityFlags = (
+  scanResult: BlockAidScanTxResult | BlockAidScanAssetResult | null | undefined,
+): { isMalicious: boolean; isSuspicious: boolean } => {
+  let isMalicious = false;
+  let isSuspicious = false;
+
+  if (!scanResult) {
+    return { isMalicious, isSuspicious };
+  }
+
+  // Handle transaction scan results
+  if (
+    "validation" in scanResult &&
+    scanResult.validation &&
+    "result_type" in scanResult.validation
+  ) {
+    const resultType = scanResult.validation.result_type;
+    if (resultType === "Malicious") {
+      isMalicious = true;
+    } else if (resultType === "Warning") {
+      isSuspicious = true;
+    }
+  }
+  // Handle asset scan results
+  else if ("result_type" in scanResult) {
+    const resultType = scanResult.result_type;
+    if (resultType === "Malicious") {
+      isMalicious = true;
+    } else if (resultType === "Warning" || resultType === "Spam") {
+      isSuspicious = true;
+    }
+  }
+
+  return { isMalicious, isSuspicious };
+};
+
+/**
  * Gets warnings for transactions and assets by checking scan results
  */
 const getScanWarnings = (
@@ -853,8 +841,6 @@ const getScanWarnings = (
   t: (key: string) => string,
 ): WarningInfo => {
   const warnings: Array<{ icon: React.ReactNode; text: string }> = [];
-  let isMalicious = false;
-  let isSuspicious = false;
 
   // If unable to scan, return unable to scan warning
   if (isUnableToScan) {
@@ -862,13 +848,16 @@ const getScanWarnings = (
       icon: <Icon.MinusCircle />,
       text: t("Unable to scan transaction"),
     });
-    return { warnings, isMalicious, isSuspicious };
+    return { warnings, isMalicious: false, isSuspicious: false };
   }
 
   // If no scan result, return empty warnings
   if (!scanResult) {
-    return { warnings, isMalicious, isSuspicious };
+    return { warnings, isMalicious: false, isSuspicious: false };
   }
+
+  // Get security flags at the beginning
+  const { isMalicious, isSuspicious } = getScanResultSecurityFlags(scanResult);
 
   // Handle transaction scan results
   if ("simulation" in scanResult || "validation" in scanResult) {
@@ -885,42 +874,24 @@ const getScanWarnings = (
     if (validation && "result_type" in validation) {
       if (validation.description) {
         warnings.push({
-          icon:
-            validation.result_type === "Malicious" ? (
-              <Icon.XCircle />
-            ) : (
-              <Icon.MinusCircle />
-            ),
+          icon: isMalicious ? <Icon.XCircle /> : <Icon.MinusCircle />,
           text: validation.description,
         });
-
-        if (validation.result_type === "Malicious") {
-          isMalicious = true;
-        } else if (validation.result_type === "Warning") {
-          isSuspicious = true;
-        }
       }
     }
   } else {
     // Handle asset scan results
     const assetResult = scanResult as BlockAidScanAssetResult;
-    const { result_type, features } = assetResult;
+    const { features } = assetResult;
     const _features = features || [];
 
     // Add feature warnings
     _features.forEach((feature) => {
       warnings.push({
-        icon:
-          result_type === "Malicious" ? <Icon.XCircle /> : <Icon.MinusCircle />,
+        icon: isMalicious ? <Icon.XCircle /> : <Icon.MinusCircle />,
         text: feature.description,
       });
     });
-
-    if (result_type === "Malicious") {
-      isMalicious = true;
-    } else if (result_type === "Warning" || result_type === "Spam") {
-      isSuspicious = true;
-    }
   }
 
   return { warnings, isMalicious, isSuspicious };

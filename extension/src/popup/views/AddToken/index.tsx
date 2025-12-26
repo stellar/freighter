@@ -430,10 +430,12 @@ export const AddToken = () => {
                   </div>
                 </div>
               </div>,
-              <BlockAidScanExpanded
-                scanResult={blockaidData!}
-                onClose={() => setActivePaneIndex(0)}
-              />,
+              blockaidData ? (
+                <BlockAidScanExpanded
+                  scanResult={blockaidData}
+                  onClose={() => setActivePaneIndex(0)}
+                />
+              ) : null,
               <AssetListWarningExpanded
                 isVerified={isVerifiedToken}
                 onClose={() => setActivePaneIndex(0)}
