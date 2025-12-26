@@ -7,7 +7,10 @@ import {
   stubTokenDetails,
   stubTokenPrices,
 } from "./helpers/stubs";
-import { truncateString } from "../src/helpers/stellar";
+
+// Helper function to avoid importing from extension source (which causes Node.js module resolution issues)
+const truncateString = (str: string, charCount = 4) =>
+  str ? `${str.slice(0, charCount)}…${str.slice(-charCount)}` : "";
 
 test("Adding and removing unverified Soroban token", async ({
   page,
@@ -81,7 +84,7 @@ test("Adding and removing unverified Soroban token", async ({
   await page.getByTestId("ManageAssetRowButton__ellipsis-E2E").click();
   await page.getByText("Remove asset").click();
   await expect(page.getByTestId("ToggleToken__asset-code")).toHaveText(
-    "CBVX…HWXJ",
+    truncateString(TEST_TOKEN_ADDRESS),
   );
   await expect(page.getByTestId("ToggleToken__asset-add-remove")).toHaveText(
     "Remove Token",

@@ -1,6 +1,6 @@
 import React, { ReactNode, useReducer } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Horizon } from "stellar-sdk";
+import { Horizon, TransactionBuilder } from "stellar-sdk";
 import { camelCase } from "lodash";
 import BigNumber from "bignumber.js";
 import {
@@ -53,6 +53,7 @@ import {
 } from "popup/ducks/cache";
 import { getAssetDomains } from "@shared/api/internal";
 import { AppDispatch } from "popup/App";
+import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
 export type HistorySection = {
   monthYear: string; // in format {month}:{year}
@@ -232,6 +233,69 @@ export const getActionIconByType = (iconType: string) => {
 };
 
 /**
+ * Extracts the actual destination address from transaction XDR
+ * This is needed because Horizon API returns base G address for M addresses
+ */
+const extractDestinationFromXDR = async (
+  transactionHash: string,
+  networkDetails: NetworkDetails,
+  fallbackTo: string,
+): Promise<string> => {
+  if (!transactionHash) {
+    return fallbackTo;
+  }
+
+  try {
+    const server = stellarSdkServer(
+      networkDetails.networkUrl,
+      networkDetails.networkPassphrase,
+    );
+    const transaction = await server
+      .transactions()
+      .transaction(transactionHash)
+      .call();
+
+    if (!transaction || !transaction.envelope_xdr) {
+      return fallbackTo;
+    }
+
+    const tx = TransactionBuilder.fromXDR(
+      transaction.envelope_xdr,
+      networkDetails.networkPassphrase,
+    );
+
+    // Find payment operation and extract destination
+    const paymentOp = tx.operations.find(
+      (op) => op.type === "payment" && "destination" in op,
+    );
+
+    if (paymentOp && "destination" in paymentOp) {
+      const { destination } = paymentOp;
+      // Return the destination from XDR (could be M address)
+      return destination;
+    }
+
+    // Also check for createAccount operation
+    const createAccountOp = tx.operations.find(
+      (op) => op.type === "createAccount" && "destination" in op,
+    );
+
+    if (createAccountOp && "destination" in createAccountOp) {
+      const { destination } = createAccountOp;
+      return destination;
+    }
+
+    // For Soroban invokeHostFunction operations, the destination is in the contract invocation
+    // For now, we'll rely on the fallback (attrs.to) which should already have the correct address
+    // since Soroban operations preserve muxed addresses in their arguments
+  } catch (error) {
+    console.error("Failed to parse XDR for destination address", error);
+  }
+
+  return fallbackTo;
+};
+
+/**
  * Retrieves the icon URL for an asset, checking the cache first and fetching from the issuer if needed.
  *
  * This helper function first checks if the icon URL is already cached in the icons object.
@@ -313,13 +377,20 @@ export const getRowDataByOpType = async (
     starting_balance: startingBalance,
     type,
     type_i: typeI,
-    transaction_attr: { operation_count: operationCount, fee_charged, memo },
+    transaction_attr,
     isCreateExternalAccount = false,
     isPayment = false,
     isSwap = false,
     transaction_successful: transactionSuccessful,
   } = operation;
   const isInvokeHostFn = typeI === 24;
+
+  const {
+    operation_count: operationCount,
+    fee_charged,
+    memo,
+    hash: transactionHash,
+  } = transaction_attr;
 
   const date = new Date(Date.parse(createdAt))
     .toDateString()
@@ -424,8 +495,14 @@ export const getRowDataByOpType = async (
   }
 
   if (isPayment) {
+    // Extract destination from XDR to get muxed address if present
+    const actualDestination = await extractDestinationFromXDR(
+      transactionHash,
+      networkDetails,
+      to || "",
+    );
     // default to Sent if a payment to self
-    const isReceiving = to === publicKey && from !== publicKey;
+    const isReceiving = actualDestination === publicKey && from !== publicKey;
     const paymentDifference = isReceiving ? "+" : "-";
     const nonLabelAmount = `${formatAmount(
       new BigNumber(amount!).toString(),
@@ -457,7 +534,7 @@ export const getRowDataByOpType = async (
         isPayment,
         isReceiving,
         nonLabelAmount,
-        to,
+        to: actualDestination,
       },
       rowText: destAssetCode,
     };
@@ -542,7 +619,17 @@ export const getRowDataByOpType = async (
           new BigNumber(attrs.amount),
           decimals,
         );
-        const isReceiving = attrs.to === publicKey && attrs.from !== publicKey;
+
+        // Extract destination from XDR for Soroban transfers (may be muxed)
+        // Note: For Soroban, the destination is in contract args, so we use attrs.to as fallback
+        const actualDestination = await extractDestinationFromXDR(
+          transactionHash,
+          networkDetails,
+          attrs.to || "",
+        );
+
+        const isReceiving =
+          actualDestination === publicKey && attrs.from !== publicKey;
         const paymentDifference = isReceiving ? "+" : "-";
         const formattedAmount = `${paymentDifference}${formattedTokenAmount} ${code}`;
 
@@ -558,7 +645,7 @@ export const getRowDataByOpType = async (
             isInvokeHostFn,
             isTokenTransfer: true,
             nonLabelAmount: formattedTokenAmount,
-            to: attrs.to,
+            to: actualDestination,
           },
           rowIcon: getTransferIcons({ isNative, isReceiving }),
           rowText: code,
@@ -576,6 +663,14 @@ export const getRowDataByOpType = async (
       // If you're not creating an external account then this means you're
       // receiving some XLM to create(fund) your own account
       const isReceiving = !isCreateExternalAccount;
+
+      // Extract destination from XDR for createAccount (may be muxed if sent to muxed address)
+      const actualDestination = await extractDestinationFromXDR(
+        transactionHash,
+        networkDetails,
+        account || "",
+      );
+
       const paymentDifference = isReceiving ? "+" : "-";
       const nonLabelAmount = formatAmount(
         new BigNumber(startingBalance!).toString(),
@@ -592,7 +687,7 @@ export const getRowDataByOpType = async (
           ...baseMetadata,
           isReceiving,
           nonLabelAmount,
-          to: account,
+          to: actualDestination,
         },
         rowIcon: (
           <div className="HistoryItem__icon__bordered">
