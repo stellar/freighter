@@ -27,7 +27,7 @@ import { AssetIcon } from "popup/components/account/AccountAssets";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import {
   BlockaidTxScanLabel,
-  BlockAidTxScanExpanded,
+  BlockAidScanExpanded,
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
 import { useShouldTreatTxAsUnableToScan } from "popup/helpers/blockaid";
@@ -37,48 +37,42 @@ import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { CopyValue } from "popup/components/CopyValue";
 import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
+import { SecurityLevel } from "popup/constants/blockaid";
 
 import "./styles.scss";
 
-type WarningType =
-  | "unable-to-scan"
-  | "malicious"
-  | "suspicious"
-  | "error"
-  | null;
-
 /**
- * Determines warning type from transaction scan result
+ * Determines security level from transaction scan result
  */
-const getTransactionWarningType = (
+const getTransactionSecurityLevel = (
   txScanResult: BlockAidScanTxResult | null | undefined,
   isUnableToScan: boolean,
-): WarningType => {
+): SecurityLevel | null => {
   if (!txScanResult) {
-    return isUnableToScan ? "unable-to-scan" : null;
+    return isUnableToScan ? SecurityLevel.UNABLE_TO_SCAN : null;
   }
 
   const { simulation, validation } = txScanResult;
 
-  // Handle simulation error
+  // Handle simulation error - treat as suspicious
   if (simulation && "error" in simulation) {
-    return "error";
+    return SecurityLevel.SUSPICIOUS;
   }
 
   // Handle validation result
   if (validation && "result_type" in validation) {
     const resultType = validation.result_type;
     if (resultType === "Malicious") {
-      return "malicious";
+      return SecurityLevel.MALICIOUS;
     }
     if (resultType === "Warning") {
-      return "suspicious";
+      return SecurityLevel.SUSPICIOUS;
     }
   }
 
   // Handle unable to scan
   if (isUnableToScan) {
-    return "unable-to-scan";
+    return SecurityLevel.UNABLE_TO_SCAN;
   }
 
   return null;
@@ -154,18 +148,13 @@ export const ReviewTx = ({
   const isUnableToScan = shouldTreatTxAsUnableToScan(txScanResult);
   const hasScanResult = !!txScanResult;
 
-  // Determine malicious/suspicious from scan result (not dev-only)
-  const isMalicious =
-    txScanResult?.validation &&
-    "result_type" in txScanResult.validation &&
-    txScanResult.validation.result_type === "Malicious";
-  const isSuspicious =
-    txScanResult?.validation &&
-    "result_type" in txScanResult.validation &&
-    txScanResult.validation.result_type === "Warning";
-
-  // Determine warning type
-  const warningType = getTransactionWarningType(txScanResult, isUnableToScan);
+  // Determine security level (handles malicious, suspicious, unable-to-scan, error)
+  const securityLevel = getTransactionSecurityLevel(
+    txScanResult,
+    isUnableToScan,
+  );
+  const isMalicious = securityLevel === SecurityLevel.MALICIOUS;
+  const isSuspicious = securityLevel === SecurityLevel.SUSPICIOUS;
 
   // Determine if transaction warning should be shown
   const hasSimulationData = !!simulationState.data;
@@ -175,7 +164,7 @@ export const ReviewTx = ({
       isUnableToScan ||
       isMalicious ||
       isSuspicious ||
-      warningType !== null);
+      securityLevel !== null);
   // Extract contract ID from asset for custom tokens
   const contractId = React.useMemo(() => {
     if (!isToken) {
@@ -389,7 +378,7 @@ export const ReviewTx = ({
                   </div>
                 </div>
               </>,
-              <BlockAidTxScanExpanded
+              <BlockAidScanExpanded
                 scanResult={txScanResult}
                 onClose={() => setActivePaneIndex(0)}
               />,

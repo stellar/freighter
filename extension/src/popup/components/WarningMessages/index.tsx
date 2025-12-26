@@ -28,7 +28,6 @@ import {
   reportTransactionWarning,
   useShouldTreatAssetAsUnableToScan,
   useShouldTreatTxAsUnableToScan,
-  useIsTxSuspicious,
 } from "popup/helpers/blockaid";
 import { SecurityLevel } from "popup/constants/blockaid";
 
@@ -664,30 +663,23 @@ export const BlockaidTxScanLabel = ({
 }) => {
   const { t } = useTranslation();
   const shouldTreatAsUnableToScan = useShouldTreatTxAsUnableToScan();
-  const isTxSuspiciousCheck = useIsTxSuspicious();
-  const [blockaidState, setBlockaidState] = useState<string | null>(null);
-  const isDev = process.env.DEV_EXTENSION === "true" || !process.env.PRODUCTION;
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
-    if (!isDev) {
-      return;
-    }
     getBlockaidOverrideState()
-      .then(setBlockaidState)
-      .catch(() => setBlockaidState(null));
-  }, [isDev]);
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, []);
 
   // Extract complex conditions for readability
   const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
   const hasScanResult = !!scanResult;
-  const isMalicious =
-    isDev &&
-    blockaidState === SecurityLevel.MALICIOUS &&
-    isTxSuspiciousCheck(scanResult);
-  const isSuspicious =
-    isDev &&
-    blockaidState === SecurityLevel.SUSPICIOUS &&
-    isTxSuspiciousCheck(scanResult);
+  // Check if override state is forcing malicious/suspicious (dev mode only)
+  const isMaliciousOverride = blockaidOverrideState === SecurityLevel.MALICIOUS;
+  const isSuspiciousOverride =
+    blockaidOverrideState === SecurityLevel.SUSPICIOUS;
 
   // Handle unable to scan state
   if (isUnableToScan) {
@@ -715,8 +707,8 @@ export const BlockaidTxScanLabel = ({
     return null;
   }
 
-  // Check if transaction is malicious
-  if (isMalicious) {
+  // Check if override state is forcing malicious (dev mode only)
+  if (isMaliciousOverride) {
     return (
       <div
         className="ScanLabel ScanMalicious"
@@ -738,8 +730,8 @@ export const BlockaidTxScanLabel = ({
     );
   }
 
-  // Check if transaction is suspicious
-  if (isSuspicious) {
+  // Check if override state is forcing suspicious (dev mode only)
+  if (isSuspiciousOverride) {
     return (
       <div
         className="ScanLabel ScanMiss"
@@ -841,7 +833,7 @@ export const BlockaidTxScanLabel = ({
   return <></>;
 };
 
-interface BlockAidTxScanExpandedProps {
+interface BlockAidScanExpandedProps {
   scanResult: BlockAidScanTxResult | BlockAidScanAssetResult | null | undefined;
   onClose?: () => void;
 }
@@ -934,10 +926,10 @@ const getScanWarnings = (
   return { warnings, isMalicious, isSuspicious };
 };
 
-export const BlockAidTxScanExpanded = ({
+export const BlockAidScanExpanded = ({
   scanResult,
   onClose,
-}: BlockAidTxScanExpandedProps) => {
+}: BlockAidScanExpandedProps) => {
   const { t } = useTranslation();
   const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
 

@@ -27,7 +27,7 @@ import {
   SSLWarningMessage,
   BlockaidAssetWarning,
   DomainNotAllowedWarningMessage,
-  BlockAidTxScanExpanded,
+  BlockAidScanExpanded,
   AssetListWarning,
   AssetListWarningExpanded,
 } from "popup/components/WarningMessages";
@@ -430,7 +430,7 @@ export const AddToken = () => {
                   </div>
                 </div>
               </div>,
-              <BlockAidTxScanExpanded
+              <BlockAidScanExpanded
                 scanResult={blockaidData!}
                 onClose={() => setActivePaneIndex(0)}
               />,

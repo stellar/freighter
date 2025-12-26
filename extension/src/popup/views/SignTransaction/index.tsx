@@ -45,7 +45,7 @@ import {
   WarningMessage,
   SSLWarningMessage,
   BlockaidTxScanLabel,
-  BlockAidTxScanExpanded,
+  BlockAidScanExpanded,
   DomainNotAllowedWarningMessage,
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
@@ -423,7 +423,7 @@ export const SignTransaction = () => {
                 </div>
               </div>
             </div>,
-            <BlockAidTxScanExpanded
+            <BlockAidScanExpanded
               scanResult={scanResult}
               onClose={() => setActivePaneIndex(0)}
             />,
