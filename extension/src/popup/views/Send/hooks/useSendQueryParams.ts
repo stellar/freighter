@@ -9,7 +9,6 @@ import {
   saveDestination,
   saveFederationAddress,
   saveIsCollectible,
-  saveIsToken,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { collectionsSelector } from "popup/ducks/cache";
@@ -99,9 +98,8 @@ export function useSendQueryParams() {
       // Pre-populate asset if provided and valid, otherwise default to native
       if (assetParam) {
         try {
-          const asset = getAssetFromCanonical(assetParam);
+          getAssetFromCanonical(assetParam);
           dispatch(saveAsset(assetParam));
-          dispatch(saveIsToken(isContractId(asset.issuer)));
         } catch {
           // Invalid asset param, ignore and use default
           if (!srcAsset) {
