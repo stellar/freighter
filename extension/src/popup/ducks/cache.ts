@@ -120,9 +120,11 @@ const cacheSlice = createSlice({
       };
     },
     clearBalancesForAccount(state, action: { payload: ClearBalancesPayload }) {
-      delete state.balanceData[action.payload.networkDetails.network][
-        action.payload.publicKey
-      ];
+      if (state.balanceData[action.payload.networkDetails.network]) {
+        delete state.balanceData[action.payload.networkDetails.network][
+          action.payload.publicKey
+        ];
+      }
       delete state.tokenPrices[action.payload.publicKey];
     },
     saveIconsForBalances(state, action: { payload: SaveIconsPayload }) {
@@ -167,6 +169,16 @@ const cacheSlice = createSlice({
         },
       };
     },
+    clearCollectiblesForAccount(
+      state,
+      action: { payload: ClearBalancesPayload },
+    ) {
+      if (state.collections[action.payload.networkDetails.network]) {
+        delete state.collections[action.payload.networkDetails.network][
+          action.payload.publicKey
+        ];
+      }
+    },
   },
 });
 
@@ -201,4 +213,5 @@ export const {
   saveTokenPrices,
   saveCollections,
   clearBalancesForAccount,
+  clearCollectiblesForAccount,
 } = cacheSlice.actions;
