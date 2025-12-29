@@ -432,7 +432,10 @@ export const stubAccountHistory = async (page: Page) => {
   });
 };
 
-export const stubCollectibles = async (page: Page) => {
+export const stubCollectibles = async (
+  page: Page,
+  shouldFailRefreshMetadata?: boolean,
+) => {
   let tokenMetadataCount = 0;
 
   await page.route("**/tokenMetadata/1", async (route) => {
@@ -449,7 +452,7 @@ export const stubCollectibles = async (page: Page) => {
       ],
       external_url: "https://nftcalendar.io/token/1",
     };
-    if (tokenMetadataCount > 1) {
+    if (tokenMetadataCount > 1 && shouldFailRefreshMetadata) {
       json.name = "Stellar Frog 1 (updated)";
       json.description = "This is a test frog (updated)";
       json.image =
@@ -552,7 +555,7 @@ export const stubCollectibles = async (page: Page) => {
           {
             collection: {
               address:
-                "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA", // Using XLM contract address for testing
+                "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN", // Using XLM contract address for testing
               name: "Stellar Frogs",
               symbol: "SFROG",
               collectibles: [
@@ -668,7 +671,7 @@ export const stubCollectiblesUnsuccessfulMetadata = async (page: Page) => {
           {
             collection: {
               address:
-                "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA", // Using XLM contract address for testing
+                "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN", // Using XLM contract address for testing
               name: "Stellar Frogs",
               symbol: "SFROG",
               collectibles: [
