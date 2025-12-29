@@ -3356,7 +3356,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@floating-ui/dom@npm:^1.6.13, @floating-ui/dom@npm:^1.7.4":
+"@floating-ui/dom@npm:^1.7.4":
   version: 1.7.4
   resolution: "@floating-ui/dom@npm:1.7.4"
   dependencies:
@@ -19699,13 +19699,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react@npm:19.0.3":
-  version: 19.0.3
-  resolution: "react@npm:19.0.3"
-  checksum: 10c0/39c41b46e719650d0b10763d66d606a6251049e81dd805935f5ed5bfb19eca85a0786a6864767f4d4e4ae721608ae24a0c655c526a8d018e56bc262b34886a36
-  languageName: node
-  linkType: hard
-
 "react-style-singleton@npm:^2.2.2, react-style-singleton@npm:^2.2.3":
   version: 2.2.3
   resolution: "react-style-singleton@npm:2.2.3"
@@ -19719,6 +19712,13 @@ __metadata:
     "@types/react":
       optional: true
   checksum: 10c0/841938ff16d16a6b76895f4cb2e1fea957e5fe3b30febbf03a54892dae1c9153f2383e231dea0b3ba41192ad2f2849448fa859caccd288943bce32639e971bee
+  languageName: node
+  linkType: hard
+
+"react@npm:19.0.3":
+  version: 19.0.3
+  resolution: "react@npm:19.0.3"
+  checksum: 10c0/39c41b46e719650d0b10763d66d606a6251049e81dd805935f5ed5bfb19eca85a0786a6864767f4d4e4ae721608ae24a0c655c526a8d018e56bc262b34886a36
   languageName: node
   linkType: hard
 
