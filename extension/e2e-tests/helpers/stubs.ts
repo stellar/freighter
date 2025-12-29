@@ -431,7 +431,10 @@ export const stubAccountHistory = async (page: Page) => {
   });
 };
 
-export const stubCollectibles = async (page: Page) => {
+export const stubCollectibles = async (
+  page: Page,
+  shouldFailRefreshMetadata?: boolean,
+) => {
   let tokenMetadataCount = 0;
 
   await page.route("**/tokenMetadata/1", async (route) => {
@@ -448,7 +451,7 @@ export const stubCollectibles = async (page: Page) => {
       ],
       external_url: "https://nftcalendar.io/token/1",
     };
-    if (tokenMetadataCount > 1) {
+    if (tokenMetadataCount > 1 && shouldFailRefreshMetadata) {
       json.name = "Stellar Frog 1 (updated)";
       json.description = "This is a test frog (updated)";
       json.image =
@@ -551,7 +554,7 @@ export const stubCollectibles = async (page: Page) => {
           {
             collection: {
               address:
-                "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA", // Using XLM contract address for testing
+                "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN", // Using XLM contract address for testing
               name: "Stellar Frogs",
               symbol: "SFROG",
               collectibles: [
@@ -667,7 +670,7 @@ export const stubCollectiblesUnsuccessfulMetadata = async (page: Page) => {
           {
             collection: {
               address:
-                "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA", // Using XLM contract address for testing
+                "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN", // Using XLM contract address for testing
               name: "Stellar Frogs",
               symbol: "SFROG",
               collectibles: [
@@ -841,4 +844,85 @@ export const stubMemoRequiredAccounts = async (
       await route.fulfill({ json });
     },
   );
+};
+
+export const stubSimulateSendCollectible = async (page: Page) => {
+  await page.route("**/simulate-tx", async (route) => {
+    const json = {
+      preparedTransaction:
+        "AAAAAgAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AACQ3sCjnUGAAABkQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABp4YjrCeaVIvf6/Qjtqbnv4gmHScnZ/YgfjDVWV8aKUEAAAAIdHJhbnNmZXIAAAADAAAAEgAAAAAAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+QAAAASAAAAAAAAAABVZkfzT8IUCc68cala6hWfNx8vR5j+La0nQf3V+7AGYwAAAAMAAAACAAAAAQAAAAAAAAAAAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAACHRyYW5zZmVyAAAAAwAAABIAAAAAAAAAAGeAFOZuZTJyobZwAwdyiZJHzR1HMa0rPEzqBvfLJIPkAAAAEgAAAAAAAAAAVWZH80/CFAnOvHGpWuoVnzcfL0eY/i2tJ0H91fuwBmMAAAADAAAAAgAAAAAAAAABAAAAAAAAAAIAAAAGAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAAFAAAAAEAAAAHP3eS4onfldMZntnbNaDPKlFUqmTNcpioxEG3FwIwY1sAAAAGAAAABgAAAAGnhiOsJ5pUi9/r9CO2pue/iCYdJydn9iB+MNVZXxopQQAAABAAAAABAAAAAgAAAA8AAAAIQXBwcm92YWwAAAADAAAAAgAAAAAAAAAGAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAAEAAAAAEAAAACAAAADwAAAAdCYWxhbmNlAAAAABIAAAAAAAAAAFVmR/NPwhQJzrxxqVrqFZ83Hy9HmP4trSdB/dX7sAZjAAAAAQAAAAYAAAABp4YjrCeaVIvf6/Qjtqbnv4gmHScnZ/YgfjDVWV8aKUEAAAAQAAAAAQAAAAIAAAAPAAAAB0JhbGFuY2UAAAAAEgAAAAAAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+QAAAABAAAABgAAAAGnhiOsJ5pUi9/r9CO2pue/iCYdJydn9iB+MNVZXxopQQAAABAAAAABAAAAAgAAAA8AAAAFT3duZXIAAAAAAAADAAAAAgAAAAEAAAAGAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAAEAAAAAEAAAACAAAADwAAAAtPd25lclRva2VucwAAAAASAAAAAAAAAABVZkfzT8IUCc68cala6hWfNx8vR5j+La0nQf3V+7AGYwAAAAEAAAAGAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAAEAAAAAEAAAACAAAADwAAAAtPd25lclRva2VucwAAAAASAAAAAAAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAEAGSIiAAAAAAAAAsgAAAAAAAJDewAAAAA=",
+      simulationResponse: {
+        minResourceFee: "100",
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
+export const stubScanTx = async (page: Page) => {
+  await page.route("**/scan-tx", async (route) => {
+    const json = {
+      data: {
+        simulation: {
+          status: "Success",
+        },
+        validation: {
+          status: "Success",
+        },
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
+export const stubSubmitTx = async (page: Page) => {
+  await page.route("**/submit-tx", async (route) => {
+    const json = {
+      successful: true,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+export const stubFeeStats = async (page: Page) => {
+  await page.route("**/fee_stats", async (route) => {
+    const json = {
+      last_ledger: "60377558",
+      last_ledger_base_fee: "100",
+      ledger_capacity_usage: "1.06",
+      fee_charged: {
+        max: "179360",
+        min: "100",
+        mode: "100",
+        p10: "100",
+        p20: "100",
+        p30: "100",
+        p40: "100",
+        p50: "100",
+        p60: "27565",
+        p70: "27644",
+        p80: "27644",
+        p90: "27644",
+        p95: "27644",
+        p99: "62292",
+      },
+      max_fee: {
+        max: "121200000",
+        min: "100",
+        mode: "100",
+        p10: "101",
+        p20: "2823",
+        p30: "21009",
+        p40: "46875",
+        p50: "46875",
+        p60: "46875",
+        p70: "46875",
+        p80: "100000",
+        p90: "1000000",
+        p95: "2000001",
+        p99: "10000000",
+      },
+    };
+    await route.fulfill({ json });
+  });
 };

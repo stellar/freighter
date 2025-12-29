@@ -1,0 +1,13 @@
+@use "../../../styles/utils.scss" as *;
+
+.SelectedCollectible {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(4px);
+  justify-content: center;
+
+  &__address-tile {
+    width: 100%;
+  }
+}
