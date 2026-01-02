@@ -5390,6 +5390,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@stellar/stellar-base@npm:^14.0.4":
+  version: 14.0.4
+  resolution: "@stellar/stellar-base@npm:14.0.4"
+  dependencies:
+    "@noble/curves": "npm:^1.9.6"
+    "@stellar/js-xdr": "npm:^3.1.2"
+    base32.js: "npm:^0.1.0"
+    bignumber.js: "npm:^9.3.1"
+    buffer: "npm:^6.0.3"
+    sha.js: "npm:^2.4.12"
+  checksum: 10c0/e09de57639b09d18ebd51a5e872f5dc742be6ee2c81ad105f0745ac1c77a7d783bd9b37299093b30136436ca1df7827f534eccbaaf0ac4c86f9d51814421b667
+  languageName: node
+  linkType: hard
+
 "@stellar/stellar-sdk@npm:13.0.0-beta.1":
   version: 13.0.0-beta.1
   resolution: "@stellar/stellar-sdk@npm:13.0.0-beta.1"
@@ -7589,7 +7603,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.6.5, axios@npm:^1.6.8, axios@npm:^1.7.7, axios@npm:^1.8.4":
+"axios@npm:^1.13.2, axios@npm:^1.6.5, axios@npm:^1.6.8, axios@npm:^1.7.7, axios@npm:^1.8.4":
   version: 1.13.2
   resolution: "axios@npm:1.13.2"
   dependencies:
@@ -11400,8 +11414,8 @@ __metadata:
     soroswap-router-sdk: "npm:1.4.6"
     speed-measure-webpack-plugin: "npm:1.5.0"
     stellar-hd-wallet: "npm:1.0.2"
-    stellar-sdk: "npm:@stellar/stellar-sdk@14.1.1"
-    stellar-sdk-next: "npm:@stellar/stellar-sdk@14.1.1"
+    stellar-sdk: "npm:@stellar/stellar-sdk@14.4.3"
+    stellar-sdk-next: "npm:@stellar/stellar-sdk@14.4.3"
     stream-browserify: "npm:3.0.0"
     stream-http: "npm:3.2.0"
     style-loader: "npm:4.0.0"
@@ -21469,6 +21483,22 @@ __metadata:
     toml: "npm:^3.0.0"
     urijs: "npm:^1.19.1"
   checksum: 10c0/c463e6472d1c312a9eb9d5699cbba021318fe2abf26c043f464d3d8036fb59e0242e9eb112c5031cdbf0b7a6b5c3feffc8538fa71f8842720f4700a7b0ee9da3
+  languageName: node
+  linkType: hard
+
+"stellar-sdk-next@npm:@stellar/stellar-sdk@14.4.3, stellar-sdk@npm:@stellar/stellar-sdk@14.4.3":
+  version: 14.4.3
+  resolution: "@stellar/stellar-sdk@npm:14.4.3"
+  dependencies:
+    "@stellar/stellar-base": "npm:^14.0.4"
+    axios: "npm:^1.13.2"
+    bignumber.js: "npm:^9.3.1"
+    eventsource: "npm:^2.0.2"
+    feaxios: "npm:^0.0.23"
+    randombytes: "npm:^2.1.0"
+    toml: "npm:^3.0.0"
+    urijs: "npm:^1.19.1"
+  checksum: 10c0/dfed422cbddfbcdc0e6fa891965d0aefe0622d0e2b8426545d31724d3533dc0b2d249dd9a44d47d5be2cceccda8348b094f265ea08138122c9269d6af138e70b
   languageName: node
   linkType: hard
 
