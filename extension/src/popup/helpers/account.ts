@@ -4,6 +4,7 @@ import {
   Account,
   AssetIcons,
   AssetVisibility,
+  Collectibles,
   HorizonOperation,
   IssuerKey,
   TokenBalances,
@@ -116,6 +117,11 @@ interface SortOperationsByAsset {
   }) => Promise<TokenDetailsResponse | Error>;
   icons: AssetIcons;
   homeDomains: { [assetIssuer: string]: string | null };
+  fetchCollectibles: (args: {
+    contracts: { id: string; token_ids: string[] }[];
+    publicKey: string;
+    networkDetails: NetworkDetails;
+  }) => Promise<Collectibles | Error>;
 }
 
 export interface AssetOperations {
@@ -130,6 +136,7 @@ export const sortOperationsByAsset = async ({
   fetchTokenDetails,
   icons,
   homeDomains,
+  fetchCollectibles,
 }: SortOperationsByAsset) => {
   const assetOperationMap = {} as AssetOperations;
 
@@ -184,6 +191,7 @@ export const sortOperationsByAsset = async ({
       icons,
       fetchTokenDetails,
       fetchedHomeDomains,
+      fetchCollectibles,
     );
     if (getIsPayment(op.type)) {
       Object.keys(assetOperationMap).forEach((assetKey) => {

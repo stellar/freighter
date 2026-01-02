@@ -12,6 +12,7 @@ import {
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
 import { useTokenDetails } from "helpers/hooks/useTokenDetails";
+import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
 import {
   homeDomainsSelector,
   saveDomainForIssuer,
@@ -34,6 +35,9 @@ function useGetAccountHistoryData() {
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchHistory } = useGetHistory();
   const { fetchData: fetchTokenDetails } = useTokenDetails();
+  const { fetchData: fetchCollectibles } = useGetCollectibles({
+    useCache: true,
+  });
   const homeDomains = useSelector(homeDomainsSelector);
   const reduxDispatch = useDispatch<AppDispatch>();
   const fetchData = async ({ balances }: { balances: AccountBalances }) => {
@@ -73,6 +77,7 @@ function useGetAccountHistoryData() {
           fetchTokenDetails,
           icons: cachedIcons,
           homeDomains: cachedHomeDomains,
+          fetchCollectibles,
         }),
       } as ResolvedAccountHistoryData;
 

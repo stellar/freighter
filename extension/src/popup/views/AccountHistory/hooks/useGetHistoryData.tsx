@@ -15,6 +15,7 @@ import StellarLogo from "popup/assets/stellar-logo.png";
 
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
+import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
 import { HistoryResponse, useGetHistory } from "helpers/hooks/useGetHistory";
 import { HistoryItemOperation } from "popup/components/accountHistory/HistoryItem";
 import {
@@ -30,7 +31,13 @@ import {
 } from "helpers/hooks/useGetAppData";
 import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { AssetIcons, HorizonOperation, TokenBalance } from "@shared/api/types";
+import {
+  AssetIcons,
+  Collectibles,
+  Collectible,
+  HorizonOperation,
+  TokenBalance,
+} from "@shared/api/types";
 import { OPERATION_TYPES } from "constants/transaction";
 import {
   capitalize,
@@ -59,6 +66,8 @@ import {
 } from "popup/ducks/cache";
 import { getAssetDomains } from "@shared/api/internal";
 import { AppDispatch } from "popup/App";
+import { captureException } from "@sentry/browser";
+import { CollectibleInfoImage } from "popup/components/account/CollectibleInfo";
 
 export type HistorySection = {
   monthYear: string; // in format {month}:{year}
@@ -177,6 +186,21 @@ export const getTransferIcons = ({
       </div>
     )}
   </>
+);
+
+export const getCollectibleIcon = ({
+  collectible,
+}: {
+  collectible: Collectible;
+}) => (
+  <div className="HistoryItem__icon__bordered">
+    <CollectibleInfoImage
+      image={collectible.metadata?.image}
+      name={collectible.tokenId}
+      isSmall
+      isHistory
+    />
+  </div>
 );
 
 export const getRowIconByType = (iconType: string) => {
@@ -477,6 +501,12 @@ export const getRowDataByOpType = async (
     networkDetails: NetworkDetails;
   }) => Promise<TokenDetailsResponse | Error>,
   homeDomains: { [assetIssuer: string]: string | null },
+  fetchCollectibles: (args: {
+    contracts: { id: string; token_ids: string[] }[];
+    publicKey: string;
+    networkDetails: NetworkDetails;
+    isOwnerFiltered?: boolean;
+  }) => Promise<Collectibles | Error>,
 ): Promise<OperationDataRow> => {
   const {
     account,
@@ -723,10 +753,9 @@ export const getRowDataByOpType = async (
       }
 
       const { token, decimals } = assetBalance as TokenBalance;
-      const formattedTokenAmount = formatTokenAmount(
-        new BigNumber(attrs.amount),
-        decimals,
-      );
+      const formattedTokenAmount = attrs.amount
+        ? formatTokenAmount(new BigNumber(attrs.amount), decimals)
+        : "";
       const formattedAmount = `${
         isReceiving ? "+" : ""
       }${formattedTokenAmount} ${token.code}`;
@@ -748,59 +777,129 @@ export const getRowDataByOpType = async (
     }
 
     if (attrs.fnName === SorobanTokenInterface.transfer) {
-      try {
-        const tokenDetailsResponse = await fetchTokenDetails({
-          contractId: attrs.contractId,
-          publicKey,
-          networkDetails,
-        });
+      // Extract destination from XDR for Soroban transfers (may be muxed)
+      // Note: For Soroban, the destination is in contract args, so we use attrs.to as fallback
+      const actualDestination = await extractDestinationFromXDR(
+        txEnvelopeXdr,
+        networkDetails,
+        attrs.to || "",
+      );
 
-        if (
-          !tokenDetailsResponse ||
-          isError<TokenDetailsResponse>(tokenDetailsResponse)
-        ) {
+      const isReceiving =
+        actualDestination === publicKey && attrs.from !== publicKey;
+
+      console.log(attrs);
+      // if the amount is present, we can surmise this is a token transfer
+      if (attrs.amount) {
+        try {
+          const tokenDetailsResponse = await fetchTokenDetails({
+            contractId: attrs.contractId,
+            publicKey,
+            networkDetails,
+          });
+
+          if (
+            !tokenDetailsResponse ||
+            isError<TokenDetailsResponse>(tokenDetailsResponse)
+          ) {
+            return genericInvocation;
+          }
+
+          const { symbol, decimals } = tokenDetailsResponse!;
+          const isNative = symbol === "native";
+          const code = isNative ? "XLM" : symbol;
+          const formattedTokenAmount = formatTokenAmount(
+            new BigNumber(attrs.amount),
+            decimals,
+          );
+
+          const paymentDifference = isReceiving ? "+" : "-";
+          const formattedAmount = `${paymentDifference}${formattedTokenAmount} ${code}`;
+
+          return {
+            action: isReceiving ? "Received" : "Sent",
+            actionIcon: isReceiving ? "received" : "sent",
+            amount: formattedAmount,
+            date,
+            id,
+            metadata: {
+              ...baseMetadata,
+              destAssetCode: code,
+              isInvokeHostFn,
+              isTokenTransfer: true,
+              nonLabelAmount: formattedTokenAmount,
+              to: actualDestination,
+            },
+            rowIcon: getTransferIcons({ isNative, isReceiving }),
+            rowText: code,
+          };
+        } catch (error) {
+          return genericInvocation;
+        }
+      }
+
+      // otherwise, we treat this as a collectible transfer
+      try {
+        // if the tokenId is not present, we can't fetch the collectible; return generic invocation
+        if (!attrs.tokenId) {
           return genericInvocation;
         }
 
-        const { symbol, decimals } = tokenDetailsResponse!;
-        const isNative = symbol === "native";
-        const code = isNative ? "XLM" : symbol;
-        const formattedTokenAmount = formatTokenAmount(
-          new BigNumber(attrs.amount),
-          decimals,
-        );
-
-        // Extract destination from XDR for Soroban transfers (may be muxed)
-        // Note: For Soroban, the destination is in contract args, so we use attrs.to as fallback
-        const actualDestination = await extractDestinationFromXDR(
-          txEnvelopeXdr,
+        const collectibleDetailsResponse = await fetchCollectibles({
+          contracts: [
+            {
+              id: attrs.contractId,
+              token_ids: [attrs.tokenId.toString()],
+            },
+          ],
+          publicKey,
           networkDetails,
-          attrs.to || "",
+          isOwnerFiltered: false,
+        });
+
+        if (isError<Collectibles>(collectibleDetailsResponse)) {
+          return genericInvocation;
+        }
+
+        if (collectibleDetailsResponse.collections.length === 0) {
+          return genericInvocation;
+        }
+
+        console.log(collectibleDetailsResponse.collections);
+
+        const collection = collectibleDetailsResponse.collections.find(
+          (c) => c.collection?.address === attrs.contractId,
         );
 
-        const isReceiving =
-          actualDestination === publicKey && attrs.from !== publicKey;
-        const paymentDifference = isReceiving ? "+" : "-";
-        const formattedAmount = `${paymentDifference}${formattedTokenAmount} ${code}`;
+        if (!collection) {
+          return genericInvocation;
+        }
+
+        const collectible = collection.collection?.collectibles.find(
+          (c) => c.tokenId === attrs.tokenId?.toString() || "",
+        );
+
+        if (!collectible) {
+          return genericInvocation;
+        }
 
         return {
           action: isReceiving ? "Received" : "Sent",
           actionIcon: isReceiving ? "received" : "sent",
-          amount: formattedAmount,
+          amount: null,
           date,
           id,
           metadata: {
             ...baseMetadata,
-            destAssetCode: code,
             isInvokeHostFn,
             isTokenTransfer: true,
-            nonLabelAmount: formattedTokenAmount,
             to: actualDestination,
           },
-          rowIcon: getTransferIcons({ isNative, isReceiving }),
-          rowText: code,
+          rowIcon: getCollectibleIcon({ collectible }),
+          rowText: collectible.collectionName || "Collectible",
         };
-      } catch (error) {
+      } catch (e) {
+        captureException(`Error fetching collectibles: ${e}`);
         return genericInvocation;
       }
     }
@@ -980,6 +1079,11 @@ const createHistorySections = async (
     networkDetails: NetworkDetails;
   }) => Promise<TokenDetailsResponse | Error>,
   homeDomains: { [assetIssuer: string]: string | null },
+  fetchCollectibles: (args: {
+    contracts: { id: string; token_ids: string[] }[];
+    publicKey: string;
+    networkDetails: NetworkDetails;
+  }) => Promise<Collectibles | Error>,
 ) => {
   /* 
     To prevent multiple requests for home domains as we build each row, 
@@ -1021,6 +1125,7 @@ const createHistorySections = async (
         icons,
         fetchTokenDetails,
         fetchedHomeDomains,
+        fetchCollectibles,
       );
 
       if (isDustPayment && isHideDustEnabled) {
@@ -1083,6 +1188,9 @@ function useGetHistoryData(
   const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
   const { fetchData: fetchHistory } = useGetHistory();
   const { fetchData: fetchTokenDetails } = useTokenDetails();
+  const { fetchData: fetchCollectibles } = useGetCollectibles({
+    useCache: true,
+  });
   const homeDomains = useSelector(homeDomainsSelector);
   const reduxDispatch = useDispatch<AppDispatch>();
 
@@ -1145,6 +1253,7 @@ function useGetHistoryData(
           historyOptions.isHideDustEnabled,
           fetchTokenDetails,
           cachedHomeDomains,
+          fetchCollectibles,
         ),
       } as ResolvedData;
 
