@@ -432,29 +432,6 @@ export const SendAmount = ({
                 </Button>
               </div>
             </div>
-            <Button
-              size="lg"
-              disabled={
-                !destination ||
-                (inputType === "crypto" &&
-                  new BigNumber(formik.values.amount).isZero()) ||
-                (inputType === "fiat" &&
-                  new BigNumber(formik.values.amountUsd).isZero()) ||
-                isAmountTooHigh ||
-                isMuxedAddressWithoutMemoSupport
-              }
-              isLoading={simulationState.state === RequestState.LOADING}
-              data-testid="send-amount-btn-continue"
-              isFullWidth
-              isRounded
-              variant="secondary"
-              onClick={(e) => {
-                e.preventDefault();
-                formik.submitForm();
-              }}
-            >
-              {t("Review Send")}
-            </Button>
             {isCollectible ? (
               <Button
                 size="lg"
