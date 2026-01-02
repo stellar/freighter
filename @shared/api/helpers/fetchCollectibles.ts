@@ -84,10 +84,12 @@ export const fetchCollectibles = async ({
   publicKey,
   contracts,
   networkDetails,
+  isOwnerFiltered = true,
 }: {
   publicKey: string;
   contracts: { id: string; token_ids: string[] }[];
   networkDetails: NetworkDetails;
+  isOwnerFiltered?: boolean;
 }) => {
   let fetchedCollections = [] as Collection[];
 
@@ -118,9 +120,12 @@ export const fetchCollectibles = async ({
     for (let i = 0; i < data.collections.length; i++) {
       const { collection } = data.collections[i];
       if (collection) {
-        const filteredCollectibles = collection.collectibles.filter(
-          (collectible) => collectible.owner === publicKey,
-        );
+        let filteredCollectibles = collection.collectibles;
+        if (isOwnerFiltered) {
+          filteredCollectibles = collection.collectibles.filter(
+            (collectible) => collectible.owner === publicKey,
+          );
+        }
 
         if (filteredCollectibles.length > 0) {
           // for each collectible, fetch the metadata from the token URI

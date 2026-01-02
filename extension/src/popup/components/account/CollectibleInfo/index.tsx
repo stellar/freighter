@@ -37,15 +37,19 @@ export const CollectibleInfoImage = ({
   image,
   name,
   isSmall = false,
+  isHistory = false,
 }: {
   image: string | undefined;
   name: string;
   isSmall?: boolean;
+  isHistory?: boolean;
 }) => {
+  console.log(isHistory);
   return image ? (
     <div
       className={classnames("CollectibleInfo__image", {
         "CollectibleInfo__image--small": isSmall,
+        "CollectibleInfo__image--history": isHistory,
       })}
     >
       <img data-testid="account-collectible-image" src={image} alt={name} />
@@ -54,6 +58,7 @@ export const CollectibleInfoImage = ({
     <div
       className={classnames("CollectibleInfo__image__placeholder", {
         "CollectibleInfo__image__placeholder--small": isSmall,
+        "CollectibleInfo__image__placeholder--history": isHistory,
       })}
       data-testid="account-collectible-placeholder"
     >

@@ -16,9 +16,10 @@ import {
 import { HorizonOperation, SorobanBalance } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
-  ArgsForTokenInvocation,
+  ArgsForTransferInvocation,
   SorobanTokenInterface,
-  TokenInvocationArgs,
+  HostFnInvocationArgs,
+  SorbanCollectibleInterface,
 } from "@shared/constants/soroban/token";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
@@ -290,16 +291,30 @@ export const addressToString = (address: xdr.ScAddress) => {
 export const getArgsForTokenInvocation = (
   fnName: string,
   args: xdr.ScVal[],
-): ArgsForTokenInvocation => {
-  let amount: bigint | number;
+): ArgsForTransferInvocation => {
+  let tokenId: number | undefined;
+  let amount: bigint | number | undefined;
   let from = "";
   let to = "";
+  const thirdArgType = args[2].switch();
 
   switch (fnName) {
-    case SorobanTokenInterface.transfer:
+    case SorobanTokenInterface.transfer || SorbanCollectibleInterface.transfer:
+      // both SEP-41 & SEP-50 tokens use the transfer method
+      // with different signatures. Without parsing the token spec,
+      // we can guess that the contract is either a token or a collectible
+      // by the type of the 3rd argument.
+      // Token transfer - (from: Address, to: Address, amount: i128)
+      // Collectible transfer - (from: Address, to: Address, tokenId: u32)
+      if (thirdArgType === xdr.ScValType.scvI128()) {
+        amount = scValToNative(args[2]);
+      }
+      if (thirdArgType === xdr.ScValType.scvU32()) {
+        tokenId = scValToNative(args[2]);
+        console.log("tokenId", tokenId);
+      }
       from = addressToString(args[0].address());
       to = addressToString(args[1].address());
-      amount = scValToNative(args[2]);
       break;
     case SorobanTokenInterface.mint:
       to = addressToString(args[0].address());
@@ -309,15 +324,15 @@ export const getArgsForTokenInvocation = (
       amount = BigInt(0);
   }
 
-  return { from, to, amount };
+  return { from, to, amount, tokenId };
 };
 
 const isSorobanOp = (operation: HorizonOperation) =>
   SOROBAN_OPERATION_TYPES.includes(operation.type);
 
-export const getTokenInvocationArgs = (
+export const getInvocationArgsFromInvokeHostFn = (
   hostFn: Operation.InvokeHostFunction,
-): TokenInvocationArgs | null => {
+): HostFnInvocationArgs | null => {
   if (!hostFn?.func?.invokeContract) {
     return null;
   }
@@ -337,12 +352,13 @@ export const getTokenInvocationArgs = (
 
   if (
     fnName !== SorobanTokenInterface.transfer &&
-    fnName !== SorobanTokenInterface.mint
+    fnName !== SorobanTokenInterface.mint &&
+    fnName !== SorbanCollectibleInterface.transfer
   ) {
     return null;
   }
 
-  let opArgs: ArgsForTokenInvocation;
+  let opArgs;
 
   try {
     opArgs = getArgsForTokenInvocation(fnName, args);
@@ -372,7 +388,7 @@ export const getAttrsFromSorobanHorizonOp = (
 
   const invokeHostFn = txEnvelope.operations[0]; // only one op per tx in Soroban right now
 
-  return getTokenInvocationArgs(invokeHostFn);
+  return getInvocationArgsFromInvokeHostFn(invokeHostFn);
 };
 
 export interface InvocationTree {
