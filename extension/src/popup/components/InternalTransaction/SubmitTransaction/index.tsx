@@ -34,6 +34,8 @@ import { navigateTo, openTab } from "popup/helpers/navigate";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { iconsSelector } from "popup/ducks/cache";
 import { resetSimulation } from "popup/ducks/token-payment";
+import { CollectibleInfoImage } from "popup/components/account/CollectibleInfo";
+
 import { SubmitFail } from "../SubmitFail";
 
 import "./styles.scss";
@@ -58,6 +60,9 @@ export const SendingTransaction = ({
   const icons = useSelector(iconsSelector);
   const [isVerifyAccountModalOpen, setIsVerifyAccountModalOpen] =
     useState(!hasPrivateKey);
+  const transactionData = submission.transactionData;
+
+  const { isCollectible, collectibleData } = transactionData;
 
   const {
     transactionData: {
@@ -142,6 +147,10 @@ export const SendingTransaction = ({
   ) {
     return <Loading />;
   }
+
+  const summaryDescriptionLabel = isCollectible
+    ? collectibleData.name
+    : `${amount} ${srcAsset.code} `;
 
   return (
     <>
@@ -238,14 +247,26 @@ export const SendingTransaction = ({
               )}
             </div>
             <div className="SendingTransaction__Summary">
-              <div className="SendingTransaction__Summary__Assets">
-                <AssetIcon
-                  assetIcons={assetIcons}
-                  code={srcAsset.code}
-                  issuerKey={srcAsset.issuer}
-                  icon={assetIcon}
-                  isSuspicious={false}
-                />
+              <div
+                className={`SendingTransaction__Summary__Assets ${isCollectible ? "SendingTransaction__Summary__Assets--collectible" : ""}`}
+              >
+                {isCollectible ? (
+                  <div className="SendingTransaction__Summary__Assets__Image">
+                    <CollectibleInfoImage
+                      image={collectibleData.image}
+                      name={collectibleData.name}
+                      isSmall
+                    />
+                  </div>
+                ) : (
+                  <AssetIcon
+                    assetIcons={assetIcons}
+                    code={srcAsset.code}
+                    issuerKey={srcAsset.issuer}
+                    icon={assetIcon}
+                    isSuspicious={false}
+                  />
+                )}
                 <div className="SendingTransaction__Summary__Assets__Divider">
                   <Icon.ChevronRightDouble />
                 </div>
@@ -265,7 +286,7 @@ export const SendingTransaction = ({
                 {isLoading && (
                   <>
                     <span className="SendingTransaction__Summary__Description__Label">
-                      {`${amount} ${srcAsset.code} `}
+                      {summaryDescriptionLabel}
                     </span>
                     {isSwap && dstAsset ? (
                       <>
@@ -290,8 +311,11 @@ export const SendingTransaction = ({
                 )}
                 {isSuccess && (
                   <>
-                    <span className="SendingTransaction__Summary__Description__Label">
-                      {`${amount} ${srcAsset.code} `}
+                    <span
+                      className="SendingTransaction__Summary__Description__Label"
+                      data-testid="sending-transaction-summary-description-label"
+                    >
+                      {summaryDescriptionLabel}
                     </span>
                     {isSwap && dstAsset ? (
                       <>
@@ -307,7 +331,10 @@ export const SendingTransaction = ({
                         <span className="SendingTransaction__Summary__Description__Label Verb">
                           {`${t("was sent to")} `}
                         </span>
-                        <span className="SendingTransaction__Summary__Description__Label">
+                        <span
+                          className="SendingTransaction__Summary__Description__Label"
+                          data-testid="sending-transaction-summary-description-label-destination-address"
+                        >
                           {truncatedPublicKey(destination)}
                         </span>
                       </>

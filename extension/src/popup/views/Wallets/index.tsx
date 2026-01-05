@@ -26,7 +26,10 @@ import {
   allAccountsSelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { clearBalancesForAccount } from "popup/ducks/cache";
+import {
+  clearBalancesForAccount,
+  clearCollectiblesForAccount,
+} from "popup/ducks/cache";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
 import { truncatedPublicKey } from "helpers/stellar";
 import { getColorPubKey } from "helpers/stellarIdenticon";
@@ -416,6 +419,12 @@ export const Wallets = () => {
                       await dispatch(makeAccountActive(publicKey));
                       await dispatch(
                         clearBalancesForAccount({ publicKey, networkDetails }),
+                      );
+                      await dispatch(
+                        clearCollectiblesForAccount({
+                          publicKey,
+                          networkDetails,
+                        }),
                       );
                       navigateTo(ROUTES.account, navigate);
                     }}

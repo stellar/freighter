@@ -95,6 +95,33 @@
   &__SendAsset {
     display: flex;
     align-items: center;
+
+    &__Collectible {
+      border-radius: pxToRem(8px);
+      display: flex;
+      align-items: center;
+      margin-right: pxToRem(12px);
+      overflow: hidden;
+      height: pxToRem(32px);
+      width: pxToRem(32px);
+
+      &__label {
+        display: flex;
+        flex-direction: column;
+
+        &__name {
+          font-size: pxToRem(14px);
+          font-weight: var(--sds-fw-medium);
+          line-height: pxToRem(20px);
+        }
+        &__id {
+          font-size: pxToRem(12px);
+          font-weight: var(--sds-fw-regular);
+          color: var(--sds-clr-gray-11);
+          line-height: pxToRem(18px);
+        }
+      }
+    }
   }
 
   &__SendAssetDetails {

@@ -63,6 +63,7 @@ import { useGetSignTxData } from "./hooks/useGetSignTxData";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
+import { publicKeySelector } from "popup/ducks/accountServices";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getSiteFavicon } from "popup/helpers/getSiteFavicon";
 import { AssetIcons, BlockaidAssetDiff } from "@shared/api/types";
@@ -99,6 +100,7 @@ export const SignTransaction = () => {
     useState(false);
   const [activePaneIndex, setActivePaneIndex] = useState(0);
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
+  const publicKey = useSelector(publicKeySelector);
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
   });
@@ -273,7 +275,6 @@ export const SignTransaction = () => {
     return <SSLWarningMessage url={domain} />;
   }
 
-  const publicKey = signTxState.data?.publicKey!;
   const { currentAccount } = signTxState.data?.signFlowState!;
 
   const hasEnoughXlm = signTxState.data?.balances.balances.some(

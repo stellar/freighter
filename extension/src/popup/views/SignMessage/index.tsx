@@ -36,6 +36,7 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { rejectTransaction, signBlob } from "popup/ducks/access";
+import { publicKeySelector } from "popup/ducks/accountServices";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getSiteFavicon } from "popup/helpers/getSiteFavicon";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
@@ -49,6 +50,7 @@ export const SignMessage = () => {
   const { networkName, networkPassphrase } = useSelector(
     settingsNetworkDetailsSelector,
   );
+  const publicKey = useSelector(publicKeySelector);
 
   const message = parsedSearchParam(location.search) as MessageToSign;
   const {
@@ -159,7 +161,6 @@ export const SignMessage = () => {
     return <SSLWarningMessage url={domain} />;
   }
 
-  const publicKey = signMessageState.data?.publicKey!;
   const punycodedDomain = getPunycodedDomain(domain);
   const isDomainValid = punycodedDomain === domain;
   const favicon = getSiteFavicon(domain);

@@ -111,6 +111,7 @@ function useCollectibleDetail() {
         );
         dispatch({ type: "FETCH_DATA_SUCCESS", payload: metadata });
       }
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload: {} });
     } catch (error) {
       captureException(error);
       dispatch({ type: "FETCH_DATA_ERROR", payload: { error } });

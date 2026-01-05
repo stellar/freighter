@@ -13,7 +13,9 @@ import {
 } from "helpers/hooks/useGetAppData";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
-import { ApiTokenPrices } from "@shared/api/types";
+import { ApiTokenPrices, Collectibles } from "@shared/api/types";
+import { isCustomNetwork } from "@shared/helpers/stellar";
+import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
 
 export interface ResolvedAssetDomains {
   type: AppDataType.RESOLVED;
@@ -22,6 +24,7 @@ export interface ResolvedAssetDomains {
   networkDetails: NetworkDetails;
   applicationState: APPLICATION_STATE;
   tokenPrices: ApiTokenPrices;
+  collectibles: Collectibles;
 }
 
 export type AssetDomains = NeedsReRoute | ResolvedAssetDomains;
@@ -37,6 +40,9 @@ export function useGetDestAssetData(getBalancesOptions: {
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(getBalancesOptions);
   const { fetchData: fetchTokenPrices } = useGetTokenPrices();
+  const { fetchData: fetchCollectibles } = useGetCollectibles({
+    useCache: true,
+  });
 
   const fetchData = async (useCache = false): Promise<AssetDomains | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -79,6 +85,17 @@ export function useGetDestAssetData(getBalancesOptions: {
         tokenPrices: fetchedTokenPrices.tokenPrices,
         applicationState: appData.account.applicationState,
       } as ResolvedAssetDomains;
+
+      if (!isCustomNetwork(networkDetails)) {
+        const collectiblesResult = await fetchCollectibles({
+          publicKey,
+          networkDetails,
+        });
+
+        payload.collectibles = collectiblesResult;
+      } else {
+        payload.collectibles = { collections: [] };
+      }
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
