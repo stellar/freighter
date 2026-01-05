@@ -243,11 +243,11 @@ test("History row displays muxed address extracted from XDR for payment", async 
   });
   await page.getByTestId("nav-link-account-history").click();
 
-  await expect(page.getByTestId("history-item")).toBeVisible({
+  await expect(page.getByTestId("history-item").nth(1)).toBeVisible({
     timeout: 10000,
   });
 
-  await page.getByTestId("history-item").first().click();
+  await page.getByTestId("history-item").nth(1).click();
 
   // Verify muxed address is displayed (extracted from XDR, not Horizon's base G address)
   const dstAmount = page.getByTestId("TransactionDetailModal__dst-amount");
@@ -338,7 +338,7 @@ test("History row displays address extracted from XDR for createAccount", async 
   });
   await page.getByTestId("nav-link-account-history").click();
 
-  await expect(page.getByTestId("history-item")).toBeVisible({
+  await expect(page.getByTestId("history-item").first()).toBeVisible({
     timeout: 10000,
   });
 
@@ -433,7 +433,7 @@ test("History row displays regular G address when no muxed address in XDR", asyn
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("nav-link-account-history").click();
 
-  await expect(page.getByTestId("history-item")).toBeVisible({
+  await expect(page.getByTestId("history-item").first()).toBeVisible({
     timeout: 10000,
   });
 
