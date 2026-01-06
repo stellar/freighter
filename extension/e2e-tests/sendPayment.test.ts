@@ -9,6 +9,7 @@ import {
   stubAccountHistory,
   stubContractSpec,
   stubMemoRequiredAccounts,
+  stubScanTx,
   stubSimulateTokenTransfer,
   stubTokenDetails,
   stubTokenPrices,
@@ -259,6 +260,7 @@ test("Send persists inputs and submits to network", async ({
   extensionId,
 }) => {
   test.slow();
+  await stubScanTx(page);
   let isScanSkiped = false;
   page.on("request", (request) => {
     if (
