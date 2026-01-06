@@ -11,6 +11,7 @@ import {
   stubMemoRequiredAccounts,
   stubScanTx,
   stubSimulateTokenTransfer,
+  stubSubmitTx,
   stubTokenDetails,
   stubTokenPrices,
 } from "./helpers/stubs";
@@ -261,6 +262,7 @@ test("Send persists inputs and submits to network", async ({
 }) => {
   test.slow();
   await stubScanTx(page);
+  await stubSubmitTx(page);
   let isScanSkiped = false;
   page.on("request", (request) => {
     if (
@@ -343,6 +345,8 @@ test("Send XLM payments to recent federated addresses", async ({
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
+  await stubScanTx(page);
+  await stubSubmitTx(page);
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
@@ -410,6 +414,8 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
+  await stubScanTx(page);
+  await stubSubmitTx(page);
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
@@ -454,6 +460,8 @@ test("Send XLM payment to M address", async ({ page, extensionId }) => {
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
+  await stubScanTx(page);
+  await stubSubmitTx(page);
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
@@ -597,6 +605,8 @@ test("Send token payment to C address", async ({ page, extensionId }) => {
   await stubAccountBalancesE2e(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
+  await stubScanTx(page);
+  await stubSubmitTx(page);
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
