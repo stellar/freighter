@@ -334,7 +334,7 @@ test("History row displays address extracted from XDR for createAccount", async 
         },
         transaction_hash: TRANSACTION_HASH,
         transaction_successful: true,
-        type: "createAccount",
+        type: "create_account",
         type_i: 0,
       },
     ];
@@ -374,9 +374,13 @@ test("History row displays address extracted from XDR for createAccount", async 
     page.getByTestId("TransactionDetailModal").getByText("Create Account"),
   ).toBeVisible({ timeout: 10000 });
 
-  const dstAmount = page
-    .getByTestId("TransactionDetailModal")
-    .locator(".Send__dst__amount");
+  // Wait for the createAccount body to render (check for src-amount which should be visible)
+  await expect(
+    page.getByTestId("TransactionDetailModal").locator(".Send__src__amount"),
+  ).toBeVisible({ timeout: 10000 });
+
+  // Verify address extracted from XDR is displayed (not just Horizon's account field)
+  const dstAmount = page.getByTestId("TransactionDetailModal__dst-amount");
   await expect(dstAmount).toBeVisible({ timeout: 15000 });
   await expect(dstAmount).toContainText(BASE_G_ADDRESS.slice(0, 4), {
     timeout: 15000,
