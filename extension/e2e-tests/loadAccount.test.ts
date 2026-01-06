@@ -61,6 +61,48 @@ test("Switches account and fetches correct balances while clearing cache", async
   await stubTokenPrices(page);
   await stubScanDapp(context);
 
+  await page.route("**/account-balances/**", async (route) => {
+    const json = {
+      balances: {
+        native: {
+          token: {
+            type: "native",
+            code: "XLM",
+          },
+          total: "10",
+          available: "9",
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          minimumBalance: "1",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: "",
+            metadata: {
+              type: "",
+            },
+            fees: {},
+          },
+        },
+      },
+      isFunded: true,
+      subentryCount: 0,
+    };
+
+    if (
+      route
+        .request()
+        .url()
+        .includes("GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2")
+    ) {
+      json.balances.native.total = "20";
+      json.balances.native.available = "19";
+    }
+    await route.fulfill({ json });
+  });
+
   test.slow();
   await loginToTestAccount({ page, extensionId });
   await expect(page.getByTestId("account-assets")).toContainText("XLM");

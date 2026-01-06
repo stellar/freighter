@@ -100,16 +100,15 @@ export function getMemoDisabledState(
 ): MemoDisabledState {
   const { targetAddress, contractId, contractSupportsMuxed, t } = params;
 
-  // Disable memo for all M addresses (memo is encoded in the address)
+  if (!contractId) {
+    return { isMemoDisabled: false, memoDisabledMessage: undefined };
+  }
+
   if (isMuxedAccount(targetAddress)) {
     return {
       isMemoDisabled: true,
       memoDisabledMessage: t("Memo is disabled for this transaction"),
     };
-  }
-
-  if (!contractId) {
-    return { isMemoDisabled: false, memoDisabledMessage: undefined };
   }
 
   // For tokens without Soroban mux support, disable memo
