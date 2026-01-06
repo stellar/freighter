@@ -333,7 +333,10 @@ export const TransactionDetail = ({
                 <Icon.ChevronDownDouble />
               </div>
               <div className="Send__dst">
-                <div className="Send__dst__amount">
+                <div
+                  className="Send__dst__amount"
+                  data-testid="TransactionDetailModal__dst-amount"
+                >
                   {truncatedPublicKey(to)}
                 </div>
                 <div className="Send__dst__icon">

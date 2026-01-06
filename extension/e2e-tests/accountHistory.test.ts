@@ -197,11 +197,8 @@ test("History row displays muxed address extracted from XDR for payment", async 
 
   const envelopeXdr = tx.toXDR();
 
-  await stubAccountBalances(page);
-  await loginToTestAccount({ page, extensionId });
-
   // Stub account history (returns base G address, not M address)
-  await page.route("**/account-history/**", async (route) => {
+  await page.route("*/**/account-history/*", async (route) => {
     const json = [
       {
         amount: "1.0000000",
@@ -231,7 +228,11 @@ test("History row displays muxed address extracted from XDR for payment", async 
   // Stub transaction XDR endpoint
   await page.route("**/transactions/**", async (route) => {
     const url = route.request().url();
-    if (url.includes(TRANSACTION_HASH)) {
+    if (
+      url.includes(`/transactions/${TRANSACTION_HASH}`) ||
+      url.includes(`transactions/${TRANSACTION_HASH}`) ||
+      url.includes(TRANSACTION_HASH)
+    ) {
       await route.fulfill({
         json: {
           envelope_xdr: envelopeXdr,
@@ -241,18 +242,37 @@ test("History row displays muxed address extracted from XDR for payment", async 
       await route.continue();
     }
   });
+
+  await stubAccountBalances(page);
+  await loginToTestAccount({ page, extensionId });
   await page.getByTestId("nav-link-account-history").click();
 
-  await expect(page.getByTestId("history-item").nth(1)).toBeVisible({
+  await expect(page.getByTestId("history-item").first()).toBeVisible({
     timeout: 10000,
   });
 
-  await page.getByTestId("history-item").nth(1).click();
+  const historyItem = page.getByTestId("history-item").first();
+  await expect(historyItem).toBeVisible({ timeout: 10000 });
+  await historyItem.click();
+
+  await expect(page.getByTestId("TransactionDetailModal")).toBeVisible({
+    timeout: 10000,
+  });
+
+  await expect(page.getByTestId("TransactionDetailModal__title")).toBeVisible({
+    timeout: 10000,
+  });
+
+  await expect(
+    page.getByTestId("TransactionDetailModal__src-amount"),
+  ).toBeVisible({ timeout: 10000 });
 
   // Verify muxed address is displayed (extracted from XDR, not Horizon's base G address)
   const dstAmount = page.getByTestId("TransactionDetailModal__dst-amount");
-  await expect(dstAmount).toBeVisible({ timeout: 10000 });
-  expect(await dstAmount.textContent()).toContain(TEST_M_ADDRESS.slice(0, 4));
+  await expect(dstAmount).toBeVisible({ timeout: 15000 });
+  await expect(dstAmount).toContainText(TEST_M_ADDRESS.slice(0, 4), {
+    timeout: 15000,
+  });
 
   // Verify memo row is hidden for M addresses
   await expect(page.getByText("Memo")).not.toBeVisible();
@@ -294,10 +314,7 @@ test("History row displays address extracted from XDR for createAccount", async 
 
   const envelopeXdr = tx.toXDR();
 
-  await stubAccountBalances(page);
-  await loginToTestAccount({ page, extensionId });
-
-  await page.route("**/account-history/**", async (route) => {
+  await page.route("*/**/account-history/*", async (route) => {
     const json = [
       {
         amount: "1.0000000",
@@ -336,18 +353,34 @@ test("History row displays address extracted from XDR for createAccount", async 
       await route.continue();
     }
   });
+
+  await stubAccountBalances(page);
+  await loginToTestAccount({ page, extensionId });
   await page.getByTestId("nav-link-account-history").click();
 
   await expect(page.getByTestId("history-item").first()).toBeVisible({
     timeout: 10000,
   });
 
-  await page.getByTestId("history-item").first().click();
+  const historyItem = page.getByTestId("history-item").first();
+  await expect(historyItem).toBeVisible({ timeout: 10000 });
+  await historyItem.click();
 
-  // Verify createAccount transaction detail is displayed
+  await expect(page.getByTestId("TransactionDetailModal")).toBeVisible({
+    timeout: 10000,
+  });
+
   await expect(
     page.getByTestId("TransactionDetailModal").getByText("Create Account"),
   ).toBeVisible({ timeout: 10000 });
+
+  const dstAmount = page
+    .getByTestId("TransactionDetailModal")
+    .locator(".Send__dst__amount");
+  await expect(dstAmount).toBeVisible({ timeout: 15000 });
+  await expect(dstAmount).toContainText(BASE_G_ADDRESS.slice(0, 4), {
+    timeout: 15000,
+  });
 });
 
 test("History row displays regular G address when no muxed address in XDR", async ({
@@ -388,7 +421,7 @@ test("History row displays regular G address when no muxed address in XDR", asyn
   const envelopeXdr = tx.toXDR();
 
   // Stub account history
-  await page.route("**/account-history/**", async (route) => {
+  await page.route("*/**/account-history/*", async (route) => {
     const json = [
       {
         amount: "1.0000000",
