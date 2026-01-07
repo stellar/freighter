@@ -859,10 +859,9 @@ export const getIndexerAccountHistory = async ({
   networkDetails: NetworkDetails;
 }): Promise<HorizonOperation[]> => {
   try {
-    const url = new URL(`${INDEXER_URL}/account-history/${publicKey}`);
-    url.searchParams.append("network", networkDetails.network);
-    url.searchParams.append("is_failed_included", "true");
-    url.searchParams.append("should_scan", "true");
+    const url = new URL(
+      `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}&is_failed_included=true`,
+    );
 
     const response = await fetch(url.href);
 

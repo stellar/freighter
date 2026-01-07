@@ -544,10 +544,8 @@ export const getRowDataByOpType = async (
     "source_amount" in operation ? operation.source_amount : null;
 
   if (isSwap) {
-    const nonLabelAmount = `${formatAmount(
-      new BigNumber(amount!).toString(),
-    )} ${destAssetCode}`;
-    const formattedAmount = `+${nonLabelAmount}`;
+    const nonLabelAmount = formatAmount(new BigNumber(amount!).toString());
+    const formattedAmount = `+${nonLabelAmount} ${destAssetCode}`;
     const formattedSrcAmount = srcAmount
       ? `${formatAmount(new BigNumber(srcAmount).toString())} ${srcAssetCode}`
       : null;
@@ -581,6 +579,7 @@ export const getRowDataByOpType = async (
       id,
       metadata: {
         ...baseMetadata,
+        destAssetCode,
         destIcon,
         destMinAmount: destAssetCode,
         formattedSrcAmount,
@@ -593,7 +592,9 @@ export const getRowDataByOpType = async (
       rowText: (
         <div className="HistoryItem__description__swap-label">
           <span>{srcAssetCode}</span>
-          <Icon.ArrowRight className="swap-label-direction" />
+          <span className="HistoryItem__description__swap-label__separator">
+            to
+          </span>
           <span>{destAssetCode}</span>
         </div>
       ),
@@ -610,10 +611,8 @@ export const getRowDataByOpType = async (
     // default to Sent if a payment to self
     const isReceiving = actualDestination === publicKey && from !== publicKey;
     const paymentDifference = isReceiving ? "+" : "-";
-    const nonLabelAmount = `${formatAmount(
-      new BigNumber(amount!).toString(),
-    )} ${destAssetCode}`;
-    const formattedAmount = `${paymentDifference}${nonLabelAmount}`;
+    const nonLabelAmount = formatAmount(new BigNumber(amount!).toString());
+    const formattedAmount = `${paymentDifference}${nonLabelAmount} ${destAssetCode}`;
 
     const destIcon =
       destAssetCode === "XLM"
@@ -641,6 +640,7 @@ export const getRowDataByOpType = async (
         isReceiving,
         nonLabelAmount,
         to: actualDestination,
+        from,
       },
       rowText: destAssetCode,
     };
@@ -832,6 +832,7 @@ export const getRowDataByOpType = async (
           isReceiving,
           nonLabelAmount,
           to: actualDestination,
+          from,
         },
         rowIcon: (
           <div className="HistoryItem__icon__bordered">

@@ -1,6 +1,6 @@
 import React, { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Asset, Button, Icon, Text } from "@stellar/design-system";
+import { Button, Icon, Text } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
@@ -20,9 +20,9 @@ import {
 } from "popup/views/AccountHistory/hooks/useGetHistoryData";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
+import { getMemoDisabledState } from "helpers/muxedAddress";
 
 import "./styles.scss";
-import { getMemoDisabledState } from "helpers/muxedAddress";
 
 export const TransactionDetail = ({
   activeOperation,
@@ -76,7 +76,7 @@ export const TransactionDetail = ({
 
   // Normalization helper functions
   const normalizePaymentToAssetDiffs = (metadata: any): AssetDiffSummary[] => {
-    const { to, nonLabelAmount, destIcon, destAssetCode, isReceiving } =
+    const { to, from, nonLabelAmount, destIcon, destAssetCode, isReceiving } =
       metadata;
 
     return [
@@ -86,33 +86,37 @@ export const TransactionDetail = ({
         decimals: 7,
         amount: nonLabelAmount,
         isCredit: isReceiving,
-        destination: isReceiving ? undefined : to,
+        destination: isReceiving ? from : to,
         icon: destIcon,
       },
     ];
   };
 
   const normalizeSwapToAssetDiffs = (metadata: any): AssetDiffSummary[] => {
-    const {
-      formattedSrcAmount,
-      srcAssetCode,
-      sourceIcon,
-      nonLabelAmount,
-      destAssetCode,
-      destIcon,
-    } = metadata;
+    const { formattedSrcAmount, srcAssetCode, nonLabelAmount, destAssetCode } =
+      metadata;
+
+    // Extract just the numeric amount from formattedSrcAmount (which includes asset code)
+    // formattedSrcAmount is formatted as "0.5 BTC", we need just "0.5"
+    const srcAmountOnly =
+      formattedSrcAmount?.split(" ")[0] || formattedSrcAmount;
 
     return [
+      // Debit: What was sent
+      {
+        assetCode: srcAssetCode,
+        assetIssuer: null,
+        decimals: 7,
+        amount: srcAmountOnly,
+        isCredit: false,
+      },
+      // Credit: What was received
       {
         assetCode: destAssetCode,
         assetIssuer: null,
         decimals: 7,
         amount: nonLabelAmount,
         isCredit: true,
-        icon: destIcon,
-        sourceAmount: formattedSrcAmount,
-        sourceAssetCode: srcAssetCode,
-        sourceIcon: sourceIcon,
       },
     ];
   };
@@ -120,7 +124,7 @@ export const TransactionDetail = ({
   const normalizeCreateAccountToAssetDiffs = (
     metadata: any,
   ): AssetDiffSummary[] => {
-    const { to, nonLabelAmount, isReceiving } = metadata;
+    const { to, from, nonLabelAmount, isReceiving } = metadata;
 
     return [
       {
@@ -129,7 +133,7 @@ export const TransactionDetail = ({
         decimals: 7,
         amount: nonLabelAmount,
         isCredit: isReceiving,
-        destination: isReceiving ? undefined : to,
+        destination: isReceiving ? from : to,
         icon: StellarLogo,
       },
     ];
@@ -149,51 +153,6 @@ export const TransactionDetail = ({
     return (
       <div className="TransactionDetailModal__asset-diffs">
         {creditDebits.map((diff: AssetDiffSummary, index: number) => {
-          // Check if this is a swap (has source info)
-          const isSwap = !!diff.sourceAmount;
-
-          if (isSwap) {
-            return (
-              <div key={index} className="AssetDiff__swap-row">
-                <div className="AssetDiff__swap-src">
-                  <div className="AssetDiff__swap-amount">
-                    {diff.sourceAmount} {diff.sourceAssetCode}
-                  </div>
-                  <div className="AssetDiff__swap-icon">
-                    <Asset
-                      size="lg"
-                      variant="single"
-                      sourceOne={{
-                        altText: "Source asset",
-                        image: diff.sourceIcon || "",
-                        backgroundColor: "transparent",
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="AssetDiff__swap-direction">
-                  <Icon.ChevronDownDouble />
-                </div>
-                <div className="AssetDiff__swap-dst">
-                  <div className="AssetDiff__swap-amount">
-                    {diff.amount} {diff.assetCode}
-                  </div>
-                  <div className="AssetDiff__swap-icon">
-                    <Asset
-                      size="lg"
-                      variant="single"
-                      sourceOne={{
-                        altText: "Destination asset",
-                        image: diff.icon || "",
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          }
-
-          // Regular sent/received row
           return (
             <div key={index} className="AssetDiff__row">
               <div
@@ -204,7 +163,7 @@ export const TransactionDetail = ({
                 ) : (
                   <Icon.ArrowCircleUp />
                 )}
-                {diff.isCredit ? "Received" : "Sent"}
+                <span>{diff.isCredit ? "Received" : "Sent"}</span>
               </div>
               <div
                 className={`AssetDiff__value ${diff.isCredit ? "credit" : "debit"}`}
@@ -261,10 +220,9 @@ export const TransactionDetail = ({
         activeOperation.metadata.isTokenMint)
     ) {
       title = `${activeOperation.action} ${activeOperation.rowText}`;
-    } else if (
-      activeOperation.metadata.isPayment ||
-      activeOperation.metadata.isSwap
-    ) {
+    } else if (activeOperation.metadata.isSwap) {
+      title = `${activeOperation.action} ${activeOperation.metadata.srcAssetCode} to ${activeOperation.metadata.destAssetCode}`;
+    } else if (activeOperation.metadata.isPayment) {
       title = `${activeOperation.action} ${activeOperation.rowText}`;
     } else if (
       activeOperation.metadata.type ===

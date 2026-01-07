@@ -271,7 +271,7 @@
         }
 
         &.success {
-          color: var(--sds-clr-green-11);
+          color: var(--sds-clr-white);
         }
       }
 
@@ -316,6 +316,12 @@
       align-items: center;
       color: var(--sds-clr-gray-11);
 
+      span {
+        line-height: 1;
+        display: flex;
+        align-items: flex-end;
+      }
+
       svg {
         margin-right: pxToRem(6px);
       }
@@ -339,36 +345,6 @@
       &.debit {
         color: var(--sds-clr-red-11);
       }
-    }
-
-    .AssetDiff__swap-row {
-      display: flex;
-      flex-direction: column;
-
-      &:not(:last-child) {
-        margin-bottom: pxToRem(12px);
-        padding-bottom: pxToRem(12px);
-        border-bottom: 1px solid var(--sds-clr-gray-06);
-      }
-    }
-
-    .AssetDiff__swap-src,
-    .AssetDiff__swap-dst {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .AssetDiff__swap-direction {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--sds-clr-gray-11);
-      height: 2rem;
-      width: 2rem;
-      border-radius: 2rem;
-      border: 1px solid var(--sds-clr-gray-06);
-      margin: pxToRem(24px) 0;
     }
 
     .AssetDiff__to-from {
