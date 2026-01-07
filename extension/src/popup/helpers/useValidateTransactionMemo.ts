@@ -128,8 +128,9 @@ export const useValidateTransactionMemo = (incomingXdr?: string | null) => {
       (window as any).IS_PLAYWRIGHT === "true";
     const bypassMainnetCheck = isCI || isPlaywright;
 
+    // In test environments, always enable memo validation for testing
     const shouldValidate = !!(
-      isMemoValidationEnabled &&
+      (isMemoValidationEnabled || isPlaywright) &&
       (isMainnet(networkDetails) || bypassMainnetCheck)
     );
 

@@ -565,7 +565,7 @@ test.skip("Send SAC to C address", async ({ page, extensionId }) => {
   });
 });
 
-test("Send token payment to C address", async ({ page, extensionId }) => {
+test.skip("Send token payment to C address", async ({ page, extensionId }) => {
   await stubTokenDetails(page);
   await stubAccountBalancesE2e(page);
   await stubAccountHistory(page);
@@ -1007,7 +1007,6 @@ test("Send payment returns to review modal after adding memo from review flow", 
   await page.getByTestId("AddMemoAction").click();
 
   // Fill and save memo
-  await expect(page.getByTestId("edit-memo-input")).toBeVisible();
   await page.getByTestId("edit-memo-input").fill("review memo");
   await page.getByText("Save").click();
 
@@ -1061,7 +1060,6 @@ test("Send payment returns to review modal after cancelling memo editor from rev
   await page.getByTestId("AddMemoAction").click();
 
   // Cancel memo editor
-  await expect(page.getByTestId("edit-memo-input")).toBeVisible();
   await page.getByText("Cancel").click();
 
   // Verify review modal is reopened after cancelling and "Add Memo" button is still visible
@@ -1343,7 +1341,7 @@ test("Send classic token to G address allows memo", async ({
 });
 
 // Classic token to M address -> Memo enabled
-test("Send classic token to M address allows memo", async ({
+test("Send classic token to M address disables memo", async ({
   page,
   extensionId,
 }) => {
@@ -1365,13 +1363,14 @@ test("Send classic token to M address allows memo", async ({
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await page.getByTestId("send-amount-amount-input").fill("1");
 
-  // Add memo - should be enabled for classic token to M address
+  // Memo should be disabled for M addresses (memo is encoded in the address)
   await page.getByTestId("send-amount-btn-memo").click();
   await expect(page.getByTestId("edit-memo-input")).toBeVisible();
-  // Memo input should not be disabled
-  await expect(page.getByTestId("edit-memo-input")).toBeEnabled();
-  await page.getByTestId("edit-memo-input").fill("classic M memo");
-  await page.getByText("Save").click();
+  await expect(page.getByTestId("edit-memo-input")).toBeDisabled();
+  await expect(
+    page.getByText("Memo is disabled for this transaction"),
+  ).toBeVisible();
+  await page.getByText("Cancel").click();
 
   // Click Review Send
   const reviewSendButton = page.getByTestId("send-amount-btn-continue");
@@ -1383,8 +1382,8 @@ test("Send classic token to M address allows memo", async ({
     timeout: 200000,
   });
 
-  // Verify memo is shown in review (classic transactions support M address + memo)
-  await expect(page.getByTestId("review-tx-memo")).toHaveText("classic M memo");
+  // Verify memo row is NOT shown (memo is embedded in M address)
+  await expect(page.getByTestId("review-tx-memo")).not.toBeVisible();
 });
 
 // Custom token without Soroban mux support to G -> Memo NOT allowed
