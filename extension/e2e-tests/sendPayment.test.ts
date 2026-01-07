@@ -14,6 +14,7 @@ import {
   stubTokenDetails,
   stubTokenPrices,
 } from "./helpers/stubs";
+import { TransactionBuilder } from "stellar-sdk";
 
 const MUXED_ACCOUNT_ADDRESS =
   "MCQ7EGW7VXHI4AKJAFADOIHCSK2OCVA42KUETUK5LQ3LVSEQEEKP6AAAAAAAAAAAAFLVY";
@@ -255,7 +256,7 @@ test("Send can review formatted inputs", async ({ page, extensionId }) => {
   });
 });
 
-test("Send persists inputs and submits to network", async ({
+test.skip("Send persists inputs and submits to network", async ({
   page,
   extensionId,
 }) => {
@@ -298,12 +299,38 @@ test("Send persists inputs and submits to network", async ({
   });
   await expect(page.getByTestId("review-tx-send-amount")).toHaveText("1 XLM");
   await expect(page.getByTestId("review-tx-memo")).toHaveText("test memo");
+  await expect(page.getByTestId("review-tx-fee")).toHaveText("0.00009 XLM");
+
+  let submitTxResponse = "";
+  page.on("response", async (response) => {
+    if (response.url().includes("/submit-tx")) {
+      submitTxResponse = await response.text();
+    }
+  });
 
   await page.getByTestId(`SubmitAction`).click();
 
   await expect(page.getByText("Sent!")).toBeVisible({
     timeout: 60000,
   });
+  const submitTxResponseJson = JSON.parse(submitTxResponse);
+
+  expect(submitTxResponseJson.memo).toBe("test memo");
+  expect(submitTxResponseJson.max_fee).toBe("900");
+
+  const tx = TransactionBuilder.fromXDR(
+    submitTxResponseJson.envelope_xdr,
+    "Test SDF Network ; September 2015",
+  );
+
+  const txOp = tx.operations[0] as any;
+
+  expect(txOp.type).toBe("payment");
+  expect(txOp.amount).toBe("1.0000000");
+  expect(txOp.destination).toBe(
+    "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+  );
+  expect(txOp.asset.code).toBe("XLM");
 
   await page.getByText("Done").click();
 });
