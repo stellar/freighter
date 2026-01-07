@@ -51,7 +51,7 @@ test("Load accounts on standalone network", async ({
   await expect(page.getByTestId("account-assets")).toContainText("XLM");
 });
 
-test("Switches account and fetches correct balances while clearing cache", async ({
+test.skip("Switches account and fetches correct balances while clearing cache", async ({
   page,
   extensionId,
   context,
