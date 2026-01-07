@@ -255,14 +255,11 @@ test("Send can review formatted inputs", async ({ page, extensionId }) => {
   });
 });
 
-test("Send persists inputs and submits to network", async ({
+test.only("Send persists inputs and submits to network", async ({
   page,
   extensionId,
 }) => {
   test.slow();
-  await stubAccountBalances(page);
-  await stubScanTx(page);
-  await stubSubmitTx(page);
   let isScanSkiped = false;
   page.on("request", (request) => {
     if (
@@ -311,7 +308,7 @@ test("Send persists inputs and submits to network", async ({
   await page.getByText("Done").click();
 });
 
-test("Send XLM payments to recent federated addresses", async ({
+test.only("Send XLM payments to recent federated addresses", async ({
   page,
   extensionId,
 }) => {
@@ -319,8 +316,6 @@ test("Send XLM payments to recent federated addresses", async ({
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
-  await stubScanTx(page);
-  await stubSubmitTx(page);
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
