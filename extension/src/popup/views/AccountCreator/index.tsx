@@ -38,7 +38,9 @@ export const AccountCreator = () => {
   const { state, fetchData } = useGetAccountCreatorData();
   const isOverWritingAccount =
     state.state === RequestState.SUCCESS &&
-    state.data.applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;
+    (state.data.applicationState ===
+      APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED ||
+      state.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED);
 
   const [mnemonicPhrase, setMnemonicPhrase] = useState("");
 
