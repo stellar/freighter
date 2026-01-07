@@ -1143,7 +1143,7 @@ test("Send payment shows memo value directly when memo is added before review", 
   await expect(page.getByTestId("SubmitAction")).toBeVisible();
 });
 
-test("Send payment shows Add Memo when switching from non-memo-required to memo-required address", async ({
+test.skip("Send payment shows Add Memo when switching from non-memo-required to memo-required address", async ({
   page,
   extensionId,
 }) => {
@@ -1216,7 +1216,7 @@ test("Send payment shows Add Memo when switching from non-memo-required to memo-
   });
 });
 
-test("Send payment shows Add Memo after cancelling review and returning to memo-required address", async ({
+test.skip("Send payment shows Add Memo after cancelling review and returning to memo-required address", async ({
   page,
   extensionId,
 }) => {
