@@ -255,7 +255,7 @@ test("Send can review formatted inputs", async ({ page, extensionId }) => {
   });
 });
 
-test.only("Send persists inputs and submits to network", async ({
+test("Send persists inputs and submits to network", async ({
   page,
   extensionId,
 }) => {
@@ -308,7 +308,7 @@ test.only("Send persists inputs and submits to network", async ({
   await page.getByText("Done").click();
 });
 
-test.only("Send XLM payments to recent federated addresses", async ({
+test("Send XLM payments to recent federated addresses", async ({
   page,
   extensionId,
 }) => {
