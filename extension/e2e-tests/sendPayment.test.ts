@@ -7,8 +7,6 @@ import {
   stubAccountBalancesWithUSDC,
   stubAccountHistory,
   stubContractSpec,
-  stubFederation,
-  stubHorizonAccounts,
   stubMemoRequiredAccounts,
   stubScanTx,
   stubSimulateTokenTransfer,
@@ -263,7 +261,6 @@ test("Send persists inputs and submits to network", async ({
 }) => {
   test.slow();
   await stubAccountBalances(page);
-  await stubHorizonAccounts(page);
   await stubScanTx(page);
   await stubSubmitTx(page);
   let isScanSkiped = false;
@@ -322,8 +319,6 @@ test("Send XLM payments to recent federated addresses", async ({
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
-  await stubFederation(page);
-  await stubHorizonAccounts(page);
   await stubScanTx(page);
   await stubSubmitTx(page);
 

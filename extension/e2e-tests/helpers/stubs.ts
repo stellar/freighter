@@ -169,83 +169,6 @@ export const stubAccountBalances = async (page: Page, xlmBalance?: string) => {
   });
 };
 
-export const stubHorizonAccounts = async (page: Page) => {
-  await page.route("**/accounts/**", async (route) => {
-    const json = {
-      _links: {
-        self: {
-          href: "https://horizon-testnet.stellar.org/accounts/GAE36JVHTUODX23WTMN3ENXWALVPZS4TI2XYHH6E7DGVF7HMYFQAUCSX",
-        },
-        transactions: {
-          href: "https://horizon-testnet.stellar.org/accounts/GAE36JVHTUODX23WTMN3ENXWALVPZS4TI2XYHH6E7DGVF7HMYFQAUCSX/transactions{?cursor,limit,order}",
-          templated: true,
-        },
-        operations: {
-          href: "https://horizon-testnet.stellar.org/accounts/GAE36JVHTUODX23WTMN3ENXWALVPZS4TI2XYHH6E7DGVF7HMYFQAUCSX/operations{?cursor,limit,order}",
-          templated: true,
-        },
-        payments: {
-          href: "https://horizon-testnet.stellar.org/accounts/GAE36JVHTUODX23WTMN3ENXWALVPZS4TI2XYHH6E7DGVF7HMYFQAUCSX/payments{?cursor,limit,order}",
-          templated: true,
-        },
-        effects: {
-          href: "https://horizon-testnet.stellar.org/accounts/GAE36JVHTUODX23WTMN3ENXWALVPZS4TI2XYHH6E7DGVF7HMYFQAUCSX/effects{?cursor,limit,order}",
-          templated: true,
-        },
-        offers: {
-          href: "https://horizon-testnet.stellar.org/accounts/GAE36JVHTUODX23WTMN3ENXWALVPZS4TI2XYHH6E7DGVF7HMYFQAUCSX/offers{?cursor,limit,order}",
-          templated: true,
-        },
-        trades: {
-          href: "https://horizon-testnet.stellar.org/accounts/GAE36JVHTUODX23WTMN3ENXWALVPZS4TI2XYHH6E7DGVF7HMYFQAUCSX/trades{?cursor,limit,order}",
-          templated: true,
-        },
-        data: {
-          href: "https://horizon-testnet.stellar.org/accounts/GAE36JVHTUODX23WTMN3ENXWALVPZS4TI2XYHH6E7DGVF7HMYFQAUCSX/data/{key}",
-          templated: true,
-        },
-      },
-      id: "GAE36JVHTUODX23WTMN3ENXWALVPZS4TI2XYHH6E7DGVF7HMYFQAUCSX",
-      account_id: "GAE36JVHTUODX23WTMN3ENXWALVPZS4TI2XYHH6E7DGVF7HMYFQAUCSX",
-      sequence: "123456789",
-      subentry_count: 0,
-      last_modified_ledger: 12345,
-      last_modified_time: "2024-01-01T00:00:00Z",
-      thresholds: {
-        low_threshold: 0,
-        med_threshold: 0,
-        high_threshold: 0,
-      },
-      flags: {
-        auth_required: false,
-        auth_revocable: false,
-        auth_immutable: false,
-        auth_clawback_enabled: false,
-      },
-      balances: [
-        {
-          balance: "10000.0000000",
-          buying_liabilities: "0.0000000",
-          selling_liabilities: "0.0000000",
-          asset_type: "native",
-        },
-      ],
-      signers: [
-        {
-          weight: 1,
-          key: "GAE36JVHTUODX23WTMN3ENXWALVPZS4TI2XYHH6E7DGVF7HMYFQAUCSX",
-          type: "ed25519_public_key",
-        },
-      ],
-      data: {},
-      num_sponsoring: 0,
-      num_sponsored: 0,
-      paging_token: "",
-    };
-    await route.fulfill({ json });
-  });
-};
-
 export const stubAccountBalancesE2e = async (page: Page) => {
   await page.route("**/account-balances/**", async (route) => {
     const json = {
@@ -958,23 +881,6 @@ export const stubSubmitTx = async (page: Page) => {
       successful: true,
     };
     await route.fulfill({ json });
-  });
-};
-
-export const stubFederation = async (page: Page) => {
-  await page.route("**/federation**", async (route) => {
-    const url = route.request().url();
-    if (url.includes("freighter.pb*lobstr.co")) {
-      const json = {
-        stellar_address: "freighter.pb*lobstr.co",
-        account_id: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
-        memo_type: null,
-        memo: null,
-      };
-      await route.fulfill({ json });
-    } else {
-      await route.fulfill({ json: {} });
-    }
   });
 };
 

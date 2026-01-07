@@ -59,70 +59,11 @@ export const loginAndFund = async ({
 }) => {
   await login({ page, extensionId });
 
-  // Wait for account view to load and check state
-  await page.waitForTimeout(2000);
-
-  const notFundedVisible = await page
-    .getByTestId("not-funded")
-    .isVisible({ timeout: 5000 })
-    .catch(() => false);
-
-  if (!notFundedVisible) {
-    // Account might already be funded or in an error state
-    const accountAssetsVisible = await page
-      .getByTestId("account-assets")
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
-    if (accountAssetsVisible) {
-      // Account appears funded, continue
-      return;
-    }
-
-    // Wait a bit more and retry
-    await page.waitForTimeout(3000);
-    const stillNotFunded = await page
-      .getByTestId("not-funded")
-      .isVisible({ timeout: 5000 })
-      .catch(() => false);
-
-    if (!stillNotFunded) {
-      throw new Error(
-        "Account is not showing expected unfunded state after login",
-      );
-    }
-  }
-
   await page.getByRole("button", { name: "Fund with Friendbot" }).click();
 
   await expect(page.getByTestId("account-assets")).toBeVisible({
-    timeout: 45000, // Increased timeout for Friendbot
+    timeout: 30000,
   });
-
-  // Verify funding actually worked by checking if balance loads
-  // This helps catch cases where Friendbot appears to succeed but doesn't fund
-  await page.waitForTimeout(3000); // Let balances load
-
-  // Try to find any balance element - this indicates the account exists and has funds
-  const balanceElements = await page
-    .locator('[data-testid*="balance"], [data-testid*="amount"]')
-    .count();
-
-  if (balanceElements === 0) {
-    // No balance elements found - funding likely failed
-    throw new Error(
-      "Friendbot funding completed but no account balance is visible",
-    );
-  }
-
-  // Additional verification: try to refresh balances to ensure they're real
-  const refreshButton = page
-    .locator('[aria-label*="refresh"], [data-testid*="refresh"]')
-    .first();
-  if (await refreshButton.isVisible().catch(() => false)) {
-    await refreshButton.click();
-    await page.waitForTimeout(2000); // Wait for refresh
-  }
 };
 
 export const loginToTestAccount = async ({
