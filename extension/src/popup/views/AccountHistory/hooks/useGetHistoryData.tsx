@@ -38,6 +38,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import {
   formatTokenAmount,
   getAttrsFromSorobanHorizonOp,
+  getDecimalsForAsset,
 } from "popup/helpers/soroban";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 import { getBalanceByKey } from "popup/helpers/balance";
@@ -416,10 +417,27 @@ const processAssetBalanceChanges = async (
             icons,
           });
 
+    // Fetch decimals based on whether it's a Soroban contract
+    let decimals: number;
+    try {
+      decimals = await getDecimalsForAsset({
+        assetIssuer,
+        publicKey,
+        networkDetails,
+      });
+    } catch (error) {
+      // If decimals cannot be fetched, skip this asset entirely
+      console.warn(
+        `Failed to fetch decimals for asset ${assetCode} (${assetIssuer}), skipping`,
+        error,
+      );
+      continue; // Skip this asset and move to the next one
+    }
+
     results.push({
       assetCode,
       assetIssuer,
-      decimals: 7, // Can be extracted if needed from asset lookup
+      decimals,
       amount: trimTrailingZeros(change.amount),
       isCredit,
       destination:
@@ -661,7 +679,7 @@ export const getRowDataByOpType = async (
       const paymentDifference = primaryDiff.isCredit ? "+" : "-";
       const formattedAmount =
         assetDiffs.length > 1
-          ? "multiple"
+          ? "Multiple"
           : `${paymentDifference}${primaryDiff.amount} ${primaryDiff.assetCode}`;
 
       const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);

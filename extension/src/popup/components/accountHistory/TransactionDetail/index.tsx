@@ -233,7 +233,6 @@ export const TransactionDetail = ({
       title = activeOperation.rowText;
     }
 
-    // TODO
     const shouldShowToFrom = creditDebits.length === 1;
     const toFromAddress = shouldShowToFrom
       ? creditDebits[0].destination
