@@ -67,7 +67,10 @@ import {
 import { getAssetDomains } from "@shared/api/internal";
 import { AppDispatch } from "popup/App";
 import { captureException } from "@sentry/browser";
-import { CollectibleInfoImage } from "popup/components/account/CollectibleInfo";
+import {
+  CollectibleInfoImage,
+  getCollectibleName,
+} from "popup/components/account/CollectibleInfo";
 
 export type HistorySection = {
   monthYear: string; // in format {month}:{year}
@@ -193,7 +196,7 @@ export const getCollectibleIcon = ({
 }: {
   collectible: Collectible;
 }) => (
-  <div className="HistoryItem__icon__bordered">
+  <div className="HistoryItem__icon__rounded">
     <CollectibleInfoImage
       image={collectible.metadata?.image}
       name={collectible.tokenId}
@@ -502,10 +505,9 @@ export const getRowDataByOpType = async (
   }) => Promise<TokenDetailsResponse | Error>,
   homeDomains: { [assetIssuer: string]: string | null },
   fetchCollectibles: (args: {
-    contracts: { id: string; token_ids: string[] }[];
+    contracts?: { id: string; token_ids: string[] }[];
     publicKey: string;
     networkDetails: NetworkDetails;
-    isOwnerFiltered?: boolean;
   }) => Promise<Collectibles | Error>,
 ): Promise<OperationDataRow> => {
   const {
@@ -788,7 +790,6 @@ export const getRowDataByOpType = async (
       const isReceiving =
         actualDestination === publicKey && attrs.from !== publicKey;
 
-      console.log(attrs);
       // if the amount is present, we can surmise this is a token transfer
       if (attrs.amount) {
         try {
@@ -854,7 +855,6 @@ export const getRowDataByOpType = async (
           ],
           publicKey,
           networkDetails,
-          isOwnerFiltered: false,
         });
 
         if (isError<Collectibles>(collectibleDetailsResponse)) {
@@ -864,8 +864,6 @@ export const getRowDataByOpType = async (
         if (collectibleDetailsResponse.collections.length === 0) {
           return genericInvocation;
         }
-
-        console.log(collectibleDetailsResponse.collections);
 
         const collection = collectibleDetailsResponse.collections.find(
           (c) => c.collection?.address === attrs.contractId,
@@ -892,8 +890,14 @@ export const getRowDataByOpType = async (
           metadata: {
             ...baseMetadata,
             isInvokeHostFn,
-            isTokenTransfer: true,
+            isCollectibleTransfer: true,
             to: actualDestination,
+            collectionName: collectible.collectionName,
+            collectionTokenId: collectible.tokenId,
+            collectibleName: getCollectibleName(
+              collectible.metadata?.name,
+              collectible.tokenId,
+            ),
           },
           rowIcon: getCollectibleIcon({ collectible }),
           rowText: collectible.collectionName || "Collectible",
@@ -1080,7 +1084,7 @@ const createHistorySections = async (
   }) => Promise<TokenDetailsResponse | Error>,
   homeDomains: { [assetIssuer: string]: string | null },
   fetchCollectibles: (args: {
-    contracts: { id: string; token_ids: string[] }[];
+    contracts?: { id: string; token_ids: string[] }[];
     publicKey: string;
     networkDetails: NetworkDetails;
   }) => Promise<Collectibles | Error>,

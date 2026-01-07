@@ -212,11 +212,24 @@
         }
 
         &__src {
+          &__collection {
+            display: flex;
+            flex-direction: column;
+          }
+
+          &__collection__name {
+            color: var(--sds-clr-gray-11);
+          }
+
           &__icon {
-            width: 32px;
-            height: 32px;
+            width: pxToRem(32px);
+            height: pxToRem(32px);
             border-radius: 2rem;
             padding: pxToRem(4px);
+
+            &--collectible {
+              padding: 0;
+            }
 
             .HistoryItem__icon__bordered {
               display: flex;
@@ -225,6 +238,13 @@
               height: pxToRem(32px);
               width: pxToRem(32px);
               border-radius: pxToRem(32px);
+            }
+
+            .CollectibleInfo__image__placeholder--history {
+              svg {
+                height: pxToRem(32px);
+                width: pxToRem(32px);
+              }
             }
           }
         }

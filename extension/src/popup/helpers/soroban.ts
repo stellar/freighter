@@ -311,7 +311,6 @@ export const getArgsForTokenInvocation = (
       }
       if (thirdArgType === xdr.ScValType.scvU32()) {
         tokenId = scValToNative(args[2]);
-        console.log("tokenId", tokenId);
       }
       from = addressToString(args[0].address());
       to = addressToString(args[1].address());

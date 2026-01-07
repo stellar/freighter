@@ -44,7 +44,6 @@ export const CollectibleInfoImage = ({
   isSmall?: boolean;
   isHistory?: boolean;
 }) => {
-  console.log(isHistory);
   return image ? (
     <div
       className={classnames("CollectibleInfo__image", {
