@@ -118,7 +118,7 @@ interface SortOperationsByAsset {
   icons: AssetIcons;
   homeDomains: { [assetIssuer: string]: string | null };
   fetchCollectibles: (args: {
-    contracts: { id: string; token_ids: string[] }[];
+    contracts?: { id: string; token_ids: string[] }[];
     publicKey: string;
     networkDetails: NetworkDetails;
   }) => Promise<Collectibles | Error>;

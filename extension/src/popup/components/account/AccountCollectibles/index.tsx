@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { Icon } from "@stellar/design-system";
 
 import { Collection } from "@shared/api/types/types";
@@ -9,6 +10,9 @@ import {
   SheetContent,
   SheetTitle,
 } from "popup/basics/shadcn/Sheet";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { getUserCollections } from "popup/helpers/collectibles";
+
 import { CollectibleDetail, SelectedCollectible } from "../CollectibleDetail";
 
 import "./styles.scss";
@@ -117,11 +121,16 @@ export const AccountCollectibles = ({
   collections,
 }: AccountCollectiblesProps) => {
   const { t } = useTranslation();
+  const publicKey = useSelector(publicKeySelector);
+  const userCollections = getUserCollections({
+    collections,
+    publicKey,
+  });
 
   return (
     <div className="AccountCollectibles" data-testid="account-collectibles">
-      {collections.length ? (
-        <CollectionsList collections={collections} />
+      {userCollections.length ? (
+        <CollectionsList collections={userCollections} />
       ) : (
         <div className="AccountCollectibles__empty">
           <Icon.Grid01 />

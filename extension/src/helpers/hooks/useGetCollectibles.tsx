@@ -36,11 +36,11 @@ function useGetCollectibles({ useCache = true }: { useCache?: boolean }) {
   const fetchData = async ({
     publicKey,
     networkDetails,
-    isOwnerFiltered = true,
+    contracts,
   }: {
     publicKey: string;
     networkDetails: NetworkDetails;
-    isOwnerFiltered?: boolean;
+    contracts?: { id: string; token_ids: string[] }[];
   }) => {
     dispatch({ type: "FETCH_DATA_START" });
     /*
@@ -55,7 +55,7 @@ function useGetCollectibles({ useCache = true }: { useCache?: boolean }) {
       cachedCollections[networkDetails.network]?.[publicKey] ||
       store.getState().cache.collections[networkDetails.network]?.[publicKey];
 
-    if (useCache && cachedCollectionsData) {
+    if (useCache && cachedCollectionsData && cachedCollectionsData.length > 0) {
       const payload = {
         collections: cachedCollectionsData,
       };
@@ -76,19 +76,29 @@ function useGetCollectibles({ useCache = true }: { useCache?: boolean }) {
       return { collections: [] } as Collectibles;
     }
 
-    const contracts = storedCollectibles.collectiblesList.map(
+    const storedContracts = storedCollectibles.collectiblesList.map(
       (collectible) => ({
         id: collectible.id,
         token_ids: collectible.tokenIds,
       }),
     );
 
+    let passedContracts: { id: string; token_ids: string[] }[] = [];
+
+    if (contracts) {
+      passedContracts = contracts.map((contract) => ({
+        id: contract.id,
+        token_ids: contract.token_ids,
+      }));
+    }
+
+    const contractsToFetch = [...storedContracts, ...(passedContracts || [])];
+
     try {
       const collectibles = await fetchCollectibles({
         publicKey,
-        contracts,
+        contracts: contractsToFetch,
         networkDetails,
-        isOwnerFiltered,
       });
 
       const images: string[] = [];
