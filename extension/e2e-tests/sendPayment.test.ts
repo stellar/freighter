@@ -261,6 +261,10 @@ test("Send persists inputs and submits to network", async ({
   extensionId,
 }) => {
   test.slow();
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
   await stubScanTx(page);
   await stubSubmitTx(page);
   let isScanSkiped = false;
