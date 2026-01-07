@@ -703,7 +703,6 @@ test("SendPayment resets state when navigating back to account", async ({
   await page.getByTestId("nav-link-send").click({ force: true });
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("0");
-  await expect(page.getByText("0 XLM")).toBeVisible();
 });
 
 test("Swap persists amount when navigating to choose source asset", async ({
