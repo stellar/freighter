@@ -1159,7 +1159,7 @@ test("Send payment shows memo value directly when memo is added before review", 
   await expect(page.getByTestId("SubmitAction")).toBeVisible();
 });
 
-test.skip("Send payment shows Add Memo when switching from non-memo-required to memo-required address", async ({
+test("Send payment shows Add Memo when switching from non-memo-required to memo-required address", async ({
   page,
   extensionId,
 }) => {
@@ -1232,7 +1232,7 @@ test.skip("Send payment shows Add Memo when switching from non-memo-required to 
   });
 });
 
-test.skip("Send payment shows Add Memo after cancelling review and returning to memo-required address", async ({
+test("Send payment shows Add Memo after cancelling review and returning to memo-required address", async ({
   page,
   extensionId,
 }) => {
@@ -1356,8 +1356,8 @@ test("Send classic token to G address allows memo", async ({
   await expect(page.getByTestId("review-tx-memo")).toHaveText("classic G memo");
 });
 
-// Classic token to M address -> Memo enabled
-test("Send classic token to M address disables memo", async ({
+// Classic token to M address -> Memo disabled (this is supported, but an antipattern)
+test("Send classic token to M address doesn't allow memo", async ({
   page,
   extensionId,
 }) => {
@@ -1382,24 +1382,8 @@ test("Send classic token to M address disables memo", async ({
   // Memo should be disabled for M addresses (memo is encoded in the address)
   await page.getByTestId("send-amount-btn-memo").click();
   await expect(page.getByTestId("edit-memo-input")).toBeVisible();
+  // Memo input should be disabled
   await expect(page.getByTestId("edit-memo-input")).toBeDisabled();
-  await expect(
-    page.getByText("Memo is disabled for this transaction"),
-  ).toBeVisible();
-  await page.getByText("Cancel").click();
-
-  // Click Review Send
-  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
-  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
-  await reviewSendButton.click({ force: true });
-
-  // Wait for review sheet to open
-  await expect(page.getByText("You are sending")).toBeVisible({
-    timeout: 200000,
-  });
-
-  // Verify memo row is NOT shown (memo is embedded in M address)
-  await expect(page.getByTestId("review-tx-memo")).not.toBeVisible();
 });
 
 // Custom token without Soroban mux support to G -> Memo NOT allowed

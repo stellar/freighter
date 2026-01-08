@@ -14,7 +14,7 @@ import {
 } from "./helpers/stubs";
 import { test, expect } from "./test-fixtures";
 
-test.skip("Send collectible with metadata", async ({
+test("Send collectible with metadata", async ({
   page,
   extensionId,
   context,
@@ -97,7 +97,7 @@ test.skip("Send collectible with metadata", async ({
   ).toHaveText("GBTY…JZOF");
 });
 
-test.skip("Send collectible without metadata", async ({
+test("Send collectible without metadata", async ({
   page,
   extensionId,
   context,

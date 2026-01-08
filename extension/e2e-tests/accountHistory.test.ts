@@ -278,9 +278,9 @@ test("History row displays muxed address extracted from XDR for payment", async 
   await expect(page.getByText("Memo")).not.toBeVisible();
 });
 
+// Horizon API does not return the muxed address for createAccount operations
 test("History row displays address extracted from XDR for createAccount", async ({
   page,
-  extensionId,
 }) => {
   test.slow();
   const TEST_ACCOUNT =
@@ -331,6 +331,7 @@ test("History row displays address extracted from XDR for createAccount", async 
           memo: null,
           fee_charged: "100",
           operation_count: 1,
+          envelope_xdr: envelopeXdr,
         },
         transaction_hash: TRANSACTION_HASH,
         transaction_successful: true,
@@ -341,21 +342,6 @@ test("History row displays address extracted from XDR for createAccount", async 
     await route.fulfill({ json });
   });
 
-  await page.route("**/transactions/**", async (route) => {
-    const url = route.request().url();
-    if (url.includes(TRANSACTION_HASH)) {
-      await route.fulfill({
-        json: {
-          envelope_xdr: envelopeXdr,
-        },
-      });
-    } else {
-      await route.continue();
-    }
-  });
-
-  await stubAccountBalances(page);
-  await loginToTestAccount({ page, extensionId });
   await page.getByTestId("nav-link-account-history").click();
 
   await expect(page.getByTestId("history-item").first()).toBeVisible({
