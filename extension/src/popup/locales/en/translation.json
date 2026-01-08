@@ -323,6 +323,8 @@
   "Medium": "Medium",
   "Medium Threshold": "Medium Threshold",
   "Memo": "Memo",
+  "Memo is disabled for this transaction": "Memo is disabled for this transaction",
+  "Memo is not supported for this operation": "Memo is not supported for this operation",
   "Memo is required": "Memo is required",
   "Memo is too long. Maximum {{max}} bytes allowed": "Memo is too long. Maximum {{max}} bytes allowed",
   "Memo required": "Memo required",
