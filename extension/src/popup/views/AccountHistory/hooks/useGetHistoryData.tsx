@@ -53,7 +53,6 @@ import {
 } from "popup/ducks/cache";
 import { getAssetDomains } from "@shared/api/internal";
 import { AppDispatch } from "popup/App";
-import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 
 export type HistorySection = {
   monthYear: string; // in format {month}:{year}
@@ -237,30 +236,17 @@ export const getActionIconByType = (iconType: string) => {
  * This is needed because Horizon API returns base G address for M addresses
  */
 const extractDestinationFromXDR = async (
-  transactionHash: string,
+  txEnvelopeXdr: string,
   networkDetails: NetworkDetails,
   fallbackTo: string,
 ): Promise<string> => {
-  if (!transactionHash) {
+  if (!txEnvelopeXdr) {
     return fallbackTo;
   }
 
   try {
-    const server = stellarSdkServer(
-      networkDetails.networkUrl,
-      networkDetails.networkPassphrase,
-    );
-    const transaction = await server
-      .transactions()
-      .transaction(transactionHash)
-      .call();
-
-    if (!transaction || !transaction.envelope_xdr) {
-      return fallbackTo;
-    }
-
     const tx = TransactionBuilder.fromXDR(
-      transaction.envelope_xdr,
+      txEnvelopeXdr,
       networkDetails.networkPassphrase,
     );
 
@@ -389,7 +375,7 @@ export const getRowDataByOpType = async (
     operation_count: operationCount,
     fee_charged,
     memo,
-    hash: transactionHash,
+    envelope_xdr: txEnvelopeXdr,
   } = transaction_attr;
 
   const date = new Date(Date.parse(createdAt))
@@ -497,7 +483,7 @@ export const getRowDataByOpType = async (
   if (isPayment) {
     // Extract destination from XDR to get muxed address if present
     const actualDestination = await extractDestinationFromXDR(
-      transactionHash,
+      txEnvelopeXdr,
       networkDetails,
       to || "",
     );
@@ -623,7 +609,7 @@ export const getRowDataByOpType = async (
         // Extract destination from XDR for Soroban transfers (may be muxed)
         // Note: For Soroban, the destination is in contract args, so we use attrs.to as fallback
         const actualDestination = await extractDestinationFromXDR(
-          transactionHash,
+          txEnvelopeXdr,
           networkDetails,
           attrs.to || "",
         );
@@ -666,7 +652,7 @@ export const getRowDataByOpType = async (
 
       // Extract destination from XDR for createAccount (may be muxed if sent to muxed address)
       const actualDestination = await extractDestinationFromXDR(
-        transactionHash,
+        txEnvelopeXdr,
         networkDetails,
         account || "",
       );
