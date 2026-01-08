@@ -606,14 +606,11 @@ export const getRowDataByOpType = async (
   }
 
   if (isPayment) {
-    // Extract destination from XDR to get muxed address if present
-    const actualDestination = await extractDestinationFromXDR(
-      txEnvelopeXdr,
-      networkDetails,
-      to || "",
-    );
+    const destination = to || "";
+    const sender = from || "";
+
     // default to Sent if a payment to self
-    const isReceiving = actualDestination === publicKey && from !== publicKey;
+    const isReceiving = destination === publicKey && sender !== publicKey;
     const paymentDifference = isReceiving ? "+" : "-";
     const nonLabelAmount = formatAmount(new BigNumber(amount!).toString());
     const formattedAmount = `${paymentDifference}${nonLabelAmount} ${destAssetCode}`;
@@ -643,8 +640,8 @@ export const getRowDataByOpType = async (
         isPayment,
         isReceiving,
         nonLabelAmount,
-        to: actualDestination,
-        from,
+        to: destination,
+        from: sender,
       },
       rowText: destAssetCode,
     };
