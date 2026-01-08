@@ -527,3 +527,150 @@ test("Logout and import new account", async ({ page, extensionId }) => {
     timeout: 30000,
   });
 });
+
+/* This test is designed to confirm that abandoning mnemonic phrase confirmation overwrites the existing account. */
+test("Overwrites account when user abandons mnemonic phrase confirmation", async ({
+  page,
+  extensionId,
+}) => {
+  await page.getByText("Create new wallet").click();
+  await expect(page.getByText("Create a password")).toBeVisible();
+
+  await page.locator("#new-password-input").fill("My-password123");
+  await page.locator("#confirm-password-input").fill("My-password123");
+  await page.locator("#termsOfUse-input").check({ force: true });
+  await page.getByText("Confirm").click();
+
+  await expect(page.getByTestId("MnemonicPhrase__modal")).toBeVisible();
+
+  await page.getByText("Show recovery phrase").click();
+  await page.goBack();
+
+  await page.getByText("Create new wallet").click();
+  await expect(page.getByText("Create a password")).toBeVisible();
+
+  await expect(
+    page.getByText(
+      "You previously did not complete onboarding. You will permanently lose access to the account you started to create in Freighter.",
+    ),
+  ).toBeVisible();
+
+  await page.locator("#new-password-input").fill(PASSWORD);
+  await page.locator("#confirm-password-input").fill(PASSWORD);
+  await page.locator("#termsOfUse-input").check({ force: true });
+  await page.getByText("Confirm").click();
+
+  await page.getByText("Show recovery phrase").click();
+  const words = await page.getByTestId("word").all();
+  const onboardingWordsArr = await Promise.all(
+    words.map(async (word) => await word.innerText()),
+  );
+  await page.getByTestId("display-mnemonic-phrase-next-btn").click();
+  await page.getByTestId("display-mnemonic-phrase-skip-btn").click();
+
+  await expect(page.getByText("You’re all set!")).toBeVisible();
+
+  await page.goto(`chrome-extension://${extensionId}/index.html#/`);
+  await expect(page.getByTestId("account-view")).toBeVisible({
+    timeout: 10000,
+  });
+
+  await expect(page.getByTestId("account-view-account-name")).toHaveText(
+    "Account 1",
+  );
+  await page.getByTestId("account-view-account-name").click();
+
+  expect(page.getByTestId("wallet-row-select")).toHaveCount(1);
+
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Settings").click();
+  await page.getByText("Security").click();
+  await page.getByText("Show recovery phrase").click();
+
+  await page.locator("#password").fill(PASSWORD);
+  await page.getByRole("button", { name: "Show recovery phrase" }).click();
+
+  await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText(
+    "Your recovery phrase",
+  );
+
+  const recoveryWords = await page.getByTestId("word").all();
+  const recoverWordsArr = await Promise.all(
+    recoveryWords.map(async (word) => await word.innerText()),
+  );
+
+  expect(recoverWordsArr).toEqual(onboardingWordsArr);
+});
+
+/* This test is designed to confirm that abandoning account creation after entering a password does not create a new account. */
+test("Overwrites account when user abandons after password creation", async ({
+  page,
+  extensionId,
+}) => {
+  await page.getByText("Create new wallet").click();
+  await expect(page.getByText("Create a password")).toBeVisible();
+
+  await page.locator("#new-password-input").fill("My-password123");
+  await page.locator("#confirm-password-input").fill("My-password123");
+  await page.locator("#termsOfUse-input").check({ force: true });
+  await page.getByText("Confirm").click();
+  await expect(page.getByText("Do this later")).toBeVisible();
+
+  await page.goBack();
+
+  await page.getByText("Create new wallet").click();
+  await expect(page.getByText("Create a password")).toBeVisible();
+
+  await expect(
+    page.getByText(
+      "You previously did not complete onboarding. You will permanently lose access to the account you started to create in Freighter.",
+    ),
+  ).toBeVisible();
+
+  await page.locator("#new-password-input").fill(PASSWORD);
+  await page.locator("#confirm-password-input").fill(PASSWORD);
+  await page.locator("#termsOfUse-input").check({ force: true });
+  await page.getByText("Confirm").click();
+
+  await page.getByText("Show recovery phrase").click();
+  const words = await page.getByTestId("word").all();
+  const onboardingWordsArr = await Promise.all(
+    words.map(async (word) => await word.innerText()),
+  );
+  await page.getByTestId("display-mnemonic-phrase-next-btn").click();
+  await page.getByTestId("display-mnemonic-phrase-skip-btn").click();
+  await expect(page.getByText("You’re all set!")).toBeVisible();
+
+  await page.goto(`chrome-extension://${extensionId}/index.html#/`);
+  await expect(page.getByTestId("account-view")).toBeVisible({
+    timeout: 10000,
+  });
+
+  await expect(page.getByTestId("account-view-account-name")).toHaveText(
+    "Account 1",
+  );
+  await page.getByTestId("account-view-account-name").click();
+
+  expect(page.getByTestId("wallet-row-select")).toHaveCount(1);
+
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Settings").click();
+  await page.getByText("Security").click();
+  await page.getByText("Show recovery phrase").click();
+
+  await page.locator("#password").fill(PASSWORD);
+  await page.getByRole("button", { name: "Show recovery phrase" }).click();
+
+  await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText(
+    "Your recovery phrase",
+  );
+
+  const recoveryWords = await page.getByTestId("word").all();
+  const recoverWordsArr = await Promise.all(
+    recoveryWords.map(async (word) => await word.innerText()),
+  );
+
+  expect(recoverWordsArr).toEqual(onboardingWordsArr);
+});

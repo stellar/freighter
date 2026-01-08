@@ -170,6 +170,7 @@ export const stubAccountBalances = async (page: Page, xlmBalance?: string) => {
 };
 
 export const stubAccountBalancesE2e = async (page: Page) => {
+  const e2eAssetCode = `E2E:${TEST_TOKEN_ADDRESS}`;
   await page.route("**/account-balances/**", async (route) => {
     const json = {
       balances: {
@@ -198,15 +199,14 @@ export const stubAccountBalancesE2e = async (page: Page) => {
             financial_stats: {},
           },
         },
-        "E2E:CBVXO445IA4SZ4ZBZFRITNP2XSPS2JPBDRMCCNXHN7O646VMJ7KTHWXJ": {
+        [e2eAssetCode]: {
           token: {
             code: "E2E",
             issuer: {
-              key: "CBVXO445IA4SZ4ZBZFRITNP2XSPS2JPBDRMCCNXHN7O646VMJ7KTHWXJ",
+              key: TEST_TOKEN_ADDRESS,
             },
           },
-          contractId:
-            "CBVXO445IA4SZ4ZBZFRITNP2XSPS2JPBDRMCCNXHN7O646VMJ7KTHWXJ",
+          contractId: TEST_TOKEN_ADDRESS,
           symbol: "E2E",
           decimals: 3,
           total: "100000099976",
