@@ -352,6 +352,28 @@ export interface GetHiddenAssetsMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_HIDDEN_ASSETS;
 }
 
+export interface GetMobileAppBannerDismissedMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_MOBILE_APP_BANNER_DISMISSED;
+}
+
+export interface DismissMobileAppBannerMessage extends BaseMessage {
+  type: SERVICE_TYPES.DISMISS_MOBILE_APP_BANNER;
+}
+
+export interface AddCollectibleMessage extends BaseMessage {
+  type: SERVICE_TYPES.ADD_COLLECTIBLE;
+  network: string;
+  publicKey: string;
+  collectibleContractAddress: string;
+  collectibleTokenId: string;
+}
+
+export interface GetCollectiblesMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_COLLECTIBLES;
+  publicKey: string;
+  network: string;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -407,4 +429,8 @@ export type ServiceMessageRequest =
   | ModifyAssetsListMessage
   | GetIsAccountMismatchMessage
   | ChangeAssetVisibilityMessage
-  | GetHiddenAssetsMessage;
+  | GetHiddenAssetsMessage
+  | GetMobileAppBannerDismissedMessage
+  | DismissMobileAppBannerMessage
+  | AddCollectibleMessage
+  | GetCollectiblesMessage;

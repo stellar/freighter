@@ -180,11 +180,11 @@ const AccountListItems = ({
                 </MigrationReviewListHeader>
 
                 <MigrationReviewDescription
-                  description="XLM balance"
+                  description={t("XLM balance")}
                   highlight={acct.xlmBalance}
                 />
                 <MigrationReviewDescription
-                  description="Minimum XLM needed"
+                  description={t("Minimum XLM needed")}
                   highlight={new BigNumber(acct.minBalance)
                     .times(2)
                     .plus(
@@ -197,7 +197,7 @@ const AccountListItems = ({
                     .toString()}
                 />
                 <MigrationReviewDescription
-                  description="Cost to migrate"
+                  description={t("Cost to migrate")}
                   highlight={getMigrationFeeAmount({
                     recommendedFee,
                     trustlineBalancesLength: acct.trustlineBalances.length,

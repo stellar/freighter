@@ -132,7 +132,7 @@ export const GrantAccess = () => {
                 <div className="GrantAccess__Detail">
                   <div className="GrantAccess__Detail__Label">
                     <Icon.Wallet01 />
-                    <span>Wallet</span>
+                    <span>{t("Wallet")}</span>
                   </div>
                   <div className="GrantAccess__Detail__Value">
                     <KeyIdenticon publicKey={publicKey} />
@@ -141,7 +141,7 @@ export const GrantAccess = () => {
                 <div className="GrantAccess__Detail">
                   <div className="GrantAccess__Detail__Label">
                     <Icon.Globe02 />
-                    <span>Network</span>
+                    <span>{t("Network")}</span>
                   </div>
                   <div className="GrantAccess__Detail__Value">
                     <span>{networkDetails.networkName}</span>
@@ -159,10 +159,12 @@ export const GrantAccess = () => {
                 </div>
               </div>
               <div className="GrantAccess__BlockaidDetails__Title">
-                Do not proceed
+                {t("Do not proceed")}
               </div>
               <div className="GrantAccess__BlockaidDetails__SubTitle">
-                This transaction does not appear safe for the following reasons.
+                {t(
+                  "This transaction does not appear safe for the following reasons",
+                )}
               </div>
               <div className="GrantAccess__BlockaidDetails__Details">
                 {attackTypes.map((attack) => (

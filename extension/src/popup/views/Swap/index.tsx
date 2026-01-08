@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { STEPS } from "popup/constants/swap";
 import { emitMetric } from "helpers/metrics";
@@ -12,6 +13,8 @@ import { SwapAmount } from "popup/components/swap/SwapAmount";
 import { AppDispatch } from "popup/App";
 import {
   resetSubmission,
+  saveAmount,
+  saveAmountUsd,
   saveAsset,
   saveDestinationAsset,
   saveIsToken,
@@ -23,6 +26,7 @@ import { resetSimulation } from "popup/ducks/token-payment";
 import { getAssetFromCanonical } from "helpers/stellar";
 
 export const Swap = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -83,7 +87,7 @@ export const Swap = () => {
         emitMetric(METRIC_NAMES.swapTo);
         return (
           <SwapAsset
-            title="Swap to"
+            title={t("Swap to")}
             hiddenAssets={[transactionData.asset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
             onClickAsset={(canonical: string, isContract: boolean) => {
@@ -100,7 +104,11 @@ export const Swap = () => {
           <SwapAmount
             inputType={inputType}
             setInputType={setInputType}
-            goBack={() => navigateTo(ROUTES.account, navigate)}
+            goBack={() => {
+              dispatch(resetSubmission());
+              dispatch(resetSimulation());
+              navigateTo(ROUTES.account, navigate);
+            }}
             goToEditSrc={() => setActiveStep(STEPS.SET_FROM_ASSET)}
             goToEditDst={() => setActiveStep(STEPS.SET_DST_ASSET)}
             goToNext={() => setActiveStep(STEPS.SWAP_CONFIRM)}
@@ -125,12 +133,14 @@ export const Swap = () => {
         emitMetric(METRIC_NAMES.swapFrom);
         return (
           <SwapAsset
-            title="Swap from"
+            title={t("Swap from")}
             hiddenAssets={[transactionData.destinationAsset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
             onClickAsset={(canonical: string, isContract: boolean) => {
               dispatch(saveAsset(canonical));
               dispatch(saveIsToken(isContract));
+              dispatch(saveAmount("0"));
+              dispatch(saveAmountUsd("0.00"));
               setActiveStep(STEPS.AMOUNT);
             }}
           />

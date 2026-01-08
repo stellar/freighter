@@ -1,0 +1,61 @@
+@use "../../../styles/utils.scss" as *;
+
+.CollectiblesList {
+  display: flex;
+  flex-direction: column;
+
+  &__empty {
+    color: var(--sds-clr-gray-11);
+    padding: pxToRem(12px) 0;
+    font-size: pxToRem(12px);
+    font-weight: var(--sds-fw-medium);
+    text-align: center;
+  }
+
+  &__collections {
+    margin-top: pxToRem(24px);
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(24px);
+  }
+
+  &__collection {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(12px);
+    cursor: pointer;
+
+    &__image {
+      width: pxToRem(32px);
+      height: pxToRem(32px);
+      border-radius: pxToRem(6px);
+      overflow: hidden;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+
+    &__title {
+      font-size: pxToRem(14px);
+      line-height: pxToRem(20px);
+    }
+
+    &__token-id {
+      border-radius: pxToRem(100px);
+      background-color: var(--sds-clr-gray-03);
+      border: 1px solid var(--sds-clr-gray-06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: auto;
+      font-size: pxToRem(12px);
+      line-height: pxToRem(18px);
+      font-weight: var(--sds-fw-heavy);
+      color: var(--sds-clr-gray-11);
+      padding: pxToRem(2px) pxToRem(6px);
+    }
+  }
+}

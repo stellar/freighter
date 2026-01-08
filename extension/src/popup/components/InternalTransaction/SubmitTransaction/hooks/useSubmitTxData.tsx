@@ -11,6 +11,7 @@ import {
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
+import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -43,6 +44,9 @@ function useSubmitTxData({
   const { fetchData: fetchBalances } = useGetBalances({
     showHidden: false,
     includeIcons: false,
+  });
+  const { fetchData: fetchCollectibles } = useGetCollectibles({
+    useCache: false,
   });
 
   const {
@@ -92,12 +96,19 @@ function useSubmitTxData({
           sourceAsset: sourceAsset.code,
         });
 
+        // After successful submission, re-fetch balances and collectibles to get their latest values
+
         const balancesResult = await fetchBalances(
           publicKey,
           isMainnet(networkDetails),
           networkDetails,
           false,
         );
+
+        await fetchCollectibles({
+          publicKey,
+          networkDetails,
+        });
 
         if (isError<AccountBalances>(balancesResult)) {
           // we don't want to throw an error if balances fail to fetch as this doesn't affect the tx submission

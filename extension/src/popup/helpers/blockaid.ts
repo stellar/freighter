@@ -21,11 +21,11 @@ export const ATTACK_TO_DISPLAY = {
   signature_farming:
     "A malicious RPC attempted to issue a raw transaction signature from the user.",
   transfer_farming:
-    "A malicious transaction causes a transfer, draining the user’s assets and tokens.",
+    "A malicious transaction causes a transfer, draining the user's assets and tokens.",
   transfer_from_farming:
-    "A malicious transaction causes a transferFrom, draining the user’s assets and tokens.",
+    "A malicious transaction causes a transferFrom, draining the user's assets and tokens.",
   raw_ether_transfer:
-    "A transaction draining the user’s native currency to a malicious address.",
+    "A transaction draining the user's native currency to a malicious address.",
   seed_farming: "A request for the user to enter the seed phrase.",
   malicious_network_interaction:
     "A malicious network interaction with a known Command and Control (CNC) server owned by an attacking group.",

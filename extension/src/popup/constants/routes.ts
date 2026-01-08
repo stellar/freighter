@@ -38,6 +38,7 @@ export enum ROUTES {
   advancedSettings = "/settings/advanced-settings",
   addFunds = "/add-funds",
 
+  addCollectibles = "/add-collectibles",
   manageAssets = "/manage-assets",
   searchAsset = "/manage-assets/search-asset",
   assetVisibility = "/manage-assets/asset-visibility",

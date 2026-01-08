@@ -23,6 +23,7 @@ import { getStellarExpertUrl } from "popup/helpers/account";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 
 import "./styles.scss";
+import { getMemoDisabledState } from "helpers/muxedAddress";
 
 export const TransactionDetail = ({
   activeOperation,
@@ -32,6 +33,25 @@ export const TransactionDetail = ({
   networkDetails: NetworkDetails;
 }) => {
   const { t } = useTranslation();
+  // Get memo disabled state using the helper
+  // For history, we don't have contractId, so we pass undefined
+  // The helper will still correctly disable memo for M addresses
+  // Must be called before early return to satisfy React hooks rules
+  const memoDisabledState = React.useMemo(() => {
+    if (!activeOperation?.metadata?.to) {
+      return { isMemoDisabled: false, memoDisabledMessage: undefined };
+    }
+    return getMemoDisabledState({
+      targetAddress: activeOperation.metadata.to,
+      contractId: undefined, // Not available in history context
+      contractSupportsMuxed: undefined,
+      networkDetails,
+      t,
+    });
+  }, [activeOperation?.metadata?.to, networkDetails, t]);
+
+  const { isMemoDisabled } = memoDisabledState;
+
   if (!activeOperation) {
     return <></>;
   }
@@ -172,7 +192,7 @@ export const TransactionDetail = ({
                   size="lg"
                   variant="single"
                   sourceOne={{
-                    altText: "Payment asset",
+                    altText: t("Payment asset"),
                     image: destIcon,
                   }}
                 />
@@ -239,7 +259,7 @@ export const TransactionDetail = ({
                   size="lg"
                   variant="single"
                   sourceOne={{
-                    altText: "Swap source",
+                    altText: t("Swap source"),
                     image: sourceIcon,
                     backgroundColor: "transparent",
                   }}
@@ -256,7 +276,7 @@ export const TransactionDetail = ({
                   size="lg"
                   variant="single"
                   sourceOne={{
-                    altText: "Swap destination",
+                    altText: t("Swap destination"),
                     image: destIcon,
                   }}
                 />
@@ -303,7 +323,7 @@ export const TransactionDetail = ({
                     size="lg"
                     variant="single"
                     sourceOne={{
-                      altText: "Stellar token logo",
+                      altText: t("Stellar token logo"),
                       image: StellarLogo,
                     }}
                   />
@@ -334,7 +354,7 @@ export const TransactionDetail = ({
               </div>
               <div className="TransactionDetailModal__title-details">
                 <div className="TransactionDetailModal__title invocation">
-                  {activeOperation.rowText} for{" "}
+                  {`${activeOperation.rowText} ${t("for")} `}
                   {activeOperation.metadata.destAssetCode}
                 </div>
                 <Text
@@ -398,31 +418,34 @@ export const TransactionDetail = ({
         <div className="Metadata">
           <div className="Metadata__label">
             <Icon.ClockCheck />
-            Status
+            {t("Status")}
           </div>
           <div
             className={`Metadata__value ${activeOperation.metadata.transactionFailed ? "failed" : "success"}`}
             data-testid="TransactionDetailModal__status"
           >
-            {activeOperation.metadata.transactionFailed ? "Failed" : "Success"}
+            {activeOperation.metadata.transactionFailed
+              ? t("Failed")
+              : t("Success")}
           </div>
         </div>
         <div className="Metadata">
           <div className="Metadata__label">
             <Icon.Route />
-            Fee
+            {t("Fee")}
           </div>
           <div className="Metadata__value">
             {stroopToXlm(feeCharged as string).toString()} XLM
           </div>
         </div>
-        {memo && (
+        {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
+        {!isMemoDisabled && (
           <div className="Metadata">
             <div className="Metadata__label">
               <Icon.File02 />
-              Memo
+              {t("Memo")}
             </div>
-            <div className="Metadata__value">{memo}</div>
+            <div className="Metadata__value">{memo || t("None")}</div>
           </div>
         )}
       </div>

@@ -7,7 +7,10 @@ import {
   stubTokenDetails,
   stubTokenPrices,
 } from "./helpers/stubs";
-import { truncateString } from "../src/helpers/stellar";
+
+// Helper function to avoid importing from extension source (which causes Node.js module resolution issues)
+const truncateString = (str: string, charCount = 4) =>
+  str ? `${str.slice(0, charCount)}…${str.slice(-charCount)}` : "";
 
 // Skipping this test because Playwright erroneously is unable to click the "Confirm" button
 test.skip("Adding and removing unverified Soroban token", async ({
@@ -82,16 +85,14 @@ test.skip("Adding and removing unverified Soroban token", async ({
   await page.getByTestId("ManageAssetRowButton__ellipsis-E2E").click();
   await page.getByText("Remove asset").click();
   await expect(page.getByTestId("ToggleToken__asset-code")).toHaveText(
-    "CBVX…HWXJ",
+    truncateString(TEST_TOKEN_ADDRESS),
   );
   await expect(page.getByTestId("ToggleToken__asset-add-remove")).toHaveText(
     "Remove Token",
   );
   await page.getByRole("button", { name: "Confirm" }).click();
   await expect(
-    page.getByText(
-      "You have no assets added. Get started by adding an asset below.",
-    ),
+    page.getByText("You have no assets added. Get started by adding an asset."),
   ).toBeVisible();
 });
 
@@ -141,7 +142,7 @@ test("Adding token on Futurenet", async ({ page, extensionId, context }) => {
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Settings").click();
   await page.getByText("Security").click();
-  await page.getByText("Advanced Settings").click();
+  await page.getByText("Advanced settings").click();
   await page.getByText("I understand, continue").click();
   await page.getByTestId("isExperimentalModeEnabledValue").click();
   await expect(page.locator("#isExperimentalModeEnabledValue")).toBeChecked();
@@ -207,9 +208,7 @@ test.skip("Adding classic asset on Testnet", async ({ page, extensionId }) => {
   await page.getByRole("button", { name: "Confirm" }).click();
   await page.getByText("Done").click();
   await expect(
-    page.getByText(
-      "You have no assets added. Get started by adding an asset below.",
-    ),
+    page.getByText("You have no assets added. Get started by adding an asset."),
   ).toBeVisible();
 });
 test.afterAll(async ({ page, extensionId }) => {

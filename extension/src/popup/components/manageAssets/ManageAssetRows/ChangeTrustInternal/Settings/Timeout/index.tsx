@@ -33,7 +33,7 @@ export const Timeout = ({ timeout, onSave, goBack }: TimeoutProps) => {
         {({ errors, setFieldValue, submitForm }) => (
           <>
             <SubviewHeader
-              title={<span>Transaction Timeout</span>}
+              title={<span>{t("Transaction Timeout")}</span>}
               hasBackButton
               customBackAction={goBack}
             />
