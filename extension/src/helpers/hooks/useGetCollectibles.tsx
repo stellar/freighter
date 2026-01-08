@@ -97,10 +97,15 @@ function useGetCollectibles({ useCache = true }: { useCache?: boolean }) {
       }),
     );
 
+    // Filter out duplicates: if a contract is already in storedContracts and also
+    // passed as the contract parameter, we only want to fetch it once
     const contractsToFetch = [
       ...storedContracts,
       ...(contract ? [contract] : []),
-    ];
+    ].filter(
+      (contract, index, self) =>
+        index === self.findIndex((c) => c.id === contract.id),
+    );
 
     try {
       const collectibles = await fetchCollectibles({
