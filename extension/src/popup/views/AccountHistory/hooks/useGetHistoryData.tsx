@@ -551,7 +551,7 @@ export const getRowDataByOpType = async (
     const nonLabelAmount = formatAmount(new BigNumber(amount!).toString());
     const formattedAmount = `+${nonLabelAmount} ${destAssetCode}`;
     const formattedSrcAmount = srcAmount
-      ? `${formatAmount(new BigNumber(srcAmount).toString())} ${srcAssetCode}`
+      ? formatAmount(new BigNumber(srcAmount).toString())
       : null;
 
     const destIcon =

@@ -96,18 +96,13 @@ export const TransactionDetail = ({
     const { formattedSrcAmount, srcAssetCode, nonLabelAmount, destAssetCode } =
       metadata;
 
-    // Extract just the numeric amount from formattedSrcAmount (which includes asset code)
-    // formattedSrcAmount is formatted as "0.5 BTC", we need just "0.5"
-    const srcAmountOnly =
-      formattedSrcAmount?.split(" ")[0] || formattedSrcAmount;
-
     return [
       // Debit: What was sent
       {
         assetCode: srcAssetCode,
         assetIssuer: null,
         decimals: 7,
-        amount: srcAmountOnly,
+        amount: formattedSrcAmount,
         isCredit: false,
       },
       // Credit: What was received
