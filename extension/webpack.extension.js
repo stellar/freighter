@@ -11,6 +11,10 @@ const smp = new SpeedMeasurePlugin();
 
 const LOCALES = ["en", "pt"];
 
+if (process.env.CI) {
+  console.log("CI detected");
+}
+
 const prodConfig = (
   env = {
     PRODUCTION: false,
