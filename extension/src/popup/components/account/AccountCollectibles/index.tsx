@@ -89,9 +89,7 @@ const CollectionsList = ({ collections }: { collections: Collection[] }) => {
                 aria-describedby={undefined}
                 side="bottom"
                 className="AccountCollectibles__collectible-detail__sheet"
-                onOpenAutoFocus={(e: React.FocusEvent<HTMLDivElement>) =>
-                  e.preventDefault()
-                }
+                onOpenAutoFocus={(e) => e.preventDefault()}
               >
                 <ScreenReaderOnly>
                   <SheetTitle>{item.tokenId}</SheetTitle>

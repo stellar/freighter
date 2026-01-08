@@ -30,6 +30,8 @@ import {
   getHomeDomainsForOperations,
 } from "popup/views/AccountHistory/hooks/useGetHistoryData";
 import { TokenDetailsResponse } from "helpers/hooks/useTokenDetails";
+import { FetchCollectiblesParams } from "helpers/hooks/useGetCollectibles";
+import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 
 export const LP_IDENTIFIER = ":lp";
 
@@ -117,11 +119,10 @@ interface SortOperationsByAsset {
   }) => Promise<TokenDetailsResponse | Error>;
   icons: AssetIcons;
   homeDomains: { [assetIssuer: string]: string | null };
-  fetchCollectibles: (args: {
-    contracts?: { id: string; token_ids: string[] }[];
-    publicKey: string;
-    networkDetails: NetworkDetails;
-  }) => Promise<Collectibles | Error>;
+  fetchCollectibles: (
+    args: FetchCollectiblesParams,
+  ) => Promise<Collectibles | Error>;
+  cachedTokenLists: AssetListResponse[];
 }
 
 export interface AssetOperations {
@@ -137,6 +138,7 @@ export const sortOperationsByAsset = async ({
   icons,
   homeDomains,
   fetchCollectibles,
+  cachedTokenLists,
 }: SortOperationsByAsset) => {
   const assetOperationMap = {} as AssetOperations;
 
@@ -192,6 +194,7 @@ export const sortOperationsByAsset = async ({
       fetchTokenDetails,
       fetchedHomeDomains,
       fetchCollectibles,
+      cachedTokenLists,
     );
     if (getIsPayment(op.type)) {
       Object.keys(assetOperationMap).forEach((assetKey) => {

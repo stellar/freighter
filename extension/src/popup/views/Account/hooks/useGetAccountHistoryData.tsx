@@ -17,6 +17,7 @@ import {
   homeDomainsSelector,
   saveDomainForIssuer,
   saveIconsForBalances,
+  tokensListsSelector,
 } from "popup/ducks/cache";
 import { AppDispatch } from "popup/App";
 
@@ -39,6 +40,7 @@ function useGetAccountHistoryData() {
     useCache: true,
   });
   const homeDomains = useSelector(homeDomainsSelector);
+  const cachedTokenLists = useSelector(tokensListsSelector);
   const reduxDispatch = useDispatch<AppDispatch>();
   const fetchData = async ({ balances }: { balances: AccountBalances }) => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -78,6 +80,7 @@ function useGetAccountHistoryData() {
           icons: cachedIcons,
           homeDomains: cachedHomeDomains,
           fetchCollectibles,
+          cachedTokenLists,
         }),
       } as ResolvedAccountHistoryData;
 
