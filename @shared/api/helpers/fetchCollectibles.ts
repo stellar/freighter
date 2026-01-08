@@ -143,6 +143,16 @@ export const fetchCollectibles = async ({
             },
           });
         }
+      } else {
+        const { error } = data.collections[i];
+        if (error) {
+          fetchedCollections.push({
+            error: {
+              collectionAddress: error.collection_address,
+              errorMessage: error.error_message,
+            },
+          });
+        }
       }
     }
   } catch (e) {

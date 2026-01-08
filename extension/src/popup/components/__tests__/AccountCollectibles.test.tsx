@@ -89,7 +89,7 @@ describe("AccountCollectibles", () => {
     render(
       <AccountCollectibles
         collections={[
-          { error: { collection_address: "test", error_message: "test" } },
+          { error: { collectionAddress: "test", errorMessage: "test" } },
         ]}
       />,
     );
@@ -99,7 +99,7 @@ describe("AccountCollectibles", () => {
   });
   it("renders some collectibles and omits the ones with an error", async () => {
     const partialMockCollectibles = [
-      { error: { collection_address: "test", error_message: "test" } },
+      { error: { collectionAddress: "test", errorMessage: "test" } },
       {
         collection: {
           address: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA", // Using XLM contract address for testing

@@ -52,7 +52,10 @@ import {
   CLASSIC_ASSET_DECIMALS,
 } from "popup/helpers/soroban";
 import { isContractId } from "@shared/api/helpers/soroban";
-import { SorobanTokenInterface } from "@shared/constants/soroban/token";
+import {
+  SorbanCollectibleInterface,
+  SorobanTokenInterface,
+} from "@shared/constants/soroban/token";
 import { getBalanceByKey } from "popup/helpers/balance";
 import { AssetType } from "@shared/api/types/account-balance";
 import {
@@ -63,6 +66,7 @@ import {
   homeDomainsSelector,
   saveDomainForIssuer,
   saveIconsForBalances,
+  tokensListsSelector,
 } from "popup/ducks/cache";
 import { getAssetDomains } from "@shared/api/internal";
 import { AppDispatch } from "popup/App";
@@ -71,6 +75,10 @@ import {
   CollectibleInfoImage,
   getCollectibleName,
 } from "popup/components/account/CollectibleInfo";
+import { FetchCollectiblesParams } from "helpers/hooks/useGetCollectibles";
+import { AssetListResponse } from "@shared/constants/soroban/asset-list";
+import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
+import IconSoroban from "popup/assets/icon-soroban.svg?react";
 
 export type HistorySection = {
   monthYear: string; // in format {month}:{year}
@@ -158,9 +166,11 @@ export const getPaymentIcon = ({
 export const getTransferIcons = ({
   isNative,
   isReceiving,
+  icon,
 }: {
   isNative: boolean;
   isReceiving: boolean;
+  icon: string | null;
 }) => (
   <>
     {isNative && (
@@ -175,7 +185,18 @@ export const getTransferIcons = ({
     )}
     {!isNative && (
       <div className="HistoryItem__icon__bordered">
-        <Icon.User01 />
+        {icon ? (
+          <AssetSds
+            size="lg"
+            variant="single"
+            sourceOne={{
+              altText: i18n.t("Token logo"),
+              image: icon,
+            }}
+          />
+        ) : (
+          <IconSoroban />
+        )}
       </div>
     )}
     {isReceiving && (
@@ -336,22 +357,35 @@ const getIconUrl = async ({
   networkDetails,
   homeDomains,
   icons,
+  cachedTokenLists,
 }: {
   key: string;
   code: string;
   networkDetails: NetworkDetails;
   homeDomains: { [assetIssuer: string]: string | null };
   icons: AssetIcons;
+  cachedTokenLists: AssetListResponse[];
 }) => {
   let iconUrl = icons[getCanonicalFromAsset(code, key)];
   if (!iconUrl && iconUrl !== null) {
-    const homeDomain = homeDomains[key || ""] || "";
-    iconUrl = await getIconUrlFromIssuer({
-      key: key || "",
-      code: code || "",
-      networkDetails,
-      homeDomain,
-    });
+    if (cachedTokenLists.length > 0) {
+      const { icon } = await getIconFromTokenLists({
+        issuerId: key,
+        code,
+        assetsListsData: cachedTokenLists,
+      });
+      if (icon) {
+        iconUrl = icon;
+      }
+    } else if (!isContractId(key)) {
+      const homeDomain = homeDomains[key || ""] || "";
+      iconUrl = await getIconUrlFromIssuer({
+        key: key || "",
+        code: code || "",
+        networkDetails,
+        homeDomain,
+      });
+    }
   }
 
   icons[getCanonicalFromAsset(code, key)] = iconUrl || null;
@@ -505,10 +539,11 @@ export const getRowDataByOpType = async (
   }) => Promise<TokenDetailsResponse | Error>,
   homeDomains: { [assetIssuer: string]: string | null },
   fetchCollectibles: (args: {
-    contracts?: { id: string; token_ids: string[] }[];
+    contract: { id: string; token_ids: string[] };
     publicKey: string;
     networkDetails: NetworkDetails;
   }) => Promise<Collectibles | Error>,
+  cachedTokenLists: AssetListResponse[],
 ): Promise<OperationDataRow> => {
   const {
     account,
@@ -599,6 +634,7 @@ export const getRowDataByOpType = async (
             networkDetails,
             homeDomains,
             icons,
+            cachedTokenLists,
           });
     const sourceIcon =
       srcAssetCode === "XLM"
@@ -609,6 +645,7 @@ export const getRowDataByOpType = async (
             networkDetails,
             homeDomains,
             icons,
+            cachedTokenLists,
           });
 
     return {
@@ -660,6 +697,7 @@ export const getRowDataByOpType = async (
             networkDetails,
             homeDomains,
             icons,
+            cachedTokenLists,
           });
 
     return {
@@ -778,7 +816,10 @@ export const getRowDataByOpType = async (
       };
     }
 
-    if (attrs.fnName === SorobanTokenInterface.transfer) {
+    if (
+      attrs.fnName === SorobanTokenInterface.transfer ||
+      attrs.fnName === SorbanCollectibleInterface.transfer
+    ) {
       // Extract destination from XDR for Soroban transfers (may be muxed)
       // Note: For Soroban, the destination is in contract args, so we use attrs.to as fallback
       const actualDestination = await extractDestinationFromXDR(
@@ -816,6 +857,14 @@ export const getRowDataByOpType = async (
 
           const paymentDifference = isReceiving ? "+" : "-";
           const formattedAmount = `${paymentDifference}${formattedTokenAmount} ${code}`;
+          const icon = await getIconUrl({
+            key: assetIssuer || "",
+            code: destAssetCode || "",
+            networkDetails,
+            homeDomains,
+            icons,
+            cachedTokenLists,
+          });
 
           return {
             action: isReceiving ? "Received" : "Sent",
@@ -828,10 +877,10 @@ export const getRowDataByOpType = async (
               destAssetCode: code,
               isInvokeHostFn,
               isTokenTransfer: true,
-              nonLabelAmount: formattedTokenAmount,
+              nonLabelAmount: `${formattedTokenAmount} ${code}`,
               to: actualDestination,
             },
-            rowIcon: getTransferIcons({ isNative, isReceiving }),
+            rowIcon: getTransferIcons({ isNative, isReceiving, icon }),
             rowText: code,
           };
         } catch (error) {
@@ -847,12 +896,10 @@ export const getRowDataByOpType = async (
         }
 
         const collectibleDetailsResponse = await fetchCollectibles({
-          contracts: [
-            {
-              id: attrs.contractId,
-              token_ids: [attrs.tokenId.toString()],
-            },
-          ],
+          contract: {
+            id: attrs.contractId,
+            token_ids: [attrs.tokenId.toString()],
+          },
           publicKey,
           networkDetails,
         });
@@ -884,7 +931,7 @@ export const getRowDataByOpType = async (
         return {
           action: isReceiving ? "Received" : "Sent",
           actionIcon: isReceiving ? "received" : "sent",
-          amount: null,
+          amount: `#${collectible.tokenId}`,
           date,
           id,
           metadata: {
@@ -965,6 +1012,7 @@ export const getRowDataByOpType = async (
         networkDetails,
         homeDomains,
         icons,
+        cachedTokenLists,
       });
 
       return {
@@ -1083,11 +1131,10 @@ const createHistorySections = async (
     networkDetails: NetworkDetails;
   }) => Promise<TokenDetailsResponse | Error>,
   homeDomains: { [assetIssuer: string]: string | null },
-  fetchCollectibles: (args: {
-    contracts?: { id: string; token_ids: string[] }[];
-    publicKey: string;
-    networkDetails: NetworkDetails;
-  }) => Promise<Collectibles | Error>,
+  fetchCollectibles: (
+    args: FetchCollectiblesParams,
+  ) => Promise<Collectibles | Error>,
+  cachedTokenLists: AssetListResponse[],
 ) => {
   /* 
     To prevent multiple requests for home domains as we build each row, 
@@ -1130,6 +1177,7 @@ const createHistorySections = async (
         fetchTokenDetails,
         fetchedHomeDomains,
         fetchCollectibles,
+        cachedTokenLists,
       );
 
       if (isDustPayment && isHideDustEnabled) {
@@ -1195,6 +1243,7 @@ function useGetHistoryData(
   const { fetchData: fetchCollectibles } = useGetCollectibles({
     useCache: true,
   });
+  const cachedTokenLists = useSelector(tokensListsSelector);
   const homeDomains = useSelector(homeDomainsSelector);
   const reduxDispatch = useDispatch<AppDispatch>();
 
@@ -1258,6 +1307,7 @@ function useGetHistoryData(
           fetchTokenDetails,
           cachedHomeDomains,
           fetchCollectibles,
+          cachedTokenLists,
         ),
       } as ResolvedData;
 

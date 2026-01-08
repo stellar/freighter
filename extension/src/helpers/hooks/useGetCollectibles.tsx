@@ -26,6 +26,12 @@ const preloadImages = async (images: string[]) => {
   }
 };
 
+export interface FetchCollectiblesParams {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+  contract?: { id: string; token_ids: string[] };
+}
+
 function useGetCollectibles({ useCache = true }: { useCache?: boolean }) {
   const [state, dispatch] = useReducer(
     reducer<Collectibles, unknown>,
@@ -36,12 +42,8 @@ function useGetCollectibles({ useCache = true }: { useCache?: boolean }) {
   const fetchData = async ({
     publicKey,
     networkDetails,
-    contracts,
-  }: {
-    publicKey: string;
-    networkDetails: NetworkDetails;
-    contracts?: { id: string; token_ids: string[] }[];
-  }) => {
+    contract,
+  }: FetchCollectiblesParams) => {
     dispatch({ type: "FETCH_DATA_START" });
     /*
         Unlike the other cache hooks, this hook may be called multiple times within one render.
@@ -56,11 +58,23 @@ function useGetCollectibles({ useCache = true }: { useCache?: boolean }) {
       store.getState().cache.collections[networkDetails.network]?.[publicKey];
 
     if (useCache && cachedCollectionsData && cachedCollectionsData.length > 0) {
-      const payload = {
-        collections: cachedCollectionsData,
-      };
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-      return payload;
+      // if we're requesting a specific contract, check if it's in the cache
+      const isContractNotFound =
+        contract &&
+        !cachedCollectionsData.find(
+          (collection) =>
+            collection.error?.collectionAddress === contract.id ||
+            collection.collection?.address === contract.id,
+        );
+
+      // if the contract is found in the cache, return the cached data
+      if (!isContractNotFound) {
+        const payload = {
+          collections: cachedCollectionsData,
+        };
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+        return payload;
+      }
     }
 
     const storedCollectibles = await getCollectibles({
@@ -83,16 +97,10 @@ function useGetCollectibles({ useCache = true }: { useCache?: boolean }) {
       }),
     );
 
-    let passedContracts: { id: string; token_ids: string[] }[] = [];
-
-    if (contracts) {
-      passedContracts = contracts.map((contract) => ({
-        id: contract.id,
-        token_ids: contract.token_ids,
-      }));
-    }
-
-    const contractsToFetch = [...storedContracts, ...(passedContracts || [])];
+    const contractsToFetch = [
+      ...storedContracts,
+      ...(contract ? [contract] : []),
+    ];
 
     try {
       const collectibles = await fetchCollectibles({
