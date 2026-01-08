@@ -1365,8 +1365,8 @@ test("Send classic token to G address allows memo", async ({
   await expect(page.getByTestId("review-tx-memo")).toHaveText("classic G memo");
 });
 
-// Classic token to M address -> Memo enabled
-test("Send classic token to M address allows memo", async ({
+// Classic token to M address -> Memo disabled (this is supported, but an antipattern)
+test("Send classic token to M address doesn't allow memo", async ({
   page,
   extensionId,
 }) => {
@@ -1391,23 +1391,8 @@ test("Send classic token to M address allows memo", async ({
   // Add memo - should be enabled for classic token to M address
   await page.getByTestId("send-amount-btn-memo").click();
   await expect(page.getByTestId("edit-memo-input")).toBeVisible();
-  // Memo input should not be disabled
-  await expect(page.getByTestId("edit-memo-input")).toBeEnabled();
-  await page.getByTestId("edit-memo-input").fill("classic M memo");
-  await page.getByText("Save").click();
-
-  // Click Review Send
-  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
-  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
-  await reviewSendButton.click({ force: true });
-
-  // Wait for review sheet to open
-  await expect(page.getByText("You are sending")).toBeVisible({
-    timeout: 200000,
-  });
-
-  // Verify memo is shown in review (classic transactions support M address + memo)
-  await expect(page.getByTestId("review-tx-memo")).toHaveText("classic M memo");
+  // Memo input should be disabled
+  await expect(page.getByTestId("edit-memo-input")).toBeDisabled();
 });
 
 // Custom token without Soroban mux support to G -> Memo NOT allowed
