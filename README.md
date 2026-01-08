@@ -1,6 +1,8 @@
 # Freighter
 
-Freighter is a non-custodial wallet extension that enables you to sign Stellar transactions via your browser. Learn more at [freighter.app](https://www.freighter.app/).
+Freighter is a non-custodial wallet extension that enables you to sign Stellar
+transactions via your browser. Learn more at
+[freighter.app](https://www.freighter.app/).
 
 ## Yarn Workspaces
 
@@ -20,7 +22,9 @@ You will need
 
 ## Build the extension
 
-To simply build a production version of the extension, install the prerequisites then navigate to this root folder (`/freighter`) in your command line and run these 2 steps:
+To simply build a production version of the extension, install the prerequisites
+then navigate to this root folder (`/freighter`) in your command line and run
+these 2 steps:
 
 ```
 yarn install
@@ -35,6 +39,20 @@ yarn build:extension:production
 
 This will generate the files that make up the extension in `extension/build`
 
+## Configure environment variables
+
+Before starting the dev server, you need to configure the backend URLs. Create a
+file `extension/.env` with the following variables:
+
+```
+INDEXER_URL=https://freighter-backend-prd.stellar.org/api/v1
+INDEXER_V2_URL=https://freighter-backend-v2-prd.stellar.org/api/v1
+```
+
+These URLs point to the production Freighter backend. For more details on
+backend configuration, see
+[extension/README.md](extension/README.md#configure-the-backend).
+
 ## Starting a dev environment
 
 ```
@@ -48,7 +66,8 @@ This will start up multiple watching builds in parallel:
 - The docs, serving on `localhost:3000`
 - A dev server with the webapp running in the extension, serving on
   `localhost:9000`
-- The actual built extension, able to be installed in Chrome or Firefox, in `build/`
+- The actual built extension, able to be installed in Chrome or Firefox, in
+  `build/`
 
 Each of these will build in response to editing their source.
 
@@ -63,22 +82,26 @@ These can be started individually with `yarn start:\<workspace name\>` where
 yarn build
 ```
 
-This will produce final output for the docs, the `@stellar/freighter` npm module, and
-the extension.
+This will produce final output for the docs, the `@stellar/freighter` npm
+module, and the extension.
 
 `yarn build:\<workspace name\>`, like the equivalent start commands, will build
 an individual workspace.
 
 ### Testing for Safari
 
-First you should allow unsigned extension in your safari session. This resets every time Safari shuts down.
+First you should allow unsigned extension in your safari session. This resets
+every time Safari shuts down.
 https://developer.apple.com/documentation/safariservices/safari_web_extensions/running_your_safari_web_extension#3744467
 
-Next, run the Safari Extension Converter locally to convert Freighter to an xcode project.
-Example from the project root -
+Next, run the Safari Extension Converter locally to convert Freighter to an
+xcode project. Example from the project root -
 `xcrun safari-web-extension-converter freighter/extension/build --project-location freighter-safari`
 
-That should launch your project in xcode. You should run the project, with a target of macos. If you have not allowed unsigned extensions, you will see a related warning but otherwise you should see Freighter launched on your Safari instance.
+That should launch your project in xcode. You should run the project, with a
+target of macos. If you have not allowed unsigned extensions, you will see a
+related warning but otherwise you should see Freighter launched on your Safari
+instance.
 
 ### Useful URLs:
 
@@ -98,27 +121,36 @@ That should launch your project in xcode. You should run the project, with a tar
 
 [The `addToken` playground](http://localhost:3000/docs/playground/addToken)
 
-It's important to note that these last functions won't interact with the _dev server_ popup
-UI on `localhost:9000` — you'll need to re-install the unpacked extension each
-time you make a change.
+It's important to note that these last functions won't interact with the _dev
+server_ popup UI on `localhost:9000` — you'll need to re-install the unpacked
+extension each time you make a change.
 
 ### Importing a workspace
 
 In some cases, you will want to import a workspace into another. For example, in
 `extension` we need to import `@shared/constants`. To do this, simply add
-`@shared/constants` to the dependencies list in package.json in `extension`. Yarn
-symlinks all the workspaces, so doing so will allow you to import files from the
-`@shared/constants` workspace as if it were a published npm package.
+`@shared/constants` to the dependencies list in package.json in `extension`.
+Yarn symlinks all the workspaces, so doing so will allow you to import files
+from the `@shared/constants` workspace as if it were a published npm package.
 
 ### Dependencies
 
-Many dev dependencies (such as Typescript, linters, Webpack, etc.) have been moved to the root `package.json` to allow devs to upgrade these libraries all in one place.
+Many dev dependencies (such as Typescript, linters, Webpack, etc.) have been
+moved to the root `package.json` to allow devs to upgrade these libraries all in
+one place.
 
 ### Pushing to repo
 
-This repo will run a pre-push hook before pushing. This hook will run the cmd `yarn build:extension:translations` to check if any strings in the extension need to be added to the translations JSON. If there is no need to update the translations JSON, the push will go through. If there is a need to update, the changes will be automatically committed to your branch and the push will be aborted. You will need to run `git push` again.
+This repo will run a pre-push hook before pushing. This hook will run the cmd
+`yarn build:extension:translations` to check if any strings in the extension
+need to be added to the translations JSON. If there is no need to update the
+translations JSON, the push will go through. If there is a need to update, the
+changes will be automatically committed to your branch and the push will be
+aborted. You will need to run `git push` again.
 
-NOTE: If you're using nvm and run into an error where the git hook is using an incompatible version of node, create a file `~/.huskryc` on your system and added the following:
+NOTE: If you're using nvm and run into an error where the git hook is using an
+incompatible version of node, create a file `~/.huskryc` on your system and
+added the following:
 
 ```
 # This loads nvm.sh, sets the correct PATH before running hook, and ensures the project version of Node
