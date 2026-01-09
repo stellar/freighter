@@ -73,32 +73,20 @@ test.describe("BlockAid Scan - Suspicious States", () => {
 
     await page.getByTestId("ManageAssetRowButton").click();
 
-    await expect(page.getByTestId("ChangeTrustInternal__Body")).toBeVisible({
-      timeout: 30000,
-    });
-
-    const changeTrustComponent = page.getByTestId("ChangeTrustInternal");
-    const isChangeTrust = await changeTrustComponent.isVisible();
-
-    if (isChangeTrust) {
-      await expect(page.getByTestId("ChangeTrustInternal__Body")).toBeVisible({
-        timeout: 30000,
-      });
-      await page.waitForTimeout(3000);
-    } else {
-      await page.waitForTimeout(2000);
-    }
-
-    // Should show suspicious warning banner
-    await expect(page.getByTestId("blockaid-miss-label")).toBeVisible({
-      timeout: 30000,
-    });
-
-    // Click on the banner to expand
-    await page.getByTestId("blockaid-miss-label").click();
-
-    // Should show expanded view with suspicious details
+    // For suspicious assets, should go directly to blockaid pane
+    // Should show expanded view with suspicious details immediately
     await expect(page.getByText("Suspicious Request")).toBeVisible();
+
+    // Click Continue to acknowledge and proceed
+    await page.getByText("Continue").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
+
+    // Should be on confirm pane with Confirm Anyway button
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test("Send payment shows suspicious warning when scan detects suspicious transaction", async ({
@@ -135,6 +123,17 @@ test.describe("BlockAid Scan - Suspicious States", () => {
 
     // Should show expanded view with suspicious details
     await expect(page.getByText("Suspicious Request")).toBeVisible();
+
+    // Click Continue to acknowledge and proceed
+    await page.getByText("Continue").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
+
+    // Should be on confirm pane with Confirm Anyway button
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test("Swap shows suspicious warning when scan detects suspicious tokens", async ({
@@ -280,6 +279,17 @@ test.describe("BlockAid Scan - Suspicious States", () => {
 
     // Should show expanded view with suspicious details
     await expect(page.getByText("Suspicious Request")).toBeVisible();
+
+    // Click Continue to acknowledge and proceed
+    await page.getByText("Continue").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
+
+    // Should be on confirm pane with Confirm Anyway button
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test("Suspicious transaction ignores memo requirements", async ({
@@ -323,5 +333,16 @@ test.describe("BlockAid Scan - Suspicious States", () => {
 
     // Should show suspicious details
     await expect(page.getByText("Suspicious Request")).toBeVisible();
+
+    // Click Continue to acknowledge and proceed
+    await page.getByText("Continue").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
+
+    // Should be on confirm pane with Confirm Anyway button
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
   });
 });

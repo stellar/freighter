@@ -58,48 +58,30 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     // Click to add the asset
     await page.getByTestId("ManageAssetRowButton").click();
 
-    // Wait for the confirmation screen to load
-    // This should be ChangeTrustInternal for classic assets
-    await expect(page.getByTestId("ChangeTrustInternal__Body")).toBeVisible({
-      timeout: 30000,
-    });
+    // For unable-to-scan assets, should go directly to blockaid pane
+    // Should show expanded view with unable-to-scan details immediately
+    await expect(page.getByText("Proceed with caution")).toBeVisible();
 
-    // Wait for ChangeTrustInternal to finish loading (if it's that component)
-    // The component shows a loader while state is LOADING or IDLE
-    const changeTrustComponent = page.getByTestId("ChangeTrustInternal");
-    const isChangeTrust = await changeTrustComponent.isVisible();
+    // For unable to scan assets, should go directly to blockaid pane (not show banner first)
+    // Should show expanded view with unable to scan details immediately
+    await expect(page.getByText("Proceed with caution")).toBeVisible();
 
-    if (isChangeTrust) {
-      // Wait for loading to complete - the body should appear
-      await expect(page.getByTestId("ChangeTrustInternal__Body")).toBeVisible({
-        timeout: 30000,
-      });
-
-      // Wait for the scan to complete and state to update
-      // On testnet, scanAsset returns {} immediately, which should be treated as unable to scan
-      await page.waitForTimeout(3000);
-    } else {
-      // If it's ToggleToken, wait a bit for any async operations
-      await page.waitForTimeout(2000);
-    }
-
-    // Should show "Unable to scan transaction" banner (test ID)
-    // Note: On testnet, scanAsset returns {} which should be treated as unable to scan
-    // The warning should appear in ChangeTrustInternal when isAssetUnableToScan is true
-    await expect(page.getByTestId("blockaid-unable-to-scan-label")).toBeVisible(
-      { timeout: 30000 },
-    );
-
-    // Click on the banner to expand
-    await page.getByTestId("blockaid-unable-to-scan-label").click();
-
-    // Should show expanded view with "Unable to scan transaction" detail inside the BlockAid box
-    // The text appears in a detail row inside BlockaidDetailsExpanded
+    // Should show unable to scan details immediately
     await expect(
       page
         .locator(".BlockaidDetailsExpanded__DetailRow")
         .getByText("Unable to scan transaction"),
     ).toBeVisible();
+
+    // Click Continue to go to confirm pane
+    await page.getByText("Continue").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
+
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test("Send payment shows 'Unable to scan transaction' warning when scan fails", async ({
@@ -146,6 +128,17 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
         .locator(".BlockaidDetailsExpanded__DetailRow")
         .getByText("Unable to scan transaction"),
     ).toBeVisible();
+
+    // Click Continue to acknowledge and proceed
+    await page.getByText("Continue").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
+
+    // Should be on confirm pane with Confirm Anyway button
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test("Swap shows 'Unable to scan transaction' warning when transaction scan fails", async ({
@@ -304,6 +297,17 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
         .locator(".BlockaidDetailsExpanded__DetailRow")
         .getByText("Unable to scan transaction"),
     ).toBeVisible({ timeout: 10000 });
+
+    // Click Continue to acknowledge and proceed
+    await page.getByText("Continue").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
+
+    // Should be on confirm pane with Confirm Anyway button
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test("Unable to scan transaction ignores memo requirements", async ({
@@ -347,5 +351,16 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
 
     // Should show unable to scan details
     await expect(page.getByText("Proceed with caution")).toBeVisible();
+
+    // Click Continue to acknowledge and proceed
+    await page.getByText("Continue").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
+
+    // Should be on confirm pane with Confirm Anyway button
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
   });
 });

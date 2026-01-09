@@ -73,46 +73,27 @@ test.describe("BlockAid Scan - Malicious States", () => {
 
     await page.getByTestId("ManageAssetRowButton").click();
 
-    await expect(page.getByTestId("ChangeTrustInternal__Body")).toBeVisible({
-      timeout: 30000,
-    });
-
-    const changeTrustComponent = page.getByTestId("ChangeTrustInternal");
-    const isChangeTrust = await changeTrustComponent.isVisible();
-
-    if (isChangeTrust) {
-      await expect(page.getByTestId("ChangeTrustInternal__Body")).toBeVisible({
-        timeout: 30000,
-      });
-      // Wait for the scan to complete and state to update
-      await page.waitForTimeout(5000);
-    } else {
-      await page.waitForTimeout(2000);
-    }
-
-    // Should show malicious warning banner
-    // For assets, malicious uses "blockaid-miss-label" when result_type is "Malicious"
-    await expect(page.getByTestId("blockaid-miss-label")).toBeVisible({
-      timeout: 30000,
-    });
-
-    // Click on the banner to expand
-    await page.getByTestId("blockaid-miss-label").click();
-
-    // Should show expanded view with malicious details
-    await expect(
-      page.getByText("This asset was flagged as malicious"),
-    ).toBeVisible();
+    // For malicious assets, should go directly to blockaid pane
+    // Should show expanded view with malicious details immediately
+    await expect(page.getByText("Do not proceed")).toBeVisible();
 
     // Should show warning detail rows from features
-    // For malicious assets, the detail row uses BlockaidDetailsExpanded__DetailRowError class
     await expect(
-      page
-        .locator(
-          ".BlockaidDetailsExpanded__DetailRow, .BlockaidDetailsExpanded__DetailRowError",
-        )
-        .getByText(/A malicious transaction causes a transfer/),
+      page.getByText(
+        "A malicious transaction causes a transfer, draining the user's assets and tokens.",
+      ),
     ).toBeVisible();
+
+    // Click Continue to go to confirm pane
+    await page.getByText("Continue").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
+
+    // Should be on confirm pane with Confirm Anyway button
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test("Send payment shows malicious warning when scan detects malicious transaction", async ({
@@ -156,6 +137,17 @@ test.describe("BlockAid Scan - Malicious States", () => {
         .locator(".BlockaidDetailsExpanded__DetailRowError")
         .getByText(/A malicious transaction causes a transfer/),
     ).toBeVisible();
+
+    // Click Continue to acknowledge and proceed
+    await page.getByText("Continue").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
+
+    // Should be on confirm pane with Confirm Anyway button
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test("Swap shows malicious warning when scan detects malicious tokens", async ({
@@ -310,6 +302,17 @@ test.describe("BlockAid Scan - Malicious States", () => {
         )
         .getByText(/A malicious transaction causes a transfer/),
     ).toBeVisible();
+
+    // Click Continue to acknowledge and proceed
+    await page.getByText("Continue").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
+
+    // Should be on confirm pane with Confirm Anyway button
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test("Malicious transaction ignores memo requirements", async ({
@@ -353,5 +356,16 @@ test.describe("BlockAid Scan - Malicious States", () => {
 
     // Should show malicious details
     await expect(page.getByText("Do not proceed")).toBeVisible();
+
+    // Click Continue to acknowledge and proceed
+    await page.getByText("Continue").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
+
+    // Should be on confirm pane with Confirm Anyway button
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
   });
 });
