@@ -23,6 +23,7 @@ import { getStellarExpertUrl } from "popup/helpers/account";
 import { getMemoDisabledState } from "helpers/muxedAddress";
 
 import "./styles.scss";
+import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
 
 export const TransactionDetail = ({
   activeOperation,
@@ -109,7 +110,7 @@ export const TransactionDetail = ({
       {
         assetCode: destAssetCode,
         assetIssuer: null,
-        decimals: 7,
+        decimals: CLASSIC_ASSET_DECIMALS,
         amount: nonLabelAmount,
         isCredit: isReceiving,
         destination: isReceiving ? from : to,

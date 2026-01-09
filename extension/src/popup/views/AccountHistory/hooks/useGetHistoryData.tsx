@@ -10,7 +10,6 @@ import {
   TextProps,
 } from "@stellar/design-system";
 import i18n from "popup/helpers/localizationConfig";
-import * as Sentry from "@sentry/browser";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 
@@ -43,8 +42,9 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import {
   formatTokenAmount,
   getAttrsFromSorobanHorizonOp,
-  getDecimalsForAsset,
+  CLASSIC_ASSET_DECIMALS,
 } from "popup/helpers/soroban";
+import { isContractId } from "@shared/api/helpers/soroban";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 import { getBalanceByKey } from "popup/helpers/balance";
 import { AssetType } from "@shared/api/types/account-balance";
@@ -359,6 +359,11 @@ const processAssetBalanceChanges = async (
   networkDetails: NetworkDetails,
   homeDomains: { [assetIssuer: string]: string | null },
   icons: AssetIcons,
+  fetchTokenDetails: (args: {
+    contractId: string;
+    publicKey: string;
+    networkDetails: NetworkDetails;
+  }) => Promise<TokenDetailsResponse | Error>,
 ): Promise<AssetDiffSummary[]> => {
   if (
     !operation.asset_balance_changes ||
@@ -406,21 +411,30 @@ const processAssetBalanceChanges = async (
 
     // Fetch decimals based on whether it's a Soroban contract
     let decimals: number;
-    try {
-      decimals = await getDecimalsForAsset({
-        assetIssuer,
-        publicKey,
-        networkDetails,
-      });
-    } catch (error) {
-      // If decimals cannot be fetched, skip this asset entirely and report to Sentry
-      Sentry.captureException({
-        message: `Failed to fetch decimals for asset ${assetCode} (${assetIssuer}), skipping`,
-        error,
-        assetCode,
-        assetIssuer,
-      });
-      continue; // Skip this asset and move to the next one
+
+    // For Soroban contracts, fetch decimals using cached function
+    if (assetIssuer && isContractId(assetIssuer)) {
+      try {
+        const tokenDetailsResponse = await fetchTokenDetails({
+          contractId: assetIssuer,
+          publicKey,
+          networkDetails,
+        });
+
+        if (
+          !tokenDetailsResponse ||
+          isError<TokenDetailsResponse>(tokenDetailsResponse)
+        ) {
+          continue; // Skip this asset if we can't fetch details
+        }
+
+        decimals = tokenDetailsResponse.decimals;
+      } catch (error) {
+        continue; // Skip this asset and move to the next one
+      }
+    } else {
+      // For native XLM and classic assets, use standard decimals
+      decimals = CLASSIC_ASSET_DECIMALS;
     }
 
     results.push({
@@ -657,6 +671,7 @@ export const getRowDataByOpType = async (
       networkDetails,
       homeDomains,
       icons,
+      fetchTokenDetails,
     );
 
     if (assetDiffs.length > 0) {
