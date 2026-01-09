@@ -59,6 +59,208 @@ export const stubScanDapp = async (context: BrowserContext) => {
   });
 };
 
+/**
+ * Stubs scan-asset endpoint to return "unable to scan" response (null data)
+ * This simulates when BlockAid cannot scan an asset
+ */
+export const stubScanAssetUnableToScan = async (
+  page: Page | BrowserContext,
+) => {
+  await page.route("**/scan-asset**", async (route) => {
+    const json = {
+      data: null,
+      error: null,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+/**
+ * Stubs scan-tx endpoint to return "unable to scan" response (null data)
+ * This simulates when BlockAid cannot scan a transaction
+ */
+export const stubScanTxUnableToScan = async (page: Page | BrowserContext) => {
+  await page.route("**/scan-tx**", async (route) => {
+    const json = {
+      data: null,
+      error: null,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+/**
+ * Stubs scan-asset endpoint to return "malicious" response
+ * This simulates when BlockAid detects a malicious asset
+ */
+export const stubScanAssetMalicious = async (page: Page | BrowserContext) => {
+  await page.route("**/scan-asset**", async (route) => {
+    const json = {
+      data: {
+        result_type: "Malicious",
+        malicious_score: "0.9",
+        attack_types: {
+          transfer_farming: true,
+          theft: true,
+        },
+        chain: "stellar",
+        address: "",
+        metadata: {
+          type: "",
+        },
+        fees: {},
+        features: [
+          {
+            description:
+              "A malicious transaction causes a transfer, draining the user's assets and tokens.",
+          },
+          {
+            description:
+              "This asset has been reported for fraudulent activity.",
+          },
+        ],
+        trading_limits: {},
+        financial_stats: {},
+      },
+      error: null,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+/**
+ * Stubs scan-asset endpoint to return "suspicious" response
+ * This simulates when BlockAid detects a suspicious asset
+ */
+export const stubScanAssetSuspicious = async (page: Page | BrowserContext) => {
+  await page.route("**/scan-asset**", async (route) => {
+    const json = {
+      data: {
+        result_type: "Warning",
+        malicious_score: "0.5",
+        attack_types: {},
+        chain: "stellar",
+        address: "",
+        metadata: {
+          type: "",
+        },
+        fees: {},
+        features: [
+          {
+            description:
+              "This asset has unusual trading patterns that may indicate risk.",
+          },
+          {
+            description:
+              "The issuer has a low trust score based on historical data.",
+          },
+        ],
+        trading_limits: {},
+        financial_stats: {},
+      },
+      error: null,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+/**
+ * Stubs scan-asset endpoint to return "safe" (benign) response
+ * This simulates when BlockAid confirms an asset is safe
+ */
+export const stubScanAssetSafe = async (page: Page | BrowserContext) => {
+  await page.route("**/scan-asset**", async (route) => {
+    const json = {
+      data: {
+        result_type: "Benign",
+        malicious_score: "0.0",
+        attack_types: {},
+        chain: "stellar",
+        address: "",
+        metadata: {
+          type: "",
+        },
+        fees: {},
+        features: [],
+        trading_limits: {},
+        financial_stats: {},
+      },
+      error: null,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+/**
+ * Stubs scan-tx endpoint to return "malicious" response
+ * This simulates when BlockAid detects a malicious transaction
+ */
+export const stubScanTxMalicious = async (page: Page | BrowserContext) => {
+  await page.route("**/scan-tx**", async (route) => {
+    const json = {
+      data: {
+        simulation: {},
+        validation: {
+          result_type: "Malicious",
+          malicious_score: "0.9",
+          attack_types: {
+            transfer_farming: true,
+            theft: true,
+          },
+          description:
+            "A malicious transaction causes a transfer, draining the user's assets and tokens.",
+        },
+      },
+      error: null,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+/**
+ * Stubs scan-tx endpoint to return "suspicious" response
+ * This simulates when BlockAid detects a suspicious transaction
+ */
+export const stubScanTxSuspicious = async (page: Page | BrowserContext) => {
+  await page.route("**/scan-tx**", async (route) => {
+    const json = {
+      data: {
+        simulation: {},
+        validation: {
+          result_type: "Warning",
+          malicious_score: "0.5",
+          attack_types: {},
+          description:
+            "This transaction has unusual patterns that may indicate risk. Proceed with caution.",
+        },
+      },
+      error: null,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+/**
+ * Stubs scan-tx endpoint to return "safe" (benign) response
+ * This simulates when BlockAid confirms a transaction is safe
+ */
+export const stubScanTxSafe = async (page: Page | BrowserContext) => {
+  await page.route("**/scan-tx**", async (route) => {
+    const json = {
+      data: {
+        simulation: {},
+        validation: {
+          result_type: "Benign",
+          malicious_score: "0.0",
+          attack_types: {},
+        },
+      },
+      error: null,
+    };
+    await route.fulfill({ json });
+  });
+};
+
 export const stubIsSac = async (page: Page | BrowserContext) => {
   await page.route("**/is-sac-contract**", async (route) => {
     const json = {
@@ -847,6 +1049,64 @@ export const stubMemoRequiredAccounts = async (
   );
 };
 
+/**
+ * Stubs Stellar Expert asset search API for asset search by issuer address
+ * Returns asset information when searching for an asset by issuer
+ */
+export const stubAssetSearch = async (page: Page | BrowserContext) => {
+  await page.route("**/asset?search=**", async (route) => {
+    const url = route.request().url();
+    const parsedUrl = new URL(url);
+    const searchParam = parsedUrl.searchParams.get("search");
+
+    // If searching by issuer address (valid Stellar public key format)
+    if (
+      searchParam &&
+      searchParam.length === 56 &&
+      searchParam.startsWith("G")
+    ) {
+      const json = {
+        _embedded: {
+          records: [
+            {
+              asset: `TEST-${searchParam}`,
+              domain: "test.example.com",
+              tomlInfo: {
+                image: "",
+              },
+            },
+          ],
+        },
+      };
+      await route.fulfill({ json });
+    } else {
+      await route.continue();
+    }
+  });
+};
+
+/**
+ * Creates an asset object for Horizon API path payment responses.
+ * Converts asset codes to the format expected by Horizon's path payment endpoint.
+ *
+ * @param assetCode - The asset code (e.g., "USDC", "native", or null)
+ * @param issuer - The issuer address for non-native assets
+ * @returns An object with asset_type, asset_code, and asset_issuer properties
+ */
+export const createAssetObject = (assetCode: string | null, issuer: string) => {
+  const isNative = assetCode === "native" || assetCode === null;
+  return isNative
+    ? {
+        asset_type: "native",
+        asset_code: undefined,
+        asset_issuer: undefined,
+      }
+    : {
+        asset_type: "credit_alphanum4",
+        asset_code: assetCode,
+        asset_issuer: issuer,
+      };
+};
 export const stubSimulateSendCollectible = async (page: Page) => {
   await page.route("**/simulate-tx", async (route) => {
     const json = {

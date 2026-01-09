@@ -71,6 +71,7 @@ import {
   NETWORKS,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
+import { isDev } from "../helpers/dev";
 import { SorobanRpcNotSupportedError } from "../constants/errors";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
@@ -1657,6 +1658,50 @@ export const saveExperimentalFeatures = async ({
   }
 
   return response;
+};
+
+export const getBlockaidOverrideState = async (): Promise<string | null> => {
+  // Only allow override state in dev mode
+  if (!isDev) {
+    return null;
+  }
+
+  const response = (await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE,
+  })) as unknown as {
+    overriddenBlockaidResponse: string | null;
+    error?: string;
+  };
+
+  if (response.error) {
+    return null;
+  }
+
+  return response.overriddenBlockaidResponse ?? null;
+};
+
+export const saveBlockaidOverrideState = async ({
+  overriddenBlockaidResponse,
+}: {
+  overriddenBlockaidResponse: string | null;
+}): Promise<{ overriddenBlockaidResponse: string | null }> => {
+  const response = (await sendMessageToBackground({
+    activePublicKey: null,
+    overriddenBlockaidResponse,
+    type: SERVICE_TYPES.SAVE_BLOCKAID_DEBUG_OVERRIDE,
+  })) as unknown as {
+    overriddenBlockaidResponse?: string | null;
+    error?: string;
+  };
+
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
+  return {
+    overriddenBlockaidResponse: response.overriddenBlockaidResponse ?? null,
+  };
 };
 
 export const changeNetwork = async ({

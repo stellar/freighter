@@ -45,10 +45,14 @@ import {
   WarningMessage,
   SSLWarningMessage,
   BlockaidTxScanLabel,
-  BlockAidTxScanExpanded,
+  BlockAidScanExpanded,
   DomainNotAllowedWarningMessage,
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
+import {
+  useShouldTreatTxAsUnableToScan,
+  useIsTxSuspicious,
+} from "popup/helpers/blockaid";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Loading } from "popup/components/Loading";
 import { VerifyAccount } from "popup/views/VerifyAccount";
@@ -100,6 +104,8 @@ export const SignTransaction = () => {
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
   });
+  const isTxSuspicious = useIsTxSuspicious();
+  const shouldTreatAsUnableToScan = useShouldTreatTxAsUnableToScan();
 
   let accountToSign = _accountToSign;
 
@@ -227,15 +233,21 @@ export const SignTransaction = () => {
   const { networkName, networkPassphrase } = signTxState.data?.networkDetails!;
 
   const scanResult = signTxState.data?.scanResult;
-  const hasNonBenignValidation = !!(
-    scanResult?.validation &&
-    "result_type" in scanResult.validation &&
-    (scanResult.validation.result_type === "Malicious" ||
-      scanResult.validation.result_type === "Warning")
-  );
+  const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
+  const isSuspiciousCheck = isTxSuspicious(scanResult);
+
+  const hasNonBenignValidation =
+    isSuspiciousCheck ||
+    !!(
+      scanResult?.validation &&
+      "result_type" in scanResult.validation &&
+      (scanResult.validation.result_type === "Malicious" ||
+        scanResult.validation.result_type === "Warning")
+    );
   const hasSimulationError =
     scanResult && scanResult.simulation && "error" in scanResult.simulation;
-  const showBlockAidDetails = hasSimulationError || hasNonBenignValidation;
+  const showBlockAidDetails =
+    isUnableToScan || hasSimulationError || hasNonBenignValidation;
   const btnIsDestructive =
     (scanResult?.validation &&
       "result_type" in scanResult.validation &&
@@ -344,7 +356,7 @@ export const SignTransaction = () => {
                     </span>
                   </div>
                 </div>
-                {scanResult && (
+                {showBlockAidDetails && (
                   <BlockaidTxScanLabel
                     scanResult={scanResult}
                     onClick={() => setActivePaneIndex(1)}
@@ -412,8 +424,8 @@ export const SignTransaction = () => {
                 </div>
               </div>
             </div>,
-            <BlockAidTxScanExpanded
-              scanResult={scanResult!}
+            <BlockAidScanExpanded
+              scanResult={scanResult}
               onClose={() => setActivePaneIndex(0)}
             />,
             <div className="SignTransaction__Body">
