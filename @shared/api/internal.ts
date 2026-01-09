@@ -862,6 +862,7 @@ export const getIndexerAccountHistory = async ({
     const url = new URL(
       `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}&is_failed_included=true`,
     );
+
     const response = await fetch(url.href);
 
     const data = await response.json();

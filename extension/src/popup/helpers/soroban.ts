@@ -26,6 +26,7 @@ import { findAssetBalance, isSorobanBalance } from "./balance";
 import { getSdk } from "@shared/helpers/stellar";
 import { AssetType } from "@shared/api/types/account-balance";
 import { getNativeContractDetails } from "./searchAsset";
+import { getTokenDetails } from "@shared/api/internal";
 import { isContractId } from "@shared/api/helpers/soroban";
 export { isContractId } from "@shared/api/helpers/soroban";
 
@@ -37,6 +38,47 @@ export const SOROBAN_OPERATION_TYPES = [
 // All assets on the classic side have 7 decimals
 // https://developers.stellar.org/docs/fundamentals-and-concepts/stellar-data-structures/assets#amount-precision
 export const CLASSIC_ASSET_DECIMALS = 7;
+
+/**
+ * Gets the correct decimals for an asset.
+ * For Soroban contracts, fetches decimals via RPC.
+ * For native XLM and classic assets, returns CLASSIC_ASSET_DECIMALS (7).
+ *
+ * @throws Error if decimals cannot be fetched for a Soroban contract
+ * @param params - Parameters object
+ * @param params.assetIssuer - The asset issuer (contract ID for Soroban, issuer address for classic, null for native)
+ * @param params.publicKey - The public key for the account
+ * @param params.networkDetails - Network configuration details
+ * @returns The number of decimals for the asset
+ */
+export const getDecimalsForAsset = async ({
+  assetIssuer,
+  publicKey,
+  networkDetails,
+}: {
+  assetIssuer: string | null;
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}): Promise<number> => {
+  // For Soroban contracts, fetch decimals via RPC
+  if (assetIssuer && isContractId(assetIssuer)) {
+    const tokenDetails = await getTokenDetails({
+      contractId: assetIssuer,
+      publicKey,
+      networkDetails,
+    });
+
+    if (tokenDetails && tokenDetails.decimals !== undefined) {
+      return tokenDetails.decimals;
+    }
+
+    // If API call succeeded but no decimals returned, throw
+    throw new Error(`Unable to fetch decimals for contract ${assetIssuer}`);
+  }
+
+  // For native XLM and classic assets, return standard decimals
+  return CLASSIC_ASSET_DECIMALS;
+};
 
 /**
  * Checks if a transaction is a Soroban transaction.
