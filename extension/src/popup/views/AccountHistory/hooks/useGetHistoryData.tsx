@@ -10,7 +10,6 @@ import {
   TextProps,
 } from "@stellar/design-system";
 import i18n from "popup/helpers/localizationConfig";
-import * as Sentry from "@sentry/browser";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 
