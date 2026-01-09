@@ -74,8 +74,34 @@ export const TransactionDetail = ({
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
   const { feeCharged, memo } = activeOperation.metadata;
 
+  // Type interfaces for metadata parameters
+  interface PaymentMetadata {
+    to?: string;
+    from?: string;
+    nonLabelAmount: string;
+    destIcon?: string;
+    destAssetCode: string;
+    isReceiving: boolean;
+  }
+
+  interface SwapMetadata {
+    formattedSrcAmount: string;
+    srcAssetCode: string;
+    nonLabelAmount: string;
+    destAssetCode: string;
+  }
+
+  interface CreateAccountMetadata {
+    to?: string;
+    from?: string;
+    nonLabelAmount: string;
+    isReceiving: boolean;
+  }
+
   // Normalization helper functions
-  const normalizePaymentToAssetDiffs = (metadata: any): AssetDiffSummary[] => {
+  const normalizePaymentToAssetDiffs = (
+    metadata: PaymentMetadata,
+  ): AssetDiffSummary[] => {
     const { to, from, nonLabelAmount, destIcon, destAssetCode, isReceiving } =
       metadata;
 
@@ -92,7 +118,9 @@ export const TransactionDetail = ({
     ];
   };
 
-  const normalizeSwapToAssetDiffs = (metadata: any): AssetDiffSummary[] => {
+  const normalizeSwapToAssetDiffs = (
+    metadata: SwapMetadata,
+  ): AssetDiffSummary[] => {
     const { formattedSrcAmount, srcAssetCode, nonLabelAmount, destAssetCode } =
       metadata;
 
@@ -117,7 +145,7 @@ export const TransactionDetail = ({
   };
 
   const normalizeCreateAccountToAssetDiffs = (
-    metadata: any,
+    metadata: CreateAccountMetadata,
   ): AssetDiffSummary[] => {
     const { to, from, nonLabelAmount, isReceiving } = metadata;
 
@@ -195,15 +223,19 @@ export const TransactionDetail = ({
     ) {
       creditDebits = activeOperation.metadata.assetDiffs;
     } else if (activeOperation.metadata.isPayment) {
-      creditDebits = normalizePaymentToAssetDiffs(activeOperation.metadata);
+      creditDebits = normalizePaymentToAssetDiffs(
+        activeOperation.metadata as PaymentMetadata,
+      );
     } else if (activeOperation.metadata.isSwap) {
-      creditDebits = normalizeSwapToAssetDiffs(activeOperation.metadata);
+      creditDebits = normalizeSwapToAssetDiffs(
+        activeOperation.metadata as SwapMetadata,
+      );
     } else if (
       activeOperation.metadata.type ===
       Horizon.HorizonApi.OperationResponseType.createAccount
     ) {
       creditDebits = normalizeCreateAccountToAssetDiffs(
-        activeOperation.metadata,
+        activeOperation.metadata as CreateAccountMetadata,
       );
     }
 

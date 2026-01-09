@@ -10,6 +10,7 @@ import {
   TextProps,
 } from "@stellar/design-system";
 import i18n from "popup/helpers/localizationConfig";
+import * as Sentry from "@sentry/browser";
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 
@@ -32,7 +33,11 @@ import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { AssetIcons, HorizonOperation, TokenBalance } from "@shared/api/types";
 import { OPERATION_TYPES } from "constants/transaction";
-import { capitalize, formatAmount } from "popup/helpers/formatters";
+import {
+  capitalize,
+  formatAmount,
+  trimTrailingZeros,
+} from "popup/helpers/formatters";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
@@ -355,24 +360,6 @@ const processAssetBalanceChanges = async (
   homeDomains: { [assetIssuer: string]: string | null },
   icons: AssetIcons,
 ): Promise<AssetDiffSummary[]> => {
-  // Helper to trim trailing zeros from amount strings
-  const trimTrailingZeros = (amount: string): string => {
-    if (!amount.includes(".")) {
-      return amount;
-    }
-
-    let trimmed = amount;
-    while (trimmed.endsWith("0")) {
-      trimmed = trimmed.substring(0, trimmed.length - 1);
-    }
-
-    if (trimmed.endsWith(".")) {
-      trimmed = trimmed.substring(0, trimmed.length - 1);
-    }
-
-    return trimmed;
-  };
-
   if (
     !operation.asset_balance_changes ||
     operation.asset_balance_changes.length === 0
@@ -426,11 +413,13 @@ const processAssetBalanceChanges = async (
         networkDetails,
       });
     } catch (error) {
-      // If decimals cannot be fetched, skip this asset entirely
-      console.warn(
-        `Failed to fetch decimals for asset ${assetCode} (${assetIssuer}), skipping`,
+      // If decimals cannot be fetched, skip this asset entirely and report to Sentry
+      Sentry.captureException({
+        message: `Failed to fetch decimals for asset ${assetCode} (${assetIssuer}), skipping`,
         error,
-      );
+        assetCode,
+        assetIssuer,
+      });
       continue; // Skip this asset and move to the next one
     }
 
