@@ -414,43 +414,60 @@ export const BlockaidByLine = ({
 
   return (
     <div className="BlockaidByLine">
-      <div className="BlockaidByLine__copy">
-        <Text as="p" size="sm" weight="medium">
+      <div className="BlockaidByLine__left">
+        <Text
+          as="p"
+          size="sm"
+          weight="medium"
+          className="BlockaidByLine__copyText"
+        >
           {t("Powered by ")}
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <g clipPath="url(#clip0_5576_70196)">
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M9.76866 2.29851H0.130597V0H9.76866C11.5709 0 13.0336 1.46269 13.0336 3.26493C13.0336 5.06716 11.5709 6.52985 9.76866 6.52985H2.76866C2.50746 6.52985 2.27239 6.73881 2.27239 7C2.27239 7.26119 2.48134 7.47015 2.76866 7.47015H9.76866C11.5709 7.47015 13.0336 8.93284 13.0336 10.7351C13.0336 12.5373 11.5709 14 9.76866 14H0.130597V11.7015H9.76866C10.291 11.7015 10.7351 11.2575 10.7351 10.7351C10.7351 10.2127 10.291 9.76866 9.76866 9.76866H2.76866C1.25373 9.76866 0 8.54105 0 7C0 5.45896 1.25373 4.23134 2.76866 4.23134H9.76866C10.291 4.23134 10.7351 3.78731 10.7351 3.26493C10.7351 2.71642 10.291 2.29851 9.76866 2.29851Z"
-                fill="#707070"
-              />
-            </g>
-            <defs>
-              <clipPath id="clip0_5576_70196">
-                <rect width="13.0336" height="14" fill="white" />
-              </clipPath>
-            </defs>
-          </svg>
-          <span>{t("Blockaid")}</span>
+        </Text>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          fill="none"
+          className="BlockaidByLine__logo"
+        >
+          <g clipPath="url(#clip0_5576_70196)">
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M9.76866 2.29851H0.130597V0H9.76866C11.5709 0 13.0336 1.46269 13.0336 3.26493C13.0336 5.06716 11.5709 6.52985 9.76866 6.52985H2.76866C2.50746 6.52985 2.27239 6.73881 2.27239 7C2.27239 7.26119 2.48134 7.47015 2.76866 7.47015H9.76866C11.5709 7.47015 13.0336 8.93284 13.0336 10.7351C13.0336 12.5373 11.5709 14 9.76866 14H0.130597V11.7015H9.76866C10.291 11.7015 10.7351 11.2575 10.7351 10.7351C10.7351 10.2127 10.291 9.76866 9.76866 9.76866H2.76866C1.25373 9.76866 0 8.54105 0 7C0 5.45896 1.25373 4.23134 2.76866 4.23134H9.76866C10.291 4.23134 10.7351 3.78731 10.7351 3.26493C10.7351 2.71642 10.291 2.29851 9.76866 2.29851Z"
+              fill="#707070"
+            />
+          </g>
+          <defs>
+            <clipPath id="clip0_5576_70196">
+              <rect width="13.0336" height="14" fill="white" />
+            </clipPath>
+          </defs>
+        </svg>
+        <Text
+          as="p"
+          size="sm"
+          weight="medium"
+          className="BlockaidByLine__copyText"
+        >
+          {t("Blockaid")}
         </Text>
       </div>
       {isMainnet(networkDetails) || isTestnet(networkDetails) ? (
-        <div className="BlockaidByLine__feedback">
-          <div
-            className="BlockaidByLine__feedback__button"
-            onClick={() => {
-              if (handleClick) {
-                handleClick();
-              }
-              setIsFeedbackActive(true);
-            }}
-          >
-            <Text as="p" size="sm" weight="medium">
-              {t("Feedback?")}
-            </Text>
-          </div>
-        </div>
+        <Text
+          as="span"
+          size="sm"
+          weight="medium"
+          className="BlockaidByLine__feedback"
+          onClick={() => {
+            if (handleClick) {
+              handleClick();
+            }
+            setIsFeedbackActive(true);
+          }}
+        >
+          {t("Feedback?")}
+        </Text>
       ) : null}
       {isFeedbackActive &&
         createPortal(
@@ -676,17 +693,14 @@ export const BlockaidTxScanLabel = ({
   // Extract complex conditions for readability
   const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
 
-  // Check override state (takes precedence, dev mode only)
-  const isMaliciousOverride = blockaidOverrideState === SecurityLevel.MALICIOUS;
-  const isSuspiciousOverride =
-    blockaidOverrideState === SecurityLevel.SUSPICIOUS;
-
   // Check actual scan result for malicious/suspicious (normal cases)
   const { isMalicious, isSuspicious } = getScanResultSecurityFlags(scanResult);
 
   // Override takes precedence, otherwise use actual scan result
-  const isMaliciousFinal = isMaliciousOverride || isMalicious;
-  const isSuspiciousFinal = isSuspiciousOverride || isSuspicious;
+  const isMaliciousFinal =
+    blockaidOverrideState === SecurityLevel.MALICIOUS || isMalicious;
+  const isSuspiciousFinal =
+    blockaidOverrideState === SecurityLevel.SUSPICIOUS || isSuspicious;
 
   // Handle unable to scan state
   if (isUnableToScan) {
@@ -839,6 +853,7 @@ const getScanWarnings = (
   scanResult: BlockAidScanTxResult | BlockAidScanAssetResult | null | undefined,
   isUnableToScan: boolean,
   t: (key: string) => string,
+  blockaidOverrideState: string | null,
 ): WarningInfo => {
   const warnings: Array<{ icon: React.ReactNode; text: string }> = [];
 
@@ -858,6 +873,27 @@ const getScanWarnings = (
 
   // Get security flags at the beginning
   const { isMalicious, isSuspicious } = getScanResultSecurityFlags(scanResult);
+
+  // Inject override messages if no real warnings but override is active
+  if (
+    blockaidOverrideState === SecurityLevel.MALICIOUS &&
+    warnings.length === 0
+  ) {
+    warnings.push({
+      icon: <Icon.XCircle />,
+      text: t("This transaction was flagged as malicious (override active)"),
+    });
+  }
+
+  if (
+    blockaidOverrideState === SecurityLevel.SUSPICIOUS &&
+    warnings.length === 0
+  ) {
+    warnings.push({
+      icon: <Icon.MinusCircle />,
+      text: t("This transaction was flagged as suspicious (override active)"),
+    });
+  }
 
   // Handle transaction scan results
   if ("simulation" in scanResult || "validation" in scanResult) {
@@ -894,7 +930,13 @@ const getScanWarnings = (
     });
   }
 
-  return { warnings, isMalicious, isSuspicious };
+  return {
+    warnings,
+    isMalicious:
+      blockaidOverrideState === SecurityLevel.MALICIOUS || isMalicious,
+    isSuspicious:
+      blockaidOverrideState === SecurityLevel.SUSPICIOUS || isSuspicious,
+  };
 };
 
 export const BlockAidScanExpanded = ({
@@ -903,17 +945,28 @@ export const BlockAidScanExpanded = ({
 }: BlockAidScanExpandedProps) => {
   const { t } = useTranslation();
   const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, []);
 
   // Always use transaction-based unable to scan logic
   const isUnableToScan = shouldTreatTxAsUnableToScan(
     scanResult as BlockAidScanTxResult,
   );
 
+  // Check override state (takes precedence, dev mode only)
   // Get warnings from scan result (handles both asset and transaction)
   const { warnings, isMalicious, isSuspicious } = getScanWarnings(
     scanResult,
     isUnableToScan,
     t,
+    blockaidOverrideState,
   );
 
   // Early return if no warnings
@@ -946,22 +999,25 @@ export const BlockAidScanExpanded = ({
           {t("This transaction does not appear safe for the following reasons")}
           :
         </div>
-        <div className="BlockaidDetailsExpanded__Details">
-          {warnings.map((warning, index) => (
-            <div
-              key={index}
-              className={
-                warning.icon &&
-                React.isValidElement(warning.icon) &&
-                warning.icon.type === Icon.XCircle
-                  ? "BlockaidDetailsExpanded__DetailRowError"
-                  : "BlockaidDetailsExpanded__DetailRow"
-              }
-            >
-              {warning.icon}
-              <span>{warning.text}</span>
-            </div>
-          ))}
+        <div className="BlockaidDetailsExpanded__Container">
+          <div className="BlockaidDetailsExpanded__WarningsList">
+            {warnings.map((warning, index) => (
+              <div
+                key={index}
+                className={
+                  warning.icon &&
+                  React.isValidElement(warning.icon) &&
+                  warning.icon.type === Icon.XCircle
+                    ? "BlockaidDetailsExpanded__DetailRowError"
+                    : "BlockaidDetailsExpanded__DetailRow"
+                }
+              >
+                {warning.icon}
+                <span>{warning.text}</span>
+              </div>
+            ))}
+          </div>
+          <div className="BlockaidDetailsExpanded__Divider" />
           <BlockaidByLine address={""} />
         </div>
       </div>
@@ -972,7 +1028,7 @@ export const BlockAidScanExpanded = ({
     <div className="BlockaidDetailsExpanded">
       <div className="BlockaidDetailsExpanded__Header">
         <div className="WarningMark">
-          <Icon.AlertTriangle />
+          <Icon.AlertOctagon />
         </div>
         <div className="Close" onClick={onClose}>
           <Icon.X />
@@ -986,15 +1042,18 @@ export const BlockAidScanExpanded = ({
       <div className="BlockaidDetailsExpanded__SubTitle">
         {t("This transaction does not appear safe for the following reasons.")}
       </div>
-      <div className="BlockaidDetailsExpanded__Details">
-        {warnings.map((warning, index) => (
-          <div key={index} className="BlockaidDetailsExpanded__DetailRow">
-            {warning.icon}
-            <span>{warning.text}</span>
-          </div>
-        ))}
+      <div className="BlockaidDetailsExpanded__Container">
+        <div className="BlockaidDetailsExpanded__WarningsList">
+          {warnings.map((warning, index) => (
+            <div key={index} className="BlockaidDetailsExpanded__DetailRow">
+              {warning.icon}
+              <span>{warning.text}</span>
+            </div>
+          ))}
+        </div>
+        <div className="BlockaidDetailsExpanded__Divider" />
+        <BlockaidByLine address={""} />
       </div>
-      <BlockaidByLine address={""} />
     </div>
   );
 };

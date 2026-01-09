@@ -9,6 +9,7 @@ import {
   stubScanTxSuspicious,
   createAssetObject,
   stubAssetSearch,
+  stubMemoRequiredAccounts,
 } from "./helpers/stubs";
 
 test.describe("BlockAid Scan - Suspicious States", () => {
@@ -97,11 +98,7 @@ test.describe("BlockAid Scan - Suspicious States", () => {
     await page.getByTestId("blockaid-miss-label").click();
 
     // Should show expanded view with suspicious details
-    await expect(
-      page
-        .getByText("This asset was flagged as suspicious")
-        .or(page.getByText("This transaction was flagged as suspicious")),
-    ).toBeVisible();
+    await expect(page.getByText("Suspicious Request")).toBeVisible();
   });
 
   test("Send payment shows suspicious warning when scan detects suspicious transaction", async ({
@@ -133,25 +130,11 @@ test.describe("BlockAid Scan - Suspicious States", () => {
 
     await page.getByText("Review Send").click({ force: true });
 
-    await expect(page.getByText("You are sending")).toBeVisible({
-      timeout: 200000,
-    });
-
-    // Should show suspicious warning banner
-    // Suspicious transactions use "blockaid-miss-label" test ID
-    await expect(page.getByTestId("blockaid-miss-label")).toBeVisible({
-      timeout: 30000,
-    });
-
-    // Click on the banner to expand
-    await page.getByTestId("blockaid-miss-label").click();
+    // For suspicious transactions, should go directly to blockaid pane (not review pane)
+    // Should show expanded suspicious details immediately
 
     // Should show expanded view with suspicious details
-    await expect(
-      page
-        .getByText("This asset was flagged as suspicious")
-        .or(page.getByText("This transaction was flagged as suspicious")),
-    ).toBeVisible();
+    await expect(page.getByText("Suspicious Request")).toBeVisible();
   });
 
   test("Swap shows suspicious warning when scan detects suspicious tokens", async ({
@@ -260,7 +243,6 @@ test.describe("BlockAid Scan - Suspicious States", () => {
     await stubAccountHistory(page);
     await stubTokenDetails(page);
     await stubTokenPrices(page);
-    await stubScanAssetSuspicious(page);
     await stubScanTxSuspicious(page);
     await loginToTestAccount({ page, extensionId });
 
@@ -293,27 +275,53 @@ test.describe("BlockAid Scan - Suspicious States", () => {
 
     await continueButton.click({ force: true });
 
-    await expect(
-      page.getByText("You are swapping").or(page.getByText("Review")),
-    ).toBeVisible({
-      timeout: 200000,
-    });
+    // For suspicious swap transactions, should go directly to blockaid pane (not review pane)
+    // Should show expanded suspicious details immediately
 
-    await page.waitForTimeout(5000);
+    // Should show expanded view with suspicious details
+    await expect(page.getByText("Suspicious Request")).toBeVisible();
+  });
 
-    // Should show suspicious warning banner
-    await expect(page.getByTestId("blockaid-miss-label")).toBeVisible({
+  test("Suspicious transaction ignores memo requirements", async ({
+    page,
+    extensionId,
+  }) => {
+    test.slow();
+    await stubAccountBalances(page, "100");
+    await stubAccountHistory(page);
+    await stubTokenDetails(page);
+    await stubTokenPrices(page);
+    await stubScanTxSuspicious(page);
+    await stubMemoRequiredAccounts(
+      page,
+      "GA6SXIZIKLJHCZI2KEOBEUUOFMM4JUPPM2UTWX6STAWT25JWIEUFIMFF",
+    );
+    await loginToTestAccount({ page, extensionId });
+
+    // Go to send payment to an M-address (requires memo)
+    await page.getByTestId("nav-link-send").click();
+    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+    await page.getByTestId("address-tile").click();
+    await page
+      .getByTestId("send-to-input")
+      .fill("GA6SXIZIKLJHCZI2KEOBEUUOFMM4JUPPM2UTWX6STAWT25JWIEUFIMFF");
+
+    await page.getByText("Continue").click({ force: true });
+    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+    await page.getByTestId("send-amount-amount-input").fill("10");
+
+    await expect(page.getByText("Review Send")).toBeEnabled({
       timeout: 30000,
     });
 
-    // Click on the banner to expand
-    await page.getByTestId("blockaid-miss-label").click();
+    await page.getByText("Review Send").click({ force: true });
 
-    // Should show expanded view with suspicious details
-    await expect(
-      page
-        .getByText("This asset was flagged as suspicious")
-        .or(page.getByText("This transaction was flagged as suspicious")),
-    ).toBeVisible();
+    // Should go directly to blockaid pane, ignoring memo requirement
+    // Should NOT show "Add Memo" banner since security warnings take precedence
+    await expect(page.getByText("Add Memo")).not.toBeVisible();
+
+    // Should show suspicious details
+    await expect(page.getByText("Suspicious Request")).toBeVisible();
   });
 });

@@ -9,6 +9,7 @@ import {
   stubScanTxMalicious,
   createAssetObject,
   stubAssetSearch,
+  stubMemoRequiredAccounts,
 } from "./helpers/stubs";
 
 test.describe("BlockAid Scan - Malicious States", () => {
@@ -143,23 +144,11 @@ test.describe("BlockAid Scan - Malicious States", () => {
 
     await page.getByText("Review Send").click({ force: true });
 
-    await expect(page.getByText("You are sending")).toBeVisible({
-      timeout: 200000,
-    });
-
-    // Should show malicious warning banner
-    // For transactions, malicious uses "blockaid-malicious-label"
-    await expect(page.getByTestId("blockaid-malicious-label")).toBeVisible({
-      timeout: 10000,
-    });
-
-    // Click on the banner to expand
-    await page.getByTestId("blockaid-malicious-label").click();
+    // For malicious transactions, should go directly to blockaid pane (not review pane)
+    // Should show expanded malicious details immediately
 
     // Should show expanded view with malicious details
-    await expect(
-      page.getByText("This transaction was flagged as malicious"),
-    ).toBeVisible();
+    await expect(page.getByText("Do not proceed")).toBeVisible();
 
     // Should show warning detail row from validation.description
     await expect(
@@ -275,7 +264,6 @@ test.describe("BlockAid Scan - Malicious States", () => {
     await stubAccountHistory(page);
     await stubTokenDetails(page);
     await stubTokenPrices(page);
-    await stubScanAssetMalicious(page);
     await stubScanTxMalicious(page);
     await loginToTestAccount({ page, extensionId });
 
@@ -308,33 +296,11 @@ test.describe("BlockAid Scan - Malicious States", () => {
 
     await continueButton.click({ force: true });
 
-    await expect(
-      page.getByText("You are swapping").or(page.getByText("Review")),
-    ).toBeVisible({
-      timeout: 200000,
-    });
-
-    await page.waitForTimeout(5000);
-
-    // Should show malicious warning banner
-    // For assets, malicious uses "blockaid-miss-label" when result_type is "Malicious"
-    // Check both possible test IDs
-    const maliciousLabel = page
-      .getByTestId("blockaid-malicious-label")
-      .or(page.getByTestId("blockaid-miss-label"));
-    await expect(maliciousLabel).toBeVisible({
-      timeout: 30000,
-    });
-
-    // Click on the banner to expand
-    await maliciousLabel.first().click();
+    // For malicious swap transactions, should go directly to blockaid pane (not review pane)
+    // Should show expanded malicious details immediately
 
     // Should show expanded view with malicious details
-    await expect(
-      page
-        .getByText("This asset was flagged as malicious")
-        .or(page.getByText("This transaction was flagged as malicious")),
-    ).toBeVisible();
+    await expect(page.getByText("Do not proceed")).toBeVisible();
 
     // Should show warning detail rows
     await expect(
@@ -344,5 +310,48 @@ test.describe("BlockAid Scan - Malicious States", () => {
         )
         .getByText(/A malicious transaction causes a transfer/),
     ).toBeVisible();
+  });
+
+  test("Malicious transaction ignores memo requirements", async ({
+    page,
+    extensionId,
+  }) => {
+    test.slow();
+    await stubAccountBalances(page, "100");
+    await stubAccountHistory(page);
+    await stubTokenDetails(page);
+    await stubTokenPrices(page);
+    await stubScanTxMalicious(page);
+    await stubMemoRequiredAccounts(
+      page,
+      "GA6SXIZIKLJHCZI2KEOBEUUOFMM4JUPPM2UTWX6STAWT25JWIEUFIMFF",
+    );
+    await loginToTestAccount({ page, extensionId });
+
+    // Go to send payment to an M-address (requires memo)
+    await page.getByTestId("nav-link-send").click();
+    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+    await page.getByTestId("address-tile").click();
+    await page
+      .getByTestId("send-to-input")
+      .fill("GA6SXIZIKLJHCZI2KEOBEUUOFMM4JUPPM2UTWX6STAWT25JWIEUFIMFF");
+
+    await page.getByText("Continue").click({ force: true });
+    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+    await page.getByTestId("send-amount-amount-input").fill("10");
+
+    await expect(page.getByText("Review Send")).toBeEnabled({
+      timeout: 30000,
+    });
+
+    await page.getByText("Review Send").click({ force: true });
+
+    // Should go directly to blockaid pane, ignoring memo requirement
+    // Should NOT show "Add Memo" banner since security warnings take precedence
+    await expect(page.getByText("Add Memo")).not.toBeVisible();
+
+    // Should show malicious details
+    await expect(page.getByText("Do not proceed")).toBeVisible();
   });
 });

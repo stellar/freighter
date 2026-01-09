@@ -9,6 +9,7 @@ import {
   stubScanTxUnableToScan,
   createAssetObject,
   stubAssetSearch,
+  stubMemoRequiredAccounts,
 } from "./helpers/stubs";
 
 test.describe("BlockAid Scan - Unable to Scan States", () => {
@@ -135,18 +136,8 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     // Click review
     await page.getByText("Review Send").click({ force: true });
 
-    // Wait for review screen
-    await expect(page.getByText("You are sending")).toBeVisible({
-      timeout: 200000,
-    });
-
-    // Should show "Unable to scan transaction" banner (test ID)
-    await expect(page.getByTestId("blockaid-unable-to-scan-label")).toBeVisible(
-      { timeout: 10000 },
-    );
-
-    // Click on the banner to expand
-    await page.getByTestId("blockaid-unable-to-scan-label").click();
+    // For unable to scan transactions, should go directly to blockaid pane (not review pane)
+    // Should show expanded unable to scan details immediately
 
     // Should show expanded view with "Unable to scan transaction" detail inside the BlockAid box
     // The text appears in a detail row inside BlockaidDetailsExpanded
@@ -290,32 +281,14 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
       .or(page.getByText("Review swap"));
     await expect(continueButton).toBeEnabled({ timeout: 30000 });
 
-    // Click continue to review
+    // Click continue
     await continueButton.click({ force: true });
 
-    // Wait for review screen
-    await expect(
-      page.getByText("You are swapping").or(page.getByText("Review")),
-    ).toBeVisible({
-      timeout: 200000,
-    });
+    // For unable to scan swap transactions, should go directly to blockaid pane (not review pane)
+    // Should show expanded unable to scan details immediately
 
-    // Wait for asset scans to complete (they happen asynchronously via useScanAsset hook)
-    // On testnet, scanAsset returns null when unable to scan
-    // For swaps, tokens are scanned separately, so we need to wait for both scans
-    // The destination token (USDC) should be scanned and return null (unable to scan)
-    // Wait longer to ensure scans complete - they're async and may take time
-    await page.waitForTimeout(12000);
-
-    // Should show "Unable to scan" banner for source or destination token (test ID)
-    // For swaps, the warning appears when either source or destination token is unable to scan
-    // Since we're swapping XLM (native, no scan needed) -> USDC (unable to scan),
-    // the warning should appear for the destination token
-    const warningLabel = page.getByTestId("blockaid-unable-to-scan-label");
-    await expect(warningLabel).toBeVisible({ timeout: 30000 });
-
-    // Click on the banner to expand
-    await warningLabel.click();
+    // Should show expanded view with unable to scan details
+    await expect(page.getByText("Proceed with caution")).toBeVisible();
 
     // Wait for the expanded view to appear and render
     await expect(page.locator(".BlockaidDetailsExpanded")).toBeVisible({
@@ -331,5 +304,48 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
         .locator(".BlockaidDetailsExpanded__DetailRow")
         .getByText("Unable to scan transaction"),
     ).toBeVisible({ timeout: 10000 });
+  });
+
+  test("Unable to scan transaction ignores memo requirements", async ({
+    page,
+    extensionId,
+  }) => {
+    test.slow();
+    await stubAccountBalances(page, "100");
+    await stubAccountHistory(page);
+    await stubTokenDetails(page);
+    await stubTokenPrices(page);
+    await stubScanTxUnableToScan(page);
+    await stubMemoRequiredAccounts(
+      page,
+      "GA6SXIZIKLJHCZI2KEOBEUUOFMM4JUPPM2UTWX6STAWT25JWIEUFIMFF",
+    );
+    await loginToTestAccount({ page, extensionId });
+
+    // Go to send payment to an M-address (requires memo)
+    await page.getByTestId("nav-link-send").click();
+    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+    await page.getByTestId("address-tile").click();
+    await page
+      .getByTestId("send-to-input")
+      .fill("GA6SXIZIKLJHCZI2KEOBEUUOFMM4JUPPM2UTWX6STAWT25JWIEUFIMFF");
+
+    await page.getByText("Continue").click({ force: true });
+    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+    await page.getByTestId("send-amount-amount-input").fill("10");
+
+    await expect(page.getByText("Review Send")).toBeEnabled({
+      timeout: 30000,
+    });
+
+    await page.getByText("Review Send").click({ force: true });
+
+    // Should go directly to blockaid pane, ignoring memo requirement
+    // Should NOT show "Add Memo" banner since security warnings take precedence
+    await expect(page.getByText("Add Memo")).not.toBeVisible();
+
+    // Should show unable to scan details
+    await expect(page.getByText("Proceed with caution")).toBeVisible();
   });
 });
