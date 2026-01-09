@@ -256,7 +256,7 @@ export const TransactionDetail = ({
       activeOperation.metadata.type ===
       Horizon.HorizonApi.OperationResponseType.changeTrust
     ) {
-      title = `${activeOperation.rowText} for ${activeOperation.metadata.destAssetCode}`;
+      title = `${activeOperation.rowText} ${t("for")} ${activeOperation.metadata.destAssetCode}`;
     } else {
       title = activeOperation.rowText;
     }

@@ -600,7 +600,7 @@ export const getRowDataByOpType = async (
         <div className="HistoryItem__description__swap-label">
           <span>{srcAssetCode}</span>
           <span className="HistoryItem__description__swap-label__separator">
-            to
+            {i18n.t("to")}
           </span>
           <span>{destAssetCode}</span>
         </div>
