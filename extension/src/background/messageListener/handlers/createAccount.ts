@@ -17,6 +17,7 @@ import {
   allAccountsSelector,
   buildHasPrivateKeySelector,
   publicKeySelector,
+  reset,
 } from "background/ducks/session";
 
 const { fromMnemonic, generateMnemonic } = StellarHDWallet;
@@ -38,6 +39,7 @@ export const createAccount = async ({
 
   if (isOverwritingAccount) {
     await clearAccount(localStore);
+    sessionStore.dispatch(reset());
   }
 
   const mnemonicPhrase = generateMnemonic({ entropyBits: 128 });

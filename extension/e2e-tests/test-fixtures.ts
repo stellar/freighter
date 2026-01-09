@@ -10,7 +10,7 @@ export const test = base.extend<{
   language: string;
 }>({
   language: "en",
-  context: async ({}, use, testInfo) => {
+  context: async ({}, use) => {
     const pathToExtension = path.join(__dirname, "../build");
     const context = await chromium.launchPersistentContext("", {
       headless: false,
@@ -19,9 +19,6 @@ export const test = base.extend<{
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
       ],
-      recordVideo: {
-        dir: testInfo.outputPath("videos"),
-      },
     });
 
     await use(context);
