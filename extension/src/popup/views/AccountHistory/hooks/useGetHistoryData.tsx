@@ -486,6 +486,7 @@ export const getRowDataByOpType = async (
     created_at: createdAt,
     id,
     to,
+    to_muxed,
     from,
     starting_balance: startingBalance,
     type,
@@ -609,7 +610,7 @@ export const getRowDataByOpType = async (
   }
 
   if (isPayment) {
-    const destination = to || "";
+    const destination = to_muxed || to || "";
     const sender = from || "";
 
     // default to Sent if a payment to self
