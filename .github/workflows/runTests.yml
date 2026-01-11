@@ -11,7 +11,7 @@ jobs:
     timeout-minutes: 45
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -55,7 +55,7 @@ jobs:
             echo "Not a release branch, skipping version check"
           fi
       - run: corepack enable
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
       - run: yarn
@@ -67,7 +67,7 @@ jobs:
       - run:
           ${{ github.base_ref == 'master' && 'IS_INTEGRATION_MODE=true' || '' }}
           yarn test:e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
