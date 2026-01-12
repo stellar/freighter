@@ -11,7 +11,7 @@ describe("getCollectibles", () => {
       external_url: "https://nftcalendar.io",
       attributes: [
         {
-          traitType: "Trait Type",
+          trait_type: "Trait Type",
           value: "Trait Value",
         },
       ],

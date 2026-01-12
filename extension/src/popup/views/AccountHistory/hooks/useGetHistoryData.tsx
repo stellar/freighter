@@ -15,7 +15,6 @@ import StellarLogo from "popup/assets/stellar-logo.png";
 
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
-import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
 import { HistoryResponse, useGetHistory } from "helpers/hooks/useGetHistory";
 import { HistoryItemOperation } from "popup/components/accountHistory/HistoryItem";
 import {
@@ -33,7 +32,6 @@ import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   AssetIcons,
-  Collectibles,
   Collectible,
   HorizonOperation,
   TokenBalance,
@@ -75,10 +73,11 @@ import {
   CollectibleInfoImage,
   getCollectibleName,
 } from "popup/components/account/CollectibleInfo";
-import { FetchCollectiblesParams } from "helpers/hooks/useGetCollectibles";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
+import { batchFetchCollectibles } from "helpers/utils/collectibles/collectiblesBatchFetcher";
+import { ContractIdentifier } from "helpers/utils/collectibles/collectiblesCache";
 
 export type HistorySection = {
   monthYear: string; // in format {month}:{year}
@@ -526,6 +525,9 @@ export interface OperationDataRow {
   rowText: ReactNode;
 }
 
+// Map key format: "contractId:tokenId"
+export type CollectibleLookupMap = Map<string, Collectible>;
+
 export const getRowDataByOpType = async (
   publicKey: string,
   balances: AssetType[],
@@ -538,11 +540,7 @@ export const getRowDataByOpType = async (
     networkDetails: NetworkDetails;
   }) => Promise<TokenDetailsResponse | Error>,
   homeDomains: { [assetIssuer: string]: string | null },
-  fetchCollectibles: (args: {
-    contract: { id: string; token_ids: string[] };
-    publicKey: string;
-    networkDetails: NetworkDetails;
-  }) => Promise<Collectibles | Error>,
+  collectibleLookup: CollectibleLookupMap,
   cachedTokenLists: AssetListResponse[],
 ): Promise<OperationDataRow> => {
   const {
@@ -895,34 +893,9 @@ export const getRowDataByOpType = async (
           return genericInvocation;
         }
 
-        const collectibleDetailsResponse = await fetchCollectibles({
-          contract: {
-            id: attrs.contractId,
-            token_ids: [attrs.tokenId.toString()],
-          },
-          publicKey,
-          networkDetails,
-        });
-
-        if (isError<Collectibles>(collectibleDetailsResponse)) {
-          return genericInvocation;
-        }
-
-        if (collectibleDetailsResponse.collections.length === 0) {
-          return genericInvocation;
-        }
-
-        const collection = collectibleDetailsResponse.collections.find(
-          (c) => c.collection?.address === attrs.contractId,
-        );
-
-        if (!collection) {
-          return genericInvocation;
-        }
-
-        const collectible = collection.collection?.collectibles.find(
-          (c) => c.tokenId === attrs.tokenId?.toString() || "",
-        );
+        // Look up collectible from pre-fetched batch data
+        const lookupKey = `${attrs.contractId}:${attrs.tokenId.toString()}`;
+        const collectible = collectibleLookup.get(lookupKey);
 
         if (!collectible) {
           return genericInvocation;
@@ -1131,9 +1104,6 @@ const createHistorySections = async (
     networkDetails: NetworkDetails;
   }) => Promise<TokenDetailsResponse | Error>,
   homeDomains: { [assetIssuer: string]: string | null },
-  fetchCollectibles: (
-    args: FetchCollectiblesParams,
-  ) => Promise<Collectibles | Error>,
   cachedTokenLists: AssetListResponse[],
 ) => {
   /* 
@@ -1145,6 +1115,63 @@ const createHistorySections = async (
     networkDetails,
     homeDomains,
   );
+
+  // Collect all collectible contract IDs and token IDs for batch fetching
+  const collectibleContracts = new Map<string, Set<string>>();
+  for (const operation of operations) {
+    if (operation.type_i === 24) {
+      const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
+      if (
+        attrs &&
+        attrs.fnName === SorbanCollectibleInterface.transfer &&
+        attrs.tokenId &&
+        !attrs.amount
+      ) {
+        const contractId = attrs.contractId;
+        const tokenId = attrs.tokenId.toString();
+        if (!collectibleContracts.has(contractId)) {
+          collectibleContracts.set(contractId, new Set());
+        }
+        collectibleContracts.get(contractId)!.add(tokenId);
+      }
+    }
+  }
+
+  // Batch fetch all collectibles
+  const collectibleLookup: CollectibleLookupMap = new Map();
+  if (collectibleContracts.size > 0) {
+    const contractsToFetch: ContractIdentifier[] = Array.from(
+      collectibleContracts.entries(),
+    ).map(([contractId, tokenIds]) => ({
+      id: contractId,
+      token_ids: Array.from(tokenIds),
+    }));
+
+    try {
+      const batchResult = await batchFetchCollectibles({
+        publicKey,
+        networkDetails,
+        contracts: contractsToFetch,
+        useCache: true,
+      });
+
+      // Build lookup map: "contractId:tokenId" -> Collectible
+      for (const collection of batchResult.collections) {
+        const contractId =
+          collection.collection?.address || collection.error?.collectionAddress;
+        if (!contractId) continue;
+
+        const collectibles = collection.collection?.collectibles || [];
+        for (const collectible of collectibles) {
+          const lookupKey = `${contractId}:${collectible.tokenId}`;
+          collectibleLookup.set(lookupKey, collectible);
+        }
+      }
+    } catch (error) {
+      captureException(`Error batch fetching collectibles: ${error}`);
+      // Continue with empty lookup map - operations will fall back to generic invocation
+    }
+  }
   return operations.reduce(
     async (
       sectionsPromise: Promise<HistorySection[]>,
@@ -1176,7 +1203,7 @@ const createHistorySections = async (
         icons,
         fetchTokenDetails,
         fetchedHomeDomains,
-        fetchCollectibles,
+        collectibleLookup,
         cachedTokenLists,
       );
 
@@ -1240,9 +1267,6 @@ function useGetHistoryData(
   const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
   const { fetchData: fetchHistory } = useGetHistory();
   const { fetchData: fetchTokenDetails } = useTokenDetails();
-  const { fetchData: fetchCollectibles } = useGetCollectibles({
-    useCache: true,
-  });
   const cachedTokenLists = useSelector(tokensListsSelector);
   const homeDomains = useSelector(homeDomainsSelector);
   const reduxDispatch = useDispatch<AppDispatch>();
@@ -1306,7 +1330,6 @@ function useGetHistoryData(
           historyOptions.isHideDustEnabled,
           fetchTokenDetails,
           cachedHomeDomains,
-          fetchCollectibles,
           cachedTokenLists,
         ),
       } as ResolvedData;
