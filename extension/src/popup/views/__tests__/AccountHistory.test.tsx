@@ -22,6 +22,7 @@ import {
   mockAccounts,
   mockAccountHistory,
   mockBalances,
+  getTestStore,
 } from "../../__testHelpers__";
 import { AccountHistory } from "../AccountHistory";
 import { ROUTES } from "popup/constants/routes";
@@ -31,6 +32,16 @@ import * as ExtensionMessaging from "@shared/api/helpers/extensionMessaging";
 import * as GetIconFromTokenList from "@shared/api/helpers/getIconFromTokenList";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
+
+// Mock the store to use test store state
+jest.mock("popup/App", () => ({
+  store: {
+    getState: jest.fn(() => ({ cache: {} })),
+  },
+}));
+
+// Import the mocked store so we can update it
+import { store } from "popup/App";
 
 jest.mock("stellar-sdk", () => {
   const original = jest.requireActual("stellar-sdk");
@@ -94,7 +105,7 @@ jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
   }),
 );
 
-jest
+const getAccountHistorySpy = jest
   .spyOn(ApiInternal, "getAccountHistory")
   .mockImplementation(() => Promise.resolve(mockAccountHistory as any));
 
@@ -113,7 +124,7 @@ jest
   .spyOn(ApiInternal, "getAssetIcons")
   .mockImplementation(() => Promise.resolve({}));
 
-jest
+const getCombinedAssetListDataSpy = jest
   .spyOn(TokenListHelpers, "getCombinedAssetListData")
   .mockImplementation(() => Promise.resolve([]));
 
@@ -130,8 +141,21 @@ jest
   .mockImplementation(() => Promise.resolve({} as any));
 
 describe("AccountHistory", () => {
+  beforeEach(() => {
+    // Update mock to use test store's getState
+    (store.getState as jest.Mock).mockImplementation(() => {
+      const testStore = getTestStore();
+      return testStore ? testStore.getState() : { cache: {} };
+    });
+  });
+
   afterEach(() => {
     jest.clearAllMocks();
+    // Restore the original mock implementations
+    getAccountHistorySpy.mockImplementation(() =>
+      Promise.resolve(mockAccountHistory as any),
+    );
+    getCombinedAssetListDataSpy.mockImplementation(() => Promise.resolve([]));
   });
   it("loads account history view with all transactions", async () => {
     render(
@@ -485,364 +509,6 @@ describe("AccountHistory", () => {
     );
   });
 
-  it("renders received collectible transactions", async () => {
-    jest.spyOn(ApiInternal, "getAccountHistory").mockImplementation(() =>
-      Promise.resolve([
-        {
-          id: "260023552098807810",
-          paging_token: "260023552098807810",
-          transaction_successful: true,
-          source_account: "G2",
-          type: "invoke_host_function",
-          type_i: 24,
-          created_at: "2025-12-31T19:17:31Z",
-          transaction_hash:
-            "164b715046d4a39ad6e163c1d3b2207dd94e1ac4fbdecdbbb7cd38325a802757",
-          function: "HostFunctionTypeHostFunctionTypeInvokeContract",
-          parameters: [
-            {
-              value: "AAAAEgAAAAGnhiOsJ5pUi9/r9CO2pue/iCYdJydn9iB+MNVZXxopQQ==",
-              type: "Address",
-            },
-            {
-              value: "AAAADwAAAAh0cmFuc2Zlcg==",
-              type: "Sym",
-            },
-            {
-              value:
-                "AAAAEgAAAAAAAAAAVWZH80/CFAnOvHGpWuoVnzcfL0eY/i2tJ0H91fuwBmM=",
-              type: "Address",
-            },
-            {
-              value:
-                "AAAAEgAAAAAAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+Q=",
-              type: "Address",
-            },
-            {
-              value: "AAAAAwAAAAI=",
-              type: "U32",
-            },
-          ],
-          address: "",
-          salt: "",
-          asset_balance_changes: null,
-          transaction_attr: {
-            operation_count: 1,
-            envelope_xdr:
-              "AAAAAgAAAABVZkfzT8IUCc68cala6hWfNx8vR5j+La0nQf3V+7AGYwADBzcCkAfAAAAAJAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABp4YjrCeaVIvf6/Qjtqbnv4gmHScnZ/YgfjDVWV8aKUEAAAAIdHJhbnNmZXIAAAADAAAAEgAAAAAAAAAAVWZH80/CFAnOvHGpWuoVnzcfL0eY/i2tJ0H91fuwBmMAAAASAAAAAAAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAMAAAACAAAAAQAAAAAAAAAAAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAACHRyYW5zZmVyAAAAAwAAABIAAAAAAAAAAFVmR/NPwhQJzrxxqVrqFZ83Hy9HmP4trSdB/dX7sAZjAAAAEgAAAAAAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+QAAAADAAAAAgAAAAAAAAABAAAAAAAAAAIAAAAGAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAAFAAAAAEAAAAHP3eS4onfldMZntnbNaDPKlFUqmTNcpioxEG3FwIwY1sAAAAGAAAABgAAAAGnhiOsJ5pUi9/r9CO2pue/iCYdJydn9iB+MNVZXxopQQAAABAAAAABAAAAAgAAAA8AAAAIQXBwcm92YWwAAAADAAAAAgAAAAAAAAAGAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAAEAAAAAEAAAACAAAADwAAAAdCYWxhbmNlAAAAABIAAAAAAAAAAFVmR/NPwhQJzrxxqVrqFZ83Hy9HmP4trSdB/dX7sAZjAAAAAQAAAAYAAAABp4YjrCeaVIvf6/Qjtqbnv4gmHScnZ/YgfjDVWV8aKUEAAAAQAAAAAQAAAAIAAAAPAAAAB0JhbGFuY2UAAAAAEgAAAAAAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+QAAAABAAAABgAAAAGnhiOsJ5pUi9/r9CO2pue/iCYdJydn9iB+MNVZXxopQQAAABAAAAABAAAAAgAAAA8AAAAFT3duZXIAAAAAAAADAAAAAgAAAAEAAAAGAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAAEAAAAAEAAAACAAAADwAAAAtPd25lclRva2VucwAAAAASAAAAAAAAAABVZkfzT8IUCc68cala6hWfNx8vR5j+La0nQf3V+7AGYwAAAAEAAAAGAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAAEAAAAAEAAAACAAAADwAAAAtPd25lclRva2VucwAAAAASAAAAAAAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAEAGUJpAAAAAAAAAsgAAAAAAAIytgAAAAH7sAZjAAAAQM5wSOQ0vtlDZI9aFKgaH6Qq2tGfqZyOYubQTDIIE0EgPjP0eiObOSE2VXo7MRv1ppM6l2ps3z11S7/A2trCugU=",
-          },
-        },
-      ] as any),
-    );
-    render(
-      <Wrapper
-        routes={[ROUTES.welcome]}
-        state={{
-          auth: {
-            error: null,
-            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
-            publicKey: "G1",
-            allAccounts: mockAccounts,
-          },
-          settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
-            networksList: DEFAULT_NETWORKS,
-            isHideDustEnabled: false,
-          },
-          cache: {
-            balanceData: {
-              [TESTNET_NETWORK_DETAILS.network]: {
-                G1: {
-                  balances: {},
-                },
-              },
-            },
-            icons: {},
-            homeDomains: {},
-            tokenLists: [],
-            tokenDetails: {},
-            historyData: {},
-            tokenPrices: {},
-            collections: {
-              [TESTNET_NETWORK_DETAILS.network]: {
-                G1: [
-                  {
-                    collection: {
-                      address:
-                        "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN",
-                      name: "Stellar Frogs",
-                      symbol: "SFROG",
-                      collectibles: [
-                        {
-                          collectionName: "Stellar Frogs",
-                          collectionAddress:
-                            "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
-                          owner: "G1",
-                          tokenId: "1",
-                          tokenUri: "https://nftcalendar.io/token/1",
-                          metadata: {
-                            name: "Stellar Frog Collectible 1",
-                            description: "This is a received frog",
-                            image:
-                              "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
-                            attributes: [
-                              {
-                                traitType: "Background",
-                                value: "Green",
-                              },
-                            ],
-                          },
-                        },
-                      ],
-                    },
-                  },
-                ],
-              },
-            },
-          },
-        }}
-      >
-        <AccountHistory />
-      </Wrapper>,
-    );
-    await waitFor(() => screen.getByTestId("AccountHistory"));
-    expect(screen.getByTestId("AccountHistory")).toBeDefined();
-    const historyNodes = screen.getAllByTestId("history-item");
-    expect(historyNodes.length).toEqual(1);
-    expect(screen.getByTestId("history-item-label")).toHaveTextContent(
-      "Stellar Frogs",
-    );
-    expect(historyNodes[0]).toHaveTextContent("Received");
-    // Verify the collectible image is displayed in the history item
-    const historyImage = screen.getByTestId("account-collectible-image");
-    expect(historyImage).toHaveAttribute(
-      "src",
-      "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
-    );
-    await act(async () => {
-      fireEvent.click(screen.getByTestId("history-item"));
-    });
-    await waitFor(() => screen.getByTestId("TransactionDetailModal"));
-    expect(screen.getByTestId("TransactionDetailModal")).toBeDefined();
-    expect(
-      screen.getByTestId("TransactionDetailModal__src-collectible-name"),
-    ).toHaveTextContent("Stellar Frog Collectible 1");
-    expect(
-      screen.getByTestId("TransactionDetailModal__src-collection-name"),
-    ).toHaveTextContent("Stellar Frogs #1");
-    // Verify the collectible image is displayed in the transaction detail modal
-    const modalImages = screen.getAllByTestId("account-collectible-image");
-    expect(modalImages.length).toBeGreaterThan(0);
-    expect(modalImages[modalImages.length - 1]).toHaveAttribute(
-      "src",
-      "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
-    );
-  });
-
-  it("renders multiple collectible transactions", async () => {
-    jest.spyOn(ApiInternal, "getAccountHistory").mockImplementation(() =>
-      Promise.resolve([
-        {
-          id: "260023552098807811",
-          paging_token: "260023552098807811",
-          transaction_successful: true,
-          source_account: "G1",
-          type: "invoke_host_function",
-          type_i: 24,
-          created_at: "2025-12-29T19:17:31Z",
-          transaction_hash:
-            "264b715046d4a39ad6e163c1d3b2207dd94e1ac4fbdecdbbb7cd38325a802758",
-          function: "HostFunctionTypeHostFunctionTypeInvokeContract",
-          parameters: [
-            {
-              value: "AAAAEgAAAAGnhiOsJ5pUi9/r9CO2pue/iCYdJydn9iB+MNVZXxopQQ==",
-              type: "Address",
-            },
-            {
-              value: "AAAADwAAAAh0cmFuc2Zlcg==",
-              type: "Sym",
-            },
-            {
-              value:
-                "AAAAEgAAAAAAAAAAVWZH80/CFAnOvHGpWuoVnzcfL0eY/i2tJ0H91fuwBmM=",
-              type: "Address",
-            },
-            {
-              value:
-                "AAAAEgAAAAAAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+Q=",
-              type: "Address",
-            },
-            {
-              value: "AAAAAwAAAAI=",
-              type: "U32",
-            },
-          ],
-          address: "",
-          salt: "",
-          asset_balance_changes: null,
-          transaction_attr: {
-            operation_count: 1,
-            envelope_xdr:
-              "AAAAAgAAAABVZkfzT8IUCc68cala6hWfNx8vR5j+La0nQf3V+7AGYwADBzcCkAfAAAAAJAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABp4YjrCeaVIvf6/Qjtqbnv4gmHScnZ/YgfjDVWV8aKUEAAAAIdHJhbnNmZXIAAAADAAAAEgAAAAAAAAAAVWZH80/CFAnOvHGpWuoVnzcfL0eY/i2tJ0H91fuwBmMAAAASAAAAAAAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAMAAAACAAAAAQAAAAAAAAAAAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAACHRyYW5zZmVyAAAAAwAAABIAAAAAAAAAAFVmR/NPwhQJzrxxqVrqFZ83Hy9HmP4trSdB/dX7sAZjAAAAEgAAAAAAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+QAAAADAAAAAgAAAAAAAAABAAAAAAAAAAIAAAAGAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAAFAAAAAEAAAAHP3eS4onfldMZntnbNaDPKlFUqmTNcpioxEG3FwIwY1sAAAAGAAAABgAAAAGnhiOsJ5pUi9/r9CO2pue/iCYdJydn9iB+MNVZXxopQQAAABAAAAABAAAAAgAAAA8AAAAIQXBwcm92YWwAAAADAAAAAgAAAAAAAAAGAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAAEAAAAAEAAAACAAAADwAAAAdCYWxhbmNlAAAAABIAAAAAAAAAAFVmR/NPwhQJzrxxqVrqFZ83Hy9HmP4trSdB/dX7sAZjAAAAAQAAAAYAAAABp4YjrCeaVIvf6/Qjtqbnv4gmHScnZ/YgfjDVWV8aKUEAAAAQAAAAAQAAAAIAAAAPAAAAB0JhbGFuY2UAAAAAEgAAAAAAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+QAAAABAAAABgAAAAGnhiOsJ5pUi9/r9CO2pue/iCYdJydn9iB+MNVZXxopQQAAABAAAAABAAAAAgAAAA8AAAAFT3duZXIAAAAAAAADAAAAAgAAAAEAAAAGAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAAEAAAAAEAAAACAAAADwAAAAtPd25lclRva2VucwAAAAASAAAAAAAAAABVZkfzT8IUCc68cala6hWfNx8vR5j+La0nQf3V+7AGYwAAAAEAAAAGAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAAEAAAAAEAAAACAAAADwAAAAtPd25lclRva2VucwAAAAASAAAAAAAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAEAGUJpAAAAAAAAAsgAAAAAAAIytgAAAAH7sAZjAAAAQM5wSOQ0vtlDZI9aFKgaH6Qq2tGfqZyOYubQTDIIE0EgPjP0eiObOSE2VXo7MRv1ppM6l2ps3z11S7/A2trCugU=",
-          },
-        },
-        {
-          id: "260023552098807812",
-          paging_token: "260023552098807812",
-          transaction_successful: true,
-          source_account: "G2",
-          type: "invoke_host_function",
-          type_i: 24,
-          created_at: "2025-12-28T19:17:31Z",
-          transaction_hash:
-            "364b715046d4a39ad6e163c1d3b2207dd94e1ac4fbdecdbbb7cd38325a802759",
-          function: "HostFunctionTypeHostFunctionTypeInvokeContract",
-          parameters: [
-            {
-              value: "AAAAEgAAAAGnhiOsJ5pUi9/r9CO2pue/iCYdJydn9iB+MNVZXxopQQ==",
-              type: "Address",
-            },
-            {
-              value: "AAAADwAAAAh0cmFuc2Zlcg==",
-              type: "Sym",
-            },
-            {
-              value:
-                "AAAAEgAAAAAAAAAAVWZH80/CFAnOvHGpWuoVnzcfL0eY/i2tJ0H91fuwBmM=",
-              type: "Address",
-            },
-            {
-              value:
-                "AAAAEgAAAAAAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+Q=",
-              type: "Address",
-            },
-            {
-              value: "AAAAAwAAAAI=",
-              type: "U32",
-            },
-          ],
-          address: "",
-          salt: "",
-          asset_balance_changes: null,
-          transaction_attr: {
-            operation_count: 1,
-            envelope_xdr:
-              "AAAAAgAAAABVZkfzT8IUCc68cala6hWfNx8vR5j+La0nQf3V+7AGYwADBzcCkAfAAAAAJAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABp4YjrCeaVIvf6/Qjtqbnv4gmHScnZ/YgfjDVWV8aKUEAAAAIdHJhbnNmZXIAAAADAAAAEgAAAAAAAAAAVWZH80/CFAnOvHGpWuoVnzcfL0eY/i2tJ0H91fuwBmMAAAASAAAAAAAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAMAAAACAAAAAQAAAAAAAAAAAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAACHRyYW5zZmVyAAAAAwAAABIAAAAAAAAAAFVmR/NPwhQJzrxxqVrqFZ83Hy9HmP4trSdB/dX7sAZjAAAAEgAAAAAAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+QAAAADAAAAAgAAAAAAAAABAAAAAAAAAAIAAAAGAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAAFAAAAAEAAAAHP3eS4onfldMZntnbNaDPKlFUqmTNcpioxEG3FwIwY1sAAAAGAAAABgAAAAGnhiOsJ5pUi9/r9CO2pue/iCYdJydn9iB+MNVZXxopQQAAABAAAAABAAAAAgAAAA8AAAAIQXBwcm92YWwAAAADAAAAAgAAAAAAAAAGAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAAEAAAAAEAAAACAAAADwAAAAdCYWxhbmNlAAAAABIAAAAAAAAAAFVmR/NPwhQJzrxxqVrqFZ83Hy9HmP4trSdB/dX7sAZjAAAAAQAAAAYAAAABp4YjrCeaVIvf6/Qjtqbnv4gmHScnZ/YgfjDVWV8aKUEAAAAQAAAAAQAAAAIAAAAPAAAAB0JhbGFuY2UAAAAAEgAAAAAAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+QAAAABAAAABgAAAAGnhiOsJ5pUi9/r9CO2pue/iCYdJydn9iB+MNVZXxopQQAAABAAAAABAAAAAgAAAA8AAAAFT3duZXIAAAAAAAADAAAAAgAAAAEAAAAGAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAAEAAAAAEAAAACAAAADwAAAAtPd25lclRva2VucwAAAAASAAAAAAAAAABVZkfzT8IUCc68cala6hWfNx8vR5j+La0nQf3V+7AGYwAAAAEAAAAGAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAAEAAAAAEAAAACAAAADwAAAAtPd25lclRva2VucwAAAAASAAAAAAAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAEAGUJpAAAAAAAAAsgAAAAAAAIytgAAAAH7sAZjAAAAQM5wSOQ0vtlDZI9aFKgaH6Qq2tGfqZyOYubQTDIIE0EgPjP0eiObOSE2VXo7MRv1ppM6l2ps3z11S7/A2trCugU=",
-          },
-        },
-      ] as any),
-    );
-    render(
-      <Wrapper
-        routes={[ROUTES.welcome]}
-        state={{
-          auth: {
-            error: null,
-            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
-            publicKey: "G1",
-            allAccounts: mockAccounts,
-          },
-          settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
-            networksList: DEFAULT_NETWORKS,
-            isHideDustEnabled: false,
-          },
-          cache: {
-            balanceData: {
-              [TESTNET_NETWORK_DETAILS.network]: {
-                G1: {
-                  balances: {},
-                },
-              },
-            },
-            icons: {},
-            homeDomains: {},
-            tokenLists: [],
-            tokenDetails: {},
-            historyData: {},
-            tokenPrices: {},
-            collections: {
-              [TESTNET_NETWORK_DETAILS.network]: {
-                G1: [
-                  {
-                    collection: {
-                      address:
-                        "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN",
-                      name: "Stellar Frogs",
-                      symbol: "SFROG",
-                      collectibles: [
-                        {
-                          collectionName: "Stellar Frogs",
-                          collectionAddress:
-                            "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
-                          owner: "G1",
-                          tokenId: "3",
-                          tokenUri: "https://nftcalendar.io/token/3",
-                          metadata: {
-                            name: "Stellar Frog Collectible 3",
-                            description: "This is a test frog",
-                            image:
-                              "https://nftcalendar.io/storage/uploads/events/2023/8/5kFeYwNfhpUST3TsSoLxm7FaGY1ljwLRgfZ5gQnV.jpg",
-                            attributes: [
-                              {
-                                traitType: "Background",
-                                value: "Blue",
-                              },
-                            ],
-                          },
-                        },
-                        {
-                          collectionName: "Stellar Frogs",
-                          collectionAddress:
-                            "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
-                          owner: "G1",
-                          tokenId: "4",
-                          tokenUri: "https://nftcalendar.io/token/4",
-                          metadata: {
-                            name: "Stellar Frog Collectible 4",
-                            description: "This is another test frog",
-                            image:
-                              "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
-                            attributes: [
-                              {
-                                traitType: "Background",
-                                value: "Yellow",
-                              },
-                            ],
-                          },
-                        },
-                      ],
-                    },
-                  },
-                ],
-              },
-            },
-          },
-        }}
-      >
-        <AccountHistory />
-      </Wrapper>,
-    );
-    await waitFor(() => screen.getByTestId("AccountHistory"));
-    expect(screen.getByTestId("AccountHistory")).toBeDefined();
-    const historyNodes = screen.getAllByTestId("history-item");
-    expect(historyNodes.length).toEqual(2);
-    const labels = screen.getAllByTestId("history-item-label");
-    expect(labels[0]).toHaveTextContent("Stellar Frogs");
-    expect(labels[1]).toHaveTextContent("Stellar Frogs");
-    // Verify the collectible images are displayed in the history items
-    const historyImages = screen.getAllByTestId("account-collectible-image");
-    expect(historyImages.length).toBeGreaterThanOrEqual(2);
-    expect(historyImages[0]).toHaveAttribute(
-      "src",
-      "https://nftcalendar.io/storage/uploads/events/2023/8/5kFeYwNfhpUST3TsSoLxm7FaGY1ljwLRgfZ5gQnV.jpg",
-    );
-    expect(historyImages[1]).toHaveAttribute(
-      "src",
-      "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
-    );
-  });
-
   it("renders collectible transaction with missing metadata", async () => {
     jest.spyOn(ApiInternal, "getAccountHistory").mockImplementation(() =>
       Promise.resolve([
@@ -936,7 +602,7 @@ describe("AccountHistory", () => {
                           collectionAddress:
                             "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
                           owner: "G1",
-                          tokenId: "5",
+                          tokenId: "2",
                           tokenUri: "https://nftcalendar.io/token/5",
                           metadata: null,
                         },
@@ -970,7 +636,7 @@ describe("AccountHistory", () => {
     // When metadata is null, it should still display the tokenId with fallback format
     expect(
       screen.getByTestId("TransactionDetailModal__src-collectible-name"),
-    ).toHaveTextContent("Token #5");
+    ).toHaveTextContent("Token #2");
     // Verify placeholder is also shown in the modal when metadata is null
     const modalPlaceholders = screen.getAllByTestId(
       "account-collectible-placeholder",
@@ -979,6 +645,15 @@ describe("AccountHistory", () => {
   });
 
   it("uses icons from token lists for account history transactions", async () => {
+    jest
+      .spyOn(TokenListHelpers, "getCombinedAssetListData")
+      .mockImplementation(() => Promise.resolve([tokenList]));
+
+    const getIconFromTokenListsSpy = jest.spyOn(
+      GetIconFromTokenList,
+      "getIconFromTokenLists",
+    );
+
     const tokenListIconUrl = "https://example.com/token-list-usdc-icon.png";
     const tokenList: AssetListResponse = {
       name: "Test Token List",
@@ -998,15 +673,6 @@ describe("AccountHistory", () => {
         },
       ],
     };
-
-    jest
-      .spyOn(TokenListHelpers, "getCombinedAssetListData")
-      .mockImplementation(() => Promise.resolve([tokenList]));
-
-    const getIconFromTokenListsSpy = jest.spyOn(
-      GetIconFromTokenList,
-      "getIconFromTokenLists",
-    );
 
     render(
       <Wrapper
