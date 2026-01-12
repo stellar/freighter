@@ -200,7 +200,7 @@ test("History row displays muxed address extracted from XDR for payment", async 
   await stubAccountBalances(page);
   await loginToTestAccount({ page, extensionId });
 
-  // Stub account history (returns base G address, not M address)
+  // Stub account history (returns both base G address and muxed M address)
   await page.route("**/account-history/**", async (route) => {
     const json = [
       {
@@ -212,7 +212,8 @@ test("History row displays muxed address extracted from XDR for payment", async 
         id: "164007621169153",
         paging_token: "164007621169153",
         source_account: TEST_ACCOUNT,
-        to: BASE_G_ADDRESS, // Horizon returns base G address, not M address
+        to: BASE_G_ADDRESS, // Horizon returns base G address
+        to_muxed: TEST_M_ADDRESS, // And also the muxed M address
         transaction_attr: {
           hash: TRANSACTION_HASH,
           memo: null,
@@ -243,14 +244,14 @@ test("History row displays muxed address extracted from XDR for payment", async 
   });
   await page.getByTestId("nav-link-account-history").click();
 
-  await expect(page.getByTestId("history-item").nth(1)).toBeVisible({
+  await expect(page.getByTestId("history-item").nth(0)).toBeVisible({
     timeout: 10000,
   });
 
-  await page.getByTestId("history-item").nth(1).click();
+  await page.getByTestId("history-item").nth(0).click();
 
-  // Verify muxed address is displayed (extracted from XDR, not Horizon's base G address)
-  const dstAmount = page.getByTestId("TransactionDetailModal__dst-amount");
+  // Verify muxed address is displayed (from to_muxed field in API response)
+  const dstAmount = page.getByTestId("KeyIdenticonKey");
   await expect(dstAmount).toBeVisible({ timeout: 10000 });
   expect(await dstAmount.textContent()).toContain(TEST_M_ADDRESS.slice(0, 4));
 
@@ -430,7 +431,7 @@ test("History row displays regular G address when no muxed address in XDR", asyn
   await page.getByTestId("history-item").first().click();
 
   // Verify G address is displayed
-  const dstAmount = page.getByTestId("TransactionDetailModal__dst-amount");
+  const dstAmount = page.getByTestId("KeyIdenticonKey");
   await expect(dstAmount).toBeVisible({ timeout: 10000 });
   expect(await dstAmount.textContent()).toContain(G_ADDRESS.slice(0, 4));
 

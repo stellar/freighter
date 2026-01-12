@@ -191,6 +191,7 @@ export const TransactionDetail = ({
               </div>
               <div
                 className={`AssetDiff__value ${diff.isCredit ? "credit" : "debit"}`}
+                data-testid={`AssetDiff__amount-${index}`}
               >
                 {diff.isCredit ? "+" : "-"}
                 {diff.amount} {diff.assetCode}
@@ -204,7 +205,10 @@ export const TransactionDetail = ({
               <Icon.User01 />
               <span>{isReceiving ? "From" : "To"}</span>
             </div>
-            <div className="AssetDiff__value">
+            <div
+              className="AssetDiff__value"
+              data-testid="AssetDiff__to-from-address"
+            >
               <KeyIdenticon publicKey={toFromAddress} isSmall />
             </div>
           </div>
@@ -282,7 +286,10 @@ export const TransactionDetail = ({
             >
               <>
                 {getActionIconByType(activeOperation.actionIcon)}
-                <div className="TransactionDetailModal__subtitle-date">
+                <div
+                  className="TransactionDetailModal__subtitle-date"
+                  data-testid="TransactionDetailModal__subtitle-date"
+                >
                   {createdAtDateStr} &bull; {createdAtTime}
                 </div>
               </>
