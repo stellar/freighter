@@ -1039,7 +1039,8 @@ export const getRowDataByOpType = async (
 };
 
 /**
- * Fetches home domains for asset issuers that are needed for displaying operation icons.
+ * Fetches home domains for asset issuers that are needed for displaying operation icons,
+ * and also collects and fetches collectible contracts needed for collectible transfers.
  *
  * This function analyzes a list of Horizon operations to identify asset issuers that require
  * home domains for icon display. It only processes operations that need icons (payments, swaps,
@@ -1048,17 +1049,25 @@ export const getRowDataByOpType = async (
  * After collecting all missing domains, it fetches them in a single batch and updates the
  * homeDomains cache object.
  *
+ * Additionally, it identifies collectible transfer operations and batch fetches the needed
+ * collectible contracts and token IDs.
+ *
  * @param {HorizonOperation[]} operations - Array of Horizon operations to analyze
  * @param {NetworkDetails} networkDetails - Network configuration details
+ * @param {string} publicKey - The public key of the account
  * @param {{ [assetIssuer: string]: string | null }} homeDomains - Cache object mapping asset issuer keys to their home domains
- * @returns {Promise<{ [assetIssuer: string]: string | null }>} The updated homeDomains object with newly fetched domains
+ * @returns {Promise<{ homeDomains: { [assetIssuer: string]: string | null }, collectibleLookup: CollectibleLookupMap }>} Object containing updated homeDomains and collectible lookup map
  */
-export const getHomeDomainsForOperations = async (
+export const getHomeDomainsAndCollectiblesForOperations = async (
   operations: HorizonOperation[],
   networkDetails: NetworkDetails,
+  publicKey: string,
   homeDomains: { [assetIssuer: string]: string | null },
 ) => {
   const domainsToFetch = new Set<string>();
+  // Collect all collectible contract IDs and token IDs for batch fetching
+  const collectibleContracts = new Map<string, Set<string>>();
+
   for (const operation of operations) {
     const { asset_issuer: assetIssuer } = operation;
     const sourceAssetIssuer =
@@ -1078,51 +1087,8 @@ export const getHomeDomainsForOperations = async (
         domainsToFetch.add(sourceAssetIssuer);
       }
     }
-  }
 
-  const domainsArr = Array.from(domainsToFetch);
-  if (domainsArr.length > 0) {
-    const newDomains = await getAssetDomains({
-      assetIssuerDomainsToFetch: domainsArr,
-      networkDetails,
-    });
-
-    Object.entries(newDomains).forEach(([key, value]) => {
-      homeDomains[key] = value;
-    });
-  }
-
-  return homeDomains;
-};
-
-const createHistorySections = async (
-  publicKey: string,
-  operations: HorizonOperation[],
-  balances: AssetType[],
-  icons: AssetIcons,
-  networkDetails: NetworkDetails,
-  isHideDustEnabled: boolean,
-  fetchTokenDetails: (args: {
-    contractId: string;
-    publicKey: string;
-    networkDetails: NetworkDetails;
-  }) => Promise<TokenDetailsResponse | Error>,
-  homeDomains: { [assetIssuer: string]: string | null },
-  cachedTokenLists: AssetListResponse[],
-) => {
-  /* 
-    To prevent multiple requests for home domains as we build each row, 
-    we iterate through the operations and collect the asset issuers that need home domains in a single request.
-  */
-  const fetchedHomeDomains = await getHomeDomainsForOperations(
-    operations,
-    networkDetails,
-    homeDomains,
-  );
-
-  // Collect all collectible contract IDs and token IDs for batch fetching
-  const collectibleContracts = new Map<string, Set<string>>();
-  for (const operation of operations) {
+    // Collect collectible contracts in the same loop
     if (operation.type_i === 24) {
       const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
       if (
@@ -1139,6 +1105,18 @@ const createHistorySections = async (
         collectibleContracts.get(contractId)!.add(tokenId);
       }
     }
+  }
+
+  const domainsArr = Array.from(domainsToFetch);
+  if (domainsArr.length > 0) {
+    const newDomains = await getAssetDomains({
+      assetIssuerDomainsToFetch: domainsArr,
+      networkDetails,
+    });
+
+    Object.entries(newDomains).forEach(([key, value]) => {
+      homeDomains[key] = value;
+    });
   }
 
   // Batch fetch all collectibles
@@ -1176,6 +1154,37 @@ const createHistorySections = async (
       // Continue with empty lookup map - operations will fall back to generic invocation
     }
   }
+
+  return { homeDomains, collectibleLookup };
+};
+
+const createHistorySections = async (
+  publicKey: string,
+  operations: HorizonOperation[],
+  balances: AssetType[],
+  icons: AssetIcons,
+  networkDetails: NetworkDetails,
+  isHideDustEnabled: boolean,
+  fetchTokenDetails: (args: {
+    contractId: string;
+    publicKey: string;
+    networkDetails: NetworkDetails;
+  }) => Promise<TokenDetailsResponse | Error>,
+  homeDomains: { [assetIssuer: string]: string | null },
+  cachedTokenLists: AssetListResponse[],
+) => {
+  /* 
+    To prevent multiple requests for home domains as we build each row, 
+    we iterate through the operations and collect the asset issuers that need home domains in a single request.
+    Also collect and fetch needed collectible contracts.
+  */
+  const { homeDomains: fetchedHomeDomains, collectibleLookup } =
+    await getHomeDomainsAndCollectiblesForOperations(
+      operations,
+      networkDetails,
+      publicKey,
+      homeDomains,
+    );
   return operations.reduce(
     async (
       sectionsPromise: Promise<HistorySection[]>,
