@@ -12,10 +12,8 @@ import { AppDispatch } from "popup/App";
 import { saveCollections } from "popup/ducks/cache";
 import {
   getCachedCollections,
-  isContractInCache,
   hasValidCache,
   deduplicateContracts,
-  ContractIdentifier,
 } from "helpers/utils/collectibles/collectiblesCache";
 import {
   preloadImages,
@@ -25,7 +23,6 @@ import {
 export interface FetchCollectiblesParams {
   publicKey: string;
   networkDetails: NetworkDetails;
-  contract?: ContractIdentifier;
 }
 
 interface UseGetCollectiblesOptions {
@@ -58,7 +55,6 @@ function useGetCollectibles({
     async ({
       publicKey,
       networkDetails,
-      contract,
     }: FetchCollectiblesParams): Promise<Collectibles> => {
       dispatch({ type: "FETCH_DATA_START" });
 
@@ -71,27 +67,9 @@ function useGetCollectibles({
           );
 
           if (hasValidCache(cached)) {
-            // If requesting a specific contract, verify it's in cache
-            if (contract) {
-              const contractInCache = isContractInCache(cached, contract.id);
-              if (contractInCache) {
-                // Filter to only return the requested contract
-                const filtered = cached.filter(
-                  (collection) =>
-                    collection.collection?.address === contract.id ||
-                    collection.error?.collectionAddress === contract.id,
-                );
-                const payload: Collectibles = { collections: filtered };
-                dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-                return payload;
-              }
-              // Contract not in cache, continue to fetch
-            } else {
-              // No specific contract requested, return all cached data
-              const payload: Collectibles = { collections: cached };
-              dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-              return payload;
-            }
+            const payload: Collectibles = { collections: cached };
+            dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+            return payload;
           }
         }
 
@@ -117,14 +95,7 @@ function useGetCollectibles({
             token_ids: collectible.tokenIds,
           }));
 
-        // Merge with optional contract parameter and deduplicate
-        const allContracts = [
-          ...storedContracts,
-          ...(contract
-            ? [{ id: contract.id, token_ids: contract.token_ids || [] }]
-            : []),
-        ];
-        const contractsToFetch = deduplicateContracts(allContracts);
+        const contractsToFetch = deduplicateContracts(storedContracts);
 
         // Fetch collectibles from API
         // contractsToFetch may be empty, but this will still return special-cased collectibles like Meridian Pay
