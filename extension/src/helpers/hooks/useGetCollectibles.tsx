@@ -13,7 +13,6 @@ import { saveCollections } from "popup/ducks/cache";
 import {
   getCachedCollections,
   hasValidCache,
-  deduplicateContracts,
 } from "helpers/utils/collectibles/collectiblesCache";
 import {
   preloadImages,
@@ -95,13 +94,13 @@ function useGetCollectibles({
             token_ids: collectible.tokenIds,
           }));
 
-        const contractsToFetch = deduplicateContracts(storedContracts);
+        console.log(storedContracts);
 
         // Fetch collectibles from API
-        // contractsToFetch may be empty, but this will still return special-cased collectibles like Meridian Pay
+        // storedContracts may be empty, but this will still return special-cased collectibles like Meridian Pay
         const collections = await fetchCollectibles({
           publicKey,
-          contracts: contractsToFetch.map((c) => ({
+          contracts: storedContracts.map((c) => ({
             id: c.id,
             token_ids: c.token_ids || [],
           })),
