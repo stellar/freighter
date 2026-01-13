@@ -62,8 +62,8 @@ export const fetchCollectibleMetadata = async (tokenUri: string) => {
 
 /**
  * Fetches collectibles (NFTs) for a given account from Freighter BE v2.
- * This function queries the API, filters collectibles by owner,
- * and enriches each collectible with metadata fetched from its token URI.
+ * This function queries the API and enriches each collectible with metadata
+ * fetched from its token URI. The API filters collectibles by owner.
  *
  * @param {Object} params - The parameters object
  * @param {string} params.publicKey - The public key of the account to fetch collectibles for
@@ -73,7 +73,7 @@ export const fetchCollectibleMetadata = async (tokenUri: string) => {
  *
  * @example
  * ```typescript
- * const collectibles = await getCollectibles({
+ * const collectibles = await fetchCollectibles({
  *   publicKey: "GABC...",
  *   contracts: [{ id: "C123...", token_ids: ["1", "2"] }],
  *   networkDetails: { network: "testnet", ... }
