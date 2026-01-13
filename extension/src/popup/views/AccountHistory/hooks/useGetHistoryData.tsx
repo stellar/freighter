@@ -32,13 +32,19 @@ import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { AssetIcons, HorizonOperation, TokenBalance } from "@shared/api/types";
 import { OPERATION_TYPES } from "constants/transaction";
-import { capitalize, formatAmount } from "popup/helpers/formatters";
+import {
+  capitalize,
+  formatAmount,
+  trimTrailingZeros,
+} from "popup/helpers/formatters";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
   formatTokenAmount,
   getAttrsFromSorobanHorizonOp,
+  CLASSIC_ASSET_DECIMALS,
 } from "popup/helpers/soroban";
+import { isContractId } from "@shared/api/helpers/soroban";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 import { getBalanceByKey } from "popup/helpers/balance";
 import { AssetType } from "@shared/api/types/account-balance";
@@ -325,6 +331,127 @@ const getIconUrl = async ({
   return iconUrl;
 };
 
+export interface AssetDiffSummary {
+  assetCode: string;
+  assetIssuer: string | null;
+  decimals: number;
+  amount: string;
+  isCredit: boolean;
+  destination?: string; // The destination public key for debits
+  icon?: string; // Asset icon URL
+
+  // For payment/createAccount flows
+  sourcePublicKey?: string; // The sending public key
+
+  // For swap flows
+  sourceAmount?: string;
+  sourceAssetCode?: string;
+  sourceIcon?: string;
+}
+
+/**
+ * Processes asset_balance_changes for a given public key and returns summaries for each asset
+ * @returns Array of asset diff summaries, or empty array if none
+ */
+const processAssetBalanceChanges = async (
+  operation: HorizonOperation,
+  publicKey: string,
+  networkDetails: NetworkDetails,
+  homeDomains: { [assetIssuer: string]: string | null },
+  icons: AssetIcons,
+  fetchTokenDetails: (args: {
+    contractId: string;
+    publicKey: string;
+    networkDetails: NetworkDetails;
+  }) => Promise<TokenDetailsResponse | Error>,
+): Promise<AssetDiffSummary[]> => {
+  if (
+    !operation.asset_balance_changes ||
+    operation.asset_balance_changes.length === 0
+  ) {
+    return [];
+  }
+
+  const results: AssetDiffSummary[] = [];
+
+  for (const change of operation.asset_balance_changes) {
+    // Filter to only changes involving this public key
+    if (change.from !== publicKey && change.to !== publicKey) {
+      continue;
+    }
+
+    // Extract asset info - handle native XLM specially
+    let assetCode: string;
+    let assetIssuer: string | null = null;
+
+    if (change.asset_type === "native") {
+      assetCode = "XLM";
+      assetIssuer = null;
+    } else {
+      assetCode = change.asset_code || "";
+      assetIssuer = change.asset_issuer || null;
+    }
+
+    // Determine if this is a credit (receiving) or debit (sending)
+    const isCredit = change.to === publicKey;
+    // Destination is the counterparty (from for credits, to for debits)
+    const destination = isCredit ? change.from : change.to;
+
+    // Get asset icon
+    const icon =
+      assetCode === "XLM"
+        ? StellarLogo
+        : await getIconUrl({
+            key: assetIssuer || "",
+            code: assetCode,
+            networkDetails,
+            homeDomains,
+            icons,
+          });
+
+    // Fetch decimals based on whether it's a Soroban contract
+    let decimals: number;
+
+    // For Soroban contracts, fetch decimals using cached function
+    if (assetIssuer && isContractId(assetIssuer)) {
+      try {
+        const tokenDetailsResponse = await fetchTokenDetails({
+          contractId: assetIssuer,
+          publicKey,
+          networkDetails,
+        });
+
+        if (
+          !tokenDetailsResponse ||
+          isError<TokenDetailsResponse>(tokenDetailsResponse)
+        ) {
+          continue; // Skip this asset if we can't fetch details
+        }
+
+        decimals = tokenDetailsResponse.decimals;
+      } catch (error) {
+        continue; // Skip this asset and move to the next one
+      }
+    } else {
+      // For native XLM and classic assets, use standard decimals
+      decimals = CLASSIC_ASSET_DECIMALS;
+    }
+
+    results.push({
+      assetCode,
+      assetIssuer,
+      decimals,
+      amount: trimTrailingZeros(change.amount),
+      isCredit,
+      destination:
+        destination && destination !== publicKey ? destination : undefined,
+      icon,
+    });
+  }
+
+  return results;
+};
+
 export interface OperationDataRow {
   action: string | null;
   actionIcon: string;
@@ -359,6 +486,7 @@ export const getRowDataByOpType = async (
     created_at: createdAt,
     id,
     to,
+    to_muxed,
     from,
     starting_balance: startingBalance,
     type,
@@ -424,12 +552,10 @@ export const getRowDataByOpType = async (
     "source_amount" in operation ? operation.source_amount : null;
 
   if (isSwap) {
-    const nonLabelAmount = `${formatAmount(
-      new BigNumber(amount!).toString(),
-    )} ${destAssetCode}`;
-    const formattedAmount = `+${nonLabelAmount}`;
+    const nonLabelAmount = formatAmount(new BigNumber(amount!).toString());
+    const formattedAmount = `+${nonLabelAmount} ${destAssetCode}`;
     const formattedSrcAmount = srcAmount
-      ? `${formatAmount(new BigNumber(srcAmount).toString())} ${srcAssetCode}`
+      ? formatAmount(new BigNumber(srcAmount).toString())
       : null;
 
     const destIcon =
@@ -461,6 +587,7 @@ export const getRowDataByOpType = async (
       id,
       metadata: {
         ...baseMetadata,
+        destAssetCode,
         destIcon,
         destMinAmount: destAssetCode,
         formattedSrcAmount,
@@ -473,7 +600,9 @@ export const getRowDataByOpType = async (
       rowText: (
         <div className="HistoryItem__description__swap-label">
           <span>{srcAssetCode}</span>
-          <Icon.ArrowRight className="swap-label-direction" />
+          <span className="HistoryItem__description__swap-label__separator">
+            {i18n.t("to")}
+          </span>
           <span>{destAssetCode}</span>
         </div>
       ),
@@ -481,19 +610,14 @@ export const getRowDataByOpType = async (
   }
 
   if (isPayment) {
-    // Extract destination from XDR to get muxed address if present
-    const actualDestination = await extractDestinationFromXDR(
-      txEnvelopeXdr,
-      networkDetails,
-      to || "",
-    );
+    const destination = to_muxed || to || "";
+    const sender = from || "";
+
     // default to Sent if a payment to self
-    const isReceiving = actualDestination === publicKey && from !== publicKey;
+    const isReceiving = destination === publicKey && sender !== publicKey;
     const paymentDifference = isReceiving ? "+" : "-";
-    const nonLabelAmount = `${formatAmount(
-      new BigNumber(amount!).toString(),
-    )} ${destAssetCode}`;
-    const formattedAmount = `${paymentDifference}${nonLabelAmount}`;
+    const nonLabelAmount = formatAmount(new BigNumber(amount!).toString());
+    const formattedAmount = `${paymentDifference}${nonLabelAmount} ${destAssetCode}`;
 
     const destIcon =
       destAssetCode === "XLM"
@@ -520,14 +644,14 @@ export const getRowDataByOpType = async (
         isPayment,
         isReceiving,
         nonLabelAmount,
-        to: actualDestination,
+        to: destination,
+        from: sender,
       },
       rowText: destAssetCode,
     };
   }
 
   if (isInvokeHostFn) {
-    const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
     const genericInvocation = {
       action: "Interacted",
       actionIcon: "contractInteraction",
@@ -542,6 +666,46 @@ export const getRowDataByOpType = async (
       rowText: i18n.t("Contract Function"),
     };
 
+    const assetDiffs = await processAssetBalanceChanges(
+      operation,
+      publicKey,
+      networkDetails,
+      homeDomains,
+      icons,
+      fetchTokenDetails,
+    );
+
+    if (assetDiffs.length > 0) {
+      // Use first asset diff for the row display amount
+      const primaryDiff = assetDiffs[0];
+      const paymentDifference = primaryDiff.isCredit ? "+" : "-";
+      const formattedAmount =
+        assetDiffs.length > 1
+          ? "Multiple"
+          : `${paymentDifference}${primaryDiff.amount} ${primaryDiff.assetCode}`;
+
+      const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
+      const isTokenTransfer = attrs?.fnName === SorobanTokenInterface.transfer;
+      const isTokenMint = attrs?.fnName === SorobanTokenInterface.mint;
+
+      return {
+        ...genericInvocation,
+        amount: formattedAmount,
+        metadata: {
+          ...genericInvocation.metadata,
+          hasAssetDiffs: true,
+          assetDiffs,
+          isReceiving: primaryDiff.isCredit,
+          isTokenTransfer,
+          isTokenMint,
+          to: primaryDiff.destination,
+          nonLabelAmount: primaryDiff.amount,
+          destAssetCode: primaryDiff.assetCode,
+        },
+      };
+    }
+
+    const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
     if (!attrs) {
       return genericInvocation;
     }
@@ -674,6 +838,7 @@ export const getRowDataByOpType = async (
           isReceiving,
           nonLabelAmount,
           to: actualDestination,
+          from,
         },
         rowIcon: (
           <div className="HistoryItem__icon__bordered">

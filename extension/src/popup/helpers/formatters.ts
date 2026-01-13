@@ -128,5 +128,14 @@ export const trimTrailingZeros = (amount: string): string => {
     return amount;
   }
 
-  return amount.replace(/\.?0+$/, "");
+  let trimmed = amount;
+  while (trimmed.endsWith("0")) {
+    trimmed = trimmed.substring(0, trimmed.length - 1);
+  }
+
+  if (trimmed.endsWith(".")) {
+    trimmed = trimmed.substring(0, trimmed.length - 1);
+  }
+
+  return trimmed;
 };

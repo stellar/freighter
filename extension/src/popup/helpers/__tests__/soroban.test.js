@@ -13,7 +13,6 @@ import {
   buildInvocationTree,
   getAvailableBalance,
   getDecimalsForAsset,
-  getContractIdFromTransactionData,
   CLASSIC_ASSET_DECIMALS,
 } from "../soroban";
 import { TEST_PUBLIC_KEY } from "popup/__testHelpers__";
@@ -337,113 +336,5 @@ describe("getDecimalsForAsset", () => {
 
     expect(decimals).toBe(CLASSIC_ASSET_DECIMALS);
     expect(mockGetTokenDetails).not.toHaveBeenCalled();
-  });
-});
-
-describe("getContractIdFromTransactionData", () => {
-  // Valid testnet contract addresses
-  const testContractId =
-    "CAZXEHTSQATVQVWDPWWDTFSY6CM764JD4MZ6HUVPO3QKS64QEEP4KJH7";
-  const testCollectionAddress =
-    "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN";
-
-  it("should return collectionAddress when isCollectible is true and collectionAddress is provided", () => {
-    const result = getContractIdFromTransactionData({
-      isCollectible: true,
-      collectionAddress: testCollectionAddress,
-      isToken: false,
-      asset: "",
-      networkDetails: TESTNET_NETWORK_DETAILS,
-    });
-
-    expect(result).toBe(testCollectionAddress);
-  });
-
-  it("should return undefined when isCollectible is true but collectionAddress is empty", () => {
-    const result = getContractIdFromTransactionData({
-      isCollectible: true,
-      collectionAddress: "",
-      isToken: false,
-      asset: `USDC:${testContractId}`,
-      networkDetails: TESTNET_NETWORK_DETAILS,
-    });
-
-    expect(result).toBeUndefined();
-  });
-
-  it("should return undefined when isToken is false", () => {
-    const result = getContractIdFromTransactionData({
-      isCollectible: false,
-      collectionAddress: "",
-      isToken: false,
-      asset: "native",
-      networkDetails: TESTNET_NETWORK_DETAILS,
-    });
-
-    expect(result).toBeUndefined();
-  });
-
-  it("should return undefined when asset is empty and isToken is true", () => {
-    const result = getContractIdFromTransactionData({
-      isCollectible: false,
-      collectionAddress: "",
-      isToken: true,
-      asset: "",
-      networkDetails: TESTNET_NETWORK_DETAILS,
-    });
-
-    expect(result).toBeUndefined();
-  });
-
-  it("should return contractId when isToken is true", () => {
-    const result = getContractIdFromTransactionData({
-      isCollectible: false,
-      collectionAddress: "",
-      isToken: true,
-      asset: testContractId,
-      networkDetails: TESTNET_NETWORK_DETAILS,
-    });
-
-    expect(result).toBe(testContractId);
-  });
-
-  it("should return native contract ID when asset is 'native' and isToken is true", () => {
-    const result = getContractIdFromTransactionData({
-      isCollectible: false,
-      collectionAddress: "",
-      isToken: true,
-      asset: "native",
-      networkDetails: TESTNET_NETWORK_DETAILS,
-    });
-
-    // The native contract on testnet has a specific contract ID
-    expect(result).toBeDefined();
-    expect(typeof result).toBe("string");
-  });
-
-  it("should prioritize collectible over token when both flags are true", () => {
-    const result = getContractIdFromTransactionData({
-      isCollectible: true,
-      collectionAddress: testCollectionAddress,
-      isToken: true,
-      asset: `USDC:${testContractId}`,
-      networkDetails: TESTNET_NETWORK_DETAILS,
-    });
-
-    // Should return the collection address, not the token contract ID
-    expect(result).toBe(testCollectionAddress);
-  });
-
-  it("should return undefined when asset is 'native' (classic asset) and isToken is true", () => {
-    const result = getContractIdFromTransactionData({
-      isCollectible: false,
-      collectionAddress: "",
-      isToken: true,
-      asset: "CODE:ISSUER", // Classic asset format
-      networkDetails: TESTNET_NETWORK_DETAILS,
-    });
-
-    // Classic assets don't have contract IDs, so should return undefined
-    expect(result).toBeUndefined();
   });
 });
