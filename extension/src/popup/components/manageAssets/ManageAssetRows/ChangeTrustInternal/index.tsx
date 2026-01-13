@@ -64,7 +64,6 @@ export const ChangeTrustInternal = ({
 }: ChangeTrustInternalProps) => {
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const [activePaneIndex, setActivePaneIndex] = useState(0);
-  const [blockaidAcknowledged, setBlockaidAcknowledged] = useState(false);
   const [activeBodyContent, setActiveBodyContent] = useState(
     ActiveBodyContent.details,
   );
@@ -105,8 +104,7 @@ export const ChangeTrustInternal = ({
 
   /**
    * Pane state machine for blockaid warnings:
-   * - If blockaid warning and not acknowledged: [Blockaid, Confirm Transaction, Details]
-   * - After acknowledging: [Confirm Transaction, Details, Blockaid] - blockaid becomes inaccessible
+   * - With blockaid warning: [Confirm Transaction, Details, Blockaid] - Blockaid accessible via banner click
    * - No warning: [Confirm Transaction, Details]
    */
   const paneConfig = React.useMemo(
@@ -117,43 +115,13 @@ export const ChangeTrustInternal = ({
             confirmIndex: 0,
             detailsIndex: 1,
           }
-        : !blockaidAcknowledged
-          ? {
-              blockaidIndex: 0,
-              confirmIndex: 1,
-              detailsIndex: 2,
-            }
-          : {
-              blockaidIndex: 2,
-              confirmIndex: 0,
-              detailsIndex: 1,
-            },
-    [shouldShowBlockaidWarning, blockaidAcknowledged],
+        : {
+            blockaidIndex: 2,
+            confirmIndex: 0,
+            detailsIndex: 1,
+          },
+    [shouldShowBlockaidWarning],
   );
-
-  // Track previous acknowledgment to avoid overriding manual navigation back to Blockaid
-  const prevBlockaidAckRef = React.useRef(blockaidAcknowledged);
-
-  // If there is any Blockaid warning, start on the Blockaid pane first; when first acknowledged, move to confirm pane
-  React.useEffect(() => {
-    const prevAck = prevBlockaidAckRef.current;
-
-    if (shouldShowBlockaidWarning && !blockaidAcknowledged) {
-      setActivePaneIndex(paneConfig.blockaidIndex ?? 0);
-    } else if (shouldShowBlockaidWarning && blockaidAcknowledged && !prevAck) {
-      setActivePaneIndex(paneConfig.confirmIndex);
-    } else if (!shouldShowBlockaidWarning && activePaneIndex !== 0) {
-      setActivePaneIndex(0);
-    }
-
-    prevBlockaidAckRef.current = blockaidAcknowledged;
-  }, [
-    shouldShowBlockaidWarning,
-    blockaidAcknowledged,
-    paneConfig.blockaidIndex,
-    paneConfig.confirmIndex,
-    activePaneIndex,
-  ]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -242,7 +210,6 @@ export const ChangeTrustInternal = ({
       <BlockAidScanExpanded
         scanResult={state.data.scanResult}
         onClose={() => {
-          setBlockaidAcknowledged(true);
           setActivePaneIndex(paneConfig.confirmIndex);
         }}
       />
@@ -368,11 +335,7 @@ export const ChangeTrustInternal = ({
 
   // Build panes in order
   if (shouldShowBlockaidWarning) {
-    if (!blockaidAcknowledged) {
-      panes.push(blockaidPane, confirmPane, detailsPane);
-    } else {
-      panes.push(confirmPane, detailsPane, blockaidPane);
-    }
+    panes.push(confirmPane, detailsPane, blockaidPane);
   } else {
     panes.push(confirmPane, detailsPane);
   }
@@ -399,7 +362,6 @@ export const ChangeTrustInternal = ({
         }`}
         onClick={(e) => {
           e.preventDefault();
-          setBlockaidAcknowledged(true);
           setActivePaneIndex(paneConfig.confirmIndex);
         }}
       >

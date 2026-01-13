@@ -73,20 +73,19 @@ test.describe("BlockAid Scan - Suspicious States", () => {
 
     await page.getByTestId("ManageAssetRowButton").click();
 
-    // For suspicious assets, should go directly to blockaid pane
-    // Should show expanded view with suspicious details immediately
-    await expect(page.getByText("Suspicious Request")).toBeVisible();
+    // Should be on confirm pane with warning banner visible
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
 
-    // Click Continue to acknowledge and proceed
-    await page.getByText("Continue").click();
+    // Click on the warning banner to view blockaid details
+    await page.getByText("This asset was flagged as suspicious").click();
 
     // Wait for pane animation to finish
     await page.waitForTimeout(1000);
 
-    // Should be on confirm pane with Confirm Anyway button
-    await expect(
-      page.getByRole("button", { name: "Confirm Anyway" }),
-    ).toBeVisible({ timeout: 10000 });
+    // Should show expanded view with suspicious details
+    await expect(page.getByText("Suspicious Request")).toBeVisible();
   });
 
   test("Send payment shows suspicious warning when scan detects suspicious transaction", async ({
@@ -118,22 +117,19 @@ test.describe("BlockAid Scan - Suspicious States", () => {
 
     await page.getByText("Review Send").click({ force: true });
 
-    // For suspicious transactions, should go directly to blockaid pane (not review pane)
-    // Should show expanded suspicious details immediately
+    // Should be on review pane with warning banner visible
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
 
-    // Should show expanded view with suspicious details
-    await expect(page.getByText("Suspicious Request")).toBeVisible();
-
-    // Click Continue to acknowledge and proceed
-    await page.getByText("Continue").click();
+    // Click on the warning banner to view blockaid details
+    await page.getByText("This transaction was flagged as suspicious").click();
 
     // Wait for pane animation to finish
     await page.waitForTimeout(1000);
 
-    // Should be on confirm pane with Confirm Anyway button
-    await expect(
-      page.getByRole("button", { name: "Confirm Anyway" }),
-    ).toBeVisible({ timeout: 10000 });
+    // Should show expanded view with suspicious details
+    await expect(page.getByText("Suspicious Request")).toBeVisible();
   });
 
   test("Swap shows suspicious warning when scan detects suspicious tokens", async ({
@@ -274,22 +270,19 @@ test.describe("BlockAid Scan - Suspicious States", () => {
 
     await continueButton.click({ force: true });
 
-    // For suspicious swap transactions, should go directly to blockaid pane (not review pane)
-    // Should show expanded suspicious details immediately
+    // Should be on review pane with warning banner visible
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
 
-    // Should show expanded view with suspicious details
-    await expect(page.getByText("Suspicious Request")).toBeVisible();
-
-    // Click Continue to acknowledge and proceed
-    await page.getByText("Continue").click();
+    // Click on the warning banner to view blockaid details
+    await page.getByText("This transaction was flagged as suspicious").click();
 
     // Wait for pane animation to finish
     await page.waitForTimeout(1000);
 
-    // Should be on confirm pane with Confirm Anyway button
-    await expect(
-      page.getByRole("button", { name: "Confirm Anyway" }),
-    ).toBeVisible({ timeout: 10000 });
+    // Should show expanded view with suspicious details
+    await expect(page.getByText("Suspicious Request")).toBeVisible();
   });
 
   test("Suspicious transaction ignores memo requirements", async ({
@@ -327,22 +320,22 @@ test.describe("BlockAid Scan - Suspicious States", () => {
 
     await page.getByText("Review Send").click({ force: true });
 
-    // Should go directly to blockaid pane, ignoring memo requirement
+    // Should be on review pane with warning banner visible
     // Should NOT show "Add Memo" banner since security warnings take precedence
     await expect(page.getByText("Add Memo")).not.toBeVisible();
-
-    // Should show suspicious details
-    await expect(page.getByText("Suspicious Request")).toBeVisible();
-
-    // Click Continue to acknowledge and proceed
-    await page.getByText("Continue").click();
-
-    // Wait for pane animation to finish
-    await page.waitForTimeout(1000);
 
     // Should be on confirm pane with Confirm Anyway button
     await expect(
       page.getByRole("button", { name: "Confirm Anyway" }),
     ).toBeVisible({ timeout: 10000 });
+
+    // Click on the warning banner to view blockaid details
+    await page.getByText("This transaction was flagged as suspicious").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
+
+    // Should show suspicious details
+    await expect(page.getByText("Suspicious Request")).toBeVisible();
   });
 });

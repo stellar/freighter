@@ -58,30 +58,26 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     // Click to add the asset
     await page.getByTestId("ManageAssetRowButton").click();
 
-    // For unable-to-scan assets, should go directly to blockaid pane
-    // Should show expanded view with unable-to-scan details immediately
+    // Should be on confirm pane with warning banner visible
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Click on the warning banner to view blockaid details
+    await page.getByText("Proceed with caution").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
+
+    // Should show expanded view with unable-to-scan details
     await expect(page.getByText("Proceed with caution")).toBeVisible();
 
-    // For unable to scan assets, should go directly to blockaid pane (not show banner first)
-    // Should show expanded view with unable to scan details immediately
-    await expect(page.getByText("Proceed with caution")).toBeVisible();
-
-    // Should show unable to scan details immediately
+    // Should show unable to scan details
     await expect(
       page
         .locator(".BlockaidDetailsExpanded__DetailRow")
         .getByText("Unable to scan transaction"),
     ).toBeVisible();
-
-    // Click Continue to go to confirm pane
-    await page.getByText("Continue").click();
-
-    // Wait for pane animation to finish
-    await page.waitForTimeout(1000);
-
-    await expect(
-      page.getByRole("button", { name: "Confirm Anyway" }),
-    ).toBeVisible({ timeout: 10000 });
   });
 
   test("Send payment shows 'Unable to scan transaction' warning when scan fails", async ({
@@ -118,8 +114,16 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     // Click review
     await page.getByText("Review Send").click({ force: true });
 
-    // For unable to scan transactions, should go directly to blockaid pane (not review pane)
-    // Should show expanded unable to scan details immediately
+    // Should be on review pane with warning banner visible
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Click on the warning banner to view blockaid details
+    await page.getByText("Proceed with caution").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
 
     // Should show expanded view with "Unable to scan transaction" detail inside the BlockAid box
     // The text appears in a detail row inside BlockaidDetailsExpanded
@@ -128,17 +132,6 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
         .locator(".BlockaidDetailsExpanded__DetailRow")
         .getByText("Unable to scan transaction"),
     ).toBeVisible();
-
-    // Click Continue to acknowledge and proceed
-    await page.getByText("Continue").click();
-
-    // Wait for pane animation to finish
-    await page.waitForTimeout(1000);
-
-    // Should be on confirm pane with Confirm Anyway button
-    await expect(
-      page.getByRole("button", { name: "Confirm Anyway" }),
-    ).toBeVisible({ timeout: 10000 });
   });
 
   test("Swap shows 'Unable to scan transaction' warning when transaction scan fails", async ({
@@ -277,8 +270,16 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     // Click continue
     await continueButton.click({ force: true });
 
-    // For unable to scan swap transactions, should go directly to blockaid pane (not review pane)
-    // Should show expanded unable to scan details immediately
+    // Should be on review pane with warning banner visible
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Click on the warning banner to view blockaid details
+    await page.getByText("Proceed with caution").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
 
     // Should show expanded view with unable to scan details
     await expect(page.getByText("Proceed with caution")).toBeVisible();
@@ -296,17 +297,6 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
       page
         .locator(".BlockaidDetailsExpanded__DetailRow")
         .getByText("Unable to scan transaction"),
-    ).toBeVisible({ timeout: 10000 });
-
-    // Click Continue to acknowledge and proceed
-    await page.getByText("Continue").click();
-
-    // Wait for pane animation to finish
-    await page.waitForTimeout(1000);
-
-    // Should be on confirm pane with Confirm Anyway button
-    await expect(
-      page.getByRole("button", { name: "Confirm Anyway" }),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -345,22 +335,22 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
 
     await page.getByText("Review Send").click({ force: true });
 
-    // Should go directly to blockaid pane, ignoring memo requirement
+    // Should be on review pane with warning banner visible
     // Should NOT show "Add Memo" banner since security warnings take precedence
     await expect(page.getByText("Add Memo")).not.toBeVisible();
-
-    // Should show unable to scan details
-    await expect(page.getByText("Proceed with caution")).toBeVisible();
-
-    // Click Continue to acknowledge and proceed
-    await page.getByText("Continue").click();
-
-    // Wait for pane animation to finish
-    await page.waitForTimeout(1000);
 
     // Should be on confirm pane with Confirm Anyway button
     await expect(
       page.getByRole("button", { name: "Confirm Anyway" }),
     ).toBeVisible({ timeout: 10000 });
+
+    // Click on the warning banner to view blockaid details
+    await page.getByText("Proceed with caution").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
+
+    // Should show unable to scan details
+    await expect(page.getByText("Proceed with caution")).toBeVisible();
   });
 });

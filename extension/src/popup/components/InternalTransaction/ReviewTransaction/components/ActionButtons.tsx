@@ -22,7 +22,6 @@ interface ActionButtonsProps {
   dest: any;
   asset: any;
   truncatedDest: string;
-  setBlockaidAcknowledged?: (acknowledged: boolean) => void;
   setActivePaneIndex?: (index: number) => void;
 }
 
@@ -41,7 +40,6 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   dest,
   asset,
   truncatedDest,
-  setBlockaidAcknowledged,
   setActivePaneIndex,
 }) => {
   const { t } = useTranslation();
@@ -71,7 +69,6 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
           data-testid="ContinueAction"
           onClick={(e) => {
             e.preventDefault();
-            setBlockaidAcknowledged?.(true);
             setActivePaneIndex?.(paneConfig.reviewIndex);
           }}
         >

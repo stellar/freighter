@@ -125,7 +125,6 @@ export const ReviewTx = ({
   const isHardwareWallet = !!hardwareWalletType;
 
   const [activePaneIndex, setActivePaneIndex] = useState(0);
-  const [blockaidAcknowledged, setBlockaidAcknowledged] = useState(false);
 
   const {
     hardwareWalletData: { status: hwStatus },
@@ -189,8 +188,7 @@ export const ReviewTx = ({
 
   /**
    * Pane state machine:
-   * - If Blockaid warning and not acknowledged: [Blockaid, Review, Memo]
-   * - After Continue (ack): [Review, Memo, Blockaid]
+   * - With Blockaid warning: [Review, Memo, Blockaid] - Blockaid accessible via banner click
    * - No warning: [Review, Memo]
    */
   const paneConfig = React.useMemo(
@@ -201,43 +199,13 @@ export const ReviewTx = ({
             reviewIndex: 0,
             memoIndex: 1,
           }
-        : !blockaidAcknowledged
-          ? {
-              blockaidIndex: 0,
-              reviewIndex: 1,
-              memoIndex: 2,
-            }
-          : {
-              blockaidIndex: 2,
-              reviewIndex: 0,
-              memoIndex: 1,
-            },
-    [shouldShowTxWarning, blockaidAcknowledged],
+        : {
+            blockaidIndex: 2,
+            reviewIndex: 0,
+            memoIndex: 1,
+          },
+    [shouldShowTxWarning],
   );
-
-  // Track previous acknowledgment to avoid overriding manual navigation back to Blockaid
-  const prevBlockaidAckRef = React.useRef(blockaidAcknowledged);
-
-  // If there is any Blockaid warning, start on the Blockaid pane first; when first acknowledged, move to review
-  React.useEffect(() => {
-    const prevAck = prevBlockaidAckRef.current;
-
-    if (shouldShowTxWarning && !blockaidAcknowledged) {
-      setActivePaneIndex(paneConfig.blockaidIndex ?? 0);
-    } else if (shouldShowTxWarning && blockaidAcknowledged && !prevAck) {
-      setActivePaneIndex(paneConfig.reviewIndex);
-    } else if (!shouldShowTxWarning && activePaneIndex !== 0) {
-      setActivePaneIndex(0);
-    }
-
-    prevBlockaidAckRef.current = blockaidAcknowledged;
-  }, [
-    shouldShowTxWarning,
-    blockaidAcknowledged,
-    paneConfig.blockaidIndex,
-    paneConfig.reviewIndex,
-    activePaneIndex,
-  ]);
 
   const isOnBlockaidPane =
     shouldShowTxWarning &&
@@ -421,7 +389,6 @@ export const ReviewTx = ({
     <BlockAidScanExpanded
       scanResult={txScanResult}
       onClose={() => {
-        setBlockaidAcknowledged(true);
         setActivePaneIndex(paneConfig.reviewIndex);
       }}
     />
@@ -461,11 +428,7 @@ export const ReviewTx = ({
   // Build panes in order (no hooks on JSX)
   const panes: React.ReactNode[] = [];
   if (shouldShowTxWarning) {
-    if (!blockaidAcknowledged) {
-      panes.push(blockaidPane, reviewPane, memoPane);
-    } else {
-      panes.push(reviewPane, memoPane, blockaidPane);
-    }
+    panes.push(reviewPane, memoPane, blockaidPane);
   } else {
     panes.push(reviewPane, memoPane);
   }
@@ -497,7 +460,6 @@ export const ReviewTx = ({
               dest={dest}
               asset={asset}
               truncatedDest={truncatedDest}
-              setBlockaidAcknowledged={setBlockaidAcknowledged}
               setActivePaneIndex={setActivePaneIndex}
             />
           </div>

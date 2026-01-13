@@ -73,8 +73,18 @@ test.describe("BlockAid Scan - Malicious States", () => {
 
     await page.getByTestId("ManageAssetRowButton").click();
 
-    // For malicious assets, should go directly to blockaid pane
-    // Should show expanded view with malicious details immediately
+    // Should be on confirm pane with warning banner visible
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Click on the warning banner to view blockaid details
+    await page.getByText("This asset was flagged as malicious").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
+
+    // Should show expanded view with malicious details
     await expect(page.getByText("Do not proceed")).toBeVisible();
 
     // Should show warning detail rows from features
@@ -83,17 +93,6 @@ test.describe("BlockAid Scan - Malicious States", () => {
         "A malicious transaction causes a transfer, draining the user's assets and tokens.",
       ),
     ).toBeVisible();
-
-    // Click Continue to go to confirm pane
-    await page.getByText("Continue").click();
-
-    // Wait for pane animation to finish
-    await page.waitForTimeout(1000);
-
-    // Should be on confirm pane with Confirm Anyway button
-    await expect(
-      page.getByRole("button", { name: "Confirm Anyway" }),
-    ).toBeVisible({ timeout: 10000 });
   });
 
   test("Send payment shows malicious warning when scan detects malicious transaction", async ({
@@ -125,8 +124,16 @@ test.describe("BlockAid Scan - Malicious States", () => {
 
     await page.getByText("Review Send").click({ force: true });
 
-    // For malicious transactions, should go directly to blockaid pane (not review pane)
-    // Should show expanded malicious details immediately
+    // Should be on review pane with warning banner visible
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Click on the warning banner to view blockaid details
+    await page.getByText("This transaction was flagged as malicious").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
 
     // Should show expanded view with malicious details
     await expect(page.getByText("Do not proceed")).toBeVisible();
@@ -137,17 +144,6 @@ test.describe("BlockAid Scan - Malicious States", () => {
         .locator(".BlockaidDetailsExpanded__DetailRowError")
         .getByText(/A malicious transaction causes a transfer/),
     ).toBeVisible();
-
-    // Click Continue to acknowledge and proceed
-    await page.getByText("Continue").click();
-
-    // Wait for pane animation to finish
-    await page.waitForTimeout(1000);
-
-    // Should be on confirm pane with Confirm Anyway button
-    await expect(
-      page.getByRole("button", { name: "Confirm Anyway" }),
-    ).toBeVisible({ timeout: 10000 });
   });
 
   test("Swap shows malicious warning when scan detects malicious tokens", async ({
@@ -288,8 +284,16 @@ test.describe("BlockAid Scan - Malicious States", () => {
 
     await continueButton.click({ force: true });
 
-    // For malicious swap transactions, should go directly to blockaid pane (not review pane)
-    // Should show expanded malicious details immediately
+    // Should be on review pane with warning banner visible
+    await expect(
+      page.getByRole("button", { name: "Confirm Anyway" }),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Click on the warning banner to view blockaid details
+    await page.getByText("This transaction was flagged as malicious").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
 
     // Should show expanded view with malicious details
     await expect(page.getByText("Do not proceed")).toBeVisible();
@@ -302,17 +306,6 @@ test.describe("BlockAid Scan - Malicious States", () => {
         )
         .getByText(/A malicious transaction causes a transfer/),
     ).toBeVisible();
-
-    // Click Continue to acknowledge and proceed
-    await page.getByText("Continue").click();
-
-    // Wait for pane animation to finish
-    await page.waitForTimeout(1000);
-
-    // Should be on confirm pane with Confirm Anyway button
-    await expect(
-      page.getByRole("button", { name: "Confirm Anyway" }),
-    ).toBeVisible({ timeout: 10000 });
   });
 
   test("Malicious transaction ignores memo requirements", async ({
@@ -350,22 +343,22 @@ test.describe("BlockAid Scan - Malicious States", () => {
 
     await page.getByText("Review Send").click({ force: true });
 
-    // Should go directly to blockaid pane, ignoring memo requirement
+    // Should be on review pane with warning banner visible
     // Should NOT show "Add Memo" banner since security warnings take precedence
     await expect(page.getByText("Add Memo")).not.toBeVisible();
-
-    // Should show malicious details
-    await expect(page.getByText("Do not proceed")).toBeVisible();
-
-    // Click Continue to acknowledge and proceed
-    await page.getByText("Continue").click();
-
-    // Wait for pane animation to finish
-    await page.waitForTimeout(1000);
 
     // Should be on confirm pane with Confirm Anyway button
     await expect(
       page.getByRole("button", { name: "Confirm Anyway" }),
     ).toBeVisible({ timeout: 10000 });
+
+    // Click on the warning banner to view blockaid details
+    await page.getByText("This transaction was flagged as malicious").click();
+
+    // Wait for pane animation to finish
+    await page.waitForTimeout(1000);
+
+    // Should show malicious details
+    await expect(page.getByText("Do not proceed")).toBeVisible();
   });
 });
