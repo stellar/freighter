@@ -322,7 +322,6 @@ export const TransactionDetail = ({
               size="xs"
               weight="regular"
               addlClassName="TransactionDetailModal__subtitle"
-              data-testid="TransactionDetailModal__subtitle-date"
             >
               <>
                 {getActionIconByType(activeOperation.actionIcon)}
