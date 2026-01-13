@@ -26,15 +26,10 @@ import { isAssetVisible } from "./settings";
 import {
   getRowDataByOpType,
   OperationDataRow,
-  getHomeDomainsForOperations,
-  CollectibleLookupMap,
+  getHomeDomainsAndCollectiblesForOperations,
 } from "popup/views/AccountHistory/hooks/useGetHistoryData";
 import { TokenDetailsResponse } from "helpers/hooks/useTokenDetails";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
-import { batchFetchCollectibles } from "helpers/utils/collectibles/collectiblesBatchFetcher";
-import { ContractIdentifier } from "helpers/utils/collectibles/collectiblesCache";
-import { SorbanCollectibleInterface } from "@shared/constants/soroban/token";
-import { captureException } from "@sentry/browser";
 
 export const LP_IDENTIFIER = ":lp";
 
@@ -161,69 +156,15 @@ export const sortOperationsByAsset = async ({
   /* 
     To prevent multiple requests for home domains as we build each row, 
     we iterate through the operations and collect the asset issuers that need home domains in a single request.
+    Also collect and fetch needed collectible contracts.
   */
-  const fetchedHomeDomains = await getHomeDomainsForOperations(
-    operations,
-    networkDetails,
-    homeDomains,
-  );
-
-  // Collect all collectible contract IDs and token IDs for batch fetching
-  const collectibleContracts = new Map<string, Set<string>>();
-  for (const op of operations) {
-    if (op.type_i === 24) {
-      const attrs = getAttrsFromSorobanHorizonOp(op, networkDetails);
-      if (
-        attrs &&
-        attrs.fnName === SorbanCollectibleInterface.transfer &&
-        attrs.tokenId &&
-        !attrs.amount
-      ) {
-        const contractId = attrs.contractId;
-        const tokenId = attrs.tokenId.toString();
-        if (!collectibleContracts.has(contractId)) {
-          collectibleContracts.set(contractId, new Set());
-        }
-        collectibleContracts.get(contractId)!.add(tokenId);
-      }
-    }
-  }
-
-  // Batch fetch all collectibles
-  const collectibleLookup: CollectibleLookupMap = new Map();
-  if (collectibleContracts.size > 0) {
-    const contractsToFetch: ContractIdentifier[] = Array.from(
-      collectibleContracts.entries(),
-    ).map(([contractId, tokenIds]) => ({
-      id: contractId,
-      token_ids: Array.from(tokenIds),
-    }));
-
-    try {
-      const batchResult = await batchFetchCollectibles({
-        publicKey,
-        networkDetails,
-        contracts: contractsToFetch,
-        useCache: true,
-      });
-
-      // Build lookup map: "contractId:tokenId" -> Collectible
-      for (const collection of batchResult.collections) {
-        const contractId =
-          collection.collection?.address || collection.error?.collectionAddress;
-        if (!contractId) continue;
-
-        const collectibles = collection.collection?.collectibles || [];
-        for (const collectible of collectibles) {
-          const lookupKey = `${contractId}:${collectible.tokenId}`;
-          collectibleLookup.set(lookupKey, collectible);
-        }
-      }
-    } catch (error) {
-      captureException(`Error batch fetching collectibles: ${error}`);
-      // Continue with empty lookup map - operations will fall back to generic invocation
-    }
-  }
+  const { homeDomains: fetchedHomeDomains, collectibleLookup } =
+    await getHomeDomainsAndCollectiblesForOperations(
+      operations,
+      networkDetails,
+      publicKey,
+      homeDomains,
+    );
 
   for (const op of operations) {
     const isPayment = getIsPayment(op.type);
