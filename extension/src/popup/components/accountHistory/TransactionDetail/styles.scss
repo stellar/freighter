@@ -77,6 +77,7 @@
   padding: pxToRem(32px) pxToRem(16px);
 
   &__title-row {
+    align-items: center;
     display: flex;
   }
 
@@ -87,8 +88,8 @@
     align-items: center;
     justify-content: center;
     margin-right: pxToRem(12px);
-    height: 32px;
-    width: 30px;
+    height: pxToRem(32px);
+    width: pxToRem(32px);
   }
 
   &__title-row-details {

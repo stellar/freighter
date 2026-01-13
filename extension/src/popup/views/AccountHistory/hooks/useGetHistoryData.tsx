@@ -328,7 +328,7 @@ const extractDestinationFromXDR = async (
     // For now, we'll rely on the fallback (attrs.to) which should already have the correct address
     // since Soroban operations preserve muxed addresses in their arguments
   } catch (error) {
-    console.error("Failed to parse XDR for destination address", error);
+    captureException(`Failed to parse XDR for destination address: ${error}`);
   }
 
   return fallbackTo;
@@ -424,6 +424,7 @@ const processAssetBalanceChanges = async (
     publicKey: string;
     networkDetails: NetworkDetails;
   }) => Promise<TokenDetailsResponse | Error>,
+  cachedTokenLists: AssetListResponse[],
 ): Promise<AssetDiffSummary[]> => {
   if (
     !operation.asset_balance_changes ||
@@ -467,6 +468,7 @@ const processAssetBalanceChanges = async (
             networkDetails,
             homeDomains,
             icons,
+            cachedTokenLists,
           });
 
     // Fetch decimals based on whether it's a Soroban contract
@@ -741,6 +743,7 @@ export const getRowDataByOpType = async (
       homeDomains,
       icons,
       fetchTokenDetails,
+      cachedTokenLists,
     );
 
     if (assetDiffs.length > 0) {
@@ -912,6 +915,7 @@ export const getRowDataByOpType = async (
             isInvokeHostFn,
             isCollectibleTransfer: true,
             to: actualDestination,
+            amount: `#${collectible.tokenId}`,
             collectionName: collectible.collectionName,
             collectionTokenId: collectible.tokenId,
             collectibleName: getCollectibleName(

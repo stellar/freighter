@@ -113,13 +113,10 @@ export const AccountCollectibles = ({
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
 
-  console.log(collections);
   const userCollections = getUserCollections({
     collections,
     publicKey,
   });
-
-  console.log(userCollections);
 
   return (
     <div className="AccountCollectibles" data-testid="account-collectibles">

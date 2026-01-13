@@ -239,7 +239,7 @@ describe("collectiblesBatchFetcher", () => {
 
       mockGetCachedCollections.mockReturnValue(cachedCollections);
       mockHasValidCache.mockReturnValue(true);
-      mockIsContractInCache.mockImplementation((collections, contractId) => {
+      mockIsContractInCache.mockImplementation((_, contractId) => {
         return contractId === "C123";
       });
 

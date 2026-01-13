@@ -85,6 +85,15 @@ export const TransactionDetail = ({
     isReceiving: boolean;
   }
 
+  interface CollectibleTransferMetadata {
+    to?: string;
+    from?: string;
+    amount: string;
+    destIcon?: string;
+    destAssetCode: string;
+    isReceiving: boolean;
+  }
+
   interface SwapMetadata {
     formattedSrcAmount: string;
     srcAssetCode: string;
@@ -112,6 +121,24 @@ export const TransactionDetail = ({
         assetIssuer: null,
         decimals: CLASSIC_ASSET_DECIMALS,
         amount: nonLabelAmount,
+        isCredit: isReceiving,
+        destination: isReceiving ? from : to,
+        icon: destIcon,
+      },
+    ];
+  };
+
+  const normalizeCollectibleTransferToAssetDiffs = (
+    metadata: CollectibleTransferMetadata,
+  ): AssetDiffSummary[] => {
+    const { to, from, amount, destIcon, destAssetCode, isReceiving } = metadata;
+
+    return [
+      {
+        assetCode: destAssetCode,
+        assetIssuer: null,
+        decimals: CLASSIC_ASSET_DECIMALS,
+        amount,
         isCredit: isReceiving,
         destination: isReceiving ? from : to,
         icon: destIcon,
@@ -169,6 +196,7 @@ export const TransactionDetail = ({
     shouldShowToFrom: boolean,
     toFromAddress: string | undefined,
     isReceiving: boolean,
+    isCollectibleTransfer: boolean,
   ) => {
     if (!creditDebits || creditDebits.length === 0) {
       return null;
@@ -193,7 +221,7 @@ export const TransactionDetail = ({
                 className={`AssetDiff__value ${diff.isCredit ? "credit" : "debit"}`}
                 data-testid={`AssetDiff__amount-${index}`}
               >
-                {diff.isCredit ? "+" : "-"}
+                {isCollectibleTransfer ? "" : diff.isCredit ? "+" : "-"}
                 {diff.amount} {diff.assetCode}
               </div>
             </div>
@@ -227,6 +255,10 @@ export const TransactionDetail = ({
       activeOperation.metadata.assetDiffs
     ) {
       creditDebits = activeOperation.metadata.assetDiffs;
+    } else if (activeOperation.metadata.isCollectibleTransfer) {
+      creditDebits = normalizeCollectibleTransferToAssetDiffs(
+        activeOperation.metadata as CollectibleTransferMetadata,
+      );
     } else if (activeOperation.metadata.isPayment) {
       creditDebits = normalizePaymentToAssetDiffs(
         activeOperation.metadata as PaymentMetadata,
@@ -252,6 +284,8 @@ export const TransactionDetail = ({
         activeOperation.metadata.isTokenMint)
     ) {
       title = `${activeOperation.action} ${activeOperation.rowText}`;
+    } else if (activeOperation.metadata.isCollectibleTransfer) {
+      title = `${t("Sent Collectible")}`;
     } else if (activeOperation.metadata.isSwap) {
       title = `${activeOperation.action} ${activeOperation.metadata.srcAssetCode} to ${activeOperation.metadata.destAssetCode}`;
     } else if (activeOperation.metadata.isPayment) {
@@ -277,12 +311,18 @@ export const TransactionDetail = ({
             {activeOperation.rowIcon}
           </div>
           <div className="TransactionDetailModal__title-details">
-            <div className="TransactionDetailModal__title">{title}</div>
+            <div
+              className="TransactionDetailModal__title"
+              data-testid="TransactionDetailModal__title"
+            >
+              {title}
+            </div>
             <Text
               as="div"
               size="xs"
               weight="regular"
               addlClassName="TransactionDetailModal__subtitle"
+              data-testid="TransactionDetailModal__subtitle-date"
             >
               <>
                 {getActionIconByType(activeOperation.actionIcon)}
@@ -301,6 +341,7 @@ export const TransactionDetail = ({
           shouldShowToFrom,
           toFromAddress,
           isReceiving,
+          activeOperation.metadata.isCollectibleTransfer || false,
         )}
       </>
     );

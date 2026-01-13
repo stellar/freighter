@@ -299,7 +299,8 @@ export const getArgsForTokenInvocation = (
   const thirdArgType = args[2].switch();
 
   switch (fnName) {
-    case SorobanTokenInterface.transfer || SorbanCollectibleInterface.transfer:
+    case SorobanTokenInterface.transfer:
+    case SorbanCollectibleInterface.transfer:
       // both SEP-41 & SEP-50 tokens use the transfer method
       // with different signatures. Without parsing the token spec,
       // we can guess that the contract is either a token or a collectible
