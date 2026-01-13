@@ -151,7 +151,6 @@ describe("imagePreloader", () => {
 
     it("should not call onProgress when not provided", async () => {
       const imageUrl = "https://example.com/image.png";
-      const onProgress = jest.fn();
 
       await preloadImages([imageUrl]);
 

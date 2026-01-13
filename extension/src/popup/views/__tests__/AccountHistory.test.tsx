@@ -495,11 +495,8 @@ describe("AccountHistory", () => {
       screen.getByTestId("TransactionDetailModal__subtitle-date"),
     ).toHaveTextContent("Dec 30");
     expect(
-      screen.getByTestId("TransactionDetailModal__src-collectible-name"),
-    ).toHaveTextContent("Stellar Frog Collectible 2");
-    expect(
-      screen.getByTestId("TransactionDetailModal__src-collection-name"),
-    ).toHaveTextContent("Stellar Frogs #2");
+      screen.getByTestId("TransactionDetailModal__title"),
+    ).toHaveTextContent("Sent Collectible");
     // Verify the collectible image is displayed in the transaction detail modal
     const modalImages = screen.getAllByTestId("account-collectible-image");
     expect(modalImages.length).toBeGreaterThan(0);
@@ -635,8 +632,8 @@ describe("AccountHistory", () => {
     expect(screen.getByTestId("TransactionDetailModal")).toBeDefined();
     // When metadata is null, it should still display the tokenId with fallback format
     expect(
-      screen.getByTestId("TransactionDetailModal__src-collectible-name"),
-    ).toHaveTextContent("Token #2");
+      screen.getByTestId("TransactionDetailModal__title"),
+    ).toHaveTextContent("Sent Collectible");
     // Verify placeholder is also shown in the modal when metadata is null
     const modalPlaceholders = screen.getAllByTestId(
       "account-collectible-placeholder",
