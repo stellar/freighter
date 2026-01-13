@@ -94,8 +94,6 @@ function useGetCollectibles({
             token_ids: collectible.tokenIds,
           }));
 
-        console.log(storedContracts);
-
         // Fetch collectibles from API
         // storedContracts may be empty, but this will still return special-cased collectibles like Meridian Pay
         const collections = await fetchCollectibles({
