@@ -104,7 +104,13 @@ export const HistoryItem = ({
             </Text>
           </div>
           <div
-            className={`HistoryItem__amount ${operation.amount?.startsWith("+") ? "credit" : "debit"}`}
+            className={`HistoryItem__amount ${
+              operation.amount === "multiple"
+                ? ""
+                : operation.amount?.startsWith("+")
+                  ? "credit"
+                  : "debit"
+            }`}
             data-testid="history-item-amount-component"
           >
             <span className="HistoryItem--amount">{operation.amount}</span>
