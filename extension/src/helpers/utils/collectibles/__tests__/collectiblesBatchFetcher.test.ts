@@ -1064,13 +1064,13 @@ describe("collectiblesBatchFetcher", () => {
     });
 
     it("should handle undefined collectibles arrays", () => {
-      const cached: Collection = {
+      const cached = {
         collection: {
           address: "C123",
           name: "Collection 1",
           symbol: "COL1",
         },
-      };
+      } as Collection;
 
       const fetched: Collection = {
         collection: {
