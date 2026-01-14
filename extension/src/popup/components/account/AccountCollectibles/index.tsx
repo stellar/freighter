@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { Icon } from "@stellar/design-system";
 
 import { Collection, CollectibleKey } from "@shared/api/types/types";
@@ -11,9 +10,8 @@ import {
   SheetTitle,
 } from "popup/basics/shadcn/Sheet";
 import { CollectibleDetail, SelectedCollectible } from "../CollectibleDetail";
-import { getHiddenCollectibles } from "@shared/api/internal";
-import { publicKeySelector } from "popup/ducks/accountServices";
 import { CollectibleInfoImage } from "../CollectibleInfo";
+import { useHiddenCollectibles } from "../hooks/useHiddenCollectibles";
 
 import "./styles.scss";
 
@@ -160,26 +158,8 @@ export const AccountCollectibles = ({
   collections,
 }: AccountCollectiblesProps) => {
   const { t } = useTranslation();
-  const publicKey = useSelector(publicKeySelector);
-  const [hiddenCollectibles, setHiddenCollectibles] = useState<
-    Record<CollectibleKey, string>
-  >({});
-
-  const fetchHiddenCollectibles = useCallback(async () => {
-    try {
-      const { hiddenCollectibles: hidden } = await getHiddenCollectibles({
-        activePublicKey: publicKey || "",
-      });
-      setHiddenCollectibles(hidden || {});
-    } catch (error) {
-      console.error("Failed to fetch hidden collectibles:", error);
-      setHiddenCollectibles({});
-    }
-  }, [publicKey]);
-
-  useEffect(() => {
-    fetchHiddenCollectibles();
-  }, [fetchHiddenCollectibles]);
+  const { hiddenCollectibles, refreshHiddenCollectibles } =
+    useHiddenCollectibles();
 
   return (
     <div className="AccountCollectibles" data-testid="account-collectibles">
@@ -188,7 +168,7 @@ export const AccountCollectibles = ({
           collections={collections}
           showHidden={false}
           hiddenCollectibles={hiddenCollectibles}
-          onCloseCollectible={fetchHiddenCollectibles}
+          onCloseCollectible={refreshHiddenCollectibles}
         />
       ) : (
         <div className="AccountCollectibles__empty">
