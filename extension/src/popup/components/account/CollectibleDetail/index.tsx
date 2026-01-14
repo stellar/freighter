@@ -26,6 +26,7 @@ import { useCollectibleDetail } from "./hooks/useCollectibleDetail";
 import {
   getCollectibleName,
   CollectibleInfo,
+  CollectibleInfoImage,
   CollectibleInfoBlock,
   CollectibleDescription,
 } from "../CollectibleInfo";
@@ -181,19 +182,28 @@ export const CollectibleDetail = ({
         ) : (
           <View.Content>
             <div className="CollectibleDetail__content">
-              <CollectibleInfo
-                name={name}
-                collectionName={collectionData?.collection?.name || ""}
-                tokenId={selectedCollectible.tokenId}
-                image={collectible.metadata?.image}
-                dataTestIdBase="CollectibleDetail"
-              />
+              <div
+                className="CollectibleInfo__image"
+                data-testid="CollectibleDetail__image"
+              >
+                <CollectibleInfoImage
+                  image={collectible.metadata?.image}
+                  name={name}
+                />
+              </div>
               {isHidden && (
                 <Notification
+                  icon={<Icon.EyeOff />}
                   variant="warning"
                   title={t("This collectible is hidden")}
                 />
               )}
+              <CollectibleInfo
+                name={name}
+                collectionName={collectionData?.collection?.name || ""}
+                tokenId={selectedCollectible.tokenId}
+                dataTestIdBase="CollectibleDetail"
+              />
               <CollectibleDescription
                 description={collectible.metadata?.description || ""}
                 dataTestIdBase="CollectibleDetail"
