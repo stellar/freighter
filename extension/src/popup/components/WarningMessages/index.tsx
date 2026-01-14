@@ -588,7 +588,7 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
   );
 };
 
-export const BlockAidMaliciousLabel = ({
+export const BlockAidMaliciousSiteLabel = ({
   onClick,
 }: {
   onClick: () => void;
@@ -596,7 +596,7 @@ export const BlockAidMaliciousLabel = ({
   const { t } = useTranslation();
   return (
     <div
-      className="ScanLabel ScanMalicious"
+      className={`ScanLabel ScanMalicious SiteMalicious`}
       data-testid="blockaid-malicious-label"
       onClick={onClick}
     >
@@ -613,10 +613,63 @@ export const BlockAidMaliciousLabel = ({
   );
 };
 
+export const BlockAidSuspiciousSiteLabel = ({
+  onClick,
+}: {
+  onClick: () => void;
+}) => {
+  const { t } = useTranslation();
+  return (
+    <div
+      className="ScanLabel ScanMiss SiteSuspicious"
+      data-testid="blockaid-suspicious-label"
+      onClick={onClick}
+    >
+      <div className="ScanLabel__Info">
+        <div className="Icon">
+          <Icon.InfoSquare className="WarningMessage__icon" />
+        </div>
+        <p className="Message">{t("This site was flagged as suspicious")}</p>
+      </div>
+      <div className="ScanLabel__Action">
+        <Icon.ChevronRight />
+      </div>
+    </div>
+  );
+};
+
+export const BlockAidUnableToScanSiteLabel = ({
+  onClick,
+}: {
+  onClick: () => void;
+}) => {
+  const { t } = useTranslation();
+  return (
+    <div
+      className="ScanLabel ScanMiss SiteUnableToScan"
+      data-testid="blockaid-unable-to-scan-label"
+      onClick={onClick}
+    >
+      <div className="ScanLabel__Info">
+        <div className="Icon">
+          <Icon.InfoSquare className="WarningMessage__icon" />
+        </div>
+        <p className="Message">{t("Proceed with caution")}</p>
+      </div>
+      <div className="ScanLabel__Action">
+        <Icon.ChevronRight />
+      </div>
+    </div>
+  );
+};
+
 export const BlockAidMissLabel = () => {
   const { t } = useTranslation();
   return (
-    <div className="ScanLabel ScanMiss" data-testid="blockaid-miss-label">
+    <div
+      className="ScanLabel ScanMiss SiteUnableToScan"
+      data-testid="blockaid-miss-label"
+    >
       <div className="ScanLabel__Info">
         <div className="Icon">
           <Icon.InfoSquare className="WarningMessage__icon" />
@@ -632,18 +685,30 @@ export const BlockAidMissLabel = () => {
 export const BlockAidSiteScanLabel = ({
   status,
   isMalicious,
+  isSuspicious,
+  isUnableToScan,
   onClick,
 }: {
-  status: "hit" | "miss";
+  status: "hit" | "miss" | undefined;
   isMalicious: boolean;
+  isSuspicious?: boolean;
+  isUnableToScan?: boolean;
   onClick: () => void;
 }) => {
+  if (isUnableToScan) {
+    return <BlockAidUnableToScanSiteLabel onClick={onClick} />;
+  }
+
   if (status === "miss") {
     return <BlockAidMissLabel />;
   }
 
   if (isMalicious) {
-    return <BlockAidMaliciousLabel onClick={onClick} />;
+    return <BlockAidMaliciousSiteLabel onClick={onClick} />;
+  }
+
+  if (isSuspicious) {
+    return <BlockAidSuspiciousSiteLabel onClick={onClick} />;
   }
 
   // benign case should not show anything for now
@@ -1005,7 +1070,6 @@ export const BlockAidScanExpanded = ({
               <div
                 key={index}
                 className={
-                  warning.icon &&
                   React.isValidElement(warning.icon) &&
                   warning.icon.type === Icon.XCircle
                     ? "BlockaidDetailsExpanded__DetailRowError"

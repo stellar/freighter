@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Button, Icon } from "@stellar/design-system";
@@ -13,6 +13,8 @@ import {
   WarningMessage,
   SSLWarningMessage,
   DomainNotAllowedWarningMessage,
+  BlockAidSiteScanLabel,
+  BlockaidByLine,
 } from "popup/components/WarningMessages";
 import { View } from "popup/basics/layout/View";
 
@@ -40,6 +42,10 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getSiteFavicon } from "popup/helpers/getSiteFavicon";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import { useScanSite, ATTACK_TO_DISPLAY } from "popup/helpers/blockaid";
+import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
+import { getBlockaidOverrideState } from "@shared/api/internal";
+import { SecurityLevel } from "popup/constants/blockaid";
 
 import "./styles.scss";
 
@@ -51,6 +57,7 @@ export const SignMessage = () => {
     settingsNetworkDetailsSelector,
   );
   const publicKey = useSelector(publicKeySelector);
+  const [activePaneIndex, setActivePaneIndex] = useState(0);
 
   const message = parsedSearchParam(location.search) as MessageToSign;
   const {
@@ -84,9 +91,33 @@ export const SignMessage = () => {
     apiVersion,
   );
 
+  // Add site scanning
+  const { scanSite } = useScanSite();
+  const [scanData, setScanData] = useState<any>(null);
+  const [isScanLoaded, setIsScanLoaded] = useState(false);
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+
   useEffect(() => {
     const getData = async () => {
       await fetchData();
+      // Scan the site for security issues
+      try {
+        const result = await scanSite(url);
+        setScanData(result);
+      } catch (error) {
+        console.error("Failed to scan site:", error);
+      } finally {
+        setIsScanLoaded(true);
+      }
+      // Get override state for dev mode
+      try {
+        const overrideState = await getBlockaidOverrideState();
+        setBlockaidOverrideState(overrideState);
+      } catch {
+        setBlockaidOverrideState(null);
+      }
     };
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -166,6 +197,40 @@ export const SignMessage = () => {
   const favicon = getSiteFavicon(domain);
   const validDomain = isDomainValid ? punycodedDomain : `xn-${punycodedDomain}`;
 
+  // Determine security states with override support
+  // Override takes precedence (dev mode only)
+  let isMalicious: boolean;
+  let isSuspicious: boolean;
+  let isUnableToScan: boolean;
+
+  if (blockaidOverrideState) {
+    // Override state takes precedence
+    isMalicious = blockaidOverrideState === SecurityLevel.MALICIOUS;
+    isSuspicious = blockaidOverrideState === SecurityLevel.SUSPICIOUS;
+    isUnableToScan = blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN;
+  } else {
+    // Use actual scan results
+    isUnableToScan = !scanData || scanData.status === undefined;
+    isMalicious = scanData?.status === "hit" && scanData.is_malicious;
+    isSuspicious = scanData?.status === "hit" && !scanData.is_malicious;
+  }
+
+  const shouldShowWarning = isMalicious || isSuspicious || isUnableToScan;
+
+  let attackTypes = [] as string[];
+  if (scanData) {
+    attackTypes = Object.keys(
+      "attack_types" in scanData ? scanData.attack_types : {},
+    );
+  }
+
+  // Inject override message if override is active but no attack types present
+  const hasOverrideWithoutMessages =
+    blockaidOverrideState &&
+    (blockaidOverrideState === SecurityLevel.MALICIOUS ||
+      blockaidOverrideState === SecurityLevel.SUSPICIOUS) &&
+    attackTypes.length === 0;
+
   return isPasswordRequired ? (
     <VerifyAccount
       isApproval
@@ -179,65 +244,194 @@ export const SignMessage = () => {
       )}
       <React.Fragment>
         <View.Content>
-          <div className="SignMessage__Body">
-            <div className="SignMessage__TitleRow">
-              <img
-                className="PunycodedDomain__favicon"
-                src={favicon}
-                alt={t("Site favicon")}
-              />
-              <div className="SignMessage__TitleRow__Detail">
-                <span className="SignMessage__TitleRow__Title">
-                  Sign message
-                </span>
-                <span className="SignMessage__TitleRow__Domain">
-                  {validDomain}
-                </span>
-              </div>
-            </div>
-          </div>
-          {!isDomainListedAllowed && (
-            <DomainNotAllowedWarningMessage domain={domain} />
-          )}
-          <Message prefix={SIGN_MESSAGE_PREFIX} message={message.message} />
-          <div className="SignMessage__Metadata">
-            <div className="SignMessage__Metadata__Row">
-              <div className="SignMessage__Metadata__Label">
-                <Icon.Wallet01 />
-                <span>{t("Wallet")}</span>
-              </div>
-              <div className="SignMessage__Metadata__Value">
-                <KeyIdenticon publicKey={publicKey} />
-              </div>
-            </div>
-          </div>
+          <MultiPaneSlider
+            activeIndex={activePaneIndex}
+            panes={[
+              <div className="SignMessage__MainPane">
+                <div className="SignMessage__Body">
+                  <div className="SignMessage__TitleRow">
+                    <img
+                      className="PunycodedDomain__favicon"
+                      src={favicon}
+                      alt={t("Site favicon")}
+                    />
+                    <div className="SignMessage__TitleRow__Detail">
+                      <span className="SignMessage__TitleRow__Title">
+                        Sign message
+                      </span>
+                      <span className="SignMessage__TitleRow__Domain">
+                        {validDomain}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {!isDomainListedAllowed && (
+                  <DomainNotAllowedWarningMessage domain={domain} />
+                )}
+                {isScanLoaded && shouldShowWarning && (
+                  <div className="SignMessage__BlockaidBanner">
+                    <BlockAidSiteScanLabel
+                      isMalicious={isMalicious}
+                      isSuspicious={isSuspicious}
+                      isUnableToScan={isUnableToScan}
+                      status={scanData?.status}
+                      onClick={() => setActivePaneIndex(1)}
+                    />
+                  </div>
+                )}
+                <Message
+                  prefix={SIGN_MESSAGE_PREFIX}
+                  message={message.message}
+                />
+                <div className="SignMessage__Metadata">
+                  <div className="SignMessage__Metadata__Row">
+                    <div className="SignMessage__Metadata__Label">
+                      <Icon.Wallet01 />
+                      <span>{t("Wallet")}</span>
+                    </div>
+                    <div className="SignMessage__Metadata__Value">
+                      <KeyIdenticon publicKey={publicKey} />
+                    </div>
+                  </div>
+                </div>
+              </div>,
+              <div className="SignMessage__BlockaidDetails">
+                <div className="SignMessage__BlockaidDetails__Header">
+                  <div
+                    className={isMalicious ? "WarningMarkError" : "WarningMark"}
+                  >
+                    <Icon.AlertOctagon />
+                  </div>
+                  <div className="Close" onClick={() => setActivePaneIndex(0)}>
+                    <Icon.X />
+                  </div>
+                </div>
+                <div className="SignMessage__BlockaidDetails__Title">
+                  {isUnableToScan
+                    ? t("Proceed with caution")
+                    : isMalicious
+                      ? t("Do not proceed")
+                      : t("Suspicious Request")}
+                </div>
+                <div className="SignMessage__BlockaidDetails__SubTitle">
+                  {isUnableToScan
+                    ? t("We were unable to scan this site for security issues")
+                    : isMalicious
+                      ? t(
+                          "This site does not appear safe for the following reasons",
+                        )
+                      : t("This site has been flagged with potential concerns")}
+                </div>
+                <div className="SignMessage__BlockaidDetails__Details">
+                  {!isUnableToScan &&
+                    attackTypes.length > 0 &&
+                    attackTypes.map((attack, index) => (
+                      <div
+                        key={index}
+                        className={
+                          isMalicious
+                            ? "SignMessage__BlockaidDetails__DetailRowError"
+                            : "SignMessage__BlockaidDetails__DetailRow"
+                        }
+                      >
+                        {isMalicious ? <Icon.XCircle /> : <Icon.MinusCircle />}
+                        <span>
+                          {
+                            ATTACK_TO_DISPLAY[
+                              attack as keyof typeof ATTACK_TO_DISPLAY
+                            ]
+                          }
+                        </span>
+                      </div>
+                    ))}
+                  {hasOverrideWithoutMessages && (
+                    <div
+                      className={
+                        blockaidOverrideState === SecurityLevel.MALICIOUS
+                          ? "SignMessage__BlockaidDetails__DetailRowError"
+                          : "SignMessage__BlockaidDetails__DetailRow"
+                      }
+                    >
+                      {blockaidOverrideState === SecurityLevel.MALICIOUS ? (
+                        <Icon.XCircle />
+                      ) : (
+                        <Icon.MinusCircle />
+                      )}
+                      <span>
+                        {blockaidOverrideState === SecurityLevel.MALICIOUS
+                          ? t("This site was flagged as malicious")
+                          : t("This site was flagged as suspicious")}
+                      </span>
+                    </div>
+                  )}
+                  {isUnableToScan && (
+                    <div className="SignMessage__BlockaidDetails__DetailRow">
+                      <Icon.MinusCircle />
+                      <span>{t("Unable to scan site")}</span>
+                    </div>
+                  )}
+                  <BlockaidByLine address={""} />
+                </div>
+              </div>,
+            ]}
+          />
         </View.Content>
         <View.Footer>
-          <span className="SignMessage__Warning">
-            {t("Only confirm if you trust this site")}
-          </span>
+          {!shouldShowWarning && (
+            <span className="SignMessage__Warning">
+              {t("Only confirm if you trust this site")}
+            </span>
+          )}
           <div className="SignMessage__Actions">
-            <Button
-              size="lg"
-              isFullWidth
-              isRounded
-              variant="tertiary"
-              onClick={() => rejectAndClose()}
-            >
-              {t("Cancel")}
-            </Button>
-            <Button
-              data-testid="sign-message-approve-button"
-              disabled={!isDomainListedAllowed}
-              size="lg"
-              isFullWidth
-              isRounded
-              variant="secondary"
-              isLoading={isConfirming}
-              onClick={() => handleApprove()}
-            >
-              {t("Confirm")}
-            </Button>
+            {shouldShowWarning ? (
+              <>
+                <Button
+                  size="lg"
+                  isFullWidth
+                  isRounded
+                  variant={isMalicious ? "destructive" : "secondary"}
+                  onClick={() => rejectAndClose()}
+                >
+                  <span className="SignMessage__CancelBtn">{t("Cancel")}</span>
+                </Button>
+                <Button
+                  data-testid="sign-message-confirm-anyway-button"
+                  disabled={!isDomainListedAllowed}
+                  size="lg"
+                  isFullWidth
+                  isRounded
+                  variant={isMalicious ? "error" : "tertiary"}
+                  isLoading={isConfirming}
+                  onClick={() => handleApprove()}
+                >
+                  {t("Confirm anyway")}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  size="lg"
+                  isFullWidth
+                  isRounded
+                  variant="tertiary"
+                  onClick={() => rejectAndClose()}
+                >
+                  <span className="SignMessage__CancelBtn">{t("Cancel")}</span>
+                </Button>
+                <Button
+                  data-testid="sign-message-approve-button"
+                  disabled={!isDomainListedAllowed}
+                  size="lg"
+                  isFullWidth
+                  isRounded
+                  variant="secondary"
+                  isLoading={isConfirming}
+                  onClick={() => handleApprove()}
+                >
+                  {t("Confirm")}
+                </Button>
+              </>
+            )}
           </div>
         </View.Footer>
       </React.Fragment>

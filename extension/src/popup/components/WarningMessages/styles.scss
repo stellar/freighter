@@ -537,6 +537,7 @@
   justify-content: space-between;
   border-radius: 16px;
   cursor: pointer;
+  margin-bottom: pxToRem(16px);
 
   &:not(:first-child) {
     margin-top: pxToRem(12px);
@@ -595,6 +596,18 @@
       color: var(--sds-clr-amber-11);
     }
   }
+}
+
+.SiteMalicious {
+  margin-bottom: 0;
+}
+
+.SiteSuspicious {
+  margin-bottom: 0;
+}
+
+.SiteUnableToScan {
+  margin-bottom: 0;
 }
 
 .BlockaidWarningModal {
@@ -789,6 +802,10 @@
 
   &__DetailRowError {
     display: flex;
+
+    &:first-child {
+      margin-top: pxToRem(8px);
+    }
 
     &:not(:last-child) {
       margin-bottom: pxToRem(8px);

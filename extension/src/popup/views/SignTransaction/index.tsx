@@ -74,6 +74,9 @@ import {
 } from "popup/helpers/soroban";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
+import { useScanSite } from "popup/helpers/blockaid";
+import { getBlockaidOverrideState } from "@shared/api/internal";
+import { SecurityLevel } from "popup/constants/blockaid";
 
 import { AuthEntries } from "popup/components/AuthEntry";
 import { Summary } from "./Preview/Summary";
@@ -131,6 +134,53 @@ export const SignTransaction = () => {
     verifyPasswordThenSign,
     hardwareWalletType,
   } = useSetupSigningFlow(rejectTransaction, signTransaction, transactionXdr);
+
+  // Add site scanning
+  const { scanSite } = useScanSite();
+  const [scanData, setScanData] = useState<any>(null);
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, []);
+
+  useEffect(() => {
+    const scan = async () => {
+      if (domain) {
+        try {
+          const result = await scanSite(domain);
+          setScanData(result);
+        } catch (error) {
+          console.error("Failed to scan site:", error);
+          setScanData(null);
+        }
+      }
+    };
+    scan();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [domain]);
+
+  // Determine site security states with override support
+  let isSiteMalicious = false;
+  let isSiteSuspicious = false;
+  let isSiteUnableToScan = false;
+
+  if (blockaidOverrideState) {
+    isSiteMalicious = blockaidOverrideState === SecurityLevel.MALICIOUS;
+    isSiteSuspicious = blockaidOverrideState === SecurityLevel.SUSPICIOUS;
+    isSiteUnableToScan = blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN;
+  } else {
+    isSiteUnableToScan = !scanData || scanData.status === undefined;
+    isSiteMalicious = scanData?.status === "hit" && scanData.is_malicious;
+    isSiteSuspicious = scanData?.status === "hit" && !scanData.is_malicious;
+  }
+
+  const shouldShowSiteWarning =
+    isSiteMalicious || isSiteSuspicious || isSiteUnableToScan;
 
   // rebuild transaction to get Transaction prototypes
   const transaction = TransactionBuilder.fromXDR(
@@ -247,12 +297,16 @@ export const SignTransaction = () => {
   const hasSimulationError =
     scanResult && scanResult.simulation && "error" in scanResult.simulation;
   const showBlockAidDetails =
-    isUnableToScan || hasSimulationError || hasNonBenignValidation;
+    isUnableToScan ||
+    hasSimulationError ||
+    hasNonBenignValidation ||
+    shouldShowSiteWarning;
   const btnIsDestructive =
     (scanResult?.validation &&
       "result_type" in scanResult.validation &&
       scanResult.validation.result_type === "Malicious") ||
-    hasSimulationError;
+    hasSimulationError ||
+    isSiteMalicious;
 
   if (_networkPassphrase !== networkPassphrase) {
     return (
@@ -357,15 +411,17 @@ export const SignTransaction = () => {
                   </div>
                 </div>
                 {showBlockAidDetails && (
-                  <BlockaidTxScanLabel
-                    scanResult={scanResult}
-                    onClick={() => setActivePaneIndex(1)}
-                  />
+                  <div className="SignTransaction__BlockaidDetails">
+                    <BlockaidTxScanLabel
+                      scanResult={scanResult}
+                      onClick={() => setActivePaneIndex(1)}
+                    />
+                  </div>
                 )}
                 {!isDomainListedAllowed && (
                   <DomainNotAllowedWarningMessage domain={domain} />
                 )}
-                {isMemoRequired && (
+                {isMemoRequired && !shouldShowSiteWarning && (
                   <MemoRequiredLabel onClick={() => setActivePaneIndex(3)} />
                 )}
                 {assetDiffs && (
@@ -531,11 +587,13 @@ export const SignTransaction = () => {
                   variant={btnIsDestructive ? "destructive" : "secondary"}
                   onClick={() => rejectAndClose()}
                 >
-                  {t("Cancel")}
+                  <span className="SignTransaction__CancelBtn">
+                    {t("Cancel")}
+                  </span>
                 </Button>
                 <Button
                   disabled={isSubmitDisabled}
-                  variant="error"
+                  variant={btnIsDestructive ? "error" : "tertiary"}
                   isFullWidth
                   isRounded
                   size="lg"
@@ -555,7 +613,9 @@ export const SignTransaction = () => {
                   variant="tertiary"
                   onClick={() => rejectAndClose()}
                 >
-                  {t("Cancel")}
+                  <span className="SignTransaction__CancelBtn">
+                    {t("Cancel")}
+                  </span>
                 </Button>
                 <Button
                   data-testid="sign-transaction-sign"
