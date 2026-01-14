@@ -14,11 +14,14 @@ import { Link } from "react-router-dom";
 
 import { TabsList } from "popup/views/Account/contexts/activeTabContext";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { collectionsSelector } from "popup/ducks/cache";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 
 import { AccountHeaderModal } from "../AccountHeaderModal";
+import { HiddenCollectibles } from "../HiddenCollectibles";
 import { useActiveTab } from "./hooks/useActiveTab";
 
 import "./styles.scss";
@@ -116,9 +119,15 @@ const ManageAssetsModalContent = () => {
  * AddCollectiblesModalContent component renders the content for the add collectibles modal,
  * providing a link to manually add collectibles.
  *
+ * @param {Object} props - Component props
+ * @param {() => void} props.onHiddenCollectiblesClick - Callback when hidden collectibles is clicked
  * @returns {JSX.Element} Modal content with link to add collectibles route
  */
-const AddCollectiblesModalContent = () => {
+const AddCollectiblesModalContent = ({
+  onHiddenCollectiblesClick,
+}: {
+  onHiddenCollectiblesClick: () => void;
+}) => {
   const { t } = useTranslation();
 
   return (
@@ -133,14 +142,18 @@ const AddCollectiblesModalContent = () => {
           </div>
         </div>
       </Link>
-      {/* <div className="AccountTabs__modal__item">
-              <div className="AccountTabs__modal__item__icon">
-                <Icon.EyeOff />
-              </div>
-              <div className="AccountTabs__modal__item__title">
-                {t("Hidden collectibles")}
-              </div>
-            </div> */}
+      <div
+        className="AccountTabs__modal__item"
+        onClick={onHiddenCollectiblesClick}
+        data-testid="hidden-collectibles-btn"
+      >
+        <div className="AccountTabs__modal__item__icon">
+          <Icon.EyeOff />
+        </div>
+        <div className="AccountTabs__modal__item__title">
+          {t("Hidden collectibles")}
+        </div>
+      </div>
     </>
   );
 };
@@ -155,12 +168,20 @@ const AddCollectiblesModalContent = () => {
 export const AccountTabs = () => {
   const [isManageAssetsOpen, setIsManageAssetsOpen] = useState(false);
   const [isAddCollectiblesOpen, setIsAddCollectiblesOpen] = useState(false);
+  const [isHiddenCollectiblesOpen, setIsHiddenCollectiblesOpen] =
+    useState(false);
   const isBackgroundActive = isManageAssetsOpen || isAddCollectiblesOpen;
 
   const { activeTab } = useActiveTab();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
+  const collections = useSelector(collectionsSelector);
 
   const isTokensTab = activeTab === TabsList.TOKENS;
   const isCollectiblesTab = activeTab === TabsList.COLLECTIBLES;
+
+  const currentCollections =
+    collections[networkDetails?.network || ""]?.[publicKey || ""] || [];
 
   /**
    * Handles the click event on the manage button, toggling the appropriate modal
@@ -172,6 +193,15 @@ export const AccountTabs = () => {
     } else if (isCollectiblesTab) {
       setIsAddCollectiblesOpen(!isAddCollectiblesOpen);
     }
+  };
+
+  /**
+   * Handles the hidden collectibles button click, opening the hidden collectibles sheet
+   * and closing the dropdown modal.
+   */
+  const handleHiddenCollectiblesClick = () => {
+    setIsAddCollectiblesOpen(false);
+    setIsHiddenCollectiblesOpen(true);
   };
 
   return (
@@ -195,9 +225,19 @@ export const AccountTabs = () => {
       >
         <>
           {isTokensTab && <ManageAssetsModalContent />}
-          {isCollectiblesTab && <AddCollectiblesModalContent />}
+          {isCollectiblesTab && (
+            <AddCollectiblesModalContent
+              onHiddenCollectiblesClick={handleHiddenCollectiblesClick}
+            />
+          )}
         </>
       </AccountHeaderModal>
+
+      <HiddenCollectibles
+        collections={currentCollections}
+        isOpen={isHiddenCollectiblesOpen}
+        onClose={() => setIsHiddenCollectiblesOpen(false)}
+      />
 
       {isBackgroundActive
         ? createPortal(

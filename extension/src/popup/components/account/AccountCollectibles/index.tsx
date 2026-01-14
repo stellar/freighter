@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { Icon } from "@stellar/design-system";
 
-import { Collection } from "@shared/api/types/types";
+import { Collection, CollectibleKey } from "@shared/api/types/types";
 import {
   ScreenReaderOnly,
   Sheet,
@@ -10,14 +11,36 @@ import {
   SheetTitle,
 } from "popup/basics/shadcn/Sheet";
 import { CollectibleDetail, SelectedCollectible } from "../CollectibleDetail";
-
-import "./styles.scss";
+import { getHiddenCollectibles } from "@shared/api/internal";
+import { publicKeySelector } from "popup/ducks/accountServices";
 import { CollectibleInfoImage } from "../CollectibleInfo";
 
-const CollectionsList = ({ collections }: { collections: Collection[] }) => {
+import "./styles.scss";
+
+const CollectionsList = ({
+  collections,
+  showHidden,
+  hiddenCollectibles,
+  onCloseCollectible,
+}: {
+  collections: Collection[];
+  showHidden: boolean;
+  hiddenCollectibles: Record<CollectibleKey, string>;
+  onCloseCollectible: () => void;
+}) => {
   const { t } = useTranslation();
   const [selectedCollectible, setSelectedCollectible] =
     useState<SelectedCollectible | null>(null);
+
+  const isCollectibleHidden = (collectionAddress: string, tokenId: string) => {
+    const key = `${collectionAddress}:${tokenId}`;
+    return hiddenCollectibles[key] === "hidden";
+  };
+
+  const handleCloseCollectible = () => {
+    setSelectedCollectible(null);
+    onCloseCollectible();
+  };
 
   // every collection has an error, so nothing to render
   if (collections.every((collection) => collection.error)) {
@@ -29,81 +52,103 @@ const CollectionsList = ({ collections }: { collections: Collection[] }) => {
     );
   }
 
-  return collections.map(({ collection, error }) => {
-    // if the collection is missing or has an error, skip rendering
-    if (error || !collection) {
-      return null;
-    }
+  return (
+    <>
+      {collections.map(({ collection, error }) => {
+        // if the collection is missing or has an error, skip rendering
+        if (error || !collection) {
+          return null;
+        }
 
-    // render the collection we do have
-    return (
-      <div
-        className="AccountCollectibles__collection"
-        key={collection.address}
-        data-testid="account-collectible"
-      >
-        <div className="AccountCollectibles__collection__header">
+        // filter collectibles based on showHidden toggle
+        const collectiblesToShow = showHidden
+          ? collection.collectibles.filter((item) =>
+              isCollectibleHidden(collection.address, item.tokenId),
+            )
+          : collection.collectibles.filter(
+              (item) => !isCollectibleHidden(collection.address, item.tokenId),
+            );
+
+        // if no collectibles to show, don't render the collection
+        if (collectiblesToShow.length === 0) {
+          return null;
+        }
+
+        return (
           <div
-            className="AccountCollectibles__collection__header__name"
-            data-testid="account-collection-name"
+            className="AccountCollectibles__collection"
+            key={collection.address}
+            data-testid="account-collectible"
           >
-            <Icon.Grid01 />
-            {collection.name}
-          </div>
-          <div
-            className="AccountCollectibles__collection__header__count"
-            data-testid="account-collection-count"
-          >
-            {collection.collectibles.length}
-          </div>
-        </div>
-        <div
-          className="AccountCollectibles__collection__grid"
-          data-testid="account-collection-grid"
-        >
-          {collection.collectibles.map((item) => (
-            <Sheet
-              open={selectedCollectible?.tokenId === item.tokenId}
-              key={item.tokenId}
-            >
+            <div className="AccountCollectibles__collection__header">
               <div
-                className="AccountCollectibles__collection__grid__item"
-                onClick={() =>
-                  setSelectedCollectible({
-                    collectionAddress: collection.address,
-                    tokenId: item.tokenId,
-                  })
-                }
-                key={item.tokenId}
+                className="AccountCollectibles__collection__header__name"
+                data-testid="account-collection-name"
               >
-                <CollectibleInfoImage
-                  image={item.metadata?.image}
-                  name={item.tokenId}
-                />
+                <Icon.Grid01 />
+                {collection.name}
               </div>
-              <SheetContent
-                aria-describedby={undefined}
-                side="bottom"
-                className="AccountCollectibles__collectible-detail__sheet"
-                onOpenAutoFocus={(e) => e.preventDefault()}
+              <div
+                className="AccountCollectibles__collection__header__count"
+                data-testid="account-collection-count"
               >
-                <ScreenReaderOnly>
-                  <SheetTitle>{item.tokenId}</SheetTitle>
-                </ScreenReaderOnly>
-                <CollectibleDetail
-                  selectedCollectible={{
-                    collectionAddress: collection.address,
-                    tokenId: item.tokenId,
-                  }}
-                  handleItemClose={() => setSelectedCollectible(null)}
-                />
-              </SheetContent>
-            </Sheet>
-          ))}
-        </div>
-      </div>
-    );
-  });
+                {collectiblesToShow.length}
+              </div>
+            </div>
+            <div
+              className="AccountCollectibles__collection__grid"
+              data-testid="account-collection-grid"
+            >
+              {collectiblesToShow.map((item) => (
+                <Sheet
+                  open={selectedCollectible?.tokenId === item.tokenId}
+                  key={item.tokenId}
+                >
+                  <div
+                    className={`AccountCollectibles__collection__grid__item${
+                      showHidden
+                        ? " AccountCollectibles__collection__grid__item--hidden"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setSelectedCollectible({
+                        collectionAddress: collection.address,
+                        tokenId: item.tokenId,
+                      })
+                    }
+                    key={item.tokenId}
+                  >
+                    <CollectibleInfoImage
+                      image={item.metadata?.image}
+                      name={item.tokenId}
+                    />
+                  </div>
+                  <SheetContent
+                    aria-describedby={undefined}
+                    side="bottom"
+                    className="AccountCollectibles__collectible-detail__sheet"
+                    onOpenAutoFocus={(e) => e.preventDefault()}
+                  >
+                    <ScreenReaderOnly>
+                      <SheetTitle>{item.tokenId}</SheetTitle>
+                    </ScreenReaderOnly>
+                    <CollectibleDetail
+                      selectedCollectible={{
+                        collectionAddress: collection.address,
+                        tokenId: item.tokenId,
+                      }}
+                      handleItemClose={handleCloseCollectible}
+                      isHidden={showHidden}
+                    />
+                  </SheetContent>
+                </Sheet>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
 };
 
 interface AccountCollectiblesProps {
@@ -115,11 +160,36 @@ export const AccountCollectibles = ({
   collections,
 }: AccountCollectiblesProps) => {
   const { t } = useTranslation();
+  const publicKey = useSelector(publicKeySelector);
+  const [hiddenCollectibles, setHiddenCollectibles] = useState<
+    Record<CollectibleKey, string>
+  >({});
+
+  const fetchHiddenCollectibles = useCallback(async () => {
+    try {
+      const { hiddenCollectibles: hidden } = await getHiddenCollectibles({
+        activePublicKey: publicKey || "",
+      });
+      setHiddenCollectibles(hidden || {});
+    } catch (error) {
+      console.error("Failed to fetch hidden collectibles:", error);
+      setHiddenCollectibles({});
+    }
+  }, [publicKey]);
+
+  useEffect(() => {
+    fetchHiddenCollectibles();
+  }, [fetchHiddenCollectibles]);
 
   return (
     <div className="AccountCollectibles" data-testid="account-collectibles">
       {collections.length ? (
-        <CollectionsList collections={collections} />
+        <CollectionsList
+          collections={collections}
+          showHidden={false}
+          hiddenCollectibles={hiddenCollectibles}
+          onCloseCollectible={fetchHiddenCollectibles}
+        />
       ) : (
         <div className="AccountCollectibles__empty">
           <Icon.Grid01 />
