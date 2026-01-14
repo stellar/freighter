@@ -1058,7 +1058,7 @@ export const getRowDataByOpType = async (
  * @param {{ [assetIssuer: string]: string | null }} homeDomains - Cache object mapping asset issuer keys to their home domains
  * @returns {Promise<{ homeDomains: { [assetIssuer: string]: string | null }, collectibleLookup: CollectibleLookupMap }>} Object containing updated homeDomains and collectible lookup map
  */
-export const getHomeDomainsAndCollectiblesForOperations = async (
+export const getOperationDependencies = async (
   operations: HorizonOperation[],
   networkDetails: NetworkDetails,
   publicKey: string,
@@ -1179,7 +1179,7 @@ const createHistorySections = async (
     Also collect and fetch needed collectible contracts.
   */
   const { homeDomains: fetchedHomeDomains, collectibleLookup } =
-    await getHomeDomainsAndCollectiblesForOperations(
+    await getOperationDependencies(
       operations,
       networkDetails,
       publicKey,

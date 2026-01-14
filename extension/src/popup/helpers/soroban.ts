@@ -45,7 +45,7 @@ export const CLASSIC_ASSET_DECIMALS = 7;
  * For Soroban contracts, fetches decimals via RPC.
  * For native XLM and classic assets, returns CLASSIC_ASSET_DECIMALS (7).
  *
- * @throws Error if decimals cannot be fetched for a Soroban contract
+ * @throws Error if the RPC call succeeds but returns no decimals for a Soroban contract
  * @param params - Parameters object
  * @param params.assetIssuer - The asset issuer (contract ID for Soroban, issuer address for classic, null for native)
  * @param params.publicKey - The public key for the account
