@@ -1,7 +1,10 @@
 /**
  * Tests for collectiblesBatchFetcher utility functions
  */
-import { batchFetchCollectibles } from "../collectiblesBatchFetcher";
+import {
+  batchFetchCollectibles,
+  mergeCollections,
+} from "../collectiblesBatchFetcher";
 import { Collection } from "@shared/api/types/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { fetchCollectibles } from "@shared/api/helpers/fetchCollectibles";
@@ -813,6 +816,283 @@ describe("collectiblesBatchFetcher", () => {
 
       expect(result.collections[0].collection?.address).toBe("C123");
       expect(result.collections[1].collection?.address).toBe("C456");
+    });
+  });
+
+  describe("mergeCollections", () => {
+    it("should return undefined when both cached and fetched are undefined", () => {
+      const result = mergeCollections(undefined, undefined);
+      expect(result).toBeUndefined();
+    });
+
+    it("should return cached when fetched is undefined", () => {
+      const cached: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+          collectibles: [
+            {
+              collectionAddress: "C123",
+              collectionName: "Collection 1",
+              tokenId: "1",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token1",
+              metadata: { name: "Token 1" },
+            },
+          ],
+        },
+      };
+
+      const result = mergeCollections(cached, undefined);
+      expect(result).toEqual(cached);
+    });
+
+    it("should return fetched when cached is undefined", () => {
+      const fetched: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+          collectibles: [
+            {
+              collectionAddress: "C123",
+              collectionName: "Collection 1",
+              tokenId: "1",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token1",
+              metadata: { name: "Token 1" },
+            },
+          ],
+        },
+      };
+
+      const result = mergeCollections(undefined, fetched);
+      expect(result).toEqual(fetched);
+    });
+
+    it("should merge collectibles from cached and fetched collections", () => {
+      const cached: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+          collectibles: [
+            {
+              collectionAddress: "C123",
+              collectionName: "Collection 1",
+              tokenId: "1",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token1",
+              metadata: { name: "Token 1" },
+            },
+          ],
+        },
+      };
+
+      const fetched: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+          collectibles: [
+            {
+              collectionAddress: "C123",
+              collectionName: "Collection 1",
+              tokenId: "2",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token2",
+              metadata: { name: "Token 2" },
+            },
+          ],
+        },
+      };
+
+      const result = mergeCollections(cached, fetched);
+
+      expect(result?.collection?.collectibles).toHaveLength(2);
+      expect(result?.collection?.collectibles?.[0].tokenId).toBe("1");
+      expect(result?.collection?.collectibles?.[1].tokenId).toBe("2");
+    });
+
+    it("should deduplicate collectibles by tokenId when merging", () => {
+      const cached: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+          collectibles: [
+            {
+              collectionAddress: "C123",
+              collectionName: "Collection 1",
+              tokenId: "1",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token1",
+              metadata: { name: "Token 1" },
+            },
+          ],
+        },
+      };
+
+      const fetched: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+          collectibles: [
+            {
+              collectionAddress: "C123",
+              collectionName: "Collection 1",
+              tokenId: "1",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token1-updated",
+              metadata: { name: "Token 1 Updated" },
+            },
+            {
+              collectionAddress: "C123",
+              collectionName: "Collection 1",
+              tokenId: "2",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token2",
+              metadata: { name: "Token 2" },
+            },
+          ],
+        },
+      };
+
+      const result = mergeCollections(cached, fetched);
+
+      expect(result?.collection?.collectibles).toHaveLength(2);
+      // Should keep the cached version of token 1
+      expect(result?.collection?.collectibles?.[0].metadata?.name).toBe(
+        "Token 1",
+      );
+      expect(result?.collection?.collectibles?.[1].tokenId).toBe("2");
+    });
+
+    it("should return fetched when cached has error and fetched has collection", () => {
+      const cached: Collection = {
+        error: {
+          collectionAddress: "C123",
+          errorMessage: "Failed to fetch",
+        },
+      };
+
+      const fetched: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+          collectibles: [
+            {
+              collectionAddress: "C123",
+              collectionName: "Collection 1",
+              tokenId: "1",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token1",
+              metadata: { name: "Token 1" },
+            },
+          ],
+        },
+      };
+
+      const result = mergeCollections(cached, fetched);
+      expect(result).toEqual(fetched);
+    });
+
+    it("should return fetched error when fetched has error", () => {
+      const cached: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+          collectibles: [
+            {
+              collectionAddress: "C123",
+              collectionName: "Collection 1",
+              tokenId: "1",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token1",
+              metadata: { name: "Token 1" },
+            },
+          ],
+        },
+      };
+
+      const fetched: Collection = {
+        error: {
+          collectionAddress: "C123",
+          errorMessage: "New error",
+        },
+      };
+
+      const result = mergeCollections(cached, fetched);
+      expect(result).toEqual(fetched);
+    });
+
+    it("should handle empty collectibles arrays", () => {
+      const cached: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+          collectibles: [],
+        },
+      };
+
+      const fetched: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+          collectibles: [
+            {
+              collectionAddress: "C123",
+              collectionName: "Collection 1",
+              tokenId: "1",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token1",
+              metadata: { name: "Token 1" },
+            },
+          ],
+        },
+      };
+
+      const result = mergeCollections(cached, fetched);
+      expect(result?.collection?.collectibles).toHaveLength(1);
+      expect(result?.collection?.collectibles?.[0].tokenId).toBe("1");
+    });
+
+    it("should handle undefined collectibles arrays", () => {
+      const cached: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+        },
+      };
+
+      const fetched: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+          collectibles: [
+            {
+              collectionAddress: "C123",
+              collectionName: "Collection 1",
+              tokenId: "1",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token1",
+              metadata: { name: "Token 1" },
+            },
+          ],
+        },
+      };
+
+      const result = mergeCollections(cached, fetched);
+      expect(result?.collection?.collectibles).toHaveLength(1);
+      expect(result?.collection?.collectibles?.[0].tokenId).toBe("1");
     });
   });
 });

@@ -24,7 +24,7 @@ export interface BatchFetchResult {
 const getCollectionAddress = (collection: Collection) =>
   collection.collection?.address || collection.error?.collectionAddress;
 
-const mergeCollections = (
+export const mergeCollections = (
   cached: Collection | undefined,
   fetched: Collection | undefined,
 ): Collection | undefined => {
