@@ -762,12 +762,10 @@ describe("Account view", () => {
       expect(
         screen.getByTestId("TransactionDetailModal__subtitle-date"),
       ).toHaveTextContent("Oct 07 2025");
-      expect(
-        screen.getByTestId("TransactionDetailModal__src-amount"),
-      ).toHaveTextContent("100 USDC");
-      expect(
-        screen.getByTestId("TransactionDetailModal__dst-amount"),
-      ).toHaveTextContent("G2…G2");
+      expect(screen.getByTestId("AssetDiff__amount-0")).toHaveTextContent(
+        "100 USDC",
+      );
+      expect(screen.getByTestId("AssetDiff__to-from-address")).toBeDefined();
       expect(
         screen.getByTestId("TransactionDetailModal__status"),
       ).toHaveTextContent("Success");

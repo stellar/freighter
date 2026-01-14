@@ -285,13 +285,35 @@ test("Send persists inputs and submits to network", async ({
   expect(isScanSkiped).toBeTruthy();
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await page.getByTestId("send-amount-amount-input").fill("1");
+
+  // Add memo
   await page.getByTestId("send-amount-btn-memo").click();
   await page.getByTestId("edit-memo-input").fill("test memo");
   await page.getByText("Save").click();
+
+  // Wait for memo editor to close
+  await expect(page.getByTestId("edit-memo-input")).not.toBeVisible({
+    timeout: 5000,
+  });
+
+  // Add fee
   await page.getByTestId("send-amount-btn-fee").click();
   await page.getByTestId("edit-tx-settings-fee-input").fill("0.00009");
   await page.getByText("Save").click();
-  await page.getByText("Review Send").click({ force: true });
+
+  // Wait for fee editor to close
+  await expect(page.getByTestId("edit-tx-settings-fee-input")).not.toBeVisible({
+    timeout: 5000,
+  });
+
+  // Wait for simulation to complete
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeEnabled({ timeout: 30000 });
+
+  // Click Review Send button
+  await reviewSendButton.click({ force: true });
+
+  // Verify review modal opens
   await expect(page.getByText("You are sending")).toBeVisible({
     timeout: 200000,
   });
