@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Icon } from "@stellar/design-system";
@@ -37,6 +37,15 @@ export const HiddenCollectibles = ({
   >({});
   const [selectedCollectible, setSelectedCollectible] =
     useState<SelectedCollectible | null>(null);
+  // Keep track of the last selected collectible so we can render it during close animation
+  const lastSelectedCollectible = useRef<SelectedCollectible | null>(null);
+
+  // Update the ref when a collectible is selected
+  useEffect(() => {
+    if (selectedCollectible) {
+      lastSelectedCollectible.current = selectedCollectible;
+    }
+  }, [selectedCollectible]);
 
   const fetchHiddenCollectibles = useCallback(async () => {
     try {
@@ -161,11 +170,17 @@ export const HiddenCollectibles = ({
           style={{ zIndex: 100 }}
         >
           <ScreenReaderOnly>
-            <SheetTitle>{selectedCollectible?.tokenId || ""}</SheetTitle>
+            <SheetTitle>
+              {selectedCollectible?.tokenId ||
+                lastSelectedCollectible.current?.tokenId ||
+                ""}
+            </SheetTitle>
           </ScreenReaderOnly>
-          {selectedCollectible && (
+          {(selectedCollectible || lastSelectedCollectible.current) && (
             <CollectibleDetail
-              selectedCollectible={selectedCollectible}
+              selectedCollectible={
+                selectedCollectible || lastSelectedCollectible.current!
+              }
               handleItemClose={handleCloseCollectible}
               isHidden
             />
