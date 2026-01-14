@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { Icon } from "@stellar/design-system";
 
-import { Collection, CollectibleKey } from "@shared/api/types/types";
+import { Collection } from "@shared/api/types/types";
 import {
   ScreenReaderOnly,
   Sheet,
@@ -13,9 +12,8 @@ import {
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { CollectibleDetail, SelectedCollectible } from "../CollectibleDetail";
-import { getHiddenCollectibles } from "@shared/api/internal";
-import { publicKeySelector } from "popup/ducks/accountServices";
 import { CollectibleInfoImage } from "../CollectibleInfo";
+import { useHiddenCollectibles } from "../hooks/useHiddenCollectibles";
 
 import "./styles.scss";
 
@@ -31,10 +29,8 @@ export const HiddenCollectibles = ({
   onClose,
 }: HiddenCollectiblesProps) => {
   const { t } = useTranslation();
-  const publicKey = useSelector(publicKeySelector);
-  const [hiddenCollectibles, setHiddenCollectibles] = useState<
-    Record<CollectibleKey, string>
-  >({});
+  const { hiddenCollectibles, refreshHiddenCollectibles } =
+    useHiddenCollectibles();
   const [selectedCollectible, setSelectedCollectible] =
     useState<SelectedCollectible | null>(null);
   // Keep track of the last selected collectible so we can render it during close animation
@@ -47,23 +43,12 @@ export const HiddenCollectibles = ({
     }
   }, [selectedCollectible]);
 
-  const fetchHiddenCollectibles = useCallback(async () => {
-    try {
-      const { hiddenCollectibles: hidden } = await getHiddenCollectibles({
-        activePublicKey: publicKey || "",
-      });
-      setHiddenCollectibles(hidden || {});
-    } catch (error) {
-      console.error("Failed to fetch hidden collectibles:", error);
-      setHiddenCollectibles({});
-    }
-  }, [publicKey]);
-
+  // Refresh hidden collectibles when sheet opens
   useEffect(() => {
     if (isOpen) {
-      fetchHiddenCollectibles();
+      refreshHiddenCollectibles();
     }
-  }, [isOpen, fetchHiddenCollectibles]);
+  }, [isOpen, refreshHiddenCollectibles]);
 
   const isCollectibleHidden = (collectionAddress: string, tokenId: string) => {
     const key = `${collectionAddress}:${tokenId}`;
@@ -72,7 +57,8 @@ export const HiddenCollectibles = ({
 
   const handleCloseCollectible = () => {
     setSelectedCollectible(null);
-    fetchHiddenCollectibles();
+    // Refresh the shared state - this will update all components using the hook
+    refreshHiddenCollectibles();
   };
 
   // Get all hidden collectibles across all collections
