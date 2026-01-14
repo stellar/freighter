@@ -19,7 +19,7 @@ import {
   ArgsForTransferInvocation,
   SorobanTokenInterface,
   HostFnInvocationArgs,
-  SorbanCollectibleInterface,
+  SorobanCollectibleInterface,
 } from "@shared/constants/soroban/token";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
@@ -300,7 +300,7 @@ export const getArgsForTokenInvocation = (
 
   switch (fnName) {
     case SorobanTokenInterface.transfer:
-    case SorbanCollectibleInterface.transfer:
+    case SorobanCollectibleInterface.transfer:
       // both SEP-41 & SEP-50 tokens use the transfer method
       // with different signatures. Without parsing the token spec,
       // we can guess that the contract is either a token or a collectible
@@ -353,7 +353,7 @@ export const getInvocationArgsFromInvokeHostFn = (
   if (
     fnName !== SorobanTokenInterface.transfer &&
     fnName !== SorobanTokenInterface.mint &&
-    fnName !== SorbanCollectibleInterface.transfer
+    fnName !== SorobanCollectibleInterface.transfer
   ) {
     return null;
   }

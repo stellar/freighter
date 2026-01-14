@@ -7,17 +7,32 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { fetchCollectibles } from "@shared/api/helpers/fetchCollectibles";
 import {
   getCachedCollections,
-  isContractInCache,
   hasValidCache,
   deduplicateContracts,
 } from "../collectiblesCache";
+import { saveCollections } from "popup/ducks/cache";
+import { store } from "popup/App";
+
+jest.mock("popup/App", () => ({
+  store: {
+    dispatch: jest.fn(),
+    getState: jest.fn(),
+  },
+}));
+
+jest.mock("popup/ducks/cache", () => ({
+  ...jest.requireActual("popup/ducks/cache"),
+  saveCollections: jest.fn((payload) => ({
+    type: "saveCollections",
+    payload,
+  })),
+}));
 
 // Mock dependencies
 jest.mock("@shared/api/helpers/fetchCollectibles");
 jest.mock("../collectiblesCache", () => ({
   ...jest.requireActual("../collectiblesCache"),
   getCachedCollections: jest.fn(),
-  isContractInCache: jest.fn(),
   hasValidCache: jest.fn(),
   deduplicateContracts: jest.fn(),
 }));
@@ -28,14 +43,17 @@ const mockFetchCollectibles = fetchCollectibles as jest.MockedFunction<
 const mockGetCachedCollections = getCachedCollections as jest.MockedFunction<
   typeof getCachedCollections
 >;
-const mockIsContractInCache = isContractInCache as jest.MockedFunction<
-  typeof isContractInCache
->;
 const mockHasValidCache = hasValidCache as jest.MockedFunction<
   typeof hasValidCache
 >;
 const mockDeduplicateContracts = deduplicateContracts as jest.MockedFunction<
   typeof deduplicateContracts
+>;
+const mockSaveCollections = saveCollections as jest.MockedFunction<
+  typeof saveCollections
+>;
+const mockDispatch = store.dispatch as jest.MockedFunction<
+  typeof store.dispatch
 >;
 
 describe("collectiblesBatchFetcher", () => {
@@ -73,6 +91,8 @@ describe("collectiblesBatchFetcher", () => {
     jest.clearAllMocks();
     // Default mock implementations
     mockDeduplicateContracts.mockImplementation((contracts) => contracts);
+    mockDispatch.mockClear();
+    mockSaveCollections.mockClear();
   });
 
   describe("batchFetchCollectibles", () => {
@@ -88,6 +108,7 @@ describe("collectiblesBatchFetcher", () => {
         fromCache: true,
       });
       expect(mockFetchCollectibles).not.toHaveBeenCalled();
+      expect(mockDispatch).not.toHaveBeenCalled();
     });
 
     it("should return cached collections when all contracts are in cache", async () => {
@@ -105,13 +126,11 @@ describe("collectiblesBatchFetcher", () => {
 
       mockGetCachedCollections.mockReturnValue(cachedCollections);
       mockHasValidCache.mockReturnValue(true);
-      mockIsContractInCache.mockReturnValue(true);
 
       const result = await batchFetchCollectibles({
         publicKey: mockPublicKey,
         networkDetails: mockNetworkDetails,
         contracts: [{ id: "C123" }, { id: "C456" }],
-        useCache: true,
       });
 
       expect(result).toEqual({
@@ -123,6 +142,26 @@ describe("collectiblesBatchFetcher", () => {
         mockNetworkDetails.network,
         mockPublicKey,
       );
+    });
+
+    it("should return cached collections when requested token_ids exist in cache", async () => {
+      const cachedCollections: Collection[] = [mockCollection];
+
+      mockGetCachedCollections.mockReturnValue(cachedCollections);
+      mockHasValidCache.mockReturnValue(true);
+
+      const result = await batchFetchCollectibles({
+        publicKey: mockPublicKey,
+        networkDetails: mockNetworkDetails,
+        contracts: [{ id: "C123", token_ids: ["1"] }],
+      });
+
+      expect(result).toEqual({
+        collections: cachedCollections,
+        fromCache: true,
+      });
+      expect(mockFetchCollectibles).not.toHaveBeenCalled();
+      expect(mockDispatch).not.toHaveBeenCalled();
     });
 
     it("should filter cached collections to only requested contracts", async () => {
@@ -148,20 +187,26 @@ describe("collectiblesBatchFetcher", () => {
 
       mockGetCachedCollections.mockReturnValue(cachedCollections);
       mockHasValidCache.mockReturnValue(true);
-      mockIsContractInCache.mockReturnValue(true);
 
       const result = await batchFetchCollectibles({
         publicKey: mockPublicKey,
         networkDetails: mockNetworkDetails,
         contracts: [{ id: "C123" }, { id: "C456" }],
-        useCache: true,
       });
 
       expect(result.collections).toHaveLength(2);
-      expect(result.collections[0].collection?.address).toBe("C123");
-      expect(result.collections[1].collection?.address).toBe("C456");
+      expect(result.collections[0]).toEqual(mockCollection);
+      expect(result.collections[1]).toEqual({
+        collection: {
+          address: "C456",
+          name: "Collection 2",
+          symbol: "COL2",
+          collectibles: [],
+        },
+      });
       expect(result.fromCache).toBe(true);
       expect(mockFetchCollectibles).not.toHaveBeenCalled();
+      expect(mockDispatch).not.toHaveBeenCalled();
     });
 
     it("should handle cached collections with error objects", async () => {
@@ -176,41 +221,70 @@ describe("collectiblesBatchFetcher", () => {
 
       mockGetCachedCollections.mockReturnValue(cachedCollections);
       mockHasValidCache.mockReturnValue(true);
-      mockIsContractInCache.mockReturnValue(true);
 
       const result = await batchFetchCollectibles({
         publicKey: mockPublicKey,
         networkDetails: mockNetworkDetails,
         contracts: [{ id: "C123" }],
-        useCache: true,
       });
 
       expect(result.collections).toEqual(cachedCollections);
       expect(result.fromCache).toBe(true);
     });
 
-    it("should fetch from API when cache is disabled", async () => {
-      const fetchedCollections: Collection[] = [mockCollection];
+    it("should fetch missing token_ids and merge with cached collections", async () => {
+      const cachedCollections: Collection[] = [mockCollection];
+
+      mockGetCachedCollections.mockReturnValue(cachedCollections);
+      mockHasValidCache.mockReturnValue(true);
+
+      const fetchedCollections: Collection[] = [
+        {
+          collection: {
+            address: "C123",
+            name: "Collection 1",
+            symbol: "COL1",
+            collectibles: [
+              {
+                collectionAddress: "C123",
+                collectionName: "Collection 1",
+                tokenId: "2",
+                owner: mockPublicKey,
+                tokenUri: "https://example.com/token2",
+                metadata: {
+                  name: "Token 2",
+                  image: "https://example.com/image2.png",
+                },
+              },
+            ],
+          },
+        },
+      ];
 
       mockFetchCollectibles.mockResolvedValue(fetchedCollections);
 
       const result = await batchFetchCollectibles({
         publicKey: mockPublicKey,
         networkDetails: mockNetworkDetails,
-        contracts: [{ id: "C123" }],
-        useCache: false,
+        contracts: [{ id: "C123", token_ids: ["1", "2"] }],
       });
 
-      expect(result).toEqual({
-        collections: fetchedCollections,
-        fromCache: false,
-      });
+      expect(result.fromCache).toBe(false);
+      expect(result.collections[0].collection?.collectibles).toHaveLength(2);
+      expect(
+        result.collections[0].collection?.collectibles?.map((c) => c.tokenId),
+      ).toEqual(["1", "2"]);
       expect(mockFetchCollectibles).toHaveBeenCalledWith({
         publicKey: mockPublicKey,
-        contracts: [{ id: "C123", token_ids: [] }],
+        contracts: [{ id: "C123", token_ids: ["2"] }],
         networkDetails: mockNetworkDetails,
       });
-      expect(mockGetCachedCollections).not.toHaveBeenCalled();
+      expect(mockDispatch).toHaveBeenCalled();
+      expect(mockSaveCollections).toHaveBeenCalledWith({
+        publicKey: mockPublicKey,
+        networkDetails: mockNetworkDetails,
+        collections: result.collections,
+      });
     });
 
     it("should fetch from API when cache is empty", async () => {
@@ -224,7 +298,6 @@ describe("collectiblesBatchFetcher", () => {
         publicKey: mockPublicKey,
         networkDetails: mockNetworkDetails,
         contracts: [{ id: "C123" }],
-        useCache: true,
       });
 
       expect(result).toEqual({
@@ -232,6 +305,12 @@ describe("collectiblesBatchFetcher", () => {
         fromCache: false,
       });
       expect(mockFetchCollectibles).toHaveBeenCalled();
+      expect(mockDispatch).toHaveBeenCalled();
+      expect(mockSaveCollections).toHaveBeenCalledWith({
+        publicKey: mockPublicKey,
+        networkDetails: mockNetworkDetails,
+        collections: fetchedCollections,
+      });
     });
 
     it("should fetch from API when not all contracts are in cache", async () => {
@@ -239,12 +318,8 @@ describe("collectiblesBatchFetcher", () => {
 
       mockGetCachedCollections.mockReturnValue(cachedCollections);
       mockHasValidCache.mockReturnValue(true);
-      mockIsContractInCache.mockImplementation((_, contractId) => {
-        return contractId === "C123";
-      });
 
       const fetchedCollections: Collection[] = [
-        mockCollection,
         {
           collection: {
             address: "C456",
@@ -261,17 +336,29 @@ describe("collectiblesBatchFetcher", () => {
         publicKey: mockPublicKey,
         networkDetails: mockNetworkDetails,
         contracts: [{ id: "C123" }, { id: "C456" }],
-        useCache: true,
       });
 
       expect(result).toEqual({
-        collections: fetchedCollections,
+        collections: [mockCollection, ...fetchedCollections],
         fromCache: false,
       });
-      expect(mockFetchCollectibles).toHaveBeenCalled();
+      expect(mockFetchCollectibles).toHaveBeenCalledWith({
+        publicKey: mockPublicKey,
+        contracts: [{ id: "C456", token_ids: [] }],
+        networkDetails: mockNetworkDetails,
+      });
+      expect(mockDispatch).toHaveBeenCalled();
+      expect(mockSaveCollections).toHaveBeenCalledWith({
+        publicKey: mockPublicKey,
+        networkDetails: mockNetworkDetails,
+        collections: [mockCollection, ...fetchedCollections],
+      });
     });
 
     it("should deduplicate contracts before fetching", async () => {
+      mockGetCachedCollections.mockReturnValue(undefined);
+      mockHasValidCache.mockReturnValue(false);
+
       const fetchedCollections: Collection[] = [mockCollection];
 
       mockFetchCollectibles.mockResolvedValue(fetchedCollections);
@@ -281,7 +368,6 @@ describe("collectiblesBatchFetcher", () => {
         publicKey: mockPublicKey,
         networkDetails: mockNetworkDetails,
         contracts: [{ id: "C123" }, { id: "C123" }], // duplicates
-        useCache: false,
       });
 
       expect(mockDeduplicateContracts).toHaveBeenCalledWith([
@@ -293,9 +379,13 @@ describe("collectiblesBatchFetcher", () => {
         contracts: [{ id: "C123", token_ids: [] }],
         networkDetails: mockNetworkDetails,
       });
+      expect(mockDispatch).toHaveBeenCalled();
     });
 
     it("should ensure token_ids is always an array", async () => {
+      mockGetCachedCollections.mockReturnValue(undefined);
+      mockHasValidCache.mockReturnValue(false);
+
       const fetchedCollections: Collection[] = [mockCollection];
 
       mockFetchCollectibles.mockResolvedValue(fetchedCollections);
@@ -307,7 +397,6 @@ describe("collectiblesBatchFetcher", () => {
           { id: "C123" }, // no token_ids
           { id: "C456", token_ids: ["1", "2"] },
         ],
-        useCache: false,
       });
 
       expect(mockFetchCollectibles).toHaveBeenCalledWith({
@@ -325,13 +414,11 @@ describe("collectiblesBatchFetcher", () => {
 
       mockGetCachedCollections.mockReturnValue(cachedCollections);
       mockHasValidCache.mockReturnValue(true);
-      mockIsContractInCache.mockReturnValue(true);
 
       const result = await batchFetchCollectibles({
         publicKey: mockPublicKey,
         networkDetails: mockNetworkDetails,
         contracts: [{ id: "C123" }],
-        // useCache not specified, should default to true
       });
 
       expect(result.fromCache).toBe(true);
@@ -339,6 +426,9 @@ describe("collectiblesBatchFetcher", () => {
     });
 
     it("should handle API fetch errors gracefully", async () => {
+      mockGetCachedCollections.mockReturnValue(undefined);
+      mockHasValidCache.mockReturnValue(false);
+
       const error = new Error("API Error");
       mockFetchCollectibles.mockRejectedValue(error);
 
@@ -347,9 +437,382 @@ describe("collectiblesBatchFetcher", () => {
           publicKey: mockPublicKey,
           networkDetails: mockNetworkDetails,
           contracts: [{ id: "C123" }],
-          useCache: false,
         }),
       ).rejects.toThrow("API Error");
+    });
+
+    it("should only fetch contracts not in cache", async () => {
+      const cachedC123: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+          collectibles: [
+            {
+              collectionAddress: "C123",
+              collectionName: "Collection 1",
+              tokenId: "1",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token1",
+              metadata: { name: "Token 1" },
+            },
+          ],
+        },
+      };
+
+      mockGetCachedCollections.mockReturnValue([cachedC123]);
+      mockHasValidCache.mockReturnValue(true);
+
+      const fetchedC456: Collection = {
+        collection: {
+          address: "C456",
+          name: "Collection 2",
+          symbol: "COL2",
+          collectibles: [
+            {
+              collectionAddress: "C456",
+              collectionName: "Collection 2",
+              tokenId: "1",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token1",
+              metadata: { name: "Token 1" },
+            },
+          ],
+        },
+      };
+
+      mockFetchCollectibles.mockResolvedValue([fetchedC456]);
+
+      const result = await batchFetchCollectibles({
+        publicKey: mockPublicKey,
+        networkDetails: mockNetworkDetails,
+        contracts: [{ id: "C123" }, { id: "C456" }],
+      });
+
+      expect(mockFetchCollectibles).toHaveBeenCalledWith({
+        publicKey: mockPublicKey,
+        contracts: [{ id: "C456", token_ids: [] }],
+        networkDetails: mockNetworkDetails,
+      });
+      expect(result.collections).toHaveLength(2);
+      expect(result.collections[0]).toEqual(cachedC123);
+      expect(result.collections[1]).toEqual(fetchedC456);
+    });
+
+    it("should skip fetching cached contracts with no token_ids", async () => {
+      mockGetCachedCollections.mockReturnValue([mockCollection]);
+      mockHasValidCache.mockReturnValue(true);
+
+      const result = await batchFetchCollectibles({
+        publicKey: mockPublicKey,
+        networkDetails: mockNetworkDetails,
+        contracts: [{ id: "C123" }], // No token_ids specified
+      });
+
+      expect(mockFetchCollectibles).not.toHaveBeenCalled();
+      expect(result.fromCache).toBe(true);
+      expect(result.collections).toEqual([mockCollection]);
+    });
+
+    it("should return cached error collections without refetching", async () => {
+      const errorCollection: Collection = {
+        error: {
+          collectionAddress: "C123",
+          errorMessage: "Failed to fetch",
+        },
+      };
+
+      mockGetCachedCollections.mockReturnValue([errorCollection]);
+      mockHasValidCache.mockReturnValue(true);
+
+      const result = await batchFetchCollectibles({
+        publicKey: mockPublicKey,
+        networkDetails: mockNetworkDetails,
+        contracts: [{ id: "C123" }],
+      });
+
+      expect(mockFetchCollectibles).not.toHaveBeenCalled();
+      expect(result.collections[0]).toEqual(errorCollection);
+      expect(result.fromCache).toBe(true);
+    });
+
+    it("should fetch only missing token_ids", async () => {
+      const cachedWithToken1: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+          collectibles: [
+            {
+              collectionAddress: "C123",
+              collectionName: "Collection 1",
+              tokenId: "1",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token1",
+              metadata: { name: "Token 1" },
+            },
+          ],
+        },
+      };
+
+      mockGetCachedCollections.mockReturnValue([cachedWithToken1]);
+      mockHasValidCache.mockReturnValue(true);
+
+      const fetchedToken2: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+          collectibles: [
+            {
+              collectionAddress: "C123",
+              collectionName: "Collection 1",
+              tokenId: "2",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token2",
+              metadata: { name: "Token 2" },
+            },
+          ],
+        },
+      };
+
+      mockFetchCollectibles.mockResolvedValue([fetchedToken2]);
+
+      const result = await batchFetchCollectibles({
+        publicKey: mockPublicKey,
+        networkDetails: mockNetworkDetails,
+        contracts: [{ id: "C123", token_ids: ["1", "2"] }],
+      });
+
+      expect(mockFetchCollectibles).toHaveBeenCalledWith({
+        publicKey: mockPublicKey,
+        contracts: [{ id: "C123", token_ids: ["2"] }],
+        networkDetails: mockNetworkDetails,
+      });
+      expect(result.collections[0].collection?.collectibles).toHaveLength(2);
+    });
+
+    it("should not fetch when all requested token_ids are in cache", async () => {
+      mockGetCachedCollections.mockReturnValue([mockCollection]);
+      mockHasValidCache.mockReturnValue(true);
+
+      const result = await batchFetchCollectibles({
+        publicKey: mockPublicKey,
+        networkDetails: mockNetworkDetails,
+        contracts: [{ id: "C123", token_ids: ["1"] }], // Token 1 is in cache
+      });
+
+      expect(mockFetchCollectibles).not.toHaveBeenCalled();
+      expect(result.fromCache).toBe(true);
+      expect(result.collections).toEqual([mockCollection]);
+    });
+
+    it("should handle partial cache hits with multiple contracts", async () => {
+      const cachedC123: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+          collectibles: [
+            {
+              collectionAddress: "C123",
+              collectionName: "Collection 1",
+              tokenId: "1",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token1",
+              metadata: { name: "Token 1" },
+            },
+          ],
+        },
+      };
+
+      mockGetCachedCollections.mockReturnValue([cachedC123]);
+      mockHasValidCache.mockReturnValue(true);
+
+      const fetchedC456: Collection = {
+        collection: {
+          address: "C456",
+          name: "Collection 2",
+          symbol: "COL2",
+          collectibles: [],
+        },
+      };
+
+      mockFetchCollectibles.mockResolvedValue([fetchedC456]);
+
+      const result = await batchFetchCollectibles({
+        publicKey: mockPublicKey,
+        networkDetails: mockNetworkDetails,
+        contracts: [
+          { id: "C123", token_ids: ["1"] },
+          { id: "C456", token_ids: ["1"] },
+        ],
+      });
+
+      expect(mockFetchCollectibles).toHaveBeenCalledWith({
+        publicKey: mockPublicKey,
+        contracts: [{ id: "C456", token_ids: ["1"] }],
+        networkDetails: mockNetworkDetails,
+      });
+      expect(result.collections).toHaveLength(2);
+      expect(result.collections[0]).toEqual(cachedC123);
+      expect(result.collections[1]).toEqual(fetchedC456);
+      expect(result.fromCache).toBe(false);
+    });
+
+    it("should dispatch saveCollections with merged results", async () => {
+      const cachedC123: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+          collectibles: [
+            {
+              collectionAddress: "C123",
+              collectionName: "Collection 1",
+              tokenId: "1",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token1",
+              metadata: { name: "Token 1" },
+            },
+          ],
+        },
+      };
+
+      mockGetCachedCollections.mockReturnValue([cachedC123]);
+      mockHasValidCache.mockReturnValue(true);
+
+      const fetchedToken2: Collection = {
+        collection: {
+          address: "C123",
+          name: "Collection 1",
+          symbol: "COL1",
+          collectibles: [
+            {
+              collectionAddress: "C123",
+              collectionName: "Collection 1",
+              tokenId: "2",
+              owner: mockPublicKey,
+              tokenUri: "https://example.com/token2",
+              metadata: { name: "Token 2" },
+            },
+          ],
+        },
+      };
+
+      mockFetchCollectibles.mockResolvedValue([fetchedToken2]);
+
+      await batchFetchCollectibles({
+        publicKey: mockPublicKey,
+        networkDetails: mockNetworkDetails,
+        contracts: [{ id: "C123", token_ids: ["1", "2"] }],
+      });
+
+      expect(mockDispatch).toHaveBeenCalled();
+      const savedCollections = mockSaveCollections.mock.calls[0][0].collections;
+      expect(savedCollections[0].collection?.collectibles).toHaveLength(2);
+    });
+
+    it("should handle multiple missing tokens across contracts", async () => {
+      mockGetCachedCollections.mockReturnValue(undefined);
+      mockHasValidCache.mockReturnValue(false);
+
+      const fetchedCollections: Collection[] = [
+        {
+          collection: {
+            address: "C123",
+            name: "Collection 1",
+            symbol: "COL1",
+            collectibles: [
+              {
+                collectionAddress: "C123",
+                collectionName: "Collection 1",
+                tokenId: "1",
+                owner: mockPublicKey,
+                tokenUri: "https://example.com/token1",
+                metadata: { name: "Token 1" },
+              },
+              {
+                collectionAddress: "C123",
+                collectionName: "Collection 1",
+                tokenId: "2",
+                owner: mockPublicKey,
+                tokenUri: "https://example.com/token2",
+                metadata: { name: "Token 2" },
+              },
+            ],
+          },
+        },
+        {
+          collection: {
+            address: "C456",
+            name: "Collection 2",
+            symbol: "COL2",
+            collectibles: [
+              {
+                collectionAddress: "C456",
+                collectionName: "Collection 2",
+                tokenId: "1",
+                owner: mockPublicKey,
+                tokenUri: "https://example.com/token1",
+                metadata: { name: "Token 1" },
+              },
+            ],
+          },
+        },
+      ];
+
+      mockFetchCollectibles.mockResolvedValue(fetchedCollections);
+
+      const result = await batchFetchCollectibles({
+        publicKey: mockPublicKey,
+        networkDetails: mockNetworkDetails,
+        contracts: [
+          { id: "C123", token_ids: ["1", "2"] },
+          { id: "C456", token_ids: ["1"] },
+        ],
+      });
+
+      expect(result.collections).toHaveLength(2);
+      expect(result.collections[0]).toEqual(fetchedCollections[0]);
+      expect(result.collections[1]).toEqual(fetchedCollections[1]);
+    });
+
+    it("should preserve contract order in results", async () => {
+      const fetchedCollections: Collection[] = [
+        {
+          collection: {
+            address: "C456",
+            name: "Collection 2",
+            symbol: "COL2",
+            collectibles: [],
+          },
+        },
+        {
+          collection: {
+            address: "C123",
+            name: "Collection 1",
+            symbol: "COL1",
+            collectibles: [],
+          },
+        },
+      ];
+
+      mockGetCachedCollections.mockReturnValue(undefined);
+      mockHasValidCache.mockReturnValue(false);
+      mockFetchCollectibles.mockResolvedValue(fetchedCollections);
+
+      const result = await batchFetchCollectibles({
+        publicKey: mockPublicKey,
+        networkDetails: mockNetworkDetails,
+        contracts: [
+          { id: "C123", token_ids: [] },
+          { id: "C456", token_ids: [] },
+        ],
+      });
+
+      expect(result.collections[0].collection?.address).toBe("C123");
+      expect(result.collections[1].collection?.address).toBe("C456");
     });
   });
 });

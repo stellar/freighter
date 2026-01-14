@@ -26,7 +26,7 @@ import { isAssetVisible } from "./settings";
 import {
   getRowDataByOpType,
   OperationDataRow,
-  getHomeDomainsAndCollectiblesForOperations,
+  getOperationDependencies,
 } from "popup/views/AccountHistory/hooks/useGetHistoryData";
 import { TokenDetailsResponse } from "helpers/hooks/useTokenDetails";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
@@ -159,7 +159,7 @@ export const sortOperationsByAsset = async ({
     Also collect and fetch needed collectible contracts.
   */
   const { homeDomains: fetchedHomeDomains, collectibleLookup } =
-    await getHomeDomainsAndCollectiblesForOperations(
+    await getOperationDependencies(
       operations,
       networkDetails,
       publicKey,

@@ -51,7 +51,7 @@ import {
 } from "popup/helpers/soroban";
 import { isContractId } from "@shared/api/helpers/soroban";
 import {
-  SorbanCollectibleInterface,
+  SorobanCollectibleInterface,
   SorobanTokenInterface,
 } from "@shared/constants/soroban/token";
 import { getBalanceByKey } from "popup/helpers/balance";
@@ -819,7 +819,7 @@ export const getRowDataByOpType = async (
 
     if (
       attrs.fnName === SorobanTokenInterface.transfer ||
-      attrs.fnName === SorbanCollectibleInterface.transfer
+      attrs.fnName === SorobanCollectibleInterface.transfer
     ) {
       // Extract destination from XDR for Soroban transfers (may be muxed)
       // Note: For Soroban, the destination is in contract args, so we use attrs.to as fallback
@@ -1093,7 +1093,7 @@ export const getOperationDependencies = async (
       const attrs = getAttrsFromSorobanHorizonOp(operation, networkDetails);
       if (
         attrs &&
-        attrs.fnName === SorbanCollectibleInterface.transfer &&
+        attrs.fnName === SorobanCollectibleInterface.transfer &&
         attrs.tokenId &&
         !attrs.amount
       ) {
@@ -1134,7 +1134,6 @@ export const getOperationDependencies = async (
         publicKey,
         networkDetails,
         contracts: contractsToFetch,
-        useCache: true,
       });
 
       // Build lookup map: "contractId:tokenId" -> Collectible
