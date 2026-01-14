@@ -277,7 +277,7 @@ export const TransactionDetail = ({
     }
 
     // Determine title based on operation type
-    let title = activeOperation.action as string | ReactNode;
+    let title: string | ReactNode;
     if (
       activeOperation.metadata.isInvokeHostFn &&
       (activeOperation.metadata.isTokenTransfer ||
