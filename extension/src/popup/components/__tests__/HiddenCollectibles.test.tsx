@@ -14,16 +14,8 @@ import {
   TEST_PUBLIC_KEY,
   mockCollectibles,
 } from "../../__testHelpers__";
-import * as internalApi from "@shared/api/internal";
 
-// Mock the internal API
-jest.mock("@shared/api/internal", () => ({
-  getHiddenCollectibles: jest.fn(),
-  changeCollectibleVisibility: jest.fn(),
-}));
-
-const mockGetHiddenCollectibles =
-  internalApi.getHiddenCollectibles as jest.Mock;
+const mockRefreshHiddenCollectibles = jest.fn().mockResolvedValue(undefined);
 
 const defaultState = {
   auth: {
@@ -54,19 +46,9 @@ const defaultState = {
 describe("HiddenCollectibles", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset the module-level state by mocking getHiddenCollectibles
-    mockGetHiddenCollectibles.mockResolvedValue({
-      hiddenCollectibles: {},
-      error: "",
-    });
   });
 
   it("renders empty state when no collectibles are hidden", async () => {
-    mockGetHiddenCollectibles.mockResolvedValue({
-      hiddenCollectibles: {},
-      error: "",
-    });
-
     const onClose = jest.fn();
 
     render(
@@ -75,6 +57,8 @@ describe("HiddenCollectibles", () => {
           collections={mockCollectibles}
           isOpen={true}
           onClose={onClose}
+          hiddenCollectibles={{}}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
         />
       </Wrapper>,
     );
@@ -85,15 +69,10 @@ describe("HiddenCollectibles", () => {
   });
 
   it("renders hidden collectibles when some are hidden", async () => {
-    // Mock one collectible as hidden
-    mockGetHiddenCollectibles.mockResolvedValue({
-      hiddenCollectibles: {
-        "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:1": "hidden",
-      },
-      error: "",
-    });
-
     const onClose = jest.fn();
+    const hiddenCollectibles = {
+      "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:1": "hidden",
+    };
 
     render(
       <Wrapper state={defaultState} routes={[ROUTES.account]}>
@@ -101,6 +80,8 @@ describe("HiddenCollectibles", () => {
           collections={mockCollectibles}
           isOpen={true}
           onClose={onClose}
+          hiddenCollectibles={hiddenCollectibles}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
         />
       </Wrapper>,
     );
@@ -111,17 +92,12 @@ describe("HiddenCollectibles", () => {
   });
 
   it("renders multiple hidden collectibles from different collections", async () => {
-    // Mock multiple collectibles as hidden
-    mockGetHiddenCollectibles.mockResolvedValue({
-      hiddenCollectibles: {
-        "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:1": "hidden",
-        "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2": "hidden",
-        "CCCSorobanDomainsCollection:102510": "hidden",
-      },
-      error: "",
-    });
-
     const onClose = jest.fn();
+    const hiddenCollectibles = {
+      "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:1": "hidden",
+      "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2": "hidden",
+      "CCCSorobanDomainsCollection:102510": "hidden",
+    };
 
     render(
       <Wrapper state={defaultState} routes={[ROUTES.account]}>
@@ -129,6 +105,8 @@ describe("HiddenCollectibles", () => {
           collections={mockCollectibles}
           isOpen={true}
           onClose={onClose}
+          hiddenCollectibles={hiddenCollectibles}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
         />
       </Wrapper>,
     );
@@ -151,6 +129,8 @@ describe("HiddenCollectibles", () => {
           collections={mockCollectibles}
           isOpen={false}
           onClose={onClose}
+          hiddenCollectibles={{}}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
         />
       </Wrapper>,
     );
@@ -162,38 +142,11 @@ describe("HiddenCollectibles", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("refreshes hidden collectibles when sheet opens", async () => {
-    mockGetHiddenCollectibles.mockResolvedValue({
-      hiddenCollectibles: {},
-      error: "",
-    });
-
-    const onClose = jest.fn();
-
-    render(
-      <Wrapper state={defaultState} routes={[ROUTES.account]}>
-        <HiddenCollectibles
-          collections={mockCollectibles}
-          isOpen={true}
-          onClose={onClose}
-        />
-      </Wrapper>,
-    );
-
-    await waitFor(() => {
-      expect(mockGetHiddenCollectibles).toHaveBeenCalled();
-    });
-  });
-
   it("opens collectible detail when clicking on a hidden collectible", async () => {
-    mockGetHiddenCollectibles.mockResolvedValue({
-      hiddenCollectibles: {
-        "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2": "hidden",
-      },
-      error: "",
-    });
-
     const onClose = jest.fn();
+    const hiddenCollectibles = {
+      "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2": "hidden",
+    };
 
     render(
       <Wrapper state={defaultState} routes={[ROUTES.account]}>
@@ -201,6 +154,8 @@ describe("HiddenCollectibles", () => {
           collections={mockCollectibles}
           isOpen={true}
           onClose={onClose}
+          hiddenCollectibles={hiddenCollectibles}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
         />
       </Wrapper>,
     );

@@ -2,7 +2,6 @@ import React from "react";
 import { render, waitFor, screen, within } from "@testing-library/react";
 
 import { AccountCollectibles } from "popup/components/account/AccountCollectibles";
-import { resetHiddenCollectiblesState } from "popup/components/account/hooks/useHiddenCollectibles";
 import {
   mockCollectibles,
   Wrapper,
@@ -15,16 +14,6 @@ import {
 } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
-import * as internalApi from "@shared/api/internal";
-
-// Mock the internal API
-jest.mock("@shared/api/internal", () => ({
-  getHiddenCollectibles: jest.fn(),
-  changeCollectibleVisibility: jest.fn(),
-}));
-
-const mockGetHiddenCollectibles =
-  internalApi.getHiddenCollectibles as jest.Mock;
 
 const defaultState = {
   auth: {
@@ -45,22 +34,21 @@ const defaultState = {
   },
 };
 
+const mockRefreshHiddenCollectibles = jest.fn().mockResolvedValue(undefined);
+
 describe("AccountCollectibles", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset the module-level state in the hook
-    resetHiddenCollectiblesState();
-    // Default: no hidden collectibles
-    mockGetHiddenCollectibles.mockResolvedValue({
-      hiddenCollectibles: {},
-      error: "",
-    });
   });
 
   it("renders collectibles", async () => {
     render(
       <Wrapper state={defaultState} routes={[ROUTES.account]}>
-        <AccountCollectibles collections={mockCollectibles} />
+        <AccountCollectibles
+          collections={mockCollectibles}
+          hiddenCollectibles={{}}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+        />
       </Wrapper>,
     );
     await waitFor(() => screen.getByTestId("account-collectibles"));
@@ -138,7 +126,11 @@ describe("AccountCollectibles", () => {
   it("renders empty state", async () => {
     render(
       <Wrapper state={defaultState} routes={[ROUTES.account]}>
-        <AccountCollectibles collections={[]} />
+        <AccountCollectibles
+          collections={[]}
+          hiddenCollectibles={{}}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+        />
       </Wrapper>,
     );
     await waitFor(() => screen.getByTestId("account-collectibles"));
@@ -152,6 +144,8 @@ describe("AccountCollectibles", () => {
           collections={[
             { error: { collection_address: "test", error_message: "test" } },
           ]}
+          hiddenCollectibles={{}}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
         />
       </Wrapper>,
     );
@@ -235,7 +229,11 @@ describe("AccountCollectibles", () => {
     ];
     render(
       <Wrapper state={defaultState} routes={[ROUTES.account]}>
-        <AccountCollectibles collections={partialMockCollectibles} />
+        <AccountCollectibles
+          collections={partialMockCollectibles}
+          hiddenCollectibles={{}}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+        />
       </Wrapper>,
     );
     await waitFor(() => screen.getByTestId("account-collectibles"));
@@ -277,21 +275,22 @@ describe("AccountCollectibles", () => {
   });
 
   it("filters out hidden collectibles from display", async () => {
-    // Mock one collectible as hidden
-    mockGetHiddenCollectibles.mockResolvedValue({
-      hiddenCollectibles: {
-        "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:1": "hidden",
-      },
-      error: "",
-    });
+    // Pass hidden collectibles as prop
+    const hiddenCollectibles = {
+      "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:1": "hidden",
+    };
 
     render(
       <Wrapper state={defaultState} routes={[ROUTES.account]}>
-        <AccountCollectibles collections={mockCollectibles} />
+        <AccountCollectibles
+          collections={mockCollectibles}
+          hiddenCollectibles={hiddenCollectibles}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+        />
       </Wrapper>,
     );
 
-    // Wait for the hidden collectibles to be loaded and applied
+    // Wait for the hidden collectibles to be applied
     // Stellar Frogs collection should now show only 2 collectibles (tokenId 2 and 3)
     await waitFor(() => {
       const grids = screen.queryAllByTestId("account-collection-grid");
@@ -320,19 +319,20 @@ describe("AccountCollectibles", () => {
   });
 
   it("filters out multiple hidden collectibles from different collections", async () => {
-    // Mock multiple collectibles as hidden
-    mockGetHiddenCollectibles.mockResolvedValue({
-      hiddenCollectibles: {
-        "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:1": "hidden",
-        "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2": "hidden",
-        "CCCSorobanDomainsCollection:102510": "hidden",
-      },
-      error: "",
-    });
+    // Pass multiple hidden collectibles as prop
+    const hiddenCollectibles = {
+      "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:1": "hidden",
+      "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2": "hidden",
+      "CCCSorobanDomainsCollection:102510": "hidden",
+    };
 
     render(
       <Wrapper state={defaultState} routes={[ROUTES.account]}>
-        <AccountCollectibles collections={mockCollectibles} />
+        <AccountCollectibles
+          collections={mockCollectibles}
+          hiddenCollectibles={hiddenCollectibles}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+        />
       </Wrapper>,
     );
 
@@ -363,17 +363,18 @@ describe("AccountCollectibles", () => {
   });
 
   it("does not render a collection when all its collectibles are hidden", async () => {
-    // Mock all collectibles in Future Monkeys collection as hidden
-    mockGetHiddenCollectibles.mockResolvedValue({
-      hiddenCollectibles: {
-        "CCCFutureMonkeysCollection:111": "hidden",
-      },
-      error: "",
-    });
+    // Pass all collectibles in Future Monkeys collection as hidden
+    const hiddenCollectibles = {
+      "CCCFutureMonkeysCollection:111": "hidden",
+    };
 
     render(
       <Wrapper state={defaultState} routes={[ROUTES.account]}>
-        <AccountCollectibles collections={mockCollectibles} />
+        <AccountCollectibles
+          collections={mockCollectibles}
+          hiddenCollectibles={hiddenCollectibles}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+        />
       </Wrapper>,
     );
 

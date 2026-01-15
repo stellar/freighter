@@ -11,7 +11,6 @@ import {
 } from "popup/basics/shadcn/Sheet";
 import { CollectibleDetail, SelectedCollectible } from "../CollectibleDetail";
 import { CollectibleInfoImage } from "../CollectibleInfo";
-import { useHiddenCollectibles } from "../hooks/useHiddenCollectibles";
 
 import "./styles.scss";
 
@@ -193,15 +192,17 @@ const CollectionsList = ({
 
 interface AccountCollectiblesProps {
   collections: Collection[];
+  hiddenCollectibles: Record<CollectibleKey, string>;
+  refreshHiddenCollectibles: () => Promise<void>;
   onClickCollectible?: (selectedCollectible: SelectedCollectible) => void;
 }
 
 export const AccountCollectibles = ({
   collections,
+  hiddenCollectibles,
+  refreshHiddenCollectibles,
 }: AccountCollectiblesProps) => {
   const { t } = useTranslation();
-  const { hiddenCollectibles, refreshHiddenCollectibles } =
-    useHiddenCollectibles();
 
   return (
     <div className="AccountCollectibles" data-testid="account-collectibles">

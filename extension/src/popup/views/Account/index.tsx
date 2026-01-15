@@ -21,6 +21,7 @@ import { AccountHeader } from "popup/components/account/AccountHeader";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+import { useHiddenCollectibles } from "popup/components/account/hooks/useHiddenCollectibles";
 
 import { newTabHref } from "helpers/urls";
 import { getTotalUsd } from "popup/helpers/balance";
@@ -50,6 +51,8 @@ export const Account = () => {
   const currentAccountName = useSelector(accountNameSelector);
   const collections = useSelector(collectionsSelector);
   const { activeTab } = useContext(AccountTabsContext);
+  const { hiddenCollectibles, refreshHiddenCollectibles } =
+    useHiddenCollectibles();
 
   const isFullscreenModeEnabled = isFullscreenMode();
   const {
@@ -186,6 +189,8 @@ export const Account = () => {
         }}
         roundedTotalBalanceUsd={roundedTotalBalanceUsd}
         isFunded={!!resolvedData?.balances?.isFunded}
+        hiddenCollectibles={hiddenCollectibles}
+        refreshHiddenCollectibles={refreshHiddenCollectibles}
       />
       <View.Content hasNoTopPadding hasNoBottomPadding>
         <div className="AccountView" data-testid="account-view">
@@ -275,6 +280,8 @@ export const Account = () => {
                       resolvedData?.publicKey || ""
                     ] || []
                   }
+                  hiddenCollectibles={hiddenCollectibles}
+                  refreshHiddenCollectibles={refreshHiddenCollectibles}
                 />
               </div>,
             ]}

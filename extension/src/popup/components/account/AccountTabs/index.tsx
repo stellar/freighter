@@ -19,6 +19,7 @@ import { collectionsSelector } from "popup/ducks/cache";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
+import { CollectibleKey } from "@shared/api/types/types";
 
 import { AccountHeaderModal } from "../AccountHeaderModal";
 import { HiddenCollectibles } from "../HiddenCollectibles";
@@ -165,7 +166,13 @@ const AddCollectiblesModalContent = ({
  *
  * @returns {JSX.Element} Account tabs component with navigation and management modals
  */
-export const AccountTabs = () => {
+export const AccountTabs = ({
+  hiddenCollectibles,
+  refreshHiddenCollectibles,
+}: {
+  hiddenCollectibles: Record<CollectibleKey, string>;
+  refreshHiddenCollectibles: () => Promise<void>;
+}) => {
   const [isManageAssetsOpen, setIsManageAssetsOpen] = useState(false);
   const [isAddCollectiblesOpen, setIsAddCollectiblesOpen] = useState(false);
   const [isHiddenCollectiblesOpen, setIsHiddenCollectiblesOpen] =
@@ -235,6 +242,8 @@ export const AccountTabs = () => {
 
       <HiddenCollectibles
         collections={currentCollections}
+        hiddenCollectibles={hiddenCollectibles}
+        refreshHiddenCollectibles={refreshHiddenCollectibles}
         isOpen={isHiddenCollectiblesOpen}
         onClose={() => setIsHiddenCollectiblesOpen(false)}
       />
