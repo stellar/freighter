@@ -21,6 +21,10 @@
       margin: 0;
     }
 
+    &--history {
+      border-radius: pxToRem(6px);
+    }
+
     &__placeholder {
       display: flex;
       align-items: center;

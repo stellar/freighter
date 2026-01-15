@@ -502,8 +502,8 @@ export interface Collection {
     collectibles: Collectible[];
   };
   error?: {
-    collection_address: string;
-    error_message: string;
+    collectionAddress: string;
+    errorMessage: string;
   };
 }
 
