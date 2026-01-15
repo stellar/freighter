@@ -57,6 +57,7 @@ import {
   ApiTokenPrices,
   HorizonOperation,
   UserNotification,
+  CollectibleContract,
 } from "./types";
 import {
   AccountBalancesInterface,
@@ -861,6 +862,7 @@ export const getIndexerAccountHistory = async ({
     const url = new URL(
       `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}&is_failed_included=true`,
     );
+
     const response = await fetch(url.href);
 
     const data = await response.json();
@@ -1129,7 +1131,6 @@ export const getAssetIcons = async ({
         if (!icon) {
           // if we don't have the icon, we try to get it from the token lists
           const tokenListIcon = await getIconFromTokenLists({
-            networkDetails,
             issuerId: key,
             contractId,
             code,
@@ -1869,6 +1870,34 @@ export const getTokenIds = async ({
   return tokenIdList;
 };
 
+export const getMobileAppBannerDismissed = async (): Promise<boolean> => {
+  const { isDismissed, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_MOBILE_APP_BANNER_DISMISSED,
+  });
+
+  if (error) {
+    return false;
+  }
+
+  return !!isDismissed;
+};
+
+export const dismissMobileAppBanner = async (): Promise<{
+  isDismissed: boolean;
+}> => {
+  const { isDismissed, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.DISMISS_MOBILE_APP_BANNER,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return { isDismissed: !!isDismissed };
+};
+
 export const removeTokenId = async ({
   activePublicKey,
   contractId,
@@ -1938,6 +1967,71 @@ export const modifyAssetsList = async ({
   return { assetsLists: response.assetsLists, error: response.error };
 };
 
+export const simulateSendCollectible = async (args: {
+  collectionAddress: string;
+  publicKey: string;
+  params: {
+    publicKey: string;
+    destination: string;
+    collectionAddress: string;
+    tokenId: number;
+  };
+  networkDetails: NetworkDetails;
+  transactionFee: string;
+}): Promise<{
+  ok: boolean;
+  response: {
+    preparedTransaction: string;
+    simulationResponse: SorobanRpc.Api.SimulateTransactionSuccessResponse;
+  };
+}> => {
+  const {
+    collectionAddress,
+    publicKey,
+    params,
+    networkDetails,
+    transactionFee,
+  } = args;
+  if (!networkDetails.sorobanRpcUrl) {
+    throw new SorobanRpcNotSupportedError();
+  }
+  const server = stellarSdkServer(
+    networkDetails.networkUrl,
+    networkDetails.networkPassphrase,
+  );
+  const Sdk = getSdk(networkDetails.networkPassphrase);
+  const sourceAccount = await server.loadAccount(publicKey);
+  const builder = new Sdk.TransactionBuilder(sourceAccount, {
+    fee: xlmToStroop(transactionFee).toFixed(),
+    networkPassphrase: networkDetails.networkPassphrase,
+  });
+
+  const sendCollectibleParams = [
+    new Address(publicKey).toScVal(), // from
+    new Address(params.destination).toScVal(), // to
+    xdr.ScVal.scvU32(params.tokenId), // token id
+  ];
+  const transaction = transfer(
+    collectionAddress,
+    sendCollectibleParams,
+    undefined,
+    builder,
+  );
+
+  const simulationResponse = (await simulateTransaction({
+    xdr: transaction.toXDR(),
+    networkDetails: networkDetails,
+  })) as {
+    ok: boolean;
+    response: {
+      preparedTransaction: string;
+      simulationResponse: SorobanRpc.Api.SimulateTransactionSuccessResponse;
+    };
+  };
+
+  return simulationResponse;
+};
+
 export const simulateTokenTransfer = async (args: {
   address: string;
   publicKey: string;
@@ -1976,7 +2070,7 @@ export const simulateTokenTransfer = async (args: {
 
     const transferParams = [
       new Address(publicKey).toScVal(), // from
-      new Address(address).toScVal(), // to
+      new Address(params.destination).toScVal(), // to (may be muxed address)
       new XdrLargeInt("i128", params.amount).toI128(), // amount
     ];
     const transaction = transfer(address, transferParams, memo, builder);
@@ -2001,22 +2095,33 @@ export const simulateTokenTransfer = async (args: {
     };
   }
 
+  // Build request body - ensure memo is a string (empty string if undefined/null for muxed addresses)
+  const requestBody: {
+    address: string;
+    pub_key: string;
+    memo: string;
+    params: {
+      publicKey: string;
+      destination: string;
+      amount: number;
+    };
+    network_url: string;
+    network_passphrase: string;
+  } = {
+    address,
+    pub_key: publicKey,
+    memo: memo || "", // Backend requires memo as string, use empty string if undefined
+    params,
+    network_url: networkDetails.sorobanRpcUrl!,
+    network_passphrase: networkDetails.networkPassphrase,
+  };
+
   const options = {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      address,
-
-      pub_key: publicKey,
-      memo,
-      params,
-
-      network_url: networkDetails.sorobanRpcUrl,
-
-      network_passphrase: networkDetails.networkPassphrase,
-    }),
+    body: JSON.stringify(requestBody),
   };
   const res = await fetch(`${INDEXER_URL}/simulate-token-transfer`, options);
   const response = await res.json();
@@ -2119,4 +2224,62 @@ export const changeAssetVisibility = async ({
   });
 
   return { hiddenAssets: response.hiddenAssets, error: response.error };
+};
+
+export const addCollectible = async ({
+  publicKey,
+  network,
+  collectibleContractAddress,
+  collectibleTokenId,
+}: {
+  publicKey: string;
+  network: string;
+  collectibleContractAddress: string;
+  collectibleTokenId: string;
+}) => {
+  let response = {
+    error: "",
+    collectiblesList: [] as CollectibleContract[],
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      type: SERVICE_TYPES.ADD_COLLECTIBLE,
+      activePublicKey: publicKey,
+      publicKey,
+      network,
+      collectibleContractAddress,
+      collectibleTokenId,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
+};
+
+export const getCollectibles = async ({
+  publicKey,
+  network,
+}: {
+  publicKey: string;
+  network: string;
+}) => {
+  let response = {
+    error: "",
+    collectiblesList: [] as CollectibleContract[],
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      type: SERVICE_TYPES.GET_COLLECTIBLES,
+      activePublicKey: publicKey,
+      publicKey,
+      network,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
 };

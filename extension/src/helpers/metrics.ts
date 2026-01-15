@@ -6,7 +6,7 @@ import { Location } from "react-router-dom";
 
 import { store } from "popup/App";
 import { METRICS_DATA } from "constants/localStorageTypes";
-import { AMPLITUDE_KEY } from "constants/env";
+import { AMPLITUDE_KEY, METRICS_PLATFORM } from "constants/env";
 import { settingsDataSharingSelector } from "popup/ducks/settings";
 import { Account, AccountType } from "@shared/api/types";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -66,6 +66,7 @@ interface Event {
   event_properties: { [key: string]: any };
   user_id: string;
   device_id: string;
+  platform: string;
   freighter_account_funded: boolean;
   hw_connected: boolean;
   secret_key_account: boolean;
@@ -176,6 +177,7 @@ export const emitMetric = async (name: string, body?: any) => {
     event_properties: body,
     user_id: getUserId(),
     device_id: window.navigator.userAgent,
+    platform: METRICS_PLATFORM,
     freighter_account_funded: metricsData.freighterFunded,
     hw_connected: metricsData.hwExists,
     secret_key_account: metricsData.importedExists,

@@ -189,7 +189,7 @@ export const ViewPublicKey = () => {
             {truncatedPublicKey(publicKey)}
           </div>
           <div className="ViewPublicKey__copy-btn">
-            <CopyText textToCopy={publicKey} doneLabel="ADDRESS COPIED">
+            <CopyText textToCopy={publicKey} doneLabel={t("Copied!")}>
               <Button size="md" variant="tertiary" isRounded>
                 {t("COPY")}
               </Button>

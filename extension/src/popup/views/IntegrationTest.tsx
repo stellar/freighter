@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Networks } from "stellar-sdk";
+import { useTranslation } from "react-i18next";
 
 import {
   createAccount,
@@ -439,10 +440,11 @@ export const IntegrationTest = () => {
     runTests();
   }, []);
 
+  const { t } = useTranslation();
   return (
     <div>
-      <div>Running integration tests ...</div>
-      <div>{isDone ? "Done" : ""}</div>
+      <div>{t("Running integration tests ...")}</div>
+      <div>{isDone ? t("Done") : ""}</div>
     </div>
   );
 };

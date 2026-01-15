@@ -26,7 +26,7 @@ export const DeleteModal = ({
             {t("Are you sure you want to delete this list?")}
           </div>
           <div className="DeleteModal__body">
-            {t("Are you sure you want to delete this list?")}{" "}
+            {`${t("Are you sure you want to delete this list?")} `}
             {t("If you delete this list, you will have to re-add it manually.")}
           </div>
           <div className="DeleteModal__button-row">
