@@ -20,6 +20,7 @@ import { BlockaidByLine } from "popup/components/WarningMessages";
 import { ATTACK_TO_DISPLAY } from "popup/helpers/blockaid";
 import { getBlockaidOverrideState } from "@shared/api/internal";
 import { SecurityLevel } from "popup/constants/blockaid";
+import { getSiteSecurityStates } from "popup/helpers/blockaid";
 
 import "popup/metrics/access";
 import "./styles.scss";
@@ -115,25 +116,12 @@ export const GrantAccess = () => {
   const scanData = state.data.scanData;
 
   // Determine security states with override support
-  // Override takes precedence (dev mode only)
-  let isMalicious: boolean;
-  let isSuspicious: boolean;
-  let isUnableToScan: boolean;
+  const { isMalicious, isUnableToScan } = getSiteSecurityStates(
+    scanData,
+    blockaidOverrideState,
+  );
 
-  if (blockaidOverrideState) {
-    // Override state takes precedence
-    isMalicious = blockaidOverrideState === SecurityLevel.MALICIOUS;
-    isSuspicious = blockaidOverrideState === SecurityLevel.SUSPICIOUS;
-    isUnableToScan = blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN;
-  } else {
-    // Use actual scan results
-    isUnableToScan = !scanData || scanData.status === undefined;
-    isMalicious = scanData?.status === "hit" && scanData.is_malicious;
-    // Treat non-malicious hits as suspicious (site has some concerns but not definitively malicious)
-    isSuspicious = scanData?.status === "hit" && !scanData.is_malicious;
-  }
-
-  const shouldShowWarning = isMalicious || isSuspicious || isUnableToScan;
+  const shouldShowWarning = isMalicious || isUnableToScan;
 
   let attackTypes = [] as string[];
   if (scanData) {
@@ -158,7 +146,6 @@ export const GrantAccess = () => {
             <DomainScanModalInfo
               domain={domain}
               isMalicious={isMalicious}
-              isSuspicious={isSuspicious}
               isUnableToScan={isUnableToScan}
               scanStatus={scanData?.status}
               onClick={() => setActivePaneIndex(1)}
@@ -252,11 +239,7 @@ export const GrantAccess = () => {
                     ) : (
                       <Icon.MinusCircle />
                     )}
-                    <span>
-                      {blockaidOverrideState === SecurityLevel.MALICIOUS
-                        ? t("This site was flagged as malicious")
-                        : t("This site was flagged as suspicious")}
-                    </span>
+                    <span>{t("This site was flagged as malicious")}</span>
                   </div>
                 )}
                 {isUnableToScan && (

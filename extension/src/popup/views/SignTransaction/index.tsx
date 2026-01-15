@@ -52,6 +52,7 @@ import {
 import {
   useShouldTreatTxAsUnableToScan,
   useIsTxSuspicious,
+  getSiteSecurityStates,
 } from "popup/helpers/blockaid";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Loading } from "popup/components/Loading";
@@ -74,9 +75,6 @@ import {
 } from "popup/helpers/soroban";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
-import { useScanSite } from "popup/helpers/blockaid";
-import { getBlockaidOverrideState } from "@shared/api/internal";
-import { SecurityLevel } from "popup/constants/blockaid";
 
 import { AuthEntries } from "popup/components/AuthEntry";
 import { Summary } from "./Preview/Summary";
@@ -122,6 +120,7 @@ export const SignTransaction = () => {
       includeIcons: false,
     },
     accountToSign,
+    domain,
   );
 
   const {
@@ -135,49 +134,21 @@ export const SignTransaction = () => {
     hardwareWalletType,
   } = useSetupSigningFlow(rejectTransaction, signTransaction, transactionXdr);
 
-  // Add site scanning
-  const { scanSite } = useScanSite();
-  const [scanData, setScanData] = useState<any>(null);
-  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
-    string | null
-  >(null);
-
-  useEffect(() => {
-    getBlockaidOverrideState()
-      .then(setBlockaidOverrideState)
-      .catch(() => setBlockaidOverrideState(null));
-  }, []);
-
-  useEffect(() => {
-    const scan = async () => {
-      if (domain) {
-        try {
-          const result = await scanSite(domain);
-          setScanData(result);
-        } catch (error) {
-          console.error("Failed to scan site:", error);
-          setScanData(null);
-        }
-      }
-    };
-    scan();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [domain]);
+  const siteScanData =
+    signTxState.data?.type === AppDataType.RESOLVED
+      ? signTxState.data.siteScanData
+      : null;
+  const blockaidOverrideState =
+    signTxState.data?.type === AppDataType.RESOLVED
+      ? signTxState.data.blockaidOverrideState
+      : null;
 
   // Determine site security states with override support
-  let isSiteMalicious = false;
-  let isSiteSuspicious = false;
-  let isSiteUnableToScan = false;
-
-  if (blockaidOverrideState) {
-    isSiteMalicious = blockaidOverrideState === SecurityLevel.MALICIOUS;
-    isSiteSuspicious = blockaidOverrideState === SecurityLevel.SUSPICIOUS;
-    isSiteUnableToScan = blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN;
-  } else {
-    isSiteUnableToScan = !scanData || scanData.status === undefined;
-    isSiteMalicious = scanData?.status === "hit" && scanData.is_malicious;
-    isSiteSuspicious = scanData?.status === "hit" && !scanData.is_malicious;
-  }
+  const {
+    isMalicious: isSiteMalicious,
+    isSuspicious: isSiteSuspicious,
+    isUnableToScan: isSiteUnableToScan,
+  } = getSiteSecurityStates(siteScanData, blockaidOverrideState);
 
   const shouldShowSiteWarning =
     isSiteMalicious || isSiteSuspicious || isSiteUnableToScan;

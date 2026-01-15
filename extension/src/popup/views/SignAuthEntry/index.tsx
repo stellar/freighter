@@ -61,8 +61,10 @@ export const SignAuthEntry = () => {
   });
   const publicKey = useSelector(publicKeySelector);
 
-  const { state: signAuthEntryData, fetchData } =
-    useGetSignAuthEntryData(accountToSign);
+  const { state: signAuthEntryData, fetchData } = useGetSignAuthEntryData(
+    accountToSign,
+    params.url,
+  );
   const {
     isConfirming,
     isPasswordRequired,

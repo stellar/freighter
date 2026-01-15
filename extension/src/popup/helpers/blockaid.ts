@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import * as Sentry from "@sentry/browser";
 import { useSelector } from "react-redux";
 
@@ -19,6 +19,7 @@ import { getBlockaidOverrideState } from "@shared/api/internal";
 import { isDev } from "@shared/helpers/dev";
 import { SecurityLevel } from "popup/constants/blockaid";
 import { fetchJson } from "./fetch";
+import { Action } from "constants/request";
 
 export const ATTACK_TO_DISPLAY = {
   signature_farming:
@@ -448,6 +449,126 @@ export const isTxSuspicious = (
 
 export const isBlockaidWarning = (resultType: string) =>
   resultType === "Warning" || resultType === "Spam";
+
+/**
+ * Determines site security states from scan data and override state
+ * @param scanData - The site scan result from Blockaid
+ * @param blockaidOverrideState - Override state for dev mode (takes precedence)
+ * @returns Object with isMalicious, isSuspicious, and isUnableToScan flags
+ */
+export const getSiteSecurityStates = (
+  scanData: BlockAidScanSiteResult | null | undefined,
+  blockaidOverrideState: string | null | undefined,
+): {
+  isMalicious: boolean;
+  isSuspicious: boolean;
+  isUnableToScan: boolean;
+} => {
+  if (blockaidOverrideState) {
+    // Override state takes precedence (dev mode only)
+    return {
+      isMalicious: blockaidOverrideState === SecurityLevel.MALICIOUS,
+      isSuspicious: blockaidOverrideState === SecurityLevel.SUSPICIOUS,
+      isUnableToScan: blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN,
+    };
+  }
+
+  // Use actual scan results
+  return {
+    isUnableToScan: !scanData || scanData.status === undefined,
+    isMalicious: scanData?.status === "hit" && scanData.is_malicious === true,
+    isSuspicious: false, // Suspicious is ignored as there's no concept of a suspicious site
+  };
+};
+
+/**
+ * Hook that handles asynchronous site scanning and updates state via dispatch
+ * This prevents blocking the UI while scanning sites
+ *
+ * @param domain - The domain/URL to scan (optional)
+ * @param dispatch - The dispatch function to update state
+ * @param updatePayload - Function that merges scan data into the existing payload
+ *
+ * @example
+ * ```tsx
+ * const { scanSite } = useAsyncSiteScan(
+ *   domain,
+ *   dispatch,
+ *   (payload, scanData) => ({ ...payload, scanData })
+ * );
+ *
+ * // Call scanSite after initial payload is dispatched
+ * scanSite(initialPayload);
+ * ```
+ */
+export const useAsyncSiteScan = <T>(
+  domain: string | undefined,
+  dispatch: (action: Action<T, unknown>) => void,
+  updatePayload: (payload: T, scanData: BlockAidScanSiteResult | null) => T,
+) => {
+  const { scanSite: scanSiteFn } = useScanSite();
+
+  const scanSite = useCallback(
+    async (currentPayload: T) => {
+      if (!domain) {
+        return;
+      }
+
+      // Scan asynchronously without blocking
+      scanSiteFn(domain)
+        .then((scanResult) => {
+          const updatedPayload = updatePayload(currentPayload, scanResult);
+          dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
+        })
+        .catch((error) => {
+          console.error("Failed to scan site:", error);
+          Sentry.captureException(`Failed to call scan site: ${error}`);
+          const updatedPayload = updatePayload(currentPayload, null);
+          dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
+        });
+    },
+    [domain, dispatch, updatePayload, scanSiteFn],
+  );
+
+  return { scanSite };
+};
+
+/**
+ * @deprecated Use useAsyncSiteScan hook instead
+ * Fetches site scan data asynchronously and updates the payload via dispatch
+ * This helper prevents blocking the UI while scanning sites
+ * @param scanSiteFn - The scanSite function to call
+ * @param url - The URL/domain to scan
+ * @param initialPayload - The initial payload to update
+ * @param dispatch - The dispatch function to update state
+ * @param updatePayload - Optional function to customize how the payload is updated with scan data (defaults to setting scanData field)
+ */
+export const fetchSiteScanData = async <T>(
+  scanSiteFn: (url: string) => Promise<BlockAidScanSiteResult | null>,
+  url: string | undefined,
+  initialPayload: T,
+  dispatch: (action: Action<T, unknown>) => void,
+  updatePayload?: (payload: T, scanData: BlockAidScanSiteResult | null) => T,
+): Promise<void> => {
+  if (!url) {
+    return;
+  }
+
+  try {
+    const scanResult = await scanSiteFn(url);
+    const updatedPayload = updatePayload
+      ? updatePayload(initialPayload, scanResult)
+      : ({ ...initialPayload, scanData: scanResult } as T);
+    dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
+  } catch (error) {
+    console.error("Failed to scan site:", error);
+    Sentry.captureException(`Failed to call scan site: ${error}`);
+    const updatedPayload = updatePayload
+      ? updatePayload(initialPayload, null)
+      : ({ ...initialPayload, scanData: null } as T);
+    dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
+  }
+};
 
 export const scanAssetBulk = async (
   addressList: string[],

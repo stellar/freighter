@@ -42,9 +42,11 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getSiteFavicon } from "popup/helpers/getSiteFavicon";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
-import { useScanSite, ATTACK_TO_DISPLAY } from "popup/helpers/blockaid";
+import {
+  ATTACK_TO_DISPLAY,
+  getSiteSecurityStates,
+} from "popup/helpers/blockaid";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
-import { getBlockaidOverrideState } from "@shared/api/internal";
 import { SecurityLevel } from "popup/constants/blockaid";
 
 import "./styles.scss";
@@ -72,8 +74,10 @@ export const SignMessage = () => {
     domain,
   });
 
-  const { state: signMessageState, fetchData } =
-    useGetSignMessageData(accountToSign);
+  const { state: signMessageState, fetchData } = useGetSignMessageData(
+    accountToSign,
+    url,
+  );
   const {
     isConfirming,
     isPasswordRequired,
@@ -91,33 +95,9 @@ export const SignMessage = () => {
     apiVersion,
   );
 
-  // Add site scanning
-  const { scanSite } = useScanSite();
-  const [scanData, setScanData] = useState<any>(null);
-  const [isScanLoaded, setIsScanLoaded] = useState(false);
-  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
-    string | null
-  >(null);
-
   useEffect(() => {
     const getData = async () => {
       await fetchData();
-      // Scan the site for security issues
-      try {
-        const result = await scanSite(url);
-        setScanData(result);
-      } catch (error) {
-        console.error("Failed to scan site:", error);
-      } finally {
-        setIsScanLoaded(true);
-      }
-      // Get override state for dev mode
-      try {
-        const overrideState = await getBlockaidOverrideState();
-        setBlockaidOverrideState(overrideState);
-      } catch {
-        setBlockaidOverrideState(null);
-      }
     };
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -197,23 +177,20 @@ export const SignMessage = () => {
   const favicon = getSiteFavicon(domain);
   const validDomain = isDomainValid ? punycodedDomain : `xn-${punycodedDomain}`;
 
-  // Determine security states with override support
-  // Override takes precedence (dev mode only)
-  let isMalicious: boolean;
-  let isSuspicious: boolean;
-  let isUnableToScan: boolean;
+  const scanData =
+    signMessageState.data?.type === AppDataType.RESOLVED
+      ? signMessageState.data.scanData
+      : null;
+  const blockaidOverrideState =
+    signMessageState.data?.type === AppDataType.RESOLVED
+      ? signMessageState.data.blockaidOverrideState
+      : null;
 
-  if (blockaidOverrideState) {
-    // Override state takes precedence
-    isMalicious = blockaidOverrideState === SecurityLevel.MALICIOUS;
-    isSuspicious = blockaidOverrideState === SecurityLevel.SUSPICIOUS;
-    isUnableToScan = blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN;
-  } else {
-    // Use actual scan results
-    isUnableToScan = !scanData || scanData.status === undefined;
-    isMalicious = scanData?.status === "hit" && scanData.is_malicious;
-    isSuspicious = scanData?.status === "hit" && !scanData.is_malicious;
-  }
+  // Determine security states with override support
+  const { isMalicious, isSuspicious, isUnableToScan } = getSiteSecurityStates(
+    scanData,
+    blockaidOverrideState,
+  );
 
   const shouldShowWarning = isMalicious || isSuspicious || isUnableToScan;
 
@@ -268,7 +245,7 @@ export const SignMessage = () => {
                 {!isDomainListedAllowed && (
                   <DomainNotAllowedWarningMessage domain={domain} />
                 )}
-                {isScanLoaded && shouldShowWarning && (
+                {shouldShowWarning && (
                   <div className="SignMessage__BlockaidBanner">
                     <BlockAidSiteScanLabel
                       isMalicious={isMalicious}
@@ -357,11 +334,7 @@ export const SignMessage = () => {
                       ) : (
                         <Icon.MinusCircle />
                       )}
-                      <span>
-                        {blockaidOverrideState === SecurityLevel.MALICIOUS
-                          ? t("This site was flagged as malicious")
-                          : t("This site was flagged as suspicious")}
-                      </span>
+                      <span>{t("This site was flagged as malicious")}</span>
                     </div>
                   )}
                   {isUnableToScan && (

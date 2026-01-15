@@ -613,31 +613,6 @@ export const BlockAidMaliciousSiteLabel = ({
   );
 };
 
-export const BlockAidSuspiciousSiteLabel = ({
-  onClick,
-}: {
-  onClick: () => void;
-}) => {
-  const { t } = useTranslation();
-  return (
-    <div
-      className="ScanLabel ScanMiss SiteSuspicious"
-      data-testid="blockaid-suspicious-label"
-      onClick={onClick}
-    >
-      <div className="ScanLabel__Info">
-        <div className="Icon">
-          <Icon.InfoSquare className="WarningMessage__icon" />
-        </div>
-        <p className="Message">{t("This site was flagged as suspicious")}</p>
-      </div>
-      <div className="ScanLabel__Action">
-        <Icon.ChevronRight />
-      </div>
-    </div>
-  );
-};
-
 export const BlockAidUnableToScanSiteLabel = ({
   onClick,
 }: {
@@ -685,13 +660,11 @@ export const BlockAidMissLabel = () => {
 export const BlockAidSiteScanLabel = ({
   status,
   isMalicious,
-  isSuspicious,
   isUnableToScan,
   onClick,
 }: {
   status: "hit" | "miss" | undefined;
   isMalicious: boolean;
-  isSuspicious?: boolean;
   isUnableToScan?: boolean;
   onClick: () => void;
 }) => {
@@ -705,10 +678,6 @@ export const BlockAidSiteScanLabel = ({
 
   if (isMalicious) {
     return <BlockAidMaliciousSiteLabel onClick={onClick} />;
-  }
-
-  if (isSuspicious) {
-    return <BlockAidSuspiciousSiteLabel onClick={onClick} />;
   }
 
   // benign case should not show anything for now
@@ -866,7 +835,7 @@ interface BlockAidScanExpandedProps {
 }
 
 interface WarningInfo {
-  warnings: Array<{ icon: React.ReactNode; text: string }>;
+  warnings: Array<{ icon: React.ReactNode; text: string; isError?: boolean }>;
   isMalicious: boolean;
   isSuspicious: boolean;
 }
@@ -920,13 +889,18 @@ const getScanWarnings = (
   t: (key: string) => string,
   blockaidOverrideState: string | null,
 ): WarningInfo => {
-  const warnings: Array<{ icon: React.ReactNode; text: string }> = [];
+  const warnings: Array<{
+    icon: React.ReactNode;
+    text: string;
+    isError?: boolean;
+  }> = [];
 
   // If unable to scan, return unable to scan warning
   if (isUnableToScan) {
     warnings.push({
       icon: <Icon.MinusCircle />,
       text: t("Unable to scan transaction"),
+      isError: false,
     });
     return { warnings, isMalicious: false, isSuspicious: false };
   }
@@ -947,6 +921,7 @@ const getScanWarnings = (
     warnings.push({
       icon: <Icon.XCircle />,
       text: t("This transaction was flagged as malicious (override active)"),
+      isError: true,
     });
   }
 
@@ -957,6 +932,7 @@ const getScanWarnings = (
     warnings.push({
       icon: <Icon.MinusCircle />,
       text: t("This transaction was flagged as suspicious (override active)"),
+      isError: false,
     });
   }
 
@@ -969,6 +945,7 @@ const getScanWarnings = (
       warnings.push({
         icon: <Icon.MinusCircle />,
         text: simulation.error,
+        isError: false,
       });
     }
 
@@ -977,6 +954,7 @@ const getScanWarnings = (
         warnings.push({
           icon: isMalicious ? <Icon.XCircle /> : <Icon.MinusCircle />,
           text: validation.description,
+          isError: isMalicious,
         });
       }
     }
@@ -991,6 +969,7 @@ const getScanWarnings = (
       warnings.push({
         icon: isMalicious ? <Icon.XCircle /> : <Icon.MinusCircle />,
         text: feature.description,
+        isError: isMalicious,
       });
     });
   }
@@ -1070,8 +1049,7 @@ export const BlockAidScanExpanded = ({
               <div
                 key={index}
                 className={
-                  React.isValidElement(warning.icon) &&
-                  warning.icon.type === Icon.XCircle
+                  warning.isError
                     ? "BlockaidDetailsExpanded__DetailRowError"
                     : "BlockaidDetailsExpanded__DetailRow"
                 }
