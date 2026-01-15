@@ -21,7 +21,7 @@ import { isCustomNetwork } from "@shared/helpers/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
 import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { INDEXER_URL } from "@shared/constants/mercury";
+import { INDEXER_URL, INDEXER_V2_URL } from "@shared/constants/mercury";
 import { captureException } from "@sentry/browser";
 
 export const getKeyIdList = async ({
@@ -297,21 +297,26 @@ export const getIsHideDustEnabled = async ({
   return isHideDustEnabled;
 };
 
-export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
+export const getIsRpcHealthy = async (localStore: DataStorageAccess) => {
   let rpcHealth = { status: "" };
+
+  const networkDetails = await getNetworkDetails({ localStore });
+
   if (isCustomNetwork(networkDetails)) {
     // TODO: use server.getHealth method to get accurate result for standalone network
     rpcHealth = { status: "healthy" };
   } else {
     try {
       const res = await fetch(
-        `${INDEXER_URL}/rpc-health?network=${networkDetails.network}`,
+        `${INDEXER_V2_URL}/ping?network=${networkDetails.network}`,
       );
 
       if (!res.ok) {
         captureException(`Failed to load rpc health for Soroban`);
       }
-      rpcHealth = await res.json();
+      const resJson = await res.json();
+
+      rpcHealth = resJson.rpc_health;
     } catch (e) {
       captureException(
         `Failed to load rpc health for Soroban - ${JSON.stringify(e)}`,
