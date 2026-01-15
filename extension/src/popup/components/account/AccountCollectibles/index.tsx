@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 
@@ -29,6 +29,15 @@ const CollectionsList = ({
   const { t } = useTranslation();
   const [selectedCollectible, setSelectedCollectible] =
     useState<SelectedCollectible | null>(null);
+  // Keep track of the last selected collectible so we can render it during close animation
+  const lastSelectedCollectible = useRef<SelectedCollectible | null>(null);
+
+  // Update the ref when a collectible is selected
+  useEffect(() => {
+    if (selectedCollectible) {
+      lastSelectedCollectible.current = selectedCollectible;
+    }
+  }, [selectedCollectible]);
 
   const isCollectibleHidden = (collectionAddress: string, tokenId: string) => {
     const key = `${collectionAddress}:${tokenId}`;
@@ -49,6 +58,28 @@ const CollectionsList = ({
       </div>
     );
   }
+
+  // Get the collectible data for the detail view
+  const getCollectibleForDetail = () => {
+    const collectibleToUse =
+      selectedCollectible || lastSelectedCollectible.current;
+    if (!collectibleToUse) return null;
+
+    for (const { collection } of collections) {
+      if (!collection) continue;
+      if (collection.address === collectibleToUse.collectionAddress) {
+        const item = collection.collectibles.find(
+          (c) => c.tokenId === collectibleToUse.tokenId,
+        );
+        if (item) {
+          return { item, collectionAddress: collection.address };
+        }
+      }
+    }
+    return null;
+  };
+
+  const collectibleForDetail = getCollectibleForDetail();
 
   return (
     <>
@@ -98,53 +129,64 @@ const CollectionsList = ({
               data-testid="account-collection-grid"
             >
               {collectiblesToShow.map((item) => (
-                <Sheet
-                  open={selectedCollectible?.tokenId === item.tokenId}
+                <div
+                  className={`AccountCollectibles__collection__grid__item${
+                    showHidden
+                      ? " AccountCollectibles__collection__grid__item--hidden"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    setSelectedCollectible({
+                      collectionAddress: collection.address,
+                      tokenId: item.tokenId,
+                    })
+                  }
                   key={item.tokenId}
                 >
-                  <div
-                    className={`AccountCollectibles__collection__grid__item${
-                      showHidden
-                        ? " AccountCollectibles__collection__grid__item--hidden"
-                        : ""
-                    }`}
-                    onClick={() =>
-                      setSelectedCollectible({
-                        collectionAddress: collection.address,
-                        tokenId: item.tokenId,
-                      })
-                    }
-                    key={item.tokenId}
-                  >
-                    <CollectibleInfoImage
-                      image={item.metadata?.image}
-                      name={item.tokenId}
-                    />
-                  </div>
-                  <SheetContent
-                    aria-describedby={undefined}
-                    side="bottom"
-                    className="AccountCollectibles__collectible-detail__sheet"
-                    onOpenAutoFocus={(e) => e.preventDefault()}
-                  >
-                    <ScreenReaderOnly>
-                      <SheetTitle>{item.tokenId}</SheetTitle>
-                    </ScreenReaderOnly>
-                    <CollectibleDetail
-                      selectedCollectible={{
-                        collectionAddress: collection.address,
-                        tokenId: item.tokenId,
-                      }}
-                      handleItemClose={handleCloseCollectible}
-                      isHidden={showHidden}
-                    />
-                  </SheetContent>
-                </Sheet>
+                  <CollectibleInfoImage
+                    image={item.metadata?.image}
+                    name={item.tokenId}
+                  />
+                </div>
               ))}
             </div>
           </div>
         );
       })}
+
+      {/* Sheet rendered outside the map to persist during close animation */}
+      <Sheet
+        open={!!selectedCollectible}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseCollectible();
+          }
+        }}
+      >
+        <SheetContent
+          aria-describedby={undefined}
+          side="bottom"
+          className="AccountCollectibles__collectible-detail__sheet"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          <ScreenReaderOnly>
+            <SheetTitle>
+              {selectedCollectible?.tokenId ||
+                lastSelectedCollectible.current?.tokenId ||
+                ""}
+            </SheetTitle>
+          </ScreenReaderOnly>
+          {collectibleForDetail && (
+            <CollectibleDetail
+              selectedCollectible={
+                selectedCollectible || lastSelectedCollectible.current!
+              }
+              handleItemClose={handleCloseCollectible}
+              isHidden={showHidden}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
     </>
   );
 };

@@ -13,6 +13,12 @@ const notifySubscribers = () => {
   subscribers.forEach((callback) => callback());
 };
 
+// Reset function for testing purposes
+export const resetHiddenCollectiblesState = () => {
+  hiddenCollectiblesState = {};
+  subscribers.clear();
+};
+
 export const useHiddenCollectibles = () => {
   const publicKey = useSelector(publicKeySelector);
   const [hiddenCollectibles, setHiddenCollectibles] = useState<
