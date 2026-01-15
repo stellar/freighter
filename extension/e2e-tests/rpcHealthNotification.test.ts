@@ -44,3 +44,41 @@ test("RPC health notification appears when RPC health is unhealthy", async ({
     page.getByText("Some features may be disabled at this time"),
   ).toBeVisible();
 });
+
+test("RPC health notification does not appear when RPC is healthy", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
+  // Stub the RPC health endpoint to return healthy status
+  await context.route("**/ping?network=*", async (route) => {
+    const json = {
+      rpc_health: {
+        status: "healthy",
+      },
+    };
+    await route.fulfill({ json });
+  });
+
+  test.slow();
+  await loginToTestAccount({ page, extensionId });
+
+  // Wait for the account view to load
+  await expect(page.getByTestId("account-view")).toBeVisible({
+    timeout: 30000,
+  });
+
+  // Check that the Soroban RPC issue notification does NOT appear
+  await expect(
+    page.getByTestId("account-view-sorban-rpc-issue"),
+  ).not.toBeVisible();
+
+  // Verify the assets are visible (normal account view)
+  await expect(page.getByTestId("account-assets")).toContainText("XLM");
+});
