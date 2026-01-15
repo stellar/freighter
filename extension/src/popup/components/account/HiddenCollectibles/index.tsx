@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 
-import { Collection } from "@shared/api/types/types";
+import { Collection, CollectibleKey } from "@shared/api/types/types";
 import {
   ScreenReaderOnly,
   Sheet,
@@ -13,24 +13,25 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { CollectibleDetail, SelectedCollectible } from "../CollectibleDetail";
 import { CollectibleInfoImage } from "../CollectibleInfo";
-import { useHiddenCollectibles } from "../hooks/useHiddenCollectibles";
 
 import "./styles.scss";
 
 interface HiddenCollectiblesProps {
   collections: Collection[];
+  hiddenCollectibles: Record<CollectibleKey, string>;
+  refreshHiddenCollectibles: () => Promise<void>;
   isOpen: boolean;
   onClose: () => void;
 }
 
 export const HiddenCollectibles = ({
   collections,
+  hiddenCollectibles,
+  refreshHiddenCollectibles,
   isOpen,
   onClose,
 }: HiddenCollectiblesProps) => {
   const { t } = useTranslation();
-  const { hiddenCollectibles, refreshHiddenCollectibles } =
-    useHiddenCollectibles();
   const [selectedCollectible, setSelectedCollectible] =
     useState<SelectedCollectible | null>(null);
   // Keep track of the last selected collectible so we can render it during close animation
