@@ -102,6 +102,13 @@
       color: var(--sds-clr-gray-09);
     }
 
+    &__rounded {
+      height: 100%;
+      width: 100%;
+      border-radius: pxToRem(6px);
+      overflow: hidden;
+    }
+
     &__small {
       display: flex;
       align-items: center;
