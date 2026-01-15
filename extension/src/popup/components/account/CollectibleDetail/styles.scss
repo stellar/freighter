@@ -9,7 +9,13 @@
     cursor: pointer;
     width: pxToRem(20px);
     height: pxToRem(20px);
-    stroke: var(--sds-clr-gray-011);
+
+    &__icon {
+      width: pxToRem(20px);
+      height: pxToRem(20px);
+      stroke: var(--sds-clr-gray-11);
+      color: var(--sds-clr-gray-11);
+    }
 
     &__trigger {
       cursor: pointer;
@@ -111,4 +117,12 @@
       stroke: var(--sds-clr-gray-09) !important;
     }
   }
+}
+
+// Target the Radix popper wrapper globally - it renders via portal at body level
+// This ensures the popover appears above nested sheets (z-index: 100)
+[data-radix-popper-content-wrapper]:has(
+    .CollectibleDetail__header__right-button__popover-content
+  ) {
+  z-index: 100 !important;
 }

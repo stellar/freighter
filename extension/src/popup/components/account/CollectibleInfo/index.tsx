@@ -79,12 +79,14 @@ export const CollectibleInfo = ({
 
   return (
     <>
-      <div
-        className="CollectibleInfo__image"
-        data-testid={`${dataTestIdBase}__image`}
-      >
-        <CollectibleInfoImage image={image} name={name} />
-      </div>
+      {image !== undefined && (
+        <div
+          className="CollectibleInfo__image"
+          data-testid={`${dataTestIdBase}__image`}
+        >
+          <CollectibleInfoImage image={image} name={name} />
+        </div>
+      )}
       <CollectibleInfoBlock
         className="CollectibleInfo__base-info"
         data-testid={`${dataTestIdBase}__base-info`}
