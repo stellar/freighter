@@ -105,6 +105,7 @@ interface DomainScanModalInfoProps {
   domain: string;
   subject: string;
   isMalicious: boolean;
+  isUnableToScan?: boolean;
   scanStatus: "hit" | "miss" | undefined;
   onClick: () => void;
 }
@@ -114,10 +115,13 @@ export const DomainScanModalInfo = ({
   domain,
   subject,
   isMalicious,
+  isUnableToScan,
   scanStatus,
   onClick,
 }: DomainScanModalInfoProps) => {
   const { t } = useTranslation();
+  const shouldShowWarning = isMalicious || isUnableToScan;
+
   return (
     <div className="ModalInfo--card GrantAccess">
       <>
@@ -129,9 +133,10 @@ export const DomainScanModalInfo = ({
           </div>
         </div>
         <div className="ModalInfo--connection-request-scan-label">
-          {scanStatus && (
+          {shouldShowWarning && (
             <BlockAidSiteScanLabel
               isMalicious={isMalicious}
+              isUnableToScan={isUnableToScan}
               status={scanStatus}
               onClick={onClick}
             />
