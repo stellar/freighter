@@ -12,9 +12,13 @@ import {
   getInvocationArgs,
   buildInvocationTree,
   getAvailableBalance,
+  getDecimalsForAsset,
+  CLASSIC_ASSET_DECIMALS,
 } from "../soroban";
 import { TEST_PUBLIC_KEY } from "popup/__testHelpers__";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import * as ApiInternal from "@shared/api/internal";
+import * as SorobanHelpers from "@shared/api/helpers/soroban";
 
 describe("getInvocationArgs", () => {
   it("can parse a create contract v1 xdr class", () => {
@@ -178,5 +182,159 @@ describe("getInvocationArgs", () => {
       recommendedFee: ".11",
     });
     expect(availableBalance).toEqual("100");
+  });
+});
+
+describe("getDecimalsForAsset", () => {
+  // Test constants
+  const sorobanContractId =
+    "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
+  const classicIssuer =
+    "GBUQWP3BOUZX34ULNQG23RQ6F4BWFIQLRW2ZD5DUGJZ7XC4LE7XZJP";
+
+  let mockIsContractId;
+  let mockGetTokenDetails;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    // Setup mocks
+    mockIsContractId = jest
+      .spyOn(SorobanHelpers, "isContractId")
+      .mockImplementation((id) => {
+        return typeof id === "string" && id.startsWith("C");
+      });
+
+    mockGetTokenDetails = jest
+      .spyOn(ApiInternal, "getTokenDetails")
+      .mockImplementation(({ contractId }) => {
+        if (contractId === sorobanContractId) {
+          return Promise.resolve({
+            name: "USDC",
+            symbol: "USDC",
+            decimals: 6,
+          });
+        }
+        return Promise.resolve(null);
+      });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("should return CLASSIC_ASSET_DECIMALS (7) for native XLM", async () => {
+    const decimals = await getDecimalsForAsset({
+      assetIssuer: null,
+      publicKey: TEST_PUBLIC_KEY,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(decimals).toBe(CLASSIC_ASSET_DECIMALS);
+    expect(decimals).toBe(7);
+    expect(mockIsContractId).not.toHaveBeenCalled();
+    expect(mockGetTokenDetails).not.toHaveBeenCalled();
+  });
+
+  it("should return CLASSIC_ASSET_DECIMALS (7) for classic assets", async () => {
+    const decimals = await getDecimalsForAsset({
+      assetIssuer: classicIssuer,
+      publicKey: TEST_PUBLIC_KEY,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(decimals).toBe(CLASSIC_ASSET_DECIMALS);
+    expect(decimals).toBe(7);
+    expect(mockIsContractId).toHaveBeenCalledWith(classicIssuer);
+    expect(mockGetTokenDetails).not.toHaveBeenCalled();
+  });
+
+  it("should fetch and return decimals for Soroban contracts", async () => {
+    const decimals = await getDecimalsForAsset({
+      assetIssuer: sorobanContractId,
+      publicKey: TEST_PUBLIC_KEY,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(decimals).toBe(6);
+    expect(mockIsContractId).toHaveBeenCalledWith(sorobanContractId);
+    expect(mockGetTokenDetails).toHaveBeenCalledWith({
+      contractId: sorobanContractId,
+      publicKey: TEST_PUBLIC_KEY,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+  });
+
+  it("should handle Soroban contracts with varying decimal places", async () => {
+    // Mock a token with 18 decimals (like some ERC-20 tokens)
+    mockGetTokenDetails.mockResolvedValueOnce({
+      name: "Custom Token",
+      symbol: "CUSTOM",
+      decimals: 18,
+    });
+
+    const decimals = await getDecimalsForAsset({
+      assetIssuer: "CABC123EXAMPLE",
+      publicKey: TEST_PUBLIC_KEY,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(decimals).toBe(18);
+  });
+
+  it("should throw error when getTokenDetails returns null for a contract", async () => {
+    mockGetTokenDetails.mockResolvedValueOnce(null);
+
+    await expect(
+      getDecimalsForAsset({
+        assetIssuer: sorobanContractId,
+        publicKey: TEST_PUBLIC_KEY,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      }),
+    ).rejects.toThrow(
+      `Unable to fetch decimals for contract ${sorobanContractId}`,
+    );
+  });
+
+  it("should throw error when getTokenDetails returns object without decimals", async () => {
+    mockGetTokenDetails.mockResolvedValueOnce({
+      name: "Broken Token",
+      symbol: "BROKEN",
+      // decimals is undefined
+    });
+
+    await expect(
+      getDecimalsForAsset({
+        assetIssuer: sorobanContractId,
+        publicKey: TEST_PUBLIC_KEY,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      }),
+    ).rejects.toThrow(
+      `Unable to fetch decimals for contract ${sorobanContractId}`,
+    );
+  });
+
+  it("should propagate error when getTokenDetails throws", async () => {
+    const rpcError = new Error("RPC connection failed");
+    mockGetTokenDetails.mockRejectedValueOnce(rpcError);
+
+    await expect(
+      getDecimalsForAsset({
+        assetIssuer: sorobanContractId,
+        publicKey: TEST_PUBLIC_KEY,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      }),
+    ).rejects.toThrow("RPC connection failed");
+  });
+
+  it("should return CLASSIC_ASSET_DECIMALS for empty string issuer", async () => {
+    const decimals = await getDecimalsForAsset({
+      assetIssuer: "",
+      publicKey: TEST_PUBLIC_KEY,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(decimals).toBe(CLASSIC_ASSET_DECIMALS);
+    expect(mockGetTokenDetails).not.toHaveBeenCalled();
   });
 });

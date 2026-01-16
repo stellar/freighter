@@ -33,9 +33,12 @@ export const AccountCreator = () => {
   const dispatch = useDispatch<AppDispatch>();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
-  const isRestartingOnboardingParam = params.get("isRestartingOnboarding");
-  const isRestartingOnboarding = isRestartingOnboardingParam === "true";
   const { state, fetchData } = useGetAccountCreatorData();
+  const isRestartingOnboardingParam = params.get("isRestartingOnboarding");
+  const isRestartingOnboarding =
+    isRestartingOnboardingParam === "true" ||
+    (state.state === RequestState.SUCCESS &&
+      state.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED);
   const isOverWritingAccount =
     state.state === RequestState.SUCCESS &&
     state.data.applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;

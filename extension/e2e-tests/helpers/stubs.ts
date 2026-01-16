@@ -170,6 +170,7 @@ export const stubAccountBalances = async (page: Page, xlmBalance?: string) => {
 };
 
 export const stubAccountBalancesE2e = async (page: Page) => {
+  const e2eAssetCode = `E2E:${TEST_TOKEN_ADDRESS}`;
   await page.route("**/account-balances/**", async (route) => {
     const json = {
       balances: {
@@ -198,7 +199,7 @@ export const stubAccountBalancesE2e = async (page: Page) => {
             financial_stats: {},
           },
         },
-        [`E2E:${TEST_TOKEN_ADDRESS}`]: {
+        [e2eAssetCode]: {
           token: {
             code: "E2E",
             issuer: {

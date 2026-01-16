@@ -2,8 +2,8 @@ import { fetchCollectibles } from "../fetchCollectibles";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { INDEXER_V2_URL } from "@shared/constants/mercury";
 
-describe("getCollectibles", () => {
-  it("should return collectibles for owner", async () => {
+describe("fetchCollectibles", () => {
+  it("should return collectibles", async () => {
     const metadata = {
       name: "Collectible Name",
       description: "Collectible Description",
@@ -48,7 +48,7 @@ describe("getCollectibles", () => {
                         {
                           owner: "G2",
                           token_id: "2",
-                          token_uri: "https://nftcalendar.io/token/1",
+                          token_uri: "https://nftcalendar.io/token/2",
                         },
                       ],
                     },
@@ -95,6 +95,34 @@ describe("getCollectibles", () => {
               owner: "G1",
               tokenId: "1",
               tokenUri: "https://nftcalendar.io/token/1",
+            },
+          ],
+        },
+      },
+      {
+        collection: {
+          address: "C1",
+          name: "C1",
+          symbol: "SYM",
+          collectibles: [
+            {
+              collectionAddress: "C1",
+              collectionName: "C1",
+              metadata: {
+                name: "Collectible Name",
+                description: "Collectible Description",
+                image: "https://nftcalendar.io/image.png",
+                externalUrl: "https://nftcalendar.io",
+                attributes: [
+                  {
+                    traitType: "Trait Type",
+                    value: "Trait Value",
+                  },
+                ],
+              },
+              owner: "G2",
+              tokenId: "2",
+              tokenUri: "https://nftcalendar.io/token/2",
             },
           ],
         },

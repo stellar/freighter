@@ -62,8 +62,8 @@ export const fetchCollectibleMetadata = async (tokenUri: string) => {
 
 /**
  * Fetches collectibles (NFTs) for a given account from Freighter BE v2.
- * This function queries the API, filters collectibles by owner,
- * and enriches each collectible with metadata fetched from its token URI.
+ * This function queries the API and enriches each collectible with metadata
+ * fetched from its token URI. The API filters collectibles by owner.
  *
  * @param {Object} params - The parameters object
  * @param {string} params.publicKey - The public key of the account to fetch collectibles for
@@ -73,7 +73,7 @@ export const fetchCollectibleMetadata = async (tokenUri: string) => {
  *
  * @example
  * ```typescript
- * const collectibles = await getCollectibles({
+ * const collectibles = await fetchCollectibles({
  *   publicKey: "GABC...",
  *   contracts: [{ id: "C123...", token_ids: ["1", "2"] }],
  *   networkDetails: { network: "testnet", ... }
@@ -118,11 +118,7 @@ export const fetchCollectibles = async ({
     for (let i = 0; i < data.collections.length; i++) {
       const { collection } = data.collections[i];
       if (collection) {
-        const filteredCollectibles = collection.collectibles.filter(
-          (collectible) => collectible.owner === publicKey,
-        );
-
-        if (filteredCollectibles.length > 0) {
+        if (collection.collectibles.length > 0) {
           // for each collectible, fetch the metadata from the token URI
           fetchedCollections.push({
             collection: {
@@ -130,7 +126,7 @@ export const fetchCollectibles = async ({
               name: collection.name,
               symbol: collection.symbol,
               collectibles: await Promise.all(
-                filteredCollectibles.map(async (collectible) => {
+                collection.collectibles.map(async (collectible) => {
                   const metadata = await fetchCollectibleMetadata(
                     collectible.token_uri,
                   );
@@ -144,6 +140,16 @@ export const fetchCollectibles = async ({
                   };
                 }),
               ),
+            },
+          });
+        }
+      } else {
+        const { error } = data.collections[i];
+        if (error) {
+          fetchedCollections.push({
+            error: {
+              collectionAddress: error.collection_address,
+              errorMessage: error.error_message,
             },
           });
         }

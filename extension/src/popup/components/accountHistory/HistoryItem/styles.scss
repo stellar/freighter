@@ -28,6 +28,10 @@
       .swap-label-direction {
         margin: 0 pxToRem(6px);
       }
+
+      &__separator {
+        margin: 0 pxToRem(4px);
+      }
     }
   }
 
@@ -96,6 +100,13 @@
       border-radius: pxToRem(32px);
       border: 1px solid var(--sds-clr-gray-06);
       color: var(--sds-clr-gray-09);
+    }
+
+    &__rounded {
+      height: 100%;
+      width: 100%;
+      border-radius: pxToRem(6px);
+      overflow: hidden;
     }
 
     &__small {

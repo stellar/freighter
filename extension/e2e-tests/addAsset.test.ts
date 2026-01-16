@@ -12,7 +12,8 @@ import {
 const truncateString = (str: string, charCount = 4) =>
   str ? `${str.slice(0, charCount)}…${str.slice(-charCount)}` : "";
 
-test("Adding and removing unverified Soroban token", async ({
+// Skipping this test because Playwright erroneously is unable to click the "Confirm" button
+test.skip("Adding and removing unverified Soroban token", async ({
   page,
   extensionId,
 }) => {
@@ -163,6 +164,8 @@ test("Adding token on Futurenet", async ({ page, extensionId, context }) => {
   await page.getByText("Add an asset").click({ force: true });
   await expect(page.getByTestId("search-token-input")).toBeVisible();
 });
+
+// Skipping this test because on Testnet, this now resolves to multiple assets
 test.skip("Adding classic asset on Testnet", async ({ page, extensionId }) => {
   test.slow();
   await loginAndFund({ page, extensionId });

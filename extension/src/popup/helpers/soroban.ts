@@ -16,9 +16,10 @@ import {
 import { HorizonOperation, SorobanBalance } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
-  ArgsForTokenInvocation,
+  ArgsForTransferInvocation,
   SorobanTokenInterface,
-  TokenInvocationArgs,
+  HostFnInvocationArgs,
+  SorobanCollectibleInterface,
 } from "@shared/constants/soroban/token";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
@@ -26,6 +27,7 @@ import { findAssetBalance, isSorobanBalance } from "./balance";
 import { getSdk } from "@shared/helpers/stellar";
 import { AssetType } from "@shared/api/types/account-balance";
 import { getNativeContractDetails } from "./searchAsset";
+import { getTokenDetails } from "@shared/api/internal";
 import { isContractId } from "@shared/api/helpers/soroban";
 export { isContractId } from "@shared/api/helpers/soroban";
 
@@ -37,6 +39,47 @@ export const SOROBAN_OPERATION_TYPES = [
 // All assets on the classic side have 7 decimals
 // https://developers.stellar.org/docs/fundamentals-and-concepts/stellar-data-structures/assets#amount-precision
 export const CLASSIC_ASSET_DECIMALS = 7;
+
+/**
+ * Gets the correct decimals for an asset.
+ * For Soroban contracts, fetches decimals via RPC.
+ * For native XLM and classic assets, returns CLASSIC_ASSET_DECIMALS (7).
+ *
+ * @throws Error if the RPC call succeeds but returns no decimals for a Soroban contract
+ * @param params - Parameters object
+ * @param params.assetIssuer - The asset issuer (contract ID for Soroban, issuer address for classic, null for native)
+ * @param params.publicKey - The public key for the account
+ * @param params.networkDetails - Network configuration details
+ * @returns The number of decimals for the asset
+ */
+export const getDecimalsForAsset = async ({
+  assetIssuer,
+  publicKey,
+  networkDetails,
+}: {
+  assetIssuer: string | null;
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}): Promise<number> => {
+  // For Soroban contracts, fetch decimals via RPC
+  if (assetIssuer && isContractId(assetIssuer)) {
+    const tokenDetails = await getTokenDetails({
+      contractId: assetIssuer,
+      publicKey,
+      networkDetails,
+    });
+
+    if (tokenDetails && tokenDetails.decimals !== undefined) {
+      return tokenDetails.decimals;
+    }
+
+    // If API call succeeded but no decimals returned, throw
+    throw new Error(`Unable to fetch decimals for contract ${assetIssuer}`);
+  }
+
+  // For native XLM and classic assets, return standard decimals
+  return CLASSIC_ASSET_DECIMALS;
+};
 
 /**
  * Checks if a transaction is a Soroban transaction.
@@ -248,16 +291,30 @@ export const addressToString = (address: xdr.ScAddress) => {
 export const getArgsForTokenInvocation = (
   fnName: string,
   args: xdr.ScVal[],
-): ArgsForTokenInvocation => {
-  let amount: bigint | number;
+): ArgsForTransferInvocation => {
+  let tokenId: number | undefined;
+  let amount: bigint | number | undefined;
   let from = "";
   let to = "";
+  const thirdArgType = args[2].switch();
 
   switch (fnName) {
     case SorobanTokenInterface.transfer:
+    case SorobanCollectibleInterface.transfer:
+      // both SEP-41 & SEP-50 tokens use the transfer method
+      // with different signatures. Without parsing the token spec,
+      // we can guess that the contract is either a token or a collectible
+      // by the type of the 3rd argument.
+      // Token transfer - (from: Address, to: Address, amount: i128)
+      // Collectible transfer - (from: Address, to: Address, tokenId: u32)
+      if (thirdArgType === xdr.ScValType.scvI128()) {
+        amount = scValToNative(args[2]);
+      }
+      if (thirdArgType === xdr.ScValType.scvU32()) {
+        tokenId = scValToNative(args[2]);
+      }
       from = addressToString(args[0].address());
       to = addressToString(args[1].address());
-      amount = scValToNative(args[2]);
       break;
     case SorobanTokenInterface.mint:
       to = addressToString(args[0].address());
@@ -267,15 +324,15 @@ export const getArgsForTokenInvocation = (
       amount = BigInt(0);
   }
 
-  return { from, to, amount };
+  return { from, to, amount, tokenId };
 };
 
 const isSorobanOp = (operation: HorizonOperation) =>
   SOROBAN_OPERATION_TYPES.includes(operation.type);
 
-export const getTokenInvocationArgs = (
+export const getInvocationArgsFromInvokeHostFn = (
   hostFn: Operation.InvokeHostFunction,
-): TokenInvocationArgs | null => {
+): HostFnInvocationArgs | null => {
   if (!hostFn?.func?.invokeContract) {
     return null;
   }
@@ -295,12 +352,13 @@ export const getTokenInvocationArgs = (
 
   if (
     fnName !== SorobanTokenInterface.transfer &&
-    fnName !== SorobanTokenInterface.mint
+    fnName !== SorobanTokenInterface.mint &&
+    fnName !== SorobanCollectibleInterface.transfer
   ) {
     return null;
   }
 
-  let opArgs: ArgsForTokenInvocation;
+  let opArgs;
 
   try {
     opArgs = getArgsForTokenInvocation(fnName, args);
@@ -330,7 +388,7 @@ export const getAttrsFromSorobanHorizonOp = (
 
   const invokeHostFn = txEnvelope.operations[0]; // only one op per tx in Soroban right now
 
-  return getTokenInvocationArgs(invokeHostFn);
+  return getInvocationArgsFromInvokeHostFn(invokeHostFn);
 };
 
 export interface InvocationTree {
