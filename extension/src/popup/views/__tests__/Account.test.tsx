@@ -352,7 +352,7 @@ describe("Account view", () => {
       screen.queryAllByTestId("account-view-user-notification"),
     ).toHaveLength(0);
     expect(
-      screen.queryAllByTestId("account-view-sorban-rpc-issue"),
+      screen.queryAllByTestId("account-view-soroban-rpc-issue"),
     ).toHaveLength(0);
   });
   it("should show user notification if user notification is enabled", async () => {
@@ -438,7 +438,7 @@ describe("Account view", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByTestId("account-view-sorban-rpc-issue"),
+        screen.getByTestId("account-view-soroban-rpc-issue"),
       ).toBeInTheDocument();
     });
   });
