@@ -26,6 +26,7 @@ import * as GetIconUrlFromIssuer from "@shared/api/helpers/getIconUrlFromIssuer"
 import * as RouteHelpers from "popup/helpers/route";
 import * as GetLedgerKeyAccounts from "@shared/api/helpers/getLedgerKeyAccounts";
 import * as UseGetCollectibles from "helpers/hooks/useGetCollectibles";
+import { Toaster } from "popup/basics/shadcn/Toast";
 
 import {
   Wrapper,
@@ -351,9 +352,6 @@ describe("Account view", () => {
     expect(
       screen.queryAllByTestId("account-view-user-notification"),
     ).toHaveLength(0);
-    expect(
-      screen.queryAllByTestId("account-view-soroban-rpc-issue"),
-    ).toHaveLength(0);
   });
   it("should show user notification if user notification is enabled", async () => {
     jest.spyOn(ApiInternal, "loadBackendSettings").mockImplementationOnce(() =>
@@ -432,13 +430,14 @@ describe("Account view", () => {
           },
         }}
       >
+        <Toaster />
         <Account />
       </Wrapper>,
     );
 
     await waitFor(() => {
       expect(
-        screen.getByTestId("account-view-soroban-rpc-issue"),
+        screen.getByText("Soroban is temporarily experiencing issues"),
       ).toBeInTheDocument();
     });
   });
