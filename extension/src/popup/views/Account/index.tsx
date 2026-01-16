@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { isEqual } from "lodash";
+import { toast } from "sonner";
 
 import {
   settingsSorobanSupportedSelector,
@@ -66,6 +67,7 @@ export const Account = () => {
   const { state: iconsData, fetchData: fetchIconsData } = useGetIcons();
 
   const previousAccountBalancesRef = useRef<AccountBalances | null>(null);
+  const sorobanErrorShownRef = useRef(false);
 
   useEffect(() => {
     const getData = async () => {
@@ -74,6 +76,17 @@ export const Account = () => {
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!isSorobanSuported && !sorobanErrorShownRef.current) {
+      toast.info(t("Soroban is temporarily experiencing issues"), {
+        description: t(
+          "You may not be able to transact with Soroban smart contracts or see your Soroban tokens at this time.",
+        ),
+      });
+      sorobanErrorShownRef.current = true;
+    }
+  }, [isSorobanSuported, t]);
 
   const accountBalances =
     accountData.state === RequestState.SUCCESS &&
@@ -196,21 +209,6 @@ export const Account = () => {
                 title={t("Failed to fetch your account balances.")}
               >
                 {t("Your account balances could not be fetched at this time.")}
-              </Notification>
-            </div>
-          )}
-          {!isSorobanSuported && (
-            <div
-              className="AccountView__fetch-fail"
-              data-testid="account-view-soroban-rpc-issue"
-            >
-              <Notification
-                title={t("Soroban is temporarily experiencing issues")}
-                variant="primary"
-              >
-                {t(
-                  "You may not be able to transact with Soroban smart contracts or see your Soroban tokens at this time.",
-                )}
               </Notification>
             </div>
           )}
