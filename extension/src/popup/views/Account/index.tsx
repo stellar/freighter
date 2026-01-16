@@ -202,13 +202,15 @@ export const Account = () => {
           {!isSorobanSuported && (
             <div
               className="AccountView__fetch-fail"
-              data-testid="account-view-sorban-rpc-issue"
+              data-testid="account-view-soroban-rpc-issue"
             >
               <Notification
-                title={t("Soroban RPC is temporarily experiencing issues")}
+                title={t("Soroban is temporarily experiencing issues")}
                 variant="primary"
               >
-                {t("Some features may be disabled at this time")}
+                {t(
+                  "You may not be able to transact with Soroban smart contracts or see your Soroban tokens at this time.",
+                )}
               </Notification>
             </div>
           )}

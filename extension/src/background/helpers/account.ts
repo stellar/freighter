@@ -308,15 +308,14 @@ export const getIsRpcHealthy = async (localStore: DataStorageAccess) => {
   } else {
     try {
       const res = await fetch(
-        `${INDEXER_V2_URL}/ping?network=${networkDetails.network}`,
+        `${INDEXER_V2_URL}/rpc-health?network=${networkDetails.network}`,
       );
 
       if (!res.ok) {
         captureException(`Failed to load rpc health for Soroban`);
       }
-      const resJson = await res.json();
 
-      rpcHealth = resJson.rpc_health;
+      rpcHealth = await res.json();
     } catch (e) {
       captureException(
         `Failed to load rpc health for Soroban - ${JSON.stringify(e)}`,
