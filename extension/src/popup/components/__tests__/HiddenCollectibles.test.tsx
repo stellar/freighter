@@ -17,6 +17,14 @@ import {
 
 const mockRefreshHiddenCollectibles = jest.fn().mockResolvedValue(undefined);
 
+// Helper to create isCollectibleHidden function based on hiddenCollectibles record
+const createIsCollectibleHidden =
+  (hiddenCollectibles: Record<string, string>) =>
+  (collectionAddress: string, tokenId: string) => {
+    const key = `${collectionAddress}:${tokenId}`;
+    return hiddenCollectibles[key] === "hidden";
+  };
+
 const defaultState = {
   auth: {
     error: null,
@@ -50,6 +58,7 @@ describe("HiddenCollectibles", () => {
 
   it("renders empty state when no collectibles are hidden", async () => {
     const onClose = jest.fn();
+    const hiddenCollectibles = {};
 
     render(
       <Wrapper state={defaultState} routes={[ROUTES.account]}>
@@ -57,8 +66,8 @@ describe("HiddenCollectibles", () => {
           collections={mockCollectibles}
           isOpen={true}
           onClose={onClose}
-          hiddenCollectibles={{}}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
         />
       </Wrapper>,
     );
@@ -80,8 +89,8 @@ describe("HiddenCollectibles", () => {
           collections={mockCollectibles}
           isOpen={true}
           onClose={onClose}
-          hiddenCollectibles={hiddenCollectibles}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
         />
       </Wrapper>,
     );
@@ -105,8 +114,8 @@ describe("HiddenCollectibles", () => {
           collections={mockCollectibles}
           isOpen={true}
           onClose={onClose}
-          hiddenCollectibles={hiddenCollectibles}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
         />
       </Wrapper>,
     );
@@ -122,6 +131,7 @@ describe("HiddenCollectibles", () => {
 
   it("does not render when isOpen is false", async () => {
     const onClose = jest.fn();
+    const hiddenCollectibles = {};
 
     render(
       <Wrapper state={defaultState} routes={[ROUTES.account]}>
@@ -129,8 +139,8 @@ describe("HiddenCollectibles", () => {
           collections={mockCollectibles}
           isOpen={false}
           onClose={onClose}
-          hiddenCollectibles={{}}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
         />
       </Wrapper>,
     );
@@ -154,8 +164,8 @@ describe("HiddenCollectibles", () => {
           collections={mockCollectibles}
           isOpen={true}
           onClose={onClose}
-          hiddenCollectibles={hiddenCollectibles}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
         />
       </Wrapper>,
     );

@@ -33,8 +33,17 @@ export const useHiddenCollectibles = () => {
     refreshHiddenCollectibles();
   }, [refreshHiddenCollectibles]);
 
+  const isCollectibleHidden = useCallback(
+    (collectionAddress: string, tokenId: string) => {
+      const key = `${collectionAddress}:${tokenId}`;
+      return hiddenCollectibles[key] === "hidden";
+    },
+    [hiddenCollectibles],
+  );
+
   return {
     hiddenCollectibles,
     refreshHiddenCollectibles,
+    isCollectibleHidden,
   };
 };

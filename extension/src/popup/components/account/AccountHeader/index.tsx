@@ -26,7 +26,6 @@ import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { MobileAppBanner } from "popup/components/account/MobileAppBanner";
 import { AccountTabs } from "popup/components/account/AccountTabs";
-import { CollectibleKey } from "@shared/api/types/types";
 
 import "./styles.scss";
 
@@ -41,8 +40,8 @@ interface AccountHeaderProps {
   }) => Promise<void>;
   publicKey: string;
   roundedTotalBalanceUsd: string;
-  hiddenCollectibles: Record<CollectibleKey, string>;
   refreshHiddenCollectibles: () => Promise<void>;
+  isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
 }
 
 export const AccountHeader = ({
@@ -53,8 +52,8 @@ export const AccountHeader = ({
   onClickRow,
   publicKey,
   roundedTotalBalanceUsd,
-  hiddenCollectibles,
   refreshHiddenCollectibles,
+  isCollectibleHidden,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -405,8 +404,8 @@ export const AccountHeader = ({
             </div>
           </div>
           <AccountTabs
-            hiddenCollectibles={hiddenCollectibles}
             refreshHiddenCollectibles={refreshHiddenCollectibles}
+            isCollectibleHidden={isCollectibleHidden}
           />
         </View.Inset>
       </View.AppHeader>

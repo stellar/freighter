@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 
-import { Collection, CollectibleKey } from "@shared/api/types/types";
+import { Collection } from "@shared/api/types/types";
 import {
   ScreenReaderOnly,
   Sheet,
@@ -18,16 +18,16 @@ import "./styles.scss";
 
 interface HiddenCollectiblesProps {
   collections: Collection[];
-  hiddenCollectibles: Record<CollectibleKey, string>;
   refreshHiddenCollectibles: () => Promise<void>;
+  isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
   isOpen: boolean;
   onClose: () => void;
 }
 
 export const HiddenCollectibles = ({
   collections,
-  hiddenCollectibles,
   refreshHiddenCollectibles,
+  isCollectibleHidden,
   isOpen,
   onClose,
 }: HiddenCollectiblesProps) => {
@@ -50,11 +50,6 @@ export const HiddenCollectibles = ({
       refreshHiddenCollectibles();
     }
   }, [isOpen, refreshHiddenCollectibles]);
-
-  const isCollectibleHidden = (collectionAddress: string, tokenId: string) => {
-    const key = `${collectionAddress}:${tokenId}`;
-    return hiddenCollectibles[key] === "hidden";
-  };
 
   const handleCloseCollectible = () => {
     setSelectedCollectible(null);
