@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 
@@ -32,17 +32,15 @@ export const HiddenCollectibles = ({
   onClose,
 }: HiddenCollectiblesProps) => {
   const { t } = useTranslation();
-  const [selectedCollectible, setSelectedCollectible] =
-    useState<SelectedCollectible | null>(null);
-  // Keep track of the last selected collectible so we can render it during close animation
-  const lastSelectedCollectible = useRef<SelectedCollectible | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [detailData, setDetailData] = useState<SelectedCollectible | null>(
+    null,
+  );
 
-  // Update the ref when a collectible is selected
-  useEffect(() => {
-    if (selectedCollectible) {
-      lastSelectedCollectible.current = selectedCollectible;
-    }
-  }, [selectedCollectible]);
+  const handleOpenCollectible = (collectible: SelectedCollectible) => {
+    setDetailData(collectible);
+    setIsDetailOpen(true);
+  };
 
   // Refresh hidden collectibles when sheet opens
   useEffect(() => {
@@ -52,9 +50,15 @@ export const HiddenCollectibles = ({
   }, [isOpen, refreshHiddenCollectibles]);
 
   const handleCloseCollectible = () => {
-    setSelectedCollectible(null);
+    setIsDetailOpen(false);
     // Refresh the shared state - this will update all components using the hook
     refreshHiddenCollectibles();
+  };
+
+  const handleAnimationEnd = () => {
+    if (!isDetailOpen) {
+      setDetailData(null);
+    }
   };
 
   // Get all hidden collectibles across all collections
@@ -106,7 +110,7 @@ export const HiddenCollectibles = ({
                     <div
                       className="HiddenCollectibles__grid__item"
                       onClick={() => {
-                        setSelectedCollectible({
+                        handleOpenCollectible({
                           collectionAddress: item.collection?.address || "",
                           tokenId: item.tokenId,
                         });
@@ -137,7 +141,7 @@ export const HiddenCollectibles = ({
 
       {/* Collectible Detail Sheet - overlays on top */}
       <Sheet
-        open={!!selectedCollectible}
+        open={isDetailOpen}
         onOpenChange={(open) => {
           if (!open) {
             handleCloseCollectible();
@@ -149,20 +153,15 @@ export const HiddenCollectibles = ({
           side="bottom"
           className="HiddenCollectibles__collectible-detail__sheet"
           onOpenAutoFocus={(e) => e.preventDefault()}
+          onAnimationEnd={handleAnimationEnd}
           style={{ zIndex: 100 }}
         >
           <ScreenReaderOnly>
-            <SheetTitle>
-              {selectedCollectible?.tokenId ||
-                lastSelectedCollectible.current?.tokenId ||
-                ""}
-            </SheetTitle>
+            <SheetTitle>{detailData?.tokenId || ""}</SheetTitle>
           </ScreenReaderOnly>
-          {(selectedCollectible || lastSelectedCollectible.current) && (
+          {detailData && (
             <CollectibleDetail
-              selectedCollectible={
-                selectedCollectible || lastSelectedCollectible.current!
-              }
+              selectedCollectible={detailData}
               handleItemClose={handleCloseCollectible}
               isHidden
             />
