@@ -134,6 +134,78 @@ export const isSorobanTransaction = ({
 };
 
 /**
+ * Extracts the contract ID from transaction data.
+ *
+ * This function determines which contract ID to use based on the transaction type:
+ * - For collectibles: returns the collection address
+ * - For tokens: extracts contract ID from the token ID using getContractIdFromTokenId
+ * - For other types: returns undefined
+ *
+ * @param params - Parameters object
+ * @param params.isCollectible - Whether this transaction involves a collectible (NFT)
+ * @param params.collectionAddress - The contract address of the collectible collection
+ * @param params.isToken - Whether this transaction involves a Soroban token
+ * @param params.asset - The asset identifier (token ID or symbol:contractId format)
+ * @param params.networkDetails - Network configuration details for resolving contract IDs
+ * @returns The contract ID if available, undefined otherwise
+ *
+ * @example
+ * // For a collectible transaction
+ * getContractIdFromTransactionData({
+ *   isCollectible: true,
+ *   collectionAddress: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
+ *   isToken: false,
+ *   asset: "",
+ *   networkDetails: testnetDetails
+ * })
+ * // Returns: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4"
+ *
+ * @example
+ * // For a token transaction
+ * getContractIdFromTransactionData({
+ *   isCollectible: false,
+ *   collectionAddress: "",
+ *   isToken: true,
+ *   asset: "USDC:CAQEEHVUG3D5YACMWVYGG7XQNQB3O6T6PK6TPZSDP75H3PVY7KDUMQQ",
+ *   networkDetails: testnetDetails
+ * })
+ * // Returns: "CAQEEHVUG3D5YACMWVYGG7XQNQB3O6T6PK6TPZSDP75H3PVY7KDUMQQ"
+ *
+ * @example
+ * // For a non-token, non-collectible transaction
+ * getContractIdFromTransactionData({
+ *   isCollectible: false,
+ *   collectionAddress: "",
+ *   isToken: false,
+ *   asset: "native",
+ *   networkDetails: testnetDetails
+ * })
+ * // Returns: undefined
+ */
+export const getContractIdFromTransactionData = ({
+  isCollectible,
+  collectionAddress,
+  isToken,
+  asset,
+  networkDetails,
+}: {
+  isCollectible: boolean;
+  collectionAddress: string;
+  isToken: boolean;
+  asset: string;
+  networkDetails: NetworkDetails;
+}) => {
+  if (isCollectible && collectionAddress) {
+    return collectionAddress;
+  }
+
+  if (!isToken || !asset) {
+    return undefined;
+  }
+  return getContractIdFromTokenId(asset, networkDetails);
+};
+
+/**
  * Extracts contract ID from a token ID string.
  * Token ID format:
  * - "native" for XLM

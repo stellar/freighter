@@ -16,7 +16,7 @@ import {
   truncatedFedAddress,
   truncatedPublicKey,
 } from "helpers/stellar";
-import { getContractIdFromTokenId } from "popup/helpers/soroban";
+import { getContractIdFromTransactionData } from "popup/helpers/soroban";
 import {
   checkIsMuxedSupported,
   getMemoDisabledState,
@@ -109,12 +109,23 @@ export const ReviewTx = ({
     : truncatedPublicKey(destination);
 
   // Extract contract ID from asset for custom tokens
-  const contractId = React.useMemo(() => {
-    if (!isToken) {
-      return undefined;
-    }
-    return getContractIdFromTokenId(srcAsset, networkDetails);
-  }, [isToken, srcAsset, networkDetails]);
+  const contractId = React.useMemo(
+    () =>
+      getContractIdFromTransactionData({
+        isCollectible,
+        collectionAddress: collectibleData.collectionAddress,
+        isToken,
+        asset: srcAsset,
+        networkDetails,
+      }),
+    [
+      isToken,
+      isCollectible,
+      collectibleData.collectionAddress,
+      srcAsset,
+      networkDetails,
+    ],
+  );
 
   // Check if contract supports muxed addresses
   const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
@@ -123,7 +134,7 @@ export const ReviewTx = ({
 
   React.useEffect(() => {
     const checkContract = async () => {
-      if (!isToken || !contractId || !networkDetails) {
+      if ((!isToken && !isCollectible) || !contractId || !networkDetails) {
         setContractSupportsMuxed(null);
         return;
       }
@@ -141,7 +152,7 @@ export const ReviewTx = ({
     };
 
     checkContract();
-  }, [isToken, contractId, networkDetails]);
+  }, [isToken, isCollectible, contractId, networkDetails]);
 
   // Get memo disabled state using the helper
   const memoDisabledState = React.useMemo(() => {
