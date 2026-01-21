@@ -18,7 +18,11 @@ import {
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
 import { emitMetric } from "helpers/metrics";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
-import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
+import {
+  getAssetDecimals,
+  getAvailableBalance,
+  getContractIdFromTransactionData,
+} from "popup/helpers/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   cleanAmount,
@@ -57,15 +61,14 @@ import { useGetSendAmountData } from "./hooks/useSendAmountData";
 import { SimulateTxData } from "./hooks/useSimulateTxData";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { MemoEditingContext } from "popup/constants/send-payment";
-
-import "../styles.scss";
 import {
   checkIsMuxedSupported,
   getMemoDisabledState,
 } from "helpers/muxedAddress";
 import { captureException } from "@sentry/browser";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { getContractIdFromTokenId } from "popup/helpers/soroban";
+
+import "../styles.scss";
 
 const DEFAULT_INPUT_WIDTH = 25;
 
@@ -104,6 +107,7 @@ export const SendAmount = ({
     isToken,
     transactionFee,
     isCollectible,
+    collectibleData,
   } = transactionData;
   const fee = transactionFee || recommendedFee;
 
@@ -132,12 +136,23 @@ export const SendAmount = ({
   >(null);
 
   // Get contract ID for custom tokens - must be before conditional returns
-  const contractId = React.useMemo(() => {
-    if (!isToken || !asset) {
-      return undefined;
-    }
-    return getContractIdFromTokenId(asset, networkDetails);
-  }, [isToken, asset, networkDetails]);
+  const contractId = React.useMemo(
+    () =>
+      getContractIdFromTransactionData({
+        isCollectible,
+        collectionAddress: collectibleData.collectionAddress,
+        isToken,
+        asset,
+        networkDetails,
+      }),
+    [
+      isToken,
+      isCollectible,
+      asset,
+      collectibleData.collectionAddress,
+      networkDetails,
+    ],
+  );
 
   // Check if recipient is muxed - must be before conditional returns
   const isRecipientMuxed = React.useMemo(
@@ -151,7 +166,12 @@ export const SendAmount = ({
   // Must be before conditional returns
   React.useEffect(() => {
     const checkContract = async () => {
-      if (!isToken || !destination || !contractId || !networkDetails) {
+      if (
+        (!isToken && !isCollectible) ||
+        !destination ||
+        !contractId ||
+        !networkDetails
+      ) {
         setContractSupportsMuxed(null);
         return;
       }
@@ -174,7 +194,7 @@ export const SendAmount = ({
     };
 
     checkContract();
-  }, [isToken, destination, contractId, networkDetails]);
+  }, [isToken, isCollectible, destination, contractId, networkDetails]);
 
   // Get memo disabled state using the helper
   const memoDisabledState = React.useMemo(() => {
@@ -194,8 +214,11 @@ export const SendAmount = ({
 
   // Determine if contract doesn't support muxed (without Soroban mux support) - transaction should be disabled
   const isMuxedAddressWithoutMemoSupport = React.useMemo(
-    () => isRecipientMuxed && isToken && contractSupportsMuxed === false,
-    [isRecipientMuxed, isToken, contractSupportsMuxed],
+    () =>
+      isRecipientMuxed &&
+      (isToken || isCollectible) &&
+      contractSupportsMuxed === false,
+    [isRecipientMuxed, isToken, isCollectible, contractSupportsMuxed],
   );
   const [memoEditingContext, setMemoEditingContext] =
     React.useState<MemoEditingContext | null>(null);
@@ -435,7 +458,7 @@ export const SendAmount = ({
             {isCollectible ? (
               <Button
                 size="lg"
-                disabled={!destination}
+                disabled={!destination || isMuxedAddressWithoutMemoSupport}
                 isLoading={false}
                 data-testid="send-collectible-btn-continue"
                 isFullWidth
