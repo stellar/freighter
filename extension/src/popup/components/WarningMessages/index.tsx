@@ -896,8 +896,8 @@ export const BlockAidTxScanExpanded = ({
                   <Icon.MinusCircle />
                   <span>{validation.description}</span>
                 </div>
+                <BlockaidByLine address={""} />
               </div>
-              <BlockaidByLine address={""} />
             </div>
           </View.Inset>
         );
