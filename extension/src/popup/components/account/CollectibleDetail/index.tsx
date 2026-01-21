@@ -141,12 +141,12 @@ export const CollectibleDetail = ({
                       {t("View on stellar.expert")}
                     </div>
                   </div>
-                  <div className="CollectibleDetail__header__right-button__popover-content__item">
+                  {/* <div className="CollectibleDetail__header__right-button__popover-content__item">
                     <Icon.EyeOff className="CollectibleDetail__header__right-button__popover-content__item__icon" />
                     <div className="CollectibleDetail__header__right-button__popover-content__item__label">
                       {t("Hide collectible")}
                     </div>
-                  </div>
+                  </div> */}
                 </PopoverContent>
               </div>
             </Popover>
