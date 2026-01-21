@@ -62,6 +62,7 @@ describe("getNetworkCongestionTranslation", () => {
 
   it("returns the original value as fallback for unknown congestion values", () => {
     const unknownValue = "Unknown";
+    // @ts-ignore - Testing runtime fallback behavior with invalid type
     const result = getNetworkCongestionTranslation(mockT, unknownValue);
     expect(result).toBe("Unknown");
   });
