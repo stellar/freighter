@@ -1,6 +1,10 @@
 import React, { useRef, useEffect } from "react";
 import { render, act } from "@testing-library/react";
-import { useNetworkFees, NetworkCongestion } from "../useNetworkFees";
+import {
+  useNetworkFees,
+  NetworkCongestion,
+  getNetworkCongestionTranslation,
+} from "../useNetworkFees";
 import { BASE_FEE } from "stellar-sdk";
 
 import { useSelector } from "react-redux";
@@ -23,6 +27,64 @@ function TestComponent({ callback }) {
 
   return null;
 }
+
+describe("getNetworkCongestionTranslation", () => {
+  let mockT;
+
+  beforeEach(() => {
+    // Mock translation function that returns the key as-is
+    mockT = jest.fn((key) => key);
+  });
+
+  it("returns translated 'Low' for NetworkCongestion.LOW", () => {
+    const result = getNetworkCongestionTranslation(mockT, NetworkCongestion.LOW);
+    expect(mockT).toHaveBeenCalledWith("Low");
+    expect(result).toBe("Low");
+  });
+
+  it("returns translated 'Medium' for NetworkCongestion.MEDIUM", () => {
+    const result = getNetworkCongestionTranslation(
+      mockT,
+      NetworkCongestion.MEDIUM,
+    );
+    expect(mockT).toHaveBeenCalledWith("Medium");
+    expect(result).toBe("Medium");
+  });
+
+  it("returns translated 'High' for NetworkCongestion.HIGH", () => {
+    const result = getNetworkCongestionTranslation(
+      mockT,
+      NetworkCongestion.HIGH,
+    );
+    expect(mockT).toHaveBeenCalledWith("High");
+    expect(result).toBe("High");
+  });
+
+  it("returns the original value as fallback for unknown congestion values", () => {
+    const unknownValue = "Unknown";
+    const result = getNetworkCongestionTranslation(mockT, unknownValue);
+    expect(result).toBe("Unknown");
+  });
+
+  it("uses translations from the t function", () => {
+    // Mock t function to return translated values
+    const mockTWithTranslations = jest.fn((key) => {
+      const translations = {
+        Low: "Baixo",
+        Medium: "Médio",
+        High: "Alto",
+      };
+      return translations[key] || key;
+    });
+
+    const result = getNetworkCongestionTranslation(
+      mockTWithTranslations,
+      NetworkCongestion.LOW,
+    );
+    expect(mockTWithTranslations).toHaveBeenCalledWith("Low");
+    expect(result).toBe("Baixo");
+  });
+});
 
 describe("useNetworkFees (React 18 compatible)", () => {
   beforeEach(() => {
