@@ -5,6 +5,10 @@
   flex-direction: column;
   display: flex;
   height: 100%;
+  width: 100%;
+  max-width: 49rem;
+  margin: 0 auto;
+  padding: 0 var(--popup--side-padding);
 
   &__loader,
   &__error {
@@ -16,7 +20,6 @@
   }
 
   &__wrapper {
-    overflow: scroll;
     position: relative;
     flex-direction: column;
     display: flex;
@@ -24,13 +27,13 @@
     width: 100%;
     flex: 1;
     overflow-y: auto;
-    padding: 1rem 1.5rem;
 
     &__body {
-      max-width: 57rem;
+      width: 100%;
+      max-width: 52rem;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      padding: 1rem 1.5rem;
     }
 
     &__header {
