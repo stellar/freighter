@@ -22,6 +22,7 @@ import { isMainnet, isTestnet } from "helpers/stellar";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
+import { View } from "popup/basics/layout/View";
 
 import {
   reportAssetWarning,
@@ -234,20 +235,22 @@ export const AssetListWarningExpanded = ({
     : t("This asset is not on your lists");
 
   return (
-    <div className="BlockaidDetailsExpanded">
-      <div className="BlockaidDetailsExpanded__Header">
-        <div className="WarningMark">
-          <Icon.AlertTriangle />
+    <View.Inset hasNoTopPadding hasNoBottomPadding>
+      <div className="BlockaidDetailsExpanded">
+        <div className="BlockaidDetailsExpanded__Header">
+          <div className="WarningMark">
+            <Icon.AlertTriangle />
+          </div>
+          <div className="Close" onClick={onClose}>
+            <Icon.X />
+          </div>
         </div>
-        <div className="Close" onClick={onClose}>
-          <Icon.X />
+        <div className="BlockaidDetailsExpanded__Title">{title}</div>
+        <div className="BlockaidDetailsExpanded__SubTitle">
+          {`${t("Freighter uses asset lists to check assets you interact with.")} ${t("You can define your own assets lists in Settings.")}`}
         </div>
       </div>
-      <div className="BlockaidDetailsExpanded__Title">{title}</div>
-      <div className="BlockaidDetailsExpanded__SubTitle">
-        {`${t("Freighter uses asset lists to check assets you interact with.")} ${t("You can define your own assets lists in Settings.")}`}
-      </div>
-    </div>
+    </View.Inset>
   );
 };
 
@@ -574,28 +577,30 @@ export const BlockAidAssetScanExpanded = ({
         };
 
   return (
-    <div className="BlockaidDetailsExpanded">
-      <div className="BlockaidDetailsExpanded__Header">
-        <div className={warningType.class}>{warningType.icon}</div>
-        <div className="Close" onClick={onClose}>
-          <Icon.X />
+    <View.Inset hasNoTopPadding hasNoBottomPadding>
+      <div className="BlockaidDetailsExpanded">
+        <div className="BlockaidDetailsExpanded__Header">
+          <div className={warningType.class}>{warningType.icon}</div>
+          <div className="Close" onClick={onClose}>
+            <Icon.X />
+          </div>
+        </div>
+        <div className="BlockaidDetailsExpanded__Title">{title}</div>
+        <div className="BlockaidDetailsExpanded__SubTitle">{description}</div>
+        <div className="BlockaidDetailsExpanded__Details">
+          {_features.map((feature) => (
+            <div
+              className="BlockaidDetailsExpanded__DetailRow"
+              key={feature.feature_id}
+            >
+              <Icon.MinusCircle />
+              <span>{feature.description}</span>
+            </div>
+          ))}
+          <BlockaidByLine address={""} />
         </div>
       </div>
-      <div className="BlockaidDetailsExpanded__Title">{title}</div>
-      <div className="BlockaidDetailsExpanded__SubTitle">{description}</div>
-      <div className="BlockaidDetailsExpanded__Details">
-        {_features.map((feature) => (
-          <div
-            className="BlockaidDetailsExpanded__DetailRow"
-            key={feature.feature_id}
-          >
-            <Icon.MinusCircle />
-            <span>{feature.description}</span>
-          </div>
-        ))}
-        <BlockaidByLine address={""} />
-      </div>
-    </div>
+    </View.Inset>
   );
 };
 
@@ -804,27 +809,31 @@ export const BlockAidTxScanExpanded = ({
 
   if (simulation && "error" in simulation) {
     return (
-      <div className="BlockaidDetailsExpanded">
-        <div className="BlockaidDetailsExpanded__Header">
-          <div className="WarningMark">
-            <Icon.AlertTriangle />
+      <View.Inset hasNoTopPadding hasNoBottomPadding>
+        <div className="BlockaidDetailsExpanded">
+          <div className="BlockaidDetailsExpanded__Header">
+            <div className="WarningMark">
+              <Icon.AlertTriangle />
+            </div>
+            <div className="Close" onClick={onClose}>
+              <Icon.X />
+            </div>
           </div>
-          <div className="Close" onClick={onClose}>
-            <Icon.X />
+          <div className="BlockaidDetailsExpanded__Title">{t("Warning")}</div>
+          <div className="BlockaidDetailsExpanded__SubTitle">
+            {t(
+              "This transaction is expected to fail for the following reasons.",
+            )}
+          </div>
+          <div className="BlockaidDetailsExpanded__Details">
+            <div className="BlockaidDetailsExpanded__DetailRow">
+              <Icon.MinusCircle />
+              <span>{simulation.error}</span>
+            </div>
+            <BlockaidByLine address={""} />
           </div>
         </div>
-        <div className="BlockaidDetailsExpanded__Title">{t("Warning")}</div>
-        <div className="BlockaidDetailsExpanded__SubTitle">
-          {t("This transaction is expected to fail for the following reasons.")}
-        </div>
-        <div className="BlockaidDetailsExpanded__Details">
-          <div className="BlockaidDetailsExpanded__DetailRow">
-            <Icon.MinusCircle />
-            <span>{simulation.error}</span>
-          </div>
-          <BlockaidByLine address={""} />
-        </div>
-      </div>
+      </View.Inset>
     );
   }
 
@@ -832,61 +841,65 @@ export const BlockAidTxScanExpanded = ({
     switch (validation.result_type) {
       case "Malicious": {
         return (
-          <div className="BlockaidDetailsExpanded">
-            <div className="BlockaidDetailsExpanded__Header">
-              <div className="WarningMarkError">
-                <Icon.AlertOctagon />
+          <View.Inset hasNoTopPadding hasNoBottomPadding>
+            <div className="BlockaidDetailsExpanded">
+              <div className="BlockaidDetailsExpanded__Header">
+                <div className="WarningMarkError">
+                  <Icon.AlertOctagon />
+                </div>
+                <div className="Close" onClick={onClose}>
+                  <Icon.X />
+                </div>
               </div>
-              <div className="Close" onClick={onClose}>
-                <Icon.X />
+              <div className="BlockaidDetailsExpanded__Title">
+                {t("Do not proceed")}
+              </div>
+              <div className="BlockaidDetailsExpanded__SubTitle">
+                {t(
+                  "This transaction does not appear safe for the following reasons",
+                )}
+              </div>
+              <div className="BlockaidDetailsExpanded__Details">
+                <div className="BlockaidDetailsExpanded__DetailRowError">
+                  <Icon.XCircle />
+                  <span>{validation.description}</span>
+                </div>
+                <BlockaidByLine address={""} />
               </div>
             </div>
-            <div className="BlockaidDetailsExpanded__Title">
-              {t("Do not proceed")}
-            </div>
-            <div className="BlockaidDetailsExpanded__SubTitle">
-              {t(
-                "This transaction does not appear safe for the following reasons",
-              )}
-            </div>
-            <div className="BlockaidDetailsExpanded__Details">
-              <div className="BlockaidDetailsExpanded__DetailRowError">
-                <Icon.XCircle />
-                <span>{validation.description}</span>
-              </div>
-              <BlockaidByLine address={""} />
-            </div>
-          </div>
+          </View.Inset>
         );
       }
 
       case "Warning": {
         return (
-          <div className="BlockaidDetailsExpanded">
-            <div className="BlockaidDetailsExpanded__Header">
-              <div className="WarningMark">
-                <Icon.AlertTriangle />
+          <View.Inset hasNoTopPadding hasNoBottomPadding>
+            <div className="BlockaidDetailsExpanded">
+              <div className="BlockaidDetailsExpanded__Header">
+                <div className="WarningMark">
+                  <Icon.AlertTriangle />
+                </div>
+                <div className="Close" onClick={onClose}>
+                  <Icon.X />
+                </div>
               </div>
-              <div className="Close" onClick={onClose}>
-                <Icon.X />
+              <div className="BlockaidDetailsExpanded__Title">
+                {t("Suspicious Request")}
+              </div>
+              <div className="BlockaidDetailsExpanded__SubTitle">
+                {t(
+                  "This transaction does not appear safe for the following reasons.",
+                )}
+              </div>
+              <div className="BlockaidDetailsExpanded__Details">
+                <div className="BlockaidDetailsExpanded__DetailRow">
+                  <Icon.MinusCircle />
+                  <span>{validation.description}</span>
+                </div>
+                <BlockaidByLine address={""} />
               </div>
             </div>
-            <div className="BlockaidDetailsExpanded__Title">
-              {t("Suspicious Request")}
-            </div>
-            <div className="BlockaidDetailsExpanded__SubTitle">
-              {t(
-                "This transaction does not appear safe for the following reasons.",
-              )}
-            </div>
-            <div className="BlockaidDetailsExpanded__Details">
-              <div className="BlockaidDetailsExpanded__DetailRow">
-                <Icon.MinusCircle />
-                <span>{validation.description}</span>
-              </div>
-            </div>
-            <BlockaidByLine address={""} />
-          </div>
+          </View.Inset>
         );
       }
 
