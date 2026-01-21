@@ -269,10 +269,6 @@ test("Send collectible with Soroban mux support to M address disables memo", asy
   await page.getByTestId("send-to-input").fill(TEST_M_ADDRESS);
   await page.getByText("Continue").click({ force: true });
 
-  // Wait for contract check to complete
-  // Since contract supports muxed (true), there should be NO warning banner
-  await page.waitForTimeout(2000);
-
   // Verify NO warning banner is shown (contract supports muxed)
   await expect(
     page.getByText(
@@ -301,9 +297,7 @@ test("Send collectible with Soroban mux support to M address disables memo", asy
   await reviewSendButton.click({ force: true });
 
   // Wait for review sheet to open
-  await expect(page.getByText("You are sending")).toBeVisible({
-    timeout: 200000,
-  });
+  await expect(page.getByText("You are sending")).toBeVisible();
 
   // Verify memo row is NOT shown in review (memo is embedded in M address for collectibles with Soroban mux support)
   await expect(page.getByTestId("review-tx-memo")).not.toBeVisible();
@@ -370,9 +364,7 @@ test("Send collectible without Soroban mux support to G address disables memo", 
   await reviewSendButton.click({ force: true });
 
   // Wait for review sheet to open
-  await expect(page.getByText("You are sending")).toBeVisible({
-    timeout: 200000,
-  });
+  await expect(page.getByText("You are sending")).toBeVisible();
 
   // Verify memo row is NOT shown in review (collectibles without muxed support disable memo)
   await expect(page.getByTestId("review-tx-memo")).not.toBeVisible();
@@ -442,9 +434,7 @@ test("Send collectible with Soroban mux support to G address allows memo", async
   await reviewSendButton.click({ force: true });
 
   // Wait for review sheet to open
-  await expect(page.getByText("You are sending")).toBeVisible({
-    timeout: 200000,
-  });
+  await expect(page.getByText("You are sending")).toBeVisible();
 
   // Verify memo row IS shown in review (collectibles with muxed support to G address allow memo)
   await expect(page.getByTestId("review-tx-memo")).toBeVisible();
