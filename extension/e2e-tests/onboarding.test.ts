@@ -787,7 +787,7 @@ test("Wrong mnemonic phrase clears mnemonic inputs but preserves pw + ToS from p
   });
 });
 
-test("Switch mnemonic phrase length preserves  previous state (pw + ToS)", async ({
+test("Switch mnemonic phrase length preserves previous state (pw + ToS)", async ({
   page,
   extensionId,
 }) => {
