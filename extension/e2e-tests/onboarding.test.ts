@@ -2,6 +2,11 @@ import { shuffle } from "lodash";
 import StellarHDWallet from "stellar-hd-wallet";
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount, PASSWORD } from "./helpers/login";
+import {
+  startImportWalletFlow,
+  fillMnemonicInputs,
+  clickImportAndWaitForSuccess,
+} from "./helpers/onboarding";
 
 const { generateMnemonic } = StellarHDWallet;
 
@@ -697,26 +702,12 @@ test("Wrong mnemonic phrase preserves previous state (pw + ToS) and allows retry
 }) => {
   test.slow();
   await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await page.getByText("I already have a wallet").click();
-  await expect(page.getByText("Create a password")).toBeVisible();
 
   const PASSWORD_TEST = "My-password123";
-  const CONFIRM_PASSWORD = "My-password123";
-
-  await page.locator("#new-password-input").fill(PASSWORD_TEST);
-  await page.locator("#confirm-password-input").fill(CONFIRM_PASSWORD);
-  await page.locator("#termsOfUse-input").check({ force: true });
-  await page.getByText("Confirm").click();
-
-  await expect(
-    page.getByText("Import wallet from recovery phrase"),
-  ).toBeVisible();
+  await startImportWalletFlow({ page, password: PASSWORD_TEST });
 
   const wrongWords = Array(12).fill("invalid");
-  for (let i = 1; i <= wrongWords.length; i++) {
-    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
-    await input.fill(wrongWords[i - 1]);
-  }
+  await fillMnemonicInputs({ page, words: wrongWords });
 
   await page.getByRole("button", { name: "Import" }).click();
   await expect(page.getByText("Invalid mnemonic phrase")).toBeVisible({
@@ -728,16 +719,9 @@ test("Wrong mnemonic phrase preserves previous state (pw + ToS) and allows retry
     .inputValue();
   expect(firstMnemonicAfterError).toBe("");
 
-  for (let i = 1; i <= TEST_WORDS_RECOVERY.length; i++) {
-    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
-    await input.fill(TEST_WORDS_RECOVERY[i - 1]);
-  }
+  await fillMnemonicInputs({ page, words: TEST_WORDS_RECOVERY });
 
-  await page.getByRole("button", { name: "Import" }).click();
-
-  await expect(page.getByText("You’re all set!")).toBeVisible({
-    timeout: 10000,
-  });
+  await clickImportAndWaitForSuccess({ page });
 });
 
 test("Wrong mnemonic phrase clears mnemonic inputs but preserves pw + ToS from previous page", async ({
@@ -746,25 +730,12 @@ test("Wrong mnemonic phrase clears mnemonic inputs but preserves pw + ToS from p
 }) => {
   test.slow();
   await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await page.getByText("I already have a wallet").click();
-  await expect(page.getByText("Create a password")).toBeVisible();
 
   const PASSWORD_TEST = "SecurePass456";
-  const CONFIRM_PASSWORD = "SecurePass456";
+  await startImportWalletFlow({ page, password: PASSWORD_TEST });
 
-  await page.locator("#new-password-input").fill(PASSWORD_TEST);
-  await page.locator("#confirm-password-input").fill(CONFIRM_PASSWORD);
-  await page.locator("#termsOfUse-input").check({ force: true });
-  await page.getByText("Confirm").click();
-
-  await expect(
-    page.getByText("Import wallet from recovery phrase"),
-  ).toBeVisible();
-
-  for (let i = 1; i <= TEST_WORDS_RECOVERY.length; i++) {
-    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
-    await input.fill("wrong");
-  }
+  const wrongWords = Array(TEST_WORDS_RECOVERY.length).fill("wrong");
+  await fillMnemonicInputs({ page, words: wrongWords });
 
   await page.getByRole("button", { name: "Import" }).click();
   await expect(page.getByText("Invalid mnemonic phrase")).toBeVisible({
@@ -776,15 +747,8 @@ test("Wrong mnemonic phrase clears mnemonic inputs but preserves pw + ToS from p
     .inputValue();
   expect(firstMnemonicAfterError).toBe("");
 
-  for (let i = 1; i <= TEST_WORDS_RECOVERY.length; i++) {
-    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
-    await input.fill(TEST_WORDS_RECOVERY[i - 1]);
-  }
-
-  await page.getByRole("button", { name: "Import" }).click();
-  await expect(page.getByText("You’re all set!")).toBeVisible({
-    timeout: 10000,
-  });
+  await fillMnemonicInputs({ page, words: TEST_WORDS_RECOVERY });
+  await clickImportAndWaitForSuccess({ page });
 });
 
 test("Switch mnemonic phrase length preserves previous state (pw + ToS)", async ({
@@ -793,19 +757,9 @@ test("Switch mnemonic phrase length preserves previous state (pw + ToS)", async 
 }) => {
   test.slow();
   await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await page.getByText("I already have a wallet").click();
-  await expect(page.getByText("Create a password")).toBeVisible();
 
   const PASSWORD_TEST = "AnotherPass789";
-
-  await page.locator("#new-password-input").fill(PASSWORD_TEST);
-  await page.locator("#confirm-password-input").fill(PASSWORD_TEST);
-  await page.locator("#termsOfUse-input").check({ force: true });
-  await page.getByText("Confirm").click();
-
-  await expect(
-    page.getByText("Import wallet from recovery phrase"),
-  ).toBeVisible();
+  await startImportWalletFlow({ page, password: PASSWORD_TEST });
 
   const toggleLabel = page.locator('label[for="RecoverAccount__toggle"]');
   await toggleLabel.click();
@@ -820,16 +774,9 @@ test("Switch mnemonic phrase length preserves previous state (pw + ToS)", async 
     .locator('input[name="MnemonicPhrase-12"]')
     .waitFor({ state: "visible" });
 
-  for (let i = 1; i <= TEST_WORDS_RECOVERY.length; i++) {
-    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
-    await input.fill(TEST_WORDS_RECOVERY[i - 1]);
-  }
+  await fillMnemonicInputs({ page, words: TEST_WORDS_RECOVERY });
 
-  await page.getByRole("button", { name: "Import" }).click();
-
-  await expect(page.getByText("You’re all set!")).toBeVisible({
-    timeout: 10000,
-  });
+  await clickImportAndWaitForSuccess({ page });
 });
 
 test("Enter wrong mnemonic multiple times and retry preserves previous state (pw + ToS) and allows successful import", async ({
@@ -838,39 +785,21 @@ test("Enter wrong mnemonic multiple times and retry preserves previous state (pw
 }) => {
   test.slow();
   await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await page.getByText("I already have a wallet").click();
-  await expect(page.getByText("Create a password")).toBeVisible();
 
   const PASSWORD_TEST = "PasteTestPass123";
+  await startImportWalletFlow({ page, password: PASSWORD_TEST });
 
-  await page.locator("#new-password-input").fill(PASSWORD_TEST);
-  await page.locator("#confirm-password-input").fill(PASSWORD_TEST);
-  await page.locator("#termsOfUse-input").check({ force: true });
-  await page.getByText("Confirm").click();
-
-  await expect(
-    page.getByText("Import wallet from recovery phrase"),
-  ).toBeVisible();
-
-  for (let i = 1; i <= 12; i++) {
-    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
-    await input.fill("wrong");
-  }
+  const wrongWords = Array(12).fill("wrong");
+  await fillMnemonicInputs({ page, words: wrongWords });
 
   await page.getByRole("button", { name: "Import" }).click();
   await expect(page.getByText("Invalid mnemonic phrase")).toBeVisible({
     timeout: 5000,
   });
 
-  for (let i = 1; i <= TEST_WORDS_RECOVERY.length; i++) {
-    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
-    await input.fill(TEST_WORDS_RECOVERY[i - 1]);
-  }
+  await fillMnemonicInputs({ page, words: TEST_WORDS_RECOVERY });
 
-  await page.getByRole("button", { name: "Import" }).click();
-  await expect(page.getByText("You’re all set!")).toBeVisible({
-    timeout: 10000,
-  });
+  await clickImportAndWaitForSuccess({ page });
 });
 
 test("Multiple failed attempts preserve state across retries (pw + ToS)", async ({
@@ -879,45 +808,24 @@ test("Multiple failed attempts preserve state across retries (pw + ToS)", async 
 }) => {
   test.slow();
   await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await page.getByText("I already have a wallet").click();
-  await expect(page.getByText("Create a password")).toBeVisible();
 
   const PASSWORD_TEST = "MultiRetryPass999";
-  const CONFIRM_PASSWORD = "MultiRetryPass999";
+  await startImportWalletFlow({ page, password: PASSWORD_TEST });
 
-  await page.locator("#new-password-input").fill(PASSWORD_TEST);
-  await page.locator("#confirm-password-input").fill(CONFIRM_PASSWORD);
-  await page.locator("#termsOfUse-input").check({ force: true });
-  await page.getByText("Confirm").click();
-
-  await expect(
-    page.getByText("Import wallet from recovery phrase"),
-  ).toBeVisible();
-
-  for (let i = 1; i <= TEST_WORDS_RECOVERY.length; i++) {
-    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
-    await input.fill("attempt1");
-  }
+  const attempt1Words = Array(TEST_WORDS_RECOVERY.length).fill("attempt1");
+  await fillMnemonicInputs({ page, words: attempt1Words });
   await page.getByRole("button", { name: "Import" }).click();
   await expect(page.getByText("Invalid mnemonic phrase")).toBeVisible({
     timeout: 5000,
   });
 
-  for (let i = 1; i <= TEST_WORDS_RECOVERY.length; i++) {
-    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
-    await input.fill("attempt2");
-  }
+  const attempt2Words = Array(TEST_WORDS_RECOVERY.length).fill("attempt2");
+  await fillMnemonicInputs({ page, words: attempt2Words });
   await page.getByRole("button", { name: "Import" }).click();
   await expect(page.getByText("Invalid mnemonic phrase")).toBeVisible({
     timeout: 5000,
   });
 
-  for (let i = 1; i <= TEST_WORDS_RECOVERY.length; i++) {
-    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
-    await input.fill(TEST_WORDS_RECOVERY[i - 1]);
-  }
-  await page.getByRole("button", { name: "Import" }).click();
-  await expect(page.getByText("You’re all set!")).toBeVisible({
-    timeout: 10000,
-  });
+  await fillMnemonicInputs({ page, words: TEST_WORDS_RECOVERY });
+  await clickImportAndWaitForSuccess({ page });
 });
