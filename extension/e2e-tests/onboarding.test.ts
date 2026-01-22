@@ -10,6 +10,22 @@ import {
 
 const { generateMnemonic } = StellarHDWallet;
 
+// Shared test mnemonic for 12-word wallet import tests
+const TEST_MNEMONIC_12_WORDS = [
+  "have",
+  "style",
+  "milk",
+  "flush",
+  "you",
+  "possible",
+  "thrive",
+  "dice",
+  "delay",
+  "police",
+  "seminar",
+  "face",
+];
+
 test.beforeEach(async ({ page, extensionId }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
 });
@@ -87,23 +103,10 @@ test("Import 12 word wallet", async ({ page }) => {
     page.getByText("Import wallet from recovery phrase"),
   ).toBeVisible();
 
-  const TEST_WORDS = [
-    "have",
-    "style",
-    "milk",
-    "flush",
-    "you",
-    "possible",
-    "thrive",
-    "dice",
-    "delay",
-    "police",
-    "seminar",
-    "face",
-  ];
-
-  for (let i = 1; i <= TEST_WORDS.length; i++) {
-    await page.locator(`#MnemonicPhrase-${i}`).fill(TEST_WORDS[i - 1]);
+  for (let i = 1; i <= TEST_MNEMONIC_12_WORDS.length; i++) {
+    await page
+      .locator(`#MnemonicPhrase-${i}`)
+      .fill(TEST_MNEMONIC_12_WORDS[i - 1]);
   }
 
   await expectPageToHaveScreenshot(
@@ -139,22 +142,7 @@ test("Import 12 word wallet by pasting", async ({ page, context }) => {
   ).toBeVisible();
 
   await page.evaluate(() => {
-    return navigator.clipboard.writeText(
-      [
-        "have",
-        "style",
-        "milk",
-        "flush",
-        "you",
-        "possible",
-        "thrive",
-        "dice",
-        "delay",
-        "police",
-        "seminar",
-        "face",
-      ].join(" "),
-    );
+    return navigator.clipboard.writeText(TEST_MNEMONIC_12_WORDS.join(" "));
   });
 
   // paste text from clipboard
@@ -681,21 +669,6 @@ test("Overwrites account when user abandons after password creation", async ({
 });
 
 // Password preservation tests
-const TEST_WORDS_RECOVERY = [
-  "have",
-  "style",
-  "milk",
-  "flush",
-  "you",
-  "possible",
-  "thrive",
-  "dice",
-  "delay",
-  "police",
-  "seminar",
-  "face",
-];
-
 test("Wrong mnemonic phrase preserves previous state (pw + ToS) and allows retry", async ({
   page,
   extensionId,
@@ -719,7 +692,7 @@ test("Wrong mnemonic phrase preserves previous state (pw + ToS) and allows retry
     .inputValue();
   expect(firstMnemonicAfterError).toBe("");
 
-  await fillMnemonicInputs({ page, words: TEST_WORDS_RECOVERY });
+  await fillMnemonicInputs({ page, words: TEST_MNEMONIC_12_WORDS });
 
   await clickImportAndWaitForSuccess({ page });
 });
@@ -734,7 +707,7 @@ test("Wrong mnemonic phrase clears mnemonic inputs but preserves pw + ToS from p
   const PASSWORD_TEST = "SecurePass456";
   await startImportWalletFlow({ page, password: PASSWORD_TEST });
 
-  const wrongWords = Array(TEST_WORDS_RECOVERY.length).fill("wrong");
+  const wrongWords = Array(TEST_MNEMONIC_12_WORDS.length).fill("wrong");
   await fillMnemonicInputs({ page, words: wrongWords });
 
   await page.getByRole("button", { name: "Import" }).click();
@@ -747,7 +720,7 @@ test("Wrong mnemonic phrase clears mnemonic inputs but preserves pw + ToS from p
     .inputValue();
   expect(firstMnemonicAfterError).toBe("");
 
-  await fillMnemonicInputs({ page, words: TEST_WORDS_RECOVERY });
+  await fillMnemonicInputs({ page, words: TEST_MNEMONIC_12_WORDS });
   await clickImportAndWaitForSuccess({ page });
 });
 
@@ -774,7 +747,7 @@ test("Switch mnemonic phrase length preserves previous state (pw + ToS)", async 
     .locator('input[name="MnemonicPhrase-12"]')
     .waitFor({ state: "visible" });
 
-  await fillMnemonicInputs({ page, words: TEST_WORDS_RECOVERY });
+  await fillMnemonicInputs({ page, words: TEST_MNEMONIC_12_WORDS });
 
   await clickImportAndWaitForSuccess({ page });
 });
@@ -797,7 +770,7 @@ test("Enter wrong mnemonic multiple times and retry preserves previous state (pw
     timeout: 5000,
   });
 
-  await fillMnemonicInputs({ page, words: TEST_WORDS_RECOVERY });
+  await fillMnemonicInputs({ page, words: TEST_MNEMONIC_12_WORDS });
 
   await clickImportAndWaitForSuccess({ page });
 });
@@ -812,20 +785,20 @@ test("Multiple failed attempts preserve state across retries (pw + ToS)", async 
   const PASSWORD_TEST = "MultiRetryPass999";
   await startImportWalletFlow({ page, password: PASSWORD_TEST });
 
-  const attempt1Words = Array(TEST_WORDS_RECOVERY.length).fill("attempt1");
+  const attempt1Words = Array(TEST_MNEMONIC_12_WORDS.length).fill("attempt1");
   await fillMnemonicInputs({ page, words: attempt1Words });
   await page.getByRole("button", { name: "Import" }).click();
   await expect(page.getByText("Invalid mnemonic phrase")).toBeVisible({
     timeout: 5000,
   });
 
-  const attempt2Words = Array(TEST_WORDS_RECOVERY.length).fill("attempt2");
+  const attempt2Words = Array(TEST_MNEMONIC_12_WORDS.length).fill("attempt2");
   await fillMnemonicInputs({ page, words: attempt2Words });
   await page.getByRole("button", { name: "Import" }).click();
   await expect(page.getByText("Invalid mnemonic phrase")).toBeVisible({
     timeout: 5000,
   });
 
-  await fillMnemonicInputs({ page, words: TEST_WORDS_RECOVERY });
+  await fillMnemonicInputs({ page, words: TEST_MNEMONIC_12_WORDS });
   await clickImportAndWaitForSuccess({ page });
 });
