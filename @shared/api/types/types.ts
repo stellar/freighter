@@ -441,6 +441,7 @@ export interface CollectibleResponse {
 }
 
 export interface Collectible {
+  isUserStored?: boolean;
   collectionAddress: string;
   collectionName: string;
   owner: string;

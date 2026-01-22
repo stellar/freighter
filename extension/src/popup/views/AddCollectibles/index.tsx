@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
 
+import { fetchCollectibles } from "@shared/api/helpers/fetchCollectibles";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
@@ -43,12 +44,36 @@ export const AddCollectibles = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const navigate = useNavigate();
   const [addCollectibleError, setAddCollectibleError] = useState<string>("");
-  const { fetchData: fetchCollectibles } = useGetCollectibles({
+  const { fetchData: fetchCollectiblesData } = useGetCollectibles({
     useCache: false,
   });
 
   const handleSubmit = async (values: FormValues) => {
     try {
+      const fetchedCollectible = await fetchCollectibles({
+        publicKey,
+        networkDetails,
+        contracts: [
+          {
+            id: values.collectibleContractAddress,
+            token_ids: [values.collectibleTokenId],
+          },
+        ],
+      });
+
+      // check to see if the collectible only returns an error from the API
+      // this would indicate it doesn't exist
+      if (
+        !fetchedCollectible.some(
+          (collection) =>
+            collection?.collection?.address ===
+            values.collectibleContractAddress,
+        )
+      ) {
+        setAddCollectibleError(t("Collectible not found"));
+        return;
+      }
+
       const response = await addCollectible({
         publicKey: publicKey,
         network: networkDetails.network,
@@ -64,7 +89,7 @@ export const AddCollectibles = () => {
       setAddCollectibleError("");
 
       // refetch collectibles to update the UI before we navigate away
-      await fetchCollectibles({ publicKey, networkDetails });
+      await fetchCollectiblesData({ publicKey, networkDetails });
 
       navigateTo(ROUTES.account, navigate, `?tab=${TabsList.COLLECTIBLES}`);
     } catch (error) {
