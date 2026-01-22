@@ -8,7 +8,6 @@ import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import * as CollectiblesCache from "helpers/utils/collectibles/collectiblesCache";
 import * as InternalApi from "@shared/api/internal";
 import * as FetchCollectiblesApi from "@shared/api/helpers/fetchCollectibles";
-import * as ImagePreloader from "helpers/utils/collectibles/imagePreloader";
 
 jest.mock("helpers/utils/collectibles/collectiblesCache", () => ({
   getCachedCollections: jest.fn(),
