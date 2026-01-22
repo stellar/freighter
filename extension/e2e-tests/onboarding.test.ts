@@ -691,7 +691,7 @@ const TEST_WORDS_RECOVERY = [
   "face",
 ];
 
-test("Wrong mnemonic phrase preserves  previous state (pw + ToS) and allows retry", async ({
+test("Wrong mnemonic phrase preserves previous state (pw + ToS) and allows retry", async ({
   page,
   extensionId,
 }) => {
