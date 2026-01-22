@@ -67,7 +67,10 @@ export const AddCollectibles = () => {
         !fetchedCollectible.some(
           (collection) =>
             collection?.collection?.address ===
-            values.collectibleContractAddress,
+              values.collectibleContractAddress &&
+            collection?.collection?.collectibles?.some(
+              (c) => c.tokenId === values.collectibleTokenId,
+            ),
         )
       ) {
         setAddCollectibleError(t("Collectible not found"));
