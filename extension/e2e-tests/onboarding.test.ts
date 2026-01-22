@@ -674,3 +674,250 @@ test("Overwrites account when user abandons after password creation", async ({
 
   expect(recoverWordsArr).toEqual(onboardingWordsArr);
 });
+
+// Password preservation tests
+const TEST_WORDS_RECOVERY = [
+  "have",
+  "style",
+  "milk",
+  "flush",
+  "you",
+  "possible",
+  "thrive",
+  "dice",
+  "delay",
+  "police",
+  "seminar",
+  "face",
+];
+
+test("Wrong mnemonic phrase preserves  previous state (pw + ToS) and allows retry", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await page.goto(`chrome-extension://${extensionId}/index.html`);
+  await page.getByText("I already have a wallet").click();
+  await expect(page.getByText("Create a password")).toBeVisible();
+
+  const PASSWORD_TEST = "My-password123";
+  const CONFIRM_PASSWORD = "My-password123";
+
+  await page.locator("#new-password-input").fill(PASSWORD_TEST);
+  await page.locator("#confirm-password-input").fill(CONFIRM_PASSWORD);
+  await page.locator("#termsOfUse-input").check({ force: true });
+  await page.getByText("Confirm").click();
+
+  await expect(
+    page.getByText("Import wallet from recovery phrase"),
+  ).toBeVisible();
+
+  const wrongWords = Array(12).fill("invalid");
+  for (let i = 1; i <= wrongWords.length; i++) {
+    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
+    await input.fill(wrongWords[i - 1]);
+  }
+
+  await page.getByRole("button", { name: "Import" }).click();
+  await expect(page.getByText("Invalid mnemonic phrase")).toBeVisible({
+    timeout: 5000,
+  });
+
+  const firstMnemonicAfterError = await page
+    .locator('input[name="MnemonicPhrase-1"]')
+    .inputValue();
+  expect(firstMnemonicAfterError).toBe("");
+
+  for (let i = 1; i <= TEST_WORDS_RECOVERY.length; i++) {
+    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
+    await input.fill(TEST_WORDS_RECOVERY[i - 1]);
+  }
+
+  await page.getByRole("button", { name: "Import" }).click();
+
+  await expect(page.getByText("You’re all set!")).toBeVisible({
+    timeout: 10000,
+  });
+});
+
+test("Wrong mnemonic phrase clears mnemonic inputs but preserves pw + ToS from previous page", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await page.goto(`chrome-extension://${extensionId}/index.html`);
+  await page.getByText("I already have a wallet").click();
+  await expect(page.getByText("Create a password")).toBeVisible();
+
+  const PASSWORD_TEST = "SecurePass456";
+  const CONFIRM_PASSWORD = "SecurePass456";
+
+  await page.locator("#new-password-input").fill(PASSWORD_TEST);
+  await page.locator("#confirm-password-input").fill(CONFIRM_PASSWORD);
+  await page.locator("#termsOfUse-input").check({ force: true });
+  await page.getByText("Confirm").click();
+
+  await expect(
+    page.getByText("Import wallet from recovery phrase"),
+  ).toBeVisible();
+
+  for (let i = 1; i <= TEST_WORDS_RECOVERY.length; i++) {
+    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
+    await input.fill("wrong");
+  }
+
+  await page.getByRole("button", { name: "Import" }).click();
+  await expect(page.getByText("Invalid mnemonic phrase")).toBeVisible({
+    timeout: 5000,
+  });
+
+  const firstMnemonicAfterError = await page
+    .locator('input[name="MnemonicPhrase-1"]')
+    .inputValue();
+  expect(firstMnemonicAfterError).toBe("");
+
+  for (let i = 1; i <= TEST_WORDS_RECOVERY.length; i++) {
+    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
+    await input.fill(TEST_WORDS_RECOVERY[i - 1]);
+  }
+
+  await page.getByRole("button", { name: "Import" }).click();
+  await expect(page.getByText("You’re all set!")).toBeVisible({
+    timeout: 10000,
+  });
+});
+
+test("Switch mnemonic phrase length preserves  previous state (pw + ToS)", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await page.goto(`chrome-extension://${extensionId}/index.html`);
+  await page.getByText("I already have a wallet").click();
+  await expect(page.getByText("Create a password")).toBeVisible();
+
+  const PASSWORD_TEST = "AnotherPass789";
+
+  await page.locator("#new-password-input").fill(PASSWORD_TEST);
+  await page.locator("#confirm-password-input").fill(PASSWORD_TEST);
+  await page.locator("#termsOfUse-input").check({ force: true });
+  await page.getByText("Confirm").click();
+
+  await expect(
+    page.getByText("Import wallet from recovery phrase"),
+  ).toBeVisible();
+
+  const toggleLabel = page.locator('label[for="RecoverAccount__toggle"]');
+  await toggleLabel.click();
+
+  await page
+    .locator('input[name="MnemonicPhrase-13"]')
+    .waitFor({ state: "visible" });
+
+  await toggleLabel.click();
+
+  await page
+    .locator('input[name="MnemonicPhrase-12"]')
+    .waitFor({ state: "visible" });
+
+  for (let i = 1; i <= TEST_WORDS_RECOVERY.length; i++) {
+    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
+    await input.fill(TEST_WORDS_RECOVERY[i - 1]);
+  }
+
+  await page.getByRole("button", { name: "Import" }).click();
+
+  await expect(page.getByText("You’re all set!")).toBeVisible({
+    timeout: 10000,
+  });
+});
+
+test("Enter wrong mnemonic multiple times and retry preserves previous state (pw + ToS) and allows successful import", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await page.goto(`chrome-extension://${extensionId}/index.html`);
+  await page.getByText("I already have a wallet").click();
+  await expect(page.getByText("Create a password")).toBeVisible();
+
+  const PASSWORD_TEST = "PasteTestPass123";
+
+  await page.locator("#new-password-input").fill(PASSWORD_TEST);
+  await page.locator("#confirm-password-input").fill(PASSWORD_TEST);
+  await page.locator("#termsOfUse-input").check({ force: true });
+  await page.getByText("Confirm").click();
+
+  await expect(
+    page.getByText("Import wallet from recovery phrase"),
+  ).toBeVisible();
+
+  for (let i = 1; i <= 12; i++) {
+    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
+    await input.fill("wrong");
+  }
+
+  await page.getByRole("button", { name: "Import" }).click();
+  await expect(page.getByText("Invalid mnemonic phrase")).toBeVisible({
+    timeout: 5000,
+  });
+
+  for (let i = 1; i <= TEST_WORDS_RECOVERY.length; i++) {
+    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
+    await input.fill(TEST_WORDS_RECOVERY[i - 1]);
+  }
+
+  await page.getByRole("button", { name: "Import" }).click();
+  await expect(page.getByText("You’re all set!")).toBeVisible({
+    timeout: 10000,
+  });
+});
+
+test("Multiple failed attempts preserve state across retries (pw + ToS)", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await page.goto(`chrome-extension://${extensionId}/index.html`);
+  await page.getByText("I already have a wallet").click();
+  await expect(page.getByText("Create a password")).toBeVisible();
+
+  const PASSWORD_TEST = "MultiRetryPass999";
+  const CONFIRM_PASSWORD = "MultiRetryPass999";
+
+  await page.locator("#new-password-input").fill(PASSWORD_TEST);
+  await page.locator("#confirm-password-input").fill(CONFIRM_PASSWORD);
+  await page.locator("#termsOfUse-input").check({ force: true });
+  await page.getByText("Confirm").click();
+
+  await expect(
+    page.getByText("Import wallet from recovery phrase"),
+  ).toBeVisible();
+
+  for (let i = 1; i <= TEST_WORDS_RECOVERY.length; i++) {
+    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
+    await input.fill("attempt1");
+  }
+  await page.getByRole("button", { name: "Import" }).click();
+  await expect(page.getByText("Invalid mnemonic phrase")).toBeVisible({
+    timeout: 5000,
+  });
+
+  for (let i = 1; i <= TEST_WORDS_RECOVERY.length; i++) {
+    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
+    await input.fill("attempt2");
+  }
+  await page.getByRole("button", { name: "Import" }).click();
+  await expect(page.getByText("Invalid mnemonic phrase")).toBeVisible({
+    timeout: 5000,
+  });
+
+  for (let i = 1; i <= TEST_WORDS_RECOVERY.length; i++) {
+    const input = page.locator(`input[name="MnemonicPhrase-${i}"]`);
+    await input.fill(TEST_WORDS_RECOVERY[i - 1]);
+  }
+  await page.getByRole("button", { name: "Import" }).click();
+  await expect(page.getByText("You’re all set!")).toBeVisible({
+    timeout: 10000,
+  });
+});
