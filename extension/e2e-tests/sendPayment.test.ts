@@ -10,6 +10,7 @@ import {
   stubContractSpec,
   stubMemoRequiredAccounts,
   stubSimulateTokenTransfer,
+  stubSubmitTx,
   stubTokenDetails,
   stubTokenPrices,
 } from "./helpers/stubs";
@@ -1699,4 +1700,88 @@ test("Send custom token with Soroban mux support to M address disables memo", as
 
   // Verify memo row is NOT shown in review (memo is embedded in M address for tokens with Soroban mux support)
   await expect(page.getByTestId("review-tx-memo")).not.toBeVisible();
+});
+
+test("Send token payment from Asset Detail", async ({ page, extensionId }) => {
+  test.slow();
+
+  await stubAccountBalancesE2e(page);
+  await stubAccountHistory(page);
+  await stubTokenDetails(page);
+  await stubTokenPrices(page);
+  await stubSimulateTokenTransfer(page);
+  await stubContractSpec(page, TEST_TOKEN_ADDRESS, true);
+
+  await loginToTestAccount({ page, extensionId });
+  await page.getByText("E2E").click();
+
+  await page.getByTestId("asset-detail-send-button").click();
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill("0.123");
+
+  await page.getByTestId("address-tile").click();
+  await page
+    .getByTestId("send-to-input")
+    .fill("GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY");
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue(
+    "0.123",
+  );
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveCSS(
+    "width",
+    "102px",
+  );
+
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
+  await reviewSendButton.click({ force: true });
+
+  await expect(page.getByText("You are sending")).toBeVisible();
+
+  await expect(page.getByTestId("SubmitAction")).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(page.getByTestId("SubmitAction")).toBeEnabled();
+});
+
+test("Send XLM payment from Asset Detail", async ({ page, extensionId }) => {
+  test.slow();
+
+  await stubAccountBalancesE2e(page);
+  await stubAccountHistory(page);
+  await stubTokenDetails(page);
+  await stubTokenPrices(page);
+  await stubSimulateTokenTransfer(page);
+  await stubContractSpec(page, TEST_TOKEN_ADDRESS, true);
+
+  await loginToTestAccount({ page, extensionId });
+  await page.getByText("XLM").click();
+
+  await page.getByTestId("asset-detail-send-button").click();
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill("0.01");
+
+  await page.getByTestId("address-tile").click();
+  await page
+    .getByTestId("send-to-input")
+    .fill("GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY");
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue(
+    "0.01",
+  );
+
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeEnabled({ timeout: 10000 });
+  await reviewSendButton.click({ force: true });
+
+  await expect(page.getByText("You are sending")).toBeVisible();
+
+  await expect(page.getByTestId("SubmitAction")).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(page.getByTestId("SubmitAction")).toBeEnabled();
 });
