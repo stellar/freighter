@@ -10,7 +10,6 @@ import {
   stubContractSpec,
   stubMemoRequiredAccounts,
   stubSimulateTokenTransfer,
-  stubSubmitTx,
   stubTokenDetails,
   stubTokenPrices,
 } from "./helpers/stubs";
