@@ -440,7 +440,17 @@ export interface CollectibleResponse {
   metadata: CollectibleMetadata | null;
 }
 
+/**
+ * Represents a single collectible tracked by the wallet.
+ *
+ * @property {boolean} [isUserStored] - Indicates how this collectible entered the
+ * wallet. Set to `true` when the collectible was explicitly added or pinned by
+ * the user (for example, via an "Add collectible" action). Leave undefined or
+ * `false` when the collectible is only present because it was discovered or
+ * cached from transaction history or external scans.
+ */
 export interface Collectible {
+  isUserStored?: boolean;
   collectionAddress: string;
   collectionName: string;
   owner: string;

@@ -46,7 +46,7 @@ test("Add a collectible to an account", async ({
           {
             collection: {
               address:
-                "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA", // Using XLM contract address for testing
+                "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN", // Using XLM contract address for testing
               name: "Stellar Frogs",
               symbol: "SFROG",
               collectibles: [

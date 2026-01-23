@@ -29,7 +29,6 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
-import { collectionsSelector } from "popup/ducks/cache";
 
 import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 import { useGetAccountHistoryData } from "./hooks/useGetAccountHistoryData";
@@ -48,7 +47,6 @@ export const Account = () => {
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
-  const collections = useSelector(collectionsSelector);
   const { activeTab } = useContext(AccountTabsContext);
 
   const isFullscreenModeEnabled = isFullscreenMode();
@@ -270,11 +268,7 @@ export const Account = () => {
               ),
               <div data-testid="account-collectibles">
                 <AccountCollectibles
-                  collections={
-                    collections[resolvedData?.networkDetails?.network || ""]?.[
-                      resolvedData?.publicKey || ""
-                    ] || []
-                  }
+                  collections={accountData.data?.collectibles.collections || []}
                 />
               </div>,
             ]}
