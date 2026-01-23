@@ -59,6 +59,7 @@ import { SelectedCollectible } from "popup/components/sendCollectible/SelectedCo
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
 import { SimulateTxData } from "./hooks/useSimulateTxData";
+import { InputWidthContext } from "popup/views/Send/contexts/inputWidthContext";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { MemoEditingContext } from "popup/constants/send-payment";
 import {
@@ -119,10 +120,14 @@ export const SendAmount = ({
     destination,
   );
   const cryptoSpanRef = useRef<HTMLSpanElement>(null);
-  const [inputWidthCrypto, setInputWidthCrypto] = useState(0);
 
   const fiatSpanRef = useRef<HTMLSpanElement>(null);
-  const [inputWidthFiat, setInputWidthFiat] = useState(0);
+  const {
+    inputWidthCrypto,
+    setInputWidthCrypto,
+    inputWidthFiat,
+    setInputWidthFiat,
+  } = React.useContext(InputWidthContext);
 
   const cryptoInputRef = useRef<HTMLInputElement>(null);
   const usdInputRef = useRef<HTMLInputElement>(null);
@@ -262,12 +267,12 @@ export const SendAmount = ({
     if (cryptoSpanRef.current) {
       setInputWidthCrypto(cryptoSpanRef.current.offsetWidth + 2);
     }
-  }, [formik.values.amount]);
+  }, [formik.values.amount, setInputWidthCrypto]);
   useLayoutEffect(() => {
     if (fiatSpanRef.current) {
       setInputWidthFiat(fiatSpanRef.current.offsetWidth + 4);
     }
-  }, [formik.values.amountUsd]);
+  }, [formik.values.amountUsd, setInputWidthFiat]);
 
   const srcAsset = getAssetFromCanonical(asset);
   const parsedSourceAsset = getAssetFromCanonical(formik.values.asset);
