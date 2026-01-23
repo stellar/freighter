@@ -1728,6 +1728,8 @@ test("Send token payment from Asset Detail", async ({ page, extensionId }) => {
   await expect(page.getByTestId("send-amount-amount-input")).toHaveValue(
     "0.123",
   );
+
+  // confirm that input width stays proportional to amount length
   await expect(page.getByTestId("send-amount-amount-input")).toHaveCSS(
     "width",
     "102px",
