@@ -117,10 +117,13 @@ export const RecoverAccount = () => {
   const [mnemonicPhraseArr, setMnemonicPhraseArr] = useState([] as string[]);
   const [password, setPassword] = useState("");
   const [pastedValues, setPastedValues] = useState<string[]>([]);
+  const [passwordFormValues, setPasswordFormValues] =
+    useState<FormValues>(initialValues);
   const { state, fetchData } = useRecoverAccountData();
 
   const handleConfirm = (values: FormValues) => {
     setPassword(values.password);
+    setPasswordFormValues(values);
   };
 
   const publicKeyRef = useRef(
@@ -225,7 +228,7 @@ export const RecoverAccount = () => {
     <React.Fragment>
       <View.Content alignment="center" hasNoTopPadding hasNoBottomPadding>
         <Formik
-          initialValues={initialValues}
+          initialValues={passwordFormValues}
           validationSchema={RecoverAccountSchema}
           onSubmit={handleSubmit}
         >

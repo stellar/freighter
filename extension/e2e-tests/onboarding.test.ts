@@ -2,8 +2,29 @@ import { shuffle } from "lodash";
 import StellarHDWallet from "stellar-hd-wallet";
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount, PASSWORD } from "./helpers/login";
+import {
+  startImportWalletFlow,
+  fillMnemonicInputs,
+  clickImportAndWaitForSuccess,
+} from "./helpers/onboarding";
 
 const { generateMnemonic } = StellarHDWallet;
+
+// Shared test mnemonic for 12-word wallet import tests
+const TEST_MNEMONIC_12_WORDS = [
+  "have",
+  "style",
+  "milk",
+  "flush",
+  "you",
+  "possible",
+  "thrive",
+  "dice",
+  "delay",
+  "police",
+  "seminar",
+  "face",
+];
 
 test.beforeEach(async ({ page, extensionId }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
@@ -82,23 +103,10 @@ test("Import 12 word wallet", async ({ page }) => {
     page.getByText("Import wallet from recovery phrase"),
   ).toBeVisible();
 
-  const TEST_WORDS = [
-    "have",
-    "style",
-    "milk",
-    "flush",
-    "you",
-    "possible",
-    "thrive",
-    "dice",
-    "delay",
-    "police",
-    "seminar",
-    "face",
-  ];
-
-  for (let i = 1; i <= TEST_WORDS.length; i++) {
-    await page.locator(`#MnemonicPhrase-${i}`).fill(TEST_WORDS[i - 1]);
+  for (let i = 1; i <= TEST_MNEMONIC_12_WORDS.length; i++) {
+    await page
+      .locator(`#MnemonicPhrase-${i}`)
+      .fill(TEST_MNEMONIC_12_WORDS[i - 1]);
   }
 
   await expectPageToHaveScreenshot(
@@ -134,22 +142,7 @@ test("Import 12 word wallet by pasting", async ({ page, context }) => {
   ).toBeVisible();
 
   await page.evaluate(() => {
-    return navigator.clipboard.writeText(
-      [
-        "have",
-        "style",
-        "milk",
-        "flush",
-        "you",
-        "possible",
-        "thrive",
-        "dice",
-        "delay",
-        "police",
-        "seminar",
-        "face",
-      ].join(" "),
-    );
+    return navigator.clipboard.writeText(TEST_MNEMONIC_12_WORDS.join(" "));
   });
 
   // paste text from clipboard
@@ -673,4 +666,139 @@ test("Overwrites account when user abandons after password creation", async ({
   );
 
   expect(recoverWordsArr).toEqual(onboardingWordsArr);
+});
+
+// Password preservation tests
+test("Wrong mnemonic phrase preserves previous state (pw + ToS) and allows retry", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await page.goto(`chrome-extension://${extensionId}/index.html`);
+
+  const PASSWORD_TEST = "My-password123";
+  await startImportWalletFlow({ page, password: PASSWORD_TEST });
+
+  const wrongWords = Array(12).fill("invalid");
+  await fillMnemonicInputs({ page, words: wrongWords });
+
+  await page.getByRole("button", { name: "Import" }).click();
+  await expect(page.getByText("Invalid mnemonic phrase")).toBeVisible({
+    timeout: 5000,
+  });
+
+  const firstMnemonicAfterError = await page
+    .locator('input[name="MnemonicPhrase-1"]')
+    .inputValue();
+  expect(firstMnemonicAfterError).toBe("");
+
+  await fillMnemonicInputs({ page, words: TEST_MNEMONIC_12_WORDS });
+
+  await clickImportAndWaitForSuccess({ page });
+});
+
+test("Wrong mnemonic phrase clears mnemonic inputs but preserves pw + ToS from previous page", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await page.goto(`chrome-extension://${extensionId}/index.html`);
+
+  const PASSWORD_TEST = "SecurePass456";
+  await startImportWalletFlow({ page, password: PASSWORD_TEST });
+
+  const wrongWords = Array(TEST_MNEMONIC_12_WORDS.length).fill("wrong");
+  await fillMnemonicInputs({ page, words: wrongWords });
+
+  await page.getByRole("button", { name: "Import" }).click();
+  await expect(page.getByText("Invalid mnemonic phrase")).toBeVisible({
+    timeout: 5000,
+  });
+
+  const firstMnemonicAfterError = await page
+    .locator('input[name="MnemonicPhrase-1"]')
+    .inputValue();
+  expect(firstMnemonicAfterError).toBe("");
+
+  await fillMnemonicInputs({ page, words: TEST_MNEMONIC_12_WORDS });
+  await clickImportAndWaitForSuccess({ page });
+});
+
+test("Switch mnemonic phrase length preserves previous state (pw + ToS)", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await page.goto(`chrome-extension://${extensionId}/index.html`);
+
+  const PASSWORD_TEST = "AnotherPass789";
+  await startImportWalletFlow({ page, password: PASSWORD_TEST });
+
+  const toggleLabel = page.locator('label[for="RecoverAccount__toggle"]');
+  await toggleLabel.click();
+
+  await page
+    .locator('input[name="MnemonicPhrase-13"]')
+    .waitFor({ state: "visible" });
+
+  await toggleLabel.click();
+
+  await page
+    .locator('input[name="MnemonicPhrase-12"]')
+    .waitFor({ state: "visible" });
+
+  await fillMnemonicInputs({ page, words: TEST_MNEMONIC_12_WORDS });
+
+  await clickImportAndWaitForSuccess({ page });
+});
+
+test("Enter wrong mnemonic multiple times and retry preserves previous state (pw + ToS) and allows successful import", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await page.goto(`chrome-extension://${extensionId}/index.html`);
+
+  const PASSWORD_TEST = "PasteTestPass123";
+  await startImportWalletFlow({ page, password: PASSWORD_TEST });
+
+  const wrongWords = Array(12).fill("wrong");
+  await fillMnemonicInputs({ page, words: wrongWords });
+
+  await page.getByRole("button", { name: "Import" }).click();
+  await expect(page.getByText("Invalid mnemonic phrase")).toBeVisible({
+    timeout: 5000,
+  });
+
+  await fillMnemonicInputs({ page, words: TEST_MNEMONIC_12_WORDS });
+
+  await clickImportAndWaitForSuccess({ page });
+});
+
+test("Multiple failed attempts preserve state across retries (pw + ToS)", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await page.goto(`chrome-extension://${extensionId}/index.html`);
+
+  const PASSWORD_TEST = "MultiRetryPass999";
+  await startImportWalletFlow({ page, password: PASSWORD_TEST });
+
+  const attempt1Words = Array(TEST_MNEMONIC_12_WORDS.length).fill("attempt1");
+  await fillMnemonicInputs({ page, words: attempt1Words });
+  await page.getByRole("button", { name: "Import" }).click();
+  await expect(page.getByText("Invalid mnemonic phrase")).toBeVisible({
+    timeout: 5000,
+  });
+
+  const attempt2Words = Array(TEST_MNEMONIC_12_WORDS.length).fill("attempt2");
+  await fillMnemonicInputs({ page, words: attempt2Words });
+  await page.getByRole("button", { name: "Import" }).click();
+  await expect(page.getByText("Invalid mnemonic phrase")).toBeVisible({
+    timeout: 5000,
+  });
+
+  await fillMnemonicInputs({ page, words: TEST_MNEMONIC_12_WORDS });
+  await clickImportAndWaitForSuccess({ page });
 });
