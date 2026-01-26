@@ -45,4 +45,8 @@
     animation: animateNotification 0.3s ease-in-out;
     margin-top: 1.5rem;
   }
+
+  .multi-pane-slider__pane {
+    padding: 0 var(--account-view-padding-side);
+  }
 }
