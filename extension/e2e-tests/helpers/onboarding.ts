@@ -24,7 +24,9 @@ export const startImportWalletFlow = async ({
   await expect(page.getByText("Create a password")).toBeVisible();
 
   await page.locator("#new-password-input").fill(password);
-  await page.locator("#confirm-password-input").fill(confirmPassword ?? password);
+  await page
+    .locator("#confirm-password-input")
+    .fill(confirmPassword ?? password);
   await page.locator("#termsOfUse-input").check({ force: true });
   await page.getByText("Confirm").click();
 
@@ -65,5 +67,5 @@ export const clickImportAndWaitForSuccess = async ({
   timeout?: number;
 }) => {
   await page.getByRole("button", { name: "Import" }).click();
-  await expect(page.getByText("You're all set!")).toBeVisible({ timeout });
+  await expect(page.getByText("You’re all set!")).toBeVisible({ timeout });
 };

@@ -185,7 +185,7 @@ export const Account = () => {
         roundedTotalBalanceUsd={roundedTotalBalanceUsd}
         isFunded={!!resolvedData?.balances?.isFunded}
       />
-      <View.Content hasNoTopPadding hasNoBottomPadding>
+      <View.Content hasNoPadding>
         <div className="AccountView" data-testid="account-view">
           {hasError && (
             <div className="AccountView__fetch-fail">

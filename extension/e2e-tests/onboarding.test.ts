@@ -141,9 +141,9 @@ test("Import 12 word wallet by pasting", async ({ page, context }) => {
     page.getByText("Import wallet from recovery phrase"),
   ).toBeVisible();
 
-  await page.evaluate(() => {
-    return navigator.clipboard.writeText(TEST_MNEMONIC_12_WORDS.join(" "));
-  });
+  await page.evaluate((argMnemonic) => {
+    return navigator.clipboard.writeText(argMnemonic.join(" "));
+  }, TEST_MNEMONIC_12_WORDS);
 
   // paste text from clipboard
   await page.locator("#MnemonicPhrase-1").press("Meta+v");
