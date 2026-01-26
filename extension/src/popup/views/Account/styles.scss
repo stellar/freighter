@@ -50,7 +50,13 @@
   */
   .multi-pane-slider {
     &__container {
-      height: 100vh;
+      height: 100%;
+
+      // this class is added when transitioning between panes;
+      // this allow us to make sure the container takes full viewport height and not the height of the previous pane
+      &--transitioning {
+        height: 100vh;
+      }
     }
 
     &__pane {
@@ -70,17 +76,17 @@
 
   // Override View layout to remove scrollable areas
   .View__contentAndFooterWrapper {
-    overflow: visible !important;
+    overflow: visible;
   }
 
   .View__content {
-    flex: none !important;
-    overflow: visible !important;
+    flex: none;
+    overflow: visible;
   }
 
   .View__content .View__inset {
-    flex: none !important;
-    overflow-y: visible !important;
+    flex: none;
+    overflow-y: visible;
     padding-top: var(--View-inset-padding-top);
     padding-bottom: 1.5rem;
   }
