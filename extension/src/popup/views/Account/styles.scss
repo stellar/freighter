@@ -5,7 +5,6 @@
 }
 
 .AccountView {
-  height: 100%;
   &__account-details {
     display: flex;
     flex-direction: column;
@@ -46,7 +45,43 @@
     margin-top: 1.5rem;
   }
 
-  .multi-pane-slider__pane {
-    padding: 0 var(--account-view-padding-side);
+  /* overwrite default MultiPaneSlider styles for AccountView
+    to make each pane take full height and NOT be scrollable
+  */
+  .multi-pane-slider {
+    &__container {
+      height: 100vh;
+    }
+
+    &__pane {
+      padding: 0 var(--account-view-padding-side);
+      height: auto;
+      overflow: auto;
+      position: relative;
+      width: 100%;
+
+      &:not(:first-child) {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+    }
+  }
+
+  // Override View layout to remove scrollable areas
+  .View__contentAndFooterWrapper {
+    overflow: visible !important;
+  }
+
+  .View__content {
+    flex: none !important;
+    overflow: visible !important;
+  }
+
+  .View__content .View__inset {
+    flex: none !important;
+    overflow-y: visible !important;
+    padding-top: var(--View-inset-padding-top);
+    padding-bottom: 1.5rem;
   }
 }

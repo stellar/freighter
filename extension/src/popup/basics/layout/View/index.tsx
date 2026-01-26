@@ -287,16 +287,22 @@ interface ViewComponent {
 interface ViewLayoutProps {
   children: React.ReactNode;
   isAppLayout?: boolean;
+  isScrollableView?: boolean;
 }
 
 export const View: React.FC<ViewLayoutProps> & ViewComponent = ({
   children,
   // Most views have "app" layout, so defaulting to that
   isAppLayout = true,
+  isScrollableView = false,
   ...props
 }: ViewLayoutProps) => (
   <ViewContext.Provider value={{ isAppLayout }}>
-    <div className="View" id="layout-view" {...props}>
+    <div
+      className={`View${isScrollableView ? " View--scrollable" : ""}`}
+      id="layout-view"
+      {...props}
+    >
       {children}
     </div>
   </ViewContext.Provider>
