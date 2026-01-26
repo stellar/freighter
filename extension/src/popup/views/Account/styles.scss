@@ -46,7 +46,7 @@
   }
 
   /* overwrite default MultiPaneSlider styles for AccountView
-    to make each pane take full height and NOT be scrollable
+    so that each pane takes full height and can scroll its content
   */
   .multi-pane-slider {
     &__container {
