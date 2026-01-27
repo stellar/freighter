@@ -12,7 +12,7 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   expect: {
     /* Set the default timeout for all tests to 30 seconds */
-    timeout: 300000,
+    timeout: 150000,
   },
   testDir: "./e2e-tests",
   /* Run tests in files in parallel */
@@ -20,7 +20,7 @@ export default defineConfig({
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
-  retries: process.env.CI ? 4 : 0,
+  retries: process.env.CI ? 5 : 0,
   /* Fail the build if any test fails afte retries */
   maxFailures: 1,
   /* Opt out of parallel tests on CI. */
