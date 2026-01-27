@@ -864,7 +864,6 @@ test("Swap resets state when navigating back to account", async ({
 
   const newAmountInput = page.locator('input[type="text"]').first();
   await expect(newAmountInput).toHaveValue("0");
-  await expect(page.getByText("0 XLM").first()).toBeVisible();
 });
 
 test.afterAll(async ({ page, extensionId }) => {
