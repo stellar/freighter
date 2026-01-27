@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { useTranslation } from "react-i18next";
-import { Button, Input, Icon } from "@stellar/design-system";
+import { Button, Input } from "@stellar/design-system";
 import { object as YupObject, string as YupString } from "yup";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -137,7 +137,7 @@ export const AddCollectibles = () => {
       onSubmit={handleSubmit}
       validationSchema={validateAddCollectiblesSchema}
     >
-      {({ setFieldValue, touched, errors, dirty, isValid, isSubmitting }) => (
+      {({ touched, errors, dirty, isValid, isSubmitting }) => (
         <Form className="AddCollectibles" data-testid="AddCollectibles">
           <SubviewHeader title={t("Add Collectible")} />
           <View.Content hasNoTopPadding>
@@ -157,25 +157,6 @@ export const AddCollectibles = () => {
                       id="collectibleContractAddress"
                       placeholder={t("Collection address")}
                       {...field}
-                      rightElement={
-                        <div className="AddCollectibles__clipboard-button">
-                          <Button
-                            type="button"
-                            size="md"
-                            variant="tertiary"
-                            onClick={async () => {
-                              const pastedCollectionAddress =
-                                await navigator.clipboard.readText();
-                              setFieldValue(
-                                "collectibleContractAddress",
-                                pastedCollectionAddress,
-                              );
-                            }}
-                          >
-                            <Icon.Clipboard />
-                          </Button>
-                        </div>
-                      }
                       error={
                         errors.collectibleContractAddress &&
                         touched.collectibleContractAddress
@@ -200,25 +181,6 @@ export const AddCollectibles = () => {
                       id="collectibleTokenId"
                       placeholder={t("Token ID")}
                       {...field}
-                      rightElement={
-                        <div className="AddCollectibles__clipboard-button">
-                          <Button
-                            type="button"
-                            size="md"
-                            variant="tertiary"
-                            onClick={async () => {
-                              const pastedTokenId =
-                                await navigator.clipboard.readText();
-                              setFieldValue(
-                                "collectibleTokenId",
-                                pastedTokenId,
-                              );
-                            }}
-                          >
-                            <Icon.Clipboard />
-                          </Button>
-                        </div>
-                      }
                       error={
                         errors.collectibleTokenId && touched.collectibleTokenId
                           ? errors.collectibleTokenId
