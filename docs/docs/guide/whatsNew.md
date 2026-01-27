@@ -4,6 +4,37 @@ title: What's New
 slug: /whatsNew
 ---
 
+# Release 5.37.0
+
+## Collectibles
+
+You can now add SEP-50 collectibles to your Freighter wallet on Mainnet,
+Testnet, and Futurenet. If your account is the owner of a collectible, click
+`Collectibles` in the Account view. Once you're in the Collectibles view, click
+the options icon on the right side of the screen. This will show you a dropdown
+with the option to `Add manually`. Clicking that will take you to a screen to
+input your collectible's contract address, as well as its token id. Once you've
+successfully done that, if your account is the owner of the collectible, you
+will now see it in your `Collectibles` view. You'll also be able to send it to
+another user, just as you would any payment, using the `Send` button.
+
+<img src={require("./assets/5.37.0/add_collectibles.png").default} alt="Add
+Collectibles" width="300"/>
+
+## Memo checks
+
+Freighter's Send flow now has enhanced memo requirement checking. If your
+destination needs a memo, we'll remind you to make sure your payment gets to
+where it's supposed to go. This is especially useful when you're sending payment
+to exchanges, which often require memos.
+
+<img src={require("./assets/5.37.0/memo_required.png").default} alt="Memo
+Required" width="300"/>
+
+## Additional bugfixes and stability fixes
+
+[Full changelog](https://github.com/stellar/freighter/releases/tag/5.37.0)
+
 # Release 5.36.0
 
 ## Peformance Improvements
