@@ -12,9 +12,14 @@ import {
   getInvocationArgs,
   buildInvocationTree,
   getAvailableBalance,
+  getDecimalsForAsset,
+  getContractIdFromTransactionData,
+  CLASSIC_ASSET_DECIMALS,
 } from "../soroban";
 import { TEST_PUBLIC_KEY } from "popup/__testHelpers__";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import * as ApiInternal from "@shared/api/internal";
+import * as SorobanHelpers from "@shared/api/helpers/soroban";
 
 describe("getInvocationArgs", () => {
   it("can parse a create contract v1 xdr class", () => {
@@ -178,5 +183,267 @@ describe("getInvocationArgs", () => {
       recommendedFee: ".11",
     });
     expect(availableBalance).toEqual("100");
+  });
+});
+
+describe("getDecimalsForAsset", () => {
+  // Test constants
+  const sorobanContractId =
+    "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
+  const classicIssuer =
+    "GBUQWP3BOUZX34ULNQG23RQ6F4BWFIQLRW2ZD5DUGJZ7XC4LE7XZJP";
+
+  let mockIsContractId;
+  let mockGetTokenDetails;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    // Setup mocks
+    mockIsContractId = jest
+      .spyOn(SorobanHelpers, "isContractId")
+      .mockImplementation((id) => {
+        return typeof id === "string" && id.startsWith("C");
+      });
+
+    mockGetTokenDetails = jest
+      .spyOn(ApiInternal, "getTokenDetails")
+      .mockImplementation(({ contractId }) => {
+        if (contractId === sorobanContractId) {
+          return Promise.resolve({
+            name: "USDC",
+            symbol: "USDC",
+            decimals: 6,
+          });
+        }
+        return Promise.resolve(null);
+      });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("should return CLASSIC_ASSET_DECIMALS (7) for native XLM", async () => {
+    const decimals = await getDecimalsForAsset({
+      assetIssuer: null,
+      publicKey: TEST_PUBLIC_KEY,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(decimals).toBe(CLASSIC_ASSET_DECIMALS);
+    expect(decimals).toBe(7);
+    expect(mockIsContractId).not.toHaveBeenCalled();
+    expect(mockGetTokenDetails).not.toHaveBeenCalled();
+  });
+
+  it("should return CLASSIC_ASSET_DECIMALS (7) for classic assets", async () => {
+    const decimals = await getDecimalsForAsset({
+      assetIssuer: classicIssuer,
+      publicKey: TEST_PUBLIC_KEY,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(decimals).toBe(CLASSIC_ASSET_DECIMALS);
+    expect(decimals).toBe(7);
+    expect(mockIsContractId).toHaveBeenCalledWith(classicIssuer);
+    expect(mockGetTokenDetails).not.toHaveBeenCalled();
+  });
+
+  it("should fetch and return decimals for Soroban contracts", async () => {
+    const decimals = await getDecimalsForAsset({
+      assetIssuer: sorobanContractId,
+      publicKey: TEST_PUBLIC_KEY,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(decimals).toBe(6);
+    expect(mockIsContractId).toHaveBeenCalledWith(sorobanContractId);
+    expect(mockGetTokenDetails).toHaveBeenCalledWith({
+      contractId: sorobanContractId,
+      publicKey: TEST_PUBLIC_KEY,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+  });
+
+  it("should handle Soroban contracts with varying decimal places", async () => {
+    // Mock a token with 18 decimals (like some ERC-20 tokens)
+    mockGetTokenDetails.mockResolvedValueOnce({
+      name: "Custom Token",
+      symbol: "CUSTOM",
+      decimals: 18,
+    });
+
+    const decimals = await getDecimalsForAsset({
+      assetIssuer: "CABC123EXAMPLE",
+      publicKey: TEST_PUBLIC_KEY,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(decimals).toBe(18);
+  });
+
+  it("should throw error when getTokenDetails returns null for a contract", async () => {
+    mockGetTokenDetails.mockResolvedValueOnce(null);
+
+    await expect(
+      getDecimalsForAsset({
+        assetIssuer: sorobanContractId,
+        publicKey: TEST_PUBLIC_KEY,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      }),
+    ).rejects.toThrow(
+      `Unable to fetch decimals for contract ${sorobanContractId}`,
+    );
+  });
+
+  it("should throw error when getTokenDetails returns object without decimals", async () => {
+    mockGetTokenDetails.mockResolvedValueOnce({
+      name: "Broken Token",
+      symbol: "BROKEN",
+      // decimals is undefined
+    });
+
+    await expect(
+      getDecimalsForAsset({
+        assetIssuer: sorobanContractId,
+        publicKey: TEST_PUBLIC_KEY,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      }),
+    ).rejects.toThrow(
+      `Unable to fetch decimals for contract ${sorobanContractId}`,
+    );
+  });
+
+  it("should propagate error when getTokenDetails throws", async () => {
+    const rpcError = new Error("RPC connection failed");
+    mockGetTokenDetails.mockRejectedValueOnce(rpcError);
+
+    await expect(
+      getDecimalsForAsset({
+        assetIssuer: sorobanContractId,
+        publicKey: TEST_PUBLIC_KEY,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      }),
+    ).rejects.toThrow("RPC connection failed");
+  });
+
+  it("should return CLASSIC_ASSET_DECIMALS for empty string issuer", async () => {
+    const decimals = await getDecimalsForAsset({
+      assetIssuer: "",
+      publicKey: TEST_PUBLIC_KEY,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(decimals).toBe(CLASSIC_ASSET_DECIMALS);
+    expect(mockGetTokenDetails).not.toHaveBeenCalled();
+  });
+});
+
+describe("getContractIdFromTransactionData", () => {
+  // Valid testnet contract addresses
+  const testContractId =
+    "CAZXEHTSQATVQVWDPWWDTFSY6CM764JD4MZ6HUVPO3QKS64QEEP4KJH7";
+  const testCollectionAddress =
+    "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN";
+
+  it("should return collectionAddress when isCollectible is true and collectionAddress is provided", () => {
+    const result = getContractIdFromTransactionData({
+      isCollectible: true,
+      collectionAddress: testCollectionAddress,
+      isToken: false,
+      asset: "",
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(result).toBe(testCollectionAddress);
+  });
+
+  it("should return undefined when isCollectible is true but collectionAddress is empty", () => {
+    const result = getContractIdFromTransactionData({
+      isCollectible: true,
+      collectionAddress: "",
+      isToken: false,
+      asset: `USDC:${testContractId}`,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(result).toBeUndefined();
+  });
+
+  it("should return undefined when isToken is false", () => {
+    const result = getContractIdFromTransactionData({
+      isCollectible: false,
+      collectionAddress: "",
+      isToken: false,
+      asset: "native",
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(result).toBeUndefined();
+  });
+
+  it("should return undefined when asset is empty and isToken is true", () => {
+    const result = getContractIdFromTransactionData({
+      isCollectible: false,
+      collectionAddress: "",
+      isToken: true,
+      asset: "",
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(result).toBeUndefined();
+  });
+
+  it("should return contractId when isToken is true", () => {
+    const result = getContractIdFromTransactionData({
+      isCollectible: false,
+      collectionAddress: "",
+      isToken: true,
+      asset: testContractId,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(result).toBe(testContractId);
+  });
+
+  it("should return native contract ID when asset is 'native' and isToken is true", () => {
+    const result = getContractIdFromTransactionData({
+      isCollectible: false,
+      collectionAddress: "",
+      isToken: true,
+      asset: "native",
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    // The native contract on testnet has a specific contract ID
+    expect(result).toBeDefined();
+    expect(typeof result).toBe("string");
+  });
+
+  it("should prioritize collectible over token when both flags are true", () => {
+    const result = getContractIdFromTransactionData({
+      isCollectible: true,
+      collectionAddress: testCollectionAddress,
+      isToken: true,
+      asset: `USDC:${testContractId}`,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    // Should return the collection address, not the token contract ID
+    expect(result).toBe(testCollectionAddress);
+  });
+
+  it("should return undefined when asset is 'native' (classic asset) and isToken is true", () => {
+    const result = getContractIdFromTransactionData({
+      isCollectible: false,
+      collectionAddress: "",
+      isToken: true,
+      asset: "CODE:ISSUER", // Classic asset format
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    // Classic assets don't have contract IDs, so should return undefined
+    expect(result).toBeUndefined();
   });
 });

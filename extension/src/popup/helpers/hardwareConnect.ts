@@ -10,6 +10,7 @@ import {
   ConfigurableWalletType,
   WalletType,
 } from "@shared/constants/hardwareWallet";
+import i18n from "popup/helpers/localizationConfig";
 
 /* Ledger Imports */
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
@@ -180,11 +181,12 @@ type PluginWalletInfo = {
 */
 export const pluginWalletInfo: PluginWalletInfo = {
   [WalletType.LEDGER]: {
-    instruction:
+    instruction: i18n.t(
       "Make sure your Ledger wallet is connected to your computer and the Stellar app is open on the Ledger wallet.",
+    ),
     link: {
       href: "https://www.ledger.com/stellar-wallet",
-      text: "Learn more about using Ledger",
+      text: i18n.t("Learn more about using Ledger"),
     },
   },
 };
@@ -201,18 +203,22 @@ type ParseWalletError = {
 export const parseWalletError: ParseWalletError = {
   [WalletType.LEDGER]: (err: any) => {
     const message = err.message || err;
-    const defaultErr = "Error connecting. Please try again.";
+    const defaultErr = i18n.t("Error connecting. Please try again.");
     if (!message) {
       return defaultErr;
     }
     if (message.indexOf("No device selected") > -1) {
-      return "No device detected. Please make sure your device is connected and the Stellar app is open on it.";
+      return `${i18n.t("No device detected.")} ${i18n.t(
+        "Please make sure your device is connected and the Stellar app is open on it.",
+      )}`;
     }
     if (message.indexOf("Incorrect length") > -1) {
-      return "Connect device to computer and open the Stellar app on it.";
+      return i18n.t(
+        "Connect device to computer and open the Stellar app on it",
+      );
     }
     if (message.indexOf("Transaction approval request was rejected") > -1) {
-      return "Transaction Rejected.";
+      return i18n.t("Transaction Rejected");
     }
     return message;
   },

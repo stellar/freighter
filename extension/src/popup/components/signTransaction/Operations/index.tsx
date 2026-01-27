@@ -868,7 +868,7 @@ export const Operations = ({
               <>
                 <div className="Operations--header">
                   <Icon.BracketsEllipses />
-                  <span>Parameters</span>
+                  <span>{t("Parameters")}</span>
                 </div>
                 <div className="Operations--item">
                   <RenderOpArgsByType op={op} />

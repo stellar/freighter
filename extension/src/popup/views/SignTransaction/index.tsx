@@ -47,6 +47,7 @@ import {
   BlockaidTxScanLabel,
   BlockAidTxScanExpanded,
   DomainNotAllowedWarningMessage,
+  MemoRequiredLabel,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Loading } from "popup/components/Loading";
@@ -143,8 +144,9 @@ export const SignTransaction = () => {
 
   const memo = decodedMemo?.value;
 
-  const flaggedKeyValues = Object.values(flaggedKeys);
-  const isMemoRequired = flaggedKeyValues.some(
+  // Check if memo is required based on flaggedKeys (populated by background script)
+  // flaggedKeys is already validated when the transaction is received, so no need to re-validate
+  const isMemoRequired = Object.values(flaggedKeys).some(
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
 
@@ -189,6 +191,7 @@ export const SignTransaction = () => {
     }
   }, [isMemoRequired]);
 
+  // Disable submit when memo is missing or domain not allowed
   const isSubmitDisabled = isMemoRequired || !isDomainListedAllowed;
 
   if (
@@ -248,7 +251,7 @@ export const SignTransaction = () => {
         header={`${t("Freighter is set to")} ${networkName}`}
       >
         <p>
-          {t("The transaction you’re trying to sign is on")}{" "}
+          {`${t("The transaction you’re trying to sign is on")} `}
           {_networkPassphrase}.
         </p>
         <p>{t("Signing this transaction is not possible at the moment.")}</p>
@@ -330,11 +333,11 @@ export const SignTransaction = () => {
                   <img
                     className="PunycodedDomain__favicon"
                     src={favicon}
-                    alt="Site favicon"
+                    alt={t("Site favicon")}
                   />
                   <div className="SignTransaction__TitleRow__Detail">
                     <span className="SignTransaction__TitleRow__Title">
-                      Confirm Transaction
+                      {t("Confirm Transaction")}
                     </span>
                     <span className="SignTransaction__TitleRow__Domain">
                       {validDomain}
@@ -349,6 +352,9 @@ export const SignTransaction = () => {
                 )}
                 {!isDomainListedAllowed && (
                   <DomainNotAllowedWarningMessage domain={domain} />
+                )}
+                {isMemoRequired && (
+                  <MemoRequiredLabel onClick={() => setActivePaneIndex(3)} />
                 )}
                 {assetDiffs && (
                   <AssetDiffs
@@ -366,7 +372,7 @@ export const SignTransaction = () => {
                   <div className="SignTransaction__Metadata__Row">
                     <div className="SignTransaction__Metadata__Label">
                       <Icon.Wallet01 />
-                      <span>Wallet</span>
+                      <span>{t("Wallet")}</span>
                     </div>
                     <div className="SignTransaction__Metadata__Value">
                       <KeyIdenticon publicKey={publicKey} />
@@ -375,15 +381,24 @@ export const SignTransaction = () => {
                   <div className="SignTransaction__Metadata__Row">
                     <div className="SignTransaction__Metadata__Label">
                       <Icon.Route />
-                      <span>Fee</span>
+                      <span>{t("Fee")}</span>
                     </div>
                     <div className="SignTransaction__Metadata__Value">
                       <span>
-                        {formatTokenAmount(
-                          new BigNumber(_fee),
-                          CLASSIC_ASSET_DECIMALS,
-                        )}{" "}
-                        XLM
+                        {`${formatTokenAmount(new BigNumber(_fee), CLASSIC_ASSET_DECIMALS)} XLM `}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="SignTransaction__Metadata__Row">
+                    <div className="SignTransaction__Metadata__Label">
+                      <Icon.File02 />
+                      <span>{t("Memo")}</span>
+                    </div>
+                    <div className="SignTransaction__Metadata__Value">
+                      <span>
+                        {decodedMemo && decodedMemo.value
+                          ? decodedMemo.value
+                          : t("None")}
                       </span>
                     </div>
                   </div>
@@ -393,7 +408,7 @@ export const SignTransaction = () => {
                   onClick={() => setActivePaneIndex(2)}
                 >
                   <Icon.List />
-                  <span>Transaction details</span>
+                  <span>{t("Transaction details")}</span>
                 </div>
               </div>
             </div>,
@@ -416,7 +431,7 @@ export const SignTransaction = () => {
                     </div>
                   </div>
                   <div className="SignTransaction__TransactionDetails__Title">
-                    <span>Transaction Details</span>
+                    <span>{t("Transaction Details")}</span>
                   </div>
                   <div className="SignTransaction__TransactionDetails__Summary">
                     <Summary
@@ -445,6 +460,49 @@ export const SignTransaction = () => {
                     flaggedKeys={flaggedKeys}
                     isMemoRequired={isMemoRequired}
                   />
+                </div>
+              </div>
+            </div>,
+            <div className="SignTransaction__Body">
+              <div className="SignTransaction__Body__Wrapper">
+                <div className="SignTransaction__TransactionDetails">
+                  <div className="SignTransaction__TransactionDetails__Header">
+                    <div className="DetailsMark">
+                      <Icon.File02 />
+                    </div>
+                    <div
+                      className="Close"
+                      onClick={() => setActivePaneIndex(0)}
+                    >
+                      <Icon.X />
+                    </div>
+                  </div>
+                  <div className="SignTransaction__TransactionDetails__Title">
+                    <span>{t("Memo is required")}</span>
+                  </div>
+                  <div className="SignTransaction__TransactionDetails__Summary">
+                    <div className="WarningMessage__infoBlock WarningMessage__infoBlock--warning">
+                      <div className="WarningMessage__header">
+                        <Icon.InfoOctagon className="WarningMessage__icon" />
+                        <div>{t("Memo is required")}</div>
+                      </div>
+                    </div>
+                    <div>
+                      {t(
+                        "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign.",
+                      )}
+                    </div>
+                    <div>
+                      {t(
+                        "Freighter automatically disabled the option to sign this transaction.",
+                      )}
+                    </div>
+                    <div>
+                      {t(
+                        "Check the destination account memo requirements and include it in the transaction.",
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>,
@@ -563,6 +621,7 @@ interface TrustlineProps {
 }
 
 export const Trustline = ({ operations, icons }: TrustlineProps) => {
+  const { t } = useTranslation();
   const renderTrustlineChanges = (operation: Operation.ChangeTrust) => {
     const { line, limit } = operation;
     const isRemoveTrustline = new BigNumber(limit).isZero();
@@ -606,12 +665,12 @@ export const Trustline = ({ operations, icons }: TrustlineProps) => {
           {isRemoveTrustline ? (
             <>
               <Icon.MinusCircle />
-              <span>Remove Trustline</span>
+              <span>{t("Remove Trustline")}</span>
             </>
           ) : (
             <>
               <Icon.PlusCircle />
-              <span>Add Trustline</span>
+              <span>{t("Add Trustline")}</span>
             </>
           )}
         </div>

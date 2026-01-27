@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Button, CopyText, Icon, Link, Loader } from "@stellar/design-system";
 
-import { ApiTokenPrice, ApiTokenPrices } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
 import {
@@ -28,7 +27,10 @@ import { TransactionDetail } from "popup/components/accountHistory/TransactionDe
 import { SlideupModal } from "popup/components/SlideupModal";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
-import { settingsSelector } from "popup/ducks/settings";
+import {
+  settingsNetworkDetailsSelector,
+  settingsSelector,
+} from "popup/ducks/settings";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { Loading } from "popup/components/Loading";
@@ -49,6 +51,8 @@ import { OperationDataRow } from "popup/views/AccountHistory/hooks/useGetHistory
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { iconsSelector, tokenPricesSelector } from "popup/ducks/cache";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 
 import "./styles.scss";
@@ -94,34 +98,29 @@ const AssetDetailOperations = ({
 };
 
 interface AssetDetailProps {
-  historyData: AccountHistoryData | null;
   accountBalances: AccountBalances;
-  networkDetails: NetworkDetails;
-  publicKey: string;
+  historyData: AccountHistoryData | null;
   selectedAsset: string;
-  setSelectedAsset: (selectedAsset: string) => void;
-  subentryCount: number;
-  tokenPrices?: ApiTokenPrices | null;
-  assetIcons: { [code: string]: string | null };
+  handleClose: () => void;
 }
 
 export const AssetDetail = ({
-  historyData,
   accountBalances,
-  networkDetails,
-  publicKey,
+  historyData,
   selectedAsset,
-  setSelectedAsset,
-  subentryCount,
-  tokenPrices,
-  assetIcons,
+  handleClose,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
+  const cachedTokenPrices = useSelector(tokenPricesSelector);
+  const assetIcons = useSelector(iconsSelector);
   const { isHideDustEnabled } = useSelector(settingsSelector);
   const [optionsOpen, setOptionsOpen] = React.useState(false);
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const isNative = selectedAsset === "native";
+  const tokenPrices = cachedTokenPrices[publicKey] || null;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -154,9 +153,7 @@ export const AssetDetail = ({
     selectedBalance.token.type === "native"
       ? StellarLogo
       : icons[selectedAsset];
-  const assetPrice: ApiTokenPrice | null = tokenPrices
-    ? tokenPrices[selectedAsset]
-    : null;
+  const assetPrice = tokenPrices ? tokenPrices[selectedAsset] : null;
   const assetIssuer = selectedBalance
     ? getIssuerFromBalance(selectedBalance)
     : "";
@@ -171,7 +168,7 @@ export const AssetDetail = ({
 
   const balanceAvailable = getAvailableBalance({
     balance: selectedBalance,
-    subentryCount,
+    subentryCount: accountBalances.subentryCount,
   });
 
   const availableTotal = `${formatAmount(balanceAvailable)} ${canonical.code}`;
@@ -236,248 +233,259 @@ export const AssetDetail = ({
     </SlideupModal>
   ) : (
     <React.Fragment>
-      <SubviewHeader
-        title={canonical.code}
-        customBackAction={() => setSelectedAsset("")}
-        rightButton={
-          !isStellarExpertSupported &&
-          isNativeBalance(selectedBalance) ? null : (
-            <>
-              <div
-                className="AssetDetail__options"
-                onClick={() => setOptionsOpen(true)}
-              >
-                <img src={IconEllipsis} alt="asset options" />
-              </div>
-              {optionsOpen ? (
+      <View>
+        <SubviewHeader
+          title={canonical.code}
+          customBackIcon={<Icon.X />}
+          customBackAction={handleClose}
+          rightButton={
+            !isStellarExpertSupported &&
+            isNativeBalance(selectedBalance) ? null : (
+              <>
                 <div
-                  className="AssetDetail__options-actions"
-                  ref={activeOptionsRef}
+                  className="AssetDetail__options"
+                  onClick={() => setOptionsOpen(true)}
                 >
-                  {!isNativeBalance(selectedBalance) ? (
-                    <div className="AssetDetail__options-actions__row">
-                      <CopyText
-                        textToCopy={
-                          isSorobanBalance(selectedBalance)
-                            ? selectedBalance.contractId
-                            : selectedBalance.token.issuer.key
-                        }
-                      >
-                        <div className="action">
-                          <div className="AssetDetail__options-actions__label">
-                            Copy address
+                  <img src={IconEllipsis} alt={t("asset options")} />
+                </div>
+                {optionsOpen ? (
+                  <div
+                    className="AssetDetail__options-actions"
+                    ref={activeOptionsRef}
+                  >
+                    {!isNativeBalance(selectedBalance) ? (
+                      <div className="AssetDetail__options-actions__row">
+                        <CopyText
+                          textToCopy={
+                            isSorobanBalance(selectedBalance)
+                              ? selectedBalance.contractId
+                              : selectedBalance.token.issuer.key
+                          }
+                        >
+                          <div className="action">
+                            <div className="AssetDetail__options-actions__label">
+                              {t("Copy address")}
+                            </div>
+                            <Icon.Copy01 />
                           </div>
-                          <Icon.Copy01 />
-                        </div>
-                      </CopyText>
-                    </div>
-                  ) : null}
-                  {isStellarExpertSupported ? (
-                    <div className="AssetDetail__options-actions__row">
-                      <Link
-                        className="action link"
-                        variant="secondary"
-                        rel="noreferrer"
-                        target="_blank"
-                        href={`https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/${stellarExpertAssetLinkSlug}`}
-                      >
-                        <>
-                          <div className="AssetDetail__options-actions__label">
-                            Stellar.expert
-                          </div>
-                          <Icon.LinkExternal01 />
-                        </>
-                      </Link>
+                        </CopyText>
+                      </div>
+                    ) : null}
+                    {isStellarExpertSupported ? (
+                      <div className="AssetDetail__options-actions__row">
+                        <Link
+                          className="action link"
+                          variant="secondary"
+                          rel="noreferrer"
+                          target="_blank"
+                          href={`https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/${stellarExpertAssetLinkSlug}`}
+                        >
+                          <>
+                            <div className="AssetDetail__options-actions__label">
+                              Stellar.expert
+                            </div>
+                            <Icon.LinkExternal01 />
+                          </>
+                        </Link>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </>
+            )
+          }
+        />
+        <View.Content>
+          <div className="AssetDetail__wrapper" data-testid="AssetDetail">
+            <div className="AssetDetail__network-icon">
+              {assetIconUrl ? (
+                <img
+                  src={assetIconUrl}
+                  alt={t("Network icon")}
+                  data-testid="AssetDetail__icon"
+                />
+              ) : null}
+            </div>
+            <div className="AssetDetail__title">
+              {isLpShare && "liquidityPoolId" in selectedBalance
+                ? `LP: ${truncateString(selectedBalance.liquidityPoolId as string, 12)}`
+                : title(
+                    selectedBalance as Exclude<
+                      AssetType,
+                      LiquidityPoolShareAsset
+                    >,
+                  ) || assetDomain}
+            </div>
+            {"contractId" in selectedBalance ? (
+              <div className="AssetDetail__subtitle">
+                <CopyValue
+                  value={selectedBalance.contractId}
+                  displayValue={displaySorobanId(
+                    selectedBalance.contractId,
+                    28,
+                  )}
+                />
+              </div>
+            ) : null}
+            <div className="AssetDetail__price">
+              {assetPrice && assetPrice.currentPrice
+                ? `$${formatAmount(
+                    roundUsdValue(
+                      new BigNumber(assetPrice.currentPrice).toString(),
+                    ),
+                  )}`
+                : null}
+            </div>
+            {assetPrice && assetPrice.percentagePriceChange24h ? (
+              <div
+                className={`AssetDetail__delta ${getPriceDeltaColor(
+                  new BigNumber(
+                    roundUsdValue(assetPrice.percentagePriceChange24h),
+                  ),
+                )}`}
+              >
+                {formatAmount(
+                  roundUsdValue(assetPrice.percentagePriceChange24h),
+                )}
+                %
+              </div>
+            ) : null}
+            <div className="AssetDetail__balance-info">
+              <div
+                className="AssetDetail__balance"
+                data-testid="asset-detail-available-copy"
+              >
+                <div className="AssetDetail__balance-label">
+                  <Icon.Coins01 />
+                  {t("Balance")}
+                </div>
+                <div>{displayTotal}</div>
+              </div>
+              <div className="AssetDetail__balance-value">
+                <div className="AssetDetail__balance-label">
+                  <Icon.BankNote02 />
+                  {t("Value")}
+                </div>
+                <div>
+                  {assetPrice && assetPrice.currentPrice
+                    ? `$${formatAmount(
+                        roundUsdValue(
+                          new BigNumber(assetPrice.currentPrice)
+                            .multipliedBy(selectedBalance.total)
+                            .toString(),
+                        ),
+                      )}`
+                    : "--"}
+                </div>
+              </div>
+            </div>
+            {filteredAssetOperations === null ? (
+              <div
+                className="AssetDetail__list AssetDetail__list--loading"
+                data-testid="AssetDetail__list__loader"
+              >
+                <Loader />
+              </div>
+            ) : (
+              <AssetDetailOperations
+                filteredAssetOperations={filteredAssetOperations}
+                accountBalances={accountBalances}
+                publicKey={publicKey}
+                networkDetails={networkDetails}
+                setActiveAssetId={setActiveAssetId}
+              />
+            )}
+          </div>
+        </View.Content>
+        {(isShowingSwap || isShowingSend) && (
+          <div className="AssetDetail__actions-container">
+            {isShowingSend && (
+              <Button
+                data-testid="asset-detail-send-button"
+                variant="secondary"
+                size="lg"
+                isRounded
+                isFullWidth
+                onClick={() => {
+                  const queryParams = `?asset=${encodeURIComponent(selectedAsset)}`;
+                  navigateTo(ROUTES.sendPayment, navigate, queryParams);
+                }}
+              >
+                {t("Send")}
+              </Button>
+            )}
+            {isShowingSwap && (
+              <Button
+                data-testid="asset-detail-swap-button"
+                variant="secondary"
+                size="lg"
+                isRounded
+                isFullWidth
+                onClick={() => {
+                  const queryParams = `?source_asset=${encodeURIComponent(selectedAsset)}`;
+                  navigateTo(ROUTES.swap, navigate, queryParams);
+                }}
+              >
+                {t("Swap")}
+              </Button>
+            )}
+          </div>
+        )}
+        {isNative && (
+          <SlideupModal
+            isModalOpen={isModalOpen}
+            setIsModalOpen={setIsModalOpen}
+          >
+            <div className="AssetDetail__info-modal">
+              <div className="AssetDetail__info-modal__total-box">
+                <div className="AssetDetail__info-modal__asset-code">
+                  <img src={StellarLogo} alt={t("Network icon")} />
+                  <div>{` ${canonical.code}`}</div>
+                </div>
+                <div>{displayTotal}</div>
+              </div>
+              <div className="AssetDetail__info-modal__available-box">
+                <div className="AssetDetail__info-modal__balance-row">
+                  <div>{t("Total Balance")}</div>
+                  <div>{displayTotal}</div>
+                </div>
+                <div className="AssetDetail__info-modal__balance-row">
+                  <div>{t("Reserved Balance*")}</div>
+                  {selectedBalance &&
+                  "available" in selectedBalance &&
+                  selectedBalance?.available &&
+                  selectedBalance?.total ? (
+                    <div>
+                      {`${formatAmount(
+                        new BigNumber(balanceAvailable)
+                          .minus(new BigNumber(selectedBalance?.total))
+                          .toString(),
+                      )} `}
+                      {canonical.code}
                     </div>
                   ) : null}
                 </div>
-              ) : null}
-            </>
-          )
-        }
-      />
-      <View.Content>
-        <div className="AssetDetail__wrapper" data-testid="AssetDetail">
-          <div className="AssetDetail__network-icon">
-            {assetIconUrl ? (
-              <img
-                src={assetIconUrl}
-                alt="Network icon"
-                data-testid="AssetDetail__icon"
-              />
-            ) : null}
-          </div>
-          <div className="AssetDetail__title">
-            {isLpShare && "liquidityPoolId" in selectedBalance
-              ? `LP: ${truncateString(selectedBalance.liquidityPoolId as string, 12)}`
-              : title(
-                  selectedBalance as Exclude<
-                    AssetType,
-                    LiquidityPoolShareAsset
-                  >,
-                ) || assetDomain}
-          </div>
-          {"contractId" in selectedBalance ? (
-            <div className="AssetDetail__subtitle">
-              <CopyValue
-                value={selectedBalance.contractId}
-                displayValue={displaySorobanId(selectedBalance.contractId, 28)}
-              />
-            </div>
-          ) : null}
-          <div className="AssetDetail__price">
-            {assetPrice && assetPrice.currentPrice
-              ? `$${formatAmount(
-                  roundUsdValue(
-                    new BigNumber(assetPrice.currentPrice).toString(),
-                  ),
-                )}`
-              : null}
-          </div>
-          {assetPrice && assetPrice.percentagePriceChange24h ? (
-            <div
-              className={`AssetDetail__delta ${getPriceDeltaColor(
-                new BigNumber(
-                  roundUsdValue(assetPrice.percentagePriceChange24h),
-                ),
-              )}`}
-            >
-              {formatAmount(roundUsdValue(assetPrice.percentagePriceChange24h))}
-              %
-            </div>
-          ) : null}
-          <div className="AssetDetail__balance-info">
-            <div
-              className="AssetDetail__balance"
-              data-testid="asset-detail-available-copy"
-            >
-              <div className="AssetDetail__balance-label">
-                <Icon.Coins01 />
-                Balance
+                <div className="AssetDetail__info-modal__total-available-row">
+                  <div>{t("Total Available")}</div>
+                  <div>{availableTotal}</div>
+                </div>
               </div>
-              <div>{displayTotal}</div>
-            </div>
-            <div className="AssetDetail__balance-value">
-              <div className="AssetDetail__balance-label">
-                <Icon.BankNote02 />
-                Value
-              </div>
-              <div>
-                {assetPrice && assetPrice.currentPrice
-                  ? `$${formatAmount(
-                      roundUsdValue(
-                        new BigNumber(assetPrice.currentPrice)
-                          .multipliedBy(selectedBalance.total)
-                          .toString(),
-                      ),
-                    )}`
-                  : "--"}
+              <div className="AssetDetail__info-modal__footnote">
+                {`${t(
+                  "* All Stellar accounts must maintain a minimum balance of lumens.",
+                )} `}
+                <a
+                  href="https://developers.stellar.org/docs/glossary/minimum-balance/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t("Learn more")}
+                </a>
               </div>
             </div>
-          </div>
-          {filteredAssetOperations === null ? (
-            <div
-              className="AssetDetail__list AssetDetail__list--loading"
-              data-testid="AssetDetail__list__loader"
-            >
-              <Loader />
-            </div>
-          ) : (
-            <AssetDetailOperations
-              filteredAssetOperations={filteredAssetOperations}
-              accountBalances={accountBalances}
-              publicKey={publicKey}
-              networkDetails={networkDetails}
-              setActiveAssetId={setActiveAssetId}
-            />
-          )}
-        </div>
-      </View.Content>
-      {(isShowingSwap || isShowingSend) && (
-        <div className="AssetDetail__actions-container">
-          {isShowingSend && (
-            <Button
-              data-testid="asset-detail-send-button"
-              variant="secondary"
-              size="lg"
-              isRounded
-              isFullWidth
-              onClick={() => {
-                const queryParams = `?asset=${encodeURIComponent(selectedAsset)}`;
-                navigateTo(ROUTES.sendPayment, navigate, queryParams);
-              }}
-            >
-              {t("Send")}
-            </Button>
-          )}
-          {isShowingSwap && (
-            <Button
-              data-testid="asset-detail-swap-button"
-              variant="secondary"
-              size="lg"
-              isRounded
-              isFullWidth
-              onClick={() => {
-                const queryParams = `?source_asset=${encodeURIComponent(selectedAsset)}`;
-                navigateTo(ROUTES.swap, navigate, queryParams);
-              }}
-            >
-              {t("Swap")}
-            </Button>
-          )}
-        </div>
-      )}
-      {isNative && (
-        <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
-          <div className="AssetDetail__info-modal">
-            <div className="AssetDetail__info-modal__total-box">
-              <div className="AssetDetail__info-modal__asset-code">
-                <img src={StellarLogo} alt="Network icon" />{" "}
-                <div>{canonical.code}</div>
-              </div>
-              <div>{displayTotal}</div>
-            </div>
-            <div className="AssetDetail__info-modal__available-box">
-              <div className="AssetDetail__info-modal__balance-row">
-                <div>{t("Total Balance")}</div>
-                <div>{displayTotal}</div>
-              </div>
-              <div className="AssetDetail__info-modal__balance-row">
-                <div>{t("Reserved Balance*")}</div>
-                {selectedBalance &&
-                "available" in selectedBalance &&
-                selectedBalance?.available &&
-                selectedBalance?.total ? (
-                  <div>
-                    {formatAmount(
-                      new BigNumber(balanceAvailable)
-                        .minus(new BigNumber(selectedBalance?.total))
-                        .toString(),
-                    )}{" "}
-                    {canonical.code}
-                  </div>
-                ) : null}
-              </div>
-              <div className="AssetDetail__info-modal__total-available-row">
-                <div>{t("Total Available")}</div>
-                <div>{availableTotal}</div>
-              </div>
-            </div>
-            <div className="AssetDetail__info-modal__footnote">
-              {t(
-                "* All Stellar accounts must maintain a minimum balance of lumens.",
-              )}{" "}
-              <a
-                href="https://developers.stellar.org/docs/glossary/minimum-balance/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                {t("Learn More")}
-              </a>
-            </div>
-          </div>
-        </SlideupModal>
-      )}
+          </SlideupModal>
+        )}
+      </View>
     </React.Fragment>
   );
 };

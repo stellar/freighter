@@ -2,6 +2,40 @@ import { validAssetList } from "popup/__testHelpers__";
 import * as SearchAsset from "../searchAsset";
 import { schemaValidatedAssetList } from "@shared/api/helpers/token-list";
 
+/**
+ * SEP-0042 Asset List JSON Schema
+ * This schema is used for testing schema validation in tests.
+ * @see https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0042.md
+ */
+const SEP_0042_ASSET_LIST_SCHEMA = {
+  type: "object",
+  properties: {
+    name: { type: "string" },
+    provider: { type: "string" },
+    description: { type: "string" },
+    version: { type: "string" },
+    network: { type: "string" },
+    assets: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          code: { type: "string" },
+          issuer: { type: "string" },
+          contract: { type: "string" },
+          name: { type: "string" },
+          org: { type: "string" },
+          domain: { type: "string" },
+          icon: { type: "string" },
+          decimals: { type: "number" },
+        },
+        required: ["code", "issuer", "contract", "domain", "icon", "decimals"],
+      },
+    },
+  },
+  required: ["name", "provider", "description", "version", "network", "assets"],
+};
+
 describe("searchAsset", () => {
   beforeEach(() => {
     jest.restoreAllMocks();
@@ -47,6 +81,17 @@ describe("searchAsset", () => {
     });
   });
   it("schemaValidatedAssetList should return list if valid", async () => {
+    // Mock the schema fetch
+    jest.spyOn(global, "fetch").mockImplementation((url) => {
+      if (url.includes("assetlist.schema.json")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => SEP_0042_ASSET_LIST_SCHEMA,
+        });
+      }
+      return Promise.reject(new Error("Unexpected fetch"));
+    });
+
     const { assets } = await schemaValidatedAssetList(validAssetList);
     expect(assets).toStrictEqual(validAssetList.assets);
   });
@@ -60,10 +105,23 @@ describe("searchAsset", () => {
     expect(assets).toStrictEqual([]);
   });
   it("schemaValidatedAssetList should return empty list and errors if validation fails", async () => {
+    // Mock the schema fetch
+    jest.spyOn(global, "fetch").mockImplementation((url) => {
+      if (url.includes("assetlist.schema.json")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            ...SEP_0042_ASSET_LIST_SCHEMA,
+            additionalProperties: false,
+          }),
+        });
+      }
+      return Promise.reject(new Error("Unexpected fetch"));
+    });
+
     const { assets, errors } = await schemaValidatedAssetList({
       // incorrect key
       title: "PiyalBasu Top 50",
-
       provider: "PiyalBasu",
       description: "Test asset list schema",
       version: "1.0",
@@ -84,7 +142,7 @@ describe("searchAsset", () => {
     });
     expect(assets).toStrictEqual([]);
 
-    // error for missing `name` and error for additional key `title`
-    expect(errors).toHaveLength(2);
+    // error for missing `name` and error for additional key `title` and error for 'feedback'
+    expect(errors).toHaveLength(3);
   });
 });

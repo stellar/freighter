@@ -25,6 +25,7 @@ import * as GetIconFromTokenList from "@shared/api/helpers/getIconFromTokenList"
 import * as GetIconUrlFromIssuer from "@shared/api/helpers/getIconUrlFromIssuer";
 import * as RouteHelpers from "popup/helpers/route";
 import * as GetLedgerKeyAccounts from "@shared/api/helpers/getLedgerKeyAccounts";
+import * as UseGetCollectibles from "helpers/hooks/useGetCollectibles";
 
 import {
   Wrapper,
@@ -123,6 +124,14 @@ jest
 jest
   .spyOn(ApiInternal, "getTokenPrices")
   .mockImplementation(() => Promise.resolve(mockPrices));
+
+jest.spyOn(UseGetCollectibles, "useGetCollectibles").mockImplementation(
+  () =>
+    ({
+      state: { collections: [] },
+      fetchData: () => Promise.resolve({ collections: [] }),
+    }) as any,
+);
 
 jest
   .spyOn(ExtensionMessaging, "sendMessageToBackground")
@@ -558,6 +567,11 @@ describe("Account view", () => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(4);
 
+      expect(screen.getByTestId("account-tab-tokens")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("account-tab-collectibles"),
+      ).toBeInTheDocument();
+
       // fetches and displays icon from background cache
       expect(
         screen.getByTestId("AccountAssets__asset--loading-USDC"),
@@ -574,7 +588,6 @@ describe("Account view", () => {
         contractId: undefined,
         code: "FOO",
         assetsListsData: assetsListsData,
-        networkDetails: TESTNET_NETWORK_DETAILS,
       });
       expect(getIconFromTokenListSpy).toHaveBeenCalledTimes(2);
 
@@ -749,12 +762,10 @@ describe("Account view", () => {
       expect(
         screen.getByTestId("TransactionDetailModal__subtitle-date"),
       ).toHaveTextContent("Oct 07 2025");
-      expect(
-        screen.getByTestId("TransactionDetailModal__src-amount"),
-      ).toHaveTextContent("100 USDC");
-      expect(
-        screen.getByTestId("TransactionDetailModal__dst-amount"),
-      ).toHaveTextContent("G2…G2");
+      expect(screen.getByTestId("AssetDiff__amount-0")).toHaveTextContent(
+        "100 USDC",
+      );
+      expect(screen.getByTestId("AssetDiff__to-from-address")).toBeDefined();
       expect(
         screen.getByTestId("TransactionDetailModal__status"),
       ).toHaveTextContent("Success");

@@ -1,5 +1,6 @@
 import React, { createContext, useContext } from "react";
 import { Text } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 
 import FreighterLogo from "popup/assets/logo-freighter-welcome-2.svg";
 import { BackButton } from "popup/basics/buttons/BackButton";
@@ -14,19 +15,22 @@ interface ViewContextProps {
 const ViewContext = createContext<ViewContextProps>({ isAppLayout: undefined });
 
 // Header
-const ViewHeader: React.FC = ({ ...props }) => (
-  <header className="View__header" {...props}>
-    <ViewInset isInline hasVerticalBorder>
-      <div className="View__header__box View__header__box--center full">
-        <img
-          className="View__header__logo"
-          alt="Freighter logo"
-          src={FreighterLogo}
-        />
-      </div>
-    </ViewInset>
-  </header>
-);
+const ViewHeader: React.FC = ({ ...props }) => {
+  const { t } = useTranslation();
+  return (
+    <header className="View__header" {...props}>
+      <ViewInset isInline hasVerticalBorder>
+        <div className="View__header__box View__header__box--center full">
+          <img
+            className="View__header__logo"
+            alt={t("Freighter logo")}
+            src={FreighterLogo}
+          />
+        </div>
+      </ViewInset>
+    </header>
+  );
+};
 
 // App header
 interface ViewAppHeaderProps {
@@ -117,6 +121,7 @@ interface ViewContentProps {
   hasNoTopPadding?: boolean;
   hasTopInput?: boolean;
   hasNoBottomPadding?: boolean;
+  hasNoPadding?: boolean;
 }
 
 const ViewContent: React.FC<ViewContentProps> = ({
@@ -126,6 +131,7 @@ const ViewContent: React.FC<ViewContentProps> = ({
   hasNoTopPadding,
   hasTopInput,
   hasNoBottomPadding,
+  hasNoPadding,
   ...props
 }: ViewContentProps) => {
   const { isAppLayout } = useContext(ViewContext);
@@ -139,6 +145,7 @@ const ViewContent: React.FC<ViewContentProps> = ({
         hasTopInput={hasTopInput}
         hasNoBottomPadding={hasNoBottomPadding}
         hasScrollShadow
+        hasNoPadding={hasNoPadding}
       >
         {children}
       </ViewInset>
@@ -220,12 +227,14 @@ interface ViewInsetProps {
   alignment?: "center";
   hasVerticalBorder?: boolean;
   hasTopBorder?: boolean;
+  hasBottomBorder?: boolean;
   additionalClassName?: string;
   hasScrollShadow?: boolean;
   hasNoTopPadding?: boolean;
   hasTopInput?: boolean;
   hasNoBottomPadding?: boolean;
   isAccountHeader?: boolean;
+  hasNoPadding?: boolean;
 }
 
 export const ViewInset: React.FC<ViewInsetProps> = ({
@@ -235,12 +244,14 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
   alignment,
   hasVerticalBorder,
   hasTopBorder,
+  hasBottomBorder,
   additionalClassName,
   hasScrollShadow,
   hasNoTopPadding,
   hasTopInput,
   hasNoBottomPadding,
   isAccountHeader,
+  hasNoPadding,
   ...props
 }: ViewInsetProps) => (
   <div
@@ -250,11 +261,13 @@ export const ViewInset: React.FC<ViewInsetProps> = ({
       alignment === "center" ? "View__inset--align-center" : "",
       hasVerticalBorder ? "View__inset--vertical-border" : "",
       hasTopBorder ? "View__inset--top-border" : "",
+      hasBottomBorder ? "View__inset--bottom-border" : "",
       hasScrollShadow ? "View__inset--scroll-shadows" : "",
       hasNoTopPadding ? "View__inset--no-top-padding" : "",
       hasTopInput ? "View__inset--top-input" : "",
       hasNoBottomPadding ? "View__inset--no-bottom-padding" : "",
       isAccountHeader ? "View__inset--account-header" : "",
+      hasNoPadding ? "View__inset--no-padding" : "",
     ])}${additionalClassName ? ` ${additionalClassName}` : ""}`}
     {...props}
   >
@@ -274,16 +287,22 @@ interface ViewComponent {
 interface ViewLayoutProps {
   children: React.ReactNode;
   isAppLayout?: boolean;
+  isScrollableView?: boolean;
 }
 
 export const View: React.FC<ViewLayoutProps> & ViewComponent = ({
   children,
   // Most views have "app" layout, so defaulting to that
   isAppLayout = true,
+  isScrollableView = false,
   ...props
 }: ViewLayoutProps) => (
   <ViewContext.Provider value={{ isAppLayout }}>
-    <div className="View" id="layout-view" {...props}>
+    <div
+      className={`View${isScrollableView ? " View--scrollable" : ""}`}
+      id="layout-view"
+      {...props}
+    >
       {children}
     </div>
   </ViewContext.Provider>

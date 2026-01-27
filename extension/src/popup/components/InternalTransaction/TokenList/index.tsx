@@ -1,5 +1,7 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
+import classnames from "classnames";
 
 import {
   AssetType,
@@ -20,6 +22,7 @@ interface TokenListProps {
   tokens: AssetType[];
   tokenPrices: ApiTokenPrices;
   onClickAsset: (canonical: string, isContract: boolean) => unknown;
+  isShowingHeader?: boolean;
 }
 
 export const TokenList = ({
@@ -28,16 +31,24 @@ export const TokenList = ({
   tokens,
   tokenPrices,
   onClickAsset,
+  isShowingHeader,
 }: TokenListProps) => {
+  const { t } = useTranslation();
   return (
-    <div className="TokenList__Assets">
+    <div
+      className={classnames("TokenList__Assets", {
+        "TokenList__Assets--no-header": !isShowingHeader,
+      })}
+    >
       {!tokens.length ? (
         <div className="TokenList__Assets__empty">
-          You have no assets added. Get started by adding an asset.
+          {`${t("You have no assets added.")} ${t("Get started by adding an asset.")}`}
         </div>
       ) : (
         <>
-          <div className="TokenList__Assets__Header">Your Tokens</div>
+          {isShowingHeader && (
+            <div className="TokenList__Assets__Header">{t("Your Tokens")}</div>
+          )}
           {tokens
             .filter(
               (
@@ -78,6 +89,7 @@ export const TokenList = ({
                   data-testid={`SendRow-${canonical}`}
                   className="TokenList__AssetRow"
                   onClick={() => onClickAsset(canonical, isContract)}
+                  key={canonical}
                 >
                   <div className="TokenList__AssetRow__Body">
                     <AssetIcon

@@ -246,7 +246,9 @@ export const ModifyAssetList = ({
 
   return (
     <>
-      <SubviewHeader title={isEditing ? "Manage List" : "Add Asset List"} />
+      <SubviewHeader
+        title={isEditing ? t("Manage List") : t("Add Asset List")}
+      />
       <View.Content hasNoTopPadding>
         <Formik
           initialValues={{

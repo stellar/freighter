@@ -20,7 +20,7 @@ export const Welcome = () => {
       <View.Content>
         <div className="Welcome__column">
           <div className="Welcome__centered-screen">
-            <img src={LogoWelcome} alt="Freighter logo" />
+            <img src={LogoWelcome} alt={t("Freighter logo")} />
             <div>
               <Heading addlClassName="Welcome__heading" as="h1" size="lg">
                 {t("Freighter Wallet")}

@@ -44,4 +44,50 @@
     animation: animateNotification 0.3s ease-in-out;
     margin-top: 1.5rem;
   }
+
+  /* overwrite default MultiPaneSlider styles for AccountView
+    so that each pane takes full height and can scroll its content
+  */
+  .multi-pane-slider {
+    &__container {
+      height: 100%;
+
+      // this class is added when transitioning between panes;
+      // this allow us to make sure the container takes full viewport height and not the height of the previous pane
+      &--transitioning {
+        height: 100vh;
+      }
+    }
+
+    &__pane {
+      padding: 0 var(--account-view-padding-side);
+      height: auto;
+      overflow: auto;
+      position: relative;
+      width: 100%;
+
+      &:not(:first-child) {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+    }
+  }
+
+  // Override View layout to remove scrollable areas
+  .View__contentAndFooterWrapper {
+    overflow: visible;
+  }
+
+  .View__content {
+    flex: none;
+    overflow: visible;
+  }
+
+  .View__content .View__inset {
+    flex: none;
+    overflow-y: visible;
+    padding-top: var(--View-inset-padding-top);
+    padding-bottom: 1.5rem;
+  }
 }

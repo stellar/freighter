@@ -16,19 +16,26 @@ import {
   truncatedFedAddress,
   truncatedPublicKey,
 } from "helpers/stellar";
-
-import { SimulateTxData } from "popup/components/sendPayment/SendAmount/hooks/useSimulateTxData";
+import { getContractIdFromTransactionData } from "popup/helpers/soroban";
+import {
+  checkIsMuxedSupported,
+  getMemoDisabledState,
+} from "helpers/muxedAddress";
+import { SimulateTxData } from "popup/components/send/SendAmount/hooks/useSimulateTxData";
 import { View } from "popup/basics/layout/View";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import {
   BlockaidTxScanLabel,
   BlockAidTxScanExpanded,
+  MemoRequiredLabel,
 } from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { CopyValue } from "popup/components/CopyValue";
+import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
+import { CollectibleInfoImage } from "popup/components/account/CollectibleInfo";
 
 import "./styles.scss";
 
@@ -49,6 +56,7 @@ interface ReviewTxProps {
   title: string;
   onConfirm: () => void;
   onCancel: () => void;
+  onAddMemo?: () => void;
 }
 
 export const ReviewTx = ({
@@ -63,6 +71,7 @@ export const ReviewTx = ({
   title,
   onConfirm,
   onCancel,
+  onAddMemo,
 }: ReviewTxProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -74,8 +83,23 @@ export const ReviewTx = ({
 
   const {
     hardwareWalletData: { status: hwStatus },
-    transactionData: { destination, memo, federationAddress },
+    transactionData: {
+      destination,
+      memo,
+      federationAddress,
+      isToken,
+      isCollectible,
+      collectibleData,
+    },
   } = submission;
+
+  // Validate memo requirements using the transaction XDR
+  const transactionXdr = simulationState.data?.transactionXdr;
+  const { isMemoMissing: isRequiredMemoMissing, isValidatingMemo } =
+    useValidateTransactionMemo(transactionXdr);
+
+  // Disable button while validating or if memo is missing
+  const isSubmitDisabled = isRequiredMemoMissing || isValidatingMemo;
 
   const asset = getAssetFromCanonical(srcAsset);
   const dest = dstAsset ? getAssetFromCanonical(dstAsset.canonical) : null;
@@ -83,6 +107,68 @@ export const ReviewTx = ({
   const truncatedDest = federationAddress
     ? truncatedFedAddress(federationAddress)
     : truncatedPublicKey(destination);
+
+  // Extract contract ID from asset for custom tokens
+  const contractId = React.useMemo(
+    () =>
+      getContractIdFromTransactionData({
+        isCollectible,
+        collectionAddress: collectibleData.collectionAddress,
+        isToken,
+        asset: srcAsset,
+        networkDetails,
+      }),
+    [
+      isToken,
+      isCollectible,
+      collectibleData.collectionAddress,
+      srcAsset,
+      networkDetails,
+    ],
+  );
+
+  // Check if contract supports muxed addresses
+  const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
+    boolean | null
+  >(null);
+
+  React.useEffect(() => {
+    const checkContract = async () => {
+      if ((!isToken && !isCollectible) || !contractId || !networkDetails) {
+        setContractSupportsMuxed(null);
+        return;
+      }
+
+      try {
+        const supportsMuxed = await checkIsMuxedSupported({
+          contractId,
+          networkDetails,
+        });
+        setContractSupportsMuxed(supportsMuxed);
+      } catch (error) {
+        // On error, assume no support for safety
+        setContractSupportsMuxed(false);
+      }
+    };
+
+    checkContract();
+  }, [isToken, isCollectible, contractId, networkDetails]);
+
+  // Get memo disabled state using the helper
+  const memoDisabledState = React.useMemo(() => {
+    if (!destination) {
+      return { isMemoDisabled: false, memoDisabledMessage: undefined };
+    }
+    return getMemoDisabledState({
+      targetAddress: destination,
+      contractId,
+      contractSupportsMuxed,
+      networkDetails,
+      t,
+    });
+  }, [destination, contractId, contractSupportsMuxed, networkDetails, t]);
+
+  const { isMemoDisabled } = memoDisabledState;
 
   if (simulationState.state === RequestState.ERROR) {
     return (
@@ -130,24 +216,54 @@ export const ReviewTx = ({
                   <p>{title}</p>
                   <div className="ReviewTx__SendSummary">
                     <div className="ReviewTx__SendAsset">
-                      <AssetIcon
-                        assetIcons={assetIcons}
-                        code={asset.code}
-                        issuerKey={asset.issuer}
-                        icon={assetIcon}
-                        isSuspicious={false}
-                      />
+                      {isCollectible ? (
+                        <div className="ReviewTx__SendAsset__Collectible">
+                          <CollectibleInfoImage
+                            image={collectibleData.image}
+                            name={collectibleData.name}
+                            isSmall
+                          />
+                        </div>
+                      ) : (
+                        <AssetIcon
+                          assetIcons={assetIcons}
+                          code={asset.code}
+                          issuerKey={asset.issuer}
+                          icon={assetIcon}
+                          isSuspicious={false}
+                        />
+                      )}
                       <div
                         className="ReviewTx__SendAssetDetails"
                         data-testid="review-tx-send-amount"
                       >
-                        <span>
-                          {sendAmount} {asset.code}
-                        </span>
-                        {isMainnet(networkDetails) && sendPriceUsd && (
-                          <span className="ReviewTx__SendAssetDetails__price">
-                            {`$${sendPriceUsd}`}
-                          </span>
+                        {isCollectible ? (
+                          <div className="ReviewTx__SendAsset__Collectible__label">
+                            <div
+                              className="ReviewTx__SendAsset__Collectible__label__name"
+                              data-testid="review-tx-send-asset-collectible-name"
+                            >
+                              {collectibleData.name}
+                            </div>
+                            <div
+                              className="ReviewTx__SendAsset__Collectible__label__id"
+                              data-testid="review-tx-send-asset-collectible-collection-name"
+                            >
+                              {collectibleData.collectionName} #
+                              {collectibleData.tokenId}
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <span>
+                              {sendAmount} {asset.code}
+                            </span>
+                            {isMainnet(networkDetails) && sendPriceUsd && (
+                              <span className="ReviewTx__SendAssetDetails__price">
+                                {`$${sendPriceUsd}`}
+                              </span>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
@@ -185,7 +301,10 @@ export const ReviewTx = ({
                       ) : (
                         <>
                           <IdenticonImg publicKey={destination} />
-                          <div className="ReviewTx__SendDestinationDetails">
+                          <div
+                            className="ReviewTx__SendDestinationDetails"
+                            data-testid="review-tx-send-destination-address"
+                          >
                             {truncatedDest}
                           </div>
                         </>
@@ -200,24 +319,30 @@ export const ReviewTx = ({
                       onClick={() => setActivePaneIndex(1)}
                     />
                   )}
+                  {isRequiredMemoMissing && !isValidatingMemo && (
+                    <MemoRequiredLabel onClick={() => setActivePaneIndex(2)} />
+                  )}
                 </div>
                 <div className="ReviewTx__Details">
-                  <div className="ReviewTx__Details__Row">
-                    <div className="ReviewTx__Details__Row__Title">
-                      <Icon.File02 />
-                      Memo
+                  {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
+                  {!isMemoDisabled && (
+                    <div className="ReviewTx__Details__Row">
+                      <div className="ReviewTx__Details__Row__Title">
+                        <Icon.File02 />
+                        {t("Memo")}
+                      </div>
+                      <div
+                        className="ReviewTx__Details__Row__Value"
+                        data-testid="review-tx-memo"
+                      >
+                        {memo || t("None")}
+                      </div>
                     </div>
-                    <div
-                      className="ReviewTx__Details__Row__Value"
-                      data-testid="review-tx-memo"
-                    >
-                      {memo || "None"}
-                    </div>
-                  </div>
+                  )}
                   <div className="ReviewTx__Details__Row">
                     <div className="ReviewTx__Details__Row__Title">
                       <Icon.Route />
-                      Fee
+                      {t("Fee")}
                     </div>
                     <div
                       className="ReviewTx__Details__Row__Value"
@@ -229,7 +354,7 @@ export const ReviewTx = ({
                   <div className="ReviewTx__Details__Row">
                     <div className="ReviewTx__Details__Row__Title">
                       <Icon.FileCode02 />
-                      XDR
+                      {t("XDR")}
                     </div>
                     <div className="ReviewTx__Details__Row__Value">
                       <CopyValue
@@ -244,35 +369,82 @@ export const ReviewTx = ({
                 scanResult={simulationState.data?.scanResult!}
                 onClose={() => setActivePaneIndex(0)}
               />,
+              <div className="ReviewTx__MemoDetails">
+                <div className="ReviewTx__MemoDetails__Header">
+                  <div className="ReviewTx__MemoDetails__Header__Icon">
+                    <Icon.InfoOctagon className="WarningMessage__icon" />
+                  </div>
+                  <div
+                    className="ReviewTx__MemoDetails__Header__Close"
+                    onClick={() => setActivePaneIndex(0)}
+                  >
+                    <Icon.X />
+                  </div>
+                </div>
+                <div className="ReviewTx__MemoDetails__Title">
+                  <span>{t("Memo is required")}</span>
+                </div>
+                <div className="ReviewTx__MemoDetails__Content">
+                  <div className="ReviewTx__MemoDetails__Text">
+                    {t(
+                      "Some destination accounts on the Stellar network require a memo to identify your payment.",
+                    )}
+                  </div>
+                  <div className="ReviewTx__MemoDetails__Text">
+                    {t(
+                      "If a required memo is missing or incorrect, your funds may not reach the intended recipient.",
+                    )}
+                  </div>
+                </div>
+              </div>,
             ]}
           />
           <div className="ReviewTx__Actions">
-            <Button
-              size="lg"
-              isFullWidth
-              isRounded
-              variant="secondary"
-              data-testid="SubmitAction"
-              onClick={(e) => {
-                e.preventDefault();
-                onConfirmTx();
-              }}
-            >
-              {dstAsset && dest
-                ? `Swap ${asset.code} to ${dest.code}`
-                : `Send to ${truncatedDest}`}
-            </Button>
+            {isRequiredMemoMissing && !isValidatingMemo && onAddMemo ? (
+              <Button
+                size="lg"
+                isFullWidth
+                isRounded
+                variant="secondary"
+                data-testid="AddMemoAction"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onAddMemo();
+                }}
+              >
+                {t("Add Memo")}
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                isFullWidth
+                isRounded
+                variant="secondary"
+                data-testid="SubmitAction"
+                disabled={isSubmitDisabled}
+                isLoading={isValidatingMemo}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onConfirmTx();
+                }}
+              >
+                {dstAsset && dest
+                  ? `Swap ${asset.code} to ${dest.code}`
+                  : `Send to ${truncatedDest}`}
+              </Button>
+            )}
             <Button
               size="lg"
               isFullWidth
               isRounded
               variant="tertiary"
+              disabled={isValidatingMemo}
               onClick={(e) => {
                 e.preventDefault();
                 onCancel();
               }}
             >
-              Cancel
+              {t("Cancel")}
             </Button>
           </div>
         </div>

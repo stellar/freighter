@@ -1,0 +1,81 @@
+@use "../../../styles/utils.scss" as *;
+
+.AccountTabs {
+  display: flex;
+  gap: pxToRem(12px);
+  padding: pxToRem(12px) 0;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+
+  &__tabs {
+    display: flex;
+    gap: pxToRem(12px);
+    text-transform: capitalize;
+  }
+
+  &__tab-item {
+    align-items: center;
+    gap: pxToRem(4px);
+    color: var(--sds-clr-gray-11);
+    cursor: pointer;
+    display: flex;
+    font-weight: var(--sds-fw-medium);
+    &:hover {
+      color: var(--sds-clr-gray-12);
+    }
+    &--active {
+      color: var(--sds-clr-gray-12);
+    }
+  }
+
+  &__manage-btn {
+    cursor: pointer;
+    color: var(--sds-clr-gray-11);
+    &:hover {
+      color: var(--sds-clr-gray-12);
+    }
+  }
+
+  &__modal {
+    width: pxToRem(210px);
+    right: pxToRem(20px);
+
+    // override the default AccountHeaderModal styles
+    left: auto !important;
+    top: pxToRem(30px);
+
+    &__item {
+      color: var(--sds-clr-gray-12);
+      display: flex;
+      align-items: center;
+      gap: pxToRem(8px);
+      cursor: pointer;
+      padding: pxToRem(6px) pxToRem(8px);
+      border-radius: pxToRem(4px);
+      &:hover {
+        background-color: var(--sds-clr-gray-02);
+      }
+
+      &__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: pxToRem(16px);
+        height: pxToRem(16px);
+        color: var(--sds-clr-gray-09);
+
+        svg {
+          width: 100%;
+          height: 100%;
+        }
+      }
+
+      &__title {
+        font-size: pxToRem(14px);
+        font-weight: var(--sds-fw-medium);
+        line-height: pxToRem(20px);
+      }
+    }
+  }
+}

@@ -18,7 +18,7 @@ import {
 
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
-import { SendPayment } from "popup/views/SendPayment";
+import { Send } from "popup/views/Send";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
 import * as CheckSuspiciousAsset from "popup/helpers/checkForSuspiciousAsset";
 import * as tokenPaymentActions from "popup/ducks/token-payment";
@@ -125,7 +125,7 @@ jest.mock("react-router-dom", () => {
 
 const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 
-describe.skip("SendPayment", () => {
+describe.skip("Send", () => {
   beforeEach(() => {
     jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
       return {
@@ -164,7 +164,7 @@ describe.skip("SendPayment", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <SendPayment />
+        <Send />
       </Wrapper>,
     );
     await waitFor(() => {
@@ -275,7 +275,7 @@ describe.skip("SendPayment", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <SendPayment />
+        <Send />
       </Wrapper>,
     );
 
@@ -314,7 +314,7 @@ describe.skip("SendPayment", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <SendPayment />
+        <Send />
       </Wrapper>,
     );
 
@@ -348,7 +348,7 @@ describe.skip("SendPayment", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <SendPayment />
+        <Send />
       </Wrapper>,
     );
 
@@ -382,7 +382,7 @@ describe.skip("SendPayment", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <SendPayment />
+        <Send />
       </Wrapper>,
     );
 
@@ -417,7 +417,7 @@ describe.skip("SendPayment", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <SendPayment />
+        <Send />
       </Wrapper>,
     );
 
@@ -452,7 +452,7 @@ describe.skip("SendPayment", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <SendPayment />
+        <Send />
       </Wrapper>,
     );
 
@@ -487,7 +487,7 @@ describe.skip("SendPayment", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <SendPayment />
+        <Send />
       </Wrapper>,
     );
 
@@ -526,7 +526,7 @@ describe.skip("SendPayment", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <SendPayment />
+        <Send />
       </Wrapper>,
     );
 
@@ -566,7 +566,7 @@ describe.skip("SendPayment", () => {
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
       >
-        <SendPayment />
+        <Send />
       </Wrapper>,
     );
 
@@ -579,6 +579,262 @@ describe.skip("SendPayment", () => {
       const continueBtn = screen.getByTestId("send-amount-btn-continue");
       // Should be disabled because destination is not set
       expect(continueBtn).toBeDisabled();
+    });
+  });
+
+  describe("Memo Editing Context", () => {
+    it("should NOT reopen review modal when submitting memo from SendPayment page", async () => {
+      render(
+        <Wrapper
+          routes={[ROUTES.sendPayment]}
+          state={{
+            auth: {
+              error: null,
+              hasPrivateKey: true,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey,
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: MAINNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+            },
+            transactionSubmission: {
+              ...transactionSubmissionInitialState,
+              transactionData: {
+                ...transactionSubmissionInitialState.transactionData,
+                asset: "native",
+                destination: publicKey,
+              },
+              accountBalances: mockBalances,
+            },
+            tokenPaymentSimulation: tokenPaymentActions.initialState,
+          }}
+        >
+          <Send />
+        </Wrapper>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      });
+
+      const input = screen.getByTestId("send-amount-amount-input");
+      fireEvent.change(input, { target: { value: "5" } });
+
+      // Open memo editor from SendPayment page
+      await waitFor(() => {
+        const memoButton = screen.getByTestId("send-amount-btn-memo");
+        fireEvent.click(memoButton);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("edit-memo-input")).toBeInTheDocument();
+      });
+
+      // Fill and submit memo
+      const memoInput = screen.getByTestId("edit-memo-input");
+      fireEvent.change(memoInput, { target: { value: "test memo" } });
+      fireEvent.click(screen.getByText("Save"));
+
+      // Verify review modal is NOT opened
+      await waitFor(() => {
+        expect(screen.queryByText("You are sending")).not.toBeInTheDocument();
+      });
+    });
+
+    it("should reopen review modal when submitting memo from Review flow", async () => {
+      render(
+        <Wrapper
+          routes={[ROUTES.sendPayment]}
+          state={{
+            auth: {
+              error: null,
+              hasPrivateKey: true,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey,
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: MAINNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+            },
+            transactionSubmission: {
+              ...transactionSubmissionInitialState,
+              transactionData: {
+                ...transactionSubmissionInitialState.transactionData,
+                asset: "native",
+                destination: publicKey,
+              },
+              accountBalances: mockBalances,
+            },
+            tokenPaymentSimulation: tokenPaymentActions.initialState,
+          }}
+        >
+          <Send />
+        </Wrapper>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      });
+
+      const input = screen.getByTestId("send-amount-amount-input");
+      fireEvent.change(input, { target: { value: "5" } });
+
+      // Click Review Send to open review modal
+      await waitFor(() => {
+        const continueBtn = screen.getByTestId("send-amount-btn-continue");
+        fireEvent.click(continueBtn);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText("You are sending")).toBeInTheDocument();
+      });
+
+      // Click "Add Memo" from review modal
+      await waitFor(() => {
+        const addMemoButton = screen.getByTestId("AddMemoAction");
+        fireEvent.click(addMemoButton);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("edit-memo-input")).toBeInTheDocument();
+      });
+
+      // Fill and submit memo
+      const memoInput = screen.getByTestId("edit-memo-input");
+      fireEvent.change(memoInput, { target: { value: "test memo" } });
+      fireEvent.click(screen.getByText("Save"));
+
+      // Verify review modal is reopened
+      await waitFor(() => {
+        expect(screen.getByText("You are sending")).toBeInTheDocument();
+      });
+    });
+
+    it("should reopen review modal when cancelling memo editor from Review flow", async () => {
+      render(
+        <Wrapper
+          routes={[ROUTES.sendPayment]}
+          state={{
+            auth: {
+              error: null,
+              hasPrivateKey: true,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey,
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: MAINNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+            },
+            transactionSubmission: {
+              ...transactionSubmissionInitialState,
+              transactionData: {
+                ...transactionSubmissionInitialState.transactionData,
+                asset: "native",
+                destination: publicKey,
+              },
+              accountBalances: mockBalances,
+            },
+            tokenPaymentSimulation: tokenPaymentActions.initialState,
+          }}
+        >
+          <Send />
+        </Wrapper>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      });
+
+      const input = screen.getByTestId("send-amount-amount-input");
+      fireEvent.change(input, { target: { value: "5" } });
+
+      // Click Review Send to open review modal
+      await waitFor(() => {
+        const continueBtn = screen.getByTestId("send-amount-btn-continue");
+        fireEvent.click(continueBtn);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText("You are sending")).toBeInTheDocument();
+      });
+
+      // Click "Add Memo" from review modal
+      await waitFor(() => {
+        const addMemoButton = screen.getByTestId("AddMemoAction");
+        fireEvent.click(addMemoButton);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("edit-memo-input")).toBeInTheDocument();
+      });
+
+      // Cancel memo editor
+      fireEvent.click(screen.getByText("Cancel"));
+
+      // Verify review modal is reopened
+      await waitFor(() => {
+        expect(screen.getByText("You are sending")).toBeInTheDocument();
+      });
+    });
+
+    it("should NOT reopen review modal when cancelling memo editor from SendPayment page", async () => {
+      render(
+        <Wrapper
+          routes={[ROUTES.sendPayment]}
+          state={{
+            auth: {
+              error: null,
+              hasPrivateKey: true,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey,
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: MAINNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+            },
+            transactionSubmission: {
+              ...transactionSubmissionInitialState,
+              transactionData: {
+                ...transactionSubmissionInitialState.transactionData,
+                asset: "native",
+                destination: publicKey,
+              },
+              accountBalances: mockBalances,
+            },
+            tokenPaymentSimulation: tokenPaymentActions.initialState,
+          }}
+        >
+          <Send />
+        </Wrapper>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      });
+
+      const input = screen.getByTestId("send-amount-amount-input");
+      fireEvent.change(input, { target: { value: "5" } });
+
+      // Open memo editor from SendPayment page
+      await waitFor(() => {
+        const memoButton = screen.getByTestId("send-amount-btn-memo");
+        fireEvent.click(memoButton);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("edit-memo-input")).toBeInTheDocument();
+      });
+
+      // Cancel memo editor
+      fireEvent.click(screen.getByText("Cancel"));
+
+      // Verify review modal is NOT opened
+      expect(screen.queryByText("You are sending")).not.toBeInTheDocument();
     });
   });
 });
@@ -620,7 +876,7 @@ const testPaymentFlow = async (
         tokenPaymentSimulation: tokenPaymentActions.initialState,
       }}
     >
-      <SendPayment />
+      <Send />
     </Wrapper>,
   );
 

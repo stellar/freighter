@@ -37,7 +37,7 @@ export const Settings = () => {
 
   return (
     <>
-      <SubviewHeader title="Settings" customBackIcon={<Icon.X />} />
+      <SubviewHeader title={t("Settings")} customBackIcon={<Icon.X />} />
       <View.Content hasNoTopPadding>
         <nav className="Settings">
           <ListNavLinkWrapper>
@@ -74,7 +74,7 @@ export const Settings = () => {
             </div>
             <div className="Settings__row">
               <ListNavLink href={ROUTES.leaveFeedback} icon={<IconFeedback />}>
-                {t("Leave feedback")}
+                {t("Leave Feedback")}
               </ListNavLink>
             </div>
             <div className="Settings__row">
@@ -108,7 +108,9 @@ export const Settings = () => {
         </nav>
         <div className="Settings__version">
           <Icon.GitCommit />
-          <span>Version {packageJson.version}</span>
+          <span>
+            {t("Version")} {packageJson.version}
+          </span>
         </div>
       </View.Content>
     </>

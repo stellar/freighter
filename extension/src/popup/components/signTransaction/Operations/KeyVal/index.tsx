@@ -132,15 +132,21 @@ export const KeyValueInvocation = ({
   invocation,
 }: {
   invocation: InvocationTree;
-}) => (
-  <>
-    <KeyValueList operationKey="Sub Invocation" operationValue="" />
-    <InvocationByType _invocation={invocation} />
-    {invocation.invocations.map((subInvocation) => (
-      <KeyValueInvocation key={subInvocation.type} invocation={subInvocation} />
-    ))}
-  </>
-);
+}) => {
+  const { t } = useTranslation();
+  return (
+    <>
+      <KeyValueList operationKey={t("Sub Invocation")} operationValue="" />
+      <InvocationByType _invocation={invocation} />
+      {invocation.invocations.map((subInvocation) => (
+        <KeyValueInvocation
+          key={subInvocation.type}
+          invocation={subInvocation}
+        />
+      ))}
+    </>
+  );
+};
 
 export const KeyValueSigner = ({ signer }: { signer: Signer }) => {
   const { t } = useTranslation();
@@ -399,6 +405,7 @@ export const KeyValueInvokeHostFnArgs = ({
   showHeader?: boolean;
   isAuthEntry?: boolean;
 }) => {
+  const { t } = useTranslation();
   const [isLoading, setLoading] = React.useState(true);
   const [argNames, setArgNames] = React.useState([] as string[]);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -434,7 +441,7 @@ export const KeyValueInvokeHostFnArgs = ({
       {showHeader && (
         <div className="Operations--header">
           <Icon.BracketsEllipses />
-          <span>Parameters</span>
+          <span>{t("Parameters")}</span>
         </div>
       )}
       <div className="OperationParameters" data-testid="OperationParameters">
@@ -489,7 +496,7 @@ export const KeyValueInvokeHostFn = ({
               <>
                 <KeyValueList
                   operationKey={t("Type")}
-                  operationValue="Create Contract"
+                  operationValue={t("Create Contract")}
                 />
                 <KeyValueWithPublicKey
                   operationKey={t("Account ID")}
@@ -530,7 +537,7 @@ export const KeyValueInvokeHostFn = ({
             <>
               <KeyValueList
                 operationKey={t("Type")}
-                operationValue="Create Contract"
+                operationValue={t("Create Contract")}
               />
               <KeyValueWithPublicKey
                 operationKey={t("Contract ID")}
@@ -573,7 +580,7 @@ export const KeyValueInvokeHostFn = ({
           <>
             <KeyValueList
               operationKey={t("Type")}
-              operationValue="Create Contract"
+              operationValue={t("Create Contract")}
             />
             {preimageFromAsset.switch().name === "assetTypeCreditAlphanum4" ||
             preimageFromAsset.switch().name === "assetTypeCreditAlphanum12" ? (
@@ -632,7 +639,7 @@ export const KeyValueInvokeHostFn = ({
           <>
             <KeyValueList
               operationKey={t("Type")}
-              operationValue="Invoke Contract"
+              operationValue={t("Invoke Contract")}
             />
             <KeyValueList
               operationKey={t("Contract ID")}
@@ -657,7 +664,7 @@ export const KeyValueInvokeHostFn = ({
           <>
             <KeyValueList
               operationKey={t("Type")}
-              operationValue="Upload Contract Wasm"
+              operationValue={t("Upload Contract Wasm")}
             />
             <KeyValueList
               operationKey={t("Wasm Hash")}
@@ -683,10 +690,10 @@ export const PathList = ({ paths }: { paths: Asset[] }) => {
       {paths.map(({ code, issuer }, i) => (
         <div className="Operations--list--item" key={`${code} ${i + 1}`}>
           <div>#{i + 1}</div>
-          <KeyValueList operationKey="Asset Code" operationValue={code} />
+          <KeyValueList operationKey={t("Asset Code")} operationValue={code} />
           {issuer ? (
             <KeyValueList
-              operationKey="Issuer"
+              operationKey={t("Issuer")}
               operationValue={<KeyIdenticon publicKey={issuer} isSmall />}
             />
           ) : null}

@@ -4,7 +4,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { HistoryResponse } from "helpers/hooks/useGetHistory";
 import { TokenDetailsResponse } from "helpers/hooks/useTokenDetails";
-import { ApiTokenPrices } from "@shared/api/types";
+import { ApiTokenPrices, Collection } from "@shared/api/types";
 
 type AssetCode = string;
 type PublicKey = string;
@@ -46,6 +46,12 @@ type SaveTokenPricesPayload = {
   tokenPrices: ApiTokenPrices;
 };
 
+type SaveCollectionsPayload = {
+  publicKey: PublicKey;
+  networkDetails: NetworkDetails;
+  collections: Collection[];
+};
+
 interface InitialState {
   balanceData: {
     [network: string]: Record<
@@ -65,6 +71,7 @@ interface InitialState {
   tokenPrices: {
     [publicKey: string]: ApiTokenPrices & { updatedAt: number };
   };
+  collections: { [network: string]: Record<PublicKey, Collection[]> };
 }
 
 const initialState: InitialState = {
@@ -75,6 +82,7 @@ const initialState: InitialState = {
   tokenDetails: {},
   historyData: {},
   tokenPrices: {},
+  collections: {},
 };
 
 const cacheSlice = createSlice({
@@ -112,9 +120,11 @@ const cacheSlice = createSlice({
       };
     },
     clearBalancesForAccount(state, action: { payload: ClearBalancesPayload }) {
-      delete state.balanceData[action.payload.networkDetails.network][
-        action.payload.publicKey
-      ];
+      if (state.balanceData[action.payload.networkDetails.network]) {
+        delete state.balanceData[action.payload.networkDetails.network][
+          action.payload.publicKey
+        ];
+      }
       delete state.tokenPrices[action.payload.publicKey];
     },
     saveIconsForBalances(state, action: { payload: SaveIconsPayload }) {
@@ -150,6 +160,25 @@ const cacheSlice = createSlice({
         } as ApiTokenPrices & { updatedAt: number },
       };
     },
+    saveCollections(state, action: { payload: SaveCollectionsPayload }) {
+      state.collections = {
+        ...state.collections,
+        [action.payload.networkDetails.network]: {
+          ...(state.collections[action.payload.networkDetails.network] || {}),
+          [action.payload.publicKey]: action.payload.collections,
+        },
+      };
+    },
+    clearCollectiblesForAccount(
+      state,
+      action: { payload: ClearBalancesPayload },
+    ) {
+      if (state.collections[action.payload.networkDetails.network]) {
+        delete state.collections[action.payload.networkDetails.network][
+          action.payload.publicKey
+        ];
+      }
+    },
   },
 });
 
@@ -169,6 +198,8 @@ export const tokenPricesSelector = (state: { cache: InitialState }) =>
   state.cache.tokenPrices;
 export const selectBalancesByPublicKey = (publicKey: string) =>
   createSelector(balancesSelector, (balances) => balances[publicKey]);
+export const collectionsSelector = (state: { cache: InitialState }) =>
+  state.cache.collections;
 
 export const { reducer } = cacheSlice;
 export const {
@@ -180,5 +211,7 @@ export const {
   saveTokenLists,
   saveTokenDetails,
   saveTokenPrices,
+  saveCollections,
   clearBalancesForAccount,
+  clearCollectiblesForAccount,
 } = cacheSlice.actions;

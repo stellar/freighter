@@ -365,6 +365,11 @@
       border-radius: pxToRem(16px);
       background-color: var(--sds-clr-gray-03);
       margin-top: pxToRem(12px);
+
+      > div:not(:first-child) {
+        margin-top: pxToRem(16px);
+        color: var(--sds-clr-gray-11);
+      }
     }
 
     &__Title {

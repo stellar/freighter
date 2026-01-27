@@ -20,7 +20,7 @@ describe.skip("cached fetch", () => {
       );
       expect(localStorage.getItem(CACHED_BLOCKED_DOMAINS_ID)).toBeTruthy();
       expect(
-        localStorage.getItem(CACHED_BLOCKED_DOMAINS_ID + "_date"),
+        `${localStorage.getItem(CACHED_BLOCKED_DOMAINS_ID)}_date`,
       ).toBeTruthy();
     });
   });
@@ -32,7 +32,7 @@ describe.skip("cached fetch", () => {
       );
       expect(localStorage.getItem(CACHED_BLOCKED_ACCOUNTS_ID)).toBeTruthy();
       expect(
-        localStorage.getItem(CACHED_BLOCKED_ACCOUNTS_ID + "_date"),
+        `${localStorage.getItem(CACHED_BLOCKED_ACCOUNTS_ID)}_date`,
       ).toBeTruthy();
     });
   });

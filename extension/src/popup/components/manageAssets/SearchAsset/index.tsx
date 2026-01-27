@@ -164,7 +164,7 @@ export const SearchAsset = () => {
 
   return (
     <>
-      <SubviewHeader title={t("Choose Asset")} />
+      <SubviewHeader title={t("Choose asset")} />
 
       <View.Content hasTopInput>
         <Formik initialValues={initialValues} onSubmit={() => {}}>
@@ -192,7 +192,7 @@ export const SearchAsset = () => {
                     )}
                   </Field>
                   <SearchCopy>
-                    {t("powered by")}{" "}
+                    {`${t("powered by")} `}
                     <a
                       href="https://stellar.expert"
                       target="_blank"
@@ -228,9 +228,7 @@ export const SearchAsset = () => {
                 </SearchResults>
                 {dirty && hasNoResults ? (
                   <div className="SearchAsset__copy">
-                    {t(
-                      "Unable to find your asset. Please check the asset code or address.",
-                    )}
+                    {`${t("Unable to find your asset.")} ${t("Please check the asset code or address.")}`}
                   </div>
                 ) : null}
               </FormRows>

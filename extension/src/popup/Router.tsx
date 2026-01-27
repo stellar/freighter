@@ -22,6 +22,7 @@ import { navigate } from "popup/ducks/views";
 
 import { AppError } from "popup/components/AppError";
 
+import { ActiveTabProvider } from "popup/views/Account/contexts/activeTabContext";
 import { Account } from "popup/views/Account";
 import { AccountHistory } from "popup/views/AccountHistory";
 import { AccountCreator } from "popup/views/AccountCreator";
@@ -50,8 +51,9 @@ import { Preferences } from "popup/views/Preferences";
 import { Security } from "popup/views/Security";
 import { AdvancedSettings } from "popup/views/AdvancedSettings";
 import { About } from "popup/views/About";
-import { SendPayment } from "popup/views/SendPayment";
+import { Send } from "popup/views/Send";
 import { ManageAssets } from "popup/views/ManageAssets";
+import { AddCollectibles } from "popup/views/AddCollectibles";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Swap } from "popup/views/Swap";
 import { ManageNetwork } from "popup/views/ManageNetwork";
@@ -150,7 +152,10 @@ const Layout = () => {
   }
 
   return (
-    <View isAppLayout={isAppLayout}>
+    <View
+      isAppLayout={isAppLayout}
+      isScrollableView={location.pathname === "/"}
+    >
       <Outlet />
     </View>
   );
@@ -161,7 +166,14 @@ export const Router = () => (
     <RouteListener />
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<Account />}></Route>
+        <Route
+          index
+          element={
+            <ActiveTabProvider>
+              <Account />
+            </ActiveTabProvider>
+          }
+        ></Route>
         <Route
           path={ROUTES.accountHistory}
           element={<AccountHistory />}
@@ -226,11 +238,19 @@ export const Router = () => (
         ></Route>
         <Route
           path={`${ROUTES.sendPayment}/*`}
-          element={<SendPayment />}
+          element={
+            <ActiveTabProvider>
+              <Send />
+            </ActiveTabProvider>
+          }
         ></Route>
         <Route
           path={`${ROUTES.manageAssets}/*`}
           element={<ManageAssets />}
+        ></Route>
+        <Route
+          path={ROUTES.addCollectibles}
+          element={<AddCollectibles />}
         ></Route>
         <Route path={ROUTES.swap} element={<Swap />}></Route>
         <Route path={`${ROUTES.swap}/*`} element={<Swap />}></Route>

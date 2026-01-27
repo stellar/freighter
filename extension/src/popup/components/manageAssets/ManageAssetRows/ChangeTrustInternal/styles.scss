@@ -6,6 +6,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  margin: 0 auto;
   background-color: var(--sds-clr-gray-01);
   border-radius: 0.875rem;
 
@@ -55,7 +57,7 @@
     padding: 1rem 1.5rem;
 
     &__Wrapper {
-      max-width: 57rem;
+      max-width: 49rem;
       width: 100%;
       display: flex;
       flex-direction: column;
@@ -92,7 +94,7 @@
     &__BtnRow {
       display: flex;
       position: relative;
-      max-width: 57rem;
+      max-width: 49rem;
       width: 100%;
       margin-top: 10px;
       gap: 0.5rem;
