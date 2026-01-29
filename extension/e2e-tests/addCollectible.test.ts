@@ -7,6 +7,7 @@ import {
   stubTokenDetails,
   stubTokenPrices,
   stubCollectibles,
+  stubAllExternalApis,
 } from "./helpers/stubs";
 
 test("Add a collectible to an account", async ({
@@ -18,6 +19,7 @@ test("Add a collectible to an account", async ({
     owner: "",
     contracts: [] as { id: string; token_ids: string[] }[],
   };
+  await stubAllExternalApis(page, context);
   await stubTokenDetails(page);
   await stubAccountBalances(page);
   await stubAccountHistory(page);

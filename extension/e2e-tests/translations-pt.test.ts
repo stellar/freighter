@@ -1,10 +1,11 @@
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccountPT } from "./helpers/login-pt";
-
+import { stubAllExternalApis } from "./helpers/stubs";
 test.use({ language: "pt" });
 
-test.beforeEach(async ({ page, extensionId }) => {
+test.beforeEach(async ({ page, extensionId, context }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
+  await stubAllExternalApis(page, context);
 });
 
 test("Smoke test: Portuguese translations are loaded", async ({ page }) => {
