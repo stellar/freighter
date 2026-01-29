@@ -20,7 +20,7 @@ export default defineConfig({
   /* Fail the build if any test fails after retries */
   maxFailures: 1,
   /* In integration mode, run tests sequentially to avoid conflicts */
-  workers: process.env.IS_INTEGRATION_MODE ? 1 : 8,
+  workers: process.env.IS_INTEGRATION_MODE ? 1 : 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: "list",
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
