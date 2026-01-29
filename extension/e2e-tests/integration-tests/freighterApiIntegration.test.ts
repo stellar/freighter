@@ -52,8 +52,12 @@ test.beforeEach(async ({ page, context }) => {
   }
 });
 
-test("should sign transaction when allowed", async ({ page, extensionId }) => {
-  await loginToTestAccount({ page, extensionId });
+test("should sign transaction when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -180,13 +184,7 @@ test.skip("should sign transaction for a specific account when allowed", async (
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -222,8 +220,9 @@ test.skip("should sign transaction for a specific account when allowed", async (
 test("should not sign transaction when not allowed", async ({
   page,
   extensionId,
+  context,
 }) => {
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
@@ -261,13 +260,7 @@ test("should sign auth entry when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -309,13 +302,7 @@ test("should not sign auth entry when not allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
@@ -345,13 +332,7 @@ test("should sign auth entry for a selected account when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   await allowDapp({ page });
 
@@ -399,13 +380,7 @@ test("should sign message string when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -443,13 +418,7 @@ test("should sign message long string when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -487,13 +456,7 @@ test("should sign message json when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -541,13 +504,7 @@ test("should sign message for a specific account when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -592,12 +549,7 @@ test("should not sign message when not allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
@@ -622,14 +574,9 @@ test("should add token when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(context);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
   await stubIsSac(context);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -664,14 +611,9 @@ test("should not add token when not allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(context);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
   await stubIsSac(context);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
@@ -705,13 +647,7 @@ test("should get public key when logged out", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Settings").click();
   await page.getByText("Log Out").click();

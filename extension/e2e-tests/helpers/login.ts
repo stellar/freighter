@@ -86,15 +86,20 @@ export const loginToTestAccount = async ({
   page,
   extensionId,
   context,
+  stubOverrides,
 }: {
   page: Page;
   extensionId: string;
-  context?: BrowserContext;
+  context: BrowserContext;
+  stubOverrides?: () => Promise<void>;
 }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
   if (context) {
     // Wait for any background activity to complete
     await stubAllExternalApis(page, context);
+    if (stubOverrides) {
+      await stubOverrides();
+    }
   }
   await page.getByText("I already have a wallet").click();
 

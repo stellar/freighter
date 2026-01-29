@@ -7,17 +7,12 @@ import {
   stubAccountHistory,
   stubTokenDetails,
   stubTokenPrices,
-  stubAllExternalApis,
   stubSimulateTokenTransfer,
   stubContractSpec,
 } from "./helpers/stubs";
 
 const MUXED_ACCOUNT_ADDRESS =
   "MCQ7EGW7VXHI4AKJAFADOIHCSK2OCVA42KUETUK5LQ3LVSEQEEKP6AAAAAAAAAAAAFLVY";
-
-test.beforeEach(async ({ page, context }) => {
-  await stubAllExternalApis(page, context);
-});
 
 test("Swap doesn't throw error when account is unfunded", async ({
   page,
@@ -31,148 +26,149 @@ test("Swap doesn't throw error when account is unfunded", async ({
 test("Swap shows correct balances for assets", async ({
   page,
   extensionId,
+  context,
 }) => {
-  await stubAccountHistory(page);
-  await stubTokenDetails(page);
-  await page.route("*/**/account-balances/*", async (route) => {
-    const json = {
-      balances: {
-        "FOO:GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY": {
-          token: {
-            type: "credit_alphanum12",
-            code: "FOO",
-            issuer: {
-              key: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-            },
-          },
-          sellingLiabilities: "0",
-          buyingLiabilities: "0",
-          total: "100",
-          limit: "922337203685.4775807",
-          available: "100",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address:
-              "FOO-GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-            metadata: {
-              external_links: {},
-            },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {
-              top_holders: [],
-            },
-          },
-        },
-        "BAZ:GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY": {
-          token: {
-            type: "credit_alphanum12",
-            code: "BAZ",
-            issuer: {
-              key: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-            },
-          },
-          sellingLiabilities: "0",
-          buyingLiabilities: "0",
-          total: "10",
-          limit: "922337203685.4775807",
-          available: "10",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address:
-              "BAZ-GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-            metadata: {
-              external_links: {},
-            },
-            fees: {},
-            features: [
-              {
-                feature_id: "HIGH_REPUTATION_TOKEN",
-                type: "Benign",
-                description: "Token with verified high reputation",
+  const stubOverrides = async () => {
+    await page.route("*/**/account-balances/*", async (route) => {
+      const json = {
+        balances: {
+          "FOO:GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY": {
+            token: {
+              type: "credit_alphanum12",
+              code: "FOO",
+              issuer: {
+                key: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
               },
-            ],
-            trading_limits: {},
-            financial_stats: {
-              top_holders: [],
+            },
+            sellingLiabilities: "0",
+            buyingLiabilities: "0",
+            total: "100",
+            limit: "922337203685.4775807",
+            available: "100",
+            blockaidData: {
+              result_type: "Benign",
+              malicious_score: "0.0",
+              attack_types: {},
+              chain: "stellar",
+              address:
+                "FOO-GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+              metadata: {
+                external_links: {},
+              },
+              fees: {},
+              features: [],
+              trading_limits: {},
+              financial_stats: {
+                top_holders: [],
+              },
+            },
+          },
+          "BAZ:GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY": {
+            token: {
+              type: "credit_alphanum12",
+              code: "BAZ",
+              issuer: {
+                key: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+              },
+            },
+            sellingLiabilities: "0",
+            buyingLiabilities: "0",
+            total: "10",
+            limit: "922337203685.4775807",
+            available: "10",
+            blockaidData: {
+              result_type: "Benign",
+              malicious_score: "0.0",
+              attack_types: {},
+              chain: "stellar",
+              address:
+                "BAZ-GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+              metadata: {
+                external_links: {},
+              },
+              fees: {},
+              features: [
+                {
+                  feature_id: "HIGH_REPUTATION_TOKEN",
+                  type: "Benign",
+                  description: "Token with verified high reputation",
+                },
+              ],
+              trading_limits: {},
+              financial_stats: {
+                top_holders: [],
+              },
+            },
+          },
+          native: {
+            token: {
+              type: "native",
+              code: "XLM",
+            },
+            total: "999",
+            available: "999",
+            sellingLiabilities: "0",
+            buyingLiabilities: "0",
+            minimumBalance: "1",
+            blockaidData: {
+              result_type: "Benign",
+              malicious_score: "0.0",
+              attack_types: {},
+              chain: "stellar",
+              address: "",
+              metadata: {
+                type: "",
+              },
+              fees: {},
+              features: [],
+              trading_limits: {},
+              financial_stats: {},
+            },
+          },
+          "PBT:GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY": {
+            token: {
+              code: "PBT",
+              issuer: {
+                key: "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
+              },
+            },
+            contractId:
+              "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
+            symbol: "PBT",
+            decimals: 5,
+            total: "9899700",
+            available: "9899700",
+            blockaidData: {
+              result_type: "Benign",
+              malicious_score: "0.0",
+              attack_types: {},
+              chain: "stellar",
+              address:
+                "PBT-CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
+              metadata: {
+                external_links: {},
+              },
+              fees: {},
+              features: [],
+              trading_limits: {},
+              financial_stats: {
+                top_holders: [],
+              },
             },
           },
         },
-        native: {
-          token: {
-            type: "native",
-            code: "XLM",
-          },
-          total: "999",
-          available: "999",
-          sellingLiabilities: "0",
-          buyingLiabilities: "0",
-          minimumBalance: "1",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address: "",
-            metadata: {
-              type: "",
-            },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {},
-          },
+        isFunded: true,
+        subentryCount: 0,
+        error: {
+          horizon: null,
+          soroban: null,
         },
-        "PBT:GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY": {
-          token: {
-            code: "PBT",
-            issuer: {
-              key: "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
-            },
-          },
-          contractId:
-            "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
-          symbol: "PBT",
-          decimals: 5,
-          total: "9899700",
-          available: "9899700",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address:
-              "PBT-CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
-            metadata: {
-              external_links: {},
-            },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {
-              top_holders: [],
-            },
-          },
-        },
-      },
-      isFunded: true,
-      subentryCount: 0,
-      error: {
-        horizon: null,
-        soroban: null,
-      },
-    };
-    await route.fulfill({ json });
-  });
+      };
+      await route.fulfill({ json });
+    });
+  };
   test.slow();
-  await login({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
@@ -190,9 +186,10 @@ test("Swap shows correct balances for assets", async ({
 test("Send doesn't throw error when account is unfunded", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
-  await login({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -206,58 +203,62 @@ test("Send doesn't throw error when account is unfunded", async ({
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 });
+
 test("Send doesn't throw error when creating muxed account", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
 
-  // Override account-balances to return 0 XLM only for the muxed account address
-  await page.route("**/account-balances/**", async (route) => {
-    const url = route.request().url();
-    const isMuxedAccount = url.includes(
-      "GCQ7EGW7VXHI4AKJAFADOIHCSK2OCVA42KUETUK5LQ3LVSEQEEKP7O7B",
-    );
+  const stubOverrides = async () => {
+    // Override account-balances to return 0 XLM only for the muxed account address
+    await page.route("**/account-balances/**", async (route) => {
+      const url = route.request().url();
+      const isMuxedAccount = url.includes(
+        "GCQ7EGW7VXHI4AKJAFADOIHCSK2OCVA42KUETUK5LQ3LVSEQEEKP7O7B",
+      );
 
-    const json = {
-      balances: {
-        native: {
-          token: {
-            type: "native",
-            code: "XLM",
-          },
-          total: isMuxedAccount ? "0" : "10000.0000000",
-          available: isMuxedAccount ? "0" : "10000.0000000",
-          sellingLiabilities: "0",
-          buyingLiabilities: "0",
-          minimumBalance: "1",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address: "",
-            metadata: {
-              type: "",
+      const json = {
+        balances: {
+          native: {
+            token: {
+              type: "native",
+              code: "XLM",
             },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {},
+            total: isMuxedAccount ? "0" : "10000.0000000",
+            available: isMuxedAccount ? "0" : "10000.0000000",
+            sellingLiabilities: "0",
+            buyingLiabilities: "0",
+            minimumBalance: "1",
+            blockaidData: {
+              result_type: "Benign",
+              malicious_score: "0.0",
+              attack_types: {},
+              chain: "stellar",
+              address: "",
+              metadata: {
+                type: "",
+              },
+              fees: {},
+              features: [],
+              trading_limits: {},
+              financial_stats: {},
+            },
           },
         },
-      },
-      isFunded: !isMuxedAccount,
-      subentryCount: 0,
-      error: {
-        horizon: null,
-        soroban: null,
-      },
-    };
-    await route.fulfill({ json });
-  });
+        isFunded: !isMuxedAccount,
+        subentryCount: 0,
+        error: {
+          horizon: null,
+          soroban: null,
+        },
+      };
+      await route.fulfill({ json });
+    });
+  };
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -282,55 +283,61 @@ test("Send doesn't throw error when creating muxed account", async ({
   });
 });
 
-test("Send can review formatted inputs", async ({ page, extensionId }) => {
+test("Send can review formatted inputs", async ({
+  page,
+  extensionId,
+  context,
+}) => {
   test.slow();
 
-  // Override account-balances to return 0 XLM only for the muxed account address
-  await page.route("**/account-balances/**", async (route) => {
-    const url = route.request().url();
-    const isMuxedAccount = url.includes(
-      "GCQ7EGW7VXHI4AKJAFADOIHCSK2OCVA42KUETUK5LQ3LVSEQEEKP7O7B",
-    );
+  const stubOverrides = async () => {
+    // Override account-balances to return 0 XLM only for the muxed account address
+    await page.route("**/account-balances/**", async (route) => {
+      const url = route.request().url();
+      const isMuxedAccount = url.includes(
+        "GCQ7EGW7VXHI4AKJAFADOIHCSK2OCVA42KUETUK5LQ3LVSEQEEKP7O7B",
+      );
 
-    const json = {
-      balances: {
-        native: {
-          token: {
-            type: "native",
-            code: "XLM",
-          },
-          total: isMuxedAccount ? "0" : "10000.0000000",
-          available: isMuxedAccount ? "0" : "10000.0000000",
-          sellingLiabilities: "0",
-          buyingLiabilities: "0",
-          minimumBalance: "1",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address: "",
-            metadata: {
-              type: "",
+      const json = {
+        balances: {
+          native: {
+            token: {
+              type: "native",
+              code: "XLM",
             },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {},
+            total: isMuxedAccount ? "0" : "10000.0000000",
+            available: isMuxedAccount ? "0" : "10000.0000000",
+            sellingLiabilities: "0",
+            buyingLiabilities: "0",
+            minimumBalance: "1",
+            blockaidData: {
+              result_type: "Benign",
+              malicious_score: "0.0",
+              attack_types: {},
+              chain: "stellar",
+              address: "",
+              metadata: {
+                type: "",
+              },
+              fees: {},
+              features: [],
+              trading_limits: {},
+              financial_stats: {},
+            },
           },
         },
-      },
-      isFunded: !isMuxedAccount,
-      subentryCount: 0,
-      error: {
-        horizon: null,
-        soroban: null,
-      },
-    };
-    await route.fulfill({ json });
-  });
+        isFunded: !isMuxedAccount,
+        subentryCount: 0,
+        error: {
+          horizon: null,
+          soroban: null,
+        },
+      };
+      await route.fulfill({ json });
+    });
+  };
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -355,9 +362,9 @@ test("Send can review formatted inputs", async ({ page, extensionId }) => {
   });
 });
 
-test.fixme("Send SAC to C address", async ({ page, extensionId }) => {
+test.fixme("Send SAC to C address", async ({ page, extensionId, context }) => {
   test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   // add USDC asset
   await page.getByTestId("account-options-dropdown").click();
@@ -457,14 +464,10 @@ test.fixme("Send SAC to C address", async ({ page, extensionId }) => {
 test("SendPayment persists amount and asset when navigating to choose address", async ({
   page,
   extensionId,
+  context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalancesWithUSDC(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-
   test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -483,14 +486,10 @@ test("SendPayment persists amount and asset when navigating to choose address", 
 test("SendPayment resets amount when user selects new asset", async ({
   page,
   extensionId,
+  context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalancesWithUSDC(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-
   test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   await page.getByTestId("nav-link-send").click({ force: true });
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -508,14 +507,10 @@ test("SendPayment resets amount when user selects new asset", async ({
 test("SendPayment resets state when navigating back to account", async ({
   page,
   extensionId,
+  context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalancesWithUSDC(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-
   test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   await page.getByTestId("nav-link-send").click({ force: true });
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -545,14 +540,10 @@ test("SendPayment resets state when navigating back to account", async ({
 test("Swap persists amount when navigating to choose source asset", async ({
   page,
   extensionId,
+  context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalancesWithUSDC(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-
   test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
@@ -573,14 +564,10 @@ test("Swap persists amount when navigating to choose source asset", async ({
 test("Swap resets amount when user selects new source asset", async ({
   page,
   extensionId,
+  context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalancesWithUSDC(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-
   test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
@@ -599,14 +586,10 @@ test("Swap resets amount when user selects new source asset", async ({
 test("Swap preserves amount when selecting destination asset", async ({
   page,
   extensionId,
+  context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalancesWithUSDC(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-
   test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
@@ -625,14 +608,10 @@ test("Swap preserves amount when selecting destination asset", async ({
 test("Swap resets state when navigating back to account", async ({
   page,
   extensionId,
+  context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalancesWithUSDC(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-
   test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
@@ -660,14 +639,14 @@ test("Swap resets state when navigating back to account", async ({
   await expect(page.getByTestId("swap-src-asset-tile")).toContainText("XLM");
 });
 
-test.afterAll(async ({ page, extensionId }) => {
+test.afterAll(async ({ page, extensionId, context }) => {
   if (
     test.info().status !== test.info().expectedStatus &&
     test.info().title === "Send SAC to C address"
   ) {
     // remove trustline in cleanup if Send SAC to C address test failed
     test.slow();
-    await loginToTestAccount({ page, extensionId });
+    await loginToTestAccount({ page, extensionId, context });
 
     await page.getByTestId("account-options-dropdown").click();
     await page.getByText("Manage assets").click({ force: true });
@@ -680,17 +659,18 @@ test.afterAll(async ({ page, extensionId }) => {
   }
 });
 
-test("Send token payment from Asset Detail", async ({ page, extensionId }) => {
+test("Send token payment from Asset Detail", async ({
+  page,
+  extensionId,
+  context,
+}) => {
   test.slow();
-
-  await stubAccountBalancesE2e(page);
-  await stubAccountHistory(page);
-  await stubTokenDetails(page);
-  await stubTokenPrices(page);
-  await stubSimulateTokenTransfer(page);
+  const stubOverrides = async () => {
+    await stubAccountBalancesE2e(page);
+  };
   await stubContractSpec(page, TEST_TOKEN_ADDRESS, true);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByText("E2E").click();
 
   await page.getByTestId("asset-detail-send-button").click();
@@ -726,17 +706,18 @@ test("Send token payment from Asset Detail", async ({ page, extensionId }) => {
   await expect(page.getByTestId("SubmitAction")).toBeEnabled();
 });
 
-test("Send XLM payment from Asset Detail", async ({ page, extensionId }) => {
+test("Send XLM payment from Asset Detail", async ({
+  page,
+  extensionId,
+  context,
+}) => {
   test.slow();
-
-  await stubAccountBalancesE2e(page);
-  await stubAccountHistory(page);
-  await stubTokenDetails(page);
-  await stubTokenPrices(page);
-  await stubSimulateTokenTransfer(page);
+  const stubOverrides = async () => {
+    await stubAccountBalancesE2e(page);
+  };
   await stubContractSpec(page, TEST_TOKEN_ADDRESS, true);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByText("XLM").click();
 
   await page.getByTestId("asset-detail-send-button").click();

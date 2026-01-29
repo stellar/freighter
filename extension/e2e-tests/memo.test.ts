@@ -23,15 +23,12 @@ test.beforeEach(async ({ page, context }) => {
 test("Send payment shows memo required warning when destination requires memo", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenDetails(page);
-  await stubTokenPrices(page);
   await stubMemoRequiredAccounts(page, MEMO_REQUIRED_ADDRESS);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -64,15 +61,12 @@ test("Send payment shows memo required warning when destination requires memo", 
 test("Send payment allows submission after adding memo to memo-required address", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenDetails(page);
-  await stubTokenPrices(page);
   await stubMemoRequiredAccounts(page, MEMO_REQUIRED_ADDRESS);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -133,15 +127,12 @@ test("Send payment allows submission after adding memo to memo-required address"
 test("Send payment returns to review modal after adding memo from review flow", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenDetails(page);
-  await stubTokenPrices(page);
   await stubMemoRequiredAccounts(page, MEMO_REQUIRED_ADDRESS);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -187,6 +178,7 @@ test("Send payment returns to review modal after adding memo from review flow", 
 test("Send payment returns to review modal after cancelling memo editor from review flow", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
   await stubAccountBalances(page);
@@ -195,7 +187,7 @@ test("Send payment returns to review modal after cancelling memo editor from rev
   await stubTokenPrices(page);
   await stubMemoRequiredAccounts(page, MEMO_REQUIRED_ADDRESS);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -239,6 +231,7 @@ test("Send payment returns to review modal after cancelling memo editor from rev
 test("Send payment shows memo value directly when memo is added before review", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
   await stubAccountBalances(page);
@@ -247,7 +240,7 @@ test("Send payment shows memo value directly when memo is added before review", 
   await stubTokenPrices(page);
   await stubMemoRequiredAccounts(page, MEMO_REQUIRED_ADDRESS);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -313,6 +306,7 @@ test("Send payment shows memo value directly when memo is added before review", 
 test("Send payment shows Add Memo when switching from non-memo-required to memo-required address", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
   const NON_MEMO_REQUIRED_ADDRESS =
@@ -324,7 +318,7 @@ test("Send payment shows Add Memo when switching from non-memo-required to memo-
   await stubTokenPrices(page);
   await stubMemoRequiredAccounts(page, MEMO_REQUIRED_ADDRESS);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -386,15 +380,12 @@ test("Send payment shows Add Memo when switching from non-memo-required to memo-
 test("Send payment shows Add Memo after cancelling review and returning to memo-required address", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenDetails(page);
-  await stubTokenPrices(page);
   await stubMemoRequiredAccounts(page, MEMO_REQUIRED_ADDRESS);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -466,14 +457,10 @@ test("Send payment shows Add Memo after cancelling review and returning to memo-
 test("Send classic token to G address allows memo", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenDetails(page);
-  await stubTokenPrices(page);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -511,14 +498,10 @@ test("Send classic token to G address allows memo", async ({
 test("Send classic token to M address doesn't allow memo", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenDetails(page);
-  await stubTokenPrices(page);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -541,17 +524,16 @@ test("Send classic token to M address doesn't allow memo", async ({
 test("Send custom token without Soroban mux support to G address disables memo", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
-  await stubAccountBalancesE2e(page);
-  await stubAccountHistory(page);
-  await stubTokenDetails(page);
-  await stubTokenPrices(page);
-  await stubSimulateTokenTransfer(page);
+  const stubOverrides = async () => {
+    await stubAccountBalancesE2e(page);
+  };
   // Stub contract spec before login to ensure it's ready when needed
   await stubContractSpec(page, TEST_TOKEN_ADDRESS, false);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible({
@@ -631,17 +613,17 @@ test("Send custom token without Soroban mux support to G address disables memo",
 test("Send custom token without Soroban mux support to M address is disabled", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
-  await stubAccountBalancesE2e(page);
-  await stubAccountHistory(page);
-  await stubTokenDetails(page);
-  await stubTokenPrices(page);
-  await stubSimulateTokenTransfer(page);
+  const stubOverrides = async () => {
+    await stubAccountBalancesE2e(page);
+    await stubSimulateTokenTransfer(page);
+  };
   // Stub contract spec before login to ensure it's ready when needed
   await stubContractSpec(page, TEST_TOKEN_ADDRESS, false);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -681,16 +663,15 @@ test("Send custom token without Soroban mux support to M address is disabled", a
 test("Send custom token with Soroban mux support to G address allows memo", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
-  await stubAccountBalancesE2e(page);
-  await stubAccountHistory(page);
-  await stubTokenDetails(page);
-  await stubTokenPrices(page);
-  await stubSimulateTokenTransfer(page);
+  const stubOverrides = async () => {
+    await stubAccountBalancesE2e(page);
+  };
   await stubContractSpec(page, TEST_TOKEN_ADDRESS, true);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -748,16 +729,15 @@ test("Send custom token with Soroban mux support to G address allows memo", asyn
 test("Send custom token with Soroban mux support to M address disables memo", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
-  await stubAccountBalancesE2e(page);
-  await stubAccountHistory(page);
-  await stubTokenDetails(page);
-  await stubTokenPrices(page);
-  await stubSimulateTokenTransfer(page);
+  const stubOverrides = async () => {
+    await stubAccountBalancesE2e(page);
+  };
   await stubContractSpec(page, TEST_TOKEN_ADDRESS, true);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();

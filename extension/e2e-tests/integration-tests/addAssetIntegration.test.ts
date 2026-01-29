@@ -1,18 +1,21 @@
 import { test, expect, expectPageToHaveScreenshot } from "../test-fixtures";
 import { loginToTestAccount } from "../helpers/login";
-import { stubAllExternalApis, stubTokenDetails } from "../helpers/stubs";
 import { TEST_TOKEN_ADDRESS } from "../helpers/test-token";
 
-test.beforeEach(async ({ page, context }) => {
-  if (!process.env.IS_INTEGRATION_MODE) {
-    await stubAllExternalApis(page, context);
-    await stubTokenDetails(page);
-  }
-});
+// test.beforeEach(async ({ page, context }) => {
+//   if (!process.env.IS_INTEGRATION_MODE) {
+//     await stubAllExternalApis(page, context);
+//     await stubTokenDetails(page);
+//   }
+// });
 
-test("Adding classic asset on Testnet", async ({ page, extensionId }) => {
+test("Adding classic asset on Testnet", async ({
+  page,
+  extensionId,
+  context,
+}) => {
   test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Manage assets").click();
@@ -76,8 +79,9 @@ const truncateString = (str: string, charCount = 4) =>
 test("Adding and removing unverified Soroban token", async ({
   page,
   extensionId,
+  context,
 }) => {
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Manage assets").click();
@@ -160,7 +164,7 @@ test("Adding and removing unverified Soroban token", async ({
   }
 });
 
-test.afterAll(async ({ page, extensionId }) => {
+test.afterAll(async ({ page, extensionId, context }) => {
   if (
     process.env.IS_INTEGRATION_MODE &&
     test.info().status !== test.info().expectedStatus &&
@@ -168,7 +172,7 @@ test.afterAll(async ({ page, extensionId }) => {
   ) {
     // remove trustline in cleanup if Adding Soroban verified token test failed
     test.slow();
-    await loginToTestAccount({ page, extensionId });
+    await loginToTestAccount({ page, extensionId, context });
 
     await page.getByTestId("account-options-dropdown").click();
     await page.getByText("Manage assets").click();

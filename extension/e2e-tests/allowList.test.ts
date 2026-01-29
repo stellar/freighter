@@ -1,14 +1,9 @@
 import { expect, test, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount, PASSWORD } from "./helpers/login";
-import { stubAllExternalApis } from "./helpers/stubs";
 
-test.beforeEach(async ({ page, context }) => {
-  await stubAllExternalApis(page, context);
-});
-
-test("View Allow List selector", async ({ page, extensionId }) => {
+test("View Allow List selector", async ({ page, extensionId, context }) => {
   test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();

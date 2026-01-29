@@ -1,45 +1,48 @@
 import { TransactionBuilder } from "stellar-sdk";
 import { test, expect } from "../test-fixtures";
 import { loginToTestAccount } from "../helpers/login";
-import { stubAllExternalApis } from "../helpers/stubs";
 import { TEST_M_ADDRESS, TEST_TOKEN_ADDRESS } from "../helpers/test-token";
 
-test.beforeEach(async ({ page, context }) => {
-  if (!process.env.IS_INTEGRATION_MODE) {
-    await stubAllExternalApis(page, context);
-  }
-});
+// test.beforeEach(async ({ page, context }) => {
+//   if (!process.env.IS_INTEGRATION_MODE) {
+//     await stubAllExternalApis(page, context);
+//   }
+// });
 
 test("Send persists inputs and submits to network", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
   let isScanSkiped = false;
-  if (!process.env.IS_INTEGRATION_MODE) {
-    await page.route("**/submit-tx", async (route) => {
-      const json = {
-        memo: "test memo",
-        max_fee: "900",
-        envelope_xdr:
-          "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAA4QAAAUVAAAAvgAAAAEAAAAAAAAAAAAAAABper1qAAAAAQAAAAl0ZXN0IG1lbW8AAAAAAAABAAAAAAAAAAEAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+QAAAAAAAAAAACYloAAAAAAAAAAAf8Yq2wAAABApUEUNnMHzyHA+ZclMfxsX1vv5wfoKegPYhxYnOuiSgit7kCLrVcahgbHAnvb0H+SM0PlZwOxEuaeBJA/B7GdAg==",
 
-        successful: true,
-      };
-      await route.fulfill({ json });
-    });
-  }
-  page.on("request", (request) => {
-    if (
-      request
-        .url()
-        .includes("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF")
-    ) {
-      isScanSkiped = request.url().includes("should_skip_scan=true");
+  const stubOverrides = async () => {
+    if (!process.env.IS_INTEGRATION_MODE) {
+      await page.route("**/submit-tx", async (route) => {
+        const json = {
+          memo: "test memo",
+          max_fee: "900",
+          envelope_xdr:
+            "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAA4QAAAUVAAAAvgAAAAEAAAAAAAAAAAAAAABper1qAAAAAQAAAAl0ZXN0IG1lbW8AAAAAAAABAAAAAAAAAAEAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+QAAAAAAAAAAACYloAAAAAAAAAAAf8Yq2wAAABApUEUNnMHzyHA+ZclMfxsX1vv5wfoKegPYhxYnOuiSgit7kCLrVcahgbHAnvb0H+SM0PlZwOxEuaeBJA/B7GdAg==",
+
+          successful: true,
+        };
+        await route.fulfill({ json });
+      });
     }
-  });
+    page.on("request", (request) => {
+      if (
+        request
+          .url()
+          .includes("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF")
+      ) {
+        isScanSkiped = request.url().includes("should_skip_scan=true");
+      }
+    });
+  };
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -127,9 +130,10 @@ test("Send persists inputs and submits to network", async ({
 test("Send XLM payments to recent federated addresses", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -200,9 +204,13 @@ test("Send XLM payments to recent federated addresses", async ({
   expect(accountBalancesRequestWasMade).toBeTruthy();
 });
 
-test("Send XLM payment to C address", async ({ page, extensionId }) => {
+test("Send XLM payment to C address", async ({
+  page,
+  extensionId,
+  context,
+}) => {
   test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   await page.getByTestId("nav-link-send").click({ force: true });
 
@@ -240,9 +248,13 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   expect(accountBalancesRequestWasMade).toBeTruthy();
 });
 
-test("Send XLM payment to M address", async ({ page, extensionId }) => {
+test("Send XLM payment to M address", async ({
+  page,
+  extensionId,
+  context,
+}) => {
   test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   await page.getByTestId("nav-link-send").click({ force: true });
 
@@ -282,77 +294,83 @@ test("Send XLM payment to M address", async ({ page, extensionId }) => {
   expect(accountBalancesRequestWasMade).toBeTruthy();
 });
 
-test("Send token payment to C address", async ({ page, extensionId }) => {
+test("Send token payment to C address", async ({
+  page,
+  extensionId,
+  context,
+}) => {
   test.slow();
-  if (!process.env.IS_INTEGRATION_MODE) {
-    await page.route("**/account-balances/**", async (route) => {
-      const json = {
-        balances: {
-          native: {
-            token: {
-              type: "native",
-              code: "XLM",
-            },
-            total: "10000.0000000",
-            available: "10000.0000000",
-            sellingLiabilities: "0",
-            buyingLiabilities: "0",
-            minimumBalance: "1",
-            blockaidData: {
-              result_type: "Benign",
-              malicious_score: "0.0",
-              attack_types: {},
-              chain: "stellar",
-              address: "",
-              metadata: {
-                type: "",
+  const stubOverrides = async () => {
+    if (!process.env.IS_INTEGRATION_MODE) {
+      await page.route("**/account-balances/**", async (route) => {
+        const json = {
+          balances: {
+            native: {
+              token: {
+                type: "native",
+                code: "XLM",
               },
-              fees: {},
-              features: [],
-              trading_limits: {},
-              financial_stats: {},
+              total: "10000.0000000",
+              available: "10000.0000000",
+              sellingLiabilities: "0",
+              buyingLiabilities: "0",
+              minimumBalance: "1",
+              blockaidData: {
+                result_type: "Benign",
+                malicious_score: "0.0",
+                attack_types: {},
+                chain: "stellar",
+                address: "",
+                metadata: {
+                  type: "",
+                },
+                fees: {},
+                features: [],
+                trading_limits: {},
+                financial_stats: {},
+              },
+            },
+            [`E2E:${TEST_TOKEN_ADDRESS}`]: {
+              token: {
+                code: "E2E",
+                issuer: {
+                  key: TEST_TOKEN_ADDRESS,
+                },
+              },
+              contractId: TEST_TOKEN_ADDRESS,
+              total: "500.0000000",
+              available: "500.0000000",
+              sellingLiabilities: "0",
+              buyingLiabilities: "0",
+              minimumBalance: "0.5",
+              blockaidData: {
+                result_type: "Benign",
+                malicious_score: "0.0",
+                attack_types: {},
+                chain: "stellar",
+                address: "",
+                metadata: {
+                  type: "",
+                },
+                fees: {},
+                features: [],
+                trading_limits: {},
+                financial_stats: {},
+              },
             },
           },
-          [`E2E:${TEST_TOKEN_ADDRESS}`]: {
-            token: {
-              code: "E2E",
-              issuer: {
-                key: TEST_TOKEN_ADDRESS,
-              },
-            },
-            contractId: TEST_TOKEN_ADDRESS,
-            total: "500.0000000",
-            available: "500.0000000",
-            sellingLiabilities: "0",
-            buyingLiabilities: "0",
-            minimumBalance: "0.5",
-            blockaidData: {
-              result_type: "Benign",
-              malicious_score: "0.0",
-              attack_types: {},
-              chain: "stellar",
-              address: "",
-              metadata: {
-                type: "",
-              },
-              fees: {},
-              features: [],
-              trading_limits: {},
-              financial_stats: {},
-            },
+          isFunded: true,
+          subentryCount: 0,
+          error: {
+            horizon: null,
+            soroban: null,
           },
-        },
-        isFunded: true,
-        subentryCount: 0,
-        error: {
-          horizon: null,
-          soroban: null,
-        },
-      };
-      await route.fulfill({ json });
-    });
-  }
-  await loginToTestAccount({ page, extensionId });
+        };
+        await route.fulfill({ json });
+      });
+    }
+  };
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   if (process.env.IS_INTEGRATION_MODE) {
     // in integration mode, make sure the token is added first

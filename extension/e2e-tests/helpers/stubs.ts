@@ -2281,7 +2281,7 @@ export const stubAllExternalApis = async (
 
   // Blockaid scan
   await stubScanTx(page);
-  // await stubScanDapp(context);
+  await stubScanDapp(context);
 };
 
 export const stubBackendSettings = async (page: Page) => {
