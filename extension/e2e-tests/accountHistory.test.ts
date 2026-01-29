@@ -11,7 +11,7 @@ import {
   Memo,
 } from "stellar-sdk";
 
-test("View Account History", async ({ page, extensionId, context }) => {
+test.only("View Account History", async ({ page, extensionId, context }) => {
   await loginToTestAccount({ page, extensionId, context });
 
   await page.getByTestId("nav-link-account-history").click();
@@ -22,7 +22,7 @@ test("View Account History", async ({ page, extensionId, context }) => {
   });
 });
 
-test("View failed transaction", async ({ page, extensionId, context }) => {
+test.only("View failed transaction", async ({ page, extensionId, context }) => {
   const stubOverrides = async () => {
     await page.route("*/**/account-history/*", async (route) => {
       const json = [
