@@ -84,6 +84,14 @@ test.afterEach(async ({ page, context }) => {
   try {
     await page.unroute("**/*");
     await context.unroute("**/*");
+    const pages = context.pages();
+    await Promise.all(
+      pages.map(async (p) => {
+        if (!p.isClosed()) {
+          await p.close();
+        }
+      }),
+    );
   } catch (e) {
     // Silently ignore errors during cleanup
   }
