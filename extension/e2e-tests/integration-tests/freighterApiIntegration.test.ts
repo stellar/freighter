@@ -42,18 +42,14 @@ const JSON_MSG_TO_SIGN = JSON.stringify({
 const JSON_SIGNED_MSG =
   '\"42IH7/mvkAT+ltbEG8oEPhVBzP7hb6NU+P+WZP3j1AIMdbwuFPrzBuRFRvLjXdXl5lDmC7aL0zrZIUrfrMXHDw==\"';
 
-test.beforeEach(async ({ page, context }) => {
-  if (!process.env.IS_INTEGRATION_MODE) {
-    await stubAllExternalApis(page, context);
-  }
-});
+const isIntegrationMode = process.env.IS_INTEGRATION_MODE === "true";
 
 test("should sign transaction when allowed", async ({
   page,
   extensionId,
   context,
 }) => {
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -256,7 +252,7 @@ test("should sign auth entry when allowed", async ({
   extensionId,
   context,
 }) => {
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -298,7 +294,7 @@ test("should not sign auth entry when not allowed", async ({
   extensionId,
   context,
 }) => {
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
@@ -328,7 +324,7 @@ test("should sign auth entry for a selected account when allowed", async ({
   extensionId,
   context,
 }) => {
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   await allowDapp({ page });
 
@@ -376,7 +372,7 @@ test("should sign message string when allowed", async ({
   extensionId,
   context,
 }) => {
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -452,7 +448,7 @@ test("should sign message json when allowed", async ({
   extensionId,
   context,
 }) => {
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -500,7 +496,7 @@ test("should sign message for a specific account when allowed", async ({
   extensionId,
   context,
 }) => {
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -545,7 +541,7 @@ test("should not sign message when not allowed", async ({
   extensionId,
   context,
 }) => {
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
@@ -572,7 +568,7 @@ test("should add token when allowed", async ({
 }) => {
   await stubIsSac(context);
 
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -607,9 +603,11 @@ test("should not add token when not allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubIsSac(context);
+  if (!isIntegrationMode) {
+    await stubIsSac(context);
+  }
 
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
@@ -643,7 +641,7 @@ test("should get public key when logged out", async ({
   extensionId,
   context,
 }) => {
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Settings").click();
   await page.getByText("Log Out").click();

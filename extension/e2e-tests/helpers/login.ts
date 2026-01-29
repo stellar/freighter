@@ -7,6 +7,9 @@ const { generateMnemonic } = StellarHDWallet;
 
 export const PASSWORD = "My-password123";
 
+/**
+ * Creates a new wallet and logs into the extension on Test Net.
+ */
 export const login = async ({
   page,
   extensionId,
@@ -62,6 +65,9 @@ export const login = async ({
   });
 };
 
+/**
+ * Logs in using `login()` and funds the account via Friendbot.
+ */
 export const loginAndFund = async ({
   page,
   extensionId,
@@ -82,19 +88,26 @@ export const loginAndFund = async ({
   });
 };
 
+/**
+ * Logs into a deterministic test account, optionally stubbing external APIs.
+ *
+ * Use `isIntegrationMode` to avoid stubbing in integration runs.
+ */
 export const loginToTestAccount = async ({
   page,
   extensionId,
   context,
   stubOverrides,
+  isIntegrationMode = false,
 }: {
   page: Page;
   extensionId: string;
   context: BrowserContext;
   stubOverrides?: () => Promise<void>;
+  isIntegrationMode?: boolean;
 }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
-  if (context) {
+  if (context && !isIntegrationMode) {
     // Wait for any background activity to complete
     await stubAllExternalApis(page, context);
     if (stubOverrides) {

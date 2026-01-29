@@ -3,11 +3,7 @@ import { test, expect } from "../test-fixtures";
 import { loginToTestAccount } from "../helpers/login";
 import { TEST_M_ADDRESS, TEST_TOKEN_ADDRESS } from "../helpers/test-token";
 
-// test.beforeEach(async ({ page, context }) => {
-//   if (!process.env.IS_INTEGRATION_MODE) {
-//     await stubAllExternalApis(page, context);
-//   }
-// });
+const isIntegrationMode = process.env.IS_INTEGRATION_MODE === "true";
 
 test("Send persists inputs and submits to network", async ({
   page,
@@ -17,32 +13,37 @@ test("Send persists inputs and submits to network", async ({
   test.slow();
   let isScanSkiped = false;
 
-  const stubOverrides = async () => {
-    if (!process.env.IS_INTEGRATION_MODE) {
-      await page.route("**/submit-tx", async (route) => {
-        const json = {
-          memo: "test memo",
-          max_fee: "900",
-          envelope_xdr:
-            "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAA4QAAAUVAAAAvgAAAAEAAAAAAAAAAAAAAABper1qAAAAAQAAAAl0ZXN0IG1lbW8AAAAAAAABAAAAAAAAAAEAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+QAAAAAAAAAAACYloAAAAAAAAAAAf8Yq2wAAABApUEUNnMHzyHA+ZclMfxsX1vv5wfoKegPYhxYnOuiSgit7kCLrVcahgbHAnvb0H+SM0PlZwOxEuaeBJA/B7GdAg==",
-
-          successful: true,
-        };
-        await route.fulfill({ json });
-      });
+  page.on("request", (request) => {
+    if (
+      request
+        .url()
+        .includes("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF")
+    ) {
+      isScanSkiped = request.url().includes("should_skip_scan=true");
     }
-    page.on("request", (request) => {
-      if (
-        request
-          .url()
-          .includes("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF")
-      ) {
-        isScanSkiped = request.url().includes("should_skip_scan=true");
-      }
+  });
+
+  const stubOverrides = async () => {
+    await page.route("**/submit-tx", async (route) => {
+      const json = {
+        memo: "test memo",
+        max_fee: "900",
+        envelope_xdr:
+          "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAA4QAAAUVAAAAvgAAAAEAAAAAAAAAAAAAAABper1qAAAAAQAAAAl0ZXN0IG1lbW8AAAAAAAABAAAAAAAAAAEAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+QAAAAAAAAAAACYloAAAAAAAAAAAf8Yq2wAAABApUEUNnMHzyHA+ZclMfxsX1vv5wfoKegPYhxYnOuiSgit7kCLrVcahgbHAnvb0H+SM0PlZwOxEuaeBJA/B7GdAg==",
+
+        successful: true,
+      };
+      await route.fulfill({ json });
     });
   };
 
-  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides,
+    isIntegrationMode,
+  });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -133,7 +134,7 @@ test("Send XLM payments to recent federated addresses", async ({
   context,
 }) => {
   test.slow();
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -210,7 +211,7 @@ test("Send XLM payment to C address", async ({
   context,
 }) => {
   test.slow();
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   await page.getByTestId("nav-link-send").click({ force: true });
 
@@ -254,7 +255,7 @@ test("Send XLM payment to M address", async ({
   context,
 }) => {
   test.slow();
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   await page.getByTestId("nav-link-send").click({ force: true });
 
@@ -301,78 +302,82 @@ test("Send token payment to C address", async ({
 }) => {
   test.slow();
   const stubOverrides = async () => {
-    if (!process.env.IS_INTEGRATION_MODE) {
-      await page.route("**/account-balances/**", async (route) => {
-        const json = {
-          balances: {
-            native: {
-              token: {
-                type: "native",
-                code: "XLM",
-              },
-              total: "10000.0000000",
-              available: "10000.0000000",
-              sellingLiabilities: "0",
-              buyingLiabilities: "0",
-              minimumBalance: "1",
-              blockaidData: {
-                result_type: "Benign",
-                malicious_score: "0.0",
-                attack_types: {},
-                chain: "stellar",
-                address: "",
-                metadata: {
-                  type: "",
-                },
-                fees: {},
-                features: [],
-                trading_limits: {},
-                financial_stats: {},
-              },
+    await page.route("**/account-balances/**", async (route) => {
+      const json = {
+        balances: {
+          native: {
+            token: {
+              type: "native",
+              code: "XLM",
             },
-            [`E2E:${TEST_TOKEN_ADDRESS}`]: {
-              token: {
-                code: "E2E",
-                issuer: {
-                  key: TEST_TOKEN_ADDRESS,
-                },
+            total: "10000.0000000",
+            available: "10000.0000000",
+            sellingLiabilities: "0",
+            buyingLiabilities: "0",
+            minimumBalance: "1",
+            blockaidData: {
+              result_type: "Benign",
+              malicious_score: "0.0",
+              attack_types: {},
+              chain: "stellar",
+              address: "",
+              metadata: {
+                type: "",
               },
-              contractId: TEST_TOKEN_ADDRESS,
-              total: "500.0000000",
-              available: "500.0000000",
-              sellingLiabilities: "0",
-              buyingLiabilities: "0",
-              minimumBalance: "0.5",
-              blockaidData: {
-                result_type: "Benign",
-                malicious_score: "0.0",
-                attack_types: {},
-                chain: "stellar",
-                address: "",
-                metadata: {
-                  type: "",
-                },
-                fees: {},
-                features: [],
-                trading_limits: {},
-                financial_stats: {},
-              },
+              fees: {},
+              features: [],
+              trading_limits: {},
+              financial_stats: {},
             },
           },
-          isFunded: true,
-          subentryCount: 0,
-          error: {
-            horizon: null,
-            soroban: null,
+          [`E2E:${TEST_TOKEN_ADDRESS}`]: {
+            token: {
+              code: "E2E",
+              issuer: {
+                key: TEST_TOKEN_ADDRESS,
+              },
+            },
+            contractId: TEST_TOKEN_ADDRESS,
+            total: "500.0000000",
+            available: "500.0000000",
+            sellingLiabilities: "0",
+            buyingLiabilities: "0",
+            minimumBalance: "0.5",
+            blockaidData: {
+              result_type: "Benign",
+              malicious_score: "0.0",
+              attack_types: {},
+              chain: "stellar",
+              address: "",
+              metadata: {
+                type: "",
+              },
+              fees: {},
+              features: [],
+              trading_limits: {},
+              financial_stats: {},
+            },
           },
-        };
-        await route.fulfill({ json });
-      });
-    }
+        },
+        isFunded: true,
+        subentryCount: 0,
+        error: {
+          horizon: null,
+          soroban: null,
+        },
+      };
+      await route.fulfill({ json });
+    });
   };
-  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides,
+    isIntegrationMode,
+  });
 
-  if (process.env.IS_INTEGRATION_MODE) {
+  if (isIntegrationMode) {
     // in integration mode, make sure the token is added first
     await page.getByTestId("account-options-dropdown").click();
     await page.getByText("Manage assets").click();

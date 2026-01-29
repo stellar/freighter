@@ -35,6 +35,7 @@ All tests in this folder must pass in **both scenarios**:
    - Real fee stats, account balances, and transaction data
    - Real network responses and delays
    - Account must be funded and in valid state
+   - Recognize that real data means these tests will inheritly be more flakey than stubbed tests
 
 ## Files
 

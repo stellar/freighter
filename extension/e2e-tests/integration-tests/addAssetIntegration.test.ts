@@ -9,13 +9,15 @@ import { TEST_TOKEN_ADDRESS } from "../helpers/test-token";
 //   }
 // });
 
+const isIntegrationMode = process.env.IS_INTEGRATION_MODE === "true";
+
 test("Adding classic asset on Testnet", async ({
   page,
   extensionId,
   context,
 }) => {
   test.slow();
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Manage assets").click();
@@ -41,7 +43,7 @@ test("Adding classic asset on Testnet", async ({
   await page.getByRole("button", { name: "Confirm" }).click();
   await expect(page.getByText("Done")).toBeVisible();
 
-  if (process.env.IS_INTEGRATION_MODE) {
+  if (isIntegrationMode) {
     // if we're running in integration mode, verify the asset was actually added
     await page.getByText("Done").click();
     await expect(
@@ -81,7 +83,7 @@ test("Adding and removing unverified Soroban token", async ({
   extensionId,
   context,
 }) => {
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Manage assets").click();
@@ -127,7 +129,7 @@ test("Adding and removing unverified Soroban token", async ({
   );
   await page.getByRole("button", { name: "Confirm" }).click();
 
-  if (process.env.IS_INTEGRATION_MODE) {
+  if (isIntegrationMode) {
     // if we're running in integration mode, verify the asset was actually added
     await expect(
       page.getByTestId("ManageAssetRowButton__ellipsis-E2E"),
@@ -166,7 +168,7 @@ test("Adding and removing unverified Soroban token", async ({
 
 test.afterAll(async ({ page, extensionId, context }) => {
   if (
-    process.env.IS_INTEGRATION_MODE &&
+    isIntegrationMode &&
     test.info().status !== test.info().expectedStatus &&
     test.info().title === "Adding classic asset on Testnet"
   ) {
