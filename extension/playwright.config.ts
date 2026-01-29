@@ -15,12 +15,12 @@ export default defineConfig({
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
-  forbidOnly: false,
+  forbidOnly: true,
   retries: 3,
   /* Fail the build if any test fails after retries */
   maxFailures: 1,
   /* In integration mode, run tests sequentially to avoid conflicts */
-  workers: process.env.IS_INTEGRATION_MODE ? 1 : process.env.CI ? 2 : 8,
+  workers: process.env.IS_INTEGRATION_MODE ? 1 : process.env.CI ? 3 : 8,
   /* Increase worker teardown timeout to handle route cleanup */
   webServer: undefined,
   globalTimeout: process.env.CI ? 3600000 : 600000, // 1 hour on CI, 10 min locally
