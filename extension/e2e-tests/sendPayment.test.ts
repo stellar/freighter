@@ -489,7 +489,10 @@ test("SendPayment resets amount when user selects new asset", async ({
   context,
 }) => {
   test.slow();
-  await loginToTestAccount({ page, extensionId, context });
+  const stubOverrides = async () => {
+    await stubAccountBalancesWithUSDC(page);
+  };
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   await page.getByTestId("nav-link-send").click({ force: true });
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -510,7 +513,10 @@ test("SendPayment resets state when navigating back to account", async ({
   context,
 }) => {
   test.slow();
-  await loginToTestAccount({ page, extensionId, context });
+  const stubOverrides = async () => {
+    await stubAccountBalancesWithUSDC(page);
+  };
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   await page.getByTestId("nav-link-send").click({ force: true });
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -567,7 +573,10 @@ test("Swap resets amount when user selects new source asset", async ({
   context,
 }) => {
   test.slow();
-  await loginToTestAccount({ page, extensionId, context });
+  const stubOverrides = async () => {
+    await stubAccountBalancesWithUSDC(page);
+  };
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
@@ -589,7 +598,10 @@ test("Swap preserves amount when selecting destination asset", async ({
   context,
 }) => {
   test.slow();
-  await loginToTestAccount({ page, extensionId, context });
+  const stubOverrides = async () => {
+    await stubAccountBalancesWithUSDC(page);
+  };
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
@@ -611,7 +623,10 @@ test("Swap resets state when navigating back to account", async ({
   context,
 }) => {
   test.slow();
-  await loginToTestAccount({ page, extensionId, context });
+  const stubOverrides = async () => {
+    await stubAccountBalancesWithUSDC(page);
+  };
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");

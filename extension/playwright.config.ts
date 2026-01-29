@@ -10,7 +10,7 @@ import { defineConfig, devices } from "@playwright/test";
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  timeout: process.env.CI ? 30000 : 15000,
+  timeout: 15000,
   testDir: "./e2e-tests",
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -20,7 +20,7 @@ export default defineConfig({
   /* Fail the build if any test fails after retries */
   maxFailures: 1,
   /* In integration mode, run tests sequentially to avoid conflicts */
-  workers: process.env.IS_INTEGRATION_MODE ? 1 : process.env.CI ? 5 : 8,
+  workers: process.env.IS_INTEGRATION_MODE ? 1 : process.env.CI ? 4 : 8,
   /* Increase worker teardown timeout to handle route cleanup */
   webServer: undefined,
   globalTimeout: process.env.CI ? 3600000 : 600000, // 1 hour on CI, 10 min locally
