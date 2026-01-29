@@ -11,11 +11,12 @@ import {
   stubAllExternalApis,
 } from "./helpers/stubs";
 
-test.beforeEach(async ({ page, context }) => {
+test("Load accounts on standalone network", async ({
+  page,
+  extensionId,
+  context,
+}) => {
   await stubAllExternalApis(page, context);
-});
-
-test("Load accounts on standalone network", async ({ page, extensionId }) => {
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Settings").click();
@@ -124,7 +125,9 @@ test.skip("Switches account and fetches correct balances while clearing cache", 
 test("Switches network and fetches correct balances while clearing cache", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   await page.route("**/account-balances/**", async (route) => {
     let json = {};
 
@@ -262,7 +265,9 @@ test("Switches network and fetches correct balances while clearing cache", async
 test("Account Balances should be loaded once and cached", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   await loginToTestAccount({ page, extensionId });
 
   let accountBalancesRequestWasMade = false;
@@ -427,7 +432,9 @@ test.skip("Clears cache and fetches balances if it's been 2 minutes since the la
 test("Loads wallets data and token prices on Mainnet in batches", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   let tokenPricesCallCount = 0;
 
   page.on("request", (request) => {
@@ -617,7 +624,7 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
 });
 
 test("Renames wallets", async ({ page, extensionId, context }) => {
-  await loginToTestAccount({ page, extensionId });
+  await stubAllExternalApis(page, context);
   await page.getByTestId("account-view-account-name").click();
   await expect(page.getByText("Wallets")).toBeVisible();
 
@@ -632,7 +639,9 @@ test("Renames wallets", async ({ page, extensionId, context }) => {
 test("Loads collectibles data with successful metadata", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   await stubCollectibles(page, true);
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("account-tab-collectibles").click();
@@ -772,7 +781,9 @@ test("Loads collectibles data with successful metadata", async ({
 test("Loads collectibles data with unsuccessful metadata", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   await stubCollectiblesUnsuccessfulMetadata(page);
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("account-tab-collectibles").click();

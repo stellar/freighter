@@ -16,15 +16,13 @@ import {
 const MEMO_REQUIRED_ADDRESS =
   "GA6SXIZIKLJHCZI2KEOBEUUOFMM4JUPPM2UTWX6STAWT25JWIEUFIMFF";
 
-test.beforeEach(async ({ page, context }) => {
-  await stubAllExternalApis(page, context);
-});
-
 test("Send payment shows memo required warning when destination requires memo", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
+  await stubAllExternalApis(page, context);
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenDetails(page);
@@ -64,8 +62,10 @@ test("Send payment shows memo required warning when destination requires memo", 
 test("Send payment allows submission after adding memo to memo-required address", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
+  await stubAllExternalApis(page, context);
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenDetails(page);
@@ -133,8 +133,10 @@ test("Send payment allows submission after adding memo to memo-required address"
 test("Send payment returns to review modal after adding memo from review flow", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
+  await stubAllExternalApis(page, context);
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenDetails(page);
@@ -187,8 +189,10 @@ test("Send payment returns to review modal after adding memo from review flow", 
 test("Send payment returns to review modal after cancelling memo editor from review flow", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
+  await stubAllExternalApis(page, context);
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenDetails(page);
@@ -239,8 +243,10 @@ test("Send payment returns to review modal after cancelling memo editor from rev
 test("Send payment shows memo value directly when memo is added before review", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
+  await stubAllExternalApis(page, context);
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenDetails(page);
@@ -313,7 +319,9 @@ test("Send payment shows memo value directly when memo is added before review", 
 test("Send payment shows Add Memo when switching from non-memo-required to memo-required address", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   test.slow();
   const NON_MEMO_REQUIRED_ADDRESS =
     "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
@@ -386,7 +394,9 @@ test("Send payment shows Add Memo when switching from non-memo-required to memo-
 test("Send payment shows Add Memo after cancelling review and returning to memo-required address", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   test.slow();
   await stubAccountBalances(page);
   await stubAccountHistory(page);
@@ -466,7 +476,9 @@ test("Send payment shows Add Memo after cancelling review and returning to memo-
 test("Send classic token to G address allows memo", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   test.slow();
   await stubAccountBalances(page);
   await stubAccountHistory(page);
@@ -511,7 +523,9 @@ test("Send classic token to G address allows memo", async ({
 test("Send classic token to M address doesn't allow memo", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   test.slow();
   await stubAccountBalances(page);
   await stubAccountHistory(page);
@@ -541,7 +555,9 @@ test("Send classic token to M address doesn't allow memo", async ({
 test("Send custom token without Soroban mux support to G address disables memo", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   test.slow();
   await stubAccountBalancesE2e(page);
   await stubAccountHistory(page);
@@ -631,7 +647,9 @@ test("Send custom token without Soroban mux support to G address disables memo",
 test("Send custom token without Soroban mux support to M address is disabled", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   test.slow();
   await stubAccountBalancesE2e(page);
   await stubAccountHistory(page);
@@ -681,7 +699,9 @@ test("Send custom token without Soroban mux support to M address is disabled", a
 test("Send custom token with Soroban mux support to G address allows memo", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   test.slow();
   await stubAccountBalancesE2e(page);
   await stubAccountHistory(page);
@@ -748,7 +768,9 @@ test("Send custom token with Soroban mux support to G address allows memo", asyn
 test("Send custom token with Soroban mux support to M address disables memo", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   test.slow();
   await stubAccountBalancesE2e(page);
   await stubAccountHistory(page);

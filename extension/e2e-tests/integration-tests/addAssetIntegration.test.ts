@@ -3,15 +3,16 @@ import { loginToTestAccount } from "../helpers/login";
 import { stubAllExternalApis, stubTokenDetails } from "../helpers/stubs";
 import { TEST_TOKEN_ADDRESS } from "../helpers/test-token";
 
-test.beforeEach(async ({ page, context }) => {
+test("Adding classic asset on Testnet", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
   if (!process.env.IS_INTEGRATION_MODE) {
     await stubAllExternalApis(page, context);
     await stubTokenDetails(page);
   }
-});
-
-test("Adding classic asset on Testnet", async ({ page, extensionId }) => {
-  test.slow();
   await loginToTestAccount({ page, extensionId });
 
   await page.getByTestId("account-options-dropdown").click();
@@ -76,7 +77,12 @@ const truncateString = (str: string, charCount = 4) =>
 test("Adding and removing unverified Soroban token", async ({
   page,
   extensionId,
+  context,
 }) => {
+  if (!process.env.IS_INTEGRATION_MODE) {
+    await stubAllExternalApis(page, context);
+    await stubTokenDetails(page);
+  }
   await loginToTestAccount({ page, extensionId });
 
   await page.getByTestId("account-options-dropdown").click();

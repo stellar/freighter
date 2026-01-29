@@ -2,11 +2,8 @@ import { expect, test, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount, PASSWORD } from "./helpers/login";
 import { stubAllExternalApis } from "./helpers/stubs";
 
-test.beforeEach(async ({ page, context }) => {
+test("View Allow List selector", async ({ page, extensionId, context }) => {
   await stubAllExternalApis(page, context);
-});
-
-test("View Allow List selector", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
 

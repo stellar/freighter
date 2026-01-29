@@ -4,17 +4,15 @@ import { loginToTestAccount } from "../helpers/login";
 import { stubAllExternalApis } from "../helpers/stubs";
 import { TEST_M_ADDRESS, TEST_TOKEN_ADDRESS } from "../helpers/test-token";
 
-test.beforeEach(async ({ page, context }) => {
-  if (!process.env.IS_INTEGRATION_MODE) {
-    await stubAllExternalApis(page, context);
-  }
-});
-
 test("Send persists inputs and submits to network", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
+  if (!process.env.IS_INTEGRATION_MODE) {
+    await stubAllExternalApis(page, context);
+  }
   let isScanSkiped = false;
   if (!process.env.IS_INTEGRATION_MODE) {
     await page.route("**/submit-tx", async (route) => {
@@ -127,8 +125,12 @@ test("Send persists inputs and submits to network", async ({
 test("Send XLM payments to recent federated addresses", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
+  if (!process.env.IS_INTEGRATION_MODE) {
+    await stubAllExternalApis(page, context);
+  }
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("nav-link-send").click({ force: true });
 
@@ -200,7 +202,14 @@ test("Send XLM payments to recent federated addresses", async ({
   expect(accountBalancesRequestWasMade).toBeTruthy();
 });
 
-test("Send XLM payment to C address", async ({ page, extensionId }) => {
+test("Send XLM payment to C address", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  if (!process.env.IS_INTEGRATION_MODE) {
+    await stubAllExternalApis(page, context);
+  }
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
@@ -240,7 +249,14 @@ test("Send XLM payment to C address", async ({ page, extensionId }) => {
   expect(accountBalancesRequestWasMade).toBeTruthy();
 });
 
-test("Send XLM payment to M address", async ({ page, extensionId }) => {
+test("Send XLM payment to M address", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  if (!process.env.IS_INTEGRATION_MODE) {
+    await stubAllExternalApis(page, context);
+  }
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
@@ -282,7 +298,14 @@ test("Send XLM payment to M address", async ({ page, extensionId }) => {
   expect(accountBalancesRequestWasMade).toBeTruthy();
 });
 
-test("Send token payment to C address", async ({ page, extensionId }) => {
+test("Send token payment to C address", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  if (!process.env.IS_INTEGRATION_MODE) {
+    await stubAllExternalApis(page, context);
+  }
   test.slow();
   if (!process.env.IS_INTEGRATION_MODE) {
     await page.route("**/account-balances/**", async (route) => {

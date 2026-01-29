@@ -15,14 +15,12 @@ import {
 const MUXED_ACCOUNT_ADDRESS =
   "MCQ7EGW7VXHI4AKJAFADOIHCSK2OCVA42KUETUK5LQ3LVSEQEEKP6AAAAAAAAAAAAFLVY";
 
-test.beforeEach(async ({ page, context }) => {
-  await stubAllExternalApis(page, context);
-});
-
 test("Swap doesn't throw error when account is unfunded", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   await login({ page, extensionId });
 
   await page.getByTestId("nav-link-swap").click();
@@ -31,7 +29,9 @@ test("Swap doesn't throw error when account is unfunded", async ({
 test("Swap shows correct balances for assets", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   await stubAccountHistory(page);
   await stubTokenDetails(page);
   await page.route("*/**/account-balances/*", async (route) => {
@@ -190,7 +190,9 @@ test("Swap shows correct balances for assets", async ({
 test("Send doesn't throw error when account is unfunded", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   test.slow();
   await login({ page, extensionId });
   await page.getByTestId("nav-link-send").click({ force: true });
@@ -209,7 +211,9 @@ test("Send doesn't throw error when account is unfunded", async ({
 test("Send doesn't throw error when creating muxed account", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   test.slow();
 
   // Override account-balances to return 0 XLM only for the muxed account address
@@ -282,7 +286,12 @@ test("Send doesn't throw error when creating muxed account", async ({
   });
 });
 
-test("Send can review formatted inputs", async ({ page, extensionId }) => {
+test("Send can review formatted inputs", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubAllExternalApis(page, context);
   test.slow();
 
   // Override account-balances to return 0 XLM only for the muxed account address
@@ -457,7 +466,9 @@ test.fixme("Send SAC to C address", async ({ page, extensionId }) => {
 test("SendPayment persists amount and asset when navigating to choose address", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   await stubTokenDetails(page);
   await stubAccountBalancesWithUSDC(page);
   await stubAccountHistory(page);
@@ -483,7 +494,9 @@ test("SendPayment persists amount and asset when navigating to choose address", 
 test("SendPayment resets amount when user selects new asset", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   await stubTokenDetails(page);
   await stubAccountBalancesWithUSDC(page);
   await stubAccountHistory(page);
@@ -508,7 +521,9 @@ test("SendPayment resets amount when user selects new asset", async ({
 test("SendPayment resets state when navigating back to account", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   await stubTokenDetails(page);
   await stubAccountBalancesWithUSDC(page);
   await stubAccountHistory(page);
@@ -545,7 +560,9 @@ test("SendPayment resets state when navigating back to account", async ({
 test("Swap persists amount when navigating to choose source asset", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   await stubTokenDetails(page);
   await stubAccountBalancesWithUSDC(page);
   await stubAccountHistory(page);
@@ -573,7 +590,9 @@ test("Swap persists amount when navigating to choose source asset", async ({
 test("Swap resets amount when user selects new source asset", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   await stubTokenDetails(page);
   await stubAccountBalancesWithUSDC(page);
   await stubAccountHistory(page);
@@ -599,7 +618,9 @@ test("Swap resets amount when user selects new source asset", async ({
 test("Swap preserves amount when selecting destination asset", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   await stubTokenDetails(page);
   await stubAccountBalancesWithUSDC(page);
   await stubAccountHistory(page);
@@ -625,7 +646,9 @@ test("Swap preserves amount when selecting destination asset", async ({
 test("Swap resets state when navigating back to account", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   await stubTokenDetails(page);
   await stubAccountBalancesWithUSDC(page);
   await stubAccountHistory(page);
@@ -680,7 +703,12 @@ test.afterAll(async ({ page, extensionId }) => {
   }
 });
 
-test("Send token payment from Asset Detail", async ({ page, extensionId }) => {
+test("Send token payment from Asset Detail", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubAllExternalApis(page, context);
   test.slow();
 
   await stubAccountBalancesE2e(page);
@@ -726,7 +754,12 @@ test("Send token payment from Asset Detail", async ({ page, extensionId }) => {
   await expect(page.getByTestId("SubmitAction")).toBeEnabled();
 });
 
-test("Send XLM payment from Asset Detail", async ({ page, extensionId }) => {
+test("Send XLM payment from Asset Detail", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubAllExternalApis(page, context);
   test.slow();
 
   await stubAccountBalancesE2e(page);

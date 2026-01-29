@@ -3,12 +3,13 @@ import { loginToTestAccountPT } from "./helpers/login-pt";
 import { stubAllExternalApis } from "./helpers/stubs";
 test.use({ language: "pt" });
 
-test.beforeEach(async ({ page, extensionId, context }) => {
+test("Smoke test: Portuguese translations are loaded", async ({
+  page,
+  extensionId,
+  context,
+}) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
   await stubAllExternalApis(page, context);
-});
-
-test("Smoke test: Portuguese translations are loaded", async ({ page }) => {
   // Verify welcome page shows Portuguese text
   await page.locator(".Welcome__column").waitFor();
   await expect(page.getByText("Carteira Freighter")).toBeVisible();
@@ -19,9 +20,11 @@ test("Smoke test: Portuguese translations are loaded", async ({ page }) => {
 test("Smoke test: Portuguese translations in account view", async ({
   page,
   extensionId,
+  context,
 }) => {
   // Login first
   await page.goto(`chrome-extension://${extensionId}/index.html`);
+  await stubAllExternalApis(page, context);
   await page.getByText("Já tenho uma carteira").click();
   await expect(page.getByText("Criar uma Senha")).toBeVisible();
 

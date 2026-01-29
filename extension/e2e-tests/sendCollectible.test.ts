@@ -8,12 +8,13 @@ import {
 import { TEST_M_ADDRESS } from "./helpers/test-token";
 import { test, expect } from "./test-fixtures";
 
-test.beforeEach(async ({ page, context }) => {
-  await stubAllExternalApis(page, context);
-});
-
 // Review screen navigation and collectible details display issues
-test("Send collectible with metadata", async ({ page, extensionId }) => {
+test("Send collectible with metadata", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubAllExternalApis(page, context);
   await stubSimulateSendCollectible(page);
 
   await loginToTestAccount({ page, extensionId });
@@ -82,7 +83,12 @@ test("Send collectible with metadata", async ({ page, extensionId }) => {
   ).toHaveText("GBTY…JZOF");
 });
 
-test("Send collectible without metadata", async ({ page, extensionId }) => {
+test("Send collectible without metadata", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubAllExternalApis(page, context);
   await stubCollectiblesUnsuccessfulMetadata(page);
   await stubSimulateSendCollectible(page);
 
@@ -153,7 +159,9 @@ test("Send collectible without metadata", async ({ page, extensionId }) => {
 test("Send collectible to M address when contract doesn't support muxed is disabled", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   await stubSimulateSendCollectible(page);
 
   // Stub contract spec with muxed support = false
@@ -195,7 +203,9 @@ test("Send collectible to M address when contract doesn't support muxed is disab
 test("Send collectible with Soroban mux support to M address disables memo", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   test.slow();
   await stubSimulateSendCollectible(page);
   // Stub contract spec with muxed support = true
@@ -259,7 +269,9 @@ test("Send collectible with Soroban mux support to M address disables memo", asy
 test("Send collectible without Soroban mux support to G address disables memo", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   // Stub contract spec with muxed support = false
   await stubContractSpec(
     page,
@@ -314,7 +326,9 @@ test("Send collectible without Soroban mux support to G address disables memo", 
 test("Send collectible with Soroban mux support to G address allows memo", async ({
   page,
   extensionId,
+  context,
 }) => {
+  await stubAllExternalApis(page, context);
   await stubSimulateSendCollectible(page);
   // Stub contract spec with muxed support = true
   await stubContractSpec(

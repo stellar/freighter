@@ -46,13 +46,14 @@ const JSON_MSG_TO_SIGN = JSON.stringify({
 const JSON_SIGNED_MSG =
   '\"42IH7/mvkAT+ltbEG8oEPhVBzP7hb6NU+P+WZP3j1AIMdbwuFPrzBuRFRvLjXdXl5lDmC7aL0zrZIUrfrMXHDw==\"';
 
-test.beforeEach(async ({ page, context }) => {
+test("should sign transaction when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
   if (!process.env.IS_INTEGRATION_MODE) {
     await stubAllExternalApis(page, context);
   }
-});
-
-test("should sign transaction when allowed", async ({ page, extensionId }) => {
   await loginToTestAccount({ page, extensionId });
   await allowDapp({ page });
 
@@ -222,7 +223,11 @@ test.skip("should sign transaction for a specific account when allowed", async (
 test("should not sign transaction when not allowed", async ({
   page,
   extensionId,
+  context,
 }) => {
+  if (!process.env.IS_INTEGRATION_MODE) {
+    await stubAllExternalApis(page, context);
+  }
   await loginToTestAccount({ page, extensionId });
 
   // open a second tab and go to docs playground
@@ -345,7 +350,9 @@ test("should sign auth entry for a selected account when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
+  if (!process.env.IS_INTEGRATION_MODE) {
+    await stubAllExternalApis(page, context);
+  }
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
@@ -399,7 +406,9 @@ test("should sign message string when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
+  if (!process.env.IS_INTEGRATION_MODE) {
+    await stubAllExternalApis(page, context);
+  }
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
@@ -443,7 +452,9 @@ test("should sign message long string when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
+  if (!process.env.IS_INTEGRATION_MODE) {
+    await stubAllExternalApis(page, context);
+  }
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
@@ -487,7 +498,9 @@ test("should sign message json when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
+  if (!process.env.IS_INTEGRATION_MODE) {
+    await stubAllExternalApis(page, context);
+  }
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
@@ -541,7 +554,9 @@ test("should sign message for a specific account when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
+  if (!process.env.IS_INTEGRATION_MODE) {
+    await stubAllExternalApis(page, context);
+  }
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
@@ -592,7 +607,9 @@ test("should not sign message when not allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
+  if (!process.env.IS_INTEGRATION_MODE) {
+    await stubAllExternalApis(page, context);
+  }
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
@@ -622,7 +639,9 @@ test("should add token when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(context);
+  if (!process.env.IS_INTEGRATION_MODE) {
+    await stubAllExternalApis(page, context);
+  }
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
@@ -664,7 +683,9 @@ test("should not add token when not allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(context);
+  if (!process.env.IS_INTEGRATION_MODE) {
+    await stubAllExternalApis(page, context);
+  }
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
@@ -705,7 +726,9 @@ test("should get public key when logged out", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
+  if (!process.env.IS_INTEGRATION_MODE) {
+    await stubAllExternalApis(page, context);
+  }
   await stubAccountBalances(page);
   await stubAccountHistory(page);
   await stubTokenPrices(page);
