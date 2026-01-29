@@ -1,13 +1,12 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
-import { TEST_TOKEN_ADDRESS, USDC_TOKEN_ADDRESS } from "./helpers/test-token";
+import { USDC_TOKEN_ADDRESS } from "./helpers/test-token";
 import {
   stubAccountBalances,
   stubAccountHistory,
   stubTokenDetails,
   stubTokenPrices,
   stubAllExternalApis,
-  stubAssetSearch,
 } from "./helpers/stubs";
 
 // The page navigation after clicking 'Manage Assets' doesn't complete reliably.

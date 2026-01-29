@@ -16,7 +16,7 @@ export default defineConfig({
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  retries: 5,
+  retries: 0,
   /* Fail the build if any test fails after retries */
   maxFailures: 1,
   /* In integration mode, run tests sequentially to avoid conflicts */
