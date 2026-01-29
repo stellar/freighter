@@ -61,9 +61,9 @@ jobs:
       - run: yarn
       - run: npx playwright install --with-deps chromium
       - run: yarn setup
-      # - run: yarn build:freighter-api
+      - run: yarn build:freighter-api
       - run: yarn build:extension
-      # - run: yarn test:ci
+      - run: yarn test:ci
       - run:
           ${{ github.base_ref == 'master' && 'IS_INTEGRATION_MODE=true' || '' }}
           yarn test:e2e
