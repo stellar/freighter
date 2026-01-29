@@ -743,17 +743,19 @@ test("Switch mnemonic phrase length preserves previous state (pw + ToS)", async 
   await startImportWalletFlow({ page, password: PASSWORD_TEST });
 
   const toggleLabel = page.locator('label[for="RecoverAccount__toggle"]');
+  const input12 = page.locator('input[name="MnemonicPhrase-12"]');
+  const input13 = page.locator('input[name="MnemonicPhrase-13"]');
+
+  await expect(toggleLabel).toBeVisible();
+  await expect(input12).toBeVisible();
+  await expect(input13).toBeHidden();
+
   await toggleLabel.click();
-
-  await page
-    .locator('input[name="MnemonicPhrase-13"]')
-    .waitFor({ state: "visible" });
+  await expect(input13).toBeVisible();
 
   await toggleLabel.click();
-
-  await page
-    .locator('input[name="MnemonicPhrase-12"]')
-    .waitFor({ state: "visible" });
+  await expect(input13).toBeHidden();
+  await expect(input12).toBeVisible();
 
   await fillMnemonicInputs({ page, words: TEST_MNEMONIC_12_WORDS });
 
