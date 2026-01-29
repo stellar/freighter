@@ -15,11 +15,11 @@ import {
   Memo,
 } from "stellar-sdk";
 
-test.beforeEach(async ({ page, context }) => {
-  await stubAllExternalApis(page, context);
+test.beforeEach(async ({ page }) => {
+  await stubAllExternalApis(page);
 });
 
-test("View Account History", async ({ page, extensionId }) => {
+test.only("View Account History", async ({ page, extensionId }) => {
   await loginToTestAccount({ page, extensionId });
 
   await page.getByTestId("nav-link-account-history").click();

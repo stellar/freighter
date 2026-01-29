@@ -2221,9 +2221,8 @@ export const stubFeeStats = async (page: Page) => {
  */
 export const stubAllExternalApis = async (
   page: Page,
-  context: BrowserContext,
+  context?: BrowserContext,
 ) => {
-  console.log(context);
   // User notification
   // await stubUserNotification(context);
 
