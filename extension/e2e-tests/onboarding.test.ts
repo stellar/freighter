@@ -2,7 +2,6 @@ import { shuffle } from "lodash";
 import StellarHDWallet from "stellar-hd-wallet";
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount, PASSWORD } from "./helpers/login";
-import { stubAllExternalApis } from "./helpers/stubs";
 import {
   startImportWalletFlow,
   fillMnemonicInputs,
@@ -27,9 +26,11 @@ const TEST_MNEMONIC_12_WORDS = [
   "face",
 ];
 
-test("Welcome page loads", async ({ page, extensionId, context }) => {
+test.beforeEach(async ({ page, extensionId }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await stubAllExternalApis(page, context);
+});
+
+test("Welcome page loads", async ({ page }) => {
   await page.locator(".Welcome__column").waitFor();
   await expect(page.getByText("Freighter Wallet")).toBeVisible();
   await expect(page.getByText("Create new wallet")).toBeVisible();
@@ -37,9 +38,7 @@ test("Welcome page loads", async ({ page, extensionId, context }) => {
   await expectPageToHaveScreenshot({ page, screenshot: "welcome-page.png" });
 });
 
-test("Create new wallet", async ({ page, extensionId, context }) => {
-  await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await stubAllExternalApis(page, context);
+test("Create new wallet", async ({ page }) => {
   await page.getByText("Create new wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
@@ -91,9 +90,7 @@ test("Create new wallet", async ({ page, extensionId, context }) => {
   });
 });
 
-test("Import 12 word wallet", async ({ page, extensionId, context }) => {
-  await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await stubAllExternalApis(page, context);
+test("Import 12 word wallet", async ({ page }) => {
   await page.getByText("I already have a wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
@@ -129,13 +126,7 @@ test("Import 12 word wallet", async ({ page, extensionId, context }) => {
   });
 });
 
-test("Import 12 word wallet by pasting", async ({
-  page,
-  extensionId,
-  context,
-}) => {
-  await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await stubAllExternalApis(page, context);
+test("Import 12 word wallet by pasting", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
   await page.getByText("I already have a wallet").click();
@@ -180,9 +171,7 @@ test("Import 12 word wallet by pasting", async ({
   });
 });
 
-test("Import 24 word wallet", async ({ page, extensionId, context }) => {
-  await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await stubAllExternalApis(page, context);
+test("Import 24 word wallet", async ({ page }) => {
   await page.getByText("I already have a wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
@@ -247,13 +236,7 @@ test("Import 24 word wallet", async ({ page, extensionId, context }) => {
   });
 });
 
-test("Import 24 word wallet by pasting", async ({
-  page,
-  extensionId,
-  context,
-}) => {
-  await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await stubAllExternalApis(page, context);
+test("Import 24 word wallet by pasting", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
   await page.getByText("I already have a wallet").click();
@@ -325,13 +308,7 @@ test("Import 24 word wallet by pasting", async ({
   });
 });
 
-test("Import wallet with wrong password", async ({
-  page,
-  extensionId,
-  context,
-}) => {
-  await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await stubAllExternalApis(page, context);
+test("Import wallet with wrong password", async ({ page }) => {
   await page.getByText("I already have a wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
@@ -351,9 +328,7 @@ test("Import wallet with wrong password", async ({
   );
 });
 
-test("Incorrect mnemonic phrase", async ({ page, extensionId, context }) => {
-  await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await stubAllExternalApis(page, context);
+test("Incorrect mnemonic phrase", async ({ page }) => {
   await page.getByText("Create new wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
@@ -400,13 +375,7 @@ test("Incorrect mnemonic phrase", async ({ page, extensionId, context }) => {
   );
 });
 
-test("Logout and create new account", async ({
-  page,
-  extensionId,
-  context,
-}) => {
-  await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await stubAllExternalApis(page, context);
+test("Logout and create new account", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
@@ -473,13 +442,7 @@ test("Logout and create new account", async ({
   });
 });
 
-test("Logout and import new account", async ({
-  page,
-  extensionId,
-  context,
-}) => {
-  await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await stubAllExternalApis(page, context);
+test("Logout and import new account", async ({ page, extensionId }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId });
 
@@ -562,10 +525,7 @@ test("Logout and import new account", async ({
 test("Overwrites account when user abandons mnemonic phrase confirmation", async ({
   page,
   extensionId,
-  context,
 }) => {
-  await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await stubAllExternalApis(page, context);
   await page.getByText("Create new wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
@@ -640,10 +600,7 @@ test("Overwrites account when user abandons mnemonic phrase confirmation", async
 test("Overwrites account when user abandons after password creation", async ({
   page,
   extensionId,
-  context,
 }) => {
-  await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await stubAllExternalApis(page, context);
   await page.getByText("Create new wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
@@ -715,11 +672,9 @@ test("Overwrites account when user abandons after password creation", async ({
 test("Wrong mnemonic phrase preserves previous state (pw + ToS) and allows retry", async ({
   page,
   extensionId,
-  context,
 }) => {
   test.slow();
   await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await stubAllExternalApis(page, context);
 
   const PASSWORD_TEST = "My-password123";
   await startImportWalletFlow({ page, password: PASSWORD_TEST });
@@ -745,11 +700,9 @@ test("Wrong mnemonic phrase preserves previous state (pw + ToS) and allows retry
 test("Wrong mnemonic phrase clears mnemonic inputs but preserves pw + ToS from previous page", async ({
   page,
   extensionId,
-  context,
 }) => {
   test.slow();
   await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await stubAllExternalApis(page, context);
 
   const PASSWORD_TEST = "SecurePass456";
   await startImportWalletFlow({ page, password: PASSWORD_TEST });
@@ -774,11 +727,9 @@ test("Wrong mnemonic phrase clears mnemonic inputs but preserves pw + ToS from p
 test("Switch mnemonic phrase length preserves previous state (pw + ToS)", async ({
   page,
   extensionId,
-  context,
 }) => {
   test.slow();
   await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await stubAllExternalApis(page, context);
 
   const PASSWORD_TEST = "AnotherPass789";
   await startImportWalletFlow({ page, password: PASSWORD_TEST });
@@ -804,11 +755,9 @@ test("Switch mnemonic phrase length preserves previous state (pw + ToS)", async 
 test("Enter wrong mnemonic multiple times and retry preserves previous state (pw + ToS) and allows successful import", async ({
   page,
   extensionId,
-  context,
 }) => {
   test.slow();
   await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await stubAllExternalApis(page, context);
 
   const PASSWORD_TEST = "PasteTestPass123";
   await startImportWalletFlow({ page, password: PASSWORD_TEST });
@@ -829,11 +778,9 @@ test("Enter wrong mnemonic multiple times and retry preserves previous state (pw
 test("Multiple failed attempts preserve state across retries (pw + ToS)", async ({
   page,
   extensionId,
-  context,
 }) => {
   test.slow();
   await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await stubAllExternalApis(page, context);
 
   const PASSWORD_TEST = "MultiRetryPass999";
   await startImportWalletFlow({ page, password: PASSWORD_TEST });

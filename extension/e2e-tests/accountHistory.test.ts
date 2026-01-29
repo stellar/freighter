@@ -15,7 +15,7 @@ import {
   Memo,
 } from "stellar-sdk";
 
-test("View Account History", async ({ page, extensionId, context }) => {
+test.only("View Account History", async ({ page, extensionId, context }) => {
   await stubAllExternalApis(page, context);
 
   await loginToTestAccount({ page, extensionId });
@@ -28,8 +28,7 @@ test("View Account History", async ({ page, extensionId, context }) => {
   });
 });
 
-test("View failed transaction", async ({ page, extensionId, context }) => {
-  await stubAllExternalApis(page, context);
+test("View failed transaction", async ({ page, extensionId }) => {
   await page.route("*/**/account-history/*", async (route) => {
     const json = [
       {
@@ -75,12 +74,7 @@ test("View failed transaction", async ({ page, extensionId, context }) => {
     screenshot: "failed-transaction.png",
   });
 });
-test("Hide create claimable balance spam", async ({
-  page,
-  extensionId,
-  context,
-}) => {
-  await stubAllExternalApis(page, context);
+test("Hide create claimable balance spam", async ({ page, extensionId }) => {
   await page.route("*/**/account-history/*", async (route) => {
     const json = [
       {
@@ -173,9 +167,7 @@ test("Hide create claimable balance spam", async ({
 test("History row displays muxed address extracted from XDR for payment", async ({
   page,
   extensionId,
-  context,
 }) => {
-  await stubAllExternalApis(page, context);
   const TEST_ACCOUNT =
     "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY";
   const BASE_G_ADDRESS =
@@ -275,10 +267,8 @@ test("History row displays muxed address extracted from XDR for payment", async 
 test.skip("History row displays address extracted from XDR for createAccount", async ({
   page,
   extensionId,
-  context,
 }) => {
   test.slow();
-  await stubAllExternalApis(page, context);
   const TEST_ACCOUNT =
     "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY";
   const BASE_G_ADDRESS =
@@ -358,9 +348,7 @@ test.skip("History row displays address extracted from XDR for createAccount", a
 test("History row displays regular G address when no muxed address in XDR", async ({
   page,
   extensionId,
-  context,
 }) => {
-  await stubAllExternalApis(page, context);
   const TEST_ACCOUNT =
     "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY";
   const G_ADDRESS = "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
@@ -463,9 +451,7 @@ test.describe("Asset Diffs in Transaction History", () => {
   test("Display single asset diff for received payment", async ({
     page,
     extensionId,
-    context,
   }) => {
-    await stubAllExternalApis(page, context);
     await stubAccountBalances(page);
     await stubTokenDetails(page);
 
@@ -527,9 +513,7 @@ test.describe("Asset Diffs in Transaction History", () => {
   test("Display both credit and debit for swap operation", async ({
     page,
     extensionId,
-    context,
   }) => {
-    await stubAllExternalApis(page, context);
     await stubAccountBalances(page);
     await stubTokenDetails(page);
 
@@ -607,9 +591,7 @@ test.describe("Asset Diffs in Transaction History", () => {
   test("Display multiple asset changes for complex transaction", async ({
     page,
     extensionId,
-    context,
   }) => {
-    await stubAllExternalApis(page, context);
     await stubAccountBalances(page);
     await stubTokenDetails(page);
 
@@ -695,9 +677,7 @@ test.describe("Asset Diffs in Transaction History", () => {
   test("Display Soroban token with 18 decimals correctly", async ({
     page,
     extensionId,
-    context,
   }) => {
-    await stubAllExternalApis(page, context);
     const TOKEN_CONTRACT =
       "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC";
 

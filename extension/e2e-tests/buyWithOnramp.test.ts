@@ -3,6 +3,8 @@ import { loginToTestAccount } from "./helpers/login";
 import { stubAllExternalApis } from "./helpers/stubs";
 
 test.beforeEach(async ({ page, context }) => {
+  await stubAllExternalApis(page, context);
+
   // Override account-balances to return 0 XLM balance
   await page.route("**/account-balances/**", async (route) => {
     const json = {
@@ -58,9 +60,7 @@ test.beforeEach(async ({ page, context }) => {
 test("should show add XLM page and open Coinbase", async ({
   page,
   extensionId,
-  context,
 }) => {
-  await stubAllExternalApis(page, context);
   await loginToTestAccount({ page, extensionId });
 
   await page.getByTestId("network-selector-open").click();
@@ -86,9 +86,7 @@ test("should show add XLM page and open Coinbase", async ({
 test("should show Buy with Coinbase and open Coinbase", async ({
   page,
   extensionId,
-  context,
 }) => {
-  await stubAllExternalApis(page, context);
   await loginToTestAccount({ page, extensionId });
 
   await page.getByTestId("network-selector-open").click();
