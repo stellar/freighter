@@ -84,17 +84,11 @@ export const loginAndFund = async ({
 export const loginToTestAccount = async ({
   page,
   extensionId,
-  context,
 }: {
   page: Page;
   extensionId: string;
-  context?: BrowserContext;
 }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
-  // if (context) {
-  //   const serviceWorkerPromise = context.waitForEvent("serviceworker");
-  //   await serviceWorkerPromise;
-  // }
   await page.getByText("I already have a wallet").click();
 
   await page.locator("#new-password-input").fill("My-password123");

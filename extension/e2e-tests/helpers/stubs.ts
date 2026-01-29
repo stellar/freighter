@@ -2221,16 +2221,16 @@ export const stubFeeStats = async (page: Page) => {
  */
 export const stubAllExternalApis = async (
   page: Page,
-  context?: BrowserContext,
+  context: BrowserContext,
 ) => {
   // User notification
-  // await stubUserNotification(context);
+  await stubUserNotification(context);
 
-  // // Feature flags
-  // await stubFeatureFlags(context);
+  // Feature flags
+  await stubFeatureFlags(context);
 
-  // // Subscription account
-  // await stubSubscriptionAccount(context);
+  // Subscription account
+  await stubSubscriptionAccount(context);
 
   // Stellar Asset List
   await stubStellarAssetList(page);
