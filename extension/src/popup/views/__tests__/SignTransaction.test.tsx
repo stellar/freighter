@@ -198,7 +198,7 @@ describe("SignTransactions", () => {
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         networkDetails: {
           ...defaultSettingsState.networkDetails,
-          networkPassphrase: "Test SDF Future Network ; October 2022",
+          networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
         },
       },
       error: null,
