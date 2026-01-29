@@ -91,7 +91,8 @@ export const loginAndFund = async ({
 /**
  * Logs into a deterministic test account, optionally stubbing external APIs.
  *
- * Use `isIntegrationMode` to avoid stubbing in integration runs.
+ * @param stubOverrides - Optional function to add custom stub routes after `stubAllExternalApis` runs.
+ * @param isIntegrationMode - Set true to skip all stubbing for integration tests.
  */
 export const loginToTestAccount = async ({
   page,
