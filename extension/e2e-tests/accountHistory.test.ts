@@ -11,7 +11,7 @@ import {
   Memo,
 } from "stellar-sdk";
 
-test.only("View Account History", async ({ page, extensionId, context }) => {
+test("View Account History", async ({ page, extensionId, context }) => {
   await loginToTestAccount({ page, extensionId, context });
 
   await page.getByTestId("nav-link-account-history").click();
@@ -22,7 +22,7 @@ test.only("View Account History", async ({ page, extensionId, context }) => {
   });
 });
 
-test.only("View failed transaction", async ({ page, extensionId, context }) => {
+test("View failed transaction", async ({ page, extensionId, context }) => {
   const stubOverrides = async () => {
     await page.route("*/**/account-history/*", async (route) => {
       const json = [
@@ -70,7 +70,7 @@ test.only("View failed transaction", async ({ page, extensionId, context }) => {
     screenshot: "failed-transaction.png",
   });
 });
-test.only("Hide create claimable balance spam", async ({
+test("Hide create claimable balance spam", async ({
   page,
   extensionId,
   context,
@@ -166,7 +166,7 @@ test.only("Hide create claimable balance spam", async ({
   await expect(historyItems).toHaveCount(2);
 });
 
-test.only("History row displays muxed address extracted from XDR for payment", async ({
+test("History row displays muxed address extracted from XDR for payment", async ({
   page,
   extensionId,
   context,
@@ -349,7 +349,7 @@ test.skip("History row displays address extracted from XDR for createAccount", a
   ).toBeVisible({ timeout: 10000 });
 });
 
-test.only("History row displays regular G address when no muxed address in XDR", async ({
+test("History row displays regular G address when no muxed address in XDR", async ({
   page,
   extensionId,
   context,

@@ -79,6 +79,16 @@ export const test = base.extend<{
   },
 });
 
+test.afterEach(async ({ page, context }) => {
+  // Clean up all route handlers to avoid teardown timeout issues
+  try {
+    await page.unroute("**/*");
+    await context.unroute("**/*");
+  } catch (e) {
+    // Silently ignore errors during cleanup
+  }
+});
+
 export const expectPageToHaveScreenshot = async (
   {
     page,

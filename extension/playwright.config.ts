@@ -21,6 +21,9 @@ export default defineConfig({
   maxFailures: 1,
   /* In integration mode, run tests sequentially to avoid conflicts */
   workers: process.env.IS_INTEGRATION_MODE ? 1 : 1,
+  /* Increase worker teardown timeout to handle route cleanup */
+  webServer: undefined,
+  globalTimeout: process.env.CI ? 3600000 : 600000, // 1 hour on CI, 10 min locally
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: "list",
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
