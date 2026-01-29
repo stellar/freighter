@@ -4,11 +4,7 @@ import { loginToTestAccount } from "../helpers/login";
 import { allowDapp } from "../helpers/allowDapp";
 import {
   stubAccountBalances,
-  stubAccountHistory,
   stubIsSac,
-  stubScanDapp,
-  stubTokenDetails,
-  stubTokenPrices,
   stubAllExternalApis,
 } from "../helpers/stubs";
 
