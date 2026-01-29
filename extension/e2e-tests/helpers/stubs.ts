@@ -2223,14 +2223,15 @@ export const stubAllExternalApis = async (
   page: Page,
   context: BrowserContext,
 ) => {
+  console.log(context);
   // User notification
-  await stubUserNotification(context);
+  // await stubUserNotification(context);
 
-  // Feature flags
-  await stubFeatureFlags(context);
+  // // Feature flags
+  // await stubFeatureFlags(context);
 
-  // Subscription account
-  await stubSubscriptionAccount(context);
+  // // Subscription account
+  // await stubSubscriptionAccount(context);
 
   // Stellar Asset List
   await stubStellarAssetList(page);
@@ -2281,7 +2282,7 @@ export const stubAllExternalApis = async (
 
   // Blockaid scan
   await stubScanTx(page);
-  await stubScanDapp(context);
+  // await stubScanDapp(context);
 };
 
 export const stubBackendSettings = async (page: Page) => {
