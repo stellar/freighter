@@ -34,7 +34,7 @@
     "start:unpacked": "yarn workspace extension start:unpacked-extension",
     "install-if-package-changed": "git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep --quiet yarn.lock && yarn setup || exit 0",
     "test:ci": "jest --ci",
-    "test:e2e": "yarn workspace extension test:e2e --workers=8",
+    "test:e2e": "yarn workspace extension test:e2e",
     "test": "jest -o --watch",
     "prepare": "husky install"
   },
