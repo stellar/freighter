@@ -1,7 +1,11 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
-import { loginAndFund, loginToTestAccount } from "./helpers/login";
+import { loginToTestAccount } from "./helpers/login";
 import { TEST_M_ADDRESS } from "./helpers/test-token";
-import { stubAccountBalances, stubTokenDetails } from "./helpers/stubs";
+import {
+  stubAccountBalances,
+  stubTokenDetails,
+  stubAllExternalApis,
+} from "./helpers/stubs";
 import {
   TransactionBuilder,
   Operation,
@@ -11,11 +15,15 @@ import {
   Memo,
 } from "stellar-sdk";
 
+test.beforeEach(async ({ page, context }) => {
+  await stubAllExternalApis(page, context);
+});
+
 test("View Account History", async ({ page, extensionId }) => {
-  test.slow();
-  await loginAndFund({ page, extensionId });
+  await loginToTestAccount({ page, extensionId });
 
   await page.getByTestId("nav-link-account-history").click();
+
   await expectPageToHaveScreenshot({
     page,
     screenshot: "account-history.png",
@@ -49,8 +57,7 @@ test("View failed transaction", async ({ page, extensionId }) => {
     await route.fulfill({ json });
   });
 
-  test.slow();
-  await loginAndFund({ page, extensionId });
+  await loginToTestAccount({ page, extensionId });
   await page.getByTestId("nav-link-account-history").click();
   await expect(page.getByTestId("history-item-amount-component")).toHaveText(
     "Mar 21",
@@ -152,19 +159,17 @@ test("Hide create claimable balance spam", async ({ page, extensionId }) => {
     await route.fulfill({ json });
   });
 
-  test.slow();
-  await loginAndFund({ page, extensionId });
+  await loginToTestAccount({ page, extensionId });
   await page.getByTestId("nav-link-account-history").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("History");
   const historyItems = page.getByTestId("history-item");
-  expect(historyItems).toHaveCount(2);
+  await expect(historyItems).toHaveCount(2);
 });
 
 test("History row displays muxed address extracted from XDR for payment", async ({
   page,
   extensionId,
 }) => {
-  test.slow();
   const TEST_ACCOUNT =
     "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY";
   const BASE_G_ADDRESS =
@@ -197,10 +202,8 @@ test("History row displays muxed address extracted from XDR for payment", async 
 
   const envelopeXdr = tx.toXDR();
 
-  await stubAccountBalances(page);
-  await loginToTestAccount({ page, extensionId });
-
-  // Stub account history (returns both base G address and muxed M address)
+  // Stub account history BEFORE login to ensure it catches all requests
+  // (returns both base G address and muxed M address)
   await page.route("**/account-history/**", async (route) => {
     const json = [
       {
@@ -242,6 +245,9 @@ test("History row displays muxed address extracted from XDR for payment", async 
       await route.continue();
     }
   });
+
+  await stubAccountBalances(page);
+  await loginToTestAccount({ page, extensionId });
   await page.getByTestId("nav-link-account-history").click();
 
   await expect(page.getByTestId("history-item").nth(0)).toBeVisible({
@@ -345,7 +351,6 @@ test("History row displays regular G address when no muxed address in XDR", asyn
   page,
   extensionId,
 }) => {
-  test.slow();
   const TEST_ACCOUNT =
     "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY";
   const G_ADDRESS = "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";

@@ -45,6 +45,17 @@ export const login = async ({
   });
   await page.getByTestId("network-selector-open").click();
   await page.getByText("Test Net").click();
+
+  // Wait for account-balances API call with TESTNET network param before clicking
+  const balancesPromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/account-balances/") &&
+      response.url().includes("network=TESTNET"),
+  );
+
+  // Wait for the balances API call to complete
+  await balancesPromise;
+
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 10000,
   });
@@ -58,9 +69,11 @@ export const loginAndFund = async ({
   extensionId: string;
 }) => {
   await login({ page, extensionId });
+
   await expect(page.getByTestId("not-funded")).toBeVisible({
     timeout: 10000,
   });
+
   await page.getByRole("button", { name: "Fund with Friendbot" }).click();
 
   await expect(page.getByTestId("account-assets")).toBeVisible({

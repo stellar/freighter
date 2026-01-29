@@ -1,10 +1,24 @@
-import { test as base, chromium, BrowserContext, Page } from "@playwright/test";
+import {
+  test as base,
+  chromium,
+  BrowserContext,
+  Page,
+  Worker,
+} from "@playwright/test";
 import path from "path";
 
-import { STELLAR_EXPERT_ASSET_LIST_JSON } from "./helpers/stubs";
+import {
+  STELLAR_EXPERT_ASSET_LIST_JSON,
+  stubFeeStats,
+  stubTokenPrices,
+  stubTokenDetails,
+  stubIsSac,
+  stubFriendbot,
+} from "./helpers/stubs";
 
 export const test = base.extend<{
   context: BrowserContext;
+  serviceWorker: Worker;
   extensionId: string;
   page: Page;
   language: string;
@@ -72,9 +86,52 @@ export const test = base.extend<{
     );
 
     if (!process.env.IS_INTEGRATION_MODE) {
+      // Stub asset list
       await page.route("*/**/testnet/asset-list/top50", async (route) => {
         const json = STELLAR_EXPERT_ASSET_LIST_JSON;
         await route.fulfill({ json });
+      });
+
+      // Stub common API endpoints for reliability
+      await stubTokenPrices(page);
+      await stubTokenDetails(page);
+      await stubIsSac(page);
+      await stubFeeStats(page);
+      await stubFriendbot(page);
+
+      // Stub Horizon endpoints
+      await page.route("**/transactions**", async (route) => {
+        await route.fulfill({
+          json: {
+            _embedded: {
+              records: [],
+            },
+          },
+        });
+      });
+
+      // Stub RPC health checks
+      await page.route("**/soroban/rpc/**", async (route) => {
+        const json = {
+          jsonrpc: "2.0",
+          id: "1",
+          result: null,
+        };
+        await route.fulfill({ json });
+      });
+
+      // Stub backend settings
+      await page.route("**/backend-settings", async (route) => {
+        await route.fulfill({
+          json: {
+            isSorobanPublicEnabled: true,
+            isRpcHealthy: true,
+            userNotification: {
+              enabled: false,
+              message: "",
+            },
+          },
+        });
       });
     }
     use(page);

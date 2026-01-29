@@ -8,20 +8,14 @@ import {
   stubTokenPrices,
   stubCollectibles,
   stubCollectiblesUnsuccessfulMetadata,
+  stubAllExternalApis,
 } from "./helpers/stubs";
 
-test("Load accounts on standalone network", async ({
-  page,
-  extensionId,
-  context,
-}) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
+test.beforeEach(async ({ page, context }) => {
+  await stubAllExternalApis(page, context);
+});
 
-  test.slow();
+test("Load accounts on standalone network", async ({ page, extensionId }) => {
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Settings").click();
@@ -130,13 +124,7 @@ test.skip("Switches account and fetches correct balances while clearing cache", 
 test("Switches network and fetches correct balances while clearing cache", async ({
   page,
   extensionId,
-  context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
   await page.route("**/account-balances/**", async (route) => {
     let json = {};
 
@@ -217,7 +205,6 @@ test("Switches network and fetches correct balances while clearing cache", async
     await route.fulfill({ json });
   });
 
-  test.slow();
   await loginToTestAccount({ page, extensionId });
   await expect(page.getByTestId("account-assets")).toContainText("XLM");
   await expect(page.getByTestId("asset-amount")).toHaveText("2");
@@ -275,15 +262,7 @@ test("Switches network and fetches correct balances while clearing cache", async
 test("Account Balances should be loaded once and cached", async ({
   page,
   extensionId,
-  context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  test.slow();
   await loginToTestAccount({ page, extensionId });
 
   let accountBalancesRequestWasMade = false;
@@ -304,13 +283,6 @@ test("Switches account without password prompt", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  test.slow();
   await loginToTestAccount({ page, extensionId });
   await expect(page.getByTestId("account-assets")).toContainText("XLM");
   await page.getByTestId("account-view-account-name").click();
@@ -327,14 +299,6 @@ test("Can't change settings on a stale window", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(context);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  test.slow();
-
   const pageOne = await page.context().newPage();
   await loginToTestAccount({ page: pageOne, extensionId });
 
@@ -463,13 +427,7 @@ test.skip("Clears cache and fetches balances if it's been 2 minutes since the la
 test("Loads wallets data and token prices on Mainnet in batches", async ({
   page,
   extensionId,
-  context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
   let tokenPricesCallCount = 0;
 
   page.on("request", (request) => {
@@ -631,8 +589,6 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
     }
     await route.fulfill({ json });
   });
-
-  test.slow();
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("network-selector-open").click();
   await page.getByText("Main Net").click();
@@ -661,11 +617,6 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
 });
 
 test("Renames wallets", async ({ page, extensionId, context }) => {
-  await stubTokenDetails(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("account-view-account-name").click();
   await expect(page.getByText("Wallets")).toBeVisible();
@@ -681,16 +632,8 @@ test("Renames wallets", async ({ page, extensionId, context }) => {
 test("Loads collectibles data with successful metadata", async ({
   page,
   extensionId,
-  context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
   await stubCollectibles(page, true);
-
-  test.slow();
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("account-tab-collectibles").click();
   await expect(page.getByText("Stellar Frogs")).toBeVisible();
@@ -829,16 +772,8 @@ test("Loads collectibles data with successful metadata", async ({
 test("Loads collectibles data with unsuccessful metadata", async ({
   page,
   extensionId,
-  context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
   await stubCollectiblesUnsuccessfulMetadata(page);
-
-  test.slow();
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("account-tab-collectibles").click();
   await expect(page.getByText("Stellar Frogs")).toBeVisible();

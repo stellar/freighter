@@ -1,9 +1,14 @@
 import { expect, test, expectPageToHaveScreenshot } from "./test-fixtures";
-import { loginAndFund, PASSWORD } from "./helpers/login";
+import { loginToTestAccount, PASSWORD } from "./helpers/login";
+import { stubAllExternalApis } from "./helpers/stubs";
+
+test.beforeEach(async ({ page, context }) => {
+  await stubAllExternalApis(page, context);
+});
 
 test("View Allow List selector", async ({ page, extensionId }) => {
   test.slow();
-  await loginAndFund({ page, extensionId });
+  await loginToTestAccount({ page, extensionId });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
@@ -61,7 +66,7 @@ test("View Allow List selector", async ({ page, extensionId }) => {
   await page.locator("#password-input").fill(PASSWORD);
   await page.getByText("Create New Address").click();
 
-  await expect(page.getByTestId("not-funded")).toBeVisible({
+  await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 10000,
   });
   await page.getByTestId("network-selector-open").click();
