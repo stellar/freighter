@@ -261,7 +261,7 @@ describe("SignTransactions", () => {
             isExperimentalModeEnabled: true,
             networkDetails: {
               ...defaultSettingsState.networkDetails,
-              networkPassphrase: "Test SDF Future Network ; October 2022",
+              networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
             },
             hiddenAssets: {},
           },
@@ -533,7 +533,7 @@ describe("SignTransactions", () => {
           applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
           networkDetails: {
             ...defaultSettingsState.networkDetails,
-            networkPassphrase: "Test SDF Future Network ; October 2022",
+            networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
           },
         },
         error: null,
@@ -562,7 +562,7 @@ describe("SignTransactions", () => {
       Promise.resolve({
         networkDetails: {
           ...defaultSettingsState.networkDetails,
-          networkPassphrase: "Test SDF Future Network ; October 2022",
+          networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
         },
         networksList: DEFAULT_NETWORKS,
         hiddenAssets: {},
@@ -614,7 +614,7 @@ describe("SignTransactions", () => {
             isExperimentalModeEnabled: true,
             networkDetails: {
               ...defaultSettingsState.networkDetails,
-              networkPassphrase: "Test SDF Future Network ; October 2022",
+              networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
             },
           },
         }}
@@ -1112,7 +1112,7 @@ describe("SignTransactions", () => {
           applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
           networkDetails: {
             ...defaultSettingsState.networkDetails,
-            networkPassphrase: "Test SDF Future Network ; October 2022",
+            networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
           },
         },
         error: null,
@@ -1138,7 +1138,7 @@ describe("SignTransactions", () => {
       Promise.resolve({
         networkDetails: {
           ...defaultSettingsState.networkDetails,
-          networkPassphrase: "Test SDF Future Network ; October 2022",
+          networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
         },
         networksList: DEFAULT_NETWORKS,
         hiddenAssets: {},
@@ -1190,7 +1190,7 @@ describe("SignTransactions", () => {
             isExperimentalModeEnabled: true,
             networkDetails: {
               ...defaultSettingsState.networkDetails,
-              networkPassphrase: "Test SDF Future Network ; October 2022",
+              networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
             },
           },
         }}
