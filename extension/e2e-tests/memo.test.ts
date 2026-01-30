@@ -47,7 +47,7 @@ test("Send payment shows memo required warning when destination requires memo", 
 
   // Wait for review sheet to open - this happens after simulation completes
   await expect(page.getByText("You are sending")).toBeVisible({
-    timeout: 200000,
+    timeout: 30000,
   });
 
   // Wait for the review transaction content to be ready (not in loading state)

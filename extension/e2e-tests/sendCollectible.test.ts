@@ -340,7 +340,7 @@ test("Send collectible with Soroban mux support to G address allows memo", async
     true,
   );
 
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
