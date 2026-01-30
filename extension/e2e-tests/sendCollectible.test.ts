@@ -17,6 +17,13 @@ test("Send collectible with metadata", async ({
     await stubSimulateSendCollectible(page);
   };
 
+  // Stub contract spec with muxed support = true
+  await stubContractSpec(
+    page,
+    "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN",
+    true,
+  );
+
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click();
 
@@ -58,7 +65,7 @@ test("Send collectible with metadata", async ({
 
   // validate that fee is updated in the review screen
   await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
-    "0.00001 XLM",
+    "0.00002 XLM",
   );
 
   await expect(
@@ -92,6 +99,13 @@ test("Send collectible without metadata", async ({
     await stubCollectiblesUnsuccessfulMetadata(page);
     await stubSimulateSendCollectible(page);
   };
+
+  // Stub contract spec with muxed support = true
+  await stubContractSpec(
+    page,
+    "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN",
+    true,
+  );
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
@@ -131,7 +145,7 @@ test("Send collectible without metadata", async ({
 
   // validate that fee is updated in the review screen
   await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
-    "0.00001 XLM",
+    "0.00002 XLM",
   );
 
   await expect(
