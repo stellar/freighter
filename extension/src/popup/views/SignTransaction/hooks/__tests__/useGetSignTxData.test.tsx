@@ -343,11 +343,11 @@ describe("useGetSignTxData", () => {
       await result.current.fetchData();
     });
 
-    // Should still succeed but with undefined balances
+    // Should still succeed but with null balances
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
     expect(
-      (result.current.state.data as { balances?: unknown })?.balances,
-    ).toBeUndefined();
+      (result.current.state.data as { balances: unknown })?.balances,
+    ).toBeNull();
     expect((result.current.state.data as { type: string })?.type).toBe(
       AppDataType.RESOLVED,
     );

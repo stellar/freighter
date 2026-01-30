@@ -28,7 +28,7 @@ import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 export interface ResolvedData {
   type: AppDataType.RESOLVED;
   scanResult: BlockAidScanTxResult | null;
-  balances?: AccountBalances;
+  balances: AccountBalances | null;
   publicKey: string;
   signFlowState: {
     allAccounts: Account[];
@@ -90,7 +90,7 @@ function useGetSignTxData(
 
       // Fetch balances with soft failure handling - if this fails, we continue
       // without balance data (balance-related warnings will be skipped)
-      let balancesResult: AccountBalances | undefined;
+      let balancesResult: AccountBalances | null = null;
       try {
         const fetchResult = await fetchBalances(
           publicKey,
@@ -99,13 +99,11 @@ function useGetSignTxData(
           false,
           true,
         );
-        if (isError<AccountBalances>(fetchResult)) {
-          balancesResult = undefined;
-        } else {
+        if (!isError<AccountBalances>(fetchResult)) {
           balancesResult = fetchResult;
         }
       } catch {
-        balancesResult = undefined;
+        // Balance fetch failed - continue without balance data
       }
 
       // handle auto selecting the right account based on `accountToSign`

@@ -1102,7 +1102,7 @@ describe("SignTransactions", () => {
             request_id: "1",
           },
           icons: {},
-          balances: undefined, // Balances unavailable due to fetch failure
+          balances: null, // Balances unavailable due to fetch failure
           publicKey: mockAccounts[1].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
