@@ -32,3 +32,4 @@ yarn-error.log*
 Freighter.app/
 Freighter.pkg
 Freighter.app.dSYM.zip
+.vscode/mcp.json
