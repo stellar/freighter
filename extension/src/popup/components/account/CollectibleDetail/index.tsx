@@ -37,9 +37,11 @@ export interface SelectedCollectible {
 export const CollectibleDetail = ({
   selectedCollectible,
   handleItemClose,
+  isHidden,
 }: {
   selectedCollectible: SelectedCollectible;
   handleItemClose: () => void;
+  isHidden?: boolean;
 }) => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
@@ -156,6 +158,11 @@ export const CollectibleDetail = ({
           <Loading />
         ) : (
           <View.Content>
+            {isHidden && (
+              <Notification variant="primary" title="">
+                {t("This collectible is hidden")}
+              </Notification>
+            )}
             <div className="CollectibleDetail__content">
               <CollectibleInfo
                 name={name}

@@ -18,6 +18,7 @@ import { isMainnet } from "helpers/stellar";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountCollectibles } from "popup/components/account/AccountCollectibles";
 import { AccountHeader } from "popup/components/account/AccountHeader";
+import { useHiddenCollectibles } from "popup/components/account/hooks/useHiddenCollectibles";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
@@ -62,6 +63,8 @@ export const Account = () => {
     useGetAccountHistoryData();
 
   const { state: iconsData, fetchData: fetchIconsData } = useGetIcons();
+  const { refreshHiddenCollectibles, isCollectibleHidden } =
+    useHiddenCollectibles();
 
   const previousAccountBalancesRef = useRef<AccountBalances | null>(null);
 
@@ -184,6 +187,8 @@ export const Account = () => {
         }}
         roundedTotalBalanceUsd={roundedTotalBalanceUsd}
         isFunded={!!resolvedData?.balances?.isFunded}
+        refreshHiddenCollectibles={refreshHiddenCollectibles}
+        isCollectibleHidden={isCollectibleHidden}
       />
       <View.Content hasNoPadding>
         <div className="AccountView" data-testid="account-view">
