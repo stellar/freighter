@@ -34,6 +34,6 @@
     "48": "images/icon48.png",
     "128": "images/icon128.png"
   },
-  "permissions": ["storage", "alarms", "clipboardRead"],
+  "permissions": ["storage", "alarms"],
   "manifest_version": 3
 }
