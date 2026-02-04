@@ -274,6 +274,8 @@ export const Account = () => {
               <div data-testid="account-collectibles">
                 <AccountCollectibles
                   collections={accountData.data?.collectibles.collections || []}
+                  refreshHiddenCollectibles={refreshHiddenCollectibles}
+                  isCollectibleHidden={isCollectibleHidden}
                 />
               </div>,
             ]}
