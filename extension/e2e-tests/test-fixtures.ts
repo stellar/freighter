@@ -19,7 +19,6 @@ export const test = base.extend<{
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
       ],
-      deviceScaleFactor: 1,
     });
 
     await use(context);
@@ -91,7 +90,7 @@ export const expectPageToHaveScreenshot = async (
   options?: any,
 ) => {
   await expect(page).toHaveScreenshot(screenshot, {
-    maxDiffPixelRatio: threshold || 0.05,
+    maxDiffPixelRatio: threshold || 0.02,
     ...options,
   });
 };
