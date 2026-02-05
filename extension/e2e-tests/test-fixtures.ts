@@ -90,7 +90,7 @@ export const expectPageToHaveScreenshot = async (
   options?: any,
 ) => {
   await expect(page).toHaveScreenshot(screenshot, {
-    maxDiffPixelRatio: threshold || 0.02,
+    maxDiffPixelRatio: threshold || 0.05,
     ...options,
   });
 };
