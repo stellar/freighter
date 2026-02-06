@@ -4,10 +4,6 @@
       "type": "stdio",
       "command": "npx",
       "args": ["playwright", "run-test-mcp-server", "--headless"]
-    },
-    "shadcn": {
-      "command": "npx",
-      "args": ["shadcn@3.7.0", "mcp"]
     }
   },
   "inputs": []
