@@ -1,7 +1,7 @@
-import test from "@playwright/test";
+import test, { Page } from "@playwright/test";
 import { expect, expectPageToHaveScreenshot } from "../test-fixtures";
 
-export const sendXlmPayment = async ({ page }) => {
+export const sendXlmPayment = async ({ page }: { page: Page }) => {
   test.setTimeout(180_000);
   await page.getByTestId("nav-link-send").click({ force: true });
 

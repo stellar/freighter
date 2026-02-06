@@ -9,7 +9,7 @@ jobs:
   test-ci:
     name: test
     timeout-minutes: 45
-    runs-on: macos-latest
+    runs-on: macos-latest-xlarge
     steps:
       - uses: actions/checkout@v6
         with:
