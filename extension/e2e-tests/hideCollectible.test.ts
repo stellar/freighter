@@ -1,4 +1,4 @@
-import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
+import { test, expect } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
 import {
   stubAccountBalances,
@@ -89,12 +89,6 @@ test("Hide and unhide a collectible", async ({
   await expect(page.getByText("Stellar Frogs")).toBeVisible();
   await expect(page.getByText("Soroban Domains")).toBeVisible();
 
-  // Take a screenshot of the collectibles view
-  await expectPageToHaveScreenshot({
-    page,
-    screenshot: "collectibles-view-before-hide.png",
-  });
-
   // Click on a collectible to open detail view
   const collectibleGrid = page.getByTestId("account-collection-grid").first();
   await collectibleGrid.locator("div").first().click();
@@ -102,23 +96,11 @@ test("Hide and unhide a collectible", async ({
   // Wait for detail view to open
   await expect(page.getByTestId("CollectibleDetail")).toBeVisible();
 
-  // Take a screenshot of the collectible detail
-  await expectPageToHaveScreenshot({
-    page,
-    screenshot: "collectible-detail-view.png",
-  });
-
   // Open the three-dot menu
   await page.getByTestId("CollectibleDetail__header__right-button").click();
 
   // Wait for menu to be visible
   await expect(page.getByText("Hide collectible")).toBeVisible();
-
-  // Take a screenshot of the menu with hide option
-  await expectPageToHaveScreenshot({
-    page,
-    screenshot: "collectible-detail-hide-menu.png",
-  });
 
   // Click "Hide collectible"
   await page.getByText("Hide collectible").click();
@@ -129,12 +111,6 @@ test("Hide and unhide a collectible", async ({
   // Open the manage dropdown and go to hidden collectibles
   await page.getByTestId("account-tabs-manage-btn-collectibles").click();
   await expect(page.getByText("Hidden collectibles")).toBeVisible();
-
-  // Take a screenshot of the manage dropdown
-  await expectPageToHaveScreenshot({
-    page,
-    screenshot: "collectibles-manage-dropdown.png",
-  });
 
   // Click on hidden collectibles
   await page.getByTestId("hidden-collectibles-btn").click();
@@ -149,12 +125,6 @@ test("Hide and unhide a collectible", async ({
   // Verify the hidden collectible is shown
   await expect(page.getByTestId("hidden-collectible-1")).toBeVisible();
 
-  // Take a screenshot of the hidden collectibles view
-  await expectPageToHaveScreenshot({
-    page,
-    screenshot: "hidden-collectibles-view.png",
-  });
-
   // Click on the hidden collectible to open detail
   await page.getByTestId("hidden-collectible-1").click();
 
@@ -167,12 +137,6 @@ test("Hide and unhide a collectible", async ({
   // Verify "Show collectible" option is visible (not "Hide collectible")
   await expect(page.getByText("Show collectible")).toBeVisible();
 
-  // Take a screenshot of the menu with show option
-  await expectPageToHaveScreenshot({
-    page,
-    screenshot: "collectible-detail-show-menu.png",
-  });
-
   // Click "Show collectible"
   await page.getByText("Show collectible").click();
 
@@ -181,12 +145,6 @@ test("Hide and unhide a collectible", async ({
 
   // Verify the empty state is now shown in hidden collectibles
   await expect(page.getByText("No hidden collectibles")).toBeVisible();
-
-  // Take a screenshot of empty hidden collectibles
-  await expectPageToHaveScreenshot({
-    page,
-    screenshot: "hidden-collectibles-empty.png",
-  });
 });
 
 test("Hidden collectibles view shows empty state when no collectibles are hidden", async ({
