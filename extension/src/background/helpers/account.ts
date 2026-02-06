@@ -313,9 +313,10 @@ export const getIsRpcHealthy = async (localStore: DataStorageAccess) => {
 
       if (!res.ok) {
         captureException(`Failed to load rpc health for Soroban`);
+        rpcHealth = { status: "unhealthy" };
+      } else {
+        rpcHealth = await res.json();
       }
-
-      rpcHealth = await res.json();
     } catch (e) {
       captureException(
         `Failed to load rpc health for Soroban - ${JSON.stringify(e)}`,
