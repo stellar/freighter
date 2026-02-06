@@ -85,6 +85,8 @@ export const Account = () => {
         ),
       });
       sorobanErrorShownRef.current = true;
+    } else if (isSorobanSuported) {
+      sorobanErrorShownRef.current = false;
     }
   }, [isSorobanSuported, t]);
 
