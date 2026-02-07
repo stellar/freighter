@@ -73,6 +73,73 @@ export interface SimulateTxData {
   scanResult?: BlockAidScanTxResult | null;
 }
 
+const CREATE_ACCOUNT_MIN_XLM = new BigNumber(1);
+
+const getExpectedToFailReason = ({
+  isDestinationFunded,
+  assetCanonical,
+  amount,
+}: {
+  isDestinationFunded?: boolean;
+  assetCanonical: string;
+  amount: string;
+}) => {
+  if (isDestinationFunded !== false) {
+    return null;
+  }
+
+  if (assetCanonical === "native") {
+    const parsedAmount = new BigNumber(cleanAmount(amount || "0"));
+    if (parsedAmount.lt(CREATE_ACCOUNT_MIN_XLM)) {
+      return "To create a new account you need to send at least 1 XLM to it.";
+    }
+    return null;
+  }
+
+  return "The destination account doesn’t exist";
+};
+
+const applyExpectedToFailReason = ({
+  scanResult,
+  expectedToFailReason,
+}: {
+  scanResult?: BlockAidScanTxResult | null;
+  expectedToFailReason: string | null;
+}) => {
+  if (!expectedToFailReason) {
+    return scanResult;
+  }
+
+  const hasSimulationError =
+    scanResult?.simulation && "error" in scanResult.simulation;
+  const hasNonBenignValidation = !!(
+    scanResult?.validation &&
+    "result_type" in scanResult.validation &&
+    (scanResult.validation.result_type === "Malicious" ||
+      scanResult.validation.result_type === "Warning")
+  );
+
+  if (hasSimulationError || hasNonBenignValidation) {
+    return scanResult;
+  }
+
+  if (!scanResult) {
+    return {
+      simulation: { error: expectedToFailReason },
+    } as BlockAidScanTxResult;
+  }
+
+  const simulation =
+    scanResult.simulation && typeof scanResult.simulation === "object"
+      ? { ...scanResult.simulation, error: expectedToFailReason }
+      : { error: expectedToFailReason };
+
+  return {
+    ...scanResult,
+    simulation,
+  } as BlockAidScanTxResult;
+};
+
 const getOperation = (
   sourceAsset: Asset | { code: string; issuer: string },
   destAsset: Asset | { code: string; issuer: string },
@@ -344,6 +411,8 @@ function useSimulateTxData({
         store.getState() as AppState,
       );
       const currentMemo = currentTransactionData.memo || memo;
+      const currentAmount = currentTransactionData.amount || amount;
+      const currentAsset = currentTransactionData.asset || asset;
       const currentTransactionFee =
         currentTransactionData.transactionFee || transactionFee;
 
@@ -363,6 +432,12 @@ function useSimulateTxData({
         }
         destBalancesResult = balances;
       }
+
+      const expectedToFailReason = getExpectedToFailReason({
+        isDestinationFunded: destBalancesResult.isFunded ?? undefined,
+        assetCanonical: currentAsset,
+        amount: currentAmount,
+      });
 
       const balancesResult = await fetchBalances(
         publicKey,
@@ -486,16 +561,22 @@ function useSimulateTxData({
         );
         const xdr = transaction.build().toXDR();
         payload.transactionXdr = xdr;
-        payload.scanResult = await scanTx(xdr, scanUrlstub, networkDetails);
+        payload.scanResult = applyExpectedToFailReason({
+          scanResult: await scanTx(xdr, scanUrlstub, networkDetails),
+          expectedToFailReason,
+        });
       }
 
       if (simParams.type === "soroban") {
         payload.transactionXdr = simResponse.payload?.preparedTransaction!;
-        payload.scanResult = await scanTx(
-          payload.transactionXdr,
-          scanUrlstub,
-          networkDetails,
-        );
+        payload.scanResult = applyExpectedToFailReason({
+          scanResult: await scanTx(
+            payload.transactionXdr,
+            scanUrlstub,
+            networkDetails,
+          ),
+          expectedToFailReason,
+        });
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

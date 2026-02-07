@@ -828,7 +828,7 @@ export const BlockAidTxScanExpanded = ({
           <div className="BlockaidDetailsExpanded__Details">
             <div className="BlockaidDetailsExpanded__DetailRow">
               <Icon.MinusCircle />
-              <span>{simulation.error}</span>
+              <span>{t(simulation.error)}</span>
             </div>
             <BlockaidByLine address={""} />
           </div>
