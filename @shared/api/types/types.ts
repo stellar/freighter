@@ -28,6 +28,7 @@ export interface UserInfo {
 export type MigratableAccount = Account & { keyIdIndex: number };
 
 export type IssuerKey = string; // {assetCode}:{issuer/contract ID} issuer pub key for classic, contract ID for tokens
+export type CollectibleKey = string; // {collectionAddress}:{tokenId}
 export type AssetVisibility = "visible" | "hidden";
 
 export interface AllowList {
@@ -116,6 +117,11 @@ export interface Response {
     visibility: AssetVisibility;
   };
   hiddenAssets: Record<IssuerKey, AssetVisibility>;
+  collectibleVisibility: {
+    collectible: CollectibleKey;
+    visibility: AssetVisibility;
+  };
+  hiddenCollectibles: Record<CollectibleKey, AssetVisibility>;
   isOverwritingAccount: boolean;
   isDismissed: boolean;
   collectiblesList: CollectibleContract[];

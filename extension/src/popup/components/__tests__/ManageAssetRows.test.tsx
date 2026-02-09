@@ -11,6 +11,9 @@ import * as CheckForSuspiciousAsset from "popup/helpers/checkForSuspiciousAsset"
 import * as BlockaidHelpers from "popup/helpers/blockaid";
 import * as GetManageAssetXDR from "popup/helpers/getManageAssetXDR";
 import * as TransactionSubmission from "popup/ducks/transactionSubmission";
+import * as AccountServices from "popup/ducks/accountServices";
+import * as SorobanHelpers from "popup/helpers/soroban";
+import { AssetType } from "@shared/api/types/account-balance";
 
 import TransportWebHID from "@ledgerhq/hw-transport-webhid";
 import LedgerApi from "@ledgerhq/hw-app-str";
@@ -762,5 +765,109 @@ describe("ManageAssetRows", () => {
 
     expect(resetSubmissionSpy).toHaveBeenCalled();
     expect(getAccountBalancesSpy).not.toHaveBeenCalled();
+  });
+
+  it("renders change trust internal for SAC assets (searched by contract ID)", async () => {
+    jest.spyOn(SorobanHelpers, "isAssetSac").mockImplementation(() => true);
+    const addTokenIdSpy = jest.spyOn(AccountServices, "addTokenId");
+
+    jest.spyOn(global, "fetch").mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            envelope_xdr:
+              "AAAAAgAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAPQkAAAYjdAAAA9gAAAAEAAAAAAAAAAAAAAABmXjffAAAAAAAAAAEAAAAAAAAABgAAAAFVU0RDAAAAACYFzNOyHT8GgwiyzcOOhwLtCctwM/RiSnrFp7JOe8xeAAAAAAAAAAAAAAAAAAAAAcskg+QAAABAA/rRMU+KKsxCX1pDBuCvYDz+eQTCsY9bzgPU4J+Xe3vOWUa8YOzWlL3N3zlxHVx9hsB7a8dpSXMSAINjjsY4Dg==",
+            hash: "hash",
+            successful: true,
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+
+    render(
+      <Wrapper
+        routes={[ROUTES.manageAssets]}
+        state={{
+          auth: {
+            hasPrivateKey: true,
+            allAccounts: [
+              {
+                hardwareWalletType: "",
+                imported: false,
+                name: "Account 1",
+                publicKey: "G1",
+              },
+              {
+                hardwareWalletType: "",
+                imported: true,
+                name: "Account 2",
+                publicKey: "G2",
+              },
+              {
+                hardwareWalletType: "Ledger",
+                imported: true,
+                name: "Ledger 1",
+                publicKey:
+                  "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
+              },
+            ],
+            publicKey:
+              "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <ManageAssetRows
+          balances={{
+            balances: [mockBalances.balances!.native as unknown as AssetType],
+            isFunded: true,
+            subentryCount: 1,
+          }}
+          verifiedAssetRows={[
+            {
+              code: "USDC",
+              // SAC assets have both issuer AND contract field
+              issuer:
+                "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+              contract:
+                "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+              domain: "centre.io",
+              image: "icon.png",
+            },
+          ]}
+          unverifiedAssetRows={[]}
+          header="header text"
+        />
+      </Wrapper>,
+    );
+
+    await waitFor(() => screen.getByTestId("ManageAssetRowButton"));
+    fireEvent.click(screen.getByTestId("ManageAssetRowButton"));
+
+    // Verify ChangeTrustInternal is shown (not addTokenId for SEP-41 tokens)
+    await waitFor(() => screen.getByTestId("ChangeTrustInternal__Body"));
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("ChangeTrustInternal__TitleRow"),
+      ).toHaveTextContent("Confirm Transaction");
+      expect(
+        screen.getByTestId("SignTransaction__TrustlineRow__Asset"),
+      ).toHaveTextContent("USDC");
+    });
+
+    fireEvent.click(screen.getByText("Confirm"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("SubmitTransaction__Title"),
+      ).toBeInTheDocument();
+    });
+
+    // SAC assets should submit trustline transactions,
+    // not just add token IDs like SEP-41 tokens do
+    expect(addTokenIdSpy).not.toHaveBeenCalled();
   });
 });

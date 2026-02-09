@@ -1,15 +1,8 @@
-import { expect, test, expectPageToHaveScreenshot } from "./test-fixtures";
-import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
-import { loginToTestAccount } from "./helpers/login";
-import { allowDapp } from "./helpers/allowDapp";
-import {
-  stubAccountBalances,
-  stubAccountHistory,
-  stubIsSac,
-  stubScanDapp,
-  stubTokenDetails,
-  stubTokenPrices,
-} from "./helpers/stubs";
+import { expect, test, expectPageToHaveScreenshot } from "../test-fixtures";
+import { TEST_TOKEN_ADDRESS } from "../helpers/test-token";
+import { loginToTestAccount } from "../helpers/login";
+import { allowDapp } from "../helpers/allowDapp";
+import { stubAccountBalances, stubIsSac } from "../helpers/stubs";
 
 const TX_TO_SIGN =
   "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAAGQAAAfjAAAOpQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAAAAAAAAvrwgAAAAAAAAAAA";
@@ -45,18 +38,14 @@ const JSON_MSG_TO_SIGN = JSON.stringify({
 const JSON_SIGNED_MSG =
   '\"42IH7/mvkAT+ltbEG8oEPhVBzP7hb6NU+P+WZP3j1AIMdbwuFPrzBuRFRvLjXdXl5lDmC7aL0zrZIUrfrMXHDw==\"';
 
+const isIntegrationMode = process.env.IS_INTEGRATION_MODE === "true";
+
 test("should sign transaction when allowed", async ({
   page,
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -76,6 +65,93 @@ test("should sign transaction when allowed", async ({
   await pageTwo.getByText("Sign Transaction XDR").click();
 
   const txPopup = await txPopupPromise;
+  await stubAccountBalances(txPopup);
+  // Stub scan-tx with detailed asset diffs
+  await txPopup.route("**/scan-tx", async (route) => {
+    await route.fulfill({
+      json: {
+        data: {
+          simulation: {
+            status: "Success",
+            assets_diffs: {
+              GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: null,
+                  out: {
+                    usd_price: 0,
+                    summary: "Sent 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  asset_type: "NATIVE",
+                },
+              ],
+              GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: {
+                    usd_price: 0,
+                    summary: "Received 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  out: null,
+                  asset_type: "NATIVE",
+                },
+              ],
+            },
+            exposures: {},
+            assets_ownership_diff: {},
+            address_details: [],
+            account_summary: {
+              account_assets_diffs: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: null,
+                  out: {
+                    usd_price: 0,
+                    summary: "Sent 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  asset_type: "NATIVE",
+                },
+              ],
+              account_exposures: [],
+              account_ownerships_diff: [],
+              total_usd_diff: {
+                in: 0,
+                out: 0,
+                total: 0,
+              },
+              total_usd_exposure: {},
+            },
+            transaction_actions: null,
+          },
+          validation: {
+            status: "Success",
+            result_type: "Benign",
+            description: "",
+            reason: "",
+            classification: "",
+            features: [],
+          },
+          request_id: "9e460857-734b-405e-9e1f-86e656def1dd",
+        },
+        error: null,
+      },
+    });
+  });
 
   await expect(txPopup.getByText("Confirm Transaction")).toBeVisible();
 
@@ -96,13 +172,7 @@ test.skip("should sign transaction for a specific account when allowed", async (
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -138,8 +208,9 @@ test.skip("should sign transaction for a specific account when allowed", async (
 test("should not sign transaction when not allowed", async ({
   page,
   extensionId,
+  context,
 }) => {
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
@@ -158,6 +229,7 @@ test("should not sign transaction when not allowed", async ({
   await pageTwo.getByText("Sign Transaction XDR").click();
 
   const txPopup = await txPopupPromise;
+  await stubAccountBalances(txPopup);
 
   await expect(
     txPopup.getByText(
@@ -176,13 +248,7 @@ test("should sign auth entry when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -224,13 +290,7 @@ test("should not sign auth entry when not allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
@@ -260,13 +320,7 @@ test("should sign auth entry for a selected account when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   await allowDapp({ page });
 
@@ -291,9 +345,10 @@ test("should sign auth entry for a selected account when allowed", async ({
     .getByRole("textbox")
     .nth(2)
     .fill("GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY");
-  await pageTwo.getByText("Sign Authorization Entry XDR").click();
 
   const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.getByText("Sign Authorization Entry XDR").click();
+
   const popup = await popupPromise;
 
   await expect(popup.getByText("Confirm Authorization").first()).toBeVisible();
@@ -313,13 +368,7 @@ test("should sign message string when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -357,13 +406,7 @@ test("should sign message long string when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -401,13 +444,7 @@ test("should sign message json when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -455,13 +492,7 @@ test("should sign message for a specific account when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -483,9 +514,10 @@ test("should sign message for a specific account when allowed", async ({
     .getByRole("textbox")
     .nth(2)
     .fill("GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY");
-  await pageTwo.getByText("Sign Message").click();
 
   const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.getByText("Sign Message").click();
+
   const popup = await popupPromise;
 
   await expect(popup.getByText("Sign message")).toBeVisible();
@@ -505,12 +537,7 @@ test("should not sign message when not allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
@@ -535,14 +562,9 @@ test("should add token when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(context);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
   await stubIsSac(context);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -577,14 +599,11 @@ test("should not add token when not allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(context);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-  await stubIsSac(context);
+  if (!isIntegrationMode) {
+    await stubIsSac(context);
+  }
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
@@ -618,13 +637,7 @@ test("should get public key when logged out", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Settings").click();
   await page.getByText("Log Out").click();

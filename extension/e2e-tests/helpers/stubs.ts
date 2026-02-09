@@ -22,6 +22,261 @@ export const STELLAR_EXPERT_ASSET_LIST_JSON = {
   ],
 };
 
+export const stubUserNotification = async (context: BrowserContext) => {
+  await context.route("*/**/user-notification", async (route) => {
+    await route.fulfill({
+      json: { enabled: false, message: "" },
+    });
+  });
+};
+
+export const stubFeatureFlags = async (context: BrowserContext) => {
+  await context.route("*/**/feature-flags", async (route) => {
+    await route.fulfill({
+      json: { useSorobanPublic: true },
+    });
+  });
+};
+
+export const stubSubscriptionAccount = async (context: BrowserContext) => {
+  await context.route("*/**/subscription/account", async (route) => {
+    await route.fulfill({
+      json: { data: {}, error: null },
+    });
+  });
+};
+
+export const stubStellarAssetList = async (page: Page) => {
+  await page.route("*/**/testnet/asset-list/**", async (route) => {
+    await route.fulfill({ json: STELLAR_EXPERT_ASSET_LIST_JSON });
+  });
+};
+
+export const stubAssetSearch = async (page: Page) => {
+  await page.route("**/asset?search**", async (route) => {
+    const json = {
+      _embedded: {
+        records: [
+          {
+            asset:
+              "USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+            num_accounts: 1000,
+            num_trades: 5000,
+            num_liquidity_pools: 100,
+            bidding_liabilities: "1000000",
+            asking_liabilities: "2000000",
+          },
+        ],
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
+export const stubHorizonAccounts = async (page: Page) => {
+  await page.route("**/accounts/**", async (route) => {
+    await route.fulfill({
+      json: {
+        id: "GDMDFPJPFH4Z2LLUCNNQT3HVQ2XU2TMZBA6OL37C752WCKU7JZO2S52R",
+        account_id: "GDMDFPJPFH4Z2LLUCNNQT3HVQ2XU2TMZBA6OL37C752WCKU7JZO2S52R",
+        sequence: "1234567890",
+        subentry_count: 0,
+        last_modified_ledger: 12345,
+        balances: [
+          {
+            balance: "10000.0000000",
+            asset_type: "native",
+          },
+        ],
+        signers: [
+          {
+            weight: 1,
+            key: "GDMDFPJPFH4Z2LLUCNNQT3HVQ2XU2TMZBA6OL37C752WCKU7JZO2S52R",
+            type: "ed25519_public_key",
+          },
+        ],
+        data: {},
+        thresholds: {
+          low_threshold: 0,
+          med_threshold: 0,
+          high_threshold: 0,
+        },
+      },
+    });
+  });
+};
+
+export const stubHorizonTransactions = async (page: Page) => {
+  await page.route("**/horizon/**/transactions", async (route) => {
+    if (route.request().method() === "POST") {
+      await route.fulfill({
+        json: {
+          hash: "d7fc8d3f7b9e8c7d6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c",
+          ledger: 10000,
+          envelope_xdr:
+            "AAAAAgAAAABNGU5jYvjfSepLUbRF52FIw18Fm1F76RViTI0pjWF7VAAAAAAAAAQoAAAAAAAAAA==",
+          result_xdr: "AAAAAAAAACgAAAAAAAAAA==",
+        },
+      });
+    } else {
+      await route.fulfill({
+        json: {
+          _embedded: { records: [] },
+        },
+      });
+    }
+  });
+};
+
+export const stubBackendSimulateTx = async (page: Page) => {
+  await page.route("**/simulate-tx**", async (route) => {
+    await route.fulfill({
+      json: {
+        preparedTransaction:
+          "AAAAAgAAAABNGU5jYvjfSepLUbRF52FIw18Fm1F76RViTI0pjWF7VAAAAZAAAAABAAAAAAAAAAEAAAAAAAAAAAAAAAEAAAAAAAAABAAAAAAAAAAAAAA=",
+        simulationResponse: {
+          minResourceFee: "100",
+          cost: {
+            cpuInsns: "1000",
+            memBytes: "1000",
+          },
+          latestLedger: "10000",
+        },
+      },
+    });
+  });
+};
+
+export const stubBackendSubmitTx = async (page: Page) => {
+  await page.route("**/submit-tx**", async (route) => {
+    await route.fulfill({
+      json: {
+        hash: "a7f2d8c9e1b4f3a6d5c8b7e9f1a2d3c4b5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0",
+        ledger: 10000,
+        envelope_xdr:
+          "AAAAAgAAAABNGU5jYvjfSepLUbRF52FIw18Fm1F76RViTI0pjWF7VAAAAZAAAAABAAAAAAAAAAEAAAAAAAAAAAAAAAEAAAAAAAAABAAAAAAAAAAAAAA=",
+        result_xdr: "AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=",
+      },
+    });
+  });
+};
+
+export const stubStellarToml = async (page: Page) => {
+  await page.route("**/.well-known/stellar.toml", async (route) => {
+    await route.fulfill({
+      body: `FEDERATION_SERVER="https://federation.lobstr.co"
+NETWORK_PASSPHRASE="Test SDF Network ; September 2015"`,
+      contentType: "text/plain",
+    });
+  });
+};
+
+export const stubFederation = async (page: Page) => {
+  await page.route("**/federation**", async (route) => {
+    await route.fulfill({
+      json: {
+        stellar_address: "freighter.pb*lobstr.co",
+        account_id: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+      },
+    });
+  });
+};
+
+export const stubDefaultAccountBalances = async (page: Page) => {
+  await page.route("**/account-balances/**", async (route) => {
+    const json = {
+      balances: {
+        native: {
+          token: {
+            type: "native",
+            code: "XLM",
+          },
+          total: "10000.0000000",
+          available: "10000.0000000",
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          minimumBalance: "1",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: "",
+            metadata: {
+              type: "",
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
+        },
+      },
+      isFunded: true,
+      subentryCount: 0,
+      error: {
+        horizon: null,
+        soroban: null,
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
+export const stubMercuryTransactions = async (page: Page) => {
+  await page.route("**/transactions**", async (route) => {
+    await route.fulfill({
+      json: {
+        _embedded: { records: [] },
+      },
+    });
+  });
+};
+
+export const stubSorobanRpc = async (page: Page) => {
+  await page.route("**/soroban/rpc/**", async (route) => {
+    await route.fulfill({
+      json: { jsonrpc: "2.0", id: "1", result: null },
+    });
+  });
+};
+
+export const stubBackendSettingsEndpoint = async (page: Page) => {
+  await page.route("**/backend-settings", async (route) => {
+    await route.fulfill({
+      json: {
+        isSorobanPublicEnabled: true,
+        isRpcHealthy: true,
+        userNotification: { enabled: false, message: "" },
+      },
+    });
+  });
+};
+
+export const stubLedgerKeysAccounts = async (page: Page) => {
+  await page.route("**/ledger-keys/accounts/**", async (route) => {
+    await route.fulfill({
+      json: {
+        data: {},
+        error: null,
+      },
+    });
+  });
+};
+
+export const stubFriendbot = async (page: Page | BrowserContext) => {
+  await page.route("**/friendbot**", async (route) => {
+    const json = {
+      hash: "d7fc8d3f7b9e8c7d6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c",
+      ledger: 10000,
+      envelope_xdr:
+        "AAAAAgAAAABNGU5jYvjfSepLUbRF52FIw18Fm1F76RViTI0pjWF7VAAAAAAAAAQoAAAAAAAAAAENQJiZNGU5jYvjfSepLUbRF52FIw18Fm1F76RViTI0pjWF7VAAACgDAAAAFQAAAAEAAAA=",
+      result_xdr: "AAAAAAAAACgAAAAAAAAAAQAAAAAD6QAAAAAAAAAA",
+    };
+    await route.fulfill({ json });
+  });
+};
+
 export const stubScanDapp = async (context: BrowserContext) => {
   await context.route("**/scan-dapp**", async (route) => {
     const json = {
@@ -798,22 +1053,1054 @@ export const stubSimulateTokenTransfer = async (
     // Backend returns: { simulationResponse: {...}, preparedTransaction: "..." }
     const json = {
       simulationResponse: {
-        minResourceFee: "100",
-        results: [],
-        cost: {
-          cpuInsns: "100",
-          memBytes: "100",
+        _parsed: true,
+        latestLedger: 60969445,
+        events: [
+          {
+            _attributes: {
+              inSuccessfulContractCall: true,
+              event: {
+                _attributes: {
+                  ext: {
+                    _switch: 0,
+                  },
+                  type: {
+                    name: "diagnostic",
+                    value: 2,
+                  },
+                  body: {
+                    _switch: 0,
+                    _arm: "v0",
+                    _value: {
+                      _attributes: {
+                        topics: [
+                          {
+                            _switch: {
+                              name: "scvSymbol",
+                              value: 15,
+                            },
+                            _arm: "sym",
+                            _armType: {
+                              _maxLength: 32,
+                            },
+                            _value: {
+                              type: "Buffer",
+                              data: [102, 110, 95, 99, 97, 108, 108],
+                            },
+                          },
+                          {
+                            _switch: {
+                              name: "scvBytes",
+                              value: 13,
+                            },
+                            _arm: "bytes",
+                            _armType: {
+                              _maxLength: 4294967295,
+                            },
+                            _value: {
+                              type: "Buffer",
+                              data: [
+                                51, 120, 205, 202, 109, 33, 164, 194, 5, 219,
+                                69, 26, 124, 216, 96, 210, 220, 233, 172, 131,
+                                124, 131, 55, 133, 20, 250, 59, 61, 195, 99,
+                                234, 75,
+                              ],
+                            },
+                          },
+                          {
+                            _switch: {
+                              name: "scvSymbol",
+                              value: 15,
+                            },
+                            _arm: "sym",
+                            _armType: {
+                              _maxLength: 32,
+                            },
+                            _value: {
+                              type: "Buffer",
+                              data: [116, 114, 97, 110, 115, 102, 101, 114],
+                            },
+                          },
+                        ],
+                        data: {
+                          _switch: {
+                            name: "scvVec",
+                            value: 16,
+                          },
+                          _arm: "vec",
+                          _armType: {
+                            _childType: {
+                              _maxLength: 2147483647,
+                            },
+                          },
+                          _value: [
+                            {
+                              _switch: {
+                                name: "scvAddress",
+                                value: 18,
+                              },
+                              _arm: "address",
+                              _value: {
+                                _switch: {
+                                  name: "scAddressTypeAccount",
+                                  value: 0,
+                                },
+                                _arm: "accountId",
+                                _value: {
+                                  _switch: {
+                                    name: "publicKeyTypeEd25519",
+                                    value: 0,
+                                  },
+                                  _arm: "ed25519",
+                                  _armType: {
+                                    _length: 32,
+                                  },
+                                  _value: {
+                                    type: "Buffer",
+                                    data: [
+                                      103, 128, 20, 230, 110, 101, 50, 114, 161,
+                                      182, 112, 3, 7, 114, 137, 146, 71, 205,
+                                      29, 71, 49, 173, 43, 60, 76, 234, 6, 247,
+                                      203, 36, 131, 228,
+                                    ],
+                                  },
+                                },
+                              },
+                            },
+                            {
+                              _switch: {
+                                name: "scvAddress",
+                                value: 18,
+                              },
+                              _arm: "address",
+                              _value: {
+                                _switch: {
+                                  name: "scAddressTypeAccount",
+                                  value: 0,
+                                },
+                                _arm: "accountId",
+                                _value: {
+                                  _switch: {
+                                    name: "publicKeyTypeEd25519",
+                                    value: 0,
+                                  },
+                                  _arm: "ed25519",
+                                  _armType: {
+                                    _length: 32,
+                                  },
+                                  _value: {
+                                    type: "Buffer",
+                                    data: [
+                                      103, 128, 20, 230, 110, 101, 50, 114, 161,
+                                      182, 112, 3, 7, 114, 137, 146, 71, 205,
+                                      29, 71, 49, 173, 43, 60, 76, 234, 6, 247,
+                                      203, 36, 131, 228,
+                                    ],
+                                  },
+                                },
+                              },
+                            },
+                            {
+                              _switch: {
+                                name: "scvI128",
+                                value: 10,
+                              },
+                              _arm: "i128",
+                              _value: {
+                                _attributes: {
+                                  hi: {
+                                    _value: "0",
+                                  },
+                                  lo: {
+                                    _value: "100000",
+                                  },
+                                },
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          {
+            _attributes: {
+              inSuccessfulContractCall: true,
+              event: {
+                _attributes: {
+                  ext: {
+                    _switch: 0,
+                  },
+                  contractId: {
+                    type: "Buffer",
+                    data: [
+                      51, 120, 205, 202, 109, 33, 164, 194, 5, 219, 69, 26, 124,
+                      216, 96, 210, 220, 233, 172, 131, 124, 131, 55, 133, 20,
+                      250, 59, 61, 195, 99, 234, 75,
+                    ],
+                  },
+                  type: {
+                    name: "contract",
+                    value: 1,
+                  },
+                  body: {
+                    _switch: 0,
+                    _arm: "v0",
+                    _value: {
+                      _attributes: {
+                        topics: [
+                          {
+                            _switch: {
+                              name: "scvSymbol",
+                              value: 15,
+                            },
+                            _arm: "sym",
+                            _armType: {
+                              _maxLength: 32,
+                            },
+                            _value: {
+                              type: "Buffer",
+                              data: [116, 114, 97, 110, 115, 102, 101, 114],
+                            },
+                          },
+                          {
+                            _switch: {
+                              name: "scvAddress",
+                              value: 18,
+                            },
+                            _arm: "address",
+                            _value: {
+                              _switch: {
+                                name: "scAddressTypeAccount",
+                                value: 0,
+                              },
+                              _arm: "accountId",
+                              _value: {
+                                _switch: {
+                                  name: "publicKeyTypeEd25519",
+                                  value: 0,
+                                },
+                                _arm: "ed25519",
+                                _armType: {
+                                  _length: 32,
+                                },
+                                _value: {
+                                  type: "Buffer",
+                                  data: [
+                                    103, 128, 20, 230, 110, 101, 50, 114, 161,
+                                    182, 112, 3, 7, 114, 137, 146, 71, 205, 29,
+                                    71, 49, 173, 43, 60, 76, 234, 6, 247, 203,
+                                    36, 131, 228,
+                                  ],
+                                },
+                              },
+                            },
+                          },
+                          {
+                            _switch: {
+                              name: "scvAddress",
+                              value: 18,
+                            },
+                            _arm: "address",
+                            _value: {
+                              _switch: {
+                                name: "scAddressTypeAccount",
+                                value: 0,
+                              },
+                              _arm: "accountId",
+                              _value: {
+                                _switch: {
+                                  name: "publicKeyTypeEd25519",
+                                  value: 0,
+                                },
+                                _arm: "ed25519",
+                                _armType: {
+                                  _length: 32,
+                                },
+                                _value: {
+                                  type: "Buffer",
+                                  data: [
+                                    103, 128, 20, 230, 110, 101, 50, 114, 161,
+                                    182, 112, 3, 7, 114, 137, 146, 71, 205, 29,
+                                    71, 49, 173, 43, 60, 76, 234, 6, 247, 203,
+                                    36, 131, 228,
+                                  ],
+                                },
+                              },
+                            },
+                          },
+                        ],
+                        data: {
+                          _switch: {
+                            name: "scvI128",
+                            value: 10,
+                          },
+                          _arm: "i128",
+                          _value: {
+                            _attributes: {
+                              hi: {
+                                _value: "0",
+                              },
+                              lo: {
+                                _value: "100000",
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          {
+            _attributes: {
+              inSuccessfulContractCall: true,
+              event: {
+                _attributes: {
+                  ext: {
+                    _switch: 0,
+                  },
+                  contractId: {
+                    type: "Buffer",
+                    data: [
+                      51, 120, 205, 202, 109, 33, 164, 194, 5, 219, 69, 26, 124,
+                      216, 96, 210, 220, 233, 172, 131, 124, 131, 55, 133, 20,
+                      250, 59, 61, 195, 99, 234, 75,
+                    ],
+                  },
+                  type: {
+                    name: "diagnostic",
+                    value: 2,
+                  },
+                  body: {
+                    _switch: 0,
+                    _arm: "v0",
+                    _value: {
+                      _attributes: {
+                        topics: [
+                          {
+                            _switch: {
+                              name: "scvSymbol",
+                              value: 15,
+                            },
+                            _arm: "sym",
+                            _armType: {
+                              _maxLength: 32,
+                            },
+                            _value: {
+                              type: "Buffer",
+                              data: [
+                                102, 110, 95, 114, 101, 116, 117, 114, 110,
+                              ],
+                            },
+                          },
+                          {
+                            _switch: {
+                              name: "scvSymbol",
+                              value: 15,
+                            },
+                            _arm: "sym",
+                            _armType: {
+                              _maxLength: 32,
+                            },
+                            _value: {
+                              type: "Buffer",
+                              data: [116, 114, 97, 110, 115, 102, 101, 114],
+                            },
+                          },
+                        ],
+                        data: {
+                          _switch: {
+                            name: "scvVoid",
+                            value: 1,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        ],
+        transactionData: {
+          _data: {
+            _attributes: {
+              ext: {
+                _switch: 0,
+              },
+              resources: {
+                _attributes: {
+                  footprint: {
+                    _attributes: {
+                      readOnly: [
+                        {
+                          _switch: {
+                            name: "contractData",
+                            value: 6,
+                          },
+                          _arm: "contractData",
+                          _value: {
+                            _attributes: {
+                              contract: {
+                                _switch: {
+                                  name: "scAddressTypeContract",
+                                  value: 1,
+                                },
+                                _arm: "contractId",
+                                _armType: {
+                                  _length: 32,
+                                },
+                                _value: {
+                                  type: "Buffer",
+                                  data: [
+                                    51, 120, 205, 202, 109, 33, 164, 194, 5,
+                                    219, 69, 26, 124, 216, 96, 210, 220, 233,
+                                    172, 131, 124, 131, 55, 133, 20, 250, 59,
+                                    61, 195, 99, 234, 75,
+                                  ],
+                                },
+                              },
+                              key: {
+                                _switch: {
+                                  name: "scvLedgerKeyContractInstance",
+                                  value: 20,
+                                },
+                              },
+                              durability: {
+                                name: "persistent",
+                                value: 1,
+                              },
+                            },
+                          },
+                        },
+                        {
+                          _switch: {
+                            name: "contractCode",
+                            value: 7,
+                          },
+                          _arm: "contractCode",
+                          _value: {
+                            _attributes: {
+                              hash: {
+                                type: "Buffer",
+                                data: [
+                                  144, 12, 51, 182, 156, 190, 52, 116, 141, 244,
+                                  68, 63, 118, 129, 119, 90, 2, 179, 5, 153,
+                                  227, 186, 185, 199, 201, 248, 179, 34, 90, 59,
+                                  31, 27,
+                                ],
+                              },
+                            },
+                          },
+                        },
+                      ],
+                      readWrite: [
+                        {
+                          _switch: {
+                            name: "contractData",
+                            value: 6,
+                          },
+                          _arm: "contractData",
+                          _value: {
+                            _attributes: {
+                              contract: {
+                                _switch: {
+                                  name: "scAddressTypeContract",
+                                  value: 1,
+                                },
+                                _arm: "contractId",
+                                _armType: {
+                                  _length: 32,
+                                },
+                                _value: {
+                                  type: "Buffer",
+                                  data: [
+                                    51, 120, 205, 202, 109, 33, 164, 194, 5,
+                                    219, 69, 26, 124, 216, 96, 210, 220, 233,
+                                    172, 131, 124, 131, 55, 133, 20, 250, 59,
+                                    61, 195, 99, 234, 75,
+                                  ],
+                                },
+                              },
+                              key: {
+                                _switch: {
+                                  name: "scvVec",
+                                  value: 16,
+                                },
+                                _arm: "vec",
+                                _armType: {
+                                  _childType: {
+                                    _maxLength: 2147483647,
+                                  },
+                                },
+                                _value: [
+                                  {
+                                    _switch: {
+                                      name: "scvSymbol",
+                                      value: 15,
+                                    },
+                                    _arm: "sym",
+                                    _armType: {
+                                      _maxLength: 32,
+                                    },
+                                    _value: {
+                                      type: "Buffer",
+                                      data: [66, 97, 108, 97, 110, 99, 101],
+                                    },
+                                  },
+                                  {
+                                    _switch: {
+                                      name: "scvAddress",
+                                      value: 18,
+                                    },
+                                    _arm: "address",
+                                    _value: {
+                                      _switch: {
+                                        name: "scAddressTypeAccount",
+                                        value: 0,
+                                      },
+                                      _arm: "accountId",
+                                      _value: {
+                                        _switch: {
+                                          name: "publicKeyTypeEd25519",
+                                          value: 0,
+                                        },
+                                        _arm: "ed25519",
+                                        _armType: {
+                                          _length: 32,
+                                        },
+                                        _value: {
+                                          type: "Buffer",
+                                          data: [
+                                            103, 128, 20, 230, 110, 101, 50,
+                                            114, 161, 182, 112, 3, 7, 114, 137,
+                                            146, 71, 205, 29, 71, 49, 173, 43,
+                                            60, 76, 234, 6, 247, 203, 36, 131,
+                                            228,
+                                          ],
+                                        },
+                                      },
+                                    },
+                                  },
+                                ],
+                              },
+                              durability: {
+                                name: "persistent",
+                                value: 1,
+                              },
+                            },
+                          },
+                        },
+                      ],
+                    },
+                  },
+                  instructions: 817757,
+                  diskReadBytes: 0,
+                  writeBytes: 148,
+                },
+              },
+              resourceFee: {
+                _value: "93238",
+              },
+            },
+          },
         },
-        transactionData: "",
-        events: [],
-        returnValue: "",
-        auth: [],
-        footprint: {
-          readOnly: [],
-          readWrite: [],
+        minResourceFee: "93238",
+        result: {
+          auth: [
+            {
+              _attributes: {
+                credentials: {
+                  _switch: {
+                    name: "sorobanCredentialsSourceAccount",
+                    value: 0,
+                  },
+                },
+                rootInvocation: {
+                  _attributes: {
+                    function: {
+                      _switch: {
+                        name: "sorobanAuthorizedFunctionTypeContractFn",
+                        value: 0,
+                      },
+                      _arm: "contractFn",
+                      _value: {
+                        _attributes: {
+                          contractAddress: {
+                            _switch: {
+                              name: "scAddressTypeContract",
+                              value: 1,
+                            },
+                            _arm: "contractId",
+                            _armType: {
+                              _length: 32,
+                            },
+                            _value: {
+                              type: "Buffer",
+                              data: [
+                                51, 120, 205, 202, 109, 33, 164, 194, 5, 219,
+                                69, 26, 124, 216, 96, 210, 220, 233, 172, 131,
+                                124, 131, 55, 133, 20, 250, 59, 61, 195, 99,
+                                234, 75,
+                              ],
+                            },
+                          },
+                          functionName: {
+                            type: "Buffer",
+                            data: [116, 114, 97, 110, 115, 102, 101, 114],
+                          },
+                          args: [
+                            {
+                              _switch: {
+                                name: "scvAddress",
+                                value: 18,
+                              },
+                              _arm: "address",
+                              _value: {
+                                _switch: {
+                                  name: "scAddressTypeAccount",
+                                  value: 0,
+                                },
+                                _arm: "accountId",
+                                _value: {
+                                  _switch: {
+                                    name: "publicKeyTypeEd25519",
+                                    value: 0,
+                                  },
+                                  _arm: "ed25519",
+                                  _armType: {
+                                    _length: 32,
+                                  },
+                                  _value: {
+                                    type: "Buffer",
+                                    data: [
+                                      103, 128, 20, 230, 110, 101, 50, 114, 161,
+                                      182, 112, 3, 7, 114, 137, 146, 71, 205,
+                                      29, 71, 49, 173, 43, 60, 76, 234, 6, 247,
+                                      203, 36, 131, 228,
+                                    ],
+                                  },
+                                },
+                              },
+                            },
+                            {
+                              _switch: {
+                                name: "scvAddress",
+                                value: 18,
+                              },
+                              _arm: "address",
+                              _value: {
+                                _switch: {
+                                  name: "scAddressTypeAccount",
+                                  value: 0,
+                                },
+                                _arm: "accountId",
+                                _value: {
+                                  _switch: {
+                                    name: "publicKeyTypeEd25519",
+                                    value: 0,
+                                  },
+                                  _arm: "ed25519",
+                                  _armType: {
+                                    _length: 32,
+                                  },
+                                  _value: {
+                                    type: "Buffer",
+                                    data: [
+                                      103, 128, 20, 230, 110, 101, 50, 114, 161,
+                                      182, 112, 3, 7, 114, 137, 146, 71, 205,
+                                      29, 71, 49, 173, 43, 60, 76, 234, 6, 247,
+                                      203, 36, 131, 228,
+                                    ],
+                                  },
+                                },
+                              },
+                            },
+                            {
+                              _switch: {
+                                name: "scvI128",
+                                value: 10,
+                              },
+                              _arm: "i128",
+                              _value: {
+                                _attributes: {
+                                  hi: {
+                                    _value: "0",
+                                  },
+                                  lo: {
+                                    _value: "100000",
+                                  },
+                                },
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    },
+                    subInvocations: [],
+                  },
+                },
+              },
+            },
+          ],
+          retval: {
+            _switch: {
+              name: "scvVoid",
+              value: 1,
+            },
+          },
         },
+        stateChanges: [
+          {
+            type: "updated",
+            key: {
+              _switch: {
+                name: "contractData",
+                value: 6,
+              },
+              _arm: "contractData",
+              _value: {
+                _attributes: {
+                  contract: {
+                    _switch: {
+                      name: "scAddressTypeContract",
+                      value: 1,
+                    },
+                    _arm: "contractId",
+                    _armType: {
+                      _length: 32,
+                    },
+                    _value: {
+                      type: "Buffer",
+                      data: [
+                        51, 120, 205, 202, 109, 33, 164, 194, 5, 219, 69, 26,
+                        124, 216, 96, 210, 220, 233, 172, 131, 124, 131, 55,
+                        133, 20, 250, 59, 61, 195, 99, 234, 75,
+                      ],
+                    },
+                  },
+                  key: {
+                    _switch: {
+                      name: "scvVec",
+                      value: 16,
+                    },
+                    _arm: "vec",
+                    _armType: {
+                      _childType: {
+                        _maxLength: 2147483647,
+                      },
+                    },
+                    _value: [
+                      {
+                        _switch: {
+                          name: "scvSymbol",
+                          value: 15,
+                        },
+                        _arm: "sym",
+                        _armType: {
+                          _maxLength: 32,
+                        },
+                        _value: {
+                          type: "Buffer",
+                          data: [66, 97, 108, 97, 110, 99, 101],
+                        },
+                      },
+                      {
+                        _switch: {
+                          name: "scvAddress",
+                          value: 18,
+                        },
+                        _arm: "address",
+                        _value: {
+                          _switch: {
+                            name: "scAddressTypeAccount",
+                            value: 0,
+                          },
+                          _arm: "accountId",
+                          _value: {
+                            _switch: {
+                              name: "publicKeyTypeEd25519",
+                              value: 0,
+                            },
+                            _arm: "ed25519",
+                            _armType: {
+                              _length: 32,
+                            },
+                            _value: {
+                              type: "Buffer",
+                              data: [
+                                103, 128, 20, 230, 110, 101, 50, 114, 161, 182,
+                                112, 3, 7, 114, 137, 146, 71, 205, 29, 71, 49,
+                                173, 43, 60, 76, 234, 6, 247, 203, 36, 131, 228,
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    ],
+                  },
+                  durability: {
+                    name: "persistent",
+                    value: 1,
+                  },
+                },
+              },
+            },
+            before: {
+              _attributes: {
+                lastModifiedLedgerSeq: 60906681,
+                data: {
+                  _switch: {
+                    name: "contractData",
+                    value: 6,
+                  },
+                  _arm: "contractData",
+                  _value: {
+                    _attributes: {
+                      ext: {
+                        _switch: 0,
+                      },
+                      contract: {
+                        _switch: {
+                          name: "scAddressTypeContract",
+                          value: 1,
+                        },
+                        _arm: "contractId",
+                        _armType: {
+                          _length: 32,
+                        },
+                        _value: {
+                          type: "Buffer",
+                          data: [
+                            51, 120, 205, 202, 109, 33, 164, 194, 5, 219, 69,
+                            26, 124, 216, 96, 210, 220, 233, 172, 131, 124, 131,
+                            55, 133, 20, 250, 59, 61, 195, 99, 234, 75,
+                          ],
+                        },
+                      },
+                      key: {
+                        _switch: {
+                          name: "scvVec",
+                          value: 16,
+                        },
+                        _arm: "vec",
+                        _armType: {
+                          _childType: {
+                            _maxLength: 2147483647,
+                          },
+                        },
+                        _value: [
+                          {
+                            _switch: {
+                              name: "scvSymbol",
+                              value: 15,
+                            },
+                            _arm: "sym",
+                            _armType: {
+                              _maxLength: 32,
+                            },
+                            _value: {
+                              type: "Buffer",
+                              data: [66, 97, 108, 97, 110, 99, 101],
+                            },
+                          },
+                          {
+                            _switch: {
+                              name: "scvAddress",
+                              value: 18,
+                            },
+                            _arm: "address",
+                            _value: {
+                              _switch: {
+                                name: "scAddressTypeAccount",
+                                value: 0,
+                              },
+                              _arm: "accountId",
+                              _value: {
+                                _switch: {
+                                  name: "publicKeyTypeEd25519",
+                                  value: 0,
+                                },
+                                _arm: "ed25519",
+                                _armType: {
+                                  _length: 32,
+                                },
+                                _value: {
+                                  type: "Buffer",
+                                  data: [
+                                    103, 128, 20, 230, 110, 101, 50, 114, 161,
+                                    182, 112, 3, 7, 114, 137, 146, 71, 205, 29,
+                                    71, 49, 173, 43, 60, 76, 234, 6, 247, 203,
+                                    36, 131, 228,
+                                  ],
+                                },
+                              },
+                            },
+                          },
+                        ],
+                      },
+                      durability: {
+                        name: "persistent",
+                        value: 1,
+                      },
+                      val: {
+                        _switch: {
+                          name: "scvI128",
+                          value: 10,
+                        },
+                        _arm: "i128",
+                        _value: {
+                          _attributes: {
+                            hi: {
+                              _value: "0",
+                            },
+                            lo: {
+                              _value: "109268289",
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+                ext: {
+                  _switch: 0,
+                },
+              },
+            },
+            after: {
+              _attributes: {
+                lastModifiedLedgerSeq: 60906681,
+                data: {
+                  _switch: {
+                    name: "contractData",
+                    value: 6,
+                  },
+                  _arm: "contractData",
+                  _value: {
+                    _attributes: {
+                      ext: {
+                        _switch: 0,
+                      },
+                      contract: {
+                        _switch: {
+                          name: "scAddressTypeContract",
+                          value: 1,
+                        },
+                        _arm: "contractId",
+                        _armType: {
+                          _length: 32,
+                        },
+                        _value: {
+                          type: "Buffer",
+                          data: [
+                            51, 120, 205, 202, 109, 33, 164, 194, 5, 219, 69,
+                            26, 124, 216, 96, 210, 220, 233, 172, 131, 124, 131,
+                            55, 133, 20, 250, 59, 61, 195, 99, 234, 75,
+                          ],
+                        },
+                      },
+                      key: {
+                        _switch: {
+                          name: "scvVec",
+                          value: 16,
+                        },
+                        _arm: "vec",
+                        _armType: {
+                          _childType: {
+                            _maxLength: 2147483647,
+                          },
+                        },
+                        _value: [
+                          {
+                            _switch: {
+                              name: "scvSymbol",
+                              value: 15,
+                            },
+                            _arm: "sym",
+                            _armType: {
+                              _maxLength: 32,
+                            },
+                            _value: {
+                              type: "Buffer",
+                              data: [66, 97, 108, 97, 110, 99, 101],
+                            },
+                          },
+                          {
+                            _switch: {
+                              name: "scvAddress",
+                              value: 18,
+                            },
+                            _arm: "address",
+                            _value: {
+                              _switch: {
+                                name: "scAddressTypeAccount",
+                                value: 0,
+                              },
+                              _arm: "accountId",
+                              _value: {
+                                _switch: {
+                                  name: "publicKeyTypeEd25519",
+                                  value: 0,
+                                },
+                                _arm: "ed25519",
+                                _armType: {
+                                  _length: 32,
+                                },
+                                _value: {
+                                  type: "Buffer",
+                                  data: [
+                                    103, 128, 20, 230, 110, 101, 50, 114, 161,
+                                    182, 112, 3, 7, 114, 137, 146, 71, 205, 29,
+                                    71, 49, 173, 43, 60, 76, 234, 6, 247, 203,
+                                    36, 131, 228,
+                                  ],
+                                },
+                              },
+                            },
+                          },
+                        ],
+                      },
+                      durability: {
+                        name: "persistent",
+                        value: 1,
+                      },
+                      val: {
+                        _switch: {
+                          name: "scvI128",
+                          value: 10,
+                        },
+                        _arm: "i128",
+                        _value: {
+                          _attributes: {
+                            hi: {
+                              _value: "0",
+                            },
+                            lo: {
+                              _value: "109268289",
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+                ext: {
+                  _switch: 0,
+                },
+              },
+            },
+          },
+        ],
       },
-      preparedTransaction: "AAAAAgAAAAC8J8h+HyYyP4AAAAA=", // Mock XDR
+      preparedTransaction:
+        "AAAAAgAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AABbJoCjnUGAAABwgAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABM3jNym0hpMIF20UafNhg0tzprIN8gzeFFPo7PcNj6ksAAAAIdHJhbnNmZXIAAAADAAAAEgAAAAAAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+QAAAASAAAAAAAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAoAAAAAAAAAAAAAAAAAAYagAAAAAQAAAAAAAAAAAAAAATN4zcptIaTCBdtFGnzYYNLc6ayDfIM3hRT6Oz3DY+pLAAAACHRyYW5zZmVyAAAAAwAAABIAAAAAAAAAAGeAFOZuZTJyobZwAwdyiZJHzR1HMa0rPEzqBvfLJIPkAAAAEgAAAAAAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+QAAAAKAAAAAAAAAAAAAAAAAAGGoAAAAAAAAAABAAAAAAAAAAIAAAAGAAAAATN4zcptIaTCBdtFGnzYYNLc6ayDfIM3hRT6Oz3DY+pLAAAAFAAAAAEAAAAHkAwztpy+NHSN9EQ/doF3WgKzBZnjurnHyfizIlo7HxsAAAABAAAABgAAAAEzeM3KbSGkwgXbRRp82GDS3Omsg3yDN4UU+js9w2PqSwAAABAAAAABAAAAAgAAAA8AAAAHQmFsYW5jZQAAAAASAAAAAAAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAEADHpdAAAAAAAAAJQAAAAAAAFsNgAAAAA=",
     };
 
     await route.fulfill({ json, status: 200 });
@@ -1066,5 +2353,117 @@ export const stubAccountBalancesWithUnfundedDestination = async (
       },
     };
     await route.fulfill({ json });
+  });
+};
+
+/**
+ * Comprehensive stub setup for all external API calls
+ * Call this early in tests to ensure all external APIs are stubbed
+ */
+export const stubAllExternalApis = async (
+  page: Page,
+  context: BrowserContext,
+) => {
+  // User notification
+  await stubUserNotification(context);
+
+  // Feature flags
+  await stubFeatureFlags(context);
+
+  // Subscription account
+  await stubSubscriptionAccount(context);
+
+  // Stellar Asset List
+  await stubStellarAssetList(page);
+  await stubAssetSearch(page);
+
+  // Token metadata
+  await stubTokenDetails(page);
+  await stubTokenPrices(page);
+  await stubIsSac(page);
+
+  // Horizon endpoints
+  await stubFeeStats(page);
+  await stubHorizonAccounts(page);
+  await stubHorizonTransactions(page);
+
+  // Backend transaction endpoints
+  await stubBackendSimulateTx(page);
+  await stubBackendSubmitTx(page);
+  await stubSimulateTokenTransfer(page);
+
+  // Federated address resolution
+  await stubStellarToml(page);
+  await stubFederation(page);
+
+  // Friendbot (testnet funding)
+  await stubFriendbot(page);
+
+  // Account balances
+  await stubDefaultAccountBalances(page);
+
+  // Collectibles
+  await stubCollectibles(page);
+
+  // Mercury/History endpoints
+  // Note: Tests that need account history should call stubAccountHistory() instead
+  // to provide their own test data
+  await stubAccountHistory(page);
+  await stubMercuryTransactions(page);
+
+  // RPC and Soroban
+  await stubSorobanRpc(page);
+
+  // Backend settings and health checks
+  await stubBackendSettingsEndpoint(page);
+
+  // Ledger keys accounts
+  await stubLedgerKeysAccounts(page);
+
+  // Blockaid scan
+  await stubScanTx(page);
+  await stubScanDapp(context);
+};
+
+export const stubBackendSettings = async (page: Page) => {
+  await page.route("**/feature-flags", async (route) => {
+    await route.fulfill({
+      json: {
+        useSorobanPublic: true,
+      },
+    });
+  });
+
+  await page.route("**/user-notification", async (route) => {
+    await route.fulfill({
+      json: {
+        enabled: false,
+        message: "",
+      },
+    });
+  });
+};
+
+/**
+ * Stub a specific API endpoint with custom response
+ * Useful for test-specific overrides
+ */
+export const stubApiEndpoint = async (
+  page: Page,
+  pattern: string,
+  response: any,
+) => {
+  await page.route(pattern, async (route) => {
+    await route.fulfill({ json: response });
+  });
+};
+
+/**
+ * Abort a specific API endpoint
+ * Useful for testing error handling
+ */
+export const abortApiEndpoint = async (page: Page, pattern: string) => {
+  await page.route(pattern, async (route) => {
+    await route.abort("failed");
   });
 };
