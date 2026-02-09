@@ -5,14 +5,13 @@ import {
   stubAccountBalancesE2e,
   stubAccountBalancesWithUSDC,
   stubAccountBalancesWithUnfundedDestination,
-  stubUnfundedDestinationBalances,
   stubContractSpec,
 } from "./helpers/stubs";
 
 const MUXED_ACCOUNT_ADDRESS =
   "MCQ7EGW7VXHI4AKJAFADOIHCSK2OCVA42KUETUK5LQ3LVSEQEEKP6AAAAAAAAAAAAFLVY";
 const UNFUNDED_DESTINATION =
-  "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZPY";
+  "GDMDFPJPFH4Z2LLUCNNQT3HVQ2XU2TMZBA6OL37C752WCKU7JZO2S52R";
 const FUNDED_DESTINATION =
   "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 
@@ -213,7 +212,11 @@ test("Send XLM below minimum to unfunded destination shows warning", async ({
 }) => {
   test.slow();
   const stubOverrides = async () => {
-    await stubUnfundedDestinationBalances(page, UNFUNDED_DESTINATION);
+    await page.unroute("**/account-balances/**");
+    await stubAccountBalancesWithUnfundedDestination(
+      page,
+      UNFUNDED_DESTINATION,
+    );
   };
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
@@ -235,14 +238,16 @@ test("Send XLM below minimum to unfunded destination shows warning", async ({
   const reviewButton = page.getByText("Review Send");
   await reviewButton.click({ force: true });
 
-  // Verify the unfunded destination warning appears in BlockAidTxScanExpanded
+  const warningLabel = page.getByTestId("blockaid-miss-label");
+  await expect(warningLabel).toBeVisible({ timeout: 30000 });
+  await warningLabel.click();
+
   await expect(
     page.getByText(
       /This is a new account and needs at least 1 XLM to be created/,
     ),
   ).toBeVisible({ timeout: 30000 });
 
-  // Verify warning section is present
   await expect(page.getByText("Warning")).toBeVisible();
 });
 
@@ -253,7 +258,11 @@ test("Send XLM at minimum to unfunded destination proceeds without warning", asy
 }) => {
   test.slow();
   const stubOverrides = async () => {
-    await stubUnfundedDestinationBalances(page, UNFUNDED_DESTINATION);
+    await page.unroute("**/account-balances/**");
+    await stubAccountBalancesWithUnfundedDestination(
+      page,
+      UNFUNDED_DESTINATION,
+    );
   };
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
@@ -280,12 +289,7 @@ test("Send XLM at minimum to unfunded destination proceeds without warning", asy
     timeout: 30000,
   });
 
-  // The unfunded warning should NOT appear since amount >= 1 XLM
-  await expect(
-    page.getByText(
-      /This is a new account and needs at least 1 XLM to be created/,
-    ),
-  ).not.toBeVisible();
+  await expect(page.getByTestId("blockaid-miss-label")).toHaveCount(0);
 });
 
 test("Send non-native asset to unfunded destination shows destination missing warning", async ({
@@ -295,6 +299,7 @@ test("Send non-native asset to unfunded destination shows destination missing wa
 }) => {
   test.slow();
   const stubOverrides = async () => {
+    await page.unroute("**/account-balances/**");
     await stubAccountBalancesWithUnfundedDestination(
       page,
       UNFUNDED_DESTINATION,
@@ -334,14 +339,16 @@ test("Send non-native asset to unfunded destination shows destination missing wa
   const reviewButton = page.getByText("Review Send");
   await reviewButton.click({ force: true });
 
-  // Verify the non-native asset unfunded destination warning appears
+  const warningLabel = page.getByTestId("blockaid-miss-label");
+  await expect(warningLabel).toBeVisible({ timeout: 30000 });
+  await warningLabel.click();
+
   await expect(
     page.getByText(
       /This is a new account and needs 1 XLM in order to get started/,
     ),
   ).toBeVisible({ timeout: 30000 });
 
-  // Verify warning section is present
   await expect(page.getByText("Warning")).toBeVisible();
 });
 
@@ -377,18 +384,7 @@ test("Send XLM to funded destination does not show unfunded warning", async ({
     timeout: 30000,
   });
 
-  // The unfunded warning should NOT appear since destination is funded
-  await expect(
-    page.getByText(
-      /This is a new account and needs at least 1 XLM to be created/,
-    ),
-  ).not.toBeVisible();
-
-  await expect(
-    page.getByText(
-      /This is a new account and needs 1 XLM in order to get started/,
-    ),
-  ).not.toBeVisible();
+  await expect(page.getByTestId("blockaid-miss-label")).toHaveCount(0);
 });
 
 test("Unfunded destination warning disappears when amount is increased above minimum", async ({
@@ -398,7 +394,11 @@ test("Unfunded destination warning disappears when amount is increased above min
 }) => {
   test.slow();
   const stubOverrides = async () => {
-    await stubUnfundedDestinationBalances(page, UNFUNDED_DESTINATION);
+    await page.unroute("**/account-balances/**");
+    await stubAccountBalancesWithUnfundedDestination(
+      page,
+      UNFUNDED_DESTINATION,
+    );
   };
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
@@ -420,12 +420,17 @@ test("Unfunded destination warning disappears when amount is increased above min
   let reviewButton = page.getByText("Review Send");
   await reviewButton.click({ force: true });
 
-  // Verify the unfunded destination warning appears
+  const warningLabel = page.getByTestId("blockaid-miss-label");
+  await expect(warningLabel).toBeVisible({ timeout: 30000 });
+  await warningLabel.click();
+
   await expect(
     page.getByText(
       /This is a new account and needs at least 1 XLM to be created/,
     ),
   ).toBeVisible({ timeout: 30000 });
+
+  await page.locator(".BlockaidDetailsExpanded__Header .Close").click();
 
   // Go back to amount input
   await page.getByTestId("BackButton").click();
@@ -443,11 +448,7 @@ test("Unfunded destination warning disappears when amount is increased above min
     timeout: 30000,
   });
 
-  await expect(
-    page.getByText(
-      /This is a new account and needs at least 1 XLM to be created/,
-    ),
-  ).not.toBeVisible();
+  await expect(page.getByTestId("blockaid-miss-label")).toHaveCount(0);
 });
 test("Send doesn't throw error when creating muxed account", async ({
   page,

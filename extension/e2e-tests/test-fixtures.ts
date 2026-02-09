@@ -1,15 +1,10 @@
-import {
-  test as base,
-  chromium,
-  BrowserContext,
-  Page,
-  Worker,
-} from "@playwright/test";
+import { test as base, chromium, BrowserContext, Page } from "@playwright/test";
 import path from "path";
+
+import { STELLAR_EXPERT_ASSET_LIST_JSON } from "./helpers/stubs";
 
 export const test = base.extend<{
   context: BrowserContext;
-  serviceWorker: Worker;
   extensionId: string;
   page: Page;
   language: string;
@@ -18,7 +13,9 @@ export const test = base.extend<{
   context: async ({}, use) => {
     const pathToExtension = path.join(__dirname, "../build");
     const context = await chromium.launchPersistentContext("", {
+      headless: false,
       args: [
+        `--headless=new`,
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
       ],
@@ -73,26 +70,15 @@ export const test = base.extend<{
         langsValue: config.langs,
       },
     );
+
+    if (!process.env.IS_INTEGRATION_MODE) {
+      await page.route("*/**/testnet/asset-list/top50", async (route) => {
+        const json = STELLAR_EXPERT_ASSET_LIST_JSON;
+        await route.fulfill({ json });
+      });
+    }
     use(page);
   },
-});
-
-test.afterEach(async ({ page, context }) => {
-  // Clean up all route handlers to avoid teardown timeout issues
-  try {
-    await page.unroute("**/*");
-    await context.unroute("**/*");
-    const pages = context.pages();
-    await Promise.all(
-      pages.map(async (p) => {
-        if (!p.isClosed()) {
-          await p.close();
-        }
-      }),
-    );
-  } catch (e) {
-    // Silently ignore errors during cleanup
-  }
 });
 
 export const expectPageToHaveScreenshot = async (
