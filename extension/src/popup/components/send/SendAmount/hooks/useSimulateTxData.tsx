@@ -88,15 +88,16 @@ const getExpectedToFailReason = ({
     return null;
   }
 
-  if (assetCanonical === "native") {
-    const parsedAmount = new BigNumber(cleanAmount(amount || "0"));
-    if (parsedAmount.lt(CREATE_ACCOUNT_MIN_XLM)) {
-      return "To create a new account you need to send at least 1 XLM to it.";
-    }
-    return null;
+  if (assetCanonical !== "native") {
+    return "blockaid.security.transaction.unfundedDestination";
   }
 
-  return "The destination account doesn’t exist";
+  const parsedAmount = new BigNumber(cleanAmount(amount || "0"));
+  if (parsedAmount.lt(CREATE_ACCOUNT_MIN_XLM)) {
+    return "blockaid.security.transaction.unfundedDestinationNative";
+  }
+
+  return null;
 };
 
 const applyExpectedToFailReason = ({
@@ -110,8 +111,6 @@ const applyExpectedToFailReason = ({
     return scanResult;
   }
 
-  const hasSimulationError =
-    scanResult?.simulation && "error" in scanResult.simulation;
   const hasNonBenignValidation = !!(
     scanResult?.validation &&
     "result_type" in scanResult.validation &&
@@ -119,7 +118,7 @@ const applyExpectedToFailReason = ({
       scanResult.validation.result_type === "Warning")
   );
 
-  if (hasSimulationError || hasNonBenignValidation) {
+  if (hasNonBenignValidation) {
     return scanResult;
   }
 

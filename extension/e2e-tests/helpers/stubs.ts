@@ -927,3 +927,144 @@ export const stubFeeStats = async (page: Page) => {
     await route.fulfill({ json });
   });
 };
+
+/**
+ * Stub helper to create unfunded destination responses for account-balances endpoint
+ * Used when testing sends to addresses that don't exist on the network
+ * @param page - The Playwright page object
+ * @param destinationAddress - The address of the unfunded destination
+ */
+export const stubUnfundedDestinationBalances = async (
+  page: Page,
+  destinationAddress: string,
+) => {
+  await page.route(
+    `**/account-balances/${destinationAddress}*`,
+    async (route) => {
+      const json = {
+        balances: {},
+        isFunded: false,
+        subentryCount: 0,
+        error: {
+          horizon: null,
+          soroban: null,
+        },
+      };
+      await route.fulfill({ json });
+    },
+  );
+};
+
+/**
+ * Stub helper for conditional account balances routing
+ * Returns unfunded response for specified destination, funded response for sender
+ * Useful for tests that need to differentiate between sender and recipient balances
+ * @param page - The Playwright page object
+ * @param unfundedDestination - The address of the unfunded destination
+ * @param senderAssets - Optional object defining sender's asset balances
+ */
+export const stubAccountBalancesWithUnfundedDestination = async (
+  page: Page,
+  unfundedDestination: string,
+  senderAssets?: {
+    [key: string]: {
+      code: string;
+      issuer?: string;
+      total: string;
+      available: string;
+      limit?: string;
+      type?: string;
+    };
+  },
+) => {
+  await page.route("**/account-balances/**", async (route) => {
+    const url = new URL(route.request().url());
+    const address = url.pathname.split("/").pop();
+
+    if (address === unfundedDestination) {
+      // Unfunded destination response
+      const json = {
+        balances: {},
+        isFunded: false,
+        subentryCount: 0,
+        error: {
+          horizon: null,
+          soroban: null,
+        },
+      };
+      return route.fulfill({ json });
+    }
+
+    // Default sender balances
+    const balances: { [key: string]: any } = {
+      native: {
+        token: {
+          type: "native",
+          code: "XLM",
+        },
+        total: "9697.8556678",
+        available: "9697.8556678",
+        sellingLiabilities: "0",
+        buyingLiabilities: "0",
+        minimumBalance: "1",
+        blockaidData: {
+          result_type: "Benign",
+          malicious_score: "0.0",
+          attack_types: {},
+          chain: "stellar",
+          address: "",
+          metadata: {
+            type: "",
+          },
+          fees: {},
+          features: [],
+          trading_limits: {},
+          financial_stats: {},
+        },
+      },
+    };
+
+    // Add custom sender assets if provided
+    if (senderAssets) {
+      Object.entries(senderAssets).forEach(([key, asset]) => {
+        balances[key] = {
+          token: {
+            type: asset.type || "credit_alphanum4",
+            code: asset.code,
+            ...(asset.issuer && { issuer: { key: asset.issuer } }),
+          },
+          total: asset.total,
+          available: asset.available,
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          ...(asset.limit && { limit: asset.limit }),
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: `${asset.code}${asset.issuer ? "-" + asset.issuer : ""}`,
+            metadata: {
+              type: "",
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
+        };
+      });
+    }
+
+    const json = {
+      balances,
+      isFunded: true,
+      subentryCount: Object.keys(balances).length - 1,
+      error: {
+        horizon: null,
+        soroban: null,
+      },
+    };
+    await route.fulfill({ json });
+  });
+};

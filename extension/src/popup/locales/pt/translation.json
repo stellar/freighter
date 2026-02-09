@@ -657,5 +657,7 @@
   "Your recovery phrase gives you full access to your wallets and funds": "Sua frase de recuperação lhe dá acesso total às suas carteiras e fundos",
   "Your Stellar secret key": "Sua Stellar secret key",
   "Your Tokens": "Seus Tokens",
-  "Your wallets could not be fetched at this time.": "Suas carteiras não puderam ser buscadas neste momento."
+  "Your wallets could not be fetched at this time.": "Suas carteiras não puderam ser buscadas neste momento.",
+  "blockaid.security.transaction.unfundedDestination": "Esta é uma nova conta e precisa de 1 XLM para começar. Qualquer transação para enviar não-XLM para uma conta não financiada falhará.",
+  "blockaid.security.transaction.unfundedDestinationNative": "Esta é uma nova conta e precisa de pelo menos 1 XLM para ser criada. Enviar menos de 1 XLM para criá-la falhará."
 }

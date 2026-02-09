@@ -6,16 +6,22 @@ import {
   stubAccountBalances,
   stubAccountBalancesE2e,
   stubAccountBalancesWithUSDC,
+  stubAccountBalancesWithUnfundedDestination,
   stubAccountHistory,
   stubContractSpec,
   stubMemoRequiredAccounts,
   stubSimulateTokenTransfer,
   stubTokenDetails,
   stubTokenPrices,
+  stubUnfundedDestinationBalances,
 } from "./helpers/stubs";
 
 const MUXED_ACCOUNT_ADDRESS =
   "MCQ7EGW7VXHI4AKJAFADOIHCSK2OCVA42KUETUK5LQ3LVSEQEEKP6AAAAAAAAAAAAFLVY";
+const UNFUNDED_DESTINATION =
+  "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZPY";
+const FUNDED_DESTINATION =
+  "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 
 test("Swap doesn't throw error when account is unfunded", async ({
   page,
@@ -204,6 +210,238 @@ test("Send doesn't throw error when account is unfunded", async ({
   await page.getByText("Continue").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+});
+
+test("Send XLM below minimum to unfunded destination shows warning", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await loginAndFund({ page, extensionId });
+  await stubUnfundedDestinationBalances(page, UNFUNDED_DESTINATION);
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Select address to send to
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(UNFUNDED_DESTINATION);
+  await page.getByText("Continue").click({ force: true });
+
+  // Verify amount input is shown
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Enter amount less than 1 XLM
+  await page.getByTestId("send-amount-amount-input").fill("0.5");
+
+  // Click Review Send and wait for simulation to complete
+  const reviewButton = page.getByText("Review Send");
+  await reviewButton.click({ force: true });
+
+  // Verify the unfunded destination warning appears in BlockAidTxScanExpanded
+  await expect(
+    page.getByText(
+      /This is a new account and needs at least 1 XLM to be created/,
+    ),
+  ).toBeVisible({ timeout: 30000 });
+
+  // Verify warning section is present
+  await expect(page.getByText("Warning")).toBeVisible();
+});
+
+test("Send XLM at minimum to unfunded destination proceeds without warning", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await loginAndFund({ page, extensionId });
+  await stubUnfundedDestinationBalances(page, UNFUNDED_DESTINATION);
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Select address to send to
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(UNFUNDED_DESTINATION);
+  await page.getByText("Continue").click({ force: true });
+
+  // Verify amount input is shown
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Enter exactly 1 XLM (minimum required)
+  await page.getByTestId("send-amount-amount-input").fill("1");
+
+  // Click Review Send and wait for simulation to complete
+  const reviewButton = page.getByText("Review Send");
+  await reviewButton.click({ force: true });
+
+  // Verify "You are sending" review page appears without the unfunded warning
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 30000,
+  });
+
+  // The unfunded warning should NOT appear since amount >= 1 XLM
+  await expect(
+    page.getByText(
+      /This is a new account and needs at least 1 XLM to be created/,
+    ),
+  ).not.toBeVisible();
+});
+
+test("Send non-native asset to unfunded destination shows destination missing warning", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await loginAndFund({ page, extensionId });
+  await stubAccountHistory(page);
+  await stubTokenDetails(page);
+  await stubTokenPrices(page);
+
+  // Set up routing for unfunded destination and USDC in sender's account
+  await stubAccountBalancesWithUnfundedDestination(page, UNFUNDED_DESTINATION, {
+    "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
+      code: "USDC",
+      issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+      type: "credit_alphanum4",
+      total: "1000.0000000",
+      available: "1000.0000000",
+      limit: "922337203685.4775807",
+    },
+  });
+
+  await page.getByTestId("nav-link-send").click({ force: true });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Change asset to USDC
+  await page.getByTestId("asset-tile").click();
+  await page.getByText("USDC").click();
+
+  // Select address to send to
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(UNFUNDED_DESTINATION);
+  await page.getByText("Continue").click({ force: true });
+
+  // Verify amount input is shown
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Enter USDC amount
+  await page.getByTestId("send-amount-amount-input").fill("10");
+
+  // Click Review Send and wait for simulation to complete
+  const reviewButton = page.getByText("Review Send");
+  await reviewButton.click({ force: true });
+
+  // Verify the non-native asset unfunded destination warning appears
+  await expect(
+    page.getByText(
+      /This is a new account and needs 1 XLM in order to get started/,
+    ),
+  ).toBeVisible({ timeout: 30000 });
+
+  // Verify warning section is present
+  await expect(page.getByText("Warning")).toBeVisible();
+});
+
+test("Send XLM to funded destination does not show unfunded warning", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await loginAndFund({ page, extensionId });
+  // Don't stub unfunded balances - the default stub will return isFunded: true
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Select address to send to (using funded destination)
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
+  await page.getByText("Continue").click({ force: true });
+
+  // Verify amount input is shown
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Enter amount
+  await page.getByTestId("send-amount-amount-input").fill("0.5");
+
+  // Click Review Send and wait for simulation to complete
+  const reviewButton = page.getByText("Review Send");
+  await reviewButton.click({ force: true });
+
+  // Verify "You are sending" review page appears
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 30000,
+  });
+
+  // The unfunded warning should NOT appear since destination is funded
+  await expect(
+    page.getByText(
+      /This is a new account and needs at least 1 XLM to be created/,
+    ),
+  ).not.toBeVisible();
+
+  await expect(
+    page.getByText(
+      /This is a new account and needs 1 XLM in order to get started/,
+    ),
+  ).not.toBeVisible();
+});
+
+test("Unfunded destination warning disappears when amount is increased above minimum", async ({
+  page,
+  extensionId,
+}) => {
+  test.slow();
+  await loginAndFund({ page, extensionId });
+  await stubUnfundedDestinationBalances(page, UNFUNDED_DESTINATION);
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Select address to send to
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(UNFUNDED_DESTINATION);
+  await page.getByText("Continue").click({ force: true });
+
+  // Verify amount input is shown
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Enter amount less than 1 XLM
+  await page.getByTestId("send-amount-amount-input").fill("0.5");
+
+  // Click Review Send and wait for simulation to complete
+  let reviewButton = page.getByText("Review Send");
+  await reviewButton.click({ force: true });
+
+  // Verify the unfunded destination warning appears
+  await expect(
+    page.getByText(
+      /This is a new account and needs at least 1 XLM to be created/,
+    ),
+  ).toBeVisible({ timeout: 30000 });
+
+  // Go back to amount input
+  await page.getByTestId("BackButton").click();
+
+  // Clear and enter amount >= 1 XLM
+  await page.getByTestId("send-amount-amount-input").clear();
+  await page.getByTestId("send-amount-amount-input").fill("1.5");
+
+  // Click Review Send again
+  reviewButton = page.getByText("Review Send");
+  await reviewButton.click({ force: true });
+
+  // Verify the warning is now gone and "You are sending" appears instead
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 30000,
+  });
+
+  await expect(
+    page.getByText(
+      /This is a new account and needs at least 1 XLM to be created/,
+    ),
+  ).not.toBeVisible();
 });
 test("Send doesn't throw error when creating muxed account", async ({
   page,
