@@ -6,6 +6,7 @@ import {
   stubAccountBalancesWithUSDC,
   stubAccountBalancesWithUnfundedDestination,
   stubContractSpec,
+  stubUnfundedDestinationBalances,
 } from "./helpers/stubs";
 
 const MUXED_ACCOUNT_ADDRESS =
@@ -300,20 +301,8 @@ test("Send non-native asset to unfunded destination shows destination missing wa
   test.slow();
   const stubOverrides = async () => {
     await page.unroute("**/account-balances/**");
-    await stubAccountBalancesWithUnfundedDestination(
-      page,
-      UNFUNDED_DESTINATION,
-      {
-        "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
-          code: "USDC",
-          issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-          type: "credit_alphanum4",
-          total: "1000.0000000",
-          available: "1000.0000000",
-          limit: "922337203685.4775807",
-        },
-      },
-    );
+    await stubUnfundedDestinationBalances(page, UNFUNDED_DESTINATION);
+    await stubAccountBalancesWithUSDC(page);
   };
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
@@ -321,7 +310,7 @@ test("Send non-native asset to unfunded destination shows destination missing wa
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
   // Change asset to USDC
-  await page.getByTestId("asset-tile").click();
+  await page.getByTestId("send-amount-edit-dest-asset").click();
   await page.getByText("USDC").click();
 
   // Select address to send to
