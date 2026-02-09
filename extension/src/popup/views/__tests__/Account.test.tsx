@@ -26,7 +26,6 @@ import * as GetIconUrlFromIssuer from "@shared/api/helpers/getIconUrlFromIssuer"
 import * as RouteHelpers from "popup/helpers/route";
 import * as GetLedgerKeyAccounts from "@shared/api/helpers/getLedgerKeyAccounts";
 import * as UseGetCollectibles from "helpers/hooks/useGetCollectibles";
-import { Toaster } from "popup/basics/shadcn/Toast";
 
 import {
   Wrapper,
@@ -43,6 +42,7 @@ import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import * as AccountDataHooks from "../../views/Account/hooks/useGetAccountData";
 import { RequestState } from "helpers/hooks/fetchHookInterface";
+import { Toaster } from "sonner";
 
 const mockHistoryOperations = {
   operations: [

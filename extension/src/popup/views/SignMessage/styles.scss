@@ -81,6 +81,165 @@
     .Button:first-child {
       margin-right: pxToRem(12px);
     }
+    margin-bottom: pxToRem(12px);
+  }
+
+  &__CancelBtn {
+    font-weight: 600;
+  }
+
+  &__BlockaidBanner {
+    margin-bottom: pxToRem(16px);
+  }
+
+  &__MainPane {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  &__BlockaidDetails {
+    display: flex;
+    flex-direction: column;
+
+    &__Header {
+      display: flex;
+      justify-content: space-between;
+
+      .WarningMark {
+        display: flex;
+        width: 40px;
+        height: 40px;
+        padding: 7.5px;
+        justify-content: center;
+        align-items: center;
+        aspect-ratio: 1/1;
+        border-radius: 8px;
+        border: 1px solid var(--sds-clr-amber-06);
+        background: var(--sds-clr-amber-03);
+
+        svg {
+          width: 25px;
+          height: 25px;
+          color: var(--sds-clr-amber-09);
+        }
+      }
+
+      .WarningMarkError {
+        display: flex;
+        width: 40px;
+        height: 40px;
+        padding: 7.5px;
+        justify-content: center;
+        align-items: center;
+        aspect-ratio: 1/1;
+        border-radius: 8px;
+        border: 1px solid var(--sds-clr-red-06);
+        background: var(--sds-clr-red-03);
+
+        svg {
+          width: 25px;
+          height: 25px;
+          color: var(--sds-clr-red-09);
+        }
+      }
+
+      .Close {
+        display: flex;
+        width: 32px;
+        height: 32px;
+        justify-content: center;
+        align-items: center;
+        border-radius: 1000px;
+        background: var(--sds-clr-gray-03);
+        color: var(--sds-clr-gray-09);
+      }
+    }
+
+    &__Title {
+      display: flex;
+      margin: pxToRem(16px) 0 pxToRem(8px);
+      font-size: pxToRem(18px);
+      font-weight: 500;
+      justify-content: flex-start;
+      text-align: left;
+      width: 100%;
+    }
+
+    &__SubTitle {
+      font-size: pxToRem(14px);
+      font-weight: 400;
+      line-height: pxToRem(20px);
+      margin-bottom: pxToRem(16px);
+      color: var(--sds-clr-gray-11);
+    }
+
+    &__Details {
+      display: flex;
+      padding: pxToRem(12px) pxToRem(16px);
+      flex-direction: column;
+      justify-content: center;
+      background-color: var(--sds-clr-gray-03);
+      border-radius: pxToRem(16px);
+
+      .BlockaidByLine {
+        margin-top: pxToRem(12px);
+        padding-top: pxToRem(12px);
+        border-top: 1px solid var(--sds-clr-gray-06);
+      }
+    }
+
+    &__DetailRow {
+      display: flex;
+
+      &:first-child {
+        margin-top: pxToRem(8px);
+      }
+
+      &:not(:last-child) {
+        margin-bottom: pxToRem(8px);
+      }
+
+      svg {
+        width: 16px;
+        height: 16px;
+        color: var(--sds-clr-gray-09);
+        margin-right: pxToRem(8px);
+      }
+
+      span {
+        flex: 3;
+        word-break: break-word;
+        font-size: pxToRem(16px);
+        font-weight: 500;
+      }
+    }
+
+    &__DetailRowError {
+      display: flex;
+
+      &:first-child {
+        margin-top: pxToRem(8px);
+      }
+
+      &:not(:last-child) {
+        margin-bottom: pxToRem(8px);
+      }
+
+      svg {
+        width: 16px;
+        height: 16px;
+        color: var(--sds-clr-red-09);
+        margin-right: pxToRem(8px);
+      }
+
+      span {
+        flex: 3;
+        word-break: break-word;
+        font-size: pxToRem(16px);
+        font-weight: 500;
+      }
+    }
   }
 
   .Blob {

@@ -39,6 +39,10 @@ export default defineConfig({
         IS_PLAYWRIGHT: "true",
       },
     },
+    viewport: {
+      width: 1280,
+      height: 720,
+    },
   },
 
   /* Configure projects for major browsers */

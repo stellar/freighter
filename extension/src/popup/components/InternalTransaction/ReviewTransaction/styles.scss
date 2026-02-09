@@ -8,7 +8,8 @@
   padding-top: 1.5rem;
   background-color: var(--sds-clr-gray-01);
   border-radius: 0.875rem;
-  height: 480px;
+  height: auto;
+  max-height: 85vh;
 
   &__Warnings {
     margin-top: pxToRem(32px);
@@ -89,6 +90,44 @@
 
     .Button {
       margin-top: pxToRem(12px);
+    }
+
+    .ReviewTx__ActionButton {
+      &--error {
+        color: var(--sds-clr-red-11);
+        border-color: var(--sds-clr-red-08);
+      }
+
+      &--default {
+        color: var(--sds-clr-gray-12);
+        border-color: var(--sds-clr-gray-07);
+        background: var(--sds-clr-white);
+      }
+    }
+
+    .ReviewTx__TextAction {
+      margin-top: pxToRem(12px);
+      width: 100%;
+      border: none;
+      background: none;
+      color: #a0a0a0;
+      font-family: "Inter", sans-serif;
+      font-weight: 600;
+      font-style: normal;
+      font-size: pxToRem(14px);
+      line-height: pxToRem(20px);
+      letter-spacing: 0;
+      padding: pxToRem(8px) 0;
+      cursor: pointer;
+      text-align: center;
+
+      &--default {
+        color: #a0a0a0;
+      }
+
+      &--error {
+        color: var(--sds-clr-red-11);
+      }
     }
   }
 

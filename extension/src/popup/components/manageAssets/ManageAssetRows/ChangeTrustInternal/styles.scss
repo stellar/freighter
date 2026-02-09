@@ -2,7 +2,6 @@
 
 .ChangeTrustInternal {
   z-index: var(--z-index--banner);
-  height: 540px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -13,7 +12,7 @@
 
   &__Loading {
     width: 100%;
-    height: 100%;
+    min-height: 30vh;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -59,6 +58,8 @@
     &__Wrapper {
       max-width: 49rem;
       width: 100%;
+      max-height: calc(85vh - pxToRem(160px));
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
     }
@@ -67,16 +68,12 @@
   &__Actions {
     display: flex;
     flex-direction: column;
-    align-self: flex-end;
     align-items: center;
     width: 100%;
-    position: sticky;
-    bottom: 0;
     background-color: var(--sds-clr-gray-01);
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-    z-index: 10;
     padding: 1rem 1.5rem;
-    padding-top: 1.5rem;
+    padding-top: 0;
+    flex-shrink: 0;
 
     &__PublicKey {
       display: flex;
@@ -93,11 +90,21 @@
 
     &__BtnRow {
       display: flex;
+      flex-direction: column;
       position: relative;
       max-width: 49rem;
       width: 100%;
       margin-top: 10px;
-      gap: 0.5rem;
+
+      .Button {
+        margin-top: pxToRem(12px);
+      }
+
+      &--side-by-side {
+        flex-direction: row;
+        gap: pxToRem(12px);
+        align-items: center;
+      }
     }
 
     &__BtnRowReject {
@@ -333,6 +340,40 @@
       height: 100vh;
       position: absolute;
       width: 100vw;
+    }
+  }
+
+  .ReviewTx__TextAction {
+    margin-top: pxToRem(12px);
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--sds-clr-gray-09);
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-style: normal;
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+    letter-spacing: 0;
+    padding: pxToRem(8px) 0;
+    cursor: pointer;
+    text-align: center;
+    outline: none;
+
+    &:hover {
+      background: transparent;
+    }
+
+    &:focus {
+      outline: none;
+    }
+
+    &--default {
+      color: var(--sds-clr-gray-09);
+    }
+
+    &--error {
+      color: var(--sds-clr-red-11);
     }
   }
 }
