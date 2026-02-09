@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Button, Icon, Notification } from "@stellar/design-system";
+import { Icon, Notification } from "@stellar/design-system";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { BlockAidScanTxResult } from "@shared/api/types";
@@ -36,6 +36,7 @@ import {
 } from "popup/components/WarningMessages";
 import { CopyValue } from "popup/components/CopyValue";
 import { useShouldTreatTxAsUnableToScan } from "popup/helpers/blockaid";
+import { ActionButtons } from "./components/ActionButtons";
 import { SendAsset, SendDestination } from "./components";
 
 import "./styles.scss";
@@ -181,9 +182,7 @@ export const ReviewTx = ({
   const isSuspicious = securityLevel === SecurityLevel.SUSPICIOUS;
 
   // Determine if transaction warning should be shown
-  const hasSimulationData = !!simulationState.data;
-  const shouldShowTxWarning =
-    hasSimulationData && (isMalicious || isSuspicious || isUnableToScan);
+  const shouldShowTxWarning = isMalicious || isSuspicious || isUnableToScan;
 
   /**
    * Pane state machine:
@@ -205,6 +204,10 @@ export const ReviewTx = ({
           },
     [shouldShowTxWarning],
   );
+
+  const isOnBlockaidPane =
+    paneConfig.blockaidIndex !== null &&
+    activePaneIndex === paneConfig.blockaidIndex;
 
   // Extract contract ID for custom tokens or collectibles
   const contractId = React.useMemo(
@@ -451,52 +454,23 @@ export const ReviewTx = ({
         <div className="ReviewTx">
           <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
           <div className="ReviewTx__Actions">
-            {isRequiredMemoMissing && !isValidatingMemo && onAddMemo ? (
-              <Button
-                size="lg"
-                isFullWidth
-                isRounded
-                variant="secondary"
-                data-testid="AddMemoAction"
-                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                  e.preventDefault();
-                  onAddMemo();
-                }}
-              >
-                {t("Add Memo")}
-              </Button>
-            ) : (
-              <Button
-                size="lg"
-                isFullWidth
-                isRounded
-                variant="secondary"
-                data-testid="SubmitAction"
-                disabled={isSubmitDisabled}
-                isLoading={isValidatingMemo}
-                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                  e.preventDefault();
-                  onConfirmTx();
-                }}
-              >
-                {dstAsset && dest
-                  ? `Swap ${asset.code} to ${dest.code}`
-                  : `Send to ${truncatedDest}`}
-              </Button>
-            )}
-            <Button
-              size="lg"
-              isFullWidth
-              isRounded
-              variant="tertiary"
-              disabled={isValidatingMemo}
-              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                e.preventDefault();
-                onCancel();
-              }}
-            >
-              {t("Cancel")}
-            </Button>
+            <ActionButtons
+              isOnBlockaidPane={isOnBlockaidPane}
+              isMalicious={isMalicious}
+              isRequiredMemoMissing={isRequiredMemoMissing}
+              isValidatingMemo={isValidatingMemo}
+              onAddMemo={onAddMemo}
+              shouldShowTxWarning={shouldShowTxWarning}
+              onCancel={onCancel}
+              onConfirmTx={onConfirmTx}
+              paneConfig={paneConfig}
+              isSubmitDisabled={isSubmitDisabled}
+              dstAsset={dstAsset}
+              dest={dest}
+              asset={asset}
+              truncatedDest={truncatedDest}
+              setActivePaneIndex={setActivePaneIndex}
+            />
           </div>
         </div>
       )}

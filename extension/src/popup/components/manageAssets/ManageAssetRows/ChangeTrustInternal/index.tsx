@@ -173,7 +173,10 @@ export const ChangeTrustInternal = ({
 
   // Determine if blockaid warnings should be shown
   const shouldShowBlockaidWarning =
-    state.data && (isMalicious || state.data.isAssetUnableToScan);
+    state.data &&
+    (isMalicious ||
+      state.data.isAssetSuspicious ||
+      state.data.isAssetUnableToScan);
 
   /**
    * Pane state machine for blockaid warnings:
@@ -200,7 +203,7 @@ export const ChangeTrustInternal = ({
   const panes: React.ReactNode[] = [];
 
   // Blockaid pane
-  const blockaidPane = state.data.scanResult ? (
+  const blockaidPane = (
     <View.Content>
       <BlockAidAssetScanExpanded
         scanResult={state.data.scanResult}
@@ -209,7 +212,7 @@ export const ChangeTrustInternal = ({
         }}
       />
     </View.Content>
-  ) : null;
+  );
 
   // Confirm Transaction pane
   const confirmPane = (

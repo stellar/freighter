@@ -1,6 +1,22 @@
 import { BrowserContext, Page } from "@playwright/test";
 import { USDC_TOKEN_ADDRESS, TEST_TOKEN_ADDRESS } from "./test-token";
 
+export const createAssetObject = (assetCode: string | null, issuer: string) => {
+  if (!assetCode || assetCode === "XLM") {
+    return {
+      asset_type: "native",
+      asset_code: null,
+      asset_issuer: null,
+    };
+  }
+
+  return {
+    asset_type: assetCode.length > 4 ? "credit_alphanum12" : "credit_alphanum4",
+    asset_code: assetCode,
+    asset_issuer: issuer,
+  };
+};
+
 export const STELLAR_EXPERT_ASSET_LIST_JSON = {
   name: "StellarExpert Top 50",
   provider: "StellarExpert",

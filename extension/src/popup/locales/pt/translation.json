@@ -638,6 +638,7 @@
   "wasm": "wasm",
   "Wasm Hash": "Hash Wasm",
   "We were unable to scan this site for security issues": "We were unable to scan this site for security issues",
+  "We were unable to scan this transaction for security issues": "We were unable to scan this transaction for security issues",
   "WEBSITE CONNECTION IS NOT SECURE": "CONEXÃO DO WEBSITE NÃO É SEGURA",
   "Welcome back": "Bem-vindo de volta",
   "What is this transaction for? (optional)": "Para que é esta transação? (opcional)",

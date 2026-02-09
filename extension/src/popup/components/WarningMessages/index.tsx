@@ -554,7 +554,7 @@ export const BlockaidAssetWarning = ({
 };
 
 interface BlockAidAssetScanExpandedProps {
-  scanResult: BlockAidScanAssetResult;
+  scanResult: BlockAidScanAssetResult | null | undefined;
   onClose?: () => void;
 }
 
@@ -563,6 +563,41 @@ export const BlockAidAssetScanExpanded = ({
   onClose,
 }: BlockAidAssetScanExpandedProps) => {
   const { t } = useTranslation();
+  const shouldTreatAssetAsUnableToScan = useShouldTreatAssetAsUnableToScan();
+
+  if (shouldTreatAssetAsUnableToScan(scanResult)) {
+    return (
+      <View.Inset hasNoTopPadding hasNoBottomPadding>
+        <div className="BlockaidDetailsExpanded">
+          <div className="BlockaidDetailsExpanded__Header">
+            <div className="WarningMark">
+              <Icon.AlertTriangle />
+            </div>
+            <div className="Close" onClick={onClose}>
+              <Icon.X />
+            </div>
+          </div>
+          <div className="BlockaidDetailsExpanded__Title">
+            {t("Proceed with caution")}
+          </div>
+          <div className="BlockaidDetailsExpanded__SubTitle">
+            {t("We were unable to scan this transaction for security issues")}
+          </div>
+          <div className="BlockaidDetailsExpanded__Details">
+            <div className="BlockaidDetailsExpanded__DetailRow">
+              <Icon.MinusCircle />
+              <span>{t("Unable to scan transaction")}</span>
+            </div>
+          </div>
+        </div>
+      </View.Inset>
+    );
+  }
+
+  if (!scanResult) {
+    return null;
+  }
+
   const { result_type, features } = scanResult;
   const _features = features || [];
 
@@ -572,7 +607,7 @@ export const BlockAidAssetScanExpanded = ({
     switch (result_type) {
       case "Spam": {
         return {
-          title: t("Warning"),
+          title: t("Suspicious Request"),
           description: t(
             "This asset has been flagged as spam for the following reasons.",
           ),
@@ -590,7 +625,7 @@ export const BlockAidAssetScanExpanded = ({
 
       default: {
         return {
-          title: t("Warning"),
+          title: t("Suspicious Request"),
           description: t(
             "This asset has been flagged as suspicious for the following reasons.",
           ),
@@ -1134,14 +1169,14 @@ export const BlockAidScanExpanded = ({
       .catch(() => setBlockaidOverrideState(null));
   }, [scanResult]);
 
-  if (!scanResult) {
-    return null;
-  }
-
   // Always use transaction-based unable to scan logic
   const isUnableToScan = shouldTreatTxAsUnableToScan(
     scanResult as BlockAidScanTxResult,
   );
+
+  if (!scanResult && !isUnableToScan) {
+    return null;
+  }
 
   // Check override state (takes precedence, dev mode only)
   // Get warnings from scan result (handles both asset and transaction)

@@ -2,13 +2,9 @@ import { test, expect } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
 import {
   stubAccountBalances,
-  stubAccountHistory,
-  stubTokenDetails,
-  stubTokenPrices,
   stubScanAssetUnableToScan,
   stubScanTxUnableToScan,
   createAssetObject,
-  stubAssetSearch,
   stubMemoRequiredAccounts,
 } from "./helpers/stubs";
 
@@ -16,28 +12,33 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
   test("Add asset shows 'Unable to scan transaction' warning when scan fails", async ({
     page,
     extensionId,
+    context,
   }) => {
     test.slow();
-    await stubTokenDetails(page);
-    await stubScanAssetUnableToScan(page);
-    await stubAssetSearch(page);
-    // Mock mainnet check - asset scanning only works on mainnet
-    await page.route("**/account-balances/*", async (route) => {
-      const json = {
-        balances: {
-          native: {
-            token: { type: "native", code: "XLM" },
-            total: "100",
-            available: "100",
-          },
-        },
-        isFunded: true,
-        subentryCount: 0,
-        error: { horizon: null, soroban: null },
-      };
-      await route.fulfill({ json });
+    await loginToTestAccount({
+      page,
+      extensionId,
+      context,
+      stubOverrides: async () => {
+        await stubScanAssetUnableToScan(page);
+        // Mock mainnet check - asset scanning only works on mainnet
+        await page.route("**/account-balances/*", async (route) => {
+          const json = {
+            balances: {
+              native: {
+                token: { type: "native", code: "XLM" },
+                total: "100",
+                available: "100",
+              },
+            },
+            isFunded: true,
+            subentryCount: 0,
+            error: { horizon: null, soroban: null },
+          };
+          await route.fulfill({ json });
+        });
+      },
     });
-    await loginToTestAccount({ page, extensionId });
 
     await page.getByTestId("account-options-dropdown").click();
     await page.getByText("Manage assets").click();
@@ -83,13 +84,18 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
   test("Send payment shows 'Unable to scan transaction' warning when scan fails", async ({
     page,
     extensionId,
+    context,
   }) => {
     test.slow();
-    await stubAccountBalances(page, "100");
-    await stubTokenDetails(page);
-    await stubTokenPrices(page);
-    await stubScanTxUnableToScan(page);
-    await loginToTestAccount({ page, extensionId });
+    await loginToTestAccount({
+      page,
+      extensionId,
+      context,
+      stubOverrides: async () => {
+        await stubAccountBalances(page, "100");
+        await stubScanTxUnableToScan(page);
+      },
+    });
 
     // Navigate to send payment
     await page.getByTestId("nav-link-send").click();
@@ -137,101 +143,105 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
   test("Swap shows 'Unable to scan transaction' warning when transaction scan fails", async ({
     page,
     extensionId,
+    context,
   }) => {
     test.slow();
     const USDC_ISSUER =
       "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
 
-    // Set up account balances with XLM and USDC tokens
-    await page.route("*/**/account-balances/*", async (route) => {
-      const json = {
-        balances: {
-          [`USDC:${USDC_ISSUER}`]: {
-            token: {
-              type: "credit_alphanum4",
-              code: "USDC",
-              issuer: {
-                key: USDC_ISSUER,
+    await loginToTestAccount({
+      page,
+      extensionId,
+      context,
+      stubOverrides: async () => {
+        // Set up account balances with XLM and USDC tokens
+        await page.route("*/**/account-balances/*", async (route) => {
+          const json = {
+            balances: {
+              [`USDC:${USDC_ISSUER}`]: {
+                token: {
+                  type: "credit_alphanum4",
+                  code: "USDC",
+                  issuer: {
+                    key: USDC_ISSUER,
+                  },
+                },
+                sellingLiabilities: "0",
+                buyingLiabilities: "0",
+                total: "100",
+                limit: "922337203685.4775807",
+                available: "100",
+                blockaidData: null, // Unable to scan (not used anymore since we only scan transactions)
+              },
+              native: {
+                token: {
+                  type: "native",
+                  code: "XLM",
+                },
+                total: "999",
+                available: "999",
+                sellingLiabilities: "0",
+                buyingLiabilities: "0",
+                minimumBalance: "1",
+                blockaidData: {
+                  result_type: "Benign",
+                  malicious_score: "0.0",
+                  attack_types: {},
+                  chain: "stellar",
+                  address: "",
+                  metadata: {
+                    type: "",
+                  },
+                  fees: {},
+                  features: [],
+                  trading_limits: {},
+                  financial_stats: {},
+                },
               },
             },
-            sellingLiabilities: "0",
-            buyingLiabilities: "0",
-            total: "100",
-            limit: "922337203685.4775807",
-            available: "100",
-            blockaidData: null, // Unable to scan (not used anymore since we only scan transactions)
-          },
-          native: {
-            token: {
-              type: "native",
-              code: "XLM",
+            isFunded: true,
+            subentryCount: 0,
+            error: {
+              horizon: null,
+              soroban: null,
             },
-            total: "999",
-            available: "999",
-            sellingLiabilities: "0",
-            buyingLiabilities: "0",
-            minimumBalance: "1",
-            blockaidData: {
-              result_type: "Benign",
-              malicious_score: "0.0",
-              attack_types: {},
-              chain: "stellar",
-              address: "",
-              metadata: {
-                type: "",
-              },
-              fees: {},
-              features: [],
-              trading_limits: {},
-              financial_stats: {},
+          };
+          await route.fulfill({ json });
+        });
+
+        // Mock swap path finding endpoint (Horizon path payment)
+        await page.route("**/paths**", async (route) => {
+          const url = new URL(route.request().url());
+          const sourceAsset = url.searchParams.get("source_asset_code");
+          const destAsset = url.searchParams.get("destination_asset_code");
+
+          const source = createAssetObject(sourceAsset, USDC_ISSUER);
+          const destination = createAssetObject(destAsset, USDC_ISSUER);
+
+          // Return a valid path for swaps
+          const json = {
+            _embedded: {
+              records: [
+                {
+                  source_asset_type: source.asset_type,
+                  source_asset_code: source.asset_code,
+                  source_asset_issuer: source.asset_issuer,
+                  destination_asset_type: destination.asset_type,
+                  destination_asset_code: destination.asset_code,
+                  destination_asset_issuer: destination.asset_issuer,
+                  destination_amount: "0.95",
+                  path: [],
+                },
+              ],
             },
-          },
-        },
-        isFunded: true,
-        subentryCount: 0,
-        error: {
-          horizon: null,
-          soroban: null,
-        },
-      };
-      await route.fulfill({ json });
+          };
+          await route.fulfill({ json });
+        });
+
+        // Transaction scan should be unable to scan
+        await stubScanTxUnableToScan(page);
+      },
     });
-
-    // Mock swap path finding endpoint (Horizon path payment)
-    await page.route("**/paths**", async (route) => {
-      const url = new URL(route.request().url());
-      const sourceAsset = url.searchParams.get("source_asset_code");
-      const destAsset = url.searchParams.get("destination_asset_code");
-
-      const source = createAssetObject(sourceAsset, USDC_ISSUER);
-      const destination = createAssetObject(destAsset, USDC_ISSUER);
-
-      // Return a valid path for swaps
-      const json = {
-        _embedded: {
-          records: [
-            {
-              source_asset_type: source.asset_type,
-              source_asset_code: source.asset_code,
-              source_asset_issuer: source.asset_issuer,
-              destination_asset_type: destination.asset_type,
-              destination_asset_code: destination.asset_code,
-              destination_asset_issuer: destination.asset_issuer,
-              destination_amount: "0.95",
-              path: [],
-            },
-          ],
-        },
-      };
-      await route.fulfill({ json });
-    });
-
-    await stubAccountHistory(page);
-    await stubTokenDetails(page);
-    await stubTokenPrices(page);
-    // Transaction scan should be unable to scan
-    await stubScanTxUnableToScan(page);
-    await loginToTestAccount({ page, extensionId });
 
     // Navigate to swap
     await page.getByTestId("nav-link-swap").click();
@@ -303,18 +313,22 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
   test("Unable to scan transaction ignores memo requirements", async ({
     page,
     extensionId,
+    context,
   }) => {
     test.slow();
-    await stubAccountBalances(page, "100");
-    await stubAccountHistory(page);
-    await stubTokenDetails(page);
-    await stubTokenPrices(page);
-    await stubScanTxUnableToScan(page);
-    await stubMemoRequiredAccounts(
+    await loginToTestAccount({
       page,
-      "GA6SXIZIKLJHCZI2KEOBEUUOFMM4JUPPM2UTWX6STAWT25JWIEUFIMFF",
-    );
-    await loginToTestAccount({ page, extensionId });
+      extensionId,
+      context,
+      stubOverrides: async () => {
+        await stubAccountBalances(page, "100");
+        await stubScanTxUnableToScan(page);
+        await stubMemoRequiredAccounts(
+          page,
+          "GA6SXIZIKLJHCZI2KEOBEUUOFMM4JUPPM2UTWX6STAWT25JWIEUFIMFF",
+        );
+      },
+    });
 
     // Go to send payment to an M-address (requires memo)
     await page.getByTestId("nav-link-send").click();

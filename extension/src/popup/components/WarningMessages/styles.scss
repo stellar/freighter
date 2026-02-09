@@ -824,10 +824,12 @@
 
   &__copyText {
     color: var(--sds-clr-gray-11);
-    display: inline;
+    display: flex;
     margin-bottom: 0 !important;
     font-size: pxToRem(12px);
     font-weight: 500;
+    align-items: center;
+    gap: pxToRem(4px);
   }
 
   &__logo {
