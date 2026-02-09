@@ -12,8 +12,10 @@
     }
     &__Subtext {
       font-size: pxToRem(14px);
+      line-height: pxToRem(20px);
       color: var(--sds-clr-gray-09);
       margin-bottom: pxToRem(12px);
+      text-align: center;
     }
   }
 

@@ -42,6 +42,7 @@ import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import * as AccountDataHooks from "../../views/Account/hooks/useGetAccountData";
 import { RequestState } from "helpers/hooks/fetchHookInterface";
+import { Toaster } from "sonner";
 
 const mockHistoryOperations = {
   operations: [
@@ -351,9 +352,6 @@ describe("Account view", () => {
     expect(
       screen.queryAllByTestId("account-view-user-notification"),
     ).toHaveLength(0);
-    expect(
-      screen.queryAllByTestId("account-view-sorban-rpc-issue"),
-    ).toHaveLength(0);
   });
   it("should show user notification if user notification is enabled", async () => {
     jest.spyOn(ApiInternal, "loadBackendSettings").mockImplementationOnce(() =>
@@ -432,13 +430,14 @@ describe("Account view", () => {
           },
         }}
       >
+        <Toaster />
         <Account />
       </Wrapper>,
     );
 
     await waitFor(() => {
       expect(
-        screen.getByTestId("account-view-sorban-rpc-issue"),
+        screen.getByText("Soroban is temporarily experiencing issues"),
       ).toBeInTheDocument();
     });
   });

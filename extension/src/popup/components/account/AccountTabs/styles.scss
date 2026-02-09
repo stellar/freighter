@@ -39,11 +39,11 @@
 
   &__modal {
     width: pxToRem(210px);
-    right: pxToRem(24px);
+    right: pxToRem(20px);
 
     // override the default AccountHeaderModal styles
     left: auto !important;
-    top: pxToRem(60px);
+    top: pxToRem(30px);
 
     &__item {
       color: var(--sds-clr-gray-12);

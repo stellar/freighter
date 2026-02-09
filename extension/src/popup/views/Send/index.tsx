@@ -30,6 +30,7 @@ import { RequestState } from "constants/request";
 import { View } from "popup/basics/layout/View";
 
 import { useSendQueryParams } from "./hooks/useSendQueryParams";
+import { InputWidthProvider } from "./contexts/inputWidthContext";
 
 /* 
   Send handles sending both tokens (classic and Soroban) and collectibles to an external destination (G, M, or C account).
@@ -205,5 +206,5 @@ export const Send = () => {
     }
   };
 
-  return renderStep(activeStep);
+  return <InputWidthProvider>{renderStep(activeStep)}</InputWidthProvider>;
 };

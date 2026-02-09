@@ -60,6 +60,9 @@ export const MobileAppBanner = () => {
       onClick={handleBannerClick}
     >
       <div className="MobileAppBanner__content">
+        <div className="MobileAppBanner__logo">
+          <img src={FreighterLogo} alt="Freighter logo" />
+        </div>
         <div className="MobileAppBanner__text">
           <Text
             as="div"
@@ -77,9 +80,6 @@ export const MobileAppBanner = () => {
           >
             {t("Download on iOS or Android today")}
           </Text>
-        </div>
-        <div className="MobileAppBanner__logo">
-          <img src={FreighterLogo} alt="Freighter logo" />
         </div>
       </div>
       <button

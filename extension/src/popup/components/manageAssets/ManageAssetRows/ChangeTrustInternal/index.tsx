@@ -20,7 +20,7 @@ import { Details } from "popup/views/SignTransaction/Preview/Details";
 import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 import { Trustline } from "popup/views/SignTransaction";
 import {
-  BlockAidScanExpanded,
+  BlockAidAssetScanExpanded,
   BlockaidAssetWarning,
 } from "popup/components/WarningMessages";
 import { SecurityLevel } from "popup/constants/blockaid";
@@ -205,16 +205,16 @@ export const ChangeTrustInternal = ({
   const panes: React.ReactNode[] = [];
 
   // Blockaid pane
-  const blockaidPane = (
+  const blockaidPane = state.data.scanResult ? (
     <View.Content>
-      <BlockAidScanExpanded
+      <BlockAidAssetScanExpanded
         scanResult={state.data.scanResult}
         onClose={() => {
           setActivePaneIndex(paneConfig.confirmIndex);
         }}
       />
     </View.Content>
-  );
+  ) : null;
 
   // Confirm Transaction pane
   const confirmPane = (

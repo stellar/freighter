@@ -598,18 +598,6 @@
   }
 }
 
-.SiteMalicious {
-  margin-bottom: 0;
-}
-
-.SiteSuspicious {
-  margin-bottom: 0;
-}
-
-.SiteUnableToScan {
-  margin-bottom: 0;
-}
-
 .BlockaidWarningModal {
   height: 100vh;
   width: 100vw;
@@ -662,9 +650,10 @@
 .BlockaidDetailsExpanded {
   display: flex;
   flex-direction: column;
-  padding: 12px 0;
   width: 100%;
-  margin: auto 0;
+  max-width: 57rem;
+  margin: 0 auto;
+  padding: 12px 0;
 
   &__Header {
     display: flex;

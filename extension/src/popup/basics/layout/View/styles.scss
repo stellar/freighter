@@ -193,6 +193,10 @@
     padding-bottom: 0 !important;
   }
 
+  &__inset--no-padding {
+    padding: 0 !important;
+  }
+
   &__inset--scroll-shadows {
     // https://css-tricks.com/books/greatest-css-tricks/scroll-shadows/
     --bgRGB: 22, 22, 24;
@@ -219,5 +223,9 @@
       // Old Microsoft browsers
       -ms-overflow-style: none;
     }
+  }
+
+  &--scrollable {
+    height: 100%;
   }
 }

@@ -34,7 +34,7 @@ interface UseGetCollectiblesReturn {
 }
 
 /**
- * Hook for fetching collectibles with caching and image preloading.
+ * Hook for fetching user's collectibles with caching and image preloading.
  *
  * NOTE: For batch fetching multiple contracts (e.g., in history views),
  * use the batchFetchCollectibles utility instead of calling this hook
@@ -66,9 +66,31 @@ function useGetCollectibles({
           );
 
           if (hasValidCache(cached)) {
-            const payload: Collectibles = { collections: cached };
-            dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-            return payload;
+            // Filter to only return collectibles with isUserStored flag
+            // This prevents returning collectibles that were just cached for history
+            const filteredCached = cached
+              .map((c) => ({
+                ...c,
+                collection: c.collection
+                  ? {
+                      ...c.collection,
+                      collectibles: c.collection.collectibles?.filter(
+                        (col) => col.isUserStored === true,
+                      ),
+                    }
+                  : undefined,
+              }))
+              .filter(
+                (c) =>
+                  c.collection?.collectibles &&
+                  c.collection.collectibles.length > 0,
+              );
+
+            if (filteredCached.length > 0) {
+              const payload: Collectibles = { collections: filteredCached };
+              dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+              return payload;
+            }
           }
         }
 
@@ -114,12 +136,25 @@ function useGetCollectibles({
 
         const payload: Collectibles = { collections };
 
-        // Update cache
+        // Update cache with isUserStored flag set to true for each collectible
+        const collectionsWithUserStored = payload.collections.map((c) => ({
+          ...c,
+          collection: c.collection
+            ? {
+                ...c.collection,
+                collectibles: c.collection.collectibles?.map((col) => ({
+                  ...col,
+                  isUserStored: true,
+                })),
+              }
+            : undefined,
+        }));
+
         reduxDispatch(
           saveCollections({
             publicKey,
             networkDetails,
-            collections: payload.collections,
+            collections: collectionsWithUserStored,
           }),
         );
 

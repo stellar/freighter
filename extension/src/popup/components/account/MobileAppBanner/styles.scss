@@ -5,7 +5,10 @@
   background: var(--sds-clr-lilac-03);
   border-radius: pxToRem(12px);
   padding: pxToRem(16px);
-  margin: pxToRem(12px) 0 pxToRem(0) pxToRem(-16px);
+  margin-right: pxToRem(32px);
+  margin-bottom: pxToRem(16px);
+  margin-top: 0;
+  margin-left: pxToRem(-16px);
   width: calc(100% + pxToRem(32px));
   display: flex;
   align-items: center;
@@ -62,8 +65,8 @@
 
   &__dismiss {
     position: absolute;
-    top: pxToRem(4px);
-    right: pxToRem(4px);
+    top: pxToRem(8px);
+    right: pxToRem(8px);
     background: none;
     border: none;
     cursor: pointer;

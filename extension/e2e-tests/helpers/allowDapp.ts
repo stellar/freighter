@@ -1,4 +1,4 @@
-import { expect, test } from "../test-fixtures";
+import { expect } from "../test-fixtures";
 
 export const allowDapp = async ({ page }) => {
   // open a second tab and go to docs playground

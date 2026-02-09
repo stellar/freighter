@@ -189,20 +189,12 @@ export const GrantAccess = () => {
                 </div>
               </div>
               <div className="GrantAccess__BlockaidDetails__Title">
-                {isUnableToScan
-                  ? t("Proceed with caution")
-                  : isMalicious
-                    ? t("Do not proceed")
-                    : t("Suspicious Request")}
+                {t("Do not proceed")}
               </div>
               <div className="GrantAccess__BlockaidDetails__SubTitle">
-                {isUnableToScan
-                  ? t("We were unable to scan this site for security issues")
-                  : isMalicious
-                    ? t(
-                        "This site does not appear safe for the following reasons",
-                      )
-                    : t("This site has been flagged with potential concerns")}
+                {t(
+                  "This transaction does not appear safe for the following reasons",
+                )}
               </div>
               <div className="GrantAccess__BlockaidDetails__Details">
                 {!isUnableToScan &&

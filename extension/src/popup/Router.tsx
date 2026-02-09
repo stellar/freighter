@@ -152,7 +152,10 @@ const Layout = () => {
   }
 
   return (
-    <View isAppLayout={isAppLayout}>
+    <View
+      isAppLayout={isAppLayout}
+      isScrollableView={location.pathname === "/"}
+    >
       <Outlet />
     </View>
   );

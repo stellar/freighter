@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { useTranslation } from "react-i18next";
-import { Button, Input, Icon } from "@stellar/design-system";
+import { Button, Input } from "@stellar/design-system";
 import { object as YupObject, string as YupString } from "yup";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
 
+import { fetchCollectibles } from "@shared/api/helpers/fetchCollectibles";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
@@ -43,12 +44,39 @@ export const AddCollectibles = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const navigate = useNavigate();
   const [addCollectibleError, setAddCollectibleError] = useState<string>("");
-  const { fetchData: fetchCollectibles } = useGetCollectibles({
+  const { fetchData: fetchCollectiblesData } = useGetCollectibles({
     useCache: false,
   });
 
   const handleSubmit = async (values: FormValues) => {
     try {
+      const fetchedCollectible = await fetchCollectibles({
+        publicKey,
+        networkDetails,
+        contracts: [
+          {
+            id: values.collectibleContractAddress,
+            token_ids: [values.collectibleTokenId],
+          },
+        ],
+      });
+
+      // check to see if the collectible only returns an error from the API
+      // this would indicate it doesn't exist
+      if (
+        !fetchedCollectible.some(
+          (collection) =>
+            collection?.collection?.address ===
+              values.collectibleContractAddress &&
+            collection?.collection?.collectibles?.some(
+              (c) => c.tokenId === values.collectibleTokenId,
+            ),
+        )
+      ) {
+        setAddCollectibleError(t("Collectible not found"));
+        return;
+      }
+
       const response = await addCollectible({
         publicKey: publicKey,
         network: networkDetails.network,
@@ -64,7 +92,7 @@ export const AddCollectibles = () => {
       setAddCollectibleError("");
 
       // refetch collectibles to update the UI before we navigate away
-      await fetchCollectibles({ publicKey, networkDetails });
+      await fetchCollectiblesData({ publicKey, networkDetails });
 
       navigateTo(ROUTES.account, navigate, `?tab=${TabsList.COLLECTIBLES}`);
     } catch (error) {
@@ -109,7 +137,7 @@ export const AddCollectibles = () => {
       onSubmit={handleSubmit}
       validationSchema={validateAddCollectiblesSchema}
     >
-      {({ setFieldValue, touched, errors, dirty, isValid, isSubmitting }) => (
+      {({ touched, errors, dirty, isValid, isSubmitting }) => (
         <Form className="AddCollectibles" data-testid="AddCollectibles">
           <SubviewHeader title={t("Add Collectible")} />
           <View.Content hasNoTopPadding>
@@ -129,25 +157,6 @@ export const AddCollectibles = () => {
                       id="collectibleContractAddress"
                       placeholder={t("Collection address")}
                       {...field}
-                      rightElement={
-                        <div className="AddCollectibles__clipboard-button">
-                          <Button
-                            type="button"
-                            size="md"
-                            variant="tertiary"
-                            onClick={async () => {
-                              const pastedCollectionAddress =
-                                await navigator.clipboard.readText();
-                              setFieldValue(
-                                "collectibleContractAddress",
-                                pastedCollectionAddress,
-                              );
-                            }}
-                          >
-                            <Icon.Clipboard />
-                          </Button>
-                        </div>
-                      }
                       error={
                         errors.collectibleContractAddress &&
                         touched.collectibleContractAddress
@@ -172,25 +181,6 @@ export const AddCollectibles = () => {
                       id="collectibleTokenId"
                       placeholder={t("Token ID")}
                       {...field}
-                      rightElement={
-                        <div className="AddCollectibles__clipboard-button">
-                          <Button
-                            type="button"
-                            size="md"
-                            variant="tertiary"
-                            onClick={async () => {
-                              const pastedTokenId =
-                                await navigator.clipboard.readText();
-                              setFieldValue(
-                                "collectibleTokenId",
-                                pastedTokenId,
-                              );
-                            }}
-                          >
-                            <Icon.Clipboard />
-                          </Button>
-                        </div>
-                      }
                       error={
                         errors.collectibleTokenId && touched.collectibleTokenId
                           ? errors.collectibleTokenId

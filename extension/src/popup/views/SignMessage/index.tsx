@@ -249,7 +249,6 @@ export const SignMessage = () => {
                   <div className="SignMessage__BlockaidBanner">
                     <BlockAidSiteScanLabel
                       isMalicious={isMalicious}
-                      isSuspicious={isSuspicious}
                       isUnableToScan={isUnableToScan}
                       status={scanData?.status}
                       onClick={() => setActivePaneIndex(1)}

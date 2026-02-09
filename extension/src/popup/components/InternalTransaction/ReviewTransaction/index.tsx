@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Notification } from "@stellar/design-system";
+import { Button, Icon, Notification } from "@stellar/design-system";
 
 import { NetworkDetails } from "@shared/constants/stellar";
+import { BlockAidScanTxResult } from "@shared/api/types";
 import { RequestState, State } from "constants/request";
 import {
   ShowOverlayStatus,
@@ -15,15 +16,13 @@ import {
   truncatedFedAddress,
   truncatedPublicKey,
 } from "helpers/stellar";
-import { getContractIdFromTokenId } from "popup/helpers/soroban";
+import { getContractIdFromTransactionData } from "popup/helpers/soroban";
 import {
   checkIsMuxedSupported,
   getMemoDisabledState,
 } from "helpers/muxedAddress";
 import { SimulateTxData } from "popup/components/send/SendAmount/hooks/useSimulateTxData";
 import { View } from "popup/basics/layout/View";
-import { useShouldTreatTxAsUnableToScan } from "popup/helpers/blockaid";
-import { BlockAidScanTxResult } from "@shared/api/types";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
@@ -36,8 +35,8 @@ import {
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
 import { CopyValue } from "popup/components/CopyValue";
-import { Icon } from "@stellar/design-system";
-import { SendAsset, SendDestination, ActionButtons } from "./components";
+import { useShouldTreatTxAsUnableToScan } from "popup/helpers/blockaid";
+import { SendAsset, SendDestination } from "./components";
 
 import "./styles.scss";
 
@@ -207,17 +206,24 @@ export const ReviewTx = ({
     [shouldShowTxWarning],
   );
 
-  const isOnBlockaidPane =
-    shouldShowTxWarning &&
-    paneConfig.blockaidIndex !== null &&
-    activePaneIndex === paneConfig.blockaidIndex;
-  // Extract contract ID from asset for custom tokens
-  const contractId = React.useMemo(() => {
-    if (!isToken) {
-      return undefined;
-    }
-    return getContractIdFromTokenId(srcAsset, networkDetails);
-  }, [isToken, srcAsset, networkDetails]);
+  // Extract contract ID for custom tokens or collectibles
+  const contractId = React.useMemo(
+    () =>
+      getContractIdFromTransactionData({
+        isCollectible,
+        collectionAddress: collectibleData?.collectionAddress || "",
+        isToken,
+        asset: srcAsset,
+        networkDetails,
+      }),
+    [
+      isCollectible,
+      collectibleData?.collectionAddress,
+      isToken,
+      srcAsset,
+      networkDetails,
+    ],
+  );
 
   // Check if contract supports muxed addresses
   const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
@@ -226,7 +232,7 @@ export const ReviewTx = ({
 
   React.useEffect(() => {
     const checkContract = async () => {
-      if (!isToken || !contractId || !networkDetails) {
+      if ((!isToken && !isCollectible) || !contractId || !networkDetails) {
         setContractSupportsMuxed(null);
         return;
       }
@@ -244,7 +250,7 @@ export const ReviewTx = ({
     };
 
     checkContract();
-  }, [isToken, contractId, networkDetails]);
+  }, [isToken, isCollectible, contractId, networkDetails]);
 
   // Get memo disabled state using the helper
   const memoDisabledState = React.useMemo(() => {
@@ -445,23 +451,52 @@ export const ReviewTx = ({
         <div className="ReviewTx">
           <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
           <div className="ReviewTx__Actions">
-            <ActionButtons
-              isOnBlockaidPane={isOnBlockaidPane}
-              isMalicious={isMalicious}
-              isRequiredMemoMissing={isRequiredMemoMissing}
-              isValidatingMemo={isValidatingMemo}
-              onAddMemo={onAddMemo}
-              shouldShowTxWarning={shouldShowTxWarning}
-              onCancel={onCancel}
-              onConfirmTx={onConfirmTx}
-              paneConfig={paneConfig}
-              isSubmitDisabled={isSubmitDisabled}
-              dstAsset={dstAsset}
-              dest={dest}
-              asset={asset}
-              truncatedDest={truncatedDest}
-              setActivePaneIndex={setActivePaneIndex}
-            />
+            {isRequiredMemoMissing && !isValidatingMemo && onAddMemo ? (
+              <Button
+                size="lg"
+                isFullWidth
+                isRounded
+                variant="secondary"
+                data-testid="AddMemoAction"
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                  e.preventDefault();
+                  onAddMemo();
+                }}
+              >
+                {t("Add Memo")}
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                isFullWidth
+                isRounded
+                variant="secondary"
+                data-testid="SubmitAction"
+                disabled={isSubmitDisabled}
+                isLoading={isValidatingMemo}
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                  e.preventDefault();
+                  onConfirmTx();
+                }}
+              >
+                {dstAsset && dest
+                  ? `Swap ${asset.code} to ${dest.code}`
+                  : `Send to ${truncatedDest}`}
+              </Button>
+            )}
+            <Button
+              size="lg"
+              isFullWidth
+              isRounded
+              variant="tertiary"
+              disabled={isValidatingMemo}
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                e.preventDefault();
+                onCancel();
+              }}
+            >
+              {t("Cancel")}
+            </Button>
           </div>
         </div>
       )}

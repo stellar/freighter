@@ -5,6 +5,10 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  margin: 0 auto;
+  background-color: var(--sds-clr-gray-01);
+  border-radius: 0.875rem;
 
   &__Loading {
     width: 100%;
@@ -52,7 +56,7 @@
     padding: 1rem 1.5rem;
 
     &__Wrapper {
-      max-width: 57rem;
+      max-width: 49rem;
       width: 100%;
       max-height: calc(85vh - pxToRem(160px));
       overflow-y: auto;
@@ -88,7 +92,7 @@
       display: flex;
       flex-direction: column;
       position: relative;
-      max-width: 57rem;
+      max-width: 49rem;
       width: 100%;
       margin-top: 10px;
 

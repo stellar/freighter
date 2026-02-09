@@ -83,6 +83,8 @@ import {
 import { getBlockaidOverrideState } from "./handlers/getDebugOverride";
 import { addCollectible } from "./handlers/addCollectible";
 import { getCollectibles } from "./handlers/getCollectibles";
+import { changeCollectibleVisibility } from "./handlers/changeCollectibleVisibility";
+import { getHiddenCollectibles } from "./handlers/getHiddenCollectibles";
 
 const numOfPublicKeysToCheck = 5;
 
@@ -371,7 +373,7 @@ export const popupMessageListener = (
       });
     }
     case SERVICE_TYPES.LOAD_BACKEND_SETTINGS: {
-      return loadBackendSettings();
+      return loadBackendSettings({ localStore });
     }
     case SERVICE_TYPES.SAVE_BLOCKAID_DEBUG_OVERRIDE: {
       return saveBlockaidOverrideState({
@@ -509,6 +511,17 @@ export const popupMessageListener = (
     case SERVICE_TYPES.GET_COLLECTIBLES: {
       return getCollectibles({
         request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.CHANGE_COLLECTIBLE_VISIBILITY: {
+      return changeCollectibleVisibility({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES: {
+      return getHiddenCollectibles({
         localStore,
       });
     }

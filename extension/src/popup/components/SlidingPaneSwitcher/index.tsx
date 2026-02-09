@@ -30,7 +30,9 @@ export const MultiPaneSlider = ({
 
   return (
     <div className="multi-pane-slider">
-      <div className="multi-pane-slider__container">
+      <div
+        className={`multi-pane-slider__container ${transitioning ? "multi-pane-slider__container--transitioning" : ""}`}
+      >
         <div
           key={displayedIndex}
           className={`multi-pane-slider__pane ${
