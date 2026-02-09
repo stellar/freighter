@@ -1,13 +1,10 @@
 import { test, expect } from "./test-fixtures";
-import { login, loginAndFund, loginToTestAccount } from "./helpers/login";
+import { login, loginToTestAccount } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 import {
   stubAccountBalancesE2e,
   stubAccountBalancesWithUSDC,
   stubAccountBalancesWithUnfundedDestination,
-  stubAccountHistory,
-  stubTokenDetails,
-  stubTokenPrices,
   stubUnfundedDestinationBalances,
   stubContractSpec,
 } from "./helpers/stubs";
@@ -212,10 +209,13 @@ test("Send doesn't throw error when account is unfunded", async ({
 test("Send XLM below minimum to unfunded destination shows warning", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
-  await loginAndFund({ page, extensionId });
-  await stubUnfundedDestinationBalances(page, UNFUNDED_DESTINATION);
+  const stubOverrides = async () => {
+    await stubUnfundedDestinationBalances(page, UNFUNDED_DESTINATION);
+  };
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -249,10 +249,13 @@ test("Send XLM below minimum to unfunded destination shows warning", async ({
 test("Send XLM at minimum to unfunded destination proceeds without warning", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
-  await loginAndFund({ page, extensionId });
-  await stubUnfundedDestinationBalances(page, UNFUNDED_DESTINATION);
+  const stubOverrides = async () => {
+    await stubUnfundedDestinationBalances(page, UNFUNDED_DESTINATION);
+  };
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -288,24 +291,26 @@ test("Send XLM at minimum to unfunded destination proceeds without warning", asy
 test("Send non-native asset to unfunded destination shows destination missing warning", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
-  await loginAndFund({ page, extensionId });
-  await stubAccountHistory(page);
-  await stubTokenDetails(page);
-  await stubTokenPrices(page);
-
-  // Set up routing for unfunded destination and USDC in sender's account
-  await stubAccountBalancesWithUnfundedDestination(page, UNFUNDED_DESTINATION, {
-    "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
-      code: "USDC",
-      issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-      type: "credit_alphanum4",
-      total: "1000.0000000",
-      available: "1000.0000000",
-      limit: "922337203685.4775807",
-    },
-  });
+  const stubOverrides = async () => {
+    await stubAccountBalancesWithUnfundedDestination(
+      page,
+      UNFUNDED_DESTINATION,
+      {
+        "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
+          code: "USDC",
+          issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+          type: "credit_alphanum4",
+          total: "1000.0000000",
+          available: "1000.0000000",
+          limit: "922337203685.4775807",
+        },
+      },
+    );
+  };
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   await page.getByTestId("nav-link-send").click({ force: true });
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -343,9 +348,10 @@ test("Send non-native asset to unfunded destination shows destination missing wa
 test("Send XLM to funded destination does not show unfunded warning", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
-  await loginAndFund({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   // Don't stub unfunded balances - the default stub will return isFunded: true
   await page.getByTestId("nav-link-send").click({ force: true });
 
@@ -388,10 +394,13 @@ test("Send XLM to funded destination does not show unfunded warning", async ({
 test("Unfunded destination warning disappears when amount is increased above minimum", async ({
   page,
   extensionId,
+  context,
 }) => {
   test.slow();
-  await loginAndFund({ page, extensionId });
-  await stubUnfundedDestinationBalances(page, UNFUNDED_DESTINATION);
+  const stubOverrides = async () => {
+    await stubUnfundedDestinationBalances(page, UNFUNDED_DESTINATION);
+  };
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
