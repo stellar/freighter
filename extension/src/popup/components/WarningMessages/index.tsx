@@ -1123,15 +1123,20 @@ export const BlockAidScanExpanded = ({
     string | null
   >(null);
 
-  if (!scanResult) {
-    return null;
-  }
-
   useEffect(() => {
+    if (!scanResult) {
+      setBlockaidOverrideState(null);
+      return;
+    }
+
     getBlockaidOverrideState()
       .then(setBlockaidOverrideState)
       .catch(() => setBlockaidOverrideState(null));
-  }, []);
+  }, [scanResult]);
+
+  if (!scanResult) {
+    return null;
+  }
 
   // Always use transaction-based unable to scan logic
   const isUnableToScan = shouldTreatTxAsUnableToScan(

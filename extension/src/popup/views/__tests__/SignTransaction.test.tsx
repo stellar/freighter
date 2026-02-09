@@ -1117,6 +1117,8 @@ describe("SignTransactions", () => {
             validation: null,
             request_id: "1",
           },
+          siteScanData: null,
+          blockaidOverrideState: null,
           icons: {},
           balances: null, // Balances unavailable due to fetch failure
           publicKey: mockAccounts[1].publicKey,

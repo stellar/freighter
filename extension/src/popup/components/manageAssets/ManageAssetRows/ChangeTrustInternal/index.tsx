@@ -97,32 +97,6 @@ export const ChangeTrustInternal = ({
     recommendedFee: BASE_FEE,
   });
 
-  // Determine if blockaid warnings should be shown
-  const shouldShowBlockaidWarning =
-    state.data &&
-    (state.data.isAssetSuspicious || state.data.isAssetUnableToScan);
-
-  /**
-   * Pane state machine for blockaid warnings:
-   * - With blockaid warning: [Confirm Transaction, Details, Blockaid] - Blockaid accessible via banner click
-   * - No warning: [Confirm Transaction, Details]
-   */
-  const paneConfig = React.useMemo(
-    () =>
-      !shouldShowBlockaidWarning
-        ? {
-            blockaidIndex: null,
-            confirmIndex: 0,
-            detailsIndex: 1,
-          }
-        : {
-            blockaidIndex: 2,
-            confirmIndex: 0,
-            detailsIndex: 1,
-          },
-    [shouldShowBlockaidWarning],
-  );
-
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -192,14 +166,35 @@ export const ChangeTrustInternal = ({
     (op) => op.type === "changeTrust",
   );
 
-  const isInBlockaidPane =
-    paneConfig.blockaidIndex !== null &&
-    activePaneIndex === paneConfig.blockaidIndex;
-
   // Determine if asset is malicious (Malicious result_type takes precedence over overrides)
   const isMalicious =
     state.data?.scanResult?.result_type === "Malicious" ||
     blockaidOverrideState === SecurityLevel.MALICIOUS;
+
+  // Determine if blockaid warnings should be shown
+  const shouldShowBlockaidWarning =
+    state.data && (isMalicious || state.data.isAssetUnableToScan);
+
+  /**
+   * Pane state machine for blockaid warnings:
+   * - With blockaid warning: [Confirm Transaction, Details, Blockaid] - Blockaid accessible via banner click
+   * - No warning: [Confirm Transaction, Details]
+   */
+  const paneConfig = !shouldShowBlockaidWarning
+    ? {
+        blockaidIndex: null,
+        confirmIndex: 0,
+        detailsIndex: 1,
+      }
+    : {
+        blockaidIndex: 2,
+        confirmIndex: 0,
+        detailsIndex: 1,
+      };
+
+  const isInBlockaidPane =
+    paneConfig.blockaidIndex !== null &&
+    activePaneIndex === paneConfig.blockaidIndex;
 
   // Build panes in order (no hooks on JSX)
   const panes: React.ReactNode[] = [];
