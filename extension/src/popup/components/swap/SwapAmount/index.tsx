@@ -346,20 +346,16 @@ export const SwapAmount = ({
               variant="secondary"
               isLoading={simulationState.state === RequestState.LOADING}
               disabled={
-                !!destinationAsset &&
-                ((inputType === "crypto" &&
+                !destinationAsset ||
+                (inputType === "crypto" &&
                   new BigNumber(formik.values.amount).isZero()) ||
-                  (inputType === "fiat" &&
-                    new BigNumber(formik.values.amountUsd).isZero()) ||
-                  isAmountTooHigh)
+                (inputType === "fiat" &&
+                  new BigNumber(formik.values.amountUsd).isZero()) ||
+                isAmountTooHigh
               }
               onClick={(e) => {
                 e.preventDefault();
-                if (destinationAsset) {
-                  formik.submitForm();
-                  return;
-                }
-                goToNext();
+                formik.submitForm();
               }}
             >
               {destinationAsset ? t("Review swap") : t("Select an asset")}
