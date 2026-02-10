@@ -23,7 +23,6 @@ import { isMainnet, isTestnet } from "helpers/stellar";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
-import { STELLAR_DOCS_CREATE_ACCOUNT_URL } from "popup/constants/externalLinks";
 
 import {
   reportAssetWarning,
@@ -809,11 +808,6 @@ export const BlockAidTxScanExpanded = ({
   const { simulation, validation } = scanResult;
 
   if (simulation && "error" in simulation) {
-    const isUnfundedError = simulation.error?.includes("unfundedDestination");
-    const handleLearnMore = () => {
-      window.open(STELLAR_DOCS_CREATE_ACCOUNT_URL, "_blank");
-    };
-
     return (
       <View.Inset hasNoTopPadding hasNoBottomPadding>
         <div className="BlockaidDetailsExpanded">
@@ -836,19 +830,6 @@ export const BlockAidTxScanExpanded = ({
               <Icon.MinusCircle />
               <span>{t(simulation.error)}</span>
             </div>
-            {isUnfundedError && (
-              <Button
-                size="md"
-                variant="tertiary"
-                isFullWidth
-                type="button"
-                icon={<Icon.LinkExternal01 />}
-                iconPosition="right"
-                onClick={handleLearnMore}
-              >
-                {t("Learn more about account creation")}
-              </Button>
-            )}
             <BlockaidByLine address={""} />
           </div>
         </div>

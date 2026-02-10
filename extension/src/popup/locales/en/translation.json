@@ -518,6 +518,7 @@
   "Terms of Service": "Terms of Service",
   "Terms of Use": "Terms of Use",
   "The destination account does not accept the asset you’re sending": "The destination account does not accept the asset you’re sending",
+  "The destination account doesn't exist": "The destination account doesn't exist",
   "The destination account doesn’t exist": "The destination account doesn’t exist.",
   "The destination account must opt to accept this asset before receiving it.": "The destination account must opt to accept this asset before receiving it.",
   "The requester expects you to sign this auth entry on": "The requester expects you to sign this auth entry on",
