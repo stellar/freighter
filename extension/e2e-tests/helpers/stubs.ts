@@ -2163,6 +2163,104 @@ export const stubScanTx = async (page: Page) => {
   });
 };
 
+export const stubScanTxWithUnfundedWarning = async (page: Page) => {
+  await page.route("**/scan-tx", async (route) => {
+    const json = {
+      data: {
+        simulation: {
+          status: "Success",
+        },
+        validation: {
+          status: "Success",
+          result_type: "Warning",
+          description:
+            "This is a new account and needs at least 1 XLM to be created. It looks like you may not be sending enough XLM to create this account.",
+          features: [
+            {
+              type: "UNFUNDED_ACCOUNT",
+              description:
+                "This is a new account and needs at least 1 XLM to be created",
+            },
+          ],
+        },
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
+export const stubScanTxWithUnfundedNonNativeWarning = async (page: Page) => {
+  await page.route("**/scan-tx", async (route) => {
+    const json = {
+      data: {
+        simulation: {
+          status: "Success",
+        },
+        validation: {
+          status: "Success",
+          result_type: "Warning",
+          description:
+            "This is a new account and needs 1 XLM in order to get started. You are attempting to send a non-native asset to an unfunded account.",
+          features: [
+            {
+              type: "UNFUNDED_ACCOUNT",
+              description:
+                "This is a new account and needs 1 XLM in order to get started",
+            },
+          ],
+        },
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
+export const stubScanTxConditionalUnfundedWarning = async (page: Page) => {
+  let callCount = 0;
+
+  await page.route("**/scan-tx", async (route) => {
+    callCount++;
+
+    // First call: show warning (0.5 XLM)
+    // Second call: no warning (1.5 XLM)
+    const shouldShowWarning = callCount === 1;
+
+    const json = shouldShowWarning
+      ? {
+          data: {
+            simulation: {
+              status: "Success",
+            },
+            validation: {
+              status: "Success",
+              result_type: "Warning",
+              description:
+                "This is a new account and needs at least 1 XLM to be created. It looks like you may not be sending enough XLM to create this account.",
+              features: [
+                {
+                  type: "UNFUNDED_ACCOUNT",
+                  description:
+                    "This is a new account and needs at least 1 XLM to be created",
+                },
+              ],
+            },
+          },
+        }
+      : {
+          data: {
+            simulation: {
+              status: "Success",
+            },
+            validation: {
+              status: "Success",
+            },
+          },
+        };
+
+    await route.fulfill({ json });
+  });
+};
+
 export const stubSubmitTx = async (page: Page) => {
   await page.route("**/submit-tx", async (route) => {
     const json = {
