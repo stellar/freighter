@@ -20,6 +20,7 @@ import { CLAIM_PREDICATES } from "constants/transaction";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { CopyValue } from "popup/components/CopyValue";
 import { truncateString } from "helpers/stellar";
+import { useIsWideScreen } from "helpers/hooks/useIsWideScreen";
 import { formattedBuffer } from "popup/helpers/formatters";
 
 import {
@@ -469,6 +470,7 @@ export const KeyValueInvokeHostFn = ({
   op: Operation.InvokeHostFunction;
 }) => {
   const { t } = useTranslation();
+  const isWide = useIsWideScreen();
   const hostfn = op.func;
 
   function renderDetails() {
@@ -641,15 +643,27 @@ export const KeyValueInvokeHostFn = ({
               operationKey={t("Type")}
               operationValue={t("Invoke Contract")}
             />
-            <KeyValueList
-              operationKey={t("Contract ID")}
-              operationValue={
-                <CopyValue
-                  value={contractId}
-                  displayValue={truncateString(contractId)}
-                />
-              }
-            />
+            <div className="Operations__pair" data-testid="OperationKeyVal">
+              <div
+                className="Operations__pair--key"
+                data-testid="OperationKeyVal__key"
+              >
+                {t("Contract ID")}
+              </div>
+              <div
+                className={`Operations__pair--value${isWide ? " Operations__pair--value-expanded" : ""}`}
+                data-testid="OperationKeyVal__value"
+              >
+                <span className="Operations__pair--value-text">
+                  <CopyValue
+                    value={contractId}
+                    displayValue={
+                      isWide ? contractId : truncateString(contractId)
+                    }
+                  />
+                </span>
+              </div>
+            </div>
             <KeyValueList
               operationKey={t("Function Name")}
               operationValue={fnName}
