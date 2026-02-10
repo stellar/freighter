@@ -32,6 +32,26 @@ Object.defineProperty(global.self, "crypto", {
   },
 });
 
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: jest.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  })),
+});
+
+Object.defineProperty(global, "matchMedia", {
+  writable: true,
+  value: jest.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  })),
+});
+
 process.env.INDEXER_URL = "http://localhost:3002/api/v1";
 process.env.INDEXER_V2_URL = "http://localhost:3003/api/v1";
 
