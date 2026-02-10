@@ -123,8 +123,14 @@ const applyExpectedToFailReason = ({
   }
 
   if (!scanResult) {
+    // Create a minimal valid BlockAidScanTxResult object
     return {
+      request_id: "local-validation",
       simulation: { error: expectedToFailReason },
+      validation: {
+        status: "Success" as const,
+        result_type: "Benign" as const,
+      },
     } as BlockAidScanTxResult;
   }
 
@@ -385,7 +391,6 @@ function useSimulateTxData({
   const { asset, amount, transactionFee, memo } = useSelector(
     transactionDataSelector,
   );
-  const assetAddress = getAssetAddress(asset, destination, networkDetails);
 
   const { scanTx } = useScanTx();
   const [state, dispatch] = useReducer(
@@ -414,6 +419,13 @@ function useSimulateTxData({
       const currentAsset = currentTransactionData.asset || asset;
       const currentTransactionFee =
         currentTransactionData.transactionFee || transactionFee;
+
+      // Compute asset address using current asset to ensure consistency
+      const currentAssetAddress = getAssetAddress(
+        currentAsset,
+        destination,
+        networkDetails,
+      );
 
       const payload = { transactionXdr: "" } as SimulateTxData;
       let destinationAccount = await getBaseAccount(destination);
@@ -451,24 +463,24 @@ function useSimulateTxData({
 
       const assetBalance = findAddressBalance(
         balancesResult.balances,
-        assetAddress,
+        currentAssetAddress,
         networkDetails.networkPassphrase as Networks,
       );
       if (!assetBalance) {
         throw new Error("asset balance not found");
       }
       const tokenAddress =
-        assetAddress === "native"
+        currentAssetAddress === "native"
           ? Asset.native().contractId(networkDetails.networkPassphrase)
-          : assetAddress;
+          : currentAssetAddress;
       const parsedAmount = parseTokenAmount(
-        cleanAmount(amount),
+        cleanAmount(currentAmount),
         Number("decimals" in assetBalance ? assetBalance.decimals : 7),
       );
 
       // For Soroban transfers, check if contract supports muxed and determine final destination
       let finalDestination = destination;
-      let sorobanMemo = memo;
+      let sorobanMemo = currentMemo;
       if (simParams.type === "soroban") {
         try {
           const contractSupportsMuxed = await checkIsMuxedSupported({
@@ -477,7 +489,7 @@ function useSimulateTxData({
           });
           finalDestination = determineMuxedDestination({
             recipientAddress: destination,
-            transactionMemo: memo,
+            transactionMemo: currentMemo,
             contractSupportsMuxed,
           });
           // For Soroban transfers with muxed support, don't pass memo separately

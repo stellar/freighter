@@ -71,7 +71,7 @@ export const test = base.extend<{
       },
     );
 
-    if (!process.env.IS_INTEGRATION_MODE) {
+    if (process.env.IS_INTEGRATION_MODE !== "true") {
       await page.route("*/**/testnet/asset-list/top50", async (route) => {
         const json = STELLAR_EXPERT_ASSET_LIST_JSON;
         await route.fulfill({ json });
