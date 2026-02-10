@@ -972,4 +972,127 @@ describe.skip("Swap", () => {
       expect(within(dstTile).getByText("Choose asset")).toBeDefined();
     });
   });
+
+  describe("Select an asset button disabled state", () => {
+    it("Select an asset button is disabled when no destination asset is selected", async () => {
+      render(
+        <Wrapper
+          routes={[ROUTES.swap]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey,
+              allAccounts: mockAccounts,
+              hasPrivateKey: true,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+            },
+            transactionSubmission: {
+              ...transactionSubmissionInitialState,
+              accountBalances: swapMockBalances,
+            },
+          }}
+        >
+          <Swap />
+        </Wrapper>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      });
+
+      const continueButton = screen.getByTestId("swap-amount-btn-continue");
+      expect(continueButton).toBeDisabled();
+      expect(continueButton).toHaveTextContent("Select an asset");
+    });
+
+    it("Button shows Review swap and is enabled when destination asset is selected and amount > 0", async () => {
+      const testAsset =
+        "SRT:GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B";
+      render(
+        <Wrapper
+          routes={[`${ROUTES.swap}?destination_asset=${testAsset}`]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey,
+              allAccounts: mockAccounts,
+              hasPrivateKey: true,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+            },
+            transactionSubmission: {
+              ...transactionSubmissionInitialState,
+              transactionData: {
+                ...transactionSubmissionInitialState.transactionData,
+                destinationAsset: testAsset,
+              },
+              accountBalances: swapMockBalances,
+            },
+          }}
+        >
+          <Swap />
+        </Wrapper>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      });
+
+      const amountInput = screen.getByTestId("send-amount-amount-input");
+      fireEvent.change(amountInput, { target: { value: "10" } });
+
+      await waitFor(() => {
+        const continueButton = screen.getByTestId("swap-amount-btn-continue");
+        expect(continueButton).toBeEnabled();
+        expect(continueButton).toHaveTextContent("Review swap");
+      });
+    });
+
+    it("Button remains disabled with destination asset but zero amount", async () => {
+      const testAsset =
+        "SRT:GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B";
+      render(
+        <Wrapper
+          routes={[`${ROUTES.swap}?destination_asset=${testAsset}`]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey,
+              allAccounts: mockAccounts,
+              hasPrivateKey: true,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+            },
+            transactionSubmission: {
+              ...transactionSubmissionInitialState,
+              transactionData: {
+                ...transactionSubmissionInitialState.transactionData,
+                destinationAsset: testAsset,
+              },
+              accountBalances: swapMockBalances,
+            },
+          }}
+        >
+          <Swap />
+        </Wrapper>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      });
+
+      const continueButton = screen.getByTestId("swap-amount-btn-continue");
+      expect(continueButton).toBeDisabled();
+    });
+  });
 });
