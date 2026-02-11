@@ -111,9 +111,10 @@ export const loginToTestAccount = async ({
   if (context && !isIntegrationMode) {
     // Wait for any background activity to complete
     await stubAllExternalApis(page, context);
-    if (stubOverrides) {
-      await stubOverrides();
-    }
+  }
+  // Always apply stubOverrides, even in integration mode, as tests explicitly request these stubs
+  if (stubOverrides) {
+    await stubOverrides();
   }
   await page.getByText("I already have a wallet").click();
 
