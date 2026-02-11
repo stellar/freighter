@@ -89,12 +89,12 @@ const getExpectedToFailReason = ({
   }
 
   if (assetCanonical !== "native") {
-    return "blockaid.security.transaction.unfundedDestination";
+    return "Blockaid unfunded destination";
   }
 
   const parsedAmount = new BigNumber(cleanAmount(amount || "0"));
   if (parsedAmount.lt(CREATE_ACCOUNT_MIN_XLM)) {
-    return "blockaid.security.transaction.unfundedDestinationNative";
+    return "Blockaid unfunded destination native";
   }
 
   return null;

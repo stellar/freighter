@@ -2215,52 +2215,6 @@ export const stubScanTxWithUnfundedNonNativeWarning = async (page: Page) => {
   });
 };
 
-export const stubScanTxConditionalUnfundedWarning = async (page: Page) => {
-  let callCount = 0;
-
-  await page.route("**/scan-tx", async (route) => {
-    callCount++;
-
-    // First call: show warning (0.5 XLM)
-    // Second call: no warning (1.5 XLM)
-    const shouldShowWarning = callCount === 1;
-
-    const json = shouldShowWarning
-      ? {
-          data: {
-            simulation: {
-              status: "Success",
-            },
-            validation: {
-              status: "Success",
-              result_type: "Warning",
-              description:
-                "This is a new account and needs at least 1 XLM to be created. It looks like you may not be sending enough XLM to create this account.",
-              features: [
-                {
-                  type: "UNFUNDED_ACCOUNT",
-                  description:
-                    "This is a new account and needs at least 1 XLM to be created",
-                },
-              ],
-            },
-          },
-        }
-      : {
-          data: {
-            simulation: {
-              status: "Success",
-            },
-            validation: {
-              status: "Success",
-            },
-          },
-        };
-
-    await route.fulfill({ json });
-  });
-};
-
 export const stubSubmitTx = async (page: Page) => {
   await page.route("**/submit-tx", async (route) => {
     const json = {
@@ -2311,33 +2265,6 @@ export const stubFeeStats = async (page: Page) => {
     };
     await route.fulfill({ json });
   });
-};
-
-/**
- * Stub helper to create unfunded destination responses for account-balances endpoint
- * Used when testing sends to addresses that don't exist on the network
- * @param page - The Playwright page object
- * @param destinationAddress - The address of the unfunded destination
- */
-export const stubUnfundedDestinationBalances = async (
-  page: Page,
-  destinationAddress: string,
-) => {
-  await page.route(
-    `**/account-balances/${destinationAddress}*`,
-    async (route) => {
-      const json = {
-        balances: {},
-        isFunded: false,
-        subentryCount: 0,
-        error: {
-          horizon: null,
-          soroban: null,
-        },
-      };
-      await route.fulfill({ json });
-    },
-  );
 };
 
 /**
