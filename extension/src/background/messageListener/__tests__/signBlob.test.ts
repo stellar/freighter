@@ -118,7 +118,7 @@ describe("signBlob handler", () => {
       uuid: "non-existent-uuid",
     };
 
-    await signBlob({
+    const result = await signBlob({
       request,
       localStore: mockLocalStore,
       sessionStore: mockSessionStore,
@@ -126,6 +126,7 @@ describe("signBlob handler", () => {
       responseQueue,
     });
 
+    expect(result).toEqual({ error: "Transaction not found" });
     expect(blobQueue).toHaveLength(1);
     expect(mockResponseFn).not.toHaveBeenCalled();
     expect(responseQueue).toHaveLength(1);
