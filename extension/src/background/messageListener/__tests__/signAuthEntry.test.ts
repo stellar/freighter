@@ -129,10 +129,10 @@ describe("signAuthEntry handler", () => {
     authEntryQueue.push(makeAuthEntryData("uuid-1"));
     responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
 
-    const request: SignAuthEntryMessage = {
+    const request = {
       type: SERVICE_TYPES.SIGN_AUTH_ENTRY,
       activePublicKey: MOCK_PUBLIC_KEY,
-    };
+    } as SignAuthEntryMessage;
 
     const result = await signAuthEntry({
       request,

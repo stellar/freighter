@@ -1250,8 +1250,8 @@ export const getAssetDomains = async ({
 export const rejectAccess = async ({
   uuid,
 }: {
-  uuid?: string;
-} = {}): Promise<void> => {
+  uuid: string;
+}): Promise<void> => {
   try {
     await sendMessageToBackground({
       activePublicKey: null,
@@ -1268,7 +1268,7 @@ export const grantAccess = async ({
   uuid,
 }: {
   url: string;
-  uuid?: string;
+  uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
@@ -1287,7 +1287,7 @@ export const handleSignedHwPayload = async ({
   uuid,
 }: {
   signedPayload: string | Buffer;
-  uuid?: string;
+  uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
@@ -1306,7 +1306,7 @@ export const addToken = async ({
   uuid,
 }: {
   activePublicKey: string;
-  uuid?: string;
+  uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
@@ -1324,7 +1324,7 @@ export const signTransaction = async ({
   uuid,
 }: {
   activePublicKey: string;
-  uuid?: string;
+  uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
@@ -1344,7 +1344,7 @@ export const signBlob = async ({
 }: {
   apiVersion?: string;
   activePublicKey: string;
-  uuid?: string;
+  uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
@@ -1363,7 +1363,7 @@ export const signAuthEntry = async ({
   uuid,
 }: {
   activePublicKey: string;
-  uuid?: string;
+  uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({

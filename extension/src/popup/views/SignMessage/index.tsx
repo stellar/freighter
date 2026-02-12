@@ -81,8 +81,8 @@ export const SignMessage = () => {
     rejectTransaction,
     signBlob,
     message.message,
-    apiVersion,
     message.uuid,
+    apiVersion,
   );
 
   useEffect(() => {

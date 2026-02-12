@@ -129,7 +129,6 @@ export const SignTransaction = () => {
     rejectTransaction,
     signTransaction,
     transactionXdr,
-    undefined,
     uuid,
   );
 

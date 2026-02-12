@@ -280,19 +280,28 @@ export const IntegrationTest = () => {
         assertEq(Object.keys(res as object).length > 0, true);
       });
 
-      await rejectAccess();
+      await rejectAccess({ uuid: "integration-test" });
 
       runAsserts("rejectAccess", () => {});
 
-      await grantAccess({ url: "https://laboratory.stellar.org" });
+      await grantAccess({
+        url: "https://laboratory.stellar.org",
+        uuid: "integration-test",
+      });
 
       runAsserts("grantAccess", () => {});
 
-      await handleSignedHwPayload({ signedPayload: "" });
+      await handleSignedHwPayload({
+        signedPayload: "",
+        uuid: "integration-test",
+      });
 
       runAsserts("handleSignedHwPayload", () => {});
 
-      await signTransaction({ activePublicKey: testPublicKey });
+      await signTransaction({
+        activePublicKey: testPublicKey,
+        uuid: "integration-test",
+      });
 
       runAsserts("signTransaction", () => {});
 

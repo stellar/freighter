@@ -13,18 +13,18 @@ import { AppState } from "popup/App";
 
 export const grantAccess = createAsyncThunk(
   "grantAccess",
-  ({ url, uuid }: { url: string; uuid?: string }) =>
+  ({ url, uuid }: { url: string; uuid: string }) =>
     internalGrantAccess({ url, uuid }),
 );
 
 export const rejectAccess = createAsyncThunk(
   "rejectAccess",
-  ({ uuid }: { uuid?: string } = {}) => internalRejectAccess({ uuid }),
+  ({ uuid }: { uuid: string }) => internalRejectAccess({ uuid }),
 );
 
 export const signTransaction = createAsyncThunk(
   "signTransaction",
-  ({ uuid }: { uuid?: string }, { getState }) => {
+  ({ uuid }: { uuid: string }, { getState }) => {
     const activePublicKey = publicKeySelector(getState() as AppState);
     return internalSignTransaction({ activePublicKey, uuid });
   },
@@ -33,7 +33,7 @@ export const signTransaction = createAsyncThunk(
 export const signBlob = createAsyncThunk(
   "signBlob",
   (
-    { apiVersion, uuid }: { apiVersion?: string; uuid?: string },
+    { apiVersion, uuid }: { apiVersion?: string; uuid: string },
     { getState },
   ) => {
     const activePublicKey = publicKeySelector(getState() as AppState);
@@ -42,7 +42,7 @@ export const signBlob = createAsyncThunk(
 );
 export const signEntry = createAsyncThunk(
   "signEntry",
-  ({ uuid }: { uuid?: string }, { getState }) => {
+  ({ uuid }: { uuid: string }, { getState }) => {
     const activePublicKey = publicKeySelector(getState() as AppState);
     return internalSignAuthEntry({ activePublicKey, uuid });
   },
@@ -50,7 +50,7 @@ export const signEntry = createAsyncThunk(
 
 export const addToken = createAsyncThunk(
   "addToken",
-  ({ uuid }: { uuid?: string }, { getState }) => {
+  ({ uuid }: { uuid: string }, { getState }) => {
     const activePublicKey = publicKeySelector(getState() as AppState);
     return internalAddToken({ activePublicKey, uuid });
   },
@@ -58,19 +58,19 @@ export const addToken = createAsyncThunk(
 
 export const rejectToken = createAsyncThunk(
   "rejectToken",
-  ({ uuid }: { uuid?: string } = {}) => internalRejectAccess({ uuid }),
+  ({ uuid }: { uuid: string }) => internalRejectAccess({ uuid }),
 );
 
 export const rejectTransaction = createAsyncThunk(
   "rejectTransaction",
-  ({ uuid }: { uuid?: string } = {}) => internalRejectAccess({ uuid }),
+  ({ uuid }: { uuid: string }) => internalRejectAccess({ uuid }),
 );
 
 export const rejectBlob = createAsyncThunk(
   "rejectBlob",
-  ({ uuid }: { uuid?: string } = {}) => internalRejectAccess({ uuid }),
+  ({ uuid }: { uuid: string }) => internalRejectAccess({ uuid }),
 );
 export const rejectAuthEntry = createAsyncThunk(
   "rejectAuthEntry",
-  ({ uuid }: { uuid?: string } = {}) => internalRejectAccess({ uuid }),
+  ({ uuid }: { uuid: string }) => internalRejectAccess({ uuid }),
 );

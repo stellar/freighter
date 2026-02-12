@@ -135,10 +135,10 @@ describe("signBlob handler", () => {
     blobQueue.push(makeBlobData("uuid-1"));
     responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
 
-    const request: SignBlobMessage = {
+    const request = {
       type: SERVICE_TYPES.SIGN_BLOB,
       activePublicKey: MOCK_PUBLIC_KEY,
-    };
+    } as SignBlobMessage;
 
     const result = await signBlob({
       request,

@@ -19,7 +19,7 @@ type Params = {
   addToken: typeof addToken;
   assetCode: string;
   assetIssuer: string;
-  uuid?: string;
+  uuid: string;
 };
 
 type Response = {

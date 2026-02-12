@@ -25,8 +25,8 @@ export function useSetupSigningFlow<Arg = void>(
   reject: typeof rejectTransaction,
   signFn: AppThunk<Arg>,
   transactionXdr: string,
+  uuid: string,
   apiVersion?: string,
-  uuid?: string,
 ) {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);

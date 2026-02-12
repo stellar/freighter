@@ -143,10 +143,10 @@ describe("signTransaction handler", () => {
     transactionQueue.push({ transaction: mockTransaction, uuid: "uuid-1" });
     responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
 
-    const request: SignTransactionMessage = {
+    const request = {
       type: SERVICE_TYPES.SIGN_TRANSACTION,
       activePublicKey: MOCK_PUBLIC_KEY,
-    };
+    } as SignTransactionMessage;
 
     const result = await signTransaction({
       request,

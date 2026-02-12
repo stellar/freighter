@@ -184,18 +184,19 @@ export const freighterApiMessageListener = (
       const domain = getUrlHostname(tabUrl);
       const punycodedDomain = getPunycodedDomain(domain);
 
+      const uuid = crypto.randomUUID();
+
       const tokenInfo: TokenToAdd = {
         domain: punycodedDomain,
         tab,
         url: tabUrl,
         contractId,
         networkPassphrase,
+        uuid,
       };
 
-      const uuid = crypto.randomUUID();
-
       tokenQueue.push(tokenInfo);
-      const encodedTokenInfo = encodeObject({ ...tokenInfo, uuid });
+      const encodedTokenInfo = encodeObject(tokenInfo);
 
       const popup = await browser.windows.create({
         url: chrome.runtime.getURL(

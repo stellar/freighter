@@ -103,7 +103,7 @@ export const HardwareSign = ({
               preparedTransaction: res.payload,
             }),
           );
-        } else {
+        } else if (uuid) {
           // right now there are only two cases after signing,
           // submitting to network or handling in background script
           await handleSignedHwPayload({ signedPayload: res.payload, uuid });

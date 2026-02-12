@@ -13,7 +13,7 @@ export interface TokenToAdd {
   url: string;
   contractId: string;
   networkPassphrase?: string;
-  uuid?: string;
+  uuid: string;
 }
 
 export interface MessageToSign {
@@ -186,44 +186,44 @@ export interface ConfirmPasswordMessage extends BaseMessage {
 export interface GrantAccessMessage extends BaseMessage {
   type: SERVICE_TYPES.GRANT_ACCESS;
   url: string;
-  uuid?: string;
+  uuid: string;
 }
 
 export interface RejectAccessMessage extends BaseMessage {
   type: SERVICE_TYPES.REJECT_ACCESS;
-  uuid?: string;
+  uuid: string;
 }
 
 export interface HandleSignedHWPayloadMessage extends BaseMessage {
   type: SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD;
   signedPayload: string | Buffer<ArrayBufferLike>;
-  uuid?: string;
+  uuid: string;
 }
 
 export interface AddTokenMessage extends BaseMessage {
   type: SERVICE_TYPES.ADD_TOKEN;
-  uuid?: string;
+  uuid: string;
 }
 
 export interface SignTransactionMessage extends BaseMessage {
   type: SERVICE_TYPES.SIGN_TRANSACTION;
-  uuid?: string;
+  uuid: string;
 }
 
 export interface SignBlobMessage extends BaseMessage {
   apiVersion?: string;
   type: SERVICE_TYPES.SIGN_BLOB;
-  uuid?: string;
+  uuid: string;
 }
 
 export interface SignAuthEntryMessage extends BaseMessage {
   type: SERVICE_TYPES.SIGN_AUTH_ENTRY;
-  uuid?: string;
+  uuid: string;
 }
 
 export interface RejectTransactionMessage extends BaseMessage {
   type: SERVICE_TYPES.REJECT_TRANSACTION;
-  uuid?: string;
+  uuid: string;
 }
 
 export interface SignFreighterTransactionMessage extends BaseMessage {

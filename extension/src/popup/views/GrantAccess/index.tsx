@@ -31,9 +31,7 @@ export const GrantAccess = () => {
   const url =
     "url" in params && typeof params.url === "string" ? params.url : "";
   const uuid =
-    "uuid" in params && typeof params.uuid === "string"
-      ? params.uuid
-      : undefined;
+    "uuid" in params && typeof params.uuid === "string" ? params.uuid : "";
   const domain = getUrlHostname(url);
   const { state, fetchData } = useGetGrantAccessData(url);
 

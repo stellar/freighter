@@ -76,7 +76,6 @@ export const SignAuthEntry = () => {
     rejectAuthEntry,
     signEntry,
     params.entry,
-    undefined,
     params.uuid,
   );
 
