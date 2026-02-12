@@ -49,7 +49,7 @@ export const signTransaction = async ({
 
   if (!uuid) {
     captureException("signTransaction: missing uuid in request");
-    return { error: "Missing uuid" };
+    return { error: "Transaction not found" };
   }
 
   if (privateKey.length) {

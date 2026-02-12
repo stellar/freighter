@@ -148,7 +148,7 @@ describe("signBlob handler", () => {
       responseQueue,
     });
 
-    expect(result).toEqual({ error: "Missing uuid" });
+    expect(result).toEqual({ error: "Transaction not found" });
     expect(blobQueue).toHaveLength(1);
   });
 

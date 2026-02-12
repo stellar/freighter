@@ -29,7 +29,7 @@ export const addToken = async ({
 
   if (!uuid) {
     captureException("addToken: missing uuid in request");
-    return { error: "Missing uuid" };
+    return { error: "Transaction not found" };
   }
 
   const publicKey = publicKeySelector(sessionStore.getState());

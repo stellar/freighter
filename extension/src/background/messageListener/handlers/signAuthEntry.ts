@@ -30,7 +30,7 @@ export const signAuthEntry = async ({
 
   if (!uuid) {
     captureException("signAuthEntry: missing uuid in request");
-    return { error: "Missing uuid" };
+    return { error: "Transaction not found" };
   }
 
   const keyId = (await localStore.getItem(KEY_ID)) || "";

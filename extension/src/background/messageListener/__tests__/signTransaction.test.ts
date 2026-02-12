@@ -156,7 +156,7 @@ describe("signTransaction handler", () => {
       responseQueue,
     });
 
-    expect(result).toEqual({ error: "Missing uuid" });
+    expect(result).toEqual({ error: "Transaction not found" });
     expect(mockSign).not.toHaveBeenCalled();
     expect(transactionQueue).toHaveLength(1);
   });

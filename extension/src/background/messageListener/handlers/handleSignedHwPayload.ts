@@ -16,7 +16,7 @@ export const handleSignedHwPayload = ({
 
   if (!uuid) {
     captureException("handleSignedHwPayload: missing uuid in request");
-    return { error: "Missing uuid" };
+    return { error: "Transaction not found" };
   }
 
   const responseIndex = responseQueue.findIndex((item) => item.uuid === uuid);

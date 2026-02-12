@@ -32,7 +32,7 @@ export const signBlob = async ({
 
   if (!uuid) {
     captureException("signBlob: missing uuid in request");
-    return { error: "Missing uuid" };
+    return { error: "Transaction not found" };
   }
 
   const keyId = (await localStore.getItem(KEY_ID)) || "";
