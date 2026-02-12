@@ -57,6 +57,7 @@ export const getTransactionInfo = (search: string) => {
     transaction,
     transactionXdr,
     flaggedKeys,
+    uuid,
     tab: { title = "" },
   } = searchParams;
   const hostname = getUrlHostname(url);
@@ -76,6 +77,7 @@ export const getTransactionInfo = (search: string) => {
     operations: _operations,
     operationTypes,
     flaggedKeys,
+    uuid,
   };
 };
 

@@ -72,7 +72,12 @@ export const SignAuthEntry = () => {
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-  } = useSetupSigningFlow(rejectAuthEntry, signEntry, params.entry);
+  } = useSetupSigningFlow(
+    rejectAuthEntry,
+    signEntry,
+    params.entry,
+    params.uuid,
+  );
 
   useEffect(() => {
     const getData = async () => {
@@ -155,6 +160,7 @@ export const SignAuthEntry = () => {
         <HardwareSign
           walletType={hardwareWalletType}
           isSignSorobanAuthorization
+          uuid={params.uuid}
         />
       )}
       <React.Fragment>

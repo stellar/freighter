@@ -10,23 +10,31 @@ import { getSdk, isPlaywright } from "@shared/helpers/stellar";
 import {
   BlobQueue,
   ResponseQueue,
+  SignBlobMessage,
   SignBlobResponse,
 } from "@shared/api/types/message-request";
 import { encodeSep53Message } from "helpers/stellar";
 
 export const signBlob = async ({
-  apiVersion,
+  request,
   localStore,
   sessionStore,
   blobQueue,
   responseQueue,
 }: {
-  apiVersion?: string;
+  request: SignBlobMessage;
   localStore: DataStorageAccess;
   sessionStore: Store;
   blobQueue: BlobQueue;
   responseQueue: ResponseQueue<SignBlobResponse>;
 }) => {
+  const { uuid, apiVersion } = request;
+
+  if (!uuid) {
+    captureException("signBlob: missing uuid in request");
+    return { error: "Transaction not found" };
+  }
+
   const keyId = (await localStore.getItem(KEY_ID)) || "";
   let privateKey = "";
 
@@ -46,7 +54,10 @@ export const signBlob = async ({
 
   if (privateKey.length) {
     const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
-    const blob = blobQueue.pop();
+    const queueIndex = blobQueue.findIndex((item) => item.uuid === uuid);
+    const blobQueueItem =
+      queueIndex !== -1 ? blobQueue.splice(queueIndex, 1)[0] : undefined;
+    const blob = blobQueueItem?.blob;
 
     let response = null;
 
@@ -59,12 +70,18 @@ export const signBlob = async ({
       response = sourceKeys.sign(signPayload);
     }
 
-    const blobResponse = responseQueue.pop();
+    const responseIndex = responseQueue.findIndex((item) => item.uuid === uuid);
+    const blobResponse =
+      responseIndex !== -1
+        ? responseQueue.splice(responseIndex, 1)[0]
+        : undefined;
 
-    if (typeof blobResponse === "function") {
-      blobResponse(response, sourceKeys.publicKey());
+    if (blobResponse && typeof blobResponse.response === "function") {
+      blobResponse.response(response, sourceKeys.publicKey());
       return {};
     }
+
+    captureException(`signBlob: no matching response found for uuid ${uuid}`);
   }
 
   return { error: "Session timed out" };

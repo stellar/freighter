@@ -10,14 +10,17 @@ import {
   ResponseQueue,
   TransactionQueue,
   SignTransactionResponse,
+  SignTransactionMessage,
 } from "@shared/api/types/message-request";
 
 export const signTransaction = async ({
+  request,
   localStore,
   sessionStore,
   transactionQueue,
   responseQueue,
 }: {
+  request: SignTransactionMessage;
   localStore: DataStorageAccess;
   sessionStore: Store;
   transactionQueue: TransactionQueue;
@@ -42,14 +45,24 @@ export const signTransaction = async ({
 
   const Sdk = getSdk(networkDetails.networkPassphrase);
 
+  const { uuid } = request;
+
+  if (!uuid) {
+    captureException("signTransaction: missing uuid in request");
+    return { error: "Transaction not found" };
+  }
+
   if (privateKey.length) {
     const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
 
     let response = "";
 
-    const transactionToSign = transactionQueue.pop();
+    const queueIndex = transactionQueue.findIndex((item) => item.uuid === uuid);
+    const transactionQueueItem =
+      queueIndex !== -1 ? transactionQueue.splice(queueIndex, 1)[0] : undefined;
 
-    if (transactionToSign) {
+    if (transactionQueueItem) {
+      const { transaction: transactionToSign } = transactionQueueItem;
       try {
         transactionToSign.sign(sourceKeys);
         response = transactionToSign.toXDR();
@@ -59,12 +72,23 @@ export const signTransaction = async ({
       }
     }
 
-    const transactionResponse = responseQueue.pop();
+    const responseIndex = responseQueue.findIndex((item) => item.uuid === uuid);
+    const transactionResponse =
+      responseIndex !== -1
+        ? responseQueue.splice(responseIndex, 1)[0]
+        : undefined;
 
-    if (typeof transactionResponse === "function") {
-      transactionResponse(response, sourceKeys.publicKey());
+    if (
+      transactionResponse &&
+      typeof transactionResponse.response === "function"
+    ) {
+      transactionResponse.response(response, sourceKeys.publicKey());
       return {};
     }
+
+    captureException(
+      `signTransaction: no matching response found for uuid ${uuid}`,
+    );
   }
 
   return { error: "Session timed out" };
