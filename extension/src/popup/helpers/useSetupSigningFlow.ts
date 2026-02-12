@@ -43,7 +43,7 @@ export function useSetupSigningFlow<Arg = void>(
 
   const rejectAndClose = () => {
     emitMetric(METRIC_NAMES.rejectSigning);
-    dispatch(reject());
+    dispatch(reject({ uuid }));
     window.close();
   };
 

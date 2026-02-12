@@ -104,7 +104,8 @@ export const freighterApiMessageListener = (
     }
 
     // otherwise, we need to confirm either url or password. Maybe both
-    const encodeOrigin = encodeObject({ tab, url: tabUrl });
+    const uuid = crypto.randomUUID();
+    const encodeOrigin = encodeObject({ tab, url: tabUrl, uuid });
 
     const window = await browser.windows.create({
       url: chrome.runtime.getURL(`/index.html#/grant-access?${encodeOrigin}`),
@@ -139,7 +140,10 @@ export const freighterApiMessageListener = (
         });
       };
 
-      (responseQueue as ResponseQueue<RequestAccessResponse>).push(response);
+      (responseQueue as ResponseQueue<RequestAccessResponse>).push({
+        response,
+        uuid,
+      });
     });
   };
 
@@ -188,8 +192,10 @@ export const freighterApiMessageListener = (
         networkPassphrase,
       };
 
+      const uuid = crypto.randomUUID();
+
       tokenQueue.push(tokenInfo);
-      const encodedTokenInfo = encodeObject(tokenInfo);
+      const encodedTokenInfo = encodeObject({ ...tokenInfo, uuid });
 
       const popup = await browser.windows.create({
         url: chrome.runtime.getURL(
@@ -222,7 +228,10 @@ export const freighterApiMessageListener = (
           });
         };
 
-        (responseQueue as ResponseQueue<AddTokenResponse>).push(response);
+        (responseQueue as ResponseQueue<AddTokenResponse>).push({
+          response,
+          uuid,
+        });
       });
     } catch (e) {
       return {
@@ -376,9 +385,10 @@ export const freighterApiMessageListener = (
           });
         };
 
-        (responseQueue as ResponseQueue<SignTransactionResponse>).push(
+        (responseQueue as ResponseQueue<SignTransactionResponse>).push({
           response,
-        );
+          uuid,
+        });
       });
     } catch (e) {
       return {
@@ -457,7 +467,10 @@ export const freighterApiMessageListener = (
           });
         };
 
-        (responseQueue as ResponseQueue<SignBlobResponse>).push(response);
+        (responseQueue as ResponseQueue<SignBlobResponse>).push({
+          response,
+          uuid,
+        });
       });
     } catch (e) {
       return {
@@ -541,7 +554,10 @@ export const freighterApiMessageListener = (
             error: FreighterApiDeclinedError.message,
           });
         };
-        (responseQueue as ResponseQueue<SignAuthEntryResponse>).push(response);
+        (responseQueue as ResponseQueue<SignAuthEntryResponse>).push({
+          response,
+          uuid,
+        });
       });
     } catch (e) {
       return {
@@ -627,8 +643,8 @@ export const freighterApiMessageListener = (
       return { isAllowed };
     }
 
-    // otherwise, we need to confirm either url or password. Maybe both
-    const encodeOrigin = encodeObject({ tab, url: tabUrl });
+    const uuid = crypto.randomUUID();
+    const encodeOrigin = encodeObject({ tab, url: tabUrl, uuid });
 
     browser.windows.create({
       url: chrome.runtime.getURL(`/index.html#/grant-access?${encodeOrigin}`),
@@ -660,7 +676,10 @@ export const freighterApiMessageListener = (
         });
       };
 
-      (responseQueue as ResponseQueue<SetAllowedStatusResponse>).push(response);
+      (responseQueue as ResponseQueue<SetAllowedStatusResponse>).push({
+        response,
+        uuid,
+      });
     });
   };
 

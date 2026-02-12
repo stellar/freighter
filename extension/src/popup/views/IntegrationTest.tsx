@@ -284,7 +284,7 @@ export const IntegrationTest = () => {
 
       runAsserts("rejectAccess", () => {});
 
-      await grantAccess("https://laboratory.stellar.org");
+      await grantAccess({ url: "https://laboratory.stellar.org" });
 
       runAsserts("grantAccess", () => {});
 

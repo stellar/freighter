@@ -27,6 +27,12 @@ export const signAuthEntry = async ({
   responseQueue: ResponseQueue<SignAuthEntryResponse>;
 }) => {
   const { uuid } = request;
+
+  if (!uuid) {
+    captureException("signAuthEntry: missing uuid in request");
+    return { error: "Missing uuid" };
+  }
+
   const keyId = (await localStore.getItem(KEY_ID)) || "";
   let privateKey = "";
 
@@ -57,12 +63,20 @@ export const signAuthEntry = async ({
       ? sourceKeys.sign(Sdk.hash(Buffer.from(authEntry.entry, "base64")))
       : null;
 
-    const entryResponse = responseQueue.pop();
+    const responseIndex = responseQueue.findIndex((item) => item.uuid === uuid);
+    const entryResponse =
+      responseIndex !== -1
+        ? responseQueue.splice(responseIndex, 1)[0]
+        : undefined;
 
-    if (typeof entryResponse === "function") {
-      entryResponse(response, sourceKeys.publicKey());
+    if (entryResponse && typeof entryResponse.response === "function") {
+      entryResponse.response(response, sourceKeys.publicKey());
       return {};
     }
+
+    captureException(
+      `signAuthEntry: no matching response found for uuid ${uuid}`,
+    );
   }
 
   return { error: "Session timed out" };

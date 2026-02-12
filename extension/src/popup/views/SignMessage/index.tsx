@@ -176,7 +176,7 @@ export const SignMessage = () => {
   ) : (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
-        <HardwareSign walletType={hardwareWalletType} />
+        <HardwareSign walletType={hardwareWalletType} uuid={message.uuid} />
       )}
       <React.Fragment>
         <View.Content>

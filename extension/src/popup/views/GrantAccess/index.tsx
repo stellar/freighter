@@ -27,7 +27,13 @@ export const GrantAccess = () => {
   const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
 
-  const { url } = parsedSearchParam(location.search);
+  const params = parsedSearchParam(location.search);
+  const url =
+    "url" in params && typeof params.url === "string" ? params.url : "";
+  const uuid =
+    "uuid" in params && typeof params.uuid === "string"
+      ? params.uuid
+      : undefined;
   const domain = getUrlHostname(url);
   const { state, fetchData } = useGetGrantAccessData(url);
 
@@ -89,14 +95,14 @@ export const GrantAccess = () => {
   const { publicKey, networkDetails } = state.data;
 
   const rejectAndClose = () => {
-    dispatch(rejectAccess());
+    dispatch(rejectAccess({ uuid }));
     window.close();
   };
 
   const grantAndClose = async () => {
     setIsGranting(true);
 
-    await dispatch(grantAccess(url));
+    await dispatch(grantAccess({ url, uuid }));
     window.close();
   };
 

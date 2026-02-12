@@ -161,6 +161,7 @@ export const SignAuthEntry = () => {
         <HardwareSign
           walletType={hardwareWalletType}
           isSignSorobanAuthorization
+          uuid={params.uuid}
         />
       )}
       <React.Fragment>

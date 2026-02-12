@@ -35,12 +35,14 @@ export const HardwareSign = ({
   onSubmit,
   isInternal = false,
   onCancel,
+  uuid,
 }: {
   walletType: ConfigurableWalletType;
   isSignSorobanAuthorization?: boolean;
   onSubmit?: () => void;
   isInternal?: boolean;
   onCancel?: () => void;
+  uuid?: string;
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
@@ -104,7 +106,7 @@ export const HardwareSign = ({
         } else {
           // right now there are only two cases after signing,
           // submitting to network or handling in background script
-          await handleSignedHwPayload({ signedPayload: res.payload });
+          await handleSignedHwPayload({ signedPayload: res.payload, uuid });
         }
         closeOverlay();
         if (onSubmit) {

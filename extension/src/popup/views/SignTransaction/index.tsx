@@ -328,7 +328,7 @@ export const SignTransaction = () => {
   ) : (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
-        <HardwareSign walletType={hardwareWalletType} />
+        <HardwareSign walletType={hardwareWalletType} uuid={uuid} />
       )}
       <div data-testid="SignTransaction" className="SignTransaction">
         <MultiPaneSlider

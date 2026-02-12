@@ -259,6 +259,7 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.REJECT_ACCESS: {
       return rejectAccess({
+        request,
         responseQueue,
       });
     }
@@ -270,6 +271,7 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.ADD_TOKEN: {
       return addToken({
+        request,
         localStore,
         sessionStore,
         tokenQueue,
@@ -305,6 +307,7 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.REJECT_TRANSACTION: {
       return rejectTransaction({
+        request,
         responseQueue,
         transactionQueue,
       });

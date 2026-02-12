@@ -29,6 +29,12 @@ export const signBlob = async ({
   responseQueue: ResponseQueue<SignBlobResponse>;
 }) => {
   const { uuid, apiVersion } = request;
+
+  if (!uuid) {
+    captureException("signBlob: missing uuid in request");
+    return { error: "Missing uuid" };
+  }
+
   const keyId = (await localStore.getItem(KEY_ID)) || "";
   let privateKey = "";
 
@@ -64,12 +70,18 @@ export const signBlob = async ({
       response = sourceKeys.sign(signPayload);
     }
 
-    const blobResponse = responseQueue.pop();
+    const responseIndex = responseQueue.findIndex((item) => item.uuid === uuid);
+    const blobResponse =
+      responseIndex !== -1
+        ? responseQueue.splice(responseIndex, 1)[0]
+        : undefined;
 
-    if (typeof blobResponse === "function") {
-      blobResponse(response, sourceKeys.publicKey());
+    if (blobResponse && typeof blobResponse.response === "function") {
+      blobResponse.response(response, sourceKeys.publicKey());
       return {};
     }
+
+    captureException(`signBlob: no matching response found for uuid ${uuid}`);
   }
 
   return { error: "Session timed out" };
