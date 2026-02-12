@@ -59,16 +59,17 @@ export const signBlob = async ({
       queueIndex !== -1 ? blobQueue.splice(queueIndex, 1)[0] : undefined;
     const blob = blobQueueItem?.blob;
 
-    let response = null;
-
-    if (blob) {
-      const supportsSep53 =
-        (apiVersion && semver.gte(apiVersion, "5.0.0")) || isPlaywright;
-      const signPayload = supportsSep53
-        ? encodeSep53Message(blob.message)
-        : Buffer.from(blob.message, "base64");
-      response = sourceKeys.sign(signPayload);
+    if (!blob) {
+      captureException(`signBlob: no blob found in queue for uuid ${uuid}`);
+      return { error: "Transaction not found" };
     }
+
+    const supportsSep53 =
+      (apiVersion && semver.gte(apiVersion, "5.0.0")) || isPlaywright;
+    const signPayload = supportsSep53
+      ? encodeSep53Message(blob.message)
+      : Buffer.from(blob.message, "base64");
+    const response = sourceKeys.sign(signPayload);
 
     const responseIndex = responseQueue.findIndex((item) => item.uuid === uuid);
     const blobResponse =
