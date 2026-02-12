@@ -90,6 +90,7 @@ export const SignTransaction = () => {
     domain,
     isHttpsDomain,
     flaggedKeys,
+    uuid,
   } = tx;
 
   const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =
@@ -124,7 +125,13 @@ export const SignTransaction = () => {
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-  } = useSetupSigningFlow(rejectTransaction, signTransaction, transactionXdr);
+  } = useSetupSigningFlow(
+    rejectTransaction,
+    signTransaction,
+    transactionXdr,
+    undefined,
+    uuid,
+  );
 
   // rebuild transaction to get Transaction prototypes
   const transaction = TransactionBuilder.fromXDR(

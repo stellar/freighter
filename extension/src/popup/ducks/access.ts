@@ -20,23 +20,29 @@ export const rejectAccess = createAsyncThunk(
 
 export const signTransaction = createAsyncThunk(
   "signTransaction",
-  (_, { getState }) => {
+  ({ uuid }: { uuid?: string }, { getState }) => {
     const activePublicKey = publicKeySelector(getState() as AppState);
-    return internalSignTransaction({ activePublicKey });
+    return internalSignTransaction({ activePublicKey, uuid });
   },
 );
 
 export const signBlob = createAsyncThunk(
   "signBlob",
-  ({ apiVersion }: { apiVersion?: string }, { getState }) => {
+  (
+    { apiVersion, uuid }: { apiVersion?: string; uuid?: string },
+    { getState },
+  ) => {
     const activePublicKey = publicKeySelector(getState() as AppState);
-    return internalSignBlob({ apiVersion, activePublicKey });
+    return internalSignBlob({ apiVersion, activePublicKey, uuid });
   },
 );
-export const signEntry = createAsyncThunk("signEntry", (_, { getState }) => {
-  const activePublicKey = publicKeySelector(getState() as AppState);
-  return internalSignAuthEntry({ activePublicKey });
-});
+export const signEntry = createAsyncThunk(
+  "signEntry",
+  ({ uuid }: { uuid?: string }, { getState }) => {
+    const activePublicKey = publicKeySelector(getState() as AppState);
+    return internalSignAuthEntry({ activePublicKey, uuid });
+  },
+);
 
 export const addToken = createAsyncThunk("addToken", (_, { getState }) => {
   const activePublicKey = publicKeySelector(getState() as AppState);

@@ -320,6 +320,8 @@ export const freighterApiMessageListener = (
         }
       }
 
+      const uuid = crypto.randomUUID();
+
       const transactionInfo = {
         transaction,
         transactionXdr,
@@ -327,9 +329,13 @@ export const freighterApiMessageListener = (
         url: tabUrl,
         flaggedKeys,
         accountToSign: accountToSign || addressToSign,
+        uuid,
       } as TransactionInfo;
 
-      transactionQueue.push(transaction as StellarSdk.Transaction);
+      transactionQueue.push({
+        transaction: transaction as StellarSdk.Transaction,
+        uuid,
+      });
       const encodedBlob = encodeObject(transactionInfo);
 
       const popup = await browser.windows.create({
@@ -392,6 +398,8 @@ export const freighterApiMessageListener = (
       const domain = getUrlHostname(tabUrl);
       const punycodedDomain = getPunycodedDomain(domain);
 
+      const uuid = crypto.randomUUID();
+
       const blobData: MessageToSign = {
         apiVersion,
         domain: punycodedDomain,
@@ -400,9 +408,10 @@ export const freighterApiMessageListener = (
         url: tabUrl,
         accountToSign: accountToSign || address,
         networkPassphrase,
+        uuid,
       };
 
-      blobQueue.push(blobData);
+      blobQueue.push({ blob: blobData, uuid });
       const encodedBlob = encodeObject(blobData);
       const popup = await browser.windows.create({
         url: chrome.runtime.getURL(`/index.html#/sign-message?${encodedBlob}`),
@@ -473,6 +482,8 @@ export const freighterApiMessageListener = (
       const domain = getUrlHostname(tabUrl);
       const punycodedDomain = getPunycodedDomain(domain);
 
+      const uuid = crypto.randomUUID();
+
       const authEntry: EntryToSign = {
         entry: entryXdr,
         accountToSign: accountToSign || address,
@@ -480,9 +491,10 @@ export const freighterApiMessageListener = (
         domain: punycodedDomain,
         url: tabUrl,
         networkPassphrase,
+        uuid,
       };
 
-      authEntryQueue.push(authEntry);
+      authEntryQueue.push({ authEntry, uuid });
       const encodedAuthEntry = encodeObject(authEntry);
       const popup = await browser.windows.create({
         url: chrome.runtime.getURL(

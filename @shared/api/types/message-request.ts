@@ -23,6 +23,7 @@ export interface MessageToSign {
   url: string;
   accountToSign?: string;
   networkPassphrase?: string;
+  uuid: string;
 }
 
 export interface EntryToSign {
@@ -32,6 +33,7 @@ export interface EntryToSign {
   url: string;
   accountToSign?: string;
   networkPassphrase?: string;
+  uuid: string;
 }
 
 export type RequestAccessResponse = string;
@@ -50,11 +52,26 @@ export type ResponseQueue<T> = Array<
 
 export type TokenQueue = TokenToAdd[];
 
-export type TransactionQueue = Transaction[];
+export interface TransactionQueueItem {
+  transaction: Transaction;
+  uuid: string;
+}
 
-export type BlobQueue = MessageToSign[];
+export type TransactionQueue = TransactionQueueItem[];
 
-export type EntryQueue = EntryToSign[];
+export interface BlobQueueItem {
+  blob: MessageToSign;
+  uuid: string;
+}
+
+export type BlobQueue = BlobQueueItem[];
+
+export interface AuthEntryQueueItem {
+  authEntry: EntryToSign;
+  uuid: string;
+}
+
+export type EntryQueue = AuthEntryQueueItem[];
 
 export interface BaseMessage {
   activePublicKey: string;
@@ -182,15 +199,18 @@ export interface AddTokenMessage extends BaseMessage {
 
 export interface SignTransactionMessage extends BaseMessage {
   type: SERVICE_TYPES.SIGN_TRANSACTION;
+  uuid?: string;
 }
 
 export interface SignBlobMessage extends BaseMessage {
   apiVersion?: string;
   type: SERVICE_TYPES.SIGN_BLOB;
+  uuid?: string;
 }
 
 export interface SignAuthEntryMessage extends BaseMessage {
   type: SERVICE_TYPES.SIGN_AUTH_ENTRY;
+  uuid?: string;
 }
 
 export interface RejectTransactionMessage extends BaseMessage {

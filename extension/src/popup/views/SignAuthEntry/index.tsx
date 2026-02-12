@@ -72,7 +72,13 @@ export const SignAuthEntry = () => {
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-  } = useSetupSigningFlow(rejectAuthEntry, signEntry, params.entry);
+  } = useSetupSigningFlow(
+    rejectAuthEntry,
+    signEntry,
+    params.entry,
+    undefined,
+    params.uuid,
+  );
 
   useEffect(() => {
     const getData = async () => {

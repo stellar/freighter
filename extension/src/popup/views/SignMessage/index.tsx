@@ -82,6 +82,7 @@ export const SignMessage = () => {
     signBlob,
     message.message,
     apiVersion,
+    message.uuid,
   );
 
   useEffect(() => {

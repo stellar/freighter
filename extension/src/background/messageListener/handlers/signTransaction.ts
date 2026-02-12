@@ -10,14 +10,17 @@ import {
   ResponseQueue,
   TransactionQueue,
   SignTransactionResponse,
+  SignTransactionMessage,
 } from "@shared/api/types/message-request";
 
 export const signTransaction = async ({
+  request,
   localStore,
   sessionStore,
   transactionQueue,
   responseQueue,
 }: {
+  request: SignTransactionMessage;
   localStore: DataStorageAccess;
   sessionStore: Store;
   transactionQueue: TransactionQueue;
@@ -47,9 +50,13 @@ export const signTransaction = async ({
 
     let response = "";
 
-    const transactionToSign = transactionQueue.pop();
+    const { uuid } = request;
+    const queueIndex = transactionQueue.findIndex((item) => item.uuid === uuid);
+    const transactionQueueItem =
+      queueIndex !== -1 ? transactionQueue.splice(queueIndex, 1)[0] : undefined;
 
-    if (transactionToSign) {
+    if (transactionQueueItem) {
+      const { transaction: transactionToSign } = transactionQueueItem;
       try {
         transactionToSign.sign(sourceKeys);
         response = transactionToSign.toXDR();

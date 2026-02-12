@@ -10,23 +10,25 @@ import { getSdk, isPlaywright } from "@shared/helpers/stellar";
 import {
   BlobQueue,
   ResponseQueue,
+  SignBlobMessage,
   SignBlobResponse,
 } from "@shared/api/types/message-request";
 import { encodeSep53Message } from "helpers/stellar";
 
 export const signBlob = async ({
-  apiVersion,
+  request,
   localStore,
   sessionStore,
   blobQueue,
   responseQueue,
 }: {
-  apiVersion?: string;
+  request: SignBlobMessage;
   localStore: DataStorageAccess;
   sessionStore: Store;
   blobQueue: BlobQueue;
   responseQueue: ResponseQueue<SignBlobResponse>;
 }) => {
+  const { uuid, apiVersion } = request;
   const keyId = (await localStore.getItem(KEY_ID)) || "";
   let privateKey = "";
 
@@ -46,7 +48,10 @@ export const signBlob = async ({
 
   if (privateKey.length) {
     const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
-    const blob = blobQueue.pop();
+    const queueIndex = blobQueue.findIndex((item) => item.uuid === uuid);
+    const blobQueueItem =
+      queueIndex !== -1 ? blobQueue.splice(queueIndex, 1)[0] : undefined;
+    const blob = blobQueueItem?.blob;
 
     let response = null;
 

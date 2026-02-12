@@ -3,6 +3,8 @@ import {
   ResponseQueue,
   ServiceMessageRequest,
   TransactionQueue,
+  BlobQueue,
+  EntryQueue,
   SignTransactionResponse,
   SignBlobResponse,
   SignAuthEntryResponse,
@@ -18,7 +20,7 @@ import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { SessionTimer } from "background/helpers/session";
 import { publicKeySelector } from "background/ducks/session";
-import { EntryToSign, MessageToSign, TokenToAdd } from "helpers/urls";
+import { TokenToAdd } from "helpers/urls";
 
 import { fundAccount } from "./handlers/fundAccount";
 import { createAccount } from "./handlers/createAccount";
@@ -94,8 +96,8 @@ export const responseQueue: ResponseQueue<
 > = [];
 export const transactionQueue: TransactionQueue = [];
 export const tokenQueue: TokenToAdd[] = [];
-export const blobQueue: MessageToSign[] = [];
-export const authEntryQueue: EntryToSign[] = [];
+export const blobQueue: BlobQueue = [];
+export const authEntryQueue: EntryQueue = [];
 
 export const popupMessageListener = (
   request: ServiceMessageRequest,
@@ -276,6 +278,7 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.SIGN_TRANSACTION: {
       return signTransaction({
+        request,
         localStore,
         sessionStore,
         responseQueue,
@@ -284,7 +287,7 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.SIGN_BLOB: {
       return signBlob({
-        apiVersion: request.apiVersion,
+        request,
         localStore,
         sessionStore,
         responseQueue,
@@ -293,6 +296,7 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.SIGN_AUTH_ENTRY: {
       return signAuthEntry({
+        request,
         localStore,
         sessionStore,
         responseQueue,

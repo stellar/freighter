@@ -9,20 +9,24 @@ import { getSdk } from "@shared/helpers/stellar";
 import {
   EntryQueue,
   ResponseQueue,
+  SignAuthEntryMessage,
   SignAuthEntryResponse,
 } from "@shared/api/types/message-request";
 
 export const signAuthEntry = async ({
+  request,
   localStore,
   sessionStore,
   authEntryQueue,
   responseQueue,
 }: {
+  request: SignAuthEntryMessage;
   localStore: DataStorageAccess;
   sessionStore: Store;
   authEntryQueue: EntryQueue;
   responseQueue: ResponseQueue<SignAuthEntryResponse>;
 }) => {
+  const { uuid } = request;
   const keyId = (await localStore.getItem(KEY_ID)) || "";
   let privateKey = "";
 
@@ -44,7 +48,10 @@ export const signAuthEntry = async ({
 
   if (privateKey.length) {
     const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
-    const authEntry = authEntryQueue.pop();
+    const queueIndex = authEntryQueue.findIndex((item) => item.uuid === uuid);
+    const authEntryQueueItem =
+      queueIndex !== -1 ? authEntryQueue.splice(queueIndex, 1)[0] : undefined;
+    const authEntry = authEntryQueueItem?.authEntry;
 
     const response = authEntry
       ? sourceKeys.sign(Sdk.hash(Buffer.from(authEntry.entry, "base64")))

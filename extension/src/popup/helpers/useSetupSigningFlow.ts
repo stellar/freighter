@@ -26,6 +26,7 @@ export function useSetupSigningFlow<Arg = void>(
   signFn: AppThunk<Arg>,
   transactionXdr: string,
   apiVersion?: string,
+  uuid?: string,
 ) {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
@@ -53,7 +54,7 @@ export function useSetupSigningFlow<Arg = void>(
       );
       setStartedHwSign(true);
     } else {
-      await dispatch(signFn({ apiVersion } as Arg));
+      await dispatch(signFn({ apiVersion, uuid } as Arg));
       await emitMetric(METRIC_NAMES.approveSign);
       window.close();
     }

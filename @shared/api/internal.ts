@@ -1303,12 +1303,15 @@ export const addToken = async ({
 
 export const signTransaction = async ({
   activePublicKey,
+  uuid,
 }: {
   activePublicKey: string;
+  uuid?: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
       activePublicKey,
+      uuid,
       type: SERVICE_TYPES.SIGN_TRANSACTION,
     });
   } catch (e) {
@@ -1319,14 +1322,17 @@ export const signTransaction = async ({
 export const signBlob = async ({
   apiVersion,
   activePublicKey,
+  uuid,
 }: {
   apiVersion?: string;
   activePublicKey: string;
+  uuid?: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
       apiVersion,
       activePublicKey,
+      uuid,
       type: SERVICE_TYPES.SIGN_BLOB,
     });
   } catch (e) {
@@ -1336,12 +1342,15 @@ export const signBlob = async ({
 
 export const signAuthEntry = async ({
   activePublicKey,
+  uuid,
 }: {
   activePublicKey: string;
+  uuid?: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
       activePublicKey,
+      uuid,
       type: SERVICE_TYPES.SIGN_AUTH_ENTRY,
     });
   } catch (e) {
