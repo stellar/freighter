@@ -7,6 +7,9 @@ import {
 import { rejectAccess } from "../handlers/rejectAccess";
 import { captureException } from "@sentry/browser";
 
+const MOCK_PUBLIC_KEY =
+  "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
+
 jest.mock("@sentry/browser", () => ({
   captureException: jest.fn(),
 }));
@@ -34,6 +37,7 @@ describe("rejectAccess handler", () => {
 
     const request: RejectAccessMessage = {
       type: SERVICE_TYPES.REJECT_ACCESS,
+      activePublicKey: MOCK_PUBLIC_KEY,
       uuid: "uuid-2",
     };
 
@@ -54,6 +58,7 @@ describe("rejectAccess handler", () => {
 
     const request: RejectAccessMessage = {
       type: SERVICE_TYPES.REJECT_ACCESS,
+      activePublicKey: MOCK_PUBLIC_KEY,
       uuid: "non-existent-uuid",
     };
 
@@ -101,6 +106,7 @@ describe("rejectAccess handler", () => {
 
     const request: RejectAccessMessage = {
       type: SERVICE_TYPES.REJECT_ACCESS,
+      activePublicKey: MOCK_PUBLIC_KEY,
       uuid: "bbb",
     };
 
@@ -120,6 +126,7 @@ describe("rejectAccess handler", () => {
   it("handles empty response queue gracefully", () => {
     const request: RejectAccessMessage = {
       type: SERVICE_TYPES.REJECT_ACCESS,
+      activePublicKey: MOCK_PUBLIC_KEY,
       uuid: "uuid-1",
     };
 
@@ -145,6 +152,7 @@ describe("rejectAccess handler", () => {
 
     const request: RejectAccessMessage = {
       type: SERVICE_TYPES.REJECT_ACCESS,
+      activePublicKey: MOCK_PUBLIC_KEY,
       uuid: "uuid-1",
     };
 

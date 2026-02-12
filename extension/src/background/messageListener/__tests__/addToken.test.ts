@@ -42,7 +42,10 @@ const mockSessionStore = {
   }),
 } as any;
 
-const makeTokenData = (uuid: string, contractId: string = MOCK_CONTRACT_ID) => ({
+const makeTokenData = (
+  uuid: string,
+  contractId: string = MOCK_CONTRACT_ID,
+) => ({
   domain: "example.com",
   url: "https://example.com",
   contractId,
@@ -76,6 +79,7 @@ describe("addToken handler", () => {
 
     const request: AddTokenMessage = {
       type: SERVICE_TYPES.ADD_TOKEN,
+      activePublicKey: MOCK_PUBLIC_KEY,
       uuid: "uuid-2",
     };
 
@@ -98,6 +102,7 @@ describe("addToken handler", () => {
 
     const request: AddTokenMessage = {
       type: SERVICE_TYPES.ADD_TOKEN,
+      activePublicKey: MOCK_PUBLIC_KEY,
       uuid: "non-existent-uuid",
     };
 
@@ -145,6 +150,7 @@ describe("addToken handler", () => {
 
     const request: AddTokenMessage = {
       type: SERVICE_TYPES.ADD_TOKEN,
+      activePublicKey: MOCK_PUBLIC_KEY,
       uuid: "bbb",
     };
 
@@ -172,6 +178,7 @@ describe("addToken handler", () => {
 
     const request: AddTokenMessage = {
       type: SERVICE_TYPES.ADD_TOKEN,
+      activePublicKey: MOCK_PUBLIC_KEY,
       uuid: "uuid-1",
     };
 
@@ -200,6 +207,7 @@ describe("addToken handler", () => {
 
     const request: AddTokenMessage = {
       type: SERVICE_TYPES.ADD_TOKEN,
+      activePublicKey: MOCK_PUBLIC_KEY,
       uuid: "uuid-1",
     };
 
@@ -225,6 +233,7 @@ describe("addToken handler", () => {
 
     const request: AddTokenMessage = {
       type: SERVICE_TYPES.ADD_TOKEN,
+      activePublicKey: MOCK_PUBLIC_KEY,
       uuid: "uuid-1",
     };
 

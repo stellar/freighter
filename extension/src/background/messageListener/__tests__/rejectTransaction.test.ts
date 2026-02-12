@@ -12,6 +12,9 @@ jest.mock("@sentry/browser", () => ({
   captureException: jest.fn(),
 }));
 
+const MOCK_PUBLIC_KEY =
+  "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
+
 describe("rejectTransaction handler", () => {
   let transactionQueue: TransactionQueue;
   let responseQueue: ResponseQueue<RejectTransactionResponse>;
@@ -38,6 +41,7 @@ describe("rejectTransaction handler", () => {
 
     const request: RejectTransactionMessage = {
       type: SERVICE_TYPES.REJECT_TRANSACTION,
+      activePublicKey: MOCK_PUBLIC_KEY,
       uuid: "uuid-2",
     };
 
@@ -60,6 +64,7 @@ describe("rejectTransaction handler", () => {
 
     const request: RejectTransactionMessage = {
       type: SERVICE_TYPES.REJECT_TRANSACTION,
+      activePublicKey: MOCK_PUBLIC_KEY,
       uuid: "uuid-1",
     };
 
@@ -84,6 +89,7 @@ describe("rejectTransaction handler", () => {
 
     const request: RejectTransactionMessage = {
       type: SERVICE_TYPES.REJECT_TRANSACTION,
+      activePublicKey: MOCK_PUBLIC_KEY,
       uuid: "non-existent-uuid",
     };
 
@@ -136,6 +142,7 @@ describe("rejectTransaction handler", () => {
 
     const request: RejectTransactionMessage = {
       type: SERVICE_TYPES.REJECT_TRANSACTION,
+      activePublicKey: MOCK_PUBLIC_KEY,
       uuid: "bbb",
     };
 
@@ -164,6 +171,7 @@ describe("rejectTransaction handler", () => {
 
     const request: RejectTransactionMessage = {
       type: SERVICE_TYPES.REJECT_TRANSACTION,
+      activePublicKey: MOCK_PUBLIC_KEY,
       uuid: "uuid-1",
     };
 
@@ -191,6 +199,7 @@ describe("rejectTransaction handler", () => {
 
     const request: RejectTransactionMessage = {
       type: SERVICE_TYPES.REJECT_TRANSACTION,
+      activePublicKey: MOCK_PUBLIC_KEY,
       uuid: "uuid-1",
     };
 
