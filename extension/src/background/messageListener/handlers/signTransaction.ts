@@ -61,15 +61,20 @@ export const signTransaction = async ({
     const transactionQueueItem =
       queueIndex !== -1 ? transactionQueue.splice(queueIndex, 1)[0] : undefined;
 
-    if (transactionQueueItem) {
-      const { transaction: transactionToSign } = transactionQueueItem;
-      try {
-        transactionToSign.sign(sourceKeys);
-        response = transactionToSign.toXDR();
-      } catch (e) {
-        console.error(e);
-        return { error: e };
-      }
+    if (!transactionQueueItem) {
+      captureException(
+        `signTransaction: no matching transaction found for uuid ${uuid}`,
+      );
+      return { error: "Transaction not found" };
+    }
+
+    const { transaction: transactionToSign } = transactionQueueItem;
+    try {
+      transactionToSign.sign(sourceKeys);
+      response = transactionToSign.toXDR();
+    } catch (e) {
+      console.error(e);
+      return { error: e };
     }
 
     const responseIndex = responseQueue.findIndex((item) => item.uuid === uuid);
