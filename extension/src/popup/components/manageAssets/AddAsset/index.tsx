@@ -145,6 +145,7 @@ export const AddAsset = () => {
       const issuer = isSacContract
         ? tokenDetailsResponse.name.split(":")[1] || ""
         : contractId; // get the issuer name, if applicable ,
+
       const scannedAsset = await scanAsset(
         `${tokenDetailsResponse.symbol}-${issuer}`,
         networkDetails,

@@ -80,6 +80,8 @@ import { dismissMobileAppBanner } from "./handlers/dismissMobileAppBanner";
 import { loadBackendSettings } from "./handlers/loadBackendSettings";
 import { addCollectible } from "./handlers/addCollectible";
 import { getCollectibles } from "./handlers/getCollectibles";
+import { changeCollectibleVisibility } from "./handlers/changeCollectibleVisibility";
+import { getHiddenCollectibles } from "./handlers/getHiddenCollectibles";
 
 const numOfPublicKeysToCheck = 5;
 
@@ -373,7 +375,7 @@ export const popupMessageListener = (
       });
     }
     case SERVICE_TYPES.LOAD_BACKEND_SETTINGS: {
-      return loadBackendSettings();
+      return loadBackendSettings({ localStore });
     }
     case SERVICE_TYPES.GET_CACHED_ASSET_ICON_LIST: {
       return getCachedAssetIconList({
@@ -500,6 +502,17 @@ export const popupMessageListener = (
     case SERVICE_TYPES.GET_COLLECTIBLES: {
       return getCollectibles({
         request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.CHANGE_COLLECTIBLE_VISIBILITY: {
+      return changeCollectibleVisibility({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES: {
+      return getHiddenCollectibles({
         localStore,
       });
     }

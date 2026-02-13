@@ -61,6 +61,7 @@ function useGetChangeTrustData({
         },
         networkDetails,
       });
+
       if (!asset.contract || isSac) {
         const server = stellarSdkServer(
           networkDetails.networkUrl,

@@ -28,7 +28,7 @@ import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 export interface ResolvedData {
   type: AppDataType.RESOLVED;
   scanResult: BlockAidScanTxResult | null;
-  balances: AccountBalances;
+  balances: AccountBalances | null;
   publicKey: string;
   signFlowState: {
     allAccounts: Account[];
@@ -87,13 +87,24 @@ function useGetSignTxData(
       const allAccounts = appData.account.allAccounts;
       const networkDetails = appData.settings.networkDetails;
       const isMainnetNetwork = isMainnet(networkDetails);
-      const balancesResult = await fetchBalances(
-        publicKey,
-        isMainnetNetwork,
-        networkDetails,
-        false,
-        true,
-      );
+
+      // Fetch balances with soft failure handling - if this fails, we continue
+      // without balance data (balance-related warnings will be skipped)
+      let balancesResult: AccountBalances | null = null;
+      try {
+        const fetchResult = await fetchBalances(
+          publicKey,
+          isMainnetNetwork,
+          networkDetails,
+          false,
+          true,
+        );
+        if (!isError<AccountBalances>(fetchResult)) {
+          balancesResult = fetchResult;
+        }
+      } catch {
+        // Balance fetch failed - continue without balance data
+      }
 
       // handle auto selecting the right account based on `accountToSign`
       const currentAccount = signFlowAccountSelector({
@@ -242,10 +253,6 @@ function useGetSignTxData(
             }
           }
         }
-      }
-
-      if (isError<AccountBalances>(balancesResult)) {
-        throw new Error(balancesResult.message);
       }
 
       const payload = {
