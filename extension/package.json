@@ -61,7 +61,7 @@
     "jest-environment-jsdom": "29.7.0",
     "js-yaml": "4.1.1",
     "jsonschema": "1.5.0",
-    "lodash": "4.17.21",
+    "lodash": "4.17.23",
     "mini-css-extract-plugin": "2.9.2",
     "prettier": "3.5.3",
     "pretty-quick": "4.1.1",
