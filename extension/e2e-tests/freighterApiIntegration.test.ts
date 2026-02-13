@@ -171,6 +171,74 @@ test("should not sign transaction when not allowed", async ({
   });
 });
 
+test("should sign correct transactions when Freighter receives multiple requests", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
+  await loginToTestAccount({ page, extensionId });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const txPopupPromise = page.context().waitForEvent("page");
+
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signTransaction",
+  );
+  await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Sign Transaction XDR").click();
+
+  const txPopup = await txPopupPromise;
+
+  await expect(txPopup.getByText("Confirm Transaction")).toBeVisible();
+
+  await expect(txPopup.getByText("GDF3…ZEFY")).toBeVisible();
+
+  await expect(txPopup.getByText("-5")).toBeVisible();
+
+  // now open a third tab and send another transaction signing request before approving the first one
+
+  const pageThree = await page.context().newPage();
+  await pageThree.waitForLoadState();
+
+  const txPopupPromise2 = page.context().waitForEvent("page");
+  await pageThree.goto(
+    "https://docs.freighter.app/docs/playground/signTransaction",
+  );
+  await pageThree
+    .getByRole("textbox")
+    .first()
+    .fill(
+      "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAAGQAAAUVAAAA/QAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAAAAAAABfXhAAAAAAAAAAAA",
+    );
+  await pageThree
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageThree.getByText("Sign Transaction XDR").click();
+
+  const txPopup2 = await txPopupPromise2;
+  await expect(txPopup2.getByText("Confirm Transaction")).toBeVisible();
+  await expect(txPopup2.getByText("GDF3…ZEFY")).toBeVisible();
+  await expect(txPopup2.getByText("-10")).toBeVisible();
+
+  await txPopup.getByRole("button", { name: "Confirm" }).click();
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(SIGNED_TX);
+});
+
 test("should sign auth entry when allowed", async ({
   page,
   extensionId,
@@ -391,6 +459,65 @@ test("should sign message long string when allowed", async ({
   await popup.getByTestId("sign-message-approve-button").click();
 
   await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(LONG_SIGNED_MSG);
+  await expect(pageTwo.getByRole("textbox").nth(4)).toHaveValue(
+    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+  );
+});
+
+test("should sign correct message when Freighter receives multiple requests", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
+  await loginToTestAccount({ page, extensionId });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Sign message").click();
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText(MSG_TO_SIGN)).toBeVisible();
+
+  await popup.getByTestId("sign-message-approve-button").click();
+
+  // now open a third tab and send another transaction signing request before approving the first one
+
+  const pageThree = await page.context().newPage();
+  await pageThree.waitForLoadState();
+
+  const popupPromise2 = page.context().waitForEvent("page");
+  await pageThree.goto(
+    "https://docs.freighter.app/docs/playground/signMessage",
+  );
+  await pageThree.getByRole("textbox").first().fill("new message");
+  await pageThree
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageThree.getByText("Sign message").click();
+
+  const popup2 = await popupPromise2;
+  await expect(popup2.getByText("new message")).toBeVisible();
+
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(SIGNED_MSG);
   await expect(pageTwo.getByRole("textbox").nth(4)).toHaveValue(
     "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
   );

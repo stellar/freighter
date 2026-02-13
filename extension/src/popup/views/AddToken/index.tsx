@@ -55,6 +55,7 @@ export const AddToken = () => {
     url,
     contractId,
     networkPassphrase: entryNetworkPassphrase,
+    uuid,
   } = params;
 
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
@@ -102,6 +103,7 @@ export const AddToken = () => {
     addToken,
     assetCode,
     assetIssuer,
+    uuid,
   });
 
   const { handleTokenLookup } = useTokenLookup({

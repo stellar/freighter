@@ -81,6 +81,7 @@ export const SignMessage = () => {
     rejectTransaction,
     signBlob,
     message.message,
+    message.uuid,
     apiVersion,
   );
 
@@ -175,7 +176,7 @@ export const SignMessage = () => {
   ) : (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
-        <HardwareSign walletType={hardwareWalletType} />
+        <HardwareSign walletType={hardwareWalletType} uuid={message.uuid} />
       )}
       <React.Fragment>
         <View.Content>
