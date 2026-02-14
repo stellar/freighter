@@ -353,6 +353,7 @@ describe("SignTransactions", () => {
         _operations: [op],
       },
       isHttpsDomain: false,
+      uuid: "123-123-123-123-123",
     }));
     render(
       <Wrapper
@@ -465,6 +466,7 @@ describe("SignTransactions", () => {
       },
       isHttpsDomain: false,
       domain: "laboratory.stellar.org",
+      uuid: "123-123-123-123-123",
     }));
     render(
       <Wrapper
@@ -600,6 +602,7 @@ describe("SignTransactions", () => {
         _operations: [op],
       },
       isHttpsDomain: false,
+      uuid: "123-123-123-123-123",
     }));
 
     render(
@@ -710,6 +713,7 @@ describe("SignTransactions", () => {
       },
       isHttpsDomain: false,
       domain: "laboratory.stellar.org",
+      uuid: "123-123-123-123-123",
     }));
     render(
       <Wrapper
@@ -828,6 +832,7 @@ describe("SignTransactions", () => {
       },
       isHttpsDomain: false,
       domain: "laboratory.stellar.org",
+      uuid: "123-123-123-123-123",
     }));
     render(
       <Wrapper
@@ -946,6 +951,7 @@ describe("SignTransactions", () => {
       },
       isHttpsDomain: false,
       domain: "laboratory.stellar.org",
+      uuid: "123-123-123-123-123",
     }));
     render(
       <Wrapper
@@ -1058,6 +1064,7 @@ describe("SignTransactions", () => {
       },
       isHttpsDomain: false,
       domain: "laboratory.stellar.org",
+      uuid: "123-123-123-123-123",
     }));
     render(
       <Wrapper

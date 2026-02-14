@@ -12,4 +12,5 @@ export interface TransactionInfo {
   flaggedKeys: FlaggedKeys;
   title?: string;
   accountToSign?: string;
+  uuid: string;
 }

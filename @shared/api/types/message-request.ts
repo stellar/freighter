@@ -13,6 +13,7 @@ export interface TokenToAdd {
   url: string;
   contractId: string;
   networkPassphrase?: string;
+  uuid: string;
 }
 
 export interface MessageToSign {
@@ -23,6 +24,7 @@ export interface MessageToSign {
   url: string;
   accountToSign?: string;
   networkPassphrase?: string;
+  uuid: string;
 }
 
 export interface EntryToSign {
@@ -32,6 +34,7 @@ export interface EntryToSign {
   url: string;
   accountToSign?: string;
   networkPassphrase?: string;
+  uuid: string;
 }
 
 export type RequestAccessResponse = string;
@@ -44,17 +47,35 @@ export type SignedHwPayloadResponse = string | Buffer<ArrayBufferLike>;
 export type RejectAccessResponse = undefined;
 export type RejectTransactionResponse = undefined;
 
-export type ResponseQueue<T> = Array<
-  (message: T, messageAddress?: string) => void
->;
+export interface ResponseQueueItem<T> {
+  response: (message: T, messageAddress?: string) => void;
+  uuid: string;
+}
+
+export type ResponseQueue<T> = ResponseQueueItem<T>[];
 
 export type TokenQueue = TokenToAdd[];
 
-export type TransactionQueue = Transaction[];
+export interface TransactionQueueItem {
+  transaction: Transaction;
+  uuid: string;
+}
 
-export type BlobQueue = MessageToSign[];
+export type TransactionQueue = TransactionQueueItem[];
 
-export type EntryQueue = EntryToSign[];
+export interface BlobQueueItem {
+  blob: MessageToSign;
+  uuid: string;
+}
+
+export type BlobQueue = BlobQueueItem[];
+
+export interface AuthEntryQueueItem {
+  authEntry: EntryToSign;
+  uuid: string;
+}
+
+export type EntryQueue = AuthEntryQueueItem[];
 
 export interface BaseMessage {
   activePublicKey: string;
@@ -165,36 +186,44 @@ export interface ConfirmPasswordMessage extends BaseMessage {
 export interface GrantAccessMessage extends BaseMessage {
   type: SERVICE_TYPES.GRANT_ACCESS;
   url: string;
+  uuid: string;
 }
 
 export interface RejectAccessMessage extends BaseMessage {
   type: SERVICE_TYPES.REJECT_ACCESS;
+  uuid: string;
 }
 
 export interface HandleSignedHWPayloadMessage extends BaseMessage {
   type: SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD;
   signedPayload: string | Buffer<ArrayBufferLike>;
+  uuid: string;
 }
 
 export interface AddTokenMessage extends BaseMessage {
   type: SERVICE_TYPES.ADD_TOKEN;
+  uuid: string;
 }
 
 export interface SignTransactionMessage extends BaseMessage {
   type: SERVICE_TYPES.SIGN_TRANSACTION;
+  uuid: string;
 }
 
 export interface SignBlobMessage extends BaseMessage {
   apiVersion?: string;
   type: SERVICE_TYPES.SIGN_BLOB;
+  uuid: string;
 }
 
 export interface SignAuthEntryMessage extends BaseMessage {
   type: SERVICE_TYPES.SIGN_AUTH_ENTRY;
+  uuid: string;
 }
 
 export interface RejectTransactionMessage extends BaseMessage {
   type: SERVICE_TYPES.REJECT_TRANSACTION;
+  uuid: string;
 }
 
 export interface SignFreighterTransactionMessage extends BaseMessage {

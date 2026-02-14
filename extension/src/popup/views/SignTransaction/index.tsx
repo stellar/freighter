@@ -90,6 +90,7 @@ export const SignTransaction = () => {
     domain,
     isHttpsDomain,
     flaggedKeys,
+    uuid,
   } = tx;
 
   const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =
@@ -124,7 +125,12 @@ export const SignTransaction = () => {
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-  } = useSetupSigningFlow(rejectTransaction, signTransaction, transactionXdr);
+  } = useSetupSigningFlow(
+    rejectTransaction,
+    signTransaction,
+    transactionXdr,
+    uuid,
+  );
 
   // rebuild transaction to get Transaction prototypes
   const transaction = TransactionBuilder.fromXDR(
@@ -321,7 +327,7 @@ export const SignTransaction = () => {
   ) : (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
-        <HardwareSign walletType={hardwareWalletType} />
+        <HardwareSign walletType={hardwareWalletType} uuid={uuid} />
       )}
       <div data-testid="SignTransaction" className="SignTransaction">
         <MultiPaneSlider

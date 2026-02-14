@@ -1,6 +1,8 @@
 import { Store } from "redux";
+import { captureException } from "@sentry/browser";
 
 import {
+  AddTokenMessage,
   AddTokenResponse,
   ResponseQueue,
   TokenQueue,
@@ -11,21 +13,32 @@ import { addTokenWithContractId } from "../helpers/add-token-contract-id";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 
 export const addToken = async ({
+  request,
   localStore,
   sessionStore,
   tokenQueue,
   responseQueue,
 }: {
+  request: AddTokenMessage;
   localStore: DataStorageAccess;
   sessionStore: Store;
   tokenQueue: TokenQueue;
   responseQueue: ResponseQueue<AddTokenResponse>;
 }) => {
+  const { uuid } = request;
+
+  if (!uuid) {
+    captureException("addToken: missing uuid in request");
+    return { error: "Transaction not found" };
+  }
+
   const publicKey = publicKeySelector(sessionStore.getState());
   const networkDetails = await getNetworkDetails({ localStore });
 
   if (publicKey.length) {
-    const tokenInfo = tokenQueue.pop();
+    const tokenIndex = tokenQueue.findIndex((item) => item.uuid === uuid);
+    const tokenInfo =
+      tokenIndex !== -1 ? tokenQueue.splice(tokenIndex, 1)[0] : undefined;
 
     if (!tokenInfo?.contractId) {
       throw Error("Missing contract id");
@@ -40,13 +53,18 @@ export const addToken = async ({
       localStore,
     });
 
-    const tokenResponse = responseQueue.pop();
+    const responseIndex = responseQueue.findIndex((item) => item.uuid === uuid);
+    const tokenResponse =
+      responseIndex !== -1
+        ? responseQueue.splice(responseIndex, 1)[0]
+        : undefined;
 
-    if (typeof tokenResponse === "function") {
-      // We're only interested here if it was a success or not
-      tokenResponse(!response.error);
+    if (tokenResponse && typeof tokenResponse.response === "function") {
+      tokenResponse.response(!response.error);
       return {};
     }
+
+    captureException(`addToken: no matching response found for uuid ${uuid}`);
   }
 
   return { error: "Session timed out" };
