@@ -57,7 +57,7 @@ describe("Create account message listener", () => {
     const tempStoreId = await mockDataStorage.getItem(TEMPORARY_STORE_ID);
 
     expect(response.hasPrivateKey).toBeTruthy();
-    expect(session.hashKey?.key).not.toBeUndefined();
+    expect(session.hashKey?.key).toBeTruthy();
     expect(keyIdList.length).toBe(1);
     expect(keyId).toBeDefined();
     expect(applicationState).toBe(APPLICATION_STATE.PASSWORD_CREATED);
