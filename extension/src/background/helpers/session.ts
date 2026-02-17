@@ -75,7 +75,7 @@ export const decryptHashString = async ({
 };
 
 export const deriveKeyFromString = async (str: string) => {
-  const iterations = 1000;
+  const iterations = 600000;
   const keylen = 32;
   const keyLength = 48;
   // randomized salt will make sure the hashed password is different on every login
