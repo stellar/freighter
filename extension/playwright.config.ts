@@ -1,7 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
 
-import { POPUP_HEIGHT, POPUP_WIDTH } from "./src/constants/dimensions";
-
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
@@ -40,10 +38,6 @@ export default defineConfig({
         ...process.env,
         IS_PLAYWRIGHT: "true",
       },
-    },
-    viewport: {
-      width: POPUP_WIDTH,
-      height: POPUP_HEIGHT,
     },
   },
 
