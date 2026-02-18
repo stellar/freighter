@@ -2,6 +2,7 @@ import {
   cleanupQueue,
   startQueueCleanup,
   QUEUE_ITEM_TTL_MS,
+  activeQueueUuids,
 } from "../queueCleanup";
 import {
   TransactionQueue,
@@ -118,6 +119,44 @@ describe("queueCleanup", () => {
       expect(queue).toHaveLength(1);
       expect(queue[0].uuid).toBe("valid");
     });
+
+    it("skips items with UUIDs in activeUuids set", () => {
+      const expiredTime = Date.now() - QUEUE_ITEM_TTL_MS - 1000;
+
+      const queue = [
+        { uuid: "expired-active", createdAt: expiredTime },
+        { uuid: "expired-inactive", createdAt: expiredTime },
+      ];
+
+      const activeUuids = new Set(["expired-active"]);
+      const removedCount = cleanupQueue(queue, QUEUE_ITEM_TTL_MS, activeUuids);
+
+      // Only the inactive expired item should be removed
+      expect(removedCount).toBe(1);
+      expect(queue).toHaveLength(1);
+      expect(queue[0].uuid).toBe("expired-active");
+    });
+
+    it("uses global activeQueueUuids by default", () => {
+      const expiredTime = Date.now() - QUEUE_ITEM_TTL_MS - 1000;
+
+      // Add to global set
+      activeQueueUuids.add("globally-active");
+
+      const queue = [
+        { uuid: "globally-active", createdAt: expiredTime },
+        { uuid: "not-active", createdAt: expiredTime },
+      ];
+
+      const removedCount = cleanupQueue(queue);
+
+      expect(removedCount).toBe(1);
+      expect(queue).toHaveLength(1);
+      expect(queue[0].uuid).toBe("globally-active");
+
+      // Cleanup
+      activeQueueUuids.delete("globally-active");
+    });
   });
 
   describe("startQueueCleanup", () => {
@@ -213,6 +252,49 @@ describe("queueCleanup", () => {
 
       // Item should still be there since cleanup was stopped
       expect(responseQueue).toHaveLength(1);
+    });
+
+    it("preserves items with active UUIDs during periodic cleanup", () => {
+      const expiredTime = Date.now() - QUEUE_ITEM_TTL_MS - 1000;
+
+      const transactionQueue: TransactionQueue = [
+        { transaction: {} as any, uuid: "active-tx", createdAt: expiredTime },
+        { transaction: {} as any, uuid: "inactive-tx", createdAt: expiredTime },
+      ];
+      const responseQueue: ResponseQueue<unknown> = [
+        { response: jest.fn(), uuid: "active-tx", createdAt: expiredTime },
+        { response: jest.fn(), uuid: "inactive-tx", createdAt: expiredTime },
+      ];
+      const tokenQueue: TokenQueue = [];
+      const blobQueue: BlobQueue = [];
+      const authEntryQueue: EntryQueue = [];
+
+      // Mark one as active
+      activeQueueUuids.add("active-tx");
+
+      const stopCleanup = startQueueCleanup(
+        {
+          responseQueue,
+          transactionQueue,
+          tokenQueue,
+          blobQueue,
+          authEntryQueue,
+        },
+        1000,
+      );
+
+      // Advance time to trigger cleanup
+      jest.advanceTimersByTime(1000);
+
+      // Active items should be preserved
+      expect(transactionQueue).toHaveLength(1);
+      expect(transactionQueue[0].uuid).toBe("active-tx");
+      expect(responseQueue).toHaveLength(1);
+      expect(responseQueue[0].uuid).toBe("active-tx");
+
+      // Cleanup
+      stopCleanup();
+      activeQueueUuids.delete("active-tx");
     });
   });
 });

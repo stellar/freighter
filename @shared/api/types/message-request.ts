@@ -430,6 +430,12 @@ export interface GetHiddenCollectiblesMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES;
 }
 
+export interface MarkQueueActiveMessage extends BaseMessage {
+  type: SERVICE_TYPES.MARK_QUEUE_ACTIVE;
+  uuid: string;
+  isActive: boolean;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -491,4 +497,5 @@ export type ServiceMessageRequest =
   | AddCollectibleMessage
   | GetCollectiblesMessage
   | ChangeCollectibleVisibilityMessage
-  | GetHiddenCollectiblesMessage;
+  | GetHiddenCollectiblesMessage
+  | MarkQueueActiveMessage;

@@ -2350,3 +2350,22 @@ export const getHiddenCollectibles = async ({
     error: response?.error || "",
   };
 };
+
+export const markQueueActive = async ({
+  uuid,
+  isActive,
+}: {
+  uuid: string;
+  isActive: boolean;
+}): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      activePublicKey: null,
+      uuid,
+      isActive,
+      type: SERVICE_TYPES.MARK_QUEUE_ACTIVE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};

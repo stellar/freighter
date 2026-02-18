@@ -40,6 +40,7 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getSiteFavicon } from "popup/helpers/getSiteFavicon";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import "./styles.scss";
 
@@ -64,6 +65,9 @@ export const SignMessage = () => {
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
   });
+
+  // Mark this queue item as active to prevent TTL cleanup while popup is open
+  useMarkQueueActive(message.uuid);
 
   const { state: signMessageState, fetchData } =
     useGetSignMessageData(accountToSign);
