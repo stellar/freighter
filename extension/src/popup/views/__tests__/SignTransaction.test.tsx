@@ -145,6 +145,7 @@ const mockTransactionInfo = {
   operationTypes: [],
   isDomainListedAllowed: true,
   flaggedKeys: { test: { tags: [""] } },
+  uuid: "mock-uuid",
 };
 
 const transactions = {

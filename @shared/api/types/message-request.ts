@@ -55,15 +55,23 @@ export type RejectTransactionResponse = undefined;
 export interface ResponseQueueItem<T> {
   response: (message: T, messageAddress?: string) => void;
   uuid: string;
+  createdAt: number;
 }
 
 export type ResponseQueue<T> = ResponseQueueItem<T>[];
 
-export type TokenQueue = TokenToAdd[];
+export interface TokenQueueItem {
+  token: TokenToAdd;
+  uuid: string;
+  createdAt: number;
+}
+
+export type TokenQueue = TokenQueueItem[];
 
 export interface TransactionQueueItem {
   transaction: Transaction;
   uuid: string;
+  createdAt: number;
 }
 
 export type TransactionQueue = TransactionQueueItem[];
@@ -71,6 +79,7 @@ export type TransactionQueue = TransactionQueueItem[];
 export interface BlobQueueItem {
   blob: MessageToSign;
   uuid: string;
+  createdAt: number;
 }
 
 export type BlobQueue = BlobQueueItem[];
@@ -78,6 +87,7 @@ export type BlobQueue = BlobQueueItem[];
 export interface AuthEntryQueueItem {
   authEntry: EntryToSign;
   uuid: string;
+  createdAt: number;
 }
 
 export type EntryQueue = AuthEntryQueueItem[];

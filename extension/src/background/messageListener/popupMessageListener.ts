@@ -5,6 +5,7 @@ import {
   TransactionQueue,
   BlobQueue,
   EntryQueue,
+  TokenQueue,
   SignTransactionResponse,
   SignBlobResponse,
   SignAuthEntryResponse,
@@ -20,7 +21,7 @@ import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { SessionTimer } from "background/helpers/session";
 import { publicKeySelector } from "background/ducks/session";
-import { TokenToAdd } from "helpers/urls";
+import { startQueueCleanup } from "background/helpers/queueCleanup";
 
 import { fundAccount } from "./handlers/fundAccount";
 import { createAccount } from "./handlers/createAccount";
@@ -97,9 +98,18 @@ export const responseQueue: ResponseQueue<
   | SignedHwPayloadResponse
 > = [];
 export const transactionQueue: TransactionQueue = [];
-export const tokenQueue: TokenToAdd[] = [];
+export const tokenQueue: TokenQueue = [];
 export const blobQueue: BlobQueue = [];
 export const authEntryQueue: EntryQueue = [];
+
+// Start periodic cleanup of expired queue items
+startQueueCleanup({
+  responseQueue,
+  transactionQueue,
+  tokenQueue,
+  blobQueue,
+  authEntryQueue,
+});
 
 export const popupMessageListener = (
   request: ServiceMessageRequest,

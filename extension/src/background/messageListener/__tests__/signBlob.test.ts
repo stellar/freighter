@@ -63,6 +63,7 @@ const makeBlobData = (uuid: string) => ({
     uuid,
   } as any,
   uuid,
+  createdAt: Date.now(),
 });
 
 describe("signBlob handler", () => {
@@ -86,7 +87,11 @@ describe("signBlob handler", () => {
       makeBlobData("uuid-2"),
       makeBlobData("uuid-3"),
     );
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-2" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-2",
+      createdAt: Date.now(),
+    });
 
     const request: SignBlobMessage = {
       type: SERVICE_TYPES.SIGN_BLOB,
@@ -110,7 +115,11 @@ describe("signBlob handler", () => {
 
   it("does not sign when uuid is not found in queue", async () => {
     blobQueue.push(makeBlobData("uuid-1"));
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request: SignBlobMessage = {
       type: SERVICE_TYPES.SIGN_BLOB,
@@ -134,7 +143,11 @@ describe("signBlob handler", () => {
 
   it("returns error when uuid is undefined", async () => {
     blobQueue.push(makeBlobData("uuid-1"));
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request = {
       type: SERVICE_TYPES.SIGN_BLOB,
@@ -159,7 +172,11 @@ describe("signBlob handler", () => {
       makeBlobData("bbb"),
       makeBlobData("ccc"),
     );
-    responseQueue.push({ response: mockResponseFn, uuid: "aaa" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "aaa",
+      createdAt: Date.now(),
+    });
 
     const request: SignBlobMessage = {
       type: SERVICE_TYPES.SIGN_BLOB,
@@ -182,7 +199,11 @@ describe("signBlob handler", () => {
 
   it("extracts apiVersion from request", async () => {
     blobQueue.push(makeBlobData("uuid-1"));
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request: SignBlobMessage = {
       type: SERVICE_TYPES.SIGN_BLOB,
