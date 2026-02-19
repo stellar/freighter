@@ -68,6 +68,10 @@ const experimentalFeaturesInitialState = {
   experimentalFeaturesState: SettingsState.IDLE,
 };
 
+const debugInitialState = {
+  overriddenBlockaidResponse: null as string | null,
+};
+
 const indexerInitialState: IndexerSettings = {
   settingsState: SettingsState.IDLE,
   isSorobanPublicEnabled: true,
@@ -79,6 +83,7 @@ const initialState = {
   ...settingsInitialState,
   ...indexerInitialState,
   ...experimentalFeaturesInitialState,
+  ...debugInitialState,
   assetsLists: DEFAULT_ASSETS_LISTS,
 };
 
@@ -348,6 +353,7 @@ const settingsSlice = createSlice({
       state.error = "";
     },
     saveSettings(state, action) {
+      const payload = action?.payload || { ...initialState };
       const {
         allowList,
         isDataSharingAllowed,
@@ -359,9 +365,7 @@ const settingsSlice = createSlice({
         assetsLists,
         isNonSSLEnabled,
         isHideDustEnabled,
-      } = action?.payload || {
-        ...initialState,
-      };
+      } = payload;
       state.allowList = allowList;
       state.isDataSharingAllowed = isDataSharingAllowed;
       state.networkDetails = networkDetails;
@@ -372,6 +376,8 @@ const settingsSlice = createSlice({
       state.assetsLists = assetsLists;
       state.isNonSSLEnabled = isNonSSLEnabled;
       state.isHideDustEnabled = isHideDustEnabled;
+      state.overriddenBlockaidResponse =
+        payload.overriddenBlockaidResponse ?? null;
       state.settingsState = SettingsState.SUCCESS;
     },
     saveBackendSettings(state, action) {
@@ -382,6 +388,12 @@ const settingsSlice = createSlice({
       state.isSorobanPublicEnabled = isSorobanPublicEnabled;
       state.isRpcHealthy = isRpcHealthy;
       state.userNotification = userNotification;
+    },
+    setOverriddenBlockaidResponse(state, action: PayloadAction<string | null>) {
+      state.overriddenBlockaidResponse = action.payload;
+    },
+    clearOverriddenBlockaidResponse(state) {
+      state.overriddenBlockaidResponse = null;
     },
   },
   extraReducers: (builder) => {
@@ -412,7 +424,10 @@ const settingsSlice = createSlice({
         isRpcHealthy,
         isSorobanPublicEnabled,
         isHideDustEnabled,
-      } = action?.payload || {
+        overriddenBlockaidResponse,
+      } = (action?.payload as typeof action.payload & {
+        overriddenBlockaidResponse?: string | null;
+      }) || {
         ...initialState,
       };
 
@@ -425,6 +440,7 @@ const settingsSlice = createSlice({
         isRpcHealthy,
         isSorobanPublicEnabled,
         isHideDustEnabled,
+        overriddenBlockaidResponse: overriddenBlockaidResponse ?? null,
       };
     });
     builder.addCase(saveExperimentalFeatures.pending, (state) => ({
@@ -592,11 +608,17 @@ export const { clearSettingsError } = settingsSlice.actions;
 export const saveSettingsAction = settingsSlice.actions.saveSettings;
 export const saveBackendSettingsAction =
   settingsSlice.actions.saveBackendSettings;
+export const setOverriddenBlockaidResponseAction =
+  settingsSlice.actions.setOverriddenBlockaidResponse;
+export const clearOverriddenBlockaidResponseAction =
+  settingsSlice.actions.clearOverriddenBlockaidResponse;
 
 export const settingsSelector = (state: {
   settings: Settings &
     IndexerSettings &
-    ExperimentalFeatures & { assetsLists: AssetsLists };
+    ExperimentalFeatures & {
+      assetsLists: AssetsLists;
+    } & typeof debugInitialState;
 }) => state.settings;
 
 export const settingsDataSharingSelector = createSelector(
@@ -653,4 +675,9 @@ export const settingsStateSelector = createSelector(
 export const isNonSSLEnabledSelector = createSelector(
   settingsSelector,
   (settings) => !isMainnet(settings.networkDetails) || settings.isNonSSLEnabled,
+);
+
+export const overriddenBlockaidResponseSelector = createSelector(
+  settingsSelector,
+  (settings) => settings.overriddenBlockaidResponse,
 );

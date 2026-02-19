@@ -18,6 +18,9 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { BlockaidByLine } from "popup/components/WarningMessages";
 import { ATTACK_TO_DISPLAY } from "popup/helpers/blockaid";
+import { getBlockaidOverrideState } from "@shared/api/internal";
+import { SecurityLevel } from "popup/constants/blockaid";
+import { getSiteSecurityStates } from "popup/helpers/blockaid";
 
 import "popup/metrics/access";
 import "./styles.scss";
@@ -37,10 +40,20 @@ export const GrantAccess = () => {
 
   const [isGranting, setIsGranting] = useState(false);
   const [activePaneIndex, setActivePaneIndex] = useState(0);
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     const getData = async () => {
       await fetchData();
+      // Get override state for dev mode
+      try {
+        const overrideState = await getBlockaidOverrideState();
+        setBlockaidOverrideState(overrideState);
+      } catch {
+        setBlockaidOverrideState(null);
+      }
     };
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -105,14 +118,27 @@ export const GrantAccess = () => {
   };
 
   const scanData = state.data.scanData;
-  const isMalicious = scanData?.status === "hit" && scanData.is_malicious;
-  let attackTypes = [] as string[];
 
+  // Determine security states with override support
+  const { isMalicious, isUnableToScan } = getSiteSecurityStates(
+    scanData,
+    blockaidOverrideState,
+  );
+
+  const shouldShowWarning = isMalicious || isUnableToScan;
+
+  let attackTypes = [] as string[];
   if (scanData) {
     attackTypes = Object.keys(
       "attack_types" in scanData ? scanData.attack_types : {},
     );
   }
+
+  // Inject override message if override is active but no attack types present
+  const hasOverrideWithoutMessages =
+    blockaidOverrideState &&
+    blockaidOverrideState === SecurityLevel.MALICIOUS &&
+    attackTypes.length === 0;
 
   return (
     <>
@@ -123,6 +149,7 @@ export const GrantAccess = () => {
             <DomainScanModalInfo
               domain={domain}
               isMalicious={isMalicious}
+              isUnableToScan={isUnableToScan}
               scanStatus={scanData?.status}
               onClick={() => setActivePaneIndex(1)}
               subject={t(
@@ -155,7 +182,9 @@ export const GrantAccess = () => {
             </DomainScanModalInfo>,
             <div className="GrantAccess__BlockaidDetails">
               <div className="GrantAccess__BlockaidDetails__Header">
-                <div className="WarningMark">
+                <div
+                  className={isMalicious ? "WarningMarkError" : "WarningMark"}
+                >
                   <Icon.AlertOctagon />
                 </div>
                 <div className="Close" onClick={() => setActivePaneIndex(0)}>
@@ -171,18 +200,49 @@ export const GrantAccess = () => {
                 )}
               </div>
               <div className="GrantAccess__BlockaidDetails__Details">
-                {attackTypes.map((attack) => (
-                  <div className="GrantAccess__BlockaidDetails__DetailRow">
-                    <Icon.XCircle />
-                    <span>
-                      {
-                        ATTACK_TO_DISPLAY[
-                          attack as keyof typeof ATTACK_TO_DISPLAY
-                        ]
+                {!isUnableToScan &&
+                  attackTypes.length > 0 &&
+                  attackTypes.map((attack, index) => (
+                    <div
+                      key={index}
+                      className={
+                        isMalicious
+                          ? "GrantAccess__BlockaidDetails__DetailRowError"
+                          : "GrantAccess__BlockaidDetails__DetailRow"
                       }
-                    </span>
+                    >
+                      {isMalicious ? <Icon.XCircle /> : <Icon.MinusCircle />}
+                      <span>
+                        {
+                          ATTACK_TO_DISPLAY[
+                            attack as keyof typeof ATTACK_TO_DISPLAY
+                          ]
+                        }
+                      </span>
+                    </div>
+                  ))}
+                {hasOverrideWithoutMessages && (
+                  <div
+                    className={
+                      blockaidOverrideState === SecurityLevel.MALICIOUS
+                        ? "GrantAccess__BlockaidDetails__DetailRowError"
+                        : "GrantAccess__BlockaidDetails__DetailRow"
+                    }
+                  >
+                    {blockaidOverrideState === SecurityLevel.MALICIOUS ? (
+                      <Icon.XCircle />
+                    ) : (
+                      <Icon.MinusCircle />
+                    )}
+                    <span>{t("This site was flagged as malicious")}</span>
                   </div>
-                ))}
+                )}
+                {isUnableToScan && (
+                  <div className="GrantAccess__BlockaidDetails__DetailRow">
+                    <Icon.MinusCircle />
+                    <span>{t("Unable to scan site")}</span>
+                  </div>
+                )}
                 <BlockaidByLine address={""} />
               </div>
             </div>,
@@ -190,29 +250,33 @@ export const GrantAccess = () => {
         />
       </View.Content>
       <View.Footer>
-        {!isMalicious && (
+        {!shouldShowWarning && (
           <span className="GrantAccess__Warning">
             Only confirm if you trust this site
           </span>
         )}
-        {isMalicious ? (
+        {shouldShowWarning ? (
           <div className="GrantAccess__ButtonsContainerMalicious">
             <Button
               size="lg"
               isFullWidth
               isRounded
-              variant="destructive"
+              variant={isMalicious ? "destructive" : "secondary"}
               onClick={rejectAndClose}
             >
-              {t("Cancel")}
+              <span className="GrantAccess__CancelBtn">{t("Cancel")}</span>
             </Button>
             <Button
               data-testid="grant-access-connect-anyway-button"
-              className="GrantAccess__ConnectAnywayBtn"
+              className={
+                isMalicious
+                  ? "GrantAccess__ConnectAnywayBtn Error"
+                  : "GrantAccess__ConnectAnywayBtn"
+              }
               size="lg"
               isFullWidth
               isRounded
-              variant="error"
+              variant={isMalicious ? "error" : "tertiary"}
               isLoading={isGranting}
               onClick={() => grantAndClose()}
             >
@@ -228,7 +292,7 @@ export const GrantAccess = () => {
               variant="tertiary"
               onClick={rejectAndClose}
             >
-              {t("Cancel")}
+              <span className="GrantAccess__CancelBtn">{t("Cancel")}</span>
             </Button>
             <Button
               data-testid="grant-access-connect-button"

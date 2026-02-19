@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import * as Sentry from "@sentry/browser";
 import { useSelector } from "react-redux";
 
@@ -15,7 +15,11 @@ import { isMainnet } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { getBlockaidOverrideState } from "@shared/api/internal";
+import { isDev } from "@shared/helpers/dev";
+import { SecurityLevel } from "popup/constants/blockaid";
 import { fetchJson } from "./fetch";
+import { Action } from "constants/request";
 
 export const ATTACK_TO_DISPLAY = {
   signature_farming:
@@ -53,6 +57,8 @@ export const useScanSite = () => {
 
       if (!res.ok) {
         setError(response.error || "Failed to scan site");
+        setLoading(false);
+        return null;
       }
       setData(response.data);
       emitMetric(METRIC_NAMES.blockaidDomainScan);
@@ -108,18 +114,22 @@ export const useScanTx = () => {
         error: string | null;
       }>(`${INDEXER_URL}/scan-tx`, options);
 
+      // If there's an error or no data, treat as unable to scan
+      if (response.error || !response.data) {
+        emitMetric(METRIC_NAMES.blockaidTxScanFailed);
+        setLoading(false);
+        return null;
+      }
+
       setData(response.data);
       emitMetric(METRIC_NAMES.blockaidTxScan);
       setLoading(false);
       return response.data;
     } catch (err) {
       setError("Failed to scan transaction");
-      Sentry.captureException({
-        error: err,
-        xdr,
-        url,
-        networkDetails,
-      });
+      Sentry.captureException(
+        err instanceof Error ? err : new Error("Failed to scan transaction"),
+      );
       setLoading(false);
     }
     return null;
@@ -164,38 +174,48 @@ export const scanAsset = async (
   address: string,
   networkDetails: NetworkDetails,
   signal?: AbortSignal,
-) => {
+): Promise<BlockAidScanAssetResult | null> => {
   try {
-    if (!isMainnet(networkDetails)) {
+    // Allow scanning in test environment (Playwright) even on testnet for e2e testing
+    const isTestEnv =
+      typeof window !== "undefined" && (window as any).IS_PLAYWRIGHT === "true";
+    if (!isMainnet(networkDetails) && !isTestEnv) {
       /* Scanning assets is only supported on Mainnet */
-      return {} as BlockAidScanAssetResult;
+      return null;
     }
-    const res = await fetch(`${INDEXER_URL}/scan-asset?address=${address}`, {
-      signal,
-    });
+    const res = await fetch(
+      `${INDEXER_URL}/scan-asset?address=${encodeURIComponent(address)}`,
+      {
+        signal,
+      },
+    );
     const response = (await res.json()) as ScanAssetResponse;
 
     if (!res.ok || response.error) {
       Sentry.captureException(response.error || "Failed to scan asset");
+      emitMetric(METRIC_NAMES.blockaidAssetScanFailed);
+      // Return null to indicate unable to scan
+      return null;
     }
 
     emitMetric(METRIC_NAMES.blockaidAssetScan);
     if (!response.data) {
-      return {} as BlockAidScanAssetResult;
+      // Return null to indicate unable to scan
+      return null;
     }
     return response.data;
   } catch (err) {
     console.error("Failed to scan asset");
     Sentry.captureException(err);
   }
-  return {} as BlockAidScanAssetResult;
+  // Return null to indicate unable to scan
+  return null;
 };
 
 export const useScanAsset = (address: string) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const [scannedAssetStatus, setScannedAssetStatus] = useState(
-    {} as BlockAidScanAssetResult,
-  );
+  const [scannedAssetStatus, setScannedAssetStatus] =
+    useState<BlockAidScanAssetResult | null>(null);
 
   useEffect(() => {
     const fetchScanAssetStatus = async () => {
@@ -213,19 +233,206 @@ export const useScanAsset = (address: string) => {
   };
 };
 
-export const isAssetSuspicious = (blockaidData?: BlockAidScanAssetResult) => {
+/**
+ * Hook that returns isAssetSuspicious with blockaid override state automatically applied
+ * In production, blockaid override state is ignored
+ */
+export const useIsAssetSuspicious = () => {
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, []);
+
+  return (blockaidData?: BlockAidScanAssetResult | null) =>
+    isAssetSuspicious(blockaidData, blockaidOverrideState);
+};
+
+/**
+ * Hook that returns isTxSuspicious with blockaid override state automatically applied
+ * In production, blockaid override state is ignored
+ */
+export const useIsTxSuspicious = () => {
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, []);
+
+  return (blockaidData?: BlockAidScanTxResult | null) =>
+    isTxSuspicious(blockaidData, blockaidOverrideState);
+};
+
+/**
+ * Hook that returns shouldTreatAssetAsUnableToScan with blockaid override state automatically applied
+ * In production, blockaid override state is ignored
+ */
+export const useShouldTreatAssetAsUnableToScan = () => {
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, []);
+
+  return (blockaidData?: BlockAidScanAssetResult | null) =>
+    shouldTreatAssetAsUnableToScan(blockaidData, blockaidOverrideState);
+};
+
+/**
+ * Hook that returns shouldTreatTxAsUnableToScan with blockaid override state automatically applied
+ * In production, blockaid override state is ignored
+ */
+export const useShouldTreatTxAsUnableToScan = () => {
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, []);
+
+  return (blockaidData?: BlockAidScanTxResult | null) =>
+    shouldTreatTxAsUnableToScan(blockaidData, blockaidOverrideState);
+};
+
+/**
+ * Checks if an asset scan result indicates the scan was unable to complete
+ * Returns true if blockaidData is null/undefined or empty object without result_type
+ */
+export const isAssetUnableToScan = (
+  blockaidData?: BlockAidScanAssetResult | null,
+): boolean => {
+  return !blockaidData || !blockaidData.result_type;
+};
+
+/**
+ * Checks if a transaction scan result indicates the scan was unable to complete
+ * Returns true if blockaidData is null/undefined
+ */
+export const isTxUnableToScan = (
+  blockaidData?: BlockAidScanTxResult | null,
+): boolean => {
+  return !blockaidData;
+};
+
+/**
+ * Checks if we're in development mode
+ */
+
+/**
+ * Determines if a security level should be considered suspicious based on blockaid override state
+ * @param blockaidOverrideState - The blockaid override state security level
+ * @returns true if suspicious, false if not suspicious, null if no override or not in dev mode
+ */
+const getSuspiciousFromBlockaidOverrideState = (
+  blockaidOverrideState?: string | null,
+): boolean | null => {
+  if (!isDev) {
+    return null;
+  }
+  if (!blockaidOverrideState) {
+    return null;
+  }
+
+  if (blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN) {
+    return false; // Unable to scan is not suspicious
+  }
+  if (blockaidOverrideState === SecurityLevel.SAFE) {
+    return false;
+  }
+  // SUSPICIOUS or MALICIOUS - both are suspicious
+  if (
+    blockaidOverrideState === SecurityLevel.SUSPICIOUS ||
+    blockaidOverrideState === SecurityLevel.MALICIOUS
+  ) {
+    return true;
+  }
+
+  return null;
+};
+
+/**
+ * Checks if asset should be treated as unable to scan based on blockaid override state
+ */
+export const shouldTreatAssetAsUnableToScan = (
+  blockaidData?: BlockAidScanAssetResult | null,
+  blockaidOverrideState?: string | null,
+): boolean => {
+  if (isDev && blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN) {
+    return true;
+  }
+  return isAssetUnableToScan(blockaidData);
+};
+
+/**
+ * Checks if transaction should be treated as unable to scan based on blockaid override state
+ */
+export const shouldTreatTxAsUnableToScan = (
+  blockaidData?: BlockAidScanTxResult | null,
+  blockaidOverrideState?: string | null,
+): boolean => {
+  if (isDev && blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN) {
+    return true;
+  }
+  return isTxUnableToScan(blockaidData);
+};
+
+export const isAssetSuspicious = (
+  blockaidData?: BlockAidScanAssetResult | null,
+  blockaidOverrideState?: string | null,
+) => {
+  const overrideResult = getSuspiciousFromBlockaidOverrideState(
+    blockaidOverrideState,
+  );
+  if (overrideResult !== null) {
+    return overrideResult;
+  }
+
+  // If unable to scan, treat as benign (not suspicious)
+  if (isAssetUnableToScan(blockaidData)) {
+    return false;
+  }
   if (!blockaidData || !blockaidData.result_type) {
     return false;
   }
   return blockaidData.result_type !== "Benign";
 };
 
-export const isTxSuspicious = (blockaidData: BlockAidScanTxResult) => {
-  const { simulation, validation } = blockaidData;
+export const isTxSuspicious = (
+  blockaidData?: BlockAidScanTxResult | null,
+  blockaidOverrideState?: string | null,
+) => {
+  const overrideResult = getSuspiciousFromBlockaidOverrideState(
+    blockaidOverrideState,
+  );
+  if (overrideResult !== null) {
+    return overrideResult;
+  }
+
+  // If unable to scan, treat as benign (not suspicious)
+  if (isTxUnableToScan(blockaidData)) {
+    return false;
+  }
 
   if (!blockaidData) {
     return false;
   }
+
+  const { simulation, validation } = blockaidData;
 
   if (simulation && "error" in simulation) {
     return true;
@@ -245,15 +452,135 @@ export const isTxSuspicious = (blockaidData: BlockAidScanTxResult) => {
 export const isBlockaidWarning = (resultType: string) =>
   resultType === "Warning" || resultType === "Spam";
 
+/**
+ * Determines site security states from scan data and override state
+ * @param scanData - The site scan result from Blockaid
+ * @param blockaidOverrideState - Override state for dev mode (takes precedence)
+ * @returns Object with isMalicious, isSuspicious, and isUnableToScan flags
+ */
+export const getSiteSecurityStates = (
+  scanData: BlockAidScanSiteResult | null | undefined,
+  blockaidOverrideState: string | null | undefined,
+): {
+  isMalicious: boolean;
+  isSuspicious: boolean;
+  isUnableToScan: boolean;
+} => {
+  if (isDev && blockaidOverrideState) {
+    // Override state takes precedence (dev mode only)
+    return {
+      isMalicious: blockaidOverrideState === SecurityLevel.MALICIOUS,
+      isSuspicious: blockaidOverrideState === SecurityLevel.SUSPICIOUS,
+      isUnableToScan: blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN,
+    };
+  }
+
+  // Use actual scan results
+  return {
+    isUnableToScan: !scanData || scanData.status === undefined,
+    isMalicious: scanData?.status === "hit" && scanData.is_malicious === true,
+    isSuspicious: false, // Suspicious is ignored as there's no concept of a suspicious site
+  };
+};
+
+/**
+ * Hook that handles asynchronous site scanning and updates state via dispatch
+ * This prevents blocking the UI while scanning sites
+ *
+ * @param domain - The domain/URL to scan (optional)
+ * @param dispatch - The dispatch function to update state
+ * @param updatePayload - Function that merges scan data into the existing payload
+ *
+ * @example
+ * ```tsx
+ * const { scanSite } = useAsyncSiteScan(
+ *   domain,
+ *   dispatch,
+ *   (payload, scanData) => ({ ...payload, scanData })
+ * );
+ *
+ * // Call scanSite after initial payload is dispatched
+ * scanSite(initialPayload);
+ * ```
+ */
+export const useAsyncSiteScan = <T>(
+  domain: string | undefined,
+  dispatch: (action: Action<T, unknown>) => void,
+  updatePayload: (payload: T, scanData: BlockAidScanSiteResult | null) => T,
+) => {
+  const { scanSite: scanSiteFn } = useScanSite();
+
+  const scanSite = useCallback(
+    async (currentPayload: T) => {
+      if (!domain) {
+        return;
+      }
+
+      // Scan asynchronously without blocking
+      scanSiteFn(domain)
+        .then((scanResult) => {
+          const updatedPayload = updatePayload(currentPayload, scanResult);
+          dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
+        })
+        .catch((error) => {
+          console.error("Failed to scan site:", error);
+          Sentry.captureException(`Failed to call scan site: ${error}`);
+          const updatedPayload = updatePayload(currentPayload, null);
+          dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
+        });
+    },
+    [domain, dispatch, updatePayload, scanSiteFn],
+  );
+
+  return { scanSite };
+};
+
+/**
+ * @deprecated Use useAsyncSiteScan hook instead
+ * Fetches site scan data asynchronously and updates the payload via dispatch
+ * This helper prevents blocking the UI while scanning sites
+ * @param scanSiteFn - The scanSite function to call
+ * @param url - The URL/domain to scan
+ * @param initialPayload - The initial payload to update
+ * @param dispatch - The dispatch function to update state
+ * @param updatePayload - Optional function to customize how the payload is updated with scan data (defaults to setting scanData field)
+ */
+export const fetchSiteScanData = async <T>(
+  scanSiteFn: (url: string) => Promise<BlockAidScanSiteResult | null>,
+  url: string | undefined,
+  initialPayload: T,
+  dispatch: (action: Action<T, unknown>) => void,
+  updatePayload?: (payload: T, scanData: BlockAidScanSiteResult | null) => T,
+): Promise<void> => {
+  if (!url) {
+    return;
+  }
+
+  try {
+    const scanResult = await scanSiteFn(url);
+    const updatedPayload = updatePayload
+      ? updatePayload(initialPayload, scanResult)
+      : ({ ...initialPayload, scanData: scanResult } as T);
+    dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
+  } catch (error) {
+    console.error("Failed to scan site:", error);
+    Sentry.captureException(`Failed to call scan site: ${error}`);
+    const updatedPayload = updatePayload
+      ? updatePayload(initialPayload, null)
+      : ({ ...initialPayload, scanData: null } as T);
+    dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
+  }
+};
+
 export const scanAssetBulk = async (
   addressList: string[],
   networkDetails: NetworkDetails,
   signal?: AbortSignal,
-) => {
+): Promise<BlockAidBulkScanAssetResult | null> => {
   try {
     if (!isMainnet(networkDetails)) {
       /* Scanning assets is only supported on Mainnet */
-      return {} as BlockAidBulkScanAssetResult;
+      return null;
     }
     const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
     addressList.forEach((address) => {
@@ -268,14 +595,14 @@ export const scanAssetBulk = async (
 
     emitMetric(METRIC_NAMES.blockaidAssetScan);
     if (!resJson.data) {
-      return {} as BlockAidBulkScanAssetResult;
+      return null;
     }
-    return resJson.data || {};
+    return resJson.data;
   } catch (err) {
     console.error("Failed to bulk scan asset");
     Sentry.captureException(err);
   }
-  return {} as BlockAidBulkScanAssetResult;
+  return null;
 };
 
 interface ReportAssetWarningParams {
@@ -295,7 +622,7 @@ export const reportAssetWarning = async ({
       return {} as ReportAssetWarningResponse;
     }
     const res = await fetchJson<ReportAssetWarningResponse>(
-      `${INDEXER_URL}/report-asset-warning?address=${address}&details=${encodeURIComponent(
+      `${INDEXER_URL}/report-asset-warning?address=${encodeURIComponent(address)}&details=${encodeURIComponent(
         details,
       )}`,
     );
@@ -331,7 +658,7 @@ export const reportTransactionWarning = async ({
     const res = await fetchJson<ReportTransactionWarningResponse>(
       `${INDEXER_URL}/report-transaction-warning?details=${encodeURIComponent(
         details,
-      )}&request_id=${requestId}&event=${event}`,
+      )}&request_id=${encodeURIComponent(requestId)}&event=${encodeURIComponent(event)}`,
     );
 
     if (res.error) {

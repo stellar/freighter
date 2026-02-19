@@ -13,6 +13,7 @@ import {
   IS_NON_SSL_ENABLED_ID,
   IS_HIDE_DUST_ENABLED_ID,
   LAST_USED_ACCOUNT,
+  OVERRIDDEN_BLOCKAID_RESPONSE_ID,
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
@@ -201,6 +202,14 @@ export const getIsHashSigningEnabled = async ({
 }: {
   localStore: DataStorageAccess;
 }) => (await localStore.getItem(IS_HASH_SIGNING_ENABLED_ID)) ?? false;
+
+export const getOverriddenBlockaidResponse = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}): Promise<string | null> => {
+  return (await localStore.getItem(OVERRIDDEN_BLOCKAID_RESPONSE_ID)) ?? null;
+};
 
 // hardware wallet helpers
 export const HW_PREFIX = "hw:";

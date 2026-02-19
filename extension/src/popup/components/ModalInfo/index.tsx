@@ -105,6 +105,7 @@ interface DomainScanModalInfoProps {
   domain: string;
   subject: string;
   isMalicious: boolean;
+  isUnableToScan?: boolean;
   scanStatus: "hit" | "miss" | undefined;
   onClick: () => void;
 }
@@ -114,6 +115,7 @@ export const DomainScanModalInfo = ({
   domain,
   subject,
   isMalicious,
+  isUnableToScan,
   scanStatus,
   onClick,
 }: DomainScanModalInfoProps) => {
@@ -132,6 +134,7 @@ export const DomainScanModalInfo = ({
           {scanStatus && (
             <BlockAidSiteScanLabel
               isMalicious={isMalicious}
+              isUnableToScan={isUnableToScan}
               status={scanStatus}
               onClick={onClick}
             />

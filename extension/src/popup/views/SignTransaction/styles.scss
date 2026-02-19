@@ -21,6 +21,10 @@
     padding-top: 1rem;
   }
 
+  &__BlockaidDetails {
+    margin-bottom: pxToRem(-16px);
+  }
+
   &__tabWrapper {
     display: flex;
     flex-direction: column;
@@ -159,12 +163,17 @@
       margin-top: 10px;
       gap: 0.5rem;
 
+      .SignTransaction__CancelBtn {
+        font-weight: 600;
+      }
+
       .SignTransaction__Action__ConfirmAnyway {
         border: 0;
         color: var(--sds-clr-red-11);
         background-color: transparent;
         cursor: pointer;
         margin-top: pxToRem(12px);
+        margin-bottom: pxToRem(12px);
         padding-top: 0;
 
         &:disabled {
