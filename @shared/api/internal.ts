@@ -1722,8 +1722,7 @@ export const saveBlockaidOverrideState = async ({
   }
 
   return {
-    overriddenBlockaidResponse:
-      (response as any).overriddenBlockaidResponse ?? null,
+    overriddenBlockaidResponse: response.overriddenBlockaidResponse ?? null,
   };
 };
 

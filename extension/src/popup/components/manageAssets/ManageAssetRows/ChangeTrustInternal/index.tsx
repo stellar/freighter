@@ -204,14 +204,12 @@ export const ChangeTrustInternal = ({
 
   // Blockaid pane
   const blockaidPane = (
-    <View.Content>
-      <BlockAidAssetScanExpanded
-        scanResult={state.data.scanResult}
-        onClose={() => {
-          setActivePaneIndex(paneConfig.confirmIndex);
-        }}
-      />
-    </View.Content>
+    <BlockAidAssetScanExpanded
+      scanResult={state.data.scanResult}
+      onClose={() => {
+        setActivePaneIndex(paneConfig.confirmIndex);
+      }}
+    />
   );
 
   // Confirm Transaction pane
@@ -238,19 +236,23 @@ export const ChangeTrustInternal = ({
             </span>
           </div>
         </div>
-        {state.data.isAssetSuspicious && (
+        {isMalicious ? (
           <BlockaidAssetWarning
             blockaidData={state.data.scanResult}
             onClick={() => setActivePaneIndex(paneConfig.blockaidIndex ?? 0)}
           />
-        )}
-        {state.data.isAssetUnableToScan && (
+        ) : state.data.isAssetUnableToScan ? (
           <BlockaidAssetWarning
             blockaidData={state.data.scanResult}
             onClick={() => setActivePaneIndex(paneConfig.blockaidIndex ?? 0)}
             messageKey="Proceed with caution"
           />
-        )}
+        ) : state.data.isAssetSuspicious ? (
+          <BlockaidAssetWarning
+            blockaidData={state.data.scanResult}
+            onClick={() => setActivePaneIndex(paneConfig.blockaidIndex ?? 0)}
+          />
+        ) : null}
         {trustlineChanges.length > 0 && (
           <Trustline operations={trustlineChanges} icons={icons} />
         )}

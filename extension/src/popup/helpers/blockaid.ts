@@ -252,6 +252,38 @@ export const useIsAssetSuspicious = () => {
     isAssetSuspicious(blockaidData, blockaidOverrideState);
 };
 
+export const isAssetMalicious = (
+  blockaidData?: BlockAidScanAssetResult | null,
+  blockaidOverrideState?: string | null,
+): boolean => {
+  if (isDev && blockaidOverrideState === SecurityLevel.MALICIOUS) {
+    return true;
+  }
+  if (!blockaidData?.result_type) {
+    return false;
+  }
+  return blockaidData.result_type === "Malicious";
+};
+
+/**
+ * Hook that returns isAssetMalicious with blockaid override state automatically applied
+ * In production, blockaid override state is ignored
+ */
+export const useIsAssetMalicious = () => {
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, []);
+
+  return (blockaidData?: BlockAidScanAssetResult | null) =>
+    isAssetMalicious(blockaidData, blockaidOverrideState);
+};
+
 /**
  * Hook that returns isTxSuspicious with blockaid override state automatically applied
  * In production, blockaid override state is ignored

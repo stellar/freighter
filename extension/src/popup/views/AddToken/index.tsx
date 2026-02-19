@@ -38,9 +38,12 @@ import { useTokenLookup } from "popup/helpers/useTokenLookup";
 import { isContractId } from "popup/helpers/soroban";
 import {
   scanAsset,
-  useIsAssetSuspicious,
-  useShouldTreatAssetAsUnableToScan,
+  isAssetSuspicious,
+  isAssetMalicious,
+  shouldTreatAssetAsUnableToScan,
+  useIsAssetMalicious,
 } from "popup/helpers/blockaid";
+import { getBlockaidOverrideState } from "@shared/api/internal";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
@@ -81,8 +84,7 @@ export const AddToken = () => {
     useState(false);
   const [blockaidData, setBlockaidData] =
     useState<BlockAidScanAssetResult | null>(null);
-  const isAssetSuspicious = useIsAssetSuspicious();
-  const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
+  const isAssetMaliciousCheck = useIsAssetMalicious();
   const [errorMessage, setErrorMessage] = useState("");
   const [activePaneIndex, setActivePaneIndex] = useState(0);
 
@@ -143,16 +145,17 @@ export const AddToken = () => {
     const { networkDetails } = state.data.settings;
 
     const getBlockaidData = async () => {
-      const scannedAsset = await scanAsset(
-        `${assetCode}-${assetIssuer}`,
-        networkDetails,
-      );
+      const [scannedAsset, overrideState] = await Promise.all([
+        scanAsset(`${assetCode}-${assetIssuer}`, networkDetails),
+        getBlockaidOverrideState().catch(() => null),
+      ]);
 
-      // Show Blockaid warning if suspicious or unable to scan (including debug override)
+      // Show Blockaid warning if suspicious, malicious, or unable to scan (including debug override)
       if (
         scannedAsset &&
-        (isAssetSuspicious(scannedAsset) ||
-          shouldTreatAsUnableToScan(scannedAsset))
+        (isAssetSuspicious(scannedAsset, overrideState) ||
+          isAssetMalicious(scannedAsset, overrideState) ||
+          shouldTreatAssetAsUnableToScan(scannedAsset, overrideState))
       ) {
         setBlockaidData(scannedAsset);
       }
@@ -462,7 +465,11 @@ export const AddToken = () => {
           isFullWidth
           isRounded
           size="lg"
-          variant="secondary"
+          variant={
+            blockaidData && isAssetMaliciousCheck(blockaidData)
+              ? "error"
+              : "secondary"
+          }
           isLoading={isConfirming}
           onClick={() => handleApprove()}
         >

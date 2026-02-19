@@ -23,7 +23,6 @@ import { isMainnet, isTestnet } from "helpers/stellar";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { getBlockaidOverrideState } from "@shared/api/internal";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
-import { View } from "popup/basics/layout/View";
 
 import {
   reportAssetWarning,
@@ -239,22 +238,20 @@ export const AssetListWarningExpanded = ({
     : t("This asset is not on your lists");
 
   return (
-    <View.Inset hasNoTopPadding hasNoBottomPadding>
-      <div className="BlockaidDetailsExpanded">
-        <div className="BlockaidDetailsExpanded__Header">
-          <div className="WarningMark">
-            <Icon.AlertTriangle />
-          </div>
-          <div className="Close" onClick={onClose}>
-            <Icon.X />
-          </div>
+    <div className="BlockaidDetailsExpanded">
+      <div className="BlockaidDetailsExpanded__Header">
+        <div className="WarningMark">
+          <Icon.AlertTriangle />
         </div>
-        <div className="BlockaidDetailsExpanded__Title">{title}</div>
-        <div className="BlockaidDetailsExpanded__SubTitle">
-          {`${t("Freighter uses asset lists to check assets you interact with.")} ${t("You can define your own assets lists in Settings.")}`}
+        <div className="Close" onClick={onClose}>
+          <Icon.X />
         </div>
       </div>
-    </View.Inset>
+      <div className="BlockaidDetailsExpanded__Title">{title}</div>
+      <div className="BlockaidDetailsExpanded__SubTitle">
+        {`${t("Freighter uses asset lists to check assets you interact with.")} ${t("You can define your own assets lists in Settings.")}`}
+      </div>
+    </div>
   );
 };
 
@@ -486,6 +483,15 @@ export const BlockaidAssetWarning = ({
 }: BlockaidAssetWarningProps) => {
   const { t } = useTranslation();
   const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, []);
 
   if (shouldTreatAsUnableToScan(blockaidData)) {
     return (
@@ -507,32 +513,30 @@ export const BlockaidAssetWarning = ({
     );
   }
 
-  if (!blockaidData || !blockaidData.result_type) {
+  // Determine effective severity — override takes precedence over scan result
+  let isMaliciousFinal =
+    blockaidData?.result_type === "Malicious" ||
+    blockaidData?.result_type === "Spam";
+  let isSuspiciousFinal =
+    blockaidData?.result_type === "Warning" ||
+    blockaidData?.result_type === "Spam";
+
+  if (blockaidOverrideState === SecurityLevel.MALICIOUS) {
+    isMaliciousFinal = true;
+    isSuspiciousFinal = false;
+  } else if (blockaidOverrideState === SecurityLevel.SUSPICIOUS) {
+    isMaliciousFinal = false;
+    isSuspiciousFinal = true;
+  }
+
+  if (!isMaliciousFinal && !isSuspiciousFinal) {
     return null;
   }
-  const renderHeader = (
-    result_type: BlockAidScanAssetResult["result_type"],
-  ) => {
-    switch (result_type) {
-      case "Spam": {
-        return t("This asset was flagged as spam");
-      }
 
-      case "Malicious": {
-        return t("This asset was flagged as malicious");
-      }
-
-      default: {
-        return t("This asset was flagged as suspicious");
-      }
-    }
-  };
-
-  const scanType =
-    blockaidData.result_type === "Spam" ||
-    blockaidData.result_type === "Warning"
-      ? "ScanMiss"
-      : "ScanMalicious";
+  const header = isMaliciousFinal
+    ? t("This asset was flagged as malicious")
+    : t("This asset was flagged as suspicious");
+  const scanType = isMaliciousFinal ? "ScanMalicious" : "ScanMiss";
 
   return (
     <div
@@ -544,7 +548,7 @@ export const BlockaidAssetWarning = ({
         <div className="Icon">
           <Icon.InfoSquare className="WarningMessage__icon" />
         </div>
-        <p className="Message">{renderHeader(blockaidData.result_type)}</p>
+        <p className="Message">{header}</p>
       </div>
       <div className="ScanLabel__Action">
         <Icon.ChevronRight />
@@ -558,119 +562,177 @@ interface BlockAidAssetScanExpandedProps {
   onClose?: () => void;
 }
 
+interface BlockaidAssetDetailPaneProps {
+  headerIconClass: string;
+  headerIcon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  detailRows: React.ReactNode;
+  onClose?: () => void;
+}
+
+const BlockaidAssetDetailPane = ({
+  headerIconClass,
+  headerIcon,
+  title,
+  subtitle,
+  detailRows,
+  onClose,
+}: BlockaidAssetDetailPaneProps) => (
+  <div className="BlockaidDetailsExpanded">
+    <div className="BlockaidDetailsExpanded__Header">
+      <div className={headerIconClass}>{headerIcon}</div>
+      <div className="Close" onClick={onClose}>
+        <Icon.X />
+      </div>
+    </div>
+    <div className="BlockaidDetailsExpanded__Title">{title}</div>
+    <div className="BlockaidDetailsExpanded__SubTitle">{subtitle}</div>
+    <div className="BlockaidDetailsExpanded__Details">
+      {detailRows}
+      <BlockaidByLine address={""} />
+    </div>
+  </div>
+);
+
 export const BlockAidAssetScanExpanded = ({
   scanResult,
   onClose,
 }: BlockAidAssetScanExpandedProps) => {
   const { t } = useTranslation();
   const shouldTreatAssetAsUnableToScan = useShouldTreatAssetAsUnableToScan();
+  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
+    string | null
+  >(null);
 
-  if (shouldTreatAssetAsUnableToScan(scanResult)) {
+  useEffect(() => {
+    getBlockaidOverrideState()
+      .then(setBlockaidOverrideState)
+      .catch(() => setBlockaidOverrideState(null));
+  }, []);
+
+  // Override takes precedence — early returns before any scan-result guards
+  if (blockaidOverrideState === SecurityLevel.MALICIOUS) {
     return (
-      <View.Inset hasNoTopPadding hasNoBottomPadding>
-        <div className="BlockaidDetailsExpanded">
-          <div className="BlockaidDetailsExpanded__Header">
-            <div className="WarningMark">
-              <Icon.AlertTriangle />
-            </div>
-            <div className="Close" onClick={onClose}>
-              <Icon.X />
-            </div>
+      <BlockaidAssetDetailPane
+        headerIconClass="WarningMarkError"
+        headerIcon={<Icon.AlertOctagon />}
+        title={t("Do not proceed")}
+        subtitle={t(
+          "This asset has been flagged as malicious for the following reasons.",
+        )}
+        detailRows={
+          <div className="BlockaidDetailsExpanded__DetailRow">
+            <Icon.XCircle />
+            <span>
+              {t("This asset was flagged as malicious (override active)")}
+            </span>
           </div>
-          <div className="BlockaidDetailsExpanded__Title">
-            {t("Proceed with caution")}
-          </div>
-          <div className="BlockaidDetailsExpanded__SubTitle">
-            {t("We were unable to scan this token for security threats")}
-          </div>
-          <div className="BlockaidDetailsExpanded__Details">
-            <div className="BlockaidDetailsExpanded__DetailRow">
-              <Icon.MinusCircle />
-              <span>{t("Unable to scan token")}</span>
-            </div>
-          </div>
-        </div>
-      </View.Inset>
+        }
+        onClose={onClose}
+      />
     );
   }
 
-  if (!scanResult) {
+  if (blockaidOverrideState === SecurityLevel.SUSPICIOUS) {
+    return (
+      <BlockaidAssetDetailPane
+        headerIconClass="WarningMark"
+        headerIcon={<Icon.AlertTriangle />}
+        title={t("Suspicious Request")}
+        subtitle={t(
+          "This asset has been flagged as suspicious for the following reasons.",
+        )}
+        detailRows={
+          <div className="BlockaidDetailsExpanded__DetailRow">
+            <Icon.MinusCircle />
+            <span>
+              {t("This asset was flagged as suspicious (override active)")}
+            </span>
+          </div>
+        }
+        onClose={onClose}
+      />
+    );
+  }
+
+  // No active override — use real scan result
+  if (shouldTreatAssetAsUnableToScan(scanResult)) {
+    return (
+      <BlockaidAssetDetailPane
+        headerIconClass="WarningMark"
+        headerIcon={<Icon.AlertTriangle />}
+        title={t("Proceed with caution")}
+        subtitle={t("We were unable to scan this token for security threats")}
+        detailRows={
+          <div className="BlockaidDetailsExpanded__DetailRow">
+            <Icon.MinusCircle />
+            <span>{t("Unable to scan token")}</span>
+          </div>
+        }
+        onClose={onClose}
+      />
+    );
+  }
+
+  const resultType = scanResult?.result_type;
+  const isMalicious = resultType === "Malicious" || resultType === "Spam";
+  const isSuspicious = resultType === "Warning" || resultType === "Spam";
+
+  if (!isMalicious && !isSuspicious) {
     return null;
   }
 
-  const { result_type, features } = scanResult;
-  const _features = features || [];
-
-  const renderDetails = (
-    result_type: BlockAidScanAssetResult["result_type"],
-  ) => {
-    switch (result_type) {
-      case "Spam": {
-        return {
-          title: t("Suspicious Request"),
-          description: t(
-            "This asset has been flagged as spam for the following reasons.",
-          ),
-        };
+  const features = scanResult?.features || [];
+  const { title, description } = isMalicious
+    ? {
+        title: t("Do not proceed"),
+        description: t(
+          "This asset has been flagged as malicious for the following reasons.",
+        ),
       }
+    : {
+        title: t("Suspicious Request"),
+        description: t(
+          "This asset has been flagged as suspicious for the following reasons.",
+        ),
+      };
 
-      case "Malicious": {
-        return {
-          title: t("Do not proceed"),
-          description: t(
-            "This asset has been flagged as malicious for the following reasons.",
-          ),
-        };
-      }
+  const warningType = isMalicious
+    ? { class: "WarningMarkError", icon: <Icon.AlertOctagon /> }
+    : { class: "WarningMark", icon: <Icon.AlertTriangle /> };
 
-      default: {
-        return {
-          title: t("Suspicious Request"),
-          description: t(
-            "This asset has been flagged as suspicious for the following reasons.",
-          ),
-        };
-      }
-    }
-  };
+  const fallbackMessage = isMalicious
+    ? t("This asset was flagged as malicious")
+    : t("This asset was flagged as suspicious");
 
-  const { title, description } = renderDetails(result_type);
-  const warningType =
-    result_type === "Spam" || result_type === "Warning"
-      ? {
-          class: "WarningMark",
-          icon: <Icon.AlertTriangle />,
-        }
-      : {
-          class: "WarningMarkError",
-          icon: <Icon.AlertOctagon />,
-        };
+  const featureRows =
+    features.length > 0 ? (
+      features.map((feature) => (
+        <div
+          className="BlockaidDetailsExpanded__DetailRow"
+          key={feature.feature_id}
+        >
+          <Icon.MinusCircle />
+          <span>{feature.description}</span>
+        </div>
+      ))
+    ) : (
+      <div className="BlockaidDetailsExpanded__DetailRow">
+        {isMalicious ? <Icon.XCircle /> : <Icon.MinusCircle />}
+        <span>{fallbackMessage}</span>
+      </div>
+    );
 
   return (
-    <View.Inset hasNoTopPadding hasNoBottomPadding>
-      <div className="BlockaidDetailsExpanded">
-        <div className="BlockaidDetailsExpanded__Header">
-          <div className={warningType.class}>{warningType.icon}</div>
-          <div className="Close" onClick={onClose}>
-            <Icon.X />
-          </div>
-        </div>
-        <div className="BlockaidDetailsExpanded__Title">{title}</div>
-        <div className="BlockaidDetailsExpanded__SubTitle">{description}</div>
-        <div className="BlockaidDetailsExpanded__Details">
-          {_features.map((feature) => (
-            <div
-              className="BlockaidDetailsExpanded__DetailRow"
-              key={feature.feature_id}
-            >
-              <Icon.MinusCircle />
-              <span>{feature.description}</span>
-            </div>
-          ))}
-          <BlockaidByLine address={""} />
-        </div>
-      </div>
-    </View.Inset>
+    <BlockaidAssetDetailPane
+      headerIconClass={warningType.class}
+      headerIcon={warningType.icon}
+      title={title}
+      subtitle={description}
+      detailRows={featureRows}
+      onClose={onClose}
+    />
   );
 };
 
@@ -1014,6 +1076,29 @@ const getScanWarnings = (
     isError?: boolean;
   }> = [];
 
+  // Override takes precedence over everything — check before null/unable-to-scan guards
+  if (blockaidOverrideState === SecurityLevel.MALICIOUS) {
+    warnings.push({
+      icon: <Icon.XCircle />,
+      text: isAssetScan
+        ? t("This asset was flagged as malicious (override active)")
+        : t("This transaction was flagged as malicious (override active)"),
+      isError: true,
+    });
+    return { warnings, isMalicious: true, isSuspicious: false };
+  }
+
+  if (blockaidOverrideState === SecurityLevel.SUSPICIOUS) {
+    warnings.push({
+      icon: <Icon.MinusCircle />,
+      text: isAssetScan
+        ? t("This asset was flagged as suspicious (override active)")
+        : t("This transaction was flagged as suspicious (override active)"),
+      isError: false,
+    });
+    return { warnings, isMalicious: false, isSuspicious: true };
+  }
+
   // If unable to scan, return unable to scan warning
   if (isUnableToScan) {
     warnings.push({
@@ -1031,34 +1116,10 @@ const getScanWarnings = (
     return { warnings, isMalicious: false, isSuspicious: false };
   }
 
-  // Get security flags at the beginning
+  // Get security flags from actual scan result
   const securityFlags = getScanResultSecurityFlags(scanResult);
-  let isMalicious = securityFlags.isMalicious;
-  let isSuspicious = securityFlags.isSuspicious;
-
-  // Inject override messages if no real warnings but override is active
-  // Always show override warning if override is active
-  let isMaliciousFinal = isMalicious;
-  let isSuspiciousFinal = isSuspicious;
-  if (blockaidOverrideState === SecurityLevel.MALICIOUS) {
-    warnings.length = 0;
-    warnings.push({
-      icon: <Icon.XCircle />,
-      text: t("This transaction was flagged as malicious (override active)"),
-      isError: true,
-    });
-    isMaliciousFinal = true;
-    isSuspiciousFinal = false;
-  } else if (blockaidOverrideState === SecurityLevel.SUSPICIOUS) {
-    warnings.length = 0;
-    warnings.push({
-      icon: <Icon.MinusCircle />,
-      text: t("This transaction was flagged as suspicious (override active)"),
-      isError: false,
-    });
-    isMaliciousFinal = false;
-    isSuspiciousFinal = true;
-  }
+  const isMalicious = securityFlags.isMalicious;
+  const isSuspicious = securityFlags.isSuspicious;
 
   // Handle transaction scan results
   if ("simulation" in scanResult || "validation" in scanResult) {
@@ -1071,7 +1132,6 @@ const getScanWarnings = (
         text: simulation.error,
         isError: false,
       });
-      isSuspicious = true;
     }
 
     if (validation && "result_type" in validation) {
@@ -1089,7 +1149,6 @@ const getScanWarnings = (
     const { features } = assetResult;
     const _features = features || [];
 
-    // Add feature warnings
     _features.forEach((feature) => {
       warnings.push({
         icon: isMalicious ? <Icon.XCircle /> : <Icon.MinusCircle />,
@@ -1099,11 +1158,7 @@ const getScanWarnings = (
     });
   }
 
-  return {
-    warnings,
-    isMalicious: isMaliciousFinal,
-    isSuspicious: isSuspiciousFinal,
-  };
+  return { warnings, isMalicious, isSuspicious };
 };
 
 export const BlockAidScanExpanded = ({
@@ -1119,11 +1174,6 @@ export const BlockAidScanExpanded = ({
   >(null);
 
   useEffect(() => {
-    if (!scanResult) {
-      setBlockaidOverrideState(null);
-      return;
-    }
-
     getBlockaidOverrideState()
       .then(setBlockaidOverrideState)
       .catch(() => setBlockaidOverrideState(null));
@@ -1139,7 +1189,11 @@ export const BlockAidScanExpanded = ({
     ? shouldTreatAssetAsUnableToScan(scanResult as BlockAidScanAssetResult)
     : shouldTreatTxAsUnableToScan(scanResult as BlockAidScanTxResult);
 
-  if (!scanResult && !isUnableToScan) {
+  const hasActiveOverride =
+    blockaidOverrideState === SecurityLevel.MALICIOUS ||
+    blockaidOverrideState === SecurityLevel.SUSPICIOUS;
+
+  if (!scanResult && !isUnableToScan && !hasActiveOverride) {
     return null;
   }
 
@@ -1177,33 +1231,31 @@ export const BlockAidScanExpanded = ({
   );
 
   return (
-    <View.Inset hasNoTopPadding hasNoBottomPadding>
-      <div className="BlockaidDetailsExpanded">
-        <div className="BlockaidDetailsExpanded__Header">
-          {headerIcon}
-          <div className="Close" onClick={onClose}>
-            <Icon.X />
-          </div>
-        </div>
-        <div className="BlockaidDetailsExpanded__Title">{title}</div>
-        <div className="BlockaidDetailsExpanded__SubTitle">{subtitle}</div>
-        <div className="BlockaidDetailsExpanded__Details">
-          {warnings.map((warning, index) => (
-            <div
-              key={`${warning.text}-${index}`}
-              className={
-                warning.isError
-                  ? "BlockaidDetailsExpanded__DetailRowError"
-                  : "BlockaidDetailsExpanded__DetailRow"
-              }
-            >
-              {warning.icon}
-              <span>{warning.text}</span>
-            </div>
-          ))}
-          <BlockaidByLine address={""} />
+    <div className="BlockaidDetailsExpanded">
+      <div className="BlockaidDetailsExpanded__Header">
+        {headerIcon}
+        <div className="Close" onClick={onClose}>
+          <Icon.X />
         </div>
       </div>
-    </View.Inset>
+      <div className="BlockaidDetailsExpanded__Title">{title}</div>
+      <div className="BlockaidDetailsExpanded__SubTitle">{subtitle}</div>
+      <div className="BlockaidDetailsExpanded__Details">
+        {warnings.map((warning, index) => (
+          <div
+            key={`${warning.text}-${index}`}
+            className={
+              warning.isError
+                ? "BlockaidDetailsExpanded__DetailRowError"
+                : "BlockaidDetailsExpanded__DetailRow"
+            }
+          >
+            {warning.icon}
+            <span>{warning.text}</span>
+          </div>
+        ))}
+        <BlockaidByLine address={""} />
+      </div>
+    </div>
   );
 };

@@ -6,7 +6,7 @@ import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
   scanAsset,
-  useIsAssetSuspicious,
+  isAssetSuspicious,
   shouldTreatAssetAsUnableToScan,
 } from "popup/helpers/blockaid";
 import { getBlockaidOverrideState } from "@shared/api/internal";
@@ -53,7 +53,6 @@ function useGetChangeTrustData({
     reducer<ChangeTrustData, unknown>,
     initialState,
   );
-  const isAssetSuspiciousCheck = useIsAssetSuspicious();
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -99,14 +98,15 @@ function useGetChangeTrustData({
           networkDetails,
         });
         payload.transactionXDR = transactionXDR;
-        // Check suspicious and unable to scan separately
-        payload.isAssetSuspicious = isAssetSuspiciousCheck(scannedAsset);
-        // Get override state directly to ensure it's checked
         const blockaidOverrideState = await getBlockaidOverrideState();
         payload.isAssetUnableToScan = shouldTreatAssetAsUnableToScan(
           scannedAsset,
           blockaidOverrideState,
         );
+        // unable-to-scan takes precedence — never mark both at once
+        payload.isAssetSuspicious =
+          !payload.isAssetUnableToScan &&
+          isAssetSuspicious(scannedAsset, blockaidOverrideState);
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
