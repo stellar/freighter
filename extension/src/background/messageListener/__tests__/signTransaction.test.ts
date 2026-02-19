@@ -74,14 +74,20 @@ describe("signTransaction handler", () => {
       {
         transaction: { sign: jest.fn(), toXDR: jest.fn() } as any,
         uuid: "uuid-1",
+        createdAt: Date.now(),
       },
-      { transaction: mockTransaction, uuid: "uuid-2" },
+      { transaction: mockTransaction, uuid: "uuid-2", createdAt: Date.now() },
       {
         transaction: { sign: jest.fn(), toXDR: jest.fn() } as any,
         uuid: "uuid-3",
+        createdAt: Date.now(),
       },
     );
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-2" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-2",
+      createdAt: Date.now(),
+    });
 
     const request: SignTransactionMessage = {
       type: SERVICE_TYPES.SIGN_TRANSACTION,
@@ -110,8 +116,16 @@ describe("signTransaction handler", () => {
       toXDR: mockToXDR,
     } as any;
 
-    transactionQueue.push({ transaction: mockTransaction, uuid: "uuid-1" });
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    transactionQueue.push({
+      transaction: mockTransaction,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request: SignTransactionMessage = {
       type: SERVICE_TYPES.SIGN_TRANSACTION,
@@ -140,8 +154,16 @@ describe("signTransaction handler", () => {
       toXDR: mockToXDR,
     } as any;
 
-    transactionQueue.push({ transaction: mockTransaction, uuid: "uuid-1" });
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    transactionQueue.push({
+      transaction: mockTransaction,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request = {
       type: SERVICE_TYPES.SIGN_TRANSACTION,
@@ -176,11 +198,15 @@ describe("signTransaction handler", () => {
     } as any;
 
     transactionQueue.push(
-      { transaction: tx1, uuid: "aaa" },
-      { transaction: tx2, uuid: "bbb" },
-      { transaction: tx3, uuid: "ccc" },
+      { transaction: tx1, uuid: "aaa", createdAt: Date.now() },
+      { transaction: tx2, uuid: "bbb", createdAt: Date.now() },
+      { transaction: tx3, uuid: "ccc", createdAt: Date.now() },
     );
-    responseQueue.push({ response: mockResponseFn, uuid: "bbb" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "bbb",
+      createdAt: Date.now(),
+    });
 
     const request: SignTransactionMessage = {
       type: SERVICE_TYPES.SIGN_TRANSACTION,

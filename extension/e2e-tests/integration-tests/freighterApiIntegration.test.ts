@@ -2,7 +2,14 @@ import { expect, test, expectPageToHaveScreenshot } from "../test-fixtures";
 import { TEST_TOKEN_ADDRESS } from "../helpers/test-token";
 import { loginToTestAccount } from "../helpers/login";
 import { allowDapp } from "../helpers/allowDapp";
-import { stubAccountBalances, stubIsSac } from "../helpers/stubs";
+import {
+  stubAccountBalances,
+  stubAccountHistory,
+  stubIsSac,
+  stubScanDapp,
+  stubTokenDetails,
+  stubTokenPrices,
+} from "../helpers/stubs";
 
 const TX_TO_SIGN =
   "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAAGQAAAfjAAAOpQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAAAAAAAAvrwgAAAAAAAAAAA";
@@ -254,7 +261,7 @@ test("should sign correct transactions when Freighter receives multiple requests
   await stubTokenPrices(page);
   await stubScanDapp(context);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -518,7 +525,7 @@ test("should sign correct message when Freighter receives multiple requests", as
   await stubTokenPrices(page);
   await stubScanDapp(context);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground

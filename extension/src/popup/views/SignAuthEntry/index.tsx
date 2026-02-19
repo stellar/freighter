@@ -39,6 +39,7 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { getSiteFavicon } from "popup/helpers/getSiteFavicon";
 import { AuthEntries } from "popup/components/AuthEntry";
+import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import "./styles.scss";
 
@@ -60,6 +61,9 @@ export const SignAuthEntry = () => {
     domain,
   });
   const publicKey = useSelector(publicKeySelector);
+
+  // Mark this queue item as active to prevent TTL cleanup while popup is open
+  useMarkQueueActive(params.uuid);
 
   const { state: signAuthEntryData, fetchData } =
     useGetSignAuthEntryData(accountToSign);
