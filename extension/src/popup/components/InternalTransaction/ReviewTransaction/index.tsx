@@ -28,14 +28,16 @@ import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
 import { SecurityLevel } from "popup/constants/blockaid";
-import { getBlockaidOverrideState } from "@shared/api/internal";
+import {
+  useBlockaidOverrideState,
+  useShouldTreatTxAsUnableToScan,
+} from "popup/helpers/blockaid";
 import {
   BlockaidTxScanLabel,
   BlockAidScanExpanded,
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
 import { CopyValue } from "popup/components/CopyValue";
-import { useShouldTreatTxAsUnableToScan } from "popup/helpers/blockaid";
 import { ActionButtons } from "./components/ActionButtons";
 import { SendAsset, SendDestination } from "./components";
 
@@ -161,15 +163,7 @@ export const ReviewTx = ({
   const isUnableToScan = shouldTreatTxAsUnableToScan(txScanResult);
 
   // Check override state (takes precedence, dev mode only)
-  const [blockaidOverrideState, setBlockaidOverrideState] = React.useState<
-    string | null
-  >(null);
-
-  React.useEffect(() => {
-    getBlockaidOverrideState()
-      .then(setBlockaidOverrideState)
-      .catch(() => setBlockaidOverrideState(null));
-  }, []);
+  const blockaidOverrideState = useBlockaidOverrideState();
 
   // Determine security level (includes overrides - takes precedence on all panes)
   const securityLevel = getTransactionSecurityLevel(

@@ -18,9 +18,11 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { BlockaidByLine } from "popup/components/WarningMessages";
 import { ATTACK_TO_DISPLAY } from "popup/helpers/blockaid";
-import { getBlockaidOverrideState } from "@shared/api/internal";
 import { SecurityLevel } from "popup/constants/blockaid";
-import { getSiteSecurityStates } from "popup/helpers/blockaid";
+import {
+  getSiteSecurityStates,
+  useBlockaidOverrideState,
+} from "popup/helpers/blockaid";
 import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import "popup/metrics/access";
@@ -44,22 +46,10 @@ export const GrantAccess = () => {
 
   const [isGranting, setIsGranting] = useState(false);
   const [activePaneIndex, setActivePaneIndex] = useState(0);
-  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
-    string | null
-  >(null);
+  const blockaidOverrideState = useBlockaidOverrideState();
 
   useEffect(() => {
-    const getData = async () => {
-      await fetchData();
-      // Get override state for dev mode
-      try {
-        const overrideState = await getBlockaidOverrideState();
-        setBlockaidOverrideState(overrideState);
-      } catch {
-        setBlockaidOverrideState(null);
-      }
-    };
-    getData();
+    fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

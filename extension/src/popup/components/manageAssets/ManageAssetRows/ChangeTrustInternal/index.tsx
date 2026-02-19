@@ -24,7 +24,7 @@ import {
   BlockaidAssetWarning,
 } from "popup/components/WarningMessages";
 import { SecurityLevel } from "popup/constants/blockaid";
-import { getBlockaidOverrideState } from "@shared/api/internal";
+import { useBlockaidOverrideState } from "popup/helpers/blockaid";
 import { useGetChangeTrustData } from "./hooks/useChangeTrustData";
 import { Fee } from "./Settings/Fee";
 import { Timeout } from "./Settings/Timeout";
@@ -70,15 +70,7 @@ export const ChangeTrustInternal = ({
   const { t } = useTranslation();
 
   // Check override state (takes precedence, dev mode only)
-  const [blockaidOverrideState, setBlockaidOverrideState] = React.useState<
-    string | null
-  >(null);
-
-  React.useEffect(() => {
-    getBlockaidOverrideState()
-      .then(setBlockaidOverrideState)
-      .catch(() => setBlockaidOverrideState(null));
-  }, []);
+  const blockaidOverrideState = useBlockaidOverrideState();
   const { recommendedFee } = useNetworkFees();
 
   const baseFeeStroops = stroopToXlm(BASE_FEE).toString();

@@ -21,12 +21,11 @@ import {
 import { isMainnet, isTestnet } from "helpers/stellar";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { getBlockaidOverrideState } from "@shared/api/internal";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
-
 import {
   reportAssetWarning,
   reportTransactionWarning,
+  useBlockaidOverrideState,
   useShouldTreatAssetAsUnableToScan,
   useShouldTreatTxAsUnableToScan,
 } from "popup/helpers/blockaid";
@@ -483,15 +482,7 @@ export const BlockaidAssetWarning = ({
 }: BlockaidAssetWarningProps) => {
   const { t } = useTranslation();
   const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
-  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
-    string | null
-  >(null);
-
-  useEffect(() => {
-    getBlockaidOverrideState()
-      .then(setBlockaidOverrideState)
-      .catch(() => setBlockaidOverrideState(null));
-  }, []);
+  const blockaidOverrideState = useBlockaidOverrideState();
 
   if (shouldTreatAsUnableToScan(blockaidData)) {
     return (
@@ -601,15 +592,7 @@ export const BlockAidAssetScanExpanded = ({
 }: BlockAidAssetScanExpandedProps) => {
   const { t } = useTranslation();
   const shouldTreatAssetAsUnableToScan = useShouldTreatAssetAsUnableToScan();
-  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
-    string | null
-  >(null);
-
-  useEffect(() => {
-    getBlockaidOverrideState()
-      .then(setBlockaidOverrideState)
-      .catch(() => setBlockaidOverrideState(null));
-  }, []);
+  const blockaidOverrideState = useBlockaidOverrideState();
 
   // Override takes precedence — early returns before any scan-result guards
   if (blockaidOverrideState === SecurityLevel.MALICIOUS) {
@@ -886,15 +869,7 @@ export const BlockaidTxScanLabel = ({
 }) => {
   const { t } = useTranslation();
   const shouldTreatAsUnableToScan = useShouldTreatTxAsUnableToScan();
-  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
-    string | null
-  >(null);
-
-  useEffect(() => {
-    getBlockaidOverrideState()
-      .then(setBlockaidOverrideState)
-      .catch(() => setBlockaidOverrideState(null));
-  }, []);
+  const blockaidOverrideState = useBlockaidOverrideState();
 
   // Extract complex conditions for readability
   const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
@@ -1169,15 +1144,7 @@ export const BlockAidScanExpanded = ({
   const { t } = useTranslation();
   const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
   const shouldTreatAssetAsUnableToScan = useShouldTreatAssetAsUnableToScan();
-  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
-    string | null
-  >(null);
-
-  useEffect(() => {
-    getBlockaidOverrideState()
-      .then(setBlockaidOverrideState)
-      .catch(() => setBlockaidOverrideState(null));
-  }, [scanResult]);
+  const blockaidOverrideState = useBlockaidOverrideState();
 
   // Use the prop if provided, otherwise infer from scan result shape
   const isAssetScan =

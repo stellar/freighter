@@ -234,10 +234,11 @@ export const useScanAsset = (address: string) => {
 };
 
 /**
- * Hook that returns isAssetSuspicious with blockaid override state automatically applied
- * In production, blockaid override state is ignored
+ * Fetches the blockaid override state once on mount.
+ * Use this directly in components that need multiple override-aware checks
+ * to avoid redundant `getBlockaidOverrideState()` calls per hook.
  */
-export const useIsAssetSuspicious = () => {
+export const useBlockaidOverrideState = () => {
   const [blockaidOverrideState, setBlockaidOverrideState] = useState<
     string | null
   >(null);
@@ -248,6 +249,15 @@ export const useIsAssetSuspicious = () => {
       .catch(() => setBlockaidOverrideState(null));
   }, []);
 
+  return blockaidOverrideState;
+};
+
+/**
+ * Hook that returns isAssetSuspicious with blockaid override state automatically applied
+ * In production, blockaid override state is ignored
+ */
+export const useIsAssetSuspicious = () => {
+  const blockaidOverrideState = useBlockaidOverrideState();
   return (blockaidData?: BlockAidScanAssetResult | null) =>
     isAssetSuspicious(blockaidData, blockaidOverrideState);
 };
@@ -270,16 +280,7 @@ export const isAssetMalicious = (
  * In production, blockaid override state is ignored
  */
 export const useIsAssetMalicious = () => {
-  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
-    string | null
-  >(null);
-
-  useEffect(() => {
-    getBlockaidOverrideState()
-      .then(setBlockaidOverrideState)
-      .catch(() => setBlockaidOverrideState(null));
-  }, []);
-
+  const blockaidOverrideState = useBlockaidOverrideState();
   return (blockaidData?: BlockAidScanAssetResult | null) =>
     isAssetMalicious(blockaidData, blockaidOverrideState);
 };
@@ -289,16 +290,7 @@ export const useIsAssetMalicious = () => {
  * In production, blockaid override state is ignored
  */
 export const useIsTxSuspicious = () => {
-  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
-    string | null
-  >(null);
-
-  useEffect(() => {
-    getBlockaidOverrideState()
-      .then(setBlockaidOverrideState)
-      .catch(() => setBlockaidOverrideState(null));
-  }, []);
-
+  const blockaidOverrideState = useBlockaidOverrideState();
   return (blockaidData?: BlockAidScanTxResult | null) =>
     isTxSuspicious(blockaidData, blockaidOverrideState);
 };
@@ -308,16 +300,7 @@ export const useIsTxSuspicious = () => {
  * In production, blockaid override state is ignored
  */
 export const useShouldTreatAssetAsUnableToScan = () => {
-  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
-    string | null
-  >(null);
-
-  useEffect(() => {
-    getBlockaidOverrideState()
-      .then(setBlockaidOverrideState)
-      .catch(() => setBlockaidOverrideState(null));
-  }, []);
-
+  const blockaidOverrideState = useBlockaidOverrideState();
   return (blockaidData?: BlockAidScanAssetResult | null) =>
     shouldTreatAssetAsUnableToScan(blockaidData, blockaidOverrideState);
 };
@@ -327,16 +310,7 @@ export const useShouldTreatAssetAsUnableToScan = () => {
  * In production, blockaid override state is ignored
  */
 export const useShouldTreatTxAsUnableToScan = () => {
-  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
-    string | null
-  >(null);
-
-  useEffect(() => {
-    getBlockaidOverrideState()
-      .then(setBlockaidOverrideState)
-      .catch(() => setBlockaidOverrideState(null));
-  }, []);
-
+  const blockaidOverrideState = useBlockaidOverrideState();
   return (blockaidData?: BlockAidScanTxResult | null) =>
     shouldTreatTxAsUnableToScan(blockaidData, blockaidOverrideState);
 };
@@ -438,10 +412,7 @@ export const isAssetSuspicious = (
   if (isAssetUnableToScan(blockaidData)) {
     return false;
   }
-  if (!blockaidData || !blockaidData.result_type) {
-    return false;
-  }
-  return blockaidData.result_type !== "Benign";
+  return blockaidData!.result_type !== "Benign";
 };
 
 export const isTxSuspicious = (
@@ -511,7 +482,11 @@ export const getSiteSecurityStates = (
   return {
     isUnableToScan: !scanData || scanData.status === undefined,
     isMalicious: scanData?.status === "hit" && scanData.is_malicious === true,
-    isSuspicious: false, // Suspicious is ignored as there's no concept of a suspicious site
+    // Blockaid does not produce a "suspicious" verdict for site scans, so this
+    // is always false for real results. The dev override intentionally allows
+    // setting isSuspicious: true so the UI path for a suspicious site can be
+    // exercised during development without needing a real suspicious scan result.
+    isSuspicious: false,
   };
 };
 
