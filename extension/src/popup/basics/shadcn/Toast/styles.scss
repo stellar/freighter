@@ -1,5 +1,57 @@
+@use "../../../styles/utils.scss" as *;
+
 .Toast {
   li:before {
     content: none !important;
+  }
+
+  [data-sonner-toast][data-styled="true"] {
+    --normal-bg: var(--sds-clr-gray-02);
+    background: var(--sds-clr-gray-02);
+    border: 1px solid var(--sds-clr-gray-06);
+    border-radius: pxToRem(8px);
+    padding: pxToRem(12px);
+    gap: pxToRem(8px);
+    box-shadow: none;
+  }
+
+  [data-sonner-toast][data-styled="true"] [data-title] {
+    font-size: pxToRem(14px);
+    font-weight: 600;
+    line-height: pxToRem(20px);
+    color: var(--sds-clr-gray-12);
+  }
+
+  [data-sonner-toast][data-styled="true"] [data-icon] {
+    color: var(--sds-clr-green-09, #30a46c);
+
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+    }
+  }
+
+  [data-sonner-toast][data-styled="true"] [data-close-button] {
+    position: static;
+    top: unset;
+    right: unset;
+    left: unset;
+    transform: none;
+    background: transparent;
+    border: none;
+    color: var(--sds-clr-gray-09);
+    width: pxToRem(20px);
+    height: pxToRem(20px);
+    padding: pxToRem(2px);
+
+    &:hover {
+      background: transparent;
+      color: var(--sds-clr-gray-12);
+    }
+
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+    }
   }
 }

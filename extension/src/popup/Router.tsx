@@ -62,6 +62,7 @@ import { AccountMigration } from "popup/views/AccountMigration";
 import { AddFunds } from "popup/views/AddFunds";
 import { Discover } from "popup/views/Discover";
 import { Wallets } from "popup/views/Wallets";
+import { ContactBook } from "popup/views/ContactBook";
 
 import { DEV_SERVER } from "@shared/constants/services";
 import { SettingsState } from "@shared/api/types";
@@ -277,6 +278,7 @@ export const Router = () => (
         <Route path={ROUTES.addFunds} element={<AddFunds />} />
         <Route path={ROUTES.discover} element={<Discover />} />
         <Route path={ROUTES.wallets} element={<Wallets />} />
+        <Route path={ROUTES.contactBook} element={<ContactBook />}></Route>
 
         {DEV_SERVER && (
           <>

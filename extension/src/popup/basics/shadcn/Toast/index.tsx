@@ -16,8 +16,10 @@ function Toaster({ ...props }: React.ComponentProps<typeof SonnerToaster>) {
       className="Toast"
       theme="dark"
       position="top-center"
+      closeButton
       icons={{
         info: <Icon.InfoCircle />,
+        success: <Icon.CheckCircle />,
       }}
       {...props}
     />

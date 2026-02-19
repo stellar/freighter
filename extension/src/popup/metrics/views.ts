@@ -68,6 +68,7 @@ const routeToEventName = {
   [ROUTES.addFunds]: METRIC_NAMES.viewAddFunds,
   [ROUTES.discover]: METRIC_NAMES.discover,
   [ROUTES.wallets]: METRIC_NAMES.wallets,
+  [ROUTES.contactBook]: METRIC_NAMES.viewContactBook,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {
