@@ -21,6 +21,7 @@ import { ATTACK_TO_DISPLAY } from "popup/helpers/blockaid";
 import { getBlockaidOverrideState } from "@shared/api/internal";
 import { SecurityLevel } from "popup/constants/blockaid";
 import { getSiteSecurityStates } from "popup/helpers/blockaid";
+import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import "popup/metrics/access";
 import "./styles.scss";
@@ -37,6 +38,9 @@ export const GrantAccess = () => {
     "uuid" in params && typeof params.uuid === "string" ? params.uuid : "";
   const domain = getUrlHostname(url);
   const { state, fetchData } = useGetGrantAccessData(url);
+
+  // Mark this queue item as active to prevent TTL cleanup while popup is open
+  useMarkQueueActive(uuid);
 
   const [isGranting, setIsGranting] = useState(false);
   const [activePaneIndex, setActivePaneIndex] = useState(0);

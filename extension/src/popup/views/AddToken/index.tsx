@@ -41,7 +41,6 @@ import {
   isAssetSuspicious,
   isAssetMalicious,
   shouldTreatAssetAsUnableToScan,
-  useIsAssetMalicious,
 } from "popup/helpers/blockaid";
 import { getBlockaidOverrideState } from "@shared/api/internal";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
@@ -51,6 +50,7 @@ import { openTab } from "popup/helpers/navigate";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
+import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import "./styles.scss";
 
@@ -70,6 +70,9 @@ export const AddToken = () => {
   });
   const { state, fetchData } = useGetAppData();
 
+  // Mark this queue item as active to prevent TTL cleanup while popup is open
+  useMarkQueueActive(uuid);
+
   const { t } = useTranslation();
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
 
@@ -84,7 +87,7 @@ export const AddToken = () => {
     useState(false);
   const [blockaidData, setBlockaidData] =
     useState<BlockAidScanAssetResult | null>(null);
-  const isAssetMaliciousCheck = useIsAssetMalicious();
+  const [isMaliciousAsset, setIsMaliciousAsset] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [activePaneIndex, setActivePaneIndex] = useState(0);
 
@@ -158,6 +161,7 @@ export const AddToken = () => {
           shouldTreatAssetAsUnableToScan(scannedAsset, overrideState))
       ) {
         setBlockaidData(scannedAsset);
+        setIsMaliciousAsset(isAssetMalicious(scannedAsset, overrideState));
       }
     };
 
@@ -465,11 +469,7 @@ export const AddToken = () => {
           isFullWidth
           isRounded
           size="lg"
-          variant={
-            blockaidData && isAssetMaliciousCheck(blockaidData)
-              ? "error"
-              : "secondary"
-          }
+          variant={isMaliciousAsset ? "error" : "secondary"}
           isLoading={isConfirming}
           onClick={() => handleApprove()}
         >

@@ -55,15 +55,23 @@ export type RejectTransactionResponse = undefined;
 export interface ResponseQueueItem<T> {
   response: (message: T, messageAddress?: string) => void;
   uuid: string;
+  createdAt: number;
 }
 
 export type ResponseQueue<T> = ResponseQueueItem<T>[];
 
-export type TokenQueue = TokenToAdd[];
+export interface TokenQueueItem {
+  token: TokenToAdd;
+  uuid: string;
+  createdAt: number;
+}
+
+export type TokenQueue = TokenQueueItem[];
 
 export interface TransactionQueueItem {
   transaction: Transaction;
   uuid: string;
+  createdAt: number;
 }
 
 export type TransactionQueue = TransactionQueueItem[];
@@ -71,6 +79,7 @@ export type TransactionQueue = TransactionQueueItem[];
 export interface BlobQueueItem {
   blob: MessageToSign;
   uuid: string;
+  createdAt: number;
 }
 
 export type BlobQueue = BlobQueueItem[];
@@ -78,6 +87,7 @@ export type BlobQueue = BlobQueueItem[];
 export interface AuthEntryQueueItem {
   authEntry: EntryToSign;
   uuid: string;
+  createdAt: number;
 }
 
 export type EntryQueue = AuthEntryQueueItem[];
@@ -428,6 +438,12 @@ export interface GetHiddenCollectiblesMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES;
 }
 
+export interface MarkQueueActiveMessage extends BaseMessage {
+  type: SERVICE_TYPES.MARK_QUEUE_ACTIVE;
+  uuid: string;
+  isActive: boolean;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -491,4 +507,5 @@ export type ServiceMessageRequest =
   | AddCollectibleMessage
   | GetCollectiblesMessage
   | ChangeCollectibleVisibilityMessage
-  | GetHiddenCollectiblesMessage;
+  | GetHiddenCollectiblesMessage
+  | MarkQueueActiveMessage;

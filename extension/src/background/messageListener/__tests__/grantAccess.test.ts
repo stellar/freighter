@@ -68,7 +68,11 @@ describe("grantAccess handler", () => {
   });
 
   it("grants access and sets allowlist for valid queue item", async () => {
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request: GrantAccessMessage = {
       type: SERVICE_TYPES.GRANT_ACCESS,
@@ -96,7 +100,11 @@ describe("grantAccess handler", () => {
   });
 
   it("does NOT set allowlist when uuid is not found in queue", async () => {
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request: GrantAccessMessage = {
       type: SERVICE_TYPES.GRANT_ACCESS,
@@ -122,7 +130,11 @@ describe("grantAccess handler", () => {
   });
 
   it("returns early and logs error when uuid is undefined", async () => {
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request = {
       type: SERVICE_TYPES.GRANT_ACCESS,
@@ -174,9 +186,9 @@ describe("grantAccess handler", () => {
     const mockResponseFn3 = jest.fn().mockReturnValue({ result: 3 });
 
     responseQueue.push(
-      { response: mockResponseFn1, uuid: "uuid-1" },
-      { response: mockResponseFn2, uuid: "uuid-2" },
-      { response: mockResponseFn3, uuid: "uuid-3" },
+      { response: mockResponseFn1, uuid: "uuid-1", createdAt: Date.now() },
+      { response: mockResponseFn2, uuid: "uuid-2", createdAt: Date.now() },
+      { response: mockResponseFn3, uuid: "uuid-3", createdAt: Date.now() },
     );
 
     const request: GrantAccessMessage = {
@@ -203,7 +215,11 @@ describe("grantAccess handler", () => {
   });
 
   it("does NOT set allowlist when response is not a function", async () => {
-    responseQueue.push({ response: "not-a-function" as any, uuid: "uuid-1" });
+    responseQueue.push({
+      response: "not-a-function" as any,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request: GrantAccessMessage = {
       type: SERVICE_TYPES.GRANT_ACCESS,

@@ -48,6 +48,7 @@ import {
 } from "popup/helpers/blockaid";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { SecurityLevel } from "popup/constants/blockaid";
+import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import "./styles.scss";
 
@@ -73,6 +74,9 @@ export const SignMessage = () => {
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
   });
+
+  // Mark this queue item as active to prevent TTL cleanup while popup is open
+  useMarkQueueActive(message.uuid);
 
   const { state: signMessageState, fetchData } = useGetSignMessageData(
     accountToSign,
