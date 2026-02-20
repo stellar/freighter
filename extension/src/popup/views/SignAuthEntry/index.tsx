@@ -39,6 +39,7 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { getSiteFavicon } from "popup/helpers/getSiteFavicon";
 import { AuthEntries } from "popup/components/AuthEntry";
+import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import "./styles.scss";
 
@@ -61,6 +62,9 @@ export const SignAuthEntry = () => {
   });
   const publicKey = useSelector(publicKeySelector);
 
+  // Mark this queue item as active to prevent TTL cleanup while popup is open
+  useMarkQueueActive(params.uuid);
+
   const { state: signAuthEntryData, fetchData } =
     useGetSignAuthEntryData(accountToSign);
   const {
@@ -72,7 +76,12 @@ export const SignAuthEntry = () => {
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-  } = useSetupSigningFlow(rejectAuthEntry, signEntry, params.entry);
+  } = useSetupSigningFlow(
+    rejectAuthEntry,
+    signEntry,
+    params.entry,
+    params.uuid,
+  );
 
   useEffect(() => {
     const getData = async () => {
@@ -155,6 +164,7 @@ export const SignAuthEntry = () => {
         <HardwareSign
           walletType={hardwareWalletType}
           isSignSorobanAuthorization
+          uuid={params.uuid}
         />
       )}
       <React.Fragment>

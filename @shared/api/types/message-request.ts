@@ -18,6 +18,7 @@ export interface TokenToAdd {
   url: string;
   contractId: string;
   networkPassphrase?: string;
+  uuid: string;
 }
 
 export interface MessageToSign {
@@ -28,6 +29,7 @@ export interface MessageToSign {
   url: string;
   accountToSign?: string;
   networkPassphrase?: string;
+  uuid: string;
 }
 
 export interface EntryToSign {
@@ -37,6 +39,7 @@ export interface EntryToSign {
   url: string;
   accountToSign?: string;
   networkPassphrase?: string;
+  uuid: string;
 }
 
 export type RequestAccessResponse = string;
@@ -49,17 +52,45 @@ export type SignedHwPayloadResponse = string | Buffer<ArrayBufferLike>;
 export type RejectAccessResponse = undefined;
 export type RejectTransactionResponse = undefined;
 
-export type ResponseQueue<T> = Array<
-  (message: T, messageAddress?: string) => void
->;
+export interface ResponseQueueItem<T> {
+  response: (message: T, messageAddress?: string) => void;
+  uuid: string;
+  createdAt: number;
+}
 
-export type TokenQueue = TokenToAdd[];
+export type ResponseQueue<T> = ResponseQueueItem<T>[];
 
-export type TransactionQueue = Transaction[];
+export interface TokenQueueItem {
+  token: TokenToAdd;
+  uuid: string;
+  createdAt: number;
+}
 
-export type BlobQueue = MessageToSign[];
+export type TokenQueue = TokenQueueItem[];
 
-export type EntryQueue = EntryToSign[];
+export interface TransactionQueueItem {
+  transaction: Transaction;
+  uuid: string;
+  createdAt: number;
+}
+
+export type TransactionQueue = TransactionQueueItem[];
+
+export interface BlobQueueItem {
+  blob: MessageToSign;
+  uuid: string;
+  createdAt: number;
+}
+
+export type BlobQueue = BlobQueueItem[];
+
+export interface AuthEntryQueueItem {
+  authEntry: EntryToSign;
+  uuid: string;
+  createdAt: number;
+}
+
+export type EntryQueue = AuthEntryQueueItem[];
 
 export interface BaseMessage {
   activePublicKey: string;
@@ -170,36 +201,44 @@ export interface ConfirmPasswordMessage extends BaseMessage {
 export interface GrantAccessMessage extends BaseMessage {
   type: SERVICE_TYPES.GRANT_ACCESS;
   url: string;
+  uuid: string;
 }
 
 export interface RejectAccessMessage extends BaseMessage {
   type: SERVICE_TYPES.REJECT_ACCESS;
+  uuid: string;
 }
 
 export interface HandleSignedHWPayloadMessage extends BaseMessage {
   type: SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD;
   signedPayload: string | Buffer<ArrayBufferLike>;
+  uuid: string;
 }
 
 export interface AddTokenMessage extends BaseMessage {
   type: SERVICE_TYPES.ADD_TOKEN;
+  uuid: string;
 }
 
 export interface SignTransactionMessage extends BaseMessage {
   type: SERVICE_TYPES.SIGN_TRANSACTION;
+  uuid: string;
 }
 
 export interface SignBlobMessage extends BaseMessage {
   apiVersion?: string;
   type: SERVICE_TYPES.SIGN_BLOB;
+  uuid: string;
 }
 
 export interface SignAuthEntryMessage extends BaseMessage {
   type: SERVICE_TYPES.SIGN_AUTH_ENTRY;
+  uuid: string;
 }
 
 export interface RejectTransactionMessage extends BaseMessage {
   type: SERVICE_TYPES.REJECT_TRANSACTION;
+  uuid: string;
 }
 
 export interface SignFreighterTransactionMessage extends BaseMessage {
@@ -391,6 +430,12 @@ export interface GetHiddenCollectiblesMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES;
 }
 
+export interface MarkQueueActiveMessage extends BaseMessage {
+  type: SERVICE_TYPES.MARK_QUEUE_ACTIVE;
+  uuid: string;
+  isActive: boolean;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -452,4 +497,5 @@ export type ServiceMessageRequest =
   | AddCollectibleMessage
   | GetCollectiblesMessage
   | ChangeCollectibleVisibilityMessage
-  | GetHiddenCollectiblesMessage;
+  | GetHiddenCollectiblesMessage
+  | MarkQueueActiveMessage;

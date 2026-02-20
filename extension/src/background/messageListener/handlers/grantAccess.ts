@@ -1,4 +1,5 @@
 import { Store } from "redux";
+import { captureException } from "@sentry/browser";
 
 import {
   GrantAccessMessage,
@@ -24,15 +25,28 @@ export const grantAccess = async ({
   responseQueue: ResponseQueue<RequestAccessResponse>;
   localStore: DataStorageAccess;
 }) => {
-  const { url = "" } = request;
+  const { url = "", uuid } = request;
+
+  if (!uuid) {
+    captureException("grantAccess: missing uuid in request");
+    return { error: "Access was denied" };
+  }
+
   const sanitizedUrl = getUrlHostname(url);
   const punycodedDomain = getPunycodedDomain(sanitizedUrl);
   const publicKey = publicKeySelector(sessionStore.getState());
   const networkDetails = await getNetworkDetails({ localStore });
 
-  // TODO: right now we're just grabbing the last thing in the queue, but this should be smarter.
-  // Maybe we need to search through responses to find a matching reponse :thinking_face
-  const response = responseQueue.pop();
+  const queueIndex = responseQueue.findIndex((item) => item.uuid === uuid);
+  const responseQueueItem =
+    queueIndex !== -1 ? responseQueue.splice(queueIndex, 1)[0] : undefined;
+
+  if (!responseQueueItem || typeof responseQueueItem.response !== "function") {
+    captureException(
+      `grantAccess: no matching response found for uuid ${uuid}`,
+    );
+    return { error: "Access was denied" };
+  }
 
   await setAllowListDomain({
     publicKey,
@@ -41,9 +55,5 @@ export const grantAccess = async ({
     localStore,
   });
 
-  if (typeof response === "function") {
-    return response(url, publicKey);
-  }
-
-  return { error: "Access was denied" };
+  return responseQueueItem.response(url, publicKey);
 };

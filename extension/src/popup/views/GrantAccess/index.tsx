@@ -18,6 +18,7 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { BlockaidByLine } from "popup/components/WarningMessages";
 import { ATTACK_TO_DISPLAY } from "popup/helpers/blockaid";
+import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import "popup/metrics/access";
 import "./styles.scss";
@@ -27,9 +28,16 @@ export const GrantAccess = () => {
   const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
 
-  const { url } = parsedSearchParam(location.search);
+  const params = parsedSearchParam(location.search);
+  const url =
+    "url" in params && typeof params.url === "string" ? params.url : "";
+  const uuid =
+    "uuid" in params && typeof params.uuid === "string" ? params.uuid : "";
   const domain = getUrlHostname(url);
   const { state, fetchData } = useGetGrantAccessData(url);
+
+  // Mark this queue item as active to prevent TTL cleanup while popup is open
+  useMarkQueueActive(uuid);
 
   const [isGranting, setIsGranting] = useState(false);
   const [activePaneIndex, setActivePaneIndex] = useState(0);
@@ -89,14 +97,14 @@ export const GrantAccess = () => {
   const { publicKey, networkDetails } = state.data;
 
   const rejectAndClose = () => {
-    dispatch(rejectAccess());
+    dispatch(rejectAccess({ uuid }));
     window.close();
   };
 
   const grantAndClose = async () => {
     setIsGranting(true);
 
-    await dispatch(grantAccess(url));
+    await dispatch(grantAccess({ url, uuid }));
     window.close();
   };
 

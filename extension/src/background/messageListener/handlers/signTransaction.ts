@@ -10,14 +10,17 @@ import {
   ResponseQueue,
   TransactionQueue,
   SignTransactionResponse,
+  SignTransactionMessage,
 } from "@shared/api/types/message-request";
 
 export const signTransaction = async ({
+  request,
   localStore,
   sessionStore,
   transactionQueue,
   responseQueue,
 }: {
+  request: SignTransactionMessage;
   localStore: DataStorageAccess;
   sessionStore: Store;
   transactionQueue: TransactionQueue;
@@ -42,29 +45,55 @@ export const signTransaction = async ({
 
   const Sdk = getSdk(networkDetails.networkPassphrase);
 
+  const { uuid } = request;
+
+  if (!uuid) {
+    captureException("signTransaction: missing uuid in request");
+    return { error: "Transaction not found" };
+  }
+
   if (privateKey.length) {
     const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
 
     let response = "";
 
-    const transactionToSign = transactionQueue.pop();
+    const queueIndex = transactionQueue.findIndex((item) => item.uuid === uuid);
+    const transactionQueueItem =
+      queueIndex !== -1 ? transactionQueue.splice(queueIndex, 1)[0] : undefined;
 
-    if (transactionToSign) {
-      try {
-        transactionToSign.sign(sourceKeys);
-        response = transactionToSign.toXDR();
-      } catch (e) {
-        console.error(e);
-        return { error: e };
-      }
+    if (!transactionQueueItem) {
+      captureException(
+        `signTransaction: no matching transaction found for uuid ${uuid}`,
+      );
+      return { error: "Transaction not found" };
     }
 
-    const transactionResponse = responseQueue.pop();
+    const { transaction: transactionToSign } = transactionQueueItem;
+    try {
+      transactionToSign.sign(sourceKeys);
+      response = transactionToSign.toXDR();
+    } catch (e) {
+      console.error(e);
+      return { error: e };
+    }
 
-    if (typeof transactionResponse === "function") {
-      transactionResponse(response, sourceKeys.publicKey());
+    const responseIndex = responseQueue.findIndex((item) => item.uuid === uuid);
+    const transactionResponse =
+      responseIndex !== -1
+        ? responseQueue.splice(responseIndex, 1)[0]
+        : undefined;
+
+    if (
+      transactionResponse &&
+      typeof transactionResponse.response === "function"
+    ) {
+      transactionResponse.response(response, sourceKeys.publicKey());
       return {};
     }
+
+    captureException(
+      `signTransaction: no matching response found for uuid ${uuid}`,
+    );
   }
 
   return { error: "Session timed out" };

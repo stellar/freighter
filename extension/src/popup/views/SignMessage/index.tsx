@@ -40,6 +40,7 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getSiteFavicon } from "popup/helpers/getSiteFavicon";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import "./styles.scss";
 
@@ -65,6 +66,9 @@ export const SignMessage = () => {
     domain,
   });
 
+  // Mark this queue item as active to prevent TTL cleanup while popup is open
+  useMarkQueueActive(message.uuid);
+
   const { state: signMessageState, fetchData } =
     useGetSignMessageData(accountToSign);
   const {
@@ -81,6 +85,7 @@ export const SignMessage = () => {
     rejectTransaction,
     signBlob,
     message.message,
+    message.uuid,
     apiVersion,
   );
 
@@ -175,7 +180,7 @@ export const SignMessage = () => {
   ) : (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
-        <HardwareSign walletType={hardwareWalletType} />
+        <HardwareSign walletType={hardwareWalletType} uuid={message.uuid} />
       )}
       <React.Fragment>
         <View.Content>

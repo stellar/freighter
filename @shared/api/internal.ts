@@ -1247,10 +1247,15 @@ export const getAssetDomains = async ({
   return assetDomains;
 };
 
-export const rejectAccess = async (): Promise<void> => {
+export const rejectAccess = async ({
+  uuid,
+}: {
+  uuid: string;
+}): Promise<void> => {
   try {
     await sendMessageToBackground({
       activePublicKey: null,
+      uuid,
       type: SERVICE_TYPES.REJECT_ACCESS,
     });
   } catch (e) {
@@ -1258,11 +1263,18 @@ export const rejectAccess = async (): Promise<void> => {
   }
 };
 
-export const grantAccess = async (url: string): Promise<void> => {
+export const grantAccess = async ({
+  url,
+  uuid,
+}: {
+  url: string;
+  uuid: string;
+}): Promise<void> => {
   try {
     await sendMessageToBackground({
       activePublicKey: null,
       url,
+      uuid,
       type: SERVICE_TYPES.GRANT_ACCESS,
     });
   } catch (e) {
@@ -1272,13 +1284,16 @@ export const grantAccess = async (url: string): Promise<void> => {
 
 export const handleSignedHwPayload = async ({
   signedPayload,
+  uuid,
 }: {
   signedPayload: string | Buffer;
+  uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
       activePublicKey: null,
       signedPayload,
+      uuid,
       type: SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD,
     });
   } catch (e) {
@@ -1288,12 +1303,15 @@ export const handleSignedHwPayload = async ({
 
 export const addToken = async ({
   activePublicKey,
+  uuid,
 }: {
   activePublicKey: string;
+  uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
       activePublicKey,
+      uuid,
       type: SERVICE_TYPES.ADD_TOKEN,
     });
   } catch (e) {
@@ -1303,12 +1321,15 @@ export const addToken = async ({
 
 export const signTransaction = async ({
   activePublicKey,
+  uuid,
 }: {
   activePublicKey: string;
+  uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
       activePublicKey,
+      uuid,
       type: SERVICE_TYPES.SIGN_TRANSACTION,
     });
   } catch (e) {
@@ -1319,14 +1340,17 @@ export const signTransaction = async ({
 export const signBlob = async ({
   apiVersion,
   activePublicKey,
+  uuid,
 }: {
   apiVersion?: string;
   activePublicKey: string;
+  uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
       apiVersion,
       activePublicKey,
+      uuid,
       type: SERVICE_TYPES.SIGN_BLOB,
     });
   } catch (e) {
@@ -1336,12 +1360,15 @@ export const signBlob = async ({
 
 export const signAuthEntry = async ({
   activePublicKey,
+  uuid,
 }: {
   activePublicKey: string;
+  uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
       activePublicKey,
+      uuid,
       type: SERVICE_TYPES.SIGN_AUTH_ENTRY,
     });
   } catch (e) {
@@ -2322,4 +2349,23 @@ export const getHiddenCollectibles = async ({
     hiddenCollectibles: response?.hiddenCollectibles || {},
     error: response?.error || "",
   };
+};
+
+export const markQueueActive = async ({
+  uuid,
+  isActive,
+}: {
+  uuid: string;
+  isActive: boolean;
+}): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      activePublicKey: null,
+      uuid,
+      isActive,
+      type: SERVICE_TYPES.MARK_QUEUE_ACTIVE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
 };

@@ -54,6 +54,7 @@ describe("getTransactionInfo", () => {
       transactionXdr: "",
       flaggedKeys: { test: { tags: [""] } },
       tab: {},
+      uuid: "test-uuid",
     });
     const info = getTransactionInfo("foo");
     if (!("blob" in info) && !("entry" in info)) {
@@ -68,6 +69,7 @@ describe("getTransactionInfo", () => {
       transactionXdr: "",
       flaggedKeys: { test: { tags: [""] } },
       tab: {},
+      uuid: "test-uuid",
     });
     const info = getTransactionInfo("foo");
     if (!("blob" in info) && !("entry" in info)) {

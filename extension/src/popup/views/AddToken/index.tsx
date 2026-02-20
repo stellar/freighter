@@ -44,6 +44,7 @@ import { openTab } from "popup/helpers/navigate";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
+import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import "./styles.scss";
 
@@ -55,12 +56,16 @@ export const AddToken = () => {
     url,
     contractId,
     networkPassphrase: entryNetworkPassphrase,
+    uuid,
   } = params;
 
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
   });
   const { state, fetchData } = useGetAppData();
+
+  // Mark this queue item as active to prevent TTL cleanup while popup is open
+  useMarkQueueActive(uuid);
 
   const { t } = useTranslation();
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
@@ -102,6 +107,7 @@ export const AddToken = () => {
     addToken,
     assetCode,
     assetIssuer,
+    uuid,
   });
 
   const { handleTokenLookup } = useTokenLookup({

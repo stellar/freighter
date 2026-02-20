@@ -39,6 +39,7 @@ import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 import { openTab } from "popup/helpers/navigate";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import {
   WarningMessageVariant,
@@ -90,7 +91,11 @@ export const SignTransaction = () => {
     domain,
     isHttpsDomain,
     flaggedKeys,
+    uuid,
   } = tx;
+
+  // Mark this queue item as active to prevent TTL cleanup while popup is open
+  useMarkQueueActive(uuid);
 
   const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =
     useState(false);
@@ -124,7 +129,12 @@ export const SignTransaction = () => {
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-  } = useSetupSigningFlow(rejectTransaction, signTransaction, transactionXdr);
+  } = useSetupSigningFlow(
+    rejectTransaction,
+    signTransaction,
+    transactionXdr,
+    uuid,
+  );
 
   // rebuild transaction to get Transaction prototypes
   const transaction = TransactionBuilder.fromXDR(
@@ -325,7 +335,7 @@ export const SignTransaction = () => {
   ) : (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
-        <HardwareSign walletType={hardwareWalletType} />
+        <HardwareSign walletType={hardwareWalletType} uuid={uuid} />
       )}
       <div data-testid="SignTransaction" className="SignTransaction">
         <MultiPaneSlider

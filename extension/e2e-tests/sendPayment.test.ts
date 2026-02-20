@@ -3,12 +3,12 @@ import { login, loginToTestAccount } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 import {
   stubAccountBalancesE2e,
-  stubAccountBalancesWithUSDC,
   stubAccountBalancesWithUnfundedDestination,
+  stubAccountBalancesWithUSDC,
   stubContractSpec,
-  stubScanTxWithUnfundedWarning,
-  stubScanTxWithUnfundedNonNativeWarning,
   stubScanTx,
+  stubScanTxWithUnfundedNonNativeWarning,
+  stubScanTxWithUnfundedWarning,
 } from "./helpers/stubs";
 
 const isIntegrationMode = process.env.IS_INTEGRATION_MODE === "true";
@@ -484,7 +484,7 @@ test("Send doesn't throw error when creating muxed account", async ({
 
   await page.getByTestId("send-to-input").fill(MUXED_ACCOUNT_ADDRESS);
   await expect(
-    page.getByText("The destination account doesn’t exist."),
+    page.getByText("The destination account doesn't exist."),
   ).toBeVisible();
   await page.getByText("Continue").click();
 
