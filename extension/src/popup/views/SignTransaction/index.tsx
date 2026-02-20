@@ -46,10 +46,15 @@ import {
   WarningMessage,
   SSLWarningMessage,
   BlockaidTxScanLabel,
-  BlockAidTxScanExpanded,
+  BlockAidScanExpanded,
   DomainNotAllowedWarningMessage,
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
+import {
+  useShouldTreatTxAsUnableToScan,
+  useIsTxSuspicious,
+  getSiteSecurityStates,
+} from "popup/helpers/blockaid";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Loading } from "popup/components/Loading";
 import { VerifyAccount } from "popup/views/VerifyAccount";
@@ -105,6 +110,8 @@ export const SignTransaction = () => {
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
   });
+  const isTxSuspicious = useIsTxSuspicious();
+  const shouldTreatAsUnableToScan = useShouldTreatTxAsUnableToScan();
 
   let accountToSign = _accountToSign;
 
@@ -118,6 +125,7 @@ export const SignTransaction = () => {
       includeIcons: false,
     },
     accountToSign,
+    domain,
   );
 
   const {
@@ -135,6 +143,25 @@ export const SignTransaction = () => {
     transactionXdr,
     uuid,
   );
+
+  const siteScanData =
+    signTxState.data?.type === AppDataType.RESOLVED
+      ? signTxState.data.siteScanData
+      : null;
+  const blockaidOverrideState =
+    signTxState.data?.type === AppDataType.RESOLVED
+      ? signTxState.data.blockaidOverrideState
+      : null;
+
+  // Determine site security states with override support
+  const {
+    isMalicious: isSiteMalicious,
+    isSuspicious: isSiteSuspicious,
+    isUnableToScan: isSiteUnableToScan,
+  } = getSiteSecurityStates(siteScanData, blockaidOverrideState);
+
+  const shouldShowSiteWarning =
+    isSiteMalicious || isSiteSuspicious || isSiteUnableToScan;
 
   // rebuild transaction to get Transaction prototypes
   const transaction = TransactionBuilder.fromXDR(
@@ -237,20 +264,30 @@ export const SignTransaction = () => {
   const { networkName, networkPassphrase } = signTxState.data?.networkDetails!;
 
   const scanResult = signTxState.data?.scanResult;
-  const hasNonBenignValidation = !!(
-    scanResult?.validation &&
-    "result_type" in scanResult.validation &&
-    (scanResult.validation.result_type === "Malicious" ||
-      scanResult.validation.result_type === "Warning")
-  );
+  const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
+  const isSuspiciousCheck = isTxSuspicious(scanResult);
+
+  const hasNonBenignValidation =
+    isSuspiciousCheck ||
+    !!(
+      scanResult?.validation &&
+      "result_type" in scanResult.validation &&
+      (scanResult.validation.result_type === "Malicious" ||
+        scanResult.validation.result_type === "Warning")
+    );
   const hasSimulationError =
     scanResult && scanResult.simulation && "error" in scanResult.simulation;
-  const showBlockAidDetails = hasSimulationError || hasNonBenignValidation;
+  const showBlockAidDetails =
+    isUnableToScan ||
+    hasSimulationError ||
+    hasNonBenignValidation ||
+    shouldShowSiteWarning;
   const btnIsDestructive =
     (scanResult?.validation &&
       "result_type" in scanResult.validation &&
       scanResult.validation.result_type === "Malicious") ||
-    hasSimulationError;
+    hasSimulationError ||
+    isSiteMalicious;
 
   if (_networkPassphrase !== networkPassphrase) {
     return (
@@ -358,11 +395,13 @@ export const SignTransaction = () => {
                     </span>
                   </div>
                 </div>
-                {scanResult && (
-                  <BlockaidTxScanLabel
-                    scanResult={scanResult}
-                    onClick={() => setActivePaneIndex(1)}
-                  />
+                {showBlockAidDetails && (
+                  <div className="SignTransaction__BlockaidDetails">
+                    <BlockaidTxScanLabel
+                      scanResult={scanResult}
+                      onClick={() => setActivePaneIndex(1)}
+                    />
+                  </div>
                 )}
                 {!isDomainListedAllowed && (
                   <DomainNotAllowedWarningMessage domain={domain} />
@@ -426,8 +465,8 @@ export const SignTransaction = () => {
                 </div>
               </div>
             </div>,
-            <BlockAidTxScanExpanded
-              scanResult={scanResult!}
+            <BlockAidScanExpanded
+              scanResult={scanResult}
               onClose={() => setActivePaneIndex(0)}
             />,
             <div className="SignTransaction__Body">
@@ -533,11 +572,13 @@ export const SignTransaction = () => {
                   variant={btnIsDestructive ? "destructive" : "secondary"}
                   onClick={() => rejectAndClose()}
                 >
-                  {t("Cancel")}
+                  <span className="SignTransaction__CancelBtn">
+                    {t("Cancel")}
+                  </span>
                 </Button>
                 <Button
                   disabled={isSubmitDisabled}
-                  variant="error"
+                  variant={btnIsDestructive ? "error" : "tertiary"}
                   isFullWidth
                   isRounded
                   size="lg"
@@ -557,7 +598,9 @@ export const SignTransaction = () => {
                   variant="tertiary"
                   onClick={() => rejectAndClose()}
                 >
-                  {t("Cancel")}
+                  <span className="SignTransaction__CancelBtn">
+                    {t("Cancel")}
+                  </span>
                 </Button>
                 <Button
                   data-testid="sign-transaction-sign"

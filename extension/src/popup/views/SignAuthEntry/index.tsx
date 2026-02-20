@@ -65,8 +65,10 @@ export const SignAuthEntry = () => {
   // Mark this queue item as active to prevent TTL cleanup while popup is open
   useMarkQueueActive(params.uuid);
 
-  const { state: signAuthEntryData, fetchData } =
-    useGetSignAuthEntryData(accountToSign);
+  const { state: signAuthEntryData, fetchData } = useGetSignAuthEntryData(
+    accountToSign,
+    params.url,
+  );
   const {
     isConfirming,
     isPasswordRequired,

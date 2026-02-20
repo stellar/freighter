@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Button, Icon, Notification } from "@stellar/design-system";
+import { Icon, Notification } from "@stellar/design-system";
 
 import { NetworkDetails } from "@shared/constants/stellar";
+import { BlockAidScanTxResult } from "@shared/api/types";
 import { RequestState, State } from "constants/request";
 import {
   ShowOverlayStatus,
@@ -12,7 +13,6 @@ import {
 } from "popup/ducks/transactionSubmission";
 import {
   getAssetFromCanonical,
-  isMainnet,
   truncatedFedAddress,
   truncatedPublicKey,
 } from "helpers/stellar";
@@ -23,21 +23,68 @@ import {
 } from "helpers/muxedAddress";
 import { SimulateTxData } from "popup/components/send/SendAmount/hooks/useSimulateTxData";
 import { View } from "popup/basics/layout/View";
-import { AssetIcon } from "popup/components/account/AccountAssets";
-import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
-import {
-  BlockaidTxScanLabel,
-  BlockAidTxScanExpanded,
-  MemoRequiredLabel,
-} from "popup/components/WarningMessages";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
-import { CopyValue } from "popup/components/CopyValue";
 import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
-import { CollectibleInfoImage } from "popup/components/account/CollectibleInfo";
+import { SecurityLevel } from "popup/constants/blockaid";
+import {
+  useBlockaidOverrideState,
+  useShouldTreatTxAsUnableToScan,
+} from "popup/helpers/blockaid";
+import {
+  BlockaidTxScanLabel,
+  BlockAidScanExpanded,
+  MemoRequiredLabel,
+} from "popup/components/WarningMessages";
+import { CopyValue } from "popup/components/CopyValue";
+import { ActionButtons } from "./components/ActionButtons";
+import { SendAsset, SendDestination } from "./components";
 
 import "./styles.scss";
+
+/**
+ * Determines security level from transaction scan result, considering overrides
+ */
+const getTransactionSecurityLevel = (
+  txScanResult: BlockAidScanTxResult | null | undefined,
+  isUnableToScan: boolean,
+  blockaidOverrideState: string | null,
+): SecurityLevel | null => {
+  // Check overrides first (takes precedence, dev mode only)
+  if (blockaidOverrideState) {
+    return blockaidOverrideState as SecurityLevel;
+  }
+
+  if (!txScanResult) {
+    return isUnableToScan ? SecurityLevel.UNABLE_TO_SCAN : null;
+  }
+
+  const { simulation, validation } = txScanResult;
+
+  // Handle simulation error - treat as suspicious
+  if (simulation && "error" in simulation) {
+    return SecurityLevel.SUSPICIOUS;
+  }
+
+  // Handle validation result
+  if (validation && "result_type" in validation) {
+    const resultType = validation.result_type;
+    if (resultType === "Malicious") {
+      return SecurityLevel.MALICIOUS;
+    }
+    if (resultType === "Warning") {
+      return SecurityLevel.SUSPICIOUS;
+    }
+  }
+
+  // Handle unable to scan
+  if (isUnableToScan) {
+    return SecurityLevel.UNABLE_TO_SCAN;
+  }
+
+  return null;
+};
 
 interface ReviewTxProps {
   assetIcon: string | null;
@@ -108,20 +155,68 @@ export const ReviewTx = ({
     ? truncatedFedAddress(federationAddress)
     : truncatedPublicKey(destination);
 
-  // Extract contract ID from asset for custom tokens
+  // Scan transaction
+  const txScanResult = simulationState.data?.scanResult;
+  const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
+
+  // Compute warning state once - used by both label and expanded components
+  const isUnableToScan = shouldTreatTxAsUnableToScan(txScanResult);
+
+  // Check override state (takes precedence, dev mode only)
+  const blockaidOverrideState = useBlockaidOverrideState();
+
+  // Determine security level (includes overrides - takes precedence on all panes)
+  const securityLevel = getTransactionSecurityLevel(
+    txScanResult,
+    isUnableToScan,
+    blockaidOverrideState,
+  );
+
+  const isMalicious = securityLevel === SecurityLevel.MALICIOUS;
+  const isSuspicious = securityLevel === SecurityLevel.SUSPICIOUS;
+
+  // Determine if transaction warning should be shown
+  const shouldShowTxWarning = isMalicious || isSuspicious || isUnableToScan;
+
+  /**
+   * Pane state machine:
+   * - With Blockaid warning: [Review, Memo, Blockaid] - Blockaid accessible via banner click
+   * - No warning: [Review, Memo]
+   */
+  const paneConfig = React.useMemo(
+    () =>
+      !shouldShowTxWarning
+        ? {
+            blockaidIndex: null,
+            reviewIndex: 0,
+            memoIndex: 1,
+          }
+        : {
+            blockaidIndex: 2,
+            reviewIndex: 0,
+            memoIndex: 1,
+          },
+    [shouldShowTxWarning],
+  );
+
+  const isOnBlockaidPane =
+    paneConfig.blockaidIndex !== null &&
+    activePaneIndex === paneConfig.blockaidIndex;
+
+  // Extract contract ID for custom tokens or collectibles
   const contractId = React.useMemo(
     () =>
       getContractIdFromTransactionData({
         isCollectible,
-        collectionAddress: collectibleData.collectionAddress,
+        collectionAddress: collectibleData?.collectionAddress || "",
         isToken,
         asset: srcAsset,
         networkDetails,
       }),
     [
-      isToken,
       isCollectible,
-      collectibleData.collectionAddress,
+      collectibleData?.collectionAddress,
+      isToken,
       srcAsset,
       networkDetails,
     ],
@@ -198,6 +293,149 @@ export const ReviewTx = ({
     onConfirm();
   };
 
+  const reviewPane = (
+    <>
+      <div className="ReviewTx__Summary">
+        <p>{title}</p>
+        <div className="ReviewTx__SendSummary">
+          <div className="ReviewTx__SendAsset">
+            <SendAsset
+              isCollectible={isCollectible}
+              collectibleData={collectibleData}
+              assetIcons={assetIcons}
+              asset={asset}
+              assetIcon={assetIcon}
+              sendAmount={sendAmount}
+              networkDetails={networkDetails}
+              sendPriceUsd={sendPriceUsd}
+            />
+          </div>
+          <div className="ReviewTx__Divider">
+            <Icon.ChevronDownDouble />
+          </div>
+          <div
+            className="ReviewTx__SendDestination"
+            data-testid="review-tx-send-destination"
+          >
+            <SendDestination
+              dstAsset={dstAsset}
+              dest={dest}
+              networkDetails={networkDetails}
+              destination={destination}
+              truncatedDest={truncatedDest}
+            />
+          </div>
+        </div>
+      </div>
+      <div className="ReviewTx__Warnings">
+        {shouldShowTxWarning && paneConfig.blockaidIndex !== null && (
+          <BlockaidTxScanLabel
+            scanResult={txScanResult}
+            onClick={() => {
+              if (paneConfig.blockaidIndex !== null) {
+                setActivePaneIndex(paneConfig.blockaidIndex);
+              }
+            }}
+          />
+        )}
+        {isRequiredMemoMissing && !isValidatingMemo && !shouldShowTxWarning && (
+          <MemoRequiredLabel
+            onClick={() => setActivePaneIndex(paneConfig.memoIndex)}
+          />
+        )}
+      </div>
+      <div className="ReviewTx__Details">
+        {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
+        {!isMemoDisabled && (
+          <div className="ReviewTx__Details__Row">
+            <div className="ReviewTx__Details__Row__Title">
+              <Icon.File02 />
+              {t("Memo")}
+            </div>
+            <div
+              className="ReviewTx__Details__Row__Value"
+              data-testid="review-tx-memo"
+            >
+              {memo || t("None")}
+            </div>
+          </div>
+        )}
+        <div className="ReviewTx__Details__Row">
+          <div className="ReviewTx__Details__Row__Title">
+            <Icon.Route />
+            {t("Fee")}
+          </div>
+          <div
+            className="ReviewTx__Details__Row__Value"
+            data-testid="review-tx-fee"
+          >
+            {fee} XLM
+          </div>
+        </div>
+        <div className="ReviewTx__Details__Row">
+          <div className="ReviewTx__Details__Row__Title">
+            <Icon.FileCode02 />
+            {t("XDR")}
+          </div>
+          <div className="ReviewTx__Details__Row__Value">
+            <CopyValue
+              value={simulationState.data!.transactionXdr}
+              displayValue={simulationState.data!.transactionXdr}
+            />
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  const blockaidPane = (
+    <BlockAidScanExpanded
+      scanResult={txScanResult}
+      onClose={() => {
+        setActivePaneIndex(paneConfig.reviewIndex);
+      }}
+    />
+  );
+
+  const memoPane = (
+    <div className="ReviewTx__MemoDetails">
+      <div className="ReviewTx__MemoDetails__Header">
+        <div className="ReviewTx__MemoDetails__Header__Icon">
+          <Icon.InfoOctagon className="WarningMessage__icon" />
+        </div>
+        <div
+          className="ReviewTx__MemoDetails__Header__Close"
+          onClick={() => setActivePaneIndex(paneConfig.reviewIndex)}
+        >
+          <Icon.X />
+        </div>
+      </div>
+      <div className="ReviewTx__MemoDetails__Title">
+        <span>{t("Memo is required")}</span>
+      </div>
+      <div className="ReviewTx__MemoDetails__Content">
+        <div className="ReviewTx__MemoDetails__Text">
+          {t(
+            "Some destination accounts on the Stellar network require a memo to identify your payment.",
+          )}
+        </div>
+        <div className="ReviewTx__MemoDetails__Text">
+          {t(
+            "If a required memo is missing or incorrect, your funds may not reach the intended recipient.",
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Build panes in order (no hooks on JSX)
+  const panes: React.ReactNode[] = [];
+  if (shouldShowTxWarning) {
+    panes.push(reviewPane, memoPane, blockaidPane);
+  } else {
+    panes.push(reviewPane, memoPane);
+  }
+
   return (
     <View.Content hasNoTopPadding>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType ? (
@@ -208,244 +446,25 @@ export const ReviewTx = ({
         />
       ) : (
         <div className="ReviewTx">
-          <MultiPaneSlider
-            activeIndex={activePaneIndex}
-            panes={[
-              <>
-                <div className="ReviewTx__Summary">
-                  <p>{title}</p>
-                  <div className="ReviewTx__SendSummary">
-                    <div className="ReviewTx__SendAsset">
-                      {isCollectible ? (
-                        <div className="ReviewTx__SendAsset__Collectible">
-                          <CollectibleInfoImage
-                            image={collectibleData.image}
-                            name={collectibleData.name}
-                            isSmall
-                          />
-                        </div>
-                      ) : (
-                        <AssetIcon
-                          assetIcons={assetIcons}
-                          code={asset.code}
-                          issuerKey={asset.issuer}
-                          icon={assetIcon}
-                          isSuspicious={false}
-                        />
-                      )}
-                      <div
-                        className="ReviewTx__SendAssetDetails"
-                        data-testid="review-tx-send-amount"
-                      >
-                        {isCollectible ? (
-                          <div className="ReviewTx__SendAsset__Collectible__label">
-                            <div
-                              className="ReviewTx__SendAsset__Collectible__label__name"
-                              data-testid="review-tx-send-asset-collectible-name"
-                            >
-                              {collectibleData.name}
-                            </div>
-                            <div
-                              className="ReviewTx__SendAsset__Collectible__label__id"
-                              data-testid="review-tx-send-asset-collectible-collection-name"
-                            >
-                              {collectibleData.collectionName} #
-                              {collectibleData.tokenId}
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <span>
-                              {sendAmount} {asset.code}
-                            </span>
-                            {isMainnet(networkDetails) && sendPriceUsd && (
-                              <span className="ReviewTx__SendAssetDetails__price">
-                                {`$${sendPriceUsd}`}
-                              </span>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div className="ReviewTx__Divider">
-                      <Icon.ChevronDownDouble />
-                    </div>
-                    <div
-                      className="ReviewTx__SendDestination"
-                      data-testid="review-tx-send-destination"
-                    >
-                      {dstAsset && dest ? (
-                        <>
-                          <AssetIcon
-                            assetIcons={
-                              dstAsset.canonical !== "native"
-                                ? { [dstAsset.canonical]: dstAsset.icon }
-                                : {}
-                            }
-                            code={dest.code}
-                            issuerKey={dest.issuer}
-                            icon={dstAsset.icon}
-                            isSuspicious={false}
-                          />
-                          <div className="ReviewTx__SendAssetDetails">
-                            <span>
-                              {dstAsset.amount} {dest.code}
-                            </span>
-                            {isMainnet(networkDetails) && dstAsset.priceUsd && (
-                              <span className="ReviewTx__SendAssetDetails__price">
-                                {`$${dstAsset.priceUsd}`}
-                              </span>
-                            )}
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <IdenticonImg publicKey={destination} />
-                          <div
-                            className="ReviewTx__SendDestinationDetails"
-                            data-testid="review-tx-send-destination-address"
-                          >
-                            {truncatedDest}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="ReviewTx__Warnings">
-                  {simulationState.data?.scanResult && (
-                    <BlockaidTxScanLabel
-                      scanResult={simulationState.data?.scanResult}
-                      onClick={() => setActivePaneIndex(1)}
-                    />
-                  )}
-                  {isRequiredMemoMissing && !isValidatingMemo && (
-                    <MemoRequiredLabel onClick={() => setActivePaneIndex(2)} />
-                  )}
-                </div>
-                <div className="ReviewTx__Details">
-                  {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
-                  {!isMemoDisabled && (
-                    <div className="ReviewTx__Details__Row">
-                      <div className="ReviewTx__Details__Row__Title">
-                        <Icon.File02 />
-                        {t("Memo")}
-                      </div>
-                      <div
-                        className="ReviewTx__Details__Row__Value"
-                        data-testid="review-tx-memo"
-                      >
-                        {memo || t("None")}
-                      </div>
-                    </div>
-                  )}
-                  <div className="ReviewTx__Details__Row">
-                    <div className="ReviewTx__Details__Row__Title">
-                      <Icon.Route />
-                      {t("Fee")}
-                    </div>
-                    <div
-                      className="ReviewTx__Details__Row__Value"
-                      data-testid="review-tx-fee"
-                    >
-                      {fee} XLM
-                    </div>
-                  </div>
-                  <div className="ReviewTx__Details__Row">
-                    <div className="ReviewTx__Details__Row__Title">
-                      <Icon.FileCode02 />
-                      {t("XDR")}
-                    </div>
-                    <div className="ReviewTx__Details__Row__Value">
-                      <CopyValue
-                        value={simulationState.data!.transactionXdr}
-                        displayValue={simulationState.data!.transactionXdr}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </>,
-              <BlockAidTxScanExpanded
-                scanResult={simulationState.data?.scanResult!}
-                onClose={() => setActivePaneIndex(0)}
-              />,
-              <div className="ReviewTx__MemoDetails">
-                <div className="ReviewTx__MemoDetails__Header">
-                  <div className="ReviewTx__MemoDetails__Header__Icon">
-                    <Icon.InfoOctagon className="WarningMessage__icon" />
-                  </div>
-                  <div
-                    className="ReviewTx__MemoDetails__Header__Close"
-                    onClick={() => setActivePaneIndex(0)}
-                  >
-                    <Icon.X />
-                  </div>
-                </div>
-                <div className="ReviewTx__MemoDetails__Title">
-                  <span>{t("Memo is required")}</span>
-                </div>
-                <div className="ReviewTx__MemoDetails__Content">
-                  <div className="ReviewTx__MemoDetails__Text">
-                    {t(
-                      "Some destination accounts on the Stellar network require a memo to identify your payment.",
-                    )}
-                  </div>
-                  <div className="ReviewTx__MemoDetails__Text">
-                    {t(
-                      "If a required memo is missing or incorrect, your funds may not reach the intended recipient.",
-                    )}
-                  </div>
-                </div>
-              </div>,
-            ]}
-          />
+          <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
           <div className="ReviewTx__Actions">
-            {isRequiredMemoMissing && !isValidatingMemo && onAddMemo ? (
-              <Button
-                size="lg"
-                isFullWidth
-                isRounded
-                variant="secondary"
-                data-testid="AddMemoAction"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onAddMemo();
-                }}
-              >
-                {t("Add Memo")}
-              </Button>
-            ) : (
-              <Button
-                size="lg"
-                isFullWidth
-                isRounded
-                variant="secondary"
-                data-testid="SubmitAction"
-                disabled={isSubmitDisabled}
-                isLoading={isValidatingMemo}
-                onClick={(e) => {
-                  e.preventDefault();
-                  onConfirmTx();
-                }}
-              >
-                {dstAsset && dest
-                  ? `Swap ${asset.code} to ${dest.code}`
-                  : `Send to ${truncatedDest}`}
-              </Button>
-            )}
-            <Button
-              size="lg"
-              isFullWidth
-              isRounded
-              variant="tertiary"
-              disabled={isValidatingMemo}
-              onClick={(e) => {
-                e.preventDefault();
-                onCancel();
-              }}
-            >
-              {t("Cancel")}
-            </Button>
+            <ActionButtons
+              isOnBlockaidPane={isOnBlockaidPane}
+              isMalicious={isMalicious}
+              isRequiredMemoMissing={isRequiredMemoMissing}
+              isValidatingMemo={isValidatingMemo}
+              onAddMemo={onAddMemo}
+              shouldShowTxWarning={shouldShowTxWarning}
+              onCancel={onCancel}
+              onConfirmTx={onConfirmTx}
+              paneConfig={paneConfig}
+              isSubmitDisabled={isSubmitDisabled}
+              dstAsset={dstAsset}
+              dest={dest}
+              asset={asset}
+              truncatedDest={truncatedDest}
+              setActivePaneIndex={setActivePaneIndex}
+            />
           </div>
         </div>
       )}

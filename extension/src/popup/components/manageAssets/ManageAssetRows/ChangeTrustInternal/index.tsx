@@ -13,6 +13,7 @@ import {
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import { View } from "popup/basics/layout/View";
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { Summary } from "popup/views/SignTransaction/Preview/Summary";
 import { Details } from "popup/views/SignTransaction/Preview/Details";
@@ -22,6 +23,8 @@ import {
   BlockAidAssetScanExpanded,
   BlockaidAssetWarning,
 } from "popup/components/WarningMessages";
+import { SecurityLevel } from "popup/constants/blockaid";
+import { useBlockaidOverrideState } from "popup/helpers/blockaid";
 import { useGetChangeTrustData } from "./hooks/useChangeTrustData";
 import { Fee } from "./Settings/Fee";
 import { Timeout } from "./Settings/Timeout";
@@ -65,6 +68,9 @@ export const ChangeTrustInternal = ({
     ActiveBodyContent.details,
   );
   const { t } = useTranslation();
+
+  // Check override state (takes precedence, dev mode only)
+  const blockaidOverrideState = useBlockaidOverrideState();
   const { recommendedFee } = useNetworkFees();
 
   const baseFeeStroops = stroopToXlm(BASE_FEE).toString();
@@ -152,227 +158,366 @@ export const ChangeTrustInternal = ({
     (op) => op.type === "changeTrust",
   );
 
-  return (
-    <div data-testid="ChangeTrustInternal" className="ChangeTrustInternal">
-      {activeBodyContent === ActiveBodyContent.details && (
-        <MultiPaneSlider
-          activeIndex={activePaneIndex}
-          panes={[
-            <div
-              className="ChangeTrustInternal__Body"
-              data-testid="ChangeTrustInternal__Body"
+  // Determine if asset is malicious (Malicious result_type takes precedence over overrides)
+  const isMalicious =
+    state.data?.scanResult?.result_type === "Malicious" ||
+    blockaidOverrideState === SecurityLevel.MALICIOUS;
+
+  // Determine if blockaid warnings should be shown
+  const shouldShowBlockaidWarning =
+    state.data &&
+    (isMalicious ||
+      state.data.isAssetSuspicious ||
+      state.data.isAssetUnableToScan);
+
+  /**
+   * Pane state machine for blockaid warnings:
+   * - With blockaid warning: [Confirm Transaction, Details, Blockaid] - Blockaid accessible via banner click
+   * - No warning: [Confirm Transaction, Details]
+   */
+  const paneConfig = !shouldShowBlockaidWarning
+    ? {
+        blockaidIndex: null,
+        confirmIndex: 0,
+        detailsIndex: 1,
+      }
+    : {
+        blockaidIndex: 2,
+        confirmIndex: 0,
+        detailsIndex: 1,
+      };
+
+  const isInBlockaidPane =
+    paneConfig.blockaidIndex !== null &&
+    activePaneIndex === paneConfig.blockaidIndex;
+
+  // Build panes in order (no hooks on JSX)
+  const panes: React.ReactNode[] = [];
+
+  // Blockaid pane
+  const blockaidPane = (
+    <BlockAidAssetScanExpanded
+      scanResult={state.data.scanResult}
+      onClose={() => {
+        setActivePaneIndex(paneConfig.confirmIndex);
+      }}
+    />
+  );
+
+  // Confirm Transaction pane
+  const confirmPane = (
+    <div
+      className="ChangeTrustInternal__Body"
+      data-testid="ChangeTrustInternal__Body"
+    >
+      <div className="ChangeTrustInternal__Body__Wrapper">
+        <div
+          className="ChangeTrustInternal__TitleRow"
+          data-testid="ChangeTrustInternal__TitleRow"
+        >
+          <img src={StellarLogo} alt={t("Stellar Logo")} />
+          <div className="ChangeTrustInternal__TitleRow__Detail">
+            <span className="ChangeTrustInternal__TitleRow__Title">
+              {t("Confirm Transaction")}
+            </span>
+            <span
+              className="SignTransaction__TitleRow__Domain"
+              data-testid="ChangeTrustInternal__TitleRow__Domain"
             >
-              <div className="ChangeTrustInternal__Body__Wrapper">
-                <div
-                  className="ChangeTrustInternal__TitleRow"
-                  data-testid="ChangeTrustInternal__TitleRow"
-                >
-                  <img src={StellarLogo} alt={t("Stellar Logo")} />
-                  <div className="ChangeTrustInternal__TitleRow__Detail">
-                    <span className="ChangeTrustInternal__TitleRow__Title">
-                      {t("Confirm Transaction")}
-                    </span>
-                    <span
-                      className="SignTransaction__TitleRow__Domain"
-                      data-testid="ChangeTrustInternal__TitleRow__Domain"
-                    >
-                      {asset.domain}
-                    </span>
-                  </div>
-                </div>
-                {state.data.isAssetSuspicious && (
-                  <BlockaidAssetWarning
-                    blockaidData={state.data.scanResult}
-                    onClick={() => setActivePaneIndex(2)}
-                  />
-                )}
-                {trustlineChanges.length > 0 && (
-                  <Trustline operations={trustlineChanges} icons={icons} />
-                )}
-                <div className="ChangeTrustInternal__Metadata">
-                  <div className="ChangeTrustInternal__Metadata__Row">
-                    <div className="ChangeTrustInternal__Metadata__Label">
-                      <Icon.Wallet01 />
-                      <span>{t("Wallet")}</span>
-                    </div>
-                    <div className="ChangeTrustInternal__Metadata__Value">
-                      <KeyIdenticon publicKey={publicKey} />
-                    </div>
-                  </div>
-                  <div className="ChangeTrustInternal__Metadata__Row">
-                    <div
-                      className="ChangeTrustInternal__Metadata__Label"
-                      data-testid="ChangeTrustInternal__Metadata__Label__Fee"
-                    >
-                      <Icon.Route />
-                      <span>{t("Fee")}</span>
-                    </div>
-                    <div
-                      className="ChangeTrustInternal__Metadata__Value"
-                      data-testid="ChangeTrustInternal__Metadata__Value__Fee"
-                    >
-                      <span>{`${fee} XLM`}</span>
-                    </div>
-                  </div>
-                </div>
-                <div
-                  className="ChangeTrustInternal__TransactionDetailsBtn"
-                  onClick={() => setActivePaneIndex(1)}
-                >
-                  <Icon.List />
-                  <span>{t("Transaction details")}</span>
-                </div>
-              </div>
-            </div>,
-            <div className="ChangeTrustInternal__Body">
-              <div className="ChangeTrustInternal__Body__Wrapper">
-                <div className="ChangeTrustInternal__TransactionDetails">
-                  <div className="ChangeTrustInternal__TransactionDetails__Header">
-                    <div className="DetailsMark">
-                      <Icon.List />
-                    </div>
-                    <div
-                      className="Close"
-                      onClick={() => setActivePaneIndex(0)}
-                    >
-                      <Icon.X />
-                    </div>
-                  </div>
-                  <div className="ChangeTrustInternal__TransactionDetails__Title">
-                    <span>{t("Transaction Details")}</span>
-                  </div>
-                  <div className="ChangeTrustInternal__TransactionDetails__Summary">
-                    <Summary
-                      sequenceNumber={sequence}
-                      fee={xlmToStroop(fee).toString()}
-                      memo={{ value: memo, type: "text" }}
-                      xdr={xdrDefined}
-                      operationNames={operations.map(
-                        (op) => OPERATION_TYPES[op.type] || op.type,
-                      )}
-                    />
-                  </div>
-                  <Details
-                    operations={operations}
-                    flaggedKeys={flaggedKeys}
-                    isMemoRequired={isMemoRequired}
-                  />
-                </div>
-              </div>
-            </div>,
-            <BlockAidAssetScanExpanded
-              scanResult={state.data.scanResult}
-              onClose={() => setActivePaneIndex(0)}
-            />,
-          ]}
-        />
-      )}
-      {activeBodyContent === ActiveBodyContent.fee && (
-        <Fee
-          fee={fee}
-          onSaveFee={setFee}
-          recommendedFee={recommendedFee}
-          goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
-        />
-      )}
-      {activeBodyContent === ActiveBodyContent.timeout && (
-        <Timeout
-          timeout={timeout}
-          onSave={setTimeout}
-          goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
-        />
-      )}
-      {activeBodyContent === ActiveBodyContent.memo && (
-        <Memo
-          memo={memo}
-          onSave={setMemo}
-          goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
-        />
-      )}
-      {activeBodyContent === ActiveBodyContent.submitTx && (
-        <SubmitTransaction
-          asset={asset}
-          addTrustline={addTrustline}
-          icons={icons}
-          fee={fee}
-          goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
-          onSuccess={onCancel}
-        />
-      )}
-      {activeBodyContent === ActiveBodyContent.details && (
-        <div className="ChangeTrustInternal__Actions">
-          <div className="ChangeTrustInternal__Actions__BtnRow">
-            {isSettingsSelectorOpen ? (
-              <div
-                className="ChangeTrustInternal__options-actions"
-                ref={activeOptionsRef}
-              >
-                <div
-                  className="ChangeTrustInternal__options-actions__row"
-                  onClick={() => setActiveBodyContent(ActiveBodyContent.fee)}
-                >
-                  <div className="action-copy">
-                    <div className="ChangeTrustInternal__options-actions__label">
-                      {t("Fee")}: {`${fee} XLM`}
-                    </div>
-                    <Icon.Route />
-                  </div>
-                </div>
-                <div
-                  className="ChangeTrustInternal__options-actions__row"
-                  onClick={() =>
-                    setActiveBodyContent(ActiveBodyContent.timeout)
-                  }
-                >
-                  <div className="action-copy">
-                    <div className="ChangeTrustInternal__options-actions__label">
-                      {t("Timeout (seconds)")}: {`${timeout}(s)`}
-                    </div>
-                    <Icon.Clock />
-                  </div>
-                </div>
-                <div
-                  className="ChangeTrustInternal__options-actions__row"
-                  onClick={() => setActiveBodyContent(ActiveBodyContent.memo)}
-                >
-                  <div className="action-copy">
-                    <div className="ChangeTrustInternal__options-actions__label">
-                      {t("Memo")}
-                    </div>
-                    <Icon.File02 />
-                  </div>
-                </div>
-              </div>
-            ) : null}
-            <Button
-              isRounded
-              size="lg"
-              variant="tertiary"
-              onClick={() => setSettingsSelectorOpen(true)}
-            >
-              <Icon.Settings04 />
-            </Button>
-            <Button
-              isFullWidth
-              isRounded
-              size="lg"
-              variant="tertiary"
-              onClick={onCancel}
-            >
-              {t("Cancel")}
-            </Button>
-            <Button
-              variant="secondary"
-              isFullWidth
-              isRounded
-              size="lg"
-              onClick={() => setActiveBodyContent(ActiveBodyContent.submitTx)}
-            >
-              {t("Confirm")}
-            </Button>
+              {asset.domain}
+            </span>
           </div>
         </div>
-      )}
+        {isMalicious ? (
+          <BlockaidAssetWarning
+            blockaidData={state.data.scanResult}
+            onClick={() => setActivePaneIndex(paneConfig.blockaidIndex ?? 0)}
+          />
+        ) : state.data.isAssetUnableToScan ? (
+          <BlockaidAssetWarning
+            blockaidData={state.data.scanResult}
+            onClick={() => setActivePaneIndex(paneConfig.blockaidIndex ?? 0)}
+            messageKey="Proceed with caution"
+          />
+        ) : state.data.isAssetSuspicious ? (
+          <BlockaidAssetWarning
+            blockaidData={state.data.scanResult}
+            onClick={() => setActivePaneIndex(paneConfig.blockaidIndex ?? 0)}
+          />
+        ) : null}
+        {trustlineChanges.length > 0 && (
+          <Trustline operations={trustlineChanges} icons={icons} />
+        )}
+        <div className="ChangeTrustInternal__Metadata">
+          <div className="ChangeTrustInternal__Metadata__Row">
+            <div className="ChangeTrustInternal__Metadata__Label">
+              <Icon.Wallet01 />
+              <span>{t("Wallet")}</span>
+            </div>
+            <div className="ChangeTrustInternal__Metadata__Value">
+              <KeyIdenticon publicKey={publicKey} />
+            </div>
+          </div>
+          <div className="ChangeTrustInternal__Metadata__Row">
+            <div
+              className="ChangeTrustInternal__Metadata__Label"
+              data-testid="ChangeTrustInternal__Metadata__Label__Fee"
+            >
+              <Icon.Route />
+              <span>{t("Fee")}</span>
+            </div>
+            <div
+              className="ChangeTrustInternal__Metadata__Value"
+              data-testid="ChangeTrustInternal__Metadata__Value__Fee"
+            >
+              <span>{`${fee} XLM`}</span>
+            </div>
+          </div>
+        </div>
+        <div
+          className="ChangeTrustInternal__TransactionDetailsBtn"
+          onClick={() => setActivePaneIndex(paneConfig.detailsIndex)}
+        >
+          <Icon.List />
+          <span>{t("Transaction details")}</span>
+        </div>
+      </div>
     </div>
+  );
+
+  // Transaction details pane
+  const detailsPane = (
+    <div className="ChangeTrustInternal__Body">
+      <div className="ChangeTrustInternal__Body__Wrapper">
+        <div className="ChangeTrustInternal__TransactionDetails">
+          <div className="ChangeTrustInternal__TransactionDetails__Header">
+            <div className="DetailsMark">
+              <Icon.List />
+            </div>
+            <div
+              className="Close"
+              onClick={() => setActivePaneIndex(paneConfig.confirmIndex)}
+            >
+              <Icon.X />
+            </div>
+          </div>
+          <div className="ChangeTrustInternal__TransactionDetails__Title">
+            <span>{t("Transaction Details")}</span>
+          </div>
+          <div className="ChangeTrustInternal__TransactionDetails__Summary">
+            <Summary
+              sequenceNumber={sequence}
+              fee={xlmToStroop(fee).toString()}
+              memo={{ value: memo, type: "text" }}
+              xdr={xdrDefined}
+              operationNames={operations.map(
+                (op) => OPERATION_TYPES[op.type] || op.type,
+              )}
+            />
+          </div>
+          <Details
+            operations={operations}
+            flaggedKeys={flaggedKeys}
+            isMemoRequired={isMemoRequired}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  // Build panes in order
+  if (shouldShowBlockaidWarning) {
+    panes.push(confirmPane, detailsPane, blockaidPane);
+  } else {
+    panes.push(confirmPane, detailsPane);
+  }
+
+  // Button rendering functions
+  const renderBlockaidPaneButtons = () => (
+    <>
+      <Button
+        isFullWidth
+        isRounded
+        size="lg"
+        variant={isMalicious ? "destructive" : "secondary"}
+        onClick={(e) => {
+          e.preventDefault();
+          setActivePaneIndex(paneConfig.confirmIndex);
+        }}
+      >
+        {t("Cancel")}
+      </Button>
+      <button
+        type="button"
+        className={`ReviewTx__TextAction ReviewTx__TextAction--${
+          isMalicious ? "error" : "default"
+        }`}
+        onClick={(e) => {
+          e.preventDefault();
+          setActivePaneIndex(paneConfig.confirmIndex);
+        }}
+      >
+        {t("Continue")}
+      </button>
+    </>
+  );
+
+  const renderBlockaidWarningButtons = () => (
+    <>
+      <Button
+        isFullWidth
+        isRounded
+        size="lg"
+        variant={isMalicious ? "destructive" : "secondary"}
+        onClick={onCancel}
+      >
+        {t("Cancel")}
+      </Button>
+      <button
+        type="button"
+        className={`ReviewTx__TextAction ReviewTx__TextAction--${
+          isMalicious ? "error" : "default"
+        }`}
+        onClick={(e) => {
+          e.preventDefault();
+          setActiveBodyContent(ActiveBodyContent.submitTx);
+        }}
+      >
+        {t("Confirm anyway")}
+      </button>
+    </>
+  );
+
+  const renderSafeCaseButtons = () => (
+    <>
+      <Button
+        isRounded
+        size="lg"
+        variant="tertiary"
+        onClick={() => setSettingsSelectorOpen(true)}
+      >
+        <Icon.Settings04 />
+      </Button>
+
+      <Button
+        isFullWidth
+        isRounded
+        size="lg"
+        variant="tertiary"
+        onClick={onCancel}
+      >
+        {t("Cancel")}
+      </Button>
+      <Button
+        variant="secondary"
+        isFullWidth
+        isRounded
+        size="lg"
+        onClick={() => setActiveBodyContent(ActiveBodyContent.submitTx)}
+      >
+        {t("Confirm")}
+      </Button>
+    </>
+  );
+
+  return (
+    <View.Content hasNoTopPadding>
+      <div data-testid="ChangeTrustInternal" className="ChangeTrustInternal">
+        {activeBodyContent === ActiveBodyContent.details && (
+          <>
+            <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
+            <div className="ChangeTrustInternal__Actions">
+              <div
+                className={`ChangeTrustInternal__Actions__BtnRow ${!shouldShowBlockaidWarning && !isInBlockaidPane ? "ChangeTrustInternal__Actions__BtnRow--side-by-side" : ""}`}
+              >
+                {isSettingsSelectorOpen ? (
+                  <div
+                    className="ChangeTrustInternal__options-actions"
+                    ref={activeOptionsRef}
+                  >
+                    <div
+                      className="ChangeTrustInternal__options-actions__row"
+                      onClick={() =>
+                        setActiveBodyContent(ActiveBodyContent.fee)
+                      }
+                    >
+                      <div className="action-copy">
+                        <div className="ChangeTrustInternal__options-actions__label">
+                          {t("Fee")}: {`${fee} XLM`}
+                        </div>
+                        <Icon.Route />
+                      </div>
+                    </div>
+                    <div
+                      className="ChangeTrustInternal__options-actions__row"
+                      onClick={() =>
+                        setActiveBodyContent(ActiveBodyContent.timeout)
+                      }
+                    >
+                      <div className="action-copy">
+                        <div className="ChangeTrustInternal__options-actions__label">
+                          {t("Timeout (seconds)")}: {`${timeout}(s)`}
+                        </div>
+                        <Icon.Clock />
+                      </div>
+                    </div>
+                    <div
+                      className="ChangeTrustInternal__options-actions__row"
+                      onClick={() =>
+                        setActiveBodyContent(ActiveBodyContent.memo)
+                      }
+                    >
+                      <div className="action-copy">
+                        <div className="ChangeTrustInternal__options-actions__label">
+                          {t("Memo")}
+                        </div>
+                        <Icon.File02 />
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+                {isInBlockaidPane
+                  ? renderBlockaidPaneButtons()
+                  : shouldShowBlockaidWarning
+                    ? renderBlockaidWarningButtons()
+                    : renderSafeCaseButtons()}
+              </div>
+            </div>
+          </>
+        )}
+        {activeBodyContent === ActiveBodyContent.fee && (
+          <Fee
+            fee={fee}
+            onSaveFee={setFee}
+            recommendedFee={recommendedFee}
+            goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
+          />
+        )}
+        {activeBodyContent === ActiveBodyContent.timeout && (
+          <Timeout
+            timeout={timeout}
+            onSave={setTimeout}
+            goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
+          />
+        )}
+        {activeBodyContent === ActiveBodyContent.memo && (
+          <Memo
+            memo={memo}
+            onSave={setMemo}
+            goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
+          />
+        )}
+        {activeBodyContent === ActiveBodyContent.submitTx && (
+          <SubmitTransaction
+            asset={asset}
+            addTrustline={addTrustline}
+            icons={icons}
+            fee={fee}
+            goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
+            onSuccess={onCancel}
+          />
+        )}
+      </div>
+    </View.Content>
   );
 };

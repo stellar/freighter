@@ -19,9 +19,9 @@ import {
 } from "popup/helpers/assetList";
 import { isContractId } from "popup/helpers/soroban";
 import {
-  isAssetSuspicious,
   scanAsset,
   scanAssetBulk,
+  useIsAssetSuspicious,
 } from "popup/helpers/blockaid";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -71,6 +71,7 @@ export const AddAsset = () => {
   const { assetsLists } = useSelector(settingsSelector);
   const cachedTokenLists = useSelector(tokensListsSelector);
   const navigate = useNavigate();
+  const isAssetSuspicious = useIsAssetSuspicious();
 
   const { state, fetchData } = useGetAddAssetData({
     showHidden: true,
@@ -244,7 +245,7 @@ export const AddAsset = () => {
             ({
               ...record,
               isSuspicious: isAssetSuspicious(
-                scannedAssets.results[`${record.code}-${record.issuer}`],
+                scannedAssets?.results[`${record.code}-${record.issuer}`],
               ),
             }) as ManageAssetCurrency,
         );

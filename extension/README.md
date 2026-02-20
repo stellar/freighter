@@ -125,6 +125,44 @@ localhost:9000/#/integration-test
 
 Errors, if any, will be in the console logs.
 
+### Blockaid Debug Override (Development Only)
+
+When developing or testing Blockaid security warnings, you can override the Blockaid scan results to simulate different security states. This feature is only available in development mode.
+
+**Steps:**
+
+1. Build the extension in development mode:
+
+   ```
+   yarn build
+   ```
+
+2. Start the dev server:
+
+   ```
+   yarn start
+   ```
+
+3. Navigate to the Debug page:
+
+   ```
+   localhost:9000/#/debug
+   ```
+
+4. In the "Blockaid Response Override" section, click one of the security level buttons:
+
+   - **Safe**: Simulates a safe transaction (no warnings)
+   - **Suspicious**: Simulates a suspicious transaction (warning banner)
+   - **Malicious**: Simulates a malicious transaction (error banner)
+   - **Unable to Scan**: Simulates an unable-to-scan state (warning banner)
+
+5. The override will persist across page reloads and will affect all Blockaid scans until you click "Clear Override".
+
+**Important Notes:**
+
+- The override state is stored in local storage and only works in development builds. Production builds will ignore any override state.
+- **Error messages/details are only injected for "Unable to Scan" overrides.** When overriding to "Malicious" or "Suspicious", the warning banners will appear, but the expanded detail view may show a blank list of rows. This is because the backend will not return actual malicious/suspicious threat data - it only returns real scan results. The override only forces the security level classification, not the detailed threat information.
+
 ## Project Setup
 
 This app has 3 main components that are named using extension nomenclature. All

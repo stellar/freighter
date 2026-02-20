@@ -281,6 +281,93 @@ test("should sign correct transactions when Freighter receives multiple requests
   await pageTwo.getByText("Sign Transaction XDR").click();
 
   const txPopup = await txPopupPromise;
+  await stubAccountBalances(txPopup);
+  // Stub scan-tx with detailed asset diffs
+  await txPopup.route("**/scan-tx", async (route) => {
+    await route.fulfill({
+      json: {
+        data: {
+          simulation: {
+            status: "Success",
+            assets_diffs: {
+              GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: null,
+                  out: {
+                    usd_price: 0,
+                    summary: "Sent 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  asset_type: "NATIVE",
+                },
+              ],
+              GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: {
+                    usd_price: 0,
+                    summary: "Received 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  out: null,
+                  asset_type: "NATIVE",
+                },
+              ],
+            },
+            exposures: {},
+            assets_ownership_diff: {},
+            address_details: [],
+            account_summary: {
+              account_assets_diffs: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: null,
+                  out: {
+                    usd_price: 0,
+                    summary: "Sent 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  asset_type: "NATIVE",
+                },
+              ],
+              account_exposures: [],
+              account_ownerships_diff: [],
+              total_usd_diff: {
+                in: 0,
+                out: 0,
+                total: 0,
+              },
+              total_usd_exposure: {},
+            },
+            transaction_actions: null,
+          },
+          validation: {
+            status: "Success",
+            result_type: "Benign",
+            description: "",
+            reason: "",
+            classification: "",
+            features: [],
+          },
+          request_id: "9e460857-734b-405e-9e1f-86e656def1dd",
+        },
+        error: null,
+      },
+    });
+  });
 
   await expect(txPopup.getByText("Confirm Transaction")).toBeVisible();
 
@@ -525,7 +612,7 @@ test("should sign correct message when Freighter receives multiple requests", as
   await stubTokenPrices(page);
   await stubScanDapp(context);
 
-  await loginToTestAccount({ page, extensionId, context });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground

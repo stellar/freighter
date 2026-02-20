@@ -17,7 +17,7 @@ import {
   getNativeContractDetails,
   VerifiedTokenRecord,
 } from "popup/helpers/searchAsset";
-import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
+import { scanAsset, useIsAssetSuspicious } from "popup/helpers/blockaid";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { tokensListsSelector } from "popup/ducks/cache";
 
@@ -42,6 +42,7 @@ export const useTokenLookup = ({
   const cachedTokenLists = useSelector(tokensListsSelector);
   const isAllowListVerificationEnabled =
     isMainnet(networkDetails) || isTestnet(networkDetails);
+  const isAssetSuspicious = useIsAssetSuspicious();
 
   const handleTokenLookup = useCallback(
     async (contractId: string) => {
@@ -159,6 +160,7 @@ export const useTokenLookup = ({
       assetsLists,
       cachedTokenLists,
       isAllowListVerificationEnabled,
+      isAssetSuspicious,
       networkDetails,
       publicKey,
       setAssetRows,

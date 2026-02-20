@@ -6,11 +6,10 @@ import {
   NeedsReRoute,
   useGetAppData,
 } from "../../../../helpers/hooks/useGetAppData";
-import { useScanSite } from "../../../../popup/helpers/blockaid";
+import { useAsyncSiteScan } from "../../../../popup/helpers/blockaid";
 import { BlockAidScanSiteResult } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { captureException } from "@sentry/browser";
 
 type ResolvedGrantAccessData = {
   type: AppDataType.RESOLVED;
@@ -29,7 +28,11 @@ function useGetGrantAccessData(url: string) {
     initialState,
   );
   const { fetchData: fetchAppData } = useGetAppData();
-  const { scanSite } = useScanSite();
+  const { scanSite } = useAsyncSiteScan<GrantAccessData>(
+    url,
+    dispatch,
+    (payload, scanData) => ({ ...payload, scanData }),
+  );
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -44,26 +47,22 @@ function useGetGrantAccessData(url: string) {
         return appData;
       }
 
-      let scanData = null;
-
-      try {
-        scanData = await scanSite(url);
-      } catch (error) {
-        console.error(error);
-        captureException(`Grant Access: Failed to call scan site: ${error}`);
-      }
-
-      const payload = {
+      // Initial payload without scanData to avoid blocking UI
+      const initialPayload = {
         type: AppDataType.RESOLVED,
         publicKey: appData.account.publicKey,
         networkDetails: appData.settings.networkDetails,
         applicationState: appData.account.applicationState,
         networksList: appData.settings.networksList,
-        scanData,
+        scanData: null,
       } as ResolvedGrantAccessData;
 
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-      return payload;
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload: initialPayload });
+
+      // Fetch scan data asynchronously without blocking UI
+      scanSite(initialPayload);
+
+      return initialPayload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
       return error;
