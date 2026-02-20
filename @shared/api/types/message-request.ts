@@ -436,6 +436,7 @@ export interface MarkQueueActiveMessage extends BaseMessage {
   isActive: boolean;
 }
 
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage

@@ -78,6 +78,8 @@
   "Balance ID": "ID do Saldo",
   "Before we start with migration, please read": "Antes de começarmos com a migration, por favor leia",
   "Blockaid": "Blockaid",
+  "Blockaid unfunded destination": "Esta é uma nova conta e precisa de 1 XLM para começar. Qualquer transação para enviar não-XLM para uma conta não financiada falhará.",
+  "Blockaid unfunded destination native": "Esta é uma nova conta e precisa de pelo menos 1 XLM para ser criada. Enviar menos de 1 XLM para criá-la falhará.",
   "Bump To": "Bump Para",
   "Buy Amount": "Amount de Compra",
   "Buy with Coinbase": "Comprar com Coinbase",
