@@ -8,8 +8,8 @@ import {
   scanAsset,
   isAssetSuspicious,
   shouldTreatAssetAsUnableToScan,
+  useBlockaidOverrideState,
 } from "popup/helpers/blockaid";
-import { getBlockaidOverrideState } from "@shared/api/internal";
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { FlaggedKeys } from "types/transactions";
@@ -53,6 +53,8 @@ function useGetChangeTrustData({
     reducer<ChangeTrustData, unknown>,
     initialState,
   );
+
+  const blockaidOverrideState = useBlockaidOverrideState() ?? null;
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
@@ -98,7 +100,6 @@ function useGetChangeTrustData({
           networkDetails,
         });
         payload.transactionXDR = transactionXDR;
-        const blockaidOverrideState = await getBlockaidOverrideState();
         payload.isAssetUnableToScan = shouldTreatAssetAsUnableToScan(
           scannedAsset,
           blockaidOverrideState,

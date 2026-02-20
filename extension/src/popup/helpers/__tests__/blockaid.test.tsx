@@ -280,27 +280,14 @@ describe("BlockAid Helper Functions", () => {
       jest.doMock("@shared/helpers/dev", () => ({
         isDev: false,
       }));
-
-      const { useIsTxSuspicious: testHook } = require("../blockaid");
-
-      const store = makeDummyStore({
-        settings: {
-          overriddenBlockaidResponse: SecurityLevel.SUSPICIOUS,
-        },
-      });
-
-      const Wrapper = ({ children }: { children: React.ReactNode }) => (
-        <Provider store={store}>{children}</Provider>
-      );
-
-      const { result } = renderHook(() => testHook(), {
-        wrapper: Wrapper,
-      });
-
+      const { isTxSuspicious: testFn } = require("../blockaid");
       expect(
-        result.current({
-          validation: { result_type: "Benign" },
-        } as BlockAidScanTxResult),
+        testFn(
+          {
+            validation: { result_type: "Benign" },
+          } as BlockAidScanTxResult,
+          SecurityLevel.MALICIOUS,
+        ),
       ).toBe(false);
     });
   });
@@ -337,28 +324,13 @@ describe("BlockAid Helper Functions", () => {
       jest.doMock("@shared/helpers/dev", () => ({
         isDev: false,
       }));
-
-      const {
-        useShouldTreatTxAsUnableToScan: testHook,
-      } = require("../blockaid");
-
-      const store = makeDummyStore({
-        settings: {
-          overriddenBlockaidResponse: SecurityLevel.UNABLE_TO_SCAN,
-        },
-      });
-
-      const Wrapper = ({ children }: { children: React.ReactNode }) => (
-        <Provider store={store}>{children}</Provider>
-      );
-
-      const { result } = renderHook(() => testHook(), {
-        wrapper: Wrapper,
-      });
-
-      expect(result.current({ simulation: {} } as BlockAidScanTxResult)).toBe(
-        false,
-      );
+      const { shouldTreatTxAsUnableToScan: testFn } = require("../blockaid");
+      expect(
+        testFn(
+          { simulation: {} } as BlockAidScanTxResult,
+          SecurityLevel.UNABLE_TO_SCAN,
+        ),
+      ).toBe(false);
     });
   });
 });

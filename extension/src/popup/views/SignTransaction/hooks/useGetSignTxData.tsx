@@ -8,8 +8,11 @@ import {
 } from "@shared/api/types";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
-import { useScanTx, useAsyncSiteScan } from "popup/helpers/blockaid";
-import { getBlockaidOverrideState } from "@shared/api/internal";
+import {
+  useScanTx,
+  useAsyncSiteScan,
+  useBlockaidOverrideState,
+} from "popup/helpers/blockaid";
 import {
   AppDataType,
   NeedsReRoute,
@@ -74,6 +77,7 @@ function useGetSignTxData(
   const cachedTokenLists = useSelector(tokensListsSelector);
   const { assetsLists } = useSelector(settingsSelector);
   const { scanTx } = useScanTx();
+  const blockaidOverrideState = useBlockaidOverrideState() ?? null;
   const { scanSite } = useAsyncSiteScan<SignTxData>(
     domain,
     dispatch,
@@ -156,8 +160,6 @@ function useGetSignTxData(
         scanOptions.url,
         networkDetails,
       );
-
-      const blockaidOverrideState = (await getBlockaidOverrideState()) ?? null;
 
       const firstRenderPayload = {
         type: AppDataType.RESOLVED,

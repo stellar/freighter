@@ -14,8 +14,10 @@ import {
 import { isMainnet } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { getBlockaidOverrideState } from "@shared/api/internal";
+import {
+  settingsNetworkDetailsSelector,
+  overriddenBlockaidResponseSelector,
+} from "popup/ducks/settings";
 import { isDev } from "@shared/helpers/dev";
 import { SecurityLevel } from "popup/constants/blockaid";
 import { fetchJson } from "./fetch";
@@ -234,23 +236,12 @@ export const useScanAsset = (address: string) => {
 };
 
 /**
- * Fetches the blockaid override state once on mount.
+ * Reads the blockaid override state from the Redux store.
  * Use this directly in components that need multiple override-aware checks
  * to avoid redundant `getBlockaidOverrideState()` calls per hook.
  */
-export const useBlockaidOverrideState = () => {
-  const [blockaidOverrideState, setBlockaidOverrideState] = useState<
-    string | null
-  >(null);
-
-  useEffect(() => {
-    getBlockaidOverrideState()
-      .then(setBlockaidOverrideState)
-      .catch(() => setBlockaidOverrideState(null));
-  }, []);
-
-  return blockaidOverrideState;
-};
+export const useBlockaidOverrideState = () =>
+  useSelector(overriddenBlockaidResponseSelector);
 
 /**
  * Hook that returns isAssetSuspicious with blockaid override state automatically applied
@@ -480,7 +471,9 @@ export const getSiteSecurityStates = (
 
   // Use actual scan results
   return {
-    isUnableToScan: !scanData || scanData.status === undefined,
+    // isUnableToScan is only true when Blockaid returned data but couldn't produce a verdict.
+    // null scanData means the scan wasn't performed or failed silently — treat as no warning.
+    isUnableToScan: !!scanData && scanData.status === undefined,
     isMalicious: scanData?.status === "hit" && scanData.is_malicious === true,
     // Blockaid does not produce a "suspicious" verdict for site scans, so this
     // is always false for real results. The dev override intentionally allows
