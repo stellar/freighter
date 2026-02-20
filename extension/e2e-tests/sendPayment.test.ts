@@ -6,9 +6,9 @@ import {
   stubAccountBalancesWithUnfundedDestination,
   stubAccountBalancesWithUSDC,
   stubContractSpec,
-  stubScanTx,
-  stubScanTxWithUnfundedNonNativeWarning,
   stubScanTxWithUnfundedWarning,
+  stubScanTxWithUnfundedNonNativeWarning,
+  stubScanTx,
 } from "./helpers/stubs";
 
 const isIntegrationMode = process.env.IS_INTEGRATION_MODE === "true";
