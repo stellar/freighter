@@ -537,7 +537,6 @@ function useSimulateTxData({
       const scanUrlstub = "internal";
       if (simParams.type === "classic") {
         const {
-          amount,
           destinationAmount,
           allowedSlippage,
           path,
