@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
  * @param minWidth - Minimum viewport width in pixels (default: 780 to accommodate full Contract ID display in Sign Transaction flow)
  * @returns `true` when the viewport is at or above `minWidth`, `false` otherwise
  */
-export const useIsWideScreen = (minWidth = 780) => {
+export const useIsLargeWidthScreen = (minWidth = 780) => {
   const query = `(min-width: ${minWidth}px)`;
   const [matches, setMatches] = useState(
     () => window.matchMedia(query).matches,

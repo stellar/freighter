@@ -20,7 +20,7 @@ import { CLAIM_PREDICATES } from "constants/transaction";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { CopyValue } from "popup/components/CopyValue";
 import { truncateString } from "helpers/stellar";
-import { useIsWideScreen } from "helpers/hooks/useIsWideScreen";
+import { useIsLargeWidthScreen } from "helpers/hooks/useIsLargeWidthScreen";
 import { formattedBuffer } from "popup/helpers/formatters";
 
 import {
@@ -470,7 +470,7 @@ export const KeyValueInvokeHostFn = ({
   op: Operation.InvokeHostFunction;
 }) => {
   const { t } = useTranslation();
-  const isWide = useIsWideScreen();
+  const isWide = useIsLargeWidthScreen();
   const hostfn = op.func;
 
   function renderDetails() {

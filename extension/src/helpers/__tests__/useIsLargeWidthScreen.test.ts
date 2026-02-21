@@ -1,7 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
-import { useIsWideScreen } from "../hooks/useIsWideScreen";
+import { useIsLargeWidthScreen } from "../hooks/useIsLargeWidthScreen";
 
-describe("useIsWideScreen", () => {
+describe("useIsLargeWidthScreen", () => {
   let listeners: Array<(e: { matches: boolean }) => void>;
   let currentMatches: boolean;
 
@@ -30,25 +30,25 @@ describe("useIsWideScreen", () => {
 
   it("returns false when viewport is below the default threshold", () => {
     currentMatches = false;
-    const { result } = renderHook(() => useIsWideScreen());
+    const { result } = renderHook(() => useIsLargeWidthScreen());
     expect(result.current).toBe(false);
   });
 
   it("returns true when viewport is at or above the default threshold", () => {
     currentMatches = true;
-    const { result } = renderHook(() => useIsWideScreen());
+    const { result } = renderHook(() => useIsLargeWidthScreen());
     expect(result.current).toBe(true);
   });
 
   it("accepts a custom minWidth", () => {
     currentMatches = true;
-    renderHook(() => useIsWideScreen(1024));
+    renderHook(() => useIsLargeWidthScreen(1024));
     expect(window.matchMedia).toHaveBeenCalledWith("(min-width: 1024px)");
   });
 
   it("updates when the media query match state changes", () => {
     currentMatches = false;
-    const { result } = renderHook(() => useIsWideScreen());
+    const { result } = renderHook(() => useIsLargeWidthScreen());
     expect(result.current).toBe(false);
 
     act(() => {
@@ -63,7 +63,7 @@ describe("useIsWideScreen", () => {
   });
 
   it("cleans up the listener on unmount", () => {
-    const { unmount } = renderHook(() => useIsWideScreen());
+    const { unmount } = renderHook(() => useIsLargeWidthScreen());
     expect(listeners).toHaveLength(1);
     unmount();
     expect(listeners).toHaveLength(0);
