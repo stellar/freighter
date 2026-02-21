@@ -19,6 +19,8 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { collectionsSelector } from "popup/ducks/cache";
 import { ROUTES } from "popup/constants/routes";
+import { changeCollectibleVisibility } from "@shared/api/internal";
+import { AssetVisibility } from "@shared/api/types/types";
 
 import { useCollectibleDetail } from "./hooks/useCollectibleDetail";
 import {
@@ -37,9 +39,11 @@ export interface SelectedCollectible {
 export const CollectibleDetail = ({
   selectedCollectible,
   handleItemClose,
+  isHidden = false,
 }: {
   selectedCollectible: SelectedCollectible;
   handleItemClose: () => void;
+  isHidden?: boolean;
 }) => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
@@ -95,6 +99,19 @@ export const CollectibleDetail = ({
     navigateTo(ROUTES.sendPayment, navigate, queryParams);
   };
 
+  const handleToggleCollectibleVisibility = async () => {
+    const collectibleKey = `${selectedCollectible.collectionAddress}:${selectedCollectible.tokenId}`;
+    await changeCollectibleVisibility({
+      collectibleKey,
+      collectibleVisibility: isHidden
+        ? "visible"
+        : ("hidden" as AssetVisibility),
+      activePublicKey: publicKey || "",
+    });
+    setIsPopoverOpen(false);
+    handleItemClose();
+  };
+
   return (
     <div className="CollectibleDetail" data-testid="CollectibleDetail">
       <View>
@@ -141,12 +158,19 @@ export const CollectibleDetail = ({
                       {t("View on stellar.expert")}
                     </div>
                   </div>
-                  {/* <div className="CollectibleDetail__header__right-button__popover-content__item">
-                    <Icon.EyeOff className="CollectibleDetail__header__right-button__popover-content__item__icon" />
+                  <div
+                    className="CollectibleDetail__header__right-button__popover-content__item"
+                    onClick={handleToggleCollectibleVisibility}
+                  >
+                    {isHidden ? (
+                      <Icon.Eye className="CollectibleDetail__header__right-button__popover-content__item__icon" />
+                    ) : (
+                      <Icon.EyeOff className="CollectibleDetail__header__right-button__popover-content__item__icon" />
+                    )}
                     <div className="CollectibleDetail__header__right-button__popover-content__item__label">
-                      {t("Hide collectible")}
+                      {isHidden ? t("Show collectible") : t("Hide collectible")}
                     </div>
-                  </div> */}
+                  </div>
                 </PopoverContent>
               </div>
             </Popover>
@@ -164,6 +188,13 @@ export const CollectibleDetail = ({
                 image={collectible.metadata?.image}
                 dataTestIdBase="CollectibleDetail"
               />
+              {isHidden && (
+                <Notification
+                  variant="warning"
+                  icon={<Icon.EyeOff />}
+                  title={t("This collectible is hidden")}
+                />
+              )}
               <CollectibleDescription
                 description={collectible.metadata?.description || ""}
                 dataTestIdBase="CollectibleDetail"

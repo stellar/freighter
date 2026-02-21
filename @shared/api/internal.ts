@@ -2310,3 +2310,62 @@ export const getCollectibles = async ({
 
   return response;
 };
+
+export const changeCollectibleVisibility = async ({
+  collectibleKey,
+  collectibleVisibility,
+  activePublicKey,
+}: {
+  collectibleKey: string;
+  collectibleVisibility: AssetVisibility;
+  activePublicKey: string;
+}) => {
+  const response = await sendMessageToBackground({
+    type: SERVICE_TYPES.CHANGE_COLLECTIBLE_VISIBILITY,
+    collectibleVisibility: {
+      collectible: collectibleKey,
+      visibility: collectibleVisibility,
+    },
+    activePublicKey,
+  });
+
+  return {
+    hiddenCollectibles: response?.hiddenCollectibles || {},
+    error: response?.error || "",
+  };
+};
+
+export const getHiddenCollectibles = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}) => {
+  const response = await sendMessageToBackground({
+    type: SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES,
+    activePublicKey,
+  });
+
+  return {
+    hiddenCollectibles: response?.hiddenCollectibles || {},
+    error: response?.error || "",
+  };
+};
+
+export const markQueueActive = async ({
+  uuid,
+  isActive,
+}: {
+  uuid: string;
+  isActive: boolean;
+}): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      activePublicKey: null,
+      uuid,
+      isActive,
+      type: SERVICE_TYPES.MARK_QUEUE_ACTIVE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};

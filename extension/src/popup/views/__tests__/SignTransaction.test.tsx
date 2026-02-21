@@ -145,6 +145,7 @@ const mockTransactionInfo = {
   operationTypes: [],
   isDomainListedAllowed: true,
   flaggedKeys: { test: { tags: [""] } },
+  uuid: "mock-uuid",
 };
 
 const transactions = {
@@ -198,7 +199,7 @@ describe("SignTransactions", () => {
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         networkDetails: {
           ...defaultSettingsState.networkDetails,
-          networkPassphrase: "Test SDF Future Network ; October 2022",
+          networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
         },
       },
       error: null,
@@ -261,7 +262,7 @@ describe("SignTransactions", () => {
             isExperimentalModeEnabled: true,
             networkDetails: {
               ...defaultSettingsState.networkDetails,
-              networkPassphrase: "Test SDF Future Network ; October 2022",
+              networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
             },
             hiddenAssets: {},
           },
@@ -535,7 +536,7 @@ describe("SignTransactions", () => {
           applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
           networkDetails: {
             ...defaultSettingsState.networkDetails,
-            networkPassphrase: "Test SDF Future Network ; October 2022",
+            networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
           },
         },
         error: null,
@@ -564,7 +565,7 @@ describe("SignTransactions", () => {
       Promise.resolve({
         networkDetails: {
           ...defaultSettingsState.networkDetails,
-          networkPassphrase: "Test SDF Future Network ; October 2022",
+          networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
         },
         networksList: DEFAULT_NETWORKS,
         hiddenAssets: {},
@@ -617,7 +618,7 @@ describe("SignTransactions", () => {
             isExperimentalModeEnabled: true,
             networkDetails: {
               ...defaultSettingsState.networkDetails,
-              networkPassphrase: "Test SDF Future Network ; October 2022",
+              networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
             },
           },
         }}
@@ -1095,5 +1096,120 @@ describe("SignTransactions", () => {
     await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.queryByTestId("blockaid-miss-label")).toBeNull();
     expect(screen.queryByTestId("blockaid-malicious-label")).toBeNull();
+  });
+
+  it("renders sign transaction view without insufficient balance warning when balances are unavailable", async () => {
+    let currentSignTxDataMock = {
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          type: AppDataType.RESOLVED,
+          scanResult: {
+            simulation: null,
+            validation: null,
+            request_id: "1",
+          },
+          icons: {},
+          balances: null, // Balances unavailable due to fetch failure
+          publicKey: mockAccounts[1].publicKey,
+          signFlowState: {
+            allAccounts: mockAccounts,
+            accountNotFound: false,
+            currentAccount: mockAccounts[0],
+          },
+          applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+          networkDetails: {
+            ...defaultSettingsState.networkDetails,
+            networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
+          },
+        },
+        error: null,
+      },
+      fetchData: jest.fn(),
+    } as ReturnType<typeof SignTxDataHooks.useGetSignTxData>;
+    jest.spyOn(SigningFlowHooks, "useSetupSigningFlow").mockReturnValue({
+      isConfirming: false,
+      isHardwareWallet: false,
+      isPasswordRequired: false,
+      handleApprove: jest.fn(),
+      hwStatus: ShowOverlayStatus.IDLE,
+      rejectAndClose: jest.fn(),
+      setIsPasswordRequired: jest.fn(),
+      verifyPasswordThenSign: jest.fn(),
+      hardwareWalletType: WalletType.LEDGER,
+    });
+    jest
+      .spyOn(SignTxDataHooks, "useGetSignTxData")
+      .mockReturnValue(currentSignTxDataMock);
+
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: {
+          ...defaultSettingsState.networkDetails,
+          networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
+        },
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+      }),
+    );
+
+    const transaction = TransactionBuilder.fromXDR(
+      transactions.classic,
+      Networks.PUBLIC,
+    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      transactionXdr: transactions.classic,
+      transaction: {
+        ...mockTransactionInfo.transaction,
+        _networkPassphrase: Networks.FUTURENET,
+        _operations: [op],
+      },
+      isHttpsDomain: false,
+    }));
+
+    render(
+      <Wrapper
+        routes={[ROUTES.signTransaction]}
+        state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
+          settings: {
+            isExperimentalModeEnabled: true,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
+            },
+          },
+        }}
+      >
+        <SignTransaction />
+      </Wrapper>,
+    );
+
+    // Should render the sign transaction view without crashing
+    await waitFor(() => screen.getByTestId("SignTransaction"));
+    // Should NOT show the insufficient balance warning when balances are unavailable
+    expect(screen.queryByTestId("InsufficientBalanceWarning")).toBeNull();
   });
 });

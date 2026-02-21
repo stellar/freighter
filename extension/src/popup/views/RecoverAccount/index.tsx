@@ -143,22 +143,17 @@ export const RecoverAccount = () => {
 
   useEffect(() => {
     const phraseInputsArr: string[] = [];
-    let PHRASE_LENGTH = SHORT_PHRASE;
+    const PHRASE_LENGTH = isLongPhrase ? LONG_PHRASE : SHORT_PHRASE;
 
-    // delay to account for css transition
-    setTimeout(() => {
-      PHRASE_LENGTH = isLongPhrase ? LONG_PHRASE : SHORT_PHRASE;
+    for (let i = 1; i <= PHRASE_LENGTH; i++) {
+      phraseInputsArr.push(`MnemonicPhrase-${i}`);
+    }
+    setPhraseInputs(phraseInputsArr);
 
-      for (let i = 1; i <= PHRASE_LENGTH; i++) {
-        phraseInputsArr.push(`MnemonicPhrase-${i}`);
-      }
-      setPhraseInputs(phraseInputsArr);
-
-      if (PHRASE_LENGTH === SHORT_PHRASE) {
-        // when going back to 12 words, clear all the fields
-        setMnemonicPhraseArr([]);
-      }
-    }, 150);
+    if (PHRASE_LENGTH === SHORT_PHRASE) {
+      // when going back to 12 words, clear all the fields
+      setMnemonicPhraseArr([]);
+    }
   }, [isLongPhrase]);
 
   useEffect(() => {
@@ -253,13 +248,7 @@ export const RecoverAccount = () => {
                       >
                         <Card variant="primary">
                           <div className="RecoverAccount__mnemonic-wrapper">
-                            <div
-                              className={`RecoverAccount__mnemonic-input ${
-                                isLongPhrase
-                                  ? "RecoverAccount__mnemonic-input--long-phrase"
-                                  : ""
-                              }`}
-                            >
+                            <div className="RecoverAccount__mnemonic-input">
                               {phraseInputs.map((phraseInput, i) => (
                                 <PhraseInput
                                   key={phraseInput}

@@ -4,7 +4,12 @@ import browser from "webextension-polyfill";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { AssetVisibility, BalanceToMigrate, IssuerKey } from "./types";
+import {
+  AssetVisibility,
+  BalanceToMigrate,
+  IssuerKey,
+  CollectibleKey,
+} from "./types";
 import { AssetsListItem } from "@shared/constants/soroban/asset-list";
 
 export interface TokenToAdd {
@@ -50,15 +55,23 @@ export type RejectTransactionResponse = undefined;
 export interface ResponseQueueItem<T> {
   response: (message: T, messageAddress?: string) => void;
   uuid: string;
+  createdAt: number;
 }
 
 export type ResponseQueue<T> = ResponseQueueItem<T>[];
 
-export type TokenQueue = TokenToAdd[];
+export interface TokenQueueItem {
+  token: TokenToAdd;
+  uuid: string;
+  createdAt: number;
+}
+
+export type TokenQueue = TokenQueueItem[];
 
 export interface TransactionQueueItem {
   transaction: Transaction;
   uuid: string;
+  createdAt: number;
 }
 
 export type TransactionQueue = TransactionQueueItem[];
@@ -66,6 +79,7 @@ export type TransactionQueue = TransactionQueueItem[];
 export interface BlobQueueItem {
   blob: MessageToSign;
   uuid: string;
+  createdAt: number;
 }
 
 export type BlobQueue = BlobQueueItem[];
@@ -73,6 +87,7 @@ export type BlobQueue = BlobQueueItem[];
 export interface AuthEntryQueueItem {
   authEntry: EntryToSign;
   uuid: string;
+  createdAt: number;
 }
 
 export type EntryQueue = AuthEntryQueueItem[];
@@ -403,6 +418,24 @@ export interface GetCollectiblesMessage extends BaseMessage {
   network: string;
 }
 
+export interface ChangeCollectibleVisibilityMessage extends BaseMessage {
+  type: SERVICE_TYPES.CHANGE_COLLECTIBLE_VISIBILITY;
+  collectibleVisibility: {
+    collectible: CollectibleKey;
+    visibility: AssetVisibility;
+  };
+}
+
+export interface GetHiddenCollectiblesMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES;
+}
+
+export interface MarkQueueActiveMessage extends BaseMessage {
+  type: SERVICE_TYPES.MARK_QUEUE_ACTIVE;
+  uuid: string;
+  isActive: boolean;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -462,4 +495,7 @@ export type ServiceMessageRequest =
   | GetMobileAppBannerDismissedMessage
   | DismissMobileAppBannerMessage
   | AddCollectibleMessage
-  | GetCollectiblesMessage;
+  | GetCollectiblesMessage
+  | ChangeCollectibleVisibilityMessage
+  | GetHiddenCollectiblesMessage
+  | MarkQueueActiveMessage;

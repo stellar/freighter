@@ -39,6 +39,7 @@ import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 import { openTab } from "popup/helpers/navigate";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import {
   WarningMessageVariant,
@@ -92,6 +93,9 @@ export const SignTransaction = () => {
     flaggedKeys,
     uuid,
   } = tx;
+
+  // Mark this queue item as active to prevent TTL cleanup while popup is open
+  useMarkQueueActive(uuid);
 
   const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =
     useState(false);
@@ -271,12 +275,16 @@ export const SignTransaction = () => {
 
   const { currentAccount } = signTxState.data?.signFlowState!;
 
-  const hasEnoughXlm = signTxState.data?.balances.balances.some(
-    (balance) =>
-      "token" in balance &&
-      balance.token.code === "XLM" &&
-      (balance as NativeAsset).available.gt(stroopToXlm(_fee as string)),
-  );
+  // Check if user has enough XLM for the fee - skip warning if balances unavailable
+  const balances = signTxState.data?.balances;
+  const hasEnoughXlm = balances
+    ? balances.balances.some(
+        (balance) =>
+          "token" in balance &&
+          balance.token.code === "XLM" &&
+          (balance as NativeAsset).available.gt(stroopToXlm(_fee as string)),
+      )
+    : true; // If balances unavailable, assume user can proceed
 
   if (
     currentAccount.publicKey &&
