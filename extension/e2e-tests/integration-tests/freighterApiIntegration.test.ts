@@ -281,6 +281,7 @@ test("should sign correct transactions when Freighter receives multiple requests
   await pageTwo.getByText("Sign Transaction XDR").click();
 
   const txPopup = await txPopupPromise;
+  await stubAccountBalances(txPopup);
 
   await expect(txPopup.getByText("Confirm Transaction")).toBeVisible();
 

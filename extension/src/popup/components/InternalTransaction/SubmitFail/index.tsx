@@ -11,6 +11,7 @@ import { navigateTo } from "popup/helpers/navigate";
 import { RESULT_CODES, getResultCodes } from "popup/helpers/parseTransaction";
 import { useIsSwap } from "popup/helpers/useIsSwap";
 import { ROUTES } from "popup/constants/routes";
+import { STELLAR_DOCS_CREATE_ACCOUNT_URL } from "popup/constants/externalLinks";
 import {
   transactionSubmissionSelector,
   resetSubmission,
@@ -100,7 +101,7 @@ export const SubmitFail = () => {
               <Link
                 isUnderline
                 variant="secondary"
-                href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
+                href={STELLAR_DOCS_CREATE_ACCOUNT_URL}
                 rel="noreferrer"
                 target="_blank"
               >

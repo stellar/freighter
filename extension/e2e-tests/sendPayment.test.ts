@@ -3,12 +3,22 @@ import { login, loginToTestAccount } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 import {
   stubAccountBalancesE2e,
+  stubAccountBalancesWithUnfundedDestination,
   stubAccountBalancesWithUSDC,
   stubContractSpec,
+  stubScanTxWithUnfundedWarning,
+  stubScanTxWithUnfundedNonNativeWarning,
+  stubScanTx,
 } from "./helpers/stubs";
+
+const isIntegrationMode = process.env.IS_INTEGRATION_MODE === "true";
 
 const MUXED_ACCOUNT_ADDRESS =
   "MCQ7EGW7VXHI4AKJAFADOIHCSK2OCVA42KUETUK5LQ3LVSEQEEKP6AAAAAAAAAAAAFLVY";
+const UNFUNDED_DESTINATION =
+  "GDMDFPJPFH4Z2LLUCNNQT3HVQ2XU2TMZBA6OL37C752WCKU7JZO2S52R";
+const FUNDED_DESTINATION =
+  "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 
 test("Swap doesn't throw error when account is unfunded", async ({
   page,
@@ -200,6 +210,211 @@ test("Send doesn't throw error when account is unfunded", async ({
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 });
 
+test("Send XLM below minimum to unfunded destination shows warning", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  const stubOverrides = async () => {
+    await page.unroute("**/account-balances/**");
+    await stubAccountBalancesWithUnfundedDestination(
+      page,
+      UNFUNDED_DESTINATION,
+    );
+    await stubScanTxWithUnfundedWarning(page);
+  };
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides,
+    isIntegrationMode,
+  });
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Select address to send to
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(UNFUNDED_DESTINATION);
+  await page.getByText("Continue").click({ force: true });
+
+  // Verify amount input is shown
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Enter amount less than 1 XLM
+  await page.getByTestId("send-amount-amount-input").fill("0.5");
+
+  // Click Review Send and wait for simulation to complete
+  const reviewButton = page.getByText("Review Send");
+  await reviewButton.click({ force: true });
+
+  const warningLabel = page.getByTestId("blockaid-miss-label");
+  await expect(warningLabel).toBeVisible({ timeout: 30000 });
+  await warningLabel.click();
+
+  await expect(
+    page.getByText(
+      /This is a new account and needs at least 1 XLM to be created/,
+    ),
+  ).toBeVisible({ timeout: 30000 });
+
+  await expect(page.getByText("Suspicious Request")).toBeVisible();
+});
+
+test("Send XLM at minimum to unfunded destination proceeds without warning", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  const stubOverrides = async () => {
+    await page.unroute("**/account-balances/**");
+    await stubAccountBalancesWithUnfundedDestination(
+      page,
+      UNFUNDED_DESTINATION,
+    );
+    // Stub scan-tx to return success (no warning) for 1 XLM to unfunded destination
+    await stubScanTx(page);
+  };
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides,
+    isIntegrationMode,
+  });
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Select address to send to
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(UNFUNDED_DESTINATION);
+  await page.getByText("Continue").click({ force: true });
+
+  // Verify amount input is shown
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Enter exactly 1 XLM (minimum required)
+  await page.getByTestId("send-amount-amount-input").fill("1");
+
+  // Click Review Send and wait for simulation to complete
+  const reviewButton = page.getByText("Review Send");
+  await reviewButton.click({ force: true });
+
+  // Verify "You are sending" review page appears without the unfunded warning
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 30000,
+  });
+
+  await expect(page.getByTestId("blockaid-miss-label")).toHaveCount(0);
+});
+
+test("Send non-native asset to unfunded destination shows destination missing warning", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  const stubOverrides = async () => {
+    await page.unroute("**/account-balances/**");
+    // Use combined stub that handles both sender (with USDC) and unfunded destination
+    await stubAccountBalancesWithUnfundedDestination(
+      page,
+      UNFUNDED_DESTINATION,
+      {
+        "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
+          code: "USDC",
+          issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+          type: "credit_alphanum4",
+          total: "1000.0000000",
+          available: "1000.0000000",
+          limit: "922337203685.4775807",
+        },
+      },
+    );
+    await stubScanTxWithUnfundedNonNativeWarning(page);
+  };
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides,
+    isIntegrationMode,
+  });
+
+  await page.getByTestId("nav-link-send").click({ force: true });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Change asset to USDC
+  await page.getByTestId("send-amount-edit-dest-asset").click();
+  await page.getByText("USDC").click();
+
+  // Select address to send to
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(UNFUNDED_DESTINATION);
+  await page.getByText("Continue").click({ force: true });
+
+  // Verify amount input is shown
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Enter USDC amount
+  await page.getByTestId("send-amount-amount-input").fill("10");
+
+  // Click Review Send and wait for simulation to complete
+  const reviewButton = page.getByText("Review Send");
+  await reviewButton.click({ force: true });
+
+  const warningLabel = page.getByTestId("blockaid-miss-label");
+  await expect(warningLabel).toBeVisible({ timeout: 30000 });
+  await warningLabel.click();
+
+  await expect(
+    page.getByText(
+      /This is a new account and needs 1 XLM in order to get started/,
+    ),
+  ).toBeVisible({ timeout: 30000 });
+
+  await expect(page.getByText("Suspicious Request")).toBeVisible();
+});
+
+test("Send XLM to funded destination does not show unfunded warning", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId, context });
+  // Don't stub unfunded balances - the default stub will return isFunded: true
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Select address to send to (using funded destination)
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
+  await page.getByText("Continue").click({ force: true });
+
+  // Verify amount input is shown
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Enter amount
+  await page.getByTestId("send-amount-amount-input").fill("0.5");
+
+  // Click Review Send and wait for simulation to complete
+  const reviewButton = page.getByText("Review Send");
+  await reviewButton.click({ force: true });
+
+  // Verify "You are sending" review page appears
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 30000,
+  });
+
+  await expect(page.getByTestId("blockaid-miss-label")).toHaveCount(0);
+});
+
 test("Send doesn't throw error when creating muxed account", async ({
   page,
   extensionId,
@@ -254,7 +469,13 @@ test("Send doesn't throw error when creating muxed account", async ({
     });
   };
 
-  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides,
+    isIntegrationMode,
+  });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -263,7 +484,7 @@ test("Send doesn't throw error when creating muxed account", async ({
 
   await page.getByTestId("send-to-input").fill(MUXED_ACCOUNT_ADDRESS);
   await expect(
-    page.getByText("The destination account doesn’t exist."),
+    page.getByText("The destination account doesn't exist."),
   ).toBeVisible();
   await page.getByText("Continue").click();
 
@@ -333,7 +554,13 @@ test("Send can review formatted inputs", async ({
     });
   };
 
-  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides,
+    isIntegrationMode,
+  });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -488,7 +715,13 @@ test("SendPayment resets amount when user selects new asset", async ({
   const stubOverrides = async () => {
     await stubAccountBalancesWithUSDC(page);
   };
-  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides,
+    isIntegrationMode,
+  });
 
   await page.getByTestId("nav-link-send").click({ force: true });
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -512,7 +745,13 @@ test("SendPayment resets state when navigating back to account", async ({
   const stubOverrides = async () => {
     await stubAccountBalancesWithUSDC(page);
   };
-  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides,
+    isIntegrationMode,
+  });
 
   await page.getByTestId("nav-link-send").click({ force: true });
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -572,7 +811,13 @@ test("Swap resets amount when user selects new source asset", async ({
   const stubOverrides = async () => {
     await stubAccountBalancesWithUSDC(page);
   };
-  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides,
+    isIntegrationMode,
+  });
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
@@ -597,7 +842,13 @@ test("Swap preserves amount when selecting destination asset", async ({
   const stubOverrides = async () => {
     await stubAccountBalancesWithUSDC(page);
   };
-  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides,
+    isIntegrationMode,
+  });
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
@@ -622,7 +873,13 @@ test("Swap resets state when navigating back to account", async ({
   const stubOverrides = async () => {
     await stubAccountBalancesWithUSDC(page);
   };
-  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides,
+    isIntegrationMode,
+  });
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
@@ -681,7 +938,13 @@ test("Send token payment from Asset Detail", async ({
   };
   await stubContractSpec(page, TEST_TOKEN_ADDRESS, true);
 
-  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides,
+    isIntegrationMode,
+  });
   await page.getByText("E2E").click();
 
   await page.getByTestId("asset-detail-send-button").click();
@@ -728,7 +991,13 @@ test("Send XLM payment from Asset Detail", async ({
   };
   await stubContractSpec(page, TEST_TOKEN_ADDRESS, true);
 
-  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides,
+    isIntegrationMode,
+  });
   await page.getByText("XLM").click();
 
   await page.getByTestId("asset-detail-send-button").click();

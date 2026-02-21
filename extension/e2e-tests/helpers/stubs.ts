@@ -2163,6 +2163,58 @@ export const stubScanTx = async (page: Page) => {
   });
 };
 
+export const stubScanTxWithUnfundedWarning = async (page: Page) => {
+  await page.route("**/scan-tx", async (route) => {
+    const json = {
+      data: {
+        simulation: {
+          status: "Success",
+        },
+        validation: {
+          status: "Success",
+          result_type: "Warning",
+          description:
+            "This is a new account and needs at least 1 XLM to be created. It looks like you may not be sending enough XLM to create this account.",
+          features: [
+            {
+              type: "UNFUNDED_ACCOUNT",
+              description:
+                "This is a new account and needs at least 1 XLM to be created",
+            },
+          ],
+        },
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
+export const stubScanTxWithUnfundedNonNativeWarning = async (page: Page) => {
+  await page.route("**/scan-tx", async (route) => {
+    const json = {
+      data: {
+        simulation: {
+          status: "Success",
+        },
+        validation: {
+          status: "Success",
+          result_type: "Warning",
+          description:
+            "This is a new account and needs 1 XLM in order to get started. You are attempting to send a non-native asset to an unfunded account.",
+          features: [
+            {
+              type: "UNFUNDED_ACCOUNT",
+              description:
+                "This is a new account and needs 1 XLM in order to get started",
+            },
+          ],
+        },
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
 export const stubSubmitTx = async (page: Page) => {
   await page.route("**/submit-tx", async (route) => {
     const json = {
@@ -2209,6 +2261,120 @@ export const stubFeeStats = async (page: Page) => {
         p90: "1000000",
         p95: "2000001",
         p99: "10000000",
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
+/**
+ * Stub helper for conditional account balances routing
+ * Returns unfunded response for specified destination, funded response for sender
+ * Useful for tests that need to differentiate between sender and recipient balances
+ * @param page - The Playwright page object
+ * @param unfundedDestination - The address of the unfunded destination
+ * @param senderAssets - Optional object defining sender's asset balances
+ */
+export const stubAccountBalancesWithUnfundedDestination = async (
+  page: Page,
+  unfundedDestination: string,
+  senderAssets?: {
+    [key: string]: {
+      code: string;
+      issuer?: string;
+      total: string;
+      available: string;
+      limit?: string;
+      type?: string;
+    };
+  },
+) => {
+  await page.route("**/account-balances/**", async (route) => {
+    const url = new URL(route.request().url());
+    const address = url.pathname.split("/").pop();
+
+    if (address === unfundedDestination) {
+      // Unfunded destination response
+      const json = {
+        balances: {},
+        isFunded: false,
+        subentryCount: 0,
+        error: {
+          horizon: null,
+          soroban: null,
+        },
+      };
+      return route.fulfill({ json });
+    }
+
+    // Default sender balances
+    const balances: { [key: string]: any } = {
+      native: {
+        token: {
+          type: "native",
+          code: "XLM",
+        },
+        total: "9697.8556678",
+        available: "9697.8556678",
+        sellingLiabilities: "0",
+        buyingLiabilities: "0",
+        minimumBalance: "1",
+        blockaidData: {
+          result_type: "Benign",
+          malicious_score: "0.0",
+          attack_types: {},
+          chain: "stellar",
+          address: "",
+          metadata: {
+            type: "",
+          },
+          fees: {},
+          features: [],
+          trading_limits: {},
+          financial_stats: {},
+        },
+      },
+    };
+
+    // Add custom sender assets if provided
+    if (senderAssets) {
+      Object.entries(senderAssets).forEach(([key, asset]) => {
+        balances[key] = {
+          token: {
+            type: asset.type || "credit_alphanum4",
+            code: asset.code,
+            ...(asset.issuer && { issuer: { key: asset.issuer } }),
+          },
+          total: asset.total,
+          available: asset.available,
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          ...(asset.limit && { limit: asset.limit }),
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: `${asset.code}${asset.issuer ? "-" + asset.issuer : ""}`,
+            metadata: {
+              type: "",
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
+        };
+      });
+    }
+
+    const json = {
+      balances,
+      isFunded: true,
+      subentryCount: Object.keys(balances).length - 1,
+      error: {
+        horizon: null,
+        soroban: null,
       },
     };
     await route.fulfill({ json });
