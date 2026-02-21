@@ -633,8 +633,8 @@ test("should sign message for a specific account when allowed", async ({
   const pageTwo = await page.context().newPage();
   await pageTwo.waitForLoadState();
 
-  page.getByTestId("account-view-account-name").click();
-  page.getByText("Account 2").click();
+  await page.getByTestId("account-view-account-name").click();
+  await page.getByText("Account 2").click();
   await expect(page.getByTestId("account-header")).toBeVisible();
   await allowDapp({ page });
 
