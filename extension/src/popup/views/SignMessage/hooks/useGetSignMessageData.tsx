@@ -10,9 +10,11 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { makeAccountActive } from "popup/ducks/accountServices";
 import { useDispatch } from "react-redux";
-import { Account } from "@shared/api/types";
+import { Account, BlockAidScanSiteResult } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
 import { signFlowAccountSelector } from "popup/helpers/account";
+import { useAsyncSiteScan } from "popup/helpers/blockaid";
+import { getBlockaidOverrideState } from "@shared/api/internal";
 
 interface ResolvedData {
   type: AppDataType.RESOLVED;
@@ -24,11 +26,13 @@ interface ResolvedData {
     currentAccount: Account;
   };
   applicationState: APPLICATION_STATE;
+  scanData: BlockAidScanSiteResult | null;
+  blockaidOverrideState: string | null;
 }
 
 type SignMessageData = ResolvedData | NeedsReRoute;
 
-function useGetSignMessageData(accountToSign?: string) {
+function useGetSignMessageData(accountToSign?: string, url?: string) {
   const [state, dispatch] = useReducer(
     reducer<SignMessageData, unknown>,
     initialState,
@@ -36,6 +40,11 @@ function useGetSignMessageData(accountToSign?: string) {
   const reduxDispatch = useDispatch<AppDispatch>();
 
   const { fetchData: fetchAppData } = useGetAppData();
+  const { scanSite } = useAsyncSiteScan<SignMessageData>(
+    url,
+    dispatch,
+    (payload, scanData) => ({ ...payload, scanData }),
+  );
   const [accountNotFound, setAccountNotFound] = useState(false);
 
   const fetchData = async (newPublicKey?: string) => {
@@ -71,7 +80,10 @@ function useGetSignMessageData(accountToSign?: string) {
         setAccountNotFound(true);
       }
 
-      const payload = {
+      const blockaidOverrideState = (await getBlockaidOverrideState()) ?? null;
+
+      // Initial payload without scanData to avoid blocking UI
+      const initialPayload = {
         type: AppDataType.RESOLVED,
         networkDetails,
         publicKey,
@@ -81,9 +93,15 @@ function useGetSignMessageData(accountToSign?: string) {
           accountNotFound,
           currentAccount,
         },
+        scanData: null as BlockAidScanSiteResult | null,
+        blockaidOverrideState,
       } as ResolvedData;
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-      return payload;
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload: initialPayload });
+
+      // Fetch scan data asynchronously without blocking UI
+      scanSite(initialPayload);
+
+      return initialPayload;
     } catch (error) {
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
       return error;
