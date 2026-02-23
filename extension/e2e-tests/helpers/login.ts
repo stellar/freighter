@@ -103,7 +103,7 @@ export const loginToTestAccount = async ({
 }: {
   page: Page;
   extensionId: string;
-  context?: BrowserContext;
+  context: BrowserContext;
   stubOverrides?: () => Promise<void>;
   isIntegrationMode?: boolean;
 }) => {

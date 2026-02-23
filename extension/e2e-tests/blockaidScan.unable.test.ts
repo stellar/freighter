@@ -2,8 +2,12 @@ import { test, expect } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
 import {
   stubAccountBalances,
+  stubAccountHistory,
+  stubAssetSearch,
   stubScanAssetUnableToScan,
   stubScanTxUnableToScan,
+  stubTokenDetails,
+  stubTokenPrices,
   createAssetObject,
   stubMemoRequiredAccounts,
 } from "./helpers/stubs";
@@ -15,12 +19,19 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     context,
   }) => {
     test.slow();
+    // Set IS_PLAYWRIGHT flag so scanAsset proceeds even on testnet for e2e testing
+    await page.addInitScript(() => {
+      // @ts-ignore
+      window.IS_PLAYWRIGHT = "true";
+    });
     await loginToTestAccount({
       page,
       extensionId,
       context,
       stubOverrides: async () => {
+        await stubTokenDetails(page);
         await stubScanAssetUnableToScan(page);
+        await stubAssetSearch(page);
         // Mock mainnet check - asset scanning only works on mainnet
         await page.route("**/account-balances/*", async (route) => {
           const json = {
@@ -29,6 +40,18 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
                 token: { type: "native", code: "XLM" },
                 total: "100",
                 available: "100",
+                blockaidData: {
+                  result_type: "Benign",
+                  malicious_score: "0.0",
+                  attack_types: {},
+                  chain: "stellar",
+                  address: "",
+                  metadata: { type: "" },
+                  fees: {},
+                  features: [],
+                  trading_limits: {},
+                  financial_stats: {},
+                },
               },
             },
             isFunded: true,
@@ -93,6 +116,8 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
       context,
       stubOverrides: async () => {
         await stubAccountBalances(page, "100");
+        await stubTokenDetails(page);
+        await stubTokenPrices(page);
         await stubScanTxUnableToScan(page);
       },
     });
@@ -239,6 +264,9 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
         });
 
         // Transaction scan should be unable to scan
+        await stubAccountHistory(page);
+        await stubTokenDetails(page);
+        await stubTokenPrices(page);
         await stubScanTxUnableToScan(page);
       },
     });
@@ -322,6 +350,9 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
       context,
       stubOverrides: async () => {
         await stubAccountBalances(page, "100");
+        await stubTokenDetails(page);
+        await stubTokenPrices(page);
+        await stubAccountHistory(page);
         await stubScanTxUnableToScan(page);
         await stubMemoRequiredAccounts(
           page,
@@ -349,14 +380,13 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
 
     await page.getByText("Review Send").click({ force: true });
 
-    // Should be on review pane with warning banner visible
-    // Should NOT show "Add Memo" banner since security warnings take precedence
-    await expect(page.getByText("Add Memo")).not.toBeVisible();
-
-    // Should be on confirm pane with Confirm Anyway button
+    // Wait for blockaid scan to complete and show the security warning button
     await expect(
       page.getByRole("button", { name: "Confirm Anyway" }),
     ).toBeVisible({ timeout: 10000 });
+
+    // Should NOT show "Add Memo" banner since security warnings take precedence
+    await expect(page.getByText("Add Memo")).not.toBeVisible();
 
     // Click on the warning banner to view blockaid details
     await page.getByText("Proceed with caution").click();
