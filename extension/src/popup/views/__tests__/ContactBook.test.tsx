@@ -69,43 +69,93 @@ const renderContactBook = () =>
 
 const { isValidStellarAddress } = jest.requireMock("helpers/stellar");
 
+/**
+ * Helper: add a contact via the UI (opens modal, fills fields, clicks Save).
+ * Must be called after renderContactBook().
+ */
+const addContactViaUI = async (address: string, name: string) => {
+  const plusButton = document.querySelector(".ContactBook__add-button")!;
+  fireEvent.click(plusButton);
+
+  const addressInput = screen.getByPlaceholderText("Address");
+  const nameInput = screen.getByPlaceholderText("Name");
+
+  fireEvent.change(addressInput, { target: { value: address } });
+  fireEvent.change(nameInput, { target: { value: name } });
+
+  await waitFor(() => {
+    expect(screen.getByText("Save").closest("button")).not.toBeDisabled();
+  });
+
+  fireEvent.click(screen.getByText("Save"));
+
+  await waitFor(() => {
+    expect(screen.getByText(name)).toBeInTheDocument();
+  });
+};
+
 describe("ContactBook", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (isValidStellarAddress as jest.Mock).mockReturnValue(true);
   });
 
-  describe("Pre-populated Contacts (INITIAL_CONTACTS)", () => {
-    it("renders the two initial contacts", () => {
-      renderContactBook();
-
-      expect(screen.getByText("Piyal")).toBeInTheDocument();
-      expect(screen.getByText("Cassio")).toBeInTheDocument();
-    });
-
-    it("shows truncated addresses for initial contacts", () => {
+  describe("Empty State", () => {
+    it("shows empty state when no contacts exist", () => {
       renderContactBook();
 
       expect(
         screen.getByText(
-          VALID_ADDRESS_1.slice(0, 4) + "..." + VALID_ADDRESS_1.slice(-4),
+          "Contacts are wallets you recognize, helpful for recurring or trusted sends.",
         ),
       ).toBeInTheDocument();
-      expect(
-        screen.getByText(
-          VALID_ADDRESS_2.slice(0, 4) + "..." + VALID_ADDRESS_2.slice(-4),
-        ),
-      ).toBeInTheDocument();
+      expect(screen.getByText("Add a Contact")).toBeInTheDocument();
     });
 
-    it("renders identicons for each contact", () => {
+    it("can add contact from empty state button", async () => {
       renderContactBook();
 
+      fireEvent.click(screen.getByText("Add a Contact"));
+
       expect(
-        screen.getByTestId(`identicon-${VALID_ADDRESS_1}`),
-      ).toBeInTheDocument();
+        document.querySelector(".EditContactCard__title"),
+      ).toHaveTextContent("Add a Contact");
+
+      const addressInput = screen.getByPlaceholderText("Address");
+      const nameInput = screen.getByPlaceholderText("Name");
+
+      fireEvent.change(addressInput, {
+        target: { value: VALID_ADDRESS_1 },
+      });
+
+      fireEvent.change(nameInput, { target: { value: "New Contact" } });
+
+      await waitFor(() => {
+        expect(screen.getByText("Save").closest("button")).not.toBeDisabled();
+      });
+
+      fireEvent.click(screen.getByText("Save"));
+
+      await waitFor(() => {
+        expect(screen.getByText("New Contact")).toBeInTheDocument();
+      });
+    });
+
+    it("shows empty state after all contacts are deleted", async () => {
+      renderContactBook();
+
+      await addContactViaUI(VALID_ADDRESS_1, "Piyal");
+
+      const menuTrigger = document.querySelector(
+        ".ContactBook__row__menu-trigger",
+      )!;
+      fireEvent.click(menuTrigger);
+      fireEvent.click(screen.getByText("Delete contact"));
+
       expect(
-        screen.getByTestId(`identicon-${VALID_ADDRESS_2}`),
+        screen.getByText(
+          "Contacts are wallets you recognize, helpful for recurring or trusted sends.",
+        ),
       ).toBeInTheDocument();
     });
   });
@@ -114,13 +164,12 @@ describe("ContactBook", () => {
     it("opens add modal when plus button is clicked", () => {
       renderContactBook();
 
-      const addButtons = screen.getAllByRole("button");
-      const plusButton = addButtons.find(
-        (btn) => btn.className === "ContactBook__add-button",
-      );
-      fireEvent.click(plusButton!);
+      const plusButton = document.querySelector(".ContactBook__add-button")!;
+      fireEvent.click(plusButton);
 
-      expect(screen.getByText("Add a Contact")).toBeInTheDocument();
+      expect(
+        document.querySelector(".EditContactCard__title"),
+      ).toHaveTextContent("Add a Contact");
       expect(screen.getByText("Save")).toBeInTheDocument();
       expect(screen.getByText("Cancel")).toBeInTheDocument();
     });
@@ -139,10 +188,12 @@ describe("ContactBook", () => {
           value: "GCKFBEIYV2U22IO2BJ4KVJOIP7XPWQGQFKKWXR6DOSJBV7DCF7KRXCNX",
         },
       });
-      fireEvent.blur(addressInput);
 
       fireEvent.change(nameInput, { target: { value: "New Friend" } });
-      fireEvent.blur(nameInput);
+
+      await waitFor(() => {
+        expect(screen.getByText("Save").closest("button")).not.toBeDisabled();
+      });
 
       fireEvent.click(screen.getByText("Save"));
 
@@ -165,10 +216,12 @@ describe("ContactBook", () => {
           value: "GCKFBEIYV2U22IO2BJ4KVJOIP7XPWQGQFKKWXR6DOSJBV7DCF7KRXCNX",
         },
       });
-      fireEvent.blur(addressInput);
 
       fireEvent.change(nameInput, { target: { value: "New Friend" } });
-      fireEvent.blur(nameInput);
+
+      await waitFor(() => {
+        expect(screen.getByText("Save").closest("button")).not.toBeDisabled();
+      });
 
       fireEvent.click(screen.getByText("Save"));
 
@@ -185,11 +238,59 @@ describe("ContactBook", () => {
       const plusButton = document.querySelector(".ContactBook__add-button")!;
       fireEvent.click(plusButton);
 
-      expect(screen.getByText("Add a Contact")).toBeInTheDocument();
+      expect(
+        document.querySelector(".EditContactCard__title"),
+      ).toHaveTextContent("Add a Contact");
 
       fireEvent.click(screen.getByText("Cancel"));
 
-      expect(screen.queryByText("Add a Contact")).not.toBeInTheDocument();
+      expect(
+        document.querySelector(".EditContactCard__title"),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Contact List", () => {
+    it("renders contacts after adding them", async () => {
+      renderContactBook();
+
+      await addContactViaUI(VALID_ADDRESS_1, "Piyal");
+      await addContactViaUI(VALID_ADDRESS_2, "Cassio");
+
+      expect(screen.getByText("Piyal")).toBeInTheDocument();
+      expect(screen.getByText("Cassio")).toBeInTheDocument();
+    });
+
+    it("shows truncated addresses for contacts", async () => {
+      renderContactBook();
+
+      await addContactViaUI(VALID_ADDRESS_1, "Piyal");
+      await addContactViaUI(VALID_ADDRESS_2, "Cassio");
+
+      expect(
+        screen.getByText(
+          VALID_ADDRESS_1.slice(0, 4) + "..." + VALID_ADDRESS_1.slice(-4),
+        ),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          VALID_ADDRESS_2.slice(0, 4) + "..." + VALID_ADDRESS_2.slice(-4),
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("renders identicons for each contact", async () => {
+      renderContactBook();
+
+      await addContactViaUI(VALID_ADDRESS_1, "Piyal");
+      await addContactViaUI(VALID_ADDRESS_2, "Cassio");
+
+      expect(
+        screen.getByTestId(`identicon-${VALID_ADDRESS_1}`),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId(`identicon-${VALID_ADDRESS_2}`),
+      ).toBeInTheDocument();
     });
   });
 
@@ -218,7 +319,6 @@ describe("ContactBook", () => {
           value: "GCKFBEIYV2U22IO2BJ4KVJOIP7XPWQGQFKKWXR6DOSJBV7DCF7KRXCNX",
         },
       });
-      fireEvent.blur(addressInput);
 
       await waitFor(() => {
         const saveButton = screen.getByText("Save").closest("button");
@@ -234,7 +334,6 @@ describe("ContactBook", () => {
 
       const nameInput = screen.getByPlaceholderText("Name");
       fireEvent.change(nameInput, { target: { value: "Alice" } });
-      fireEvent.blur(nameInput);
 
       await waitFor(() => {
         const saveButton = screen.getByText("Save").closest("button");
@@ -256,10 +355,8 @@ describe("ContactBook", () => {
           value: "GCKFBEIYV2U22IO2BJ4KVJOIP7XPWQGQFKKWXR6DOSJBV7DCF7KRXCNX",
         },
       });
-      fireEvent.blur(addressInput);
 
       fireEvent.change(nameInput, { target: { value: "New Contact" } });
-      fireEvent.blur(nameInput);
 
       await waitFor(() => {
         const saveButton = screen.getByText("Save").closest("button");
@@ -267,7 +364,7 @@ describe("ContactBook", () => {
       });
     });
 
-    it("shows error for invalid Stellar address on blur", async () => {
+    it("shows error for invalid Stellar address", async () => {
       (isValidStellarAddress as jest.Mock).mockReturnValue(false);
 
       renderContactBook();
@@ -286,7 +383,7 @@ describe("ContactBook", () => {
       });
     });
 
-    it("shows error for empty name on blur", async () => {
+    it("shows error for empty name", async () => {
       renderContactBook();
 
       const plusButton = document.querySelector(".ContactBook__add-button")!;
@@ -305,6 +402,10 @@ describe("ContactBook", () => {
     it("shows duplicate address error", async () => {
       renderContactBook();
 
+      // First add a contact
+      await addContactViaUI(VALID_ADDRESS_1, "Piyal");
+
+      // Now try to add another contact with the same address
       const plusButton = document.querySelector(".ContactBook__add-button")!;
       fireEvent.click(plusButton);
 
@@ -324,6 +425,10 @@ describe("ContactBook", () => {
     it("shows duplicate name error", async () => {
       renderContactBook();
 
+      // First add a contact
+      await addContactViaUI(VALID_ADDRESS_1, "Piyal");
+
+      // Now try to add another contact with the same name
       const plusButton = document.querySelector(".ContactBook__add-button")!;
       fireEvent.click(plusButton);
 
@@ -340,13 +445,15 @@ describe("ContactBook", () => {
   });
 
   describe("Contact Menu Actions", () => {
-    it("opens context menu when dots button is clicked", () => {
+    it("opens context menu when dots button is clicked", async () => {
       renderContactBook();
 
-      const menuTriggers = document.querySelectorAll(
+      await addContactViaUI(VALID_ADDRESS_1, "Piyal");
+
+      const menuTrigger = document.querySelector(
         ".ContactBook__row__menu-trigger",
-      );
-      fireEvent.click(menuTriggers[0]);
+      )!;
+      fireEvent.click(menuTrigger);
 
       expect(screen.getByText("Edit contact")).toBeInTheDocument();
       expect(screen.getByText("Copy address")).toBeInTheDocument();
@@ -356,10 +463,12 @@ describe("ContactBook", () => {
     it("copies address when Copy address is clicked", async () => {
       renderContactBook();
 
-      const menuTriggers = document.querySelectorAll(
+      await addContactViaUI(VALID_ADDRESS_1, "Piyal");
+
+      const menuTrigger = document.querySelector(
         ".ContactBook__row__menu-trigger",
-      );
-      fireEvent.click(menuTriggers[0]);
+      )!;
+      fireEvent.click(menuTrigger);
       fireEvent.click(screen.getByText("Copy address"));
 
       await waitFor(() => {
@@ -368,8 +477,11 @@ describe("ContactBook", () => {
       });
     });
 
-    it("deletes contact when Delete contact is clicked", () => {
+    it("deletes contact when Delete contact is clicked", async () => {
       renderContactBook();
+
+      await addContactViaUI(VALID_ADDRESS_1, "Piyal");
+      await addContactViaUI(VALID_ADDRESS_2, "Cassio");
 
       const menuTriggers = document.querySelectorAll(
         ".ContactBook__row__menu-trigger",
@@ -384,13 +496,15 @@ describe("ContactBook", () => {
       );
     });
 
-    it("opens edit modal with pre-filled data", () => {
+    it("opens edit modal with pre-filled data", async () => {
       renderContactBook();
 
-      const menuTriggers = document.querySelectorAll(
+      await addContactViaUI(VALID_ADDRESS_1, "Piyal");
+
+      const menuTrigger = document.querySelector(
         ".ContactBook__row__menu-trigger",
-      );
-      fireEvent.click(menuTriggers[0]);
+      )!;
+      fireEvent.click(menuTrigger);
       fireEvent.click(screen.getByText("Edit contact"));
 
       expect(screen.getByText("Edit a Contact")).toBeInTheDocument();
@@ -401,86 +515,26 @@ describe("ContactBook", () => {
     it("saves edited contact", async () => {
       renderContactBook();
 
-      const menuTriggers = document.querySelectorAll(
+      await addContactViaUI(VALID_ADDRESS_1, "Piyal");
+
+      const menuTrigger = document.querySelector(
         ".ContactBook__row__menu-trigger",
-      );
-      fireEvent.click(menuTriggers[0]);
+      )!;
+      fireEvent.click(menuTrigger);
       fireEvent.click(screen.getByText("Edit contact"));
 
       const nameInput = screen.getByDisplayValue("Piyal");
       fireEvent.change(nameInput, { target: { value: "Piyal Updated" } });
-      fireEvent.blur(nameInput);
+
+      await waitFor(() => {
+        expect(screen.getByText("Save").closest("button")).not.toBeDisabled();
+      });
 
       fireEvent.click(screen.getByText("Save"));
 
       await waitFor(() => {
         expect(screen.getByText("Piyal Updated")).toBeInTheDocument();
         expect(screen.queryByText("Piyal")).not.toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("Empty State", () => {
-    it("shows empty state when all contacts are deleted", () => {
-      renderContactBook();
-
-      const menuTriggers = document.querySelectorAll(
-        ".ContactBook__row__menu-trigger",
-      );
-
-      fireEvent.click(menuTriggers[0]);
-      fireEvent.click(screen.getByText("Delete contact"));
-
-      const remainingMenuTriggers = document.querySelectorAll(
-        ".ContactBook__row__menu-trigger",
-      );
-      fireEvent.click(remainingMenuTriggers[0]);
-      fireEvent.click(screen.getByText("Delete contact"));
-
-      expect(
-        screen.getByText(
-          "Contacts are wallets you recognize, helpful for recurring or trusted sends.",
-        ),
-      ).toBeInTheDocument();
-      expect(screen.getByText("Add a Contact")).toBeInTheDocument();
-    });
-
-    it("can add contact from empty state button", async () => {
-      renderContactBook();
-
-      const menuTriggers = document.querySelectorAll(
-        ".ContactBook__row__menu-trigger",
-      );
-      fireEvent.click(menuTriggers[0]);
-      fireEvent.click(screen.getByText("Delete contact"));
-
-      const remainingMenuTriggers = document.querySelectorAll(
-        ".ContactBook__row__menu-trigger",
-      );
-      fireEvent.click(remainingMenuTriggers[0]);
-      fireEvent.click(screen.getByText("Delete contact"));
-
-      fireEvent.click(screen.getByText("Add a Contact"));
-
-      expect(
-        document.querySelector(".EditContactCard__title"),
-      ).toHaveTextContent("Add a Contact");
-
-      const addressInput = screen.getByPlaceholderText("Address");
-      const nameInput = screen.getByPlaceholderText("Name");
-
-      fireEvent.change(addressInput, {
-        target: { value: VALID_ADDRESS_1 },
-      });
-      fireEvent.blur(addressInput);
-
-      fireEvent.change(nameInput, { target: { value: "New Contact" } });
-      fireEvent.blur(nameInput);
-
-      fireEvent.click(screen.getByText("Save"));
-
-      await waitFor(() => {
-        expect(screen.getByText("New Contact")).toBeInTheDocument();
       });
     });
   });
