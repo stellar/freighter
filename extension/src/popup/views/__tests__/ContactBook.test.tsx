@@ -194,17 +194,19 @@ describe("ContactBook", () => {
   });
 
   describe("Validation", () => {
-    it("Save button is disabled when fields are empty", () => {
+    it("Save button is disabled when fields are empty", async () => {
       renderContactBook();
 
       const plusButton = document.querySelector(".ContactBook__add-button")!;
       fireEvent.click(plusButton);
 
-      const saveButton = screen.getByText("Save").closest("button");
-      expect(saveButton).toBeDisabled();
+      await waitFor(() => {
+        const saveButton = screen.getByText("Save").closest("button");
+        expect(saveButton).toBeDisabled();
+      });
     });
 
-    it("Save button is disabled when only address is filled", () => {
+    it("Save button is disabled when only address is filled", async () => {
       renderContactBook();
 
       const plusButton = document.querySelector(".ContactBook__add-button")!;
@@ -218,11 +220,13 @@ describe("ContactBook", () => {
       });
       fireEvent.blur(addressInput);
 
-      const saveButton = screen.getByText("Save").closest("button");
-      expect(saveButton).toBeDisabled();
+      await waitFor(() => {
+        const saveButton = screen.getByText("Save").closest("button");
+        expect(saveButton).toBeDisabled();
+      });
     });
 
-    it("Save button is disabled when only name is filled", () => {
+    it("Save button is disabled when only name is filled", async () => {
       renderContactBook();
 
       const plusButton = document.querySelector(".ContactBook__add-button")!;
@@ -232,11 +236,13 @@ describe("ContactBook", () => {
       fireEvent.change(nameInput, { target: { value: "Alice" } });
       fireEvent.blur(nameInput);
 
-      const saveButton = screen.getByText("Save").closest("button");
-      expect(saveButton).toBeDisabled();
+      await waitFor(() => {
+        const saveButton = screen.getByText("Save").closest("button");
+        expect(saveButton).toBeDisabled();
+      });
     });
 
-    it("Save button is enabled when both fields are valid", () => {
+    it("Save button is enabled when both fields are valid", async () => {
       renderContactBook();
 
       const plusButton = document.querySelector(".ContactBook__add-button")!;
@@ -255,11 +261,13 @@ describe("ContactBook", () => {
       fireEvent.change(nameInput, { target: { value: "New Contact" } });
       fireEvent.blur(nameInput);
 
-      const saveButton = screen.getByText("Save").closest("button");
-      expect(saveButton).not.toBeDisabled();
+      await waitFor(() => {
+        const saveButton = screen.getByText("Save").closest("button");
+        expect(saveButton).not.toBeDisabled();
+      });
     });
 
-    it("shows error for invalid Stellar address on blur", () => {
+    it("shows error for invalid Stellar address on blur", async () => {
       (isValidStellarAddress as jest.Mock).mockReturnValue(false);
 
       renderContactBook();
@@ -273,10 +281,12 @@ describe("ContactBook", () => {
       });
       fireEvent.blur(addressInput);
 
-      expect(screen.getByText("Invalid Stellar address")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText("Invalid Stellar address")).toBeInTheDocument();
+      });
     });
 
-    it("shows error for empty name on blur", () => {
+    it("shows error for empty name on blur", async () => {
       renderContactBook();
 
       const plusButton = document.querySelector(".ContactBook__add-button")!;
@@ -287,10 +297,12 @@ describe("ContactBook", () => {
       fireEvent.change(nameInput, { target: { value: " " } });
       fireEvent.blur(nameInput);
 
-      expect(screen.getByText("Name cannot be empty")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText("Name cannot be empty")).toBeInTheDocument();
+      });
     });
 
-    it("shows duplicate address error", () => {
+    it("shows duplicate address error", async () => {
       renderContactBook();
 
       const plusButton = document.querySelector(".ContactBook__add-button")!;
@@ -302,12 +314,14 @@ describe("ContactBook", () => {
       });
       fireEvent.blur(addressInput);
 
-      expect(
-        screen.getByText("This address already exists in your contacts"),
-      ).toBeInTheDocument();
+      await waitFor(() => {
+        expect(
+          screen.getByText("This address already exists in your contacts"),
+        ).toBeInTheDocument();
+      });
     });
 
-    it("shows duplicate name error", () => {
+    it("shows duplicate name error", async () => {
       renderContactBook();
 
       const plusButton = document.querySelector(".ContactBook__add-button")!;
@@ -317,9 +331,11 @@ describe("ContactBook", () => {
       fireEvent.change(nameInput, { target: { value: "Piyal" } });
       fireEvent.blur(nameInput);
 
-      expect(
-        screen.getByText("This name already exists in your contacts"),
-      ).toBeInTheDocument();
+      await waitFor(() => {
+        expect(
+          screen.getByText("This name already exists in your contacts"),
+        ).toBeInTheDocument();
+      });
     });
   });
 

@@ -1,3 +1,3 @@
 export const featureFlags = {
-  isContactListEnabled: true,
+  isContactListEnabled: false,
 };

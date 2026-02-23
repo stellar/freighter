@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Icon, Input } from "@stellar/design-system";
+import { Field, Form, Formik } from "formik";
+import { object as YupObject, string as YupString } from "yup";
 import { Federation } from "stellar-sdk";
 import { toast } from "sonner";
 
@@ -20,22 +22,22 @@ interface Contact {
   name: string;
 }
 
-const INITIAL_CONTACTS: Contact[] = [
-  {
-    address: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
-    name: "Piyal",
-  },
-  {
-    address: "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
-    name: "Cassio",
-  },
-];
+// const INITIAL_CONTACTS: Contact[] = [
+//   {
+//     address: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+//     name: "Piyal",
+//   },
+//   {
+//     address: "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
+//     name: "Cassio",
+//   },
+// ];
 
 type CardMode = { type: "add" } | { type: "edit"; contact: Contact };
 
 export const ContactBook = () => {
   const { t } = useTranslation();
-  const [contacts, setContacts] = useState<Contact[]>(INITIAL_CONTACTS);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [cardMode, setCardMode] = useState<CardMode | null>(null);
   const [openMenuAddress, setOpenMenuAddress] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -240,6 +242,11 @@ interface EditContactCardProps {
   onCancel: () => void;
 }
 
+interface ContactFormValues {
+  address: string;
+  name: string;
+}
+
 const EditContactCard = ({
   title: cardTitle,
   address: initialAddress = "",
@@ -249,192 +256,125 @@ const EditContactCard = ({
   onCancel,
 }: EditContactCardProps) => {
   const { t } = useTranslation();
-  const [address, setAddress] = useState(initialAddress);
-  const [name, setName] = useState(initialName);
-  const [addressError, setAddressError] = useState("");
-  const [nameError, setNameError] = useState("");
-  const [isValidating, setIsValidating] = useState(false);
-  const [addressValidated, setAddressValidated] = useState(!!initialAddress);
-  const [nameValidated, setNameValidated] = useState(!!initialName);
 
-  const isSaveDisabled =
-    isValidating ||
-    !address ||
-    !name.trim() ||
-    !!addressError ||
-    !!nameError ||
-    !addressValidated ||
-    !nameValidated;
-
-  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAddress(e.target.value);
-    setAddressError("");
-    setAddressValidated(false);
-  };
-
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setName(e.target.value);
-    setNameError("");
-    setNameValidated(false);
-  };
-
-  const validateAddress = async (val: string) => {
-    if (!val) {
-      setAddressError("");
-      return;
-    }
-
-    if (isFederationAddress(val)) {
-      try {
-        await Federation.Server.resolve(val);
-      } catch {
-        setAddressError(t("Failed to resolve federated address"));
-        return;
-      }
-    } else if (!isValidStellarAddress(val)) {
-      setAddressError(t("Invalid Stellar address"));
-      return;
-    }
-
-    if (
-      existingContacts.some(
-        (c) => c.address.toLowerCase() === val.toLowerCase(),
+  const contactFormSchema = YupObject().shape({
+    address: YupString()
+      .required(t("Invalid Stellar address"))
+      .test("is-valid-stellar-address", t("Invalid Stellar address"), (val) => {
+        if (!val) return false;
+        if (isFederationAddress(val)) return true;
+        return isValidStellarAddress(val);
+      })
+      .test(
+        "is-not-federation-failure",
+        t("Failed to resolve federated address"),
+        async (val) => {
+          if (!val) return true;
+          if (!isFederationAddress(val)) return true;
+          try {
+            await Federation.Server.resolve(val);
+            return true;
+          } catch {
+            return false;
+          }
+        },
       )
-    ) {
-      setAddressError(t("This address already exists in your contacts"));
-      return;
-    }
+      .test(
+        "is-not-duplicate-address",
+        t("This address already exists in your contacts"),
+        (val) => {
+          if (!val) return true;
+          return !existingContacts.some(
+            (c) => c.address.toLowerCase() === val.toLowerCase(),
+          );
+        },
+      ),
+    name: YupString()
+      .required(t("Name cannot be empty"))
+      .trim()
+      .test(
+        "is-not-duplicate-name",
+        t("This name already exists in your contacts"),
+        (val) => {
+          if (!val) return true;
+          return !existingContacts.some(
+            (c) => c.name.toLowerCase() === val.trim().toLowerCase(),
+          );
+        },
+      ),
+  });
 
-    setAddressError("");
-    setAddressValidated(true);
+  const initialValues: ContactFormValues = {
+    address: initialAddress,
+    name: initialName,
   };
 
-  const validateName = (val: string) => {
-    const trimmed = val.trim();
-    if (!trimmed) {
-      setNameError(t("Name cannot be empty"));
-      return;
-    }
-
-    if (
-      existingContacts.some(
-        (c) => c.name.toLowerCase() === trimmed.toLowerCase(),
-      )
-    ) {
-      setNameError(t("This name already exists in your contacts"));
-      return;
-    }
-
-    setNameError("");
-    setNameValidated(true);
-  };
-
-  const handleAddressBlur = () => {
-    validateAddress(address);
-  };
-
-  const handleNameBlur = () => {
-    if (name) {
-      validateName(name);
-    }
-  };
-
-  const validate = async (): Promise<boolean> => {
-    let isValid = true;
-
-    if (isFederationAddress(address)) {
-      try {
-        await Federation.Server.resolve(address);
-      } catch {
-        setAddressError(t("Failed to resolve federated address"));
-        isValid = false;
-      }
-    } else if (!isValidStellarAddress(address)) {
-      setAddressError(t("Invalid Stellar address"));
-      isValid = false;
-    }
-
-    if (
-      isValid &&
-      existingContacts.some(
-        (c) => c.address.toLowerCase() === address.toLowerCase(),
-      )
-    ) {
-      setAddressError(t("This address already exists in your contacts"));
-      isValid = false;
-    }
-
-    const trimmedName = name.trim();
-    if (!trimmedName) {
-      setNameError(t("Name cannot be empty"));
-      isValid = false;
-    } else if (
-      existingContacts.some(
-        (c) => c.name.toLowerCase() === trimmedName.toLowerCase(),
-      )
-    ) {
-      setNameError(t("This name already exists in your contacts"));
-      isValid = false;
-    }
-
-    return isValid;
-  };
-
-  const handleSave = async () => {
-    setIsValidating(true);
-    try {
-      const isValid = await validate();
-      if (isValid) {
-        onSave(address, name.trim());
-      }
-    } finally {
-      setIsValidating(false);
-    }
+  const handleSubmit = (values: ContactFormValues) => {
+    onSave(values.address, values.name.trim());
   };
 
   return (
-    <div className="EditContactCard">
-      <div className="EditContactCard__content">
-        <span className="EditContactCard__title">{cardTitle}</span>
-        <div className="EditContactCard__fields">
-          <Input
-            fieldSize="md"
-            autoComplete="off"
-            id="contact-address"
-            value={address}
-            onChange={handleAddressChange}
-            onBlur={handleAddressBlur}
-            placeholder={t("Address")}
-            leftElement={<Icon.Wallet01 />}
-            error={addressError || undefined}
-          />
-          <Input
-            fieldSize="md"
-            autoComplete="off"
-            id="contact-name"
-            value={name}
-            onChange={handleNameChange}
-            onBlur={handleNameBlur}
-            placeholder={t("Name")}
-            leftElement={<Icon.User01 />}
-            error={nameError || undefined}
-          />
-        </div>
-      </div>
-      <div className="EditContactCard__actions">
-        <Button size="md" isRounded variant="tertiary" onClick={onCancel}>
-          {t("Cancel")}
-        </Button>
-        <Button
-          size="md"
-          isRounded
-          variant="secondary"
-          onClick={handleSave}
-          disabled={isSaveDisabled}
-        >
-          {t("Save")}
-        </Button>
-      </div>
-    </div>
+    <Formik
+      initialValues={initialValues}
+      validationSchema={contactFormSchema}
+      onSubmit={handleSubmit}
+      validateOnMount
+    >
+      {({ errors, touched, isValid, isSubmitting }) => {
+        return (
+          <Form>
+            <div className="EditContactCard">
+              <div className="EditContactCard__content">
+                <span className="EditContactCard__title">{cardTitle}</span>
+                <div className="EditContactCard__fields">
+                  <Input
+                    fieldSize="md"
+                    autoComplete="off"
+                    id="contact-address"
+                    placeholder={t("Address")}
+                    leftElement={<Icon.Wallet01 />}
+                    error={
+                      errors.address && touched.address ? errors.address : ""
+                    }
+                    customInput={<Field />}
+                    name="address"
+                  />
+                  <Input
+                    fieldSize="md"
+                    autoComplete="off"
+                    id="contact-name"
+                    placeholder={t("Name")}
+                    leftElement={<Icon.User01 />}
+                    error={errors.name && touched.name ? errors.name : ""}
+                    customInput={<Field />}
+                    name="name"
+                  />
+                </div>
+              </div>
+              <div className="EditContactCard__actions">
+                <Button
+                  size="md"
+                  isRounded
+                  variant="tertiary"
+                  type="button"
+                  onClick={onCancel}
+                >
+                  {t("Cancel")}
+                </Button>
+                <Button
+                  size="md"
+                  isRounded
+                  variant="secondary"
+                  type="submit"
+                  disabled={!isValid || isSubmitting}
+                >
+                  {t("Save")}
+                </Button>
+              </div>
+            </div>
+          </Form>
+        );
+      }}
+    </Formik>
   );
 };
