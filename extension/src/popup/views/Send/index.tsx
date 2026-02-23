@@ -94,8 +94,6 @@ export const Send = () => {
       publicKey,
       destination,
       networkDetails,
-      destAsset: getAssetFromCanonical(destinationAsset || "native"),
-      sourceAsset: asset,
       simParams,
       isMainnet: isMainnet(networkDetails),
     });

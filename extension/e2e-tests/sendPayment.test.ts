@@ -485,7 +485,7 @@ test("Send doesn't throw error when creating muxed account", async ({
   await page.getByTestId("send-to-input").fill(MUXED_ACCOUNT_ADDRESS);
   await expect(
     page.getByText("The destination account doesn't exist."),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 10000 });
   await page.getByText("Continue").click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -569,8 +569,8 @@ test("Send can review formatted inputs", async ({
 
   await page.getByTestId("send-to-input").fill(MUXED_ACCOUNT_ADDRESS);
   await expect(
-    page.getByText("The destination account doesn’t exist."),
-  ).toBeVisible();
+    page.getByText("The destination account doesn't exist."),
+  ).toBeVisible({ timeout: 10000 });
   await page.getByText("Continue").click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();

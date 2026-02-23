@@ -1,4 +1,5 @@
 import { useReducer } from "react";
+import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import BigNumber from "bignumber.js";
 import { captureException } from "@sentry/browser";
@@ -75,26 +76,32 @@ export interface SimulateTxData {
 
 const CREATE_ACCOUNT_MIN_XLM = new BigNumber(1);
 
+/**
+ * Returns the translated user-facing reason why a transaction is expected to fail,
+ * or null if no expected failure.
+ */
 const getExpectedToFailReason = ({
   isDestinationFunded,
   assetCanonical,
   amount,
+  t,
 }: {
   isDestinationFunded?: boolean;
   assetCanonical: string;
   amount: string;
+  t: (key: string) => string;
 }) => {
   if (isDestinationFunded !== false) {
     return null;
   }
 
   if (assetCanonical !== "native") {
-    return "Blockaid unfunded destination";
+    return t("Blockaid unfunded destination");
   }
 
   const parsedAmount = new BigNumber(cleanAmount(amount || "0"));
   if (parsedAmount.lt(CREATE_ACCOUNT_MIN_XLM)) {
-    return "Blockaid unfunded destination native";
+    return t("Blockaid unfunded destination native");
   }
 
   return null;
@@ -373,19 +380,16 @@ function useSimulateTxData({
   publicKey,
   destination,
   networkDetails,
-  destAsset,
-  sourceAsset,
   simParams,
   isMainnet,
 }: {
   publicKey: string;
   destination: string;
   networkDetails: NetworkDetails;
-  destAsset: ReturnType<typeof getAssetFromCanonical>;
-  sourceAsset: ReturnType<typeof getAssetFromCanonical>;
   simParams: SimClassic | SimSoroban;
   isMainnet: boolean;
 }) {
+  const { t } = useTranslation();
   const reduxDispatch = useDispatch<AppDispatch>();
   const store = useStore();
   const { asset, amount, transactionFee, memo } = useSelector(
@@ -419,6 +423,12 @@ function useSimulateTxData({
       const currentAsset = currentTransactionData.asset || asset;
       const currentTransactionFee =
         currentTransactionData.transactionFee || transactionFee;
+      // Derive asset objects directly from fresh Redux state so the XDR and
+      // expectedToFailReason logic always use the same asset values.
+      const freshSourceAsset = getAssetFromCanonical(currentAsset);
+      const freshDestAsset = getAssetFromCanonical(
+        currentTransactionData.destinationAsset || "native",
+      );
 
       // Compute asset address using current asset to ensure consistency
       const currentAssetAddress = getAssetAddress(
@@ -448,6 +458,7 @@ function useSimulateTxData({
         isDestinationFunded: destBalancesResult.isFunded ?? undefined,
         assetCanonical: currentAsset,
         amount: currentAmount,
+        t,
       });
 
       const balancesResult = await fetchBalances(
@@ -553,8 +564,8 @@ function useSimulateTxData({
         const transaction = await getBuiltTx(
           publicKey,
           {
-            sourceAsset,
-            destAsset,
+            sourceAsset: freshSourceAsset,
+            destAsset: freshDestAsset,
             amount: cleanAmount(currentAmount),
             destinationAmount,
             destination,

@@ -103,7 +103,7 @@ export const loginToTestAccount = async ({
 }: {
   page: Page;
   extensionId: string;
-  context: BrowserContext;
+  context?: BrowserContext;
   stubOverrides?: () => Promise<void>;
   isIntegrationMode?: boolean;
 }) => {
@@ -111,10 +111,9 @@ export const loginToTestAccount = async ({
   if (context && !isIntegrationMode) {
     // Wait for any background activity to complete
     await stubAllExternalApis(page, context);
-  }
-  // Always apply stubOverrides, even in integration mode, as tests explicitly request these stubs
-  if (stubOverrides) {
-    await stubOverrides();
+    if (stubOverrides) {
+      await stubOverrides();
+    }
   }
   await page.getByText("I already have a wallet").click();
 

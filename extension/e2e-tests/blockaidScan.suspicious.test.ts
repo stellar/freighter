@@ -20,8 +20,7 @@ test.describe("BlockAid Scan - Suspicious States", () => {
     test.slow();
     // Set IS_PLAYWRIGHT flag so scanAsset proceeds even on testnet for e2e testing
     await page.addInitScript(() => {
-      // @ts-ignore
-      window.IS_PLAYWRIGHT = "true";
+      (window as any).IS_PLAYWRIGHT = "true";
     });
     await stubTokenDetails(page);
     await stubScanAssetSuspicious(page);
@@ -139,8 +138,7 @@ test.describe("BlockAid Scan - Suspicious States", () => {
     test.slow();
     // Set IS_PLAYWRIGHT flag so scanAsset proceeds even on testnet for e2e testing
     await page.addInitScript(() => {
-      // @ts-ignore
-      window.IS_PLAYWRIGHT = "true";
+      (window as any).IS_PLAYWRIGHT = "true";
     });
     const USDC_ISSUER =
       "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
