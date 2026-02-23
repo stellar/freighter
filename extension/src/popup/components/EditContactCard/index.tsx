@@ -6,20 +6,16 @@ import { object as YupObject, string as YupString } from "yup";
 import { Federation } from "stellar-sdk";
 
 import { isValidStellarAddress, isFederationAddress } from "helpers/stellar";
+import type { ContactsMap } from "popup/views/ContactBook";
 
 import "./styles.scss";
-
-interface Contact {
-  address: string;
-  name: string;
-}
 
 interface EditContactCardProps {
   title: string;
   address?: string;
   name?: string;
-  existingContacts: Contact[];
-  onSave: (address: string, name: string) => void;
+  existingContacts: ContactsMap;
+  onSave: (address: string, name: string, resolvedAddress?: string) => void;
   onCancel: () => void;
 }
 
@@ -37,13 +33,16 @@ export const EditContactCard = ({
   onCancel,
 }: EditContactCardProps) => {
   const { t } = useTranslation();
+  const resolvedAddressRef = React.useRef<string | undefined>(undefined);
 
   const contactFormSchema = YupObject().shape({
     address: YupString()
       .required(t("Invalid Stellar address"))
       .test("is-valid-stellar-address", t("Invalid Stellar address"), (val) => {
         if (!val) return false;
-        if (isFederationAddress(val)) return true;
+        if (isFederationAddress(val)) {
+          return true;
+        }
         return isValidStellarAddress(val);
       })
       .test(
@@ -53,9 +52,11 @@ export const EditContactCard = ({
           if (!val) return true;
           if (!isFederationAddress(val)) return true;
           try {
-            await Federation.Server.resolve(val);
+            const fedResp = await Federation.Server.resolve(val);
+            resolvedAddressRef.current = fedResp.account_id;
             return true;
           } catch {
+            resolvedAddressRef.current = undefined;
             return false;
           }
         },
@@ -65,8 +66,8 @@ export const EditContactCard = ({
         t("This address already exists in your contacts"),
         (val) => {
           if (!val) return true;
-          return !existingContacts.some(
-            (c) => c.address.toLowerCase() === val.toLowerCase(),
+          return !Object.keys(existingContacts).some(
+            (key) => key.toLowerCase() === val.toLowerCase(),
           );
         },
       ),
@@ -78,7 +79,7 @@ export const EditContactCard = ({
         t("This name already exists in your contacts"),
         (val) => {
           if (!val) return true;
-          return !existingContacts.some(
+          return !Object.values(existingContacts).some(
             (c) => c.name.toLowerCase() === val.trim().toLowerCase(),
           );
         },
@@ -91,7 +92,7 @@ export const EditContactCard = ({
   };
 
   const handleSubmit = (values: ContactFormValues) => {
-    onSave(values.address, values.name.trim());
+    onSave(values.address, values.name.trim(), resolvedAddressRef.current);
   };
 
   return (
@@ -100,6 +101,8 @@ export const EditContactCard = ({
       validationSchema={contactFormSchema}
       onSubmit={handleSubmit}
       validateOnMount
+      validateOnChange={false}
+      validateOnBlur
     >
       {({ errors, touched, isValid, isSubmitting }) => {
         return (

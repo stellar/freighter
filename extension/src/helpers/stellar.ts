@@ -245,7 +245,10 @@ export const isValidStellarAddress = (publicKey: string): boolean => {
   }
 };
 
-export const isFederationAddress = (address: string) => address.includes("*");
+export const isFederationAddress = (address: string) => {
+  const parts = address.split("*");
+  return parts.length === 2 && parts[0].length > 0 && parts[1].length > 0;
+};
 
 export const isValidDomain = (input: string) => {
   // eslint-disable-next-line no-useless-escape

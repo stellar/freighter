@@ -125,6 +125,7 @@
   "Connected apps": "Connected apps",
   "CONNECTION ERROR": "CONNECTION ERROR",
   "Connection Request": "Connection Request",
+  "Contact actions": "Contact actions",
   "Contact Book": "Contact Book",
   "Contact successfully added": "Contact successfully added",
   "Contact successfully deleted": "Contact successfully deleted",
@@ -551,11 +552,8 @@
   "There are no sites to display at this moment.": "There are no sites to display at this moment.",
   "These assets are not on any of your lists. Proceed with caution before adding.": "These assets are not on any of your lists. Proceed with caution before adding.",
   "These words are your wallet’s keys—store them securely to keep your funds safe.": "These words are your wallet’s keys—store them securely to keep your funds safe.",
-<<<<<<< feature/contact-book-ui
   "This address already exists in your contacts": "This address already exists in your contacts",
-=======
   "This asset does not appear safe for the following reasons.": "This asset does not appear safe for the following reasons.",
->>>>>>> release/5.38.0
   "This asset has a balance": "This asset has a balance",
   "This asset has been flagged as malicious for the following reasons.": "This asset has been flagged as malicious for the following reasons.",
   "This asset has been flagged as spam for the following reasons.": "This asset has been flagged as spam for the following reasons.",

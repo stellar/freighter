@@ -45,6 +45,8 @@ const VALID_ADDRESS_1 =
   "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 const VALID_ADDRESS_2 =
   "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH";
+const VALID_ADDRESS_3 =
+  "GCKFBEIYV2U22IO2BJ4KVJOIP7XPWQGQFKKWXR6DOSJBV7DCF7KRXCNX";
 
 const renderContactBook = () =>
   render(
@@ -68,6 +70,8 @@ const renderContactBook = () =>
   );
 
 const { isValidStellarAddress } = jest.requireMock("helpers/stellar");
+const { isFederationAddress } = jest.requireMock("helpers/stellar");
+const { Federation } = jest.requireMock("stellar-sdk");
 
 /**
  * Helper: add a contact via the UI (opens modal, fills fields, clicks Save).
@@ -292,6 +296,61 @@ describe("ContactBook", () => {
         screen.getByTestId(`identicon-${VALID_ADDRESS_2}`),
       ).toBeInTheDocument();
     });
+
+    it("renders contacts sorted alphabetically by name", async () => {
+      renderContactBook();
+
+      await addContactViaUI(VALID_ADDRESS_1, "Zebra");
+      await addContactViaUI(VALID_ADDRESS_2, "Alpha");
+      await addContactViaUI(VALID_ADDRESS_3, "Middle");
+
+      const names = document.querySelectorAll(".ContactBook__row__name");
+      expect(names[0]).toHaveTextContent("Alpha");
+      expect(names[1]).toHaveTextContent("Middle");
+      expect(names[2]).toHaveTextContent("Zebra");
+    });
+
+    it("uses resolved address for identicon when contact is a federation address", async () => {
+      const FEDERATION_ADDRESS = "bob*stellar.org";
+      const RESOLVED_ADDRESS = VALID_ADDRESS_1;
+
+      (isFederationAddress as jest.Mock).mockImplementation(
+        (addr: string) => addr === FEDERATION_ADDRESS,
+      );
+      (Federation.Server.resolve as jest.Mock).mockResolvedValue({
+        account_id: RESOLVED_ADDRESS,
+      });
+
+      renderContactBook();
+
+      const plusButton = document.querySelector(".ContactBook__add-button")!;
+      fireEvent.click(plusButton);
+
+      const addressInput = screen.getByPlaceholderText("Address");
+      const nameInput = screen.getByPlaceholderText("Name");
+
+      fireEvent.change(addressInput, {
+        target: { value: FEDERATION_ADDRESS },
+      });
+      fireEvent.change(nameInput, { target: { value: "Bob" } });
+
+      await waitFor(() => {
+        expect(screen.getByText("Save").closest("button")).not.toBeDisabled();
+      });
+
+      fireEvent.click(screen.getByText("Save"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Bob")).toBeInTheDocument();
+      });
+
+      expect(
+        screen.getByTestId(`identicon-${RESOLVED_ADDRESS}`),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByTestId(`identicon-${FEDERATION_ADDRESS}`),
+      ).not.toBeInTheDocument();
+    });
   });
 
   describe("Validation", () => {
@@ -489,8 +548,8 @@ describe("ContactBook", () => {
       fireEvent.click(menuTriggers[0]);
       fireEvent.click(screen.getByText("Delete contact"));
 
-      expect(screen.queryByText("Piyal")).not.toBeInTheDocument();
-      expect(screen.getByText("Cassio")).toBeInTheDocument();
+      expect(screen.queryByText("Cassio")).not.toBeInTheDocument();
+      expect(screen.getByText("Piyal")).toBeInTheDocument();
       expect(mockToastSuccess).toHaveBeenCalledWith(
         "Contact successfully deleted",
       );

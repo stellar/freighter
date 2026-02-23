@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 import { toast } from "sonner";
@@ -11,27 +17,29 @@ import { truncatedPublicKey } from "helpers/stellar";
 
 import "./styles.scss";
 
-interface Contact {
-  address: string;
+export interface ContactData {
   name: string;
+  resolvedAddress?: string;
 }
 
-// const INITIAL_CONTACTS: Contact[] = [
-//   {
-//     address: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
-//     name: "Piyal",
-//   },
-//   {
-//     address: "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
-//     name: "Cassio",
-//   },
-// ];
+export type ContactsMap = Record<string, ContactData>;
 
-type CardMode = { type: "add" } | { type: "edit"; contact: Contact };
+const INITIAL_CONTACTS: ContactsMap = {
+  GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF: {
+    name: "Piyal",
+  },
+  GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH: {
+    name: "Cassio",
+  },
+};
+
+type CardMode =
+  | { type: "add" }
+  | { type: "edit"; address: string; data: ContactData };
 
 export const ContactBook = () => {
   const { t } = useTranslation();
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contacts, setContacts] = useState<ContactsMap>(INITIAL_CONTACTS);
   const [cardMode, setCardMode] = useState<CardMode | null>(null);
   const [openMenuAddress, setOpenMenuAddress] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -40,40 +48,52 @@ export const ContactBook = () => {
     setCardMode({ type: "add" });
   }, []);
 
-  const handleEditContact = useCallback((contact: Contact) => {
-    setCardMode({ type: "edit", contact });
-    setOpenMenuAddress(null);
-  }, []);
+  const handleEditContact = useCallback(
+    (address: string, data: ContactData) => {
+      setCardMode({ type: "edit", address, data });
+      setOpenMenuAddress(null);
+    },
+    [],
+  );
 
   const handleCopyAddress = useCallback(
     async (address: string) => {
       await navigator.clipboard.writeText(address);
-      toast.success(t("Address copied"));
+      toast.success(t("Address copied"), { className: "ContactBook__toast" });
       setOpenMenuAddress(null);
     },
     [t],
   );
 
   const handleDeleteContact = useCallback(
-    (contact: Contact) => {
-      setContacts((prev) => prev.filter((c) => c.address !== contact.address));
-      toast.success(t("Contact successfully deleted"));
+    (address: string) => {
+      setContacts((prev) => {
+        const { [address]: _, ...rest } = prev;
+        return rest;
+      });
+      toast.success(t("Contact successfully deleted"), {
+        className: "ContactBook__toast",
+      });
       setOpenMenuAddress(null);
     },
     [t],
   );
 
   const handleSaveContact = useCallback(
-    (address: string, name: string) => {
+    (address: string, name: string, resolvedAddress?: string) => {
       if (cardMode?.type === "edit") {
-        setContacts((prev) =>
-          prev.map((c) =>
-            c.address === cardMode.contact.address ? { address, name } : c,
-          ),
-        );
+        setContacts((prev) => {
+          const { [cardMode.address]: _, ...rest } = prev;
+          return { ...rest, [address]: { name, resolvedAddress } };
+        });
       } else if (cardMode?.type === "add") {
-        setContacts((prev) => [...prev, { address, name }]);
-        toast.success(t("Contact successfully added"));
+        setContacts((prev) => ({
+          ...prev,
+          [address]: { name, resolvedAddress },
+        }));
+        toast.success(t("Contact successfully added"), {
+          className: "ContactBook__toast",
+        });
       }
       setCardMode(null);
     },
@@ -88,7 +108,6 @@ export const ContactBook = () => {
     setOpenMenuAddress((prev) => (prev === address ? null : address));
   }, []);
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -105,12 +124,24 @@ export const ContactBook = () => {
     };
   }, [openMenuAddress]);
 
+  const sortedEntries = useMemo(
+    () =>
+      Object.entries(contacts).sort(([, a], [, b]) =>
+        a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
+      ),
+    [contacts],
+  );
+
   const cardTitle =
     cardMode?.type === "edit" ? t("Edit a Contact") : t("Add a Contact");
 
-  const existingContacts =
+  const existingContacts: ContactsMap =
     cardMode?.type === "edit"
-      ? contacts.filter((c) => c.address !== cardMode.contact.address)
+      ? Object.fromEntries(
+          Object.entries(contacts).filter(
+            ([addr]) => addr !== cardMode.address,
+          ),
+        )
       : contacts;
 
   return (
@@ -130,7 +161,7 @@ export const ContactBook = () => {
         }
       />
       <View.Content hasNoTopPadding>
-        {contacts.length === 0 ? (
+        {sortedEntries.length === 0 ? (
           <div className="ContactBook__empty">
             <Icon.Users01 className="ContactBook__empty__icon" />
             <span className="ContactBook__empty__text">
@@ -147,52 +178,50 @@ export const ContactBook = () => {
           </div>
         ) : (
           <div className="ContactBook__list">
-            {contacts.map((contact) => (
-              <div key={contact.address} className="ContactBook__row">
+            {sortedEntries.map(([address, data]) => (
+              <div key={address} className="ContactBook__row">
                 <div className="ContactBook__row__info">
                   <div className="ContactBook__row__identicon">
-                    <IdenticonImg publicKey={contact.address} />
+                    <IdenticonImg publicKey={data.resolvedAddress || address} />
                   </div>
                   <div className="ContactBook__row__details">
-                    <span className="ContactBook__row__name">
-                      {contact.name}
-                    </span>
+                    <span className="ContactBook__row__name">{data.name}</span>
                     <span className="ContactBook__row__address">
-                      {truncatedPublicKey(contact.address)}
+                      {truncatedPublicKey(address)}
                     </span>
                   </div>
                 </div>
                 <div
                   className="ContactBook__row__menu-wrapper"
-                  ref={openMenuAddress === contact.address ? menuRef : null}
+                  ref={openMenuAddress === address ? menuRef : null}
                 >
                   <button
                     type="button"
                     className="ContactBook__row__menu-trigger"
                     aria-label={t("Contact actions")}
-                    onClick={() => toggleMenu(contact.address)}
+                    onClick={() => toggleMenu(address)}
                   >
                     <Icon.DotsHorizontal />
                   </button>
-                  {openMenuAddress === contact.address && (
+                  {openMenuAddress === address && (
                     <div className="ContactBook__row__menu">
                       <button
                         className="ContactBook__row__menu__item"
-                        onClick={() => handleEditContact(contact)}
+                        onClick={() => handleEditContact(address, data)}
                       >
                         <Icon.Edit05 />
                         {t("Edit contact")}
                       </button>
                       <button
                         className="ContactBook__row__menu__item"
-                        onClick={() => handleCopyAddress(contact.address)}
+                        onClick={() => handleCopyAddress(address)}
                       >
                         <Icon.Copy01 />
                         {t("Copy address")}
                       </button>
                       <button
                         className="ContactBook__row__menu__item ContactBook__row__menu__item--destructive"
-                        onClick={() => handleDeleteContact(contact)}
+                        onClick={() => handleDeleteContact(address)}
                       >
                         <Icon.Trash01 />
                         {t("Delete contact")}
@@ -214,12 +243,8 @@ export const ContactBook = () => {
           >
             <EditContactCard
               title={cardTitle}
-              address={
-                cardMode.type === "edit" ? cardMode.contact.address : undefined
-              }
-              name={
-                cardMode.type === "edit" ? cardMode.contact.name : undefined
-              }
+              address={cardMode.type === "edit" ? cardMode.address : undefined}
+              name={cardMode.type === "edit" ? cardMode.data.name : undefined}
               existingContacts={existingContacts}
               onSave={handleSaveContact}
               onCancel={handleDismissCard}
