@@ -165,7 +165,9 @@ export const ContactBook = () => {
                   ref={openMenuAddress === contact.address ? menuRef : null}
                 >
                   <button
+                    type="button"
                     className="ContactBook__row__menu-trigger"
+                    aria-label={t("Contact actions")}
                     onClick={() => toggleMenu(contact.address)}
                   >
                     <Icon.DotsHorizontal />
