@@ -120,7 +120,9 @@ export const ContactBook = () => {
         customBackIcon={<Icon.X />}
         rightButton={
           <button
+            type="button"
             className="ContactBook__add-button"
+            aria-label={t("Add a contact")}
             onClick={handleAddContact}
           >
             <Icon.Plus />
