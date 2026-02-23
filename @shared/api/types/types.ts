@@ -125,6 +125,7 @@ export interface Response {
   isOverwritingAccount: boolean;
   isDismissed: boolean;
   collectiblesList: CollectibleContract[];
+  overriddenBlockaidResponse: string | null;
 }
 
 export interface MemoRequiredAccount {

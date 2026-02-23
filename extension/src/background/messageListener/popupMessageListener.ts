@@ -83,6 +83,8 @@ import { getHiddenAssets } from "./handlers/getHiddenAssets";
 import { getMobileAppBannerDismissed } from "./handlers/getMobileAppBannerDismissed";
 import { dismissMobileAppBanner } from "./handlers/dismissMobileAppBanner";
 import { loadBackendSettings } from "./handlers/loadBackendSettings";
+import { saveBlockaidOverrideState } from "./handlers/saveDebugOverride";
+import { getBlockaidOverrideState } from "./handlers/getDebugOverride";
 import { addCollectible } from "./handlers/addCollectible";
 import { getCollectibles } from "./handlers/getCollectibles";
 import { changeCollectibleVisibility } from "./handlers/changeCollectibleVisibility";
@@ -391,6 +393,12 @@ export const popupMessageListener = (
     case SERVICE_TYPES.LOAD_BACKEND_SETTINGS: {
       return loadBackendSettings({ localStore });
     }
+    case SERVICE_TYPES.SAVE_BLOCKAID_DEBUG_OVERRIDE: {
+      return saveBlockaidOverrideState({
+        request,
+        localStore,
+      });
+    }
     case SERVICE_TYPES.GET_CACHED_ASSET_ICON_LIST: {
       return getCachedAssetIconList({
         localStore,
@@ -504,6 +512,11 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.DISMISS_MOBILE_APP_BANNER: {
       return dismissMobileAppBanner({
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE: {
+      return getBlockaidOverrideState({
         localStore,
       });
     }
