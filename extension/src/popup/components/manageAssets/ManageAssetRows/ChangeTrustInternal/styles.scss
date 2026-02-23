@@ -349,7 +349,7 @@
     border: none;
     background: transparent;
     color: var(--sds-clr-gray-09);
-    font-family: "Inter", sans-serif;
+    font-family: var(--sds-ff-base);
     font-weight: 600;
     font-style: normal;
     font-size: pxToRem(14px);

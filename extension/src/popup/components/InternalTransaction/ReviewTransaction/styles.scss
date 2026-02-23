@@ -110,8 +110,8 @@
       width: 100%;
       border: none;
       background: none;
-      color: #a0a0a0;
-      font-family: "Inter", sans-serif;
+      color: var(--sds-clr-gray-09);
+      font-family: var(--sds-ff-base);
       font-weight: 600;
       font-style: normal;
       font-size: pxToRem(14px);
@@ -122,7 +122,7 @@
       text-align: center;
 
       &--default {
-        color: #a0a0a0;
+        color: var(--sds-clr-gray-09);
       }
 
       &--error {

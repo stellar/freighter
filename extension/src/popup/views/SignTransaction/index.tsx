@@ -363,6 +363,38 @@ export const SignTransaction = () => {
       ? scanResult.simulation.assets_diffs?.[publicKey]
       : undefined;
 
+  /**
+   * Renders at most one warning banner based on priority:
+   * 1. Domain  – destination domain not in allowlist
+   * 2. Blockaid – malicious / suspicious / unable-to-scan result
+   * 3. Memo    – required but missing
+   */
+  const renderBanner = () => {
+    // 1. Domain: site not in allowlist
+    if (!isDomainListedAllowed) {
+      return <DomainNotAllowedWarningMessage domain={domain} />;
+    }
+
+    // 2. Blockaid: malicious / suspicious / unable-to-scan
+    if (showBlockAidDetails) {
+      return (
+        <div className="SignTransaction__BlockaidDetails">
+          <BlockaidTxScanLabel
+            scanResult={scanResult}
+            onClick={() => setActivePaneIndex(1)}
+          />
+        </div>
+      );
+    }
+
+    // 3. Memo required
+    if (isMemoRequired) {
+      return <MemoRequiredLabel onClick={() => setActivePaneIndex(3)} />;
+    }
+
+    return null;
+  };
+
   return isPasswordRequired ? (
     <VerifyAccount
       isApproval
@@ -395,20 +427,7 @@ export const SignTransaction = () => {
                     </span>
                   </div>
                 </div>
-                {showBlockAidDetails && (
-                  <div className="SignTransaction__BlockaidDetails">
-                    <BlockaidTxScanLabel
-                      scanResult={scanResult}
-                      onClick={() => setActivePaneIndex(1)}
-                    />
-                  </div>
-                )}
-                {!isDomainListedAllowed && (
-                  <DomainNotAllowedWarningMessage domain={domain} />
-                )}
-                {isMemoRequired && (
-                  <MemoRequiredLabel onClick={() => setActivePaneIndex(3)} />
-                )}
+                {renderBanner()}
                 {assetDiffs && (
                   <AssetDiffs
                     icons={signTxState.data?.icons || {}}
