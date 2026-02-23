@@ -16,11 +16,13 @@ test.describe("BlockAid Scan - Suspicious States", () => {
   test("Add asset shows suspicious warning when scan detects suspicious asset", async ({
     page,
     extensionId,
+    context,
   }) => {
     test.slow();
     // Set IS_PLAYWRIGHT flag so scanAsset proceeds even on testnet for e2e testing
     await page.addInitScript(() => {
-      (window as any).IS_PLAYWRIGHT = "true";
+      // @ts-ignore
+      window.IS_PLAYWRIGHT = "true";
     });
     await stubTokenDetails(page);
     await stubScanAssetSuspicious(page);
@@ -54,7 +56,7 @@ test.describe("BlockAid Scan - Suspicious States", () => {
       };
       await route.fulfill({ json });
     });
-    await loginToTestAccount({ page, extensionId });
+    await loginToTestAccount({ page, extensionId, context });
 
     await page.getByTestId("account-options-dropdown").click();
     await page.getByText("Manage assets").click();
@@ -90,13 +92,14 @@ test.describe("BlockAid Scan - Suspicious States", () => {
   test("Send payment shows suspicious warning when scan detects suspicious transaction", async ({
     page,
     extensionId,
+    context,
   }) => {
     test.slow();
     await stubAccountBalances(page, "100");
     await stubTokenDetails(page);
     await stubTokenPrices(page);
     await stubScanTxSuspicious(page);
-    await loginToTestAccount({ page, extensionId });
+    await loginToTestAccount({ page, extensionId, context });
 
     await page.getByTestId("nav-link-send").click();
     await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -134,11 +137,13 @@ test.describe("BlockAid Scan - Suspicious States", () => {
   test("Swap shows suspicious warning when scan detects suspicious tokens", async ({
     page,
     extensionId,
+    context,
   }) => {
     test.slow();
     // Set IS_PLAYWRIGHT flag so scanAsset proceeds even on testnet for e2e testing
     await page.addInitScript(() => {
-      (window as any).IS_PLAYWRIGHT = "true";
+      // @ts-ignore
+      window.IS_PLAYWRIGHT = "true";
     });
     const USDC_ISSUER =
       "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
@@ -237,7 +242,7 @@ test.describe("BlockAid Scan - Suspicious States", () => {
     await stubTokenDetails(page);
     await stubTokenPrices(page);
     await stubScanTxSuspicious(page);
-    await loginToTestAccount({ page, extensionId });
+    await loginToTestAccount({ page, extensionId, context });
 
     await page.getByTestId("nav-link-swap").click();
     await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
@@ -286,6 +291,7 @@ test.describe("BlockAid Scan - Suspicious States", () => {
   test("Suspicious transaction ignores memo requirements", async ({
     page,
     extensionId,
+    context,
   }) => {
     test.slow();
     await stubAccountBalances(page, "100");
@@ -297,7 +303,7 @@ test.describe("BlockAid Scan - Suspicious States", () => {
       page,
       "GA6SXIZIKLJHCZI2KEOBEUUOFMM4JUPPM2UTWX6STAWT25JWIEUFIMFF",
     );
-    await loginToTestAccount({ page, extensionId });
+    await loginToTestAccount({ page, extensionId, context });
 
     // Go to send payment to an M-address (requires memo)
     await page.getByTestId("nav-link-send").click();
