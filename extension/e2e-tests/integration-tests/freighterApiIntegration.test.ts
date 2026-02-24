@@ -2,7 +2,14 @@ import { expect, test, expectPageToHaveScreenshot } from "../test-fixtures";
 import { TEST_TOKEN_ADDRESS } from "../helpers/test-token";
 import { loginToTestAccount } from "../helpers/login";
 import { allowDapp } from "../helpers/allowDapp";
-import { stubAccountBalances, stubIsSac } from "../helpers/stubs";
+import {
+  stubAccountBalances,
+  stubAccountHistory,
+  stubIsSac,
+  stubScanDapp,
+  stubTokenDetails,
+  stubTokenPrices,
+} from "../helpers/stubs";
 
 const TX_TO_SIGN =
   "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAAGQAAAfjAAAOpQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAAAAAAAAvrwgAAAAAAAAAAA";

@@ -1183,6 +1183,7 @@ describe("SignTransactions", () => {
         _operations: [op],
       },
       isHttpsDomain: false,
+      uuid: "123-123-123-123-123",
     }));
 
     render(
