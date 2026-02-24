@@ -34,6 +34,8 @@ export const EditContactCard = ({
 }: EditContactCardProps) => {
   const { t } = useTranslation();
   const resolvedAddressRef = React.useRef<string | undefined>(undefined);
+  const [isFetchingFederationAddress, setIsFetchingFederationAddress] =
+    React.useState(false);
 
   const contactFormSchema = YupObject().shape({
     address: YupString()
@@ -51,6 +53,7 @@ export const EditContactCard = ({
         async (val) => {
           if (!val) return true;
           if (!isFederationAddress(val)) return true;
+          setIsFetchingFederationAddress(true);
           try {
             const fedResp = await Federation.Server.resolve(val);
             resolvedAddressRef.current = fedResp.account_id;
@@ -58,6 +61,8 @@ export const EditContactCard = ({
           } catch {
             resolvedAddressRef.current = undefined;
             return false;
+          } finally {
+            setIsFetchingFederationAddress(false);
           }
         },
       )
@@ -118,7 +123,11 @@ export const EditContactCard = ({
                     placeholder={t("Address")}
                     leftElement={<Icon.Wallet01 />}
                     error={
-                      errors.address && touched.address ? errors.address : ""
+                      errors.address &&
+                      touched.address &&
+                      !isFetchingFederationAddress
+                        ? errors.address
+                        : ""
                     }
                     customInput={<Field />}
                     name="address"
