@@ -121,9 +121,6 @@ export const submitFreighterTransaction = createAsyncThunk<
           },
           body: JSON.stringify({
             signed_xdr: signedXDR,
-
-            network_url: networkDetails.networkUrl,
-
             network_passphrase: networkDetails.networkPassphrase,
           }),
         };
@@ -185,9 +182,6 @@ export const submitFreighterSorobanTransaction = createAsyncThunk<
           },
           body: JSON.stringify({
             signed_xdr: signedXDR,
-
-            network_url: networkDetails.networkUrl,
-
             network_passphrase: networkDetails.networkPassphrase,
           }),
         };
