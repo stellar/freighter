@@ -331,6 +331,61 @@ export const stubScanDapp = async (context: BrowserContext) => {
 };
 
 /**
+ * Stubs scan-dapp endpoint to return a malicious site response
+ * This simulates when BlockAid detects the connecting site as malicious
+ */
+export const stubScanDappMalicious = async (context: BrowserContext) => {
+  await context.route("**/scan-dapp**", async (route) => {
+    const json = {
+      data: {
+        status: "hit",
+        url: "https://docs.freighter.app/docs/playground/setallowed/",
+        scan_start_time: "2025-07-04T08:58:59.350000",
+        scan_end_time: "2025-07-04T09:02:37.766000",
+        malicious_score: 0.95,
+        is_reachable: true,
+        is_web3_site: true,
+        is_malicious: true,
+        attack_types: {
+          malicious_sdk: {
+            description:
+              "A known piece of malicious code is embedded within the site.",
+            score: 0.95,
+          },
+        },
+        network_operations: ["evil.com"],
+        json_rpc_operations: [],
+        contract_write: {
+          contract_addresses: [],
+          functions: {},
+        },
+        contract_read: {
+          contract_addresses: [],
+          functions: {},
+        },
+        modals: [],
+      },
+      error: null,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+/**
+ * Stubs scan-dapp endpoint to return an unable-to-scan response (null data)
+ * This simulates when BlockAid cannot scan the connecting site
+ */
+export const stubScanDappUnableToScan = async (context: BrowserContext) => {
+  await context.route("**/scan-dapp**", async (route) => {
+    const json = {
+      data: null,
+      error: null,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+/**
  * Stubs scan-asset endpoint to return "unable to scan" response (null data)
  * This simulates when BlockAid cannot scan an asset
  */
