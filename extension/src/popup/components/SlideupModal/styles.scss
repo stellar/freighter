@@ -12,11 +12,13 @@
   transform: translateY(100%);
   opacity: 0;
   pointer-events: none;
+  overflow: hidden;
 
   transition:
     transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform, opacity;
+    opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity, height;
 
   .View__inset {
     border: 0;

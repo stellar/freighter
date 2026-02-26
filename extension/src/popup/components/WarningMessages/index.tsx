@@ -317,6 +317,18 @@ const BlockaidFeedbackForm = ({
     };
   }, [setIsFeedbackActive]);
 
+  useEffect(() => {
+    const modalRoot = document.getElementById("modal-root");
+    if (modalRoot) {
+      modalRoot.classList.add("BlockaidFeedback__modal-root");
+    }
+    return () => {
+      if (modalRoot) {
+        modalRoot.classList.remove("BlockaidFeedback__modal-root");
+      }
+    };
+  }, []);
+
   return (
     <>
       <div className="BlockaidFeedback__background">

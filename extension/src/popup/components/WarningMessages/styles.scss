@@ -791,13 +791,14 @@
 
   &__DetailRowError {
     display: flex;
+    overflow: scroll;
 
     &:first-child {
-      margin-top: pxToRem(8px);
+      padding-top: pxToRem(8px);
     }
 
     &:not(:last-child) {
-      margin-bottom: pxToRem(8px);
+      padding-bottom: pxToRem(8px);
     }
 
     svg {
