@@ -85,7 +85,9 @@ const addContactViaUI = async (address: string, name: string) => {
   const nameInput = screen.getByPlaceholderText("Name");
 
   fireEvent.change(addressInput, { target: { value: address } });
+  fireEvent.blur(addressInput);
   fireEvent.change(nameInput, { target: { value: name } });
+  fireEvent.blur(nameInput);
 
   await waitFor(() => {
     expect(screen.getByText("Save").closest("button")).not.toBeDisabled();
@@ -193,8 +195,10 @@ describe("ContactBook", () => {
         },
       });
 
+      fireEvent.blur(addressInput);
       fireEvent.change(nameInput, { target: { value: "New Friend" } });
 
+      fireEvent.blur(nameInput);
       await waitFor(() => {
         expect(screen.getByText("Save").closest("button")).not.toBeDisabled();
       });
@@ -221,8 +225,10 @@ describe("ContactBook", () => {
         },
       });
 
+      fireEvent.blur(addressInput);
       fireEvent.change(nameInput, { target: { value: "New Friend" } });
 
+      fireEvent.blur(nameInput);
       await waitFor(() => {
         expect(screen.getByText("Save").closest("button")).not.toBeDisabled();
       });
@@ -232,6 +238,7 @@ describe("ContactBook", () => {
       await waitFor(() => {
         expect(mockToastSuccess).toHaveBeenCalledWith(
           "Contact successfully added",
+          { className: "ContactBook__toast" },
         );
       });
     });
@@ -532,7 +539,9 @@ describe("ContactBook", () => {
 
       await waitFor(() => {
         expect(mockClipboardWriteText).toHaveBeenCalledWith(VALID_ADDRESS_1);
-        expect(mockToastSuccess).toHaveBeenCalledWith("Address copied");
+        expect(mockToastSuccess).toHaveBeenCalledWith("Address copied", {
+          className: "ContactBook__toast",
+        });
       });
     });
 
@@ -552,6 +561,7 @@ describe("ContactBook", () => {
       expect(screen.getByText("Piyal")).toBeInTheDocument();
       expect(mockToastSuccess).toHaveBeenCalledWith(
         "Contact successfully deleted",
+        { className: "ContactBook__toast" },
       );
     });
 
@@ -584,6 +594,7 @@ describe("ContactBook", () => {
 
       const nameInput = screen.getByDisplayValue("Piyal");
       fireEvent.change(nameInput, { target: { value: "Piyal Updated" } });
+      fireEvent.blur(nameInput);
 
       await waitFor(() => {
         expect(screen.getByText("Save").closest("button")).not.toBeDisabled();

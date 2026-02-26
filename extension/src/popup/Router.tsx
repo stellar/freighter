@@ -12,6 +12,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
 import { ROUTES } from "popup/constants/routes";
+import { featureFlags } from "popup/constants/featureFlags";
 import {
   applicationStateSelector,
   hasPrivateKeySelector,
@@ -278,7 +279,16 @@ export const Router = () => (
         <Route path={ROUTES.addFunds} element={<AddFunds />} />
         <Route path={ROUTES.discover} element={<Discover />} />
         <Route path={ROUTES.wallets} element={<Wallets />} />
-        <Route path={ROUTES.contactBook} element={<ContactBook />}></Route>
+        <Route
+          path={ROUTES.contactBook}
+          element={
+            featureFlags.isContactListEnabled ? (
+              <ContactBook />
+            ) : (
+              <Navigate to="/" />
+            )
+          }
+        ></Route>
 
         {DEV_SERVER && (
           <>
