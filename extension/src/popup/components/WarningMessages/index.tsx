@@ -371,6 +371,7 @@ const BlockaidFeedbackForm = ({
                     <Field name="details">
                       {({ field }: FieldProps) => (
                         <Textarea
+                          data-testid="blockaid-feedback-details"
                           {...field}
                           className="BlockaidFeedback__details"
                           fieldSize="md"

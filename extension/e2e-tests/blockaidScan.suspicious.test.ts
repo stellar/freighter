@@ -11,6 +11,7 @@ import {
   stubAssetSearch,
   stubMemoRequiredAccounts,
 } from "./helpers/stubs";
+import { testBlockaidFeedback } from "./helpers/blockaid";
 
 test.describe("BlockAid Scan - Suspicious States", () => {
   test("Add asset shows suspicious warning when scan detects suspicious asset", async ({
@@ -138,6 +139,7 @@ test.describe("BlockAid Scan - Suspicious States", () => {
 
     // Should show expanded view with suspicious details
     await expect(page.getByText("Suspicious Request")).toBeVisible();
+    await testBlockaidFeedback({ page });
   });
 
   test("Swap shows suspicious warning when scan detects suspicious tokens", async ({
@@ -293,6 +295,7 @@ test.describe("BlockAid Scan - Suspicious States", () => {
 
     // Should show expanded view with suspicious details
     await expect(page.getByText("Suspicious Request")).toBeVisible();
+    await testBlockaidFeedback({ page });
   });
 
   test("Suspicious transaction ignores memo requirements", async ({

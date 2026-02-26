@@ -54,6 +54,10 @@
   align-items: center;
   justify-content: center;
 
+  &__modal-root {
+    z-index: calc(var(--z-index-modal) + 1) !important;
+  }
+
   &__details {
     resize: none;
   }

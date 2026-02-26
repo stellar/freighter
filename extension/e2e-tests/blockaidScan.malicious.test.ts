@@ -11,6 +11,7 @@ import {
   stubAssetSearch,
   stubMemoRequiredAccounts,
 } from "./helpers/stubs";
+import { testBlockaidFeedback } from "./helpers/blockaid";
 
 test.describe("BlockAid Scan - Malicious States", () => {
   test("Add asset shows malicious warning when scan detects malicious asset", async ({
@@ -144,6 +145,8 @@ test.describe("BlockAid Scan - Malicious States", () => {
         .locator(".BlockaidDetailsExpanded__DetailRowError")
         .getByText(/A malicious transaction causes a transfer/),
     ).toBeVisible();
+
+    await testBlockaidFeedback({ page });
   });
 
   test("Swap shows malicious warning when scan detects malicious tokens", async ({
@@ -306,6 +309,7 @@ test.describe("BlockAid Scan - Malicious States", () => {
         )
         .getByText(/A malicious transaction causes a transfer/),
     ).toBeVisible();
+    await testBlockaidFeedback({ page });
   });
 
   test("Malicious transaction ignores memo requirements", async ({
