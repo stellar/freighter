@@ -1,5 +1,6 @@
 import { BrowserContext, Page } from "@playwright/test";
 import { USDC_TOKEN_ADDRESS, TEST_TOKEN_ADDRESS } from "./test-token";
+import { request } from "http";
 
 export const createAssetObject = (assetCode: string | null, issuer: string) => {
   if (!assetCode || assetCode === "XLM") {
@@ -470,6 +471,7 @@ export const stubScanTxMalicious = async (page: Page | BrowserContext) => {
   await page.route("**/scan-tx**", async (route) => {
     const json = {
       data: {
+        request_id: "123e4567-e89b-12d3-a456-426614174000",
         simulation: {},
         validation: {
           result_type: "Malicious",
@@ -496,6 +498,7 @@ export const stubScanTxSuspicious = async (page: Page | BrowserContext) => {
   await page.route("**/scan-tx**", async (route) => {
     const json = {
       data: {
+        request_id: "123e4567-e89b-12d3-a456-426614174000",
         simulation: {},
         validation: {
           result_type: "Warning",
@@ -2760,6 +2763,22 @@ export const stubScanAssetDelayed = async (
         trading_limits: {},
         financial_stats: {},
       },
+      error: null,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+/**
+ * Stubs report-transaction-warning endpoint
+ * Returns a successful response for reporting transaction warnings
+ */
+export const stubReportTransactionWarning = async (
+  page: Page | BrowserContext,
+) => {
+  await page.route("**/report-transaction-warning**", async (route) => {
+    const json = {
+      data: 123,
       error: null,
     };
     await route.fulfill({ json });

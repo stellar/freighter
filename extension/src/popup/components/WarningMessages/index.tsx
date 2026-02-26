@@ -1186,6 +1186,10 @@ export const BlockAidScanExpanded = ({
     blockaidOverrideState,
     isAssetScan,
   );
+  let requestId = "";
+  if (scanResult && "request_id" in scanResult && scanResult.request_id) {
+    requestId = scanResult.request_id;
+  }
 
   // Early return if no warnings
   if (warnings.length === 0) {
@@ -1234,7 +1238,7 @@ export const BlockAidScanExpanded = ({
             <span>{warning.text}</span>
           </div>
         ))}
-        <BlockaidByLine address={""} />
+        <BlockaidByLine address={""} requestId={requestId} />
       </div>
     </div>
   );
