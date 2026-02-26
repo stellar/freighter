@@ -1,6 +1,5 @@
 import { BrowserContext, Page } from "@playwright/test";
 import { USDC_TOKEN_ADDRESS, TEST_TOKEN_ADDRESS } from "./test-token";
-import { request } from "http";
 
 export const createAssetObject = (assetCode: string | null, issuer: string) => {
   if (!assetCode || assetCode === "XLM") {

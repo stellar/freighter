@@ -55,6 +55,7 @@
   justify-content: center;
 
   &__modal-root {
+    // this style makes sure we the feedback form is above the BlockaidWarningModal when both are active
     z-index: calc(var(--z-index-modal) + 1) !important;
   }
 
