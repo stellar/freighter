@@ -486,9 +486,7 @@ export const getSiteSecurityStates = (
 
   // Use actual scan results
   return {
-    // isUnableToScan is only true when Blockaid returned data but couldn't produce a verdict.
-    // null scanData means the scan wasn't performed or failed silently — treat as no warning.
-    isUnableToScan: !!scanData && scanData.status === undefined,
+    isUnableToScan: !scanData,
     isMalicious: scanData?.status === "hit" && scanData.is_malicious === true,
     // Blockaid does not produce a "suspicious" verdict for site scans, so this
     // is always false for real results. The dev override intentionally allows
