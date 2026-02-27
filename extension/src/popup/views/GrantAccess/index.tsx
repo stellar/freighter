@@ -17,12 +17,12 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { BlockaidByLine } from "popup/components/WarningMessages";
-import { ATTACK_TO_DISPLAY } from "popup/helpers/blockaid";
-import { SecurityLevel } from "popup/constants/blockaid";
 import {
+  ATTACK_TO_DISPLAY,
   getSiteSecurityStates,
   useBlockaidOverrideState,
 } from "popup/helpers/blockaid";
+import { SecurityLevel } from "popup/constants/blockaid";
 import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import "popup/metrics/access";
@@ -114,12 +114,10 @@ export const GrantAccess = () => {
   const scanData = state.data.scanData;
 
   // Determine security states with override support
-  const { isMalicious, isUnableToScan: rawIsUnableToScan } =
-    getSiteSecurityStates(scanData, blockaidOverrideState);
-
-  // scanData === undefined means the scan is still in-flight; suppress
-  // unable-to-scan until the result (null or a real response) arrives
-  const isUnableToScan = rawIsUnableToScan && scanData !== undefined;
+  const { isMalicious, isUnableToScan } = getSiteSecurityStates(
+    scanData,
+    blockaidOverrideState,
+  );
 
   const shouldShowWarning = isMalicious || isUnableToScan;
 

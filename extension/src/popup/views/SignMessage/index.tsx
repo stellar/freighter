@@ -192,15 +192,10 @@ export const SignMessage = () => {
       : null;
 
   // Determine security states with override support
-  const {
-    isMalicious,
-    isSuspicious,
-    isUnableToScan: rawIsUnableToScan,
-  } = getSiteSecurityStates(scanData, blockaidOverrideState);
-
-  // scanData === undefined means the scan is still in-flight; suppress
-  // unable-to-scan until the result (null or a real response) arrives
-  const isUnableToScan = rawIsUnableToScan && scanData !== undefined;
+  const { isMalicious, isSuspicious, isUnableToScan } = getSiteSecurityStates(
+    scanData,
+    blockaidOverrideState,
+  );
 
   const shouldShowWarning = isMalicious || isSuspicious || isUnableToScan;
 

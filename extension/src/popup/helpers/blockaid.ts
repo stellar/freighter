@@ -486,8 +486,9 @@ export const getSiteSecurityStates = (
 
   // Use actual scan results
   return {
-    // If scanData is falsy (network failure), or blockaid wasn't able to scan, treat as unable to scan instead of malicious to avoid false positives
-    isUnableToScan: !scanData || scanData.status !== "hit",
+    // undefined = scan in-flight (suppress warning); null = scan failed; check status otherwise
+    isUnableToScan:
+      scanData !== undefined && (!scanData || scanData.status !== "hit"),
     isMalicious: scanData?.status === "hit" && scanData.is_malicious === true,
     // Blockaid does not produce a "suspicious" verdict for site scans, so this
     // is always false for real results. The dev override intentionally allows
