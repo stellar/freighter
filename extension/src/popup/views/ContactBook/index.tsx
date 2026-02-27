@@ -14,6 +14,7 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { EditContactCard } from "popup/components/EditContactCard";
 import { truncatedPublicKey } from "helpers/stellar";
+import { Toaster } from "popup/basics/shadcn/Toast";
 
 import "./styles.scss";
 
@@ -242,6 +243,7 @@ export const ContactBook = () => {
             className="ContactBook__modal"
             onClick={(e) => e.stopPropagation()}
           >
+            <Toaster closeButton />
             <EditContactCard
               title={cardTitle}
               address={cardMode.type === "edit" ? cardMode.address : undefined}

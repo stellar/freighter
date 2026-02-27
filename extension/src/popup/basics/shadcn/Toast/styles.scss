@@ -22,9 +22,16 @@
     color: var(--sds-clr-gray-12);
   }
 
-  [data-sonner-toast][data-styled="true"] [data-icon] {
+  [data-sonner-toast][data-styled="true"][data-type="success"] [data-icon] {
     color: var(--sds-clr-green-09, #30a46c);
 
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+    }
+  }
+
+  [data-sonner-toast][data-styled="true"] [data-icon] {
     svg {
       width: pxToRem(16px);
       height: pxToRem(16px);
