@@ -93,7 +93,7 @@ function useGetSignMessageData(accountToSign?: string, url?: string) {
           accountNotFound,
           currentAccount,
         },
-        scanData: undefined as BlockAidScanSiteResult | null | undefined,
+        scanData: undefined,
         blockaidOverrideState,
       } as ResolvedData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload: initialPayload });

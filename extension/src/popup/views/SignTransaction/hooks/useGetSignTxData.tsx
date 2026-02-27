@@ -165,7 +165,7 @@ function useGetSignTxData(
         type: AppDataType.RESOLVED,
         balances: balancesResult,
         scanResult,
-        siteScanData: undefined as BlockAidScanSiteResult | null | undefined,
+        siteScanData: undefined,
         blockaidOverrideState,
         publicKey,
         applicationState: appData.account.applicationState,
