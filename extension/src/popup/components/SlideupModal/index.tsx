@@ -33,10 +33,10 @@ export const SlideupModal = ({
       <LoadingBackground
         onClick={() => {
           setIsOpen(false);
-          // our dismiss transition is 200ms long
+          // our dismiss transition is 150ms long
           setTimeout(() => {
             setIsModalOpen(false);
-          }, 200);
+          }, 150);
         }}
         isActive={isOpen}
       />
