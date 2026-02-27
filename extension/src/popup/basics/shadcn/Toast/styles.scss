@@ -15,6 +15,11 @@
     box-shadow: none;
   }
 
+  [data-close-button] {
+    order: 3;
+    margin-left: auto;
+  }
+
   [data-sonner-toast][data-styled="true"] [data-title] {
     font-size: pxToRem(14px);
     font-weight: 600;
@@ -24,6 +29,15 @@
 
   [data-sonner-toast][data-styled="true"][data-type="success"] [data-icon] {
     color: var(--sds-clr-green-09, #30a46c);
+
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+    }
+  }
+
+  [data-sonner-toast][data-styled="true"][data-type="error"] [data-icon] {
+    color: var(--sds-clr-red-09, #e5484d);
 
     svg {
       width: pxToRem(16px);

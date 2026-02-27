@@ -208,10 +208,6 @@
   }
 
   &__toast {
-    --gap: pxToRem(-30);
-    [data-close-button] {
-      order: 3;
-      margin-left: auto;
-    }
+    --gap: -30px;
   }
 }

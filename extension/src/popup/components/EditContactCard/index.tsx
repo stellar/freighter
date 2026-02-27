@@ -34,6 +34,8 @@ export const EditContactCard = ({
 }: EditContactCardProps) => {
   const { t } = useTranslation();
   const resolvedAddressRef = React.useRef<string | undefined>(undefined);
+  const hasAddressBlurred = React.useRef(false);
+  const activeFieldRef = React.useRef<string | null>(null);
   const [isFetchingFederationAddress, setIsFetchingFederationAddress] =
     React.useState(false);
 
@@ -53,6 +55,11 @@ export const EditContactCard = ({
         async (val) => {
           if (!val) return true;
           if (!isFederationAddress(val)) return true;
+          if (
+            !hasAddressBlurred.current ||
+            activeFieldRef.current !== "address"
+          )
+            return true;
           setIsFetchingFederationAddress(true);
           try {
             const fedResp = await Federation.Server.resolve(val);
@@ -105,11 +112,16 @@ export const EditContactCard = ({
       initialValues={initialValues}
       validationSchema={contactFormSchema}
       onSubmit={handleSubmit}
-      validateOnMount
-      validateOnChange={false}
-      validateOnBlur
     >
-      {({ errors, touched, isValid, isSubmitting }) => {
+      {({
+        errors,
+        touched,
+        isValid,
+        isSubmitting,
+        validateField,
+        handleBlur,
+        handleChange,
+      }) => {
         return (
           <Form>
             <div className="EditContactCard">
@@ -117,6 +129,7 @@ export const EditContactCard = ({
                 <span className="EditContactCard__title">{cardTitle}</span>
                 <div className="EditContactCard__fields">
                   <Input
+                    type="text"
                     fieldSize="md"
                     autoComplete="off"
                     id="contact-address"
@@ -129,17 +142,44 @@ export const EditContactCard = ({
                         ? errors.address
                         : ""
                     }
-                    customInput={<Field />}
+                    customInput={
+                      <Field
+                        onFocus={() => {
+                          activeFieldRef.current = "address";
+                        }}
+                        onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
+                          handleBlur(e);
+                          if (isFederationAddress(e.target.value)) {
+                            hasAddressBlurred.current = true;
+                            validateField("address");
+                          }
+                        }}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          handleChange(e);
+                          if (hasAddressBlurred.current) {
+                            hasAddressBlurred.current = false;
+                            resolvedAddressRef.current = undefined;
+                          }
+                        }}
+                      />
+                    }
                     name="address"
                   />
                   <Input
+                    type="text"
                     fieldSize="md"
                     autoComplete="off"
                     id="contact-name"
                     placeholder={t("Name")}
                     leftElement={<Icon.User01 />}
                     error={errors.name && touched.name ? errors.name : ""}
-                    customInput={<Field />}
+                    customInput={
+                      <Field
+                        onFocus={() => {
+                          activeFieldRef.current = "name";
+                        }}
+                      />
+                    }
                     name="name"
                   />
                 </div>

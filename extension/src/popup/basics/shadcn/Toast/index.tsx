@@ -19,6 +19,7 @@ function Toaster({ ...props }: React.ComponentProps<typeof SonnerToaster>) {
       icons={{
         info: <Icon.InfoCircle />,
         success: <Icon.CheckCircle />,
+        error: <Icon.XCircle />,
       }}
       {...props}
     />

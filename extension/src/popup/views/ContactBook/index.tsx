@@ -18,6 +18,8 @@ import { Toaster } from "popup/basics/shadcn/Toast";
 
 import "./styles.scss";
 
+export const CONTACT_BOOK_TOASTER_ID = "contact-book-toaster";
+
 export interface ContactData {
   name: string;
   resolvedAddress?: string;
@@ -61,19 +63,8 @@ export const ContactBook = () => {
   const handleCopyAddress = useCallback(
     async (address: string) => {
       await navigator.clipboard.writeText(address);
-      toast.success(t("Address copied"), { className: "ContactBook__toast" });
-      setOpenMenuAddress(null);
-    },
-    [t],
-  );
-
-  const handleDeleteContact = useCallback(
-    (address: string) => {
-      setContacts((prev) => {
-        const { [address]: _, ...rest } = prev;
-        return rest;
-      });
-      toast.success(t("Contact successfully deleted"), {
+      toast.success(t("Address copied"), {
+        toasterId: CONTACT_BOOK_TOASTER_ID,
         className: "ContactBook__toast",
       });
       setOpenMenuAddress(null);
@@ -81,23 +72,53 @@ export const ContactBook = () => {
     [t],
   );
 
-  const handleSaveContact = useCallback(
-    (address: string, name: string, resolvedAddress?: string) => {
-      if (cardMode?.type === "edit") {
+  const handleDeleteContact = useCallback(
+    (address: string) => {
+      try {
         setContacts((prev) => {
-          const { [cardMode.address]: _, ...rest } = prev;
-          return { ...rest, [address]: { name, resolvedAddress } };
+          const { [address]: _, ...rest } = prev;
+          return rest;
         });
-      } else if (cardMode?.type === "add") {
-        setContacts((prev) => ({
-          ...prev,
-          [address]: { name, resolvedAddress },
-        }));
-        toast.success(t("Contact successfully added"), {
+        toast.success(t("Contact successfully deleted"), {
+          toasterId: CONTACT_BOOK_TOASTER_ID,
+          className: "ContactBook__toast",
+        });
+        setOpenMenuAddress(null);
+      } catch {
+        toast.error(t("Failed to delete contact"), {
+          toasterId: CONTACT_BOOK_TOASTER_ID,
           className: "ContactBook__toast",
         });
       }
-      setCardMode(null);
+    },
+    [t],
+  );
+
+  const handleSaveContact = useCallback(
+    (address: string, name: string, resolvedAddress?: string) => {
+      try {
+        if (cardMode?.type === "edit") {
+          setContacts((prev) => {
+            const { [cardMode.address]: _, ...rest } = prev;
+            return { ...rest, [address]: { name, resolvedAddress } };
+          });
+        } else if (cardMode?.type === "add") {
+          setContacts((prev) => ({
+            ...prev,
+            [address]: { name, resolvedAddress },
+          }));
+          toast.success(t("Contact successfully added"), {
+            toasterId: CONTACT_BOOK_TOASTER_ID,
+            className: "ContactBook__toast",
+          });
+        }
+        setCardMode(null);
+      } catch {
+        toast.error(t("Failed to save contact"), {
+          toasterId: CONTACT_BOOK_TOASTER_ID,
+          className: "ContactBook__toast",
+        });
+      }
     },
     [cardMode, t],
   );
@@ -162,6 +183,8 @@ export const ContactBook = () => {
           </button>
         }
       />
+      <Toaster id={CONTACT_BOOK_TOASTER_ID} closeButton />
+
       <View.Content hasNoTopPadding>
         {sortedEntries.length === 0 ? (
           <div className="ContactBook__empty">
@@ -243,7 +266,6 @@ export const ContactBook = () => {
             className="ContactBook__modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <Toaster closeButton />
             <EditContactCard
               title={cardTitle}
               address={cardMode.type === "edit" ? cardMode.address : undefined}
