@@ -26,7 +26,7 @@ interface ResolvedData {
     currentAccount: Account;
   };
   applicationState: APPLICATION_STATE;
-  scanData: BlockAidScanSiteResult | null | undefined;
+  scanData: BlockAidScanSiteResult | null;
   blockaidOverrideState: string | null;
 }
 
