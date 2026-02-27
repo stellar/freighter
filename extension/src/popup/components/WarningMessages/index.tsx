@@ -317,6 +317,18 @@ const BlockaidFeedbackForm = ({
     };
   }, [setIsFeedbackActive]);
 
+  useEffect(() => {
+    const modalRoot = document.getElementById("modal-root");
+    if (modalRoot) {
+      modalRoot.classList.add("BlockaidFeedback__modal-root");
+    }
+    return () => {
+      if (modalRoot) {
+        modalRoot.classList.remove("BlockaidFeedback__modal-root");
+      }
+    };
+  }, []);
+
   return (
     <>
       <div className="BlockaidFeedback__background">
@@ -359,6 +371,7 @@ const BlockaidFeedbackForm = ({
                     <Field name="details">
                       {({ field }: FieldProps) => (
                         <Textarea
+                          data-testid="blockaid-feedback-details"
                           {...field}
                           className="BlockaidFeedback__details"
                           fieldSize="md"
@@ -1173,6 +1186,10 @@ export const BlockAidScanExpanded = ({
     blockaidOverrideState,
     isAssetScan,
   );
+  let requestId = "";
+  if (scanResult && "request_id" in scanResult && scanResult.request_id) {
+    requestId = scanResult.request_id;
+  }
 
   // Early return if no warnings
   if (warnings.length === 0) {
@@ -1221,7 +1238,7 @@ export const BlockAidScanExpanded = ({
             <span>{warning.text}</span>
           </div>
         ))}
-        <BlockaidByLine address={""} />
+        <BlockaidByLine address={""} requestId={requestId} />
       </div>
     </div>
   );
