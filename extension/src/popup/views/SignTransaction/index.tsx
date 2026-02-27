@@ -157,8 +157,13 @@ export const SignTransaction = () => {
   const {
     isMalicious: isSiteMalicious,
     isSuspicious: isSiteSuspicious,
-    isUnableToScan: isSiteUnableToScan,
+    isUnableToScan: rawIsSiteUnableToScan,
   } = getSiteSecurityStates(siteScanData, blockaidOverrideState);
+
+  // siteScanData === undefined means the scan is still in-flight; suppress
+  // unable-to-scan until the result (null or a real response) arrives
+  const isSiteUnableToScan =
+    rawIsSiteUnableToScan && siteScanData !== undefined;
 
   const shouldShowSiteWarning =
     isSiteMalicious || isSiteSuspicious || isSiteUnableToScan;

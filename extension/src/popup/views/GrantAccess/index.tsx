@@ -114,10 +114,12 @@ export const GrantAccess = () => {
   const scanData = state.data.scanData;
 
   // Determine security states with override support
-  const { isMalicious, isUnableToScan } = getSiteSecurityStates(
-    scanData,
-    blockaidOverrideState,
-  );
+  const { isMalicious, isUnableToScan: rawIsUnableToScan } =
+    getSiteSecurityStates(scanData, blockaidOverrideState);
+
+  // scanData === undefined means the scan is still in-flight; suppress
+  // unable-to-scan until the result (null or a real response) arrives
+  const isUnableToScan = rawIsUnableToScan && scanData !== undefined;
 
   const shouldShowWarning = isMalicious || isUnableToScan;
 

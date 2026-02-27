@@ -17,7 +17,7 @@ type ResolvedGrantAccessData = {
   networkDetails: NetworkDetails;
   networksList: NetworkDetails[];
   applicationState: APPLICATION_STATE;
-  scanData: BlockAidScanSiteResult | null;
+  scanData: BlockAidScanSiteResult | null | undefined;
 };
 
 type GrantAccessData = NeedsReRoute | ResolvedGrantAccessData;
@@ -54,7 +54,7 @@ function useGetGrantAccessData(url: string) {
         networkDetails: appData.settings.networkDetails,
         applicationState: appData.account.applicationState,
         networksList: appData.settings.networksList,
-        scanData: null,
+        scanData: undefined,
       } as ResolvedGrantAccessData;
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload: initialPayload });
