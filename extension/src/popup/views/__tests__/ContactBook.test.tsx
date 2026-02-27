@@ -608,4 +608,281 @@ describe("ContactBook", () => {
       });
     });
   });
+
+  describe("Federation Addresses", () => {
+    const FEDERATION_ADDRESS = "alice*example.com";
+    const RESOLVED_KEY = VALID_ADDRESS_3;
+
+    beforeEach(() => {
+      (isFederationAddress as jest.Mock).mockImplementation((addr: string) =>
+        addr.includes("*"),
+      );
+      (Federation.Server.resolve as jest.Mock).mockResolvedValue({
+        account_id: RESOLVED_KEY,
+      });
+    });
+
+    it("accepts a valid federation address and enables Save", async () => {
+      renderContactBook();
+
+      const plusButton = document.querySelector(".ContactBook__add-button")!;
+      fireEvent.click(plusButton);
+
+      const addressInput = screen.getByPlaceholderText("Address");
+      const nameInput = screen.getByPlaceholderText("Name");
+
+      fireEvent.change(addressInput, {
+        target: { value: FEDERATION_ADDRESS },
+      });
+      fireEvent.blur(addressInput);
+      fireEvent.change(nameInput, { target: { value: "Alice" } });
+      fireEvent.blur(nameInput);
+
+      await waitFor(() => {
+        expect(screen.getByText("Save").closest("button")).not.toBeDisabled();
+      });
+
+      expect(
+        screen.queryByText("Invalid Stellar address"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Failed to resolve federated address"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("resolves federation address and saves contact with resolved key", async () => {
+      renderContactBook();
+
+      const plusButton = document.querySelector(".ContactBook__add-button")!;
+      fireEvent.click(plusButton);
+
+      const addressInput = screen.getByPlaceholderText("Address");
+      const nameInput = screen.getByPlaceholderText("Name");
+
+      fireEvent.change(addressInput, {
+        target: { value: FEDERATION_ADDRESS },
+      });
+      fireEvent.blur(addressInput);
+      fireEvent.change(nameInput, { target: { value: "Alice" } });
+      fireEvent.blur(nameInput);
+
+      await waitFor(() => {
+        expect(screen.getByText("Save").closest("button")).not.toBeDisabled();
+      });
+
+      fireEvent.click(screen.getByText("Save"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Alice")).toBeInTheDocument();
+      });
+
+      // The identicon should use the resolved public key, not the federation address
+      expect(
+        screen.getByTestId(`identicon-${RESOLVED_KEY}`),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByTestId(`identicon-${FEDERATION_ADDRESS}`),
+      ).not.toBeInTheDocument();
+    });
+
+    it("shows error when federation resolution fails", async () => {
+      (Federation.Server.resolve as jest.Mock).mockRejectedValue(
+        new Error("Not found"),
+      );
+
+      renderContactBook();
+
+      const plusButton = document.querySelector(".ContactBook__add-button")!;
+      fireEvent.click(plusButton);
+
+      const addressInput = screen.getByPlaceholderText("Address");
+      const nameInput = screen.getByPlaceholderText("Name");
+
+      fireEvent.change(addressInput, {
+        target: { value: FEDERATION_ADDRESS },
+      });
+      fireEvent.blur(addressInput);
+      fireEvent.change(nameInput, { target: { value: "Alice" } });
+      fireEvent.blur(nameInput);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("Failed to resolve federated address"),
+        ).toBeInTheDocument();
+      });
+
+      expect(screen.getByText("Save").closest("button")).toBeDisabled();
+    });
+
+    it("calls Federation.Server.resolve with the federation address", async () => {
+      renderContactBook();
+
+      const plusButton = document.querySelector(".ContactBook__add-button")!;
+      fireEvent.click(plusButton);
+
+      const addressInput = screen.getByPlaceholderText("Address");
+      fireEvent.change(addressInput, {
+        target: { value: FEDERATION_ADDRESS },
+      });
+      fireEvent.blur(addressInput);
+
+      await waitFor(() => {
+        expect(Federation.Server.resolve).toHaveBeenCalledWith(
+          FEDERATION_ADDRESS,
+        );
+      });
+    });
+
+    it("prevents duplicate federation addresses", async () => {
+      renderContactBook();
+
+      // Add a contact with the federation address first
+      const plusButton = document.querySelector(".ContactBook__add-button")!;
+      fireEvent.click(plusButton);
+
+      const addressInput = screen.getByPlaceholderText("Address");
+      const nameInput = screen.getByPlaceholderText("Name");
+
+      fireEvent.change(addressInput, {
+        target: { value: FEDERATION_ADDRESS },
+      });
+      fireEvent.blur(addressInput);
+      fireEvent.change(nameInput, { target: { value: "Alice" } });
+      fireEvent.blur(nameInput);
+
+      await waitFor(() => {
+        expect(screen.getByText("Save").closest("button")).not.toBeDisabled();
+      });
+
+      fireEvent.click(screen.getByText("Save"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Alice")).toBeInTheDocument();
+      });
+
+      // Try to add the same federation address again
+      fireEvent.click(document.querySelector(".ContactBook__add-button")!);
+
+      const addressInput2 = screen.getByPlaceholderText("Address");
+      fireEvent.change(addressInput2, {
+        target: { value: FEDERATION_ADDRESS },
+      });
+      fireEvent.blur(addressInput2);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("This address already exists in your contacts"),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("does not call Federation.Server.resolve for regular addresses", async () => {
+      (isFederationAddress as jest.Mock).mockReturnValue(false);
+
+      renderContactBook();
+
+      const plusButton = document.querySelector(".ContactBook__add-button")!;
+      fireEvent.click(plusButton);
+
+      const addressInput = screen.getByPlaceholderText("Address");
+      fireEvent.change(addressInput, {
+        target: { value: VALID_ADDRESS_1 },
+      });
+      fireEvent.blur(addressInput);
+
+      await waitFor(() => {
+        expect(Federation.Server.resolve).not.toHaveBeenCalled();
+      });
+    });
+
+    it("displays federation address (not resolved key) in the contact row", async () => {
+      renderContactBook();
+
+      const plusButton = document.querySelector(".ContactBook__add-button")!;
+      fireEvent.click(plusButton);
+
+      const addressInput = screen.getByPlaceholderText("Address");
+      const nameInput = screen.getByPlaceholderText("Name");
+
+      fireEvent.change(addressInput, {
+        target: { value: FEDERATION_ADDRESS },
+      });
+      fireEvent.blur(addressInput);
+      fireEvent.change(nameInput, { target: { value: "Alice" } });
+      fireEvent.blur(nameInput);
+
+      await waitFor(() => {
+        expect(screen.getByText("Save").closest("button")).not.toBeDisabled();
+      });
+
+      fireEvent.click(screen.getByText("Save"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Alice")).toBeInTheDocument();
+      });
+
+      // The contact row should show the truncated federation address as the key
+      expect(
+        screen.getByText(
+          FEDERATION_ADDRESS.slice(0, 4) + "..." + FEDERATION_ADDRESS.slice(-4),
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("can edit a federation address contact", async () => {
+      renderContactBook();
+
+      // Add a federation contact
+      const plusButton = document.querySelector(".ContactBook__add-button")!;
+      fireEvent.click(plusButton);
+
+      const addressInput = screen.getByPlaceholderText("Address");
+      const nameInput = screen.getByPlaceholderText("Name");
+
+      fireEvent.change(addressInput, {
+        target: { value: FEDERATION_ADDRESS },
+      });
+      fireEvent.blur(addressInput);
+      fireEvent.change(nameInput, { target: { value: "Alice" } });
+      fireEvent.blur(nameInput);
+
+      await waitFor(() => {
+        expect(screen.getByText("Save").closest("button")).not.toBeDisabled();
+      });
+
+      fireEvent.click(screen.getByText("Save"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Alice")).toBeInTheDocument();
+      });
+
+      // Open edit modal
+      const menuTrigger = document.querySelector(
+        ".ContactBook__row__menu-trigger",
+      )!;
+      fireEvent.click(menuTrigger);
+      fireEvent.click(screen.getByText("Edit contact"));
+
+      expect(screen.getByDisplayValue(FEDERATION_ADDRESS)).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Alice")).toBeInTheDocument();
+
+      // Update the name
+      const editNameInput = screen.getByDisplayValue("Alice");
+      fireEvent.change(editNameInput, {
+        target: { value: "Alice Updated" },
+      });
+      fireEvent.blur(editNameInput);
+
+      await waitFor(() => {
+        expect(screen.getByText("Save").closest("button")).not.toBeDisabled();
+      });
+
+      fireEvent.click(screen.getByText("Save"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Alice Updated")).toBeInTheDocument();
+        expect(screen.queryByText("Alice")).not.toBeInTheDocument();
+      });
+    });
+  });
 });
