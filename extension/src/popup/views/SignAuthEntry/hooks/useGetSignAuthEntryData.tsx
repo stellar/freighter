@@ -93,7 +93,7 @@ function useGetSignAuthEntryData(accountToSign?: string, url?: string) {
           accountNotFound,
           currentAccount,
         },
-        scanData: null as BlockAidScanSiteResult | null,
+        scanData: null,
         blockaidOverrideState,
       } as ResolvedData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload: initialPayload });

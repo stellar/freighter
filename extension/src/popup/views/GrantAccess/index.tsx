@@ -17,12 +17,12 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { BlockaidByLine } from "popup/components/WarningMessages";
-import { ATTACK_TO_DISPLAY } from "popup/helpers/blockaid";
-import { SecurityLevel } from "popup/constants/blockaid";
 import {
+  ATTACK_TO_DISPLAY,
   getSiteSecurityStates,
   useBlockaidOverrideState,
 } from "popup/helpers/blockaid";
+import { SecurityLevel } from "popup/constants/blockaid";
 import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import "popup/metrics/access";

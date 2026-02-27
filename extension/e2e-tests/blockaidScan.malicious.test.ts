@@ -1,12 +1,17 @@
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
 import {
+  openGrantAccessPopup,
+  openSignMessagePopup,
+} from "./helpers/dAppSessionHelper";
+import {
   stubAccountBalances,
   stubAccountHistory,
   stubTokenDetails,
   stubTokenPrices,
   stubScanAssetMalicious,
   stubScanTxMalicious,
+  stubScanDappMalicious,
   createAssetObject,
   stubAssetSearch,
   stubMemoRequiredAccounts,
@@ -17,46 +22,47 @@ test.describe("BlockAid Scan - Malicious States", () => {
   test("Add asset shows malicious warning when scan detects malicious asset", async ({
     page,
     extensionId,
+    context,
   }) => {
     test.slow();
-    // Set IS_PLAYWRIGHT flag so scanAsset proceeds even on testnet for e2e testing
-    await page.addInitScript(() => {
-      // @ts-ignore
-      window.IS_PLAYWRIGHT = "true";
-    });
-    await stubTokenDetails(page);
-    await stubScanAssetMalicious(page);
-    await stubAssetSearch(page);
-    // Mock mainnet check - asset scanning only works on mainnet
-    // We need to mock account-balances to simulate mainnet so scanAsset proceeds
-    await page.route("**/account-balances/*", async (route) => {
-      const json = {
-        balances: {
-          native: {
-            token: { type: "native", code: "XLM" },
-            total: "100",
-            available: "100",
-            blockaidData: {
-              result_type: "Benign",
-              malicious_score: "0.0",
-              attack_types: {},
-              chain: "stellar",
-              address: "",
-              metadata: { type: "" },
-              fees: {},
-              features: [],
-              trading_limits: {},
-              financial_stats: {},
+    await loginToTestAccount({
+      page,
+      extensionId,
+      context,
+      stubOverrides: async () => {
+        await stubTokenDetails(page);
+        await stubScanAssetMalicious(page);
+        await stubAssetSearch(page);
+        // Mock mainnet balances so asset scan proceeds (scanning only runs on mainnet)
+        await page.route("**/account-balances/*", async (route) => {
+          const json = {
+            balances: {
+              native: {
+                token: { type: "native", code: "XLM" },
+                total: "100",
+                available: "100",
+                blockaidData: {
+                  result_type: "Benign",
+                  malicious_score: "0.0",
+                  attack_types: {},
+                  chain: "stellar",
+                  address: "",
+                  metadata: { type: "" },
+                  fees: {},
+                  features: [],
+                  trading_limits: {},
+                  financial_stats: {},
+                },
+              },
             },
-          },
-        },
-        isFunded: true,
-        subentryCount: 0,
-        error: { horizon: null, soroban: null },
-      };
-      await route.fulfill({ json });
+            isFunded: true,
+            subentryCount: 0,
+            error: { horizon: null, soroban: null },
+          };
+          await route.fulfill({ json });
+        });
+      },
     });
-    await loginToTestAccount({ page, extensionId });
 
     await page.getByTestId("account-options-dropdown").click();
     await page.getByText("Manage assets").click();
@@ -99,13 +105,20 @@ test.describe("BlockAid Scan - Malicious States", () => {
   test("Send payment shows malicious warning when scan detects malicious transaction", async ({
     page,
     extensionId,
+    context,
   }) => {
     test.slow();
-    await stubAccountBalances(page, "100");
-    await stubTokenDetails(page);
-    await stubTokenPrices(page);
-    await stubScanTxMalicious(page);
-    await loginToTestAccount({ page, extensionId });
+    await loginToTestAccount({
+      page,
+      extensionId,
+      context,
+      stubOverrides: async () => {
+        await stubAccountBalances(page, "100");
+        await stubTokenDetails(page);
+        await stubTokenPrices(page);
+        await stubScanTxMalicious(page);
+      },
+    });
 
     await page.getByTestId("nav-link-send").click();
     await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -152,111 +165,105 @@ test.describe("BlockAid Scan - Malicious States", () => {
   test("Swap shows malicious warning when scan detects malicious tokens", async ({
     page,
     extensionId,
+    context,
   }) => {
     test.slow();
-    // Set IS_PLAYWRIGHT flag so scanAsset proceeds even on testnet for e2e testing
-    await page.addInitScript(() => {
-      // @ts-ignore
-      window.IS_PLAYWRIGHT = "true";
-    });
     const USDC_ISSUER =
       "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
 
-    await page.route("*/**/account-balances/*", async (route) => {
-      const json = {
-        balances: {
-          [`USDC:${USDC_ISSUER}`]: {
-            token: {
-              type: "credit_alphanum4",
-              code: "USDC",
-              issuer: {
-                key: USDC_ISSUER,
+    await loginToTestAccount({
+      page,
+      extensionId,
+      context,
+      stubOverrides: async () => {
+        await page.route("*/**/account-balances/*", async (route) => {
+          const json = {
+            balances: {
+              [`USDC:${USDC_ISSUER}`]: {
+                token: {
+                  type: "credit_alphanum4",
+                  code: "USDC",
+                  issuer: { key: USDC_ISSUER },
+                },
+                sellingLiabilities: "0",
+                buyingLiabilities: "0",
+                total: "100",
+                limit: "922337203685.4775807",
+                available: "100",
+                blockaidData: {
+                  result_type: "Malicious",
+                  malicious_score: "0.9",
+                  attack_types: { theft: true },
+                  chain: "stellar",
+                  address: "",
+                  metadata: { type: "" },
+                  fees: {},
+                  features: [],
+                  trading_limits: {},
+                  financial_stats: {},
+                },
+              },
+              native: {
+                token: { type: "native", code: "XLM" },
+                total: "999",
+                available: "999",
+                sellingLiabilities: "0",
+                buyingLiabilities: "0",
+                minimumBalance: "1",
+                blockaidData: {
+                  result_type: "Benign",
+                  malicious_score: "0.0",
+                  attack_types: {},
+                  chain: "stellar",
+                  address: "",
+                  metadata: { type: "" },
+                  fees: {},
+                  features: [],
+                  trading_limits: {},
+                  financial_stats: {},
+                },
               },
             },
-            sellingLiabilities: "0",
-            buyingLiabilities: "0",
-            total: "100",
-            limit: "922337203685.4775807",
-            available: "100",
-            blockaidData: {
-              result_type: "Malicious",
-              malicious_score: "0.9",
-              attack_types: { theft: true },
-              chain: "stellar",
-              address: "",
-              metadata: { type: "" },
-              fees: {},
-              features: [],
-              trading_limits: {},
-              financial_stats: {},
+            isFunded: true,
+            subentryCount: 0,
+            error: { horizon: null, soroban: null },
+          };
+          await route.fulfill({ json });
+        });
+
+        await page.route("**/paths**", async (route) => {
+          const url = new URL(route.request().url());
+          const sourceAsset = url.searchParams.get("source_asset_code");
+          const destAsset = url.searchParams.get("destination_asset_code");
+
+          const source = createAssetObject(sourceAsset, USDC_ISSUER);
+          const destination = createAssetObject(destAsset, USDC_ISSUER);
+
+          const json = {
+            _embedded: {
+              records: [
+                {
+                  source_asset_type: source.asset_type,
+                  source_asset_code: source.asset_code,
+                  source_asset_issuer: source.asset_issuer,
+                  destination_asset_type: destination.asset_type,
+                  destination_asset_code: destination.asset_code,
+                  destination_asset_issuer: destination.asset_issuer,
+                  destination_amount: "0.95",
+                  path: [],
+                },
+              ],
             },
-          },
-          native: {
-            token: {
-              type: "native",
-              code: "XLM",
-            },
-            total: "999",
-            available: "999",
-            sellingLiabilities: "0",
-            buyingLiabilities: "0",
-            minimumBalance: "1",
-            blockaidData: {
-              result_type: "Benign",
-              malicious_score: "0.0",
-              attack_types: {},
-              chain: "stellar",
-              address: "",
-              metadata: { type: "" },
-              fees: {},
-              features: [],
-              trading_limits: {},
-              financial_stats: {},
-            },
-          },
-        },
-        isFunded: true,
-        subentryCount: 0,
-        error: {
-          horizon: null,
-          soroban: null,
-        },
-      };
-      await route.fulfill({ json });
+          };
+          await route.fulfill({ json });
+        });
+
+        await stubAccountHistory(page);
+        await stubTokenDetails(page);
+        await stubTokenPrices(page);
+        await stubScanTxMalicious(page);
+      },
     });
-
-    await page.route("**/paths**", async (route) => {
-      const url = new URL(route.request().url());
-      const sourceAsset = url.searchParams.get("source_asset_code");
-      const destAsset = url.searchParams.get("destination_asset_code");
-
-      const source = createAssetObject(sourceAsset, USDC_ISSUER);
-      const destination = createAssetObject(destAsset, USDC_ISSUER);
-
-      const json = {
-        _embedded: {
-          records: [
-            {
-              source_asset_type: source.asset_type,
-              source_asset_code: source.asset_code,
-              source_asset_issuer: source.asset_issuer,
-              destination_asset_type: destination.asset_type,
-              destination_asset_code: destination.asset_code,
-              destination_asset_issuer: destination.asset_issuer,
-              destination_amount: "0.95",
-              path: [],
-            },
-          ],
-        },
-      };
-      await route.fulfill({ json });
-    });
-
-    await stubAccountHistory(page);
-    await stubTokenDetails(page);
-    await stubTokenPrices(page);
-    await stubScanTxMalicious(page);
-    await loginToTestAccount({ page, extensionId });
 
     await page.getByTestId("nav-link-swap").click();
     await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
@@ -315,18 +322,25 @@ test.describe("BlockAid Scan - Malicious States", () => {
   test("Malicious transaction ignores memo requirements", async ({
     page,
     extensionId,
+    context,
   }) => {
     test.slow();
-    await stubAccountBalances(page, "100");
-    await stubAccountHistory(page);
-    await stubTokenDetails(page);
-    await stubTokenPrices(page);
-    await stubScanTxMalicious(page);
-    await stubMemoRequiredAccounts(
+    await loginToTestAccount({
       page,
-      "GA6SXIZIKLJHCZI2KEOBEUUOFMM4JUPPM2UTWX6STAWT25JWIEUFIMFF",
-    );
-    await loginToTestAccount({ page, extensionId });
+      extensionId,
+      context,
+      stubOverrides: async () => {
+        await stubAccountBalances(page, "100");
+        await stubAccountHistory(page);
+        await stubTokenDetails(page);
+        await stubTokenPrices(page);
+        await stubScanTxMalicious(page);
+        await stubMemoRequiredAccounts(
+          page,
+          "GA6SXIZIKLJHCZI2KEOBEUUOFMM4JUPPM2UTWX6STAWT25JWIEUFIMFF",
+        );
+      },
+    });
 
     // Go to send payment to an M-address (requires memo)
     await page.getByTestId("nav-link-send").click();
@@ -364,5 +378,106 @@ test.describe("BlockAid Scan - Malicious States", () => {
 
     // Should show malicious details
     await expect(page.getByText("Do not proceed")).toBeVisible();
+  });
+});
+
+test.describe("BlockAid Scan - Malicious Site", () => {
+  test("GrantAccess shows malicious warning when site is flagged as malicious", async ({
+    page,
+    extensionId,
+    context,
+  }) => {
+    test.slow();
+    await loginToTestAccount({
+      page,
+      extensionId,
+      context,
+      stubOverrides: async () => {
+        // Override safe scan-dapp with malicious response (LIFO: this wins)
+        await stubScanDappMalicious(context);
+      },
+    });
+
+    const popupPromise = openGrantAccessPopup({ page });
+    const popup = await popupPromise;
+
+    await expect(popup.getByText("Connection Request")).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Malicious label should be visible
+    await expect(popup.getByTestId("blockaid-malicious-label")).toBeVisible();
+    await expect(
+      popup.getByText("This site was flagged as malicious"),
+    ).toBeVisible();
+
+    // "Connect anyway" replaces the normal "Connect" button
+    await expect(
+      popup.getByTestId("grant-access-connect-anyway-button"),
+    ).toBeVisible();
+    await expect(
+      popup.getByTestId("grant-access-connect-button"),
+    ).not.toBeVisible();
+
+    // Expand blockaid details pane
+    await popup.getByTestId("blockaid-malicious-label").click();
+    await popup.waitForTimeout(1000);
+
+    // Expanded pane shows "Do not proceed" and attack type description
+    await expect(popup.getByText("Do not proceed")).toBeVisible();
+    await expect(
+      popup.getByText(
+        "A known piece of malicious code is embedded within the site.",
+      ),
+    ).toBeVisible();
+  });
+
+  test("SignMessage shows malicious warning when site is flagged as malicious", async ({
+    page,
+    extensionId,
+    context,
+  }) => {
+    test.slow();
+    await loginToTestAccount({
+      page,
+      extensionId,
+      context,
+      stubOverrides: async () => {
+        await stubScanDappMalicious(context);
+      },
+    });
+
+    const popupPromise = openSignMessagePopup({ page });
+    const popup = await popupPromise;
+
+    await expect(popup.getByText("Sign message")).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Malicious label should be visible
+    await expect(popup.getByTestId("blockaid-malicious-label")).toBeVisible();
+    await expect(
+      popup.getByText("This site was flagged as malicious"),
+    ).toBeVisible();
+
+    // "Confirm anyway" replaces the normal "Confirm" button
+    await expect(
+      popup.getByTestId("sign-message-confirm-anyway-button"),
+    ).toBeVisible();
+    await expect(
+      popup.getByTestId("sign-message-approve-button"),
+    ).not.toBeVisible();
+
+    // Expand blockaid details pane
+    await popup.getByTestId("blockaid-malicious-label").click();
+    await popup.waitForTimeout(1000);
+
+    // Expanded pane shows "Do not proceed" and site-specific subtitle
+    await expect(popup.getByText("Do not proceed")).toBeVisible();
+    await expect(
+      popup.getByText(
+        "This site does not appear safe for the following reasons",
+      ),
+    ).toBeVisible();
   });
 });

@@ -37,7 +37,7 @@ import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 export interface ResolvedData {
   type: AppDataType.RESOLVED;
   scanResult: BlockAidScanTxResult | null;
-  siteScanData: BlockAidScanSiteResult | null;
+  siteScanData: BlockAidScanSiteResult | null | undefined;
   blockaidOverrideState: string | null;
   balances: AccountBalances | null;
   publicKey: string;
@@ -165,7 +165,7 @@ function useGetSignTxData(
         type: AppDataType.RESOLVED,
         balances: balancesResult,
         scanResult,
-        siteScanData: null as BlockAidScanSiteResult | null,
+        siteScanData: undefined,
         blockaidOverrideState,
         publicKey,
         applicationState: appData.account.applicationState,

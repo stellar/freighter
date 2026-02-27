@@ -836,12 +836,12 @@ export const BlockAidSiteScanLabel = ({
   isUnableToScan?: boolean;
   onClick: () => void;
 }) => {
-  if (isUnableToScan) {
-    return <BlockAidUnableToScanSiteLabel onClick={onClick} />;
-  }
-
   if (status === "miss") {
     return <BlockAidMissLabel />;
+  }
+
+  if (isUnableToScan) {
+    return <BlockAidUnableToScanSiteLabel onClick={onClick} />;
   }
 
   if (isMalicious) {
