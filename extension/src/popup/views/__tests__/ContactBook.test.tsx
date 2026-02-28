@@ -34,6 +34,7 @@ jest.mock("helpers/stellar", () => ({
 const mockToastSuccess = jest.fn();
 jest.mock("sonner", () => ({
   toast: { success: (...args: any[]) => mockToastSuccess(...args) },
+  Toaster: (props: any) => <div data-testid="sonner-toaster" {...props} />,
 }));
 
 const mockClipboardWriteText = jest.fn(() => Promise.resolve());
@@ -238,7 +239,10 @@ describe("ContactBook", () => {
       await waitFor(() => {
         expect(mockToastSuccess).toHaveBeenCalledWith(
           "Contact successfully added",
-          { className: "ContactBook__toast" },
+          {
+            toasterId: "contact-book-toaster",
+            className: "ContactBook__toast",
+          },
         );
       });
     });
@@ -336,10 +340,13 @@ describe("ContactBook", () => {
       const addressInput = screen.getByPlaceholderText("Address");
       const nameInput = screen.getByPlaceholderText("Name");
 
+      fireEvent.focus(addressInput);
       fireEvent.change(addressInput, {
         target: { value: FEDERATION_ADDRESS },
       });
+      fireEvent.blur(addressInput);
       fireEvent.change(nameInput, { target: { value: "Bob" } });
+      fireEvent.blur(nameInput);
 
       await waitFor(() => {
         expect(screen.getByText("Save").closest("button")).not.toBeDisabled();
@@ -540,6 +547,7 @@ describe("ContactBook", () => {
       await waitFor(() => {
         expect(mockClipboardWriteText).toHaveBeenCalledWith(VALID_ADDRESS_1);
         expect(mockToastSuccess).toHaveBeenCalledWith("Address copied", {
+          toasterId: "contact-book-toaster",
           className: "ContactBook__toast",
         });
       });
@@ -561,7 +569,10 @@ describe("ContactBook", () => {
       expect(screen.getByText("Piyal")).toBeInTheDocument();
       expect(mockToastSuccess).toHaveBeenCalledWith(
         "Contact successfully deleted",
-        { className: "ContactBook__toast" },
+        {
+          toasterId: "contact-book-toaster",
+          className: "ContactBook__toast",
+        },
       );
     });
 
@@ -631,6 +642,7 @@ describe("ContactBook", () => {
       const addressInput = screen.getByPlaceholderText("Address");
       const nameInput = screen.getByPlaceholderText("Name");
 
+      fireEvent.focus(addressInput);
       fireEvent.change(addressInput, {
         target: { value: FEDERATION_ADDRESS },
       });
@@ -659,6 +671,7 @@ describe("ContactBook", () => {
       const addressInput = screen.getByPlaceholderText("Address");
       const nameInput = screen.getByPlaceholderText("Name");
 
+      fireEvent.focus(addressInput);
       fireEvent.change(addressInput, {
         target: { value: FEDERATION_ADDRESS },
       });
@@ -698,6 +711,7 @@ describe("ContactBook", () => {
       const addressInput = screen.getByPlaceholderText("Address");
       const nameInput = screen.getByPlaceholderText("Name");
 
+      fireEvent.focus(addressInput);
       fireEvent.change(addressInput, {
         target: { value: FEDERATION_ADDRESS },
       });
@@ -721,6 +735,7 @@ describe("ContactBook", () => {
       fireEvent.click(plusButton);
 
       const addressInput = screen.getByPlaceholderText("Address");
+      fireEvent.focus(addressInput);
       fireEvent.change(addressInput, {
         target: { value: FEDERATION_ADDRESS },
       });

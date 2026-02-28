@@ -111,6 +111,7 @@ export const EditContactCard = ({
     <Formik
       initialValues={initialValues}
       validationSchema={contactFormSchema}
+      validateOnMount
       onSubmit={handleSubmit}
     >
       {({
