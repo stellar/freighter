@@ -1,5 +1,5 @@
 import { test, expect } from "./test-fixtures";
-import { loginToTestAccount } from "./helpers/login";
+import { loginToTestAccount, switchToMainnet } from "./helpers/login";
 import {
   openGrantAccessPopup,
   openSignMessagePopup,
@@ -63,6 +63,9 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
       },
     });
 
+    // switch to Mainnet where asset scanning is supported and errors are surfaced
+    await switchToMainnet(page);
+
     await page.getByTestId("account-options-dropdown").click();
     await page.getByText("Manage assets").click();
     await expect(page.getByText("Your assets")).toBeVisible();
@@ -88,13 +91,15 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     ).toBeVisible({ timeout: 10000 });
 
     // Click on the warning banner to view blockaid details
-    await page.getByText("Proceed with caution").click();
+    await page.getByTestId("blockaid-unable-to-scan-label").click();
 
     // Wait for pane animation to finish
     await page.waitForTimeout(1000);
 
     // Should show expanded view with unable-to-scan details
-    await expect(page.getByText("Proceed with caution")).toBeVisible();
+    await expect(
+      page.getByTestId("ChangeTrustInternal").getByText("Proceed with caution"),
+    ).toBeVisible();
 
     // Should show unable to scan details
     await expect(
