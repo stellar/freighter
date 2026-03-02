@@ -7,6 +7,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { RequestState } from "constants/request";
 import {
   getCanonicalFromAsset,
+  isMainnet,
   stroopToXlm,
   xlmToStroop,
 } from "helpers/stellar";
@@ -164,11 +165,12 @@ export const ChangeTrustInternal = ({
     blockaidOverrideState === SecurityLevel.MALICIOUS;
 
   // Determine if blockaid warnings should be shown
+  // "Unable to scan" is only relevant on mainnet (scanning is not supported on other networks)
+  const isUnableToScanOnMainnet =
+    state.data.isAssetUnableToScan && isMainnet(networkDetails);
   const shouldShowBlockaidWarning =
     state.data &&
-    (isMalicious ||
-      state.data.isAssetSuspicious ||
-      state.data.isAssetUnableToScan);
+    (isMalicious || state.data.isAssetSuspicious || isUnableToScanOnMainnet);
 
   /**
    * Pane state machine for blockaid warnings:
@@ -233,7 +235,7 @@ export const ChangeTrustInternal = ({
             blockaidData={state.data.scanResult}
             onClick={() => setActivePaneIndex(paneConfig.blockaidIndex ?? 0)}
           />
-        ) : state.data.isAssetUnableToScan ? (
+        ) : isUnableToScanOnMainnet ? (
           <BlockaidAssetWarning
             blockaidData={state.data.scanResult}
             onClick={() => setActivePaneIndex(paneConfig.blockaidIndex ?? 0)}
