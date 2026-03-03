@@ -11,8 +11,6 @@ import {
   stubScanTx,
 } from "./helpers/stubs";
 
-const isIntegrationMode = process.env.IS_INTEGRATION_MODE === "true";
-
 const MUXED_ACCOUNT_ADDRESS =
   "MCQ7EGW7VXHI4AKJAFADOIHCSK2OCVA42KUETUK5LQ3LVSEQEEKP6AAAAAAAAAAAAFLVY";
 const UNFUNDED_DESTINATION =
@@ -229,7 +227,6 @@ test("Send XLM below minimum to unfunded destination shows warning", async ({
     extensionId,
     context,
     stubOverrides,
-    isIntegrationMode,
   });
   await page.getByTestId("nav-link-send").click({ force: true });
 
@@ -283,7 +280,6 @@ test("Send XLM at minimum to unfunded destination proceeds without warning", asy
     extensionId,
     context,
     stubOverrides,
-    isIntegrationMode,
   });
   await page.getByTestId("nav-link-send").click({ force: true });
 
@@ -342,7 +338,6 @@ test("Send non-native asset to unfunded destination shows destination missing wa
     extensionId,
     context,
     stubOverrides,
-    isIntegrationMode,
   });
 
   await page.getByTestId("nav-link-send").click({ force: true });
@@ -474,7 +469,6 @@ test("Send doesn't throw error when creating muxed account", async ({
     extensionId,
     context,
     stubOverrides,
-    isIntegrationMode,
   });
   await page.getByTestId("nav-link-send").click({ force: true });
 
@@ -559,7 +553,6 @@ test("Send can review formatted inputs", async ({
     extensionId,
     context,
     stubOverrides,
-    isIntegrationMode,
   });
   await page.getByTestId("nav-link-send").click({ force: true });
 
@@ -720,7 +713,6 @@ test("SendPayment resets amount when user selects new asset", async ({
     extensionId,
     context,
     stubOverrides,
-    isIntegrationMode,
   });
 
   await page.getByTestId("nav-link-send").click({ force: true });
@@ -750,7 +742,6 @@ test("SendPayment resets state when navigating back to account", async ({
     extensionId,
     context,
     stubOverrides,
-    isIntegrationMode,
   });
 
   await page.getByTestId("nav-link-send").click({ force: true });
@@ -816,7 +807,6 @@ test("Swap resets amount when user selects new source asset", async ({
     extensionId,
     context,
     stubOverrides,
-    isIntegrationMode,
   });
 
   await page.getByTestId("nav-link-swap").click();
@@ -847,7 +837,6 @@ test("Swap preserves amount when selecting destination asset", async ({
     extensionId,
     context,
     stubOverrides,
-    isIntegrationMode,
   });
 
   await page.getByTestId("nav-link-swap").click();
@@ -878,7 +867,6 @@ test("Swap resets state when navigating back to account", async ({
     extensionId,
     context,
     stubOverrides,
-    isIntegrationMode,
   });
 
   await page.getByTestId("nav-link-swap").click();
@@ -943,7 +931,6 @@ test("Send token payment from Asset Detail", async ({
     extensionId,
     context,
     stubOverrides,
-    isIntegrationMode,
   });
   await page.getByText("E2E").click();
 
@@ -996,7 +983,6 @@ test("Send XLM payment from Asset Detail", async ({
     extensionId,
     context,
     stubOverrides,
-    isIntegrationMode,
   });
   await page.getByText("XLM").click();
 
