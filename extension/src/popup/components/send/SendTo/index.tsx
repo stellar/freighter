@@ -26,6 +26,7 @@ import { FormRows } from "popup/basics/Forms";
 import { emitMetric } from "helpers/metrics";
 import { isContractId } from "popup/helpers/soroban";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { STELLAR_DOCS_CREATE_ACCOUNT_URL } from "popup/constants/externalLinks";
 import { View } from "popup/basics/layout/View";
 import {
   saveDestination,
@@ -63,13 +64,13 @@ export const AccountDoesntExistWarning = () => {
     <div className="SendTo__info-block">
       <Notification
         variant="primary"
-        title={t("The destination account doesn’t exist")}
+        title={t("The destination account doesn't exist")}
       >
         <div>
           {`${t("Send at least 1 XLM to create account.")} `}
           <Link
-            variant="secondary"
-            href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
+            variant="primary"
+            href={STELLAR_DOCS_CREATE_ACCOUNT_URL}
             rel="noreferrer"
             target="_blank"
           >

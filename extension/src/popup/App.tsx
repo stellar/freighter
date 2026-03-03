@@ -5,6 +5,7 @@ import { Provider } from "react-redux";
 
 import { metricsMiddleware } from "helpers/metrics";
 import { activePublicKeyMiddleware } from "helpers/activePublicKeyMiddleware";
+import { Toaster } from "popup/basics/shadcn/Toast";
 
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
@@ -42,6 +43,7 @@ export const App = () => (
   <ErrorBoundary>
     <Provider store={store}>
       <AccountMismatch />
+      <Toaster />
       <ErrorTracking />
       <Router />
     </Provider>

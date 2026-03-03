@@ -143,6 +143,7 @@ export const freighterApiMessageListener = (
       (responseQueue as ResponseQueue<RequestAccessResponse>).push({
         response,
         uuid,
+        createdAt: Date.now(),
       });
     });
   };
@@ -195,7 +196,7 @@ export const freighterApiMessageListener = (
         uuid,
       };
 
-      tokenQueue.push(tokenInfo);
+      tokenQueue.push({ token: tokenInfo, uuid, createdAt: Date.now() });
       const encodedTokenInfo = encodeObject(tokenInfo);
 
       const popup = await browser.windows.create({
@@ -232,6 +233,7 @@ export const freighterApiMessageListener = (
         (responseQueue as ResponseQueue<AddTokenResponse>).push({
           response,
           uuid,
+          createdAt: Date.now(),
         });
       });
     } catch (e) {
@@ -345,6 +347,7 @@ export const freighterApiMessageListener = (
       transactionQueue.push({
         transaction: transaction as StellarSdk.Transaction,
         uuid,
+        createdAt: Date.now(),
       });
       const encodedBlob = encodeObject(transactionInfo);
 
@@ -389,6 +392,7 @@ export const freighterApiMessageListener = (
         (responseQueue as ResponseQueue<SignTransactionResponse>).push({
           response,
           uuid,
+          createdAt: Date.now(),
         });
       });
     } catch (e) {
@@ -422,7 +426,7 @@ export const freighterApiMessageListener = (
         uuid,
       };
 
-      blobQueue.push({ blob: blobData, uuid });
+      blobQueue.push({ blob: blobData, uuid, createdAt: Date.now() });
       const encodedBlob = encodeObject(blobData);
       const popup = await browser.windows.create({
         url: chrome.runtime.getURL(`/index.html#/sign-message?${encodedBlob}`),
@@ -471,6 +475,7 @@ export const freighterApiMessageListener = (
         (responseQueue as ResponseQueue<SignBlobResponse>).push({
           response,
           uuid,
+          createdAt: Date.now(),
         });
       });
     } catch (e) {
@@ -508,7 +513,7 @@ export const freighterApiMessageListener = (
         uuid,
       };
 
-      authEntryQueue.push({ authEntry, uuid });
+      authEntryQueue.push({ authEntry, uuid, createdAt: Date.now() });
       const encodedAuthEntry = encodeObject(authEntry);
       const popup = await browser.windows.create({
         url: chrome.runtime.getURL(
@@ -558,6 +563,7 @@ export const freighterApiMessageListener = (
         (responseQueue as ResponseQueue<SignAuthEntryResponse>).push({
           response,
           uuid,
+          createdAt: Date.now(),
         });
       });
     } catch (e) {
@@ -680,6 +686,7 @@ export const freighterApiMessageListener = (
       (responseQueue as ResponseQueue<SetAllowedStatusResponse>).push({
         response,
         uuid,
+        createdAt: Date.now(),
       });
     });
   };

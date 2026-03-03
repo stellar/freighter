@@ -8,6 +8,7 @@ import { Formik, Form } from "formik";
 import { fundAccount } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { ROUTES } from "popup/constants/routes";
+import { STELLAR_DOCS_CREATE_ACCOUNT_URL } from "popup/constants/externalLinks";
 import { navigateTo } from "popup/helpers/navigate";
 import { AppDispatch } from "popup/App";
 import { isMainnet } from "helpers/stellar";
@@ -41,7 +42,7 @@ export const NotFundedMessage = ({
       >
         <a
           className="NotFunded__link"
-          href="https://developers.stellar.org/docs/tutorials/create-account/#create-account"
+          href={STELLAR_DOCS_CREATE_ACCOUNT_URL}
           rel="noreferrer"
           target="_blank"
         >

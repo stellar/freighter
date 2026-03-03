@@ -175,7 +175,9 @@ export const METRIC_NAMES = {
 
   blockaidDomainScan: "blockaid: scanned domain",
   blockaidTxScan: "blockaid: scanned transaction",
+  blockaidTxScanFailed: "blockaid: transaction scan failed",
   blockaidAssetScan: "blockaid: scanned asset",
+  blockaidAssetScanFailed: "blockaid: asset scan failed",
 
   coinbaseOnrampOpened: "coinbase onramp: opened",
   wallets: "loaded screen: wallets",

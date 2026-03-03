@@ -10,6 +10,12 @@ import "jest-localstorage-mock";
 import "jsdom-global";
 import { TextEncoder, TextDecoder } from "util";
 
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 // make a JSDOM thing so we can fuck with mount
 const jsdom = new JSDOM("<!doctype html><html><body></body></html>");
 const { window } = jsdom;
@@ -30,6 +36,26 @@ Object.defineProperty(global.self, "crypto", {
     getRandomValues: crypto.getRandomValues,
     subtle: crypto.webcrypto.subtle,
   },
+});
+
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: jest.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  })),
+});
+
+Object.defineProperty(global, "matchMedia", {
+  writable: true,
+  value: jest.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  })),
 });
 
 process.env.INDEXER_URL = "http://localhost:3002/api/v1";
