@@ -1,5 +1,5 @@
 import { test, expect } from "./test-fixtures";
-import { loginToTestAccount } from "./helpers/login";
+import { loginToTestAccount, switchToMainnet } from "./helpers/login";
 import {
   openGrantAccessPopup,
   openSignMessagePopup,
@@ -61,6 +61,9 @@ test.describe("BlockAid Scan - Safe States (No Override)", () => {
         });
       },
     });
+
+    // switch to Mainnet where asset scanning is supported and results are shown
+    await switchToMainnet(page);
 
     await page.getByTestId("account-options-dropdown").click();
     await page.getByText("Manage assets").click();

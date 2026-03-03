@@ -1,5 +1,5 @@
 import { test, expect } from "./test-fixtures";
-import { loginToTestAccount } from "./helpers/login";
+import { loginToTestAccount, switchToMainnet } from "./helpers/login";
 import {
   stubAccountBalances,
   stubScanAssetServerError,
@@ -41,6 +41,9 @@ test.describe("BlockAid Scan - Edge Cases", () => {
           });
         },
       });
+
+      // switch to Mainnet where asset scanning is supported and errors are surfaced
+      await switchToMainnet(page);
 
       await page.getByTestId("account-options-dropdown").click();
       await page.getByText("Manage assets").click();
@@ -180,6 +183,9 @@ test.describe("BlockAid Scan - Edge Cases", () => {
         },
       });
 
+      // switch to Mainnet where asset scanning is supported and errors are surfaced
+      await switchToMainnet(page);
+
       await page.getByTestId("account-options-dropdown").click();
       await page.getByText("Manage assets").click();
       await expect(page.getByText("Your assets")).toBeVisible();
@@ -200,7 +206,7 @@ test.describe("BlockAid Scan - Edge Cases", () => {
       ).toBeVisible({ timeout: 10000 });
 
       // Click the warning banner to expand
-      await page.getByText("Proceed with caution").click();
+      await page.getByTestId("blockaid-unable-to-scan-label").click();
       await page.waitForTimeout(1000);
 
       // Should show asset-specific "Unable to scan token" text
