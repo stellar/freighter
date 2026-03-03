@@ -1,0 +1,40 @@
+@use "../../styles/utils.scss" as *;
+
+.EditContactCard {
+  background-color: var(--sds-clr-gray-01);
+  border: 1px solid var(--sds-clr-gray-06);
+  border-radius: pxToRem(8px);
+  padding: pxToRem(16px);
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(24px);
+  box-shadow: 0 pxToRem(10px) pxToRem(20px) pxToRem(-10px) rgba(0, 0, 0, 0.1);
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(16px);
+  }
+
+  &__title {
+    font-size: pxToRem(16px);
+    font-weight: 500;
+    color: var(--sds-clr-gray-12);
+    line-height: pxToRem(24px);
+  }
+
+  &__fields {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12px);
+  }
+
+  &__actions {
+    display: flex;
+    gap: pxToRem(12px);
+
+    button {
+      flex: 1;
+    }
+  }
+}

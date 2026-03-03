@@ -18,6 +18,8 @@ function Toaster({ ...props }: React.ComponentProps<typeof SonnerToaster>) {
       position="top-center"
       icons={{
         info: <Icon.InfoCircle />,
+        success: <Icon.CheckCircle />,
+        error: <Icon.XCircle />,
       }}
       {...props}
     />
