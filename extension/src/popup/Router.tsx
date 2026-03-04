@@ -64,6 +64,8 @@ import { Discover } from "popup/views/Discover";
 import { Wallets } from "popup/views/Wallets";
 
 import { DEV_SERVER } from "@shared/constants/services";
+import { isSidebarMode } from "popup/helpers/isSidebarMode";
+import { SidebarSigningListener } from "popup/components/SidebarSigningListener";
 import { SettingsState } from "@shared/api/types";
 
 import { SignMessage } from "./views/SignMessage";
@@ -164,6 +166,7 @@ const Layout = () => {
 export const Router = () => (
   <HashRouter>
     <RouteListener />
+    {isSidebarMode() && <SidebarSigningListener />}
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route

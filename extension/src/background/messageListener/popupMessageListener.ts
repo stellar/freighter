@@ -16,6 +16,7 @@ import {
   RejectTransactionResponse,
   SignedHwPayloadResponse,
   MarkQueueActiveMessage,
+  SidebarRegisterMessage,
 } from "@shared/api/types/message-request";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
@@ -91,6 +92,13 @@ import { changeCollectibleVisibility } from "./handlers/changeCollectibleVisibil
 import { getHiddenCollectibles } from "./handlers/getHiddenCollectibles";
 
 const numOfPublicKeysToCheck = 5;
+
+const SIDEBAR_WINDOW_ID_KEY = "sidebarWindowId";
+
+export const getSidebarWindowId = async (): Promise<number | null> => {
+  const result = await chrome.storage.session.get(SIDEBAR_WINDOW_ID_KEY);
+  return result[SIDEBAR_WINDOW_ID_KEY] ?? null;
+};
 
 export const responseQueue: ResponseQueue<
   | RequestAccessResponse
@@ -550,6 +558,18 @@ export const popupMessageListener = (
       } else {
         activeQueueUuids.delete(uuid);
       }
+      return {};
+    }
+
+    case SERVICE_TYPES.SIDEBAR_REGISTER: {
+      chrome.storage.session.set({
+        [SIDEBAR_WINDOW_ID_KEY]: (request as SidebarRegisterMessage).windowId,
+      });
+      return {};
+    }
+
+    case SERVICE_TYPES.SIDEBAR_UNREGISTER: {
+      chrome.storage.session.remove(SIDEBAR_WINDOW_ID_KEY);
       return {};
     }
 

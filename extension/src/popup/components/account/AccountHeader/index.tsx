@@ -11,7 +11,7 @@ import { ROUTES } from "popup/constants/routes";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { isActiveNetwork } from "helpers/stellar";
-import { navigateTo, openTab } from "popup/helpers/navigate";
+import { navigateTo, openTab, openSidebar } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
@@ -179,6 +179,19 @@ export const AccountHeader = ({
                         <Icon.Lock01 />
                       </div>
                     </div>
+                    {!/Arc\//.test(navigator.userAgent) && (
+                      <div
+                        className="AccountHeader__options__item"
+                        onClick={() => openSidebar()}
+                      >
+                        <Text as="div" size="sm" weight="medium">
+                          {t("Sidebar mode")}
+                        </Text>
+                        <div className="AccountHeader__options__item__icon">
+                          <Icon.LayoutRight />
+                        </div>
+                      </div>
+                    )}
                     <div
                       className="AccountHeader__options__item"
                       onClick={() => openTab(newTabHref(ROUTES.account))}
