@@ -34,6 +34,9 @@
     "48": "images/icon48.png",
     "128": "images/icon128.png"
   },
-  "permissions": ["storage", "alarms"],
+  "permissions": ["storage", "alarms", "sidePanel"],
+  "side_panel": {
+    "default_path": "index.html?mode=sidebar"
+  },
   "manifest_version": 3
 }
