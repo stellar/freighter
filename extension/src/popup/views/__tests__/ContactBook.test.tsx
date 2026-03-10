@@ -791,6 +791,104 @@ describe("ContactBook", () => {
       });
     });
 
+    it("prevents adding a federation address whose resolved key matches an existing contact", async () => {
+      renderContactBook();
+
+      // Add a contact with the raw public key
+      await addContactViaUI(RESOLVED_KEY, "Direct Key");
+
+      // Now try to add a federation address that resolves to the same key
+      fireEvent.click(document.querySelector(".ContactBook__add-button")!);
+
+      const addressInput = screen.getByPlaceholderText("Address");
+      const nameInput = screen.getByPlaceholderText("Name");
+
+      fireEvent.focus(addressInput);
+      fireEvent.change(addressInput, {
+        target: { value: FEDERATION_ADDRESS },
+      });
+      fireEvent.blur(addressInput);
+
+      // Wait for federation resolution to complete before interacting with name
+      await waitFor(() => {
+        expect(Federation.Server.resolve).toHaveBeenCalledWith(
+          FEDERATION_ADDRESS,
+        );
+      });
+
+      fireEvent.change(nameInput, { target: { value: "Alice Fed" } });
+      fireEvent.blur(nameInput);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("This address already exists in your contacts"),
+        ).toBeInTheDocument();
+      });
+
+      expect(screen.getByText("Save").closest("button")).toBeDisabled();
+    });
+
+    it("prevents adding a federation address whose resolved key matches another contact's resolved address", async () => {
+      const FEDERATION_ADDRESS_2 = "bob*example.com";
+
+      renderContactBook();
+
+      // Add a federation contact first
+      const plusButton = document.querySelector(".ContactBook__add-button")!;
+      fireEvent.click(plusButton);
+
+      const addressInput = screen.getByPlaceholderText("Address");
+      const nameInput = screen.getByPlaceholderText("Name");
+
+      fireEvent.focus(addressInput);
+      fireEvent.change(addressInput, {
+        target: { value: FEDERATION_ADDRESS },
+      });
+      fireEvent.blur(addressInput);
+      fireEvent.change(nameInput, { target: { value: "Alice" } });
+      fireEvent.blur(nameInput);
+
+      await waitFor(() => {
+        expect(screen.getByText("Save").closest("button")).not.toBeDisabled();
+      });
+
+      fireEvent.click(screen.getByText("Save"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Alice")).toBeInTheDocument();
+      });
+
+      // Now try to add a different federation address that resolves to the same key
+      fireEvent.click(document.querySelector(".ContactBook__add-button")!);
+
+      const addressInput2 = screen.getByPlaceholderText("Address");
+      const nameInput2 = screen.getByPlaceholderText("Name");
+
+      fireEvent.focus(addressInput2);
+      fireEvent.change(addressInput2, {
+        target: { value: FEDERATION_ADDRESS_2 },
+      });
+      fireEvent.blur(addressInput2);
+
+      // Wait for federation resolution to complete before interacting with name
+      await waitFor(() => {
+        expect(Federation.Server.resolve).toHaveBeenCalledWith(
+          FEDERATION_ADDRESS_2,
+        );
+      });
+
+      fireEvent.change(nameInput2, { target: { value: "Bob" } });
+      fireEvent.blur(nameInput2);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("This address already exists in your contacts"),
+        ).toBeInTheDocument();
+      });
+
+      expect(screen.getByText("Save").closest("button")).toBeDisabled();
+    });
+
     it("does not call Federation.Server.resolve for regular addresses", async () => {
       (isFederationAddress as jest.Mock).mockReturnValue(false);
 

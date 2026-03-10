@@ -78,9 +78,23 @@ export const EditContactCard = ({
         t("This address already exists in your contacts"),
         (val) => {
           if (!val) return true;
-          return !Object.keys(existingContacts).some(
+          // Check if the raw address already exists as a contact key
+          const rawDuplicate = Object.keys(existingContacts).some(
             (key) => key.toLowerCase() === val.toLowerCase(),
           );
+          if (rawDuplicate) return false;
+          // For federated addresses, check if the resolved address already
+          // exists as a contact key or as another contact's resolved address
+          const resolved = resolvedAddressRef.current;
+          if (resolved) {
+            const resolvedLower = resolved.toLowerCase();
+            return !Object.entries(existingContacts).some(
+              ([key, contact]) =>
+                key.toLowerCase() === resolvedLower ||
+                contact.resolvedAddress?.toLowerCase() === resolvedLower,
+            );
+          }
+          return true;
         },
       ),
     name: YupString()
