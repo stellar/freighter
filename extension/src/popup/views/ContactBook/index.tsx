@@ -54,14 +54,22 @@ export const ContactBook = () => {
 
   const handleCopyAddress = useCallback(
     async (address: string) => {
-      await navigator.clipboard.writeText(address);
-      toast.success(t("Address copied"), {
-        toasterId: CONTACT_BOOK_TOASTER_ID,
-        className: "ContactBook__toast",
-      });
-      setOpenMenuAddress(null);
+      try {
+        await navigator.clipboard.writeText(address);
+        toast.success(t("Address copied"), {
+          toasterId: CONTACT_BOOK_TOASTER_ID,
+          className: "ContactBook__toast",
+        });
+      } catch {
+        toast.error(t("Failed to copy address"), {
+          toasterId: CONTACT_BOOK_TOASTER_ID,
+          className: "ContactBook__toast",
+        });
+      } finally {
+        setOpenMenuAddress(null);
+      }
     },
-    [t],
+    [t, setOpenMenuAddress],
   );
 
   const handleDeleteContact = useCallback(
