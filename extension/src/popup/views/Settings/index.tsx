@@ -7,7 +7,6 @@ import { Icon } from "@stellar/design-system";
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
-import { featureFlags } from "popup/constants/featureFlags";
 import { signOut } from "popup/ducks/accountServices";
 import { navigateTo } from "popup/helpers/navigate";
 import { AppDispatch } from "popup/App";
@@ -53,18 +52,14 @@ export const Settings = () => {
               </ListNavLink>
             </div>
 
-            {featureFlags.isContactListEnabled && (
-              <div className="Settings__row">
-                <ListNavLink
-                  href={ROUTES.contactBook}
-                  icon={
-                    <Icon.Users01 className="Settings__icon__preferences" />
-                  }
-                >
-                  {t("Contact Book")}
-                </ListNavLink>
-              </div>
-            )}
+            <div className="Settings__row">
+              <ListNavLink
+                href={ROUTES.contactBook}
+                icon={<Icon.Users01 className="Settings__icon__preferences" />}
+              >
+                {t("Contact Book")}
+              </ListNavLink>
+            </div>
 
             <div className="Settings__row">
               <ListNavLink href={ROUTES.security} icon={<IconSecurity />}>
