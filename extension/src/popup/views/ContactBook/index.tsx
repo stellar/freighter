@@ -27,14 +27,6 @@ export interface ContactData {
 
 export type ContactsMap = Record<string, ContactData>;
 
-// const INITIAL_CONTACTS: ContactsMap = {
-//   GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF: {
-//     name: "Piyal",
-//   },
-//   GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH: {
-//     name: "Cassio",
-//   },
-// };
 const INITIAL_CONTACTS: ContactsMap = {};
 
 type CardMode =
