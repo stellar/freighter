@@ -158,3 +158,12 @@ export const loginToTestAccount = async ({
     timeout: 30000,
   });
 };
+
+export const switchToMainnet = async (page: Page) => {
+  await page.getByTestId("network-selector-open").click();
+  await page.getByText("Main Net").click();
+  await expect(page.getByTestId("network-selector-open")).toContainText(
+    "Main Net",
+    { timeout: 30000 },
+  );
+};

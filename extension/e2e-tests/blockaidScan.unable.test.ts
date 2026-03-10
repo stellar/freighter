@@ -1,9 +1,18 @@
 import { test, expect } from "./test-fixtures";
-import { loginToTestAccount } from "./helpers/login";
+import { loginToTestAccount, switchToMainnet } from "./helpers/login";
+import {
+  openGrantAccessPopup,
+  openSignMessagePopup,
+} from "./helpers/dAppSessionHelper";
 import {
   stubAccountBalances,
+  stubAccountHistory,
+  stubAssetSearch,
   stubScanAssetUnableToScan,
   stubScanTxUnableToScan,
+  stubScanDappUnableToScan,
+  stubTokenDetails,
+  stubTokenPrices,
   createAssetObject,
   stubMemoRequiredAccounts,
 } from "./helpers/stubs";
@@ -20,7 +29,9 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
       extensionId,
       context,
       stubOverrides: async () => {
+        await stubTokenDetails(page);
         await stubScanAssetUnableToScan(page);
+        await stubAssetSearch(page);
         // Mock mainnet check - asset scanning only works on mainnet
         await page.route("**/account-balances/*", async (route) => {
           const json = {
@@ -29,6 +40,18 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
                 token: { type: "native", code: "XLM" },
                 total: "100",
                 available: "100",
+                blockaidData: {
+                  result_type: "Benign",
+                  malicious_score: "0.0",
+                  attack_types: {},
+                  chain: "stellar",
+                  address: "",
+                  metadata: { type: "" },
+                  fees: {},
+                  features: [],
+                  trading_limits: {},
+                  financial_stats: {},
+                },
               },
             },
             isFunded: true,
@@ -39,6 +62,9 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
         });
       },
     });
+
+    // switch to Mainnet where asset scanning is supported and errors are surfaced
+    await switchToMainnet(page);
 
     await page.getByTestId("account-options-dropdown").click();
     await page.getByText("Manage assets").click();
@@ -65,13 +91,15 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     ).toBeVisible({ timeout: 10000 });
 
     // Click on the warning banner to view blockaid details
-    await page.getByText("Proceed with caution").click();
+    await page.getByTestId("blockaid-unable-to-scan-label").click();
 
     // Wait for pane animation to finish
     await page.waitForTimeout(1000);
 
     // Should show expanded view with unable-to-scan details
-    await expect(page.getByText("Proceed with caution")).toBeVisible();
+    await expect(
+      page.getByTestId("ChangeTrustInternal").getByText("Proceed with caution"),
+    ).toBeVisible();
 
     // Should show unable to scan details
     await expect(
@@ -93,6 +121,8 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
       context,
       stubOverrides: async () => {
         await stubAccountBalances(page, "100");
+        await stubTokenDetails(page);
+        await stubTokenPrices(page);
         await stubScanTxUnableToScan(page);
       },
     });
@@ -239,6 +269,9 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
         });
 
         // Transaction scan should be unable to scan
+        await stubAccountHistory(page);
+        await stubTokenDetails(page);
+        await stubTokenPrices(page);
         await stubScanTxUnableToScan(page);
       },
     });
@@ -322,6 +355,9 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
       context,
       stubOverrides: async () => {
         await stubAccountBalances(page, "100");
+        await stubTokenDetails(page);
+        await stubTokenPrices(page);
+        await stubAccountHistory(page);
         await stubScanTxUnableToScan(page);
         await stubMemoRequiredAccounts(
           page,
@@ -349,14 +385,13 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
 
     await page.getByText("Review Send").click({ force: true });
 
-    // Should be on review pane with warning banner visible
-    // Should NOT show "Add Memo" banner since security warnings take precedence
-    await expect(page.getByText("Add Memo")).not.toBeVisible();
-
-    // Should be on confirm pane with Confirm Anyway button
+    // Wait for blockaid scan to complete and show the security warning button
     await expect(
       page.getByRole("button", { name: "Confirm Anyway" }),
     ).toBeVisible({ timeout: 10000 });
+
+    // Should NOT show "Add Memo" banner since security warnings take precedence
+    await expect(page.getByText("Add Memo")).not.toBeVisible();
 
     // Click on the warning banner to view blockaid details
     await page.getByText("Proceed with caution").click();
@@ -366,5 +401,98 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
 
     // Should show unable to scan details
     await expect(page.getByText("Proceed with caution")).toBeVisible();
+  });
+});
+
+test.describe("BlockAid Scan - Unable to Scan Site", () => {
+  test("GrantAccess shows unable-to-scan warning when site scan returns no data", async ({
+    page,
+    extensionId,
+    context,
+  }) => {
+    test.slow();
+    await loginToTestAccount({
+      page,
+      extensionId,
+      context,
+      stubOverrides: async () => {
+        await stubScanDappUnableToScan(context);
+      },
+    });
+
+    const popupPromise = openGrantAccessPopup({ page });
+    const popup = await popupPromise;
+
+    await expect(popup.getByText("Connection Request")).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Unable-to-scan label should be visible
+    await expect(
+      popup.getByTestId("blockaid-unable-to-scan-label"),
+    ).toBeVisible();
+    await expect(popup.getByText("Proceed with caution")).toBeVisible();
+
+    // "Connect anyway" replaces the normal "Connect" button
+    await expect(
+      popup.getByTestId("grant-access-connect-anyway-button"),
+    ).toBeVisible();
+    await expect(
+      popup.getByTestId("grant-access-connect-button"),
+    ).not.toBeVisible();
+
+    // Expand the blockaid details pane
+    await popup.getByTestId("blockaid-unable-to-scan-label").click();
+    await popup.waitForTimeout(1000);
+
+    // Expanded pane shows "Unable to scan site" detail
+    await expect(popup.getByText("Unable to scan site")).toBeVisible();
+  });
+
+  test("SignMessage shows unable-to-scan warning when site scan returns no data", async ({
+    page,
+    extensionId,
+    context,
+  }) => {
+    test.slow();
+    await loginToTestAccount({
+      page,
+      extensionId,
+      context,
+      stubOverrides: async () => {
+        await stubScanDappUnableToScan(context);
+      },
+    });
+
+    const popupPromise = openSignMessagePopup({ page });
+    const popup = await popupPromise;
+
+    await expect(popup.getByText("Sign message")).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Unable-to-scan label should be visible
+    await expect(
+      popup.getByTestId("blockaid-unable-to-scan-label"),
+    ).toBeVisible();
+    await expect(popup.getByText("Proceed with caution")).toBeVisible();
+
+    // "Confirm anyway" replaces the normal "Confirm" button
+    await expect(
+      popup.getByTestId("sign-message-confirm-anyway-button"),
+    ).toBeVisible();
+    await expect(
+      popup.getByTestId("sign-message-approve-button"),
+    ).not.toBeVisible();
+
+    // Expand the blockaid details pane
+    await popup.getByTestId("blockaid-unable-to-scan-label").click();
+    await popup.waitForTimeout(1000);
+
+    // Expanded pane shows unable-to-scan title and subtitle
+    await expect(popup.getByText("Proceed with caution")).toBeVisible();
+    await expect(
+      popup.getByText("We were unable to scan this site for security issues"),
+    ).toBeVisible();
   });
 });

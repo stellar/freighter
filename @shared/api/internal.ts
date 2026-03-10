@@ -2171,14 +2171,12 @@ export const simulateTokenTransfer = async (args: {
       destination: string;
       amount: number;
     };
-    network_url: string;
     network_passphrase: string;
   } = {
     address,
     pub_key: publicKey,
     memo: memo || "", // Backend requires memo as string, use empty string if undefined
     params,
-    network_url: networkDetails.sorobanRpcUrl!,
     network_passphrase: networkDetails.networkPassphrase,
   };
 
@@ -2209,9 +2207,6 @@ export const simulateTransaction = async (args: {
     },
     body: JSON.stringify({
       xdr,
-
-      network_url: networkDetails.sorobanRpcUrl,
-
       network_passphrase: networkDetails.networkPassphrase,
     }),
   };

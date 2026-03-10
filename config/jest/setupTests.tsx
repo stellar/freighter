@@ -10,6 +10,12 @@ import "jest-localstorage-mock";
 import "jsdom-global";
 import { TextEncoder, TextDecoder } from "util";
 
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 // make a JSDOM thing so we can fuck with mount
 const jsdom = new JSDOM("<!doctype html><html><body></body></html>");
 const { window } = jsdom;

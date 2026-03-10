@@ -120,6 +120,8 @@ export const DomainScanModalInfo = ({
   onClick,
 }: DomainScanModalInfoProps) => {
   const { t } = useTranslation();
+
+  const shouldShowWarning = isMalicious || isUnableToScan;
   return (
     <div className="ModalInfo--card GrantAccess">
       <>
@@ -131,7 +133,7 @@ export const DomainScanModalInfo = ({
           </div>
         </div>
         <div className="ModalInfo--connection-request-scan-label">
-          {scanStatus && (
+          {shouldShowWarning && (
             <BlockAidSiteScanLabel
               isMalicious={isMalicious}
               isUnableToScan={isUnableToScan}

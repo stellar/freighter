@@ -6,6 +6,7 @@ import {
   Worker,
 } from "@playwright/test";
 import path from "path";
+import { STELLAR_EXPERT_ASSET_LIST_JSON } from "./helpers/stubs";
 
 export const test = base.extend<{
   context: BrowserContext;
@@ -75,6 +76,13 @@ export const test = base.extend<{
         langsValue: config.langs,
       },
     );
+
+    if (process.env.IS_INTEGRATION_MODE !== "true") {
+      await page.route("*/**/testnet/asset-list/top50", async (route) => {
+        const json = STELLAR_EXPERT_ASSET_LIST_JSON;
+        await route.fulfill({ json });
+      });
+    }
     use(page);
   },
 });

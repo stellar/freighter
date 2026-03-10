@@ -1,7 +1,7 @@
 import { expect, test, expectPageToHaveScreenshot } from "../test-fixtures";
 import { TEST_TOKEN_ADDRESS } from "../helpers/test-token";
 import { loginToTestAccount } from "../helpers/login";
-import { allowDapp } from "../helpers/allowDapp";
+import { allowDapp } from "../helpers/dAppSessionHelper";
 import {
   stubAccountBalances,
   stubAccountHistory,

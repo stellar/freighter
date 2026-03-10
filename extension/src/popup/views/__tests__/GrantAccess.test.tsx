@@ -232,7 +232,7 @@ describe("Grant Access view", () => {
     );
   });
 
-  it("shows no label or error when scan site returns an error on Mainnet", async () => {
+  it("shows unable to scan label when scan site returns an error on Mainnet", async () => {
     jest.spyOn(blockAidHelpers, "useScanSite").mockImplementation(() => {
       return {
         error: null,
@@ -269,12 +269,14 @@ describe("Grant Access view", () => {
 
     await waitFor(() => screen.getByTestId("grant-access-view"));
     expect(screen.getByTestId("grant-access-view")).toBeDefined();
-    expect(screen.queryByTestId("blockaid-benign-label")).toBeNull();
-    expect(screen.queryByTestId("blockaid-malicious-label")).toBeNull();
-    expect(screen.queryByTestId("blockaid-miss-label")).toBeNull();
-    expect(screen.getByTestId("grant-access-connect-button")).toBeDefined();
+    await waitFor(() =>
+      expect(screen.getByTestId("blockaid-unable-to-scan-label")).toBeDefined(),
+    );
+    expect(
+      screen.getByTestId("grant-access-connect-anyway-button"),
+    ).toBeDefined();
   });
-  it("shows no label or error when on custom network", async () => {
+  it("shows unable to scan label when on custom network", async () => {
     render(
       <Wrapper
         routes={[ROUTES.welcome]}
@@ -311,12 +313,14 @@ describe("Grant Access view", () => {
 
     await waitFor(() => screen.getByTestId("grant-access-view"));
     expect(screen.getByTestId("grant-access-view")).toBeDefined();
-    expect(screen.queryByTestId("blockaid-benign-label")).toBeNull();
-    expect(screen.queryByTestId("blockaid-malicious-label")).toBeNull();
-    expect(screen.queryByTestId("blockaid-miss-label")).toBeNull();
-    expect(screen.getByTestId("grant-access-connect-button")).toBeDefined();
+    await waitFor(() =>
+      expect(screen.getByTestId("blockaid-unable-to-scan-label")).toBeDefined(),
+    );
+    expect(
+      screen.getByTestId("grant-access-connect-anyway-button"),
+    ).toBeDefined();
   });
-  it("shows no label or error when scan site API returns an error", async () => {
+  it("shows unable to scan label when scan site API returns an error", async () => {
     jest.spyOn(global, "fetch").mockImplementation(() =>
       Promise.resolve({
         ok: false,
@@ -347,9 +351,11 @@ describe("Grant Access view", () => {
 
     await waitFor(() => screen.getByTestId("grant-access-view"));
     expect(screen.getByTestId("grant-access-view")).toBeDefined();
-    expect(screen.queryByTestId("blockaid-benign-label")).toBeNull();
-    expect(screen.queryByTestId("blockaid-malicious-label")).toBeNull();
-    expect(screen.queryByTestId("blockaid-miss-label")).toBeNull();
-    expect(screen.getByTestId("grant-access-connect-button")).toBeDefined();
+    await waitFor(() =>
+      expect(screen.getByTestId("blockaid-unable-to-scan-label")).toBeDefined(),
+    );
+    expect(
+      screen.getByTestId("grant-access-connect-anyway-button"),
+    ).toBeDefined();
   });
 });

@@ -26,7 +26,7 @@ interface ResolvedData {
     currentAccount: Account;
   };
   applicationState: APPLICATION_STATE;
-  scanData: BlockAidScanSiteResult | null;
+  scanData: BlockAidScanSiteResult | null | undefined;
   blockaidOverrideState: string | null;
 }
 
@@ -93,7 +93,7 @@ function useGetSignMessageData(accountToSign?: string, url?: string) {
           accountNotFound,
           currentAccount,
         },
-        scanData: null as BlockAidScanSiteResult | null,
+        scanData: undefined,
         blockaidOverrideState,
       } as ResolvedData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload: initialPayload });

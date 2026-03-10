@@ -249,8 +249,11 @@ export const useBlockaidOverrideState = () =>
  */
 export const useIsAssetSuspicious = () => {
   const blockaidOverrideState = useBlockaidOverrideState();
-  return (blockaidData?: BlockAidScanAssetResult | null) =>
-    isAssetSuspicious(blockaidData, blockaidOverrideState);
+  return useCallback(
+    (blockaidData?: BlockAidScanAssetResult | null) =>
+      isAssetSuspicious(blockaidData, blockaidOverrideState),
+    [blockaidOverrideState],
+  );
 };
 
 export const isAssetMalicious = (
@@ -272,8 +275,11 @@ export const isAssetMalicious = (
  */
 export const useIsAssetMalicious = () => {
   const blockaidOverrideState = useBlockaidOverrideState();
-  return (blockaidData?: BlockAidScanAssetResult | null) =>
-    isAssetMalicious(blockaidData, blockaidOverrideState);
+  return useCallback(
+    (blockaidData?: BlockAidScanAssetResult | null) =>
+      isAssetMalicious(blockaidData, blockaidOverrideState),
+    [blockaidOverrideState],
+  );
 };
 
 /**
@@ -282,8 +288,11 @@ export const useIsAssetMalicious = () => {
  */
 export const useIsTxSuspicious = () => {
   const blockaidOverrideState = useBlockaidOverrideState();
-  return (blockaidData?: BlockAidScanTxResult | null) =>
-    isTxSuspicious(blockaidData, blockaidOverrideState);
+  return useCallback(
+    (blockaidData?: BlockAidScanTxResult | null) =>
+      isTxSuspicious(blockaidData, blockaidOverrideState),
+    [blockaidOverrideState],
+  );
 };
 
 /**
@@ -292,8 +301,11 @@ export const useIsTxSuspicious = () => {
  */
 export const useShouldTreatAssetAsUnableToScan = () => {
   const blockaidOverrideState = useBlockaidOverrideState();
-  return (blockaidData?: BlockAidScanAssetResult | null) =>
-    shouldTreatAssetAsUnableToScan(blockaidData, blockaidOverrideState);
+  return useCallback(
+    (blockaidData?: BlockAidScanAssetResult | null) =>
+      shouldTreatAssetAsUnableToScan(blockaidData, blockaidOverrideState),
+    [blockaidOverrideState],
+  );
 };
 
 /**
@@ -302,8 +314,11 @@ export const useShouldTreatAssetAsUnableToScan = () => {
  */
 export const useShouldTreatTxAsUnableToScan = () => {
   const blockaidOverrideState = useBlockaidOverrideState();
-  return (blockaidData?: BlockAidScanTxResult | null) =>
-    shouldTreatTxAsUnableToScan(blockaidData, blockaidOverrideState);
+  return useCallback(
+    (blockaidData?: BlockAidScanTxResult | null) =>
+      shouldTreatTxAsUnableToScan(blockaidData, blockaidOverrideState),
+    [blockaidOverrideState],
+  );
 };
 
 /**
@@ -471,9 +486,9 @@ export const getSiteSecurityStates = (
 
   // Use actual scan results
   return {
-    // isUnableToScan is only true when Blockaid returned data but couldn't produce a verdict.
-    // null scanData means the scan wasn't performed or failed silently — treat as no warning.
-    isUnableToScan: !!scanData && scanData.status === undefined,
+    // undefined = scan in-flight (suppress warning); null = scan failed; check status otherwise
+    isUnableToScan:
+      scanData !== undefined && (!scanData || scanData.status !== "hit"),
     isMalicious: scanData?.status === "hit" && scanData.is_malicious === true,
     // Blockaid does not produce a "suspicious" verdict for site scans, so this
     // is always false for real results. The dev override intentionally allows

@@ -38,7 +38,7 @@
   }
 
   &__fullscreen {
-    margin-top: 1.5rem;
+    margin-top: pxToRem(24) pxToRem(24) 0;
   }
 
   &__fetch-fail {

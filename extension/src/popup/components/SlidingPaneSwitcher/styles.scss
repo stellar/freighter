@@ -2,7 +2,8 @@
   position: relative;
   width: 100%;
   height: auto;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 
   &__container {
     position: relative;

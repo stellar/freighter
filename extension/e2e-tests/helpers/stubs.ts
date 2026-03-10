@@ -331,6 +331,61 @@ export const stubScanDapp = async (context: BrowserContext) => {
 };
 
 /**
+ * Stubs scan-dapp endpoint to return a malicious site response
+ * This simulates when BlockAid detects the connecting site as malicious
+ */
+export const stubScanDappMalicious = async (context: BrowserContext) => {
+  await context.route("**/scan-dapp**", async (route) => {
+    const json = {
+      data: {
+        status: "hit",
+        url: "https://docs.freighter.app/docs/playground/setallowed/",
+        scan_start_time: "2025-07-04T08:58:59.350000",
+        scan_end_time: "2025-07-04T09:02:37.766000",
+        malicious_score: 0.95,
+        is_reachable: true,
+        is_web3_site: true,
+        is_malicious: true,
+        attack_types: {
+          malicious_sdk: {
+            description:
+              "A known piece of malicious code is embedded within the site.",
+            score: 0.95,
+          },
+        },
+        network_operations: ["evil.com"],
+        json_rpc_operations: [],
+        contract_write: {
+          contract_addresses: [],
+          functions: {},
+        },
+        contract_read: {
+          contract_addresses: [],
+          functions: {},
+        },
+        modals: [],
+      },
+      error: null,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+/**
+ * Stubs scan-dapp endpoint to return an unable-to-scan response (null data)
+ * This simulates when BlockAid cannot scan the connecting site
+ */
+export const stubScanDappUnableToScan = async (context: BrowserContext) => {
+  await context.route("**/scan-dapp**", async (route) => {
+    const json = {
+      data: null,
+      error: null,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+/**
  * Stubs scan-asset endpoint to return "unable to scan" response (null data)
  * This simulates when BlockAid cannot scan an asset
  */
@@ -470,6 +525,7 @@ export const stubScanTxMalicious = async (page: Page | BrowserContext) => {
   await page.route("**/scan-tx**", async (route) => {
     const json = {
       data: {
+        request_id: "123e4567-e89b-12d3-a456-426614174000",
         simulation: {},
         validation: {
           result_type: "Malicious",
@@ -496,6 +552,7 @@ export const stubScanTxSuspicious = async (page: Page | BrowserContext) => {
   await page.route("**/scan-tx**", async (route) => {
     const json = {
       data: {
+        request_id: "123e4567-e89b-12d3-a456-426614174000",
         simulation: {},
         validation: {
           result_type: "Warning",
@@ -2381,6 +2438,58 @@ export const stubScanTx = async (page: Page) => {
   });
 };
 
+export const stubScanTxWithUnfundedWarning = async (page: Page) => {
+  await page.route("**/scan-tx", async (route) => {
+    const json = {
+      data: {
+        simulation: {
+          status: "Success",
+        },
+        validation: {
+          status: "Success",
+          result_type: "Warning",
+          description:
+            "This is a new account and needs at least 1 XLM to be created. It looks like you may not be sending enough XLM to create this account.",
+          features: [
+            {
+              type: "UNFUNDED_ACCOUNT",
+              description:
+                "This is a new account and needs at least 1 XLM to be created",
+            },
+          ],
+        },
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
+export const stubScanTxWithUnfundedNonNativeWarning = async (page: Page) => {
+  await page.route("**/scan-tx", async (route) => {
+    const json = {
+      data: {
+        simulation: {
+          status: "Success",
+        },
+        validation: {
+          status: "Success",
+          result_type: "Warning",
+          description:
+            "This is a new account and needs 1 XLM in order to get started. You are attempting to send a non-native asset to an unfunded account.",
+          features: [
+            {
+              type: "UNFUNDED_ACCOUNT",
+              description:
+                "This is a new account and needs 1 XLM in order to get started",
+            },
+          ],
+        },
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
 export const stubSubmitTx = async (page: Page) => {
   await page.route("**/submit-tx", async (route) => {
     const json = {
@@ -2427,6 +2536,120 @@ export const stubFeeStats = async (page: Page) => {
         p90: "1000000",
         p95: "2000001",
         p99: "10000000",
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
+/**
+ * Stub helper for conditional account balances routing
+ * Returns unfunded response for specified destination, funded response for sender
+ * Useful for tests that need to differentiate between sender and recipient balances
+ * @param page - The Playwright page object
+ * @param unfundedDestination - The address of the unfunded destination
+ * @param senderAssets - Optional object defining sender's asset balances
+ */
+export const stubAccountBalancesWithUnfundedDestination = async (
+  page: Page,
+  unfundedDestination: string,
+  senderAssets?: {
+    [key: string]: {
+      code: string;
+      issuer?: string;
+      total: string;
+      available: string;
+      limit?: string;
+      type?: string;
+    };
+  },
+) => {
+  await page.route("**/account-balances/**", async (route) => {
+    const url = new URL(route.request().url());
+    const address = url.pathname.split("/").pop();
+
+    if (address === unfundedDestination) {
+      // Unfunded destination response
+      const json = {
+        balances: {},
+        isFunded: false,
+        subentryCount: 0,
+        error: {
+          horizon: null,
+          soroban: null,
+        },
+      };
+      return route.fulfill({ json });
+    }
+
+    // Default sender balances
+    const balances: { [key: string]: any } = {
+      native: {
+        token: {
+          type: "native",
+          code: "XLM",
+        },
+        total: "9697.8556678",
+        available: "9697.8556678",
+        sellingLiabilities: "0",
+        buyingLiabilities: "0",
+        minimumBalance: "1",
+        blockaidData: {
+          result_type: "Benign",
+          malicious_score: "0.0",
+          attack_types: {},
+          chain: "stellar",
+          address: "",
+          metadata: {
+            type: "",
+          },
+          fees: {},
+          features: [],
+          trading_limits: {},
+          financial_stats: {},
+        },
+      },
+    };
+
+    // Add custom sender assets if provided
+    if (senderAssets) {
+      Object.entries(senderAssets).forEach(([key, asset]) => {
+        balances[key] = {
+          token: {
+            type: asset.type || "credit_alphanum4",
+            code: asset.code,
+            ...(asset.issuer && { issuer: { key: asset.issuer } }),
+          },
+          total: asset.total,
+          available: asset.available,
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          ...(asset.limit && { limit: asset.limit }),
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: `${asset.code}${asset.issuer ? "-" + asset.issuer : ""}`,
+            metadata: {
+              type: "",
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
+        };
+      });
+    }
+
+    const json = {
+      balances,
+      isFunded: true,
+      subentryCount: Object.keys(balances).length - 1,
+      error: {
+        horizon: null,
+        soroban: null,
       },
     };
     await route.fulfill({ json });
@@ -2594,6 +2817,22 @@ export const stubScanAssetDelayed = async (
         trading_limits: {},
         financial_stats: {},
       },
+      error: null,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+/**
+ * Stubs report-transaction-warning endpoint
+ * Returns a successful response for reporting transaction warnings
+ */
+export const stubReportTransactionWarning = async (
+  page: Page | BrowserContext,
+) => {
+  await page.route("**/report-transaction-warning**", async (route) => {
+    const json = {
+      data: 123,
       error: null,
     };
     await route.fulfill({ json });

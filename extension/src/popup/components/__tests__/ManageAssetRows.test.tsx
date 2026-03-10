@@ -3,7 +3,10 @@ import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 
 import { ManageAssetRows } from "popup/components/manageAssets/ManageAssetRows";
 import { Wrapper, mockBalances } from "popup/__testHelpers__";
-import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import {
+  MAINNET_NETWORK_DETAILS,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 
 import * as ApiInternal from "@shared/api/internal";
 import * as StellarSdkServer from "@shared/api/helpers/stellarSdkServer";
@@ -869,5 +872,147 @@ describe("ManageAssetRows", () => {
     // SAC assets should submit trustline transactions,
     // not just add token IDs like SEP-41 tokens do
     expect(addTokenIdSpy).not.toHaveBeenCalled();
+  });
+
+  it("shows 'unable to scan' warning on mainnet when scan returns null", async () => {
+    jest.spyOn(BlockaidHelpers, "scanAsset").mockResolvedValueOnce(null);
+
+    render(
+      <Wrapper
+        routes={[ROUTES.manageAssets]}
+        state={{
+          auth: {
+            hasPrivateKey: true,
+            allAccounts: [
+              {
+                hardwareWalletType: "",
+                imported: false,
+                name: "Account 1",
+                publicKey: "G1",
+              },
+              {
+                hardwareWalletType: "",
+                imported: true,
+                name: "Account 2",
+                publicKey: "G2",
+              },
+              {
+                hardwareWalletType: "Ledger",
+                imported: true,
+                name: "Ledger 1",
+                publicKey:
+                  "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
+              },
+            ],
+            publicKey:
+              "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <ManageAssetRows
+          balances={{
+            balances: [mockBalances?.balances?.native as any],
+            isFunded: true,
+            subentryCount: 1,
+          }}
+          verifiedAssetRows={[
+            {
+              code: "USDC",
+              issuer:
+                "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+              domain: "test.com",
+              image: "icon.png",
+            },
+          ]}
+          unverifiedAssetRows={[]}
+          header="header text"
+        />
+      </Wrapper>,
+    );
+
+    await waitFor(() => screen.getByTestId("ManageAssetRowButton"));
+    fireEvent.click(screen.getByTestId("ManageAssetRowButton"));
+
+    await waitFor(() => screen.getByTestId("ChangeTrustInternal__Body"));
+    await waitFor(() => {
+      expect(screen.getByText("Proceed with caution")).toBeInTheDocument();
+      expect(screen.getByText("Confirm anyway")).toBeInTheDocument();
+    });
+  });
+
+  it("does not show 'unable to scan' warning on testnet when scan returns null", async () => {
+    jest.spyOn(BlockaidHelpers, "scanAsset").mockResolvedValueOnce(null);
+
+    render(
+      <Wrapper
+        routes={[ROUTES.manageAssets]}
+        state={{
+          auth: {
+            hasPrivateKey: true,
+            allAccounts: [
+              {
+                hardwareWalletType: "",
+                imported: false,
+                name: "Account 1",
+                publicKey: "G1",
+              },
+              {
+                hardwareWalletType: "",
+                imported: true,
+                name: "Account 2",
+                publicKey: "G2",
+              },
+              {
+                hardwareWalletType: "Ledger",
+                imported: true,
+                name: "Ledger 1",
+                publicKey:
+                  "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
+              },
+            ],
+            publicKey:
+              "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <ManageAssetRows
+          balances={{
+            balances: [mockBalances?.balances?.native as any],
+            isFunded: true,
+            subentryCount: 1,
+          }}
+          verifiedAssetRows={[
+            {
+              code: "USDC",
+              issuer:
+                "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+              domain: "test.com",
+              image: "icon.png",
+            },
+          ]}
+          unverifiedAssetRows={[]}
+          header="header text"
+        />
+      </Wrapper>,
+    );
+
+    await waitFor(() => screen.getByTestId("ManageAssetRowButton"));
+    fireEvent.click(screen.getByTestId("ManageAssetRowButton"));
+
+    await waitFor(() => screen.getByTestId("ChangeTrustInternal__Body"));
+    await waitFor(() => {
+      expect(
+        screen.queryByText("Proceed with caution"),
+      ).not.toBeInTheDocument();
+      // Should show the normal "Confirm" button, not "Confirm anyway"
+      expect(screen.getByText("Confirm")).toBeInTheDocument();
+      expect(screen.queryByText("Confirm anyway")).not.toBeInTheDocument();
+    });
   });
 });
