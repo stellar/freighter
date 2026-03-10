@@ -36,6 +36,7 @@ export enum ROUTES {
   manageAssetsLists = "/settings/manage-assets-lists",
   manageAssetsListsModifyAssetList = "/settings/manage-assets-lists/modify-asset-list",
   advancedSettings = "/settings/advanced-settings",
+  contactBook = "/settings/contact-book",
   addFunds = "/add-funds",
 
   addCollectibles = "/add-collectibles",

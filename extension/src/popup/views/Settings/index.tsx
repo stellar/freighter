@@ -53,6 +53,15 @@ export const Settings = () => {
             </div>
 
             <div className="Settings__row">
+              <ListNavLink
+                href={ROUTES.contactBook}
+                icon={<Icon.Users01 className="Settings__icon__preferences" />}
+              >
+                {t("Contact Book")}
+              </ListNavLink>
+            </div>
+
+            <div className="Settings__row">
               <ListNavLink href={ROUTES.security} icon={<IconSecurity />}>
                 {t("Security")}
               </ListNavLink>
