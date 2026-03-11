@@ -649,40 +649,35 @@ interface AssetDiffsProps {
 
 const AssetDiffs = ({ assetDiffs, icons }: AssetDiffsProps) => {
   const renderAssetDiffs = (diff: BlockaidAssetDiff) => {
-    switch (diff.asset_type) {
-      // NOTE:
-      // Blockaid does not populate custom tokens in asset diffs
-      // If the begin to do this, we will need to add a lookup for token details
-      // When asset diffs include tokens not in the users balance.
-      case "NATIVE":
-      case "ASSET":
-      default: {
-        const code = "code" in diff.asset ? diff.asset.code! : "";
-        const issuer = "issuer" in diff.asset ? diff.asset.issuer! : "";
-        return (
-          <div className="SignTransaction__AssetDiffRow">
-            <div className="SignTransaction__AssetDiffRow__Asset">
-              <AssetIcon
-                assetIcons={code !== "XLM" ? icons : {}}
-                code={code}
-                issuerKey={issuer}
-              />
-              {code}
-            </div>
-            {diff.in && (
-              <div className="SignTransaction__AssetDiffRow__Amount Credit">
-                {`+${formatTokenAmount(new BigNumber(diff.in.raw_value), CLASSIC_ASSET_DECIMALS)}`}
-              </div>
-            )}
-            {diff.out && (
-              <div className="SignTransaction__AssetDiffRow__Amount Debit">
-                {`-${formatTokenAmount(new BigNumber(diff.out.raw_value), CLASSIC_ASSET_DECIMALS)}`}
-              </div>
-            )}
+    const asset = diff.asset as Record<string, unknown>;
+    const code = ((asset.symbol as string) ?? (asset.code as string)) || "";
+    const issuer =
+      ((asset.issuer as string) ?? (asset.address as string)) || "";
+    const decimals =
+      (asset.decimals as number | undefined) ?? CLASSIC_ASSET_DECIMALS;
+
+    return (
+      <div className="SignTransaction__AssetDiffRow">
+        <div className="SignTransaction__AssetDiffRow__Asset">
+          <AssetIcon
+            assetIcons={code !== "XLM" ? icons : {}}
+            code={code}
+            issuerKey={issuer}
+          />
+          {code}
+        </div>
+        {diff.in && (
+          <div className="SignTransaction__AssetDiffRow__Amount Credit">
+            {`+${formatTokenAmount(new BigNumber(diff.in.raw_value), decimals)}`}
           </div>
-        );
-      }
-    }
+        )}
+        {diff.out && (
+          <div className="SignTransaction__AssetDiffRow__Amount Debit">
+            {`-${formatTokenAmount(new BigNumber(diff.out.raw_value), decimals)}`}
+          </div>
+        )}
+      </div>
+    );
   };
   return (
     <div className="SignTransaction__AssetDiffs">
