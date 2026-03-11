@@ -260,35 +260,35 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    padding: 0 1rem;
+    padding: 0 pxToRem(24px);
+    gap: pxToRem(16px);
 
     &__Header {
       display: flex;
       justify-content: space-between;
-      margin: pxToRem(12px) 0;
+      align-items: center;
 
       &__Icon {
         display: flex;
-        width: 40px;
-        height: 40px;
-        padding: 7.5px;
+        width: pxToRem(32px);
+        height: pxToRem(32px);
         justify-content: center;
         align-items: center;
-        aspect-ratio: 1/1;
-        border-radius: 8px;
-        background: var(--sds-clr-purple-03);
+        border-radius: pxToRem(8px);
+        background: var(--sds-clr-lilac-03);
+        border: 1px solid var(--sds-clr-lilac-06);
 
         svg {
-          width: 25px;
-          height: 25px;
-          color: var(--sds-clr-purple-11);
+          width: pxToRem(20px);
+          height: pxToRem(20px);
+          color: var(--sds-clr-lilac-09);
         }
       }
 
       &__Close {
         display: flex;
-        width: 32px;
-        height: 32px;
+        width: pxToRem(32px);
+        height: pxToRem(32px);
         justify-content: center;
         align-items: center;
         border-radius: 1000px;
@@ -302,8 +302,7 @@
       display: flex;
       align-items: center;
       width: 100%;
-      margin: pxToRem(12px) 0;
-      font-size: pxToRem(20px);
+      font-size: pxToRem(18px);
       font-weight: var(--font-weight-medium);
     }
 
@@ -312,7 +311,7 @@
       flex-direction: column;
       border-radius: pxToRem(16px);
       background-color: var(--sds-clr-gray-03);
-      padding: pxToRem(12px);
+      padding: pxToRem(12px) pxToRem(16px);
 
       &__Row {
         display: flex;
@@ -324,31 +323,32 @@
           border-bottom: 1px solid var(--sds-clr-gray-06);
         }
 
-        &--total {
-          padding-top: pxToRem(12px);
-        }
-
         &__Label {
           font-size: pxToRem(14px);
+          font-weight: var(--font-weight-medium);
           color: var(--sds-clr-gray-11);
+
+          &--total {
+            color: var(--sds-clr-lilac-11);
+          }
         }
 
         &__Value {
           font-size: pxToRem(14px);
           font-weight: var(--font-weight-medium);
+          color: var(--sds-clr-gray-12);
 
           &--total {
-            color: var(--sds-clr-purple-11);
+            color: var(--sds-clr-lilac-11);
           }
         }
       }
     }
 
     &__Description {
-      margin-top: pxToRem(16px);
       color: var(--sds-clr-gray-11);
       font-size: pxToRem(14px);
-      line-height: 1.5rem;
+      line-height: pxToRem(20px);
     }
   }
 
