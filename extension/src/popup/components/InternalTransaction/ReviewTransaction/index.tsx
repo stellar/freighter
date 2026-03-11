@@ -368,6 +368,7 @@ export const ReviewTx = ({
             {t("Fee")}
             <button
               className="ReviewTx__Details__Row__FeesInfoBtn"
+              data-testid="review-tx-fee-info-btn"
               onClick={() => setActivePaneIndex(paneConfig.feesIndex)}
               aria-label={t("Fee breakdown")}
             >
@@ -438,13 +439,14 @@ export const ReviewTx = ({
   );
 
   const feesPane = (
-    <div className="ReviewTx__FeesDetails">
+    <div className="ReviewTx__FeesDetails" data-testid="review-tx-fees-pane">
       <div className="ReviewTx__FeesDetails__Header">
         <div className="ReviewTx__FeesDetails__Header__Icon">
           <Icon.Route />
         </div>
         <div
           className="ReviewTx__FeesDetails__Header__Close"
+          data-testid="review-tx-fees-close-btn"
           onClick={() => setActivePaneIndex(paneConfig.reviewIndex)}
         >
           <Icon.X />
@@ -459,7 +461,10 @@ export const ReviewTx = ({
             <span className="ReviewTx__FeesDetails__Card__Row__Label">
               {t("Inclusion Fee")}
             </span>
-            <span className="ReviewTx__FeesDetails__Card__Row__Value">
+            <span
+              className="ReviewTx__FeesDetails__Card__Row__Value"
+              data-testid="review-tx-inclusion-fee"
+            >
               {simulationState.data.inclusionFee} XLM
             </span>
           </div>
@@ -469,21 +474,30 @@ export const ReviewTx = ({
             <span className="ReviewTx__FeesDetails__Card__Row__Label">
               {t("Resource Fee")}
             </span>
-            <span className="ReviewTx__FeesDetails__Card__Row__Value">
+            <span
+              className="ReviewTx__FeesDetails__Card__Row__Value"
+              data-testid="review-tx-resource-fee"
+            >
               {simulationState.data.resourceFee} XLM
             </span>
           </div>
         )}
-        <div className="ReviewTx__FeesDetails__Card__Row ReviewTx__FeesDetails__Card__Row--total">
-          <span className="ReviewTx__FeesDetails__Card__Row__Label">
+        <div className="ReviewTx__FeesDetails__Card__Row">
+          <span className="ReviewTx__FeesDetails__Card__Row__Label ReviewTx__FeesDetails__Card__Row__Label--total">
             {t("Total Fee")}
           </span>
-          <span className="ReviewTx__FeesDetails__Card__Row__Value ReviewTx__FeesDetails__Card__Row__Value--total">
+          <span
+            className="ReviewTx__FeesDetails__Card__Row__Value ReviewTx__FeesDetails__Card__Row__Value--total"
+            data-testid="review-tx-total-fee"
+          >
             {fee} XLM
           </span>
         </div>
       </div>
-      <div className="ReviewTx__FeesDetails__Description">
+      <div
+        className="ReviewTx__FeesDetails__Description"
+        data-testid="review-tx-fees-description"
+      >
         {simulationState.data?.resourceFee
           ? t("Fees description soroban")
           : t("Fees description classic")}
