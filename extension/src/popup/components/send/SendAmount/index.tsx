@@ -429,9 +429,12 @@ export const SendAmount = ({
                   {t("Fee")}:
                 </span>
                 <span data-testid="send-amount-fee-display">
-                  {inputType === "crypto"
-                    ? `${fee} ${t("XLM")}`
-                    : recommendedFeeUsd}
+                  {(isToken || isCollectible) &&
+                  simulationState.state === RequestState.LOADING
+                    ? t("Calculating...")
+                    : inputType === "crypto"
+                      ? `${fee} ${t("XLM")}`
+                      : recommendedFeeUsd}
                 </span>
               </div>
               <div className="SendAmount__settings-options">
@@ -464,7 +467,7 @@ export const SendAmount = ({
               <Button
                 size="lg"
                 disabled={!destination || isMuxedAddressWithoutMemoSupport}
-                isLoading={false}
+                isLoading={simulationState.state === RequestState.LOADING}
                 data-testid="send-collectible-btn-continue"
                 isFullWidth
                 isRounded

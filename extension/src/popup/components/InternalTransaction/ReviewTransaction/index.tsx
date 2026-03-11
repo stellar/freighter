@@ -190,11 +190,13 @@ export const ReviewTx = ({
             blockaidIndex: null,
             reviewIndex: 0,
             memoIndex: 1,
+            feesIndex: 2,
           }
         : {
             blockaidIndex: 2,
             reviewIndex: 0,
             memoIndex: 1,
+            feesIndex: 3,
           },
     [shouldShowTxWarning],
   );
@@ -364,6 +366,13 @@ export const ReviewTx = ({
           <div className="ReviewTx__Details__Row__Title">
             <Icon.Route />
             {t("Fee")}
+            <button
+              className="ReviewTx__Details__Row__FeesInfoBtn"
+              onClick={() => setActivePaneIndex(paneConfig.feesIndex)}
+              aria-label={t("Fee breakdown")}
+            >
+              <Icon.InfoCircle />
+            </button>
           </div>
           <div
             className="ReviewTx__Details__Row__Value"
@@ -428,12 +437,66 @@ export const ReviewTx = ({
     </div>
   );
 
+  const feesPane = (
+    <div className="ReviewTx__FeesDetails">
+      <div className="ReviewTx__FeesDetails__Header">
+        <div className="ReviewTx__FeesDetails__Header__Icon">
+          <Icon.Route />
+        </div>
+        <div
+          className="ReviewTx__FeesDetails__Header__Close"
+          onClick={() => setActivePaneIndex(paneConfig.reviewIndex)}
+        >
+          <Icon.X />
+        </div>
+      </div>
+      <div className="ReviewTx__FeesDetails__Title">
+        <span>{t("Fees")}</span>
+      </div>
+      <div className="ReviewTx__FeesDetails__Card">
+        {simulationState.data?.inclusionFee && (
+          <div className="ReviewTx__FeesDetails__Card__Row">
+            <span className="ReviewTx__FeesDetails__Card__Row__Label">
+              {t("Inclusion Fee")}
+            </span>
+            <span className="ReviewTx__FeesDetails__Card__Row__Value">
+              {simulationState.data.inclusionFee} XLM
+            </span>
+          </div>
+        )}
+        {simulationState.data?.resourceFee && (
+          <div className="ReviewTx__FeesDetails__Card__Row">
+            <span className="ReviewTx__FeesDetails__Card__Row__Label">
+              {t("Resource Fee")}
+            </span>
+            <span className="ReviewTx__FeesDetails__Card__Row__Value">
+              {simulationState.data.resourceFee} XLM
+            </span>
+          </div>
+        )}
+        <div className="ReviewTx__FeesDetails__Card__Row ReviewTx__FeesDetails__Card__Row--total">
+          <span className="ReviewTx__FeesDetails__Card__Row__Label">
+            {t("Total Fee")}
+          </span>
+          <span className="ReviewTx__FeesDetails__Card__Row__Value ReviewTx__FeesDetails__Card__Row__Value--total">
+            {fee} XLM
+          </span>
+        </div>
+      </div>
+      <div className="ReviewTx__FeesDetails__Description">
+        {simulationState.data?.resourceFee
+          ? t("Fees description soroban")
+          : t("Fees description classic")}
+      </div>
+    </div>
+  );
+
   // Build panes in order (no hooks on JSX)
   const panes: React.ReactNode[] = [];
   if (shouldShowTxWarning) {
-    panes.push(reviewPane, memoPane, blockaidPane);
+    panes.push(reviewPane, memoPane, blockaidPane, feesPane);
   } else {
-    panes.push(reviewPane, memoPane);
+    panes.push(reviewPane, memoPane, feesPane);
   }
 
   return (

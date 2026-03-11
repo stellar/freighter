@@ -72,6 +72,8 @@ interface SimSoroban {
 export interface SimulateTxData {
   transactionXdr: string;
   scanResult?: BlockAidScanTxResult | null;
+  inclusionFee?: string;
+  resourceFee?: string;
 }
 
 const CREATE_ACCOUNT_MIN_XLM = new BigNumber(1);
@@ -341,6 +343,8 @@ const simulateTx = async ({
       return {
         payload: response,
         recommendedFee: baseFee.plus(new BigNumber(minResourceFee)).toString(),
+        inclusionFee: baseFee.toString(),
+        resourceFee: minResourceFee,
       };
     }
 
@@ -544,6 +548,13 @@ function useSimulateTxData({
           response: simulationResponse,
         }),
       );
+
+      if (simResponse.inclusionFee !== undefined) {
+        payload.inclusionFee = simResponse.inclusionFee;
+      }
+      if (simResponse.resourceFee !== undefined) {
+        payload.resourceFee = simResponse.resourceFee;
+      }
 
       const scanUrlstub = "internal";
       if (simParams.type === "classic") {
