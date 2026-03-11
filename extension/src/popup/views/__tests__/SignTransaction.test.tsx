@@ -1370,7 +1370,7 @@ describe("SignTransactions", () => {
     );
     await waitFor(() => screen.getByTestId("SignTransaction"));
     // With decimals=3, raw_value=500 should display as 0.5, not 0.00005
-    expect(screen.getByText("-0.5")).toBeDefined();
-    expect(screen.getByText("E2E")).toBeDefined();
+    expect(screen.getByText("-0.5")).toBeInTheDocument();
+    expect(screen.getByText("E2E")).toBeInTheDocument();
   });
 });
