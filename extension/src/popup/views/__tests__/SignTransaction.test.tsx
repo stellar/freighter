@@ -1373,4 +1373,181 @@ describe("SignTransactions", () => {
     expect(screen.getByText("-0.5")).toBeInTheDocument();
     expect(screen.getByText("E2E")).toBeInTheDocument();
   });
+
+  it("skips asset diffs when blockaid payload fields are not the expected type", async () => {
+    let currentSignTxDataMock = {
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          type: AppDataType.RESOLVED,
+          scanResult: {
+            simulation: {
+              status: "Success",
+              assets_diffs: {
+                [mockAccounts[0].publicKey]: [
+                  {
+                    // invalid: symbol and code are not strings — should be skipped
+                    asset_type: "ASSET",
+                    asset: {
+                      symbol: 42,
+                      code: null,
+                      issuer: "GBXYZ",
+                    },
+                    in: null,
+                    out: {
+                      raw_value: 1000000,
+                      value: "1",
+                      usd_price: "0",
+                    },
+                  },
+                  {
+                    // invalid: issuer and address are not strings — should be skipped
+                    asset_type: "ASSET",
+                    asset: {
+                      code: "USDC",
+                      issuer: 99,
+                      address: null,
+                    },
+                    in: {
+                      raw_value: 5000000,
+                      value: "5",
+                      usd_price: "0",
+                    },
+                    out: null,
+                  },
+                  {
+                    // valid SEP-41 entry — should render
+                    asset_type: "SEP41",
+                    asset: {
+                      symbol: "E2E",
+                      address:
+                        "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+                      decimals: 3,
+                      name: "E2E Token",
+                      type: "CONTRACT",
+                    },
+                    in: null,
+                    out: {
+                      raw_value: 500,
+                      value: "0.5",
+                      usd_price: "0",
+                    },
+                  },
+                ],
+              },
+            } as any,
+            validation: null,
+            request_id: "1",
+          },
+          icons: {},
+          balances: {
+            balances: sortBalances(mockBalances.balances),
+            isFunded: true,
+            subentryCount: 0,
+          },
+          publicKey: mockAccounts[1].publicKey,
+          signFlowState: {
+            allAccounts: mockAccounts,
+            accountNotFound: false,
+            currentAccount: mockAccounts[0],
+          },
+          applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+          networkDetails: {
+            ...defaultSettingsState.networkDetails,
+            networkPassphrase: "Test SDF Network ; September 2015",
+          },
+          siteScanData: null,
+          blockaidOverrideState: null,
+        },
+        error: null,
+      },
+      fetchData: jest.fn(),
+    } as ReturnType<typeof SignTxDataHooks.useGetSignTxData>;
+    jest
+      .spyOn(SignTxDataHooks, "useGetSignTxData")
+      .mockReturnValue(currentSignTxDataMock);
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: {
+          ...defaultSettingsState.networkDetails,
+          networkPassphrase: "Test SDF Network ; September 2015",
+          networkName: "Test Net",
+        },
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: {
+          "Test Net": {
+            [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+          },
+        },
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+      }),
+    );
+    const transaction = TransactionBuilder.fromXDR(
+      transactions.classic,
+      Networks.TESTNET,
+    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      transactionXdr: transactions.classic,
+      transaction: {
+        ...mockTransactionInfo.transaction,
+        _networkPassphrase: Networks.TESTNET,
+        _operations: [op],
+      },
+      isHttpsDomain: false,
+      domain: "laboratory.stellar.org",
+      uuid: "123-123-123-123-123",
+    }));
+    render(
+      <Wrapper
+        routes={[ROUTES.signTransaction]}
+        state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
+          settings: {
+            allowList: {
+              "Test Net": {
+                [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+              },
+            },
+            isExperimentalModeEnabled: false,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Network ; September 2015",
+              networkName: "Test Net",
+            },
+          },
+        }}
+      >
+        <SignTransaction />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("SignTransaction"));
+    // Invalid entries (non-string code or non-string issuer/address) should be skipped
+    expect(screen.queryByText("+1")).not.toBeInTheDocument();
+    expect(screen.queryByText("+5")).not.toBeInTheDocument();
+    expect(screen.queryByText("USDC")).not.toBeInTheDocument();
+    // Valid SEP-41 entry should still render
+    expect(screen.getByText("E2E")).toBeInTheDocument();
+    expect(screen.getByText("-0.5")).toBeInTheDocument();
+  });
 });

@@ -650,9 +650,25 @@ interface AssetDiffsProps {
 const AssetDiffs = ({ assetDiffs, icons }: AssetDiffsProps) => {
   const renderAssetDiffs = (diff: BlockaidAssetDiff) => {
     const asset = diff.asset as Record<string, unknown>;
-    const code = ((asset.symbol as string) ?? (asset.code as string)) || "";
+    const code =
+      typeof asset.symbol === "string"
+        ? asset.symbol
+        : typeof asset.code === "string"
+          ? asset.code
+          : null;
     const issuer =
-      ((asset.issuer as string) ?? (asset.address as string)) || "";
+      diff.asset_type === "NATIVE"
+        ? ""
+        : typeof asset.issuer === "string"
+          ? asset.issuer
+          : typeof asset.address === "string"
+            ? asset.address
+            : null;
+
+    if (code === null || issuer === null) {
+      return null;
+    }
+
     const decimals =
       (asset.decimals as number | undefined) ?? CLASSIC_ASSET_DECIMALS;
 
