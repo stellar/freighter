@@ -51,6 +51,7 @@ import { AMOUNT_ERROR, InputType } from "helpers/transaction";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { EditSettings } from "popup/components/InternalTransaction/EditSettings";
+import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
 import { EditMemo } from "popup/components/InternalTransaction/EditMemo";
 import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
 import { AddressTile } from "popup/components/send/AddressTile";
@@ -112,6 +113,24 @@ export const SendAmount = ({
   } = transactionData;
   const fee = transactionFee || recommendedFee;
 
+  // Persist the last-known inclusion fee across re-simulations so the
+  // EditSettings input never jumps back to the total fee while LOADING
+  // (the request reducer sets data: null on FETCH_DATA_START).
+  const lastInclusionFeeRef = useRef<string | null>(null);
+  if (
+    simulationState.state === RequestState.SUCCESS &&
+    simulationState.data?.inclusionFee
+  ) {
+    lastInclusionFeeRef.current = simulationState.data.inclusionFee;
+  }
+
+  // For Soroban: show the stable inclusion fee (base fee only).
+  // For classic: show the current total fee (may be user-customised).
+  const editSettingsFee =
+    isToken || isCollectible
+      ? (lastInclusionFeeRef.current ?? recommendedFee)
+      : fee;
+
   const { state: sendAmountData, fetchData } = useGetSendAmountData(
     {
       showHidden: false,
@@ -131,10 +150,14 @@ export const SendAmount = ({
 
   const cryptoInputRef = useRef<HTMLInputElement>(null);
   const usdInputRef = useRef<HTMLInputElement>(null);
+  // Tracks the dest+asset pair that simulation was last triggered for, so we
+  // can detect changes and re-simulate without watching simulationState.data.
+  const simulationDataRef = useRef({ destination: "", asset: "" });
 
   const [inputType, setInputType] = useState<InputType>("crypto");
   const [isEditingMemo, setIsEditingMemo] = React.useState(false);
   const [isEditingSettings, setIsEditingSettings] = React.useState(false);
+  const [isShowingFeesPane, setIsShowingFeesPane] = React.useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
   const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
     boolean | null
@@ -235,7 +258,15 @@ export const SendAmount = ({
   };
 
   const handleContinue = async () => {
-    if (!transactionFee) {
+    if (isToken || isCollectible) {
+      // Reset to the inclusion fee before re-simulating. After a prior
+      // simulation, saveTransactionFee stored the TOTAL (inclusion + resource).
+      // Without this reset that total would be used as baseFee on the next run,
+      // inflating both inclusionFee and recommendedFee.
+      dispatch(
+        saveTransactionFee(lastInclusionFeeRef.current ?? recommendedFee),
+      );
+    } else if (!transactionFee) {
       dispatch(saveTransactionFee(fee));
     }
     await fetchSimulationData();
@@ -299,6 +330,34 @@ export const SendAmount = ({
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Soroban: re-simulate whenever destination or asset changes (and on first
+  // mount if both are ready). simulationDataRef tracks what was last simulated so
+  // we detect genuine changes without watching simulationState.data.
+  // simulationState.state is included so that if a change arrives while a
+  // simulation is already in-flight, we retry once it finishes.
+  useEffect(() => {
+    if (!(isToken || isCollectible)) return;
+    if (!destination) return;
+    // Don't stack concurrent simulations.
+    if (simulationState.state === RequestState.LOADING) return;
+
+    const destChanged = simulationDataRef.current.destination !== destination;
+    const assetChanged = simulationDataRef.current.asset !== asset;
+
+    if (destChanged || assetChanged) {
+      // Reset to inclusion fee before re-simulating so total fee from a prior
+      // simulation isn't used as baseFee (which would inflate the result).
+      if (isToken || isCollectible) {
+        dispatch(
+          saveTransactionFee(lastInclusionFeeRef.current ?? recommendedFee),
+        );
+      }
+      simulationDataRef.current = { destination, asset };
+      fetchSimulationData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [destination, asset, isToken, isCollectible, simulationState.state]);
 
   const getAmountFontSize = () => {
     const length = formik.values.amount.length;
@@ -457,7 +516,18 @@ export const SendAmount = ({
                   size="md"
                   isRounded
                   variant="tertiary"
-                  onClick={() => setIsEditingSettings(true)}
+                  onClick={() => {
+                    setIsEditingSettings(true);
+                    // For Soroban tokens, trigger simulation immediately so fee
+                    // input and FeesPane both reflect the correct simulated amounts
+                    if (
+                      (isToken || isCollectible) &&
+                      simulationState.state !== RequestState.SUCCESS &&
+                      simulationState.state !== RequestState.LOADING
+                    ) {
+                      fetchSimulationData();
+                    }
+                  }}
                 >
                   <Icon.Settings01 />
                 </Button>
@@ -788,15 +858,17 @@ export const SendAmount = ({
           />
         </>
       ) : null}
-      {isEditingSettings ? (
+      {isEditingSettings && !isShowingFeesPane ? (
         <>
           <div className="EditMemoWrapper">
             <EditSettings
-              fee={fee}
+              fee={editSettingsFee}
               title={t("Send Settings")}
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
+              isSoroban={isToken || isCollectible}
               onClose={() => setIsEditingSettings(false)}
+              onShowFeesInfo={() => setIsShowingFeesPane(true)}
               onSubmit={async ({
                 fee,
                 timeout,
@@ -817,6 +889,26 @@ export const SendAmount = ({
             isActive={isEditingSettings}
           />
         </>
+      ) : null}
+      {isShowingFeesPane ? (
+        <SlideupModal
+          setIsModalOpen={() => {
+            setIsShowingFeesPane(false);
+            setIsEditingSettings(true);
+          }}
+          isModalOpen={isShowingFeesPane}
+        >
+          <View.Inset>
+            <FeesPane
+              fee={fee}
+              simulationState={simulationState}
+              onClose={() => {
+                setIsShowingFeesPane(false);
+                setIsEditingSettings(true);
+              }}
+            />
+          </View.Inset>
+        </SlideupModal>
       ) : null}
       <SlideupModal
         setIsModalOpen={() => setIsReviewingTx(false)}

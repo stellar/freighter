@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Card, Input } from "@stellar/design-system";
+import { Button, Card, Icon, Input } from "@stellar/design-system";
 import { Field, FieldProps, Formik, Form } from "formik";
 import { useTranslation } from "react-i18next";
 
@@ -17,7 +17,9 @@ interface EditSettingsProps {
   timeout: number;
   congestion: string;
   title: string;
+  isSoroban?: boolean;
   onClose: () => void;
+  onShowFeesInfo?: () => void;
   onSubmit: (args: EditSettingsFormValue) => void;
 }
 
@@ -26,7 +28,9 @@ export const EditSettings = ({
   timeout,
   congestion,
   title,
+  isSoroban = false,
   onClose,
+  onShowFeesInfo,
   onSubmit,
 }: EditSettingsProps) => {
   const { t } = useTranslation();
@@ -38,11 +42,32 @@ export const EditSettings = ({
     onSubmit(values);
   };
 
+  const feeLabel = (
+    <span className="EditTxSettings__fee-label">
+      {isSoroban ? t("Inclusion Fee") : t("Transaction Fee")}
+      {isSoroban && onShowFeesInfo && (
+        <button
+          className="EditTxSettings__fee-info-btn"
+          type="button"
+          onClick={onShowFeesInfo}
+          aria-label={t("Fee breakdown")}
+          data-testid="edit-settings-fees-info-btn"
+        >
+          <Icon.InfoCircle />
+        </button>
+      )}
+    </span>
+  );
+
   return (
     <div className="EditTxSettings">
       <Card>
         {title && <p>{title}</p>}
-        <Formik initialValues={initialValues} onSubmit={handleSubmit}>
+        <Formik
+          initialValues={initialValues}
+          onSubmit={handleSubmit}
+          enableReinitialize
+        >
           {({ errors, setFieldValue }) => (
             <>
               <Form className="EditTxSettings__form">
@@ -57,7 +82,7 @@ export const EditSettings = ({
                       autoComplete="off"
                       id="fee"
                       placeholder={t("Fee")}
-                      label={t("Transaction Fee")}
+                      label={feeLabel}
                       {...field}
                       error={errors.fee}
                       onChange={(e) => {

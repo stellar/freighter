@@ -38,6 +38,7 @@ import {
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
 import { CopyValue } from "popup/components/CopyValue";
+import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
 import { ActionButtons } from "./components/ActionButtons";
 import { SendAsset, SendDestination } from "./components";
 
@@ -439,70 +440,11 @@ export const ReviewTx = ({
   );
 
   const feesPane = (
-    <div className="ReviewTx__FeesDetails" data-testid="review-tx-fees-pane">
-      <div className="ReviewTx__FeesDetails__Header">
-        <div className="ReviewTx__FeesDetails__Header__Icon">
-          <Icon.Route />
-        </div>
-        <div
-          className="ReviewTx__FeesDetails__Header__Close"
-          data-testid="review-tx-fees-close-btn"
-          onClick={() => setActivePaneIndex(paneConfig.reviewIndex)}
-        >
-          <Icon.X />
-        </div>
-      </div>
-      <div className="ReviewTx__FeesDetails__Title">
-        <span>{t("Fees")}</span>
-      </div>
-      <div className="ReviewTx__FeesDetails__Card">
-        {simulationState.data?.inclusionFee && (
-          <div className="ReviewTx__FeesDetails__Card__Row">
-            <span className="ReviewTx__FeesDetails__Card__Row__Label">
-              {t("Inclusion Fee")}
-            </span>
-            <span
-              className="ReviewTx__FeesDetails__Card__Row__Value"
-              data-testid="review-tx-inclusion-fee"
-            >
-              {simulationState.data.inclusionFee} XLM
-            </span>
-          </div>
-        )}
-        {simulationState.data?.resourceFee && (
-          <div className="ReviewTx__FeesDetails__Card__Row">
-            <span className="ReviewTx__FeesDetails__Card__Row__Label">
-              {t("Resource Fee")}
-            </span>
-            <span
-              className="ReviewTx__FeesDetails__Card__Row__Value"
-              data-testid="review-tx-resource-fee"
-            >
-              {simulationState.data.resourceFee} XLM
-            </span>
-          </div>
-        )}
-        <div className="ReviewTx__FeesDetails__Card__Row">
-          <span className="ReviewTx__FeesDetails__Card__Row__Label ReviewTx__FeesDetails__Card__Row__Label--total">
-            {t("Total Fee")}
-          </span>
-          <span
-            className="ReviewTx__FeesDetails__Card__Row__Value ReviewTx__FeesDetails__Card__Row__Value--total"
-            data-testid="review-tx-total-fee"
-          >
-            {fee} XLM
-          </span>
-        </div>
-      </div>
-      <div
-        className="ReviewTx__FeesDetails__Description"
-        data-testid="review-tx-fees-description"
-      >
-        {simulationState.data?.resourceFee
-          ? t("Fees description soroban")
-          : t("Fees description classic")}
-      </div>
-    </div>
+    <FeesPane
+      fee={fee}
+      simulationState={simulationState}
+      onClose={() => setActivePaneIndex(paneConfig.reviewIndex)}
+    />
   );
 
   // Build panes in order (no hooks on JSX)
