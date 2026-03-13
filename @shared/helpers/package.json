@@ -6,6 +6,6 @@
     "bignumber.js": "9.3.0",
     "stellar-sdk": "npm:@stellar/stellar-sdk@14.4.3",
     "stellar-sdk-next": "npm:@stellar/stellar-sdk@14.4.3",
-    "typescript": "5.8.3"
+    "typescript": "5.9.3"
   }
 }
