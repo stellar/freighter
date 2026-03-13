@@ -669,8 +669,17 @@ const AssetDiffs = ({ assetDiffs, icons }: AssetDiffsProps) => {
       return null;
     }
 
+    const rawDecimals = asset.decimals;
+    if (
+      rawDecimals !== undefined &&
+      (typeof rawDecimals !== "number" ||
+        !Number.isFinite(rawDecimals) ||
+        rawDecimals < 0)
+    ) {
+      return null;
+    }
     const decimals =
-      (asset.decimals as number | undefined) ?? CLASSIC_ASSET_DECIMALS;
+      (rawDecimals as number | undefined) ?? CLASSIC_ASSET_DECIMALS;
 
     return (
       <div className="SignTransaction__AssetDiffRow">
