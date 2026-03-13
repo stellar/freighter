@@ -1,0 +1,97 @@
+@use "../../../styles/utils.scss" as *;
+
+.FeesPane {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: pxToRem(16px) 0;
+  gap: pxToRem(16px);
+
+  &__Header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    &__Icon {
+      display: flex;
+      width: pxToRem(32px);
+      height: pxToRem(32px);
+      justify-content: center;
+      align-items: center;
+      border-radius: pxToRem(8px);
+      background: var(--sds-clr-lilac-03);
+      border: 1px solid var(--sds-clr-lilac-06);
+
+      svg {
+        width: pxToRem(20px);
+        height: pxToRem(20px);
+        color: var(--sds-clr-lilac-09);
+      }
+    }
+
+    &__Close {
+      display: flex;
+      width: pxToRem(32px);
+      height: pxToRem(32px);
+      justify-content: center;
+      align-items: center;
+      border-radius: 1000px;
+      background: var(--sds-clr-gray-03);
+      color: var(--sds-clr-gray-09);
+      cursor: pointer;
+    }
+  }
+
+  &__Title {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    font-size: pxToRem(18px);
+    font-weight: var(--font-weight-medium);
+  }
+
+  &__Card {
+    display: flex;
+    flex-direction: column;
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    padding: pxToRem(12px) pxToRem(16px);
+
+    &__Row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: pxToRem(12px) 0;
+
+      &:not(:last-child) {
+        border-bottom: 1px solid var(--sds-clr-gray-06);
+      }
+
+      &__Label {
+        font-size: pxToRem(14px);
+        font-weight: var(--font-weight-medium);
+        color: var(--sds-clr-gray-11);
+
+        &--total {
+          color: var(--sds-clr-lilac-11);
+        }
+      }
+
+      &__Value {
+        font-size: pxToRem(14px);
+        font-weight: var(--font-weight-medium);
+        color: var(--sds-clr-gray-12);
+
+        &--total {
+          color: var(--sds-clr-lilac-11);
+        }
+      }
+    }
+  }
+
+  &__Description {
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+  }
+}
