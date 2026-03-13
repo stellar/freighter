@@ -1601,9 +1601,9 @@ describe("SignTransactions", () => {
                 ],
               },
             },
+            validation: null,
+            request_id: "1",
           } as any,
-          validation: null,
-          request_id: "1",
           icons: {},
           balances: {
             balances: sortBalances(mockBalances.balances),

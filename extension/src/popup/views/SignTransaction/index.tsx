@@ -674,6 +674,7 @@ const AssetDiffs = ({ assetDiffs, icons }: AssetDiffsProps) => {
       rawDecimals !== undefined &&
       (typeof rawDecimals !== "number" ||
         !Number.isFinite(rawDecimals) ||
+        !Number.isInteger(rawDecimals) ||
         rawDecimals < 0)
     ) {
       return null;
