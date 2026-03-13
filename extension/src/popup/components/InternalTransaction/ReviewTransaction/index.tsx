@@ -38,6 +38,7 @@ import {
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
 import { CopyValue } from "popup/components/CopyValue";
+import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
 import { ActionButtons } from "./components/ActionButtons";
 import { SendAsset, SendDestination } from "./components";
 
@@ -190,11 +191,13 @@ export const ReviewTx = ({
             blockaidIndex: null,
             reviewIndex: 0,
             memoIndex: 1,
+            feesIndex: 2,
           }
         : {
             blockaidIndex: 2,
             reviewIndex: 0,
             memoIndex: 1,
+            feesIndex: 3,
           },
     [shouldShowTxWarning],
   );
@@ -364,6 +367,14 @@ export const ReviewTx = ({
           <div className="ReviewTx__Details__Row__Title">
             <Icon.Route />
             {t("Fee")}
+            <button
+              className="ReviewTx__Details__Row__FeesInfoBtn"
+              data-testid="review-tx-fee-info-btn"
+              onClick={() => setActivePaneIndex(paneConfig.feesIndex)}
+              aria-label={t("Fee breakdown")}
+            >
+              <Icon.InfoCircle />
+            </button>
           </div>
           <div
             className="ReviewTx__Details__Row__Value"
@@ -428,12 +439,20 @@ export const ReviewTx = ({
     </div>
   );
 
+  const feesPane = (
+    <FeesPane
+      fee={fee}
+      simulationState={simulationState}
+      onClose={() => setActivePaneIndex(paneConfig.reviewIndex)}
+    />
+  );
+
   // Build panes in order (no hooks on JSX)
   const panes: React.ReactNode[] = [];
   if (shouldShowTxWarning) {
-    panes.push(reviewPane, memoPane, blockaidPane);
+    panes.push(reviewPane, memoPane, blockaidPane, feesPane);
   } else {
-    panes.push(reviewPane, memoPane);
+    panes.push(reviewPane, memoPane, feesPane);
   }
 
   return (

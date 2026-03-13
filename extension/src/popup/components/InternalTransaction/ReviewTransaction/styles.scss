@@ -58,6 +58,7 @@
         flex: 2;
         display: flex;
         color: var(--sds-clr-gray-09);
+        align-items: center;
 
         svg {
           margin-right: pxToRem(6px);
@@ -253,6 +254,26 @@
       color: var(--sds-clr-gray-11);
       font-size: pxToRem(14px);
       line-height: 1.5rem;
+    }
+  }
+
+  &__Details__Row__FeesInfoBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-left: pxToRem(4px);
+    display: inline-flex;
+    align-items: center;
+    color: var(--sds-clr-gray-09);
+
+    svg {
+      width: pxToRem(14px);
+      height: pxToRem(14px);
+    }
+
+    &:hover {
+      color: var(--sds-clr-gray-12);
     }
   }
 }

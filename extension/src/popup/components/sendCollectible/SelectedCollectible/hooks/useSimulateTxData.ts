@@ -25,6 +25,8 @@ import { useScanTx } from "popup/helpers/blockaid";
 export interface SimulateTxData {
   transactionXdr: string;
   scanResult?: BlockAidScanTxResult | null;
+  inclusionFee?: string;
+  resourceFee?: string;
 }
 
 const simulateTx = async ({
@@ -75,6 +77,8 @@ const simulateTx = async ({
   return {
     payload: response,
     recommendedFee: baseFee.plus(new BigNumber(minResourceFee)).toString(),
+    inclusionFee: baseFee.toString(),
+    resourceFee: minResourceFee,
   };
 };
 
@@ -149,6 +153,13 @@ function useSimulateTxData({
           response: simulationResponse,
         }),
       );
+
+      if (simResponse.inclusionFee !== undefined) {
+        payload.inclusionFee = simResponse.inclusionFee;
+      }
+      if (simResponse.resourceFee !== undefined) {
+        payload.resourceFee = simResponse.resourceFee;
+      }
 
       const scanUrlstub = "internal";
 
