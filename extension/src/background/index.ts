@@ -24,6 +24,7 @@ import {
   dataStorageAccess,
   browserLocalStorage,
 } from "./helpers/dataStorageAccess";
+import { IS_OPEN_SIDEBAR_BY_DEFAULT_ID } from "constants/localStorageTypes";
 import { ServiceMessageRequest } from "@shared/api/types/message-request";
 import {
   BrowserStorageKeyStore,
@@ -107,6 +108,16 @@ export const initInstalledListener = () => {
   browser?.runtime?.onInstalled.addListener(migrateFriendBotUrlNetworkDetails);
   browser?.runtime?.onInstalled.addListener(migrateSorobanRpcUrlNetworkDetails);
   browser?.runtime?.onInstalled.addListener(versionedMigration);
+};
+
+export const initSidebarBehavior = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const val =
+    ((await localStore.getItem(IS_OPEN_SIDEBAR_BY_DEFAULT_ID)) as boolean) ??
+    false;
+  if (chrome.sidePanel?.setPanelBehavior) {
+    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: !!val });
+  }
 };
 
 export const initAlarmListener = () => {

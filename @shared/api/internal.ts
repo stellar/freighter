@@ -1611,11 +1611,13 @@ export const saveSettings = async ({
   isDataSharingAllowed,
   isMemoValidationEnabled,
   isHideDustEnabled,
+  isOpenSidebarByDefault,
 }: {
   activePublicKey: string;
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isHideDustEnabled: boolean;
+  isOpenSidebarByDefault: boolean;
 }): Promise<Settings & IndexerSettings> => {
   let response = {
     allowList: DEFAULT_ALLOW_LIST,
@@ -1629,6 +1631,7 @@ export const saveSettings = async ({
     isSorobanPublicEnabled: false,
     isNonSSLEnabled: false,
     isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
     error: "",
     hiddenAssets: {},
   };
@@ -1639,6 +1642,7 @@ export const saveSettings = async ({
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isHideDustEnabled,
+      isOpenSidebarByDefault,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
   } catch (e) {
