@@ -206,6 +206,8 @@ export const ReviewTx = ({
     paneConfig.blockaidIndex !== null &&
     activePaneIndex === paneConfig.blockaidIndex;
 
+  const isOnFeesPane = activePaneIndex === paneConfig.feesIndex;
+
   // Extract contract ID for custom tokens or collectibles
   const contractId = React.useMemo(
     () =>
@@ -367,6 +369,11 @@ export const ReviewTx = ({
           <div className="ReviewTx__Details__Row__Title">
             <Icon.Route />
             {t("Fee")}
+          </div>
+          <div
+            className="ReviewTx__Details__Row__Value"
+            data-testid="review-tx-fee"
+          >
             <button
               className="ReviewTx__Details__Row__FeesInfoBtn"
               data-testid="review-tx-fee-info-btn"
@@ -375,11 +382,6 @@ export const ReviewTx = ({
             >
               <Icon.InfoCircle />
             </button>
-          </div>
-          <div
-            className="ReviewTx__Details__Row__Value"
-            data-testid="review-tx-fee"
-          >
             {fee} XLM
           </div>
         </div>
@@ -466,25 +468,27 @@ export const ReviewTx = ({
       ) : (
         <div className="ReviewTx">
           <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
-          <div className="ReviewTx__Actions">
-            <ActionButtons
-              isOnBlockaidPane={isOnBlockaidPane}
-              isMalicious={isMalicious}
-              isRequiredMemoMissing={isRequiredMemoMissing}
-              isValidatingMemo={isValidatingMemo}
-              onAddMemo={onAddMemo}
-              shouldShowTxWarning={shouldShowTxWarning}
-              onCancel={onCancel}
-              onConfirmTx={onConfirmTx}
-              paneConfig={paneConfig}
-              isSubmitDisabled={isSubmitDisabled}
-              dstAsset={dstAsset}
-              dest={dest}
-              asset={asset}
-              truncatedDest={truncatedDest}
-              setActivePaneIndex={setActivePaneIndex}
-            />
-          </div>
+          {!isOnFeesPane && (
+            <div className="ReviewTx__Actions">
+              <ActionButtons
+                isOnBlockaidPane={isOnBlockaidPane}
+                isMalicious={isMalicious}
+                isRequiredMemoMissing={isRequiredMemoMissing}
+                isValidatingMemo={isValidatingMemo}
+                onAddMemo={onAddMemo}
+                shouldShowTxWarning={shouldShowTxWarning}
+                onCancel={onCancel}
+                onConfirmTx={onConfirmTx}
+                paneConfig={paneConfig}
+                isSubmitDisabled={isSubmitDisabled}
+                dstAsset={dstAsset}
+                dest={dest}
+                asset={asset}
+                truncatedDest={truncatedDest}
+                setActivePaneIndex={setActivePaneIndex}
+              />
+            </div>
+          )}
         </div>
       )}
     </View.Content>
