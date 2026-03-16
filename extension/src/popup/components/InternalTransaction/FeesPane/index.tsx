@@ -26,13 +26,15 @@ export const FeesPane = ({ fee, simulationState, onClose }: FeesPaneProps) => {
         <div className="FeesPane__Header__Icon">
           <Icon.Route />
         </div>
-        <div
+        <button
+          type="button"
           className="FeesPane__Header__Close"
           data-testid="review-tx-fees-close-btn"
           onClick={onClose}
+          aria-label={t("Close")}
         >
           <Icon.X />
-        </div>
+        </button>
       </div>
       <div className="FeesPane__Title">
         <span>{t("Fees")}</span>
