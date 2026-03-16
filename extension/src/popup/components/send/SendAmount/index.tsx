@@ -899,14 +899,16 @@ export const SendAmount = ({
           isModalOpen={isShowingFeesPane}
         >
           <View.Inset>
-            <FeesPane
-              fee={fee}
-              simulationState={simulationState}
-              onClose={() => {
-                setIsShowingFeesPane(false);
-                setIsEditingSettings(true);
-              }}
-            />
+            <div className="SendAmount__FeesPane">
+              <FeesPane
+                fee={fee}
+                simulationState={simulationState}
+                onClose={() => {
+                  setIsShowingFeesPane(false);
+                  setIsEditingSettings(true);
+                }}
+              />
+            </div>
           </View.Inset>
         </SlideupModal>
       ) : null}

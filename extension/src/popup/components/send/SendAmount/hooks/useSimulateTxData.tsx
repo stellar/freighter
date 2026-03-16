@@ -48,6 +48,9 @@ import {
   checkIsMuxedSupported,
   determineMuxedDestination,
 } from "helpers/muxedAddress";
+import { SimulateTxData } from "types/transactions";
+
+export type { SimulateTxData };
 
 interface SimClassic {
   type: "classic";
@@ -67,13 +70,6 @@ interface SimClassic {
 interface SimSoroban {
   type: "soroban";
   xdr: string;
-}
-
-export interface SimulateTxData {
-  transactionXdr: string;
-  scanResult?: BlockAidScanTxResult | null;
-  inclusionFee?: string;
-  resourceFee?: string;
 }
 
 const CREATE_ACCOUNT_MIN_XLM = new BigNumber(1);

@@ -13,7 +13,6 @@ import {
   formatTokenAmount,
 } from "popup/helpers/soroban";
 import { simulateSendCollectible } from "@shared/api/internal";
-import { BlockAidScanTxResult } from "@shared/api/types";
 import {
   saveSimulation,
   saveTransactionFee,
@@ -21,13 +20,9 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { AppDispatch, AppState } from "popup/App";
 import { useScanTx } from "popup/helpers/blockaid";
+import { SimulateTxData } from "types/transactions";
 
-export interface SimulateTxData {
-  transactionXdr: string;
-  scanResult?: BlockAidScanTxResult | null;
-  inclusionFee?: string;
-  resourceFee?: string;
-}
+export type { SimulateTxData };
 
 const simulateTx = async ({
   options,

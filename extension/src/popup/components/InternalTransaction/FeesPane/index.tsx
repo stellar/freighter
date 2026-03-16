@@ -3,7 +3,7 @@ import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { RequestState, State } from "constants/request";
-import { SimulateTxData } from "popup/components/send/SendAmount/hooks/useSimulateTxData";
+import { SimulateTxData } from "types/transactions";
 
 import "./styles.scss";
 
