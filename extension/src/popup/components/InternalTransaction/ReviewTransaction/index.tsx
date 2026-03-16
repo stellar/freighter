@@ -181,8 +181,8 @@ export const ReviewTx = ({
 
   /**
    * Pane state machine:
-   * - With Blockaid warning: [Review, Memo, Blockaid] - Blockaid accessible via banner click
-   * - No warning: [Review, Memo]
+   * - No warning: [Review (0), Memo (1), Fees (2)]
+   * - With Blockaid warning: [Review (0), Memo (1), Blockaid (2), Fees (3)] - Blockaid accessible via banner click
    */
   const paneConfig = React.useMemo(
     () =>
