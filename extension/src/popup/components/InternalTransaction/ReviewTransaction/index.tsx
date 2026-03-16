@@ -21,7 +21,7 @@ import {
   checkIsMuxedSupported,
   getMemoDisabledState,
 } from "helpers/muxedAddress";
-import { SimulateTxData } from "popup/components/send/SendAmount/hooks/useSimulateTxData";
+import { SimulateTxData } from "types/transactions";
 import { View } from "popup/basics/layout/View";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";

@@ -243,6 +243,10 @@
       margin-right: pxToRem(6px);
     }
   }
+
+  &__FeesPane {
+    padding: pxToRem(32px) 0;
+  }
 }
 
 .SendTo {

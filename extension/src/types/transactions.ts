@@ -1,7 +1,16 @@
+import { BlockAidScanTxResult } from "@shared/api/types";
+
 export interface FlaggedKeys {
   [address: string]: {
     tags: Array<string>;
   };
+}
+
+export interface SimulateTxData {
+  transactionXdr: string;
+  scanResult?: BlockAidScanTxResult | null;
+  inclusionFee?: string;
+  resourceFee?: string;
 }
 
 export interface TransactionInfo {
