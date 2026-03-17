@@ -7,6 +7,10 @@
   padding: 0 0;
   gap: pxToRem(16px);
 
+  .multi-pane-slider & {
+    padding: 0;
+  }
+
   &__Header {
     display: flex;
     justify-content: space-between;
