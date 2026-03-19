@@ -289,6 +289,11 @@ export const ContactBook = () => {
               title={cardTitle}
               address={cardMode.type === "edit" ? cardMode.address : undefined}
               name={cardMode.type === "edit" ? cardMode.data.name : undefined}
+              resolvedAddress={
+                cardMode.type === "edit"
+                  ? cardMode.data.resolvedAddress
+                  : undefined
+              }
               existingContacts={existingContacts}
               onSave={handleSaveContact}
               onCancel={handleDismissCard}
