@@ -100,12 +100,7 @@ export const createContactFormSchema = ({
             return true;
           }
 
-          if (
-            !refs.hasAddressBlurred.current ||
-            refs.activeField.current !== "address"
-          )
-            return !refs.federationFailed.current;
-
+          // Use cached result if we already resolved this exact value
           if (refs.lastResolvedInput.current === trimmed) {
             return refs.resolvedAddress.current !== undefined;
           }

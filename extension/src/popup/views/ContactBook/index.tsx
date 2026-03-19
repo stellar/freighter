@@ -17,6 +17,8 @@ import {
   truncatedPublicKey,
   truncatedFedAddress,
   isFederationAddress,
+  isMuxedAccount,
+  getBaseAccount,
 } from "helpers/stellar";
 import { Toaster } from "popup/basics/shadcn/Toast";
 
@@ -50,6 +52,7 @@ export const ContactBook = () => {
   }, []);
 
   const handleAddContact = useCallback(() => {
+    setOpenMenuAddress(null);
     setCardMode({ type: "add" });
   }, []);
 
@@ -224,7 +227,14 @@ export const ContactBook = () => {
               <div key={address} className="ContactBook__row">
                 <div className="ContactBook__row__info">
                   <div className="ContactBook__row__identicon">
-                    <IdenticonImg publicKey={data.resolvedAddress || address} />
+                    <IdenticonImg
+                      publicKey={
+                        data.resolvedAddress ||
+                        (isMuxedAccount(address)
+                          ? (getBaseAccount(address) ?? address)
+                          : address)
+                      }
+                    />
                   </div>
                   <div className="ContactBook__row__details">
                     <span className="ContactBook__row__name">{data.name}</span>
