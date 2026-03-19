@@ -96,7 +96,6 @@ export const EditContactCard = ({
       {({
         errors,
         touched,
-        dirty,
         isValid,
         isSubmitting,
         validateField,
