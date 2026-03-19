@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Icon, Input } from "@stellar/design-system";
-import { Field, Form, Formik, FormikProps } from "formik";
+import { Field, Form, Formik, FormikProps, useFormikContext } from "formik";
 
 import { isFederationAddress } from "helpers/stellar";
 import {
@@ -74,6 +74,18 @@ export const EditContactCard = ({
     onSave(trimmedAddress, sanitizedName, refs.resolvedAddress.current);
   };
 
+  const FormikDirtyObserver: React.FC<{
+    onDirtyChange?: (dirty: boolean) => void;
+  }> = ({ onDirtyChange }) => {
+    const { dirty } = useFormikContext<ContactFormValues>();
+
+    React.useEffect(() => {
+      onDirtyChange?.(dirty);
+    }, [dirty, onDirtyChange]);
+
+    return null;
+  };
+
   return (
     <Formik
       initialValues={{ address: initialAddress, name: initialName }}
@@ -91,14 +103,9 @@ export const EditContactCard = ({
         handleBlur,
         handleChange,
       }: FormikProps<ContactFormValues>) => {
-        // Report dirty state to parent for dismiss confirmation
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        React.useEffect(() => {
-          onDirtyChange?.(dirty);
-        }, [dirty]);
-
         return (
           <Form>
+            <FormikDirtyObserver onDirtyChange={onDirtyChange} />
             <div className="EditContactCard">
               <div className="EditContactCard__content">
                 <span className="EditContactCard__title">{cardTitle}</span>
