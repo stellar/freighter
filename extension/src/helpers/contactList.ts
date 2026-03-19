@@ -1,3 +1,4 @@
+import React from "react";
 import { object as YupObject, string as YupString } from "yup";
 import { Federation } from "stellar-sdk";
 
