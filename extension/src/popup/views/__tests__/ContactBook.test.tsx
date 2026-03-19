@@ -26,9 +26,11 @@ jest.mock("popup/components/identicons/IdenticonImg", () => ({
 jest.mock("helpers/stellar", () => ({
   isValidStellarAddress: jest.fn(() => true),
   isFederationAddress: jest.fn(() => false),
+  isValidFederatedDomain: jest.fn(() => false),
   truncatedPublicKey: jest.fn(
     (key: string) => key.slice(0, 4) + "..." + key.slice(-4),
   ),
+  truncatedFedAddress: jest.fn((addr: string) => addr),
 }));
 
 const mockToastSuccess = jest.fn();
@@ -70,8 +72,8 @@ const renderContactBook = () =>
     </Wrapper>,
   );
 
-const { isValidStellarAddress } = jest.requireMock("helpers/stellar");
-const { isFederationAddress } = jest.requireMock("helpers/stellar");
+const { isValidStellarAddress, isFederationAddress, isValidFederatedDomain } =
+  jest.requireMock("helpers/stellar");
 const { Federation } = jest.requireMock("stellar-sdk");
 
 /**
@@ -326,6 +328,9 @@ describe("ContactBook", () => {
       const RESOLVED_ADDRESS = VALID_ADDRESS_1;
 
       (isFederationAddress as jest.Mock).mockImplementation(
+        (addr: string) => addr === FEDERATION_ADDRESS,
+      );
+      (isValidFederatedDomain as jest.Mock).mockImplementation(
         (addr: string) => addr === FEDERATION_ADDRESS,
       );
       (Federation.Server.resolve as jest.Mock).mockResolvedValue({
@@ -626,6 +631,9 @@ describe("ContactBook", () => {
 
     beforeEach(() => {
       (isFederationAddress as jest.Mock).mockImplementation((addr: string) =>
+        addr.includes("*"),
+      );
+      (isValidFederatedDomain as jest.Mock).mockImplementation((addr: string) =>
         addr.includes("*"),
       );
       (Federation.Server.resolve as jest.Mock).mockResolvedValue({
@@ -934,12 +942,8 @@ describe("ContactBook", () => {
         expect(screen.getByText("Alice")).toBeInTheDocument();
       });
 
-      // The contact row should show the truncated federation address as the key
-      expect(
-        screen.getByText(
-          FEDERATION_ADDRESS.slice(0, 4) + "..." + FEDERATION_ADDRESS.slice(-4),
-        ),
-      ).toBeInTheDocument();
+      // The contact row should show the federation address (via truncatedFedAddress)
+      expect(screen.getByText(FEDERATION_ADDRESS)).toBeInTheDocument();
     });
 
     it("can edit a federation address contact", async () => {

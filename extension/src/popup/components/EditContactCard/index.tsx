@@ -1,11 +1,15 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Icon, Input } from "@stellar/design-system";
-import { Field, Form, Formik } from "formik";
-import { object as YupObject, string as YupString } from "yup";
-import { Federation } from "stellar-sdk";
+import { Field, Form, Formik, FormikProps } from "formik";
 
-import { isValidStellarAddress, isFederationAddress } from "helpers/stellar";
+import { isFederationAddress } from "helpers/stellar";
+import {
+  createContactFormSchema,
+  sanitizeName,
+  NAME_MAX_LENGTH,
+  FederationRefs,
+} from "helpers/contactList";
 import type { ContactsMap } from "popup/views/ContactBook";
 
 import "./styles.scss";
@@ -17,6 +21,7 @@ interface EditContactCardProps {
   existingContacts: ContactsMap;
   onSave: (address: string, name: string, resolvedAddress?: string) => void;
   onCancel: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 interface ContactFormValues {
@@ -31,99 +36,47 @@ export const EditContactCard = ({
   existingContacts,
   onSave,
   onCancel,
+  onDirtyChange,
 }: EditContactCardProps) => {
   const { t } = useTranslation();
-  const resolvedAddressRef = React.useRef<string | undefined>(undefined);
-  const hasAddressBlurred = React.useRef(false);
-  const activeFieldRef = React.useRef<string | null>(null);
   const [isFetchingFederationAddress, setIsFetchingFederationAddress] =
     React.useState(false);
 
-  const contactFormSchema = YupObject().shape({
-    address: YupString()
-      .required(t("Invalid Stellar address"))
-      .test("is-valid-stellar-address", t("Invalid Stellar address"), (val) => {
-        if (!val) return false;
-        if (isFederationAddress(val)) {
-          return true;
-        }
-        return isValidStellarAddress(val);
-      })
-      .test(
-        "is-not-federation-failure",
-        t("Failed to resolve federated address"),
-        async (val) => {
-          if (!val) return true;
-          if (!isFederationAddress(val)) return true;
-          if (
-            !hasAddressBlurred.current ||
-            activeFieldRef.current !== "address"
-          )
-            return true;
-          setIsFetchingFederationAddress(true);
-          try {
-            const fedResp = await Federation.Server.resolve(val);
-            resolvedAddressRef.current = fedResp.account_id;
-            return true;
-          } catch {
-            resolvedAddressRef.current = undefined;
-            return false;
-          } finally {
-            setIsFetchingFederationAddress(false);
-          }
-        },
-      )
-      .test(
-        "is-not-duplicate-address",
-        t("This address already exists in your contacts"),
-        (val) => {
-          if (!val) return true;
-          // Check if the raw address already exists as a contact key
-          const rawDuplicate = Object.keys(existingContacts).some(
-            (key) => key.toLowerCase() === val.toLowerCase(),
-          );
-          if (rawDuplicate) return false;
-          // For federated addresses, check if the resolved address already
-          // exists as a contact key or as another contact's resolved address
-          const resolved = resolvedAddressRef.current;
-          if (resolved) {
-            const resolvedLower = resolved.toLowerCase();
-            return !Object.entries(existingContacts).some(
-              ([key, contact]) =>
-                key.toLowerCase() === resolvedLower ||
-                contact.resolvedAddress?.toLowerCase() === resolvedLower,
-            );
-          }
-          return true;
-        },
-      ),
-    name: YupString()
-      .required(t("Name cannot be empty"))
-      .trim()
-      .test(
-        "is-not-duplicate-name",
-        t("This name already exists in your contacts"),
-        (val) => {
-          if (!val) return true;
-          return !Object.values(existingContacts).some(
-            (c) => c.name.toLowerCase() === val.trim().toLowerCase(),
-          );
-        },
-      ),
-  });
-
-  const initialValues: ContactFormValues = {
-    address: initialAddress,
-    name: initialName,
+  const refs: FederationRefs = {
+    resolvedAddress: React.useRef<string | undefined>(undefined),
+    lastResolvedInput: React.useRef<string | undefined>(undefined),
+    federationFailed: React.useRef(false),
+    hasAddressBlurred: React.useRef(false),
+    activeField: React.useRef<string | null>(null),
+    abortController: React.useRef<AbortController | null>(null),
+    isMounted: React.useRef(true),
   };
 
+  // Cleanup on unmount — cancel any in-flight federation request
+  React.useEffect(() => {
+    return () => {
+      refs.isMounted.current = false;
+      refs.abortController.current?.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const contactFormSchema = createContactFormSchema({
+    t,
+    existingContacts,
+    refs,
+    setIsFetchingFederationAddress,
+  });
+
   const handleSubmit = (values: ContactFormValues) => {
-    onSave(values.address, values.name.trim(), resolvedAddressRef.current);
+    const trimmedAddress = values.address.trim();
+    const sanitizedName = sanitizeName(values.name.trim());
+    onSave(trimmedAddress, sanitizedName, refs.resolvedAddress.current);
   };
 
   return (
     <Formik
-      initialValues={initialValues}
+      initialValues={{ address: initialAddress, name: initialName }}
       validationSchema={contactFormSchema}
       validateOnMount
       onSubmit={handleSubmit}
@@ -131,12 +84,19 @@ export const EditContactCard = ({
       {({
         errors,
         touched,
+        dirty,
         isValid,
         isSubmitting,
         validateField,
         handleBlur,
         handleChange,
-      }) => {
+      }: FormikProps<ContactFormValues>) => {
+        // Report dirty state to parent for dismiss confirmation
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        React.useEffect(() => {
+          onDirtyChange?.(dirty);
+        }, [dirty]);
+
         return (
           <Form>
             <div className="EditContactCard">
@@ -160,20 +120,23 @@ export const EditContactCard = ({
                     customInput={
                       <Field
                         onFocus={() => {
-                          activeFieldRef.current = "address";
+                          refs.activeField.current = "address";
                         }}
                         onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
                           handleBlur(e);
-                          if (isFederationAddress(e.target.value)) {
-                            hasAddressBlurred.current = true;
+                          if (isFederationAddress(e.target.value.trim())) {
+                            refs.hasAddressBlurred.current = true;
                             validateField("address");
                           }
                         }}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                           handleChange(e);
-                          if (hasAddressBlurred.current) {
-                            hasAddressBlurred.current = false;
-                            resolvedAddressRef.current = undefined;
+                          if (refs.hasAddressBlurred.current) {
+                            refs.hasAddressBlurred.current = false;
+                            refs.resolvedAddress.current = undefined;
+                            refs.lastResolvedInput.current = undefined;
+                            refs.federationFailed.current = false;
+                            refs.abortController.current?.abort();
                           }
                         }}
                       />
@@ -187,11 +150,12 @@ export const EditContactCard = ({
                     id="contact-name"
                     placeholder={t("Name")}
                     leftElement={<Icon.User01 />}
+                    maxLength={NAME_MAX_LENGTH}
                     error={errors.name && touched.name ? errors.name : ""}
                     customInput={
                       <Field
                         onFocus={() => {
-                          activeFieldRef.current = "name";
+                          refs.activeField.current = "name";
                         }}
                       />
                     }

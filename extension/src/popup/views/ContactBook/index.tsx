@@ -13,7 +13,11 @@ import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { EditContactCard } from "popup/components/EditContactCard";
-import { truncatedPublicKey } from "helpers/stellar";
+import {
+  truncatedPublicKey,
+  truncatedFedAddress,
+  isFederationAddress,
+} from "helpers/stellar";
 import { Toaster } from "popup/basics/shadcn/Toast";
 
 import "./styles.scss";
@@ -39,6 +43,11 @@ export const ContactBook = () => {
   const [cardMode, setCardMode] = useState<CardMode | null>(null);
   const [openMenuAddress, setOpenMenuAddress] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const isFormDirtyRef = useRef(false);
+
+  const handleFormDirtyChange = useCallback((dirty: boolean) => {
+    isFormDirtyRef.current = dirty;
+  }, []);
 
   const handleAddContact = useCallback(() => {
     setCardMode({ type: "add" });
@@ -112,6 +121,7 @@ export const ContactBook = () => {
             className: "ContactBook__toast",
           });
         }
+        isFormDirtyRef.current = false;
         setCardMode(null);
       } catch {
         toast.error(t("Failed to save contact"), {
@@ -124,8 +134,15 @@ export const ContactBook = () => {
   );
 
   const handleDismissCard = useCallback(() => {
+    if (
+      isFormDirtyRef.current &&
+      !window.confirm(t("You have unsaved changes. Discard them?"))
+    ) {
+      return;
+    }
+    isFormDirtyRef.current = false;
     setCardMode(null);
-  }, []);
+  }, [t]);
 
   const toggleMenu = useCallback((address: string) => {
     setOpenMenuAddress((prev) => (prev === address ? null : address));
@@ -212,7 +229,9 @@ export const ContactBook = () => {
                   <div className="ContactBook__row__details">
                     <span className="ContactBook__row__name">{data.name}</span>
                     <span className="ContactBook__row__address">
-                      {truncatedPublicKey(address)}
+                      {isFederationAddress(address)
+                        ? truncatedFedAddress(address)
+                        : truncatedPublicKey(address)}
                     </span>
                   </div>
                 </div>
@@ -273,6 +292,7 @@ export const ContactBook = () => {
               existingContacts={existingContacts}
               onSave={handleSaveContact}
               onCancel={handleDismissCard}
+              onDirtyChange={handleFormDirtyChange}
             />
           </div>
         </div>

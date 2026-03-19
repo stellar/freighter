@@ -71,8 +71,8 @@ import { SignMessage } from "./views/SignMessage";
 
 import { View } from "./basics/layout/View";
 import { AppDispatch } from "./App";
-import { Toaster } from "./basics/shadcn/Toast";
 
+import { Toaster } from "./basics/shadcn/Toast";
 import "popup/metrics/views";
 
 /*
