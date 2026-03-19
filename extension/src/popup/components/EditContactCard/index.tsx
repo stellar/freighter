@@ -18,6 +18,7 @@ interface EditContactCardProps {
   title: string;
   address?: string;
   name?: string;
+  resolvedAddress?: string;
   existingContacts: ContactsMap;
   onSave: (address: string, name: string, resolvedAddress?: string) => void;
   onCancel: () => void;
@@ -33,6 +34,7 @@ export const EditContactCard = ({
   title: cardTitle,
   address: initialAddress = "",
   name: initialName = "",
+  resolvedAddress: initialResolvedAddress,
   existingContacts,
   onSave,
   onCancel,
@@ -43,8 +45,10 @@ export const EditContactCard = ({
     React.useState(false);
 
   const refs: FederationRefs = {
-    resolvedAddress: React.useRef<string | undefined>(undefined),
-    lastResolvedInput: React.useRef<string | undefined>(undefined),
+    resolvedAddress: React.useRef<string | undefined>(initialResolvedAddress),
+    lastResolvedInput: React.useRef<string | undefined>(
+      initialResolvedAddress ? initialAddress : undefined,
+    ),
     federationFailed: React.useRef(false),
     hasAddressBlurred: React.useRef(false),
     activeField: React.useRef<string | null>(null),
