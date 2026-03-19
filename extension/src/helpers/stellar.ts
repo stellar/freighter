@@ -252,7 +252,7 @@ export const isFederationAddress = (address: string) => {
 
 export const isValidDomain = (input: string) => {
   // eslint-disable-next-line no-useless-escape
-  const domainRegex = /^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6}$/i;
+  const domainRegex = /^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,63}$/i;
   if (domainRegex.test(input)) {
     return true;
   } else {
