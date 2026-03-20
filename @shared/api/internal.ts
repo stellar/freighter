@@ -2208,7 +2208,7 @@ export const simulateTransaction = async (args: {
     body: JSON.stringify({
       xdr,
       network_passphrase: networkDetails.networkPassphrase,
-      network_url: networkDetails.networkUrl,
+      network_url: networkDetails.sorobanRpcUrl,
     }),
   };
   const res = await fetch(`${INDEXER_URL}/simulate-tx`, options);
