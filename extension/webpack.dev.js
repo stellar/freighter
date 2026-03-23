@@ -39,6 +39,10 @@ const devConfig = (env = {}) => ({
     port: 9000,
   },
   plugins: [
+    new webpack.DefinePlugin({
+      DEV_SERVER: true,
+      DEV_EXTENSION: true,
+    }),
     new webpack.NormalModuleReplacementPlugin(
       /webextension-polyfill/,
       path.resolve(__dirname, "../config/shims/webextension-polyfill.ts"),
@@ -52,9 +56,8 @@ const devConfig = (env = {}) => ({
 module.exports = (env = {}) => {
   const mergedEnv = {
     ...env,
-    DEV_SERVER: true,
-    DEV_EXTENSION: true,
     AMPLITUDE_KEY: env.AMPLITUDE_KEY || process.env.AMPLITUDE_KEY || "",
+    BUILD_TYPE: "development",
   };
   return merge(devConfig(mergedEnv), commonConfig(mergedEnv));
 };

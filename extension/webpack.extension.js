@@ -64,6 +64,10 @@ const prodConfig = (
     },
 
     plugins: [
+      new webpack.DefinePlugin({
+        DEV_SERVER: false,
+        DEV_EXTENSION: !env.PRODUCTION,
+      }),
       ...(env.TRANSLATIONS
         ? [
             new I18nextWebpackPlugin({
@@ -107,8 +111,7 @@ const prodConfig = (
 module.exports = (env) => {
   const mergedEnv = {
     ...env,
-    DEV_SERVER: false,
-    DEV_EXTENSION: !env.PRODUCTION,
+    BUILD_TYPE: env.PRODUCTION ? "production" : "beta",
   };
   return merge(prodConfig(mergedEnv), commonConfig(mergedEnv));
 };
