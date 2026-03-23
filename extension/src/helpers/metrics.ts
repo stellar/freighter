@@ -258,16 +258,23 @@ const refreshDebugInfoSnapshot = () => {
  * updates (data-sharing toggle) so the debug panel stays reactive.
  * Compatible with React's `useSyncExternalStore`.
  */
+let unsubscribeFromStore: (() => void) | null = null;
+
 export const subscribeToDebugInfo = (listener: () => void): (() => void) => {
   // Lazily subscribe to the Redux store on first listener.
   if (debugInfoListeners.length === 0) {
-    store.subscribe(refreshDebugInfoSnapshot);
+    unsubscribeFromStore = store.subscribe(refreshDebugInfoSnapshot);
   }
   debugInfoListeners.push(listener);
   // Refresh immediately so the first subscriber gets current data.
   refreshDebugInfoSnapshot();
   return () => {
     debugInfoListeners = debugInfoListeners.filter((l) => l !== listener);
+    // Clean up the Redux subscription when no listeners remain.
+    if (debugInfoListeners.length === 0 && unsubscribeFromStore) {
+      unsubscribeFromStore();
+      unsubscribeFromStore = null;
+    }
   };
 };
 
@@ -380,10 +387,23 @@ export const initAmplitude = () => {
 /**
  * Returns the extension's manifest version when running as a real extension,
  * or the package.json version (injected at build time) when running on the
- * dev server where `chrome.runtime` is unavailable.
+ * dev server where runtime APIs are unavailable.
  */
-const getAppVersion = (): string =>
-  chrome?.runtime?.getManifest?.()?.version ?? APP_VERSION;
+const getAppVersion = (): string => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const g = globalThis as any;
+
+  // Chrome / Chromium-based extensions
+  const chromeVersion = g?.chrome?.runtime?.getManifest?.()?.version;
+  if (chromeVersion) return chromeVersion;
+
+  // Firefox extensions (browser.* API)
+  const browserVersion = g?.browser?.runtime?.getManifest?.()?.version;
+  if (browserVersion) return browserVersion;
+
+  // Dev server or unknown environment — use build-time constant
+  return APP_VERSION;
+};
 
 /**
  * Builds common context data attached to every event.

@@ -82,7 +82,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22
-      - run:
+      - run: >
           yarn && yarn build:freighter-api && yarn build:extension:production
           --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{
           secrets.SENTRY_KEY }}"
