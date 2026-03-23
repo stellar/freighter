@@ -44,6 +44,7 @@ const prodConfig = (
     PRODUCTION: false,
     TRANSLATIONS: false,
     AMPLITUDE_KEY: "",
+    AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY: "",
     SENTRY_KEY: "",
   },
 ) =>
@@ -104,11 +105,19 @@ const prodConfig = (
     },
   });
 
-module.exports = (env) => {
+module.exports = (env = {}) => {
   const mergedEnv = {
     ...env,
     DEV_SERVER: false,
     DEV_EXTENSION: !env.PRODUCTION,
+    // Ensure these are always strings so JSON.stringify() in DefinePlugin
+    // never receives `undefined`. Falls back to process.env (dotenv-loaded)
+    // and finally to "" when neither a CLI --env flag nor an env var is set.
+    AMPLITUDE_KEY: env.AMPLITUDE_KEY || process.env.AMPLITUDE_KEY || "",
+    AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY:
+      env.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY ||
+      process.env.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY ||
+      "",
   };
   return merge(prodConfig(mergedEnv), commonConfig(mergedEnv));
 };

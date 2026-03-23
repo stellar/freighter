@@ -1,0 +1,62 @@
+.MaintenanceScreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  background-color: var(--sds-clr-gray-01);
+  text-align: center;
+
+  &__logo {
+    width: 3rem;
+    height: auto;
+    margin-bottom: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  &__card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: var(--sds-clr-gray-03);
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 22rem;
+    gap: 0.75rem;
+  }
+
+  &__icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sds-clr-lilac-11);
+    margin-bottom: 0.25rem;
+
+    svg {
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+  }
+
+  &__title {
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    p {
+      color: var(--sds-clr-gray-09);
+      margin: 0;
+    }
+  }
+}

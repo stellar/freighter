@@ -30,10 +30,18 @@
   transform: translateY(0);
   opacity: 1;
   pointer-events: auto;
+  // Explicitly restore visibility when opening so children are visible to Playwright.
+  visibility: visible;
 }
 
 .SlideupModal.closed {
   transform: translateY(100%);
   opacity: 0;
   pointer-events: none;
+  // `visibility: hidden` is required for Playwright's checkVisibility() to detect
+  // the closed state. Playwright 1.57 does not check opacity:0 for visibility,
+  // but it does check visibility:hidden (including inherited from ancestors).
+  // This ensures .not.toBeVisible() assertions pass in E2E tests for modal content
+  // that lives inside a closed SlideupModal.
+  visibility: hidden;
 }

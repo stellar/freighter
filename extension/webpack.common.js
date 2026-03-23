@@ -16,6 +16,7 @@ const commonConfig = (
   env = {
     EXPERIMENTAL: false,
     AMPLITUDE_KEY: "",
+    AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY: "",
     SENTRY_KEY: "",
     DEV_SERVER: false,
     DEV_EXTENSION: false,
@@ -166,6 +167,9 @@ const commonConfig = (
     new webpack.DefinePlugin({
       EXPERIMENTAL: env.EXPERIMENTAL,
       AMPLITUDE_KEY: JSON.stringify(env.AMPLITUDE_KEY),
+      AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY: JSON.stringify(
+        env.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY,
+      ),
       SENTRY_KEY: JSON.stringify(env.SENTRY_KEY),
       DEV_SERVER: JSON.stringify(String(env.DEV_SERVER || false)),
       DEV_EXTENSION: JSON.stringify(String(env.DEV_EXTENSION || false)),

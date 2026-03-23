@@ -14,6 +14,7 @@ import {
   APP_VERSION,
   BUILD_TYPE,
 } from "constants/env";
+import { initExperimentClient } from "helpers/experimentClient";
 import { isDev } from "@shared/helpers/dev";
 import {
   settingsDataSharingSelector,
@@ -377,6 +378,10 @@ export const initAmplitude = () => {
 
     hasInitialized = true;
 
+    // Initialize Experiment client now that analytics is ready.
+    // initializeWithAmplitudeAnalytics requires the analytics SDK to be started first.
+    initExperimentClient();
+
     // Keep opt-out in sync whenever the data-sharing setting changes in Redux.
     // This is the authoritative source of truth; the initial call above may fire
     // before settings are loaded from the background script.
@@ -410,7 +415,6 @@ export const initAmplitude = () => {
  * dev server where runtime APIs are unavailable.
  */
 const getAppVersion = (): string => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const g = globalThis as any;
 
   // Chrome / Chromium-based extensions

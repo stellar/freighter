@@ -1,0 +1,33 @@
+.MaintenanceBanner {
+  cursor: default;
+
+  &[role="button"] {
+    cursor: pointer;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+
+  &__modal {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem;
+  }
+
+  &__modal-title {
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    p {
+      color: var(--sds-clr-gray-09);
+      margin: 0;
+    }
+  }
+}

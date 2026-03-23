@@ -55,6 +55,10 @@ module.exports = (env = {}) => {
     DEV_SERVER: true,
     DEV_EXTENSION: true,
     AMPLITUDE_KEY: env.AMPLITUDE_KEY || process.env.AMPLITUDE_KEY || "",
+    AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY:
+      env.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY ||
+      process.env.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY ||
+      "",
   };
   return merge(devConfig(mergedEnv), commonConfig(mergedEnv));
 };

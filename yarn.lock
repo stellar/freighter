@@ -453,6 +453,28 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@amplitude/experiment-core@npm:^0.12.0":
+  version: 0.12.0
+  resolution: "@amplitude/experiment-core@npm:0.12.0"
+  dependencies:
+    js-base64: "npm:^3.7.5"
+  checksum: 10c0/a78e941199bb97a7a5bf4005357e85d78bdab830853d79cb88e7ecb1bd90c1c35dd3b6fc383c349257066337346f52bc163f4f565ae06e08b2f699982dc41869
+  languageName: node
+  linkType: hard
+
+"@amplitude/experiment-js-client@npm:^1.20.3":
+  version: 1.20.3
+  resolution: "@amplitude/experiment-js-client@npm:1.20.3"
+  dependencies:
+    "@amplitude/analytics-connector": "npm:^1.6.4"
+    "@amplitude/experiment-core": "npm:^0.12.0"
+    "@amplitude/ua-parser-js": "npm:^0.7.31"
+    base64-js: "npm:1.5.1"
+    unfetch: "npm:4.1.0"
+  checksum: 10c0/387358e48f834c012934d23ff2a810d85c83bf870b8dffa36c977b477a38b21a6a9bca9ef6049973ff649c2961bc77a462466e8c9f54f88ca6592d555ca52a89
+  languageName: node
+  linkType: hard
+
 "@amplitude/plugin-autocapture-browser@npm:1.24.1":
   version: 1.24.1
   resolution: "@amplitude/plugin-autocapture-browser@npm:1.24.1"
@@ -511,6 +533,13 @@ __metadata:
     tslib: "npm:^2.4.1"
     web-vitals: "npm:5.1.0"
   checksum: 10c0/283b720ff62be4421fdd5cd5befa041bd21670f462e4ef078b7b8bd640979d656e7cca1d799418fc1871a59025ba9a30c1ccf1b0402187e729c5708d55b53d73
+  languageName: node
+  linkType: hard
+
+"@amplitude/ua-parser-js@npm:^0.7.31":
+  version: 0.7.33
+  resolution: "@amplitude/ua-parser-js@npm:0.7.33"
+  checksum: 10c0/9f44b78701655a3b1da9f0721324355ae5d1548c08c46a74b90cfa55de4fca40f97a3c90cb7ae46d405706f1383f7f8dda4b34aee5f9eb3f738c86a934ec1f8b
   languageName: node
   linkType: hard
 
@@ -8502,7 +8531,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"base64-js@npm:^1.3.1":
+"base64-js@npm:1.5.1, base64-js@npm:^1.3.1":
   version: 1.5.1
   resolution: "base64-js@npm:1.5.1"
   checksum: 10c0/f23823513b63173a001030fae4f2dabe283b99a9d324ade3ad3d148e218134676f1ee8568c877cd79ec1c53158dcf2d2ba527a97c606618928ba99dd930102bf
@@ -12207,6 +12236,7 @@ __metadata:
   resolution: "extension@workspace:extension"
   dependencies:
     "@amplitude/analytics-browser": "npm:^2.37.0"
+    "@amplitude/experiment-js-client": "npm:^1.20.3"
     "@lavamoat/allow-scripts": "npm:3.3.2"
     "@ledgerhq/hw-app-str": "npm:7.2.0"
     "@ledgerhq/hw-transport-webhid": "npm:6.30.6"
@@ -15893,6 +15923,13 @@ __metadata:
   version: 6.1.3
   resolution: "jose@npm:6.1.3"
   checksum: 10c0/b9577b4a7a5e84131011c23823db9f5951eae3ba796771a6a2401ae5dd50daf71104febc8ded9c38146aa5ebe94a92ac09c725e699e613ef26949b9f5a8bc30f
+  languageName: node
+  linkType: hard
+
+"js-base64@npm:^3.7.5":
+  version: 3.7.8
+  resolution: "js-base64@npm:3.7.8"
+  checksum: 10c0/a4452a7e7f32b0ef568a344157efec00c14593bbb1cf0c113f008dddff7ec515b35147af0cd70a7735adb69a2a2bdee921adffea2ea465e2c856ba50d649b11e
   languageName: node
   linkType: hard
 
@@ -24222,6 +24259,13 @@ __metadata:
   version: 7.15.0
   resolution: "undici@npm:7.15.0"
   checksum: 10c0/2c526bf157771c11e3ce297b2173cbde67b057db33263d3923529f40f57159a5ed8dab5134766091ed8aba529ddf023becb5e04292e23924f14d9b6fa79dcd4e
+  languageName: node
+  linkType: hard
+
+"unfetch@npm:4.1.0":
+  version: 4.1.0
+  resolution: "unfetch@npm:4.1.0"
+  checksum: 10c0/36ac46e654648acb227a739b30afd303121985613ae043b794d9daf39fb2888b5d013927e5803e6ea28d154ae1dabfa0dfd8cbcb91d839f765ec03979848e06c
   languageName: node
   linkType: hard
 

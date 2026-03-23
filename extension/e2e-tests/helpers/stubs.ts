@@ -2838,3 +2838,75 @@ export const stubReportTransactionWarning = async (
     await route.fulfill({ json });
   });
 };
+
+// ---------------------------------------------------------------------------
+// Maintenance mode state injection helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Injects a `maintenance_screen` enabled state directly into the Redux store
+ * via `window.__store` (exposed in E2E builds when `IS_PLAYWRIGHT` is set).
+ *
+ * This bypasses the Amplitude Experiment SDK entirely, making the tests
+ * independent of any deployment key or network connectivity.
+ *
+ * @param page - The extension popup page
+ * @param content - Title and body paragraphs to display on the overlay
+ */
+export const injectMaintenanceScreenState = async (
+  page: Page,
+  content: { title: string; body: string[] },
+) => {
+  await page.evaluate((payload) => {
+    const store = (window as any).__store;
+    if (!store) {
+      throw new Error(
+        "Redux store not found on window.__store. " +
+          "IS_PLAYWRIGHT must be set before page scripts run.",
+      );
+    }
+    store.dispatch({
+      type: "remoteConfig/fetchFeatureFlags/fulfilled",
+      payload: {
+        isInitialized: true,
+        maintenanceScreen: { enabled: true, content: payload },
+        maintenanceBanner: { enabled: false, content: null },
+      },
+    });
+  }, content);
+};
+
+/**
+ * Injects a `maintenance_banner` enabled state directly into the Redux store
+ * via `window.__store` (exposed in E2E builds when `IS_PLAYWRIGHT` is set).
+ *
+ * @param page - The extension popup page
+ * @param content - Banner title, theme, and optional url/modal payload
+ */
+export const injectMaintenanceBannerState = async (
+  page: Page,
+  content: {
+    theme: string;
+    bannerTitle: string;
+    url?: string;
+    modal?: { title: string; body: string[] };
+  },
+) => {
+  await page.evaluate((payload) => {
+    const store = (window as any).__store;
+    if (!store) {
+      throw new Error(
+        "Redux store not found on window.__store. " +
+          "IS_PLAYWRIGHT must be set before page scripts run.",
+      );
+    }
+    store.dispatch({
+      type: "remoteConfig/fetchFeatureFlags/fulfilled",
+      payload: {
+        isInitialized: true,
+        maintenanceBanner: { enabled: true, content: payload },
+        maintenanceScreen: { enabled: false, content: null },
+      },
+    });
+  }, content);
+};
