@@ -167,8 +167,8 @@ const commonConfig = (
       EXPERIMENTAL: env.EXPERIMENTAL,
       AMPLITUDE_KEY: JSON.stringify(env.AMPLITUDE_KEY),
       SENTRY_KEY: JSON.stringify(env.SENTRY_KEY),
-      DEV_SERVER: env.DEV_SERVER || false,
-      DEV_EXTENSION: env.DEV_EXTENSION || false,
+      DEV_SERVER: JSON.stringify(String(env.DEV_SERVER || false)),
+      DEV_EXTENSION: JSON.stringify(String(env.DEV_EXTENSION || false)),
       APP_VERSION: JSON.stringify(packageJson.version),
       BUILD_TYPE: JSON.stringify(
         env.DEV_SERVER

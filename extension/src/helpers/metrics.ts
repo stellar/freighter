@@ -118,9 +118,6 @@ export interface DebugEvent {
   props?: Record<string, unknown>;
 }
 
-let recentEventsSnapshot: DebugEvent[] = [];
-let debugListeners: Array<() => void> = [];
-
 /**
  * Reads persisted debug events from localStorage, filtering out any
  * entries older than DEBUG_EVENT_TTL_MS.
@@ -137,6 +134,11 @@ const readPersistedEvents = (): DebugEvent[] => {
     return [];
   }
 };
+
+// Initialize the snapshot from localStorage so the debug panel shows
+// persisted events immediately after a page refresh (dev only).
+let recentEventsSnapshot: DebugEvent[] = isDev ? readPersistedEvents() : [];
+let debugListeners: Array<() => void> = [];
 
 /**
  * Writes the given events array to localStorage, capped at
@@ -180,11 +182,11 @@ const addToRecentEvents = (
 ): void => {
   if (!isDev) return;
 
+  const entry: DebugEvent = { event, timestamp: Date.now(), props };
   const events = readPersistedEvents();
-  const updated = [{ event, timestamp: Date.now(), props }, ...events];
+  const updated = [entry, ...events].slice(0, MAX_RECENT_EVENTS);
   writePersistedEvents(updated);
-  // Pass the already-computed array so invalidateSnapshot does not re-read.
-  invalidateSnapshot(updated.slice(0, MAX_RECENT_EVENTS));
+  invalidateSnapshot(updated);
 };
 
 /**
@@ -301,10 +303,33 @@ if (isDev && typeof window !== "undefined") {
   });
 }
 
+/**
+ * Generates a random UUID, preferring `crypto.randomUUID()` (available in
+ * modern browsers and secure extension contexts) with a
+ * `crypto.getRandomValues` fallback for older environments.
+ */
+const generateUserId = (): string => {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
+  }
+  // Fallback: build a v4-style UUID from getRandomValues
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+  bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 1
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(
+    "",
+  );
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+};
+
 const getUserId = () => {
   const storedId = localStorage.getItem(METRICS_USER_ID_KEY);
   if (!storedId) {
-    const newId = crypto.randomUUID();
+    const newId = generateUserId();
     localStorage.setItem(METRICS_USER_ID_KEY, newId);
     return newId;
   }
