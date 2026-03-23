@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -31,6 +31,27 @@ export const Swap = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeStep, setActiveStep] = React.useState(STEPS.AMOUNT);
+  const lastEmittedStep = useRef<STEPS | null>(null);
+
+  // Emit a screen-view metric only once per step transition.
+  useEffect(() => {
+    if (activeStep === lastEmittedStep.current) return;
+    lastEmittedStep.current = activeStep;
+
+    const metricByStep: Partial<Record<STEPS, string>> = {
+      [STEPS.SWAP_CONFIRM]: METRIC_NAMES.swapConfirm,
+      [STEPS.SET_DST_ASSET]: METRIC_NAMES.swapTo,
+      [STEPS.AMOUNT]: METRIC_NAMES.swapAmount,
+      [STEPS.CONFIRM_AMOUNT]: METRIC_NAMES.swapAmountReview,
+      [STEPS.SET_FROM_ASSET]: METRIC_NAMES.swapFrom,
+    };
+
+    const metric = metricByStep[activeStep];
+    if (metric) {
+      emitMetric(metric);
+    }
+  }, [activeStep]);
+
   const submission = useSelector(transactionSubmissionSelector);
   const { transactionSimulation, transactionData } = submission;
 
@@ -75,7 +96,6 @@ export const Swap = () => {
   const renderStep = (step: STEPS) => {
     switch (step) {
       case STEPS.SWAP_CONFIRM: {
-        emitMetric(METRIC_NAMES.swapConfirm);
         return (
           <TransactionConfirm
             xdr={transactionSimulation.preparedTransaction!}
@@ -84,7 +104,6 @@ export const Swap = () => {
         );
       }
       case STEPS.SET_DST_ASSET: {
-        emitMetric(METRIC_NAMES.swapTo);
         return (
           <SwapAsset
             title={t("Swap to")}
@@ -99,7 +118,6 @@ export const Swap = () => {
         );
       }
       case STEPS.AMOUNT: {
-        emitMetric(METRIC_NAMES.swapAmount);
         return (
           <SwapAmount
             inputType={inputType}
@@ -116,7 +134,6 @@ export const Swap = () => {
         );
       }
       case STEPS.CONFIRM_AMOUNT: {
-        emitMetric(METRIC_NAMES.swapAmount);
         return (
           <SwapAmount
             inputType={inputType}
@@ -130,7 +147,6 @@ export const Swap = () => {
       }
       case STEPS.SET_FROM_ASSET:
       default: {
-        emitMetric(METRIC_NAMES.swapFrom);
         return (
           <SwapAsset
             title={t("Swap from")}

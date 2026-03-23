@@ -31,7 +31,7 @@ if (missingVars.length > 0) {
   process.exit(1);
 }
 
-const devConfig = {
+const devConfig = (env = {}) => ({
   mode: "development",
   devtool: "cheap-source-map",
   devServer: {
@@ -39,16 +39,22 @@ const devConfig = {
     port: 9000,
   },
   plugins: [
-    new webpack.DefinePlugin({
-      DEV_SERVER: true,
-      DEV_EXTENSION: true,
-    }),
     new webpack.NormalModuleReplacementPlugin(
       /webextension-polyfill/,
       path.resolve(__dirname, "../config/shims/webextension-polyfill.ts"),
     ),
     new Dotenv(),
   ],
-};
+});
 
-module.exports = (env) => merge(devConfig, commonConfig(env));
+// Merge AMPLITUDE_KEY from .env into the env object passed to commonConfig,
+// so its DefinePlugin handles the value without conflicts.
+module.exports = (env = {}) => {
+  const mergedEnv = {
+    ...env,
+    DEV_SERVER: true,
+    DEV_EXTENSION: true,
+    AMPLITUDE_KEY: env.AMPLITUDE_KEY || process.env.AMPLITUDE_KEY || "",
+  };
+  return merge(devConfig(mergedEnv), commonConfig(mergedEnv));
+};

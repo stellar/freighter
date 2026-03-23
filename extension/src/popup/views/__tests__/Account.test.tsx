@@ -263,7 +263,24 @@ jest.mock("helpers/metrics", () => ({
   registerHandler: jest.fn(),
   storeBalanceMetricData: jest.fn(),
   emitMetric: jest.fn(),
+  initAmplitude: jest.fn(),
   metricsMiddleware: jest.fn(),
+  getAnalyticsDebugInfo: jest.fn(() => ({
+    hasInitialized: false,
+    hasAmplitudeKey: false,
+    userId: null,
+    isSendingToAmplitude: false,
+  })),
+  getDebugInfoSnapshot: jest.fn(() => ({
+    hasInitialized: false,
+    hasAmplitudeKey: false,
+    userId: null,
+    isSendingToAmplitude: false,
+  })),
+  subscribeToDebugInfo: jest.fn(() => () => {}),
+  getRecentEvents: jest.fn(() => []),
+  clearRecentEvents: jest.fn(),
+  subscribeToDebugEvents: jest.fn(() => () => {}),
 }));
 
 jest.mock("popup/ducks/accountServices", () => {

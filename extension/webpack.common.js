@@ -8,11 +8,18 @@ const path = require("path");
 const webpack = require("webpack");
 
 const { DEFAULT_STATS } = require("../config/webpack");
+const packageJson = require("./package.json");
 
 const BUILD_PATH = path.resolve(__dirname, "./build");
 
 const commonConfig = (
-  env = { EXPERIMENTAL: false, AMPLITUDE_KEY: "", SENTRY_KEY: "" },
+  env = {
+    EXPERIMENTAL: false,
+    AMPLITUDE_KEY: "",
+    SENTRY_KEY: "",
+    DEV_SERVER: false,
+    DEV_EXTENSION: false,
+  },
 ) => ({
   cache: true,
   entry: {
@@ -160,6 +167,16 @@ const commonConfig = (
       EXPERIMENTAL: env.EXPERIMENTAL,
       AMPLITUDE_KEY: JSON.stringify(env.AMPLITUDE_KEY),
       SENTRY_KEY: JSON.stringify(env.SENTRY_KEY),
+      DEV_SERVER: env.DEV_SERVER || false,
+      DEV_EXTENSION: env.DEV_EXTENSION || false,
+      APP_VERSION: JSON.stringify(packageJson.version),
+      BUILD_TYPE: JSON.stringify(
+        env.DEV_SERVER
+          ? "development"
+          : env.DEV_EXTENSION
+            ? "beta"
+            : "production",
+      ),
     }),
     new MiniCssExtractPlugin({
       filename: "[name].min.css",
