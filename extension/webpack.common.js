@@ -18,8 +18,7 @@ const commonConfig = (
     AMPLITUDE_KEY: "",
     AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY: "",
     SENTRY_KEY: "",
-    DEV_SERVER: false,
-    DEV_EXTENSION: false,
+    BUILD_TYPE: "production",
   },
 ) => ({
   cache: true,
@@ -171,16 +170,8 @@ const commonConfig = (
         env.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY,
       ),
       SENTRY_KEY: JSON.stringify(env.SENTRY_KEY),
-      DEV_SERVER: JSON.stringify(String(env.DEV_SERVER || false)),
-      DEV_EXTENSION: JSON.stringify(String(env.DEV_EXTENSION || false)),
       APP_VERSION: JSON.stringify(packageJson.version),
-      BUILD_TYPE: JSON.stringify(
-        env.DEV_SERVER
-          ? "development"
-          : env.DEV_EXTENSION
-            ? "beta"
-            : "production",
-      ),
+      BUILD_TYPE: JSON.stringify(env.BUILD_TYPE || "production"),
     }),
     new MiniCssExtractPlugin({
       filename: "[name].min.css",
