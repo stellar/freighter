@@ -415,7 +415,6 @@ export const initAmplitude = () => {
  * dev server where runtime APIs are unavailable.
  */
 const getAppVersion = (): string => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const g = globalThis as any;
 
   // Chrome / Chromium-based extensions
