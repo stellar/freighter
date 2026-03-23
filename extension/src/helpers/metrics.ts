@@ -140,9 +140,11 @@ const readPersistedEvents = (): DebugEvent[] => {
 
 /**
  * Writes the given events array to localStorage, capped at
- * MAX_RECENT_EVENTS. Silently ignores storage errors.
+ * MAX_RECENT_EVENTS. Only writes in dev builds — production builds
+ * never persist debug analytics data. Silently ignores storage errors.
  */
 const writePersistedEvents = (events: DebugEvent[]): void => {
+  if (!isDev) return; // defense-in-depth: never write analytics debug data in production
   try {
     localStorage.setItem(
       DEBUG_ANALYTICS_EVENTS,
@@ -295,8 +297,7 @@ if (isDev && typeof window !== "undefined") {
 const getUserId = () => {
   const storedId = localStorage.getItem(METRICS_USER_ID_KEY);
   if (!storedId) {
-    // Create a random ID by taking the decimal portion of a random number
-    const newId = Math.random().toString().split(".")[1];
+    const newId = crypto.randomUUID();
     localStorage.setItem(METRICS_USER_ID_KEY, newId);
     return newId;
   }
