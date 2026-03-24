@@ -124,7 +124,7 @@ jobs:
             exit 0
           fi
 
-          last_release_tag=$(git tag --list 'v*' --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)
+          last_release_tag=$(git tag --list '[0-9]*' --sort=-version:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)
 
           if [ -n "$last_release_tag" ]; then
             commits=$(git log "${last_release_tag}..HEAD" --pretty=format:'- %s' --no-merges 2>/dev/null || true)
