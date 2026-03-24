@@ -1,0 +1,297 @@
+name: New Release
+on:
+  workflow_dispatch:
+    inputs:
+      appVersion:
+        description: App version to bump to (e.g., 5.39.0)
+        required: true
+        type: string
+      branch:
+        description:
+          Branch or tag to release from (Default is `master`. For emergency
+          releases, enter the tag version to branch from, e.g. 5.38.0)
+        default: "master"
+        required: true
+        type: string
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  create-release:
+    name: Prepare Release Branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate and normalize app version
+        id: normalize_version
+        env:
+          RAW_APP_VERSION: ${{ inputs.appVersion }}
+        run: |
+          APP_VERSION="$RAW_APP_VERSION"
+          APP_VERSION=$(echo "$APP_VERSION" | sed 's/^v//')
+          if [[ ! "$APP_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Invalid version format. Expected format: 5.39.0 or v5.39.0"
+            exit 1
+          fi
+          echo "app_version=${APP_VERSION}" >> $GITHUB_OUTPUT
+          echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
+
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.branch }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine branch names
+        id: set_branches
+        run: |
+          APP_VERSION="${{ steps.normalize_version.outputs.app_version }}"
+          BRANCH_FROM="${{ inputs.branch }}"
+
+          if [ "$BRANCH_FROM" = "master" ]; then
+            RELEASE_BRANCH="release/${APP_VERSION}"
+          else
+            RELEASE_BRANCH="emergency-release/${APP_VERSION}"
+          fi
+
+          VERSION_BRANCH="v${APP_VERSION}"
+
+          echo "release_branch=${RELEASE_BRANCH}" >> $GITHUB_OUTPUT
+          echo "version_branch=${VERSION_BRANCH}" >> $GITHUB_OUTPUT
+
+      # Step 1: Create release branch
+      - name: Create and push release branch
+        env:
+          RELEASE_BRANCH: ${{ steps.set_branches.outputs.release_branch }}
+        run: |
+          if git ls-remote --heads origin "$RELEASE_BRANCH" | grep -q "$RELEASE_BRANCH"; then
+            echo "Error: Branch '$RELEASE_BRANCH' already exists on remote."
+            echo "Please delete the '$RELEASE_BRANCH' branch before starting a new release."
+            exit 1
+          fi
+          git checkout -b "$RELEASE_BRANCH"
+          git push --set-upstream origin "$RELEASE_BRANCH"
+
+      # Step 2: Version branch + PR against release
+      - name: Create version branch
+        env:
+          VERSION_BRANCH: ${{ steps.set_branches.outputs.version_branch }}
+        run: |
+          if git ls-remote --heads origin "$VERSION_BRANCH" | grep -q "$VERSION_BRANCH"; then
+            echo "Error: Branch '$VERSION_BRANCH' already exists on remote."
+            echo "Please delete the '$VERSION_BRANCH' branch before starting a new release."
+            exit 1
+          fi
+          git checkout -b "$VERSION_BRANCH"
+
+      - name: Update extension/package.json version
+        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
+        with:
+          file: ./extension/package.json
+          field: version
+          value: ${{ steps.normalize_version.outputs.app_version }}
+      - name: Update manifest v3 version
+        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
+        with:
+          file: ./extension/public/static/manifest/v3.json
+          field: version
+          value: ${{ steps.normalize_version.outputs.app_version }}
+      - name: Update manifest v3 version_name
+        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
+        with:
+          file: ./extension/public/static/manifest/v3.json
+          field: version_name
+          value: ${{ steps.normalize_version.outputs.app_version }}
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          OUTPUT_DELIM="__RELEASE_DESCRIPTION__"
+          BRANCH_FROM="${{ inputs.branch }}"
+
+          if [ "$BRANCH_FROM" != "master" ]; then
+            release_notes="Use this branch to push the emergency fix. Please replace this PR description with a description of the fix after it has been pushed."
+            {
+              echo "notes<<$OUTPUT_DELIM"
+              echo "$release_notes"
+              echo "$OUTPUT_DELIM"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          last_release_tag=$(git tag --list 'v*' --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)
+
+          if [ -n "$last_release_tag" ]; then
+            commits=$(git log "${last_release_tag}..HEAD" --pretty=format:'- %s' --no-merges 2>/dev/null || true)
+          else
+            commits=$(git log --pretty=format:'- %s' --no-merges 2>/dev/null || true)
+          fi
+
+          commits=$(printf '%s\n' "$commits" | sed '/^$/d')
+
+          if [ -z "$commits" ]; then
+            commits="- No commits since last release"
+          fi
+
+          printf -v release_notes '## Release Changes\n\n%s' "$commits"
+          release_notes=${release_notes%$'\n'}
+
+          {
+            echo "notes<<$OUTPUT_DELIM"
+            echo "$release_notes"
+            echo "$OUTPUT_DELIM"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push version branch
+        env:
+          APP_VERSION: ${{ steps.normalize_version.outputs.app_version }}
+          VERSION_BRANCH: ${{ steps.set_branches.outputs.version_branch }}
+        run: |
+          git add -A
+          git commit -m "v${APP_VERSION}"
+          git push --set-upstream origin "$VERSION_BRANCH"
+
+      - name: Open PR against release branch
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          APP_VERSION: ${{ steps.normalize_version.outputs.app_version }}
+          RELEASE_BRANCH: ${{ steps.set_branches.outputs.release_branch }}
+          VERSION_BRANCH: ${{ steps.set_branches.outputs.version_branch }}
+          BRANCH_FROM: ${{ inputs.branch }}
+          RELEASE_NOTES: ${{ steps.release_notes.outputs.notes }}
+        with:
+          script: |
+            const releaseBranch = process.env.RELEASE_BRANCH;
+            const versionBranch = process.env.VERSION_BRANCH;
+            const branchFrom = process.env.BRANCH_FROM;
+            const isEmergencyRelease = branchFrom !== "master";
+            const title = isEmergencyRelease
+              ? `[Emergency Release] v${process.env.APP_VERSION}`
+              : `v${process.env.APP_VERSION}`;
+            const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
+            const releaseNotes = process.env.RELEASE_NOTES || "";
+            const trimmedBody = releaseNotes.trim();
+            const body = trimmedBody.length > 0 ? releaseNotes : `Automated release for v${process.env.APP_VERSION}.`;
+
+            try {
+              const { data } = await github.rest.pulls.create({
+                owner,
+                repo,
+                head: versionBranch,
+                base: releaseBranch,
+                title,
+                body
+              });
+              core.notice(`Pull request ready: ${data.html_url}`);
+            } catch (error) {
+              if (error.status === 422) {
+                core.warning(`Pull request could not be created automatically: ${error.message}`);
+                const { data: existing } = await github.rest.pulls.list({
+                  owner,
+                  repo,
+                  head: `${owner}:${versionBranch}`,
+                  base: releaseBranch,
+                  state: "open"
+                });
+                if (existing.length > 0) {
+                  core.notice(`Existing pull request found: ${existing[0].html_url}`);
+                } else {
+                  throw error;
+                }
+              } else {
+                throw error;
+              }
+            }
+
+      # Step 3: Bump-version branch + PR against master (only for regular releases)
+      - name: Create bump-version branch
+        if: inputs.branch == 'master'
+        run: |
+          git checkout master
+          git pull origin master
+
+          if git ls-remote --heads origin bump-version | grep -q bump-version; then
+            echo "Error: Branch 'bump-version' already exists on remote."
+            echo "Please delete the 'bump-version' branch before starting a new release."
+            exit 1
+          fi
+
+          git checkout -b bump-version
+
+      - name: Update extension/package.json version (bump-version)
+        if: inputs.branch == 'master'
+        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
+        with:
+          file: ./extension/package.json
+          field: version
+          value: ${{ steps.normalize_version.outputs.app_version }}
+      - name: Update manifest v3 version (bump-version)
+        if: inputs.branch == 'master'
+        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
+        with:
+          file: ./extension/public/static/manifest/v3.json
+          field: version
+          value: ${{ steps.normalize_version.outputs.app_version }}
+      - name: Update manifest v3 version_name (bump-version)
+        if: inputs.branch == 'master'
+        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
+        with:
+          file: ./extension/public/static/manifest/v3.json
+          field: version_name
+          value: ${{ steps.normalize_version.outputs.app_version }}
+
+      - name: Commit and push bump-version branch
+        if: inputs.branch == 'master'
+        env:
+          APP_VERSION: ${{ steps.normalize_version.outputs.app_version }}
+        run: |
+          git add -A
+          git commit -m "bump versions to ${APP_VERSION}"
+          git push --set-upstream origin bump-version
+
+      - name: Open PR against master
+        if: inputs.branch == 'master'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          APP_VERSION: ${{ steps.normalize_version.outputs.app_version }}
+        with:
+          script: |
+            const version = process.env.APP_VERSION;
+            const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
+            const title = `Bump version to v${version} [merge now]`;
+            const body = `Bumping version on \`master\` branch to \`v${version}\`.`;
+
+            try {
+              const { data } = await github.rest.pulls.create({
+                owner,
+                repo,
+                head: "bump-version",
+                base: "master",
+                title,
+                body
+              });
+              core.notice(`Bump version pull request ready: ${data.html_url}`);
+            } catch (error) {
+              if (error.status === 422) {
+                core.warning(`Bump version pull request could not be created automatically: ${error.message}`);
+                const { data: existing } = await github.rest.pulls.list({
+                  owner,
+                  repo,
+                  head: `${owner}:bump-version`,
+                  base: "master",
+                  state: "open"
+                });
+                if (existing.length > 0) {
+                  core.notice(`Existing bump version pull request found: ${existing[0].html_url}`);
+                } else {
+                  throw error;
+                }
+              } else {
+                throw error;
+              }
+            }
