@@ -2,7 +2,7 @@ name: Run Integration Tests
 env:
   INDEXER_URL: ${{ secrets.INDEXER_URL }}
   INDEXER_V2_URL: ${{ secrets.INDEXER_V2_BETA_URL }}
-  INTEGRATION_MODE: true
+  IS_INTEGRATION_MODE: "true"
 on: [workflow_dispatch]
 concurrency:
   group: ${{ github.workflow }}
