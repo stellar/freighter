@@ -165,13 +165,11 @@
   &__modal-body {
     display: flex;
     flex-direction: column;
-    gap: pxToRem(16px);
-    margin-bottom: pxToRem(8px);
+    gap: pxToRem(12px);
   }
 
   &__modal-bodyText {
     color: var(--sds-clr-gray-11);
     margin: 0;
-    font-size: pxToRem(14px);
   }
 }

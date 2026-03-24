@@ -1,7 +1,7 @@
 import React from "react";
 import { configureStore } from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
-import { Provider } from "react-redux";
+import { Provider, useSelector } from "react-redux";
 
 import { metricsMiddleware, initAmplitude } from "helpers/metrics";
 import { activePublicKeyMiddleware } from "helpers/activePublicKeyMiddleware";
@@ -17,6 +17,7 @@ import { ErrorTracking } from "popup/components/ErrorTracking";
 import { AccountMismatch } from "popup/components/AccountMismatch";
 import { MaintenanceScreen } from "popup/components/MaintenanceScreen";
 import { useRemoteConfig } from "popup/helpers/hooks/useRemoteConfig";
+import { maintenanceScreenSelector } from "popup/ducks/remoteConfig";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Router } from "./Router";
 
@@ -53,17 +54,19 @@ if ((window as any).IS_PLAYWRIGHT) {
 initAmplitude();
 
 /**
- * Initializes the remote config (Amplitude Experiment flags) and renders the
- * maintenance screen overlay when the `maintenance_screen` flag is active.
+ * Initializes the remote config (Amplitude Experiment flags). When the
+ * `maintenance_screen` flag is active, renders only the maintenance screen
+ * and suppresses all other app content.
  */
 const MaintenanceGate = ({ children }: { children: React.ReactNode }) => {
   useRemoteConfig();
-  return (
-    <>
-      <MaintenanceScreen />
-      {children}
-    </>
-  );
+  const { enabled } = useSelector(maintenanceScreenSelector);
+
+  if (enabled) {
+    return <MaintenanceScreen />;
+  }
+
+  return <>{children}</>;
 };
 
 export const App = () => (

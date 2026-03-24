@@ -157,7 +157,7 @@ export const MaintenanceBanner: React.FC = () => {
                   {activeContent.modal.body.map((paragraph, index) => (
                     <Text
                       as="div"
-                      size="xs"
+                      size="sm"
                       key={index}
                       className="MaintenanceBanner__modal-bodyText"
                     >
