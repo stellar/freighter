@@ -1,91 +1,89 @@
-# name: PR Preview
-# env:
-#   INDEXER_URL: ${{ secrets.INDEXER_URL }}
-#   INDEXER_V2_URL: ${{ secrets.INDEXER_V2_BETA_URL }}
-# on:
-#   pull_request:
-#     types: [opened, synchronize, reopened, closed]
-# concurrency:
-#   group: pr-preview-${{ github.event.pull_request.number }}
-#   cancel-in-progress: true
-# permissions:
-#   contents: write
-# jobs:
-#   build-and-release:
-#     if: github.event.action != 'closed'
-#     name: Build and Release PR Preview
-#     runs-on: ubuntu-latest
-#     steps:
-#       - if: ${{ env.INDEXER_URL == '' }}
-#         run: |
-#           echo "Missing INDEXER_URL"
-#           gh run cancel ${{ github.run_id }}
-#           gh run watch ${{ github.run_id }}
-#       - if: ${{ env.INDEXER_V2_URL == '' }}
-#         run: |
-#           echo "Missing INDEXER_V2_URL"
-#           gh run cancel ${{ github.run_id }}
-#           gh run watch ${{ github.run_id }}
-#       - name: Checkout code
-#         uses: actions/checkout@v6
-#       - name: Update manifest-v3.json name
-#         uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
-#         with:
-#           file: ./extension/public/static/manifest/v3.json
-#           field: name
-#           value: Freighter PR Preview ${{ github.event.pull_request.number }}
-#       - name: Update manifest-v3.json version_name
-#         uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
-#         with:
-#           file: ./extension/public/static/manifest/v3.json
-#           field: version_name
-#           value: pr-preview-${{ github.event.pull_request.number }}
-#       - name: Enable Corepack
-#         run: corepack enable
-#       - name: Build extension
-#         uses: actions/setup-node@v6
-#         with:
-#           node-version: 22
-#       - run: yarn && yarn build:freighter-api && yarn build:extension:production
-#       - name: Use BETA icons
-#         run: |
-#           rm -rf ./extension/build/images
-#           mv ./extension/build/beta_images ./extension/build/images
-#       - name: Remove scripts tag
-#         uses: restackio/update-json-file-action@f8ef1561cb15ba86a6367b547216375bc60e7f91 #v2.1
-#         with:
-#           file: ./extension/build/manifest.json
-#           fields: '{"background": {"service_worker": "background.min.js"}}'
-#       - name: Install zip
-#         uses: montudor/action-zip@0852c26906e00f8a315c704958823928d8018b28 #v1.0.0
-#       - name: Zip extension build
-#         run: zip -qq -r ./build.zip *
-#         working-directory: ./extension/build
-#       - name: Delete existing release
-#         run:
-#           gh release delete pr-preview-${{ github.event.pull_request.number }}
-#           --yes --cleanup-tag || true
-#         env:
-#           GH_TOKEN: ${{ github.token }}
-#       - name: Create GitHub Release
-#         run: |
-#           gh release create pr-preview-${{ github.event.pull_request.number }} \
-#             ./extension/build/build.zip \
-#             --title "PR Preview #${{ github.event.pull_request.number }}" \
-#             --notes "Preview build for PR #${{ github.event.pull_request.number }}" \
-#             --prerelease
-#         env:
-#           GH_TOKEN: ${{ github.token }}
-#
-#   cleanup-release:
-#     if: github.event.action == 'closed'
-#     name: Cleanup PR Preview Release
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Delete release and tag
-#         run:
-#           gh release delete pr-preview-${{ github.event.pull_request.number }}
-#           --yes --cleanup-tag || true
-#         env:
-#           GH_TOKEN: ${{ github.token }}
-#           GH_REPO: ${{ github.repository }}
+name: PR Preview
+env:
+  INDEXER_URL: ${{ secrets.INDEXER_URL }}
+  INDEXER_V2_URL: ${{ secrets.INDEXER_V2_BETA_URL }}
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+permissions:
+  contents: write
+jobs:
+  build-and-release:
+    if: github.event.action != 'closed'
+    name: Build and Release PR Preview
+    runs-on: ubuntu-latest
+    steps:
+      - if: ${{ env.INDEXER_URL == '' }}
+        run: |
+          echo "Missing INDEXER_URL"
+          exit 1
+      - if: ${{ env.INDEXER_V2_URL == '' }}
+        run: |
+          echo "Missing INDEXER_V2_URL"
+          exit 1
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Update manifest-v3.json name
+        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
+        with:
+          file: ./extension/public/static/manifest/v3.json
+          field: name
+          value: Freighter PR Preview ${{ github.event.pull_request.number }}
+      - name: Update manifest-v3.json version_name
+        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
+        with:
+          file: ./extension/public/static/manifest/v3.json
+          field: version_name
+          value: pr-preview-${{ github.event.pull_request.number }}
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Build extension
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - run: yarn && yarn build:freighter-api && yarn build:extension:production
+      - name: Use BETA icons
+        run: |
+          rm -rf ./extension/build/images
+          mv ./extension/build/beta_images ./extension/build/images
+      - name: Remove scripts tag
+        uses: restackio/update-json-file-action@f8ef1561cb15ba86a6367b547216375bc60e7f91 #v2.1
+        with:
+          file: ./extension/build/manifest.json
+          fields: '{"background": {"service_worker": "background.min.js"}}'
+      - name: Install zip
+        uses: montudor/action-zip@0852c26906e00f8a315c704958823928d8018b28 #v1.0.0
+      - name: Zip extension build
+        run: zip -qq -r ./build.zip *
+        working-directory: ./extension/build
+      - name: Delete existing release
+        run:
+          gh release delete pr-preview-${{ github.event.pull_request.number }}
+          --yes --cleanup-tag || true
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Create GitHub Release
+        run: |
+          gh release create pr-preview-${{ github.event.pull_request.number }} \
+            ./extension/build/build.zip \
+            --title "PR Preview #${{ github.event.pull_request.number }}" \
+            --notes "Preview build for PR #${{ github.event.pull_request.number }}" \
+            --prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  cleanup-release:
+    if: github.event.action == 'closed'
+    name: Cleanup PR Preview Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete release and tag
+        run:
+          gh release delete pr-preview-${{ github.event.pull_request.number }}
+          --yes --cleanup-tag || true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
