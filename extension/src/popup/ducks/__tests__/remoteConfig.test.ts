@@ -67,11 +67,17 @@ describe("remoteConfig duck — initial state", () => {
     expect(getState(store).isInitialized).toBe(false);
   });
 
-  it("has both maintenance flags disabled and content null by default", () => {
+  it("has both maintenance flags disabled with no payload by default", () => {
     const store = makeStore();
     const state = getState(store);
-    expect(state.maintenanceBanner).toEqual({ enabled: false, content: null });
-    expect(state.maintenanceScreen).toEqual({ enabled: false, content: null });
+    expect(state.maintenance_banner).toEqual({
+      enabled: false,
+      payload: undefined,
+    });
+    expect(state.maintenance_screen).toEqual({
+      enabled: false,
+      payload: undefined,
+    });
   });
 });
 
@@ -87,20 +93,21 @@ describe("remoteConfig duck — fetchFeatureFlags when experiment client is null
     await store.dispatch(fetchFeatureFlags());
     const state = getState(store);
     expect(state.isInitialized).toBe(true);
-    expect(state.maintenanceBanner.enabled).toBe(false);
-    expect(state.maintenanceScreen.enabled).toBe(false);
+    expect(state.maintenance_banner.enabled).toBe(false);
+    expect(state.maintenance_screen.enabled).toBe(false);
   });
 });
 
 describe("remoteConfig duck — fetchFeatureFlags with live client", () => {
-  const bannerContent: MaintenanceBannerContent = {
+  const bannerPayload = {
     theme: "warning",
-    bannerTitle: "Services degraded",
-    url: "https://status.stellar.org",
+    banner: { title: { en: "Services degraded" } },
   };
-  const screenContent: MaintenanceScreenContent = {
-    title: "Under Maintenance",
-    body: ["We'll be back soon."],
+  const screenPayload = {
+    content: {
+      title: { en: "Under Maintenance" },
+      body: { en: ["We'll be back soon."] },
+    },
   };
 
   beforeEach(() => {
@@ -128,83 +135,87 @@ describe("remoteConfig duck — fetchFeatureFlags with live client", () => {
     expect(getState(store).isInitialized).toBe(true);
   });
 
-  it("enables maintenance_banner when variant is 'on' and payload parses", async () => {
-    (parseBannerPayload as jest.Mock).mockReturnValue(bannerContent);
+  it("enables maintenance_banner when variant is 'on'", async () => {
     (getExperimentClient as jest.Mock).mockReturnValue(
-      makeClient({ maintenance_banner: { value: "on", payload: {} } }),
+      makeClient({
+        maintenance_banner: { value: "on", payload: bannerPayload },
+      }),
     );
 
     const store = makeStore();
     await store.dispatch(fetchFeatureFlags());
-    const { maintenanceBanner } = getState(store);
-    expect(maintenanceBanner.enabled).toBe(true);
-    expect(maintenanceBanner.content).toEqual(bannerContent);
+    const flag = getState(store).maintenance_banner;
+    expect(flag.enabled).toBe(true);
+    expect(flag.payload).toEqual(bannerPayload);
   });
 
-  it("enables maintenance_screen when variant is 'on' and payload parses", async () => {
-    (parseScreenPayload as jest.Mock).mockReturnValue(screenContent);
+  it("enables maintenance_screen when variant is 'on'", async () => {
     (getExperimentClient as jest.Mock).mockReturnValue(
-      makeClient({ maintenance_screen: { value: "on", payload: {} } }),
+      makeClient({
+        maintenance_screen: { value: "on", payload: screenPayload },
+      }),
     );
 
     const store = makeStore();
     await store.dispatch(fetchFeatureFlags());
-    const { maintenanceScreen } = getState(store);
-    expect(maintenanceScreen.enabled).toBe(true);
-    expect(maintenanceScreen.content).toEqual(screenContent);
+    const flag = getState(store).maintenance_screen;
+    expect(flag.enabled).toBe(true);
+    expect(flag.payload).toEqual(screenPayload);
   });
 
   it.each(["on", "true", "enabled", "yes"])(
     "recognizes '%s' as an on-variant value",
     async (value) => {
-      (parseBannerPayload as jest.Mock).mockReturnValue(bannerContent);
       (getExperimentClient as jest.Mock).mockReturnValue(
-        makeClient({ maintenance_banner: { value, payload: {} } }),
+        makeClient({
+          maintenance_banner: { value, payload: bannerPayload },
+        }),
       );
 
       const store = makeStore();
       await store.dispatch(fetchFeatureFlags());
-      expect(getState(store).maintenanceBanner.enabled).toBe(true);
+      expect(getState(store).maintenance_banner.enabled).toBe(true);
     },
   );
 
   it("disables banner when variant value is off", async () => {
     (getExperimentClient as jest.Mock).mockReturnValue(
-      makeClient({ maintenance_banner: { value: "off", payload: {} } }),
+      makeClient({
+        maintenance_banner: { value: "off", payload: bannerPayload },
+      }),
     );
 
     const store = makeStore();
     await store.dispatch(fetchFeatureFlags());
-    expect(getState(store).maintenanceBanner.enabled).toBe(false);
+    expect(getState(store).maintenance_banner.enabled).toBe(false);
+    expect(getState(store).maintenance_banner.payload).toBeUndefined();
   });
 
-  it("disables banner when payload parse returns null (even if variant is on)", async () => {
-    (parseBannerPayload as jest.Mock).mockReturnValue(null);
+  it("stores payload as undefined when variant is off", async () => {
     (getExperimentClient as jest.Mock).mockReturnValue(
-      makeClient({ maintenance_banner: { value: "on", payload: null } }),
+      makeClient({
+        maintenance_banner: { value: "off", payload: bannerPayload },
+      }),
     );
 
     const store = makeStore();
     await store.dispatch(fetchFeatureFlags());
-    expect(getState(store).maintenanceBanner.enabled).toBe(false);
-    expect(getState(store).maintenanceBanner.content).toBeNull();
+    expect(getState(store).maintenance_banner.payload).toBeUndefined();
   });
 
   it("enables both flags simultaneously", async () => {
-    (parseBannerPayload as jest.Mock).mockReturnValue(bannerContent);
-    (parseScreenPayload as jest.Mock).mockReturnValue(screenContent);
     (getExperimentClient as jest.Mock).mockReturnValue(
       makeClient({
-        maintenance_banner: { value: "on", payload: {} },
-        maintenance_screen: { value: "on", payload: {} },
+        maintenance_banner: { value: "on", payload: bannerPayload },
+        maintenance_screen: { value: "on", payload: screenPayload },
       }),
     );
 
     const store = makeStore();
     await store.dispatch(fetchFeatureFlags());
     const state = getState(store);
-    expect(state.maintenanceBanner.enabled).toBe(true);
-    expect(state.maintenanceScreen.enabled).toBe(true);
+    expect(state.maintenance_banner.enabled).toBe(true);
+    expect(state.maintenance_screen.enabled).toBe(true);
   });
 });
 
@@ -221,13 +232,25 @@ describe("remoteConfig duck — error handling", () => {
     await store.dispatch(fetchFeatureFlags());
     const state = getState(store);
     expect(state.isInitialized).toBe(true);
-    expect(state.maintenanceBanner.enabled).toBe(false);
-    expect(state.maintenanceScreen.enabled).toBe(false);
+    expect(state.maintenance_banner.enabled).toBe(false);
+    expect(state.maintenance_screen.enabled).toBe(false);
   });
 });
 
 describe("remoteConfig selectors", () => {
-  it("maintenanceBannerSelector returns banner slice", () => {
+  const bannerContent: MaintenanceBannerContent = {
+    theme: "warning",
+    bannerTitle: "Services degraded",
+    url: "https://status.stellar.org",
+  };
+  const screenContent: MaintenanceScreenContent = {
+    title: "Under Maintenance",
+    body: ["We'll be back soon."],
+  };
+
+  afterEach(() => jest.clearAllMocks());
+
+  it("maintenanceBannerSelector returns disabled when flag is off", () => {
     const store = makeStore();
     expect(maintenanceBannerSelector(store.getState())).toEqual({
       enabled: false,
@@ -235,12 +258,59 @@ describe("remoteConfig selectors", () => {
     });
   });
 
-  it("maintenanceScreenSelector returns screen slice", () => {
+  it("maintenanceScreenSelector returns disabled when flag is off", () => {
     const store = makeStore();
     expect(maintenanceScreenSelector(store.getState())).toEqual({
       enabled: false,
       content: null,
     });
+  });
+
+  it("maintenanceBannerSelector parses payload when enabled", async () => {
+    (parseBannerPayload as jest.Mock).mockReturnValue(bannerContent);
+    (getExperimentClient as jest.Mock).mockReturnValue(
+      makeClient({
+        maintenance_banner: { value: "on", payload: { raw: true } },
+      }),
+    );
+
+    const store = makeStore();
+    await store.dispatch(fetchFeatureFlags());
+
+    const result = maintenanceBannerSelector(store.getState());
+    expect(parseBannerPayload).toHaveBeenCalledWith({ raw: true });
+    expect(result).toEqual({ enabled: true, content: bannerContent });
+  });
+
+  it("maintenanceScreenSelector parses payload when enabled", async () => {
+    (parseScreenPayload as jest.Mock).mockReturnValue(screenContent);
+    (getExperimentClient as jest.Mock).mockReturnValue(
+      makeClient({
+        maintenance_screen: { value: "on", payload: { raw: true } },
+      }),
+    );
+
+    const store = makeStore();
+    await store.dispatch(fetchFeatureFlags());
+
+    const result = maintenanceScreenSelector(store.getState());
+    expect(parseScreenPayload).toHaveBeenCalledWith({ raw: true });
+    expect(result).toEqual({ enabled: true, content: screenContent });
+  });
+
+  it("maintenanceBannerSelector returns disabled when parser returns null", async () => {
+    (parseBannerPayload as jest.Mock).mockReturnValue(null);
+    (getExperimentClient as jest.Mock).mockReturnValue(
+      makeClient({
+        maintenance_banner: { value: "on", payload: { bad: true } },
+      }),
+    );
+
+    const store = makeStore();
+    await store.dispatch(fetchFeatureFlags());
+
+    const result = maintenanceBannerSelector(store.getState());
+    expect(result).toEqual({ enabled: false, content: null });
   });
 
   it("isRemoteConfigInitializedSelector returns false initially", () => {

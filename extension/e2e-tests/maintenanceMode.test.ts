@@ -107,7 +107,7 @@ test("MaintenanceBanner — warning theme applies warning variant", async ({
 
   await expect(page.getByTestId("maintenance-banner")).toBeVisible();
   await expect(
-    page.getByTestId("maintenance-banner").locator(".Notification--warning"),
+    page.getByTestId("maintenance-banner").locator(".MaintenanceBanner__alert--warning"),
   ).toBeVisible();
 });
 
@@ -125,7 +125,7 @@ test("MaintenanceBanner — error theme applies error variant", async ({
 
   await expect(page.getByTestId("maintenance-banner")).toBeVisible();
   await expect(
-    page.getByTestId("maintenance-banner").locator(".Notification--error"),
+    page.getByTestId("maintenance-banner").locator(".MaintenanceBanner__alert--error"),
   ).toBeVisible();
 });
 
@@ -143,7 +143,7 @@ test("MaintenanceBanner — primary theme applies primary variant", async ({
 
   await expect(page.getByTestId("maintenance-banner")).toBeVisible();
   await expect(
-    page.getByTestId("maintenance-banner").locator(".Notification--primary"),
+    page.getByTestId("maintenance-banner").locator(".MaintenanceBanner__alert--primary"),
   ).toBeVisible();
 });
 
@@ -161,7 +161,7 @@ test("MaintenanceBanner — secondary theme applies secondary variant", async ({
 
   await expect(page.getByTestId("maintenance-banner")).toBeVisible();
   await expect(
-    page.getByTestId("maintenance-banner").locator(".Notification--secondary"),
+    page.getByTestId("maintenance-banner").locator(".MaintenanceBanner__alert--secondary"),
   ).toBeVisible();
 });
 
@@ -178,9 +178,8 @@ test("MaintenanceBanner — tertiary theme maps to primary variant", async ({
   });
 
   await expect(page.getByTestId("maintenance-banner")).toBeVisible();
-  // tertiary has no SDS equivalent — mapThemeToVariant() falls back to "primary"
   await expect(
-    page.getByTestId("maintenance-banner").locator(".Notification--primary"),
+    page.getByTestId("maintenance-banner").locator(".MaintenanceBanner__alert--tertiary"),
   ).toBeVisible();
 });
 
@@ -255,7 +254,7 @@ test("MaintenanceBanner — Close button dismisses the detail modal", async ({
   await page.getByTestId("maintenance-banner").click();
   await expect(page.getByTestId("maintenance-banner-modal")).toBeVisible();
 
-  // The "Close" button inside the modal should dismiss it
+  // The close (×) button inside the modal should dismiss it
   await page
     .getByTestId("maintenance-banner-modal")
     .getByRole("button", { name: "Close" })

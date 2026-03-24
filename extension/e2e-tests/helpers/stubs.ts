@@ -2850,6 +2850,9 @@ export const stubReportTransactionWarning = async (
  * This bypasses the Amplitude Experiment SDK entirely, making the tests
  * independent of any deployment key or network connectivity.
  *
+ * The payload uses the raw `MaintenanceScreenPayload` shape (localized maps).
+ * The selector in `remoteConfig.ts` will parse it into resolved content.
+ *
  * @param page - The extension popup page
  * @param content - Title and body paragraphs to display on the overlay
  */
@@ -2869,8 +2872,16 @@ export const injectMaintenanceScreenState = async (
       type: "remoteConfig/fetchFeatureFlags/fulfilled",
       payload: {
         isInitialized: true,
-        maintenanceScreen: { enabled: true, content: payload },
-        maintenanceBanner: { enabled: false, content: null },
+        maintenance_screen: {
+          enabled: true,
+          payload: {
+            content: {
+              title: { en: payload.title },
+              body: { en: payload.body },
+            },
+          },
+        },
+        maintenance_banner: { enabled: false, payload: undefined },
       },
     });
   }, content);
@@ -2879,6 +2890,9 @@ export const injectMaintenanceScreenState = async (
 /**
  * Injects a `maintenance_banner` enabled state directly into the Redux store
  * via `window.__store` (exposed in E2E builds when `IS_PLAYWRIGHT` is set).
+ *
+ * The payload uses the raw `MaintenanceBannerPayload` shape (localized maps).
+ * The selector in `remoteConfig.ts` will parse it into resolved content.
  *
  * @param page - The extension popup page
  * @param content - Banner title, theme, and optional url/modal payload
@@ -2900,12 +2914,27 @@ export const injectMaintenanceBannerState = async (
           "IS_PLAYWRIGHT must be set before page scripts run.",
       );
     }
+
+    const rawPayload: Record<string, unknown> = {
+      theme: payload.theme,
+      banner: { title: { en: payload.bannerTitle } },
+    };
+    if (payload.url) {
+      rawPayload.url = payload.url;
+    }
+    if (payload.modal) {
+      rawPayload.modal = {
+        title: { en: payload.modal.title },
+        body: { en: payload.modal.body },
+      };
+    }
+
     store.dispatch({
       type: "remoteConfig/fetchFeatureFlags/fulfilled",
       payload: {
         isInitialized: true,
-        maintenanceBanner: { enabled: true, content: payload },
-        maintenanceScreen: { enabled: false, content: null },
+        maintenance_banner: { enabled: true, payload: rawPayload },
+        maintenance_screen: { enabled: false, payload: undefined },
       },
     });
   }, content);

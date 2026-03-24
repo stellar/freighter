@@ -45,3 +45,8 @@
   // that lives inside a closed SlideupModal.
   visibility: hidden;
 }
+
+.SlideupModal + .LoadingBackground--isFullScreen.LoadingBackground--active {
+  position: fixed;
+  z-index: calc(var(--z-index-modal) - 1);
+}

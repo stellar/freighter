@@ -13,7 +13,6 @@ import {
 import { View } from "popup/basics/layout/View";
 import { accountNameSelector } from "popup/ducks/accountServices";
 import { openTab } from "popup/helpers/navigate";
-import { MaintenanceBanner } from "popup/components/MaintenanceBanner";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { isMainnet } from "helpers/stellar";
 
@@ -243,7 +242,6 @@ export const Account = () => {
               </Notification>
             </div>
           )}
-          <MaintenanceBanner />
           {isFullscreenModeEnabled && (
             <div className="AccountView__fullscreen">
               <Notification

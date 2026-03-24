@@ -2,7 +2,7 @@
 
 .Debug {
   padding: pxToRem(20px);
-  max-width: pxToRem(600px);
+  max-width: pxToRem(1000px);
 
   &__title {
     margin-bottom: pxToRem(8px);
@@ -46,6 +46,17 @@
     flex-wrap: wrap;
     gap: pxToRem(8px);
     margin-bottom: pxToRem(20px);
+  }
+
+  &__side-by-side {
+    display: flex;
+    gap: pxToRem(20px);
+    margin-top: pxToRem(20px);
+
+    > * {
+      flex: 1;
+      min-width: 0;
+    }
   }
 
   // Analytics debug section

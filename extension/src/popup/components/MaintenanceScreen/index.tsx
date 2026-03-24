@@ -1,12 +1,24 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
 import { Heading, Icon, Text } from "@stellar/design-system";
 
 import { maintenanceScreenSelector } from "popup/ducks/remoteConfig";
-import FreighterLogo from "popup/assets/logo-freighter-welcome-2.svg";
+import { MaintenanceScreenContent } from "popup/helpers/maintenance/types";
 
 import "./styles.scss";
+
+// ---------------------------------------------------------------------------
+// Dev override — assign DEV_CONTENT to force the screen on for local testing.
+// Set back to null before committing.
+// ---------------------------------------------------------------------------
+const DEV_CONTENT: MaintenanceScreenContent | null = null;
+// const DEV_CONTENT: MaintenanceScreenContent = {
+//   title: "[Dev] Freighter is under maintenance",
+//   body: [
+//     "We are performing important updates to improve your experience.",
+//     "Please check back shortly. Thank you for your patience.",
+//   ],
+// };
 
 /**
  * Full-screen blocking overlay displayed when the `maintenance_screen`
@@ -16,36 +28,33 @@ import "./styles.scss";
  * until the flag is disabled. Returns `null` when not active.
  */
 export const MaintenanceScreen: React.FC = () => {
-  const { t } = useTranslation();
   const { enabled, content } = useSelector(maintenanceScreenSelector);
+  const activeContent = DEV_CONTENT ?? (enabled ? content : null);
 
-  if (!enabled || !content) {
+  if (!activeContent) {
     return null;
   }
 
   return (
     <div className="MaintenanceScreen" data-testid="maintenance-screen">
-      <img
-        className="MaintenanceScreen__logo"
-        src={FreighterLogo}
-        alt={t("Freighter logo")}
-      />
       <div className="MaintenanceScreen__card">
-        <div className="MaintenanceScreen__icon-wrapper">
+        <div className="MaintenanceScreen__icon-box">
           <Icon.AlertOctagon />
         </div>
-        <Heading as="h2" size="md" addlClassName="MaintenanceScreen__title">
-          {content.title}
-        </Heading>
-        {content.body.length > 0 && (
-          <div className="MaintenanceScreen__body">
-            {content.body.map((paragraph, index) => (
-              <Text as="p" size="sm" key={index}>
-                {paragraph}
-              </Text>
-            ))}
-          </div>
-        )}
+        <div className="MaintenanceScreen__text">
+          <Heading as="h2" size="md" addlClassName="MaintenanceScreen__title">
+            {activeContent.title}
+          </Heading>
+          {activeContent.body.length > 0 && (
+            <div className="MaintenanceScreen__body">
+              {activeContent.body.map((paragraph, index) => (
+                <Text as="p" size="sm" key={index}>
+                  {paragraph}
+                </Text>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

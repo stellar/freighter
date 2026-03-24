@@ -37,6 +37,7 @@ interface ViewAppHeaderProps {
   leftContent?: React.ReactNode;
   rightContent?: React.ReactNode;
   centerContent?: React.ReactNode;
+  topContent?: React.ReactNode;
   pageTitle?: React.ReactNode;
   pageSubtitle?: React.ReactNode;
   hasBackButton?: boolean;
@@ -50,6 +51,7 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
   leftContent,
   rightContent,
   centerContent,
+  topContent,
   pageTitle,
   pageSubtitle,
   hasBackButton,
@@ -60,6 +62,9 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
   ...props
 }: ViewAppHeaderProps) => (
   <div className="View__header" {...props}>
+    <ViewInset hasVerticalBorder hasNoPadding>
+      <div className="View__topContent">{topContent}</div>
+    </ViewInset>
     <ViewInset isInline isAccountHeader={isAccountHeader} hasVerticalBorder>
       {/* Left */}
       <div className="View__header__box View__header__box--left">

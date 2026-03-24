@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
+
 import { Button, Card, Text } from "@stellar/design-system";
 import { captureException } from "@sentry/browser";
 
@@ -17,6 +18,7 @@ import {
   subscribeToDebugEvents,
 } from "helpers/metrics";
 import type { DebugEvent } from "helpers/metrics";
+import { getExperimentClient } from "helpers/experimentClient";
 
 import "./Debug/styles.scss";
 
@@ -92,66 +94,187 @@ const AnalyticsDebugSection = () => {
   );
 
   return (
-    <div className="Debug__section">
-      <Card>
-        <div className="Debug__card">
-          <Text
-            as="h2"
-            size="md"
-            weight="medium"
-            className="Debug__section-title"
-          >
-            {t("Analytics Debug")}
+    <Card>
+      <div className="Debug__card">
+        <Text
+          as="h2"
+          size="md"
+          weight="medium"
+          className="Debug__section-title"
+        >
+          {t("Analytics Debug")}
+        </Text>
+        <Text as="p" size="sm" className="Debug__section-description">
+          {t("Amplitude SDK state and recent events")}
+        </Text>
+
+        <div className="Debug__analytics-status">
+          <StatusRow
+            label={t("Initialized")}
+            value={debugInfo.hasInitialized ? "Yes" : "No"}
+          />
+          <StatusRow
+            label={t("API Key")}
+            value={debugInfo.hasAmplitudeKey ? "[set]" : "Not set"}
+          />
+          <StatusRow label={t("User ID")} value={debugInfo.userId ?? "N/A"} />
+          <StatusRow
+            label={t("Sending to Amplitude")}
+            value={debugInfo.isSendingToAmplitude ? "Yes" : "No"}
+          />
+        </div>
+
+        <div className="Debug__analytics-events-header">
+          <Text as="h3" size="sm" weight="medium">
+            {t("Recent Events")} ({recentEvents.length})
           </Text>
-          <Text as="p" size="sm" className="Debug__section-description">
-            {t("Amplitude SDK state and recent events")}
-          </Text>
-
-          <div className="Debug__analytics-status">
-            <StatusRow
-              label={t("Initialized")}
-              value={debugInfo.hasInitialized ? "Yes" : "No"}
-            />
-            <StatusRow
-              label={t("API Key")}
-              value={debugInfo.hasAmplitudeKey ? "[set]" : "Not set"}
-            />
-            <StatusRow label={t("User ID")} value={debugInfo.userId ?? "N/A"} />
-            <StatusRow
-              label={t("Sending to Amplitude")}
-              value={debugInfo.isSendingToAmplitude ? "Yes" : "No"}
-            />
-          </div>
-
-          <div className="Debug__analytics-events-header">
-            <Text as="h3" size="sm" weight="medium">
-              {t("Recent Events")} ({recentEvents.length})
-            </Text>
-            {recentEvents.length > 0 && (
-              <Button variant="tertiary" size="sm" onClick={clearRecentEvents}>
-                {t("Clear")}
-              </Button>
-            )}
-          </div>
-
-          {recentEvents.length === 0 ? (
-            <Text as="p" size="sm" className="Debug__analytics-empty">
-              {t("No events recorded yet. Navigate around to generate events.")}
-            </Text>
-          ) : (
-            <div className="Debug__analytics-events-list">
-              {recentEvents.map((entry, idx) => (
-                <AnalyticsEventRow
-                  key={`${entry.timestamp}-${idx}`}
-                  event={entry.event}
-                  timestamp={entry.timestamp}
-                  props={entry.props}
-                />
-              ))}
-            </div>
+          {recentEvents.length > 0 && (
+            <Button variant="tertiary" size="sm" onClick={clearRecentEvents}>
+              {t("Clear")}
+            </Button>
           )}
         </div>
-      </Card>
+
+        {recentEvents.length === 0 ? (
+          <Text as="p" size="sm" className="Debug__analytics-empty">
+            {t("No events recorded yet. Navigate around to generate events.")}
+          </Text>
+        ) : (
+          <div className="Debug__analytics-events-list">
+            {recentEvents.map((entry, idx) => (
+              <AnalyticsEventRow
+                key={`${entry.timestamp}-${idx}`}
+                event={entry.event}
+                timestamp={entry.timestamp}
+                props={entry.props}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+};
+
+const FeatureFlagsDebugSection = () => {
+  const { t } = useTranslation();
+  const [flags, setFlags] = useState<
+    Record<string, { key?: string; value?: string; payload?: unknown }>
+  >({});
+
+  const client = getExperimentClient();
+  const isActive = client !== null;
+
+  useEffect(() => {
+    if (!client) return;
+    setFlags(client.all());
+  }, [client]);
+
+  const handleRefresh = async () => {
+    if (!client) return;
+    try {
+      await client.fetch();
+      setFlags(client.all());
+    } catch (e) {
+      console.error("[Debug] Failed to refresh flags", e);
+    }
+  };
+
+  const flagEntries = Object.entries(flags);
+
+  return (
+    <Card>
+      <div className="Debug__card">
+        <Text
+          as="h2"
+          size="md"
+          weight="medium"
+          className="Debug__section-title"
+        >
+          {t("Feature Flags")}
+        </Text>
+        <Text as="p" size="sm" className="Debug__section-description">
+          {t("Amplitude Experiment feature flags and variants")}
+        </Text>
+
+        <div className="Debug__analytics-status">
+          <StatusRow
+            label={t("Experiment Client")}
+            value={isActive ? "Active" : "Not initialized"}
+          />
+          <StatusRow
+            label={t("Flags Loaded")}
+            value={String(flagEntries.length)}
+          />
+        </div>
+
+        {isActive && (
+          <div className="Debug__analytics-events-header">
+            <Text as="h3" size="sm" weight="medium">
+              {t("Current Flags")}
+            </Text>
+            <Button variant="tertiary" size="sm" onClick={handleRefresh}>
+              {t("Refresh")}
+            </Button>
+          </div>
+        )}
+
+        {!isActive ? (
+          <Text as="p" size="sm" className="Debug__analytics-empty">
+            {t(
+              "Experiment client is not initialized. Check that AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY is set.",
+            )}
+          </Text>
+        ) : flagEntries.length === 0 ? (
+          <Text as="p" size="sm" className="Debug__analytics-empty">
+            {t("No feature flags loaded.")}
+          </Text>
+        ) : (
+          <div className="Debug__analytics-events-list">
+            {flagEntries.map(([key, variant]) => (
+              <FeatureFlagRow key={key} flagKey={key} variant={variant} />
+            ))}
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+};
+
+const FeatureFlagRow = ({
+  flagKey,
+  variant,
+}: {
+  flagKey: string;
+  variant: { key?: string; value?: string; payload?: unknown };
+}) => {
+  const [expanded, setExpanded] = useState(false);
+  const hasPayload = variant.payload !== undefined && variant.payload !== null;
+
+  return (
+    <div className="Debug__analytics-event">
+      <button
+        type="button"
+        className="Debug__analytics-event-header"
+        onClick={() => setExpanded((prev) => !prev)}
+      >
+        <Text as="span" size="xs" weight="medium" className="Debug__flag-key">
+          {flagKey}
+        </Text>
+        <Text as="span" size="xs" className="Debug__flag-value">
+          {variant.value ?? "off"}
+        </Text>
+        {hasPayload && (
+          <Text as="span" size="xs" className="Debug__analytics-event-chevron">
+            {expanded ? "▾" : "▸"}
+          </Text>
+        )}
+      </button>
+      {expanded && hasPayload && (
+        <pre className="Debug__analytics-event-props">
+          {JSON.stringify(variant.payload, null, 2)}
+        </pre>
+      )}
     </div>
   );
 };
@@ -217,8 +340,6 @@ export const Debug = () => {
       <p className="Debug__description">
         {t("Use this page for development helpers")}
       </p>
-
-      <AnalyticsDebugSection />
 
       <div className="Debug__section">
         <Card>
@@ -303,6 +424,11 @@ export const Debug = () => {
             )}
           </div>
         </Card>
+      </div>
+
+      <div className="Debug__side-by-side">
+        <AnalyticsDebugSection />
+        <FeatureFlagsDebugSection />
       </div>
     </div>
   );

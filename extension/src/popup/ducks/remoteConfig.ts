@@ -9,17 +9,10 @@ import {
   parseBannerPayload,
   parseScreenPayload,
 } from "popup/helpers/maintenance/parseMaintenanceContent";
-import {
-  MaintenanceBannerContent,
-  MaintenanceScreenContent,
-} from "popup/helpers/maintenance/types";
 
 // ---------------------------------------------------------------------------
-// Constants
+// Feature flag configuration
 // ---------------------------------------------------------------------------
-
-const MAINTENANCE_BANNER_FLAG = "maintenance_banner";
-const MAINTENANCE_SCREEN_FLAG = "maintenance_screen";
 
 /**
  * Variant values that indicate a flag is switched "on".
@@ -27,25 +20,53 @@ const MAINTENANCE_SCREEN_FLAG = "maintenance_screen";
  */
 const ON_VARIANT_VALUES = ["on", "true", "enabled", "yes"];
 
+/** Boolean flags — variant value is checked against ON_VARIANT_VALUES. */
+const BOOLEAN_FLAGS = [] as const;
+
+/** String flags — variant value is used directly. */
+const STRING_FLAGS = [] as const;
+
+/**
+ * Complex flags — enabled via ON_VARIANT_VALUES, raw payload is forwarded.
+ * Specific flags (e.g. maintenance_banner) get parsed in their selectors.
+ */
+const COMPLEX_FLAGS = ["maintenance_banner", "maintenance_screen"] as const;
+
+// ---------------------------------------------------------------------------
+// Derived types (mirrors freighter-mobile/src/ducks/remoteConfig.ts)
+// ---------------------------------------------------------------------------
+
+type BooleanFeatureFlags = {
+  [K in (typeof BOOLEAN_FLAGS)[number]]: boolean;
+};
+
+type StringFeatureFlags = {
+  [K in (typeof STRING_FLAGS)[number]]: string;
+};
+
+type ComplexFeatureFlags = {
+  [K in (typeof COMPLEX_FLAGS)[number]]: {
+    enabled: boolean;
+    payload: Record<string, unknown> | undefined;
+  };
+};
+
+type FeatureFlags = BooleanFeatureFlags &
+  StringFeatureFlags &
+  ComplexFeatureFlags;
+
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
 
-interface MaintenanceFlagState<TContent> {
-  enabled: boolean;
-  content: TContent | null;
-}
-
-interface RemoteConfigState {
+interface RemoteConfigState extends FeatureFlags {
   isInitialized: boolean;
-  maintenanceBanner: MaintenanceFlagState<MaintenanceBannerContent>;
-  maintenanceScreen: MaintenanceFlagState<MaintenanceScreenContent>;
 }
 
 const initialState: RemoteConfigState = {
   isInitialized: false,
-  maintenanceBanner: { enabled: false, content: null },
-  maintenanceScreen: { enabled: false, content: null },
+  maintenance_banner: { enabled: false, payload: undefined },
+  maintenance_screen: { enabled: false, payload: undefined },
 };
 
 // ---------------------------------------------------------------------------
@@ -53,7 +74,8 @@ const initialState: RemoteConfigState = {
 // ---------------------------------------------------------------------------
 
 /**
- * Fetches all Amplitude Experiment flags and parses the maintenance flags.
+ * Fetches all Amplitude Experiment flags and categorises them into boolean,
+ * string, and complex buckets — mirroring the mobile implementation.
  *
  * Called once per popup open from `useRemoteConfig`. When the Experiment
  * client is unavailable (e.g. no deployment key in dev), returns the initial
@@ -71,36 +93,32 @@ export const fetchFeatureFlags = createAsyncThunk(
     await client.fetch();
 
     const variants = client.all();
+    const updates: Partial<FeatureFlags> = {};
 
-    // --- maintenance_banner ---
-    const bannerVariant = variants[MAINTENANCE_BANNER_FLAG];
-    const bannerEnabled =
-      bannerVariant?.value !== undefined &&
-      ON_VARIANT_VALUES.includes(bannerVariant.value);
-    const bannerContent = bannerEnabled
-      ? parseBannerPayload(bannerVariant?.payload)
-      : null;
+    Object.entries(variants).forEach(([key, variant]) => {
+      if (variant?.value === undefined) return;
 
-    // --- maintenance_screen ---
-    const screenVariant = variants[MAINTENANCE_SCREEN_FLAG];
-    const screenEnabled =
-      screenVariant?.value !== undefined &&
-      ON_VARIANT_VALUES.includes(screenVariant.value);
-    const screenContent = screenEnabled
-      ? parseScreenPayload(screenVariant?.payload)
-      : null;
+      // Boolean flags — value checked against ON_VARIANT_VALUES
+      if ((BOOLEAN_FLAGS as readonly string[]).includes(key)) {
+        (updates as Record<string, unknown>)[key] = ON_VARIANT_VALUES.includes(
+          variant.value,
+        );
+      }
+      // String flags — value used directly
+      else if ((STRING_FLAGS as readonly string[]).includes(key)) {
+        (updates as Record<string, unknown>)[key] = variant.value;
+      }
+      // Complex flags — enabled + raw payload
+      else if ((COMPLEX_FLAGS as readonly string[]).includes(key)) {
+        const enabled = ON_VARIANT_VALUES.includes(variant.value);
+        (updates as Record<string, unknown>)[key] = {
+          enabled,
+          payload: enabled ? variant.payload : undefined,
+        };
+      }
+    });
 
-    return {
-      isInitialized: true,
-      maintenanceBanner: {
-        enabled: bannerEnabled && !!bannerContent,
-        content: bannerContent,
-      },
-      maintenanceScreen: {
-        enabled: screenEnabled && !!screenContent,
-        content: screenContent,
-      },
-    };
+    return { ...initialState, ...updates, isInitialized: true };
   },
 );
 
@@ -136,18 +154,34 @@ const remoteConfigSelector = (state: { remoteConfig: RemoteConfigState }) =>
 
 /**
  * Returns the maintenance banner flag state (enabled + resolved content).
+ * Payload parsing happens here so the Redux store stays generic.
  */
 export const maintenanceBannerSelector = createSelector(
   remoteConfigSelector,
-  (rc) => rc.maintenanceBanner,
+  (rc) => {
+    const flag = rc.maintenance_banner;
+    if (!flag.enabled) {
+      return { enabled: false as const, content: null };
+    }
+    const content = parseBannerPayload(flag.payload);
+    return { enabled: !!content, content };
+  },
 );
 
 /**
  * Returns the maintenance screen flag state (enabled + resolved content).
+ * Payload parsing happens here so the Redux store stays generic.
  */
 export const maintenanceScreenSelector = createSelector(
   remoteConfigSelector,
-  (rc) => rc.maintenanceScreen,
+  (rc) => {
+    const flag = rc.maintenance_screen;
+    if (!flag.enabled) {
+      return { enabled: false as const, content: null };
+    }
+    const content = parseScreenPayload(flag.payload);
+    return { enabled: !!content, content };
+  },
 );
 
 /**
