@@ -1,0 +1,36 @@
+name: Run Integration Tests
+env:
+  INDEXER_URL: ${{ secrets.INDEXER_URL }}
+  INDEXER_V2_URL: ${{ secrets.INDEXER_V2_BETA_URL }}
+  INTEGRATION_MODE: true
+on: [workflow_dispatch]
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+jobs:
+  test-ci:
+    name: test
+    timeout-minutes: 45
+    runs-on: macos-latest-xlarge
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - run: corepack enable
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - run: yarn
+      - run: npx playwright install --with-deps chromium
+      - run: yarn setup
+      - run: yarn build:freighter-api
+      - run: yarn build:extension
+      - run: yarn test:ci
+      - run: yarn test:e2e
+      - uses: actions/upload-artifact@v5
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: extension/test-results/
+          retention-days: 5

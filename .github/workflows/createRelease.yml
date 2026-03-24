@@ -53,18 +53,6 @@ jobs:
           file: ./extension/public/static/manifest/v3.json
           field: version_name
           value: ${{ github.event.inputs.appVersion }}
-      - name: Update manifest v2 version
-        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
-        with:
-          file: ./extension/public/static/manifest/v2.json
-          field: version
-          value: ${{ github.event.inputs.appVersion }}
-      - name: Update manifest v2 version_name
-        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
-        with:
-          file: ./extension/public/static/manifest/v2.json
-          field: version_name
-          value: ${{ github.event.inputs.appVersion }}
       - name: Commit and push version branch
         run: |
           git add -A
@@ -101,18 +89,6 @@ jobs:
         uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
           file: ./extension/public/static/manifest/v3.json
-          field: version_name
-          value: ${{ github.event.inputs.appVersion }}
-      - name: Update manifest v2 version
-        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
-        with:
-          file: ./extension/public/static/manifest/v2.json
-          field: version
-          value: ${{ github.event.inputs.appVersion }}
-      - name: Update manifest v2 version_name
-        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
-        with:
-          file: ./extension/public/static/manifest/v2.json
           field: version_name
           value: ${{ github.event.inputs.appVersion }}
       - name: Commit and force push bump-version branch
