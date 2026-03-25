@@ -25,7 +25,7 @@ test("View Account History", async ({ page, extensionId, context }) => {
 test("View failed transaction", async ({ page, extensionId, context }) => {
   test.slow();
   const stubOverrides = async () => {
-    await page.route("*/**/account-history/*", async (route) => {
+    await context.route("*/**/account-history/*", async (route) => {
       const json = [
         {
           amount: "0.0010000",
@@ -77,7 +77,7 @@ test("Hide create claimable balance spam", async ({
   context,
 }) => {
   const stubOverrides = async () => {
-    await page.route("*/**/account-history/*", async (route) => {
+    await context.route("*/**/account-history/*", async (route) => {
       const json = [
         {
           amount: "0.0010000",
@@ -206,7 +206,7 @@ test("History row displays muxed address extracted from XDR for payment", async 
     const envelopeXdr = tx.toXDR();
     // Stub account history BEFORE login to ensure it catches all requests
     // (returns both base G address and muxed M address)
-    await page.route("**/account-history/**", async (route) => {
+    await context.route("**/account-history/**", async (route) => {
       const json = [
         {
           amount: "1.0000000",
@@ -308,7 +308,7 @@ test.skip("History row displays address extracted from XDR for createAccount", a
   await stubAccountBalances(page);
   await loginToTestAccount({ page, extensionId, context });
 
-  await page.route("**/account-history/**", async (route) => {
+  await context.route("**/account-history/**", async (route) => {
     const json = [
       {
         amount: "1.0000000",
@@ -389,7 +389,7 @@ test("History row displays regular G address when no muxed address in XDR", asyn
 
   const stubOverrides = async () => {
     // Stub account history
-    await page.route("**/account-history/**", async (route) => {
+    await context.route("**/account-history/**", async (route) => {
       const json = [
         {
           amount: "1.0000000",
@@ -464,7 +464,7 @@ test.describe("Asset Diffs in Transaction History", () => {
     await stubTokenDetails(page);
 
     const stubOverrides = async () => {
-      await page.route("*/**/account-history/*", async (route) => {
+      await context.route("*/**/account-history/*", async (route) => {
         const json = [
           {
             amount: "100.0000000",
@@ -529,7 +529,7 @@ test.describe("Asset Diffs in Transaction History", () => {
     await stubTokenDetails(page);
 
     const stubOverrides = async () => {
-      await page.route("*/**/account-history/*", async (route) => {
+      await context.route("*/**/account-history/*", async (route) => {
         const json = [
           {
             asset_type: "native",
@@ -610,7 +610,7 @@ test.describe("Asset Diffs in Transaction History", () => {
     await stubTokenDetails(page);
 
     const stubOverrides = async () => {
-      await page.route("*/**/account-history/*", async (route) => {
+      await context.route("*/**/account-history/*", async (route) => {
         const json = [
           {
             asset_type: "native",
@@ -714,7 +714,7 @@ test.describe("Asset Diffs in Transaction History", () => {
         }
       });
 
-      await page.route("*/**/account-history/*", async (route) => {
+      await context.route("*/**/account-history/*", async (route) => {
         const json = [
           {
             amount: "1000000000000000000",
