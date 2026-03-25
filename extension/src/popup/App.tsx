@@ -48,7 +48,7 @@ export type AppDispatch = typeof store.dispatch;
 // Typed window extension — only used in non-production builds for E2E testing.
 declare global {
   interface Window {
-    IS_PLAYWRIGHT?: boolean;
+    IS_PLAYWRIGHT?: string;
     __store?: typeof store;
   }
 }

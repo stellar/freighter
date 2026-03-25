@@ -53,7 +53,7 @@ type StringFeatureFlags = {
 type ComplexFeatureFlags = {
   [K in (typeof COMPLEX_FLAGS)[number]]: {
     enabled: boolean;
-    payload: Record<string, unknown> | undefined;
+    payload: unknown | undefined;
   };
 };
 

@@ -66,8 +66,8 @@ test("MaintenanceScreen overlay intercepts clicks on underlying UI", async ({
 
   await expect(page.getByTestId("maintenance-screen")).toBeVisible();
 
-  // The fixed overlay (z-index: 9999) sits above the account UI; Playwright's
-  // click uses elementFromPoint() which respects z-index, so this should throw.
+  // The fixed overlay sits above the account UI; Playwright's click uses
+  // elementFromPoint(), which respects z-index, so this should throw.
   await expect(async () => {
     await page.getByTestId("account-options-dropdown").click({ timeout: 2000 });
   }).rejects.toThrow();
@@ -107,7 +107,9 @@ test("MaintenanceBanner — warning theme applies warning variant", async ({
 
   await expect(page.getByTestId("maintenance-banner")).toBeVisible();
   await expect(
-    page.getByTestId("maintenance-banner").locator(".MaintenanceBanner__alert--warning"),
+    page
+      .getByTestId("maintenance-banner")
+      .locator(".MaintenanceBanner__alert--warning"),
   ).toBeVisible();
 });
 
@@ -125,7 +127,9 @@ test("MaintenanceBanner — error theme applies error variant", async ({
 
   await expect(page.getByTestId("maintenance-banner")).toBeVisible();
   await expect(
-    page.getByTestId("maintenance-banner").locator(".MaintenanceBanner__alert--error"),
+    page
+      .getByTestId("maintenance-banner")
+      .locator(".MaintenanceBanner__alert--error"),
   ).toBeVisible();
 });
 
@@ -143,7 +147,9 @@ test("MaintenanceBanner — primary theme applies primary variant", async ({
 
   await expect(page.getByTestId("maintenance-banner")).toBeVisible();
   await expect(
-    page.getByTestId("maintenance-banner").locator(".MaintenanceBanner__alert--primary"),
+    page
+      .getByTestId("maintenance-banner")
+      .locator(".MaintenanceBanner__alert--primary"),
   ).toBeVisible();
 });
 
@@ -161,7 +167,9 @@ test("MaintenanceBanner — secondary theme applies secondary variant", async ({
 
   await expect(page.getByTestId("maintenance-banner")).toBeVisible();
   await expect(
-    page.getByTestId("maintenance-banner").locator(".MaintenanceBanner__alert--secondary"),
+    page
+      .getByTestId("maintenance-banner")
+      .locator(".MaintenanceBanner__alert--secondary"),
   ).toBeVisible();
 });
 
@@ -179,7 +187,9 @@ test("MaintenanceBanner — tertiary theme maps to primary variant", async ({
 
   await expect(page.getByTestId("maintenance-banner")).toBeVisible();
   await expect(
-    page.getByTestId("maintenance-banner").locator(".MaintenanceBanner__alert--tertiary"),
+    page
+      .getByTestId("maintenance-banner")
+      .locator(".MaintenanceBanner__alert--tertiary"),
   ).toBeVisible();
 });
 

@@ -5,6 +5,7 @@ import { Button, Heading, Icon, Text } from "@stellar/design-system";
 
 import { maintenanceBannerSelector } from "popup/ducks/remoteConfig";
 import { BannerTheme } from "popup/helpers/maintenance/types";
+import { openTab } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
 import { SlideupModal } from "popup/components/SlideupModal";
 
@@ -81,7 +82,7 @@ export const MaintenanceBanner: React.FC = () => {
     if (!activeContent) return;
 
     if (activeContent.url) {
-      window.open(activeContent.url, "_blank", "noopener,noreferrer");
+      openTab(activeContent.url);
       return;
     }
 
@@ -114,7 +115,12 @@ export const MaintenanceBanner: React.FC = () => {
         onKeyDown={
           isClickable
             ? (e) => {
-                if (e.key === "Enter" || e.key === " ") handleClick();
+                if (e.key === "Enter") {
+                  handleClick();
+                } else if (e.key === " ") {
+                  e.preventDefault();
+                  handleClick();
+                }
               }
             : undefined
         }
@@ -122,7 +128,7 @@ export const MaintenanceBanner: React.FC = () => {
         <span className="MaintenanceBanner__alert-icon">
           {getBannerIcon(activeContent.theme)}
         </span>
-        <Text as="h6" size="xs" className="MaintenanceBanner__alert-text">
+        <Text as="span" size="xs" className="MaintenanceBanner__alert-text">
           {activeContent.bannerTitle}
         </Text>
       </div>
