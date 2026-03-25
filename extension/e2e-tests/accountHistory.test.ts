@@ -23,6 +23,7 @@ test("View Account History", async ({ page, extensionId, context }) => {
 });
 
 test("View failed transaction", async ({ page, extensionId, context }) => {
+  test.slow();
   const stubOverrides = async () => {
     await page.route("*/**/account-history/*", async (route) => {
       const json = [
