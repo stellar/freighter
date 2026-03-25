@@ -105,12 +105,9 @@ test("MaintenanceBanner — warning theme applies warning variant", async ({
     bannerTitle: "Warning banner",
   });
 
-  await expect(page.getByTestId("maintenance-banner")).toBeVisible();
-  await expect(
-    page
-      .getByTestId("maintenance-banner")
-      .locator(".MaintenanceBanner__alert--warning"),
-  ).toBeVisible();
+  const banner = page.getByTestId("maintenance-banner");
+  await expect(banner).toBeVisible();
+  await expect(banner).toHaveClass(/MaintenanceBanner__alert--warning/);
 });
 
 test("MaintenanceBanner — error theme applies error variant", async ({
@@ -125,12 +122,9 @@ test("MaintenanceBanner — error theme applies error variant", async ({
     bannerTitle: "Error banner",
   });
 
-  await expect(page.getByTestId("maintenance-banner")).toBeVisible();
-  await expect(
-    page
-      .getByTestId("maintenance-banner")
-      .locator(".MaintenanceBanner__alert--error"),
-  ).toBeVisible();
+  const banner = page.getByTestId("maintenance-banner");
+  await expect(banner).toBeVisible();
+  await expect(banner).toHaveClass(/MaintenanceBanner__alert--error/);
 });
 
 test("MaintenanceBanner — primary theme applies primary variant", async ({
@@ -145,12 +139,9 @@ test("MaintenanceBanner — primary theme applies primary variant", async ({
     bannerTitle: "Primary banner",
   });
 
-  await expect(page.getByTestId("maintenance-banner")).toBeVisible();
-  await expect(
-    page
-      .getByTestId("maintenance-banner")
-      .locator(".MaintenanceBanner__alert--primary"),
-  ).toBeVisible();
+  const banner = page.getByTestId("maintenance-banner");
+  await expect(banner).toBeVisible();
+  await expect(banner).toHaveClass(/MaintenanceBanner__alert--primary/);
 });
 
 test("MaintenanceBanner — secondary theme applies secondary variant", async ({
@@ -165,15 +156,12 @@ test("MaintenanceBanner — secondary theme applies secondary variant", async ({
     bannerTitle: "Secondary banner",
   });
 
-  await expect(page.getByTestId("maintenance-banner")).toBeVisible();
-  await expect(
-    page
-      .getByTestId("maintenance-banner")
-      .locator(".MaintenanceBanner__alert--secondary"),
-  ).toBeVisible();
+  const banner = page.getByTestId("maintenance-banner");
+  await expect(banner).toBeVisible();
+  await expect(banner).toHaveClass(/MaintenanceBanner__alert--secondary/);
 });
 
-test("MaintenanceBanner — tertiary theme maps to primary variant", async ({
+test("MaintenanceBanner — tertiary theme applies tertiary variant", async ({
   page,
   extensionId,
   context,
@@ -185,12 +173,9 @@ test("MaintenanceBanner — tertiary theme maps to primary variant", async ({
     bannerTitle: "Tertiary banner",
   });
 
-  await expect(page.getByTestId("maintenance-banner")).toBeVisible();
-  await expect(
-    page
-      .getByTestId("maintenance-banner")
-      .locator(".MaintenanceBanner__alert--tertiary"),
-  ).toBeVisible();
+  const banner = page.getByTestId("maintenance-banner");
+  await expect(banner).toBeVisible();
+  await expect(banner).toHaveClass(/MaintenanceBanner__alert--tertiary/);
 });
 
 test("MaintenanceBanner — clicking banner with URL opens external link", async ({
