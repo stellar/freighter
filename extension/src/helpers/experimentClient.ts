@@ -3,6 +3,13 @@ import { Experiment, ExperimentClient } from "@amplitude/experiment-js-client";
 import { AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY } from "constants/env";
 import { isDev } from "@shared/helpers/dev";
 
+// Console log message constants
+const LOG_MESSAGES = {
+  EXPERIMENT_PREFIX: "[Experiment]",
+  MISSING_KEY: "Missing AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY — feature flags will not be fetched",
+  INIT_FAILED: "Failed to initialize",
+} as const;
+
 let client: ExperimentClient | null = null;
 
 /**
@@ -16,7 +23,7 @@ export const initExperimentClient = (): void => {
   if (!AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY) {
     if (!isDev) {
       console.error(
-        "[Experiment] Missing AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY — feature flags will not be fetched",
+        `${LOG_MESSAGES.EXPERIMENT_PREFIX} ${LOG_MESSAGES.MISSING_KEY}`,
       );
     }
     return;
@@ -27,7 +34,7 @@ export const initExperimentClient = (): void => {
       AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY,
     );
   } catch (e) {
-    console.error("[Experiment] Failed to initialize", e);
+    console.error(`${LOG_MESSAGES.EXPERIMENT_PREFIX} ${LOG_MESSAGES.INIT_FAILED}`, e);
   }
 };
 

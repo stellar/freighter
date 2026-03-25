@@ -24,6 +24,14 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { Account, AccountType } from "@shared/api/types";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
+// Console log message constants
+const LOG_MESSAGES = {
+  AMPLITUDE_PREFIX: "[Amplitude]",
+  MISSING_KEY: "Missing AMPLITUDE_KEY — events will not be uploaded",
+  INIT_FAILED: "Failed to initialize",
+  EVENT_NOT_UPLOADED: "Amplitude event (not uploaded):",
+} as const;
+
 type MetricsPayloadAction = PayloadAction<{
   errorMessage?: string;
   location?: Location;
@@ -115,6 +123,26 @@ const MAX_RECENT_EVENTS = 50;
  * 10 minutes keeps the buffer relevant without accumulating stale data.
  */
 const DEBUG_EVENT_TTL_MS = 10 * 60 * 1000;
+
+/**
+ * Amplitude flush interval in milliseconds. Reduced from the default 1 second
+ * so queued events are sent promptly before the extension popup closes.
+ */
+const AMPLITUDE_FLUSH_INTERVAL_MS = 500;
+
+/**
+ * Number of bytes in a UUID (version 4). Used for the fallback UUID generation
+ * when crypto.randomUUID is unavailable.
+ */
+const UUID_BYTE_LENGTH = 16;
+
+/**
+ * UUID version 4 and variant 1 bitmasks per RFC 4122.
+ */
+const UUID_VERSION_4_MASK = 0x0f;
+const UUID_VERSION_4_FLAG = 0x40;
+const UUID_VARIANT_1_MASK = 0x3f;
+const UUID_VARIANT_1_FLAG = 0x80;
 
 export interface DebugEvent {
   event: string;
@@ -317,10 +345,10 @@ const generateUserId = (): string => {
     return crypto.randomUUID();
   }
   // Fallback: build a v4-style UUID from getRandomValues
-  const bytes = new Uint8Array(16);
+  const bytes = new Uint8Array(UUID_BYTE_LENGTH);
   crypto.getRandomValues(bytes);
-  bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
-  bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 1
+  bytes[6] = (bytes[6] & UUID_VERSION_4_MASK) | UUID_VERSION_4_FLAG; // version 4
+  bytes[8] = (bytes[8] & UUID_VARIANT_1_MASK) | UUID_VARIANT_1_FLAG; // variant 1
   const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 };
@@ -345,7 +373,7 @@ export const initAmplitude = () => {
   if (!AMPLITUDE_KEY) {
     if (!isDev) {
       console.error(
-        "[Amplitude] Missing AMPLITUDE_KEY — events will not be uploaded",
+        `${LOG_MESSAGES.AMPLITUDE_PREFIX} ${LOG_MESSAGES.MISSING_KEY}`,
       );
     }
     hasInitialized = true;
@@ -363,7 +391,7 @@ export const initAmplitude = () => {
       autocapture: false,
       // The extension popup can close at any time; reduce the flush interval
       // so queued events are sent promptly instead of waiting the default 1 s.
-      flushIntervalMillis: 500,
+      flushIntervalMillis: AMPLITUDE_FLUSH_INTERVAL_MS,
     });
 
     amplitude.setUserId(getUserId());
@@ -404,7 +432,7 @@ export const initAmplitude = () => {
       });
     }
   } catch (e) {
-    console.error("[Amplitude] Failed to initialize", e);
+    console.error(`${LOG_MESSAGES.AMPLITUDE_PREFIX} ${LOG_MESSAGES.INIT_FAILED}`, e);
   }
 };
 
@@ -536,7 +564,7 @@ export const emitMetric = (name: string, body?: Record<string, unknown>) => {
   }
 
   if (!AMPLITUDE_KEY || !hasInitialized) {
-    console.log("Amplitude event (not uploaded):", name, eventProperties);
+    console.log(LOG_MESSAGES.EVENT_NOT_UPLOADED, name, eventProperties);
     return;
   }
 

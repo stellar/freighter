@@ -25,6 +25,12 @@ import "./Debug/styles.scss";
 // "[set]" is a technical indicator (not a natural-language word), kept as a local constant.
 const STATUS_SET = "[set]";
 
+// Console log message constants
+const LOG_MESSAGES = {
+  DEBUG_PREFIX: "[Debug]",
+  REFRESH_FAILED: "Failed to refresh flags",
+} as const;
+
 const formatTime = (timestamp: number) => {
   const date = new Date(timestamp);
   return date.toLocaleTimeString("en-US", {
@@ -179,7 +185,7 @@ const FeatureFlagsDebugSection = () => {
       await client.fetch();
       setFlags(client.all());
     } catch (e) {
-      console.error("[Debug] Failed to refresh flags", e);
+      console.error(`${LOG_MESSAGES.DEBUG_PREFIX} ${LOG_MESSAGES.REFRESH_FAILED}`, e);
     }
   };
 

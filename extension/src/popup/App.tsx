@@ -54,9 +54,11 @@ declare global {
 }
 
 // Expose the Redux store for Playwright E2E tests.
-// Excluded from production bundles via the BUILD_TYPE guard — webpack's
-// DefinePlugin replaces the constant at compile time, enabling dead-code elimination.
-if (BUILD_TYPE !== "production" && window.IS_PLAYWRIGHT) {
+// SECURITY: Only exposed in development builds (dev server), NOT in beta builds.
+// The double-guard (BUILD_TYPE check + IS_PLAYWRIGHT flag) prevents privilege
+// escalation in beta builds where a malicious script could set IS_PLAYWRIGHT=true.
+// Playwright tests run against the dev server, so this restriction is safe.
+if (BUILD_TYPE === "development" && window.IS_PLAYWRIGHT) {
   window.__store = store;
 }
 
