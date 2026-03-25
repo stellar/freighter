@@ -13,6 +13,7 @@ import {
   IS_NON_SSL_ENABLED_ID,
   IS_HIDE_DUST_ENABLED_ID,
   LAST_USED_ACCOUNT,
+  OVERRIDDEN_BLOCKAID_RESPONSE_ID,
 } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
@@ -21,7 +22,7 @@ import { isCustomNetwork } from "@shared/helpers/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
 import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { INDEXER_URL } from "@shared/constants/mercury";
+import { INDEXER_URL, INDEXER_V2_URL } from "@shared/constants/mercury";
 import { captureException } from "@sentry/browser";
 
 export const getKeyIdList = async ({
@@ -202,6 +203,14 @@ export const getIsHashSigningEnabled = async ({
   localStore: DataStorageAccess;
 }) => (await localStore.getItem(IS_HASH_SIGNING_ENABLED_ID)) ?? false;
 
+export const getOverriddenBlockaidResponse = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}): Promise<string | null> => {
+  return (await localStore.getItem(OVERRIDDEN_BLOCKAID_RESPONSE_ID)) ?? null;
+};
+
 // hardware wallet helpers
 export const HW_PREFIX = "hw:";
 
@@ -297,21 +306,26 @@ export const getIsHideDustEnabled = async ({
   return isHideDustEnabled;
 };
 
-export const getIsRpcHealthy = async (networkDetails: NetworkDetails) => {
+export const getIsRpcHealthy = async (localStore: DataStorageAccess) => {
   let rpcHealth = { status: "" };
+
+  const networkDetails = await getNetworkDetails({ localStore });
+
   if (isCustomNetwork(networkDetails)) {
     // TODO: use server.getHealth method to get accurate result for standalone network
     rpcHealth = { status: "healthy" };
   } else {
     try {
       const res = await fetch(
-        `${INDEXER_URL}/rpc-health?network=${networkDetails.network}`,
+        `${INDEXER_V2_URL}/rpc-health?network=${networkDetails.network}`,
       );
 
       if (!res.ok) {
         captureException(`Failed to load rpc health for Soroban`);
+        rpcHealth = { status: "unhealthy" };
+      } else {
+        rpcHealth = await res.json();
       }
-      rpcHealth = await res.json();
     } catch (e) {
       captureException(
         `Failed to load rpc health for Soroban - ${JSON.stringify(e)}`,

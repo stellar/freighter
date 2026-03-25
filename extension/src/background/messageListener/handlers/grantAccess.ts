@@ -41,6 +41,13 @@ export const grantAccess = async ({
   const responseQueueItem =
     queueIndex !== -1 ? responseQueue.splice(queueIndex, 1)[0] : undefined;
 
+  if (!responseQueueItem || typeof responseQueueItem.response !== "function") {
+    captureException(
+      `grantAccess: no matching response found for uuid ${uuid}`,
+    );
+    return { error: "Access was denied" };
+  }
+
   await setAllowListDomain({
     publicKey,
     networkDetails,
@@ -48,10 +55,5 @@ export const grantAccess = async ({
     localStore,
   });
 
-  if (responseQueueItem && typeof responseQueueItem.response === "function") {
-    return responseQueueItem.response(url, publicKey);
-  }
-
-  captureException(`grantAccess: no matching response found for uuid ${uuid}`);
-  return { error: "Access was denied" };
+  return responseQueueItem.response(url, publicKey);
 };

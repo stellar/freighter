@@ -10,7 +10,15 @@ import {
 } from "@shared/constants/stellar";
 import { ROUTES } from "popup/constants/routes";
 
+// Mock functions for hidden collectibles
+const mockRefreshHiddenCollectibles = jest.fn().mockResolvedValue(undefined);
+const mockIsCollectibleHidden = jest.fn().mockReturnValue(false);
+
 describe("AccountCollectibles", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("renders collectibles", async () => {
     render(
       <Wrapper
@@ -46,7 +54,11 @@ describe("AccountCollectibles", () => {
           },
         }}
       >
-        <AccountCollectibles collections={mockCollectibles} />
+        <AccountCollectibles
+          collections={mockCollectibles}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={mockIsCollectibleHidden}
+        />
       </Wrapper>,
     );
     await waitFor(() => screen.getByTestId("account-collectibles"));
@@ -156,7 +168,11 @@ describe("AccountCollectibles", () => {
           },
         }}
       >
-        <AccountCollectibles collections={[]} />
+        <AccountCollectibles
+          collections={[]}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={mockIsCollectibleHidden}
+        />
       </Wrapper>,
     );
     await waitFor(() => screen.getByTestId("account-collectibles"));
@@ -202,6 +218,8 @@ describe("AccountCollectibles", () => {
           collections={[
             { error: { collectionAddress: "test", errorMessage: "test" } },
           ]}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={mockIsCollectibleHidden}
         />
       </Wrapper>,
     );
@@ -317,7 +335,11 @@ describe("AccountCollectibles", () => {
           },
         }}
       >
-        <AccountCollectibles collections={partialMockCollectibles} />
+        <AccountCollectibles
+          collections={partialMockCollectibles}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={mockIsCollectibleHidden}
+        />
       </Wrapper>,
     );
     await waitFor(() => screen.getByTestId("account-collectibles"));

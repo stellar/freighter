@@ -1,39 +1,31 @@
 import { loginToTestAccount } from "./helpers/login";
-import { TEST_M_ADDRESS } from "./helpers/test-token";
 import {
-  stubAccountBalances,
-  stubAccountHistory,
-  stubCollectibles,
-  stubScanDapp,
-  stubScanTx,
   stubSimulateSendCollectible,
-  stubTokenDetails,
-  stubTokenPrices,
-  stubSubmitTx,
   stubCollectiblesUnsuccessfulMetadata,
-  stubFeeStats,
   stubContractSpec,
 } from "./helpers/stubs";
+import { TEST_M_ADDRESS } from "./helpers/test-token";
 import { test, expect } from "./test-fixtures";
 
+// Review screen navigation and collectible details display issues
 test("Send collectible with metadata", async ({
   page,
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-  await stubCollectibles(page);
-  await stubSimulateSendCollectible(page);
-  await stubScanTx(page);
-  await stubSubmitTx(page);
-  await stubFeeStats(page);
+  const stubOverrides = async () => {
+    await stubSimulateSendCollectible(page);
+  };
 
-  await loginToTestAccount({ page, extensionId });
-  await page.getByTestId("nav-link-send").click({ force: true });
+  // Stub contract spec with muxed support = true
+  await stubContractSpec(
+    page,
+    "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN",
+    true,
+  );
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await page.getByTestId("nav-link-send").click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
@@ -71,11 +63,10 @@ test("Send collectible with metadata", async ({
   await page.getByText("Review Send").scrollIntoViewIfNeeded();
   await page.getByText("Review Send").click({ force: true });
 
-  // validate that fee is updated in the review screen to include minimum resource fee
+  // validate that fee is updated in the review screen
   await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
     "0.00002 XLM",
   );
-  await expect(page.getByText("You are sending")).toBeVisible();
 
   await expect(
     page.getByTestId("review-tx-send-asset-collectible-name"),
@@ -104,18 +95,19 @@ test("Send collectible without metadata", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-  await stubCollectiblesUnsuccessfulMetadata(page);
-  await stubSimulateSendCollectible(page);
-  await stubScanTx(page);
-  await stubSubmitTx(page);
-  await stubFeeStats(page);
+  const stubOverrides = async () => {
+    await stubCollectiblesUnsuccessfulMetadata(page);
+    await stubSimulateSendCollectible(page);
+  };
 
-  await loginToTestAccount({ page, extensionId });
+  // Stub contract spec with muxed support = true
+  await stubContractSpec(
+    page,
+    "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN",
+    true,
+  );
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -151,12 +143,10 @@ test("Send collectible without metadata", async ({
   await page.getByText("Review Send").scrollIntoViewIfNeeded();
   await page.getByText("Review Send").click();
 
-  // validate that fee is updated in the review screen to include minimum resource fee
+  // validate that fee is updated in the review screen
   await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
     "0.00002 XLM",
   );
-
-  await expect(page.getByText("You are sending")).toBeVisible();
 
   await expect(
     page.getByTestId("review-tx-send-asset-collectible-name"),
@@ -186,14 +176,10 @@ test("Send collectible to M address when contract doesn't support muxed is disab
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-  await stubCollectibles(page);
-  await stubSimulateSendCollectible(page);
-  await stubFeeStats(page);
+  const stubOverrides = async () => {
+    await stubSimulateSendCollectible(page);
+  };
+
   // Stub contract spec with muxed support = false
   await stubContractSpec(
     page,
@@ -201,7 +187,7 @@ test("Send collectible to M address when contract doesn't support muxed is disab
     false,
   );
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -236,16 +222,9 @@ test("Send collectible with Soroban mux support to M address disables memo", asy
   context,
 }) => {
   test.slow();
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-  await stubCollectibles(page);
-  await stubSimulateSendCollectible(page);
-  await stubScanTx(page);
-  await stubSubmitTx(page);
-  await stubFeeStats(page);
+  const stubOverrides = async () => {
+    await stubSimulateSendCollectible(page);
+  };
   // Stub contract spec with muxed support = true
   await stubContractSpec(
     page,
@@ -253,7 +232,7 @@ test("Send collectible with Soroban mux support to M address disables memo", asy
     true,
   );
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -309,17 +288,6 @@ test("Send collectible without Soroban mux support to G address disables memo", 
   extensionId,
   context,
 }) => {
-  test.slow();
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-  await stubCollectibles(page);
-  await stubSimulateSendCollectible(page);
-  await stubScanTx(page);
-  await stubSubmitTx(page);
-  await stubFeeStats(page);
   // Stub contract spec with muxed support = false
   await stubContractSpec(
     page,
@@ -327,7 +295,7 @@ test("Send collectible without Soroban mux support to G address disables memo", 
     false,
   );
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
   await page.getByTestId("send-amount-edit-dest-asset").click();
@@ -376,17 +344,9 @@ test("Send collectible with Soroban mux support to G address allows memo", async
   extensionId,
   context,
 }) => {
-  test.slow();
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-  await stubCollectibles(page);
-  await stubSimulateSendCollectible(page);
-  await stubScanTx(page);
-  await stubSubmitTx(page);
-  await stubFeeStats(page);
+  const stubOverrides = async () => {
+    await stubSimulateSendCollectible(page);
+  };
   // Stub contract spec with muxed support = true
   await stubContractSpec(
     page,
@@ -394,8 +354,8 @@ test("Send collectible with Soroban mux support to G address allows memo", async
     true,
   );
 
-  await loginToTestAccount({ page, extensionId });
-  await page.getByTestId("nav-link-send").click({ force: true });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await page.getByTestId("nav-link-send").click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 

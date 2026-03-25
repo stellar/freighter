@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { isEqual } from "lodash";
+import { toast } from "sonner";
 
 import {
   settingsSorobanSupportedSelector,
@@ -18,6 +19,7 @@ import { isMainnet } from "helpers/stellar";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountCollectibles } from "popup/components/account/AccountCollectibles";
 import { AccountHeader } from "popup/components/account/AccountHeader";
+import { useHiddenCollectibles } from "popup/components/account/hooks/useHiddenCollectibles";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
@@ -62,8 +64,11 @@ export const Account = () => {
     useGetAccountHistoryData();
 
   const { state: iconsData, fetchData: fetchIconsData } = useGetIcons();
+  const { refreshHiddenCollectibles, isCollectibleHidden } =
+    useHiddenCollectibles();
 
   const previousAccountBalancesRef = useRef<AccountBalances | null>(null);
+  const sorobanErrorShownRef = useRef(false);
 
   useEffect(() => {
     const getData = async () => {
@@ -72,6 +77,19 @@ export const Account = () => {
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!isSorobanSuported && !sorobanErrorShownRef.current) {
+      toast.info(t("Soroban is temporarily experiencing issues"), {
+        description: t(
+          "You may not be able to transact with Soroban smart contracts or see your Soroban tokens at this time.",
+        ),
+      });
+      sorobanErrorShownRef.current = true;
+    } else if (isSorobanSuported) {
+      sorobanErrorShownRef.current = false;
+    }
+  }, [isSorobanSuported, t]);
 
   const accountBalances =
     accountData.state === RequestState.SUCCESS &&
@@ -184,6 +202,8 @@ export const Account = () => {
         }}
         roundedTotalBalanceUsd={roundedTotalBalanceUsd}
         isFunded={!!resolvedData?.balances?.isFunded}
+        refreshHiddenCollectibles={refreshHiddenCollectibles}
+        isCollectibleHidden={isCollectibleHidden}
       />
       <View.Content hasNoPadding>
         <div className="AccountView" data-testid="account-view">
@@ -194,19 +214,6 @@ export const Account = () => {
                 title={t("Failed to fetch your account balances.")}
               >
                 {t("Your account balances could not be fetched at this time.")}
-              </Notification>
-            </div>
-          )}
-          {!isSorobanSuported && (
-            <div
-              className="AccountView__fetch-fail"
-              data-testid="account-view-sorban-rpc-issue"
-            >
-              <Notification
-                title={t("Soroban RPC is temporarily experiencing issues")}
-                variant="primary"
-              >
-                {t("Some features may be disabled at this time")}
               </Notification>
             </div>
           )}
@@ -269,6 +276,8 @@ export const Account = () => {
               <div data-testid="account-collectibles">
                 <AccountCollectibles
                   collections={accountData.data?.collectibles.collections || []}
+                  refreshHiddenCollectibles={refreshHiddenCollectibles}
+                  isCollectibleHidden={isCollectibleHidden}
                 />
               </div>,
             ]}
