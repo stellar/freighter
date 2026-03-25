@@ -122,7 +122,9 @@ describe("MaintenanceScreen", () => {
 
   it("does not render a body section when body array is empty", () => {
     const { container } = render(
-      <MaintenanceScreen content={{ title: "Down for maintenance", body: [] }} />,
+      <MaintenanceScreen
+        content={{ title: "Down for maintenance", body: [] }}
+      />,
     );
 
     expect(screen.getByText("Down for maintenance")).toBeInTheDocument();
@@ -166,7 +168,7 @@ describe("MaintenanceBanner", () => {
 
   it("renders the alert bar with the banner title", () => {
     const store = setupBanner({
-      theme: BannerTheme.warning,
+      theme: BannerTheme.Warning,
       bannerTitle: "Services degraded",
     });
     renderWithStore(<MaintenanceBanner />, store);
@@ -176,11 +178,11 @@ describe("MaintenanceBanner", () => {
   });
 
   it.each([
-    [BannerTheme.warning, "MaintenanceBanner__alert--warning"],
-    [BannerTheme.error, "MaintenanceBanner__alert--error"],
-    [BannerTheme.primary, "MaintenanceBanner__alert--primary"],
-    [BannerTheme.secondary, "MaintenanceBanner__alert--secondary"],
-    [BannerTheme.tertiary, "MaintenanceBanner__alert--tertiary"],
+    [BannerTheme.Warning, "MaintenanceBanner__alert--warning"],
+    [BannerTheme.Error, "MaintenanceBanner__alert--error"],
+    [BannerTheme.Primary, "MaintenanceBanner__alert--primary"],
+    [BannerTheme.Secondary, "MaintenanceBanner__alert--secondary"],
+    [BannerTheme.Tertiary, "MaintenanceBanner__alert--tertiary"],
   ])("applies the %s theme CSS class", (theme, expectedClass) => {
     const store = setupBanner({ theme, bannerTitle: "Banner" });
     const { container } = renderWithStore(<MaintenanceBanner />, store);
@@ -189,7 +191,7 @@ describe("MaintenanceBanner", () => {
 
   it("does not have role=button when no url or modal is provided", () => {
     const store = setupBanner({
-      theme: BannerTheme.warning,
+      theme: BannerTheme.Warning,
       bannerTitle: "Info only",
     });
     renderWithStore(<MaintenanceBanner />, store);
@@ -200,7 +202,7 @@ describe("MaintenanceBanner", () => {
 
   it("has role=button when a url is provided", () => {
     const store = setupBanner({
-      theme: BannerTheme.warning,
+      theme: BannerTheme.Warning,
       bannerTitle: "Check status",
       url: "https://status.stellar.org",
     });
@@ -214,7 +216,7 @@ describe("MaintenanceBanner", () => {
 
   it("has role=button when a modal is provided", () => {
     const store = setupBanner({
-      theme: BannerTheme.warning,
+      theme: BannerTheme.Warning,
       bannerTitle: "Details available",
       modal: { title: "Details", body: ["More info."] },
     });
@@ -231,7 +233,7 @@ describe("MaintenanceBanner", () => {
 
   it("opens the modal when the banner is clicked with a modal payload", () => {
     const store = setupBanner({
-      theme: BannerTheme.warning,
+      theme: BannerTheme.Warning,
       bannerTitle: "Scheduled maintenance",
       modal: {
         title: "Maintenance details",
@@ -257,7 +259,7 @@ describe("MaintenanceBanner", () => {
 
   it("closes the modal when the Done button is clicked", () => {
     const store = setupBanner({
-      theme: BannerTheme.primary,
+      theme: BannerTheme.Primary,
       bannerTitle: "Upcoming outage",
       modal: {
         title: "Outage window",
@@ -279,7 +281,7 @@ describe("MaintenanceBanner", () => {
 
   it("closes the modal when the close (×) button is clicked", () => {
     const store = setupBanner({
-      theme: BannerTheme.warning,
+      theme: BannerTheme.Warning,
       bannerTitle: "Alert",
       modal: { title: "Details", body: ["Info."] },
     });
@@ -298,7 +300,7 @@ describe("MaintenanceBanner", () => {
 
   it("renders a theme icon box in the modal header", () => {
     const store = setupBanner({
-      theme: BannerTheme.warning,
+      theme: BannerTheme.Warning,
       bannerTitle: "Alert",
       modal: { title: "Details", body: [] },
     });
@@ -313,7 +315,7 @@ describe("MaintenanceBanner", () => {
 
   it("renders multiple body paragraphs in the modal", () => {
     const store = setupBanner({
-      theme: BannerTheme.warning,
+      theme: BannerTheme.Warning,
       bannerTitle: "Alert",
       modal: {
         title: "Details",
@@ -329,7 +331,7 @@ describe("MaintenanceBanner", () => {
 
   it("opens a URL in a new tab when the banner has a url", () => {
     const store = setupBanner({
-      theme: BannerTheme.warning,
+      theme: BannerTheme.Warning,
       bannerTitle: "Network degraded",
       url: "https://status.stellar.org",
     });
@@ -342,7 +344,7 @@ describe("MaintenanceBanner", () => {
 
   it("does not open a modal when the banner has only a url", () => {
     const store = setupBanner({
-      theme: BannerTheme.warning,
+      theme: BannerTheme.Warning,
       bannerTitle: "Network degraded",
       url: "https://status.stellar.org",
     });

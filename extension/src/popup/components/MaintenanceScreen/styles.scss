@@ -32,13 +32,13 @@
     width: pxToRem(40px);
     height: pxToRem(40px);
     border-radius: pxToRem(8px);
-    background-color: var(--sds-clr-gray-01);
-    border: 1px solid var(--sds-clr-gray-04);
+    background-color: var(--sds-clr-lilac-03);
+    border: 1px solid var(--sds-clr-lilac-06);
     flex-shrink: 0;
 
     svg {
-      width: pxToRem(20px);
-      height: pxToRem(20px);
+      width: pxToRem(24px);
+      height: pxToRem(24px);
     }
   }
 

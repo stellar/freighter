@@ -8,7 +8,7 @@ import {
 } from "./types";
 
 const VALID_THEMES: BannerTheme[] = Object.values(BannerTheme);
-const DEFAULT_THEME: BannerTheme = BannerTheme.warning;
+const DEFAULT_THEME: BannerTheme = BannerTheme.Warning;
 
 /**
  * Returns the two-letter base language code from i18next (e.g. "en-US" → "en").

@@ -240,7 +240,7 @@ describe("remoteConfig duck — error handling", () => {
 
 describe("remoteConfig selectors", () => {
   const bannerContent: MaintenanceBannerContent = {
-    theme: BannerTheme.warning,
+    theme: BannerTheme.Warning,
     bannerTitle: "Services degraded",
     url: "https://status.stellar.org",
   };

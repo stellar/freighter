@@ -6,11 +6,11 @@ export type LocalizedStringArray = Record<string, string[]>;
 
 /** Theme variants for the maintenance banner, matching the mobile implementation. */
 export enum BannerTheme {
-  primary = "primary",
-  secondary = "secondary",
-  tertiary = "tertiary",
-  warning = "warning",
-  error = "error",
+  Primary = "primary",
+  Secondary = "secondary",
+  Tertiary = "tertiary",
+  Warning = "warning",
+  Error = "error",
 }
 
 /**

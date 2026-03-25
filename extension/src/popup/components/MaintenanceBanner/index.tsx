@@ -19,12 +19,12 @@ import "./styles.scss";
  */
 function getBannerIcon(theme: BannerTheme): React.ReactElement {
   switch (theme) {
-    case BannerTheme.warning:
-    case BannerTheme.error:
+    case BannerTheme.Warning:
+    case BannerTheme.Error:
       return <Icon.AlertOctagon />;
-    case BannerTheme.primary:
-    case BannerTheme.secondary:
-    case BannerTheme.tertiary:
+    case BannerTheme.Primary:
+    case BannerTheme.Secondary:
+    case BannerTheme.Tertiary:
     default:
       return <Icon.InfoCircle />;
   }
@@ -32,11 +32,11 @@ function getBannerIcon(theme: BannerTheme): React.ReactElement {
 
 /** CSS color value for each modal icon theme, applied as inline style to override SDS defaults. */
 const MODAL_ICON_COLOR: Record<BannerTheme, string> = {
-  [BannerTheme.warning]: "var(--sds-clr-amber-09, #ffb224)",
-  [BannerTheme.error]: "var(--sds-clr-red-09, #e5484d)",
-  [BannerTheme.primary]: "var(--sds-clr-lilac-09, #6e56cf)",
-  [BannerTheme.secondary]: "var(--sds-clr-lilac-09, #6e56cf)",
-  [BannerTheme.tertiary]: "var(--sds-clr-gray-09, #707070)",
+  [BannerTheme.Warning]: "var(--sds-clr-amber-09, #ffb224)",
+  [BannerTheme.Error]: "var(--sds-clr-red-09, #e5484d)",
+  [BannerTheme.Primary]: "var(--sds-clr-lilac-09, #6e56cf)",
+  [BannerTheme.Secondary]: "var(--sds-clr-lilac-09, #6e56cf)",
+  [BannerTheme.Tertiary]: "var(--sds-clr-gray-09, #707070)",
 };
 
 /**
@@ -50,12 +50,12 @@ const MODAL_ICON_COLOR: Record<BannerTheme, string> = {
 function getModalIcon(theme: BannerTheme): React.ReactElement {
   const iconStyle = { color: MODAL_ICON_COLOR[theme] };
   switch (theme) {
-    case BannerTheme.warning:
-    case BannerTheme.error:
+    case BannerTheme.Warning:
+    case BannerTheme.Error:
       return <Icon.AlertOctagon style={iconStyle} />;
-    case BannerTheme.primary:
-    case BannerTheme.secondary:
-    case BannerTheme.tertiary:
+    case BannerTheme.Primary:
+    case BannerTheme.Secondary:
+    case BannerTheme.Tertiary:
     default:
       return <Icon.InfoCircle style={iconStyle} />;
   }
