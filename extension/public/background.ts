@@ -4,6 +4,7 @@ import {
   initInstalledListener,
   initAlarmListener,
   initSidebarBehavior,
+  initSidebarConnectionListener,
 } from "background";
 
 function main() {
@@ -12,6 +13,7 @@ function main() {
   initInstalledListener();
   initAlarmListener();
   initSidebarBehavior();
+  initSidebarConnectionListener();
 }
 
 main();

@@ -7,8 +7,13 @@ import {
 import { ExternalRequest, Response } from "@shared/api/types";
 import { buildStore } from "background/store";
 
-import { popupMessageListener } from "./messageListener/popupMessageListener";
+import {
+  popupMessageListener,
+  clearSidebarWindowId,
+  setSidebarWindowId,
+} from "./messageListener/popupMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
+import { SIDEBAR_PORT_NAME } from "popup/components/SidebarSigningListener";
 import {
   SESSION_ALARM_NAME,
   SessionTimer,
@@ -43,6 +48,24 @@ export const initContentScriptMessageListener = () => {
       });
     }
     return undefined;
+  });
+};
+
+export const initSidebarConnectionListener = () => {
+  chrome.runtime.onConnect.addListener((port) => {
+    if (port.name !== SIDEBAR_PORT_NAME) return;
+
+    // Sidebar sends its window ID as first message
+    port.onMessage.addListener((msg: { windowId: number }) => {
+      if (msg.windowId !== undefined) {
+        setSidebarWindowId(msg.windowId);
+      }
+    });
+
+    // When sidebar closes (for any reason), clear the window ID
+    port.onDisconnect.addListener(() => {
+      clearSidebarWindowId();
+    });
   });
 };
 

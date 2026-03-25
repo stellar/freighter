@@ -1,23 +1,22 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { SERVICE_TYPES } from "@shared/constants/services";
 import { ROUTES } from "popup/constants/routes";
 
 const SIDEBAR_NAVIGATE = "SIDEBAR_NAVIGATE";
+export const SIDEBAR_PORT_NAME = "sidebar";
 
 export const SidebarSigningListener = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const register = async () => {
-      const win = await chrome.windows.getCurrent();
-      chrome.runtime.sendMessage({
-        type: SERVICE_TYPES.SIDEBAR_REGISTER,
-        windowId: win.id,
-      });
-    };
+    // Open a long-lived port to the background.
+    // The background uses onDisconnect to reliably clear sidebarWindowId when sidebar closes.
+    const port = chrome.runtime.connect({ name: SIDEBAR_PORT_NAME });
 
-    register();
+    // Send window ID so the background can register this sidebar
+    chrome.windows.getCurrent().then((win) => {
+      port.postMessage({ windowId: win.id });
+    });
 
     // In sidebar mode, window.close() would collapse the panel. Navigate home instead.
     const originalClose = window.close.bind(window);
@@ -31,17 +30,10 @@ export const SidebarSigningListener = () => {
 
     chrome.runtime.onMessage.addListener(handler);
 
-    const handleUnload = () => {
-      chrome.runtime.sendMessage({ type: SERVICE_TYPES.SIDEBAR_UNREGISTER });
-    };
-
-    window.addEventListener("beforeunload", handleUnload);
-
     return () => {
       window.close = originalClose;
       chrome.runtime.onMessage.removeListener(handler);
-      window.removeEventListener("beforeunload", handleUnload);
-      chrome.runtime.sendMessage({ type: SERVICE_TYPES.SIDEBAR_UNREGISTER });
+      port.disconnect();
     };
   }, [navigate]);
 

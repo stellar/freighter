@@ -97,6 +97,12 @@ const numOfPublicKeysToCheck = 5;
 let sidebarWindowId: number | null = null;
 
 export const getSidebarWindowId = (): number | null => sidebarWindowId;
+export const setSidebarWindowId = (id: number) => {
+  sidebarWindowId = id;
+};
+export const clearSidebarWindowId = () => {
+  sidebarWindowId = null;
+};
 
 export const responseQueue: ResponseQueue<
   | RequestAccessResponse
