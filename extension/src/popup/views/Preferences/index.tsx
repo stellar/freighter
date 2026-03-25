@@ -182,7 +182,7 @@ export const Preferences = () => {
                 </span>
               </div>
 
-              {!/Arc\//.test(navigator.userAgent) && (
+              {typeof globalThis.chrome?.sidePanel?.open === "function" && (
                 <div className="Preferences--section">
                   <div className="Preferences--section--title">
                     <span>{t("Open sidebar mode by default")} </span>

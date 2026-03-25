@@ -17,6 +17,7 @@ import {
   SignedHwPayloadResponse,
   MarkQueueActiveMessage,
   SidebarRegisterMessage,
+  OpenSidebarMessage,
 } from "@shared/api/types/message-request";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
@@ -93,12 +94,9 @@ import { getHiddenCollectibles } from "./handlers/getHiddenCollectibles";
 
 const numOfPublicKeysToCheck = 5;
 
-const SIDEBAR_WINDOW_ID_KEY = "sidebarWindowId";
+let sidebarWindowId: number | null = null;
 
-export const getSidebarWindowId = async (): Promise<number | null> => {
-  const result = await chrome.storage.session.get(SIDEBAR_WINDOW_ID_KEY);
-  return result[SIDEBAR_WINDOW_ID_KEY] ?? null;
-};
+export const getSidebarWindowId = (): number | null => sidebarWindowId;
 
 export const responseQueue: ResponseQueue<
   | RequestAccessResponse
@@ -561,15 +559,26 @@ export const popupMessageListener = (
       return {};
     }
 
+    case SERVICE_TYPES.OPEN_SIDEBAR: {
+      const { windowId } = request as OpenSidebarMessage;
+      return (async () => {
+        await chrome.sidePanel
+          .setOptions({ path: "index.html?mode=sidebar", enabled: true })
+          .catch((e) => console.error("Failed to set sidebar options:", e));
+        await chrome.sidePanel
+          .open({ windowId })
+          .catch((e) => console.error("Failed to open sidebar:", e));
+        return {};
+      })();
+    }
+
     case SERVICE_TYPES.SIDEBAR_REGISTER: {
-      chrome.storage.session.set({
-        [SIDEBAR_WINDOW_ID_KEY]: (request as SidebarRegisterMessage).windowId,
-      });
+      sidebarWindowId = (request as SidebarRegisterMessage).windowId;
       return {};
     }
 
     case SERVICE_TYPES.SIDEBAR_UNREGISTER: {
-      chrome.storage.session.remove(SIDEBAR_WINDOW_ID_KEY);
+      sidebarWindowId = null;
       return {};
     }
 

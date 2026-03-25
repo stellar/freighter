@@ -179,7 +179,7 @@ export const AccountHeader = ({
                         <Icon.Lock01 />
                       </div>
                     </div>
-                    {!/Arc\//.test(navigator.userAgent) && (
+                    {typeof globalThis.chrome?.sidePanel?.open === "function" && (
                       <div
                         className="AccountHeader__options__item"
                         onClick={() => openSidebar()}

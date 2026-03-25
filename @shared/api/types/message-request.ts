@@ -454,6 +454,11 @@ export interface SidebarUnregisterMessage extends BaseMessage {
   type: SERVICE_TYPES.SIDEBAR_UNREGISTER;
 }
 
+export interface OpenSidebarMessage extends BaseMessage {
+  type: SERVICE_TYPES.OPEN_SIDEBAR;
+  windowId: number;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -520,4 +525,5 @@ export type ServiceMessageRequest =
   | GetHiddenCollectiblesMessage
   | MarkQueueActiveMessage
   | SidebarRegisterMessage
-  | SidebarUnregisterMessage;
+  | SidebarUnregisterMessage
+  | OpenSidebarMessage;

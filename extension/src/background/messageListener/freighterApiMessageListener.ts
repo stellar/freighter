@@ -66,11 +66,12 @@ import {
   tokenQueue,
   transactionQueue,
 } from "./popupMessageListener";
+import { QUEUE_ITEM_TTL_MS } from "background/helpers/queueCleanup";
 
 const SIDEBAR_NAVIGATE = "SIDEBAR_NAVIGATE";
 
-const openSigningWindow = async (hashRoute: string) => {
-  const sidebarWindowId = await getSidebarWindowId();
+const openSigningWindow = async (hashRoute: string, width?: number) => {
+  const sidebarWindowId = getSidebarWindowId();
   if (sidebarWindowId !== null) {
     browser.runtime.sendMessage({ type: SIDEBAR_NAVIGATE, route: hashRoute });
     try {
@@ -89,6 +90,7 @@ const openSigningWindow = async (hashRoute: string) => {
   return browser.windows.create({
     url: chrome.runtime.getURL(`/index.html#${hashRoute}`),
     ...WINDOW_SETTINGS,
+    ...(width !== undefined ? { width } : {}),
   });
 };
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
@@ -136,6 +138,16 @@ export const freighterApiMessageListener = (
     const popup = await openSigningWindow(`/grant-access?${encodeOrigin}`);
 
     return new Promise((resolve) => {
+      if (popup === null) {
+        setTimeout(
+          () =>
+            resolve({
+              apiError: FreighterApiDeclinedError,
+              error: FreighterApiDeclinedError.message,
+            }),
+          QUEUE_ITEM_TTL_MS,
+        );
+      }
       const response = async (url: string, publicKey?: string) => {
         // queue it up, we'll let user confirm the url looks okay and then we'll send publicKey
         // if we're good, of course
@@ -377,7 +389,16 @@ export const freighterApiMessageListener = (
             apiError: FreighterApiInternalError,
             error: FreighterApiInternalError.message,
           });
-        } else if (popup !== null) {
+        } else if (popup === null) {
+          setTimeout(
+            () =>
+              resolve({
+                apiError: FreighterApiDeclinedError,
+                error: FreighterApiDeclinedError.message,
+              }),
+            QUEUE_ITEM_TTL_MS,
+          );
+        } else {
           browser.windows.onRemoved.addListener(() =>
             resolve({
               // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
@@ -449,7 +470,16 @@ export const freighterApiMessageListener = (
             apiError: FreighterApiInternalError,
             error: FreighterApiInternalError.message,
           });
-        } else if (popup !== null) {
+        } else if (popup === null) {
+          setTimeout(
+            () =>
+              resolve({
+                apiError: FreighterApiDeclinedError,
+                error: FreighterApiDeclinedError.message,
+              }),
+            QUEUE_ITEM_TTL_MS,
+          );
+        } else {
           browser.windows.onRemoved.addListener(() =>
             resolve({
               // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
@@ -535,7 +565,16 @@ export const freighterApiMessageListener = (
             apiError: FreighterApiInternalError,
             error: FreighterApiInternalError.message,
           });
-        } else if (popup !== null) {
+        } else if (popup === null) {
+          setTimeout(
+            () =>
+              resolve({
+                apiError: FreighterApiDeclinedError,
+                error: FreighterApiDeclinedError.message,
+              }),
+            QUEUE_ITEM_TTL_MS,
+          );
+        } else {
           browser.windows.onRemoved.addListener(() =>
             resolve({
               // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
@@ -659,13 +698,17 @@ export const freighterApiMessageListener = (
     const uuid = crypto.randomUUID();
     const encodeOrigin = encodeObject({ tab, url: tabUrl, uuid });
 
-    browser.windows.create({
-      url: chrome.runtime.getURL(`/index.html#/grant-access?${encodeOrigin}`),
-      ...WINDOW_SETTINGS,
-      width: 400,
-    });
+    await openSigningWindow(`/grant-access?${encodeOrigin}`, 400);
 
     return new Promise((resolve) => {
+      setTimeout(
+        () =>
+          resolve({
+            apiError: FreighterApiDeclinedError,
+            error: FreighterApiDeclinedError.message,
+          }),
+        QUEUE_ITEM_TTL_MS,
+      );
       const response = async (url?: string) => {
         // queue it up, we'll let user confirm the url looks okay and then we'll say it's okay
         if (url === tabUrl) {

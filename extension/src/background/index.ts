@@ -116,7 +116,9 @@ export const initSidebarBehavior = async () => {
     ((await localStore.getItem(IS_OPEN_SIDEBAR_BY_DEFAULT_ID)) as boolean) ??
     false;
   if (chrome.sidePanel?.setPanelBehavior) {
-    chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: !!val });
+    chrome.sidePanel
+      .setPanelBehavior({ openPanelOnActionClick: !!val })
+      .catch((e) => console.error("Failed to set panel behavior:", e));
   }
 };
 

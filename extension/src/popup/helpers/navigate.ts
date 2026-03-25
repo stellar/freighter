@@ -16,16 +16,21 @@ export const navigateTo = (
 export const openTab = (url: string) => browser.tabs.create({ url });
 
 export const openSidebar = async () => {
-  if ((browser as any).sidebarAction) {
-    // Firefox
-    await (browser as any).sidebarAction.open();
-  } else {
-    // Chrome and other Chromium browsers
-    const win = await chrome.windows.getCurrent();
-    await chrome.sidePanel.setOptions({
-      path: "index.html?mode=sidebar",
-      enabled: true,
-    });
-    await chrome.sidePanel.open({ windowId: win.id! });
+  try {
+    if ((browser as any).sidebarAction) {
+      // Firefox
+      await (browser as any).sidebarAction.open();
+    } else {
+      // Chrome — must be called in user gesture context before closing popup
+      const win = await chrome.windows.getCurrent();
+      await chrome.sidePanel.setOptions({
+        path: "index.html?mode=sidebar",
+        enabled: true,
+      });
+      await chrome.sidePanel.open({ windowId: win.id! });
+    }
+  } catch (e) {
+    console.error("Failed to open sidebar:", e);
   }
+  window.close();
 };

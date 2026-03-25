@@ -40,9 +40,9 @@ export const saveSettings = async ({
 
   // Apply sidebar behavior immediately on Chrome
   if (chrome.sidePanel?.setPanelBehavior) {
-    chrome.sidePanel.setPanelBehavior({
-      openPanelOnActionClick: isOpenSidebarByDefault,
-    });
+    chrome.sidePanel
+      .setPanelBehavior({ openPanelOnActionClick: isOpenSidebarByDefault })
+      .catch((e) => console.error("Failed to set panel behavior:", e));
   }
 
   const networkDetails = await getNetworkDetails({ localStore });
