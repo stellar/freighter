@@ -11,7 +11,6 @@ import { SlideupModal } from "popup/components/SlideupModal";
 
 import "./styles.scss";
 
-
 /**
  * Maps a `BannerTheme` to the banner-strip icon (small, inline).
  *

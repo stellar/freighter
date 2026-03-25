@@ -11,6 +11,10 @@ jest.mock("popup/helpers/maintenance/parseMaintenanceContent", () => ({
   parseBannerPayload: jest.fn(),
 }));
 
+jest.mock("popup/helpers/navigate", () => ({
+  openTab: jest.fn(),
+}));
+
 import { reducer as remoteConfig } from "popup/ducks/remoteConfig";
 import { MaintenanceScreen } from "popup/components/MaintenanceScreen";
 import { MaintenanceBanner } from "popup/components/MaintenanceBanner";
@@ -20,6 +24,10 @@ import { BannerTheme } from "popup/helpers/maintenance/types";
 const { parseBannerPayload } = jest.requireMock<
   typeof import("popup/helpers/maintenance/parseMaintenanceContent")
 >("popup/helpers/maintenance/parseMaintenanceContent");
+
+const { openTab } = jest.requireMock<typeof import("popup/helpers/navigate")>(
+  "popup/helpers/navigate",
+);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -320,8 +328,6 @@ describe("MaintenanceBanner", () => {
   });
 
   it("opens a URL in a new tab when the banner has a url", () => {
-    const openSpy = jest.spyOn(window, "open").mockImplementation(() => null);
-
     const store = setupBanner({
       theme: BannerTheme.warning,
       bannerTitle: "Network degraded",
@@ -331,13 +337,7 @@ describe("MaintenanceBanner", () => {
 
     fireEvent.click(screen.getByTestId("maintenance-banner"));
 
-    expect(openSpy).toHaveBeenCalledWith(
-      "https://status.stellar.org",
-      "_blank",
-      "noopener,noreferrer",
-    );
-
-    openSpy.mockRestore();
+    expect(openTab).toHaveBeenCalledWith("https://status.stellar.org");
   });
 
   it("does not open a modal when the banner has only a url", () => {
