@@ -6,7 +6,8 @@ import { isDev } from "@shared/helpers/dev";
 // Console log message constants
 const LOG_MESSAGES = {
   EXPERIMENT_PREFIX: "[Experiment]",
-  MISSING_KEY: "Missing AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY — feature flags will not be fetched",
+  MISSING_KEY:
+    "Missing AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY — feature flags will not be fetched",
   INIT_FAILED: "Failed to initialize",
 } as const;
 
@@ -34,7 +35,10 @@ export const initExperimentClient = (): void => {
       AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY,
     );
   } catch (e) {
-    console.error(`${LOG_MESSAGES.EXPERIMENT_PREFIX} ${LOG_MESSAGES.INIT_FAILED}`, e);
+    console.error(
+      `${LOG_MESSAGES.EXPERIMENT_PREFIX} ${LOG_MESSAGES.INIT_FAILED}`,
+      e,
+    );
   }
 };
 
