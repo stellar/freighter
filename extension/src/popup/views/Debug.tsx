@@ -22,6 +22,9 @@ import { getExperimentClient } from "helpers/experimentClient";
 
 import "./Debug/styles.scss";
 
+// "[set]" is a technical indicator (not a natural-language word), kept as a local constant.
+const STATUS_SET = "[set]";
+
 const formatTime = (timestamp: number) => {
   const date = new Date(timestamp);
   return date.toLocaleTimeString("en-US", {
@@ -111,16 +114,16 @@ const AnalyticsDebugSection = () => {
         <div className="Debug__analytics-status">
           <StatusRow
             label={t("Initialized")}
-            value={debugInfo.hasInitialized ? "Yes" : "No"}
+            value={debugInfo.hasInitialized ? t("Yes") : t("No")}
           />
           <StatusRow
             label={t("API Key")}
-            value={debugInfo.hasAmplitudeKey ? "[set]" : "Not set"}
+            value={debugInfo.hasAmplitudeKey ? STATUS_SET : t("Not set")}
           />
-          <StatusRow label={t("User ID")} value={debugInfo.userId ?? "N/A"} />
+          <StatusRow label={t("User ID")} value={debugInfo.userId ?? t("N/A")} />
           <StatusRow
             label={t("Sending to Amplitude")}
-            value={debugInfo.isSendingToAmplitude ? "Yes" : "No"}
+            value={debugInfo.isSendingToAmplitude ? t("Yes") : t("No")}
           />
         </div>
 
@@ -200,7 +203,7 @@ const FeatureFlagsDebugSection = () => {
         <div className="Debug__analytics-status">
           <StatusRow
             label={t("Experiment Client")}
-            value={isActive ? "Active" : "Not initialized"}
+            value={isActive ? t("Active") : t("Not initialized")}
           />
           <StatusRow
             label={t("Flags Loaded")}
@@ -248,6 +251,7 @@ const FeatureFlagRow = ({
   flagKey: string;
   variant: { key?: string; value?: string; payload?: unknown };
 }) => {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const hasPayload = variant.payload !== undefined && variant.payload !== null;
 
@@ -262,7 +266,7 @@ const FeatureFlagRow = ({
           {flagKey}
         </Text>
         <Text as="span" size="xs" className="Debug__flag-value">
-          {variant.value ?? "off"}
+          {variant.value ?? t("off")}
         </Text>
         {hasPayload && (
           <Text as="span" size="xs" className="Debug__analytics-event-chevron">

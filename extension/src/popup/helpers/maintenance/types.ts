@@ -5,12 +5,13 @@ export type LocalizedString = Record<string, string>;
 export type LocalizedStringArray = Record<string, string[]>;
 
 /** Theme variants for the maintenance banner, matching the mobile implementation. */
-export type BannerTheme =
-  | "primary"
-  | "secondary"
-  | "tertiary"
-  | "warning"
-  | "error";
+export enum BannerTheme {
+  primary = "primary",
+  secondary = "secondary",
+  tertiary = "tertiary",
+  warning = "warning",
+  error = "error",
+}
 
 /**
  * Raw payload shape from the Amplitude Experiment `maintenance_banner` flag.

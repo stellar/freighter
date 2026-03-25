@@ -20,10 +20,16 @@ import {
  */
 const ON_VARIANT_VALUES = ["on", "true", "enabled", "yes"];
 
-/** Boolean flags — variant value is checked against ON_VARIANT_VALUES. */
+/**
+ * Boolean flags — variant value is checked against ON_VARIANT_VALUES.
+ * Empty for now; add flag names here as new boolean flags are introduced.
+ */
 const BOOLEAN_FLAGS = [] as const;
 
-/** String flags — variant value is used directly. */
+/**
+ * String flags — variant value is used directly.
+ * Empty for now; add flag names here as new string flags are introduced.
+ */
 const STRING_FLAGS = [] as const;
 
 /**

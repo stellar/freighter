@@ -19,12 +19,12 @@ import "./styles.scss";
  */
 function getBannerIcon(theme: BannerTheme): React.ReactElement {
   switch (theme) {
-    case "warning":
-    case "error":
+    case BannerTheme.warning:
+    case BannerTheme.error:
       return <Icon.AlertOctagon />;
-    case "primary":
-    case "secondary":
-    case "tertiary":
+    case BannerTheme.primary:
+    case BannerTheme.secondary:
+    case BannerTheme.tertiary:
     default:
       return <Icon.InfoCircle />;
   }
@@ -32,11 +32,11 @@ function getBannerIcon(theme: BannerTheme): React.ReactElement {
 
 /** CSS color value for each modal icon theme, applied as inline style to override SDS defaults. */
 const MODAL_ICON_COLOR: Record<BannerTheme, string> = {
-  warning: "var(--sds-clr-amber-09, #ffb224)",
-  error: "var(--sds-clr-red-09, #e5484d)",
-  primary: "var(--sds-clr-lilac-09, #6e56cf)",
-  secondary: "var(--sds-clr-lilac-09, #6e56cf)",
-  tertiary: "var(--sds-clr-gray-09, #707070)",
+  [BannerTheme.warning]: "var(--sds-clr-amber-09, #ffb224)",
+  [BannerTheme.error]: "var(--sds-clr-red-09, #e5484d)",
+  [BannerTheme.primary]: "var(--sds-clr-lilac-09, #6e56cf)",
+  [BannerTheme.secondary]: "var(--sds-clr-lilac-09, #6e56cf)",
+  [BannerTheme.tertiary]: "var(--sds-clr-gray-09, #707070)",
 };
 
 /**
@@ -50,12 +50,12 @@ const MODAL_ICON_COLOR: Record<BannerTheme, string> = {
 function getModalIcon(theme: BannerTheme): React.ReactElement {
   const iconStyle = { color: MODAL_ICON_COLOR[theme] };
   switch (theme) {
-    case "warning":
-    case "error":
+    case BannerTheme.warning:
+    case BannerTheme.error:
       return <Icon.AlertOctagon style={iconStyle} />;
-    case "primary":
-    case "secondary":
-    case "tertiary":
+    case BannerTheme.primary:
+    case BannerTheme.secondary:
+    case BannerTheme.tertiary:
     default:
       return <Icon.InfoCircle style={iconStyle} />;
   }
@@ -104,6 +104,13 @@ export const MaintenanceBanner: React.FC = () => {
         onClick={isClickable ? handleClick : undefined}
         role={isClickable ? "button" : undefined}
         tabIndex={isClickable ? 0 : undefined}
+        aria-label={
+          isClickable
+            ? activeContent.url
+              ? t("Open status page")
+              : t("View maintenance details")
+            : undefined
+        }
         onKeyDown={
           isClickable
             ? (e) => {
@@ -158,7 +165,7 @@ export const MaintenanceBanner: React.FC = () => {
                     <Text
                       as="div"
                       size="sm"
-                      key={index}
+                      key={`${index}-${paragraph.slice(0, 20)}`}
                       className="MaintenanceBanner__modal-bodyText"
                     >
                       {paragraph}

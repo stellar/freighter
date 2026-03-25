@@ -9,18 +9,15 @@ jest.mock("helpers/experimentClient", () => ({
 
 jest.mock("popup/helpers/maintenance/parseMaintenanceContent", () => ({
   parseBannerPayload: jest.fn(),
-  parseScreenPayload: jest.fn(),
 }));
 
 import { reducer as remoteConfig } from "popup/ducks/remoteConfig";
 import { MaintenanceScreen } from "popup/components/MaintenanceScreen";
 import { MaintenanceBanner } from "popup/components/MaintenanceBanner";
-import type {
-  MaintenanceBannerContent,
-  MaintenanceScreenContent,
-} from "popup/helpers/maintenance/types";
+import type { MaintenanceBannerContent } from "popup/helpers/maintenance/types";
+import { BannerTheme } from "popup/helpers/maintenance/types";
 
-const { parseBannerPayload, parseScreenPayload } = jest.requireMock<
+const { parseBannerPayload } = jest.requireMock<
   typeof import("popup/helpers/maintenance/parseMaintenanceContent")
 >("popup/helpers/maintenance/parseMaintenanceContent");
 
@@ -78,44 +75,22 @@ function setupBanner(content: MaintenanceBannerContent) {
   });
 }
 
-/**
- * Helper to set up screen parse mock and create a store with an enabled screen.
- */
-function setupScreen(content: MaintenanceScreenContent) {
-  (parseScreenPayload as jest.Mock).mockReturnValue(content);
-  return makeStore({
-    maintenance_screen: { enabled: true, payload: { stub: true } },
-  });
-}
-
 // ---------------------------------------------------------------------------
 // MaintenanceScreen
 // ---------------------------------------------------------------------------
 
 describe("MaintenanceScreen", () => {
-  afterEach(() => jest.clearAllMocks());
-
-  it("returns null when flag is disabled", () => {
-    const store = makeStore();
-    const { container } = renderWithStore(<MaintenanceScreen />, store);
+  it("returns null when content is null", () => {
+    const { container } = render(<MaintenanceScreen content={null} />);
     expect(container.firstChild).toBeNull();
   });
 
-  it("returns null when payload is undefined even if enabled", () => {
-    (parseScreenPayload as jest.Mock).mockReturnValue(null);
-    const store = makeStore({
-      maintenance_screen: { enabled: true, payload: undefined },
-    });
-    const { container } = renderWithStore(<MaintenanceScreen />, store);
-    expect(container.firstChild).toBeNull();
-  });
-
-  it("renders the overlay when enabled with content", () => {
-    const store = setupScreen({
-      title: "Under Maintenance",
-      body: ["Back soon."],
-    });
-    renderWithStore(<MaintenanceScreen />, store);
+  it("renders the overlay when content is provided", () => {
+    render(
+      <MaintenanceScreen
+        content={{ title: "Under Maintenance", body: ["Back soon."] }}
+      />,
+    );
 
     expect(screen.getByTestId("maintenance-screen")).toBeInTheDocument();
     expect(screen.getByText("Under Maintenance")).toBeInTheDocument();
@@ -123,11 +98,14 @@ describe("MaintenanceScreen", () => {
   });
 
   it("renders multiple body paragraphs", () => {
-    const store = setupScreen({
-      title: "Maintenance",
-      body: ["Paragraph one.", "Paragraph two.", "Paragraph three."],
-    });
-    renderWithStore(<MaintenanceScreen />, store);
+    render(
+      <MaintenanceScreen
+        content={{
+          title: "Maintenance",
+          body: ["Paragraph one.", "Paragraph two.", "Paragraph three."],
+        }}
+      />,
+    );
 
     expect(screen.getByText("Paragraph one.")).toBeInTheDocument();
     expect(screen.getByText("Paragraph two.")).toBeInTheDocument();
@@ -135,8 +113,9 @@ describe("MaintenanceScreen", () => {
   });
 
   it("does not render a body section when body array is empty", () => {
-    const store = setupScreen({ title: "Down for maintenance", body: [] });
-    const { container } = renderWithStore(<MaintenanceScreen />, store);
+    const { container } = render(
+      <MaintenanceScreen content={{ title: "Down for maintenance", body: [] }} />,
+    );
 
     expect(screen.getByText("Down for maintenance")).toBeInTheDocument();
     expect(
@@ -145,8 +124,9 @@ describe("MaintenanceScreen", () => {
   });
 
   it("renders the icon box", () => {
-    const store = setupScreen({ title: "Title", body: [] });
-    const { container } = renderWithStore(<MaintenanceScreen />, store);
+    const { container } = render(
+      <MaintenanceScreen content={{ title: "Title", body: [] }} />,
+    );
 
     expect(
       container.querySelector(".MaintenanceScreen__icon-box"),
@@ -178,7 +158,7 @@ describe("MaintenanceBanner", () => {
 
   it("renders the alert bar with the banner title", () => {
     const store = setupBanner({
-      theme: "warning",
+      theme: BannerTheme.warning,
       bannerTitle: "Services degraded",
     });
     renderWithStore(<MaintenanceBanner />, store);
@@ -188,12 +168,12 @@ describe("MaintenanceBanner", () => {
   });
 
   it.each([
-    ["warning", "MaintenanceBanner__alert--warning"],
-    ["error", "MaintenanceBanner__alert--error"],
-    ["primary", "MaintenanceBanner__alert--primary"],
-    ["secondary", "MaintenanceBanner__alert--secondary"],
-    ["tertiary", "MaintenanceBanner__alert--tertiary"],
-  ] as const)("applies the %s theme CSS class", (theme, expectedClass) => {
+    [BannerTheme.warning, "MaintenanceBanner__alert--warning"],
+    [BannerTheme.error, "MaintenanceBanner__alert--error"],
+    [BannerTheme.primary, "MaintenanceBanner__alert--primary"],
+    [BannerTheme.secondary, "MaintenanceBanner__alert--secondary"],
+    [BannerTheme.tertiary, "MaintenanceBanner__alert--tertiary"],
+  ])("applies the %s theme CSS class", (theme, expectedClass) => {
     const store = setupBanner({ theme, bannerTitle: "Banner" });
     const { container } = renderWithStore(<MaintenanceBanner />, store);
     expect(container.querySelector(`.${expectedClass}`)).toBeInTheDocument();
@@ -201,7 +181,7 @@ describe("MaintenanceBanner", () => {
 
   it("does not have role=button when no url or modal is provided", () => {
     const store = setupBanner({
-      theme: "warning",
+      theme: BannerTheme.warning,
       bannerTitle: "Info only",
     });
     renderWithStore(<MaintenanceBanner />, store);
@@ -212,7 +192,7 @@ describe("MaintenanceBanner", () => {
 
   it("has role=button when a url is provided", () => {
     const store = setupBanner({
-      theme: "warning",
+      theme: BannerTheme.warning,
       bannerTitle: "Check status",
       url: "https://status.stellar.org",
     });
@@ -226,7 +206,7 @@ describe("MaintenanceBanner", () => {
 
   it("has role=button when a modal is provided", () => {
     const store = setupBanner({
-      theme: "warning",
+      theme: BannerTheme.warning,
       bannerTitle: "Details available",
       modal: { title: "Details", body: ["More info."] },
     });
@@ -238,34 +218,12 @@ describe("MaintenanceBanner", () => {
     );
   });
 
-  it("renders a chevron when the banner is clickable", () => {
-    const store = setupBanner({
-      theme: "primary",
-      bannerTitle: "Click me",
-      modal: { title: "Details", body: [] },
-    });
-    const { container } = renderWithStore(<MaintenanceBanner />, store);
-
-    expect(
-      container.querySelector(".MaintenanceBanner__alert-chevron"),
-    ).toBeInTheDocument();
-  });
-
-  it("does not render a chevron for a non-clickable banner", () => {
-    const store = setupBanner({
-      theme: "primary",
-      bannerTitle: "Info only",
-    });
-    const { container } = renderWithStore(<MaintenanceBanner />, store);
-
-    expect(
-      container.querySelector(".MaintenanceBanner__alert-chevron"),
-    ).not.toBeInTheDocument();
-  });
+  // Click affordance for clickable banners is communicated via role="button"
+  // and tabIndex (tested above), not a visual chevron element.
 
   it("opens the modal when the banner is clicked with a modal payload", () => {
     const store = setupBanner({
-      theme: "warning",
+      theme: BannerTheme.warning,
       bannerTitle: "Scheduled maintenance",
       modal: {
         title: "Maintenance details",
@@ -291,7 +249,7 @@ describe("MaintenanceBanner", () => {
 
   it("closes the modal when the Done button is clicked", () => {
     const store = setupBanner({
-      theme: "primary",
+      theme: BannerTheme.primary,
       bannerTitle: "Upcoming outage",
       modal: {
         title: "Outage window",
@@ -313,7 +271,7 @@ describe("MaintenanceBanner", () => {
 
   it("closes the modal when the close (×) button is clicked", () => {
     const store = setupBanner({
-      theme: "warning",
+      theme: BannerTheme.warning,
       bannerTitle: "Alert",
       modal: { title: "Details", body: ["Info."] },
     });
@@ -332,7 +290,7 @@ describe("MaintenanceBanner", () => {
 
   it("renders a theme icon box in the modal header", () => {
     const store = setupBanner({
-      theme: "warning",
+      theme: BannerTheme.warning,
       bannerTitle: "Alert",
       modal: { title: "Details", body: [] },
     });
@@ -347,7 +305,7 @@ describe("MaintenanceBanner", () => {
 
   it("renders multiple body paragraphs in the modal", () => {
     const store = setupBanner({
-      theme: "warning",
+      theme: BannerTheme.warning,
       bannerTitle: "Alert",
       modal: {
         title: "Details",
@@ -365,7 +323,7 @@ describe("MaintenanceBanner", () => {
     const openSpy = jest.spyOn(window, "open").mockImplementation(() => null);
 
     const store = setupBanner({
-      theme: "warning",
+      theme: BannerTheme.warning,
       bannerTitle: "Network degraded",
       url: "https://status.stellar.org",
     });
@@ -384,7 +342,7 @@ describe("MaintenanceBanner", () => {
 
   it("does not open a modal when the banner has only a url", () => {
     const store = setupBanner({
-      theme: "warning",
+      theme: BannerTheme.warning,
       bannerTitle: "Network degraded",
       url: "https://status.stellar.org",
     });

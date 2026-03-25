@@ -6,7 +6,10 @@
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 9999;
+  // Above all app layers (SlideupModal uses --z-index-modal: 30) but below
+  // browser-chrome overlays. Intentionally higher than any in-app z-index so
+  // the maintenance overlay blocks all user interaction.
+  z-index: 100;
   background-color: var(--sds-clr-gray-01);
   display: flex;
   flex-direction: column;

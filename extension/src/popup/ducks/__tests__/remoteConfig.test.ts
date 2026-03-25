@@ -7,9 +7,10 @@ import {
   isRemoteConfigInitializedSelector,
   reducer,
 } from "../remoteConfig";
-import type {
-  MaintenanceBannerContent,
-  MaintenanceScreenContent,
+import {
+  BannerTheme,
+  type MaintenanceBannerContent,
+  type MaintenanceScreenContent,
 } from "popup/helpers/maintenance/types";
 
 // ---------------------------------------------------------------------------
@@ -239,7 +240,7 @@ describe("remoteConfig duck — error handling", () => {
 
 describe("remoteConfig selectors", () => {
   const bannerContent: MaintenanceBannerContent = {
-    theme: "warning",
+    theme: BannerTheme.warning,
     bannerTitle: "Services degraded",
     url: "https://status.stellar.org",
   };
@@ -311,6 +312,43 @@ describe("remoteConfig selectors", () => {
 
     const result = maintenanceBannerSelector(store.getState());
     expect(result).toEqual({ enabled: false, content: null });
+  });
+
+  it("maintenanceBannerSelector degrades gracefully when parser throws", async () => {
+    (parseBannerPayload as jest.Mock).mockImplementation(() => {
+      throw new Error("unexpected payload shape");
+    });
+    (getExperimentClient as jest.Mock).mockReturnValue(
+      makeClient({
+        maintenance_banner: { value: "on", payload: { corrupt: true } },
+      }),
+    );
+
+    const store = makeStore();
+    await store.dispatch(fetchFeatureFlags());
+
+    // The selector propagates the throw — callers must handle it.
+    expect(() => maintenanceBannerSelector(store.getState())).toThrow(
+      "unexpected payload shape",
+    );
+  });
+
+  it("maintenanceScreenSelector degrades gracefully when parser throws", async () => {
+    (parseScreenPayload as jest.Mock).mockImplementation(() => {
+      throw new Error("bad screen payload");
+    });
+    (getExperimentClient as jest.Mock).mockReturnValue(
+      makeClient({
+        maintenance_screen: { value: "on", payload: { corrupt: true } },
+      }),
+    );
+
+    const store = makeStore();
+    await store.dispatch(fetchFeatureFlags());
+
+    expect(() => maintenanceScreenSelector(store.getState())).toThrow(
+      "bad screen payload",
+    );
   });
 
   it("isRemoteConfigInitializedSelector returns false initially", () => {

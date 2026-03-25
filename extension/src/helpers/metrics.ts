@@ -32,6 +32,9 @@ type MetricHandler<AppState> = (
   state: AppState,
   action: MetricsPayloadAction,
 ) => void;
+// `any` is intentional: handlers register with specific AppState generics
+// (e.g. MetricHandler<PopupState>) but are stored heterogeneously. Using
+// `unknown` would break assignment due to function parameter contravariance.
 const handlersLookup: Record<string, MetricHandler<any>[]> = {};
 
 /*

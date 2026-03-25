@@ -7,14 +7,8 @@ import {
   MaintenanceScreenContent,
 } from "./types";
 
-const VALID_THEMES: BannerTheme[] = [
-  "primary",
-  "secondary",
-  "tertiary",
-  "warning",
-  "error",
-];
-const DEFAULT_THEME: BannerTheme = "warning";
+const VALID_THEMES: BannerTheme[] = Object.values(BannerTheme);
+const DEFAULT_THEME: BannerTheme = BannerTheme.warning;
 
 /**
  * Returns the two-letter base language code from i18next (e.g. "en-US" → "en").
@@ -90,8 +84,15 @@ export function parseBannerPayload(
 
   const resolvedTheme = toTheme(theme);
 
-  const resolvedUrl =
-    typeof url === "string" && url.startsWith("https://") ? url : undefined;
+  const resolvedUrl = (() => {
+    if (typeof url !== "string") return undefined;
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === "https:" ? url : undefined;
+    } catch {
+      return undefined;
+    }
+  })();
 
   let resolvedModal: MaintenanceBannerContent["modal"];
   if (isObject(modal) && isObject(modal.title) && isObject(modal.body)) {
