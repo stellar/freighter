@@ -24,31 +24,59 @@ test("View Account History", async ({ page, extensionId, context }) => {
 
 test("View failed transaction", async ({ page, extensionId, context }) => {
   test.slow();
+  const mockAccountHistoryData = [
+    {
+      amount: "0.0010000",
+      asset_code: "USDC",
+      asset_issuer:
+        "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+      asset_type: "credit_alphanum4",
+      created_at: "2025-03-21T22:28:46Z",
+      from: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+      id: "164007621169153",
+      paging_token: "164007621169153",
+      source_account:
+        "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+      to: "GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2",
+      transaction_attr: {},
+      transaction_hash:
+        "686601028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a5",
+      transaction_successful: false,
+      type: "payment",
+      type_i: 1,
+    },
+  ];
+
   const stubOverrides = async () => {
+    // Use addInitScript to patch window.fetch directly in the extension page.
+    // Playwright's route interception (context.route/page.route) does not reliably
+    // intercept fetch requests made from Chrome extension popup pages in CI headless mode.
+    // addInitScript injects code before page scripts run and is guaranteed to work.
+    await page.addInitScript((data: object[]) => {
+      const origFetch = window.fetch.bind(window);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).fetch = function (input: any, init: any) {
+        const urlStr: string =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.href
+              : input.url ?? "";
+        if (urlStr.includes("/account-history/")) {
+          return Promise.resolve(
+            new Response(JSON.stringify(data), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }),
+          );
+        }
+        return origFetch(input, init);
+      };
+    }, mockAccountHistoryData);
+
+    // Also register context.route as a network-level fallback
     await context.route("*/**/account-history/*", async (route) => {
-      const json = [
-        {
-          amount: "0.0010000",
-          asset_code: "USDC",
-          asset_issuer:
-            "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-          asset_type: "credit_alphanum4",
-          created_at: "2025-03-21T22:28:46Z",
-          from: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-          id: "164007621169153",
-          paging_token: "164007621169153",
-          source_account:
-            "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-          to: "GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2",
-          transaction_attr: {},
-          transaction_hash:
-            "686601028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a5",
-          transaction_successful: false,
-          type: "payment",
-          type_i: 1,
-        },
-      ];
-      await route.fulfill({ json });
+      await route.fulfill({ json: mockAccountHistoryData });
     });
   };
 
@@ -56,6 +84,7 @@ test("View failed transaction", async ({ page, extensionId, context }) => {
   await page.getByTestId("nav-link-account-history").click();
   await expect(page.getByTestId("history-item-amount-component")).toHaveText(
     "Mar 21",
+    { timeout: 30000 },
   );
   await expect(page.getByTestId("history-item-label")).toHaveText(
     "Transaction Failed",
