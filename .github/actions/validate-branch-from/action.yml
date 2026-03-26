@@ -26,7 +26,10 @@ runs:
       id: fetch_tags
       shell: bash
       run: |
-        git fetch --tags 2>/dev/null || true
+        if ! git fetch --tags 2>/dev/null; then
+          echo "Error: Failed to fetch git tags. Please check repository access and network connectivity." >&2
+          exit 1
+        fi
 
         TAGS=$(git tag --list '[0-9]*' --sort=-version:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -n 10)
 

@@ -81,8 +81,7 @@ jobs:
       - name: Determine branch names
         id: set_branches
         env:
-          VALIDATED_BRANCH_FROM:
-            ${{ steps.validate_branch_from.outputs.branch_or_tag }}
+          VALIDATED_BRANCH_FROM: ${{ steps.validate_branch_from.outputs.branch_or_tag }}
           APP_VERSION: ${{ steps.normalize_version.outputs.app_version }}
         run: |
           BRANCH_FROM="$VALIDATED_BRANCH_FROM"
