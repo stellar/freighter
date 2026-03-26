@@ -1,6 +1,6 @@
 import { expect, test, expectPageToHaveScreenshot } from "../test-fixtures";
 import { TEST_TOKEN_ADDRESS } from "../helpers/test-token";
-import { loginToTestAccount } from "../helpers/login";
+import { loginToTestAccount, switchToMainnet } from "../helpers/login";
 import { allowDapp } from "../helpers/dAppSessionHelper";
 import {
   stubAccountBalances,
@@ -21,6 +21,11 @@ const AUTH_ENTRY_TO_SIGN =
 
 const SIGNED_AUTH_ENTRY =
   '"pUMQKvSlK72f3XmJmZbLLV05SPn9e8k/9m9RQOW2GDmpUZ/fS5ZWDsAF3rJulGg8AVL21FlUr+nRFcF+rLOiAw=="';
+
+// A valid HashIdPreimage XDR of type ENVELOPE_TYPE_OP_ID (6), NOT sorobanAuthorization.
+// Used to test the second validation catch in SignAuthEntry (wrong preimage variant).
+const NON_SOROBAN_AUTH_ENTRY =
+  "AAAABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAA==";
 
 const MSG_TO_SIGN = "Hello, World!";
 const SIGNED_MSG =
@@ -890,4 +895,215 @@ test("should get public key when logged out", async ({
   await expect(pageTwo.getByRole("textbox").first()).toHaveValue(
     "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
   );
+});
+
+// ── Network validation tests ──────────────────────────────────────────────────
+
+test("should show network mismatch warning when signing auth entry for wrong network", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  // Switch to MainNet so the wallet's expected networkId is the MainNet hash,
+  // while AUTH_ENTRY_TO_SIGN embeds the TestNet networkId.
+  await switchToMainnet(page);
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signAuthEntry",
+  );
+  await pageTwo.getByRole("textbox").first().fill(AUTH_ENTRY_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo
+    .getByText("Sign Authorization Entry XDR")
+    .click({ force: true });
+
+  const popup = await popupPromise;
+
+  await expect(
+    popup.getByText(
+      "The authorization entry is for a different network than the one you are connected to.",
+    ),
+  ).toBeVisible();
+  await expect(
+    popup.getByText(
+      "Signing this authorization is not possible at the moment.",
+    ),
+  ).toBeVisible();
+});
+
+test("should show invalid entry warning when auth entry XDR cannot be parsed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signAuthEntry",
+  );
+  // TX_TO_SIGN is a TransactionEnvelope XDR — it will fail to parse as HashIdPreimage
+  await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo
+    .getByText("Sign Authorization Entry XDR")
+    .click({ force: true });
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText("Invalid Authorization Entry")).toBeVisible();
+  await expect(
+    popup.getByText("The authorization entry XDR could not be parsed."),
+  ).toBeVisible();
+});
+
+test("should show invalid entry warning when auth entry is not a Soroban authorization", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signAuthEntry",
+  );
+  // NON_SOROBAN_AUTH_ENTRY is a valid HashIdPreimage of type OP_ID (6), not sorobanAuthorization
+  await pageTwo.getByRole("textbox").first().fill(NON_SOROBAN_AUTH_ENTRY);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo
+    .getByText("Sign Authorization Entry XDR")
+    .click({ force: true });
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText("Invalid Authorization Entry")).toBeVisible();
+  await expect(
+    popup.getByText(
+      "The authorization entry is malformed or contains invalid data.",
+    ),
+  ).toBeVisible();
+});
+
+test("should show network warning when signing message without network passphrase", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
+  // leave networkPassphrase field (nth(1)) empty — falsy value bypasses the old guard
+  await pageTwo.getByText("Sign message").click();
+
+  const popup = await popupPromise;
+
+  await expect(
+    popup.getByText(
+      "The requester did not specify a network for this message.",
+    ),
+  ).toBeVisible();
+  await expect(
+    popup.getByText("Signing this message is not possible at the moment."),
+  ).toBeVisible();
+});
+
+test("should show network warning when signing message with mismatched network passphrase", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
+  // Wallet is on TestNet; provide MainNet passphrase to trigger network mismatch
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Public Global Stellar Network ; September 2015");
+  await pageTwo.getByText("Sign message").click();
+
+  const popup = await popupPromise;
+
+  await expect(
+    popup.getByText("The requester expects you to sign this message on"),
+  ).toBeVisible();
+  // Should show "Main Net" (the mapped network name) instead of the raw passphrase
+  await expect(popup.getByText(/Main Net/)).toBeVisible();
+  await expect(
+    popup.getByText("Signing this message is not possible at the moment."),
+  ).toBeVisible();
+});
+
+test("should show network mismatch warning when signing transaction for wrong network", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signTransaction",
+  );
+  await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
+  // Wallet is on TestNet; provide MainNet passphrase to trigger the mismatch check
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Public Global Stellar Network ; September 2015");
+  await pageTwo.getByText("Sign Transaction XDR").click();
+
+  const txPopup = await popupPromise;
+  await stubAccountBalances(txPopup);
+  await txPopup.route("**/scan-tx", async (route) => {
+    await route.fulfill({
+      json: { data: null, error: null },
+    });
+  });
+
+  await expect(
+    txPopup.getByText("The transaction you're trying to sign is on"),
+  ).toBeVisible();
+  // Should show "Main Net" (the mapped network name) instead of the raw passphrase
+  await expect(txPopup.getByText(/Main Net/)).toBeVisible();
 });

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { PASSPHRASE_TO_NETWORK_NAME } from "@shared/constants/stellar";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
@@ -313,7 +314,8 @@ export const SignTransaction = () => {
       >
         <p>
           {`${t("The transaction you’re trying to sign is on")} `}
-          {_networkPassphrase}.
+          {PASSPHRASE_TO_NETWORK_NAME[_networkPassphrase] ?? _networkPassphrase}
+          .
         </p>
         <p>{t("Signing this transaction is not possible at the moment.")}</p>
       </WarningMessage>

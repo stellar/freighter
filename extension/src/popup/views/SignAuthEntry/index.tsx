@@ -129,7 +129,7 @@ export const SignAuthEntry = () => {
     return (
       <WarningMessage
         variant={WarningMessageVariant.warning}
-        handleCloseClick={() => window.close()}
+        handleCloseClick={() => rejectAndClose()}
         isActive
         header={t("Invalid Authorization Entry")}
       >
@@ -141,14 +141,16 @@ export const SignAuthEntry = () => {
   // Cryptographically validate the networkId embedded in the XDR against the
   // wallet's active network. This is stronger than trusting the dApp-supplied
   // networkPassphrase string (which may be absent or spoofed).
+  let sorobanAuth: ReturnType<typeof preimage.sorobanAuthorization>;
   try {
-    const embeddedNetworkId = preimage.sorobanAuthorization().networkId();
+    sorobanAuth = preimage.sorobanAuthorization();
+    const embeddedNetworkId = sorobanAuth.networkId();
     const expectedNetworkId = hash(Buffer.from(networkPassphrase));
     if (!embeddedNetworkId.equals(expectedNetworkId)) {
       return (
         <WarningMessage
           variant={WarningMessageVariant.warning}
-          handleCloseClick={() => window.close()}
+          handleCloseClick={() => rejectAndClose()}
           isActive
           header={`${t("Freighter is set to")} ${networkName}`}
         >
@@ -167,7 +169,7 @@ export const SignAuthEntry = () => {
     return (
       <WarningMessage
         variant={WarningMessageVariant.warning}
-        handleCloseClick={() => window.close()}
+        handleCloseClick={() => rejectAndClose()}
         isActive
         header={t("Invalid Authorization Entry")}
       >
@@ -188,7 +190,7 @@ export const SignAuthEntry = () => {
   const favicon = getSiteFavicon(domain);
   const validDomain = isDomainValid ? punycodedDomain : `xn-${punycodedDomain}`;
 
-  const invocation = preimage.sorobanAuthorization().invocation();
+  const invocation = sorobanAuth.invocation();
 
   return isPasswordRequired ? (
     <VerifyAccount
