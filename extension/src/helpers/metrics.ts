@@ -16,6 +16,7 @@ import {
 } from "constants/env";
 import { initExperimentClient } from "helpers/experimentClient";
 import { isDev } from "@shared/helpers/dev";
+import { truncatedPublicKey } from "helpers/stellar";
 import {
   settingsDataSharingSelector,
   settingsNetworkDetailsSelector,
@@ -92,22 +93,8 @@ export interface MetricsData {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Truncates a Stellar public key for analytics/storage use.
- * Returns first 8 + last 4 chars (e.g. "GABCDEFG…WXYZ"), which is enough
- * for session correlation without storing the full address.
- */
-const truncatePublicKey = (publicKey: string): string =>
-  `${publicKey.slice(0, 8)}…${publicKey.slice(-4)}`;
-
-// ---------------------------------------------------------------------------
 // Amplitude SDK initialization
 // ---------------------------------------------------------------------------
-
-const METRICS_USER_ID_KEY = "metrics_user_id";
 
 let hasInitialized = false;
 
@@ -129,20 +116,6 @@ const DEBUG_EVENT_TTL_MS = 10 * 60 * 1000;
  * so queued events are sent promptly before the extension popup closes.
  */
 const AMPLITUDE_FLUSH_INTERVAL_MS = 500;
-
-/**
- * Number of bytes in a UUID (version 4). Used for the fallback UUID generation
- * when crypto.randomUUID is unavailable.
- */
-const UUID_BYTE_LENGTH = 16;
-
-/**
- * UUID version 4 and variant 1 bitmasks per RFC 4122.
- */
-const UUID_VERSION_4_MASK = 0x0f;
-const UUID_VERSION_4_FLAG = 0x40;
-const UUID_VARIANT_1_MASK = 0x3f;
-const UUID_VARIANT_1_FLAG = 0x80;
 
 export interface DebugEvent {
   event: string;
@@ -240,7 +213,7 @@ export const clearRecentEvents = (): void => {
 export interface AnalyticsDebugInfo {
   hasInitialized: boolean;
   hasAmplitudeKey: boolean;
-  userId: string | null;
+  userId: string | null | undefined;
   isSendingToAmplitude: boolean;
 }
 
@@ -252,7 +225,7 @@ export interface AnalyticsDebugInfo {
 export const getAnalyticsDebugInfo = (): AnalyticsDebugInfo => ({
   hasInitialized,
   hasAmplitudeKey: Boolean(AMPLITUDE_KEY),
-  userId: localStorage.getItem(METRICS_USER_ID_KEY),
+  userId: hasInitialized ? amplitude.getUserId() : null,
   isSendingToAmplitude:
     hasInitialized &&
     Boolean(AMPLITUDE_KEY) &&
@@ -336,34 +309,6 @@ if (isDev && typeof window !== "undefined") {
 }
 
 /**
- * Generates a random UUID, preferring `crypto.randomUUID()` (available in
- * modern browsers and secure extension contexts) with a
- * `crypto.getRandomValues` fallback for older environments.
- */
-const generateUserId = (): string => {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  // Fallback: build a v4-style UUID from getRandomValues
-  const bytes = new Uint8Array(UUID_BYTE_LENGTH);
-  crypto.getRandomValues(bytes);
-  bytes[6] = (bytes[6] & UUID_VERSION_4_MASK) | UUID_VERSION_4_FLAG; // version 4
-  bytes[8] = (bytes[8] & UUID_VARIANT_1_MASK) | UUID_VARIANT_1_FLAG; // variant 1
-  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-};
-
-const getUserId = () => {
-  const storedId = localStorage.getItem(METRICS_USER_ID_KEY);
-  if (!storedId) {
-    const newId = generateUserId();
-    localStorage.setItem(METRICS_USER_ID_KEY, newId);
-    return newId;
-  }
-  return storedId;
-};
-
-/**
  * Initializes the Amplitude SDK. Should be called once at app startup.
  * In development (no AMPLITUDE_KEY), events are logged to console only.
  */
@@ -382,19 +327,14 @@ export const initAmplitude = () => {
 
   try {
     amplitude.init(AMPLITUDE_KEY, undefined, {
-      // Disable Amplitude's built-in cookie/localStorage identity persistence.
-      // We manage the user ID ourselves via `getUserId()` + localStorage so that
-      // we control the identifier format and lifecycle. Amplitude's default
-      // identity storage would create a second, SDK-managed identifier that could
-      // conflict with ours and is unnecessary given we call setUserId() manually.
-      identityStorage: "none",
+      // Use localStorage for identity persistence. The SDK will automatically
+      // generate a UUID deviceId and persist it across sessions.
+      identityStorage: "localStorage",
       autocapture: false,
       // The extension popup can close at any time; reduce the flush interval
       // so queued events are sent promptly instead of waiting the default 1 s.
       flushIntervalMillis: AMPLITUDE_FLUSH_INTERVAL_MS,
     });
-
-    amplitude.setUserId(getUserId());
 
     // Set persistent user properties (mirrors mobile's setAmplitudeUserProperties)
     const identify = new amplitude.Identify();
@@ -432,7 +372,10 @@ export const initAmplitude = () => {
       });
     }
   } catch (e) {
-    console.error(`${LOG_MESSAGES.AMPLITUDE_PREFIX} ${LOG_MESSAGES.INIT_FAILED}`, e);
+    console.error(
+      `${LOG_MESSAGES.AMPLITUDE_PREFIX} ${LOG_MESSAGES.INIT_FAILED}`,
+      e,
+    );
   }
 };
 
@@ -441,24 +384,9 @@ export const initAmplitude = () => {
 // ---------------------------------------------------------------------------
 
 /**
- * Returns the extension's manifest version when running as a real extension,
- * or the package.json version (injected at build time) when running on the
- * dev server where runtime APIs are unavailable.
+ * Returns the extension version from package.json, injected at build time.
  */
-const getAppVersion = (): string => {
-  const g = globalThis as any;
-
-  // Chrome / Chromium-based extensions
-  const chromeVersion = g?.chrome?.runtime?.getManifest?.()?.version;
-  if (chromeVersion) return chromeVersion;
-
-  // Firefox extensions (browser.* API)
-  const browserVersion = g?.browser?.runtime?.getManifest?.()?.version;
-  if (browserVersion) return browserVersion;
-
-  // Dev server or unknown environment — use build-time constant
-  return APP_VERSION;
-};
+const getAppVersion = (): string => APP_VERSION;
 
 /**
  * Builds common context data attached to every event.
@@ -485,7 +413,7 @@ const buildCommonContext = (
   };
 
   const context: Record<string, unknown> = {
-    publicKey: activePublicKey ? truncatePublicKey(activePublicKey) : "N/A",
+    publicKey: activePublicKey ? truncatedPublicKey(activePublicKey, 8) : "N/A",
     platform: METRICS_PLATFORM,
     platformVersion: navigator.userAgent,
     network: (networkDetails?.networkName ?? "").toUpperCase(),
@@ -598,7 +526,7 @@ export const storeBalanceMetricData = (
     // full G-addresses to localStorage.
     const unfundedFreighterAccounts =
       metricsData.unfundedFreighterAccounts || [];
-    const truncated = truncatePublicKey(publicKey);
+    const truncated = truncatedPublicKey(publicKey);
     const idx = unfundedFreighterAccounts.indexOf(truncated);
 
     if (accountFunded) {

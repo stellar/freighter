@@ -112,7 +112,6 @@ const prodConfig = (
 module.exports = (env = {}) => {
   const mergedEnv = {
     ...env,
-    BUILD_TYPE: env.PRODUCTION ? "production" : "beta",
   };
   return merge(prodConfig(mergedEnv), commonConfig(mergedEnv));
 };
