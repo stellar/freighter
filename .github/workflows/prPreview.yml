@@ -12,7 +12,7 @@
 #   contents: write
 # jobs:
 #   build-and-release:
-#     if: github.event.action != 'closed'
+#     if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
 #     name: Build and Release PR Preview
 #     runs-on: ubuntu-latest
 #     steps:
@@ -78,7 +78,7 @@
 #           GH_TOKEN: ${{ github.token }}
 #
 #   cleanup-release:
-#     if: github.event.action == 'closed'
+#     if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
 #     name: Cleanup PR Preview Release
 #     runs-on: ubuntu-latest
 #     steps:
