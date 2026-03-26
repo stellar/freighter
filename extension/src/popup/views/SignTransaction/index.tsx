@@ -261,7 +261,21 @@ export const SignTransaction = () => {
     });
   }
 
-  const { networkName, networkPassphrase } = signTxState.data?.networkDetails!;
+  // Handle potential missing networkDetails
+  if (!signTxState.data?.networkDetails) {
+    return (
+      <WarningMessage
+        variant={WarningMessageVariant.warning}
+        handleCloseClick={() => window.close()}
+        isActive
+        header={t("Unable to load network details")}
+      >
+        <p>{t("Please try again or contact support if the issue persists.")}</p>
+      </WarningMessage>
+    );
+  }
+
+  const { networkName, networkPassphrase } = signTxState.data.networkDetails;
 
   const scanResult = signTxState.data?.scanResult;
   const isUnableToScan = shouldTreatAsUnableToScan(scanResult);

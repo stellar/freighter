@@ -161,6 +161,8 @@ test("should sign transaction when allowed", async ({
   });
 
   await expect(txPopup.getByText("Confirm Transaction")).toBeVisible();
+  await expect(txPopup.getByText("Network")).toBeVisible();
+  await expect(txPopup.getByText("Test Net")).toBeVisible();
 
   await expect(txPopup.getByText("GDF3…ZEFY")).toBeVisible();
 

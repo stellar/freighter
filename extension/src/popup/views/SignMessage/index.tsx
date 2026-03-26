@@ -156,7 +156,7 @@ export const SignMessage = () => {
     );
   }
 
-  if (blobNetworkPassphrase && blobNetworkPassphrase !== networkPassphrase) {
+  if (!blobNetworkPassphrase || blobNetworkPassphrase !== networkPassphrase) {
     return (
       <WarningMessage
         variant={WarningMessageVariant.warning}
@@ -165,8 +165,9 @@ export const SignMessage = () => {
         header={`${t("Freighter is set to")} ${networkName}`}
       >
         <p>
-          {`${t("The requester expects you to sign this message on")} `}
-          {blobNetworkPassphrase}.
+          {blobNetworkPassphrase
+            ? `${t("The requester expects you to sign this message on")} ${blobNetworkPassphrase}.`
+            : t("The requester did not specify a network for this message.")}
         </p>
         <p>{t("Signing this message is not possible at the moment.")}</p>
       </WarningMessage>
