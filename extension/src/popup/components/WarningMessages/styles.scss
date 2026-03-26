@@ -802,6 +802,10 @@
       padding-top: pxToRem(8px);
     }
 
+    &:first-child {
+      margin-top: pxToRem(8px);
+    }
+
     &:not(:last-child) {
       padding-bottom: pxToRem(8px);
     }
