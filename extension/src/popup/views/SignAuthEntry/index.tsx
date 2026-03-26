@@ -52,10 +52,7 @@ export const SignAuthEntry = () => {
   );
 
   const params = parsedSearchParam(location.search) as EntryToSign;
-  const {
-    accountToSign,
-    domain,
-  } = params;
+  const { accountToSign, domain } = params;
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
   });
@@ -160,7 +157,9 @@ export const SignAuthEntry = () => {
               "The authorization entry is for a different network than the one you are connected to.",
             )}
           </p>
-          <p>{t("Signing this authorization is not possible at the moment.")}</p>
+          <p>
+            {t("Signing this authorization is not possible at the moment.")}
+          </p>
         </WarningMessage>
       );
     }
@@ -173,9 +172,7 @@ export const SignAuthEntry = () => {
         header={t("Invalid Authorization Entry")}
       >
         <p>
-          {t(
-            "The authorization entry is malformed or contains invalid data.",
-          )}
+          {t("The authorization entry is malformed or contains invalid data.")}
         </p>
       </WarningMessage>
     );

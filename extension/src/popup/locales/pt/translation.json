@@ -532,6 +532,7 @@
   "Terms of Use": "Termos de Uso",
   "The authorization entry does not contain a valid Soroban network ID.": "A entrada de autorização não contém um ID de rede Soroban válido.",
   "The authorization entry is for a different network than the one you are connected to.": "A entrada de autorização é para uma rede diferente da que você está conectado.",
+  "The authorization entry is malformed or contains invalid data.": "A entrada de autorização está malformada ou contém dados inválidos.",
   "The authorization entry XDR could not be parsed.": "O XDR da entrada de autorização não pôde ser interpretado.",
   "The destination account does not accept the asset you’re sending": "A conta de destino não aceita o ativo que você está enviando",
   "The destination account doesn't exist": "A conta de destino não existe",

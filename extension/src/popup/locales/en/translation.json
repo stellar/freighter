@@ -530,6 +530,7 @@
   "Terms of Use": "Terms of Use",
   "The authorization entry does not contain a valid Soroban network ID.": "The authorization entry does not contain a valid Soroban network ID.",
   "The authorization entry is for a different network than the one you are connected to.": "The authorization entry is for a different network than the one you are connected to.",
+  "The authorization entry is malformed or contains invalid data.": "The authorization entry is malformed or contains invalid data.",
   "The authorization entry XDR could not be parsed.": "The authorization entry XDR could not be parsed.",
   "The destination account does not accept the asset you’re sending": "The destination account does not accept the asset you’re sending",
   "The destination account doesn't exist": "The destination account doesn't exist.",
