@@ -35,8 +35,17 @@ jobs:
           echo "app_version=${APP_VERSION}" >> $GITHUB_OUTPUT
           echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
 
+      - name: Validate branch name
+        env:
+          RAW_BRANCH: ${{ inputs.branch }}
+        run: |
+          if [[ ! "$RAW_BRANCH" =~ ^[a-zA-Z0-9._/-]+$ ]]; then
+            echo "Error: Invalid branch name. Only alphanumeric characters, dots, slashes, and hyphens are allowed."
+            exit 1
+          fi
+
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: ${{ inputs.branch }}
           fetch-depth: 0
@@ -49,10 +58,10 @@ jobs:
 
       - name: Determine branch names
         id: set_branches
+        env:
+          APP_VERSION: ${{ steps.normalize_version.outputs.app_version }}
+          BRANCH_FROM: ${{ inputs.branch }}
         run: |
-          APP_VERSION="${{ steps.normalize_version.outputs.app_version }}"
-          BRANCH_FROM="${{ inputs.branch }}"
-
           if [ "$BRANCH_FROM" = "master" ]; then
             RELEASE_BRANCH="release/${APP_VERSION}"
           else
@@ -110,9 +119,10 @@ jobs:
 
       - name: Generate release notes
         id: release_notes
+        env:
+          BRANCH_FROM: ${{ inputs.branch }}
         run: |
           OUTPUT_DELIM="__RELEASE_DESCRIPTION__"
-          BRANCH_FROM="${{ inputs.branch }}"
 
           if [ "$BRANCH_FROM" != "master" ]; then
             release_notes="Use this branch to push the emergency fix. Please replace this PR description with a description of the fix after it has been pushed."
@@ -152,7 +162,7 @@ jobs:
           APP_VERSION: ${{ steps.normalize_version.outputs.app_version }}
           VERSION_BRANCH: ${{ steps.set_branches.outputs.version_branch }}
         run: |
-          git add -A
+          git add extension/package.json extension/public/static/manifest/v3.json
           git commit -m "v${APP_VERSION}"
           git push --set-upstream origin "$VERSION_BRANCH"
 
@@ -250,7 +260,7 @@ jobs:
         env:
           APP_VERSION: ${{ steps.normalize_version.outputs.app_version }}
         run: |
-          git add -A
+          git add extension/package.json extension/public/static/manifest/v3.json
           git commit -m "bump versions to ${APP_VERSION}"
           git push --set-upstream origin bump-version
 
