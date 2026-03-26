@@ -7,7 +7,6 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-  actions: write
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
