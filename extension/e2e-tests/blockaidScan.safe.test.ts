@@ -332,6 +332,10 @@ test.describe("BlockAid Scan - Safe States (No Override)", () => {
       timeout: 10000,
     });
 
+    // Verify Network row is visible
+    await expect(popup.getByText("Network")).toBeVisible();
+    await expect(popup.getByText("Test SDF Network")).toBeVisible();
+
     // Standard connect button should be visible (not "connect anyway")
     await expect(
       popup.getByTestId("grant-access-connect-button"),

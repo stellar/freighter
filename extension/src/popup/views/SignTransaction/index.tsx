@@ -452,6 +452,15 @@ export const SignTransaction = () => {
                   </div>
                   <div className="SignTransaction__Metadata__Row">
                     <div className="SignTransaction__Metadata__Label">
+                      <Icon.Globe02 />
+                      <span>{t("Network")}</span>
+                    </div>
+                    <div className="SignTransaction__Metadata__Value">
+                      <span>{networkName}</span>
+                    </div>
+                  </div>
+                  <div className="SignTransaction__Metadata__Row">
+                    <div className="SignTransaction__Metadata__Label">
                       <Icon.Route />
                       <span>{t("Fee")}</span>
                     </div>

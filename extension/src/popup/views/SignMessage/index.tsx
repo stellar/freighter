@@ -274,6 +274,15 @@ export const SignMessage = () => {
                       <KeyIdenticon publicKey={publicKey} />
                     </div>
                   </div>
+                  <div className="SignMessage__Metadata__Row">
+                    <div className="SignMessage__Metadata__Label">
+                      <Icon.Globe02 />
+                      <span>{t("Network")}</span>
+                    </div>
+                    <div className="SignMessage__Metadata__Value">
+                      <span>{networkName}</span>
+                    </div>
+                  </div>
                 </div>
               </div>,
               <div className="SignMessage__BlockaidDetails">

@@ -434,6 +434,8 @@ test("should sign auth entry when allowed", async ({
   const popup = await popupPromise;
 
   await expect(popup.getByText("Confirm Authorization").first()).toBeVisible();
+  await expect(popup.getByText("Network")).toBeVisible();
+  await expect(popup.getByText("Test SDF Network")).toBeVisible();
   await expectPageToHaveScreenshot({
     page: popup,
     screenshot: "sign-auth-entry.png",
@@ -550,6 +552,8 @@ test("should sign message string when allowed", async ({
   const popup = await popupPromise;
 
   await expect(popup.getByText(MSG_TO_SIGN)).toBeVisible();
+  await expect(popup.getByText("Network")).toBeVisible();
+  await expect(popup.getByText("Test SDF Network")).toBeVisible();
   await expectPageToHaveScreenshot({
     page: popup,
     screenshot: "sign-message.png",

@@ -200,6 +200,15 @@ export const SignAuthEntry = () => {
                   <KeyIdenticon publicKey={publicKey} />
                 </div>
               </div>
+              <div className="SignAuthEntry__Metadata__Row">
+                <div className="SignAuthEntry__Metadata__Label">
+                  <Icon.Globe02 />
+                  <span>{t("Network")}</span>
+                </div>
+                <div className="SignAuthEntry__Metadata__Value">
+                  <span>{networkName}</span>
+                </div>
+              </div>
             </div>
           </div>
           <AuthEntries invocations={[invocation]} />
