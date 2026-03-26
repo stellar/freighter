@@ -95,8 +95,6 @@ const truncatePublicKey = (publicKey: string): string =>
 // Amplitude SDK initialization
 // ---------------------------------------------------------------------------
 
-const METRICS_USER_ID_KEY = "metrics_user_id";
-
 let hasInitialized = false;
 
 /**
@@ -220,7 +218,7 @@ export interface AnalyticsDebugInfo {
 export const getAnalyticsDebugInfo = (): AnalyticsDebugInfo => ({
   hasInitialized,
   hasAmplitudeKey: Boolean(AMPLITUDE_KEY),
-  userId: localStorage.getItem(METRICS_USER_ID_KEY),
+  userId: hasInitialized ? amplitude.getUserId() : null,
   isSendingToAmplitude:
     hasInitialized &&
     Boolean(AMPLITUDE_KEY) &&
@@ -304,39 +302,6 @@ if (isDev && typeof window !== "undefined") {
 }
 
 /**
- * Generates a random UUID, preferring `crypto.randomUUID()` (available in
- * modern browsers and secure extension contexts) with a
- * `crypto.getRandomValues` fallback for older environments.
- */
-const generateUserId = (): string => {
-  if (
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
-  ) {
-    return crypto.randomUUID();
-  }
-  // Fallback: build a v4-style UUID from getRandomValues
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
-  bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 1
-  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(
-    "",
-  );
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-};
-
-const getUserId = () => {
-  const storedId = localStorage.getItem(METRICS_USER_ID_KEY);
-  if (!storedId) {
-    const newId = generateUserId();
-    localStorage.setItem(METRICS_USER_ID_KEY, newId);
-    return newId;
-  }
-  return storedId;
-};
-
-/**
  * Initializes the Amplitude SDK. Should be called once at app startup.
  * In development (no AMPLITUDE_KEY), events are logged to console only.
  */
@@ -355,19 +320,14 @@ export const initAmplitude = () => {
 
   try {
     amplitude.init(AMPLITUDE_KEY, undefined, {
-      // Disable Amplitude's built-in cookie/localStorage identity persistence.
-      // We manage the user ID ourselves via `getUserId()` + localStorage so that
-      // we control the identifier format and lifecycle. Amplitude's default
-      // identity storage would create a second, SDK-managed identifier that could
-      // conflict with ours and is unnecessary given we call setUserId() manually.
-      identityStorage: "none",
+      // Use localStorage for identity persistence. The SDK will automatically
+      // generate a UUID deviceId and persist it across sessions.
+      identityStorage: "localStorage",
       autocapture: false,
       // The extension popup can close at any time; reduce the flush interval
       // so queued events are sent promptly instead of waiting the default 1 s.
       flushIntervalMillis: 500,
     });
-
-    amplitude.setUserId(getUserId());
 
     // Set persistent user properties (mirrors mobile's setAmplitudeUserProperties)
     const identify = new amplitude.Identify();

@@ -108,10 +108,11 @@ const prodConfig = (
     },
   });
 
-module.exports = (env) => {
+module.exports = (env = {}) => {
   const mergedEnv = {
     ...env,
-    BUILD_TYPE: env.PRODUCTION ? "production" : "beta",
+    // BUILD_TYPE must be passed explicitly from build scripts/workflows.
+    // Don't derive it automatically to ensure correct build variant tagging.
   };
   return merge(prodConfig(mergedEnv), commonConfig(mergedEnv));
 };

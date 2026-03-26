@@ -16,7 +16,9 @@ const commonConfig = (
   env = {
     EXPERIMENTAL: false,
     AMPLITUDE_KEY: "",
+    AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY: "",
     SENTRY_KEY: "",
+    // BUILD_TYPE should be explicitly passed: "development", "beta", or "production"
     BUILD_TYPE: "production",
   },
 ) => ({
@@ -165,6 +167,9 @@ const commonConfig = (
     new webpack.DefinePlugin({
       EXPERIMENTAL: env.EXPERIMENTAL,
       AMPLITUDE_KEY: JSON.stringify(env.AMPLITUDE_KEY),
+      AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY: JSON.stringify(
+        env.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY,
+      ),
       SENTRY_KEY: JSON.stringify(env.SENTRY_KEY),
       APP_VERSION: JSON.stringify(packageJson.version),
       BUILD_TYPE: JSON.stringify(env.BUILD_TYPE || "production"),
