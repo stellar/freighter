@@ -3,8 +3,12 @@ env:
   INDEXER_URL: ${{ secrets.INDEXER_URL }}
   INDEXER_V2_URL: ${{ secrets.INDEXER_V2_BETA_URL }}
 on: [pull_request]
+permissions:
+  contents: read
+  actions: write
 concurrency:
-  group: ${{ github.workflow }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 jobs:
   test-ci:
     name: test
@@ -13,8 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
+          fetch-depth: 1
       - run: corepack enable
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:

@@ -1,0 +1,92 @@
+name: "Validate Branch From"
+description:
+  "Validates that branch_from is 'master' or a semver tag and provides available
+  version tags"
+
+inputs:
+  branch_from:
+    description:
+      "The source ref to branch from: either 'master' or a version tag of the
+      form X.Y.Z"
+    required: true
+
+outputs:
+  is_valid:
+    description:
+      "Whether the branch_from input is a valid 'master' ref or semver tag"
+    value: ${{ steps.validate.outputs.is_valid }}
+  branch_or_tag:
+    description: "The validated source ref name ('master' or an X.Y.Z tag)"
+    value: ${{ steps.validate.outputs.branch_or_tag }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Fetch tags
+      id: fetch_tags
+      shell: bash
+      run: |
+        git fetch --tags 2>/dev/null || true
+
+        TAGS=$(git tag --list '[0-9]*' --sort=-version:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -n 10)
+
+        TAGS_CSV=$(echo "$TAGS" | tr '\n' ',' | sed 's/,$//')
+        echo "tags=$TAGS_CSV" >> $GITHUB_OUTPUT
+
+        DELIM="TAGS_$(openssl rand -hex 16)"
+        {
+          echo "tags_list<<$DELIM"
+          echo "$TAGS"
+          echo "$DELIM"
+        } >> $GITHUB_OUTPUT
+
+        echo "Available tags:"
+        echo "$TAGS" | while read tag; do
+          echo "  - $tag"
+        done
+
+    - name: Validate branch_from
+      id: validate
+      shell: bash
+      env:
+        RAW_BRANCH_FROM: ${{ inputs.branch_from }}
+        FETCHED_TAGS: ${{ steps.fetch_tags.outputs.tags_list }}
+      run: |
+        BRANCH_FROM="$RAW_BRANCH_FROM"
+        TAGS="$FETCHED_TAGS"
+
+        if [ "$BRANCH_FROM" = "master" ]; then
+          echo "Using master branch as base"
+          echo "is_valid=true" >> $GITHUB_OUTPUT
+          echo "branch_or_tag=master" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # Strip "v" prefix if present
+        BRANCH_FROM=$(echo "$BRANCH_FROM" | sed 's/^v//')
+
+        if [[ ! "$BRANCH_FROM" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Error: Invalid format. Must be 'master' or a version tag like '5.38.0'"
+          echo ""
+          echo "Available tags (last 10):"
+          echo "$TAGS" | while read tag; do
+            echo "  - $tag"
+          done
+          echo "is_valid=false" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+
+        if git tag --list "$BRANCH_FROM" | grep -qx "$BRANCH_FROM"; then
+          echo "Using tag $BRANCH_FROM as base"
+          echo "is_valid=true" >> $GITHUB_OUTPUT
+          echo "branch_or_tag=$BRANCH_FROM" >> $GITHUB_OUTPUT
+        else
+          echo "Error: Tag $BRANCH_FROM does not exist"
+          echo ""
+          echo "Available tags (last 10):"
+          echo "$TAGS" | while read tag; do
+            echo "  - $tag"
+          done
+          echo "is_valid=false" >> $GITHUB_OUTPUT
+          exit 1
+        fi

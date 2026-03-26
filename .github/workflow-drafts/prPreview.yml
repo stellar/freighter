@@ -27,7 +27,7 @@
 #           gh run cancel ${{ github.run_id }}
 #           gh run watch ${{ github.run_id }}
 #       - name: Checkout code
-#         uses: actions/checkout@v6
+#         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 #       - name: Update manifest-v3.json name
 #         uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
 #         with:
@@ -43,7 +43,7 @@
 #       - name: Enable Corepack
 #         run: corepack enable
 #       - name: Build extension
-#         uses: actions/setup-node@v6
+#         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
 #         with:
 #           node-version: 22
 #       - run: yarn && yarn build:freighter-api && yarn build:extension:production
@@ -62,20 +62,21 @@
 #         run: zip -qq -r ./build.zip *
 #         working-directory: ./extension/build
 #       - name: Delete existing release
-#         run:
-#           gh release delete pr-preview-${{ github.event.pull_request.number }}
-#           --yes --cleanup-tag || true
 #         env:
 #           GH_TOKEN: ${{ github.token }}
-#       - name: Create GitHub Release
+#           PR_NUMBER: ${{ github.event.pull_request.number }}
 #         run: |
-#           gh release create pr-preview-${{ github.event.pull_request.number }} \
-#             ./extension/build/build.zip \
-#             --title "PR Preview #${{ github.event.pull_request.number }}" \
-#             --notes "Preview build for PR #${{ github.event.pull_request.number }}" \
-#             --prerelease
+#           gh release delete "pr-preview-${PR_NUMBER}" --yes --cleanup-tag || true
+#       - name: Create GitHub Release
 #         env:
 #           GH_TOKEN: ${{ github.token }}
+#           PR_NUMBER: ${{ github.event.pull_request.number }}
+#         run: |
+#           gh release create "pr-preview-${PR_NUMBER}" \
+#             ./extension/build/build.zip \
+#             --title "PR Preview #${PR_NUMBER}" \
+#             --notes "Preview build for PR #${PR_NUMBER}" \
+#             --prerelease
 #
 #   cleanup-release:
 #     if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
@@ -83,9 +84,9 @@
 #     runs-on: ubuntu-latest
 #     steps:
 #       - name: Delete release and tag
-#         run:
-#           gh release delete pr-preview-${{ github.event.pull_request.number }}
-#           --yes --cleanup-tag || true
 #         env:
 #           GH_TOKEN: ${{ github.token }}
 #           GH_REPO: ${{ github.repository }}
+#           PR_NUMBER: ${{ github.event.pull_request.number }}
+#         run: |
+#           gh release delete "pr-preview-${PR_NUMBER}" --yes --cleanup-tag || true

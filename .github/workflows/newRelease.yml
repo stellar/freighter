@@ -33,21 +33,28 @@ jobs:
             exit 1
           fi
           echo "app_version=${APP_VERSION}" >> $GITHUB_OUTPUT
-          echo "APP_VERSION=${APP_VERSION}" >> $GITHUB_ENV
 
-      - name: Validate branch name
+      - name: Validate branch input format
+        id: validate_branch_format
         env:
           RAW_BRANCH: ${{ inputs.branch }}
         run: |
-          if [[ ! "$RAW_BRANCH" =~ ^[a-zA-Z0-9._/-]+$ ]]; then
-            echo "Error: Invalid branch name. Only alphanumeric characters, dots, slashes, and hyphens are allowed."
+          BRANCH="$RAW_BRANCH"
+          if [ "$BRANCH" = "master" ]; then
+            echo "branch=master" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          BRANCH=$(echo "$BRANCH" | sed 's/^v//')
+          if [[ ! "$BRANCH" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Invalid format. Must be 'master' or a version tag like '5.38.0'"
             exit 1
           fi
+          echo "branch=${BRANCH}" >> $GITHUB_OUTPUT
 
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ steps.validate_branch_format.outputs.branch }}
           fetch-depth: 0
           fetch-tags: true
 
@@ -56,29 +63,49 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+      - name: Validate and get available tags
+        id: validate_branch_from
+        uses: ./.github/actions/validate-branch-from
+        with:
+          branch_from: ${{ steps.validate_branch_format.outputs.branch }}
+
+      - name: Check for existing release tag
+        env:
+          APP_VERSION: ${{ steps.normalize_version.outputs.app_version }}
+        run: |
+          if git tag --list "$APP_VERSION" | grep -qx "$APP_VERSION"; then
+            echo "Error: Tag '$APP_VERSION' already exists. This version has already been released."
+            exit 1
+          fi
+
       - name: Determine branch names
         id: set_branches
         env:
+          VALIDATED_BRANCH_FROM:
+            ${{ steps.validate_branch_from.outputs.branch_or_tag }}
           APP_VERSION: ${{ steps.normalize_version.outputs.app_version }}
-          BRANCH_FROM: ${{ inputs.branch }}
         run: |
+          BRANCH_FROM="$VALIDATED_BRANCH_FROM"
+
           if [ "$BRANCH_FROM" = "master" ]; then
-            RELEASE_BRANCH="release/${APP_VERSION}"
+            RELEASE_BRANCH="release"
           else
-            RELEASE_BRANCH="emergency-release/${APP_VERSION}"
+            RELEASE_BRANCH="emergency-release"
           fi
 
           VERSION_BRANCH="v${APP_VERSION}"
 
           echo "release_branch=${RELEASE_BRANCH}" >> $GITHUB_OUTPUT
           echo "version_branch=${VERSION_BRANCH}" >> $GITHUB_OUTPUT
+          echo "Using release branch: ${RELEASE_BRANCH}"
+          echo "Using version branch: ${VERSION_BRANCH}"
 
       # Step 1: Create release branch
       - name: Create and push release branch
         env:
           RELEASE_BRANCH: ${{ steps.set_branches.outputs.release_branch }}
         run: |
-          if git ls-remote --heads origin "$RELEASE_BRANCH" | grep -q "$RELEASE_BRANCH"; then
+          if git ls-remote --heads origin "$RELEASE_BRANCH" | grep -q "refs/heads/${RELEASE_BRANCH}$"; then
             echo "Error: Branch '$RELEASE_BRANCH' already exists on remote."
             echo "Please delete the '$RELEASE_BRANCH' branch before starting a new release."
             exit 1
@@ -91,38 +118,28 @@ jobs:
         env:
           VERSION_BRANCH: ${{ steps.set_branches.outputs.version_branch }}
         run: |
-          if git ls-remote --heads origin "$VERSION_BRANCH" | grep -q "$VERSION_BRANCH"; then
+          if git ls-remote --heads origin "$VERSION_BRANCH" | grep -q "refs/heads/${VERSION_BRANCH}$"; then
             echo "Error: Branch '$VERSION_BRANCH' already exists on remote."
             echo "Please delete the '$VERSION_BRANCH' branch before starting a new release."
             exit 1
           fi
           git checkout -b "$VERSION_BRANCH"
 
-      - name: Update extension/package.json version
-        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
-        with:
-          file: ./extension/package.json
-          field: version
-          value: ${{ steps.normalize_version.outputs.app_version }}
-      - name: Update manifest v3 version
-        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
-        with:
-          file: ./extension/public/static/manifest/v3.json
-          field: version
-          value: ${{ steps.normalize_version.outputs.app_version }}
-      - name: Update manifest v3 version_name
-        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
-        with:
-          file: ./extension/public/static/manifest/v3.json
-          field: version_name
-          value: ${{ steps.normalize_version.outputs.app_version }}
+      - name: Update version in package.json and manifest
+        env:
+          APP_VERSION: ${{ steps.normalize_version.outputs.app_version }}
+        run: |
+          tmp=$(mktemp)
+          jq --arg v "$APP_VERSION" '.version = $v' extension/package.json > "$tmp" && mv "$tmp" extension/package.json
+          tmp=$(mktemp)
+          jq --arg v "$APP_VERSION" '.version = $v | .version_name = $v' extension/public/static/manifest/v3.json > "$tmp" && mv "$tmp" extension/public/static/manifest/v3.json
 
       - name: Generate release notes
         id: release_notes
         env:
-          BRANCH_FROM: ${{ inputs.branch }}
+          BRANCH_FROM: ${{ steps.validate_branch_from.outputs.branch_or_tag }}
         run: |
-          OUTPUT_DELIM="__RELEASE_DESCRIPTION__"
+          OUTPUT_DELIM="RELEASE_DESCRIPTION_$(openssl rand -hex 16)"
 
           if [ "$BRANCH_FROM" != "master" ]; then
             release_notes="Use this branch to push the emergency fix. Please replace this PR description with a description of the fix after it has been pushed."
@@ -172,7 +189,7 @@ jobs:
           APP_VERSION: ${{ steps.normalize_version.outputs.app_version }}
           RELEASE_BRANCH: ${{ steps.set_branches.outputs.release_branch }}
           VERSION_BRANCH: ${{ steps.set_branches.outputs.version_branch }}
-          BRANCH_FROM: ${{ inputs.branch }}
+          BRANCH_FROM: ${{ steps.validate_branch_from.outputs.branch_or_tag }}
           RELEASE_NOTES: ${{ steps.release_notes.outputs.notes }}
         with:
           script: |
@@ -225,7 +242,7 @@ jobs:
           git checkout master
           git pull origin master
 
-          if git ls-remote --heads origin bump-version | grep -q bump-version; then
+          if git ls-remote --heads origin bump-version | grep -q "refs/heads/bump-version$"; then
             echo "Error: Branch 'bump-version' already exists on remote."
             echo "Please delete the 'bump-version' branch before starting a new release."
             exit 1
@@ -233,27 +250,15 @@ jobs:
 
           git checkout -b bump-version
 
-      - name: Update extension/package.json version (bump-version)
+      - name: Update version in package.json and manifest (bump-version)
         if: inputs.branch == 'master'
-        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
-        with:
-          file: ./extension/package.json
-          field: version
-          value: ${{ steps.normalize_version.outputs.app_version }}
-      - name: Update manifest v3 version (bump-version)
-        if: inputs.branch == 'master'
-        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
-        with:
-          file: ./extension/public/static/manifest/v3.json
-          field: version
-          value: ${{ steps.normalize_version.outputs.app_version }}
-      - name: Update manifest v3 version_name (bump-version)
-        if: inputs.branch == 'master'
-        uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
-        with:
-          file: ./extension/public/static/manifest/v3.json
-          field: version_name
-          value: ${{ steps.normalize_version.outputs.app_version }}
+        env:
+          APP_VERSION: ${{ steps.normalize_version.outputs.app_version }}
+        run: |
+          tmp=$(mktemp)
+          jq --arg v "$APP_VERSION" '.version = $v' extension/package.json > "$tmp" && mv "$tmp" extension/package.json
+          tmp=$(mktemp)
+          jq --arg v "$APP_VERSION" '.version = $v | .version_name = $v' extension/public/static/manifest/v3.json > "$tmp" && mv "$tmp" extension/public/static/manifest/v3.json
 
       - name: Commit and push bump-version branch
         if: inputs.branch == 'master'
