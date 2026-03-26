@@ -54,7 +54,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          ref: ${{ steps.validate_branch_format.outputs.branch }}
           fetch-depth: 0
           fetch-tags: true
 
@@ -68,6 +67,12 @@ jobs:
         uses: ./.github/actions/validate-branch-from
         with:
           branch_from: ${{ steps.validate_branch_format.outputs.branch }}
+
+      - name: Checkout validated ref
+        env:
+          VALIDATED_REF: ${{ steps.validate_branch_from.outputs.branch_or_tag }}
+        run: |
+          git checkout "$VALIDATED_REF"
 
       - name: Check for existing release tag
         env:
@@ -174,15 +179,23 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Commit and push version branch
+        id: commit_version_branch
         env:
           APP_VERSION: ${{ steps.normalize_version.outputs.app_version }}
           VERSION_BRANCH: ${{ steps.set_branches.outputs.version_branch }}
         run: |
           git add extension/package.json extension/public/static/manifest/v3.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit; skipping commit and push for version branch."
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           git commit -m "v${APP_VERSION}"
           git push --set-upstream origin "$VERSION_BRANCH"
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
 
       - name: Open PR against release branch
+        if: ${{ steps.commit_version_branch.outputs.has_changes == 'true' }}
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           APP_VERSION: ${{ steps.normalize_version.outputs.app_version }}
@@ -260,16 +273,26 @@ jobs:
           jq --arg v "$APP_VERSION" '.version = $v | .version_name = $v' extension/public/static/manifest/v3.json > "$tmp" && mv "$tmp" extension/public/static/manifest/v3.json
 
       - name: Commit and push bump-version branch
+        id: commit_and_push_bump_version
         if: inputs.branch == 'master'
         env:
           APP_VERSION: ${{ steps.normalize_version.outputs.app_version }}
         run: |
           git add extension/package.json extension/public/static/manifest/v3.json
+
+          # Check if there is anything to commit (master may already be at this version)
+          if git diff --cached --quiet; then
+            echo "No version changes detected; skipping commit, push, and bump-version PR creation."
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
           git commit -m "bump versions to ${APP_VERSION}"
           git push --set-upstream origin bump-version
 
       - name: Open PR against master
-        if: inputs.branch == 'master'
+        if: inputs.branch == 'master' && steps.commit_and_push_bump_version.outputs.has_changes == 'true'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           APP_VERSION: ${{ steps.normalize_version.outputs.app_version }}
