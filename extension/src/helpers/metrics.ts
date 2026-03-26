@@ -206,7 +206,7 @@ export const clearRecentEvents = (): void => {
 export interface AnalyticsDebugInfo {
   hasInitialized: boolean;
   hasAmplitudeKey: boolean;
-  userId: string | null;
+  userId: string | null | undefined;
   isSendingToAmplitude: boolean;
 }
 
@@ -218,7 +218,7 @@ export interface AnalyticsDebugInfo {
 export const getAnalyticsDebugInfo = (): AnalyticsDebugInfo => ({
   hasInitialized,
   hasAmplitudeKey: Boolean(AMPLITUDE_KEY),
-  userId: hasInitialized ? amplitude.getUserId() : null,
+  userId: amplitude.getUserId(),
   isSendingToAmplitude:
     hasInitialized &&
     Boolean(AMPLITUDE_KEY) &&
