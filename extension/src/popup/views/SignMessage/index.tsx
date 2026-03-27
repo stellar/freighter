@@ -157,7 +157,7 @@ export const SignMessage = () => {
     );
   }
 
-  if (!blobNetworkPassphrase || blobNetworkPassphrase !== networkPassphrase) {
+  if (blobNetworkPassphrase && blobNetworkPassphrase !== networkPassphrase) {
     return (
       <WarningMessage
         variant={WarningMessageVariant.warning}

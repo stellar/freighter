@@ -1101,9 +1101,7 @@ test("should show network mismatch warning when signing transaction for wrong ne
     });
   });
 
-  await expect(
-    txPopup.getByText("The transaction you're trying to sign is on"),
-  ).toBeVisible();
+  await expect(txPopup.getByText(/trying to sign is on/)).toBeVisible();
   // Should show "Main Net" (the mapped network name) instead of the raw passphrase
   await expect(txPopup.getByText(/Main Net/)).toBeVisible();
 });
