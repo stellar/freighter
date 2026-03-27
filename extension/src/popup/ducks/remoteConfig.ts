@@ -3,6 +3,7 @@ import {
   createSelector,
   createSlice,
 } from "@reduxjs/toolkit";
+import type { Variant } from "@amplitude/experiment-js-client";
 
 import { getExperimentClient } from "helpers/experimentClient";
 import {
@@ -101,7 +102,7 @@ export const fetchFeatureFlags = createAsyncThunk(
     const variants = client.all();
     const updates: Partial<FeatureFlags> = {};
 
-    Object.entries(variants).forEach(([key, variant]) => {
+    Object.entries(variants).forEach(([key, variant]: [string, Variant]) => {
       if (variant?.value === undefined) return;
 
       // Boolean flags — value checked against ON_VARIANT_VALUES
