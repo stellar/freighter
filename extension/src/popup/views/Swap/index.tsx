@@ -25,12 +25,20 @@ import { ROUTES } from "popup/constants/routes";
 import { resetSimulation } from "popup/ducks/token-payment";
 import { getAssetFromCanonical } from "helpers/stellar";
 
+const SWAP_METRIC_BY_STEP: Partial<Record<STEPS, string>> = {
+  [STEPS.SWAP_CONFIRM]: METRIC_NAMES.swapConfirm,
+  [STEPS.SET_DST_ASSET]: METRIC_NAMES.swapTo,
+  [STEPS.AMOUNT]: METRIC_NAMES.swapAmount,
+  [STEPS.CONFIRM_AMOUNT]: METRIC_NAMES.swapAmountReview,
+  [STEPS.SET_FROM_ASSET]: METRIC_NAMES.swapFrom,
+};
+
 export const Swap = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeStep, setActiveStep] = React.useState(STEPS.AMOUNT);
+  const [activeStep, setActiveStep] = useState(STEPS.AMOUNT);
   const lastEmittedStep = useRef<STEPS | null>(null);
 
   // Emit a screen-view metric only once per step transition.
@@ -38,15 +46,7 @@ export const Swap = () => {
     if (activeStep === lastEmittedStep.current) return;
     lastEmittedStep.current = activeStep;
 
-    const metricByStep: Partial<Record<STEPS, string>> = {
-      [STEPS.SWAP_CONFIRM]: METRIC_NAMES.swapConfirm,
-      [STEPS.SET_DST_ASSET]: METRIC_NAMES.swapTo,
-      [STEPS.AMOUNT]: METRIC_NAMES.swapAmount,
-      [STEPS.CONFIRM_AMOUNT]: METRIC_NAMES.swapAmountReview,
-      [STEPS.SET_FROM_ASSET]: METRIC_NAMES.swapFrom,
-    };
-
-    const metric = metricByStep[activeStep];
+    const metric = SWAP_METRIC_BY_STEP[activeStep];
     if (metric) {
       emitMetric(metric);
     }

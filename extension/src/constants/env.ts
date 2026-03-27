@@ -11,8 +11,9 @@ const _APP_VERSION = APP_VERSION;
 /**
  * Build type derived from webpack flags at compile time.
  * - "development" — `yarn start` (dev server)
- * - "beta" — `yarn build` (non-production extension build)
- * - "production" — `yarn build:production`
+ * - "beta" — `yarn build:extension:production --env BUILD_TYPE="beta"`
+ *   (production build with beta variant, used for CI beta releases)
+ * - "production" — `yarn build:extension:production --env BUILD_TYPE="production"`
  */
 declare const BUILD_TYPE: string;
 const _BUILD_TYPE = BUILD_TYPE;

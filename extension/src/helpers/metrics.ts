@@ -3,10 +3,13 @@ import { Action, Middleware } from "redux";
 import { PayloadAction } from "@reduxjs/toolkit";
 import { Location } from "react-router-dom";
 
+import browser from "webextension-polyfill";
+
 import { store } from "popup/App";
 import {
   METRICS_DATA,
   DEBUG_ANALYTICS_EVENTS,
+  METRICS_USER_ID,
 } from "constants/localStorageTypes";
 import {
   AMPLITUDE_KEY,
@@ -20,6 +23,7 @@ import {
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
+import { truncatedPublicKey } from "helpers/stellar";
 import { Account, AccountType } from "@shared/api/types";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -78,18 +82,6 @@ export interface MetricsData {
   freighterFunded: boolean;
   unfundedFreighterAccounts: string[];
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Truncates a Stellar public key for analytics/storage use.
- * Returns first 8 + last 4 chars (e.g. "GABCDEFG…WXYZ"), which is enough
- * for session correlation without storing the full address.
- */
-const truncatePublicKey = (publicKey: string): string =>
-  `${publicKey.slice(0, 8)}…${publicKey.slice(-4)}`;
 
 // ---------------------------------------------------------------------------
 // Amplitude SDK initialization
@@ -301,6 +293,46 @@ if (isDev && typeof window !== "undefined") {
   });
 }
 
+// ---------------------------------------------------------------------------
+// User identity (mirrors mobile's src/services/analytics/user.ts)
+// ---------------------------------------------------------------------------
+
+/** Mirrors mobile's `generateRandomUserId` — a numeric decimal string. */
+const generateRandomUserId = (): string =>
+  Math.random().toString().split(".")[1];
+
+/** Session-level cache, mirrors mobile's module-level `sessionUserId` fallback. */
+let sessionUserId: string | null = null;
+
+/**
+ * Gets or creates a persistent analytics user ID.
+ * Mirrors mobile's `getUserId` from `src/services/analytics/user.ts`:
+ * - Reads from localStorage under key `"metrics_user_id"`
+ * - Falls back to a session-only ID if storage is unavailable
+ */
+const getUserId = (): string => {
+  try {
+    const stored = localStorage.getItem(METRICS_USER_ID);
+    if (stored) {
+      sessionUserId = stored;
+      return stored;
+    }
+
+    const newId = generateRandomUserId();
+    try {
+      localStorage.setItem(METRICS_USER_ID, newId);
+    } catch {
+      // Storage write failed — hold in session only
+    }
+    sessionUserId = newId;
+    return newId;
+  } catch {
+    if (sessionUserId) return sessionUserId;
+    sessionUserId = generateRandomUserId();
+    return sessionUserId;
+  }
+};
+
 /**
  * Initializes the Amplitude SDK. Should be called once at app startup.
  * In development (no AMPLITUDE_KEY), events are logged to console only.
@@ -329,9 +361,13 @@ export const initAmplitude = () => {
       flushIntervalMillis: 500,
     });
 
+    // Set a persistent user ID for parity with mobile.
+    const userId = getUserId();
+    amplitude.setUserId(userId);
+
     // Set persistent user properties (mirrors mobile's setAmplitudeUserProperties)
     const identify = new amplitude.Identify();
-    identify.set("Bundle Id", BUILD_TYPE);
+    identify.set("Bundle Id", `extension.${BUILD_TYPE}`);
     amplitude.identify(identify);
 
     // Apply initial opt-out state. Note: settings may not yet be loaded from the
@@ -370,23 +406,45 @@ export const initAmplitude = () => {
 // ---------------------------------------------------------------------------
 
 /**
- * Returns the extension's manifest version when running as a real extension,
- * or the package.json version (injected at build time) when running on the
- * dev server where runtime APIs are unavailable.
+ * Returns the extension version. Prefers the build-time constant (always
+ * available via DefinePlugin), falling back to the browser extension manifest.
  */
 const getAppVersion = (): string => {
-  const g = globalThis as any;
+  if (APP_VERSION) return APP_VERSION;
 
-  // Chrome / Chromium-based extensions
-  const chromeVersion = g?.chrome?.runtime?.getManifest?.()?.version;
-  if (chromeVersion) return chromeVersion;
+  try {
+    return browser.runtime.getManifest().version;
+  } catch {
+    return "unknown";
+  }
+};
 
-  // Firefox extensions (browser.* API)
-  const browserVersion = g?.browser?.runtime?.getManifest?.()?.version;
-  if (browserVersion) return browserVersion;
+/**
+ * Extracts a coarsened browser identifier from the user agent string.
+ * Returns "BrowserName/MajorVersion" (e.g. "Chrome/120", "Firefox/121").
+ * Falls back to "Unknown" if parsing fails.
+ */
+const getCoarsenedUserAgent = (): string => {
+  const ua = navigator.userAgent;
 
-  // Dev server or unknown environment — use build-time constant
-  return APP_VERSION;
+  // Order matters: check more specific browsers first.
+  // Edge includes "Chrome" in its UA, so check Edge before Chrome.
+  const patterns: Array<[RegExp, string]> = [
+    [/Edg(?:e|A|iOS)?\/(\d+)/, "Edge"],
+    [/OPR\/(\d+)/, "Opera"],
+    [/Firefox\/(\d+)/, "Firefox"],
+    [/(?:Chrome|CriOS)\/(\d+)/, "Chrome"],
+    [/Version\/(\d+).*Safari/, "Safari"],
+  ];
+
+  for (const [regex, name] of patterns) {
+    const match = ua.match(regex);
+    if (match) {
+      return `${name}/${match[1]}`;
+    }
+  }
+
+  return "Unknown";
 };
 
 /**
@@ -396,9 +454,9 @@ const getAppVersion = (): string => {
  * | Mobile property   | Extension equivalent                         |
  * |-------------------|----------------------------------------------|
  * | Platform.OS       | METRICS_PLATFORM ("WEB")                     |
- * | Platform.Version  | navigator.userAgent                          |
+ * | Platform.Version  | coarsened user agent (e.g. "Chrome/120")     |
  * | getVersion()      | manifest version / APP_VERSION               |
- * | getBundleId()     | BUILD_TYPE ("development"|"beta"|"production")|
+ * | getBundleId()     | "extension.<BUILD_TYPE>"                     |
  *
  * @param state Current Redux state (passed in to avoid a redundant getState() call).
  */
@@ -414,13 +472,13 @@ const buildCommonContext = (
   };
 
   const context: Record<string, unknown> = {
-    publicKey: activePublicKey ? truncatePublicKey(activePublicKey) : "N/A",
+    publicKey: activePublicKey ? truncatedPublicKey(activePublicKey) : "N/A",
     platform: METRICS_PLATFORM,
-    platformVersion: navigator.userAgent,
-    network: (networkDetails?.networkName ?? "").toUpperCase(),
+    platformVersion: getCoarsenedUserAgent(),
+    network: networkDetails?.network ?? "UNKNOWN",
     connectionType: nav.connection?.type ?? "unknown",
     appVersion: getAppVersion(),
-    bundleId: BUILD_TYPE,
+    bundleId: `extension.${BUILD_TYPE}`,
   };
 
   if (nav.connection?.effectiveType) {
@@ -527,7 +585,7 @@ export const storeBalanceMetricData = (
     // full G-addresses to localStorage.
     const unfundedFreighterAccounts =
       metricsData.unfundedFreighterAccounts || [];
-    const truncated = truncatePublicKey(publicKey);
+    const truncated = truncatedPublicKey(publicKey);
     const idx = unfundedFreighterAccounts.indexOf(truncated);
 
     if (accountFunded) {
