@@ -22,7 +22,13 @@ export const SidebarSigningListener = () => {
     const originalClose = window.close.bind(window);
     window.close = () => navigate(ROUTES.account);
 
-    const handler = (message: { type: string; route: string }) => {
+    const handler = (
+      message: { type: string; route: string },
+      sender: chrome.runtime.MessageSender,
+    ) => {
+      // Only accept navigation messages from our own extension background.
+      // Content scripts always have sender.tab; extension pages do not.
+      if (sender.id !== chrome.runtime.id || sender.tab) return;
       if (message.type === SIDEBAR_NAVIGATE) {
         navigate(message.route);
       }

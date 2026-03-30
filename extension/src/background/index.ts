@@ -55,6 +55,16 @@ export const initSidebarConnectionListener = () => {
   chrome.runtime.onConnect.addListener((port) => {
     if (port.name !== SIDEBAR_PORT_NAME) return;
 
+    // Reject connections from content scripts; only extension pages are trusted.
+    // Extension pages have no associated tab and load from the extension origin.
+    const isExtensionPage =
+      !port.sender?.tab &&
+      port.sender?.url?.startsWith(chrome.runtime.getURL(""));
+    if (!isExtensionPage) {
+      port.disconnect();
+      return;
+    }
+
     // Sidebar sends its window ID as first message
     port.onMessage.addListener((msg: { windowId: number }) => {
       if (msg.windowId !== undefined) {
@@ -85,7 +95,13 @@ export const initExtensionMessageListener = () => {
     const req = request as ExternalRequest | Response;
     let res;
 
-    if (Object.values(SERVICE_TYPES).includes(req.type as SERVICE_TYPES)) {
+    // Only allow SERVICE_TYPES messages from extension pages (popup, sidebar,
+    // options). Content scripts always have sender.tab set; extension pages do not.
+    const isFromExtensionPage = !sender.tab;
+    if (
+      isFromExtensionPage &&
+      Object.values(SERVICE_TYPES).includes(req.type as SERVICE_TYPES)
+    ) {
       res = await popupMessageListener(
         req as ServiceMessageRequest,
         sessionStore,
