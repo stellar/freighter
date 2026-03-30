@@ -417,6 +417,103 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@amplitude/analytics-browser@npm:^2.37.0":
+  version: 2.37.0
+  resolution: "@amplitude/analytics-browser@npm:2.37.0"
+  dependencies:
+    "@amplitude/analytics-core": "npm:2.43.0"
+    "@amplitude/plugin-autocapture-browser": "npm:1.24.1"
+    "@amplitude/plugin-custom-enrichment-browser": "npm:0.1.0"
+    "@amplitude/plugin-network-capture-browser": "npm:1.9.9"
+    "@amplitude/plugin-page-url-enrichment-browser": "npm:0.7.0"
+    "@amplitude/plugin-page-view-tracking-browser": "npm:2.9.1"
+    "@amplitude/plugin-web-vitals-browser": "npm:1.1.24"
+    tslib: "npm:^2.4.1"
+  checksum: 10c0/da3ff67a3e32ebc179a3e6c684c0734754f7967e592b1b521468c6c000996846ace96087323b8a41d7bfad7743e492b7fb74f7bc7142438d474471d8756ac42d
+  languageName: node
+  linkType: hard
+
+"@amplitude/analytics-connector@npm:^1.6.4":
+  version: 1.6.4
+  resolution: "@amplitude/analytics-connector@npm:1.6.4"
+  checksum: 10c0/b084180029e48c011fffc47301462fc2db06830421348ca5fdf235fb6d30e4c0309161eb4392350bc00ab2bf7537306f18b9dfffa9998f70db2b6f31470f0e88
+  languageName: node
+  linkType: hard
+
+"@amplitude/analytics-core@npm:2.43.0":
+  version: 2.43.0
+  resolution: "@amplitude/analytics-core@npm:2.43.0"
+  dependencies:
+    "@amplitude/analytics-connector": "npm:^1.6.4"
+    "@types/zen-observable": "npm:0.8.3"
+    safe-json-stringify: "npm:1.2.0"
+    tslib: "npm:^2.4.1"
+    zen-observable: "npm:0.10.0"
+  checksum: 10c0/06e50c3398caab49f312c839d8be92d9aa7dfb27a2c20402c772976ea67f34db70fb692ba6466cfd0c16bc36233cd09873cb8a0ac74e304d181cf5e292961675
+  languageName: node
+  linkType: hard
+
+"@amplitude/plugin-autocapture-browser@npm:1.24.1":
+  version: 1.24.1
+  resolution: "@amplitude/plugin-autocapture-browser@npm:1.24.1"
+  dependencies:
+    "@amplitude/analytics-core": "npm:2.43.0"
+    tslib: "npm:^2.4.1"
+  checksum: 10c0/e00dff1a9998559ef4c18ac7c8567b4c3c783a550b6c4a723d26325f49bb638a7adbae34ff25d66405311034681d8a24f2c1547e5f373b6e4fbac3b137160fca
+  languageName: node
+  linkType: hard
+
+"@amplitude/plugin-custom-enrichment-browser@npm:0.1.0":
+  version: 0.1.0
+  resolution: "@amplitude/plugin-custom-enrichment-browser@npm:0.1.0"
+  dependencies:
+    "@amplitude/analytics-core": "npm:2.43.0"
+    tslib: "npm:^2.4.1"
+  checksum: 10c0/5e93ce832b67abf9f555925ca8330f2986e429f202e2e6257b4a926bb6c5148cf49d2a22bea0121a77824387fae4e3fc9b5ff5354dc585f56f758fdaa49291b9
+  languageName: node
+  linkType: hard
+
+"@amplitude/plugin-network-capture-browser@npm:1.9.9":
+  version: 1.9.9
+  resolution: "@amplitude/plugin-network-capture-browser@npm:1.9.9"
+  dependencies:
+    "@amplitude/analytics-core": "npm:2.43.0"
+    tslib: "npm:^2.4.1"
+  checksum: 10c0/2b5b9a66bc6cb60aa6c4de9bafb845a360279aee8af721754e18061df9a1bce35f110ff90d67df336645e2ef0629cae3c455663a104f50a8f529a7c00c7fe486
+  languageName: node
+  linkType: hard
+
+"@amplitude/plugin-page-url-enrichment-browser@npm:0.7.0":
+  version: 0.7.0
+  resolution: "@amplitude/plugin-page-url-enrichment-browser@npm:0.7.0"
+  dependencies:
+    "@amplitude/analytics-core": "npm:2.43.0"
+    tslib: "npm:^2.4.1"
+  checksum: 10c0/730e158b6673fefd61f4894c76fcabfd258422a5655feac7237e69812a2dde24e7cff50d9adebb55e796432b37062e8caab3695c84e2704c17fb8e77d6c37326
+  languageName: node
+  linkType: hard
+
+"@amplitude/plugin-page-view-tracking-browser@npm:2.9.1":
+  version: 2.9.1
+  resolution: "@amplitude/plugin-page-view-tracking-browser@npm:2.9.1"
+  dependencies:
+    "@amplitude/analytics-core": "npm:2.43.0"
+    tslib: "npm:^2.4.1"
+  checksum: 10c0/a961da49e683e683dcc29c7b876a1095b585558dc9191cd1cdf3a32b9de7eccb146b62639e7425ee7e64ecfef7bb011d1db4caabaea353066d2ecdb6e53be6fa
+  languageName: node
+  linkType: hard
+
+"@amplitude/plugin-web-vitals-browser@npm:1.1.24":
+  version: 1.1.24
+  resolution: "@amplitude/plugin-web-vitals-browser@npm:1.1.24"
+  dependencies:
+    "@amplitude/analytics-core": "npm:2.43.0"
+    tslib: "npm:^2.4.1"
+    web-vitals: "npm:5.1.0"
+  checksum: 10c0/283b720ff62be4421fdd5cd5befa041bd21670f462e4ef078b7b8bd640979d656e7cca1d799418fc1871a59025ba9a30c1ccf1b0402187e729c5708d55b53d73
+  languageName: node
+  linkType: hard
+
 "@ampproject/remapping@npm:^2.2.0":
   version: 2.3.0
   resolution: "@ampproject/remapping@npm:2.3.0"
@@ -7142,6 +7239,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/zen-observable@npm:0.8.3":
+  version: 0.8.3
+  resolution: "@types/zen-observable@npm:0.8.3"
+  checksum: 10c0/c0605d109e58a32c9b47ab9becb4ee4bcd8ed54f452ccdcfbb025a60eb8abb1341f00fb045caaa6f1a72f1299f2cdf7b7918023aef34bd9bfdfdbae0e21e66eb
+  languageName: node
+  linkType: hard
+
 "@typescript-eslint/eslint-plugin@npm:8.20.0":
   version: 8.20.0
   resolution: "@typescript-eslint/eslint-plugin@npm:8.20.0"
@@ -12102,6 +12206,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "extension@workspace:extension"
   dependencies:
+    "@amplitude/analytics-browser": "npm:^2.37.0"
     "@lavamoat/allow-scripts": "npm:3.3.2"
     "@ledgerhq/hw-app-str": "npm:7.2.0"
     "@ledgerhq/hw-transport-webhid": "npm:6.30.6"
@@ -21758,7 +21863,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"safe-json-stringify@npm:~1":
+"safe-json-stringify@npm:1.2.0, safe-json-stringify@npm:~1":
   version: 1.2.0
   resolution: "safe-json-stringify@npm:1.2.0"
   checksum: 10c0/9c21c7b63a35a9e52d248eea2ad7bc9e790dde5aa418f0d4eed3c0b4c866e15337425b0d973173d30dd70a9e422271619f17e13574e0c8371d0c240cf72b871f
@@ -23788,7 +23893,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:2.8.1, tslib@npm:^2.0.0, tslib@npm:^2.0.1, tslib@npm:^2.0.3, tslib@npm:^2.1.0, tslib@npm:^2.4.0, tslib@npm:^2.6.0, tslib@npm:^2.6.2, tslib@npm:^2.8.1":
+"tslib@npm:2.8.1, tslib@npm:^2.0.0, tslib@npm:^2.0.1, tslib@npm:^2.0.3, tslib@npm:^2.1.0, tslib@npm:^2.4.0, tslib@npm:^2.4.1, tslib@npm:^2.6.0, tslib@npm:^2.6.2, tslib@npm:^2.8.1":
   version: 2.8.1
   resolution: "tslib@npm:2.8.1"
   checksum: 10c0/9c4759110a19c53f992d9aae23aac5ced636e99887b51b9e61def52611732872ff7668757d4e4c61f19691e36f4da981cd9485e869b4a7408d689f6bf1f14e62
@@ -24784,6 +24889,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"web-vitals@npm:5.1.0":
+  version: 5.1.0
+  resolution: "web-vitals@npm:5.1.0"
+  checksum: 10c0/1af22ddbe2836ba880fcb492cfba24c3349f4760ebb5e92f38324ea67bca3c4dbb9c86f1a32af4795b6115cdaf98b90000cf3a7402bffef6e8c503f0d1b2e706
+  languageName: node
+  linkType: hard
+
 "webextension-polyfill@npm:0.12.0":
   version: 0.12.0
   resolution: "webextension-polyfill@npm:0.12.0"
@@ -25612,6 +25724,13 @@ __metadata:
     toposort: "npm:^2.0.2"
     type-fest: "npm:^2.19.0"
   checksum: 10c0/84c2b53996e8001041239cf2719851719f67063ec7cd843067df73562353216f5ad4f8a222319696882d5a6058e528fade1e463c59d70cbffb41b99cd0d7571b
+  languageName: node
+  linkType: hard
+
+"zen-observable@npm:0.10.0":
+  version: 0.10.0
+  resolution: "zen-observable@npm:0.10.0"
+  checksum: 10c0/f97e97bfaa1dbe0033761d4860368120c1b69ee12dd1fa649c902f3f740c6cac3470a07e3dd00e2d41598dd9f17a97c80f69652b851ba1a73802f30748eb4260
   languageName: node
   linkType: hard
 
