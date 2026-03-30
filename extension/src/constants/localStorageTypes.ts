@@ -30,3 +30,4 @@ export const TEMPORARY_STORE_EXTRA_ID = "temporaryStoreExtra";
 export const MOBILE_APP_BANNER_DISMISSED = "mobileAppBannerDismissed";
 export const OVERRIDDEN_BLOCKAID_RESPONSE_ID = "overriddenBlockaidResponse";
 export const COLLECTIBLES_ID = "collectibles";
+export const METRICS_USER_ID = "metrics_user_id";

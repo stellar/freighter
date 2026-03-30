@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Text, Icon } from "@stellar/design-system";
 
@@ -15,7 +15,9 @@ import "./styles.scss";
 export const FullscreenSuccessMessage = () => {
   const { t } = useTranslation();
 
-  emitMetric(METRIC_NAMES.recoverAccountFinished);
+  useEffect(() => {
+    emitMetric(METRIC_NAMES.recoverAccountFinished);
+  }, []);
 
   return (
     <>

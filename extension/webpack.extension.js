@@ -66,8 +66,6 @@ const prodConfig = (
     plugins: [
       new webpack.DefinePlugin({
         DEV_SERVER: false,
-        AMPLITUDE_KEY: JSON.stringify(env.AMPLITUDE_KEY),
-        SENTRY_KEY: JSON.stringify(env.SENTRY_KEY),
         DEV_EXTENSION: !env.PRODUCTION,
       }),
       ...(env.TRANSLATIONS
@@ -110,4 +108,11 @@ const prodConfig = (
     },
   });
 
-module.exports = (env) => merge(prodConfig(env), commonConfig(env));
+module.exports = (env = {}) => {
+  const mergedEnv = {
+    ...env,
+    // BUILD_TYPE must be passed explicitly from build scripts/workflows.
+    // Don't derive it automatically to ensure correct build variant tagging.
+  };
+  return merge(prodConfig(mergedEnv), commonConfig(mergedEnv));
+};
