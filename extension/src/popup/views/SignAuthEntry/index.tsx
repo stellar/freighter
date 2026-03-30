@@ -4,6 +4,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { hash, xdr } from "stellar-sdk";
+import { PASSPHRASE_TO_NETWORK_NAME } from "@shared/constants/stellar";
 
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import {
@@ -145,6 +146,9 @@ export const SignAuthEntry = () => {
   try {
     sorobanAuth = preimage.sorobanAuthorization();
     const embeddedNetworkId = sorobanAuth.networkId();
+    const entryNetworkName = Object.entries(PASSPHRASE_TO_NETWORK_NAME).find(
+      ([passphrase]) => hash(Buffer.from(passphrase)).equals(embeddedNetworkId),
+    )?.[1];
     const expectedNetworkId = hash(Buffer.from(networkPassphrase));
     if (!embeddedNetworkId.equals(expectedNetworkId)) {
       return (
@@ -155,9 +159,11 @@ export const SignAuthEntry = () => {
           header={`${t("Freighter is set to")} ${networkName}`}
         >
           <p>
-            {t(
-              "The authorization entry is for a different network than the one you are connected to.",
-            )}
+            {entryNetworkName
+              ? `${t("The authorization entry is for")} ${entryNetworkName}.`
+              : t(
+                  "The authorization entry is for a different network than the one you are connected to.",
+                )}
           </p>
           <p>
             {t("Signing this authorization is not possible at the moment.")}

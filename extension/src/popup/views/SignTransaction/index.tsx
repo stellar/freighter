@@ -271,7 +271,7 @@ export const SignTransaction = () => {
         isActive
         header={t("Unable to load network details")}
       >
-        <p>{t("Please try again or contact support if the issue persists.")}</p>
+        <p>{t("Please try again.")}</p>
       </WarningMessage>
     );
   }
