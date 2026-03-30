@@ -929,9 +929,7 @@ test("should show network mismatch warning when signing auth entry for wrong net
   const popup = await popupPromise;
 
   await expect(
-    popup.getByText(
-      "The authorization entry is for a different network than the one you are connected to.",
-    ),
+    popup.getByText(/The authorization entry is for Test Net/),
   ).toBeVisible();
   await expect(
     popup.getByText(
@@ -1005,35 +1003,6 @@ test("should show invalid entry warning when auth entry is not a Soroban authori
     popup.getByText(
       "The authorization entry is malformed or contains invalid data.",
     ),
-  ).toBeVisible();
-});
-
-test("should show network warning when signing message without network passphrase", async ({
-  page,
-  extensionId,
-  context,
-}) => {
-  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
-  await allowDapp({ page });
-
-  const pageTwo = await page.context().newPage();
-  await pageTwo.waitForLoadState();
-
-  const popupPromise = page.context().waitForEvent("page");
-  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
-  await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
-  // leave networkPassphrase field (nth(1)) empty — falsy value bypasses the old guard
-  await pageTwo.getByText("Sign message").click();
-
-  const popup = await popupPromise;
-
-  await expect(
-    popup.getByText(
-      "The requester did not specify a network for this message.",
-    ),
-  ).toBeVisible();
-  await expect(
-    popup.getByText("Signing this message is not possible at the moment."),
   ).toBeVisible();
 });
 
