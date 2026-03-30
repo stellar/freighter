@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Button, Card, Text } from "@stellar/design-system";
 import { captureException } from "@sentry/browser";
 
+import { isDev } from "@shared/helpers/dev";
 import { SecurityLevel } from "popup/constants/blockaid";
 import {
   getBlockaidOverrideState,
@@ -10,9 +11,6 @@ import {
 } from "@shared/api/internal";
 
 import "./Debug/styles.scss";
-
-// Only show in dev mode
-const isDev = process.env.DEV_EXTENSION === "true" || !process.env.PRODUCTION;
 
 export const Debug = () => {
   const { t } = useTranslation();

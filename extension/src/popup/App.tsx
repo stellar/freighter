@@ -3,7 +3,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
 import { Provider } from "react-redux";
 
-import { metricsMiddleware } from "helpers/metrics";
+import { metricsMiddleware, initAmplitude } from "helpers/metrics";
 import { activePublicKeyMiddleware } from "helpers/activePublicKeyMiddleware";
 import { Toaster } from "popup/basics/shadcn/Toast";
 
@@ -38,6 +38,8 @@ export const store = configureStore({
 });
 
 export type AppDispatch = typeof store.dispatch;
+
+initAmplitude();
 
 export const App = () => (
   <ErrorBoundary>

@@ -152,7 +152,7 @@ export const TrustlineError = ({
   useEffect(() => {
     // emit general metric on view load
     emitMetric(METRIC_NAMES.viewTrustlineError);
-  });
+  }, []);
 
   useEffect(() => {
     const xdrEnvelope = error?.response?.extras?.envelope_xdr;
