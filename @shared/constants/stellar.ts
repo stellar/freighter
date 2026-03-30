@@ -72,3 +72,9 @@ export const DEFAULT_NETWORKS: Array<NetworkDetails> = [
 
 export const BASE_RESERVE = 0.5 as const;
 export const BASE_RESERVE_MIN_COUNT = 2 as const;
+
+export const PASSPHRASE_TO_NETWORK_NAME: Record<string, string> = {
+  [Networks.PUBLIC]: NETWORK_NAMES.PUBNET,
+  [Networks.TESTNET]: NETWORK_NAMES.TESTNET,
+  [FUTURENET_NETWORK_DETAILS.networkPassphrase]: NETWORK_NAMES.FUTURENET,
+};
