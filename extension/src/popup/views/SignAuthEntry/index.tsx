@@ -146,9 +146,10 @@ export const SignAuthEntry = () => {
   try {
     sorobanAuth = preimage.sorobanAuthorization();
     const embeddedNetworkId = sorobanAuth.networkId();
-    const entryNetworkName = Object.entries(PASSPHRASE_TO_NETWORK_NAME).find(
-      ([passphrase]) => hash(Buffer.from(passphrase)).equals(embeddedNetworkId),
-    )?.[1];
+    const entryNetworkName =
+      Object.entries(PASSPHRASE_TO_NETWORK_NAME).find(([passphrase]) =>
+        hash(Buffer.from(passphrase)).equals(embeddedNetworkId),
+      )?.[1] ?? params.networkPassphrase;
     const expectedNetworkId = hash(Buffer.from(networkPassphrase));
     if (!embeddedNetworkId.equals(expectedNetworkId)) {
       return (
