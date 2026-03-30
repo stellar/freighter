@@ -1,8 +1,8 @@
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
 import {
-  injectMaintenanceScreenState,
-  injectMaintenanceBannerState,
+  stubMaintenanceScreenVariant,
+  stubMaintenanceBannerVariant,
 } from "./helpers/stubs";
 
 // loginToTestAccount performs wallet import + network switching which typically
@@ -21,7 +21,7 @@ test("MaintenanceScreen shows overlay with title and body from payload", async (
 }) => {
   await loginToTestAccount({ page, extensionId, context });
 
-  await injectMaintenanceScreenState(page, {
+  await stubMaintenanceScreenVariant(page, {
     title: "Maintenance in progress",
     body: ["We'll be back soon.", "Thank you for your patience."],
   });
@@ -39,7 +39,7 @@ test("MaintenanceScreen renders no body section when body array is empty", async
 }) => {
   await loginToTestAccount({ page, extensionId, context });
 
-  await injectMaintenanceScreenState(page, {
+  await stubMaintenanceScreenVariant(page, {
     title: "Down for maintenance",
     body: [],
   });
@@ -59,7 +59,7 @@ test("MaintenanceScreen overlay intercepts clicks on underlying UI", async ({
   // Confirm baseline — dropdown works before the overlay is active
   await expect(page.getByTestId("account-view")).toBeVisible();
 
-  await injectMaintenanceScreenState(page, {
+  await stubMaintenanceScreenVariant(page, {
     title: "Maintenance",
     body: ["Back soon."],
   });
@@ -84,7 +84,7 @@ test("MaintenanceBanner appears on the Account view", async ({
 }) => {
   await loginToTestAccount({ page, extensionId, context });
 
-  await injectMaintenanceBannerState(page, {
+  await stubMaintenanceBannerVariant(page, {
     theme: "warning",
     bannerTitle: "Services degraded",
   });
@@ -100,7 +100,7 @@ test("MaintenanceBanner — warning theme applies warning variant", async ({
 }) => {
   await loginToTestAccount({ page, extensionId, context });
 
-  await injectMaintenanceBannerState(page, {
+  await stubMaintenanceBannerVariant(page, {
     theme: "warning",
     bannerTitle: "Warning banner",
   });
@@ -117,7 +117,7 @@ test("MaintenanceBanner — error theme applies error variant", async ({
 }) => {
   await loginToTestAccount({ page, extensionId, context });
 
-  await injectMaintenanceBannerState(page, {
+  await stubMaintenanceBannerVariant(page, {
     theme: "error",
     bannerTitle: "Error banner",
   });
@@ -134,7 +134,7 @@ test("MaintenanceBanner — primary theme applies primary variant", async ({
 }) => {
   await loginToTestAccount({ page, extensionId, context });
 
-  await injectMaintenanceBannerState(page, {
+  await stubMaintenanceBannerVariant(page, {
     theme: "primary",
     bannerTitle: "Primary banner",
   });
@@ -151,7 +151,7 @@ test("MaintenanceBanner — secondary theme applies secondary variant", async ({
 }) => {
   await loginToTestAccount({ page, extensionId, context });
 
-  await injectMaintenanceBannerState(page, {
+  await stubMaintenanceBannerVariant(page, {
     theme: "secondary",
     bannerTitle: "Secondary banner",
   });
@@ -168,7 +168,7 @@ test("MaintenanceBanner — tertiary theme applies tertiary variant", async ({
 }) => {
   await loginToTestAccount({ page, extensionId, context });
 
-  await injectMaintenanceBannerState(page, {
+  await stubMaintenanceBannerVariant(page, {
     theme: "tertiary",
     bannerTitle: "Tertiary banner",
   });
@@ -185,7 +185,7 @@ test("MaintenanceBanner — clicking banner with URL opens external link", async
 }) => {
   await loginToTestAccount({ page, extensionId, context });
 
-  await injectMaintenanceBannerState(page, {
+  await stubMaintenanceBannerVariant(page, {
     theme: "warning",
     bannerTitle: "Network degraded",
     url: "https://status.stellar.org",
@@ -207,7 +207,7 @@ test("MaintenanceBanner — clicking banner with modal opens the detail sheet", 
 }) => {
   await loginToTestAccount({ page, extensionId, context });
 
-  await injectMaintenanceBannerState(page, {
+  await stubMaintenanceBannerVariant(page, {
     theme: "warning",
     bannerTitle: "Scheduled maintenance",
     modal: {
@@ -237,7 +237,7 @@ test("MaintenanceBanner — Close button dismisses the detail modal", async ({
 }) => {
   await loginToTestAccount({ page, extensionId, context });
 
-  await injectMaintenanceBannerState(page, {
+  await stubMaintenanceBannerVariant(page, {
     theme: "primary",
     bannerTitle: "Upcoming outage",
     modal: {

@@ -5,7 +5,6 @@ import { Provider, useSelector } from "react-redux";
 
 import { metricsMiddleware, initAmplitude } from "helpers/metrics";
 import { activePublicKeyMiddleware } from "helpers/activePublicKeyMiddleware";
-import { BUILD_TYPE } from "constants/env";
 import { Toaster } from "popup/basics/shadcn/Toast";
 
 import { reducer as auth } from "popup/ducks/accountServices";
@@ -44,21 +43,6 @@ export const store = configureStore({
 });
 
 export type AppDispatch = typeof store.dispatch;
-
-// Typed window extension — only used in non-production builds for E2E testing.
-declare global {
-  interface Window {
-    IS_PLAYWRIGHT?: string;
-    __store?: typeof store;
-  }
-}
-
-// Expose the Redux store for Playwright E2E tests.
-// Excluded from production bundles via the BUILD_TYPE guard — webpack's
-// DefinePlugin replaces the constant at compile time, enabling dead-code elimination.
-if (BUILD_TYPE !== "production" && window.IS_PLAYWRIGHT) {
-  window.__store = store;
-}
 
 initAmplitude();
 

@@ -139,6 +139,17 @@ describe("parseBannerPayload", () => {
     expect(result?.modal?.title).toBe("Detalhes");
     expect(result?.modal?.body).toEqual(["Linha um", "Linha dois"]);
   });
+
+  it("filters out non-string and empty values from modal body", () => {
+    const result = parseBannerPayload({
+      ...validPayload,
+      modal: {
+        title: { en: "Details" },
+        body: { en: ["valid", 42, null, "", "  ", "also valid"] as any },
+      },
+    });
+    expect(result?.modal?.body).toEqual(["valid", "also valid"]);
+  });
 });
 
 describe("parseScreenPayload", () => {
@@ -213,5 +224,15 @@ describe("parseScreenPayload", () => {
       content: { title: { en: "Title" }, body: { en: [] } },
     });
     expect(result?.body).toEqual([]);
+  });
+
+  it("filters out non-string and empty values from body array", () => {
+    const result = parseScreenPayload({
+      content: {
+        title: { en: "Title" },
+        body: { en: ["valid", 42, null, "", "  ", "also valid"] as any },
+      },
+    });
+    expect(result?.body).toEqual(["valid", "also valid"]);
   });
 });

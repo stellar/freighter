@@ -3,6 +3,8 @@ import { Experiment, ExperimentClient } from "@amplitude/experiment-js-client";
 import { AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY } from "constants/env";
 import { isDev } from "@shared/helpers/dev";
 
+const TEST_EXPERIMENT_DEPLOYMENT_KEY = "playwright-test-deployment-key";
+
 // Console log message constants
 const LOG_MESSAGES = {
   EXPERIMENT_PREFIX: "[Experiment]",
@@ -13,6 +15,16 @@ const LOG_MESSAGES = {
 
 let client: ExperimentClient | null = null;
 
+const isRuntimeTestEnv = (): boolean => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return (
+    (window as Window & { IS_PLAYWRIGHT?: string }).IS_PLAYWRIGHT === "true"
+  );
+};
+
 /**
  * Initializes the Amplitude Experiment client using the paired analytics SDK.
  * Must be called after `amplitude.init()` so that the experiment client can
@@ -21,8 +33,12 @@ let client: ExperimentClient | null = null;
  * Silently skips initialization in development when no key is configured.
  */
 export const initExperimentClient = (): void => {
-  if (!AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY) {
-    if (!isDev) {
+  const deploymentKey =
+    AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY ||
+    (isRuntimeTestEnv() ? TEST_EXPERIMENT_DEPLOYMENT_KEY : "");
+
+  if (!deploymentKey) {
+    if (!isDev && !isRuntimeTestEnv()) {
       console.error(
         `${LOG_MESSAGES.EXPERIMENT_PREFIX} ${LOG_MESSAGES.MISSING_KEY}`,
       );
@@ -31,9 +47,9 @@ export const initExperimentClient = (): void => {
   }
 
   try {
-    client = Experiment.initializeWithAmplitudeAnalytics(
-      AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY,
-    );
+    client = AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY
+      ? Experiment.initializeWithAmplitudeAnalytics(deploymentKey)
+      : Experiment.initialize(deploymentKey);
   } catch (e) {
     console.error(
       `${LOG_MESSAGES.EXPERIMENT_PREFIX} ${LOG_MESSAGES.INIT_FAILED}`,

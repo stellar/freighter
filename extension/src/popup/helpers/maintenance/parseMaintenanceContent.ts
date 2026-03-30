@@ -38,7 +38,11 @@ function resolveLocalized(map: LocalizedString): string {
  */
 function resolveLocalizedArray(map: LocalizedStringArray): string[] {
   const lang = getLang();
-  return map[lang] ?? map.en ?? [];
+  const value = map[lang] ?? map.en;
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (v): v is string => typeof v === "string" && v.trim().length > 0,
+  );
 }
 
 /**

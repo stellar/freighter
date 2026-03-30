@@ -2840,64 +2840,67 @@ export const stubReportTransactionWarning = async (
 };
 
 // ---------------------------------------------------------------------------
-// Maintenance mode state injection helpers
+// Maintenance mode Experiment API stubs
 // ---------------------------------------------------------------------------
 
+const AMPLITUDE_EXPERIMENT_VARDATA_ROUTE = "**/sdk/v2/vardata**";
+const MAINTENANCE_VARIANT_VALUE = "on";
+
+const stubExperimentVariants = async (
+  page: Page,
+  variants: Record<string, { payload?: unknown }>,
+) => {
+  await page.route(AMPLITUDE_EXPERIMENT_VARDATA_ROUTE, async (route) => {
+    const response = Object.fromEntries(
+      Object.entries(variants).map(([flagKey, variant]) => [
+        flagKey,
+        {
+          key: MAINTENANCE_VARIANT_VALUE,
+          value: MAINTENANCE_VARIANT_VALUE,
+          ...(variant.payload !== undefined
+            ? { payload: variant.payload }
+            : {}),
+        },
+      ]),
+    );
+
+    await route.fulfill({ json: response });
+  });
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+};
+
 /**
- * Injects a `maintenance_screen` enabled state directly into the Redux store
- * via `window.__store` (exposed in E2E builds when `IS_PLAYWRIGHT` is set).
- *
- * This bypasses the Amplitude Experiment SDK entirely, making the tests
- * independent of any deployment key or network connectivity.
- *
- * The payload uses the raw `MaintenanceScreenPayload` shape (localized maps).
- * The selector in `remoteConfig.ts` will parse it into resolved content.
+ * Stubs Amplitude Experiment to return a `maintenance_screen` variant, then
+ * reloads the popup so `useRemoteConfig` fetches and applies the response.
  *
  * @param page - The extension popup page
  * @param content - Title and body paragraphs to display on the overlay
  */
-export const injectMaintenanceScreenState = async (
+export const stubMaintenanceScreenVariant = async (
   page: Page,
   content: { title: string; body: string[] },
 ) => {
-  await page.evaluate((payload) => {
-    const store = (window as any).__store;
-    if (!store) {
-      throw new Error(
-        "Redux store not found on window.__store. " +
-          "IS_PLAYWRIGHT must be set before page scripts run.",
-      );
-    }
-    store.dispatch({
-      type: "remoteConfig/fetchFeatureFlags/fulfilled",
+  await stubExperimentVariants(page, {
+    maintenance_screen: {
       payload: {
-        isInitialized: true,
-        maintenance_screen: {
-          enabled: true,
-          payload: {
-            content: {
-              title: { en: payload.title },
-              body: { en: payload.body },
-            },
-          },
+        content: {
+          title: { en: content.title },
+          body: { en: content.body },
         },
-        maintenance_banner: { enabled: false, payload: undefined },
       },
-    });
-  }, content);
+    },
+  });
 };
 
 /**
- * Injects a `maintenance_banner` enabled state directly into the Redux store
- * via `window.__store` (exposed in E2E builds when `IS_PLAYWRIGHT` is set).
- *
- * The payload uses the raw `MaintenanceBannerPayload` shape (localized maps).
- * The selector in `remoteConfig.ts` will parse it into resolved content.
+ * Stubs Amplitude Experiment to return a `maintenance_banner` variant, then
+ * reloads the popup so `useRemoteConfig` fetches and applies the response.
  *
  * @param page - The extension popup page
  * @param content - Banner title, theme, and optional url/modal payload
  */
-export const injectMaintenanceBannerState = async (
+export const stubMaintenanceBannerVariant = async (
   page: Page,
   content: {
     theme: string;
@@ -2906,36 +2909,25 @@ export const injectMaintenanceBannerState = async (
     modal?: { title: string; body: string[] };
   },
 ) => {
-  await page.evaluate((payload) => {
-    const store = (window as any).__store;
-    if (!store) {
-      throw new Error(
-        "Redux store not found on window.__store. " +
-          "IS_PLAYWRIGHT must be set before page scripts run.",
-      );
-    }
+  const rawPayload: Record<string, unknown> = {
+    theme: content.theme,
+    banner: { title: { en: content.bannerTitle } },
+  };
 
-    const rawPayload: Record<string, unknown> = {
-      theme: payload.theme,
-      banner: { title: { en: payload.bannerTitle } },
+  if (content.url) {
+    rawPayload.url = content.url;
+  }
+
+  if (content.modal) {
+    rawPayload.modal = {
+      title: { en: content.modal.title },
+      body: { en: content.modal.body },
     };
-    if (payload.url) {
-      rawPayload.url = payload.url;
-    }
-    if (payload.modal) {
-      rawPayload.modal = {
-        title: { en: payload.modal.title },
-        body: { en: payload.modal.body },
-      };
-    }
+  }
 
-    store.dispatch({
-      type: "remoteConfig/fetchFeatureFlags/fulfilled",
-      payload: {
-        isInitialized: true,
-        maintenance_banner: { enabled: true, payload: rawPayload },
-        maintenance_screen: { enabled: false, payload: undefined },
-      },
-    });
-  }, content);
+  await stubExperimentVariants(page, {
+    maintenance_banner: {
+      payload: rawPayload,
+    },
+  });
 };

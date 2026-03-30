@@ -6,6 +6,7 @@ import {
 import type { Variant } from "@amplitude/experiment-js-client";
 
 import { getExperimentClient } from "helpers/experimentClient";
+import { BUILD_TYPE } from "constants/env";
 import {
   parseBannerPayload,
   parseScreenPayload,
@@ -28,10 +29,11 @@ const ON_VARIANT_VALUES = ["on", "true", "enabled", "yes"];
 const BOOLEAN_FLAGS = [] as const;
 
 /**
- * String flags — variant value is used directly.
- * Empty for now; add flag names here as new string flags are introduced.
+ * Version flags — variant value is parsed from underscore format (1_2_3 → 1.2.3).
+ * Matches the mobile implementation for interoperability.
+ * Empty for now; add flag names here as new version flags are introduced.
  */
-const STRING_FLAGS = [] as const;
+const VERSION_FLAGS = [] as const;
 
 /**
  * Complex flags — enabled via ON_VARIANT_VALUES, raw payload is forwarded.
@@ -47,9 +49,17 @@ type BooleanFeatureFlags = {
   [K in (typeof BOOLEAN_FLAGS)[number]]: boolean;
 };
 
-type StringFeatureFlags = {
-  [K in (typeof STRING_FLAGS)[number]]: string;
+type VersionFeatureFlags = {
+  [K in (typeof VERSION_FLAGS)[number]]: string;
 };
+
+/**
+ * Parses a version string from underscore format to dot format.
+ * e.g. "1_2_3" → "1.2.3"
+ */
+function parseVersionValue(value: string): string {
+  return value.replace(/_/g, ".");
+}
 
 type ComplexFeatureFlags = {
   [K in (typeof COMPLEX_FLAGS)[number]]: {
@@ -59,7 +69,7 @@ type ComplexFeatureFlags = {
 };
 
 type FeatureFlags = BooleanFeatureFlags &
-  StringFeatureFlags &
+  VersionFeatureFlags &
   ComplexFeatureFlags;
 
 // ---------------------------------------------------------------------------
@@ -97,7 +107,13 @@ export const fetchFeatureFlags = createAsyncThunk(
       return { ...initialState, isInitialized: true };
     }
 
-    await client.fetch();
+    // Pass user_properties explicitly so flags are fetched correctly even when
+    // the user has opted out of analytics (mirrors mobile implementation).
+    await client.fetch({
+      user_properties: {
+        "Bundle Id": `extension.${BUILD_TYPE}`,
+      },
+    });
 
     const variants = client.all();
     const updates: Partial<FeatureFlags> = {};
@@ -111,9 +127,11 @@ export const fetchFeatureFlags = createAsyncThunk(
           variant.value,
         );
       }
-      // String flags — value used directly
-      else if ((STRING_FLAGS as readonly string[]).includes(key)) {
-        (updates as Record<string, unknown>)[key] = variant.value;
+      // Version flags — value parsed from underscore to dot format (1_2_3 → 1.2.3)
+      else if ((VERSION_FLAGS as readonly string[]).includes(key)) {
+        (updates as Record<string, unknown>)[key] = parseVersionValue(
+          variant.value,
+        );
       }
       // Complex flags — enabled + raw payload
       else if ((COMPLEX_FLAGS as readonly string[]).includes(key)) {

@@ -17,6 +17,10 @@ import {
 // Mocks
 // ---------------------------------------------------------------------------
 
+jest.mock("constants/env", () => ({
+  BUILD_TYPE: "development",
+}));
+
 jest.mock("helpers/experimentClient", () => ({
   getExperimentClient: jest.fn(),
 }));
@@ -118,13 +122,18 @@ describe("remoteConfig duck — fetchFeatureFlags with live client", () => {
 
   afterEach(() => jest.clearAllMocks());
 
-  it("calls client.fetch() and client.all()", async () => {
+  it("calls client.fetch() with user_properties and client.all()", async () => {
     const client = makeClient();
     (getExperimentClient as jest.Mock).mockReturnValue(client);
 
     const store = makeStore();
     await store.dispatch(fetchFeatureFlags());
     expect(client.fetch).toHaveBeenCalledTimes(1);
+    expect(client.fetch).toHaveBeenCalledWith({
+      user_properties: {
+        "Bundle Id": "extension.development",
+      },
+    });
     expect(client.all).toHaveBeenCalledTimes(1);
   });
 

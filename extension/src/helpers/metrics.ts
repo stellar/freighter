@@ -32,6 +32,16 @@ const LOG_MESSAGES = {
   EVENT_NOT_UPLOADED: "Amplitude event (not uploaded):",
 } as const;
 
+const isRuntimeTestEnv = (): boolean => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return (
+    (window as Window & { IS_PLAYWRIGHT?: string }).IS_PLAYWRIGHT === "true"
+  );
+};
+
 type MetricsPayloadAction = PayloadAction<{
   errorMessage?: string;
   location?: Location;
@@ -147,11 +157,16 @@ export const initAmplitude = () => {
   if (hasInitialized) return;
 
   if (!AMPLITUDE_KEY) {
-    if (!isDev) {
+    if (!isDev && !isRuntimeTestEnv()) {
       console.error(
         `${LOG_MESSAGES.AMPLITUDE_PREFIX} ${LOG_MESSAGES.MISSING_KEY}`,
       );
     }
+
+    if (isRuntimeTestEnv()) {
+      initExperimentClient();
+    }
+
     hasInitialized = true;
     return;
   }
