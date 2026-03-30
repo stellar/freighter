@@ -24,7 +24,10 @@ import {
   FreighterApiInternalError,
   FreighterApiDeclinedError,
 } from "@shared/api/helpers/extensionMessaging";
-import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
+import {
+  EXTERNAL_SERVICE_TYPES,
+  SIDEBAR_NAVIGATE,
+} from "@shared/constants/services";
 import {
   MAINNET_NETWORK_DETAILS,
   NetworkDetails,
@@ -67,8 +70,6 @@ import {
   transactionQueue,
 } from "./popupMessageListener";
 import { QUEUE_ITEM_TTL_MS } from "background/helpers/queueCleanup";
-
-const SIDEBAR_NAVIGATE = "SIDEBAR_NAVIGATE";
 
 const openSigningWindow = async (hashRoute: string, width?: number) => {
   const sidebarWindowId = getSidebarWindowId();

@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "popup/constants/routes";
+import { SIDEBAR_NAVIGATE } from "@shared/constants/services";
 
-const SIDEBAR_NAVIGATE = "SIDEBAR_NAVIGATE";
 export const SIDEBAR_PORT_NAME = "sidebar";
 
 export const SidebarSigningListener = () => {
