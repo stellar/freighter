@@ -43,7 +43,15 @@
   // but it does check visibility:hidden (including inherited from ancestors).
   // This ensures .not.toBeVisible() assertions pass in E2E tests for modal content
   // that lives inside a closed SlideupModal.
+  //
+  // The transition-delay keeps visibility:hidden from firing until AFTER the 200ms
+  // slide/fade animation completes, preventing abrupt disappearance on close.
   visibility: hidden;
+  transition:
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s linear 0.2s;
 }
 
 .SlideupModal + .LoadingBackground--isFullScreen.LoadingBackground--active {
