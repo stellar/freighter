@@ -182,12 +182,13 @@ export const initInstalledListener = () => {
 
 export const initSidebarBehavior = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
+  // getItem returns a string from localStorage; compare explicitly to avoid
+  // any truthy string (e.g. "false") being coerced to true.
   const val =
-    ((await localStore.getItem(IS_OPEN_SIDEBAR_BY_DEFAULT_ID)) as boolean) ??
-    false;
+    (await localStore.getItem(IS_OPEN_SIDEBAR_BY_DEFAULT_ID)) === "true";
   if (chrome.sidePanel?.setPanelBehavior) {
     chrome.sidePanel
-      .setPanelBehavior({ openPanelOnActionClick: !!val })
+      .setPanelBehavior({ openPanelOnActionClick: val })
       .catch((e) => console.error("Failed to set panel behavior:", e));
   }
 };

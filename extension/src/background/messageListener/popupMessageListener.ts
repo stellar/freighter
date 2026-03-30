@@ -16,7 +16,6 @@ import {
   RejectTransactionResponse,
   SignedHwPayloadResponse,
   MarkQueueActiveMessage,
-  SidebarRegisterMessage,
   OpenSidebarMessage,
 } from "@shared/api/types/message-request";
 import { SERVICE_TYPES } from "@shared/constants/services";
@@ -582,18 +581,6 @@ export const popupMessageListener = (
           .catch((e) => console.error("Failed to open sidebar:", e));
         return {};
       })();
-    }
-
-    case SERVICE_TYPES.SIDEBAR_REGISTER: {
-      if (!isFromExtensionPage) return { error: "Unauthorized" };
-      sidebarWindowId = (request as SidebarRegisterMessage).windowId;
-      return {};
-    }
-
-    case SERVICE_TYPES.SIDEBAR_UNREGISTER: {
-      if (!isFromExtensionPage) return { error: "Unauthorized" };
-      sidebarWindowId = null;
-      return {};
     }
 
     default:

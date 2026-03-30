@@ -445,15 +445,6 @@ export interface MarkQueueActiveMessage extends BaseMessage {
   isActive: boolean;
 }
 
-export interface SidebarRegisterMessage extends BaseMessage {
-  type: SERVICE_TYPES.SIDEBAR_REGISTER;
-  windowId: number;
-}
-
-export interface SidebarUnregisterMessage extends BaseMessage {
-  type: SERVICE_TYPES.SIDEBAR_UNREGISTER;
-}
-
 export interface OpenSidebarMessage extends BaseMessage {
   type: SERVICE_TYPES.OPEN_SIDEBAR;
   windowId: number;
@@ -524,6 +515,4 @@ export type ServiceMessageRequest =
   | ChangeCollectibleVisibilityMessage
   | GetHiddenCollectiblesMessage
   | MarkQueueActiveMessage
-  | SidebarRegisterMessage
-  | SidebarUnregisterMessage
   | OpenSidebarMessage;
