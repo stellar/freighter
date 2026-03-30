@@ -88,7 +88,6 @@ describe("sidebar message handlers", () => {
       const {
         getSidebarWindowId,
         clearSidebarWindowId,
-        setSidebarWindowId,
       } = require("background/messageListener/popupMessageListener");
       clearSidebarWindowId();
       expect(getSidebarWindowId()).toBeNull();
