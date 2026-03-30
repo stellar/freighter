@@ -62,9 +62,11 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
   ...props
 }: ViewAppHeaderProps) => (
   <div className="View__header" {...props}>
-    <ViewInset hasVerticalBorder hasNoPadding>
-      <div className="View__topContent">{topContent}</div>
-    </ViewInset>
+    {topContent && (
+      <ViewInset hasVerticalBorder hasNoPadding>
+        <div className="View__topContent">{topContent}</div>
+      </ViewInset>
+    )}
     <ViewInset isInline isAccountHeader={isAccountHeader} hasVerticalBorder>
       {/* Left */}
       <div className="View__header__box View__header__box--left">

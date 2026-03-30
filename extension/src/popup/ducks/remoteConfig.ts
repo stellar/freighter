@@ -170,8 +170,12 @@ export const maintenanceBannerSelector = createSelector(
     if (!flag.enabled) {
       return { enabled: false as const, content: null };
     }
-    const content = parseBannerPayload(flag.payload);
-    return { enabled: !!content, content };
+    try {
+      const content = parseBannerPayload(flag.payload);
+      return { enabled: !!content, content };
+    } catch {
+      return { enabled: false as const, content: null };
+    }
   },
 );
 
@@ -186,8 +190,12 @@ export const maintenanceScreenSelector = createSelector(
     if (!flag.enabled) {
       return { enabled: false as const, content: null };
     }
-    const content = parseScreenPayload(flag.payload);
-    return { enabled: !!content, content };
+    try {
+      const content = parseScreenPayload(flag.payload);
+      return { enabled: !!content, content };
+    } catch {
+      return { enabled: false as const, content: null };
+    }
   },
 );
 

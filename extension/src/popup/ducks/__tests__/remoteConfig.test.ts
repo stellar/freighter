@@ -327,10 +327,9 @@ describe("remoteConfig selectors", () => {
     const store = makeStore();
     await store.dispatch(fetchFeatureFlags());
 
-    // The selector propagates the throw — callers must handle it.
-    expect(() => maintenanceBannerSelector(store.getState())).toThrow(
-      "unexpected payload shape",
-    );
+    // The selector catches the throw and returns safe defaults.
+    const result = maintenanceBannerSelector(store.getState());
+    expect(result).toEqual({ enabled: false, content: null });
   });
 
   it("maintenanceScreenSelector degrades gracefully when parser throws", async () => {
@@ -346,9 +345,9 @@ describe("remoteConfig selectors", () => {
     const store = makeStore();
     await store.dispatch(fetchFeatureFlags());
 
-    expect(() => maintenanceScreenSelector(store.getState())).toThrow(
-      "bad screen payload",
-    );
+    // The selector catches the throw and returns safe defaults.
+    const result = maintenanceScreenSelector(store.getState());
+    expect(result).toEqual({ enabled: false, content: null });
   });
 
   it("isRemoteConfigInitializedSelector returns false initially", () => {
