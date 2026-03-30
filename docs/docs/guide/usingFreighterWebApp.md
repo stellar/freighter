@@ -268,7 +268,7 @@ account.
 
 ### signAuthEntry
 
-#### `signAuthEntry(authEntryXdr: string, opts: { address: string }) -> <Promise<{ signedAuthEntry: string | null; signerAddress: string } & { error?: string; }>>`
+#### `signAuthEntry(entryXdr: string, opts: { address: string }) -> <Promise<{ signedAuthEntry: string | null; signerAddress: string } & { error?: string; }>>`
 
 This function accepts an
 [authorization entry preimage](https://github.com/stellar/js-stellar-base/blob/a9567e5843760bfb6a8b786592046aee4c9d38b2/types/next.d.ts#L6895)

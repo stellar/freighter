@@ -1,13 +1,25 @@
-import throttle from "lodash/throttle";
+import * as amplitude from "@amplitude/analytics-browser";
 import { Action, Middleware } from "redux";
-import { captureException } from "@sentry/browser";
 import { PayloadAction } from "@reduxjs/toolkit";
 import { Location } from "react-router-dom";
 
+import browser from "webextension-polyfill";
+
 import { store } from "popup/App";
-import { METRICS_DATA } from "constants/localStorageTypes";
-import { AMPLITUDE_KEY, METRICS_PLATFORM } from "constants/env";
-import { settingsDataSharingSelector } from "popup/ducks/settings";
+import { METRICS_DATA, METRICS_USER_ID } from "constants/localStorageTypes";
+import {
+  AMPLITUDE_KEY,
+  METRICS_PLATFORM,
+  APP_VERSION,
+  BUILD_TYPE,
+} from "constants/env";
+import { isDev } from "@shared/helpers/dev";
+import {
+  settingsDataSharingSelector,
+  settingsNetworkDetailsSelector,
+} from "popup/ducks/settings";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { truncatedPublicKey } from "helpers/stellar";
 import { Account, AccountType } from "@shared/api/types";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -19,7 +31,7 @@ type MetricHandler<AppState> = (
   state: AppState,
   action: MetricsPayloadAction,
 ) => void;
-const handlersLookup: { [key: string]: MetricHandler<any>[] } = {};
+const handlersLookup: Record<string, MetricHandler<any>[]> = {};
 
 /*
  * metricsMiddleware is a redux middleware that calls handlers specified to
@@ -54,23 +66,7 @@ export function registerHandler<State>(
   handler: (state: State, action: MetricsPayloadAction) => void,
 ) {
   const type = typeof actionType === "string" ? actionType : actionType.type;
-  if (handlersLookup[type]) {
-    handlersLookup[type].push(handler);
-  } else {
-    handlersLookup[type] = [handler];
-  }
-}
-
-interface Event {
-  event_type: string;
-  event_properties: { [key: string]: any };
-  user_id: string;
-  device_id: string;
-  platform: string;
-  freighter_account_funded: boolean;
-  hw_connected: boolean;
-  secret_key_account: boolean;
-  secret_key_account_funded: boolean;
+  (handlersLookup[type] ??= []).push(handler);
 }
 
 export interface MetricsData {
@@ -83,116 +79,286 @@ export interface MetricsData {
   unfundedFreighterAccounts: string[];
 }
 
-const METRICS_ENDPOINT = "https://api.amplitude.com/2/httpapi";
-let cache: Event[] = [];
+// ---------------------------------------------------------------------------
+// Amplitude SDK initialization
+// ---------------------------------------------------------------------------
 
-const uploadMetrics = throttle(async () => {
-  const toUpload = cache;
-  cache = [];
-  if (!AMPLITUDE_KEY) {
-    console.log("Not uploading metrics", toUpload);
-    return;
-  }
+let hasInitialized = false;
 
+// ---------------------------------------------------------------------------
+// User identity (mirrors mobile's src/services/analytics/user.ts)
+// ---------------------------------------------------------------------------
+
+/** Mirrors mobile's `generateRandomUserId` — a numeric decimal string. */
+const generateRandomUserId = (): string =>
+  Math.random().toString().split(".")[1];
+
+/** Session-level cache, mirrors mobile's module-level `sessionUserId` fallback. */
+let sessionUserId: string | null = null;
+
+/**
+ * Gets or creates a persistent analytics user ID.
+ * Mirrors mobile's `getUserId` from `src/services/analytics/user.ts`:
+ * - Reads from localStorage under key `"metrics_user_id"`
+ * - Falls back to a session-only ID if storage is unavailable
+ */
+const getUserId = (): string => {
   try {
-    const amplitudeFetchRes = await fetch(METRICS_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        api_key: AMPLITUDE_KEY,
-        events: toUpload,
-      }),
-    });
-
-    if (!amplitudeFetchRes.ok) {
-      const amplitudeFetchResJson = await amplitudeFetchRes.json();
-      captureException(
-        `Error uploading to Amplitude with error: ${JSON.stringify(
-          amplitudeFetchResJson,
-        )} | cache size: ${toUpload.length} | cache contents: ${JSON.stringify(
-          toUpload,
-        )}`,
-      );
+    const stored = localStorage.getItem(METRICS_USER_ID);
+    if (stored) {
+      sessionUserId = stored;
+      return stored;
     }
-  } catch (e) {
-    captureException(
-      `Amplitude fetch threw error: ${JSON.stringify(e)} | cache size: ${
-        toUpload.length
-      } | cache contents: ${JSON.stringify(toUpload)}`,
-    );
-  }
-}, 500);
 
-const getUserId = () => {
-  const storedId = localStorage.getItem("metrics_user_id");
-  if (!storedId) {
-    // Create a random ID by taking the decimal portion of a random number
-    const newId = Math.random().toString().split(".")[1];
-    localStorage.setItem("metrics_user_id", newId);
+    const newId = generateRandomUserId();
+    try {
+      localStorage.setItem(METRICS_USER_ID, newId);
+    } catch {
+      // Storage write failed — hold in session only
+    }
+    sessionUserId = newId;
     return newId;
+  } catch {
+    if (sessionUserId) return sessionUserId;
+    sessionUserId = generateRandomUserId();
+    return sessionUserId;
   }
-  return storedId;
 };
 
 /**
- *
- * @param {string} name The name (in plain language, thoughtfully considered) of
- * the event. This is long-lived and appears in the metrics dashboard, so
- * logically related events should be presented predictably.
- * @param {object?} body An optional object containing event metadata
- * @returns {void}
+ * Initializes the Amplitude SDK. Should be called once at app startup.
+ * In development (no AMPLITUDE_KEY), events are logged to console only.
  */
-export const emitMetric = async (name: string, body?: any) => {
-  const isDataSharingAllowed = settingsDataSharingSelector(store.getState());
-  if (!isDataSharingAllowed) {
+export const initAmplitude = () => {
+  if (hasInitialized) return;
+
+  if (!AMPLITUDE_KEY) {
+    if (!isDev) {
+      console.error(
+        "[Amplitude] Missing AMPLITUDE_KEY — events will not be uploaded",
+      );
+    }
+    hasInitialized = true;
     return;
   }
 
-  let metricsData: MetricsData;
+  try {
+    amplitude.init(AMPLITUDE_KEY, undefined, {
+      // Use localStorage for identity persistence. The SDK will automatically
+      // generate a UUID deviceId and persist it across sessions.
+      identityStorage: "localStorage",
+      autocapture: false,
+      // The extension popup can close at any time; reduce the flush interval
+      // so queued events are sent promptly instead of waiting the default 1 s.
+      flushIntervalMillis: 500,
+    });
+
+    // Set a persistent user ID for parity with mobile.
+    const userId = getUserId();
+    amplitude.setUserId(userId);
+
+    // Set persistent user properties (mirrors mobile's setAmplitudeUserProperties)
+    const identify = new amplitude.Identify();
+    identify.set("Bundle Id", `extension.${BUILD_TYPE}`);
+    amplitude.identify(identify);
+
+    // Apply initial opt-out state. Note: settings may not yet be loaded from the
+    // background at this point (they're fetched async). The store subscription
+    // below will correct this as soon as the real preference arrives.
+    const isDataSharingAllowed = settingsDataSharingSelector(store.getState());
+    amplitude.setOptOut(!isDataSharingAllowed);
+
+    hasInitialized = true;
+
+    // Keep opt-out in sync whenever the data-sharing setting changes in Redux.
+    // This is the authoritative source of truth; the initial call above may fire
+    // before settings are loaded from the background script.
+    let lastDataSharingAllowed: boolean | null = null;
+    store.subscribe(() => {
+      const allowed = settingsDataSharingSelector(store.getState());
+      if (allowed !== lastDataSharingAllowed) {
+        lastDataSharingAllowed = allowed;
+        amplitude.setOptOut(!allowed);
+      }
+    });
+
+    // Flush any queued events before the popup window closes so they aren't lost.
+    if (typeof window !== "undefined") {
+      window.addEventListener("beforeunload", () => {
+        amplitude.flush();
+      });
+    }
+  } catch (e) {
+    console.error("[Amplitude] Failed to initialize", e);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Common context (mirrors mobile's buildCommonContext)
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the extension version. Prefers the build-time constant (always
+ * available via DefinePlugin), falling back to the browser extension manifest.
+ */
+const getAppVersion = (): string => {
+  if (APP_VERSION) return APP_VERSION;
 
   try {
-    const storedData = localStorage.getItem(METRICS_DATA);
-    if (storedData) {
-      metricsData = JSON.parse(storedData);
-    } else {
-      throw new Error("No metrics data found in localStorage");
-    }
+    return browser.runtime.getManifest().version;
   } catch {
-    // Fallback to default values if parsing fails or data is missing
-    metricsData = {
-      accountType: AccountType.FREIGHTER,
-      hwExists: false,
-      importedExists: false,
-      hwFunded: false,
-      importedFunded: false,
-      freighterFunded: false,
-      unfundedFreighterAccounts: [],
-    };
+    return "unknown";
+  }
+};
+
+/**
+ * Extracts a coarsened browser identifier from the user agent string.
+ * Returns "BrowserName/MajorVersion" (e.g. "Chrome/120", "Firefox/121").
+ * Falls back to "Unknown" if parsing fails.
+ */
+const getCoarsenedUserAgent = (): string => {
+  const ua = navigator.userAgent;
+
+  // Order matters: check more specific browsers first.
+  // Edge includes "Chrome" in its UA, so check Edge before Chrome.
+  const patterns: Array<[RegExp, string]> = [
+    [/Edg(?:e|A|iOS)?\/(\d+)/, "Edge"],
+    [/OPR\/(\d+)/, "Opera"],
+    [/Firefox\/(\d+)/, "Firefox"],
+    [/(?:Chrome|CriOS)\/(\d+)/, "Chrome"],
+    [/Version\/(\d+).*Safari/, "Safari"],
+  ];
+
+  for (const [regex, name] of patterns) {
+    const match = ua.match(regex);
+    if (match) {
+      return `${name}/${match[1]}`;
+    }
   }
 
-  cache.push({
-    event_type: name,
-    event_properties: body,
-    user_id: getUserId(),
-    device_id: window.navigator.userAgent,
+  return "Unknown";
+};
+
+/**
+ * Builds common context data attached to every event.
+ * Mirrors the mobile app's context properties for consistency across platforms.
+ *
+ * | Mobile property   | Extension equivalent                         |
+ * |-------------------|----------------------------------------------|
+ * | Platform.OS       | METRICS_PLATFORM ("WEB")                     |
+ * | Platform.Version  | coarsened user agent (e.g. "Chrome/120")     |
+ * | getVersion()      | manifest version / APP_VERSION               |
+ * | getBundleId()     | "extension.<BUILD_TYPE>"                     |
+ *
+ * @param state Current Redux state (passed in to avoid a redundant getState() call).
+ */
+const buildCommonContext = (
+  state: ReturnType<typeof store.getState>,
+): Record<string, unknown> => {
+  const activePublicKey = publicKeySelector(state);
+  const networkDetails = settingsNetworkDetailsSelector(state);
+
+  // Navigator.connection is not available in all browsers
+  const nav = navigator as Navigator & {
+    connection?: { type?: string; effectiveType?: string };
+  };
+
+  const context: Record<string, unknown> = {
+    publicKey: activePublicKey ? truncatedPublicKey(activePublicKey) : "N/A",
     platform: METRICS_PLATFORM,
+    platformVersion: getCoarsenedUserAgent(),
+    network: networkDetails?.network ?? "UNKNOWN",
+    connectionType: nav.connection?.type ?? "unknown",
+    appVersion: getAppVersion(),
+    bundleId: `extension.${BUILD_TYPE}`,
+  };
+
+  if (nav.connection?.effectiveType) {
+    context.effectiveType = nav.connection.effectiveType;
+  }
+
+  return context;
+};
+
+// ---------------------------------------------------------------------------
+// localStorage helpers
+// ---------------------------------------------------------------------------
+
+const METRICS_DATA_DEFAULTS: MetricsData = {
+  accountType: AccountType.FREIGHTER,
+  hwExists: false,
+  importedExists: false,
+  hwFunded: false,
+  importedFunded: false,
+  freighterFunded: false,
+  unfundedFreighterAccounts: [],
+};
+
+/**
+ * Reads and parses metrics data from localStorage.
+ * Returns safe defaults if the entry is missing or contains invalid JSON
+ * (e.g. after a storage corruption or schema change).
+ */
+const getMetricsData = (): MetricsData => {
+  try {
+    const raw = localStorage.getItem(METRICS_DATA);
+    if (!raw) return { ...METRICS_DATA_DEFAULTS };
+    return JSON.parse(raw) as MetricsData;
+  } catch {
+    return { ...METRICS_DATA_DEFAULTS };
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Event emission
+// ---------------------------------------------------------------------------
+
+/**
+ * Emits a named analytics event to Amplitude with optional metadata.
+ * Respects the user's data-sharing preference; no-ops if disabled.
+ * @param name The event name for the Amplitude dashboard.
+ * @param body Optional object containing event-specific metadata.
+ */
+export const emitMetric = (name: string, body?: Record<string, unknown>) => {
+  const state = store.getState();
+
+  const metricsData = getMetricsData();
+
+  const eventProperties = {
+    ...buildCommonContext(state),
+    ...body,
     freighter_account_funded: metricsData.freighterFunded,
     hw_connected: metricsData.hwExists,
     secret_key_account: metricsData.importedExists,
     secret_key_account_funded: metricsData.importedFunded,
-  });
-  await uploadMetrics();
+  };
+
+  const isDataSharingAllowed = settingsDataSharingSelector(state);
+  if (!isDataSharingAllowed) {
+    return;
+  }
+
+  if (!AMPLITUDE_KEY || !hasInitialized) {
+    console.log("Amplitude event (not uploaded):", name, eventProperties);
+    return;
+  }
+
+  amplitude.track(name, eventProperties);
 };
 
+/**
+ * Persists balance-related metrics data for a given account.
+ * Tracks whether HW, imported, or Freighter accounts are funded, and
+ * emits a one-time event when a previously unfunded Freighter account
+ * receives its first funding.
+ * @param publicKey The Stellar public key (G-address) of the account.
+ * @param accountFunded Whether the account currently has a balance.
+ */
 export const storeBalanceMetricData = (
   publicKey: string,
   accountFunded: boolean,
 ) => {
-  const metricsData: MetricsData = JSON.parse(
-    localStorage.getItem(METRICS_DATA) || "{}",
-  );
+  const metricsData: MetricsData = getMetricsData();
   const accountType = metricsData.accountType;
 
   if (accountFunded && accountType === AccountType.HW) {
@@ -202,20 +368,25 @@ export const storeBalanceMetricData = (
     metricsData.importedFunded = true;
   }
   if (accountType === AccountType.FREIGHTER) {
-    // check if we found a previously unfunded freighter account for metrics
+    // Track previously-unfunded Freighter accounts so we can fire a one-time
+    // "funded" event. Keys are truncated before storage to avoid persisting
+    // full G-addresses to localStorage.
     const unfundedFreighterAccounts =
       metricsData.unfundedFreighterAccounts || [];
-    const idx = unfundedFreighterAccounts.indexOf(publicKey);
+    const truncated = truncatedPublicKey(publicKey);
+    const idx = unfundedFreighterAccounts.indexOf(truncated);
 
     if (accountFunded) {
       metricsData.freighterFunded = true;
       if (idx !== -1) {
-        emitMetric(METRIC_NAMES.freighterAccountFunded, { publicKey });
+        emitMetric(METRIC_NAMES.freighterAccountFunded, {
+          publicKey: truncated,
+        });
         unfundedFreighterAccounts.splice(idx, 1);
       }
     }
     if (!accountFunded && idx === -1) {
-      unfundedFreighterAccounts.push(publicKey);
+      unfundedFreighterAccounts.push(truncated);
     }
     metricsData.unfundedFreighterAccounts = unfundedFreighterAccounts;
   }
@@ -223,13 +394,18 @@ export const storeBalanceMetricData = (
   localStorage.setItem(METRICS_DATA, JSON.stringify(metricsData));
 };
 
+/**
+ * Persists account-type metrics data derived from the user's full account list.
+ * Records whether HW or imported accounts exist, and sets the active account
+ * type for subsequent metric emissions.
+ * @param publicKey The currently active Stellar public key.
+ * @param allAccounts All accounts known to the wallet.
+ */
 export const storeAccountMetricsData = (
   publicKey: string,
   allAccounts: Account[],
 ) => {
-  const metricsData: MetricsData = JSON.parse(
-    localStorage.getItem(METRICS_DATA) || "{}",
-  );
+  const metricsData: MetricsData = getMetricsData();
 
   let accountType = AccountType.FREIGHTER;
   allAccounts.forEach((acc: Account) => {
