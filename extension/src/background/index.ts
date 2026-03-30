@@ -11,9 +11,15 @@ import {
   popupMessageListener,
   clearSidebarWindowId,
   setSidebarWindowId,
+  responseQueue,
+  transactionQueue,
+  blobQueue,
+  authEntryQueue,
+  tokenQueue,
 } from "./messageListener/popupMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
 import { SIDEBAR_PORT_NAME } from "popup/components/SidebarSigningListener";
+import { activeQueueUuids } from "./helpers/queueCleanup";
 import {
   SESSION_ALARM_NAME,
   SessionTimer,
@@ -73,8 +79,38 @@ export const initSidebarConnectionListener = () => {
     });
 
     // When sidebar closes (for any reason), clear the window ID
+    // and reject any pending signing requests
     port.onDisconnect.addListener(() => {
       clearSidebarWindowId();
+
+      // Reject all active signing requests that were open in the sidebar
+      for (const uuid of activeQueueUuids) {
+        const responseIndex = responseQueue.findIndex(
+          (item) => item.uuid === uuid,
+        );
+        if (responseIndex !== -1) {
+          const responseQueueItem = responseQueue.splice(responseIndex, 1)[0];
+          responseQueueItem.response(undefined);
+        }
+
+        // Clean up the data queues
+        const txIndex = transactionQueue.findIndex(
+          (item) => item.uuid === uuid,
+        );
+        if (txIndex !== -1) transactionQueue.splice(txIndex, 1);
+
+        const blobIndex = blobQueue.findIndex((item) => item.uuid === uuid);
+        if (blobIndex !== -1) blobQueue.splice(blobIndex, 1);
+
+        const authIndex = authEntryQueue.findIndex(
+          (item) => item.uuid === uuid,
+        );
+        if (authIndex !== -1) authEntryQueue.splice(authIndex, 1);
+
+        const tokenIndex = tokenQueue.findIndex((item) => item.uuid === uuid);
+        if (tokenIndex !== -1) tokenQueue.splice(tokenIndex, 1);
+      }
+      activeQueueUuids.clear();
     });
   });
 };
