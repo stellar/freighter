@@ -3,7 +3,8 @@ import { Button, Icon } from "@stellar/design-system";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { xdr } from "stellar-sdk";
+import { hash, xdr } from "stellar-sdk";
+import { PASSPHRASE_TO_NETWORK_NAME } from "@shared/constants/stellar";
 
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import {
@@ -52,11 +53,7 @@ export const SignAuthEntry = () => {
   );
 
   const params = parsedSearchParam(location.search) as EntryToSign;
-  const {
-    accountToSign,
-    networkPassphrase: entryNetworkPassphrase,
-    domain,
-  } = params;
+  const { accountToSign, domain } = params;
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
   });
@@ -124,19 +121,68 @@ export const SignAuthEntry = () => {
     });
   }
 
-  if (entryNetworkPassphrase && entryNetworkPassphrase !== networkPassphrase) {
+  // Parse the XDR early so we can validate the embedded network ID before
+  // showing any signing UI. An unparseable entry is rejected immediately.
+  let preimage: xdr.HashIdPreimage;
+  try {
+    preimage = xdr.HashIdPreimage.fromXDR(params.entry, "base64");
+  } catch (_e) {
     return (
       <WarningMessage
         variant={WarningMessageVariant.warning}
-        handleCloseClick={() => window.close()}
+        handleCloseClick={() => rejectAndClose()}
         isActive
-        header={`${t("Freighter is set to")} ${networkName}`}
+        header={t("Invalid Authorization Entry")}
+      >
+        <p>{t("The authorization entry XDR could not be parsed.")}</p>
+      </WarningMessage>
+    );
+  }
+
+  // Cryptographically validate the networkId embedded in the XDR against the
+  // wallet's active network. This is stronger than trusting the dApp-supplied
+  // networkPassphrase string (which may be absent or spoofed).
+  let sorobanAuth: ReturnType<typeof preimage.sorobanAuthorization>;
+  try {
+    sorobanAuth = preimage.sorobanAuthorization();
+    const embeddedNetworkId = sorobanAuth.networkId();
+    const entryNetworkName =
+      Object.entries(PASSPHRASE_TO_NETWORK_NAME).find(([passphrase]) =>
+        hash(Buffer.from(passphrase)).equals(embeddedNetworkId),
+      )?.[1] ?? params.networkPassphrase;
+    const expectedNetworkId = hash(Buffer.from(networkPassphrase));
+    if (!embeddedNetworkId.equals(expectedNetworkId)) {
+      return (
+        <WarningMessage
+          variant={WarningMessageVariant.warning}
+          handleCloseClick={() => rejectAndClose()}
+          isActive
+          header={`${t("Freighter is set to")} ${networkName}`}
+        >
+          <p>
+            {entryNetworkName
+              ? `${t("The authorization entry is for")} ${entryNetworkName}.`
+              : t(
+                  "The authorization entry is for a different network than the one you are connected to.",
+                )}
+          </p>
+          <p>
+            {t("Signing this authorization is not possible at the moment.")}
+          </p>
+        </WarningMessage>
+      );
+    }
+  } catch (_e) {
+    return (
+      <WarningMessage
+        variant={WarningMessageVariant.warning}
+        handleCloseClick={() => rejectAndClose()}
+        isActive
+        header={t("Invalid Authorization Entry")}
       >
         <p>
-          {`${t("The requester expects you to sign this auth entry on")} `}
-          {entryNetworkPassphrase}.
+          {t("The authorization entry is malformed or contains invalid data.")}
         </p>
-        <p>{t("Signing this authorization is not possible at the moment.")}</p>
       </WarningMessage>
     );
   }
@@ -151,8 +197,7 @@ export const SignAuthEntry = () => {
   const favicon = getSiteFavicon(domain);
   const validDomain = isDomainValid ? punycodedDomain : `xn-${punycodedDomain}`;
 
-  const preimage = xdr.HashIdPreimage.fromXDR(params.entry, "base64");
-  const invocation = preimage.sorobanAuthorization().invocation();
+  const invocation = sorobanAuth.invocation();
 
   return isPasswordRequired ? (
     <VerifyAccount
@@ -198,6 +243,15 @@ export const SignAuthEntry = () => {
                 </div>
                 <div className="SignAuthEntry__Metadata__Value">
                   <KeyIdenticon publicKey={publicKey} />
+                </div>
+              </div>
+              <div className="SignAuthEntry__Metadata__Row">
+                <div className="SignAuthEntry__Metadata__Label">
+                  <Icon.Globe02 />
+                  <span>{t("Network")}</span>
+                </div>
+                <div className="SignAuthEntry__Metadata__Value">
+                  <span>{networkName}</span>
                 </div>
               </div>
             </div>
