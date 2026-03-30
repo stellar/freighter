@@ -18,7 +18,6 @@
   &__card {
     display: flex;
     flex-direction: column;
-    gap: pxToRem(16px);
     background-color: var(--sds-clr-gray-03);
     border-radius: pxToRem(16px);
     padding: pxToRem(24px);
@@ -29,20 +28,23 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: pxToRem(40px);
-    height: pxToRem(40px);
+    width: pxToRem(32px);
+    height: pxToRem(32px);
     border-radius: pxToRem(8px);
     background-color: var(--sds-clr-lilac-03);
     border: 1px solid var(--sds-clr-lilac-06);
     flex-shrink: 0;
+    margin-bottom: pxToRem(12px);
 
     svg {
-      width: pxToRem(24px);
-      height: pxToRem(24px);
+      width: pxToRem(20px);
+      height: pxToRem(20px);
     }
   }
 
   &__title {
+    font-size: pxToRem(18px);
+    line-height: pxToRem(26px);
     color: var(--sds-clr-gray-12);
   }
 
@@ -55,5 +57,12 @@
   &__body-text {
     color: var(--sds-clr-gray-11);
     margin: 0;
+    font-size: pxToRem(14px);
+    margin-top: pxToRem(12px);
+    line-height: pxToRem(20px);
+
+    &:first-child {
+      margin-top: pxToRem(8px);
+    }
   }
 }
