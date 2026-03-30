@@ -135,9 +135,14 @@ export const popupMessageListener = (
   localStore: DataStorageAccess,
   keyManager: KeyManager,
   sessionTimer: SessionTimer,
+  sender?: browser.Runtime.MessageSender,
 ) => {
   const currentState = sessionStore.getState();
   const publicKey = publicKeySelector(currentState);
+
+  // Content scripts (dapp pages) always carry sender.tab; extension pages do not.
+  // Sidebar-specific handlers must only be reachable from extension pages.
+  const isFromExtensionPage = !sender?.tab;
 
   if (
     request.activePublicKey &&
@@ -566,6 +571,7 @@ export const popupMessageListener = (
     }
 
     case SERVICE_TYPES.OPEN_SIDEBAR: {
+      if (!isFromExtensionPage) return { error: "Unauthorized" };
       const { windowId } = request as OpenSidebarMessage;
       return (async () => {
         await chrome.sidePanel
@@ -579,11 +585,13 @@ export const popupMessageListener = (
     }
 
     case SERVICE_TYPES.SIDEBAR_REGISTER: {
+      if (!isFromExtensionPage) return { error: "Unauthorized" };
       sidebarWindowId = (request as SidebarRegisterMessage).windowId;
       return {};
     }
 
     case SERVICE_TYPES.SIDEBAR_UNREGISTER: {
+      if (!isFromExtensionPage) return { error: "Unauthorized" };
       sidebarWindowId = null;
       return {};
     }

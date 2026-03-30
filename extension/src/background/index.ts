@@ -95,19 +95,14 @@ export const initExtensionMessageListener = () => {
     const req = request as ExternalRequest | Response;
     let res;
 
-    // Only allow SERVICE_TYPES messages from extension pages (popup, sidebar,
-    // options). Content scripts always have sender.tab set; extension pages do not.
-    const isFromExtensionPage = !sender.tab;
-    if (
-      isFromExtensionPage &&
-      Object.values(SERVICE_TYPES).includes(req.type as SERVICE_TYPES)
-    ) {
+    if (Object.values(SERVICE_TYPES).includes(req.type as SERVICE_TYPES)) {
       res = await popupMessageListener(
         req as ServiceMessageRequest,
         sessionStore,
         localStore,
         keyManager,
         sessionTimer,
+        sender,
       );
     }
     if (
