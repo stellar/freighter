@@ -135,7 +135,7 @@ export const popupMessageListener = (
   localStore: DataStorageAccess,
   keyManager: KeyManager,
   sessionTimer: SessionTimer,
-  sender?: chrome.runtime.MessageSender,
+  sender?: { tab?: unknown },
 ) => {
   const currentState = sessionStore.getState();
   const publicKey = publicKeySelector(currentState);
