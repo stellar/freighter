@@ -463,15 +463,15 @@ __metadata:
   linkType: hard
 
 "@amplitude/experiment-js-client@npm:^1.20.3":
-  version: 1.20.3
-  resolution: "@amplitude/experiment-js-client@npm:1.20.3"
+  version: 1.20.4
+  resolution: "@amplitude/experiment-js-client@npm:1.20.4"
   dependencies:
     "@amplitude/analytics-connector": "npm:^1.6.4"
     "@amplitude/experiment-core": "npm:^0.12.0"
     "@amplitude/ua-parser-js": "npm:^0.7.31"
     base64-js: "npm:1.5.1"
     unfetch: "npm:4.1.0"
-  checksum: 10c0/387358e48f834c012934d23ff2a810d85c83bf870b8dffa36c977b477a38b21a6a9bca9ef6049973ff649c2961bc77a462466e8c9f54f88ca6592d555ca52a89
+  checksum: 10c0/84a5a0746c7ffba2220433dbb308f4e5b9302a91db4963823a23817e966cef9be5fbd18e4a98a1d600483c6b09e6e06f49fbfdb89958a58fe33cdf6c35fa3196
   languageName: node
   linkType: hard
 

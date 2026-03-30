@@ -101,6 +101,7 @@ export const EnterPassword = ({
                         isPassword
                         fieldSize="md"
                         autoComplete="off"
+                        autoFocus
                         placeholder={t("Enter password")}
                         onChange={(e) => {
                           e.stopPropagation();

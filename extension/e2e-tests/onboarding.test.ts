@@ -676,6 +676,20 @@ test("Overwrites account when user abandons after password creation", async ({
   expect(recoverWordsArr).toEqual(onboardingWordsArr);
 });
 
+test("Password input is auto focused on Show recovery phrase screen", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId, context });
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Settings").click();
+  await page.getByText("Security").click();
+  await page.getByText("Show recovery phrase").click();
+  await expect(page.locator("#password")).toBeFocused();
+});
+
 // Password preservation tests
 test("Wrong mnemonic phrase preserves previous state (pw + ToS) and allows retry", async ({
   page,
