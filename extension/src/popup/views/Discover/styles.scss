@@ -5,6 +5,10 @@
   background: var(--sds-clr-gray-01);
 
   &__sheet-wrapper {
-    height: var(--popup--height);
+    background: var(--sds-clr-gray-01) !important;
+    height: 100%;
+    width: 100%;
+    border: none !important;
+    box-shadow: none !important;
   }
 }
