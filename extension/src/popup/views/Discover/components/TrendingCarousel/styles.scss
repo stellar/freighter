@@ -1,0 +1,58 @@
+@use "../../../../styles/utils.scss" as *;
+
+.TrendingCarousel {
+  &__label {
+    margin-bottom: pxToRem(12);
+  }
+
+  &__scroll-container {
+    display: flex;
+    gap: pxToRem(16);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__card {
+    min-width: pxToRem(264);
+    height: pxToRem(148);
+    border-radius: pxToRem(12);
+    background-color: var(--sds-clr-gray-03);
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    scroll-snap-align: start;
+    flex-shrink: 0;
+
+    &__gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        transparent 40%,
+        var(--sds-clr-gray-03) 100%
+      );
+    }
+
+    &__content {
+      position: absolute;
+      bottom: pxToRem(12);
+      left: pxToRem(12);
+      right: pxToRem(12);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    &__tag {
+      color: var(--sds-clr-gray-11);
+    }
+  }
+}
