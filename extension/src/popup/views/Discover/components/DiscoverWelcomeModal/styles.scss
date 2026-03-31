@@ -1,0 +1,57 @@
+@use "../../../../styles/utils.scss" as *;
+
+.DiscoverWelcomeModal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-index-modal);
+  padding: pxToRem(24);
+
+  &__card {
+    background: var(--sds-clr-gray-01);
+    border: 1px solid var(--sds-clr-gray-06);
+    border-radius: pxToRem(16);
+    padding: pxToRem(24);
+    position: relative;
+    z-index: 2;
+    max-width: pxToRem(312);
+    width: 100%;
+  }
+
+  &__icon {
+    width: pxToRem(40);
+    height: pxToRem(40);
+    border-radius: pxToRem(10);
+    background: var(--sds-clr-lilac-03, var(--sds-clr-gray-03));
+    border: 1px solid var(--sds-clr-lilac-06, var(--sds-clr-gray-06));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: pxToRem(16);
+    color: var(--sds-clr-gray-12);
+
+    svg {
+      width: pxToRem(20);
+      height: pxToRem(20);
+    }
+  }
+
+  &__title {
+    margin-bottom: pxToRem(12);
+  }
+
+  &__body {
+    color: var(--sds-clr-gray-11);
+    margin-bottom: pxToRem(24);
+
+    p {
+      margin-bottom: pxToRem(12);
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
