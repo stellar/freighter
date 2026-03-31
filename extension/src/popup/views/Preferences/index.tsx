@@ -3,6 +3,7 @@ import { Notification, Toggle } from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
+import browser from "webextension-polyfill";
 
 import { View } from "popup/basics/layout/View";
 import { AppDispatch } from "popup/App";
@@ -182,7 +183,9 @@ export const Preferences = () => {
                 </span>
               </div>
 
-              {typeof globalThis.chrome?.sidePanel?.open === "function" && (
+              {(typeof globalThis.chrome?.sidePanel?.open === "function" ||
+                typeof (browser as any)?.sidebarAction?.open ===
+                  "function") && (
                 <div className="Preferences--section">
                   <div className="Preferences--section--title">
                     <span>{t("Open sidebar mode by default")} </span>

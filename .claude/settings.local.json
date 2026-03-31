@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__browser__open",
+      "Bash(npx playwright:*)",
+      "Bash(export PATH=\"/usr/local/bin:/opt/homebrew/bin:$HOME/.nvm/versions/node/*/bin:$PATH\")",
+      "Bash(export SHELL=/bin/zsh)",
+      "Read(//bin/**)",
+      "Bash(node -e \"console.log\\(process.execPath\\)\")",
+      "Bash(echo $PATH)",
+      "Bash(/opt/homebrew/bin/node -e \"const {execSync} = require\\(''child_process''\\); console.log\\(execSync\\(''/opt/homebrew/bin/npx playwright install chromium'', {env: {...process.env, SHELL: ''/bin/zsh''}}\\).toString\\(\\)\\)\")",
+      "Bash(/opt/homebrew/bin/node -e \"const {execSync} = require\\(''child_process''\\); const p = {...process.env, PATH: ''/opt/homebrew/bin:'' + process.env.PATH}; console.log\\(execSync\\(''/opt/homebrew/bin/npx playwright install chromium'', {env: p}\\).toString\\(\\)\\)\")",
+      "Bash(/opt/homebrew/bin/node -e \"const fs = require\\(''fs''\\); console.log\\(''sh:'', fs.existsSync\\(''/bin/sh''\\)\\); console.log\\(''zsh:'', fs.existsSync\\(''/bin/zsh''\\)\\); console.log\\(''bash:'', fs.existsSync\\(''/bin/bash''\\)\\); console.log\\(''usr sh:'', fs.existsSync\\(''/usr/bin/sh''\\)\\);\")",
+      "Bash(/opt/homebrew/bin/node -e \"const {execSync} = require\\(''child_process''\\); const p = {...process.env, PATH: ''/opt/homebrew/bin:/bin:/usr/bin:'' + process.env.PATH}; console.log\\(execSync\\(''/opt/homebrew/bin/npx playwright install chromium'', {env: p, shell: ''/bin/zsh''}\\).toString\\(\\)\\)\")",
+      "Bash(/opt/homebrew/bin/node -e \"const fs = require\\(''fs''\\); const dir = ''/Users/piyal/Library/Caches/ms-playwright''; fs.readdirSync\\(dir\\).forEach\\(f => console.log\\(f\\)\\)\")",
+      "Bash(/opt/homebrew/bin/node -e \"const {execSync} = require\\(''child_process''\\); const p = {...process.env, PATH: ''/opt/homebrew/bin:/bin:/usr/bin:'' + process.env.PATH}; console.log\\(execSync\\(''npx playwright@latest install chromium'', {env: p, shell: ''/bin/zsh''}\\).toString\\(\\)\\)\")",
+      "mcp__browser__screenshot",
+      "mcp__browser__playwright",
+      "mcp__browser__console_logs",
+      "mcp__browser__network_requests",
+      "mcp__browser__close",
+      "Bash(export PATH=\"/opt/homebrew/bin:/bin:/usr/bin:/usr/sbin:$PATH\")"
+    ]
+  }
+}

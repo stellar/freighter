@@ -32,8 +32,7 @@ export const loadSettings = async ({
   const isNonSSLEnabled = await getIsNonSSLEnabled({ localStore });
   const isHideDustEnabled = await getIsHideDustEnabled({ localStore });
   const isOpenSidebarByDefault =
-    ((await localStore.getItem(IS_OPEN_SIDEBAR_BY_DEFAULT_ID)) as boolean) ??
-    false;
+    (await localStore.getItem(IS_OPEN_SIDEBAR_BY_DEFAULT_ID)) === "true";
   const { hiddenAssets } = await getHiddenAssets({ localStore });
   const overriddenBlockaidResponse = await getOverriddenBlockaidResponse({
     localStore,

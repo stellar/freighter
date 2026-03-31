@@ -1,5 +1,9 @@
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { popupMessageListener } from "background/messageListener/popupMessageListener";
+import {
+  setSidebarPort,
+  clearSidebarPort,
+} from "background/messageListener/freighterApiMessageListener";
 
 // Mock chrome.sidePanel API
 const mockSetOptions = jest.fn().mockResolvedValue(undefined);
@@ -103,6 +107,33 @@ describe("sidebar message handlers", () => {
       expect(getSidebarWindowId()).toBe(99);
       clearSidebarWindowId();
       expect(getSidebarWindowId()).toBeNull();
+    });
+  });
+
+  describe("sidebarPort management", () => {
+    afterEach(() => {
+      clearSidebarPort();
+    });
+
+    it("setSidebarPort stores the port without throwing", () => {
+      const mockPort = {
+        postMessage: jest.fn(),
+        disconnect: jest.fn(),
+      } as any;
+      expect(() => setSidebarPort(mockPort)).not.toThrow();
+    });
+
+    it("clearSidebarPort clears without throwing", () => {
+      const mockPort = {
+        postMessage: jest.fn(),
+        disconnect: jest.fn(),
+      } as any;
+      setSidebarPort(mockPort);
+      expect(() => clearSidebarPort()).not.toThrow();
+    });
+
+    it("clearSidebarPort is safe to call when no port is set", () => {
+      expect(() => clearSidebarPort()).not.toThrow();
     });
   });
 });
