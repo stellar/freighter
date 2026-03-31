@@ -6,7 +6,7 @@ import {
 import type { Variant } from "@amplitude/experiment-js-client";
 
 import { getExperimentClient } from "helpers/experimentClient";
-import { BUILD_TYPE } from "constants/env";
+import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import {
   parseBannerPayload,
   parseScreenPayload,
@@ -111,7 +111,7 @@ export const fetchFeatureFlags = createAsyncThunk(
     // the user has opted out of analytics (mirrors mobile implementation).
     await client.fetch({
       user_properties: {
-        "Bundle Id": `extension.${BUILD_TYPE}`,
+        [BUNDLE_ID_USER_PROPERTY_KEY]: getBundleId(),
       },
     });
 

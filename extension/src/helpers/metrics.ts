@@ -7,13 +7,9 @@ import browser from "webextension-polyfill";
 
 import { store } from "popup/App";
 import { METRICS_DATA, METRICS_USER_ID } from "constants/localStorageTypes";
-import {
-  AMPLITUDE_KEY,
-  METRICS_PLATFORM,
-  APP_VERSION,
-  BUILD_TYPE,
-} from "constants/env";
+import { AMPLITUDE_KEY, METRICS_PLATFORM, APP_VERSION } from "constants/env";
 import { initExperimentClient } from "helpers/experimentClient";
+import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import { isDev } from "@shared/helpers/dev";
 import { truncatedPublicKey } from "helpers/stellar";
 import {
@@ -188,7 +184,7 @@ export const initAmplitude = () => {
 
     // Set persistent user properties (mirrors mobile's setAmplitudeUserProperties)
     const identify = new amplitude.Identify();
-    identify.set("Bundle Id", `extension.${BUILD_TYPE}`);
+    identify.set(BUNDLE_ID_USER_PROPERTY_KEY, getBundleId());
     amplitude.identify(identify);
 
     // Apply initial opt-out state. Note: settings may not yet be loaded from the
@@ -306,7 +302,7 @@ const buildCommonContext = (
     network: networkDetails?.network ?? "UNKNOWN",
     connectionType: nav.connection?.type ?? "unknown",
     appVersion: getAppVersion(),
-    bundleId: `extension.${BUILD_TYPE}`,
+    bundleId: getBundleId(),
   };
 
   if (nav.connection?.effectiveType) {
