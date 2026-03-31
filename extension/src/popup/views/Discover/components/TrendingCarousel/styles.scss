@@ -9,9 +9,13 @@
     display: flex;
     gap: pxToRem(16);
     overflow-x: auto;
-    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
     -ms-overflow-style: none;
     scrollbar-width: none;
+    margin-left: calc(-1 * var(--popup--side-padding));
+    margin-right: calc(-1 * var(--popup--side-padding));
+    padding-left: var(--popup--side-padding);
+    padding-right: var(--popup--side-padding);
 
     &::-webkit-scrollbar {
       display: none;
@@ -28,7 +32,6 @@
     position: relative;
     overflow: hidden;
     cursor: pointer;
-    scroll-snap-align: start;
     flex-shrink: 0;
 
     &__gradient {
