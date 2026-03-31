@@ -196,13 +196,33 @@ export const initSidebarBehavior = async () => {
   const val =
     (await localStore.getItem(IS_OPEN_SIDEBAR_BY_DEFAULT_ID)) === "true";
   if (chrome.sidePanel?.setPanelBehavior) {
+    // Chrome: delegate action-click to the side panel when enabled
     chrome.sidePanel
       .setPanelBehavior({ openPanelOnActionClick: val })
       .catch((e) => console.error("Failed to set panel behavior:", e));
+  } else if ((browser as any).sidebarAction) {
+    // Firefox: when "open by default" is on, clear the browser-action popup so
+    // clicks fire onClicked instead of opening the popup, and open the sidebar.
+    // When off, restore the popup so the normal popup opens on click.
+    if ((browser as any).browserAction?.setPopup) {
+      await (browser as any).browserAction
+        .setPopup({ popup: val ? "" : "index.html" })
+        .catch((e: unknown) =>
+          console.error("Failed to set browser action popup:", e),
+        );
+    }
   }
 };
 
 export const initAlarmListener = () => {
+  // Firefox: when "open by default" is on the browser-action popup is cleared,
+  // so clicks fire onClicked. Open the sidebar in response.
+  if ((browser as any).browserAction?.onClicked) {
+    (browser as any).browserAction.onClicked.addListener(() => {
+      (browser as any).sidebarAction?.open?.();
+    });
+  }
+
   browser?.alarms?.onAlarm.addListener(async ({ name }: { name: string }) => {
     const sessionStore = await buildStore();
     const localStore = dataStorageAccess(browserLocalStorage);

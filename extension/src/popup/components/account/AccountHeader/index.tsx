@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, NavLink } from "react-router-dom";
 import { createPortal } from "react-dom";
+import browser from "webextension-polyfill";
 
 import { Icon, Text, NavButton, CopyText } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -179,7 +180,10 @@ export const AccountHeader = ({
                         <Icon.Lock01 />
                       </div>
                     </div>
-                    {typeof globalThis.chrome?.sidePanel?.open === "function" && (
+                    {(typeof globalThis.chrome?.sidePanel?.open ===
+                      "function" ||
+                      typeof (browser as any)?.sidebarAction?.open ===
+                        "function") && (
                       <div
                         className="AccountHeader__options__item"
                         onClick={() => openSidebar()}

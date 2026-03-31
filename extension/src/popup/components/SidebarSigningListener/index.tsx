@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import browser from "webextension-polyfill";
 import { ROUTES } from "popup/constants/routes";
 import { SIDEBAR_NAVIGATE } from "@shared/constants/services";
 
@@ -11,10 +12,10 @@ export const SidebarSigningListener = () => {
   useEffect(() => {
     // Open a long-lived port to the background.
     // The background uses onDisconnect to reliably clear sidebarWindowId when sidebar closes.
-    const port = chrome.runtime.connect({ name: SIDEBAR_PORT_NAME });
+    const port = browser.runtime.connect({ name: SIDEBAR_PORT_NAME });
 
     // Send window ID so the background can register this sidebar
-    chrome.windows.getCurrent().then((win) => {
+    browser.windows.getCurrent().then((win) => {
       port.postMessage({ windowId: win.id });
     });
 
@@ -24,9 +25,10 @@ export const SidebarSigningListener = () => {
 
     // Listen for navigation messages sent directly over the port from the
     // background, scoped to this sidebar only (no broadcast to other listeners).
-    const portHandler = (message: { type: string; route: string }) => {
-      if (message.type === SIDEBAR_NAVIGATE) {
-        navigate(message.route);
+    const portHandler = (message: unknown) => {
+      const { type, route } = message as { type: string; route: string };
+      if (type === SIDEBAR_NAVIGATE) {
+        navigate(route);
       }
     };
 

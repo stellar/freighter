@@ -103,7 +103,7 @@ const openSigningWindow = async (hashRoute: string, width?: number) => {
     return null;
   }
   return browser.windows.create({
-    url: chrome.runtime.getURL(`/index.html#${hashRoute}`),
+    url: browser.runtime.getURL(`/index.html#${hashRoute}`),
     ...WINDOW_SETTINGS,
     ...(width !== undefined ? { width } : {}),
   });
