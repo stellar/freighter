@@ -72,9 +72,9 @@ import {
 import { QUEUE_ITEM_TTL_MS } from "background/helpers/queueCleanup";
 
 // Long-lived port to the sidebar, set by initSidebarConnectionListener
-let sidebarPort: chrome.runtime.Port | null = null;
+let sidebarPort: browser.Runtime.Port | null = null;
 
-export const setSidebarPort = (port: chrome.runtime.Port) => {
+export const setSidebarPort = (port: browser.Runtime.Port) => {
   sidebarPort = port;
 };
 export const clearSidebarPort = () => {

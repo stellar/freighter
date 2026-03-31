@@ -62,14 +62,14 @@ export const initContentScriptMessageListener = () => {
 };
 
 export const initSidebarConnectionListener = () => {
-  chrome.runtime.onConnect.addListener((port) => {
+  browser.runtime.onConnect.addListener((port) => {
     if (port.name !== SIDEBAR_PORT_NAME) return;
 
     // Reject connections from content scripts; only extension pages are trusted.
     // Extension pages have no associated tab and load from the extension origin.
     const isExtensionPage =
       !port.sender?.tab &&
-      port.sender?.url?.startsWith(chrome.runtime.getURL(""));
+      port.sender?.url?.startsWith(browser.runtime.getURL(""));
     if (!isExtensionPage) {
       port.disconnect();
       return;
@@ -79,9 +79,10 @@ export const initSidebarConnectionListener = () => {
     setSidebarPort(port);
 
     // Sidebar sends its window ID as first message
-    port.onMessage.addListener((msg: { windowId: number }) => {
-      if (msg.windowId !== undefined) {
-        setSidebarWindowId(msg.windowId);
+    port.onMessage.addListener((msg: unknown) => {
+      const { windowId } = msg as { windowId?: number };
+      if (typeof windowId === "number") {
+        setSidebarWindowId(windowId);
       }
     });
 
