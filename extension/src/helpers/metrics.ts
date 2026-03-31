@@ -7,21 +7,36 @@ import browser from "webextension-polyfill";
 
 import { store } from "popup/App";
 import { METRICS_DATA, METRICS_USER_ID } from "constants/localStorageTypes";
-import {
-  AMPLITUDE_KEY,
-  METRICS_PLATFORM,
-  APP_VERSION,
-  BUILD_TYPE,
-} from "constants/env";
+import { AMPLITUDE_KEY, METRICS_PLATFORM, APP_VERSION } from "constants/env";
+import { initExperimentClient } from "helpers/experimentClient";
+import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import { isDev } from "@shared/helpers/dev";
+import { truncatedPublicKey } from "helpers/stellar";
 import {
   settingsDataSharingSelector,
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
-import { truncatedPublicKey } from "helpers/stellar";
 import { Account, AccountType } from "@shared/api/types";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+
+// Console log message constants
+const LOG_MESSAGES = {
+  AMPLITUDE_PREFIX: "[Amplitude]",
+  MISSING_KEY: "Missing AMPLITUDE_KEY — events will not be uploaded",
+  INIT_FAILED: "Failed to initialize",
+  EVENT_NOT_UPLOADED: "Amplitude event (not uploaded):",
+} as const;
+
+const isRuntimeTestEnv = (): boolean => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return (
+    (window as Window & { IS_PLAYWRIGHT?: string }).IS_PLAYWRIGHT === "true"
+  );
+};
 
 type MetricsPayloadAction = PayloadAction<{
   errorMessage?: string;
@@ -31,6 +46,9 @@ type MetricHandler<AppState> = (
   state: AppState,
   action: MetricsPayloadAction,
 ) => void;
+// `any` is intentional: handlers register with specific AppState generics
+// (e.g. MetricHandler<PopupState>) but are stored heterogeneously. Using
+// `unknown` would break assignment due to function parameter contravariance.
 const handlersLookup: Record<string, MetricHandler<any>[]> = {};
 
 /*
@@ -79,11 +97,13 @@ export interface MetricsData {
   unfundedFreighterAccounts: string[];
 }
 
-// ---------------------------------------------------------------------------
-// Amplitude SDK initialization
-// ---------------------------------------------------------------------------
-
 let hasInitialized = false;
+
+/**
+ * Amplitude flush interval in milliseconds. Reduced from the default 1 second
+ * so queued events are sent promptly before the extension popup closes.
+ */
+const AMPLITUDE_FLUSH_INTERVAL_MS = 500;
 
 // ---------------------------------------------------------------------------
 // User identity (mirrors mobile's src/services/analytics/user.ts)
@@ -133,11 +153,16 @@ export const initAmplitude = () => {
   if (hasInitialized) return;
 
   if (!AMPLITUDE_KEY) {
-    if (!isDev) {
+    if (!isDev && !isRuntimeTestEnv()) {
       console.error(
-        "[Amplitude] Missing AMPLITUDE_KEY — events will not be uploaded",
+        `${LOG_MESSAGES.AMPLITUDE_PREFIX} ${LOG_MESSAGES.MISSING_KEY}`,
       );
     }
+
+    if (isRuntimeTestEnv()) {
+      initExperimentClient();
+    }
+
     hasInitialized = true;
     return;
   }
@@ -150,7 +175,7 @@ export const initAmplitude = () => {
       autocapture: false,
       // The extension popup can close at any time; reduce the flush interval
       // so queued events are sent promptly instead of waiting the default 1 s.
-      flushIntervalMillis: 500,
+      flushIntervalMillis: AMPLITUDE_FLUSH_INTERVAL_MS,
     });
 
     // Set a persistent user ID for parity with mobile.
@@ -159,7 +184,7 @@ export const initAmplitude = () => {
 
     // Set persistent user properties (mirrors mobile's setAmplitudeUserProperties)
     const identify = new amplitude.Identify();
-    identify.set("Bundle Id", `extension.${BUILD_TYPE}`);
+    identify.set(BUNDLE_ID_USER_PROPERTY_KEY, getBundleId());
     amplitude.identify(identify);
 
     // Apply initial opt-out state. Note: settings may not yet be loaded from the
@@ -169,6 +194,10 @@ export const initAmplitude = () => {
     amplitude.setOptOut(!isDataSharingAllowed);
 
     hasInitialized = true;
+
+    // Initialize Experiment client now that analytics is ready.
+    // initializeWithAmplitudeAnalytics requires the analytics SDK to be started first.
+    initExperimentClient();
 
     // Keep opt-out in sync whenever the data-sharing setting changes in Redux.
     // This is the authoritative source of truth; the initial call above may fire
@@ -189,7 +218,10 @@ export const initAmplitude = () => {
       });
     }
   } catch (e) {
-    console.error("[Amplitude] Failed to initialize", e);
+    console.error(
+      `${LOG_MESSAGES.AMPLITUDE_PREFIX} ${LOG_MESSAGES.INIT_FAILED}`,
+      e,
+    );
   }
 };
 
@@ -270,7 +302,7 @@ const buildCommonContext = (
     network: networkDetails?.network ?? "UNKNOWN",
     connectionType: nav.connection?.type ?? "unknown",
     appVersion: getAppVersion(),
-    bundleId: `extension.${BUILD_TYPE}`,
+    bundleId: getBundleId(),
   };
 
   if (nav.connection?.effectiveType) {
@@ -339,7 +371,7 @@ export const emitMetric = (name: string, body?: Record<string, unknown>) => {
   }
 
   if (!AMPLITUDE_KEY || !hasInitialized) {
-    console.log("Amplitude event (not uploaded):", name, eventProperties);
+    console.log(LOG_MESSAGES.EVENT_NOT_UPLOADED, name, eventProperties);
     return;
   }
 

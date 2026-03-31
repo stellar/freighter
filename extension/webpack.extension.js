@@ -44,6 +44,7 @@ const prodConfig = (
     PRODUCTION: false,
     TRANSLATIONS: false,
     AMPLITUDE_KEY: "",
+    AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY: "",
     SENTRY_KEY: "",
   },
 ) =>
@@ -111,8 +112,6 @@ const prodConfig = (
 module.exports = (env = {}) => {
   const mergedEnv = {
     ...env,
-    // BUILD_TYPE must be passed explicitly from build scripts/workflows.
-    // Don't derive it automatically to ensure correct build variant tagging.
   };
   return merge(prodConfig(mergedEnv), commonConfig(mergedEnv));
 };

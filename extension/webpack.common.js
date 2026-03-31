@@ -18,7 +18,7 @@ const commonConfig = (
     AMPLITUDE_KEY: "",
     AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY: "",
     SENTRY_KEY: "",
-    // BUILD_TYPE should be explicitly passed: "development", "beta", or "production"
+    // BUILD_TYPE should be explicitly passed "development", "beta", or "production"
     BUILD_TYPE: "production",
   },
 ) => ({
