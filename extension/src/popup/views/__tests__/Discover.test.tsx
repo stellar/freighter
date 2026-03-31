@@ -42,6 +42,7 @@ const mockProtocols = [
     websiteUrl: "https://soroswap.finance",
     tags: ["Exchange"],
     isBlacklisted: false,
+    backgroundUrl: undefined,
     isTrending: false,
   },
   {
@@ -51,6 +52,7 @@ const mockProtocols = [
     websiteUrl: "https://bad.com",
     tags: ["Scam"],
     isBlacklisted: true,
+    backgroundUrl: undefined,
     isTrending: false,
   },
 ];
