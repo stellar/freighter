@@ -42,6 +42,7 @@ interface AccountHeaderProps {
   roundedTotalBalanceUsd: string;
   refreshHiddenCollectibles: () => Promise<void>;
   isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
+  onDiscoverClick: () => void;
 }
 
 export const AccountHeader = ({
@@ -54,6 +55,7 @@ export const AccountHeader = ({
   roundedTotalBalanceUsd,
   refreshHiddenCollectibles,
   isCollectibleHidden,
+  onDiscoverClick,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -307,7 +309,7 @@ export const AccountHeader = ({
         rightContent={
           <div
             className="AccountHeader__right-button AccountHeader__right-button--with-label"
-            onClick={() => navigateTo(ROUTES.discover, navigate)}
+            onClick={onDiscoverClick}
           >
             <Icon.Compass03 /> {t("Discover")}
           </div>
