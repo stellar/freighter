@@ -144,5 +144,5 @@
     "debug@4.4.2": "4.4.1",
     "ansi-styles@6.2.2": "6.2.3"
   },
-  "packageManager": "yarn@4.9.4"
+  "packageManager": "yarn@4.10.0"
 }
