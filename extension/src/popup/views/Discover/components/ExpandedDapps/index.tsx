@@ -26,7 +26,7 @@ export const ExpandedDapps = ({
   const { t } = useTranslation();
 
   return (
-    <>
+    <View>
       <SubviewHeader title={t("dApps")} customBackAction={onBack} />
       <View.Content hasNoTopPadding>
         <div className="ExpandedDapps__list">
@@ -40,6 +40,6 @@ export const ExpandedDapps = ({
           ))}
         </div>
       </View.Content>
-    </>
+    </View>
   );
 };

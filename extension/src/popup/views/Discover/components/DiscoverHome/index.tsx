@@ -38,7 +38,7 @@ export const DiscoverHome = ({
   const { t } = useTranslation();
 
   return (
-    <>
+    <View>
       <SubviewHeader
         title={t("Discover")}
         customBackIcon={<Icon.XClose />}
@@ -77,6 +77,6 @@ export const DiscoverHome = ({
           </div>
         )}
       </View.Content>
-    </>
+    </View>
   );
 };

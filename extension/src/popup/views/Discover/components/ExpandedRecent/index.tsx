@@ -30,7 +30,7 @@ export const ExpandedRecent = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <>
+    <View>
       <SubviewHeader
         title={t("Recent")}
         customBackAction={onBack}
@@ -75,6 +75,6 @@ export const ExpandedRecent = ({
           ))}
         </div>
       </View.Content>
-    </>
+    </View>
   );
 };
