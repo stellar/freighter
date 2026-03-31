@@ -17,6 +17,10 @@ import {
   authEntryQueue,
   tokenQueue,
 } from "./messageListener/popupMessageListener";
+import {
+  setSidebarPort,
+  clearSidebarPort,
+} from "./messageListener/freighterApiMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
 import { SIDEBAR_PORT_NAME } from "popup/components/SidebarSigningListener";
 import { activeQueueUuids } from "./helpers/queueCleanup";
@@ -71,6 +75,9 @@ export const initSidebarConnectionListener = () => {
       return;
     }
 
+    // Store port reference so openSigningWindow can send messages directly
+    setSidebarPort(port);
+
     // Sidebar sends its window ID as first message
     port.onMessage.addListener((msg: { windowId: number }) => {
       if (msg.windowId !== undefined) {
@@ -81,6 +88,7 @@ export const initSidebarConnectionListener = () => {
     // When sidebar closes (for any reason), clear the window ID
     // and reject any pending signing requests
     port.onDisconnect.addListener(() => {
+      clearSidebarPort();
       clearSidebarWindowId();
 
       // Reject all active signing requests that were open in the sidebar

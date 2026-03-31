@@ -71,10 +71,24 @@ import {
 } from "./popupMessageListener";
 import { QUEUE_ITEM_TTL_MS } from "background/helpers/queueCleanup";
 
+// Long-lived port to the sidebar, set by initSidebarConnectionListener
+let sidebarPort: chrome.runtime.Port | null = null;
+
+export const setSidebarPort = (port: chrome.runtime.Port) => {
+  sidebarPort = port;
+};
+export const clearSidebarPort = () => {
+  sidebarPort = null;
+};
+
 const openSigningWindow = async (hashRoute: string, width?: number) => {
   const sidebarWindowId = getSidebarWindowId();
   if (sidebarWindowId !== null) {
-    browser.runtime.sendMessage({ type: SIDEBAR_NAVIGATE, route: hashRoute });
+    // Send navigation directly to the sidebar via its long-lived port
+    // instead of broadcasting to all extension listeners
+    if (sidebarPort) {
+      sidebarPort.postMessage({ type: SIDEBAR_NAVIGATE, route: hashRoute });
+    }
     try {
       if ((browser as any).sidebarAction) {
         // Firefox
@@ -139,10 +153,17 @@ export const freighterApiMessageListener = (
     const popup = await openSigningWindow(`/grant-access?${encodeOrigin}`);
 
     return new Promise((resolve) => {
+      let resolved = false;
+      const safeResolve = (value: any) => {
+        if (resolved) return;
+        resolved = true;
+        resolve(value);
+      };
+
       if (popup === null) {
         setTimeout(
           () =>
-            resolve({
+            safeResolve({
               apiError: FreighterApiDeclinedError,
               error: FreighterApiDeclinedError.message,
             }),
@@ -165,10 +186,11 @@ export const freighterApiMessageListener = (
             }
           }, 50);
 
-          resolve({ publicKey });
+          safeResolve({ publicKey });
+          return;
         }
 
-        resolve({
+        safeResolve({
           // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
           apiError: FreighterApiDeclinedError,
           error: FreighterApiDeclinedError.message,
@@ -237,25 +259,33 @@ export const freighterApiMessageListener = (
       const popup = await openSigningWindow(`/add-token?${encodedTokenInfo}`);
 
       return new Promise((resolve) => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+          if (resolved) return;
+          resolved = true;
+          resolve(value);
+        };
+
         if (popup === undefined) {
-          resolve({
+          safeResolve({
             apiError: FreighterApiInternalError,
           });
         } else if (popup !== null) {
           browser.windows.onRemoved.addListener(() =>
-            resolve({
+            safeResolve({
               apiError: FreighterApiDeclinedError,
             }),
           );
         }
         const response = (success: boolean) => {
           if (success) {
-            resolve({
+            safeResolve({
               contractId,
             });
+            return;
           }
 
-          resolve({
+          safeResolve({
             apiError: FreighterApiDeclinedError,
           });
         };
@@ -384,8 +414,15 @@ export const freighterApiMessageListener = (
       const popup = await openSigningWindow(`/sign-transaction?${encodedBlob}`);
 
       return new Promise((resolve) => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+          if (resolved) return;
+          resolved = true;
+          resolve(value);
+        };
+
         if (popup === undefined) {
-          resolve({
+          safeResolve({
             // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
             apiError: FreighterApiInternalError,
             error: FreighterApiInternalError.message,
@@ -393,7 +430,7 @@ export const freighterApiMessageListener = (
         } else if (popup === null) {
           setTimeout(
             () =>
-              resolve({
+              safeResolve({
                 apiError: FreighterApiDeclinedError,
                 error: FreighterApiDeclinedError.message,
               }),
@@ -401,7 +438,7 @@ export const freighterApiMessageListener = (
           );
         } else {
           browser.windows.onRemoved.addListener(() =>
-            resolve({
+            safeResolve({
               // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
               apiError: FreighterApiDeclinedError,
               error: FreighterApiDeclinedError.message,
@@ -413,10 +450,11 @@ export const freighterApiMessageListener = (
           signerAddress?: string,
         ) => {
           if (signedTransaction) {
-            resolve({ signedTransaction, signerAddress });
+            safeResolve({ signedTransaction, signerAddress });
+            return;
           }
 
-          resolve({
+          safeResolve({
             // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
             apiError: FreighterApiDeclinedError,
             error: FreighterApiDeclinedError.message,
@@ -465,8 +503,15 @@ export const freighterApiMessageListener = (
       const popup = await openSigningWindow(`/sign-message?${encodedBlob}`);
 
       return new Promise((resolve) => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+          if (resolved) return;
+          resolved = true;
+          resolve(value);
+        };
+
         if (popup === undefined) {
-          resolve({
+          safeResolve({
             // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
             apiError: FreighterApiInternalError,
             error: FreighterApiInternalError.message,
@@ -474,7 +519,7 @@ export const freighterApiMessageListener = (
         } else if (popup === null) {
           setTimeout(
             () =>
-              resolve({
+              safeResolve({
                 apiError: FreighterApiDeclinedError,
                 error: FreighterApiDeclinedError.message,
               }),
@@ -482,7 +527,7 @@ export const freighterApiMessageListener = (
           );
         } else {
           browser.windows.onRemoved.addListener(() =>
-            resolve({
+            safeResolve({
               // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
               apiError: FreighterApiDeclinedError,
               error: FreighterApiDeclinedError.message,
@@ -496,16 +541,17 @@ export const freighterApiMessageListener = (
         ) => {
           if (signedBlob) {
             if (apiVersion && semver.gte(apiVersion, "4.0.0")) {
-              resolve({
+              safeResolve({
                 signedBlob: signedBlob.toString("base64"),
                 signerAddress,
               });
               return;
             }
-            resolve({ signedBlob, signerAddress });
+            safeResolve({ signedBlob, signerAddress });
+            return;
           }
 
-          resolve({
+          safeResolve({
             // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
             apiError: FreighterApiDeclinedError,
             error: FreighterApiDeclinedError.message,
@@ -560,8 +606,15 @@ export const freighterApiMessageListener = (
       );
 
       return new Promise((resolve) => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+          if (resolved) return;
+          resolved = true;
+          resolve(value);
+        };
+
         if (popup === undefined) {
-          resolve({
+          safeResolve({
             // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
             apiError: FreighterApiInternalError,
             error: FreighterApiInternalError.message,
@@ -569,7 +622,7 @@ export const freighterApiMessageListener = (
         } else if (popup === null) {
           setTimeout(
             () =>
-              resolve({
+              safeResolve({
                 apiError: FreighterApiDeclinedError,
                 error: FreighterApiDeclinedError.message,
               }),
@@ -577,7 +630,7 @@ export const freighterApiMessageListener = (
           );
         } else {
           browser.windows.onRemoved.addListener(() =>
-            resolve({
+            safeResolve({
               // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
               apiError: FreighterApiDeclinedError,
               error: FreighterApiDeclinedError.message,
@@ -590,17 +643,18 @@ export const freighterApiMessageListener = (
         ) => {
           if (signedAuthEntry) {
             if (apiVersion && semver.gte(apiVersion, "4.2.0")) {
-              resolve({
+              safeResolve({
                 signedAuthEntry:
                   Buffer.from(signedAuthEntry).toString("base64"),
                 signerAddress,
               });
               return;
             }
-            resolve({ signedAuthEntry, signerAddress });
+            safeResolve({ signedAuthEntry, signerAddress });
+            return;
           }
 
-          resolve({
+          safeResolve({
             // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
             apiError: FreighterApiDeclinedError,
             error: FreighterApiDeclinedError.message,
@@ -702,9 +756,16 @@ export const freighterApiMessageListener = (
     await openSigningWindow(`/grant-access?${encodeOrigin}`, 400);
 
     return new Promise((resolve) => {
+      let resolved = false;
+      const safeResolve = (value: any) => {
+        if (resolved) return;
+        resolved = true;
+        resolve(value);
+      };
+
       setTimeout(
         () =>
-          resolve({
+          safeResolve({
             apiError: FreighterApiDeclinedError,
             error: FreighterApiDeclinedError.message,
           }),
@@ -723,10 +784,11 @@ export const freighterApiMessageListener = (
             allowListSegment: updatedAllAccountsllowListSegment,
           });
 
-          resolve({ isAllowed: isAllowedResponse });
+          safeResolve({ isAllowed: isAllowedResponse });
+          return;
         }
 
-        resolve({
+        safeResolve({
           // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
           apiError: FreighterApiDeclinedError,
           error: FreighterApiDeclinedError.message,
