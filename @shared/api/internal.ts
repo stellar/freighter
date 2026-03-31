@@ -633,6 +633,8 @@ export const getDiscoverData = async () => {
         website_url: string;
         tags: string[];
         is_blacklisted: boolean;
+        background_url?: string;
+        is_trending: boolean;
       }[];
     };
   };
@@ -652,6 +654,8 @@ export const getDiscoverData = async () => {
     websiteUrl: entry.website_url,
     tags: entry.tags,
     isBlacklisted: entry.is_blacklisted,
+    backgroundUrl: entry.background_url,
+    isTrending: entry.is_trending,
   }));
 };
 

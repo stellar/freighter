@@ -21,6 +21,8 @@ describe("Discover view", () => {
           websiteUrl: "https://foo.com",
           tags: ["tag1", "tag2"],
           isBlacklisted: false,
+          backgroundUrl: undefined,
+          isTrending: false,
         },
         {
           description: "description text",
@@ -29,6 +31,8 @@ describe("Discover view", () => {
           websiteUrl: "https://baz.com",
           tags: ["tag1", "tag2"],
           isBlacklisted: true,
+          backgroundUrl: undefined,
+          isTrending: false,
         },
       ]),
     );

@@ -403,6 +403,8 @@ export type DiscoverData = {
   websiteUrl: string;
   tags: string[];
   isBlacklisted: boolean;
+  backgroundUrl?: string;
+  isTrending: boolean;
 }[];
 
 export interface LedgerKeyAccount {
