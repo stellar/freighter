@@ -38,5 +38,12 @@
   "side_panel": {
     "default_path": "index.html?mode=sidebar"
   },
+  "sidebar_action": {
+    "default_panel": "index.html?mode=sidebar",
+    "default_icon": {
+      "16": "images/icon16.png",
+      "32": "images/icon32.png"
+    }
+  },
   "manifest_version": 3
 }
