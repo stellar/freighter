@@ -31,7 +31,8 @@
     color: var(--sds-clr-gray-12);
     display: flex;
     gap: pxToRem(4);
-    padding: pxToRem(6) pxToRem(10);
+    height: pxToRem(32);
+    padding: 0 pxToRem(10);
     justify-content: center;
     align-items: center;
     cursor: pointer;
@@ -43,6 +44,11 @@
       height: pxToRem(14);
       width: pxToRem(14);
       color: var(--sds-clr-gray-09);
+
+      svg {
+        width: pxToRem(14);
+        height: pxToRem(14);
+      }
     }
   }
 }
