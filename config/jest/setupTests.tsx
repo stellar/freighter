@@ -30,6 +30,11 @@ global.TextEncoder = TextEncoder;
 // @ts-expect-error
 global.TextDecoder = TextDecoder;
 global.__PACKAGE_VERSION__ = "5.0.0";
+global.AMPLITUDE_KEY = "test-amplitude-key";
+global.SENTRY_KEY = "test-sentry-key";
+global.APP_VERSION = "5.0.0";
+global.BUILD_TYPE = "development";
+global.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY = "test-experiment-key";
 
 Object.defineProperty(global.self, "crypto", {
   value: {
@@ -74,7 +79,9 @@ jest.mock("helpers/metrics", () => ({
   registerHandler: () => {},
   emitMetric: () => {},
   initAmplitude: () => {},
-  metricsMiddleware: jest.fn(() => () => (next: any) => (action: any) => next(action)),
+  metricsMiddleware: jest.fn(
+    () => () => (next: any) => (action: any) => next(action),
+  ),
   storeBalanceMetricData: () => {},
   storeAccountMetricsData: () => {},
   getAnalyticsDebugInfo: () => ({

@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.37.0",
+    "@amplitude/experiment-js-client": "^1.20.3",
     "@ledgerhq/hw-app-str": "7.2.0",
     "@ledgerhq/hw-transport-webhid": "6.30.6",
     "@radix-ui/react-dialog": "1.1.15",
