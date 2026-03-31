@@ -66,7 +66,6 @@ const routeToEventName = {
     METRIC_NAMES.viewAccountMigrationMigrationComplete,
   [ROUTES.advancedSettings]: METRIC_NAMES.viewAdvancedSettings,
   [ROUTES.addFunds]: METRIC_NAMES.viewAddFunds,
-  [ROUTES.discover]: METRIC_NAMES.discover,
   [ROUTES.wallets]: METRIC_NAMES.wallets,
 };
 

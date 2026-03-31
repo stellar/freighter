@@ -88,7 +88,6 @@ export const METRIC_NAMES = {
   viewEditNetwork: "loaded screen: edit network",
   viewNetworkSettings: "loaded screen: network settings",
   viewAddFunds: "loaded screen: add fund",
-  discover: "loaded screen: discover",
 
   manageAssetAddAsset: "manage asset: add asset",
   manageAssetAddToken: "manage asset: add token",
