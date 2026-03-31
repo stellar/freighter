@@ -39,9 +39,9 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
 
   const handleOpenProtocol = useCallback(
     async (protocol: Protocol) => {
-      openTab(protocol.websiteUrl);
       await addRecentProtocol(protocol.websiteUrl);
       await refreshRecent();
+      openTab(protocol.websiteUrl);
     },
     [refreshRecent],
   );
