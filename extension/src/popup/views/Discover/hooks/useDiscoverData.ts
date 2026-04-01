@@ -104,7 +104,6 @@ export const useDiscoverData = () => {
     trendingItems,
     recentItems,
     dappsItems,
-    allProtocols: allowedProtocols,
     refreshRecent,
   };
 };
