@@ -11,9 +11,19 @@ import {
   popupMessageListener,
   clearSidebarWindowId,
   setSidebarWindowId,
+  responseQueue,
+  transactionQueue,
+  blobQueue,
+  authEntryQueue,
+  tokenQueue,
 } from "./messageListener/popupMessageListener";
+import {
+  setSidebarPort,
+  clearSidebarPort,
+} from "./messageListener/freighterApiMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
 import { SIDEBAR_PORT_NAME } from "popup/components/SidebarSigningListener";
+import { activeQueueUuids } from "./helpers/queueCleanup";
 import {
   SESSION_ALARM_NAME,
   SessionTimer,
@@ -52,19 +62,64 @@ export const initContentScriptMessageListener = () => {
 };
 
 export const initSidebarConnectionListener = () => {
-  chrome.runtime.onConnect.addListener((port) => {
+  browser.runtime.onConnect.addListener((port) => {
     if (port.name !== SIDEBAR_PORT_NAME) return;
 
+    // Reject connections from content scripts; only extension pages are trusted.
+    // Extension pages have no associated tab and load from the extension origin.
+    const isExtensionPage =
+      !port.sender?.tab &&
+      port.sender?.url?.startsWith(browser.runtime.getURL(""));
+    if (!isExtensionPage) {
+      port.disconnect();
+      return;
+    }
+
+    // Store port reference so openSigningWindow can send messages directly
+    setSidebarPort(port);
+
     // Sidebar sends its window ID as first message
-    port.onMessage.addListener((msg: { windowId: number }) => {
-      if (msg.windowId !== undefined) {
-        setSidebarWindowId(msg.windowId);
+    port.onMessage.addListener((msg: unknown) => {
+      const { windowId } = msg as { windowId?: number };
+      if (typeof windowId === "number") {
+        setSidebarWindowId(windowId);
       }
     });
 
     // When sidebar closes (for any reason), clear the window ID
+    // and reject any pending signing requests
     port.onDisconnect.addListener(() => {
+      clearSidebarPort();
       clearSidebarWindowId();
+
+      // Reject all active signing requests that were open in the sidebar
+      for (const uuid of activeQueueUuids) {
+        const responseIndex = responseQueue.findIndex(
+          (item) => item.uuid === uuid,
+        );
+        if (responseIndex !== -1) {
+          const responseQueueItem = responseQueue.splice(responseIndex, 1)[0];
+          responseQueueItem.response(undefined);
+        }
+
+        // Clean up the data queues
+        const txIndex = transactionQueue.findIndex(
+          (item) => item.uuid === uuid,
+        );
+        if (txIndex !== -1) transactionQueue.splice(txIndex, 1);
+
+        const blobIndex = blobQueue.findIndex((item) => item.uuid === uuid);
+        if (blobIndex !== -1) blobQueue.splice(blobIndex, 1);
+
+        const authIndex = authEntryQueue.findIndex(
+          (item) => item.uuid === uuid,
+        );
+        if (authIndex !== -1) authEntryQueue.splice(authIndex, 1);
+
+        const tokenIndex = tokenQueue.findIndex((item) => item.uuid === uuid);
+        if (tokenIndex !== -1) tokenQueue.splice(tokenIndex, 1);
+      }
+      activeQueueUuids.clear();
     });
   });
 };
@@ -92,6 +147,7 @@ export const initExtensionMessageListener = () => {
         localStore,
         keyManager,
         sessionTimer,
+        sender,
       );
     }
     if (
@@ -135,17 +191,38 @@ export const initInstalledListener = () => {
 
 export const initSidebarBehavior = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
+  // getItem returns a string from localStorage; compare explicitly to avoid
+  // any truthy string (e.g. "false") being coerced to true.
   const val =
-    ((await localStore.getItem(IS_OPEN_SIDEBAR_BY_DEFAULT_ID)) as boolean) ??
-    false;
+    (await localStore.getItem(IS_OPEN_SIDEBAR_BY_DEFAULT_ID)) === "true";
   if (chrome.sidePanel?.setPanelBehavior) {
+    // Chrome: delegate action-click to the side panel when enabled
     chrome.sidePanel
-      .setPanelBehavior({ openPanelOnActionClick: !!val })
+      .setPanelBehavior({ openPanelOnActionClick: val })
       .catch((e) => console.error("Failed to set panel behavior:", e));
+  } else if ((browser as any).sidebarAction) {
+    // Firefox: when "open by default" is on, clear the browser-action popup so
+    // clicks fire onClicked instead of opening the popup, and open the sidebar.
+    // When off, restore the popup so the normal popup opens on click.
+    if ((browser as any).browserAction?.setPopup) {
+      await (browser as any).browserAction
+        .setPopup({ popup: val ? "" : "index.html" })
+        .catch((e: unknown) =>
+          console.error("Failed to set browser action popup:", e),
+        );
+    }
   }
 };
 
 export const initAlarmListener = () => {
+  // Firefox: when "open by default" is on the browser-action popup is cleared,
+  // so clicks fire onClicked. Open the sidebar in response.
+  if ((browser as any).browserAction?.onClicked) {
+    (browser as any).browserAction.onClicked.addListener(() => {
+      (browser as any).sidebarAction?.open?.();
+    });
+  }
+
   browser?.alarms?.onAlarm.addListener(async ({ name }: { name: string }) => {
     const sessionStore = await buildStore();
     const localStore = dataStorageAccess(browserLocalStorage);
