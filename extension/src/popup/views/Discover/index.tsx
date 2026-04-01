@@ -54,6 +54,7 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
   const handleDetailsOpen = useCallback(
     async (protocol: Protocol) => {
       setIsDetailsOpen(false);
+      // Wait for the SlideupModal close animation before clearing state
       setTimeout(async () => {
         setSelectedProtocol(null);
         await handleOpenProtocol(protocol);
