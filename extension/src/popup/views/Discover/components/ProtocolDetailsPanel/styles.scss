@@ -1,7 +1,7 @@
 @use "../../../../styles/utils.scss" as *;
 
 .ProtocolDetailsPanel {
-  padding: pxToRem(32) pxToRem(16);
+  padding: pxToRem(24);
 
   &__header {
     display: flex;
@@ -81,6 +81,10 @@
     border: 1px solid var(--sds-clr-lime-06);
     padding: pxToRem(2) pxToRem(8);
     color: var(--sds-clr-lime-11);
+
+    .Text {
+      line-height: pxToRem(20);
+    }
   }
 
   &__description {
