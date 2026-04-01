@@ -7,8 +7,13 @@ import {
 import { ExternalRequest, Response } from "@shared/api/types";
 import { buildStore } from "background/store";
 
-import { popupMessageListener } from "./messageListener/popupMessageListener";
+import {
+  popupMessageListener,
+  clearSidebarWindowId,
+  setSidebarWindowId,
+} from "./messageListener/popupMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
+import { SIDEBAR_PORT_NAME } from "popup/components/SidebarSigningListener";
 import {
   SESSION_ALARM_NAME,
   SessionTimer,
@@ -24,6 +29,7 @@ import {
   dataStorageAccess,
   browserLocalStorage,
 } from "./helpers/dataStorageAccess";
+import { IS_OPEN_SIDEBAR_BY_DEFAULT_ID } from "constants/localStorageTypes";
 import { ServiceMessageRequest } from "@shared/api/types/message-request";
 import {
   BrowserStorageKeyStore,
@@ -42,6 +48,24 @@ export const initContentScriptMessageListener = () => {
       });
     }
     return undefined;
+  });
+};
+
+export const initSidebarConnectionListener = () => {
+  chrome.runtime.onConnect.addListener((port) => {
+    if (port.name !== SIDEBAR_PORT_NAME) return;
+
+    // Sidebar sends its window ID as first message
+    port.onMessage.addListener((msg: { windowId: number }) => {
+      if (msg.windowId !== undefined) {
+        setSidebarWindowId(msg.windowId);
+      }
+    });
+
+    // When sidebar closes (for any reason), clear the window ID
+    port.onDisconnect.addListener(() => {
+      clearSidebarWindowId();
+    });
   });
 };
 
@@ -107,6 +131,18 @@ export const initInstalledListener = () => {
   browser?.runtime?.onInstalled.addListener(migrateFriendBotUrlNetworkDetails);
   browser?.runtime?.onInstalled.addListener(migrateSorobanRpcUrlNetworkDetails);
   browser?.runtime?.onInstalled.addListener(versionedMigration);
+};
+
+export const initSidebarBehavior = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const val =
+    ((await localStore.getItem(IS_OPEN_SIDEBAR_BY_DEFAULT_ID)) as boolean) ??
+    false;
+  if (chrome.sidePanel?.setPanelBehavior) {
+    chrome.sidePanel
+      .setPanelBehavior({ openPanelOnActionClick: !!val })
+      .catch((e) => console.error("Failed to set panel behavior:", e));
+  }
 };
 
 export const initAlarmListener = () => {

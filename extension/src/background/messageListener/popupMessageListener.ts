@@ -16,6 +16,8 @@ import {
   RejectTransactionResponse,
   SignedHwPayloadResponse,
   MarkQueueActiveMessage,
+  SidebarRegisterMessage,
+  OpenSidebarMessage,
 } from "@shared/api/types/message-request";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
@@ -91,6 +93,16 @@ import { changeCollectibleVisibility } from "./handlers/changeCollectibleVisibil
 import { getHiddenCollectibles } from "./handlers/getHiddenCollectibles";
 
 const numOfPublicKeysToCheck = 5;
+
+let sidebarWindowId: number | null = null;
+
+export const getSidebarWindowId = (): number | null => sidebarWindowId;
+export const setSidebarWindowId = (id: number) => {
+  sidebarWindowId = id;
+};
+export const clearSidebarWindowId = () => {
+  sidebarWindowId = null;
+};
 
 export const responseQueue: ResponseQueue<
   | RequestAccessResponse
@@ -550,6 +562,29 @@ export const popupMessageListener = (
       } else {
         activeQueueUuids.delete(uuid);
       }
+      return {};
+    }
+
+    case SERVICE_TYPES.OPEN_SIDEBAR: {
+      const { windowId } = request as OpenSidebarMessage;
+      return (async () => {
+        await chrome.sidePanel
+          .setOptions({ path: "index.html?mode=sidebar", enabled: true })
+          .catch((e) => console.error("Failed to set sidebar options:", e));
+        await chrome.sidePanel
+          .open({ windowId })
+          .catch((e) => console.error("Failed to open sidebar:", e));
+        return {};
+      })();
+    }
+
+    case SERVICE_TYPES.SIDEBAR_REGISTER: {
+      sidebarWindowId = (request as SidebarRegisterMessage).windowId;
+      return {};
+    }
+
+    case SERVICE_TYPES.SIDEBAR_UNREGISTER: {
+      sidebarWindowId = null;
       return {};
     }
 

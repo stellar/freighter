@@ -281,6 +281,7 @@ export interface SaveSettingsMessage extends BaseMessage {
   isHideDustEnabled: boolean;
   isMemoValidationEnabled: boolean;
   isDataSharingAllowed: boolean;
+  isOpenSidebarByDefault: boolean;
 }
 
 export interface SaveExperimentalFeaturesMessage extends BaseMessage {
@@ -444,6 +445,20 @@ export interface MarkQueueActiveMessage extends BaseMessage {
   isActive: boolean;
 }
 
+export interface SidebarRegisterMessage extends BaseMessage {
+  type: SERVICE_TYPES.SIDEBAR_REGISTER;
+  windowId: number;
+}
+
+export interface SidebarUnregisterMessage extends BaseMessage {
+  type: SERVICE_TYPES.SIDEBAR_UNREGISTER;
+}
+
+export interface OpenSidebarMessage extends BaseMessage {
+  type: SERVICE_TYPES.OPEN_SIDEBAR;
+  windowId: number;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -508,4 +523,7 @@ export type ServiceMessageRequest =
   | GetCollectiblesMessage
   | ChangeCollectibleVisibilityMessage
   | GetHiddenCollectiblesMessage
-  | MarkQueueActiveMessage;
+  | MarkQueueActiveMessage
+  | SidebarRegisterMessage
+  | SidebarUnregisterMessage
+  | OpenSidebarMessage;
