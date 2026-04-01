@@ -315,7 +315,7 @@ export const Account = () => {
           onOpenAutoFocus={(e) => e.preventDefault()}
           aria-describedby={undefined}
           side="bottom"
-          className="Discover__sheet-wrapper"
+          className="AccountView__discover-sheet"
         >
           <ScreenReaderOnly>
             <SheetTitle>{t("Discover")}</SheetTitle>
