@@ -1,10 +1,53 @@
-import React from "react";
-import { Text } from "@stellar/design-system";
+import React, { useState } from "react";
+import { Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { DiscoverData, ProtocolEntry } from "@shared/api/types";
 
 import "./styles.scss";
+
+const TrendingCard = ({
+  protocol,
+  onCardClick,
+}: {
+  protocol: ProtocolEntry;
+  onCardClick: (protocol: ProtocolEntry) => void;
+}) => {
+  const [imgFailed, setImgFailed] = useState(false);
+  const showPlaceholder = !protocol.backgroundUrl || imgFailed;
+
+  return (
+    <div
+      className="TrendingCarousel__card"
+      data-testid="trending-card"
+      onClick={() => onCardClick(protocol)}
+    >
+      {showPlaceholder ? (
+        <div className="TrendingCarousel__card__placeholder">
+          <Icon.Image01 />
+        </div>
+      ) : (
+        <img
+          className="TrendingCarousel__card__bg"
+          src={protocol.backgroundUrl}
+          alt={`${protocol.name} background image`}
+          onError={() => setImgFailed(true)}
+        />
+      )}
+      <div className="TrendingCarousel__card__gradient" />
+      <div className="TrendingCarousel__card__content">
+        <Text as="div" size="sm" weight="semi-bold">
+          {protocol.name}
+        </Text>
+        <div className="TrendingCarousel__card__tag">
+          <Text as="div" size="sm" weight="medium">
+            {protocol.tags[0] ?? ""}
+          </Text>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface TrendingCarouselProps {
   items: DiscoverData;
@@ -30,29 +73,11 @@ export const TrendingCarousel = ({
       </div>
       <div className="TrendingCarousel__scroll-container">
         {items.map((protocol) => (
-          <div
+          <TrendingCard
             key={protocol.websiteUrl}
-            className="TrendingCarousel__card"
-            data-testid="trending-card"
-            style={
-              protocol.backgroundUrl
-                ? { backgroundImage: `url(${protocol.backgroundUrl})` }
-                : {}
-            }
-            onClick={() => onCardClick(protocol)}
-          >
-            <div className="TrendingCarousel__card__gradient" />
-            <div className="TrendingCarousel__card__content">
-              <Text as="div" size="sm" weight="semi-bold">
-                {protocol.name}
-              </Text>
-              <div className="TrendingCarousel__card__tag">
-                <Text as="div" size="sm" weight="medium">
-                  {protocol.tags[0] ?? ""}
-                </Text>
-              </div>
-            </div>
-          </div>
+            protocol={protocol}
+            onCardClick={onCardClick}
+          />
         ))}
       </div>
     </div>

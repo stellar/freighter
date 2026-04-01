@@ -5,6 +5,7 @@ import {
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
+import { DiscoverData } from "@shared/api/types";
 import * as ApiInternal from "@shared/api/internal";
 import * as RecentProtocols from "popup/helpers/recentProtocols";
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
@@ -24,7 +25,7 @@ jest.mock("webextension-polyfill", () => ({
   },
 }));
 
-const mockProtocols = [
+const mockProtocols: DiscoverData = [
   {
     description: "A lending protocol",
     name: "Blend",

@@ -58,6 +58,7 @@ import {
   HorizonOperation,
   UserNotification,
   CollectibleContract,
+  DiscoverData,
 } from "./types";
 import {
   AccountBalancesInterface,
@@ -621,7 +622,7 @@ export const getTokenPrices = async (tokens: string[]) => {
   return parsedResponse.data;
 };
 
-export const getDiscoverData = async () => {
+export const getDiscoverData = async (): Promise<DiscoverData> => {
   const url = new URL(`${INDEXER_V2_URL}/protocols`);
   const response = await fetch(url.href);
   const parsedResponse = (await response.json()) as {
