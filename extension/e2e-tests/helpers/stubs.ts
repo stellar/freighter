@@ -2838,3 +2838,96 @@ export const stubReportTransactionWarning = async (
     await route.fulfill({ json });
   });
 };
+
+// ---------------------------------------------------------------------------
+// Maintenance mode Experiment API stubs
+// ---------------------------------------------------------------------------
+
+const AMPLITUDE_EXPERIMENT_VARDATA_ROUTE = "**/sdk/v2/vardata**";
+const MAINTENANCE_VARIANT_VALUE = "on";
+
+const stubExperimentVariants = async (
+  page: Page,
+  variants: Record<string, { payload?: unknown }>,
+) => {
+  await page.route(AMPLITUDE_EXPERIMENT_VARDATA_ROUTE, async (route) => {
+    const response = Object.fromEntries(
+      Object.entries(variants).map(([flagKey, variant]) => [
+        flagKey,
+        {
+          key: MAINTENANCE_VARIANT_VALUE,
+          value: MAINTENANCE_VARIANT_VALUE,
+          ...(variant.payload !== undefined
+            ? { payload: variant.payload }
+            : {}),
+        },
+      ]),
+    );
+
+    await route.fulfill({ json: response });
+  });
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+};
+
+/**
+ * Stubs Amplitude Experiment to return a `maintenance_screen` variant, then
+ * reloads the popup so `useRemoteConfig` fetches and applies the response.
+ *
+ * @param page - The extension popup page
+ * @param content - Title and body paragraphs to display on the overlay
+ */
+export const stubMaintenanceScreenVariant = async (
+  page: Page,
+  content: { title: string; body: string[] },
+) => {
+  await stubExperimentVariants(page, {
+    maintenance_screen: {
+      payload: {
+        content: {
+          title: { en: content.title },
+          body: { en: content.body },
+        },
+      },
+    },
+  });
+};
+
+/**
+ * Stubs Amplitude Experiment to return a `maintenance_banner` variant, then
+ * reloads the popup so `useRemoteConfig` fetches and applies the response.
+ *
+ * @param page - The extension popup page
+ * @param content - Banner title, theme, and optional url/modal payload
+ */
+export const stubMaintenanceBannerVariant = async (
+  page: Page,
+  content: {
+    theme: string;
+    bannerTitle: string;
+    url?: string;
+    modal?: { title: string; body: string[] };
+  },
+) => {
+  const rawPayload: Record<string, unknown> = {
+    theme: content.theme,
+    banner: { title: { en: content.bannerTitle } },
+  };
+
+  if (content.url) {
+    rawPayload.url = content.url;
+  }
+
+  if (content.modal) {
+    rawPayload.modal = {
+      title: { en: content.modal.title },
+      body: { en: content.modal.body },
+    };
+  }
+
+  await stubExperimentVariants(page, {
+    maintenance_banner: {
+      payload: rawPayload,
+    },
+  });
+};

@@ -26,6 +26,7 @@ import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { MobileAppBanner } from "popup/components/account/MobileAppBanner";
 import { AccountTabs } from "popup/components/account/AccountTabs";
+import { MaintenanceBanner } from "popup/components/MaintenanceBanner";
 
 import "./styles.scss";
 
@@ -93,6 +94,7 @@ export const AccountHeader = ({
     <>
       <View.AppHeader
         isAccountHeader
+        topContent={<MaintenanceBanner />}
         leftContent={
           <div data-testid="AccountHeader__icon-btn">
             <div className="AccountHeader__icon-btn__left">

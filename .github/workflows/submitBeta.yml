@@ -82,7 +82,11 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22
-      - run: yarn && yarn build:freighter-api && yarn build:extension:production
+      - run: >
+          yarn && yarn build:freighter-api && yarn build:extension:production
+          --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"
+          AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY="${{
+          secrets.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY }}" BUILD_TYPE="beta"
       - name: Use BETA icons
         run: |
           rm -rf ./extension/build/images

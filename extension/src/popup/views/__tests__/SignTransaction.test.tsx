@@ -109,6 +109,7 @@ jest.mock("helpers/metrics", () => ({
   registerHandler: jest.fn(),
   storeBalanceMetricData: jest.fn(),
   emitMetric: jest.fn(),
+  initAmplitude: jest.fn(),
   metricsMiddleware: jest.fn(),
 }));
 

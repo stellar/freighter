@@ -8,11 +8,19 @@ const path = require("path");
 const webpack = require("webpack");
 
 const { DEFAULT_STATS } = require("../config/webpack");
+const packageJson = require("./package.json");
 
 const BUILD_PATH = path.resolve(__dirname, "./build");
 
 const commonConfig = (
-  env = { EXPERIMENTAL: false, AMPLITUDE_KEY: "", SENTRY_KEY: "" },
+  env = {
+    EXPERIMENTAL: false,
+    AMPLITUDE_KEY: "",
+    AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY: "",
+    SENTRY_KEY: "",
+    // BUILD_TYPE should be explicitly passed "development", "beta", or "production"
+    BUILD_TYPE: "production",
+  },
 ) => ({
   cache: true,
   entry: {
@@ -159,7 +167,12 @@ const commonConfig = (
     new webpack.DefinePlugin({
       EXPERIMENTAL: env.EXPERIMENTAL,
       AMPLITUDE_KEY: JSON.stringify(env.AMPLITUDE_KEY),
+      AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY: JSON.stringify(
+        env.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY,
+      ),
       SENTRY_KEY: JSON.stringify(env.SENTRY_KEY),
+      APP_VERSION: JSON.stringify(packageJson.version),
+      BUILD_TYPE: JSON.stringify(env.BUILD_TYPE || "production"),
     }),
     new MiniCssExtractPlugin({
       filename: "[name].min.css",
