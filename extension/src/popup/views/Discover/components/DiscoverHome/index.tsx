@@ -2,15 +2,12 @@ import React from "react";
 import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { DiscoverData } from "@shared/api/types";
+import { DiscoverData, ProtocolEntry } from "@shared/api/types";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { TrendingCarousel } from "../TrendingCarousel";
 import { DiscoverSection } from "../DiscoverSection";
-
 import "./styles.scss";
-
-type Protocol = DiscoverData[number];
 
 interface DiscoverHomeProps {
   trendingItems: DiscoverData;
@@ -19,9 +16,9 @@ interface DiscoverHomeProps {
   onClose: () => void;
   onExpandRecent: () => void;
   onExpandDapps: () => void;
-  onCardClick: (protocol: Protocol) => void;
-  onRowClick: (protocol: Protocol) => void;
-  onOpenClick: (protocol: Protocol) => void;
+  onCardClick: (protocol: ProtocolEntry) => void;
+  onRowClick: (protocol: ProtocolEntry) => void;
+  onOpenClick: (protocol: ProtocolEntry) => void;
 }
 
 export const DiscoverHome = ({

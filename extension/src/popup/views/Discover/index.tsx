@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from "react";
 
-import { DiscoverData } from "@shared/api/types";
+import { ProtocolEntry } from "@shared/api/types";
 import { openTab } from "popup/helpers/navigate";
 import {
   addRecentProtocol,
@@ -16,10 +16,8 @@ import { ExpandedRecent } from "./components/ExpandedRecent";
 import { ExpandedDapps } from "./components/ExpandedDapps";
 import { ProtocolDetailsPanel } from "./components/ProtocolDetailsPanel";
 import { DiscoverWelcomeModal } from "./components/DiscoverWelcomeModal";
-
 import "./styles.scss";
 
-type Protocol = DiscoverData[number];
 type DiscoverView = "main" | "recent" | "dapps";
 
 interface DiscoverProps {
@@ -28,9 +26,8 @@ interface DiscoverProps {
 
 export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
   const [activeView, setActiveView] = useState<DiscoverView>("main");
-  const [selectedProtocol, setSelectedProtocol] = useState<Protocol | null>(
-    null,
-  );
+  const [selectedProtocol, setSelectedProtocol] =
+    useState<ProtocolEntry | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const { isLoading, trendingItems, recentItems, dappsItems, refreshRecent } =
@@ -38,7 +35,7 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
   const { showWelcome, dismissWelcome } = useDiscoverWelcome();
 
   const handleOpenProtocol = useCallback(
-    async (protocol: Protocol) => {
+    async (protocol: ProtocolEntry) => {
       await addRecentProtocol(protocol.websiteUrl);
       await refreshRecent();
       openTab(protocol.websiteUrl);
@@ -46,13 +43,13 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
     [refreshRecent],
   );
 
-  const handleRowClick = useCallback((protocol: Protocol) => {
+  const handleRowClick = useCallback((protocol: ProtocolEntry) => {
     setSelectedProtocol(protocol);
     setIsDetailsOpen(true);
   }, []);
 
   const handleDetailsOpen = useCallback(
-    async (protocol: Protocol) => {
+    async (protocol: ProtocolEntry) => {
       setIsDetailsOpen(false);
       // Wait for the SlideupModal close animation before clearing state
       setTimeout(async () => {

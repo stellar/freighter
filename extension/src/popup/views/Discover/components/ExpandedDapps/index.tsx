@@ -1,20 +1,17 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import { DiscoverData } from "@shared/api/types";
+import { DiscoverData, ProtocolEntry } from "@shared/api/types";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { ProtocolRow } from "../ProtocolRow";
-
 import "./styles.scss";
-
-type Protocol = DiscoverData[number];
 
 interface ExpandedDappsProps {
   items: DiscoverData;
   onBack: () => void;
-  onRowClick: (protocol: Protocol) => void;
-  onOpenClick: (protocol: Protocol) => void;
+  onRowClick: (protocol: ProtocolEntry) => void;
+  onOpenClick: (protocol: ProtocolEntry) => void;
 }
 
 export const ExpandedDapps = ({

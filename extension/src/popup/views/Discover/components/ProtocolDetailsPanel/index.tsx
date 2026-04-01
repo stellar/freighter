@@ -2,15 +2,13 @@ import React from "react";
 import { Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { DiscoverData } from "@shared/api/types";
+import { ProtocolEntry } from "@shared/api/types";
 
 import "./styles.scss";
 
-type Protocol = DiscoverData[number];
-
 interface ProtocolDetailsPanelProps {
-  protocol: Protocol;
-  onOpen: (protocol: Protocol) => void;
+  protocol: ProtocolEntry;
+  onOpen: (protocol: ProtocolEntry) => void;
 }
 
 const getHostname = (url: string): string => {

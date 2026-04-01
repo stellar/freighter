@@ -2,16 +2,14 @@ import React from "react";
 import { Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { DiscoverData } from "@shared/api/types";
+import { ProtocolEntry } from "@shared/api/types";
 
 import "./styles.scss";
 
-type Protocol = DiscoverData[number];
-
 interface ProtocolRowProps {
-  protocol: Protocol;
-  onRowClick: (protocol: Protocol) => void;
-  onOpenClick: (protocol: Protocol) => void;
+  protocol: ProtocolEntry;
+  onRowClick: (protocol: ProtocolEntry) => void;
+  onOpenClick: (protocol: ProtocolEntry) => void;
 }
 
 export const ProtocolRow = ({

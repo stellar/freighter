@@ -396,7 +396,7 @@ export interface ApiTokenPrices {
   [key: string]: ApiTokenPrice | null;
 }
 
-export type DiscoverData = {
+export interface ProtocolEntry {
   description: string;
   iconUrl: string;
   name: string;
@@ -405,7 +405,9 @@ export type DiscoverData = {
   isBlacklisted: boolean;
   backgroundUrl?: string;
   isTrending: boolean;
-}[];
+}
+
+export type DiscoverData = ProtocolEntry[];
 
 export interface LedgerKeyAccount {
   account_id: string;

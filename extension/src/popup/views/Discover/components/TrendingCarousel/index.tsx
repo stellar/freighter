@@ -2,15 +2,13 @@ import React from "react";
 import { Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { DiscoverData } from "@shared/api/types";
+import { DiscoverData, ProtocolEntry } from "@shared/api/types";
 
 import "./styles.scss";
 
-type Protocol = DiscoverData[number];
-
 interface TrendingCarouselProps {
   items: DiscoverData;
-  onCardClick: (protocol: Protocol) => void;
+  onCardClick: (protocol: ProtocolEntry) => void;
 }
 
 export const TrendingCarousel = ({

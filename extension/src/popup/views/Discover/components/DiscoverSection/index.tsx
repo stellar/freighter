@@ -1,12 +1,9 @@
 import React from "react";
 import { Icon, Text } from "@stellar/design-system";
 
-import { DiscoverData } from "@shared/api/types";
+import { DiscoverData, ProtocolEntry } from "@shared/api/types";
 import { ProtocolRow } from "../ProtocolRow";
-
 import "./styles.scss";
-
-type Protocol = DiscoverData[number];
 
 const MAX_VISIBLE = 5;
 
@@ -14,8 +11,8 @@ interface DiscoverSectionProps {
   title: string;
   items: DiscoverData;
   onExpand: () => void;
-  onRowClick: (protocol: Protocol) => void;
-  onOpenClick: (protocol: Protocol) => void;
+  onRowClick: (protocol: ProtocolEntry) => void;
+  onOpenClick: (protocol: ProtocolEntry) => void;
 }
 
 export const DiscoverSection = ({
