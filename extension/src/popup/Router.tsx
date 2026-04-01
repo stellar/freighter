@@ -62,6 +62,7 @@ import { AccountMigration } from "popup/views/AccountMigration";
 import { AddFunds } from "popup/views/AddFunds";
 import { Discover } from "popup/views/Discover";
 import { Wallets } from "popup/views/Wallets";
+import { ConfirmSidebarRequest } from "popup/views/ConfirmSidebarRequest";
 
 import { DEV_SERVER } from "@shared/constants/services";
 import { isSidebarMode } from "popup/helpers/isSidebarMode";
@@ -205,6 +206,10 @@ export const Router = () => (
           element={<DisplayBackupPhrase />}
         ></Route>
         <Route path={ROUTES.grantAccess} element={<GrantAccess />}></Route>
+        <Route
+          path={ROUTES.confirmSidebarRequest}
+          element={<ConfirmSidebarRequest />}
+        ></Route>
         <Route
           path={ROUTES.mnemonicPhrase}
           element={<MnemonicPhrase mnemonicPhrase="" />}

@@ -1,0 +1,49 @@
+@use "../../styles/utils.scss" as *;
+
+.ConfirmSidebarRequest {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: pxToRem(48px) pxToRem(24px);
+  gap: pxToRem(16px);
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: pxToRem(56px);
+    height: pxToRem(56px);
+    border-radius: 50%;
+    background-color: var(--sds-clr-amber-03);
+    color: var(--sds-clr-amber-11);
+
+    svg {
+      width: pxToRem(28px);
+      height: pxToRem(28px);
+    }
+  }
+
+  &__title {
+    font-size: pxToRem(20px);
+    font-weight: 600;
+    color: var(--sds-clr-gray-12);
+    margin: 0;
+  }
+
+  &__body {
+    font-size: pxToRem(14px);
+    color: var(--sds-clr-gray-11);
+    line-height: 1.5;
+    margin: 0;
+    max-width: pxToRem(320px);
+  }
+
+  &__buttons {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8px);
+    width: 100%;
+    margin-top: pxToRem(16px);
+  }
+}
