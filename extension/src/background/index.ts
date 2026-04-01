@@ -80,9 +80,13 @@ export const initSidebarConnectionListener = () => {
 
     // Sidebar sends its window ID as first message
     port.onMessage.addListener((msg: unknown) => {
-      const { windowId } = msg as { windowId?: number };
-      if (typeof windowId === "number") {
-        setSidebarWindowId(windowId);
+      if (
+        typeof msg === "object" &&
+        msg !== null &&
+        "windowId" in msg &&
+        typeof (msg as { windowId?: unknown }).windowId === "number"
+      ) {
+        setSidebarWindowId((msg as { windowId: number }).windowId);
       }
     });
 
