@@ -7,10 +7,6 @@
     gap: pxToRem(24);
   }
 
-  &__menu {
-    position: relative;
-  }
-
   &__menu-trigger {
     background: transparent;
     border: none;
@@ -25,16 +21,13 @@
   }
 
   &__dropdown {
-    position: absolute;
-    right: 0;
-    top: pxToRem(32);
     width: pxToRem(180);
     background: var(--sds-clr-gray-01);
     border: 1px solid var(--sds-clr-gray-06);
     border-radius: pxToRem(6);
     box-shadow: 0 pxToRem(10) pxToRem(20) pxToRem(-10) rgba(0, 0, 0, 0.1);
     padding: pxToRem(4);
-    z-index: 10;
+    z-index: 100;
   }
 
   &__dropdown-item {
