@@ -41,7 +41,7 @@ export const DiscoverHome = ({
     <View>
       <SubviewHeader
         title={t("Discover")}
-        customBackIcon={<Icon.XClose />}
+        customBackIcon={<Icon.X />}
         customBackAction={onClose}
       />
       <View.Content hasNoTopPadding>
