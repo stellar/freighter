@@ -43,7 +43,8 @@
     "default_icon": {
       "16": "images/icon16.png",
       "32": "images/icon32.png"
-    }
+    },
+    "open_at_install": false
   },
   "manifest_version": 3
 }

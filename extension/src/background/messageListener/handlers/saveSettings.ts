@@ -60,6 +60,7 @@ export const saveSettings = async ({
     isNonSSLEnabled: await getIsNonSSLEnabled({ localStore }),
     isHideDustEnabled: await getIsHideDustEnabled({ localStore }),
     isOpenSidebarByDefault:
-      (await localStore.getItem(IS_OPEN_SIDEBAR_BY_DEFAULT_ID)) === "true",
+      ((await localStore.getItem(IS_OPEN_SIDEBAR_BY_DEFAULT_ID)) as boolean) ??
+      false,
   };
 };
