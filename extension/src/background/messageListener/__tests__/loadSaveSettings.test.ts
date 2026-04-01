@@ -33,11 +33,10 @@ jest.mock("../helpers/get-hidden-assets", () => ({
 };
 
 describe("loadSettings isOpenSidebarByDefault", () => {
-  it('returns true when localStorage value is the string "true"', async () => {
+  it("returns true when storage value is boolean true", async () => {
     const localStore = {
       getItem: jest.fn().mockImplementation((key: string) => {
-        if (key === IS_OPEN_SIDEBAR_BY_DEFAULT_ID)
-          return Promise.resolve("true");
+        if (key === IS_OPEN_SIDEBAR_BY_DEFAULT_ID) return Promise.resolve(true);
         return Promise.resolve(null);
       }),
       setItem: jest.fn(),
@@ -47,11 +46,11 @@ describe("loadSettings isOpenSidebarByDefault", () => {
     expect(result.isOpenSidebarByDefault).toBe(true);
   });
 
-  it('returns false when localStorage value is the string "false"', async () => {
+  it("returns false when storage value is boolean false", async () => {
     const localStore = {
       getItem: jest.fn().mockImplementation((key: string) => {
         if (key === IS_OPEN_SIDEBAR_BY_DEFAULT_ID)
-          return Promise.resolve("false");
+          return Promise.resolve(false);
         return Promise.resolve(null);
       }),
       setItem: jest.fn(),
@@ -61,7 +60,7 @@ describe("loadSettings isOpenSidebarByDefault", () => {
     expect(result.isOpenSidebarByDefault).toBe(false);
   });
 
-  it("returns false when localStorage value is null", async () => {
+  it("returns false when storage value is null", async () => {
     const localStore = {
       getItem: jest.fn().mockResolvedValue(null),
       setItem: jest.fn(),
@@ -76,8 +75,7 @@ describe("saveSettings isOpenSidebarByDefault", () => {
   it("calls setPanelBehavior with the boolean from the request", async () => {
     const localStore = {
       getItem: jest.fn().mockImplementation((key: string) => {
-        if (key === IS_OPEN_SIDEBAR_BY_DEFAULT_ID)
-          return Promise.resolve("true");
+        if (key === IS_OPEN_SIDEBAR_BY_DEFAULT_ID) return Promise.resolve(true);
         return Promise.resolve(null);
       }),
       setItem: jest.fn().mockResolvedValue(undefined),
@@ -98,11 +96,11 @@ describe("saveSettings isOpenSidebarByDefault", () => {
     expect(result.isOpenSidebarByDefault).toBe(true);
   });
 
-  it('returns boolean false (not the string "false") after saving', async () => {
+  it("returns boolean false after saving false", async () => {
     const localStore = {
       getItem: jest.fn().mockImplementation((key: string) => {
         if (key === IS_OPEN_SIDEBAR_BY_DEFAULT_ID)
-          return Promise.resolve("false");
+          return Promise.resolve(false);
         return Promise.resolve(null);
       }),
       setItem: jest.fn().mockResolvedValue(undefined),
@@ -117,7 +115,6 @@ describe("saveSettings isOpenSidebarByDefault", () => {
 
     const result = await saveSettings({ request, localStore });
     expect(result.isOpenSidebarByDefault).toBe(false);
-    // Ensure it's actually a boolean, not the string "false"
     expect(typeof result.isOpenSidebarByDefault).toBe("boolean");
   });
 });
