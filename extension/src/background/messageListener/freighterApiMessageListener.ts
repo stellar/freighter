@@ -271,11 +271,15 @@ export const freighterApiMessageListener = (
             apiError: FreighterApiInternalError,
           });
         } else if (popup !== null) {
-          browser.windows.onRemoved.addListener(() =>
-            safeResolve({
-              apiError: FreighterApiDeclinedError,
-            }),
-          );
+          const onWindowRemoved = (removedWindowId: number) => {
+            if (removedWindowId === popup.id) {
+              browser.windows.onRemoved.removeListener(onWindowRemoved);
+              safeResolve({
+                apiError: FreighterApiDeclinedError,
+              });
+            }
+          };
+          browser.windows.onRemoved.addListener(onWindowRemoved);
         }
         const response = (success: boolean) => {
           if (success) {
@@ -437,13 +441,17 @@ export const freighterApiMessageListener = (
             QUEUE_ITEM_TTL_MS,
           );
         } else {
-          browser.windows.onRemoved.addListener(() =>
-            safeResolve({
-              // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
-              apiError: FreighterApiDeclinedError,
-              error: FreighterApiDeclinedError.message,
-            }),
-          );
+          const onWindowRemoved = (removedWindowId: number) => {
+            if (removedWindowId === popup.id) {
+              browser.windows.onRemoved.removeListener(onWindowRemoved);
+              safeResolve({
+                // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
+                apiError: FreighterApiDeclinedError,
+                error: FreighterApiDeclinedError.message,
+              });
+            }
+          };
+          browser.windows.onRemoved.addListener(onWindowRemoved);
         }
         const response = (
           signedTransaction: string,
@@ -526,13 +534,17 @@ export const freighterApiMessageListener = (
             QUEUE_ITEM_TTL_MS,
           );
         } else {
-          browser.windows.onRemoved.addListener(() =>
-            safeResolve({
-              // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
-              apiError: FreighterApiDeclinedError,
-              error: FreighterApiDeclinedError.message,
-            }),
-          );
+          const onWindowRemoved = (removedWindowId: number) => {
+            if (removedWindowId === popup.id) {
+              browser.windows.onRemoved.removeListener(onWindowRemoved);
+              safeResolve({
+                // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
+                apiError: FreighterApiDeclinedError,
+                error: FreighterApiDeclinedError.message,
+              });
+            }
+          };
+          browser.windows.onRemoved.addListener(onWindowRemoved);
         }
 
         const response = (
@@ -629,13 +641,17 @@ export const freighterApiMessageListener = (
             QUEUE_ITEM_TTL_MS,
           );
         } else {
-          browser.windows.onRemoved.addListener(() =>
-            safeResolve({
-              // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
-              apiError: FreighterApiDeclinedError,
-              error: FreighterApiDeclinedError.message,
-            }),
-          );
+          const onWindowRemoved = (removedWindowId: number) => {
+            if (removedWindowId === popup.id) {
+              browser.windows.onRemoved.removeListener(onWindowRemoved);
+              safeResolve({
+                // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
+                apiError: FreighterApiDeclinedError,
+                error: FreighterApiDeclinedError.message,
+              });
+            }
+          };
+          browser.windows.onRemoved.addListener(onWindowRemoved);
         }
         const response = (
           signedAuthEntry: SignAuthEntryResponse,
