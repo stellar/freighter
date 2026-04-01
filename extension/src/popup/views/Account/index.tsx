@@ -318,7 +318,7 @@ export const Account = () => {
           className="Discover__sheet-wrapper"
         >
           <ScreenReaderOnly>
-            <SheetTitle>Discover</SheetTitle>
+            <SheetTitle>{t("Discover")}</SheetTitle>
           </ScreenReaderOnly>
           <Discover onClose={() => setIsDiscoverOpen(false)} />
         </SheetContent>
