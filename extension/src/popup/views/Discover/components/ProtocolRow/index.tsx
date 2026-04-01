@@ -38,7 +38,7 @@ export const ProtocolRow = ({
         </Text>
         <div className="ProtocolRow__label__subtitle">
           <Text as="div" size="xs" weight="medium">
-            {protocol.tags[0]}
+            {protocol.tags[0] ?? ""}
           </Text>
         </div>
       </div>

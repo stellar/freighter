@@ -50,7 +50,7 @@ export const TrendingCarousel = ({
               </Text>
               <div className="TrendingCarousel__card__tag">
                 <Text as="div" size="sm" weight="medium">
-                  {protocol.tags[0]}
+                  {protocol.tags[0] ?? ""}
                 </Text>
               </div>
             </div>
