@@ -41,7 +41,7 @@
     display: flex;
     align-items: center;
     gap: pxToRem(8);
-    padding: pxToRem(8);
+    padding: pxToRem(6) pxToRem(8);
     cursor: pointer;
     border-radius: pxToRem(4);
     color: var(--sds-clr-red-09);
