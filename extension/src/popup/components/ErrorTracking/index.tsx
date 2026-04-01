@@ -17,8 +17,10 @@ export const ErrorTracking = () => {
       integrations: [Sentry.browserTracingIntegration()],
       tracesSampleRate: 1.0,
       denyUrls: [
-        // Amplitude 4xx's on too many Posts, which is expected behavior
-        /api\.amplitude\.com\/2\/httpapi/i,
+        // Suppress Amplitude SDK network errors (rate-limits, transient 4xx/5xx).
+        // The SDK handles retries internally; these errors are noise in Sentry.
+        // Covers both the legacy endpoint (api.) and the SDK default (api2.).
+        /api2?\.amplitude\.com/i,
       ],
       beforeSend(event) {
         if (!event.request) {
