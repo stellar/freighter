@@ -28,6 +28,15 @@
   --z-index-maintenance-screen: 100;
 }
 
+html,
+body {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 body {
   color: var(--sds-clr-gray-12);
   overscroll-behavior: none;
