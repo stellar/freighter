@@ -40,9 +40,10 @@ export const DiscoverWelcomeModal = ({
             </Text>
           </div>
           <Button
-            size="md"
-            variant="tertiary"
+            size="lg"
+            variant="secondary"
             isFullWidth
+            isRounded
             onClick={onDismiss}
             data-testid="discover-welcome-dismiss"
           >

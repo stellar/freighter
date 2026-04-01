@@ -21,16 +21,16 @@
   }
 
   &__icon {
-    width: pxToRem(40);
-    height: pxToRem(40);
-    border-radius: pxToRem(10);
+    width: pxToRem(32);
+    height: pxToRem(32);
+    border-radius: pxToRem(8);
     background: var(--sds-clr-lilac-03, var(--sds-clr-gray-03));
     border: 1px solid var(--sds-clr-lilac-06, var(--sds-clr-gray-06));
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: pxToRem(16);
-    color: var(--sds-clr-gray-12);
+    color: var(--sds-clr-lilac-11);
 
     svg {
       width: pxToRem(20);
