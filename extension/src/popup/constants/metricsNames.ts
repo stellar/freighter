@@ -182,5 +182,5 @@ export const METRIC_NAMES = {
 
   coinbaseOnrampOpened: "coinbase onramp: opened",
   wallets: "loaded screen: wallets",
-  confirmSidebarRequest: "loaded screen: confirmSidebarRequest",
+  confirmSidebarRequest: "loaded screen: confirm sidebar request",
 };
