@@ -15,6 +15,11 @@ export const CLEANUP_INTERVAL_MS = 60 * 1000;
 // In MV3, this resets when the service worker restarts, which also resets the queues.
 export const activeQueueUuids: Set<string> = new Set();
 
+// Set of UUIDs for signing requests that are being handled by the sidebar
+// (as opposed to a standalone popup window). Only these should be rejected
+// when the sidebar disconnects.
+export const sidebarQueueUuids: Set<string> = new Set();
+
 /**
  * Removes expired items from a queue based on their createdAt timestamp.
  * Items older than the TTL are removed. Items without createdAt are also removed

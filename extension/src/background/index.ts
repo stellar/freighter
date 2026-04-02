@@ -20,10 +20,11 @@ import {
 import {
   setSidebarPort,
   clearSidebarPort,
+  getSidebarPort,
 } from "./messageListener/freighterApiMessageListener";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
 import { SIDEBAR_PORT_NAME } from "popup/components/SidebarSigningListener";
-import { activeQueueUuids } from "./helpers/queueCleanup";
+import { sidebarQueueUuids } from "./helpers/queueCleanup";
 import {
   SESSION_ALARM_NAME,
   SessionTimer,
@@ -93,11 +94,18 @@ export const initSidebarConnectionListener = () => {
     // When sidebar closes (for any reason), clear the window ID
     // and reject any pending signing requests
     port.onDisconnect.addListener(() => {
-      clearSidebarPort();
-      clearSidebarWindowId();
+      // Only clear the stored port/windowId if this is still the active sidebar port.
+      // An older port disconnecting after a newer sidebar connected must not
+      // evict the newer sidebar's state.
+      if (getSidebarPort() === port) {
+        clearSidebarPort();
+        clearSidebarWindowId();
+      }
 
-      // Reject all active signing requests that were open in the sidebar
-      for (const uuid of activeQueueUuids) {
+      // Reject only the signing requests that were routed to this sidebar.
+      // Requests handled by standalone popup windows have their own
+      // onWindowRemoved listeners and must not be cancelled here.
+      for (const uuid of sidebarQueueUuids) {
         const responseIndex = responseQueue.findIndex(
           (item) => item.uuid === uuid,
         );
@@ -123,7 +131,7 @@ export const initSidebarConnectionListener = () => {
         const tokenIndex = tokenQueue.findIndex((item) => item.uuid === uuid);
         if (tokenIndex !== -1) tokenQueue.splice(tokenIndex, 1);
       }
-      activeQueueUuids.clear();
+      sidebarQueueUuids.clear();
     });
   });
 };

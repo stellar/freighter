@@ -3,6 +3,7 @@ import { popupMessageListener } from "background/messageListener/popupMessageLis
 import {
   setSidebarPort,
   clearSidebarPort,
+  getSidebarPort,
 } from "background/messageListener/freighterApiMessageListener";
 
 // Mock chrome.sidePanel API
@@ -134,6 +135,37 @@ describe("sidebar message handlers", () => {
 
     it("clearSidebarPort is safe to call when no port is set", () => {
       expect(() => clearSidebarPort()).not.toThrow();
+    });
+
+    it("getSidebarPort returns null after clearSidebarPort", () => {
+      const mockPort = { postMessage: jest.fn(), disconnect: jest.fn() } as any;
+      setSidebarPort(mockPort);
+      clearSidebarPort();
+      expect(getSidebarPort()).toBeNull();
+    });
+
+    it("getSidebarPort returns the currently stored port", () => {
+      const mockPort = { postMessage: jest.fn(), disconnect: jest.fn() } as any;
+      setSidebarPort(mockPort);
+      expect(getSidebarPort()).toBe(mockPort);
+    });
+
+    it("an older port disconnecting does not evict a newer sidebar port", () => {
+      const portA = { postMessage: jest.fn(), disconnect: jest.fn() } as any;
+      const portB = { postMessage: jest.fn(), disconnect: jest.fn() } as any;
+
+      // Connect portA then portB (simulates a second sidebar window opening)
+      setSidebarPort(portA);
+      setSidebarPort(portB);
+
+      // Simulate portA's disconnect handler: only clear if portA is still the active port
+      const disconnectingPort = portA;
+      if (getSidebarPort() === disconnectingPort) {
+        clearSidebarPort();
+      }
+
+      // portA disconnected but portB is still active – must not be cleared
+      expect(getSidebarPort()).toBe(portB);
     });
   });
 });

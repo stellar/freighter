@@ -69,7 +69,7 @@ import {
   tokenQueue,
   transactionQueue,
 } from "./popupMessageListener";
-import { QUEUE_ITEM_TTL_MS } from "background/helpers/queueCleanup";
+import { QUEUE_ITEM_TTL_MS, sidebarQueueUuids } from "background/helpers/queueCleanup";
 
 // Long-lived port to the sidebar, set by initSidebarConnectionListener
 let sidebarPort: browser.Runtime.Port | null = null;
@@ -80,6 +80,7 @@ export const setSidebarPort = (port: browser.Runtime.Port) => {
 export const clearSidebarPort = () => {
   sidebarPort = null;
 };
+export const getSidebarPort = () => sidebarPort;
 
 const openSigningWindow = async (hashRoute: string, width?: number) => {
   const sidebarWindowId = getSidebarWindowId();
@@ -157,10 +158,12 @@ export const freighterApiMessageListener = (
       const safeResolve = (value: any) => {
         if (resolved) return;
         resolved = true;
+        sidebarQueueUuids.delete(uuid);
         resolve(value);
       };
 
       if (popup === null) {
+        sidebarQueueUuids.add(uuid);
         setTimeout(
           () =>
             safeResolve({
@@ -263,6 +266,7 @@ export const freighterApiMessageListener = (
         const safeResolve = (value: any) => {
           if (resolved) return;
           resolved = true;
+          sidebarQueueUuids.delete(uuid);
           resolve(value);
         };
 
@@ -270,7 +274,9 @@ export const freighterApiMessageListener = (
           safeResolve({
             apiError: FreighterApiInternalError,
           });
-        } else if (popup !== null) {
+        } else if (popup === null) {
+          sidebarQueueUuids.add(uuid);
+        } else {
           const onWindowRemoved = (removedWindowId: number) => {
             if (removedWindowId === popup.id) {
               browser.windows.onRemoved.removeListener(onWindowRemoved);
@@ -422,6 +428,7 @@ export const freighterApiMessageListener = (
         const safeResolve = (value: any) => {
           if (resolved) return;
           resolved = true;
+          sidebarQueueUuids.delete(uuid);
           resolve(value);
         };
 
@@ -432,6 +439,7 @@ export const freighterApiMessageListener = (
             error: FreighterApiInternalError.message,
           });
         } else if (popup === null) {
+          sidebarQueueUuids.add(uuid);
           setTimeout(
             () =>
               safeResolve({
@@ -515,6 +523,7 @@ export const freighterApiMessageListener = (
         const safeResolve = (value: any) => {
           if (resolved) return;
           resolved = true;
+          sidebarQueueUuids.delete(uuid);
           resolve(value);
         };
 
@@ -525,6 +534,7 @@ export const freighterApiMessageListener = (
             error: FreighterApiInternalError.message,
           });
         } else if (popup === null) {
+          sidebarQueueUuids.add(uuid);
           setTimeout(
             () =>
               safeResolve({
@@ -622,6 +632,7 @@ export const freighterApiMessageListener = (
         const safeResolve = (value: any) => {
           if (resolved) return;
           resolved = true;
+          sidebarQueueUuids.delete(uuid);
           resolve(value);
         };
 
@@ -632,6 +643,7 @@ export const freighterApiMessageListener = (
             error: FreighterApiInternalError.message,
           });
         } else if (popup === null) {
+          sidebarQueueUuids.add(uuid);
           setTimeout(
             () =>
               safeResolve({
