@@ -63,6 +63,11 @@ export const initContentScriptMessageListener = () => {
 };
 
 export const initSidebarConnectionListener = () => {
+  // Pending cleanup scheduled when a sidebar port disconnects.
+  // Cancelled if a new port connects before it fires (sidebar reloaded
+  // rather than closed, e.g. from chrome.sidePanel.open()).
+  let pendingCleanup: ReturnType<typeof setTimeout> | null = null;
+
   browser.runtime.onConnect.addListener((port) => {
     if (port.name !== SIDEBAR_PORT_NAME) return;
 
@@ -74,6 +79,13 @@ export const initSidebarConnectionListener = () => {
     if (!isExtensionPage) {
       port.disconnect();
       return;
+    }
+
+    // A new sidebar connected — cancel any pending cleanup from a
+    // previous port disconnect so in-flight requests stay alive.
+    if (pendingCleanup !== null) {
+      clearTimeout(pendingCleanup);
+      pendingCleanup = null;
     }
 
     // Store port reference so openSigningWindow can send messages directly
@@ -91,47 +103,48 @@ export const initSidebarConnectionListener = () => {
       }
     });
 
-    // When sidebar closes (for any reason), clear the window ID
-    // and reject any pending signing requests
+    // When sidebar closes, clear port state and schedule cleanup.
+    // The cleanup is deferred because chrome.sidePanel.open() can
+    // reload the sidebar page, causing a brief disconnect/reconnect.
     port.onDisconnect.addListener(() => {
-      // Only clear the stored port/windowId if this is still the active sidebar port.
-      // An older port disconnecting after a newer sidebar connected must not
-      // evict the newer sidebar's state.
       if (getSidebarPort() === port) {
         clearSidebarPort();
         clearSidebarWindowId();
       }
 
-      // Reject only the signing requests that were routed to this sidebar.
-      // Requests handled by standalone popup windows have their own
-      // onWindowRemoved listeners and must not be cancelled here.
-      for (const uuid of sidebarQueueUuids) {
-        const responseIndex = responseQueue.findIndex(
-          (item) => item.uuid === uuid,
-        );
-        if (responseIndex !== -1) {
-          const responseQueueItem = responseQueue.splice(responseIndex, 1)[0];
-          responseQueueItem.response(undefined);
+      pendingCleanup = setTimeout(() => {
+        pendingCleanup = null;
+
+        // Reject only the signing requests that were routed to the sidebar.
+        // Requests handled by standalone popup windows have their own
+        // onWindowRemoved listeners and must not be cancelled here.
+        for (const uuid of sidebarQueueUuids) {
+          const responseIndex = responseQueue.findIndex(
+            (item) => item.uuid === uuid,
+          );
+          if (responseIndex !== -1) {
+            const responseQueueItem = responseQueue.splice(responseIndex, 1)[0];
+            responseQueueItem.response(undefined);
+          }
+
+          const txIndex = transactionQueue.findIndex(
+            (item) => item.uuid === uuid,
+          );
+          if (txIndex !== -1) transactionQueue.splice(txIndex, 1);
+
+          const blobIndex = blobQueue.findIndex((item) => item.uuid === uuid);
+          if (blobIndex !== -1) blobQueue.splice(blobIndex, 1);
+
+          const authIndex = authEntryQueue.findIndex(
+            (item) => item.uuid === uuid,
+          );
+          if (authIndex !== -1) authEntryQueue.splice(authIndex, 1);
+
+          const tokenIndex = tokenQueue.findIndex((item) => item.uuid === uuid);
+          if (tokenIndex !== -1) tokenQueue.splice(tokenIndex, 1);
         }
-
-        // Clean up the data queues
-        const txIndex = transactionQueue.findIndex(
-          (item) => item.uuid === uuid,
-        );
-        if (txIndex !== -1) transactionQueue.splice(txIndex, 1);
-
-        const blobIndex = blobQueue.findIndex((item) => item.uuid === uuid);
-        if (blobIndex !== -1) blobQueue.splice(blobIndex, 1);
-
-        const authIndex = authEntryQueue.findIndex(
-          (item) => item.uuid === uuid,
-        );
-        if (authIndex !== -1) authEntryQueue.splice(authIndex, 1);
-
-        const tokenIndex = tokenQueue.findIndex((item) => item.uuid === uuid);
-        if (tokenIndex !== -1) tokenQueue.splice(tokenIndex, 1);
-      }
-      sidebarQueueUuids.clear();
+        sidebarQueueUuids.clear();
+      }, 500);
     });
   });
 };
