@@ -10,10 +10,16 @@ import "./styles.scss";
 export interface FeesPaneProps {
   fee: string;
   simulationState: State<SimulateTxData, string>;
+  isSoroban?: boolean;
   onClose: () => void;
 }
 
-export const FeesPane = ({ fee, simulationState, onClose }: FeesPaneProps) => {
+export const FeesPane = ({
+  fee,
+  simulationState,
+  isSoroban = false,
+  onClose,
+}: FeesPaneProps) => {
   const { t } = useTranslation();
 
   const isLoading =
@@ -82,7 +88,7 @@ export const FeesPane = ({ fee, simulationState, onClose }: FeesPaneProps) => {
         className="FeesPane__Description"
         data-testid="review-tx-fees-description"
       >
-        {simulationState.data?.resourceFee
+        {isSoroban
           ? t("Fees description soroban")
           : t("Fees description classic")}
       </div>

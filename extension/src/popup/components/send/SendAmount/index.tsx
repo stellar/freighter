@@ -37,6 +37,7 @@ import {
   saveIsToken,
   saveMemo,
   saveTransactionFee,
+  saveManualTransactionFee,
   saveTransactionTimeout,
   saveAmountUsd,
 } from "popup/ducks/transactionSubmission";
@@ -74,6 +75,19 @@ import "../styles.scss";
 
 const DEFAULT_INPUT_WIDTH = 25;
 
+// Returns the value to show in FeesPane's total row given the user's current
+// draft inclusion fee and the simulated resource fee.  For classic (no
+// resource fee) the inclusion fee IS the total.
+function buildFeesPaneTotal(
+  inclusionFee: string,
+  resourceFee: string | undefined,
+): string {
+  if (!resourceFee) {
+    return inclusionFee;
+  }
+  return new BigNumber(inclusionFee).plus(resourceFee).toFixed();
+}
+
 export const SendAmount = ({
   goBack,
   goToNext,
@@ -110,6 +124,7 @@ export const SendAmount = ({
     transactionFee,
     isCollectible,
     collectibleData,
+    manualTransactionFee,
   } = transactionData;
   const fee = transactionFee || recommendedFee;
 
@@ -124,12 +139,28 @@ export const SendAmount = ({
     lastInclusionFeeRef.current = simulationState.data.inclusionFee;
   }
 
-  // For Soroban: show the stable inclusion fee (base fee only).
-  // For classic: show the current total fee (may be user-customised).
+  // Tracks the fee the user explicitly saved via EditSettings this session.
+  // Once set, re-simulations no longer overwrite the displayed inclusion fee,
+  // mirroring the mobile hasManuallyChanged pattern.
+  // Initialized from Redux so the value survives SendAmount unmount/remount
+  // (e.g. when the user navigates to pick a recipient address and returns).
+  const hasManuallySetFeeRef = useRef<string | null>(manualTransactionFee);
+
+  // For Soroban: prefer the user's manually-saved fee, then the last simulated
+  // inclusion fee (base fee only).  For classic: use the current total fee.
   const editSettingsFee =
     isToken || isCollectible
-      ? (lastInclusionFeeRef.current ?? recommendedFee)
+      ? (hasManuallySetFeeRef.current ??
+        lastInclusionFeeRef.current ??
+        recommendedFee)
       : fee;
+
+  // Holds the fee the user has typed but not yet saved.  Survives the
+  // EditSettings unmount that occurs when the fees pane opens so that the
+  // input re-initialises to the draft value on return.
+  const [draftFeeForDisplay, setDraftFeeForDisplay] = React.useState<
+    string | null
+  >(null);
 
   const { state: sendAmountData, fetchData } = useGetSendAmountData(
     {
@@ -158,6 +189,9 @@ export const SendAmount = ({
   const [isEditingMemo, setIsEditingMemo] = React.useState(false);
   const [isEditingSettings, setIsEditingSettings] = React.useState(false);
   const [isShowingFeesPane, setIsShowingFeesPane] = React.useState(false);
+  // Holds the fee value shown in FeesPane's total row. Updated to reflect the
+  // user's current draft inclusion fee before the pane opens.
+  const [feesPaneTotal, setFeesPaneTotal] = React.useState(fee);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
   const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
     boolean | null
@@ -262,9 +296,14 @@ export const SendAmount = ({
       // Reset to the inclusion fee before re-simulating. After a prior
       // simulation, saveTransactionFee stored the TOTAL (inclusion + resource).
       // Without this reset that total would be used as baseFee on the next run,
-      // inflating both inclusionFee and recommendedFee.
+      // inflating both inclusionFee and recommendedFee.  Prefer any fee the
+      // user explicitly saved via EditSettings over the simulated base fee.
       dispatch(
-        saveTransactionFee(lastInclusionFeeRef.current ?? recommendedFee),
+        saveTransactionFee(
+          hasManuallySetFeeRef.current ??
+            lastInclusionFeeRef.current ??
+            recommendedFee,
+        ),
       );
     } else if (!transactionFee) {
       dispatch(saveTransactionFee(fee));
@@ -348,9 +387,14 @@ export const SendAmount = ({
     if (destChanged || assetChanged) {
       // Reset to inclusion fee before re-simulating so total fee from a prior
       // simulation isn't used as baseFee (which would inflate the result).
+      // Prefer the user's manually-saved fee if present.
       if (isToken || isCollectible) {
         dispatch(
-          saveTransactionFee(lastInclusionFeeRef.current ?? recommendedFee),
+          saveTransactionFee(
+            hasManuallySetFeeRef.current ??
+              lastInclusionFeeRef.current ??
+              recommendedFee,
+          ),
         );
       }
       simulationDataRef.current = { destination, asset };
@@ -452,12 +496,22 @@ export const SendAmount = ({
     dispatch(saveIsToken(false));
     dispatch(saveAmount("0"));
     dispatch(saveAmountUsd("0.00"));
+    // Clear any manually-saved fee so the next send session always starts from
+    // the simulated base fee rather than a stale override.
+    dispatch(saveTransactionFee(""));
+    dispatch(saveManualTransactionFee(null));
     goBack();
     if (isCollectible) {
       goToChooseAssetAction();
     }
   };
   const goToChooseAssetAction = () => {
+    // Changing the asset may switch between Soroban and classic (or a different
+    // token), so any manually-saved fee from the prior asset should not carry
+    // over.  Clear it here before navigating so post-remount the fee is derived
+    // freshly from the new asset's simulation.
+    dispatch(saveManualTransactionFee(null));
+    hasManuallySetFeeRef.current = null;
     goToChooseAsset();
   };
 
@@ -862,13 +916,30 @@ export const SendAmount = ({
         <>
           <div className="EditMemoWrapper">
             <EditSettings
-              fee={editSettingsFee}
+              fee={draftFeeForDisplay ?? editSettingsFee}
               title={t("Send Settings")}
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
               isSoroban={isToken || isCollectible}
-              onClose={() => setIsEditingSettings(false)}
-              onShowFeesInfo={() => setIsShowingFeesPane(true)}
+              onFeeChange={(v) => {
+                setDraftFeeForDisplay(v);
+              }}
+              onClose={() => {
+                setIsEditingSettings(false);
+                setDraftFeeForDisplay(null);
+              }}
+              onShowFeesInfo={(currentDraftFee) => {
+                const inclusionFee =
+                  currentDraftFee ||
+                  (lastInclusionFeeRef.current ?? recommendedFee);
+                setFeesPaneTotal(
+                  buildFeesPaneTotal(
+                    inclusionFee,
+                    simulationState.data?.resourceFee,
+                  ),
+                );
+                setIsShowingFeesPane(true);
+              }}
               onSubmit={async ({
                 fee,
                 timeout,
@@ -878,14 +949,20 @@ export const SendAmount = ({
               }) => {
                 dispatch(saveTransactionFee(fee));
                 dispatch(saveTransactionTimeout(timeout));
+                hasManuallySetFeeRef.current = fee;
+                dispatch(saveManualTransactionFee(fee));
                 setIsEditingSettings(false);
+                setDraftFeeForDisplay(null);
                 // Regenerate transaction XDR with new fee (now reads fee from Redux state inside fetchData)
                 await fetchSimulationData();
               }}
             />
           </div>
           <LoadingBackground
-            onClick={() => setIsEditingSettings(false)}
+            onClick={() => {
+              setIsEditingSettings(false);
+              setDraftFeeForDisplay(null);
+            }}
             isActive={isEditingSettings}
           />
         </>
@@ -901,8 +978,9 @@ export const SendAmount = ({
           <View.Inset>
             <div className="SendAmount__FeesPane">
               <FeesPane
-                fee={fee}
+                fee={feesPaneTotal}
                 simulationState={simulationState}
+                isSoroban={isToken || isCollectible}
                 onClose={() => {
                   setIsShowingFeesPane(false);
                   setIsEditingSettings(true);

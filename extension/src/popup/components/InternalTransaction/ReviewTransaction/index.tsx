@@ -445,6 +445,7 @@ export const ReviewTx = ({
     <FeesPane
       fee={fee}
       simulationState={simulationState}
+      isSoroban={isToken || isCollectible}
       onClose={() => setActivePaneIndex(paneConfig.reviewIndex)}
     />
   );

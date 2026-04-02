@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Button, Card, Icon, Input } from "@stellar/design-system";
 import { Field, FieldProps, Formik, Form } from "formik";
 import { useTranslation } from "react-i18next";
@@ -19,7 +19,8 @@ interface EditSettingsProps {
   title: string;
   isSoroban?: boolean;
   onClose: () => void;
-  onShowFeesInfo?: () => void;
+  onFeeChange?: (fee: string) => void;
+  onShowFeesInfo?: (currentDraftFee: string) => void;
   onSubmit: (args: EditSettingsFormValue) => void;
 }
 
@@ -30,10 +31,14 @@ export const EditSettings = ({
   title,
   isSoroban = false,
   onClose,
+  onFeeChange,
   onShowFeesInfo,
   onSubmit,
 }: EditSettingsProps) => {
   const { t } = useTranslation();
+  // Tracks the current draft fee so onShowFeesInfo can pass it to the parent
+  // for an accurate FeesPane total without requiring a Redux save first.
+  const draftFeeRef = useRef<string>(fee);
   const initialValues: EditSettingsFormValue = {
     fee,
     timeout,
@@ -49,7 +54,7 @@ export const EditSettings = ({
         <button
           className="EditTxSettings__fee-info-btn"
           type="button"
-          onClick={onShowFeesInfo}
+          onClick={() => onShowFeesInfo?.(draftFeeRef.current)}
           aria-label={t("Fee breakdown")}
           data-testid="edit-settings-fees-info-btn"
         >
@@ -63,11 +68,7 @@ export const EditSettings = ({
     <div className="EditTxSettings">
       <Card>
         {title && <p>{title}</p>}
-        <Formik
-          initialValues={initialValues}
-          onSubmit={handleSubmit}
-          enableReinitialize
-        >
+        <Formik initialValues={initialValues} onSubmit={handleSubmit}>
           {({ errors, setFieldValue }) => (
             <>
               <Form className="EditTxSettings__form">
@@ -89,6 +90,8 @@ export const EditSettings = ({
                         let value = e.target.value;
                         if (value === "") {
                           setFieldValue("fee", "");
+                          draftFeeRef.current = "";
+                          onFeeChange?.("");
                           return;
                         }
 
@@ -101,13 +104,19 @@ export const EditSettings = ({
                         }
 
                         setFieldValue("fee", value);
+                        draftFeeRef.current = value;
+                        onFeeChange?.(value);
                       }}
                       rightElement={
                         <Button
                           type="button"
                           size="md"
                           variant="tertiary"
-                          onClick={() => setFieldValue("fee", fee)}
+                          onClick={() => {
+                            setFieldValue("fee", fee);
+                            draftFeeRef.current = fee;
+                            onFeeChange?.(fee);
+                          }}
                         >
                           {t("Default")}
                         </Button>
