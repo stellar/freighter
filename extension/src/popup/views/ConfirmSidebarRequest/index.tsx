@@ -27,23 +27,25 @@ export const ConfirmSidebarRequest = () => {
   };
 
   return (
-    <View.Content alignment="center">
+    <View.Content>
       <div className="ConfirmSidebarRequest">
-        <div className="ConfirmSidebarRequest__icon">
-          <Icon.AlertTriangle />
+        <div className="ConfirmSidebarRequest__header">
+          <div className="ConfirmSidebarRequest__icon">
+            <Icon.AlertTriangle />
+          </div>
+          <h1 className="ConfirmSidebarRequest__title">
+            {t("New Signing Request")}
+          </h1>
+          <div className="ConfirmSidebarRequest__body">
+            {t(
+              "A new signing request arrived while you were reviewing another. Please review it carefully before approving.",
+            )}
+          </div>
         </div>
-        <h1 className="ConfirmSidebarRequest__title">
-          {t("New Signing Request")}
-        </h1>
-        <p className="ConfirmSidebarRequest__body">
-          {t(
-            "A new signing request arrived while you were reviewing another. Please review it carefully before approving.",
-          )}
-        </p>
         <div className="ConfirmSidebarRequest__buttons">
           <Button
             size="md"
-            variant="secondary"
+            variant="tertiary"
             onClick={handleReject}
             isFullWidth
           >
@@ -51,11 +53,11 @@ export const ConfirmSidebarRequest = () => {
           </Button>
           <Button
             size="md"
-            variant="primary"
+            variant="secondary"
             onClick={handleReview}
             isFullWidth
           >
-            {t("Review Request")}
+            {t("Continue to review")}
           </Button>
         </div>
       </div>
