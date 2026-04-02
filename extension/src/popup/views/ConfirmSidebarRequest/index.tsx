@@ -16,12 +16,27 @@ export const ConfirmSidebarRequest = () => {
   const params = new URLSearchParams(location.search);
   const next = params.get("next") || "";
 
-  const handleReview = () => {
-    if (next) {
-      navigate(next);
+  // Only allow safe, in-extension routes for "next"; fall back to account route.
+  const isValidNextRoute = (value: string) => {
+    if (!value) {
+      return false;
     }
+    // Require a single leading "/" (internal path), disallow "//" and any URI scheme.
+    if (!value.startsWith("/") || value.startsWith("//")) {
+      return false;
+    }
+    // Disallow strings that look like they start with a URI scheme (e.g., "http:", "javascript:").
+    if (/^[a-zA-Z][a-zA-Z0-9+\-.]*:/.test(value)) {
+      return false;
+    }
+    return true;
   };
 
+  const safeNext = isValidNextRoute(next) ? next : ROUTES.account;
+
+  const handleReview = () => {
+    navigate(safeNext);
+  };
   const handleReject = () => {
     navigate(ROUTES.account);
   };
