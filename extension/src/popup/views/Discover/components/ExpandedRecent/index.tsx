@@ -38,7 +38,7 @@ export const ExpandedRecent = ({
         customBackAction={onBack}
         rightButton={
           <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-            <PopoverTrigger asChild onClick={() => setIsPopoverOpen(true)}>
+            <PopoverTrigger asChild>
               <button
                 className="ExpandedRecent__menu-trigger"
                 data-testid="expanded-recent-menu"
