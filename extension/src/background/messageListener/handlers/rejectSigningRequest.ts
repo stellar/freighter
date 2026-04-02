@@ -48,7 +48,7 @@ export const rejectSigningRequest = ({
 
   if (!uuid) {
     captureException("rejectSigningRequest: missing uuid in request");
-    return;
+    return {};
   }
 
   // Resolve (reject) the dapp's pending promise
@@ -74,4 +74,6 @@ export const rejectSigningRequest = ({
 
   const tokenIndex = tokenQueue.findIndex((item) => item.uuid === uuid);
   if (tokenIndex !== -1) tokenQueue.splice(tokenIndex, 1);
+
+  return {};
 };
