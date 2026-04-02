@@ -3,7 +3,7 @@ import {
   setSidebarPort,
   clearSidebarPort,
   getSidebarPort,
-} from "background/messageListener/freighterApiMessageListener";
+} from "background/helpers/sidebarPort";
 import {
   clearSidebarWindowId,
   responseQueue,

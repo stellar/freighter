@@ -71,24 +71,16 @@ import {
 } from "./popupMessageListener";
 import { QUEUE_ITEM_TTL_MS } from "background/helpers/queueCleanup";
 
-// Long-lived port to the sidebar, set by initSidebarConnectionListener
-let sidebarPort: browser.Runtime.Port | null = null;
-
-export const setSidebarPort = (port: browser.Runtime.Port) => {
-  sidebarPort = port;
-};
-export const clearSidebarPort = () => {
-  sidebarPort = null;
-};
-export const getSidebarPort = () => sidebarPort;
+import { getSidebarPort } from "background/helpers/sidebarPort";
 
 const openSigningWindow = async (hashRoute: string, width?: number) => {
   const sidebarWindowId = getSidebarWindowId();
   if (sidebarWindowId !== null) {
     // Send navigation directly to the sidebar via its long-lived port
     // instead of broadcasting to all extension listeners
-    if (sidebarPort) {
-      sidebarPort.postMessage({ type: SIDEBAR_NAVIGATE, route: hashRoute });
+    const currentPort = getSidebarPort();
+    if (currentPort) {
+      currentPort.postMessage({ type: SIDEBAR_NAVIGATE, route: hashRoute });
     }
     try {
       if ((browser as any).sidebarAction) {

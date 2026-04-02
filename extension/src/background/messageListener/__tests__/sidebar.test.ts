@@ -4,7 +4,7 @@ import {
   setSidebarPort,
   clearSidebarPort,
   getSidebarPort,
-} from "background/messageListener/freighterApiMessageListener";
+} from "background/helpers/sidebarPort";
 
 // Mock chrome.sidePanel API
 const mockSetOptions = jest.fn().mockResolvedValue(undefined);

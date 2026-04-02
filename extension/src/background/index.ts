@@ -21,7 +21,7 @@ import {
   setSidebarPort,
   clearSidebarPort,
   getSidebarPort,
-} from "./messageListener/freighterApiMessageListener";
+} from "./helpers/sidebarPort";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
 import { SIDEBAR_PORT_NAME } from "popup/components/SidebarSigningListener";
 import { sidebarQueueUuids } from "./helpers/queueCleanup";
