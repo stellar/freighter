@@ -32,5 +32,6 @@ export const openSidebar = async () => {
     window.close();
   } catch (e) {
     console.error("Failed to open sidebar:", e);
+    window.close();
   }
 };

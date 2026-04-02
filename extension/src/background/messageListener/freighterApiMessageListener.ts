@@ -69,7 +69,10 @@ import {
   tokenQueue,
   transactionQueue,
 } from "./popupMessageListener";
-import { QUEUE_ITEM_TTL_MS, sidebarQueueUuids } from "background/helpers/queueCleanup";
+import {
+  QUEUE_ITEM_TTL_MS,
+  sidebarQueueUuids,
+} from "background/helpers/queueCleanup";
 
 // Long-lived port to the sidebar, set by initSidebarConnectionListener
 let sidebarPort: browser.Runtime.Port | null = null;
@@ -781,24 +784,28 @@ export const freighterApiMessageListener = (
     const uuid = crypto.randomUUID();
     const encodeOrigin = encodeObject({ tab, url: tabUrl, uuid });
 
-    await openSigningWindow(`/grant-access?${encodeOrigin}`, 400);
+    const popup = await openSigningWindow(`/grant-access?${encodeOrigin}`, 400);
 
     return new Promise((resolve) => {
       let resolved = false;
       const safeResolve = (value: any) => {
         if (resolved) return;
         resolved = true;
+        sidebarQueueUuids.delete(uuid);
         resolve(value);
       };
 
-      setTimeout(
-        () =>
-          safeResolve({
-            apiError: FreighterApiDeclinedError,
-            error: FreighterApiDeclinedError.message,
-          }),
-        QUEUE_ITEM_TTL_MS,
-      );
+      if (popup === null) {
+        sidebarQueueUuids.add(uuid);
+        setTimeout(
+          () =>
+            safeResolve({
+              apiError: FreighterApiDeclinedError,
+              error: FreighterApiDeclinedError.message,
+            }),
+          QUEUE_ITEM_TTL_MS,
+        );
+      }
       const response = async (url?: string) => {
         // queue it up, we'll let user confirm the url looks okay and then we'll say it's okay
         if (url === tabUrl) {

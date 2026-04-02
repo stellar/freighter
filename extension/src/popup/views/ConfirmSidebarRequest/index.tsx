@@ -5,6 +5,8 @@ import { Button, Icon } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
 import { View } from "popup/basics/layout/View";
+import { rejectAccess as internalRejectAccess } from "@shared/api/internal";
+import { parsedSearchParam } from "helpers/urls";
 
 import "./styles.scss";
 
@@ -37,7 +39,21 @@ export const ConfirmSidebarRequest = () => {
   const handleReview = () => {
     navigate(safeNext);
   };
-  const handleReject = () => {
+  const handleReject = async () => {
+    // Extract the UUID from the incoming request's encoded route so we can
+    // explicitly reject it, preventing the dapp's promise from hanging.
+    try {
+      const nextRoute = isValidNextRoute(next) ? next : "";
+      const queryString = nextRoute.split("?")[1] || "";
+      if (queryString) {
+        const parsed = parsedSearchParam(queryString);
+        if (parsed.uuid) {
+          await internalRejectAccess({ uuid: parsed.uuid });
+        }
+      }
+    } catch {
+      // Best-effort — navigate home regardless
+    }
     navigate(ROUTES.account);
   };
 
