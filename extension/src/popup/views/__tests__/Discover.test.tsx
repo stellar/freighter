@@ -172,6 +172,43 @@ describe("Discover", () => {
     });
   });
 
+  describe("error state", () => {
+    it("shows error screen with retry when API fails", async () => {
+      jest
+        .spyOn(ApiInternal, "getDiscoverData")
+        .mockRejectedValue(new Error("Network error"));
+
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("discover-error")).toBeInTheDocument();
+      });
+
+      expect(screen.getByText("Unable to fetch protocols")).toBeInTheDocument();
+    });
+
+    it("retries fetching data when Refresh is clicked", async () => {
+      const getDiscoverSpy = jest
+        .spyOn(ApiInternal, "getDiscoverData")
+        .mockRejectedValueOnce(new Error("Network error"))
+        .mockResolvedValueOnce(mockProtocols);
+
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("discover-error")).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByTestId("discover-error-retry"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("trending-carousel")).toBeInTheDocument();
+      });
+
+      expect(getDiscoverSpy).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe("open protocol", () => {
     it("saves to recents before opening a new tab", async () => {
       renderDiscover();

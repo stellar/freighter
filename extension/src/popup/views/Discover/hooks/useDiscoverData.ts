@@ -105,5 +105,6 @@ export const useDiscoverData = () => {
     recentItems,
     dappsItems,
     refreshRecent,
+    retry: fetchData,
   };
 };
