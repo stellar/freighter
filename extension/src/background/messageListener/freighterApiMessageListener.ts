@@ -69,10 +69,7 @@ import {
   tokenQueue,
   transactionQueue,
 } from "./popupMessageListener";
-import {
-  QUEUE_ITEM_TTL_MS,
-  sidebarQueueUuids,
-} from "background/helpers/queueCleanup";
+import { QUEUE_ITEM_TTL_MS } from "background/helpers/queueCleanup";
 
 // Long-lived port to the sidebar, set by initSidebarConnectionListener
 let sidebarPort: browser.Runtime.Port | null = null;
@@ -112,6 +109,25 @@ const openSigningWindow = async (hashRoute: string, width?: number) => {
     ...(width !== undefined ? { width } : {}),
   });
 };
+
+/** Reject the dapp's pending request when the popup window is closed. */
+const rejectOnWindowClose = (
+  windowId: number,
+  safeResolve: (value: any) => void,
+  rejectValue: Record<string, unknown> = {
+    apiError: FreighterApiDeclinedError,
+    error: FreighterApiDeclinedError.message,
+  },
+) => {
+  const onWindowRemoved = (removedWindowId: number) => {
+    if (removedWindowId === windowId) {
+      browser.windows.onRemoved.removeListener(onWindowRemoved);
+      safeResolve(rejectValue);
+    }
+  };
+  browser.windows.onRemoved.addListener(onWindowRemoved);
+};
+
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 
 interface WindowParams {
@@ -161,12 +177,10 @@ export const freighterApiMessageListener = (
       const safeResolve = (value: any) => {
         if (resolved) return;
         resolved = true;
-        sidebarQueueUuids.delete(uuid);
         resolve(value);
       };
 
       if (popup === null) {
-        sidebarQueueUuids.add(uuid);
         setTimeout(
           () =>
             safeResolve({
@@ -269,7 +283,6 @@ export const freighterApiMessageListener = (
         const safeResolve = (value: any) => {
           if (resolved) return;
           resolved = true;
-          sidebarQueueUuids.delete(uuid);
           resolve(value);
         };
 
@@ -277,18 +290,10 @@ export const freighterApiMessageListener = (
           safeResolve({
             apiError: FreighterApiInternalError,
           });
-        } else if (popup === null) {
-          sidebarQueueUuids.add(uuid);
-        } else {
-          const onWindowRemoved = (removedWindowId: number) => {
-            if (removedWindowId === popup.id) {
-              browser.windows.onRemoved.removeListener(onWindowRemoved);
-              safeResolve({
-                apiError: FreighterApiDeclinedError,
-              });
-            }
-          };
-          browser.windows.onRemoved.addListener(onWindowRemoved);
+        } else if (popup !== null) {
+          rejectOnWindowClose(popup.id!, safeResolve, {
+            apiError: FreighterApiDeclinedError,
+          });
         }
         const response = (success: boolean) => {
           if (success) {
@@ -431,7 +436,6 @@ export const freighterApiMessageListener = (
         const safeResolve = (value: any) => {
           if (resolved) return;
           resolved = true;
-          sidebarQueueUuids.delete(uuid);
           resolve(value);
         };
 
@@ -442,7 +446,6 @@ export const freighterApiMessageListener = (
             error: FreighterApiInternalError.message,
           });
         } else if (popup === null) {
-          sidebarQueueUuids.add(uuid);
           setTimeout(
             () =>
               safeResolve({
@@ -452,17 +455,7 @@ export const freighterApiMessageListener = (
             QUEUE_ITEM_TTL_MS,
           );
         } else {
-          const onWindowRemoved = (removedWindowId: number) => {
-            if (removedWindowId === popup.id) {
-              browser.windows.onRemoved.removeListener(onWindowRemoved);
-              safeResolve({
-                // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
-                apiError: FreighterApiDeclinedError,
-                error: FreighterApiDeclinedError.message,
-              });
-            }
-          };
-          browser.windows.onRemoved.addListener(onWindowRemoved);
+          rejectOnWindowClose(popup.id!, safeResolve);
         }
         const response = (
           signedTransaction: string,
@@ -526,7 +519,6 @@ export const freighterApiMessageListener = (
         const safeResolve = (value: any) => {
           if (resolved) return;
           resolved = true;
-          sidebarQueueUuids.delete(uuid);
           resolve(value);
         };
 
@@ -537,7 +529,6 @@ export const freighterApiMessageListener = (
             error: FreighterApiInternalError.message,
           });
         } else if (popup === null) {
-          sidebarQueueUuids.add(uuid);
           setTimeout(
             () =>
               safeResolve({
@@ -547,17 +538,7 @@ export const freighterApiMessageListener = (
             QUEUE_ITEM_TTL_MS,
           );
         } else {
-          const onWindowRemoved = (removedWindowId: number) => {
-            if (removedWindowId === popup.id) {
-              browser.windows.onRemoved.removeListener(onWindowRemoved);
-              safeResolve({
-                // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
-                apiError: FreighterApiDeclinedError,
-                error: FreighterApiDeclinedError.message,
-              });
-            }
-          };
-          browser.windows.onRemoved.addListener(onWindowRemoved);
+          rejectOnWindowClose(popup.id!, safeResolve);
         }
 
         const response = (
@@ -635,7 +616,6 @@ export const freighterApiMessageListener = (
         const safeResolve = (value: any) => {
           if (resolved) return;
           resolved = true;
-          sidebarQueueUuids.delete(uuid);
           resolve(value);
         };
 
@@ -646,7 +626,6 @@ export const freighterApiMessageListener = (
             error: FreighterApiInternalError.message,
           });
         } else if (popup === null) {
-          sidebarQueueUuids.add(uuid);
           setTimeout(
             () =>
               safeResolve({
@@ -656,17 +635,7 @@ export const freighterApiMessageListener = (
             QUEUE_ITEM_TTL_MS,
           );
         } else {
-          const onWindowRemoved = (removedWindowId: number) => {
-            if (removedWindowId === popup.id) {
-              browser.windows.onRemoved.removeListener(onWindowRemoved);
-              safeResolve({
-                // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
-                apiError: FreighterApiDeclinedError,
-                error: FreighterApiDeclinedError.message,
-              });
-            }
-          };
-          browser.windows.onRemoved.addListener(onWindowRemoved);
+          rejectOnWindowClose(popup.id!, safeResolve);
         }
         const response = (
           signedAuthEntry: SignAuthEntryResponse,
@@ -791,12 +760,10 @@ export const freighterApiMessageListener = (
       const safeResolve = (value: any) => {
         if (resolved) return;
         resolved = true;
-        sidebarQueueUuids.delete(uuid);
         resolve(value);
       };
 
       if (popup === null) {
-        sidebarQueueUuids.add(uuid);
         setTimeout(
           () =>
             safeResolve({

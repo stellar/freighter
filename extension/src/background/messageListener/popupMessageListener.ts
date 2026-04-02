@@ -27,7 +27,9 @@ import { publicKeySelector } from "background/ducks/session";
 import {
   startQueueCleanup,
   activeQueueUuids,
+  sidebarQueueUuids,
 } from "background/helpers/queueCleanup";
+import { getSidebarPort } from "./freighterApiMessageListener";
 
 import { fundAccount } from "./handlers/fundAccount";
 import { createAccount } from "./handlers/createAccount";
@@ -578,8 +580,12 @@ export const popupMessageListener = (
       const { uuid, isActive } = request as MarkQueueActiveMessage;
       if (isActive) {
         activeQueueUuids.add(uuid);
+        if (getSidebarPort() !== null) {
+          sidebarQueueUuids.add(uuid);
+        }
       } else {
         activeQueueUuids.delete(uuid);
+        sidebarQueueUuids.delete(uuid);
       }
       return {};
     }
