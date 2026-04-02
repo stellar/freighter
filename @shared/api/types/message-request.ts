@@ -450,6 +450,11 @@ export interface OpenSidebarMessage extends BaseMessage {
   windowId: number;
 }
 
+export interface RejectSigningRequestMessage extends BaseMessage {
+  type: SERVICE_TYPES.REJECT_SIGNING_REQUEST;
+  uuid: string;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -515,4 +520,5 @@ export type ServiceMessageRequest =
   | ChangeCollectibleVisibilityMessage
   | GetHiddenCollectiblesMessage
   | MarkQueueActiveMessage
-  | OpenSidebarMessage;
+  | OpenSidebarMessage
+  | RejectSigningRequestMessage;

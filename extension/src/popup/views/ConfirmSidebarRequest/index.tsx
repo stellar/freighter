@@ -5,7 +5,7 @@ import { Button, Icon } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
 import { View } from "popup/basics/layout/View";
-import { rejectAccess as internalRejectAccess } from "@shared/api/internal";
+import { rejectSigningRequest } from "@shared/api/internal";
 import { parsedSearchParam } from "helpers/urls";
 
 import "./styles.scss";
@@ -40,15 +40,17 @@ export const ConfirmSidebarRequest = () => {
     navigate(safeNext);
   };
   const handleReject = async () => {
-    // Extract the UUID from the incoming request's encoded route so we can
-    // explicitly reject it, preventing the dapp's promise from hanging.
+    // Extract the UUID from the incoming request's encoded route and reject it
+    // via a dedicated handler that cleans up ALL queues (responseQueue,
+    // transactionQueue, blobQueue, authEntryQueue, tokenQueue) so the dapp's
+    // promise resolves immediately instead of hanging until the TTL fires.
     try {
       const nextRoute = isValidNextRoute(next) ? next : "";
       const queryString = nextRoute.split("?")[1] || "";
       if (queryString) {
         const parsed = parsedSearchParam(queryString);
         if (parsed.uuid) {
-          await internalRejectAccess({ uuid: parsed.uuid });
+          await rejectSigningRequest({ uuid: parsed.uuid });
         }
       }
     } catch {

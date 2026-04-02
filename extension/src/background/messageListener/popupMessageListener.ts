@@ -55,6 +55,7 @@ import { signTransaction } from "./handlers/signTransaction";
 import { signBlob } from "./handlers/signBlob";
 import { signAuthEntry } from "./handlers/signAuthEntry";
 import { rejectTransaction } from "./handlers/rejectTransaction";
+import { rejectSigningRequest } from "./handlers/rejectSigningRequest";
 import { signFreighterTransaction } from "./handlers/signFreighterTransaction";
 import { addRecentAddress } from "./handlers/addRecentAddress";
 import { loadRecentAddresses } from "./handlers/loadRecentAddresses";
@@ -348,6 +349,16 @@ export const popupMessageListener = (
         request,
         responseQueue,
         transactionQueue,
+      });
+    }
+    case SERVICE_TYPES.REJECT_SIGNING_REQUEST: {
+      return rejectSigningRequest({
+        request,
+        responseQueue,
+        transactionQueue,
+        blobQueue,
+        authEntryQueue,
+        tokenQueue,
       });
     }
     case SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION: {
