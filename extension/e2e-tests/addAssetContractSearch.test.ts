@@ -1,3 +1,4 @@
+import { Page } from "@playwright/test";
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
@@ -11,9 +12,7 @@ import {
  * Stub the Stellar Expert asset search to return a mix of classic assets
  * and contract IDs, matching the updated API payload format.
  */
-const stubAssetSearchWithContractId = async (
-  page: import("@playwright/test").Page,
-) => {
+const stubAssetSearchWithContractId = async (page: Page) => {
   await page.route("**/asset?search**", async (route) => {
     const json = {
       _embedded: {
@@ -36,9 +35,7 @@ const stubAssetSearchWithContractId = async (
  * Stub account balances to include the E2E test token so it appears
  * as already added.
  */
-const stubAccountBalancesWithTestToken = async (
-  page: import("@playwright/test").Page,
-) => {
+const stubAccountBalancesWithTestToken = async (page: Page) => {
   const e2eAssetCode = `E2E:${TEST_TOKEN_ADDRESS}`;
   await page.route("**/account-balances/**", async (route) => {
     const json = {
@@ -103,6 +100,14 @@ const stubAccountBalancesWithTestToken = async (
   });
 };
 
+/**
+ * Helper to locate a ManageAssetRow by its exact asset code.
+ */
+const getAssetRow = (page: Page, code: string) =>
+  page.getByTestId("ManageAssetRow").filter({
+    has: page.getByTestId("ManageAssetCode").getByText(code, { exact: true }),
+  });
+
 test("Stellar Expert contract ID result shows as already added", async ({
   page,
   extensionId,
@@ -115,7 +120,6 @@ test("Stellar Expert contract ID result shows as already added", async ({
     extensionId,
     context,
     stubOverrides: async () => {
-      // Override the default asset search and balances stubs
       await stubAssetSearchWithContractId(page);
       await stubAccountBalancesWithTestToken(page);
       await stubTokenDetails(page);
@@ -157,7 +161,6 @@ test("Stellar Expert contract ID result shows Add when not owned", async ({
     extensionId,
     context,
     stubOverrides: async () => {
-      // Use default balances (no E2E token) but search returns a contract ID
       await stubAssetSearchWithContractId(page);
       await stubTokenDetails(page);
       await stubIsSac(page);
@@ -179,8 +182,8 @@ test("Stellar Expert contract ID result shows Add when not owned", async ({
   const rows = page.getByTestId("ManageAssetRow");
   await expect(rows.first()).toBeVisible({ timeout: 10000 });
 
-  // Find the row for the contract-ID asset (E2E token)
-  const e2eRow = rows.filter({ hasText: "E2E" });
+  // Find the E2E token row by its exact asset code
+  const e2eRow = getAssetRow(page, "E2E");
   await expect(e2eRow).toBeVisible();
 
   // The button should say "Add" since the user does not have this token
@@ -200,7 +203,6 @@ test("Can add a token returned as contract ID from Stellar Expert search", async
     extensionId,
     context,
     stubOverrides: async () => {
-      // Search returns a contract ID, user does not own it yet
       await stubAssetSearchWithContractId(page);
       await stubTokenDetails(page);
       await stubIsSac(page);
@@ -222,8 +224,8 @@ test("Can add a token returned as contract ID from Stellar Expert search", async
   const rows = page.getByTestId("ManageAssetRow");
   await expect(rows.first()).toBeVisible({ timeout: 10000 });
 
-  // Find the E2E token row and click Add
-  const e2eRow = rows.filter({ hasText: "E2E" });
+  // Find the E2E token row by its exact asset code and click Add
+  const e2eRow = getAssetRow(page, "E2E");
   await expect(e2eRow).toBeVisible();
   await e2eRow.getByTestId("ManageAssetRowButton").click();
 

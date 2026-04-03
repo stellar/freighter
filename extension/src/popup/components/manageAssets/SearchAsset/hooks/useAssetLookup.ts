@@ -32,6 +32,10 @@ interface AssetRecord {
   tomlInfo?: { image: string };
 }
 
+type StellarExpertResult =
+  | { type: "classic"; row: ManageAssetCurrency }
+  | { type: "contract"; contractId: string };
+
 interface AssetLookupDetails {
   isVerifiedToken: boolean;
   isVerificationInfoShowing: boolean;
@@ -257,10 +261,11 @@ const useAssetLookup = () => {
 
   /*
    * Fetches data from Stellar Expert for the given asset.
-   * It returns an array of ManageAssetCurrency objects.
+   * Returns a discriminated union: classic assets are returned as ready-to-render
+   * rows, while contract IDs are returned as-is for further lookup via fetchTokenData.
    *
    * @param {string} asset - The asset to look up.
-   * @returns {Promise<ManageAssetCurrency[]>}
+   * @returns {Promise<StellarExpertResult[]>}
    */
   const fetchStellarExpertData = async ({
     asset,
@@ -270,7 +275,7 @@ const useAssetLookup = () => {
     asset: string;
     networkDetails: NetworkDetails;
     signal: AbortSignal;
-  }): Promise<ManageAssetCurrency[]> => {
+  }): Promise<StellarExpertResult[]> => {
     const resJson = await searchAsset({
       asset,
       networkDetails,
@@ -282,25 +287,23 @@ const useAssetLookup = () => {
       throw new Error("Failed to fetch Stellar Expert data");
     });
 
-    return resJson._embedded.records.map((record: AssetRecord) => {
-      if (isContractId(record.asset)) {
+    return resJson._embedded.records.map(
+      (record: AssetRecord): StellarExpertResult => {
+        if (isContractId(record.asset)) {
+          return { type: "contract", contractId: record.asset };
+        }
         return {
-          code: "",
-          issuer: "",
-          contract: record.asset,
-          domain: record.domain,
-          image: record.tomlInfo?.image,
-          isSuspicious: false,
+          type: "classic",
+          row: {
+            code: record.asset.split("-")[0],
+            issuer: record.asset.split("-")[1],
+            domain: record.domain ?? null,
+            image: record.tomlInfo?.image,
+            isSuspicious: false,
+          },
         };
-      }
-      return {
-        code: record.asset.split("-")[0],
-        issuer: record.asset.split("-")[1],
-        domain: record.domain,
-        image: record.tomlInfo?.image,
-        isSuspicious: false,
-      };
-    });
+      },
+    );
   };
 
   /*
@@ -397,34 +400,40 @@ const useAssetLookup = () => {
 
         // Stellar Expert may return contract IDs alongside classic assets.
         // Route contract-ID results through the token lookup flow.
-        const classicResults: ManageAssetCurrency[] = [];
-        const contractResults: ManageAssetCurrency[] = [];
-        for (const row of expertResults) {
-          if (row.contract && !row.issuer) {
-            contractResults.push(row);
+        const classicRows: ManageAssetCurrency[] = [];
+        const contractIds: string[] = [];
+        for (const result of expertResults) {
+          if (result.type === "contract") {
+            contractIds.push(result.contractId);
           } else {
-            classicResults.push(row);
+            classicRows.push(result.row);
           }
         }
 
-        assetRows = classicResults;
+        assetRows = classicRows;
 
-        for (const contractRow of contractResults) {
-          try {
-            const tokenRows = await fetchTokenData(
-              publicKey,
-              contractRow.contract!,
-              isAllowListVerificationEnabled,
-              networkDetails,
-              assetsListsData,
-              signal,
-            );
-            assetRows = assetRows.concat(tokenRows);
-          } catch (e) {
-            captureException(
-              `Failed to fetch token details for contract ${contractRow.contract} - ${JSON.stringify(e)}`,
-            );
-            console.error(e);
+        if (contractIds.length) {
+          const tokenResults = await Promise.allSettled(
+            contractIds.map((id) =>
+              fetchTokenData(
+                publicKey,
+                id,
+                isAllowListVerificationEnabled,
+                networkDetails,
+                assetsListsData,
+                signal,
+              ),
+            ),
+          );
+          for (const result of tokenResults) {
+            if (result.status === "fulfilled") {
+              assetRows = assetRows.concat(result.value);
+            } else {
+              captureException(
+                `Failed to fetch token details for contract - ${JSON.stringify(result.reason)}`,
+              );
+              console.error(result.reason);
+            }
           }
         }
       } catch (error) {
