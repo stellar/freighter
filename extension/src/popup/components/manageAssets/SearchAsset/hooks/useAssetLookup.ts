@@ -282,13 +282,25 @@ const useAssetLookup = () => {
       throw new Error("Failed to fetch Stellar Expert data");
     });
 
-    return resJson._embedded.records.map((record: AssetRecord) => ({
-      code: record.asset.split("-")[0],
-      issuer: record.asset.split("-")[1],
-      domain: record.domain,
-      image: record.tomlInfo?.image,
-      isSuspicious: false,
-    }));
+    return resJson._embedded.records.map((record: AssetRecord) => {
+      if (isContractId(record.asset)) {
+        return {
+          code: "",
+          issuer: "",
+          contract: record.asset,
+          domain: record.domain,
+          image: record.tomlInfo?.image,
+          isSuspicious: false,
+        };
+      }
+      return {
+        code: record.asset.split("-")[0],
+        issuer: record.asset.split("-")[1],
+        domain: record.domain,
+        image: record.tomlInfo?.image,
+        isSuspicious: false,
+      };
+    });
   };
 
   /*
@@ -377,11 +389,44 @@ const useAssetLookup = () => {
     } else {
       // otherwise, try to use stellar.expert to search for a classic asset
       try {
-        assetRows = await fetchStellarExpertData({
+        const expertResults = await fetchStellarExpertData({
           asset,
           networkDetails,
           signal,
         });
+
+        // Stellar Expert may return contract IDs alongside classic assets.
+        // Route contract-ID results through the token lookup flow.
+        const classicResults: ManageAssetCurrency[] = [];
+        const contractResults: ManageAssetCurrency[] = [];
+        for (const row of expertResults) {
+          if (row.contract && !row.issuer) {
+            contractResults.push(row);
+          } else {
+            classicResults.push(row);
+          }
+        }
+
+        assetRows = classicResults;
+
+        for (const contractRow of contractResults) {
+          try {
+            const tokenRows = await fetchTokenData(
+              publicKey,
+              contractRow.contract!,
+              isAllowListVerificationEnabled,
+              networkDetails,
+              assetsListsData,
+              signal,
+            );
+            assetRows = assetRows.concat(tokenRows);
+          } catch (e) {
+            captureException(
+              `Failed to fetch token details for contract ${contractRow.contract} - ${JSON.stringify(e)}`,
+            );
+            console.error(e);
+          }
+        }
       } catch (error) {
         captureException(
           `Failed to fetch StellarExpert data - ${JSON.stringify(error)}`,
