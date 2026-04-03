@@ -96,7 +96,9 @@ Shows "New Signing Request" with two options:
 
 **File:** `src/background/helpers/queueCleanup.ts`
 
-`sidebarQueueUuids: Set<string>` tracks which signing requests were routed to the sidebar. When the sidebar disconnects (and doesn't reconnect within 500ms), only these UUIDs are rejected — standalone popup requests have their own `onWindowRemoved` cleanup.
+`sidebarQueueUuids: Set<string>` tracks which signing requests were routed to the sidebar. UUIDs are added at routing time in `openSigningWindow()` (in `freighterApiMessageListener.ts`) when the sidebar path is chosen — not at view mount time. This ensures requests behind the `ConfirmSidebarRequest` interstitial are tracked before the signing view mounts.
+
+When the sidebar disconnects (and doesn't reconnect within 500ms), only these UUIDs are rejected — standalone popup requests have their own `onWindowRemoved` cleanup. The disconnect cleanup only fires when the disconnecting port is the currently active sidebar port; stale port disconnects are ignored.
 
 ## Key Constants
 
