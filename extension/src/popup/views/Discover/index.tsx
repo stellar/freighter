@@ -1,8 +1,15 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ProtocolEntry } from "@shared/api/types";
+import {
+  trackDiscoverViewed,
+  trackDiscoverProtocolOpened,
+  trackDiscoverProtocolOpenedFromDetails,
+  DiscoverSource,
+  DISCOVER_SOURCE,
+} from "popup/metrics/discover";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { openTab } from "popup/helpers/navigate";
@@ -34,6 +41,9 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
   const [activeView, setActiveView] = useState<DiscoverView>("main");
   const [selectedProtocol, setSelectedProtocol] =
     useState<ProtocolEntry | null>(null);
+  const [selectedSource, setSelectedSource] = useState<DiscoverSource>(
+    DISCOVER_SOURCE.DAPPS_LIST,
+  );
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const {
@@ -47,8 +57,13 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
   } = useDiscoverData();
   const { showWelcome, dismissWelcome } = useDiscoverWelcome();
 
+  useEffect(() => {
+    trackDiscoverViewed();
+  }, []);
+
   const handleOpenProtocol = useCallback(
-    async (protocol: ProtocolEntry) => {
+    async (protocol: ProtocolEntry, source: DiscoverSource) => {
+      trackDiscoverProtocolOpened(protocol.name, protocol.websiteUrl, source);
       await addRecentProtocol(protocol.websiteUrl);
       await refreshRecent();
       openTab(protocol.websiteUrl);
@@ -56,21 +71,29 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
     [refreshRecent],
   );
 
-  const handleRowClick = useCallback((protocol: ProtocolEntry) => {
-    setSelectedProtocol(protocol);
-    setIsDetailsOpen(true);
-  }, []);
+  const handleRowClick = useCallback(
+    (protocol: ProtocolEntry, source: DiscoverSource) => {
+      setSelectedProtocol(protocol);
+      setSelectedSource(source);
+      setIsDetailsOpen(true);
+    },
+    [],
+  );
 
   const handleDetailsOpen = useCallback(
     async (protocol: ProtocolEntry) => {
+      trackDiscoverProtocolOpenedFromDetails(
+        protocol.name,
+        protocol.websiteUrl,
+      );
       setIsDetailsOpen(false);
       // Wait for the SlideupModal close animation before clearing state
       setTimeout(async () => {
         setSelectedProtocol(null);
-        await handleOpenProtocol(protocol);
+        await handleOpenProtocol(protocol, selectedSource);
       }, 200);
     },
-    [handleOpenProtocol],
+    [handleOpenProtocol, selectedSource],
   );
 
   const handleClearRecent = useCallback(async () => {
@@ -114,17 +137,33 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
           onClose={onClose}
           onExpandRecent={() => setActiveView("recent")}
           onExpandDapps={() => setActiveView("dapps")}
-          onCardClick={handleRowClick}
-          onRowClick={handleRowClick}
-          onOpenClick={handleOpenProtocol}
+          onCardClick={(p: ProtocolEntry) =>
+            handleRowClick(p, DISCOVER_SOURCE.TRENDING_CAROUSEL)
+          }
+          onRecentRowClick={(p: ProtocolEntry) =>
+            handleRowClick(p, DISCOVER_SOURCE.RECENT_LIST)
+          }
+          onDappsRowClick={(p: ProtocolEntry) =>
+            handleRowClick(p, DISCOVER_SOURCE.DAPPS_LIST)
+          }
+          onOpenRecentClick={(p: ProtocolEntry) =>
+            handleOpenProtocol(p, DISCOVER_SOURCE.RECENT_LIST)
+          }
+          onOpenDappsClick={(p: ProtocolEntry) =>
+            handleOpenProtocol(p, DISCOVER_SOURCE.DAPPS_LIST)
+          }
         />
       )}
       {activeView === "recent" && (
         <ExpandedRecent
           items={recentItems}
           onBack={() => setActiveView("main")}
-          onRowClick={handleRowClick}
-          onOpenClick={handleOpenProtocol}
+          onRowClick={(p: ProtocolEntry) =>
+            handleRowClick(p, DISCOVER_SOURCE.EXPANDED_RECENT_LIST)
+          }
+          onOpenClick={(p) =>
+            handleOpenProtocol(p, DISCOVER_SOURCE.EXPANDED_RECENT_LIST)
+          }
           onClearRecent={handleClearRecent}
         />
       )}
@@ -132,8 +171,12 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
         <ExpandedDapps
           items={dappsItems}
           onBack={() => setActiveView("main")}
-          onRowClick={handleRowClick}
-          onOpenClick={handleOpenProtocol}
+          onRowClick={(p: ProtocolEntry) =>
+            handleRowClick(p, DISCOVER_SOURCE.EXPANDED_DAPPS_LIST)
+          }
+          onOpenClick={(p) =>
+            handleOpenProtocol(p, DISCOVER_SOURCE.EXPANDED_DAPPS_LIST)
+          }
         />
       )}
 

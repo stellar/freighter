@@ -17,8 +17,10 @@ interface DiscoverHomeProps {
   onExpandRecent: () => void;
   onExpandDapps: () => void;
   onCardClick: (protocol: ProtocolEntry) => void;
-  onRowClick: (protocol: ProtocolEntry) => void;
-  onOpenClick: (protocol: ProtocolEntry) => void;
+  onRecentRowClick: (protocol: ProtocolEntry) => void;
+  onDappsRowClick: (protocol: ProtocolEntry) => void;
+  onOpenRecentClick: (protocol: ProtocolEntry) => void;
+  onOpenDappsClick: (protocol: ProtocolEntry) => void;
 }
 
 export const DiscoverHome = ({
@@ -29,8 +31,10 @@ export const DiscoverHome = ({
   onExpandRecent,
   onExpandDapps,
   onCardClick,
-  onRowClick,
-  onOpenClick,
+  onRecentRowClick,
+  onDappsRowClick,
+  onOpenRecentClick,
+  onOpenDappsClick,
 }: DiscoverHomeProps) => {
   const { t } = useTranslation();
 
@@ -48,15 +52,15 @@ export const DiscoverHome = ({
             title={t("Recent")}
             items={recentItems}
             onExpand={onExpandRecent}
-            onRowClick={onRowClick}
-            onOpenClick={onOpenClick}
+            onRowClick={onRecentRowClick}
+            onOpenClick={onOpenRecentClick}
           />
           <DiscoverSection
             title={t("dApps")}
             items={dappsItems}
             onExpand={onExpandDapps}
-            onRowClick={onRowClick}
-            onOpenClick={onOpenClick}
+            onRowClick={onDappsRowClick}
+            onOpenClick={onOpenDappsClick}
           />
         </div>
         {dappsItems.length > 0 && (

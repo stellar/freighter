@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ProtocolEntry } from "@shared/api/types";
+import { trackDiscoverProtocolDetailsViewed } from "popup/metrics/discover";
 
 import "./styles.scss";
 
@@ -24,6 +25,10 @@ export const ProtocolDetailsPanel = ({
   onOpen,
 }: ProtocolDetailsPanelProps) => {
   const { t } = useTranslation();
+
+  useEffect(() => {
+    trackDiscoverProtocolDetailsViewed(protocol.name, protocol.tags);
+  }, [protocol]);
 
   return (
     <div className="ProtocolDetailsPanel" data-testid="protocol-details-panel">

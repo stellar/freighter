@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Button, Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
+import { trackDiscoverWelcomeModalViewed } from "popup/metrics/discover";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 
 import "./styles.scss";
@@ -14,6 +15,10 @@ export const DiscoverWelcomeModal = ({
   onDismiss,
 }: DiscoverWelcomeModalProps) => {
   const { t } = useTranslation();
+
+  useEffect(() => {
+    trackDiscoverWelcomeModalViewed();
+  }, []);
 
   return (
     <>
