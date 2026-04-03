@@ -295,7 +295,7 @@ const useAssetLookup = () => {
       if (isContractId(record.asset)) {
         return {
           code: record.code || record.tomlInfo?.code || "",
-          issuer: record.tomlInfo?.issuer || record.asset,
+          issuer: record.asset,
           contract: record.asset,
           domain: record.domain ?? null,
           image: record.tomlInfo?.image,

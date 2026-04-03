@@ -106,7 +106,11 @@ export const stubAssetSearchWithContractId = async (page: Page) => {
             domain: "example.com",
             tomlInfo: {
               code: "E2E",
-              issuer: TEST_TOKEN_ADDRESS,
+              // Use a different address than the token contract to match real
+              // Stellar Expert responses where tomlInfo.issuer is the token
+              // issuer, not the token contract itself.
+              issuer:
+                "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
               name: "E2E Token",
               image: "",
             },
