@@ -100,6 +100,16 @@ export const stubAssetSearchWithContractId = async (page: Page) => {
           },
           {
             asset: TEST_TOKEN_ADDRESS,
+            code: "E2E",
+            token_name: "E2E Token",
+            decimals: 3,
+            domain: "example.com",
+            tomlInfo: {
+              code: "E2E",
+              issuer: TEST_TOKEN_ADDRESS,
+              name: "E2E Token",
+              image: "",
+            },
           },
         ],
       },

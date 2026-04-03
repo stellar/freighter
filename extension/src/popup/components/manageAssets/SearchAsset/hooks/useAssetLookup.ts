@@ -29,12 +29,16 @@ import { AppDispatch, store } from "popup/App";
 interface AssetRecord {
   asset: string;
   domain?: string;
-  tomlInfo?: { image: string };
+  code?: string;
+  token_name?: string;
+  decimals?: number;
+  tomlInfo?: {
+    image?: string;
+    code?: string;
+    issuer?: string;
+    name?: string;
+  };
 }
-
-type StellarExpertResult =
-  | { type: "classic"; row: ManageAssetCurrency }
-  | { type: "contract"; contractId: string };
 
 interface AssetLookupDetails {
   isVerifiedToken: boolean;
@@ -261,11 +265,11 @@ const useAssetLookup = () => {
 
   /*
    * Fetches data from Stellar Expert for the given asset.
-   * Returns a discriminated union: classic assets are returned as ready-to-render
-   * rows, while contract IDs are returned as-is for further lookup via fetchTokenData.
+   * Returns an array of ManageAssetCurrency objects for both classic
+   * ({code}-{issuer}) and contract ID results.
    *
    * @param {string} asset - The asset to look up.
-   * @returns {Promise<StellarExpertResult[]>}
+   * @returns {Promise<ManageAssetCurrency[]>}
    */
   const fetchStellarExpertData = async ({
     asset,
@@ -275,7 +279,7 @@ const useAssetLookup = () => {
     asset: string;
     networkDetails: NetworkDetails;
     signal: AbortSignal;
-  }): Promise<StellarExpertResult[]> => {
+  }): Promise<ManageAssetCurrency[]> => {
     const resJson = await searchAsset({
       asset,
       networkDetails,
@@ -287,23 +291,27 @@ const useAssetLookup = () => {
       throw new Error("Failed to fetch Stellar Expert data");
     });
 
-    return resJson._embedded.records.map(
-      (record: AssetRecord): StellarExpertResult => {
-        if (isContractId(record.asset)) {
-          return { type: "contract", contractId: record.asset };
-        }
+    return resJson._embedded.records.map((record: AssetRecord) => {
+      if (isContractId(record.asset)) {
         return {
-          type: "classic",
-          row: {
-            code: record.asset.split("-")[0],
-            issuer: record.asset.split("-")[1],
-            domain: record.domain ?? null,
-            image: record.tomlInfo?.image,
-            isSuspicious: false,
-          },
+          code: record.code || record.tomlInfo?.code || "",
+          issuer: record.tomlInfo?.issuer || record.asset,
+          contract: record.asset,
+          domain: record.domain ?? null,
+          image: record.tomlInfo?.image,
+          name: record.token_name || record.tomlInfo?.name,
+          decimals: record.decimals,
+          isSuspicious: false,
         };
-      },
-    );
+      }
+      return {
+        code: record.asset.split("-")[0],
+        issuer: record.asset.split("-")[1],
+        domain: record.domain ?? null,
+        image: record.tomlInfo?.image,
+        isSuspicious: false,
+      };
+    });
   };
 
   /*
@@ -392,50 +400,11 @@ const useAssetLookup = () => {
     } else {
       // otherwise, try to use stellar.expert to search for a classic asset
       try {
-        const expertResults = await fetchStellarExpertData({
+        assetRows = await fetchStellarExpertData({
           asset,
           networkDetails,
           signal,
         });
-
-        // Stellar Expert may return contract IDs alongside classic assets.
-        // Route contract-ID results through the token lookup flow.
-        const classicRows: ManageAssetCurrency[] = [];
-        const contractIds: string[] = [];
-        for (const result of expertResults) {
-          if (result.type === "contract") {
-            contractIds.push(result.contractId);
-          } else {
-            classicRows.push(result.row);
-          }
-        }
-
-        assetRows = classicRows;
-
-        if (contractIds.length) {
-          const tokenResults = await Promise.allSettled(
-            contractIds.map((id) =>
-              fetchTokenData(
-                publicKey,
-                id,
-                isAllowListVerificationEnabled,
-                networkDetails,
-                assetsListsData,
-                signal,
-              ),
-            ),
-          );
-          for (const result of tokenResults) {
-            if (result.status === "fulfilled") {
-              assetRows = assetRows.concat(result.value);
-            } else if (!signal.aborted) {
-              captureException(
-                `Failed to fetch token details for contract - ${JSON.stringify(result.reason)}`,
-              );
-              console.error(result.reason);
-            }
-          }
-        }
       } catch (error) {
         captureException(
           `Failed to fetch StellarExpert data - ${JSON.stringify(error)}`,
