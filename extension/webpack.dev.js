@@ -42,7 +42,6 @@ const devConfig = (env = {}) => ({
     new webpack.DefinePlugin({
       DEV_SERVER: true,
       DEV_EXTENSION: true,
-      BUILD_TYPE: JSON.stringify("development"),
     }),
     new webpack.NormalModuleReplacementPlugin(
       /webextension-polyfill/,
