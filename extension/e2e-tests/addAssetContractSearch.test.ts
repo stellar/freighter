@@ -190,3 +190,54 @@ test("Stellar Expert contract ID result shows Add when not owned", async ({
   const rowButton = e2eRow.getByTestId("ManageAssetRowButton");
   await expect(rowButton).toHaveText("Add");
 });
+
+test("Can add a token returned as contract ID from Stellar Expert search", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides: async () => {
+      // Search returns a contract ID, user does not own it yet
+      await stubAssetSearchWithContractId(page);
+      await stubTokenDetails(page);
+      await stubIsSac(page);
+      await stubScanAssetSafe(page);
+    },
+  });
+
+  await page.getByTestId("account-options-dropdown").click();
+  const manageAssets = page.getByText("Manage assets");
+  await expect(manageAssets).toBeVisible();
+  await manageAssets.click();
+
+  await expect(page.getByText("Your assets")).toBeVisible({ timeout: 10000 });
+  await page.getByText("Add an asset").click({ force: true });
+
+  await page.getByTestId("search-asset-input").fill("E2E");
+
+  // Wait for search results
+  const rows = page.getByTestId("ManageAssetRow");
+  await expect(rows.first()).toBeVisible({ timeout: 10000 });
+
+  // Find the E2E token row and click Add
+  const e2eRow = rows.filter({ hasText: "E2E" });
+  await expect(e2eRow).toBeVisible();
+  await e2eRow.getByTestId("ManageAssetRowButton").click();
+
+  // Should navigate to the Add Token confirmation page
+  await expect(page.getByTestId("ToggleToken__asset-code")).toHaveText(
+    "E2E Token",
+  );
+  await expect(page.getByTestId("ToggleToken__asset-add-remove")).toHaveText(
+    "Add Token",
+  );
+
+  // Confirm the add
+  await page.getByRole("button", { name: "Confirm" }).click();
+});
