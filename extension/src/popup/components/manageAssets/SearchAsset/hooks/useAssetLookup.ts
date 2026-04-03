@@ -428,7 +428,7 @@ const useAssetLookup = () => {
           for (const result of tokenResults) {
             if (result.status === "fulfilled") {
               assetRows = assetRows.concat(result.value);
-            } else {
+            } else if (!signal.aborted) {
               captureException(
                 `Failed to fetch token details for contract - ${JSON.stringify(result.reason)}`,
               );

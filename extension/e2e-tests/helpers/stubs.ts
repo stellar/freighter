@@ -89,6 +89,25 @@ export const stubAssetSearch = async (page: Page) => {
   });
 };
 
+export const stubAssetSearchWithContractId = async (page: Page) => {
+  await page.route("**/asset?search**", async (route) => {
+    const json = {
+      _embedded: {
+        records: [
+          {
+            asset:
+              "USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+          },
+          {
+            asset: TEST_TOKEN_ADDRESS,
+          },
+        ],
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
 export const stubHorizonAccounts = async (page: Page) => {
   await page.route("**/accounts/**", async (route) => {
     await route.fulfill({

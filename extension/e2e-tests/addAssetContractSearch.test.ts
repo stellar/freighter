@@ -1,104 +1,13 @@
 import { Page } from "@playwright/test";
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
-import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 import {
   stubTokenDetails,
   stubIsSac,
   stubScanAssetSafe,
+  stubAssetSearchWithContractId,
+  stubAccountBalancesE2e,
 } from "./helpers/stubs";
-
-/**
- * Stub the Stellar Expert asset search to return a mix of classic assets
- * and contract IDs, matching the updated API payload format.
- */
-const stubAssetSearchWithContractId = async (page: Page) => {
-  await page.route("**/asset?search**", async (route) => {
-    const json = {
-      _embedded: {
-        records: [
-          {
-            asset:
-              "USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-          },
-          {
-            asset: TEST_TOKEN_ADDRESS,
-          },
-        ],
-      },
-    };
-    await route.fulfill({ json });
-  });
-};
-
-/**
- * Stub account balances to include the E2E test token so it appears
- * as already added.
- */
-const stubAccountBalancesWithTestToken = async (page: Page) => {
-  const e2eAssetCode = `E2E:${TEST_TOKEN_ADDRESS}`;
-  await page.route("**/account-balances/**", async (route) => {
-    const json = {
-      balances: {
-        native: {
-          token: {
-            type: "native",
-            code: "XLM",
-          },
-          total: "10000.0000000",
-          available: "10000.0000000",
-          sellingLiabilities: "0",
-          buyingLiabilities: "0",
-          minimumBalance: "1",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address: "",
-            metadata: { type: "" },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {},
-          },
-        },
-        [e2eAssetCode]: {
-          token: {
-            code: "E2E",
-            issuer: {
-              key: TEST_TOKEN_ADDRESS,
-            },
-          },
-          contractId: TEST_TOKEN_ADDRESS,
-          symbol: "E2E",
-          decimals: 3,
-          total: "100000099976",
-          available: "100000099976",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address: "",
-            metadata: { type: "" },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {},
-          },
-        },
-      },
-      isFunded: true,
-      subentryCount: 0,
-      error: {
-        horizon: null,
-        soroban: null,
-      },
-    };
-    await route.fulfill({ json });
-  });
-};
 
 /**
  * Helper to locate a ManageAssetRow by its exact asset code.
@@ -121,7 +30,7 @@ test("Stellar Expert contract ID result shows as already added", async ({
     context,
     stubOverrides: async () => {
       await stubAssetSearchWithContractId(page);
-      await stubAccountBalancesWithTestToken(page);
+      await stubAccountBalancesE2e(page);
       await stubTokenDetails(page);
       await stubIsSac(page);
       await stubScanAssetSafe(page);
