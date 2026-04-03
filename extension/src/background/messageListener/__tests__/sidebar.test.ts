@@ -74,13 +74,14 @@ describe("sidebar message handlers", () => {
       expect(mockOpen).toHaveBeenCalledWith({ windowId: 42 });
     });
 
-    it("opens the sidebar when no sender is provided", async () => {
+    it("opens the sidebar when sender is from this extension", async () => {
       const result = await popupMessageListener(
         request as any,
         mockSessionStore,
         mockLocalStore,
         mockKeyManager,
         mockSessionTimer,
+        {},
       );
       expect(result).toEqual({});
       expect(mockSetOptions).toHaveBeenCalled();

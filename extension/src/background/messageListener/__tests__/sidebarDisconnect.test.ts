@@ -389,6 +389,7 @@ describe("MARK_QUEUE_ACTIVE with sidebarQueueUuids", () => {
       mockLocalStore,
       mockKeyManager,
       mockSessionTimer,
+      { id: "fake-extension-id" },
     );
 
     expect(activeQueueUuids.has("test-uuid")).toBe(true);
@@ -406,6 +407,7 @@ describe("MARK_QUEUE_ACTIVE with sidebarQueueUuids", () => {
       mockLocalStore,
       mockKeyManager,
       mockSessionTimer,
+      { id: "fake-extension-id" },
     );
 
     expect(activeQueueUuids.has("test-uuid")).toBe(false);
@@ -423,6 +425,7 @@ describe("MARK_QUEUE_ACTIVE with sidebarQueueUuids", () => {
       mockLocalStore,
       mockKeyManager,
       mockSessionTimer,
+      { id: "fake-extension-id" },
     );
 
     expect(sidebarQueueUuids.has("test-uuid")).toBe(false);

@@ -75,6 +75,7 @@ export const initSidebarConnectionListener = () => {
     // Extension pages have no associated tab and load from the extension origin.
     const isExtensionPage =
       !port.sender?.tab &&
+      port.sender?.id === browser.runtime.id &&
       port.sender?.url?.startsWith(browser.runtime.getURL(""));
     if (!isExtensionPage) {
       port.disconnect();

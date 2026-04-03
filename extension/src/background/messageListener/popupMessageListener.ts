@@ -137,7 +137,7 @@ export const popupMessageListener = (
   localStore: DataStorageAccess,
   keyManager: KeyManager,
   sessionTimer: SessionTimer,
-  sender?: { tab?: unknown; id?: string },
+  sender: { tab?: unknown; id?: string },
 ) => {
   const currentState = sessionStore.getState();
   const publicKey = publicKeySelector(currentState);
@@ -145,9 +145,8 @@ export const popupMessageListener = (
   // Content scripts (dapp pages) always carry sender.tab; extension pages do not.
   // Also verify the message originates from this extension (sender.id matches),
   // guarding against other extensions calling popupMessageListener handlers.
-  // When sender is absent (internal calls), both checks pass by default.
   const isFromExtensionPage =
-    !sender?.tab && (!sender?.id || sender.id === browser.runtime.id);
+    !sender.tab && (!sender.id || sender.id === browser?.runtime?.id);
 
   if (
     request.activePublicKey &&
@@ -353,6 +352,7 @@ export const popupMessageListener = (
       });
     }
     case SERVICE_TYPES.REJECT_SIGNING_REQUEST: {
+      if (!isFromExtensionPage) return { error: "Unauthorized" };
       return rejectSigningRequest({
         request,
         responseQueue,
@@ -592,6 +592,7 @@ export const popupMessageListener = (
     case SERVICE_TYPES.OPEN_SIDEBAR: {
       if (!isFromExtensionPage) return { error: "Unauthorized" };
       const { windowId } = request as OpenSidebarMessage;
+      if (typeof windowId !== "number") return { error: "Invalid windowId" };
       return (async () => {
         await chrome.sidePanel
           .setOptions({ path: "index.html?mode=sidebar", enabled: true })
