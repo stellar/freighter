@@ -138,14 +138,11 @@ test("Stellar Expert contract ID result shows as already added", async ({
   const rows = page.getByTestId("ManageAssetRow");
   await expect(rows.first()).toBeVisible({ timeout: 10000 });
 
-  // Find the row for the contract-ID asset (E2E token)
-  const e2eRow = rows.filter({ hasText: "E2E" });
-  await expect(e2eRow).toBeVisible();
-
-  // The button should NOT say "Add" — it should show the ellipsis menu
+  // The E2E token row should show the ellipsis menu instead of "Add"
   // because the token is already in the user's balances
-  const rowButton = e2eRow.getByTestId("ManageAssetRowButton");
-  await expect(rowButton).not.toHaveText("Add");
+  await expect(
+    page.getByTestId("ManageAssetRowButton__ellipsis-E2E"),
+  ).toBeVisible();
 });
 
 test("Stellar Expert contract ID result shows Add when not owned", async ({
