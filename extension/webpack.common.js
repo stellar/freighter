@@ -19,7 +19,7 @@ const commonConfig = (
     AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY: "",
     SENTRY_KEY: "",
     // BUILD_TYPE should be explicitly passed "development", "beta", or "production"
-    BUILD_TYPE: "production",
+    BUILD_TYPE: "development",
   },
 ) => ({
   cache: true,
@@ -172,7 +172,7 @@ const commonConfig = (
       ),
       SENTRY_KEY: JSON.stringify(env.SENTRY_KEY),
       APP_VERSION: JSON.stringify(packageJson.version),
-      BUILD_TYPE: JSON.stringify(env.BUILD_TYPE || "production"),
+      BUILD_TYPE: JSON.stringify(env.BUILD_TYPE || "development"),
     }),
     new MiniCssExtractPlugin({
       filename: "[name].min.css",
