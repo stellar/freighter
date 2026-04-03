@@ -69,13 +69,25 @@ import {
   tokenQueue,
   transactionQueue,
 } from "./popupMessageListener";
-import { QUEUE_ITEM_TTL_MS } from "background/helpers/queueCleanup";
+import {
+  QUEUE_ITEM_TTL_MS,
+  sidebarQueueUuids,
+} from "background/helpers/queueCleanup";
 
 import { getSidebarPort } from "background/helpers/sidebarPort";
 
-const openSigningWindow = async (hashRoute: string, width?: number) => {
+const openSigningWindow = async (
+  hashRoute: string,
+  uuid: string,
+  width?: number,
+) => {
   const sidebarWindowId = getSidebarWindowId();
   if (sidebarWindowId !== null) {
+    // Track this UUID as sidebar-routed at routing time so it gets
+    // cleaned up on sidebar disconnect, even if the signing view
+    // hasn't mounted yet (e.g. ConfirmSidebarRequest interstitial).
+    sidebarQueueUuids.add(uuid);
+
     // Send navigation directly to the sidebar via its long-lived port
     // instead of broadcasting to all extension listeners
     const currentPort = getSidebarPort();
@@ -162,7 +174,10 @@ export const freighterApiMessageListener = (
     const uuid = crypto.randomUUID();
     const encodeOrigin = encodeObject({ tab, url: tabUrl, uuid });
 
-    const popup = await openSigningWindow(`/grant-access?${encodeOrigin}`);
+    const popup = await openSigningWindow(
+      `/grant-access?${encodeOrigin}`,
+      uuid,
+    );
 
     return new Promise((resolve) => {
       let resolved = false;
@@ -268,7 +283,10 @@ export const freighterApiMessageListener = (
       tokenQueue.push({ token: tokenInfo, uuid, createdAt: Date.now() });
       const encodedTokenInfo = encodeObject(tokenInfo);
 
-      const popup = await openSigningWindow(`/add-token?${encodedTokenInfo}`);
+      const popup = await openSigningWindow(
+        `/add-token?${encodedTokenInfo}`,
+        uuid,
+      );
 
       return new Promise((resolve) => {
         let resolved = false;
@@ -421,7 +439,10 @@ export const freighterApiMessageListener = (
       });
       const encodedBlob = encodeObject(transactionInfo);
 
-      const popup = await openSigningWindow(`/sign-transaction?${encodedBlob}`);
+      const popup = await openSigningWindow(
+        `/sign-transaction?${encodedBlob}`,
+        uuid,
+      );
 
       return new Promise((resolve) => {
         let resolved = false;
@@ -504,7 +525,10 @@ export const freighterApiMessageListener = (
 
       blobQueue.push({ blob: blobData, uuid, createdAt: Date.now() });
       const encodedBlob = encodeObject(blobData);
-      const popup = await openSigningWindow(`/sign-message?${encodedBlob}`);
+      const popup = await openSigningWindow(
+        `/sign-message?${encodedBlob}`,
+        uuid,
+      );
 
       return new Promise((resolve) => {
         let resolved = false;
@@ -601,6 +625,7 @@ export const freighterApiMessageListener = (
       const encodedAuthEntry = encodeObject(authEntry);
       const popup = await openSigningWindow(
         `/sign-auth-entry?${encodedAuthEntry}`,
+        uuid,
       );
 
       return new Promise((resolve) => {
@@ -745,7 +770,11 @@ export const freighterApiMessageListener = (
     const uuid = crypto.randomUUID();
     const encodeOrigin = encodeObject({ tab, url: tabUrl, uuid });
 
-    const popup = await openSigningWindow(`/grant-access?${encodeOrigin}`, 400);
+    const popup = await openSigningWindow(
+      `/grant-access?${encodeOrigin}`,
+      uuid,
+      400,
+    );
 
     return new Promise((resolve) => {
       let resolved = false;

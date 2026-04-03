@@ -106,11 +106,16 @@ export const initSidebarConnectionListener = () => {
     // When sidebar closes, clear port state and schedule cleanup.
     // The cleanup is deferred because chrome.sidePanel.open() can
     // reload the sidebar page, causing a brief disconnect/reconnect.
+    // Only schedule cleanup when the disconnecting port is the currently
+    // active sidebar port — a stale port disconnecting should not trigger
+    // cleanup while a newer port is still connected.
     port.onDisconnect.addListener(() => {
-      if (getSidebarPort() === port) {
-        clearSidebarPort();
-        clearSidebarWindowId();
+      if (getSidebarPort() !== port) {
+        return;
       }
+
+      clearSidebarPort();
+      clearSidebarWindowId();
 
       pendingCleanup = setTimeout(() => {
         pendingCleanup = null;

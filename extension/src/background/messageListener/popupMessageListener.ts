@@ -29,7 +29,6 @@ import {
   activeQueueUuids,
   sidebarQueueUuids,
 } from "background/helpers/queueCleanup";
-import { getSidebarPort } from "background/helpers/sidebarPort";
 
 import { fundAccount } from "./handlers/fundAccount";
 import { createAccount } from "./handlers/createAccount";
@@ -580,9 +579,9 @@ export const popupMessageListener = (
       const { uuid, isActive } = request as MarkQueueActiveMessage;
       if (isActive) {
         activeQueueUuids.add(uuid);
-        if (getSidebarPort() !== null) {
-          sidebarQueueUuids.add(uuid);
-        }
+        // sidebarQueueUuids is populated at routing time in
+        // openSigningWindow, not here — this avoids missing requests
+        // that are behind the ConfirmSidebarRequest interstitial.
       } else {
         activeQueueUuids.delete(uuid);
         sidebarQueueUuids.delete(uuid);

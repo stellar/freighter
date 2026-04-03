@@ -321,18 +321,33 @@ describe("initSidebarConnectionListener", () => {
       expect(sidebarQueueUuids.size).toBe(0);
     });
 
-    it("stale port disconnect does not clear a newer port's state", () => {
+    it("stale port disconnect does not clear a newer port's state or schedule cleanup", () => {
       const portA = connectSidebarPort();
       setSidebarPort(portA as any);
 
       // New port connects (simulates sidebar reload)
       const portB = connectSidebarPort();
 
-      // portA's disconnect fires late
+      const mockResponse = jest.fn();
+      sidebarQueueUuids.add("uuid-1");
+      responseQueue.push({
+        response: mockResponse,
+        uuid: "uuid-1",
+        createdAt: Date.now(),
+      } as any);
+
+      // portA's disconnect fires late — should be a no-op
       (portA as any)._fireDisconnect();
 
       // portB should still be the active port
       expect(getSidebarPort()).toBe(portB);
+
+      // Advance past cleanup timeout — nothing should be rejected
+      // because stale port disconnect doesn't schedule cleanup
+      jest.advanceTimersByTime(500);
+      expect(mockResponse).not.toHaveBeenCalled();
+      expect(responseQueue).toHaveLength(1);
+      expect(sidebarQueueUuids.has("uuid-1")).toBe(true);
     });
   });
 });
@@ -364,7 +379,7 @@ describe("MARK_QUEUE_ACTIVE with sidebarQueueUuids", () => {
     activeQueueUuids.clear();
   });
 
-  it("adds to both activeQueueUuids and sidebarQueueUuids when sidebar port is connected", async () => {
+  it("adds to activeQueueUuids only — sidebarQueueUuids is populated at routing time in openSigningWindow", async () => {
     const mockPort = { postMessage: jest.fn(), disconnect: jest.fn() } as any;
     setSidebarPort(mockPort);
 
@@ -377,19 +392,7 @@ describe("MARK_QUEUE_ACTIVE with sidebarQueueUuids", () => {
     );
 
     expect(activeQueueUuids.has("test-uuid")).toBe(true);
-    expect(sidebarQueueUuids.has("test-uuid")).toBe(true);
-  });
-
-  it("adds to activeQueueUuids only when no sidebar port is connected", async () => {
-    await popupMessageListener(
-      { type: "MARK_QUEUE_ACTIVE", uuid: "test-uuid", isActive: true } as any,
-      mockSessionStore,
-      mockLocalStore,
-      mockKeyManager,
-      mockSessionTimer,
-    );
-
-    expect(activeQueueUuids.has("test-uuid")).toBe(true);
+    // sidebarQueueUuids is no longer set here; it's set in openSigningWindow
     expect(sidebarQueueUuids.has("test-uuid")).toBe(false);
   });
 
