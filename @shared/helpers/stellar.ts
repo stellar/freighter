@@ -126,7 +126,8 @@ export const makeDisplayableBalances = async (
           .plus(num_sponsoring)
           .minus(num_sponsored)
           .times(BASE_RESERVE)
-          .plus(sellingLiabilities),
+          .plus(sellingLiabilities)
+          .plus(StellarSdk.stroopsToLumens(StellarSdk.BASE_FEE)),
         blockaidData: defaultBlockaidScanAssetResult,
       };
       continue;
