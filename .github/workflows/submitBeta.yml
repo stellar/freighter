@@ -13,6 +13,11 @@ on:
         description: Beta version
         default: "0"
         required: true
+      ref_name:
+        description:
+          A git ref to checkout (branch/tag/sha). Defaults to release/<release>
+        type: string
+        default: ""
 jobs:
   bump-version:
     name: Bump Package Version and Submit Extension
@@ -28,10 +33,17 @@ jobs:
           echo "Missing INDEXER_V2_URL"
           gh run cancel ${{ github.run_id }}
           gh run watch ${{ github.run_id }}
+      - name: Set ref
+        run: |
+          if [[ "${{ github.event.inputs.ref_name }}" != "" ]]; then
+            echo "REF_NAME=${{ github.event.inputs.ref_name }}" >> $GITHUB_ENV
+          else
+            echo "REF_NAME=release/${{ github.event.inputs.release }}" >> $GITHUB_ENV
+          fi
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          ref: release/${{ github.event.inputs.release }}
+          ref: ${{ env.REF_NAME }}
       - name: Update manifest-v2.json name
         uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
