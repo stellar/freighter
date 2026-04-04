@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       ref_name:
-        description: A git commit/hash/tag (optional, defaults to master)
+        description: A git commit/hash/tag (optional, defaults to the selected branch or tag)
         type: string
         default: ""
 jobs:
@@ -25,17 +25,13 @@ jobs:
           echo "Missing INDEXER_V2_URL"
           gh run cancel ${{ github.run_id }}
           gh run watch ${{ github.run_id }}
-      - name: Set ref
-        run: |
-          if [[ "${{ github.event.inputs.ref_name }}" != "" ]]; then
-            echo "REF_NAME=${{ github.event.inputs.ref_name }}" >> $GITHUB_ENV
-          else
-            echo "REF_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
-          fi
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          ref: ${{ env.REF_NAME }}
+          ref: ${{ github.event.inputs.ref_name != '' && github.event.inputs.ref_name || github.ref_name }}
+      - name: Get checkout SHA
+        id: checkout_sha
+        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Get version from package.json
         id: package_version
         run: |
@@ -67,6 +63,7 @@ jobs:
           body: ${{ steps.package_version.outputs.version }}
           draft: false
           prerelease: false
+          target_commitish: ${{ steps.checkout_sha.outputs.sha }}
       - name: Build for Firefox
         id: web-ext-build
         uses: kewisch/action-web-ext@fe10addf5d5e5ba6b78ffde720dd488a27d10e8c #v1

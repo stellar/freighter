@@ -33,17 +33,13 @@ jobs:
           echo "Missing INDEXER_V2_URL"
           gh run cancel ${{ github.run_id }}
           gh run watch ${{ github.run_id }}
-      - name: Set ref
-        run: |
-          if [[ "${{ github.event.inputs.ref_name }}" != "" ]]; then
-            echo "REF_NAME=${{ github.event.inputs.ref_name }}" >> $GITHUB_ENV
-          else
-            echo "REF_NAME=release/${{ github.event.inputs.release }}" >> $GITHUB_ENV
-          fi
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          ref: ${{ env.REF_NAME }}
+          ref: ${{ github.event.inputs.ref_name != '' && github.event.inputs.ref_name || format('release/{0}', github.event.inputs.release) }}
+      - name: Get checkout SHA
+        id: checkout_sha
+        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Update manifest-v2.json name
         uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
@@ -130,6 +126,7 @@ jobs:
             github.event.inputs.version }}
           draft: false
           prerelease: true
+          target_commitish: ${{ steps.checkout_sha.outputs.sha }}
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
