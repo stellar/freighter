@@ -16,6 +16,8 @@ jobs:
   bump-version:
     name: Bump Package Version and Submit Extension
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - if: ${{ env.INDEXER_URL == '' }}
         run: |
@@ -56,8 +58,19 @@ jobs:
         uses: montudor/action-zip@0852c26906e00f8a315c704958823928d8018b28 #v1.0.0
       - name: Create and push git tag
         run: |
-          git tag ${{ steps.package_version.outputs.version }} ${{ steps.checkout_sha.outputs.sha }}
-          git push origin ${{ steps.package_version.outputs.version }}
+          TAG="${{ steps.package_version.outputs.version }}"
+          SHA="${{ steps.checkout_sha.outputs.sha }}"
+          EXISTING=$(git ls-remote origin "refs/tags/$TAG" | awk '{print $1}')
+          if [ -n "$EXISTING" ]; then
+            if [ "$EXISTING" != "$SHA" ]; then
+              echo "ERROR: Tag $TAG already exists pointing to $EXISTING, expected $SHA"
+              exit 1
+            fi
+            echo "Tag $TAG already exists and points to the correct SHA, skipping"
+          else
+            git tag "$TAG" "$SHA"
+            git push origin "$TAG"
+          fi
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -69,6 +82,7 @@ jobs:
           body: ${{ steps.package_version.outputs.version }}
           draft: false
           prerelease: false
+          target_commitish: ${{ steps.checkout_sha.outputs.sha }}
       - name: Build for Firefox
         id: web-ext-build
         uses: kewisch/action-web-ext@fe10addf5d5e5ba6b78ffde720dd488a27d10e8c #v1
