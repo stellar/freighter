@@ -89,6 +89,39 @@ export const stubAssetSearch = async (page: Page) => {
   });
 };
 
+export const stubAssetSearchWithContractId = async (page: Page) => {
+  await page.route("**/asset?search**", async (route) => {
+    const json = {
+      _embedded: {
+        records: [
+          {
+            asset:
+              "USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+          },
+          {
+            asset: TEST_TOKEN_ADDRESS,
+            code: "E2E",
+            token_name: "E2E Token",
+            decimals: 3,
+            domain: "example.com",
+            tomlInfo: {
+              code: "E2E",
+              // Use a different address than the token contract to match real
+              // Stellar Expert responses where tomlInfo.issuer is the token
+              // issuer, not the token contract itself.
+              issuer:
+                "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+              name: "E2E Token",
+              image: "",
+            },
+          },
+        ],
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
 export const stubHorizonAccounts = async (page: Page) => {
   await page.route("**/accounts/**", async (route) => {
     await route.fulfill({
