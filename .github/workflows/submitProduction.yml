@@ -7,7 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       ref_name:
-        description: A git commit/hash/tag (optional, defaults to the selected branch or tag)
+        description:
+          A git commit/hash/tag (optional, defaults to the selected branch or
+          tag)
         type: string
         default: ""
 jobs:
@@ -28,7 +30,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.inputs.ref_name != '' && github.event.inputs.ref_name || github.ref_name }}
+          ref:
+            ${{ github.event.inputs.ref_name != '' &&
+            github.event.inputs.ref_name || github.ref_name }}
       - name: Get checkout SHA
         id: checkout_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
@@ -50,8 +54,10 @@ jobs:
           secrets.SENTRY_KEY }}" BUILD_TYPE="production"
       - name: Install zip
         uses: montudor/action-zip@0852c26906e00f8a315c704958823928d8018b28 #v1.0.0
-      - name: Create git tag
-        run: git tag ${{ steps.package_version.outputs.version }}
+      - name: Create and push git tag
+        run: |
+          git tag ${{ steps.package_version.outputs.version }} ${{ steps.checkout_sha.outputs.sha }}
+          git push origin ${{ steps.package_version.outputs.version }}
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -63,7 +69,6 @@ jobs:
           body: ${{ steps.package_version.outputs.version }}
           draft: false
           prerelease: false
-          target_commitish: ${{ steps.checkout_sha.outputs.sha }}
       - name: Build for Firefox
         id: web-ext-build
         uses: kewisch/action-web-ext@fe10addf5d5e5ba6b78ffde720dd488a27d10e8c #v1
