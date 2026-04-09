@@ -1,4 +1,8 @@
-# N10 — Troubleshooting Guide: Freighter Extension
+---
+id: troubleshooting-guide
+title: Troubleshooting Guide
+slug: /troubleshooting-guide
+---
 
 _Last updated: 2026-04-08_
 
@@ -37,13 +41,17 @@ nvm use
 > created that file, it has no effect — create `~/.config/husky/init.sh`
 > instead.
 
-### IDE and ESLint plugins not loading with Husky
+### IDE and ESLint plugins not loading
 
-**Symptom:** Pre-commit hooks run successfully but ESLint errors are not caught
-in the editor, or the hook exits early without running ESLint.
+**Symptom:** ESLint errors are not shown in the editor, or the IDE reports
+"ESLint server failed to start" / "No ESLint configuration found".
 
-**Solution:** Ensure the ESLint VSCode/IDE extension is installed and
-configured:
+> **Note:** The pre-commit hook runs `pretty-quick` (formatting) and
+> `addTranslations.sh` — it does **not** run ESLint. ESLint runs in CI and in
+> your editor only. If ESLint is not catching errors, the issue is with your IDE
+> extension, not Husky.
+
+**Solution:** Ensure the ESLint IDE extension is installed and configured:
 
 1. **VS Code:** Install the
    [ESLint extension](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint).
@@ -57,8 +65,7 @@ configured:
    ```bash
    npx eslint extension/src/popup/App.tsx
    ```
-4. **After confirming ESLint works**, verify Husky's pre-commit script is
-   executable:
+4. **Verify Husky's pre-commit script is executable:**
    ```bash
    ls -la .husky/pre-commit    # Should show -rwxr-xr-x
    chmod +x .husky/pre-commit  # Fix if not executable
@@ -256,7 +263,7 @@ to Chrome for Testing, which uses significantly more memory
 
 1. **Reduce parallelism:** Limit Playwright workers in `playwright.config.ts`:
    ```ts
-   workers: 1; // or 2, depending on available RAM
+   workers: 1, // or 2, depending on available RAM
    ```
 2. **If running in CI:** Ensure the CI runner has at least 8GB of RAM. Consider
    using `--shard` to distribute tests across multiple runners.
@@ -307,8 +314,10 @@ seconds of inactivity. Any in-progress work is lost.
 
 - Never use `setTimeout()` or `setInterval()` for long delays — timers are
   cancelled when the worker terminates
-- Use `chrome.alarms` for delayed operations instead
-- Store pending state in `chrome.storage` so it survives worker restarts
+- Use `browser.alarms` (via `webextension-polyfill`) for delayed operations
+  instead
+- Store pending state with the storage helpers (`dataStorageAccess` /
+  `browserLocalStorage`) so it survives worker restarts
 - Register all event listeners synchronously at the top level — asynchronously
   registered listeners may not fire
 
@@ -323,15 +332,15 @@ registered, causing the event to be silently dropped.
 
 **Solution:** Always register listeners at the module's top level:
 
-```typescript
+```ts
 // WRONG — listener may not be registered after worker restart
 async function setup() {
   const config = await loadConfig();
-  chrome.runtime.onMessage.addListener(handler);
+  browser.runtime.onMessage.addListener(handler);
 }
 
 // RIGHT — listener is always registered
-chrome.runtime.onMessage.addListener(handler);
+browser.runtime.onMessage.addListener(handler);
 ```
 
 ## React 19 Compatibility Issues
