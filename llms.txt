@@ -1,0 +1,34 @@
+# Freighter
+
+> Non-custodial Stellar wallet — browser extension for Chrome, Firefox, and Safari
+
+## Documentation
+- [User Guides](https://docs.freighter.app/docs/guide/introduction)
+- [API Playgrounds](https://docs.freighter.app/docs/playground/getAddress)
+- [Extension Dev Guide](./extension/README.md)
+- [E2E Testing Guide](./extension/e2e-tests/README.md)
+
+## Development
+- [Getting Started](./README.md)
+- [Contributing](./CONTRIBUTING.MD)
+- [Style Guide](./extension/STYLEGUIDE.MD)
+- [Localization](./extension/LOCALIZATION.MD)
+
+## API Reference
+- [@stellar/freighter-api SDK](./@stellar/freighter-api/README.md)
+- [API Changelog](./@stellar/freighter-api/CHANGELOG.MD)
+
+## Integration Guides
+- [Hardware Wallet Integration](./extension/INTEGRATING_HARDWARE_WALLET.MD)
+- [Soroswap Integration](./extension/INTEGRATING_SOROSWAP.MD)
+
+## Architecture
+- [AI Agent Context](./CLAUDE.md)
+- [Extension Changelog](./extension/CHANGELOG.MD)
+
+## Key Concepts
+- Monorepo: extension, SDK (@stellar/freighter-api), shared utils (@shared), docs (Docusaurus)
+- Extension runtime: popup (React UI), background (service worker), content script (dApp bridge)
+- State: Redux
+- Testing: Jest (unit) + Playwright (e2e)
+- Build: Webpack, Yarn workspaces, Node >= 22
