@@ -109,7 +109,8 @@ INDEXER_V2_URL=https://freighter-backend-v2.stellar.org/api/v1
 - **Translations:** All user-facing strings wrapped in `t()` from
   `react-i18next`. Run `yarn build:extension:translations` to generate keys. See
   `extension/LOCALIZATION.MD`.
-- **Imports:** External packages first, then internal. ESLint enforces ordering.
+- **Imports:** External packages first, then internal; follow this convention
+  consistently.
 - **Formatting:** Double quotes, 2-space indent, trailing commas, 80-char width,
   semicolons. Config in `.prettierrc.yaml`.
 - **Branch naming:** `type/description` — `feature/`, `fix/`, `chore/`,
@@ -121,9 +122,9 @@ INDEXER_V2_URL=https://freighter-backend-v2.stellar.org/api/v1
 
 Husky runs on every commit:
 
-1. `pretty-quick --staged` — Prettier on staged files
-2. `lint-staged` — ESLint fix on staged `.ts`/`.tsx`
-3. Translation build — auto-generates `extension/src/popup/locales/` files
+1. `./.husky/addTranslations.sh` — translation build that auto-generates
+   `extension/src/popup/locales/` files
+2. `pretty-quick --staged` — Prettier on staged files
 
 If using nvm, create `~/.huskyrc` to ensure correct Node version.
 
