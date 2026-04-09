@@ -23,7 +23,7 @@
 - [Soroswap Integration](./extension/INTEGRATING_SOROSWAP.MD)
 
 ## Architecture
-- [AI Agent Context](./CLAUDE.md)
+- [AI Agent Context](./AGENTS.md)
 - [Extension Changelog](./extension/CHANGELOG.MD)
 
 ## Key Concepts
@@ -32,3 +32,4 @@
 - State: Redux
 - Testing: Jest (unit) + Playwright (e2e)
 - Build: Webpack, Yarn workspaces, Node >= 22
+
