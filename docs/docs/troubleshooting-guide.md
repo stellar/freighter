@@ -403,3 +403,13 @@ different constraints than popup or content scripts:
 
 Test that your background code works correctly after a worker restart, not just
 in the popup context where you typically develop and debug.
+
+### Sidebar mode routes signing through a separate context
+
+Signing requests (sign transaction, sign auth entry, etc.) can be routed through
+the sidebar panel instead of the popup. The background maintains a separate
+`sidebarQueueUuids` set alongside `activeQueueUuids`. Disconnect cleanup and
+queue clearing behave differently in each path.
+
+If you're modifying signing flows, message handling, or queue cleanup logic,
+test in both popup and sidebar mode.
