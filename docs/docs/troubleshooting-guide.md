@@ -163,7 +163,7 @@ block dev server connections. Use `yarn build:extension` for development.
 
 ### Playwright tests fail on stale build
 
-**Symptom:** E2e tests fail with unexpected behavior, missing elements, or
+**Symptom:** e2e tests fail with unexpected behavior, missing elements, or
 assertion errors — but the code looks correct.
 
 **Solution:** Always rebuild before running e2e tests. Playwright tests run
@@ -200,8 +200,10 @@ yarn test:e2e --ui
    that pass on retry are flaky
 
 This avoids wasting time debugging timing-related flakes. If a test is
-consistently flaky, it likely needs a longer timeout or a more robust element
-selector.
+consistently flaky, use the
+[Playwright MCP server](https://playwright.dev/docs/mcp) (`playwright-test`) to
+diagnose and fix the root cause — it typically produces a more robust fix than
+manually bumping timeouts.
 
 ### Playwright tests timeout on first run
 
@@ -213,6 +215,38 @@ selector.
 yarn build:extension    # Ensure a fresh build
 yarn test:e2e --headed  # Watch what's happening
 ```
+
+### Playwright 1.57 high memory usage (Chrome for Testing)
+
+**Symptom:** Playwright tests crash or the system becomes unresponsive during
+parallel test execution. Each Chrome instance consumes ~20GB of memory.
+
+**Root cause:** Playwright 1.57 switched from lightweight open-source Chromium
+to Chrome for Testing, which uses significantly more memory
+([microsoft/playwright#38489](https://github.com/microsoft/playwright/issues/38489)).
+
+**Solution:**
+
+1. **Reduce parallelism:** Limit Playwright workers in `playwright.config.ts`:
+   ```ts
+   workers: 1, // or 2, depending on available RAM
+   ```
+2. **If running in CI:** Ensure the CI runner has at least 8GB of RAM. Consider
+   using `--shard` to distribute tests across multiple runners.
+3. **Monitor version updates:** This is being tracked upstream — future
+   Playwright versions may offer a lighter alternative.
+
+### Playwright 1.58+ breaks `--dry-run` output parsing
+
+**Symptom:** Docker builds or CI scripts that parse
+`npx playwright install --dry-run` output fail after upgrading past 1.57.
+
+**Root cause:** Playwright 1.58 changed the `--dry-run` output format from
+`"browser: chromium"` to `"Chrome for Testing"`.
+
+**Solution:** If you have CI scripts that grep for `"chromium"` in dry-run
+output, update them to match the new format. The project is currently on
+Playwright 1.57 — be aware of this if upgrading.
 
 ### Jest tests fail with module resolution errors
 
@@ -247,40 +281,6 @@ If the key is new, ensure it's added to all JSON files in
 **Solution:** This is expected. The pre-commit hook auto-runs
 `yarn build:extension:translations` and stages locale files. These are generated
 — commit them as-is.
-
-## Playwright & CI Compatibility Issues
-
-### Playwright 1.57 high memory usage (Chrome for Testing)
-
-**Symptom:** Playwright tests crash or the system becomes unresponsive during
-parallel test execution. Each Chrome instance consumes ~20GB of memory.
-
-**Root cause:** Playwright 1.57 switched from lightweight open-source Chromium
-to Chrome for Testing, which uses significantly more memory
-([microsoft/playwright#38489](https://github.com/microsoft/playwright/issues/38489)).
-
-**Solution:**
-
-1. **Reduce parallelism:** Limit Playwright workers in `playwright.config.ts`:
-   ```ts
-   workers: 1, // or 2, depending on available RAM
-   ```
-2. **If running in CI:** Ensure the CI runner has at least 8GB of RAM. Consider
-   using `--shard` to distribute tests across multiple runners.
-3. **Monitor version updates:** This is being tracked upstream — future
-   Playwright versions may offer a lighter alternative.
-
-### Playwright 1.58+ breaks `--dry-run` output parsing
-
-**Symptom:** Docker builds or CI scripts that parse
-`npx playwright install --dry-run` output fail after upgrading past 1.57.
-
-**Root cause:** Playwright 1.58 changed the `--dry-run` output format from
-`"browser: chromium"` to `"Chrome for Testing"`.
-
-**Solution:** If you have CI scripts that grep for `"chromium"` in dry-run
-output, update them to match the new format. The project is currently on
-Playwright 1.57 — be aware of this if upgrading.
 
 ## Node.js & Build Environment Issues
 
@@ -378,73 +378,6 @@ from ref callbacks will break.
 **Solution:** If a ref callback doesn't need cleanup, ensure it returns
 `undefined` (or nothing).
 
-## Known Issues & Recent Fixes
-
-These are issues that have been encountered and fixed or are commonly reported.
-Understanding them helps avoid re-introducing them or wasting time debugging
-known causes.
-
-### Slow extension startup (> 3 seconds)
-
-**History:** Before February 2026, the extension loaded in ~3.5 seconds because
-it fetched account balances, transaction history, asset icons, and multiple data
-streams simultaneously at startup.
-
-**Fix applied:** Load only account balances initially, defer everything else
-(history, icons, asset lists) to background fetching after the UI renders.
-Startup is now ~1.27 seconds (63% improvement).
-
-**If you notice startup regression:** Check if new code added to the initial
-load path fetches data synchronously. All non-critical data should load
-asynchronously after the popup renders.
-
-### SAC trustline not auto-created when adding by C-address
-
-**History:** Adding a Stellar Asset Contract (SAC) token by its contract address
-(C-address) didn't automatically create the required trustline for the
-underlying classic asset.
-
-**Fix applied:** The extension now auto-creates the trustline when adding a SAC
-by C-address.
-
-**If you're working with SAC/token features:** Always test adding tokens by both
-asset code and contract address. Ensure trustlines are created correctly.
-
-### Race condition in asset search
-
-**History:** When users rapidly typed in the asset search field, previous API
-requests weren't cancelled. This caused stale results from slower earlier
-requests to overwrite correct results from the latest request.
-
-**Fix applied:** API requests are now cancelled when search parameters change
-quickly.
-
-**If you're adding search/filter features:** Always cancel in-flight requests
-when the user changes input. Use AbortController or equivalent cancellation
-pattern.
-
-### Session expiration during send/swap flow
-
-**History:** If the user's session expired mid-way through a send or swap flow,
-the password modal appeared incorrectly, disrupting the flow.
-
-**Fix applied:** Session expiration is now checked before showing the password
-modal.
-
-**If you're working with auth-gated flows:** Always check session validity at
-the start of multi-step flows, not just when a signing action is needed.
-
-### Users on wrong network (testnet vs mainnet)
-
-**Frequency:** Common user-reported confusion. Users interact with testnet
-thinking they're on mainnet, or vice versa.
-
-**Current mitigation:** Network indicator visible in the UI. The FAQ
-(freighter.app/faq) calls this out.
-
-**If you're adding network-dependent features:** Always display the current
-network prominently. Consider adding warnings when the user is on testnet.
-
 ## Common Development Pitfalls
 
 ### Editing content script without rebuilding
@@ -459,12 +392,14 @@ When adding new message types between popup/background/content script, update
 the typed message enums in all three contexts. A mismatch causes silent message
 drops.
 
-### Forgetting to test both Manifest V3 contexts
+### Background service worker behaves differently from popup
 
-Background scripts run as service workers (Manifest V3), which means:
+Background scripts run as service workers (Manifest V3), which means they have
+different constraints than popup or content scripts:
 
-- No persistent state between events (use `chrome.storage`)
+- No persistent state between events — use `browser.storage` to persist data
 - No DOM access
 - Limited lifetime (Chrome may terminate idle workers)
 
-Test that your background code works correctly after a worker restart.
+Test that your background code works correctly after a worker restart, not just
+in the popup context where you typically develop and debug.
