@@ -872,8 +872,8 @@ export const stubAccountBalancesWithUSDC = async (page: Page) => {
   });
 };
 
-export const stubAccountHistory = async (page: Page) => {
-  await page.route("**/account-history/**", async (route) => {
+export const stubAccountHistory = async (context: BrowserContext) => {
+  await context.route("**/account-history/**", async (route) => {
     const json = [
       {
         _links: {
@@ -2741,7 +2741,7 @@ export const stubAllExternalApis = async (
   // Mercury/History endpoints
   // Note: Tests that need account history should call stubAccountHistory() instead
   // to provide their own test data
-  await stubAccountHistory(page);
+  await stubAccountHistory(context);
   await stubMercuryTransactions(page);
 
   // RPC and Soroban

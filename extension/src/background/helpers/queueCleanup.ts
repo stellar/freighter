@@ -8,12 +8,23 @@ import {
 // Default TTL is 5 minutes (in milliseconds)
 export const QUEUE_ITEM_TTL_MS = 5 * 60 * 1000;
 
+// How long to wait after a sidebar port disconnects before rejecting its
+// pending requests. This debounce avoids false positives when the sidebar
+// page reloads (e.g. from chrome.sidePanel.open()), causing a brief
+// disconnect/reconnect cycle.
+export const SIDEBAR_DISCONNECT_DEBOUNCE_MS = 500;
+
 // Cleanup interval is 1 minute
 export const CLEANUP_INTERVAL_MS = 60 * 1000;
 
 // Set of UUIDs that have active popups open - these should not be cleaned up.
 // In MV3, this resets when the service worker restarts, which also resets the queues.
 export const activeQueueUuids: Set<string> = new Set();
+
+// Set of UUIDs for signing requests that are being handled by the sidebar
+// (as opposed to a standalone popup window). Only these should be rejected
+// when the sidebar disconnects.
+export const sidebarQueueUuids: Set<string> = new Set();
 
 /**
  * Removes expired items from a queue based on their createdAt timestamp.

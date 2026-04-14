@@ -160,6 +160,7 @@ jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
     isDataSharingAllowed: false,
     isMemoValidationEnabled: false,
     isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
     settingsState: SettingsState.SUCCESS,
     isSorobanPublicEnabled: false,
     isRpcHealthy: true,
