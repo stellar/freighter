@@ -94,7 +94,7 @@ const useAssetLookup = () => {
 
       const chunk = assetRows.slice(i, i + MAX_ASSETS_TO_SCAN);
       chunk.forEach((record) => {
-        if (record.code && record.issuer) {
+        if (record.code && record.issuer && !isContractId(record.issuer)) {
           url.searchParams.append(
             "asset_ids",
             `${record.code}-${record.issuer}`,
