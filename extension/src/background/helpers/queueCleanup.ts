@@ -8,6 +8,12 @@ import {
 // Default TTL is 5 minutes (in milliseconds)
 export const QUEUE_ITEM_TTL_MS = 5 * 60 * 1000;
 
+// How long to wait after a sidebar port disconnects before rejecting its
+// pending requests. This debounce avoids false positives when the sidebar
+// page reloads (e.g. from chrome.sidePanel.open()), causing a brief
+// disconnect/reconnect cycle.
+export const SIDEBAR_DISCONNECT_DEBOUNCE_MS = 500;
+
 // Cleanup interval is 1 minute
 export const CLEANUP_INTERVAL_MS = 60 * 1000;
 

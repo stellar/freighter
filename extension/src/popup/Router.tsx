@@ -83,6 +83,13 @@ We are checking for applicationState here to find out if the account doesn’t e
 If an account doesn't exist, go to the <Welcome /> page; otherwise, go to <UnlockAccount/>
 */
 
+const SidebarOnlyRoute = ({ children }: { children: JSX.Element }) => {
+  if (!isSidebarMode()) {
+    return <Navigate to={ROUTES.account} replace />;
+  }
+  return children;
+};
+
 const UnlockAccountRoute = ({ children }: { children: JSX.Element }) => {
   const applicationState = useSelector(applicationStateSelector);
 
@@ -208,7 +215,11 @@ export const Router = () => (
         <Route path={ROUTES.grantAccess} element={<GrantAccess />}></Route>
         <Route
           path={ROUTES.confirmSidebarRequest}
-          element={<ConfirmSidebarRequest />}
+          element={
+            <SidebarOnlyRoute>
+              <ConfirmSidebarRequest />
+            </SidebarOnlyRoute>
+          }
         ></Route>
         <Route
           path={ROUTES.mnemonicPhrase}

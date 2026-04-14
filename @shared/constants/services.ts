@@ -67,6 +67,9 @@ export enum SERVICE_TYPES {
   REJECT_SIGNING_REQUEST = "REJECT_SIGNING_REQUEST",
 }
 
+// SIDEBAR_NAVIGATE is a plain string constant (not in an enum) because it is
+// only sent over the long-lived sidebar port, never through the standard
+// browser.runtime.onMessage routing that dispatches on SERVICE_TYPES/EXTERNAL_SERVICE_TYPES.
 export const SIDEBAR_NAVIGATE = "SIDEBAR_NAVIGATE";
 
 export enum EXTERNAL_SERVICE_TYPES {

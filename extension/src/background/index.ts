@@ -24,7 +24,11 @@ import {
 } from "./helpers/sidebarPort";
 import { freighterApiMessageListener } from "./messageListener/freighterApiMessageListener";
 import { SIDEBAR_PORT_NAME } from "popup/components/SidebarSigningListener";
-import { sidebarQueueUuids } from "./helpers/queueCleanup";
+import {
+  sidebarQueueUuids,
+  SIDEBAR_DISCONNECT_DEBOUNCE_MS,
+} from "./helpers/queueCleanup";
+import { removeUuidFromAllQueues } from "./messageListener/handlers/rejectSigningRequest";
 import {
   SESSION_ALARM_NAME,
   SessionTimer,
@@ -125,32 +129,16 @@ export const initSidebarConnectionListener = () => {
         // Requests handled by standalone popup windows have their own
         // onWindowRemoved listeners and must not be cancelled here.
         for (const uuid of sidebarQueueUuids) {
-          const responseIndex = responseQueue.findIndex(
-            (item) => item.uuid === uuid,
-          );
-          if (responseIndex !== -1) {
-            const responseQueueItem = responseQueue.splice(responseIndex, 1)[0];
-            responseQueueItem.response(undefined);
-          }
-
-          const txIndex = transactionQueue.findIndex(
-            (item) => item.uuid === uuid,
-          );
-          if (txIndex !== -1) transactionQueue.splice(txIndex, 1);
-
-          const blobIndex = blobQueue.findIndex((item) => item.uuid === uuid);
-          if (blobIndex !== -1) blobQueue.splice(blobIndex, 1);
-
-          const authIndex = authEntryQueue.findIndex(
-            (item) => item.uuid === uuid,
-          );
-          if (authIndex !== -1) authEntryQueue.splice(authIndex, 1);
-
-          const tokenIndex = tokenQueue.findIndex((item) => item.uuid === uuid);
-          if (tokenIndex !== -1) tokenQueue.splice(tokenIndex, 1);
+          removeUuidFromAllQueues(uuid, {
+            responseQueue,
+            transactionQueue,
+            blobQueue,
+            authEntryQueue,
+            tokenQueue,
+          });
         }
         sidebarQueueUuids.clear();
-      }, 500);
+      }, SIDEBAR_DISCONNECT_DEBOUNCE_MS);
     });
   });
 };

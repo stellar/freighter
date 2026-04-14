@@ -6,19 +6,6 @@ import { SIDEBAR_NAVIGATE } from "@shared/constants/services";
 
 export const SIDEBAR_PORT_NAME = "sidebar";
 
-// Routes that represent active signing/approval flows.
-// When a new SIDEBAR_NAVIGATE arrives while the user is already on one of
-// these, we show an interstitial instead of silently swapping the screen.
-const SIGNING_ROUTE_PREFIXES = [
-  ROUTES.signTransaction,
-  ROUTES.signAuthEntry,
-  ROUTES.signMessage,
-  ROUTES.grantAccess,
-  ROUTES.addToken,
-  ROUTES.reviewAuthorization,
-  ROUTES.confirmSidebarRequest,
-];
-
 // Only allow navigation to known signing-related routes (defense-in-depth).
 const ALLOWED_NAV_PREFIXES = [
   ROUTES.signTransaction,
@@ -27,6 +14,14 @@ const ALLOWED_NAV_PREFIXES = [
   ROUTES.grantAccess,
   ROUTES.addToken,
   ROUTES.reviewAuthorization,
+];
+
+// Routes that represent active signing/approval flows.
+// When a new SIDEBAR_NAVIGATE arrives while the user is already on one of
+// these, we show an interstitial instead of silently swapping the screen.
+const SIGNING_ROUTE_PREFIXES = [
+  ...ALLOWED_NAV_PREFIXES,
+  ROUTES.confirmSidebarRequest,
 ];
 
 export const SidebarSigningListener = () => {

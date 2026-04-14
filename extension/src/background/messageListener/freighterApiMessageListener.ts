@@ -75,6 +75,17 @@ import {
 } from "background/helpers/queueCleanup";
 
 import { getSidebarPort } from "background/helpers/sidebarPort";
+import { DataStorageAccess } from "background/helpers/dataStorageAccess";
+
+/** Create a resolve wrapper that silently ignores duplicate calls. */
+const makeSafeResolve = (resolve: (value: unknown) => void) => {
+  let resolved = false;
+  return (value: unknown) => {
+    if (resolved) return;
+    resolved = true;
+    resolve(value);
+  };
+};
 
 const openSigningWindow = async (
   hashRoute: string,
@@ -117,7 +128,7 @@ const openSigningWindow = async (
 /** Reject the dapp's pending request when the popup window is closed. */
 const rejectOnWindowClose = (
   windowId: number,
-  safeResolve: (value: any) => void,
+  safeResolve: (value: unknown) => void,
   rejectValue: Record<string, unknown> = {
     apiError: FreighterApiDeclinedError,
     error: FreighterApiDeclinedError.message,
@@ -131,8 +142,6 @@ const rejectOnWindowClose = (
   };
   browser.windows.onRemoved.addListener(onWindowRemoved);
 };
-
-import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 
 interface WindowParams {
   height: number;
@@ -180,14 +189,14 @@ export const freighterApiMessageListener = (
     );
 
     return new Promise((resolve) => {
-      let resolved = false;
-      const safeResolve = (value: any) => {
-        if (resolved) return;
-        resolved = true;
-        resolve(value);
-      };
+      const safeResolve = makeSafeResolve(resolve);
 
-      if (popup === null) {
+      if (popup === undefined) {
+        safeResolve({
+          apiError: FreighterApiInternalError,
+          error: FreighterApiInternalError.message,
+        });
+      } else if (popup === null) {
         setTimeout(
           () =>
             safeResolve({
@@ -196,6 +205,8 @@ export const freighterApiMessageListener = (
             }),
           QUEUE_ITEM_TTL_MS,
         );
+      } else {
+        rejectOnWindowClose(popup.id!, safeResolve);
       }
       const response = async (url: string, publicKey?: string) => {
         // queue it up, we'll let user confirm the url looks okay and then we'll send publicKey
@@ -289,18 +300,21 @@ export const freighterApiMessageListener = (
       );
 
       return new Promise((resolve) => {
-        let resolved = false;
-        const safeResolve = (value: any) => {
-          if (resolved) return;
-          resolved = true;
-          resolve(value);
-        };
+        const safeResolve = makeSafeResolve(resolve);
 
         if (popup === undefined) {
           safeResolve({
             apiError: FreighterApiInternalError,
           });
-        } else if (popup !== null) {
+        } else if (popup === null) {
+          setTimeout(
+            () =>
+              safeResolve({
+                apiError: FreighterApiDeclinedError,
+              }),
+            QUEUE_ITEM_TTL_MS,
+          );
+        } else {
           rejectOnWindowClose(popup.id!, safeResolve, {
             apiError: FreighterApiDeclinedError,
           });
@@ -445,12 +459,7 @@ export const freighterApiMessageListener = (
       );
 
       return new Promise((resolve) => {
-        let resolved = false;
-        const safeResolve = (value: any) => {
-          if (resolved) return;
-          resolved = true;
-          resolve(value);
-        };
+        const safeResolve = makeSafeResolve(resolve);
 
         if (popup === undefined) {
           safeResolve({
@@ -531,12 +540,7 @@ export const freighterApiMessageListener = (
       );
 
       return new Promise((resolve) => {
-        let resolved = false;
-        const safeResolve = (value: any) => {
-          if (resolved) return;
-          resolved = true;
-          resolve(value);
-        };
+        const safeResolve = makeSafeResolve(resolve);
 
         if (popup === undefined) {
           safeResolve({
@@ -629,12 +633,7 @@ export const freighterApiMessageListener = (
       );
 
       return new Promise((resolve) => {
-        let resolved = false;
-        const safeResolve = (value: any) => {
-          if (resolved) return;
-          resolved = true;
-          resolve(value);
-        };
+        const safeResolve = makeSafeResolve(resolve);
 
         if (popup === undefined) {
           safeResolve({
@@ -777,14 +776,14 @@ export const freighterApiMessageListener = (
     );
 
     return new Promise((resolve) => {
-      let resolved = false;
-      const safeResolve = (value: any) => {
-        if (resolved) return;
-        resolved = true;
-        resolve(value);
-      };
+      const safeResolve = makeSafeResolve(resolve);
 
-      if (popup === null) {
+      if (popup === undefined) {
+        safeResolve({
+          apiError: FreighterApiInternalError,
+          error: FreighterApiInternalError.message,
+        });
+      } else if (popup === null) {
         setTimeout(
           () =>
             safeResolve({
@@ -793,6 +792,8 @@ export const freighterApiMessageListener = (
             }),
           QUEUE_ITEM_TTL_MS,
         );
+      } else {
+        rejectOnWindowClose(popup.id!, safeResolve);
       }
       const response = async (url?: string) => {
         // queue it up, we'll let user confirm the url looks okay and then we'll say it's okay

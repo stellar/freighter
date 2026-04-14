@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button, Icon } from "@stellar/design-system";
+import { Button, Heading, Icon, Text } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
 import { View } from "popup/basics/layout/View";
@@ -66,14 +66,18 @@ export const ConfirmSidebarRequest = () => {
           <div className="ConfirmSidebarRequest__icon">
             <Icon.AlertTriangle />
           </div>
-          <h1 className="ConfirmSidebarRequest__title">
+          <Heading
+            as="h1"
+            size="md"
+            addlClassName="ConfirmSidebarRequest__title"
+          >
             {t("New Signing Request")}
-          </h1>
-          <div className="ConfirmSidebarRequest__body">
+          </Heading>
+          <Text as="p" size="sm" addlClassName="ConfirmSidebarRequest__body">
             {t(
               "A new signing request arrived while you were reviewing another. Please review it carefully before approving.",
             )}
-          </div>
+          </Text>
         </div>
         <div className="ConfirmSidebarRequest__buttons">
           <Button

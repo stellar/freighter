@@ -29,9 +29,9 @@ export const openSidebar = async () => {
       });
       await chrome.sidePanel.open({ windowId: win.id! });
     }
-    window.close();
   } catch (e) {
     console.error("Failed to open sidebar:", e);
+  } finally {
     window.close();
   }
 };
