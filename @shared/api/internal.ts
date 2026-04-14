@@ -2407,3 +2407,19 @@ export const markQueueActive = async ({
     console.error(e);
   }
 };
+
+export const rejectSigningRequest = async ({
+  uuid,
+}: {
+  uuid: string;
+}): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      activePublicKey: null,
+      uuid,
+      type: SERVICE_TYPES.REJECT_SIGNING_REQUEST,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};

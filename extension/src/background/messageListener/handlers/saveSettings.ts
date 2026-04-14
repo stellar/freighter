@@ -59,8 +59,8 @@ export const saveSettings = async ({
     isSorobanPublicEnabled: featureFlags.useSorobanPublic,
     isNonSSLEnabled: await getIsNonSSLEnabled({ localStore }),
     isHideDustEnabled: await getIsHideDustEnabled({ localStore }),
-    isOpenSidebarByDefault: (await localStore.getItem(
-      IS_OPEN_SIDEBAR_BY_DEFAULT_ID,
-    )) as boolean ?? false,
+    isOpenSidebarByDefault:
+      ((await localStore.getItem(IS_OPEN_SIDEBAR_BY_DEFAULT_ID)) as boolean) ??
+      false,
   };
 };

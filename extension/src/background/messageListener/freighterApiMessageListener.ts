@@ -24,7 +24,10 @@ import {
   FreighterApiInternalError,
   FreighterApiDeclinedError,
 } from "@shared/api/helpers/extensionMessaging";
-import { EXTERNAL_SERVICE_TYPES } from "@shared/constants/services";
+import {
+  EXTERNAL_SERVICE_TYPES,
+  SIDEBAR_NAVIGATE,
+} from "@shared/constants/services";
 import {
   MAINNET_NETWORK_DETAILS,
   NetworkDetails,
@@ -66,14 +69,42 @@ import {
   tokenQueue,
   transactionQueue,
 } from "./popupMessageListener";
-import { QUEUE_ITEM_TTL_MS } from "background/helpers/queueCleanup";
+import {
+  QUEUE_ITEM_TTL_MS,
+  sidebarQueueUuids,
+} from "background/helpers/queueCleanup";
 
-const SIDEBAR_NAVIGATE = "SIDEBAR_NAVIGATE";
+import { getSidebarPort } from "background/helpers/sidebarPort";
+import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 
-const openSigningWindow = async (hashRoute: string, width?: number) => {
+/** Create a resolve wrapper that silently ignores duplicate calls. */
+const makeSafeResolve = (resolve: (value: unknown) => void) => {
+  let resolved = false;
+  return (value: unknown) => {
+    if (resolved) return;
+    resolved = true;
+    resolve(value);
+  };
+};
+
+const openSigningWindow = async (
+  hashRoute: string,
+  uuid: string,
+  width?: number,
+) => {
   const sidebarWindowId = getSidebarWindowId();
   if (sidebarWindowId !== null) {
-    browser.runtime.sendMessage({ type: SIDEBAR_NAVIGATE, route: hashRoute });
+    // Track this UUID as sidebar-routed at routing time so it gets
+    // cleaned up on sidebar disconnect, even if the signing view
+    // hasn't mounted yet (e.g. ConfirmSidebarRequest interstitial).
+    sidebarQueueUuids.add(uuid);
+
+    // Send navigation directly to the sidebar via its long-lived port
+    // instead of broadcasting to all extension listeners
+    const currentPort = getSidebarPort();
+    if (currentPort) {
+      currentPort.postMessage({ type: SIDEBAR_NAVIGATE, route: hashRoute });
+    }
     try {
       if ((browser as any).sidebarAction) {
         // Firefox
@@ -88,12 +119,29 @@ const openSigningWindow = async (hashRoute: string, width?: number) => {
     return null;
   }
   return browser.windows.create({
-    url: chrome.runtime.getURL(`/index.html#${hashRoute}`),
+    url: browser.runtime.getURL(`/index.html#${hashRoute}`),
     ...WINDOW_SETTINGS,
     ...(width !== undefined ? { width } : {}),
   });
 };
-import { DataStorageAccess } from "background/helpers/dataStorageAccess";
+
+/** Reject the dapp's pending request when the popup window is closed. */
+const rejectOnWindowClose = (
+  windowId: number,
+  safeResolve: (value: unknown) => void,
+  rejectValue: Record<string, unknown> = {
+    apiError: FreighterApiDeclinedError,
+    error: FreighterApiDeclinedError.message,
+  },
+) => {
+  const onWindowRemoved = (removedWindowId: number) => {
+    if (removedWindowId === windowId) {
+      browser.windows.onRemoved.removeListener(onWindowRemoved);
+      safeResolve(rejectValue);
+    }
+  };
+  browser.windows.onRemoved.addListener(onWindowRemoved);
+};
 
 interface WindowParams {
   height: number;
@@ -135,18 +183,30 @@ export const freighterApiMessageListener = (
     const uuid = crypto.randomUUID();
     const encodeOrigin = encodeObject({ tab, url: tabUrl, uuid });
 
-    const popup = await openSigningWindow(`/grant-access?${encodeOrigin}`);
+    const popup = await openSigningWindow(
+      `/grant-access?${encodeOrigin}`,
+      uuid,
+    );
 
     return new Promise((resolve) => {
-      if (popup === null) {
+      const safeResolve = makeSafeResolve(resolve);
+
+      if (popup === undefined) {
+        safeResolve({
+          apiError: FreighterApiInternalError,
+          error: FreighterApiInternalError.message,
+        });
+      } else if (popup === null) {
         setTimeout(
           () =>
-            resolve({
+            safeResolve({
               apiError: FreighterApiDeclinedError,
               error: FreighterApiDeclinedError.message,
             }),
           QUEUE_ITEM_TTL_MS,
         );
+      } else {
+        rejectOnWindowClose(popup.id!, safeResolve);
       }
       const response = async (url: string, publicKey?: string) => {
         // queue it up, we'll let user confirm the url looks okay and then we'll send publicKey
@@ -164,10 +224,11 @@ export const freighterApiMessageListener = (
             }
           }, 50);
 
-          resolve({ publicKey });
+          safeResolve({ publicKey });
+          return;
         }
 
-        resolve({
+        safeResolve({
           // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
           apiError: FreighterApiDeclinedError,
           error: FreighterApiDeclinedError.message,
@@ -233,28 +294,40 @@ export const freighterApiMessageListener = (
       tokenQueue.push({ token: tokenInfo, uuid, createdAt: Date.now() });
       const encodedTokenInfo = encodeObject(tokenInfo);
 
-      const popup = await openSigningWindow(`/add-token?${encodedTokenInfo}`);
+      const popup = await openSigningWindow(
+        `/add-token?${encodedTokenInfo}`,
+        uuid,
+      );
 
       return new Promise((resolve) => {
+        const safeResolve = makeSafeResolve(resolve);
+
         if (popup === undefined) {
-          resolve({
+          safeResolve({
             apiError: FreighterApiInternalError,
           });
-        } else if (popup !== null) {
-          browser.windows.onRemoved.addListener(() =>
-            resolve({
-              apiError: FreighterApiDeclinedError,
-            }),
+        } else if (popup === null) {
+          setTimeout(
+            () =>
+              safeResolve({
+                apiError: FreighterApiDeclinedError,
+              }),
+            QUEUE_ITEM_TTL_MS,
           );
+        } else {
+          rejectOnWindowClose(popup.id!, safeResolve, {
+            apiError: FreighterApiDeclinedError,
+          });
         }
         const response = (success: boolean) => {
           if (success) {
-            resolve({
+            safeResolve({
               contractId,
             });
+            return;
           }
 
-          resolve({
+          safeResolve({
             apiError: FreighterApiDeclinedError,
           });
         };
@@ -380,11 +453,16 @@ export const freighterApiMessageListener = (
       });
       const encodedBlob = encodeObject(transactionInfo);
 
-      const popup = await openSigningWindow(`/sign-transaction?${encodedBlob}`);
+      const popup = await openSigningWindow(
+        `/sign-transaction?${encodedBlob}`,
+        uuid,
+      );
 
       return new Promise((resolve) => {
+        const safeResolve = makeSafeResolve(resolve);
+
         if (popup === undefined) {
-          resolve({
+          safeResolve({
             // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
             apiError: FreighterApiInternalError,
             error: FreighterApiInternalError.message,
@@ -392,30 +470,25 @@ export const freighterApiMessageListener = (
         } else if (popup === null) {
           setTimeout(
             () =>
-              resolve({
+              safeResolve({
                 apiError: FreighterApiDeclinedError,
                 error: FreighterApiDeclinedError.message,
               }),
             QUEUE_ITEM_TTL_MS,
           );
         } else {
-          browser.windows.onRemoved.addListener(() =>
-            resolve({
-              // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
-              apiError: FreighterApiDeclinedError,
-              error: FreighterApiDeclinedError.message,
-            }),
-          );
+          rejectOnWindowClose(popup.id!, safeResolve);
         }
         const response = (
           signedTransaction: string,
           signerAddress?: string,
         ) => {
           if (signedTransaction) {
-            resolve({ signedTransaction, signerAddress });
+            safeResolve({ signedTransaction, signerAddress });
+            return;
           }
 
-          resolve({
+          safeResolve({
             // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
             apiError: FreighterApiDeclinedError,
             error: FreighterApiDeclinedError.message,
@@ -461,11 +534,16 @@ export const freighterApiMessageListener = (
 
       blobQueue.push({ blob: blobData, uuid, createdAt: Date.now() });
       const encodedBlob = encodeObject(blobData);
-      const popup = await openSigningWindow(`/sign-message?${encodedBlob}`);
+      const popup = await openSigningWindow(
+        `/sign-message?${encodedBlob}`,
+        uuid,
+      );
 
       return new Promise((resolve) => {
+        const safeResolve = makeSafeResolve(resolve);
+
         if (popup === undefined) {
-          resolve({
+          safeResolve({
             // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
             apiError: FreighterApiInternalError,
             error: FreighterApiInternalError.message,
@@ -473,20 +551,14 @@ export const freighterApiMessageListener = (
         } else if (popup === null) {
           setTimeout(
             () =>
-              resolve({
+              safeResolve({
                 apiError: FreighterApiDeclinedError,
                 error: FreighterApiDeclinedError.message,
               }),
             QUEUE_ITEM_TTL_MS,
           );
         } else {
-          browser.windows.onRemoved.addListener(() =>
-            resolve({
-              // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
-              apiError: FreighterApiDeclinedError,
-              error: FreighterApiDeclinedError.message,
-            }),
-          );
+          rejectOnWindowClose(popup.id!, safeResolve);
         }
 
         const response = (
@@ -495,16 +567,17 @@ export const freighterApiMessageListener = (
         ) => {
           if (signedBlob) {
             if (apiVersion && semver.gte(apiVersion, "4.0.0")) {
-              resolve({
+              safeResolve({
                 signedBlob: signedBlob.toString("base64"),
                 signerAddress,
               });
               return;
             }
-            resolve({ signedBlob, signerAddress });
+            safeResolve({ signedBlob, signerAddress });
+            return;
           }
 
-          resolve({
+          safeResolve({
             // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
             apiError: FreighterApiDeclinedError,
             error: FreighterApiDeclinedError.message,
@@ -556,11 +629,14 @@ export const freighterApiMessageListener = (
       const encodedAuthEntry = encodeObject(authEntry);
       const popup = await openSigningWindow(
         `/sign-auth-entry?${encodedAuthEntry}`,
+        uuid,
       );
 
       return new Promise((resolve) => {
+        const safeResolve = makeSafeResolve(resolve);
+
         if (popup === undefined) {
-          resolve({
+          safeResolve({
             // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
             apiError: FreighterApiInternalError,
             error: FreighterApiInternalError.message,
@@ -568,20 +644,14 @@ export const freighterApiMessageListener = (
         } else if (popup === null) {
           setTimeout(
             () =>
-              resolve({
+              safeResolve({
                 apiError: FreighterApiDeclinedError,
                 error: FreighterApiDeclinedError.message,
               }),
             QUEUE_ITEM_TTL_MS,
           );
         } else {
-          browser.windows.onRemoved.addListener(() =>
-            resolve({
-              // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
-              apiError: FreighterApiDeclinedError,
-              error: FreighterApiDeclinedError.message,
-            }),
-          );
+          rejectOnWindowClose(popup.id!, safeResolve);
         }
         const response = (
           signedAuthEntry: SignAuthEntryResponse,
@@ -589,17 +659,18 @@ export const freighterApiMessageListener = (
         ) => {
           if (signedAuthEntry) {
             if (apiVersion && semver.gte(apiVersion, "4.2.0")) {
-              resolve({
+              safeResolve({
                 signedAuthEntry:
                   Buffer.from(signedAuthEntry).toString("base64"),
                 signerAddress,
               });
               return;
             }
-            resolve({ signedAuthEntry, signerAddress });
+            safeResolve({ signedAuthEntry, signerAddress });
+            return;
           }
 
-          resolve({
+          safeResolve({
             // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
             apiError: FreighterApiDeclinedError,
             error: FreighterApiDeclinedError.message,
@@ -698,17 +769,32 @@ export const freighterApiMessageListener = (
     const uuid = crypto.randomUUID();
     const encodeOrigin = encodeObject({ tab, url: tabUrl, uuid });
 
-    await openSigningWindow(`/grant-access?${encodeOrigin}`, 400);
+    const popup = await openSigningWindow(
+      `/grant-access?${encodeOrigin}`,
+      uuid,
+      400,
+    );
 
     return new Promise((resolve) => {
-      setTimeout(
-        () =>
-          resolve({
-            apiError: FreighterApiDeclinedError,
-            error: FreighterApiDeclinedError.message,
-          }),
-        QUEUE_ITEM_TTL_MS,
-      );
+      const safeResolve = makeSafeResolve(resolve);
+
+      if (popup === undefined) {
+        safeResolve({
+          apiError: FreighterApiInternalError,
+          error: FreighterApiInternalError.message,
+        });
+      } else if (popup === null) {
+        setTimeout(
+          () =>
+            safeResolve({
+              apiError: FreighterApiDeclinedError,
+              error: FreighterApiDeclinedError.message,
+            }),
+          QUEUE_ITEM_TTL_MS,
+        );
+      } else {
+        rejectOnWindowClose(popup.id!, safeResolve);
+      }
       const response = async (url?: string) => {
         // queue it up, we'll let user confirm the url looks okay and then we'll say it's okay
         if (url === tabUrl) {
@@ -722,10 +808,11 @@ export const freighterApiMessageListener = (
             allowListSegment: updatedAllAccountsllowListSegment,
           });
 
-          resolve({ isAllowed: isAllowedResponse });
+          safeResolve({ isAllowed: isAllowedResponse });
+          return;
         }
 
-        resolve({
+        safeResolve({
           // return 2 error formats: one for clients running older versions of freighter-api, and one to adhere to the standard wallet interface
           apiError: FreighterApiDeclinedError,
           error: FreighterApiDeclinedError.message,
