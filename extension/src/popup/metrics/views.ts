@@ -3,6 +3,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { registerHandler, emitMetric } from "helpers/metrics";
 import { getTransactionInfo } from "helpers/stellar";
 import { parsedSearchParam, getUrlHostname, getUrlDomain } from "helpers/urls";
+import { isSidebarMode } from "popup/helpers/isSidebarMode";
 
 import { navigate } from "popup/ducks/views";
 import { AppState } from "popup/App";
@@ -68,6 +69,7 @@ const routeToEventName = {
   [ROUTES.addFunds]: METRIC_NAMES.viewAddFunds,
   [ROUTES.discover]: METRIC_NAMES.discover,
   [ROUTES.wallets]: METRIC_NAMES.wallets,
+  [ROUTES.confirmSidebarRequest]: METRIC_NAMES.confirmSidebarRequest,
 };
 
 registerHandler<AppState>(navigate, (_, a) => {
@@ -82,11 +84,14 @@ registerHandler<AppState>(navigate, (_, a) => {
   }
 
   // "/sign-transaction" and "/grant-access" require additional metrics on loaded page
+  const isSidebarModeActivated = isSidebarMode();
+
   if (pathname === ROUTES.grantAccess) {
     const { url } = parsedSearchParam(search);
     const METRIC_OPTION_DOMAIN = {
       domain: getUrlDomain(url),
       subdomain: getUrlHostname(url),
+      sidebarMode: isSidebarModeActivated,
     };
 
     emitMetric(eventName, METRIC_OPTION_DOMAIN);
@@ -95,6 +100,7 @@ registerHandler<AppState>(navigate, (_, a) => {
     const METRIC_OPTIONS = {
       domain: getUrlDomain(url),
       subdomain: getUrlHostname(url),
+      sidebarMode: isSidebarModeActivated,
     };
 
     emitMetric(eventName, METRIC_OPTIONS);
@@ -106,7 +112,7 @@ registerHandler<AppState>(navigate, (_, a) => {
     const METRIC_OPTIONS = {
       domain: getUrlDomain(url),
       subdomain: getUrlHostname(url),
-
+      sidebarMode: isSidebarModeActivated,
       number_of_operations: operations.length,
       operationTypes,
     };
@@ -121,6 +127,7 @@ registerHandler<AppState>(navigate, (_, a) => {
     const METRIC_OPTIONS = {
       domain: getUrlDomain(url),
       subdomain: getUrlHostname(url),
+      sidebarMode: isSidebarModeActivated,
     };
 
     emitMetric(eventName, METRIC_OPTIONS);
