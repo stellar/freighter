@@ -40,6 +40,7 @@ const mockLoadSettings = () =>
     isDataSharingAllowed: false,
     isMemoValidationEnabled: false,
     isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
     settingsState: SettingsState.SUCCESS,
     isSorobanPublicEnabled: false,
     isRpcHealthy: true,
