@@ -29,6 +29,7 @@ export const Preferences = () => {
     isValidatingMemoValue: boolean;
     isDataSharingAllowedValue: boolean;
     isHideDustEnabledValue: boolean;
+    isOpenSidebarByDefaultValue: boolean;
   }
 
   const handleSubmit = async (formValue: SettingValues) => {
@@ -36,6 +37,7 @@ export const Preferences = () => {
       isValidatingMemoValue,
       isDataSharingAllowedValue,
       isHideDustEnabledValue,
+      isOpenSidebarByDefaultValue,
     } = formValue;
 
     await dispatch(
@@ -43,6 +45,7 @@ export const Preferences = () => {
         isMemoValidationEnabled: isValidatingMemoValue,
         isDataSharingAllowed: isDataSharingAllowedValue,
         isHideDustEnabled: isHideDustEnabledValue,
+        isOpenSidebarByDefault: isOpenSidebarByDefaultValue,
       }),
     );
   };
@@ -95,13 +98,18 @@ export const Preferences = () => {
     state: state.state,
   });
 
-  const { isMemoValidationEnabled, isDataSharingAllowed, isHideDustEnabled } =
-    state.data.settings;
+  const {
+    isMemoValidationEnabled,
+    isDataSharingAllowed,
+    isHideDustEnabled,
+    isOpenSidebarByDefault,
+  } = state.data.settings;
 
   const initialValues: SettingValues = {
     isValidatingMemoValue: isMemoValidationEnabled,
     isDataSharingAllowedValue: isDataSharingAllowed,
     isHideDustEnabledValue: isHideDustEnabled,
+    isOpenSidebarByDefaultValue: isOpenSidebarByDefault ?? false,
   };
 
   return (
@@ -149,9 +157,11 @@ export const Preferences = () => {
                   </div>
                 </div>
                 <span className="Preferences--section--subtitle">
-                  {t(
-                    "Allow Freighter to collect anonymous information about usage. Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts.",
-                  )}
+                  {`${t(
+                    "Allow Freighter to collect anonymous information about usage.",
+                  )} ${t(
+                    "Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts.",
+                  )}`}
                 </span>
               </div>
 
@@ -171,6 +181,27 @@ export const Preferences = () => {
                   {t("Hide payments smaller than 0.1 XLM")}
                 </span>
               </div>
+
+              {typeof globalThis.chrome?.sidePanel?.open === "function" && (
+                <div className="Preferences--section">
+                  <div className="Preferences--section--title">
+                    <span>{t("Open sidebar mode by default")} </span>
+                    <div className="Preferences--toggle">
+                      <Toggle
+                        fieldSize="sm"
+                        checked={initialValues.isOpenSidebarByDefaultValue}
+                        customInput={<Field />}
+                        id="isOpenSidebarByDefaultValue"
+                      />
+                    </div>
+                  </div>
+                  <span className="Preferences--section--subtitle">
+                    {t(
+                      "Open Freighter in sidebar instead of popup when clicking the extension icon",
+                    )}
+                  </span>
+                </div>
+              )}
             </Form>
           </div>
         </View.Content>

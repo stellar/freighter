@@ -4,14 +4,19 @@ export enum SorobanTokenInterface {
   mint = "mint",
 }
 
-export type ArgsForTokenInvocation = {
+export enum SorobanCollectibleInterface {
+  transfer = "transfer",
+}
+
+export type ArgsForTransferInvocation = {
   from: string;
   to: string;
-  amount: bigint | number;
+  amount?: bigint | number;
+  tokenId?: number;
 };
 
-export type TokenInvocationArgs = ArgsForTokenInvocation & {
-  fnName: SorobanTokenInterface;
+export type HostFnInvocationArgs = ArgsForTransferInvocation & {
+  fnName: SorobanTokenInterface | SorobanCollectibleInterface;
   contractId: string;
 };
 

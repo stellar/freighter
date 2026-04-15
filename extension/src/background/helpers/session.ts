@@ -29,44 +29,62 @@ export class SessionTimer {
   }
 }
 
+const IV_LENGTH = 16; // AES-CBC uses 128-bit (16 byte) IV
+
 interface HashString {
   str: string;
-  keyObject: { iv: ArrayBuffer; key: CryptoKey };
+  keyObject: { key: CryptoKey };
 }
 
 const TEMPORARY_STORE_ENCRYPTION_NAME = "AES-CBC";
 const HASH_KEY_ENCRYPTION_PARAMS = { name: "PBKDF2", hash: "SHA-256" };
 
-export const encryptHashString = ({ str, keyObject }: HashString) => {
+export const encryptHashString = async ({
+  str,
+  keyObject,
+}: HashString): Promise<ArrayBuffer> => {
+  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
   const encoder = new TextEncoder();
   const encodedStr = encoder.encode(str);
 
-  return crypto.subtle.encrypt(
+  const ciphertext = await crypto.subtle.encrypt(
     {
       name: TEMPORARY_STORE_ENCRYPTION_NAME,
-      iv: keyObject.iv,
+      iv,
     },
     keyObject.key,
     encodedStr,
   );
+
+  // Prepend IV to ciphertext so each encryption is self-contained
+  const result = new Uint8Array(iv.byteLength + ciphertext.byteLength);
+  result.set(iv, 0);
+  result.set(new Uint8Array(ciphertext), iv.byteLength);
+
+  return result.buffer;
 };
 
 interface DecodeHashString {
   hash: ArrayBuffer;
-  keyObject: { iv: ArrayBuffer; key: CryptoKey };
+  keyObject: { key: CryptoKey };
 }
 
 export const decryptHashString = async ({
   hash,
   keyObject,
 }: DecodeHashString) => {
+  const data = new Uint8Array(hash);
+  // Extract the IV from the first 16 bytes
+  const iv = data.slice(0, IV_LENGTH);
+  const ciphertext = data.slice(IV_LENGTH);
+
   const decrypted = await crypto.subtle.decrypt(
     {
       name: TEMPORARY_STORE_ENCRYPTION_NAME,
-      iv: keyObject.iv,
+      iv,
     },
     keyObject.key,
-    hash,
+    ciphertext,
   );
 
   const textDecoder = new TextDecoder();
@@ -75,9 +93,8 @@ export const decryptHashString = async ({
 };
 
 export const deriveKeyFromString = async (str: string) => {
-  const iterations = 1000;
+  const iterations = 600000;
   const keylen = 32;
-  const keyLength = 48;
   // randomized salt will make sure the hashed password is different on every login
   const salt = crypto.getRandomValues(new Uint8Array(16)).toString();
 
@@ -101,15 +118,12 @@ export const deriveKeyFromString = async (str: string) => {
   const derivation = await crypto.subtle.deriveBits(
     params,
     importedKey,
-    keyLength * 8,
+    keylen * 8,
   );
-
-  const derivedKey = derivation.slice(0, keylen);
-  const iv = derivation.slice(keylen);
 
   const importedEncryptionKey = await crypto.subtle.importKey(
     "raw",
-    derivedKey,
+    derivation,
     { name: TEMPORARY_STORE_ENCRYPTION_NAME },
     true,
     ["encrypt", "decrypt"],
@@ -117,7 +131,6 @@ export const deriveKeyFromString = async (str: string) => {
 
   return {
     key: importedEncryptionKey,
-    iv,
   };
 };
 
@@ -125,7 +138,6 @@ interface StoreActiveHashKey {
   sessionStore: Store;
   hashKey: {
     key: CryptoKey;
-    iv: ArrayBuffer;
   };
 }
 
@@ -141,8 +153,6 @@ export const storeActiveHashKey = async ({
   sessionStore.dispatch(
     setActiveHashKey({
       hashKey: {
-        // properly encode ArrayBuffer into serializable format
-        iv: encode(hashKey.iv),
         // JSON Web Key is able to be stringified without encoding
         key: JSON.stringify(exportedKey),
       },
@@ -159,7 +169,7 @@ export const getActiveHashKeyCryptoKey = async ({
 }: GetActiveHashKey) => {
   const hashKey = hashKeySelector(sessionStore.getState() as SessionState);
 
-  if (hashKey?.key && hashKey?.iv) {
+  if (hashKey?.key) {
     try {
       const format = "jwk";
       // JSON Web Key can be parsed with decoding
@@ -175,7 +185,6 @@ export const getActiveHashKeyCryptoKey = async ({
       );
 
       return {
-        iv: decode(hashKey.iv),
         key,
       };
     } catch (e) {
@@ -191,7 +200,6 @@ interface StoreEncryptedTemporaryData {
   keyName: string;
   temporaryData: string;
   hashKey: {
-    iv: ArrayBuffer;
     key: CryptoKey;
   };
 }

@@ -117,10 +117,13 @@ export const RecoverAccount = () => {
   const [mnemonicPhraseArr, setMnemonicPhraseArr] = useState([] as string[]);
   const [password, setPassword] = useState("");
   const [pastedValues, setPastedValues] = useState<string[]>([]);
+  const [passwordFormValues, setPasswordFormValues] =
+    useState<FormValues>(initialValues);
   const { state, fetchData } = useRecoverAccountData();
 
   const handleConfirm = (values: FormValues) => {
     setPassword(values.password);
+    setPasswordFormValues(values);
   };
 
   const publicKeyRef = useRef(
@@ -140,22 +143,17 @@ export const RecoverAccount = () => {
 
   useEffect(() => {
     const phraseInputsArr: string[] = [];
-    let PHRASE_LENGTH = SHORT_PHRASE;
+    const PHRASE_LENGTH = isLongPhrase ? LONG_PHRASE : SHORT_PHRASE;
 
-    // delay to account for css transition
-    setTimeout(() => {
-      PHRASE_LENGTH = isLongPhrase ? LONG_PHRASE : SHORT_PHRASE;
+    for (let i = 1; i <= PHRASE_LENGTH; i++) {
+      phraseInputsArr.push(`MnemonicPhrase-${i}`);
+    }
+    setPhraseInputs(phraseInputsArr);
 
-      for (let i = 1; i <= PHRASE_LENGTH; i++) {
-        phraseInputsArr.push(`MnemonicPhrase-${i}`);
-      }
-      setPhraseInputs(phraseInputsArr);
-
-      if (PHRASE_LENGTH === SHORT_PHRASE) {
-        // when going back to 12 words, clear all the fields
-        setMnemonicPhraseArr([]);
-      }
-    }, 150);
+    if (PHRASE_LENGTH === SHORT_PHRASE) {
+      // when going back to 12 words, clear all the fields
+      setMnemonicPhraseArr([]);
+    }
   }, [isLongPhrase]);
 
   useEffect(() => {
@@ -225,7 +223,7 @@ export const RecoverAccount = () => {
     <React.Fragment>
       <View.Content alignment="center" hasNoTopPadding hasNoBottomPadding>
         <Formik
-          initialValues={initialValues}
+          initialValues={passwordFormValues}
           validationSchema={RecoverAccountSchema}
           onSubmit={handleSubmit}
         >
@@ -237,7 +235,7 @@ export const RecoverAccount = () => {
                     <Onboarding layout="half">
                       <OnboardingModal
                         data-testid="confirm-mnemonic-phrase"
-                        headerText="Import wallet from recovery phrase"
+                        headerText={t("Import wallet from recovery phrase")}
                         bodyText={
                           <>
                             <Text as="p" size="md">
@@ -250,13 +248,7 @@ export const RecoverAccount = () => {
                       >
                         <Card variant="primary">
                           <div className="RecoverAccount__mnemonic-wrapper">
-                            <div
-                              className={`RecoverAccount__mnemonic-input ${
-                                isLongPhrase
-                                  ? "RecoverAccount__mnemonic-input--long-phrase"
-                                  : ""
-                              }`}
-                            >
+                            <div className="RecoverAccount__mnemonic-input">
                               {phraseInputs.map((phraseInput, i) => (
                                 <PhraseInput
                                   key={phraseInput}

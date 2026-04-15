@@ -36,7 +36,7 @@ export const CheckButton = ({
       value={wordKey}
     />
     <label className="ButtonLabel" htmlFor={wordIndex}>
-      <div className="ButtonLabel__number">{wordNumber()}</div>{" "}
+      <div className="ButtonLabel__number">{`${wordNumber()} `}</div>
       <div className="ButtonLabel__word">{word}</div>
     </label>
   </div>

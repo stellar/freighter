@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { PASSPHRASE_TO_NETWORK_NAME } from "@shared/constants/stellar";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
@@ -39,15 +40,22 @@ import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 import { openTab } from "popup/helpers/navigate";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import {
   WarningMessageVariant,
   WarningMessage,
   SSLWarningMessage,
   BlockaidTxScanLabel,
-  BlockAidTxScanExpanded,
+  BlockAidScanExpanded,
   DomainNotAllowedWarningMessage,
+  MemoRequiredLabel,
 } from "popup/components/WarningMessages";
+import {
+  useShouldTreatTxAsUnableToScan,
+  useIsTxSuspicious,
+  getSiteSecurityStates,
+} from "popup/helpers/blockaid";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Loading } from "popup/components/Loading";
 import { VerifyAccount } from "popup/views/VerifyAccount";
@@ -89,7 +97,11 @@ export const SignTransaction = () => {
     domain,
     isHttpsDomain,
     flaggedKeys,
+    uuid,
   } = tx;
+
+  // Mark this queue item as active to prevent TTL cleanup while popup is open
+  useMarkQueueActive(uuid);
 
   const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =
     useState(false);
@@ -99,6 +111,8 @@ export const SignTransaction = () => {
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
   });
+  const isTxSuspicious = useIsTxSuspicious();
+  const shouldTreatAsUnableToScan = useShouldTreatTxAsUnableToScan();
 
   let accountToSign = _accountToSign;
 
@@ -112,6 +126,7 @@ export const SignTransaction = () => {
       includeIcons: false,
     },
     accountToSign,
+    domain,
   );
 
   const {
@@ -123,7 +138,31 @@ export const SignTransaction = () => {
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
-  } = useSetupSigningFlow(rejectTransaction, signTransaction, transactionXdr);
+  } = useSetupSigningFlow(
+    rejectTransaction,
+    signTransaction,
+    transactionXdr,
+    uuid,
+  );
+
+  const siteScanData =
+    signTxState.data?.type === AppDataType.RESOLVED
+      ? signTxState.data.siteScanData
+      : null;
+  const blockaidOverrideState =
+    signTxState.data?.type === AppDataType.RESOLVED
+      ? signTxState.data.blockaidOverrideState
+      : null;
+
+  // Determine site security states with override support
+  const {
+    isMalicious: isSiteMalicious,
+    isSuspicious: isSiteSuspicious,
+    isUnableToScan: isSiteUnableToScan,
+  } = getSiteSecurityStates(siteScanData, blockaidOverrideState);
+
+  const shouldShowSiteWarning =
+    isSiteMalicious || isSiteSuspicious || isSiteUnableToScan;
 
   // rebuild transaction to get Transaction prototypes
   const transaction = TransactionBuilder.fromXDR(
@@ -143,8 +182,9 @@ export const SignTransaction = () => {
 
   const memo = decodedMemo?.value;
 
-  const flaggedKeyValues = Object.values(flaggedKeys);
-  const isMemoRequired = flaggedKeyValues.some(
+  // Check if memo is required based on flaggedKeys (populated by background script)
+  // flaggedKeys is already validated when the transaction is received, so no need to re-validate
+  const isMemoRequired = Object.values(flaggedKeys).some(
     ({ tags }) => tags.includes(TRANSACTION_WARNING.memoRequired) && !memo,
   );
 
@@ -189,6 +229,7 @@ export const SignTransaction = () => {
     }
   }, [isMemoRequired]);
 
+  // Disable submit when memo is missing or domain not allowed
   const isSubmitDisabled = isMemoRequired || !isDomainListedAllowed;
 
   if (
@@ -221,23 +262,47 @@ export const SignTransaction = () => {
     });
   }
 
-  const { networkName, networkPassphrase } = signTxState.data?.networkDetails!;
+  // Handle potential missing networkDetails
+  if (!signTxState.data?.networkDetails) {
+    return (
+      <WarningMessage
+        variant={WarningMessageVariant.warning}
+        handleCloseClick={() => window.close()}
+        isActive
+        header={t("Unable to load network details")}
+      >
+        <p>{t("Please try again.")}</p>
+      </WarningMessage>
+    );
+  }
+
+  const { networkName, networkPassphrase } = signTxState.data.networkDetails;
 
   const scanResult = signTxState.data?.scanResult;
-  const hasNonBenignValidation = !!(
-    scanResult?.validation &&
-    "result_type" in scanResult.validation &&
-    (scanResult.validation.result_type === "Malicious" ||
-      scanResult.validation.result_type === "Warning")
-  );
+  const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
+  const isSuspiciousCheck = isTxSuspicious(scanResult);
+
+  const hasNonBenignValidation =
+    isSuspiciousCheck ||
+    !!(
+      scanResult?.validation &&
+      "result_type" in scanResult.validation &&
+      (scanResult.validation.result_type === "Malicious" ||
+        scanResult.validation.result_type === "Warning")
+    );
   const hasSimulationError =
     scanResult && scanResult.simulation && "error" in scanResult.simulation;
-  const showBlockAidDetails = hasSimulationError || hasNonBenignValidation;
+  const showBlockAidDetails =
+    isUnableToScan ||
+    hasSimulationError ||
+    hasNonBenignValidation ||
+    shouldShowSiteWarning;
   const btnIsDestructive =
     (scanResult?.validation &&
       "result_type" in scanResult.validation &&
       scanResult.validation.result_type === "Malicious") ||
-    hasSimulationError;
+    hasSimulationError ||
+    isSiteMalicious;
 
   if (_networkPassphrase !== networkPassphrase) {
     return (
@@ -248,8 +313,9 @@ export const SignTransaction = () => {
         header={`${t("Freighter is set to")} ${networkName}`}
       >
         <p>
-          {t("The transaction you’re trying to sign is on")}{" "}
-          {_networkPassphrase}.
+          {`${t("The transaction you’re trying to sign is on")} `}
+          {PASSPHRASE_TO_NETWORK_NAME[_networkPassphrase] ?? _networkPassphrase}
+          .
         </p>
         <p>{t("Signing this transaction is not possible at the moment.")}</p>
       </WarningMessage>
@@ -262,12 +328,16 @@ export const SignTransaction = () => {
 
   const { currentAccount } = signTxState.data?.signFlowState!;
 
-  const hasEnoughXlm = signTxState.data?.balances.balances.some(
-    (balance) =>
-      "token" in balance &&
-      balance.token.code === "XLM" &&
-      (balance as NativeAsset).available.gt(stroopToXlm(_fee as string)),
-  );
+  // Check if user has enough XLM for the fee - skip warning if balances unavailable
+  const balances = signTxState.data?.balances;
+  const hasEnoughXlm = balances
+    ? balances.balances.some(
+        (balance) =>
+          "token" in balance &&
+          balance.token.code === "XLM" &&
+          (balance as NativeAsset).available.gt(stroopToXlm(_fee as string)),
+      )
+    : true; // If balances unavailable, assume user can proceed
 
   if (
     currentAccount.publicKey &&
@@ -309,6 +379,38 @@ export const SignTransaction = () => {
       ? scanResult.simulation.assets_diffs?.[publicKey]
       : undefined;
 
+  /**
+   * Renders at most one warning banner based on priority:
+   * 1. Domain  – destination domain not in allowlist
+   * 2. Blockaid – malicious / suspicious / unable-to-scan result
+   * 3. Memo    – required but missing
+   */
+  const renderBanner = () => {
+    // 1. Domain: site not in allowlist
+    if (!isDomainListedAllowed) {
+      return <DomainNotAllowedWarningMessage domain={domain} />;
+    }
+
+    // 2. Blockaid: malicious / suspicious / unable-to-scan
+    if (showBlockAidDetails) {
+      return (
+        <div className="SignTransaction__BlockaidDetails">
+          <BlockaidTxScanLabel
+            scanResult={scanResult}
+            onClick={() => setActivePaneIndex(1)}
+          />
+        </div>
+      );
+    }
+
+    // 3. Memo required
+    if (isMemoRequired) {
+      return <MemoRequiredLabel onClick={() => setActivePaneIndex(3)} />;
+    }
+
+    return null;
+  };
+
   return isPasswordRequired ? (
     <VerifyAccount
       isApproval
@@ -318,7 +420,7 @@ export const SignTransaction = () => {
   ) : (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
-        <HardwareSign walletType={hardwareWalletType} />
+        <HardwareSign walletType={hardwareWalletType} uuid={uuid} />
       )}
       <div data-testid="SignTransaction" className="SignTransaction">
         <MultiPaneSlider
@@ -330,26 +432,18 @@ export const SignTransaction = () => {
                   <img
                     className="PunycodedDomain__favicon"
                     src={favicon}
-                    alt="Site favicon"
+                    alt={t("Site favicon")}
                   />
                   <div className="SignTransaction__TitleRow__Detail">
                     <span className="SignTransaction__TitleRow__Title">
-                      Confirm Transaction
+                      {t("Confirm Transaction")}
                     </span>
                     <span className="SignTransaction__TitleRow__Domain">
                       {validDomain}
                     </span>
                   </div>
                 </div>
-                {scanResult && (
-                  <BlockaidTxScanLabel
-                    scanResult={scanResult}
-                    onClick={() => setActivePaneIndex(1)}
-                  />
-                )}
-                {!isDomainListedAllowed && (
-                  <DomainNotAllowedWarningMessage domain={domain} />
-                )}
+                {renderBanner()}
                 {assetDiffs && (
                   <AssetDiffs
                     icons={signTxState.data?.icons || {}}
@@ -366,7 +460,7 @@ export const SignTransaction = () => {
                   <div className="SignTransaction__Metadata__Row">
                     <div className="SignTransaction__Metadata__Label">
                       <Icon.Wallet01 />
-                      <span>Wallet</span>
+                      <span>{t("Wallet")}</span>
                     </div>
                     <div className="SignTransaction__Metadata__Value">
                       <KeyIdenticon publicKey={publicKey} />
@@ -374,16 +468,34 @@ export const SignTransaction = () => {
                   </div>
                   <div className="SignTransaction__Metadata__Row">
                     <div className="SignTransaction__Metadata__Label">
+                      <Icon.Globe02 />
+                      <span>{t("Network")}</span>
+                    </div>
+                    <div className="SignTransaction__Metadata__Value">
+                      <span>{networkName}</span>
+                    </div>
+                  </div>
+                  <div className="SignTransaction__Metadata__Row">
+                    <div className="SignTransaction__Metadata__Label">
                       <Icon.Route />
-                      <span>Fee</span>
+                      <span>{t("Fee")}</span>
                     </div>
                     <div className="SignTransaction__Metadata__Value">
                       <span>
-                        {formatTokenAmount(
-                          new BigNumber(_fee),
-                          CLASSIC_ASSET_DECIMALS,
-                        )}{" "}
-                        XLM
+                        {`${formatTokenAmount(new BigNumber(_fee), CLASSIC_ASSET_DECIMALS)} XLM `}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="SignTransaction__Metadata__Row">
+                    <div className="SignTransaction__Metadata__Label">
+                      <Icon.File02 />
+                      <span>{t("Memo")}</span>
+                    </div>
+                    <div className="SignTransaction__Metadata__Value">
+                      <span>
+                        {decodedMemo && decodedMemo.value
+                          ? decodedMemo.value
+                          : t("None")}
                       </span>
                     </div>
                   </div>
@@ -393,12 +505,12 @@ export const SignTransaction = () => {
                   onClick={() => setActivePaneIndex(2)}
                 >
                   <Icon.List />
-                  <span>Transaction details</span>
+                  <span>{t("Transaction details")}</span>
                 </div>
               </div>
             </div>,
-            <BlockAidTxScanExpanded
-              scanResult={scanResult!}
+            <BlockAidScanExpanded
+              scanResult={scanResult}
               onClose={() => setActivePaneIndex(0)}
             />,
             <div className="SignTransaction__Body">
@@ -416,7 +528,7 @@ export const SignTransaction = () => {
                     </div>
                   </div>
                   <div className="SignTransaction__TransactionDetails__Title">
-                    <span>Transaction Details</span>
+                    <span>{t("Transaction Details")}</span>
                   </div>
                   <div className="SignTransaction__TransactionDetails__Summary">
                     <Summary
@@ -448,6 +560,49 @@ export const SignTransaction = () => {
                 </div>
               </div>
             </div>,
+            <div className="SignTransaction__Body">
+              <div className="SignTransaction__Body__Wrapper">
+                <div className="SignTransaction__TransactionDetails">
+                  <div className="SignTransaction__TransactionDetails__Header">
+                    <div className="DetailsMark">
+                      <Icon.File02 />
+                    </div>
+                    <div
+                      className="Close"
+                      onClick={() => setActivePaneIndex(0)}
+                    >
+                      <Icon.X />
+                    </div>
+                  </div>
+                  <div className="SignTransaction__TransactionDetails__Title">
+                    <span>{t("Memo is required")}</span>
+                  </div>
+                  <div className="SignTransaction__TransactionDetails__Summary">
+                    <div className="WarningMessage__infoBlock WarningMessage__infoBlock--warning">
+                      <div className="WarningMessage__header">
+                        <Icon.InfoOctagon className="WarningMessage__icon" />
+                        <div>{t("Memo is required")}</div>
+                      </div>
+                    </div>
+                    <div>
+                      {t(
+                        "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign.",
+                      )}
+                    </div>
+                    <div>
+                      {t(
+                        "Freighter automatically disabled the option to sign this transaction.",
+                      )}
+                    </div>
+                    <div>
+                      {t(
+                        "Check the destination account memo requirements and include it in the transaction.",
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>,
           ]}
         />
         <div className="SignTransaction__Actions">
@@ -461,11 +616,13 @@ export const SignTransaction = () => {
                   variant={btnIsDestructive ? "destructive" : "secondary"}
                   onClick={() => rejectAndClose()}
                 >
-                  {t("Cancel")}
+                  <span className="SignTransaction__CancelBtn">
+                    {t("Cancel")}
+                  </span>
                 </Button>
                 <Button
                   disabled={isSubmitDisabled}
-                  variant="error"
+                  variant={btnIsDestructive ? "error" : "tertiary"}
                   isFullWidth
                   isRounded
                   size="lg"
@@ -485,7 +642,9 @@ export const SignTransaction = () => {
                   variant="tertiary"
                   onClick={() => rejectAndClose()}
                 >
-                  {t("Cancel")}
+                  <span className="SignTransaction__CancelBtn">
+                    {t("Cancel")}
+                  </span>
                 </Button>
                 <Button
                   data-testid="sign-transaction-sign"
@@ -515,40 +674,61 @@ interface AssetDiffsProps {
 
 const AssetDiffs = ({ assetDiffs, icons }: AssetDiffsProps) => {
   const renderAssetDiffs = (diff: BlockaidAssetDiff) => {
-    switch (diff.asset_type) {
-      // NOTE:
-      // Blockaid does not populate custom tokens in asset diffs
-      // If the begin to do this, we will need to add a lookup for token details
-      // When asset diffs include tokens not in the users balance.
-      case "NATIVE":
-      case "ASSET":
-      default: {
-        const code = "code" in diff.asset ? diff.asset.code! : "";
-        const issuer = "issuer" in diff.asset ? diff.asset.issuer! : "";
-        return (
-          <div className="SignTransaction__AssetDiffRow">
-            <div className="SignTransaction__AssetDiffRow__Asset">
-              <AssetIcon
-                assetIcons={code !== "XLM" ? icons : {}}
-                code={code}
-                issuerKey={issuer}
-              />
-              {code}
-            </div>
-            {diff.in && (
-              <div className="SignTransaction__AssetDiffRow__Amount Credit">
-                {`+${formatTokenAmount(new BigNumber(diff.in.raw_value), CLASSIC_ASSET_DECIMALS)}`}
-              </div>
-            )}
-            {diff.out && (
-              <div className="SignTransaction__AssetDiffRow__Amount Debit">
-                {`-${formatTokenAmount(new BigNumber(diff.out.raw_value), CLASSIC_ASSET_DECIMALS)}`}
-              </div>
-            )}
-          </div>
-        );
-      }
+    const asset = diff.asset as Record<string, unknown>;
+    const code =
+      typeof asset.symbol === "string"
+        ? asset.symbol
+        : typeof asset.code === "string"
+          ? asset.code
+          : null;
+    const issuer =
+      diff.asset_type === "NATIVE"
+        ? ""
+        : typeof asset.issuer === "string"
+          ? asset.issuer
+          : typeof asset.address === "string"
+            ? asset.address
+            : null;
+
+    if (code === null || issuer === null) {
+      return null;
     }
+
+    const rawDecimals = asset.decimals;
+    if (
+      rawDecimals !== undefined &&
+      (typeof rawDecimals !== "number" ||
+        !Number.isFinite(rawDecimals) ||
+        !Number.isInteger(rawDecimals) ||
+        rawDecimals < 0)
+    ) {
+      return null;
+    }
+    const decimals =
+      (rawDecimals as number | undefined) ?? CLASSIC_ASSET_DECIMALS;
+
+    return (
+      <div className="SignTransaction__AssetDiffRow">
+        <div className="SignTransaction__AssetDiffRow__Asset">
+          <AssetIcon
+            assetIcons={code !== "XLM" ? icons : {}}
+            code={code}
+            issuerKey={issuer}
+          />
+          {code}
+        </div>
+        {diff.in && (
+          <div className="SignTransaction__AssetDiffRow__Amount Credit">
+            {`+${formatTokenAmount(new BigNumber(diff.in.raw_value), decimals)}`}
+          </div>
+        )}
+        {diff.out && (
+          <div className="SignTransaction__AssetDiffRow__Amount Debit">
+            {`-${formatTokenAmount(new BigNumber(diff.out.raw_value), decimals)}`}
+          </div>
+        )}
+      </div>
+    );
   };
   return (
     <div className="SignTransaction__AssetDiffs">
@@ -563,6 +743,7 @@ interface TrustlineProps {
 }
 
 export const Trustline = ({ operations, icons }: TrustlineProps) => {
+  const { t } = useTranslation();
   const renderTrustlineChanges = (operation: Operation.ChangeTrust) => {
     const { line, limit } = operation;
     const isRemoveTrustline = new BigNumber(limit).isZero();
@@ -606,12 +787,12 @@ export const Trustline = ({ operations, icons }: TrustlineProps) => {
           {isRemoveTrustline ? (
             <>
               <Icon.MinusCircle />
-              <span>Remove Trustline</span>
+              <span>{t("Remove Trustline")}</span>
             </>
           ) : (
             <>
               <Icon.PlusCircle />
-              <span>Add Trustline</span>
+              <span>{t("Add Trustline")}</span>
             </>
           )}
         </div>

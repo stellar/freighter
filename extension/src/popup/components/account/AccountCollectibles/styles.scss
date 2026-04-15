@@ -1,0 +1,87 @@
+@use "../../../styles/utils.scss" as *;
+
+.AccountCollectibles {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(24px);
+  padding: pxToRem(24px) 0;
+
+  &__toggle-hidden {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(8px);
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    cursor: pointer;
+    padding: pxToRem(8px) 0;
+
+    &:hover {
+      color: var(--sds-clr-gray-12);
+    }
+
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+    }
+  }
+
+  &__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: pxToRem(8px);
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
+    text-align: center;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(24px);
+  }
+
+  &__collection {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12px);
+
+    &__header {
+      color: var(--sds-clr-gray-11);
+      display: flex;
+      font-weight: var(--sds-fw-medium);
+      justify-content: space-between;
+      align-items: center;
+
+      &__name {
+        display: flex;
+        align-items: center;
+        gap: pxToRem(6px);
+      }
+    }
+
+    &__grid {
+      display: grid;
+      gap: pxToRem(12px);
+      grid-template-columns: repeat(auto-fill, pxToRem(150px));
+      font-size: 0;
+
+      &__item {
+        cursor: pointer;
+        aspect-ratio: 1/1;
+        overflow: hidden;
+
+        &--hidden {
+          opacity: 0.5;
+        }
+      }
+    }
+  }
+
+  &__collectible-detail__sheet {
+    z-index: var(--z-index-modal);
+  }
+}

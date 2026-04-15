@@ -11,52 +11,66 @@ import {
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { AppState } from "popup/App";
 
-export const grantAccess = createAsyncThunk("grantAccess", internalGrantAccess);
+export const grantAccess = createAsyncThunk(
+  "grantAccess",
+  ({ url, uuid }: { url: string; uuid: string }) =>
+    internalGrantAccess({ url, uuid }),
+);
 
 export const rejectAccess = createAsyncThunk(
   "rejectAccess",
-  internalRejectAccess,
+  ({ uuid }: { uuid: string }) => internalRejectAccess({ uuid }),
 );
 
 export const signTransaction = createAsyncThunk(
   "signTransaction",
-  (_, { getState }) => {
+  ({ uuid }: { uuid: string }, { getState }) => {
     const activePublicKey = publicKeySelector(getState() as AppState);
-    return internalSignTransaction({ activePublicKey });
+    return internalSignTransaction({ activePublicKey, uuid });
   },
 );
 
 export const signBlob = createAsyncThunk(
   "signBlob",
-  ({ apiVersion }: { apiVersion?: string }, { getState }) => {
+  (
+    { apiVersion, uuid }: { apiVersion?: string; uuid: string },
+    { getState },
+  ) => {
     const activePublicKey = publicKeySelector(getState() as AppState);
-    return internalSignBlob({ apiVersion, activePublicKey });
+    return internalSignBlob({ apiVersion, activePublicKey, uuid });
   },
 );
-export const signEntry = createAsyncThunk("signEntry", (_, { getState }) => {
-  const activePublicKey = publicKeySelector(getState() as AppState);
-  return internalSignAuthEntry({ activePublicKey });
-});
+export const signEntry = createAsyncThunk(
+  "signEntry",
+  ({ uuid }: { uuid: string }, { getState }) => {
+    const activePublicKey = publicKeySelector(getState() as AppState);
+    return internalSignAuthEntry({ activePublicKey, uuid });
+  },
+);
 
-export const addToken = createAsyncThunk("addToken", (_, { getState }) => {
-  const activePublicKey = publicKeySelector(getState() as AppState);
-  return internalAddToken({ activePublicKey });
-});
+export const addToken = createAsyncThunk(
+  "addToken",
+  ({ uuid }: { uuid: string }, { getState }) => {
+    const activePublicKey = publicKeySelector(getState() as AppState);
+    return internalAddToken({ activePublicKey, uuid });
+  },
+);
 
 export const rejectToken = createAsyncThunk(
   "rejectToken",
-  internalRejectAccess,
+  ({ uuid }: { uuid: string }) => internalRejectAccess({ uuid }),
 );
 
-// Basically an alias for metrics purposes
 export const rejectTransaction = createAsyncThunk(
   "rejectTransaction",
-  internalRejectAccess,
+  ({ uuid }: { uuid: string }) => internalRejectAccess({ uuid }),
 );
 
-// Basically an alias for metrics purposes
-export const rejectBlob = createAsyncThunk("rejectBlob", internalRejectAccess);
+export const rejectBlob = createAsyncThunk(
+  "rejectBlob",
+  ({ uuid }: { uuid: string }) => internalRejectAccess({ uuid }),
+);
 export const rejectAuthEntry = createAsyncThunk(
   "rejectAuthEntry",
-  internalRejectAccess,
+  ({ uuid }: { uuid: string }) => internalRejectAccess({ uuid }),
 );

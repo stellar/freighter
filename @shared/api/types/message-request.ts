@@ -4,7 +4,12 @@ import browser from "webextension-polyfill";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { AssetVisibility, BalanceToMigrate, IssuerKey } from "./types";
+import {
+  AssetVisibility,
+  BalanceToMigrate,
+  IssuerKey,
+  CollectibleKey,
+} from "./types";
 import { AssetsListItem } from "@shared/constants/soroban/asset-list";
 
 export interface TokenToAdd {
@@ -13,6 +18,7 @@ export interface TokenToAdd {
   url: string;
   contractId: string;
   networkPassphrase?: string;
+  uuid: string;
 }
 
 export interface MessageToSign {
@@ -23,6 +29,7 @@ export interface MessageToSign {
   url: string;
   accountToSign?: string;
   networkPassphrase?: string;
+  uuid: string;
 }
 
 export interface EntryToSign {
@@ -32,6 +39,7 @@ export interface EntryToSign {
   url: string;
   accountToSign?: string;
   networkPassphrase?: string;
+  uuid: string;
 }
 
 export type RequestAccessResponse = string;
@@ -44,17 +52,45 @@ export type SignedHwPayloadResponse = string | Buffer<ArrayBufferLike>;
 export type RejectAccessResponse = undefined;
 export type RejectTransactionResponse = undefined;
 
-export type ResponseQueue<T> = Array<
-  (message: T, messageAddress?: string) => void
->;
+export interface ResponseQueueItem<T> {
+  response: (message: T, messageAddress?: string) => void;
+  uuid: string;
+  createdAt: number;
+}
 
-export type TokenQueue = TokenToAdd[];
+export type ResponseQueue<T> = ResponseQueueItem<T>[];
 
-export type TransactionQueue = Transaction[];
+export interface TokenQueueItem {
+  token: TokenToAdd;
+  uuid: string;
+  createdAt: number;
+}
 
-export type BlobQueue = MessageToSign[];
+export type TokenQueue = TokenQueueItem[];
 
-export type EntryQueue = EntryToSign[];
+export interface TransactionQueueItem {
+  transaction: Transaction;
+  uuid: string;
+  createdAt: number;
+}
+
+export type TransactionQueue = TransactionQueueItem[];
+
+export interface BlobQueueItem {
+  blob: MessageToSign;
+  uuid: string;
+  createdAt: number;
+}
+
+export type BlobQueue = BlobQueueItem[];
+
+export interface AuthEntryQueueItem {
+  authEntry: EntryToSign;
+  uuid: string;
+  createdAt: number;
+}
+
+export type EntryQueue = AuthEntryQueueItem[];
 
 export interface BaseMessage {
   activePublicKey: string;
@@ -165,36 +201,44 @@ export interface ConfirmPasswordMessage extends BaseMessage {
 export interface GrantAccessMessage extends BaseMessage {
   type: SERVICE_TYPES.GRANT_ACCESS;
   url: string;
+  uuid: string;
 }
 
 export interface RejectAccessMessage extends BaseMessage {
   type: SERVICE_TYPES.REJECT_ACCESS;
+  uuid: string;
 }
 
 export interface HandleSignedHWPayloadMessage extends BaseMessage {
   type: SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD;
   signedPayload: string | Buffer<ArrayBufferLike>;
+  uuid: string;
 }
 
 export interface AddTokenMessage extends BaseMessage {
   type: SERVICE_TYPES.ADD_TOKEN;
+  uuid: string;
 }
 
 export interface SignTransactionMessage extends BaseMessage {
   type: SERVICE_TYPES.SIGN_TRANSACTION;
+  uuid: string;
 }
 
 export interface SignBlobMessage extends BaseMessage {
   apiVersion?: string;
   type: SERVICE_TYPES.SIGN_BLOB;
+  uuid: string;
 }
 
 export interface SignAuthEntryMessage extends BaseMessage {
   type: SERVICE_TYPES.SIGN_AUTH_ENTRY;
+  uuid: string;
 }
 
 export interface RejectTransactionMessage extends BaseMessage {
   type: SERVICE_TYPES.REJECT_TRANSACTION;
+  uuid: string;
 }
 
 export interface SignFreighterTransactionMessage extends BaseMessage {
@@ -237,6 +281,7 @@ export interface SaveSettingsMessage extends BaseMessage {
   isHideDustEnabled: boolean;
   isMemoValidationEnabled: boolean;
   isDataSharingAllowed: boolean;
+  isOpenSidebarByDefault: boolean;
 }
 
 export interface SaveExperimentalFeaturesMessage extends BaseMessage {
@@ -252,6 +297,11 @@ export interface LoadSettingsMessage extends BaseMessage {
 
 export interface LoadBackendSettingsMessage extends BaseMessage {
   type: SERVICE_TYPES.LOAD_BACKEND_SETTINGS;
+}
+
+export interface SaveBlockaidDebugOverrideMessage extends BaseMessage {
+  type: SERVICE_TYPES.SAVE_BLOCKAID_DEBUG_OVERRIDE;
+  overriddenBlockaidResponse: string | null;
 }
 
 export interface GetCachedAssetIconListMessage extends BaseMessage {
@@ -352,6 +402,59 @@ export interface GetHiddenAssetsMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_HIDDEN_ASSETS;
 }
 
+export interface GetMobileAppBannerDismissedMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_MOBILE_APP_BANNER_DISMISSED;
+}
+
+export interface DismissMobileAppBannerMessage extends BaseMessage {
+  type: SERVICE_TYPES.DISMISS_MOBILE_APP_BANNER;
+}
+
+export interface GetBlockaidDebugOverrideMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE;
+}
+export interface AddCollectibleMessage extends BaseMessage {
+  type: SERVICE_TYPES.ADD_COLLECTIBLE;
+  network: string;
+  publicKey: string;
+  collectibleContractAddress: string;
+  collectibleTokenId: string;
+}
+
+export interface GetCollectiblesMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_COLLECTIBLES;
+  publicKey: string;
+  network: string;
+}
+
+export interface ChangeCollectibleVisibilityMessage extends BaseMessage {
+  type: SERVICE_TYPES.CHANGE_COLLECTIBLE_VISIBILITY;
+  collectibleVisibility: {
+    collectible: CollectibleKey;
+    visibility: AssetVisibility;
+  };
+}
+
+export interface GetHiddenCollectiblesMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES;
+}
+
+export interface MarkQueueActiveMessage extends BaseMessage {
+  type: SERVICE_TYPES.MARK_QUEUE_ACTIVE;
+  uuid: string;
+  isActive: boolean;
+}
+
+export interface OpenSidebarMessage extends BaseMessage {
+  type: SERVICE_TYPES.OPEN_SIDEBAR;
+  windowId: number;
+}
+
+export interface RejectSigningRequestMessage extends BaseMessage {
+  type: SERVICE_TYPES.REJECT_SIGNING_REQUEST;
+  uuid: string;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -388,6 +491,7 @@ export type ServiceMessageRequest =
   | SaveAllowListMessage
   | SaveSettingsMessage
   | SaveExperimentalFeaturesMessage
+  | SaveBlockaidDebugOverrideMessage
   | LoadSettingsMessage
   | LoadBackendSettingsMessage
   | GetCachedAssetIconListMessage
@@ -407,4 +511,14 @@ export type ServiceMessageRequest =
   | ModifyAssetsListMessage
   | GetIsAccountMismatchMessage
   | ChangeAssetVisibilityMessage
-  | GetHiddenAssetsMessage;
+  | GetHiddenAssetsMessage
+  | GetMobileAppBannerDismissedMessage
+  | DismissMobileAppBannerMessage
+  | GetBlockaidDebugOverrideMessage
+  | AddCollectibleMessage
+  | GetCollectiblesMessage
+  | ChangeCollectibleVisibilityMessage
+  | GetHiddenCollectiblesMessage
+  | MarkQueueActiveMessage
+  | OpenSidebarMessage
+  | RejectSigningRequestMessage;

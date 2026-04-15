@@ -15,7 +15,6 @@ import {
   saveAllowedSlippage,
   saveAmount,
   saveAmountUsd,
-  saveAsset,
   saveTransactionFee,
   saveTransactionTimeout,
   transactionDataSelector,
@@ -295,16 +294,13 @@ export const SwapAmount = ({
       ));
 
   const goToEditSrcAction = () => {
-    dispatch(saveAsset("native"));
-    dispatch(saveAmount("0"));
-    dispatch(saveAmountUsd("0.00"));
     goToEditSrc();
   };
 
   return (
     <>
       <SubviewHeader
-        title={<span>Swap</span>}
+        title={<span>{t("Swap")}</span>}
         hasBackButton
         customBackAction={goBack}
       />
@@ -314,7 +310,7 @@ export const SwapAmount = ({
             <div className="SwapAsset__settings-row">
               <div className="SwapAsset__settings-fee-display">
                 <span className="SwapAsset__settings-fee-display__label">
-                  Fee:
+                  {t("Fee")}:
                 </span>
                 <span>
                   {inputType === "crypto" ? `${fee} XLM` : recommendedFeeUsd}
@@ -328,7 +324,7 @@ export const SwapAmount = ({
                   variant="tertiary"
                   onClick={() => setIsEditingSlippage(true)}
                 >
-                  {`Slippage: ${allowedSlippage}%`}
+                  {`${t("Slippage")}: ${allowedSlippage}%`}
                 </Button>
                 <Button
                   type="button"
@@ -350,20 +346,16 @@ export const SwapAmount = ({
               variant="secondary"
               isLoading={simulationState.state === RequestState.LOADING}
               disabled={
-                !!destinationAsset &&
-                ((inputType === "crypto" &&
+                !destinationAsset ||
+                (inputType === "crypto" &&
                   new BigNumber(formik.values.amount).isZero()) ||
-                  (inputType === "fiat" &&
-                    new BigNumber(formik.values.amountUsd).isZero()) ||
-                  isAmountTooHigh)
+                (inputType === "fiat" &&
+                  new BigNumber(formik.values.amountUsd).isZero()) ||
+                isAmountTooHigh
               }
               onClick={(e) => {
                 e.preventDefault();
-                if (destinationAsset) {
-                  formik.submitForm();
-                  return;
-                }
-                goToNext();
+                formik.submitForm();
               }}
             >
               {destinationAsset ? t("Review swap") : t("Select an asset")}
@@ -516,8 +508,9 @@ export const SwapAmount = ({
                     <>
                       <Icon.AlertCircle />
                       <span>
-                        You don't have enough {parsedSourceAsset.code} in your
-                        account
+                        {t("You don’t have enough {{asset}} in your account", {
+                          asset: parsedSourceAsset.code,
+                        })}
                       </span>
                     </>
                   )}
@@ -563,7 +556,7 @@ export const SwapAmount = ({
                   assetIcon={assetIcon}
                   balance={displayTotal}
                   onClick={goToEditSrcAction}
-                  emptyLabel="Send"
+                  emptyLabel={t("Send")}
                   testId="swap-src-asset-tile"
                 />
                 <AssetTile
@@ -580,7 +573,7 @@ export const SwapAmount = ({
                   assetIcon={dstAssetIcon}
                   balance={dstDisplayTotal}
                   onClick={goToEditDst}
-                  emptyLabel="Receive"
+                  emptyLabel={t("Receive")}
                   testId="swap-dst-asset-tile"
                 />
               </div>
@@ -604,7 +597,7 @@ export const SwapAmount = ({
           <div className="SlippageWrapper">
             <EditSettings
               fee={fee}
-              title="Swap Settings"
+              title={t("Swap Settings")}
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
               onClose={() => setIsEditingSettings(false)}
@@ -648,7 +641,7 @@ export const SwapAmount = ({
               priceUsd: simulationState.data?.dstAmountPriceUsd!,
               amount: destinationAmount,
             }}
-            title="You are swapping"
+            title={t("You are swapping")}
           />
         ) : (
           <></>
@@ -698,7 +691,7 @@ const EditSlippage = ({ onClose }: EditSlippageProps) => {
           <View.Content hasNoTopPadding>
             <div className="Slippage">
               <Card>
-                <p>Allowed Slippage</p>
+                <p>{t("Allowed Slippage")}</p>
                 <div className="Slippage__cards">
                   {["1", "2", "3"].map((value) => (
                     <label key={value} className="Slippage--radio-label">

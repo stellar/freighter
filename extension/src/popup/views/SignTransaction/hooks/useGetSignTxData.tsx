@@ -1,9 +1,18 @@
 import { useReducer, useState } from "react";
 
-import { Account, AssetIcons, BlockAidScanTxResult } from "@shared/api/types";
+import {
+  Account,
+  AssetIcons,
+  BlockAidScanTxResult,
+  BlockAidScanSiteResult,
+} from "@shared/api/types";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
-import { useScanTx } from "popup/helpers/blockaid";
+import {
+  useScanTx,
+  useAsyncSiteScan,
+  useBlockaidOverrideState,
+} from "popup/helpers/blockaid";
 import {
   AppDataType,
   NeedsReRoute,
@@ -16,7 +25,7 @@ import { makeAccountActive } from "popup/ducks/accountServices";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "popup/App";
 import { signFlowAccountSelector } from "popup/helpers/account";
-import { iconsSelector } from "popup/ducks/cache";
+import { iconsSelector, tokensListsSelector } from "popup/ducks/cache";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
 import { isContractId } from "popup/helpers/soroban";
@@ -28,7 +37,9 @@ import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 export interface ResolvedData {
   type: AppDataType.RESOLVED;
   scanResult: BlockAidScanTxResult | null;
-  balances: AccountBalances;
+  siteScanData: BlockAidScanSiteResult | null | undefined;
+  blockaidOverrideState: string | null;
+  balances: AccountBalances | null;
   publicKey: string;
   signFlowState: {
     allAccounts: Account[];
@@ -52,6 +63,7 @@ function useGetSignTxData(
     includeIcons: boolean;
   },
   accountToSign?: string,
+  domain?: string,
 ) {
   const [state, dispatch] = useReducer(
     reducer<SignTxData, unknown>,
@@ -62,8 +74,33 @@ function useGetSignTxData(
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(balanceOptions);
   const cachedIcons = useSelector(iconsSelector);
+  const cachedTokenLists = useSelector(tokensListsSelector);
   const { assetsLists } = useSelector(settingsSelector);
   const { scanTx } = useScanTx();
+  const blockaidOverrideState = useBlockaidOverrideState() ?? null;
+  const { scanSite } = useAsyncSiteScan<SignTxData>(
+    domain,
+    dispatch,
+    (payload, scanData) => {
+      // Type guard to ensure we're working with ResolvedData
+      if (payload.type === AppDataType.RESOLVED) {
+        const resolvedPayload = payload as ResolvedData;
+        const updated = {
+          ...resolvedPayload,
+          siteScanData: scanData,
+        } as ResolvedData;
+        // Preserve icons if they've been fetched
+        if (
+          resolvedPayload.icons &&
+          Object.keys(resolvedPayload.icons).length > 0
+        ) {
+          updated.icons = resolvedPayload.icons;
+        }
+        return updated;
+      }
+      return payload;
+    },
+  );
   const [accountNotFound, setAccountNotFound] = useState(false);
 
   const fetchData = async (newPublicKey?: string) => {
@@ -86,13 +123,24 @@ function useGetSignTxData(
       const allAccounts = appData.account.allAccounts;
       const networkDetails = appData.settings.networkDetails;
       const isMainnetNetwork = isMainnet(networkDetails);
-      const balancesResult = await fetchBalances(
-        publicKey,
-        isMainnetNetwork,
-        networkDetails,
-        false,
-        true,
-      );
+
+      // Fetch balances with soft failure handling - if this fails, we continue
+      // without balance data (balance-related warnings will be skipped)
+      let balancesResult: AccountBalances | null = null;
+      try {
+        const fetchResult = await fetchBalances(
+          publicKey,
+          isMainnetNetwork,
+          networkDetails,
+          false,
+          true,
+        );
+        if (!isError<AccountBalances>(fetchResult)) {
+          balancesResult = fetchResult;
+        }
+      } catch {
+        // Balance fetch failed - continue without balance data
+      }
 
       // handle auto selecting the right account based on `accountToSign`
       const currentAccount = signFlowAccountSelector({
@@ -117,6 +165,8 @@ function useGetSignTxData(
         type: AppDataType.RESOLVED,
         balances: balancesResult,
         scanResult,
+        siteScanData: undefined,
+        blockaidOverrideState,
         publicKey,
         applicationState: appData.account.applicationState,
         networkDetails: appData.settings.networkDetails,
@@ -125,15 +175,23 @@ function useGetSignTxData(
           accountNotFound,
           currentAccount,
         },
+        icons: {} as AssetIcons,
       } as ResolvedData;
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload: firstRenderPayload });
 
-      // Add all icons needed for tx assets
-      const icons = {} as { [code: string]: string | null };
-      let assetsListsData: AssetListResponse[] = [];
+      // Fetch site scan data asynchronously without blocking UI
+      scanSite(firstRenderPayload);
 
+      // Add all icons needed for tx assets
+      const icons = {} as { [code: string]: string };
+      // Initialize with cached lists, but we'll fetch fresh data when needed for icon lookups
+      let assetsListsData: AssetListResponse[] = cachedTokenLists || [];
+      let hasFetchedAssetLists = assetsListsData.length > 0;
+
+      // Fetch icons for asset diffs only if includeIcons is true
       if (
+        balanceOptions.includeIcons &&
         scanResult &&
         "simulation" in scanResult &&
         scanResult.simulation &&
@@ -152,8 +210,9 @@ function useGetSignTxData(
             const key = diff.asset.issuer;
             const code = diff.asset.code;
             let canonical = getCanonicalFromAsset(code, key);
-            if (cachedIcons[canonical]) {
-              icons[canonical] = cachedIcons[canonical];
+            const cachedIcon = cachedIcons[canonical];
+            if (cachedIcon) {
+              icons[canonical] = cachedIcon;
             } else {
               let icon = await getIconUrlFromIssuer({
                 key,
@@ -161,14 +220,15 @@ function useGetSignTxData(
                 networkDetails,
               });
               if (!icon) {
-                if (!assetsListsData.length) {
+                if (!hasFetchedAssetLists) {
                   assetsListsData = await getCombinedAssetListData({
                     networkDetails,
                     assetsLists,
+                    cachedAssetLists: cachedTokenLists,
                   });
+                  hasFetchedAssetLists = true;
                 }
                 const tokenListIcon = await getIconFromTokenLists({
-                  networkDetails,
                   issuerId: key,
                   contractId: isContractId(key) ? key : undefined,
                   code,
@@ -179,12 +239,15 @@ function useGetSignTxData(
                   canonical = tokenListIcon.canonicalAsset;
                 }
               }
-              icons[canonical] = icon;
+              if (icon) {
+                icons[canonical] = icon;
+              }
             }
           }
         }
       }
 
+      // Always fetch icons for changeTrust operations (regardless of includeIcons flag)
       const transaction = TransactionBuilder.fromXDR(
         scanOptions.xdr,
         networkDetails.networkPassphrase,
@@ -197,8 +260,9 @@ function useGetSignTxData(
           if ("code" in trustChange.line) {
             const { code, issuer } = trustChange.line;
             let canonical = getCanonicalFromAsset(code, issuer);
-            if (cachedIcons[canonical]) {
-              icons[canonical] = cachedIcons[canonical];
+            const cachedIcon = cachedIcons[canonical];
+            if (cachedIcon) {
+              icons[canonical] = cachedIcon;
             } else {
               let icon = await getIconUrlFromIssuer({
                 key: issuer,
@@ -206,14 +270,15 @@ function useGetSignTxData(
                 networkDetails,
               });
               if (!icon) {
-                if (!assetsListsData.length) {
+                if (!hasFetchedAssetLists) {
                   assetsListsData = await getCombinedAssetListData({
                     networkDetails,
                     assetsLists,
+                    cachedAssetLists: cachedTokenLists,
                   });
+                  hasFetchedAssetLists = true;
                 }
                 const tokenListIcon = await getIconFromTokenLists({
-                  networkDetails,
                   issuerId: issuer,
                   contractId: isContractId(issuer) ? issuer : undefined,
                   code,
@@ -224,20 +289,20 @@ function useGetSignTxData(
                   canonical = tokenListIcon.canonicalAsset;
                 }
               }
-              icons[canonical] = icon;
+              if (icon) {
+                icons[canonical] = icon;
+              }
             }
           }
         }
-      }
-
-      if (isError<AccountBalances>(balancesResult)) {
-        throw new Error(balancesResult.message);
       }
 
       const payload = {
         type: AppDataType.RESOLVED,
         balances: balancesResult,
         scanResult,
+        siteScanData: firstRenderPayload.siteScanData,
+        blockaidOverrideState: firstRenderPayload.blockaidOverrideState,
         publicKey,
         applicationState: appData.account.applicationState,
         networkDetails: appData.settings.networkDetails,

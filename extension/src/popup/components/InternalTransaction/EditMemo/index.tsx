@@ -4,6 +4,7 @@ import { Field, FieldProps, Form, Formik } from "formik";
 import { useTranslation } from "react-i18next";
 
 import { View } from "popup/basics/layout/View";
+import { useValidateMemo } from "popup/helpers/useValidateMemo";
 
 import "./styles.scss";
 
@@ -15,22 +16,40 @@ interface EditMemoProps {
   memo: string;
   onClose: () => void;
   onSubmit: (args: FormValue) => void;
+  disabled?: boolean;
+  disabledMessage?: string;
 }
 
-export const EditMemo = ({ memo, onClose, onSubmit }: EditMemoProps) => {
+export const EditMemo = ({
+  memo,
+  onClose,
+  onSubmit,
+  disabled = false,
+  disabledMessage,
+}: EditMemoProps) => {
   const { t } = useTranslation();
+  const [localMemo, setLocalMemo] = React.useState(memo);
+  const { error: memoError } = useValidateMemo(localMemo);
+
   const initialValues: FormValue = {
     memo,
   };
+
   const handleSubmit = async (values: FormValue) => {
-    onSubmit(values);
+    if (!disabled) {
+      onSubmit(values);
+    }
+  };
+
+  const handleFieldChange = (value: string) => {
+    setLocalMemo(value);
   };
 
   return (
     <View.Content hasNoTopPadding>
       <div className="EditMemo">
         <Card>
-          <p>Memo</p>
+          <p>{t("Memo")}</p>
           <Formik initialValues={initialValues} onSubmit={handleSubmit}>
             {({ errors }) => (
               <>
@@ -39,19 +58,31 @@ export const EditMemo = ({ memo, onClose, onSubmit }: EditMemoProps) => {
                     {({ field }: FieldProps) => (
                       <Input
                         data-testid="edit-memo-input"
-                        autoFocus
+                        autoFocus={!disabled}
                         fieldSize="md"
                         autoComplete="off"
                         id="memo"
-                        placeholder={"Memo"}
+                        placeholder={t("Type your memo")}
                         {...field}
-                        error={errors.memo}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          handleFieldChange(e.target.value);
+                        }}
+                        error={memoError || errors.memo}
+                        disabled={disabled}
                       />
                     )}
                   </Field>
-                  <div className="EditMemo__description">
-                    What is this transaction for? (optional)
-                  </div>
+                  {disabled && disabledMessage && (
+                    <div className="EditMemo__description EditMemo__description--warning">
+                      {disabledMessage}
+                    </div>
+                  )}
+                  {!disabled && (
+                    <div className="EditMemo__description">
+                      {t("What is this transaction for? (optional)")}
+                    </div>
+                  )}
                   <div className="EditMemo__actions">
                     <Button
                       type="button"
@@ -67,6 +98,7 @@ export const EditMemo = ({ memo, onClose, onSubmit }: EditMemoProps) => {
                       size="md"
                       isRounded
                       variant="secondary"
+                      disabled={disabled || !!memoError}
                     >
                       {t("Save")}
                     </Button>

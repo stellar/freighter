@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Networks } from "stellar-sdk";
+import { useTranslation } from "react-i18next";
 
 import {
   createAccount,
@@ -279,19 +280,28 @@ export const IntegrationTest = () => {
         assertEq(Object.keys(res as object).length > 0, true);
       });
 
-      await rejectAccess();
+      await rejectAccess({ uuid: "integration-test" });
 
       runAsserts("rejectAccess", () => {});
 
-      await grantAccess("https://laboratory.stellar.org");
+      await grantAccess({
+        url: "https://laboratory.stellar.org",
+        uuid: "integration-test",
+      });
 
       runAsserts("grantAccess", () => {});
 
-      await handleSignedHwPayload({ signedPayload: "" });
+      await handleSignedHwPayload({
+        signedPayload: "",
+        uuid: "integration-test",
+      });
 
       runAsserts("handleSignedHwPayload", () => {});
 
-      await signTransaction({ activePublicKey: testPublicKey });
+      await signTransaction({
+        activePublicKey: testPublicKey,
+        uuid: "integration-test",
+      });
 
       runAsserts("signTransaction", () => {});
 
@@ -337,6 +347,7 @@ export const IntegrationTest = () => {
         isDataSharingAllowed: true,
         isMemoValidationEnabled: true,
         isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
       });
       runAsserts("saveSettings", () => {
         assertEq(res.networkDetails, FUTURENET_NETWORK_DETAILS);
@@ -439,10 +450,11 @@ export const IntegrationTest = () => {
     runTests();
   }, []);
 
+  const { t } = useTranslation();
   return (
     <div>
-      <div>Running integration tests ...</div>
-      <div>{isDone ? "Done" : ""}</div>
+      <div>{t("Running integration tests ...")}</div>
+      <div>{isDone ? t("Done") : ""}</div>
     </div>
   );
 };

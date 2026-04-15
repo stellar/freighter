@@ -22,6 +22,7 @@ import { navigate } from "popup/ducks/views";
 
 import { AppError } from "popup/components/AppError";
 
+import { ActiveTabProvider } from "popup/views/Account/contexts/activeTabContext";
 import { Account } from "popup/views/Account";
 import { AccountHistory } from "popup/views/AccountHistory";
 import { AccountCreator } from "popup/views/AccountCreator";
@@ -50,8 +51,9 @@ import { Preferences } from "popup/views/Preferences";
 import { Security } from "popup/views/Security";
 import { AdvancedSettings } from "popup/views/AdvancedSettings";
 import { About } from "popup/views/About";
-import { SendPayment } from "popup/views/SendPayment";
+import { Send } from "popup/views/Send";
 import { ManageAssets } from "popup/views/ManageAssets";
+import { AddCollectibles } from "popup/views/AddCollectibles";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Swap } from "popup/views/Swap";
 import { ManageNetwork } from "popup/views/ManageNetwork";
@@ -60,8 +62,11 @@ import { AccountMigration } from "popup/views/AccountMigration";
 import { AddFunds } from "popup/views/AddFunds";
 import { Discover } from "popup/views/Discover";
 import { Wallets } from "popup/views/Wallets";
+import { ConfirmSidebarRequest } from "popup/views/ConfirmSidebarRequest";
 
 import { DEV_SERVER } from "@shared/constants/services";
+import { isSidebarMode } from "popup/helpers/isSidebarMode";
+import { SidebarSigningListener } from "popup/components/SidebarSigningListener";
 import { SettingsState } from "@shared/api/types";
 
 import { SignMessage } from "./views/SignMessage";
@@ -77,6 +82,13 @@ a) it’s in the keystore in localstorage and it needs to be extracted or b) the
 We are checking for applicationState here to find out if the account doesn’t exist
 If an account doesn't exist, go to the <Welcome /> page; otherwise, go to <UnlockAccount/>
 */
+
+const SidebarOnlyRoute = ({ children }: { children: JSX.Element }) => {
+  if (!isSidebarMode()) {
+    return <Navigate to={ROUTES.account} replace />;
+  }
+  return children;
+};
 
 const UnlockAccountRoute = ({ children }: { children: JSX.Element }) => {
   const applicationState = useSelector(applicationStateSelector);
@@ -150,7 +162,10 @@ const Layout = () => {
   }
 
   return (
-    <View isAppLayout={isAppLayout}>
+    <View
+      isAppLayout={isAppLayout}
+      isScrollableView={location.pathname === "/"}
+    >
       <Outlet />
     </View>
   );
@@ -159,9 +174,17 @@ const Layout = () => {
 export const Router = () => (
   <HashRouter>
     <RouteListener />
+    {isSidebarMode() && <SidebarSigningListener />}
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<Account />}></Route>
+        <Route
+          index
+          element={
+            <ActiveTabProvider>
+              <Account />
+            </ActiveTabProvider>
+          }
+        ></Route>
         <Route
           path={ROUTES.accountHistory}
           element={<AccountHistory />}
@@ -190,6 +213,14 @@ export const Router = () => (
           element={<DisplayBackupPhrase />}
         ></Route>
         <Route path={ROUTES.grantAccess} element={<GrantAccess />}></Route>
+        <Route
+          path={ROUTES.confirmSidebarRequest}
+          element={
+            <SidebarOnlyRoute>
+              <ConfirmSidebarRequest />
+            </SidebarOnlyRoute>
+          }
+        ></Route>
         <Route
           path={ROUTES.mnemonicPhrase}
           element={<MnemonicPhrase mnemonicPhrase="" />}
@@ -226,11 +257,19 @@ export const Router = () => (
         ></Route>
         <Route
           path={`${ROUTES.sendPayment}/*`}
-          element={<SendPayment />}
+          element={
+            <ActiveTabProvider>
+              <Send />
+            </ActiveTabProvider>
+          }
         ></Route>
         <Route
           path={`${ROUTES.manageAssets}/*`}
           element={<ManageAssets />}
+        ></Route>
+        <Route
+          path={ROUTES.addCollectibles}
+          element={<AddCollectibles />}
         ></Route>
         <Route path={ROUTES.swap} element={<Swap />}></Route>
         <Route path={`${ROUTES.swap}/*`} element={<Swap />}></Route>

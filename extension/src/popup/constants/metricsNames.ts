@@ -68,12 +68,15 @@ export const METRIC_NAMES = {
   swapFrom: "loaded screen: swap from asset",
   swapTo: "loaded screen: swap to asset",
   swapAmount: "loaded screen: swap amount",
+  swapAmountReview: "loaded screen: swap amount review",
   swapSettings: "loaded screen: swap settings",
   swapSettingsFee: "loaded screen: swap settings fee",
   swapSettingsSlippage: "loaded screen: swap settings slippage",
   swapSettingsTimeout: "loaded screen: swap settings timeout",
   swapConfirm: "loaded screen: swap confirm",
 
+  viewAddCollectibles: "loaded screen: add collectibles",
+  viewSendCollectible: "loaded screen: send collectible",
   viewManageAssets: "loaded screen: manage assets",
   viewSearchAsset: "loaded screen: search asset",
   viewAssetVisibility: "loaded screen: asset visibility",
@@ -173,8 +176,11 @@ export const METRIC_NAMES = {
 
   blockaidDomainScan: "blockaid: scanned domain",
   blockaidTxScan: "blockaid: scanned transaction",
+  blockaidTxScanFailed: "blockaid: transaction scan failed",
   blockaidAssetScan: "blockaid: scanned asset",
+  blockaidAssetScanFailed: "blockaid: asset scan failed",
 
   coinbaseOnrampOpened: "coinbase onramp: opened",
   wallets: "loaded screen: wallets",
+  confirmSidebarRequest: "loaded screen: confirm sidebar request",
 };

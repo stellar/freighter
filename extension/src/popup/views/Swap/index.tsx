@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { STEPS } from "popup/constants/swap";
 import { emitMetric } from "helpers/metrics";
@@ -12,6 +13,8 @@ import { SwapAmount } from "popup/components/swap/SwapAmount";
 import { AppDispatch } from "popup/App";
 import {
   resetSubmission,
+  saveAmount,
+  saveAmountUsd,
   saveAsset,
   saveDestinationAsset,
   saveIsToken,
@@ -22,11 +25,33 @@ import { ROUTES } from "popup/constants/routes";
 import { resetSimulation } from "popup/ducks/token-payment";
 import { getAssetFromCanonical } from "helpers/stellar";
 
+const SWAP_METRIC_BY_STEP: Partial<Record<STEPS, string>> = {
+  [STEPS.SWAP_CONFIRM]: METRIC_NAMES.swapConfirm,
+  [STEPS.SET_DST_ASSET]: METRIC_NAMES.swapTo,
+  [STEPS.AMOUNT]: METRIC_NAMES.swapAmount,
+  [STEPS.CONFIRM_AMOUNT]: METRIC_NAMES.swapAmountReview,
+  [STEPS.SET_FROM_ASSET]: METRIC_NAMES.swapFrom,
+};
+
 export const Swap = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeStep, setActiveStep] = React.useState(STEPS.AMOUNT);
+  const [activeStep, setActiveStep] = useState(STEPS.AMOUNT);
+  const lastEmittedStep = useRef<STEPS | null>(null);
+
+  // Emit a screen-view metric only once per step transition.
+  useEffect(() => {
+    if (activeStep === lastEmittedStep.current) return;
+    lastEmittedStep.current = activeStep;
+
+    const metric = SWAP_METRIC_BY_STEP[activeStep];
+    if (metric) {
+      emitMetric(metric);
+    }
+  }, [activeStep]);
+
   const submission = useSelector(transactionSubmissionSelector);
   const { transactionSimulation, transactionData } = submission;
 
@@ -71,7 +96,6 @@ export const Swap = () => {
   const renderStep = (step: STEPS) => {
     switch (step) {
       case STEPS.SWAP_CONFIRM: {
-        emitMetric(METRIC_NAMES.swapConfirm);
         return (
           <TransactionConfirm
             xdr={transactionSimulation.preparedTransaction!}
@@ -80,10 +104,9 @@ export const Swap = () => {
         );
       }
       case STEPS.SET_DST_ASSET: {
-        emitMetric(METRIC_NAMES.swapTo);
         return (
           <SwapAsset
-            title="Swap to"
+            title={t("Swap to")}
             hiddenAssets={[transactionData.asset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
             onClickAsset={(canonical: string, isContract: boolean) => {
@@ -95,12 +118,15 @@ export const Swap = () => {
         );
       }
       case STEPS.AMOUNT: {
-        emitMetric(METRIC_NAMES.swapAmount);
         return (
           <SwapAmount
             inputType={inputType}
             setInputType={setInputType}
-            goBack={() => navigateTo(ROUTES.account, navigate)}
+            goBack={() => {
+              dispatch(resetSubmission());
+              dispatch(resetSimulation());
+              navigateTo(ROUTES.account, navigate);
+            }}
             goToEditSrc={() => setActiveStep(STEPS.SET_FROM_ASSET)}
             goToEditDst={() => setActiveStep(STEPS.SET_DST_ASSET)}
             goToNext={() => setActiveStep(STEPS.SWAP_CONFIRM)}
@@ -108,7 +134,6 @@ export const Swap = () => {
         );
       }
       case STEPS.CONFIRM_AMOUNT: {
-        emitMetric(METRIC_NAMES.swapAmount);
         return (
           <SwapAmount
             inputType={inputType}
@@ -122,15 +147,16 @@ export const Swap = () => {
       }
       case STEPS.SET_FROM_ASSET:
       default: {
-        emitMetric(METRIC_NAMES.swapFrom);
         return (
           <SwapAsset
-            title="Swap from"
+            title={t("Swap from")}
             hiddenAssets={[transactionData.destinationAsset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
             onClickAsset={(canonical: string, isContract: boolean) => {
               dispatch(saveAsset(canonical));
               dispatch(saveIsToken(isContract));
+              dispatch(saveAmount("0"));
+              dispatch(saveAmountUsd("0.00"));
               setActiveStep(STEPS.AMOUNT);
             }}
           />

@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: maxim-lobanov/setup-xcode@v1
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Update package.json version
         uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
@@ -56,7 +56,7 @@ jobs:
       - name: Enable Corepack
         run: corepack enable
       - name: Build extension
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
       - run:
@@ -68,7 +68,7 @@ jobs:
           xcrun safari-web-extension-converter ./extension/build
           --project-location $GYM_PROJECT --macos-only
       - name: Set up ruby env
-        uses: ruby/setup-ruby@v1.232.0
+        uses: ruby/setup-ruby@v1.268.0
         with:
           ruby-version: 2.6.10
           bundler-cache: true

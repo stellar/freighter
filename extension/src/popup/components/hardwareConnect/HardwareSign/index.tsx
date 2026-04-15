@@ -35,12 +35,14 @@ export const HardwareSign = ({
   onSubmit,
   isInternal = false,
   onCancel,
+  uuid,
 }: {
   walletType: ConfigurableWalletType;
   isSignSorobanAuthorization?: boolean;
   onSubmit?: () => void;
   isInternal?: boolean;
   onCancel?: () => void;
+  uuid?: string;
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
@@ -101,10 +103,10 @@ export const HardwareSign = ({
               preparedTransaction: res.payload,
             }),
           );
-        } else {
+        } else if (uuid) {
           // right now there are only two cases after signing,
           // submitting to network or handling in background script
-          await handleSignedHwPayload({ signedPayload: res.payload });
+          await handleSignedHwPayload({ signedPayload: res.payload, uuid });
         }
         closeOverlay();
         if (onSubmit) {
@@ -147,17 +149,17 @@ export const HardwareSign = ({
             }
           }}
           customBackIcon={<Icon.XClose />}
-          title={`Connect ${walletType}`}
+          title={t("Connect {walletType}", { walletType })}
         />
         <div className="HardwareSign__content">
           <div className="HardwareSign__success">
-            {hardwareConnectSuccessful ? "Connected" : ""}
+            {hardwareConnectSuccessful ? t("Connected") : ""}
           </div>
           <div className="HardwareSign__content__center">
             <img
               className="HardwareSign__img"
               src={hardwareConnectSuccessful ? LedgerSigning : Ledger}
-              alt={walletType}
+              alt={t("Connect {walletType}", { walletType })}
             />
             <span data-testid="HardwareSign__connect-text">
               {hardwareConnectSuccessful
@@ -198,17 +200,17 @@ export const HardwareSign = ({
         <SubviewHeader
           customBackAction={closeOverlay}
           customBackIcon={<Icon.XClose />}
-          title={`Connect ${walletType}`}
+          title={t("Connect {walletType}", { walletType })}
         />
         <div className="HardwareSign__content">
           <div className="HardwareSign__success">
-            {hardwareConnectSuccessful ? "Connected" : ""}
+            {hardwareConnectSuccessful ? t("Connected") : ""}
           </div>
           <div className="HardwareSign__content__center">
             <img
               className="HardwareSign__img"
               src={hardwareConnectSuccessful ? LedgerSigning : Ledger}
-              alt={walletType}
+              alt={t("Connect {walletType}", { walletType })}
             />
             <span data-testid="HardwareSign__connect-text">
               {hardwareConnectSuccessful

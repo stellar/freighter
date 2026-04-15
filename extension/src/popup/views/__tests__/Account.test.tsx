@@ -25,6 +25,8 @@ import * as GetIconFromTokenList from "@shared/api/helpers/getIconFromTokenList"
 import * as GetIconUrlFromIssuer from "@shared/api/helpers/getIconUrlFromIssuer";
 import * as RouteHelpers from "popup/helpers/route";
 import * as GetLedgerKeyAccounts from "@shared/api/helpers/getLedgerKeyAccounts";
+import * as UseGetCollectibles from "helpers/hooks/useGetCollectibles";
+import { Toaster } from "popup/basics/shadcn/Toast";
 
 import {
   Wrapper,
@@ -124,6 +126,14 @@ jest
   .spyOn(ApiInternal, "getTokenPrices")
   .mockImplementation(() => Promise.resolve(mockPrices));
 
+jest.spyOn(UseGetCollectibles, "useGetCollectibles").mockImplementation(
+  () =>
+    ({
+      state: { collections: [] },
+      fetchData: () => Promise.resolve({ collections: [] }),
+    }) as any,
+);
+
 jest
   .spyOn(ExtensionMessaging, "sendMessageToBackground")
   .mockImplementation((msg) => {
@@ -218,6 +228,7 @@ jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
     isDataSharingAllowed: false,
     isMemoValidationEnabled: false,
     isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
     settingsState: SettingsState.SUCCESS,
     isSorobanPublicEnabled: false,
     isRpcHealthy: true,
@@ -253,6 +264,7 @@ jest.mock("helpers/metrics", () => ({
   registerHandler: jest.fn(),
   storeBalanceMetricData: jest.fn(),
   emitMetric: jest.fn(),
+  initAmplitude: jest.fn(),
   metricsMiddleware: jest.fn(),
 }));
 
@@ -342,9 +354,6 @@ describe("Account view", () => {
     expect(
       screen.queryAllByTestId("account-view-user-notification"),
     ).toHaveLength(0);
-    expect(
-      screen.queryAllByTestId("account-view-sorban-rpc-issue"),
-    ).toHaveLength(0);
   });
   it("should show user notification if user notification is enabled", async () => {
     jest.spyOn(ApiInternal, "loadBackendSettings").mockImplementationOnce(() =>
@@ -423,13 +432,14 @@ describe("Account view", () => {
           },
         }}
       >
+        <Toaster />
         <Account />
       </Wrapper>,
     );
 
     await waitFor(() => {
       expect(
-        screen.getByTestId("account-view-sorban-rpc-issue"),
+        screen.getByText("Soroban is temporarily experiencing issues"),
       ).toBeInTheDocument();
     });
   });
@@ -558,6 +568,11 @@ describe("Account view", () => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(4);
 
+      expect(screen.getByTestId("account-tab-tokens")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("account-tab-collectibles"),
+      ).toBeInTheDocument();
+
       // fetches and displays icon from background cache
       expect(
         screen.getByTestId("AccountAssets__asset--loading-USDC"),
@@ -574,7 +589,6 @@ describe("Account view", () => {
         contractId: undefined,
         code: "FOO",
         assetsListsData: assetsListsData,
-        networkDetails: TESTNET_NETWORK_DETAILS,
       });
       expect(getIconFromTokenListSpy).toHaveBeenCalledTimes(2);
 
@@ -749,12 +763,10 @@ describe("Account view", () => {
       expect(
         screen.getByTestId("TransactionDetailModal__subtitle-date"),
       ).toHaveTextContent("Oct 07 2025");
-      expect(
-        screen.getByTestId("TransactionDetailModal__src-amount"),
-      ).toHaveTextContent("100 USDC");
-      expect(
-        screen.getByTestId("TransactionDetailModal__dst-amount"),
-      ).toHaveTextContent("G2…G2");
+      expect(screen.getByTestId("AssetDiff__amount-0")).toHaveTextContent(
+        "100 USDC",
+      );
+      expect(screen.getByTestId("AssetDiff__to-from-address")).toBeDefined();
       expect(
         screen.getByTestId("TransactionDetailModal__status"),
       ).toHaveTextContent("Success");
@@ -862,6 +874,7 @@ describe("Account view", () => {
         isDataSharingAllowed: false,
         isMemoValidationEnabled: false,
         isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
         settingsState: SettingsState.SUCCESS,
         isSorobanPublicEnabled: false,
         isRpcHealthy: true,
@@ -915,6 +928,7 @@ describe("Account view", () => {
         isDataSharingAllowed: false,
         isMemoValidationEnabled: false,
         isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
         settingsState: SettingsState.SUCCESS,
         isSorobanPublicEnabled: false,
         isRpcHealthy: true,
@@ -986,6 +1000,7 @@ describe("Account view", () => {
         isDataSharingAllowed: false,
         isMemoValidationEnabled: false,
         isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
         settingsState: SettingsState.SUCCESS,
         isSorobanPublicEnabled: false,
         isRpcHealthy: true,
@@ -1058,6 +1073,7 @@ describe("Account view", () => {
         isDataSharingAllowed: false,
         isMemoValidationEnabled: false,
         isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
         settingsState: SettingsState.SUCCESS,
         isSorobanPublicEnabled: false,
         isRpcHealthy: true,

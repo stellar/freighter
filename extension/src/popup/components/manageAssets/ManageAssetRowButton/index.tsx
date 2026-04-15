@@ -54,7 +54,7 @@ export const ManageAssetRowButton = ({
               }
             }}
           >
-            <img src={IconEllipsis} alt="icon asset options" />
+            <img src={IconEllipsis} alt={t("icon asset options")} />
           </div>
           {rowButtonShowing === canonicalAsset ? (
             <div
@@ -90,7 +90,7 @@ export const ManageAssetRowButton = ({
                       {t("Remove asset")}
                     </div>
                     {isLoading ? null : (
-                      <img src={IconRemove} alt="icon remove" />
+                      <img src={IconRemove} alt={t("icon remove")} />
                     )}
                   </Button>
                 </div>
@@ -116,7 +116,7 @@ export const ManageAssetRowButton = ({
           data-testid="ManageAssetRowButton"
         >
           <div className="ManageAssetRowButton__label">{t("Add")}</div>
-          <img src={IconAdd} alt="icon add" />
+          <img src={IconAdd} alt={t("icon add")} />
         </Button>
       )}
     </div>

@@ -27,16 +27,22 @@ import {
   SSLWarningMessage,
   BlockaidAssetWarning,
   DomainNotAllowedWarningMessage,
-  BlockAidAssetScanExpanded,
   AssetListWarning,
   AssetListWarningExpanded,
+  BlockAidAssetScanExpanded,
 } from "popup/components/WarningMessages";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { View } from "popup/basics/layout/View";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { useTokenLookup } from "popup/helpers/useTokenLookup";
 import { isContractId } from "popup/helpers/soroban";
-import { isAssetSuspicious, scanAsset } from "popup/helpers/blockaid";
+import {
+  scanAsset,
+  isAssetSuspicious,
+  isAssetMalicious,
+  shouldTreatAssetAsUnableToScan,
+} from "popup/helpers/blockaid";
+import { getBlockaidOverrideState } from "@shared/api/internal";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
@@ -44,6 +50,7 @@ import { openTab } from "popup/helpers/navigate";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
+import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import "./styles.scss";
 
@@ -55,12 +62,16 @@ export const AddToken = () => {
     url,
     contractId,
     networkPassphrase: entryNetworkPassphrase,
+    uuid,
   } = params;
 
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
   });
   const { state, fetchData } = useGetAppData();
+
+  // Mark this queue item as active to prevent TTL cleanup while popup is open
+  useMarkQueueActive(uuid);
 
   const { t } = useTranslation();
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
@@ -74,9 +85,9 @@ export const AddToken = () => {
   const [isVerifiedToken, setIsVerifiedToken] = useState(false);
   const [isVerificationInfoShowing, setIsVerificationInfoShowing] =
     useState(false);
-  const [blockaidData, setBlockaidData] = useState<
-    BlockAidScanAssetResult | undefined
-  >(undefined);
+  const [blockaidData, setBlockaidData] =
+    useState<BlockAidScanAssetResult | null>(null);
+  const [isMaliciousAsset, setIsMaliciousAsset] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [activePaneIndex, setActivePaneIndex] = useState(0);
 
@@ -102,6 +113,7 @@ export const AddToken = () => {
     addToken,
     assetCode,
     assetIssuer,
+    uuid,
   });
 
   const { handleTokenLookup } = useTokenLookup({
@@ -114,9 +126,7 @@ export const AddToken = () => {
   useEffect(() => {
     if (!isContractId(contractId)) {
       setErrorMessage(
-        t(
-          "This is not a valid contract id. Please try again with a different value.",
-        ),
+        `${t("This is not a valid contract id.")} ${t("Please try again with a different value.")}`,
       );
       return;
     }
@@ -138,13 +148,20 @@ export const AddToken = () => {
     const { networkDetails } = state.data.settings;
 
     const getBlockaidData = async () => {
-      const scannedAsset = await scanAsset(
-        `${assetCode}-${assetIssuer}`,
-        networkDetails,
-      );
+      const [scannedAsset, overrideState] = await Promise.all([
+        scanAsset(`${assetCode}-${assetIssuer}`, networkDetails),
+        getBlockaidOverrideState().catch(() => null),
+      ]);
 
-      if (isAssetSuspicious(scannedAsset)) {
+      // Show Blockaid warning if suspicious, malicious, or unable to scan (including debug override)
+      if (
+        scannedAsset &&
+        (isAssetSuspicious(scannedAsset, overrideState) ||
+          isAssetMalicious(scannedAsset, overrideState) ||
+          shouldTreatAssetAsUnableToScan(scannedAsset, overrideState))
+      ) {
         setBlockaidData(scannedAsset);
+        setIsMaliciousAsset(isAssetMalicious(scannedAsset, overrideState));
       }
     };
 
@@ -338,7 +355,7 @@ export const AddToken = () => {
                         size="lg"
                         variant="single"
                         sourceOne={{
-                          altText: "Add token logo",
+                          altText: t("Add token logo"),
                           image: assetIcon,
                           backgroundColor: "transparent",
                         }}
@@ -406,13 +423,15 @@ export const AddToken = () => {
                 )}
 
                 <div className="AddToken__Description">
-                  Allow token to be displayed and used with this wallet address
+                  {t(
+                    "Allow token to be displayed and used with this wallet address",
+                  )}
                 </div>
                 <div className="AddToken__Metadata">
                   <div className="AddToken__Metadata__Row">
                     <div className="AddToken__Metadata__Label">
                       <Icon.Wallet01 />
-                      <span>Wallet</span>
+                      <span>{t("Wallet")}</span>
                     </div>
                     <div className="AddToken__Metadata__Value">
                       <KeyIdenticon publicKey={state.data.account.publicKey} />
@@ -420,10 +439,12 @@ export const AddToken = () => {
                   </div>
                 </div>
               </div>,
-              <BlockAidAssetScanExpanded
-                scanResult={blockaidData!}
-                onClose={() => setActivePaneIndex(0)}
-              />,
+              blockaidData ? (
+                <BlockAidAssetScanExpanded
+                  scanResult={blockaidData}
+                  onClose={() => setActivePaneIndex(0)}
+                />
+              ) : null,
               <AssetListWarningExpanded
                 isVerified={isVerifiedToken}
                 onClose={() => setActivePaneIndex(0)}
@@ -448,7 +469,7 @@ export const AddToken = () => {
           isFullWidth
           isRounded
           size="lg"
-          variant="secondary"
+          variant={isMaliciousAsset ? "error" : "secondary"}
           isLoading={isConfirming}
           onClick={() => handleApprove()}
         >

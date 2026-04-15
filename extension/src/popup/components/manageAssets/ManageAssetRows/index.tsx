@@ -247,7 +247,7 @@ const AssetRows = ({
               className="ManageAssetRows__tooltip"
               data-testid="asset-on-list"
             >
-              On your lists
+              {t("On your lists")}
             </h5>
           </InfoTooltip>
         )}
@@ -318,7 +318,7 @@ const AssetRows = ({
               className="ManageAssetRows__tooltip"
               data-testid="not-asset-on-list"
             >
-              Not on your lists
+              {t("Not on your lists")}
             </h5>
           </InfoTooltip>
         )}

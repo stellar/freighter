@@ -34,7 +34,7 @@
     "start:unpacked": "yarn workspace extension start:unpacked-extension",
     "install-if-package-changed": "git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep --quiet yarn.lock && yarn setup || exit 0",
     "test:ci": "jest --ci",
-    "test:e2e": "yarn workspace extension test:e2e --workers=1",
+    "test:e2e": "yarn workspace extension test:e2e",
     "test": "jest -o --watch",
     "prepare": "husky install"
   },
@@ -92,7 +92,7 @@
     "eslint-plugin-react": "7.37.4",
     "eslint-plugin-react-hooks": "5.1.0",
     "eslint-webpack-plugin": "5.0.0",
-    "glob": "11.0.1",
+    "glob": "11.1.0",
     "globals": "16.0.0",
     "got": "14.4.5",
     "husky": "9.1.7",
@@ -110,7 +110,7 @@
     "typescript": "5.7.3",
     "webpack": "5.97.1",
     "webpack-cli": "6.0.1",
-    "webpack-dev-server": "5.1.0",
+    "webpack-dev-server": "5.2.1",
     "webpack-merge": "6.0.1"
   },
   "devDependencies": {
@@ -144,5 +144,5 @@
     "debug@4.4.2": "4.4.1",
     "ansi-styles@6.2.2": "6.2.3"
   },
-  "packageManager": "yarn@4.9.4"
+  "packageManager": "yarn@4.10.0"
 }

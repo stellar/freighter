@@ -155,7 +155,7 @@ export function HSVtoRGB(h, s, v) {
 function setFillStyle(canvas, byte) {
   var ctx = canvas.getContext("2d");
   var color = HSVtoRGB(byte / 255, 0.7, 0.8);
-  ctx.fillStyle = "rgb(" + color.r + ", " + color.g + ", " + color.b + ")";
+  ctx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
 }
 
 function drawIdenticon(canvas, stellarAddress) {

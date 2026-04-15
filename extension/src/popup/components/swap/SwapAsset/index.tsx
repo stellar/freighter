@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { Icon, Input, Loader } from "@stellar/design-system";
 import { useFormik } from "formik";
 import { debounce } from "lodash";
+import { useTranslation } from "react-i18next";
 
 import { TokenList } from "popup/components/InternalTransaction/TokenList";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -30,6 +31,7 @@ export const SwapAsset = ({
   onClickAsset,
   goBack,
 }: SwapAssetProps) => {
+  const { t } = useTranslation();
   const { state, fetchData, filterBalances } = useGetSwapFromData({
     showHidden: false,
     includeIcons: true,
@@ -107,7 +109,7 @@ export const SwapAsset = ({
             autoComplete="off"
             id="destination-input"
             name="searchTerm"
-            placeholder={"Search token name or address"}
+            placeholder={t("Search token name or address")}
             value={formik.values.searchTerm}
             onChange={handleChange}
             leftElement={<Icon.SearchMd />}
