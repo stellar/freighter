@@ -57,6 +57,7 @@ import {
   ApiTokenPrices,
   HorizonOperation,
   UserNotification,
+  CollectibleContract,
 } from "./types";
 import {
   AccountBalancesInterface,
@@ -70,6 +71,7 @@ import {
   NETWORKS,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
+import { isDev } from "../helpers/dev";
 import { SorobanRpcNotSupportedError } from "../constants/errors";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
@@ -861,6 +863,7 @@ export const getIndexerAccountHistory = async ({
     const url = new URL(
       `${INDEXER_URL}/account-history/${publicKey}?network=${networkDetails.network}&is_failed_included=true`,
     );
+
     const response = await fetch(url.href);
 
     const data = await response.json();
@@ -1129,7 +1132,6 @@ export const getAssetIcons = async ({
         if (!icon) {
           // if we don't have the icon, we try to get it from the token lists
           const tokenListIcon = await getIconFromTokenLists({
-            networkDetails,
             issuerId: key,
             contractId,
             code,
@@ -1246,10 +1248,15 @@ export const getAssetDomains = async ({
   return assetDomains;
 };
 
-export const rejectAccess = async (): Promise<void> => {
+export const rejectAccess = async ({
+  uuid,
+}: {
+  uuid: string;
+}): Promise<void> => {
   try {
     await sendMessageToBackground({
       activePublicKey: null,
+      uuid,
       type: SERVICE_TYPES.REJECT_ACCESS,
     });
   } catch (e) {
@@ -1257,11 +1264,18 @@ export const rejectAccess = async (): Promise<void> => {
   }
 };
 
-export const grantAccess = async (url: string): Promise<void> => {
+export const grantAccess = async ({
+  url,
+  uuid,
+}: {
+  url: string;
+  uuid: string;
+}): Promise<void> => {
   try {
     await sendMessageToBackground({
       activePublicKey: null,
       url,
+      uuid,
       type: SERVICE_TYPES.GRANT_ACCESS,
     });
   } catch (e) {
@@ -1271,13 +1285,16 @@ export const grantAccess = async (url: string): Promise<void> => {
 
 export const handleSignedHwPayload = async ({
   signedPayload,
+  uuid,
 }: {
   signedPayload: string | Buffer;
+  uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
       activePublicKey: null,
       signedPayload,
+      uuid,
       type: SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD,
     });
   } catch (e) {
@@ -1287,12 +1304,15 @@ export const handleSignedHwPayload = async ({
 
 export const addToken = async ({
   activePublicKey,
+  uuid,
 }: {
   activePublicKey: string;
+  uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
       activePublicKey,
+      uuid,
       type: SERVICE_TYPES.ADD_TOKEN,
     });
   } catch (e) {
@@ -1302,12 +1322,15 @@ export const addToken = async ({
 
 export const signTransaction = async ({
   activePublicKey,
+  uuid,
 }: {
   activePublicKey: string;
+  uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
       activePublicKey,
+      uuid,
       type: SERVICE_TYPES.SIGN_TRANSACTION,
     });
   } catch (e) {
@@ -1318,14 +1341,17 @@ export const signTransaction = async ({
 export const signBlob = async ({
   apiVersion,
   activePublicKey,
+  uuid,
 }: {
   apiVersion?: string;
   activePublicKey: string;
+  uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
       apiVersion,
       activePublicKey,
+      uuid,
       type: SERVICE_TYPES.SIGN_BLOB,
     });
   } catch (e) {
@@ -1335,12 +1361,15 @@ export const signBlob = async ({
 
 export const signAuthEntry = async ({
   activePublicKey,
+  uuid,
 }: {
   activePublicKey: string;
+  uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
       activePublicKey,
+      uuid,
       type: SERVICE_TYPES.SIGN_AUTH_ENTRY,
     });
   } catch (e) {
@@ -1582,11 +1611,13 @@ export const saveSettings = async ({
   isDataSharingAllowed,
   isMemoValidationEnabled,
   isHideDustEnabled,
+  isOpenSidebarByDefault,
 }: {
   activePublicKey: string;
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isHideDustEnabled: boolean;
+  isOpenSidebarByDefault: boolean;
 }): Promise<Settings & IndexerSettings> => {
   let response = {
     allowList: DEFAULT_ALLOW_LIST,
@@ -1600,6 +1631,7 @@ export const saveSettings = async ({
     isSorobanPublicEnabled: false,
     isNonSSLEnabled: false,
     isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
     error: "",
     hiddenAssets: {},
   };
@@ -1610,6 +1642,7 @@ export const saveSettings = async ({
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isHideDustEnabled,
+      isOpenSidebarByDefault,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
   } catch (e) {
@@ -1657,6 +1690,44 @@ export const saveExperimentalFeatures = async ({
   }
 
   return response;
+};
+
+export const getBlockaidOverrideState = async (): Promise<string | null> => {
+  // Only allow override state in dev mode
+  if (!isDev) {
+    return null;
+  }
+
+  const response = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE,
+  });
+
+  if (response.error) {
+    return null;
+  }
+
+  return response.overriddenBlockaidResponse ?? null;
+};
+
+export const saveBlockaidOverrideState = async ({
+  overriddenBlockaidResponse,
+}: {
+  overriddenBlockaidResponse: string | null;
+}): Promise<{ overriddenBlockaidResponse: string | null }> => {
+  const response = await sendMessageToBackground({
+    activePublicKey: null,
+    overriddenBlockaidResponse,
+    type: SERVICE_TYPES.SAVE_BLOCKAID_DEBUG_OVERRIDE,
+  });
+
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
+  return {
+    overriddenBlockaidResponse: response.overriddenBlockaidResponse ?? null,
+  };
 };
 
 export const changeNetwork = async ({
@@ -1869,6 +1940,34 @@ export const getTokenIds = async ({
   return tokenIdList;
 };
 
+export const getMobileAppBannerDismissed = async (): Promise<boolean> => {
+  const { isDismissed, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_MOBILE_APP_BANNER_DISMISSED,
+  });
+
+  if (error) {
+    return false;
+  }
+
+  return !!isDismissed;
+};
+
+export const dismissMobileAppBanner = async (): Promise<{
+  isDismissed: boolean;
+}> => {
+  const { isDismissed, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.DISMISS_MOBILE_APP_BANNER,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return { isDismissed: !!isDismissed };
+};
+
 export const removeTokenId = async ({
   activePublicKey,
   contractId,
@@ -1938,6 +2037,71 @@ export const modifyAssetsList = async ({
   return { assetsLists: response.assetsLists, error: response.error };
 };
 
+export const simulateSendCollectible = async (args: {
+  collectionAddress: string;
+  publicKey: string;
+  params: {
+    publicKey: string;
+    destination: string;
+    collectionAddress: string;
+    tokenId: number;
+  };
+  networkDetails: NetworkDetails;
+  transactionFee: string;
+}): Promise<{
+  ok: boolean;
+  response: {
+    preparedTransaction: string;
+    simulationResponse: SorobanRpc.Api.SimulateTransactionSuccessResponse;
+  };
+}> => {
+  const {
+    collectionAddress,
+    publicKey,
+    params,
+    networkDetails,
+    transactionFee,
+  } = args;
+  if (!networkDetails.sorobanRpcUrl) {
+    throw new SorobanRpcNotSupportedError();
+  }
+  const server = stellarSdkServer(
+    networkDetails.networkUrl,
+    networkDetails.networkPassphrase,
+  );
+  const Sdk = getSdk(networkDetails.networkPassphrase);
+  const sourceAccount = await server.loadAccount(publicKey);
+  const builder = new Sdk.TransactionBuilder(sourceAccount, {
+    fee: xlmToStroop(transactionFee).toFixed(),
+    networkPassphrase: networkDetails.networkPassphrase,
+  });
+
+  const sendCollectibleParams = [
+    new Address(publicKey).toScVal(), // from
+    new Address(params.destination).toScVal(), // to
+    xdr.ScVal.scvU32(params.tokenId), // token id
+  ];
+  const transaction = transfer(
+    collectionAddress,
+    sendCollectibleParams,
+    undefined,
+    builder,
+  );
+
+  const simulationResponse = (await simulateTransaction({
+    xdr: transaction.toXDR(),
+    networkDetails: networkDetails,
+  })) as {
+    ok: boolean;
+    response: {
+      preparedTransaction: string;
+      simulationResponse: SorobanRpc.Api.SimulateTransactionSuccessResponse;
+    };
+  };
+
+  return simulationResponse;
+};
+
 export const simulateTokenTransfer = async (args: {
   address: string;
   publicKey: string;
@@ -1976,7 +2140,7 @@ export const simulateTokenTransfer = async (args: {
 
     const transferParams = [
       new Address(publicKey).toScVal(), // from
-      new Address(address).toScVal(), // to
+      new Address(params.destination).toScVal(), // to (may be muxed address)
       new XdrLargeInt("i128", params.amount).toI128(), // amount
     ];
     const transaction = transfer(address, transferParams, memo, builder);
@@ -2001,22 +2165,31 @@ export const simulateTokenTransfer = async (args: {
     };
   }
 
+  // Build request body - ensure memo is a string (empty string if undefined/null for muxed addresses)
+  const requestBody: {
+    address: string;
+    pub_key: string;
+    memo: string;
+    params: {
+      publicKey: string;
+      destination: string;
+      amount: number;
+    };
+    network_passphrase: string;
+  } = {
+    address,
+    pub_key: publicKey,
+    memo: memo || "", // Backend requires memo as string, use empty string if undefined
+    params,
+    network_passphrase: networkDetails.networkPassphrase,
+  };
+
   const options = {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      address,
-
-      pub_key: publicKey,
-      memo,
-      params,
-
-      network_url: networkDetails.sorobanRpcUrl,
-
-      network_passphrase: networkDetails.networkPassphrase,
-    }),
+    body: JSON.stringify(requestBody),
   };
   const res = await fetch(`${INDEXER_URL}/simulate-token-transfer`, options);
   const response = await res.json();
@@ -2038,9 +2211,6 @@ export const simulateTransaction = async (args: {
     },
     body: JSON.stringify({
       xdr,
-
-      network_url: networkDetails.sorobanRpcUrl,
-
       network_passphrase: networkDetails.networkPassphrase,
     }),
   };
@@ -2119,4 +2289,137 @@ export const changeAssetVisibility = async ({
   });
 
   return { hiddenAssets: response.hiddenAssets, error: response.error };
+};
+
+export const addCollectible = async ({
+  publicKey,
+  network,
+  collectibleContractAddress,
+  collectibleTokenId,
+}: {
+  publicKey: string;
+  network: string;
+  collectibleContractAddress: string;
+  collectibleTokenId: string;
+}) => {
+  let response = {
+    error: "",
+    collectiblesList: [] as CollectibleContract[],
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      type: SERVICE_TYPES.ADD_COLLECTIBLE,
+      activePublicKey: publicKey,
+      publicKey,
+      network,
+      collectibleContractAddress,
+      collectibleTokenId,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
+};
+
+export const getCollectibles = async ({
+  publicKey,
+  network,
+}: {
+  publicKey: string;
+  network: string;
+}) => {
+  let response = {
+    error: "",
+    collectiblesList: [] as CollectibleContract[],
+  };
+
+  try {
+    response = await sendMessageToBackground({
+      type: SERVICE_TYPES.GET_COLLECTIBLES,
+      activePublicKey: publicKey,
+      publicKey,
+      network,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
+};
+
+export const changeCollectibleVisibility = async ({
+  collectibleKey,
+  collectibleVisibility,
+  activePublicKey,
+}: {
+  collectibleKey: string;
+  collectibleVisibility: AssetVisibility;
+  activePublicKey: string;
+}) => {
+  const response = await sendMessageToBackground({
+    type: SERVICE_TYPES.CHANGE_COLLECTIBLE_VISIBILITY,
+    collectibleVisibility: {
+      collectible: collectibleKey,
+      visibility: collectibleVisibility,
+    },
+    activePublicKey,
+  });
+
+  return {
+    hiddenCollectibles: response?.hiddenCollectibles || {},
+    error: response?.error || "",
+  };
+};
+
+export const getHiddenCollectibles = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}) => {
+  const response = await sendMessageToBackground({
+    type: SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES,
+    activePublicKey,
+  });
+
+  return {
+    hiddenCollectibles: response?.hiddenCollectibles || {},
+    error: response?.error || "",
+  };
+};
+
+export const markQueueActive = async ({
+  uuid,
+  isActive,
+}: {
+  uuid: string;
+  isActive: boolean;
+}): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      activePublicKey: null,
+      uuid,
+      isActive,
+      type: SERVICE_TYPES.MARK_QUEUE_ACTIVE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+export const rejectSigningRequest = async ({
+  uuid,
+}: {
+  uuid: string;
+}): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      activePublicKey: null,
+      uuid,
+      type: SERVICE_TYPES.REJECT_SIGNING_REQUEST,
+    });
+  } catch (e) {
+    console.error(e);
+  }
 };

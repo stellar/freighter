@@ -26,9 +26,10 @@ import { isAssetVisible } from "./settings";
 import {
   getRowDataByOpType,
   OperationDataRow,
-  getHomeDomainsForOperations,
+  getOperationDependencies,
 } from "popup/views/AccountHistory/hooks/useGetHistoryData";
 import { TokenDetailsResponse } from "helpers/hooks/useTokenDetails";
+import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 
 export const LP_IDENTIFIER = ":lp";
 
@@ -116,6 +117,7 @@ interface SortOperationsByAsset {
   }) => Promise<TokenDetailsResponse | Error>;
   icons: AssetIcons;
   homeDomains: { [assetIssuer: string]: string | null };
+  cachedTokenLists: AssetListResponse[];
 }
 
 export interface AssetOperations {
@@ -130,6 +132,7 @@ export const sortOperationsByAsset = async ({
   fetchTokenDetails,
   icons,
   homeDomains,
+  cachedTokenLists,
 }: SortOperationsByAsset) => {
   const assetOperationMap = {} as AssetOperations;
 
@@ -153,12 +156,15 @@ export const sortOperationsByAsset = async ({
   /* 
     To prevent multiple requests for home domains as we build each row, 
     we iterate through the operations and collect the asset issuers that need home domains in a single request.
+    Also collect and fetch needed collectible contracts.
   */
-  const fetchedHomeDomains = await getHomeDomainsForOperations(
-    operations,
-    networkDetails,
-    homeDomains,
-  );
+  const { homeDomains: fetchedHomeDomains, collectibleLookup } =
+    await getOperationDependencies(
+      operations,
+      networkDetails,
+      publicKey,
+      homeDomains,
+    );
 
   for (const op of operations) {
     const isPayment = getIsPayment(op.type);
@@ -184,6 +190,8 @@ export const sortOperationsByAsset = async ({
       icons,
       fetchTokenDetails,
       fetchedHomeDomains,
+      collectibleLookup,
+      cachedTokenLists,
     );
     if (getIsPayment(op.type)) {
       Object.keys(assetOperationMap).forEach((assetKey) => {

@@ -1,0 +1,1076 @@
+import { expect, test, expectPageToHaveScreenshot } from "../test-fixtures";
+import { TEST_TOKEN_ADDRESS } from "../helpers/test-token";
+import { loginToTestAccount, switchToMainnet } from "../helpers/login";
+import { allowDapp } from "../helpers/dAppSessionHelper";
+import {
+  stubAccountBalances,
+  stubAccountHistory,
+  stubIsSac,
+  stubScanDapp,
+  stubTokenDetails,
+  stubTokenPrices,
+} from "../helpers/stubs";
+
+const TX_TO_SIGN =
+  "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAAGQAAAfjAAAOpQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAAAAAAAAvrwgAAAAAAAAAAA";
+const SIGNED_TX =
+  "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAAGQAAAfjAAAOpQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAAAAAAAAvrwgAAAAAAAAAAB/xirbAAAAEBWgE2DhhukpAdJTOhBxvuvePAJH+gBbD3hQQljuidQbTFDMEyak7c2fOjyK2moqVhf3AUpCIMSlALglwFXumQH";
+
+const AUTH_ENTRY_TO_SIGN =
+  "AAAACc7gMC1ZhE0yvcqRXIID3USzP7t+3BkFHqN6vt8o7NRyGVzFh1h1V3oANBPZAAAAAAAAAAGhRTk9qFLakLcWsi5wS6hhHr80ka5WABdo/8hF7QmS3QAAAARzd2FwAAAABAAAABIAAAAB0kc/9lM7RuxEsaiiUFR+T89kG7IOUk1U0cXCIDkTDesAAAASAAAAAZ+9o35h9wEnNl2hiVZHRJxsDoO3altsu023K1kAex/nAAAACgAAAAAAAAAAAAAAAAADDUAAAAAKAAAAAAAAAAAAAAAAAAGGoAAAAAEAAAAAAAAAAdJHP/ZTO0bsRLGoolBUfk/PZBuyDlJNVNHFwiA5Ew3rAAAACHRyYW5zZmVyAAAAAwAAABIAAAAAAAAAAFVmR/NPwhQJzrxxqVrqFZ83Hy9HmP4trSdB/dX7sAZjAAAAEgAAAAGhRTk9qFLakLcWsi5wS6hhHr80ka5WABdo/8hF7QmS3QAAAAoAAAAAAAAAAAAAAAAAAw1AAAAAAA==";
+
+const SIGNED_AUTH_ENTRY =
+  '"pUMQKvSlK72f3XmJmZbLLV05SPn9e8k/9m9RQOW2GDmpUZ/fS5ZWDsAF3rJulGg8AVL21FlUr+nRFcF+rLOiAw=="';
+
+// A valid HashIdPreimage XDR of type ENVELOPE_TYPE_OP_ID (6), NOT sorobanAuthorization.
+// Used to test the second validation catch in SignAuthEntry (wrong preimage variant).
+const NON_SOROBAN_AUTH_ENTRY =
+  "AAAABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAA==";
+
+const MSG_TO_SIGN = "Hello, World!";
+const SIGNED_MSG =
+  '"dxdeMTXPabzkvpVyTFFvPyiQ1soAJVf55NLkzgQ1a5HihB0wGi78P6p4Qac3YJa9pOVD9YeKGeUPZVNCM/f8Cg=="';
+
+const LONG_MSG_TO_SIGN = Array(10000).fill("a").join("");
+const LONG_SIGNED_MSG =
+  '"7JrY+dlbFjYGv0TVg+vnM+6XOMeDl2TojARHiyInnXamS5MHrmINhssrvFqGyPx/QGGsKZuvfuVzXPqGoLWkBw=="';
+
+const JSON_MSG_TO_SIGN = JSON.stringify({
+  message: "Hello, World!",
+  timestamp: 111111,
+  isActive: true,
+  tags: ["tag1", "tag2"],
+  nested: {
+    message: "Hello, Universe!",
+    timestamp: 222222,
+    isActive: false,
+    tags: ["tag01", "tag02"],
+  },
+});
+const JSON_SIGNED_MSG =
+  '\"42IH7/mvkAT+ltbEG8oEPhVBzP7hb6NU+P+WZP3j1AIMdbwuFPrzBuRFRvLjXdXl5lDmC7aL0zrZIUrfrMXHDw==\"';
+
+const isIntegrationMode = process.env.IS_INTEGRATION_MODE === "true";
+
+test("should sign transaction when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const txPopupPromise = page.context().waitForEvent("page");
+
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signTransaction",
+  );
+  await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Sign Transaction XDR").click();
+
+  const txPopup = await txPopupPromise;
+  await stubAccountBalances(txPopup);
+  // Stub scan-tx with detailed asset diffs
+  await txPopup.route("**/scan-tx", async (route) => {
+    await route.fulfill({
+      json: {
+        data: {
+          simulation: {
+            status: "Success",
+            assets_diffs: {
+              GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: null,
+                  out: {
+                    usd_price: 0,
+                    summary: "Sent 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  asset_type: "NATIVE",
+                },
+              ],
+              GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: {
+                    usd_price: 0,
+                    summary: "Received 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  out: null,
+                  asset_type: "NATIVE",
+                },
+              ],
+            },
+            exposures: {},
+            assets_ownership_diff: {},
+            address_details: [],
+            account_summary: {
+              account_assets_diffs: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: null,
+                  out: {
+                    usd_price: 0,
+                    summary: "Sent 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  asset_type: "NATIVE",
+                },
+              ],
+              account_exposures: [],
+              account_ownerships_diff: [],
+              total_usd_diff: {
+                in: 0,
+                out: 0,
+                total: 0,
+              },
+              total_usd_exposure: {},
+            },
+            transaction_actions: null,
+          },
+          validation: {
+            status: "Success",
+            result_type: "Benign",
+            description: "",
+            reason: "",
+            classification: "",
+            features: [],
+          },
+          request_id: "9e460857-734b-405e-9e1f-86e656def1dd",
+        },
+        error: null,
+      },
+    });
+  });
+
+  await expect(txPopup.getByText("Confirm Transaction")).toBeVisible();
+  await expect(txPopup.getByText("Network")).toBeVisible();
+  await expect(txPopup.getByText("Test Net")).toBeVisible();
+
+  await expect(txPopup.getByText("GDF3…ZEFY")).toBeVisible();
+
+  await expect(txPopup.getByText("-5")).toBeVisible();
+  await expectPageToHaveScreenshot({
+    page: txPopup,
+    screenshot: "sign-transaction.png",
+  });
+  await txPopup.getByRole("button", { name: "Confirm" }).click();
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(SIGNED_TX);
+});
+
+// TODO: once freighter-api is updated in npm to fix signing address, this test should be unskipped
+test.skip("should sign transaction for a specific account when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  page.getByTestId("account-view-account-name").click();
+  page.getByText("Account 2").click();
+  await expect(page.getByTestId("account-header")).toBeVisible();
+  await allowDapp({ page });
+
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signTransaction",
+  );
+  await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Sign Transaction XDR").click();
+
+  const txPopupPromise = page.context().waitForEvent("page");
+  const txPopup = await txPopupPromise;
+
+  await expect(txPopup.getByText("Confirm Transaction")).toBeVisible();
+  await expect(txPopup.getByText("GDF3…ZEFY")).toBeVisible();
+
+  await txPopup.getByRole("button", { name: "Confirm" }).click();
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(SIGNED_TX);
+});
+
+// TODO: Add domain not allowed to SignTransaction when warning is redesigned
+test("should not sign transaction when not allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const txPopupPromise = page.context().waitForEvent("page");
+
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signTransaction",
+  );
+  await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Sign Transaction XDR").click();
+
+  const txPopup = await txPopupPromise;
+  await stubAccountBalances(txPopup);
+
+  await expect(
+    txPopup.getByText(
+      "docs.freighter.app is not currently connected to Freighter",
+    ),
+  ).toBeVisible();
+  await expect(txPopup.getByTestId("sign-transaction-sign")).toBeDisabled();
+  await expectPageToHaveScreenshot({
+    page: txPopup,
+    screenshot: "domain-not-allowed-sign-transaction.png",
+  });
+});
+
+test("should sign correct transactions when Freighter receives multiple requests", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
+  await loginToTestAccount({ page, extensionId, context });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const txPopupPromise = page.context().waitForEvent("page");
+
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signTransaction",
+  );
+  await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Sign Transaction XDR").click();
+
+  const txPopup = await txPopupPromise;
+  await stubAccountBalances(txPopup);
+  // Stub scan-tx with detailed asset diffs
+  await txPopup.route("**/scan-tx", async (route) => {
+    await route.fulfill({
+      json: {
+        data: {
+          simulation: {
+            status: "Success",
+            assets_diffs: {
+              GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: null,
+                  out: {
+                    usd_price: 0,
+                    summary: "Sent 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  asset_type: "NATIVE",
+                },
+              ],
+              GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: {
+                    usd_price: 0,
+                    summary: "Received 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  out: null,
+                  asset_type: "NATIVE",
+                },
+              ],
+            },
+            exposures: {},
+            assets_ownership_diff: {},
+            address_details: [],
+            account_summary: {
+              account_assets_diffs: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: null,
+                  out: {
+                    usd_price: 0,
+                    summary: "Sent 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  asset_type: "NATIVE",
+                },
+              ],
+              account_exposures: [],
+              account_ownerships_diff: [],
+              total_usd_diff: {
+                in: 0,
+                out: 0,
+                total: 0,
+              },
+              total_usd_exposure: {},
+            },
+            transaction_actions: null,
+          },
+          validation: {
+            status: "Success",
+            result_type: "Benign",
+            description: "",
+            reason: "",
+            classification: "",
+            features: [],
+          },
+          request_id: "9e460857-734b-405e-9e1f-86e656def1dd",
+        },
+        error: null,
+      },
+    });
+  });
+
+  await expect(txPopup.getByText("Confirm Transaction")).toBeVisible();
+
+  await expect(txPopup.getByText("GDF3…ZEFY")).toBeVisible();
+
+  await expect(txPopup.getByText("-5")).toBeVisible();
+
+  // now open a third tab and send another transaction signing request before approving the first one
+
+  const pageThree = await page.context().newPage();
+  await pageThree.waitForLoadState();
+
+  const txPopupPromise2 = page.context().waitForEvent("page");
+  await pageThree.goto(
+    "https://docs.freighter.app/docs/playground/signTransaction",
+  );
+  await pageThree
+    .getByRole("textbox")
+    .first()
+    .fill(
+      "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAAGQAAAUVAAAA/QAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAAAAAAABfXhAAAAAAAAAAAA",
+    );
+  await pageThree
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageThree.getByText("Sign Transaction XDR").click();
+
+  const txPopup2 = await txPopupPromise2;
+  await expect(txPopup2.getByText("Confirm Transaction")).toBeVisible();
+  await expect(txPopup2.getByText("GDF3…ZEFY")).toBeVisible();
+  await expect(txPopup2.getByText("-10")).toBeVisible();
+
+  await txPopup.getByRole("button", { name: "Confirm" }).click();
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(SIGNED_TX);
+});
+
+test("should sign auth entry when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signAuthEntry",
+  );
+  await pageTwo.getByRole("textbox").first().fill(AUTH_ENTRY_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo
+    .getByText("Sign Authorization Entry XDR")
+    .click({ force: true });
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText("Confirm Authorization").first()).toBeVisible();
+  await expect(popup.getByText("Network")).toBeVisible();
+  await expect(popup.getByText("Test Net")).toBeVisible();
+  await expectPageToHaveScreenshot({
+    page: popup,
+    screenshot: "sign-auth-entry.png",
+  });
+
+  await popup.getByRole("button", { name: "Confirm" }).click();
+
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(
+    SIGNED_AUTH_ENTRY,
+  );
+});
+
+// unlike sign tx and add token, if a dapp is not allowed, it shows the connection request modal
+test("should not sign auth entry when not allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signAuthEntry",
+  );
+  await pageTwo.getByRole("textbox").first().fill(AUTH_ENTRY_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo
+    .getByText("Sign Authorization Entry XDR")
+    .click({ force: true });
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText("Connection Request")).toBeVisible();
+});
+
+test("should sign auth entry for a selected account when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  await page.getByTestId("account-view-account-name").click();
+  await page.getByText("Account 2").click();
+  await expect(page.getByTestId("account-header")).toBeVisible();
+  await allowDapp({ page });
+
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signAuthEntry",
+  );
+  await pageTwo.getByRole("textbox").first().fill(AUTH_ENTRY_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo
+    .getByRole("textbox")
+    .nth(2)
+    .fill("GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY");
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.getByText("Sign Authorization Entry XDR").click();
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText("Confirm Authorization").first()).toBeVisible();
+  await expect(popup.getByText("GDF3…ZEFY")).toBeVisible();
+
+  await popup.getByRole("button", { name: "Confirm" }).click();
+
+  await expect(pageTwo.getByRole("textbox").nth(4)).toHaveValue(
+    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+  );
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(
+    SIGNED_AUTH_ENTRY,
+  );
+});
+test("should sign message string when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Sign message").click();
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText(MSG_TO_SIGN)).toBeVisible();
+  await expect(popup.getByText("Network")).toBeVisible();
+  await expect(popup.getByText("Test Net")).toBeVisible();
+  await expectPageToHaveScreenshot({
+    page: popup,
+    screenshot: "sign-message.png",
+  });
+
+  await popup.getByTestId("sign-message-approve-button").click();
+
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(SIGNED_MSG);
+  await expect(pageTwo.getByRole("textbox").nth(4)).toHaveValue(
+    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+  );
+});
+
+test("should sign message long string when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.getByRole("textbox").first().fill(LONG_MSG_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Sign message").click();
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText(LONG_MSG_TO_SIGN)).toBeVisible();
+  await expectPageToHaveScreenshot({
+    page: popup,
+    screenshot: "sign-message-long-string.png",
+  });
+
+  await popup.getByTestId("sign-message-approve-button").click();
+
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(LONG_SIGNED_MSG);
+  await expect(pageTwo.getByRole("textbox").nth(4)).toHaveValue(
+    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+  );
+});
+
+test("should sign correct message when Freighter receives multiple requests", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Sign message").click();
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText(MSG_TO_SIGN)).toBeVisible();
+
+  await popup.getByTestId("sign-message-approve-button").click();
+
+  // now open a third tab and send another transaction signing request before approving the first one
+
+  const pageThree = await page.context().newPage();
+  await pageThree.waitForLoadState();
+
+  const popupPromise2 = page.context().waitForEvent("page");
+  await pageThree.goto(
+    "https://docs.freighter.app/docs/playground/signMessage",
+  );
+  await pageThree.getByRole("textbox").first().fill("new message");
+  await pageThree
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageThree.getByText("Sign message").click();
+
+  const popup2 = await popupPromise2;
+  await expect(popup2.getByText("new message")).toBeVisible();
+
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(SIGNED_MSG);
+  await expect(pageTwo.getByRole("textbox").nth(4)).toHaveValue(
+    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+  );
+});
+
+test("should sign message json when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.getByRole("textbox").first().fill(JSON_MSG_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Sign message").click();
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText("Hello, World!")).toBeVisible();
+  await expect(popup.getByText("Hello, Universe!")).toBeVisible();
+  await expect(popup.getByText("111111")).toBeVisible();
+  await expect(popup.getByText("true")).toBeVisible();
+  await expect(popup.getByText("tag1")).toBeVisible();
+  await expect(popup.getByText("tag2")).toBeVisible();
+  await expect(popup.getByText("Hello, Universe!")).toBeVisible();
+  await expect(popup.getByText("222222")).toBeVisible();
+  await expect(popup.getByText("false")).toBeVisible();
+  await expect(popup.getByText("tag01")).toBeVisible();
+  await expect(popup.getByText("tag02")).toBeVisible();
+  await expectPageToHaveScreenshot({
+    page: popup,
+    screenshot: "sign-message-json.png",
+  });
+
+  await popup.getByTestId("sign-message-approve-button").click();
+
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(JSON_SIGNED_MSG);
+  await expect(pageTwo.getByRole("textbox").nth(4)).toHaveValue(
+    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+  );
+});
+
+test("should sign message for a specific account when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  await page.getByTestId("account-view-account-name").click();
+  await page.getByText("Account 2").click();
+  await expect(page.getByTestId("account-header")).toBeVisible();
+  await allowDapp({ page });
+
+  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo
+    .getByRole("textbox")
+    .nth(2)
+    .fill("GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY");
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.getByText("Sign Message").click();
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText("Sign message")).toBeVisible();
+  await expect(popup.getByText("GDF3…ZEFY")).toBeVisible();
+
+  await popup.getByRole("button", { name: "Confirm" }).click();
+
+  await expect(pageTwo.getByRole("textbox").nth(4)).toHaveValue(
+    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+  );
+  await expect(pageTwo.getByRole("textbox").nth(3)).toHaveText(SIGNED_MSG);
+});
+
+// unlike sign tx and add token, if a dapp is not allowed, it shows the connection request modal
+test("should not sign message when not allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Sign message").click({ force: true });
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText("Connection Request")).toBeVisible();
+});
+
+test("should add token when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubIsSac(context);
+
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto("https://docs.freighter.app/docs/playground/addToken");
+  await pageTwo.getByRole("textbox").first().fill(TEST_TOKEN_ADDRESS);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Add Token").click();
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText("E2E Token")).toBeDefined();
+  await expectPageToHaveScreenshot({
+    page: popup,
+    screenshot: "add-token.png",
+  });
+  await popup.getByTestId("add-token-approve").click();
+
+  await expect(pageTwo.getByRole("textbox").nth(2)).toHaveText(
+    "Token info successfully sent.",
+  );
+});
+
+test("should not add token when not allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  if (!isIntegrationMode) {
+    await stubIsSac(context);
+  }
+
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto("https://docs.freighter.app/docs/playground/addToken");
+  await pageTwo.getByRole("textbox").first().fill(TEST_TOKEN_ADDRESS);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Add Token").click({ force: true });
+
+  const popup = await popupPromise;
+
+  await expect(
+    popup.getByText(
+      "docs.freighter.app is not currently connected to Freighter",
+    ),
+  ).toBeVisible();
+  await expect(popup.getByTestId("add-token-approve")).toBeDisabled();
+  await expectPageToHaveScreenshot({
+    page: popup,
+    screenshot: "domain-not-allowed-add-token.png",
+  });
+});
+
+test("should get public key when logged out", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Settings").click();
+  await page.getByText("Log Out").click();
+  await expect(page.getByText("Welcome back")).toBeVisible();
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/requestAccess",
+  );
+  await pageTwo.getByText("Request Access").click();
+
+  const popup = await popupPromise;
+  await expect(popup.getByText("Welcome back")).toBeVisible();
+  await popup.locator("#password-input").fill("My-password123");
+  await popup.getByRole("button", { name: "Unlock" }).click();
+  await expect(popup.getByText("Connection Request")).toBeVisible();
+  await popup.getByTestId("grant-access-connect-button").click();
+
+  await expect(pageTwo.getByRole("textbox").first()).toHaveValue(
+    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+  );
+});
+
+// ── Network validation tests ──────────────────────────────────────────────────
+
+test("should show network mismatch warning when signing auth entry for wrong network", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  // Switch to MainNet so the wallet's expected networkId is the MainNet hash,
+  // while AUTH_ENTRY_TO_SIGN embeds the TestNet networkId.
+  await switchToMainnet(page);
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signAuthEntry",
+  );
+  await pageTwo.getByRole("textbox").first().fill(AUTH_ENTRY_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo
+    .getByText("Sign Authorization Entry XDR")
+    .click({ force: true });
+
+  const popup = await popupPromise;
+
+  await expect(
+    popup.getByText(/The authorization entry is for Test Net/),
+  ).toBeVisible();
+  await expect(
+    popup.getByText(
+      "Signing this authorization is not possible at the moment.",
+    ),
+  ).toBeVisible();
+});
+
+test("should show invalid entry warning when auth entry XDR cannot be parsed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signAuthEntry",
+  );
+  // TX_TO_SIGN is a TransactionEnvelope XDR — it will fail to parse as HashIdPreimage
+  await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo
+    .getByText("Sign Authorization Entry XDR")
+    .click({ force: true });
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText("Invalid Authorization Entry")).toBeVisible();
+  await expect(
+    popup.getByText("The authorization entry XDR could not be parsed."),
+  ).toBeVisible();
+});
+
+test("should show invalid entry warning when auth entry is not a Soroban authorization", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signAuthEntry",
+  );
+  // NON_SOROBAN_AUTH_ENTRY is a valid HashIdPreimage of type OP_ID (6), not sorobanAuthorization
+  await pageTwo.getByRole("textbox").first().fill(NON_SOROBAN_AUTH_ENTRY);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo
+    .getByText("Sign Authorization Entry XDR")
+    .click({ force: true });
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText("Invalid Authorization Entry")).toBeVisible();
+  await expect(
+    popup.getByText(
+      "The authorization entry is malformed or contains invalid data.",
+    ),
+  ).toBeVisible();
+});
+
+test("should show network warning when signing message with mismatched network passphrase", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
+  // Wallet is on TestNet; provide MainNet passphrase to trigger network mismatch
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Public Global Stellar Network ; September 2015");
+  await pageTwo.getByText("Sign message").click();
+
+  const popup = await popupPromise;
+
+  await expect(
+    popup.getByText("The requester expects you to sign this message on"),
+  ).toBeVisible();
+  // Should show "Main Net" (the mapped network name) instead of the raw passphrase
+  await expect(popup.getByText(/Main Net/)).toBeVisible();
+  await expect(
+    popup.getByText("Signing this message is not possible at the moment."),
+  ).toBeVisible();
+});
+
+test("should show network mismatch warning when signing transaction for wrong network", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signTransaction",
+  );
+  await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
+  // Wallet is on TestNet; provide MainNet passphrase to trigger the mismatch check
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Public Global Stellar Network ; September 2015");
+  await pageTwo.getByText("Sign Transaction XDR").click();
+
+  const txPopup = await popupPromise;
+  await stubAccountBalances(txPopup);
+  await txPopup.route("**/scan-tx", async (route) => {
+    await route.fulfill({
+      json: { data: null, error: null },
+    });
+  });
+
+  await expect(txPopup.getByText(/trying to sign is on/)).toBeVisible();
+  // Should show "Main Net" (the mapped network name) instead of the raw passphrase
+  await expect(txPopup.getByText(/Main Net/)).toBeVisible();
+});

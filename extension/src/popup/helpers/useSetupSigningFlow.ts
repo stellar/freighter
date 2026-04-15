@@ -25,6 +25,7 @@ export function useSetupSigningFlow<Arg = void>(
   reject: typeof rejectTransaction,
   signFn: AppThunk<Arg>,
   transactionXdr: string,
+  uuid: string,
   apiVersion?: string,
 ) {
   const [isConfirming, setIsConfirming] = useState(false);
@@ -42,7 +43,7 @@ export function useSetupSigningFlow<Arg = void>(
 
   const rejectAndClose = () => {
     emitMetric(METRIC_NAMES.rejectSigning);
-    dispatch(reject());
+    dispatch(reject({ uuid }));
     window.close();
   };
 
@@ -53,7 +54,7 @@ export function useSetupSigningFlow<Arg = void>(
       );
       setStartedHwSign(true);
     } else {
-      await dispatch(signFn({ apiVersion } as Arg));
+      await dispatch(signFn({ apiVersion, uuid } as Arg));
       await emitMetric(METRIC_NAMES.approveSign);
       window.close();
     }

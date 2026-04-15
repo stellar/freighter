@@ -115,3 +115,18 @@ export const roundUsdValue = (fullValue: string) =>
 export const capitalize = (str: string) => {
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
+
+/**
+ * Removes trailing zeros from decimal numbers and removes decimal point if all decimals were zeros
+ * @param amount - Numeric string to trim
+ * @returns Trimmed numeric string
+ * @example trimTrailingZeros("1.5000") // returns "1.5"
+ * @example trimTrailingZeros("100.0000") // returns "100"
+ */
+export const trimTrailingZeros = (amount: string): string => {
+  if (!amount.includes(".")) {
+    return amount;
+  }
+
+  return amount.replace(/\.?0+$/, "");
+};

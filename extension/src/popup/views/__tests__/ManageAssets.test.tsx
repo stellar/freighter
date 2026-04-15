@@ -317,6 +317,7 @@ jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
     isDataSharingAllowed: false,
     isMemoValidationEnabled: false,
     isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
     settingsState: SettingsState.SUCCESS,
     isSorobanPublicEnabled: false,
     isRpcHealthy: true,
@@ -461,7 +462,7 @@ describe.skip("Manage assets", () => {
     await waitFor(() => {
       screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Choose Asset",
+        "Choose asset",
       );
 
       const searchInput = screen.getByTestId("search-asset-input");
@@ -712,7 +713,7 @@ describe.skip("Manage assets", () => {
     await waitFor(() => {
       screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Choose Asset",
+        "Choose asset",
       );
 
       const searchInput = screen.getByTestId("search-asset-input");
@@ -777,7 +778,7 @@ describe.skip("Manage assets", () => {
     await waitFor(() => {
       screen.getByTestId("AppHeaderPageTitle");
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Choose Asset",
+        "Choose asset",
       );
 
       const searchInput = screen.getByTestId("search-asset-input");

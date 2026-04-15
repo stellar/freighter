@@ -3,4 +3,31 @@ const _AMPLITUDE_KEY = AMPLITUDE_KEY;
 
 declare const SENTRY_KEY: string;
 const _SENTRY_KEY = SENTRY_KEY;
-export { _AMPLITUDE_KEY as AMPLITUDE_KEY, _SENTRY_KEY as SENTRY_KEY };
+
+/** Version from package.json, injected at build time. */
+declare const APP_VERSION: string;
+const _APP_VERSION = APP_VERSION;
+
+/**
+ * Build type derived from webpack flags at compile time.
+ * - "development" — `yarn start` (dev server)
+ * - "beta" — `yarn build:extension:production --env BUILD_TYPE="beta"`
+ *   (production build with beta variant, used for CI beta releases)
+ * - "production" — `yarn build:extension:production --env BUILD_TYPE="production"`
+ */
+declare const BUILD_TYPE: string;
+const _BUILD_TYPE = BUILD_TYPE;
+
+declare const AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY: string;
+const _AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY =
+  AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY;
+
+export const METRICS_PLATFORM = "WEB";
+
+export {
+  _AMPLITUDE_KEY as AMPLITUDE_KEY,
+  _AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY as AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY,
+  _SENTRY_KEY as SENTRY_KEY,
+  _APP_VERSION as APP_VERSION,
+  _BUILD_TYPE as BUILD_TYPE,
+};

@@ -1,0 +1,402 @@
+@use "../../styles/utils.scss" as *;
+
+:root {
+  --bottom-btn-margin: 24px;
+
+  --continue-btn-height: 2.625rem;
+}
+
+.SendAmount {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  &__subtitle {
+    text-align: center;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+
+    form {
+      height: 100%;
+      width: 100%;
+    }
+  }
+
+  &__collectible-display {
+    width: 100%;
+  }
+
+  &__simplebar {
+    margin-top: 1rem;
+
+    &__content {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+  }
+
+  &__icon-slider {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    padding: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    display: flex;
+    align-items: center;
+    z-index: var(--back--button-z-index);
+  }
+
+  &__asset-copy {
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    color: var(--sds-clr-gray-12);
+    margin-bottom: 1rem;
+  }
+
+  &__amount-warning {
+    margin: 1rem 0;
+
+    &__path-payment {
+      margin: 1rem 0;
+    }
+  }
+
+  &__warning-banner {
+    padding: 16px;
+  }
+
+  &__btn-set-max {
+    display: flex;
+    justify-content: center;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    margin-bottom: pxToRem(32px);
+  }
+
+  &__amount-row {
+    display: flex;
+    position: relative;
+  }
+
+  &__amount-input-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  &__amount-label {
+    font-size: 2.5rem;
+    font-weight: var(--font-weight-light);
+    margin-left: pxToRem(6px);
+  }
+
+  &__amount-label-usd {
+    font-size: 2.5rem;
+    font-weight: var(--font-weight-light);
+  }
+
+  &__mirror-amount {
+    position: absolute;
+    visibility: hidden;
+    white-space: pre;
+    font-size: 2.5rem;
+    font-family: inherit;
+    padding: 0;
+  }
+
+  &__input-amount {
+    font-size: 2.5rem;
+    font-weight: var(--font-weight-light);
+    background: none;
+    border: none;
+    text-align: right;
+    background-color: transparent;
+    outline: none;
+    transition: opacity 0.15s ease-in-out;
+
+    &__full-height {
+      margin-top: 2rem;
+    }
+  }
+
+  &__small {
+    font-size: 1.6rem;
+  }
+
+  &__med {
+    font-size: 1.875rem;
+  }
+
+  &__row {
+    &__rate {
+      display: flex;
+      justify-content: center;
+      font-size: 0.875rem;
+      line-height: 1.375rem;
+      height: 1.375rem;
+      color: var(--sds-clr-gray-12);
+    }
+  }
+
+  &__asset-select-container {
+    margin-top: auto;
+  }
+
+  &__btn-continue {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__settings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: pxToRem(12px);
+  }
+
+  &__settings-fee-display {
+    display: flex;
+
+    svg {
+      margin-right: pxToRem(6px);
+      path {
+        fill: var(--sds-clr-white);
+      }
+    }
+
+    &__label {
+      color: var(--sds-clr-gray-11);
+      margin-right: pxToRem(6px);
+    }
+  }
+
+  &__settings-options {
+    display: flex;
+
+    .Button:first-child {
+      margin-right: pxToRem(6px);
+    }
+  }
+
+  &__EditDestAsset {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: pxToRem(12px) pxToRem(24px);
+    background-color: var(--sds-clr-gray-03);
+    border-radius: pxToRem(14px);
+    margin-bottom: pxToRem(12px);
+    cursor: pointer;
+
+    &__title {
+      display: flex;
+      align-items: center;
+    }
+
+    &__asset-title {
+      display: flex;
+      flex-direction: column;
+    }
+    // &__asset-heading {}
+    &__asset-total {
+      font-size: pxToRem(12px);
+      color: var(--sds-clr-gray-11);
+      margin-top: pxToRem(4px);
+    }
+  }
+
+  &__amount-price {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: pxToRem(12px);
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(18px);
+
+    .Button {
+      border: 0;
+      padding: 0;
+      width: 14px;
+      height: 14px;
+      margin-left: pxToRem(6px);
+    }
+  }
+
+  &__invalid-state {
+    display: flex;
+    justify-content: center;
+    height: pxToRem(20px);
+    margin: 2rem 0;
+    color: var(--sds-clr-red-09);
+    font-size: pxToRem(14px);
+
+    svg {
+      margin-right: pxToRem(6px);
+    }
+  }
+}
+
+.SendTo {
+  &__address-wrapper {
+    margin-top: 1rem;
+  }
+
+  &__loader {
+    height: 8.75rem;
+    display: flex;
+    justify-content: center;
+    align-items: end;
+  }
+
+  &__subheading {
+    display: flex;
+    align-items: center;
+    margin-top: 1.5rem;
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--sds-clr-gray-11);
+
+    svg {
+      margin-right: pxToRem(8px);
+    }
+  }
+
+  &__subsection-copy {
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    margin-top: 0.75rem;
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__recent-accts-ul {
+    padding: 0;
+
+    li::before {
+      content: none !important;
+    }
+
+    button {
+      cursor: pointer;
+    }
+  }
+
+  &__subheading-identicon {
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    color: var(--sds-clr-gray-12);
+    font-weight: var(--font-weight-medium);
+    background: none;
+    border: 0;
+    display: flex;
+    flex-direction: row;
+    margin: 0.75rem 0 0 0;
+    padding: 0;
+    align-items: center;
+
+    &__identicon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 2rem;
+      height: 2rem;
+      border: 1px solid var(--sds-clr-gray-06);
+      border-radius: 100px;
+      padding: 0.25rem 0.5rem;
+    }
+
+    img {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    span {
+      margin-left: 0.5rem;
+    }
+  }
+
+  &__info-block {
+    font-size: 0.875rem;
+  }
+}
+
+.SendSettings {
+  &__input {
+    color: black;
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+
+    &__title {
+      color: var(--sds-clr-gray-12);
+    }
+
+    &__right {
+      display: flex;
+      align-items: center;
+    }
+
+    &__left {
+      display: flex;
+      align-items: center;
+
+      button {
+        margin-left: 0.5rem;
+        width: 1rem;
+      }
+    }
+  }
+
+  &__clickable {
+    cursor: pointer;
+  }
+
+  .FormRows {
+    gap: 0.75rem;
+  }
+
+  &__loadingWrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.SendConfirm {
+  display: flex;
+  flex-direction: column;
+
+  text-align: center;
+  &__input {
+    color: black;
+  }
+}
+
+.EditMemoWrapper {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.ReviewTxWrapper {
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+}

@@ -18,6 +18,10 @@
   justify-content: space-between;
   overflow: hidden;
 
+  &__topContent {
+    width: 100%;
+  }
+
   &__header {
     min-height: var(--View-header-height);
     flex-shrink: 0;
@@ -173,6 +177,10 @@
     &--top-border {
       border-top: 1px solid var(--sds-clr-gray-06);
     }
+
+    &--bottom-border {
+      border-bottom: 1px solid var(--sds-clr-gray-06);
+    }
   }
 
   &__inset--no-top-padding {
@@ -187,6 +195,10 @@
 
   &__inset--no-bottom-padding {
     padding-bottom: 0 !important;
+  }
+
+  &__inset--no-padding {
+    padding: 0 !important;
   }
 
   &__inset--scroll-shadows {
@@ -215,5 +227,9 @@
       // Old Microsoft browsers
       -ms-overflow-style: none;
     }
+  }
+
+  &--scrollable {
+    height: 100%;
   }
 }

@@ -28,10 +28,12 @@ import { AssetIcons } from "@shared/api/types";
 import { removeTokenId, startHwSign } from "popup/ducks/transactionSubmission";
 import { NETWORKS } from "@shared/constants/stellar";
 import { useGetChangeTrust } from "../hooks/useChangeTrust";
+import { isAssetSac } from "popup/helpers/soroban";
 
 import "./styles.scss";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { useResetChangeTrustData } from "../hooks/useResetChangeTrustData";
+import { useTranslation } from "react-i18next";
 
 interface SubmitTransactionProps {
   asset: {
@@ -56,6 +58,7 @@ export const SubmitTransaction = ({
   goBack,
   onSuccess,
 }: SubmitTransactionProps) => {
+  const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -72,7 +75,18 @@ export const SubmitTransaction = ({
 
   useEffect(() => {
     const getData = async () => {
-      if (asset.contract) {
+      const isSac = isAssetSac({
+        asset: {
+          code: asset.code,
+          issuer: asset.issuer,
+          contract: asset.contract,
+        },
+        networkDetails,
+      });
+
+      // For SEP-41 tokens, just add/remove the token ID
+      // For SACs and classic assets, we need to submit a trustline transaction
+      if (asset.contract && !isSac) {
         if (addTrustline) {
           await dispatch(
             addTokenId({
@@ -90,6 +104,7 @@ export const SubmitTransaction = ({
           );
         }
       } else {
+        // Classic asset or SAC - submit trustline transaction
         const server = stellarSdkServer(
           networkDetails.networkUrl,
           networkDetails.networkPassphrase,
@@ -149,10 +164,10 @@ export const SubmitTransaction = ({
       {isVerifyAccountModalOpen ? (
         <EnterPassword
           accountAddress={publicKey}
-          description={
-            "Enter your account password to authorize this transaction."
-          }
-          confirmButtonTitle={"Submit"}
+          description={t(
+            "Enter your account password to authorize this transaction",
+          )}
+          confirmButtonTitle={t("Submit")}
           onConfirm={handleConfirm}
           onCancel={goBack}
         />
@@ -163,8 +178,9 @@ export const SubmitTransaction = ({
               {isLoading && (
                 <>
                   <div className="SubmitTransaction__Footer__Subtext">
-                    You can close this screen, your transaction should be
-                    complete in less than a minute.
+                    {t(
+                      "You can close this screen, your transaction should be complete in less than a minute.",
+                    )}
                   </div>
                   <Button
                     size="lg"
@@ -176,7 +192,7 @@ export const SubmitTransaction = ({
                       window.close();
                     }}
                   >
-                    Close
+                    {t("Close")}
                   </Button>
                 </>
               )}
@@ -193,7 +209,7 @@ export const SubmitTransaction = ({
                       )
                     }
                   >
-                    View transaction
+                    {t("View transaction")}
                   </Button>
                 </>
               ) : null}
@@ -216,7 +232,7 @@ export const SubmitTransaction = ({
                       onSuccess();
                     }}
                   >
-                    Done
+                    {t("Done")}
                   </Button>
                 </div>
               )}
@@ -231,7 +247,7 @@ export const SubmitTransaction = ({
               {isLoading && (
                 <>
                   <Loader size="2rem" />
-                  <span>Submitting</span>
+                  <span>{t("Submitting")}</span>
                 </>
               )}
               {isSuccess && (
@@ -240,13 +256,13 @@ export const SubmitTransaction = ({
                     className="SubmitTransaction__Title__Success"
                     data-testid="SubmitTransaction__Title__Success"
                   />
-                  <span>Success!</span>
+                  <span>{t("Success!")}</span>
                 </>
               )}
               {isFail && (
                 <>
                   <Icon.XCircle className="SubmitTransaction__Title__Fail" />
-                  <span>Failed!</span>
+                  <span>{t("Failed!")}</span>
                 </>
               )}
             </div>

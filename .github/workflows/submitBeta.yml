@@ -13,6 +13,11 @@ on:
         description: Beta version
         default: "0"
         required: true
+      ref_name:
+        description:
+          A git ref to checkout (branch/tag/sha). Defaults to release/<release>
+        type: string
+        default: ""
 jobs:
   bump-version:
     name: Bump Package Version and Submit Extension
@@ -29,9 +34,12 @@ jobs:
           gh run cancel ${{ github.run_id }}
           gh run watch ${{ github.run_id }}
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
-          ref: release/${{ github.event.inputs.release }}
+          ref: ${{ github.event.inputs.ref_name != '' && github.event.inputs.ref_name || format('release/{0}', github.event.inputs.release) }}
+      - name: Get checkout SHA
+        id: checkout_sha
+        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Update manifest-v2.json name
         uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
@@ -79,10 +87,14 @@ jobs:
       - name: Enable Corepack
         run: corepack enable
       - name: Build extension
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
-      - run: yarn && yarn build:freighter-api && yarn build:extension:production
+      - run: >
+          yarn && yarn build:freighter-api && yarn build:extension:production
+          --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"
+          AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY="${{
+          secrets.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY }}" BUILD_TYPE="beta"
       - name: Use BETA icons
         run: |
           rm -rf ./extension/build/images
@@ -114,6 +126,7 @@ jobs:
             github.event.inputs.version }}
           draft: false
           prerelease: true
+          target_commitish: ${{ steps.checkout_sha.outputs.sha }}
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1

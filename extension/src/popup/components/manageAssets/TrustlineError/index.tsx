@@ -97,9 +97,7 @@ const RenderedError = ({
             className="TrustlineError__body"
             data-testid="TrustlineError__body"
           >
-            {t("You still have a balance of")} {assetBalance}.{" "}
-            {t("You must have a balance of")} 0{" "}
-            {t("in order to remove an asset.")}
+            {`${t("You still have a balance of")} ${assetBalance}. ${t("You must have a balance of")} 0 ${t("in order to remove an asset.")}`}
           </div>
         </>
       );
@@ -113,9 +111,7 @@ const RenderedError = ({
             className="TrustlineError__body"
             data-testid="TrustlineError__body"
           >
-            {t("You still have a buying liability of")} {buyingLiabilities}.{" "}
-            {t("You must have a buying liability of")} 0{" "}
-            {t("in order to remove an asset.")}
+            {`${t("You still have a buying liability of")} ${buyingLiabilities}. ${t("You must have a buying liability of")} 0 ${t("in order to remove an asset.")}`}
           </div>
         </>
       );
@@ -156,7 +152,7 @@ export const TrustlineError = ({
   useEffect(() => {
     // emit general metric on view load
     emitMetric(METRIC_NAMES.viewTrustlineError);
-  });
+  }, []);
 
   useEffect(() => {
     const xdrEnvelope = error?.response?.extras?.envelope_xdr;

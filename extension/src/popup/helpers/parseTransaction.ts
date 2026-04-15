@@ -7,6 +7,11 @@ import { ErrorMessage } from "@shared/api/types";
 export const decodeMemo = (memo: any): { value: string; type: MemoType } => {
   const _memo = memo as Memo;
 
+  // Handle case where memo might be empty object or doesn't have type property
+  if (!_memo || !_memo.type || _memo.type === "none") {
+    return { value: "", type: "none" };
+  }
+
   if (_memo.type === "id") {
     return { value: _memo.value as string, type: _memo.type };
   }

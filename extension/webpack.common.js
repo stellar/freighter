@@ -8,11 +8,19 @@ const path = require("path");
 const webpack = require("webpack");
 
 const { DEFAULT_STATS } = require("../config/webpack");
+const packageJson = require("./package.json");
 
 const BUILD_PATH = path.resolve(__dirname, "./build");
 
 const commonConfig = (
-  env = { EXPERIMENTAL: false, AMPLITUDE_KEY: "", SENTRY_KEY: "" },
+  env = {
+    EXPERIMENTAL: false,
+    AMPLITUDE_KEY: "",
+    AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY: "",
+    SENTRY_KEY: "",
+    // BUILD_TYPE may be explicitly passed as "development", "beta", or "production"; defaults to "development" when omitted
+    BUILD_TYPE: "development",
+  },
 ) => ({
   cache: true,
   entry: {
@@ -101,7 +109,13 @@ const commonConfig = (
         use: ["@svgr/webpack"],
       },
       {
+        test: /tailwind.css$/i,
+        include: path.resolve(__dirname, "./src/popup/styles/vendor/"),
+        use: ["style-loader", "css-loader", "postcss-loader"],
+      },
+      {
         test: /\.(css|sass|scss)$/,
+        exclude: path.resolve(__dirname, "./src/popup/styles/vendor/"),
         use: [
           MiniCssExtractPlugin.loader,
           {
@@ -153,7 +167,12 @@ const commonConfig = (
     new webpack.DefinePlugin({
       EXPERIMENTAL: env.EXPERIMENTAL,
       AMPLITUDE_KEY: JSON.stringify(env.AMPLITUDE_KEY),
+      AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY: JSON.stringify(
+        env.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY,
+      ),
       SENTRY_KEY: JSON.stringify(env.SENTRY_KEY),
+      APP_VERSION: JSON.stringify(packageJson.version),
+      BUILD_TYPE: JSON.stringify(env.BUILD_TYPE || "development"),
     }),
     new MiniCssExtractPlugin({
       filename: "[name].min.css",

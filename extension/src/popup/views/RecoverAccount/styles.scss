@@ -7,23 +7,18 @@
   margin-top: #{pxToRem(121px)};
 
   &__mnemonic-wrapper {
-    overflow: scroll;
+    overflow: auto;
     height: #{pxToRem(246px)};
+    scrollbar-width: thin;
   }
 
   &__mnemonic-input {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: #{pxToRem(6px)} #{pxToRem(16px)};
-    max-height: #{pxToRem(244px)};
-    overflow: hidden;
     padding: #{pxToRem(3px)} #{pxToRem(6px)};
     position: relative;
-    transition: max-height var(--dropdown-animation);
-
-    &--long-phrase {
-      max-height: 48rem;
-    }
   }
 
   &__phrase-input {

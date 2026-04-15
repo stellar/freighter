@@ -163,12 +163,13 @@ export const DisplayBackupPhrase = () => {
                     fieldSize="md"
                     id="password"
                     autoComplete="off"
-                    label="Password"
+                    label={t("Password")}
                     error={errorMessage}
                     customInput={<Field />}
                     type="password"
                     name="password"
                     placeholder={t("Enter your password")}
+                    autoFocus
                   />
                 </View.Content>
                 <View.Footer>

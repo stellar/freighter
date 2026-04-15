@@ -32,3 +32,8 @@ yarn-error.log*
 Freighter.app/
 Freighter.pkg
 Freighter.app.dSYM.zip
+
+# Agent tools
+.vscode/mcp.json
+.copliot/
+.github/copilot-skills/

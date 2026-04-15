@@ -1,13 +1,21 @@
-import { test as base, chromium, BrowserContext, Page } from "@playwright/test";
+import {
+  test as base,
+  chromium,
+  BrowserContext,
+  Page,
+  Worker,
+} from "@playwright/test";
 import path from "path";
-
-import { STELLAR_EXPERT_ASSET_LIST_JSON } from "./helpers/stubs.ts";
+import { STELLAR_EXPERT_ASSET_LIST_JSON } from "./helpers/stubs";
 
 export const test = base.extend<{
   context: BrowserContext;
+  serviceWorker: Worker;
   extensionId: string;
   page: Page;
+  language: string;
 }>({
+  language: "en",
   context: async ({}, use) => {
     const pathToExtension = path.join(__dirname, "../build");
     const context = await chromium.launchPersistentContext("", {
@@ -34,8 +42,42 @@ export const test = base.extend<{
     const extensionId = background.url().split("/")[2];
     await use(extensionId);
   },
-  page: async ({ page }, use) => {
-    if (!process.env.IS_INTEGRATION_MODE) {
+  page: async ({ page, language }, use) => {
+    const langConfig: Record<string, { lang: string; langs: string[] }> = {
+      en: { lang: "en-US", langs: ["en-US", "en"] },
+      pt: { lang: "pt-BR", langs: ["pt-BR", "pt"] },
+    };
+    const config = langConfig[language] || langConfig.en;
+
+    await page.addInitScript(
+      ({ lang, langValue, langsValue }) => {
+        (window as any).IS_PLAYWRIGHT = "true";
+        try {
+          // Set i18next language preference
+          if (window.localStorage) {
+            window.localStorage.setItem("i18nextLng", lang);
+          }
+          // Override navigator.language for language detection
+          Object.defineProperty(navigator, "language", {
+            get: () => langValue,
+            configurable: true,
+          });
+          Object.defineProperty(navigator, "languages", {
+            get: () => langsValue,
+            configurable: true,
+          });
+        } catch (e) {
+          // Ignore security errors for extension pages
+        }
+      },
+      {
+        lang: language,
+        langValue: config.lang,
+        langsValue: config.langs,
+      },
+    );
+
+    if (process.env.IS_INTEGRATION_MODE !== "true") {
       await page.route("*/**/testnet/asset-list/top50", async (route) => {
         const json = STELLAR_EXPERT_ASSET_LIST_JSON;
         await route.fulfill({ json });
@@ -43,6 +85,24 @@ export const test = base.extend<{
     }
     use(page);
   },
+});
+
+test.afterEach(async ({ page, context }) => {
+  // Clean up all route handlers to avoid teardown timeout issues
+  try {
+    await page.unroute("**/*");
+    await context.unroute("**/*");
+    const pages = context.pages();
+    await Promise.all(
+      pages.map(async (p) => {
+        if (!p.isClosed()) {
+          await p.close();
+        }
+      }),
+    );
+  } catch (e) {
+    // Silently ignore errors during cleanup
+  }
 });
 
 export const expectPageToHaveScreenshot = async (
