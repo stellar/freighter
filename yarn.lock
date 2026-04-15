@@ -5685,7 +5685,7 @@ __metadata:
   dependencies:
     "@blockaid/client": "npm:0.31.0"
     "@lavamoat/allow-scripts": "npm:3.3.2"
-    "@stellar/js-xdr": "npm:3.1.2"
+    "@stellar/js-xdr": "npm:4.0.0"
     bignumber.js: "npm:9.3.0"
     prettier: "npm:3.5.3"
     stellar-sdk: "npm:@stellar/stellar-sdk@15.0.1"
@@ -5887,17 +5887,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@stellar/js-xdr@npm:3.1.2, @stellar/js-xdr@npm:^3.1.1, @stellar/js-xdr@npm:^3.1.2":
-  version: 3.1.2
-  resolution: "@stellar/js-xdr@npm:3.1.2"
-  checksum: 10c0/eaa1fc9341b1d1bcaf5c616b9bc0a6dc9a6c7ef7a477f6f6b4cb4206a947cdd3c7e06395ba7be30f6137179eec5f206d75b3ed66fdfe5e2ac54553b7a353130c
-  languageName: node
-  linkType: hard
-
-"@stellar/js-xdr@npm:^4.0.0":
+"@stellar/js-xdr@npm:4.0.0, @stellar/js-xdr@npm:^4.0.0":
   version: 4.0.0
   resolution: "@stellar/js-xdr@npm:4.0.0"
   checksum: 10c0/617bb3d7fa9fbdb607e5cb42cc032a15ad1c111440c6d7ede40fcecde204e88ed351aebc80ce1e4eedac6c1d949c3da5722696611e2b00569e7edbd5a0634c37
+  languageName: node
+  linkType: hard
+
+"@stellar/js-xdr@npm:^3.1.1, @stellar/js-xdr@npm:^3.1.2":
+  version: 3.1.2
+  resolution: "@stellar/js-xdr@npm:3.1.2"
+  checksum: 10c0/eaa1fc9341b1d1bcaf5c616b9bc0a6dc9a6c7ef7a477f6f6b4cb4206a947cdd3c7e06395ba7be30f6137179eec5f206d75b3ed66fdfe5e2ac54553b7a353130c
   languageName: node
   linkType: hard
 

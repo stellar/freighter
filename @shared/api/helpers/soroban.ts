@@ -530,7 +530,12 @@ export const parseWasmXdr = async (xdrContents: string) => {
   const wasmBuffer = xdr.LedgerEntryData.fromXDR(xdrContents, "base64")
     .contractCode()
     .code();
-  const wasmModule = await WebAssembly.compile(new Uint8Array(wasmBuffer));
+  const wasmBytes = new Uint8Array(
+    wasmBuffer.buffer as ArrayBuffer,
+    wasmBuffer.byteOffset,
+    wasmBuffer.byteLength,
+  );
+  const wasmModule = await WebAssembly.compile(wasmBytes);
   const reader = new XdrReader(
     Buffer.from(
       WebAssembly.Module.customSections(wasmModule, "contractspecv0")[0],
