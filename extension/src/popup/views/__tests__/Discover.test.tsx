@@ -8,7 +8,6 @@ import {
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import { DiscoverData } from "@shared/api/types";
 import * as ApiInternal from "@shared/api/internal";
-import * as RecentProtocols from "popup/helpers/recentProtocols";
 import * as Navigate from "popup/helpers/navigate";
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import { Discover } from "../Discover";
@@ -67,9 +66,9 @@ describe("Discover", () => {
 
   beforeEach(() => {
     jest.spyOn(ApiInternal, "getDiscoverData").mockResolvedValue(mockProtocols);
-    jest.spyOn(RecentProtocols, "getRecentProtocols").mockResolvedValue([]);
-    jest.spyOn(RecentProtocols, "addRecentProtocol").mockResolvedValue();
-    jest.spyOn(RecentProtocols, "clearRecentProtocols").mockResolvedValue();
+    jest.spyOn(ApiInternal, "getRecentProtocols").mockResolvedValue([]);
+    jest.spyOn(ApiInternal, "addRecentProtocol").mockResolvedValue([]);
+    jest.spyOn(ApiInternal, "clearRecentProtocols").mockResolvedValue([]);
     openTabSpy = jest.spyOn(Navigate, "openTab").mockResolvedValue({} as any);
     mockStorageGet.mockResolvedValue({});
   });
@@ -144,7 +143,7 @@ describe("Discover", () => {
 
     it("shows recent section when recent protocols exist", async () => {
       jest
-        .spyOn(RecentProtocols, "getRecentProtocols")
+        .spyOn(ApiInternal, "getRecentProtocols")
         .mockResolvedValue([
           { websiteUrl: "https://blend.capital", lastAccessed: Date.now() },
         ]);
@@ -222,13 +221,13 @@ describe("Discover", () => {
       const openButtons = screen.getAllByTestId("protocol-row-open");
       await userEvent.click(openButtons[0]);
 
-      expect(RecentProtocols.addRecentProtocol).toHaveBeenCalledWith(
+      expect(ApiInternal.addRecentProtocol).toHaveBeenCalledWith(
         "https://blend.capital",
       );
       expect(openTabSpy).toHaveBeenCalledWith("https://blend.capital");
 
       // Verify order: addRecentProtocol called before openTab
-      const addCall = (RecentProtocols.addRecentProtocol as jest.Mock).mock
+      const addCall = (ApiInternal.addRecentProtocol as jest.Mock).mock
         .invocationCallOrder[0];
       const openCall = openTabSpy.mock.invocationCallOrder[0];
       expect(addCall).toBeLessThan(openCall);
@@ -334,7 +333,7 @@ describe("Discover", () => {
 
     it("navigates to expanded recent view and back", async () => {
       jest
-        .spyOn(RecentProtocols, "getRecentProtocols")
+        .spyOn(ApiInternal, "getRecentProtocols")
         .mockResolvedValue([
           { websiteUrl: "https://blend.capital", lastAccessed: Date.now() },
         ]);
@@ -360,7 +359,7 @@ describe("Discover", () => {
   describe("clear recents", () => {
     it("clears recent protocols and returns to main view", async () => {
       jest
-        .spyOn(RecentProtocols, "getRecentProtocols")
+        .spyOn(ApiInternal, "getRecentProtocols")
         .mockResolvedValueOnce([
           { websiteUrl: "https://blend.capital", lastAccessed: Date.now() },
         ])
@@ -390,7 +389,7 @@ describe("Discover", () => {
       const clearButton = screen.getByTestId("clear-recents-button");
       await userEvent.click(clearButton);
 
-      expect(RecentProtocols.clearRecentProtocols).toHaveBeenCalled();
+      expect(ApiInternal.clearRecentProtocols).toHaveBeenCalled();
 
       // Should return to main view
       await waitFor(() => {
