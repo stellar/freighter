@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useReducer } from "react";
 import { captureException } from "@sentry/browser";
 
-import { getDiscoverData } from "@shared/api/internal";
-import { DiscoverData } from "@shared/api/types";
-import {
-  getRecentProtocols,
-  RecentProtocolEntry,
-} from "popup/helpers/recentProtocols";
+import { getDiscoverData, getRecentProtocols } from "@shared/api/internal";
+import { DiscoverData, RecentProtocolEntry } from "@shared/api/types";
 
 interface DiscoverDataState {
   isLoading: boolean;
