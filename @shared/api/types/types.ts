@@ -409,6 +409,11 @@ export interface ProtocolEntry {
   isTrending: boolean;
 }
 
+export interface RecentProtocolEntry {
+  websiteUrl: string;
+  lastAccessed: number;
+}
+
 export type DiscoverData = ProtocolEntry[];
 
 export interface LedgerKeyAccount {
