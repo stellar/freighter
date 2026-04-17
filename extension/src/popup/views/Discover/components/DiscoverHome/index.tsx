@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { DiscoverData, ProtocolEntry } from "@shared/api/types";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
+import { DISCOVER_DISCLAIMER } from "../../constants";
 import { TrendingCarousel } from "../TrendingCarousel";
 import { DiscoverSection } from "../DiscoverSection";
 import "./styles.scss";
@@ -66,9 +67,7 @@ export const DiscoverHome = ({
         {dappsItems.length > 0 && (
           <div className="DiscoverHome__footer">
             <Text as="div" size="xs" addlClassName="DiscoverHome__footer__copy">
-              {t(
-                "These services are operated by independent third parties, not by Freighter or SDF. Inclusion here is not an endorsement. DeFi carries risk, including loss of funds. Use at your own risk.",
-              )}
+              {t(DISCOVER_DISCLAIMER)}
             </Text>
           </div>
         )}
