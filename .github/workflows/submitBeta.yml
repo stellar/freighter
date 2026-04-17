@@ -13,6 +13,11 @@ on:
         description: Beta version
         default: "0"
         required: true
+      ref_name:
+        description:
+          A git ref to checkout (branch/tag/sha). Defaults to v<release>
+        type: string
+        default: ""
 jobs:
   bump-version:
     name: Bump Package Version and Submit Extension
@@ -31,7 +36,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          ref: release/${{ github.event.inputs.release }}
+          ref:
+            ${{ github.event.inputs.ref_name != '' &&
+            github.event.inputs.ref_name || format('v{0}',
+            github.event.inputs.release) }}
+      - name: Get checkout SHA
+        id: checkout_sha
+        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Update manifest-v2.json name
         uses: jossef/action-set-json-field@2a0f7d953b580b828717daf4de7fafc7e4135e97 #v2
         with:
@@ -118,6 +129,7 @@ jobs:
             github.event.inputs.version }}
           draft: false
           prerelease: true
+          target_commitish: ${{ steps.checkout_sha.outputs.sha }}
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1

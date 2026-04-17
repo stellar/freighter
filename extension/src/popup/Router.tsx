@@ -61,8 +61,11 @@ import { LeaveFeedback } from "popup/views/LeaveFeedback";
 import { AccountMigration } from "popup/views/AccountMigration";
 import { AddFunds } from "popup/views/AddFunds";
 import { Wallets } from "popup/views/Wallets";
+import { ConfirmSidebarRequest } from "popup/views/ConfirmSidebarRequest";
 
 import { DEV_SERVER } from "@shared/constants/services";
+import { isSidebarMode } from "popup/helpers/isSidebarMode";
+import { SidebarSigningListener } from "popup/components/SidebarSigningListener";
 import { SettingsState } from "@shared/api/types";
 
 import { SignMessage } from "./views/SignMessage";
@@ -78,6 +81,13 @@ a) it’s in the keystore in localstorage and it needs to be extracted or b) the
 We are checking for applicationState here to find out if the account doesn’t exist
 If an account doesn't exist, go to the <Welcome /> page; otherwise, go to <UnlockAccount/>
 */
+
+const SidebarOnlyRoute = ({ children }: { children: JSX.Element }) => {
+  if (!isSidebarMode()) {
+    return <Navigate to={ROUTES.account} replace />;
+  }
+  return children;
+};
 
 const UnlockAccountRoute = ({ children }: { children: JSX.Element }) => {
   const applicationState = useSelector(applicationStateSelector);
@@ -163,6 +173,7 @@ const Layout = () => {
 export const Router = () => (
   <HashRouter>
     <RouteListener />
+    {isSidebarMode() && <SidebarSigningListener />}
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route
@@ -201,6 +212,14 @@ export const Router = () => (
           element={<DisplayBackupPhrase />}
         ></Route>
         <Route path={ROUTES.grantAccess} element={<GrantAccess />}></Route>
+        <Route
+          path={ROUTES.confirmSidebarRequest}
+          element={
+            <SidebarOnlyRoute>
+              <ConfirmSidebarRequest />
+            </SidebarOnlyRoute>
+          }
+        ></Route>
         <Route
           path={ROUTES.mnemonicPhrase}
           element={<MnemonicPhrase mnemonicPhrase="" />}

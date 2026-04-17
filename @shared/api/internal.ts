@@ -1616,11 +1616,13 @@ export const saveSettings = async ({
   isDataSharingAllowed,
   isMemoValidationEnabled,
   isHideDustEnabled,
+  isOpenSidebarByDefault,
 }: {
   activePublicKey: string;
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isHideDustEnabled: boolean;
+  isOpenSidebarByDefault: boolean;
 }): Promise<Settings & IndexerSettings> => {
   let response = {
     allowList: DEFAULT_ALLOW_LIST,
@@ -1634,6 +1636,7 @@ export const saveSettings = async ({
     isSorobanPublicEnabled: false,
     isNonSSLEnabled: false,
     isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
     error: "",
     hiddenAssets: {},
   };
@@ -1644,6 +1647,7 @@ export const saveSettings = async ({
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isHideDustEnabled,
+      isOpenSidebarByDefault,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
   } catch (e) {
@@ -2403,6 +2407,22 @@ export const markQueueActive = async ({
       uuid,
       isActive,
       type: SERVICE_TYPES.MARK_QUEUE_ACTIVE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+export const rejectSigningRequest = async ({
+  uuid,
+}: {
+  uuid: string;
+}): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      activePublicKey: null,
+      uuid,
+      type: SERVICE_TYPES.REJECT_SIGNING_REQUEST,
     });
   } catch (e) {
     console.error(e);

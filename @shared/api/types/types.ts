@@ -110,6 +110,7 @@ export interface Response {
   recommendedFee: string;
   isNonSSLEnabled: boolean;
   isHideDustEnabled: boolean;
+  isOpenSidebarByDefault: boolean;
   activePublicKey: string;
   isAccountMismatch: boolean;
   assetVisibility: {
@@ -185,6 +186,7 @@ export interface Preferences {
   isMemoValidationEnabled: boolean;
   networksList: NetworkDetails[];
   isHideDustEnabled: boolean;
+  isOpenSidebarByDefault: boolean;
   error: string;
 }
 
