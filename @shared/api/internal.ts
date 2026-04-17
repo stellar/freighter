@@ -2440,7 +2440,7 @@ export const getRecentProtocols = async (): Promise<RecentProtocolEntry[]> => {
     return [];
   }
 
-  return (recentProtocols || []) as RecentProtocolEntry[];
+  return recentProtocols || [];
 };
 
 export const addRecentProtocol = async (
@@ -2456,7 +2456,7 @@ export const addRecentProtocol = async (
     throw new Error(error);
   }
 
-  return recentProtocols as RecentProtocolEntry[];
+  return recentProtocols;
 };
 
 export const clearRecentProtocols = async (): Promise<
@@ -2471,7 +2471,7 @@ export const clearRecentProtocols = async (): Promise<
     throw new Error(error);
   }
 
-  return (recentProtocols || []) as RecentProtocolEntry[];
+  return recentProtocols || [];
 };
 
 export const getHasSeenDiscoverWelcome = async (): Promise<boolean> => {
