@@ -89,6 +89,39 @@ export const stubAssetSearch = async (page: Page) => {
   });
 };
 
+export const stubAssetSearchWithContractId = async (page: Page) => {
+  await page.route("**/asset?search**", async (route) => {
+    const json = {
+      _embedded: {
+        records: [
+          {
+            asset:
+              "USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+          },
+          {
+            asset: TEST_TOKEN_ADDRESS,
+            code: "E2E",
+            token_name: "E2E Token",
+            decimals: 3,
+            domain: "example.com",
+            tomlInfo: {
+              code: "E2E",
+              // Use a different address than the token contract to match real
+              // Stellar Expert responses where tomlInfo.issuer is the token
+              // issuer, not the token contract itself.
+              issuer:
+                "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+              name: "E2E Token",
+              image: "",
+            },
+          },
+        ],
+      },
+    };
+    await route.fulfill({ json });
+  });
+};
+
 export const stubHorizonAccounts = async (page: Page) => {
   await page.route("**/accounts/**", async (route) => {
     await route.fulfill({
@@ -839,8 +872,8 @@ export const stubAccountBalancesWithUSDC = async (page: Page) => {
   });
 };
 
-export const stubAccountHistory = async (page: Page) => {
-  await page.route("**/account-history/**", async (route) => {
+export const stubAccountHistory = async (context: BrowserContext) => {
+  await context.route("**/account-history/**", async (route) => {
     const json = [
       {
         _links: {
@@ -2708,7 +2741,7 @@ export const stubAllExternalApis = async (
   // Mercury/History endpoints
   // Note: Tests that need account history should call stubAccountHistory() instead
   // to provide their own test data
-  await stubAccountHistory(page);
+  await stubAccountHistory(context);
   await stubMercuryTransactions(page);
 
   // RPC and Soroban
@@ -2836,5 +2869,98 @@ export const stubReportTransactionWarning = async (
       error: null,
     };
     await route.fulfill({ json });
+  });
+};
+
+// ---------------------------------------------------------------------------
+// Maintenance mode Experiment API stubs
+// ---------------------------------------------------------------------------
+
+const AMPLITUDE_EXPERIMENT_VARDATA_ROUTE = "**/sdk/v2/vardata**";
+const MAINTENANCE_VARIANT_VALUE = "on";
+
+const stubExperimentVariants = async (
+  page: Page,
+  variants: Record<string, { payload?: unknown }>,
+) => {
+  await page.route(AMPLITUDE_EXPERIMENT_VARDATA_ROUTE, async (route) => {
+    const response = Object.fromEntries(
+      Object.entries(variants).map(([flagKey, variant]) => [
+        flagKey,
+        {
+          key: MAINTENANCE_VARIANT_VALUE,
+          value: MAINTENANCE_VARIANT_VALUE,
+          ...(variant.payload !== undefined
+            ? { payload: variant.payload }
+            : {}),
+        },
+      ]),
+    );
+
+    await route.fulfill({ json: response });
+  });
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+};
+
+/**
+ * Stubs Amplitude Experiment to return a `maintenance_screen` variant, then
+ * reloads the popup so `useRemoteConfig` fetches and applies the response.
+ *
+ * @param page - The extension popup page
+ * @param content - Title and body paragraphs to display on the overlay
+ */
+export const stubMaintenanceScreenVariant = async (
+  page: Page,
+  content: { title: string; body: string[] },
+) => {
+  await stubExperimentVariants(page, {
+    maintenance_screen: {
+      payload: {
+        content: {
+          title: { en: content.title },
+          body: { en: content.body },
+        },
+      },
+    },
+  });
+};
+
+/**
+ * Stubs Amplitude Experiment to return a `maintenance_banner` variant, then
+ * reloads the popup so `useRemoteConfig` fetches and applies the response.
+ *
+ * @param page - The extension popup page
+ * @param content - Banner title, theme, and optional url/modal payload
+ */
+export const stubMaintenanceBannerVariant = async (
+  page: Page,
+  content: {
+    theme: string;
+    bannerTitle: string;
+    url?: string;
+    modal?: { title: string; body: string[] };
+  },
+) => {
+  const rawPayload: Record<string, unknown> = {
+    theme: content.theme,
+    banner: { title: { en: content.bannerTitle } },
+  };
+
+  if (content.url) {
+    rawPayload.url = content.url;
+  }
+
+  if (content.modal) {
+    rawPayload.modal = {
+      title: { en: content.modal.title },
+      body: { en: content.modal.body },
+    };
+  }
+
+  await stubExperimentVariants(page, {
+    maintenance_banner: {
+      payload: rawPayload,
+    },
   });
 };

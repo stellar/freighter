@@ -68,6 +68,7 @@ export const METRIC_NAMES = {
   swapFrom: "loaded screen: swap from asset",
   swapTo: "loaded screen: swap to asset",
   swapAmount: "loaded screen: swap amount",
+  swapAmountReview: "loaded screen: swap amount review",
   swapSettings: "loaded screen: swap settings",
   swapSettingsFee: "loaded screen: swap settings fee",
   swapSettingsSlippage: "loaded screen: swap settings slippage",
@@ -181,4 +182,5 @@ export const METRIC_NAMES = {
 
   coinbaseOnrampOpened: "coinbase onramp: opened",
   wallets: "loaded screen: wallets",
+  confirmSidebarRequest: "loaded screen: confirm sidebar request",
 };

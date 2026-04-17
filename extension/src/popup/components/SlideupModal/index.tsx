@@ -8,12 +8,14 @@ interface SlideupModalProps {
   children: React.ReactElement;
   isModalOpen: boolean;
   setIsModalOpen: (isModalOpen: boolean) => void;
+  hasBackdrop?: boolean;
 }
 
 export const SlideupModal = ({
   children,
   isModalOpen,
   setIsModalOpen,
+  hasBackdrop = false,
 }: SlideupModalProps) => {
   const slideupModalRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -74,6 +76,7 @@ export const SlideupModal = ({
           }, 150);
         }}
         isActive={isOpen}
+        isFullScreen={hasBackdrop}
       />
     </>
   );

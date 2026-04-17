@@ -18,6 +18,10 @@
   justify-content: space-between;
   overflow: hidden;
 
+  &__topContent {
+    width: 100%;
+  }
+
   &__header {
     min-height: var(--View-header-height);
     flex-shrink: 0;

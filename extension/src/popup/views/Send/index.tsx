@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
@@ -32,7 +32,13 @@ import { View } from "popup/basics/layout/View";
 import { useSendQueryParams } from "./hooks/useSendQueryParams";
 import { InputWidthProvider } from "./contexts/inputWidthContext";
 
-/* 
+const SEND_METRIC_BY_STEP: Partial<Record<STEPS, string>> = {
+  [STEPS.AMOUNT]: METRIC_NAMES.sendPaymentAmount,
+  [STEPS.PAYMENT_CONFIRM]: METRIC_NAMES.sendPaymentConfirm,
+  [STEPS.DESTINATION]: METRIC_NAMES.sendPaymentRecentAddress,
+};
+
+/*
   Send handles sending both tokens (classic and Soroban) and collectibles to an external destination (G, M, or C account).
   This flow entails selecting an item, selecting a destination, adjusting fees and memos, reviewing the transaction, and submitting the transaction.
 */
@@ -106,7 +112,19 @@ export const Send = () => {
       networkDetails,
     });
 
-  const [activeStep, setActiveStep] = React.useState(STEPS.AMOUNT);
+  const [activeStep, setActiveStep] = useState(STEPS.AMOUNT);
+  const lastEmittedStep = useRef<STEPS | null>(null);
+
+  // Emit a screen-view metric only once per step transition.
+  useEffect(() => {
+    if (activeStep === lastEmittedStep.current) return;
+    lastEmittedStep.current = activeStep;
+
+    const metric = SEND_METRIC_BY_STEP[activeStep];
+    if (metric) {
+      emitMetric(metric);
+    }
+  }, [activeStep]);
 
   // Handle query params and set defaults on mount
   // This is used to pre-populate the destination, asset and/or collectible data if they are provided in the query params.
@@ -115,7 +133,6 @@ export const Send = () => {
   const renderStep = (step: STEPS) => {
     switch (step) {
       case STEPS.PAYMENT_CONFIRM: {
-        emitMetric(METRIC_NAMES.sendPaymentConfirm);
         let xdr = "";
 
         // based on the type of Send, we need to get the XDR from the appropriate simulation state
@@ -152,7 +169,6 @@ export const Send = () => {
         );
       }
       case STEPS.AMOUNT: {
-        emitMetric(METRIC_NAMES.sendPaymentAmount);
         return (
           <SendAmount
             goBack={() => {
@@ -193,7 +209,6 @@ export const Send = () => {
       }
       default:
       case STEPS.DESTINATION: {
-        emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
         return (
           <SendTo
             goBack={() => setActiveStep(STEPS.AMOUNT)}
