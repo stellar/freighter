@@ -59,6 +59,7 @@ import {
   UserNotification,
   CollectibleContract,
   DiscoverData,
+  RecentProtocolEntry,
 } from "./types";
 import {
   AccountBalancesInterface,
@@ -2427,4 +2428,74 @@ export const rejectSigningRequest = async ({
   } catch (e) {
     console.error(e);
   }
+};
+
+export const getRecentProtocols = async (): Promise<RecentProtocolEntry[]> => {
+  const { recentProtocols, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_RECENT_PROTOCOLS,
+  });
+
+  if (error) {
+    return [];
+  }
+
+  return (recentProtocols || []) as RecentProtocolEntry[];
+};
+
+export const addRecentProtocol = async (
+  websiteUrl: string,
+): Promise<RecentProtocolEntry[]> => {
+  const { recentProtocols, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    websiteUrl,
+    type: SERVICE_TYPES.ADD_RECENT_PROTOCOL,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return recentProtocols as RecentProtocolEntry[];
+};
+
+export const clearRecentProtocols = async (): Promise<
+  RecentProtocolEntry[]
+> => {
+  const { recentProtocols, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.CLEAR_RECENT_PROTOCOLS,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return (recentProtocols || []) as RecentProtocolEntry[];
+};
+
+export const getHasSeenDiscoverWelcome = async (): Promise<boolean> => {
+  const { hasSeenDiscoverWelcome, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_DISCOVER_WELCOME_SEEN,
+  });
+
+  if (error) {
+    return false;
+  }
+
+  return !!hasSeenDiscoverWelcome;
+};
+
+export const dismissDiscoverWelcome = async (): Promise<boolean> => {
+  const { hasSeenDiscoverWelcome, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.DISMISS_DISCOVER_WELCOME,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return !!hasSeenDiscoverWelcome;
 };

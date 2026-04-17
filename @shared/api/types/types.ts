@@ -127,6 +127,8 @@ export interface Response {
   isDismissed: boolean;
   collectiblesList: CollectibleContract[];
   overriddenBlockaidResponse: string | null;
+  recentProtocols: RecentProtocolEntry[];
+  hasSeenDiscoverWelcome: boolean;
 }
 
 export interface MemoRequiredAccount {
