@@ -52,7 +52,7 @@ export const DiscoverWelcomeModal = ({
             onClick={onDismiss}
             data-testid="discover-welcome-dismiss"
           >
-            {t("Let's go")}
+            {t("Let’s go")}
           </Button>
         </div>
       </div>
