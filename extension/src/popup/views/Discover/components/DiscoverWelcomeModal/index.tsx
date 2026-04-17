@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { trackDiscoverWelcomeModalViewed } from "popup/metrics/discover";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
+import { DiscoverDisclaimer } from "../DiscoverDisclaimer";
 
 import "./styles.scss";
 
@@ -38,11 +39,7 @@ export const DiscoverWelcomeModal = ({
                 "Your gateway to the Stellar ecosystem. Browse and connect to decentralized applications built on Stellar.",
               )}
             </Text>
-            <Text as="p" size="sm" weight="regular">
-              {t(
-                "These services are operated by independent third parties, not by Freighter or SDF. Inclusion here is not an endorsement. DeFi carries risk, including loss of funds. Use at your own risk.",
-              )}
-            </Text>
+            <DiscoverDisclaimer as="p" size="sm" />
           </div>
           <Button
             size="md"
