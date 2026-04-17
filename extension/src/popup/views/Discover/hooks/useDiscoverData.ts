@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { captureException } from "@sentry/browser";
 
 import { getDiscoverData, getRecentProtocols } from "@shared/api/internal";
-import { DiscoverData, RecentProtocolEntry } from "@shared/api/types";
+import {
+  DiscoverData,
+  ProtocolEntry,
+  RecentProtocolEntry,
+} from "@shared/api/types";
 import { RequestState } from "constants/request";
 import { initialState, reducer } from "helpers/request";
 
@@ -53,7 +57,7 @@ export const useDiscoverData = () => {
         .map((entry) =>
           allowedProtocols.find((p) => p.websiteUrl === entry.websiteUrl),
         )
-        .filter(Boolean) as DiscoverData,
+        .filter((p): p is ProtocolEntry => p !== undefined),
     [recentEntries, allowedProtocols],
   );
 
