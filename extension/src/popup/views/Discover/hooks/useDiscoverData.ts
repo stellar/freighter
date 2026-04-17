@@ -1,74 +1,29 @@
-import { useCallback, useEffect, useReducer } from "react";
+import { useCallback, useEffect, useReducer, useState } from "react";
 import { captureException } from "@sentry/browser";
 
 import { getDiscoverData, getRecentProtocols } from "@shared/api/internal";
 import { DiscoverData, RecentProtocolEntry } from "@shared/api/types";
-
-interface DiscoverDataState {
-  isLoading: boolean;
-  error: unknown | null;
-  allProtocols: DiscoverData;
-  recentEntries: RecentProtocolEntry[];
-}
-
-type Action =
-  | { type: "FETCH_START" }
-  | {
-      type: "FETCH_SUCCESS";
-      payload: {
-        protocols: DiscoverData;
-        recentEntries: RecentProtocolEntry[];
-      };
-    }
-  | { type: "FETCH_ERROR"; payload: unknown }
-  | { type: "REFRESH_RECENT"; payload: RecentProtocolEntry[] };
-
-const initialState: DiscoverDataState = {
-  isLoading: true,
-  error: null,
-  allProtocols: [],
-  recentEntries: [],
-};
-
-const reducer = (
-  state: DiscoverDataState,
-  action: Action,
-): DiscoverDataState => {
-  switch (action.type) {
-    case "FETCH_START":
-      return { ...state, isLoading: true, error: null };
-    case "FETCH_SUCCESS":
-      return {
-        isLoading: false,
-        error: null,
-        allProtocols: action.payload.protocols,
-        recentEntries: action.payload.recentEntries,
-      };
-    case "FETCH_ERROR":
-      return { ...state, isLoading: false, error: action.payload };
-    case "REFRESH_RECENT":
-      return { ...state, recentEntries: action.payload };
-    default:
-      return state;
-  }
-};
+import { RequestState } from "constants/request";
+import { initialState, reducer } from "helpers/request";
 
 export const useDiscoverData = () => {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(
+    reducer<DiscoverData, unknown>,
+    initialState,
+  );
+  const [recentEntries, setRecentEntries] = useState<RecentProtocolEntry[]>([]);
 
   const fetchData = useCallback(async () => {
-    dispatch({ type: "FETCH_START" });
+    dispatch({ type: "FETCH_DATA_START" });
     try {
-      const [protocols, recentEntries] = await Promise.all([
+      const [protocols, entries] = await Promise.all([
         getDiscoverData(),
         getRecentProtocols(),
       ]);
-      dispatch({
-        type: "FETCH_SUCCESS",
-        payload: { protocols, recentEntries },
-      });
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload: protocols });
+      setRecentEntries(entries);
     } catch (error) {
-      dispatch({ type: "FETCH_ERROR", payload: error });
+      dispatch({ type: "FETCH_DATA_ERROR", payload: error });
       captureException(`Error loading discover data - ${error}`);
     }
   }, []);
@@ -78,15 +33,16 @@ export const useDiscoverData = () => {
   }, [fetchData]);
 
   const refreshRecent = useCallback(async () => {
-    const recentEntries = await getRecentProtocols();
-    dispatch({ type: "REFRESH_RECENT", payload: recentEntries });
+    const entries = await getRecentProtocols();
+    setRecentEntries(entries);
   }, []);
 
-  const allowedProtocols = state.allProtocols.filter((p) => !p.isBlacklisted);
+  const allProtocols = state.data ?? [];
+  const allowedProtocols = allProtocols.filter((p) => !p.isBlacklisted);
 
   const trendingItems = allowedProtocols.filter((p) => p.isTrending);
 
-  const recentItems = state.recentEntries
+  const recentItems = recentEntries
     .map((entry) =>
       allowedProtocols.find((p) => p.websiteUrl === entry.websiteUrl),
     )
@@ -95,7 +51,8 @@ export const useDiscoverData = () => {
   const dappsItems = allowedProtocols;
 
   return {
-    isLoading: state.isLoading,
+    isLoading:
+      state.state === RequestState.IDLE || state.state === RequestState.LOADING,
     error: state.error,
     trendingItems,
     recentItems,
