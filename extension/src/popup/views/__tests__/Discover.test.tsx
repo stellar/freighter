@@ -12,24 +12,6 @@ import * as Navigate from "popup/helpers/navigate";
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import { Discover } from "../Discover";
 
-// Mock browser.storage.local
-const mockStorageGet = jest.fn().mockResolvedValue({});
-const mockStorageSet = jest.fn().mockResolvedValue(undefined);
-const mockStorageRemove = jest.fn().mockResolvedValue(undefined);
-
-jest.mock("webextension-polyfill", () => ({
-  storage: {
-    local: {
-      get: (...args: unknown[]) => mockStorageGet(...args),
-      set: (...args: unknown[]) => mockStorageSet(...args),
-      remove: (...args: unknown[]) => mockStorageRemove(...args),
-    },
-  },
-  tabs: {
-    create: jest.fn(),
-  },
-}));
-
 const mockProtocols: DiscoverData = [
   {
     description: "A lending protocol",
@@ -69,8 +51,11 @@ describe("Discover", () => {
     jest.spyOn(ApiInternal, "getRecentProtocols").mockResolvedValue([]);
     jest.spyOn(ApiInternal, "addRecentProtocol").mockResolvedValue([]);
     jest.spyOn(ApiInternal, "clearRecentProtocols").mockResolvedValue([]);
+    jest
+      .spyOn(ApiInternal, "getHasSeenDiscoverWelcome")
+      .mockResolvedValue(false);
+    jest.spyOn(ApiInternal, "dismissDiscoverWelcome").mockResolvedValue(true);
     openTabSpy = jest.spyOn(Navigate, "openTab").mockResolvedValue({} as any);
-    mockStorageGet.mockResolvedValue({});
   });
 
   afterEach(() => {
@@ -263,7 +248,9 @@ describe("Discover", () => {
 
   describe("welcome modal", () => {
     it("shows welcome modal on first visit", async () => {
-      mockStorageGet.mockResolvedValue({});
+      jest
+        .spyOn(ApiInternal, "getHasSeenDiscoverWelcome")
+        .mockResolvedValue(false);
 
       renderDiscover();
 
@@ -273,7 +260,9 @@ describe("Discover", () => {
     });
 
     it("hides welcome modal when already dismissed", async () => {
-      mockStorageGet.mockResolvedValue({ hasSeenDiscoverWelcome: true });
+      jest
+        .spyOn(ApiInternal, "getHasSeenDiscoverWelcome")
+        .mockResolvedValue(true);
 
       renderDiscover();
 
@@ -289,7 +278,9 @@ describe("Discover", () => {
     });
 
     it("dismisses welcome modal and persists to storage", async () => {
-      mockStorageGet.mockResolvedValue({});
+      jest
+        .spyOn(ApiInternal, "getHasSeenDiscoverWelcome")
+        .mockResolvedValue(false);
 
       renderDiscover();
 
@@ -303,9 +294,7 @@ describe("Discover", () => {
       expect(
         screen.queryByText("Welcome to Discover!"),
       ).not.toBeInTheDocument();
-      expect(mockStorageSet).toHaveBeenCalledWith({
-        hasSeenDiscoverWelcome: true,
-      });
+      expect(ApiInternal.dismissDiscoverWelcome).toHaveBeenCalled();
     });
   });
 
