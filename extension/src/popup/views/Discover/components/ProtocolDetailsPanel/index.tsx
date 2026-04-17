@@ -12,11 +12,11 @@ interface ProtocolDetailsPanelProps {
   onOpen: (protocol: ProtocolEntry) => void;
 }
 
-const getHostname = (url: string): string => {
+const getHostname = (url: string): string | null => {
   try {
     return new URL(url).hostname;
   } catch {
-    return url;
+    return null;
   }
 };
 
@@ -29,6 +29,8 @@ export const ProtocolDetailsPanel = ({
   useEffect(() => {
     trackDiscoverProtocolDetailsViewed(protocol.name, protocol.tags);
   }, [protocol]);
+
+  const domain = getHostname(protocol.websiteUrl);
 
   return (
     <div className="ProtocolDetailsPanel" data-testid="protocol-details-panel">
@@ -57,19 +59,21 @@ export const ProtocolDetailsPanel = ({
         </button>
       </div>
 
-      <div className="ProtocolDetailsPanel__section">
-        <div className="ProtocolDetailsPanel__section__label">
-          <Text as="div" size="xs" weight="medium">
-            {t("Domain")}
-          </Text>
+      {domain && (
+        <div className="ProtocolDetailsPanel__section">
+          <div className="ProtocolDetailsPanel__section__label">
+            <Text as="div" size="xs" weight="medium">
+              {t("Domain")}
+            </Text>
+          </div>
+          <div className="ProtocolDetailsPanel__domain">
+            <Icon.Globe02 />
+            <Text as="div" size="sm" weight="medium">
+              {domain}
+            </Text>
+          </div>
         </div>
-        <div className="ProtocolDetailsPanel__domain">
-          <Icon.Globe02 />
-          <Text as="div" size="sm" weight="medium">
-            {getHostname(protocol.websiteUrl)}
-          </Text>
-        </div>
-      </div>
+      )}
 
       <div className="ProtocolDetailsPanel__section">
         <div className="ProtocolDetailsPanel__section__label">
