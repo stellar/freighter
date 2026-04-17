@@ -41,6 +41,7 @@ export const ProtocolRow = ({
         </div>
       </div>
       <button
+        type="button"
         className="ProtocolRow__open-button"
         data-testid="protocol-row-open"
         onClick={(e) => {
