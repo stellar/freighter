@@ -2456,7 +2456,7 @@ export const addRecentProtocol = async (
     throw new Error(error);
   }
 
-  return recentProtocols;
+  return recentProtocols || [];
 };
 
 export const clearRecentProtocols = async (): Promise<
