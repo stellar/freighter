@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { captureException } from "@sentry/browser";
 
 import { getDiscoverData, getRecentProtocols } from "@shared/api/internal";
@@ -37,16 +37,25 @@ export const useDiscoverData = () => {
     setRecentEntries(entries);
   }, []);
 
-  const allProtocols = state.data ?? [];
-  const allowedProtocols = allProtocols.filter((p) => !p.isBlacklisted);
+  const allowedProtocols = useMemo(
+    () => (state.data ?? []).filter((p) => !p.isBlacklisted),
+    [state.data],
+  );
 
-  const trendingItems = allowedProtocols.filter((p) => p.isTrending);
+  const trendingItems = useMemo(
+    () => allowedProtocols.filter((p) => p.isTrending),
+    [allowedProtocols],
+  );
 
-  const recentItems = recentEntries
-    .map((entry) =>
-      allowedProtocols.find((p) => p.websiteUrl === entry.websiteUrl),
-    )
-    .filter(Boolean) as DiscoverData;
+  const recentItems = useMemo(
+    () =>
+      recentEntries
+        .map((entry) =>
+          allowedProtocols.find((p) => p.websiteUrl === entry.websiteUrl),
+        )
+        .filter(Boolean) as DiscoverData,
+    [recentEntries, allowedProtocols],
+  );
 
   const dappsItems = allowedProtocols;
 
