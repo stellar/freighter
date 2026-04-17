@@ -45,7 +45,7 @@ export const DiscoverWelcomeModal = ({
             </Text>
           </div>
           <Button
-            size="sm"
+            size="md"
             variant="secondary"
             isFullWidth
             isRounded
