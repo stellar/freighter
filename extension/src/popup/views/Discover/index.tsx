@@ -13,10 +13,7 @@ import {
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { openTab } from "popup/helpers/navigate";
-import {
-  addRecentProtocol,
-  clearRecentProtocols,
-} from "popup/helpers/recentProtocols";
+import { addRecentProtocol, clearRecentProtocols } from "@shared/api/internal";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { Loading } from "popup/components/Loading";
 
