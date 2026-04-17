@@ -93,6 +93,11 @@ import { addCollectible } from "./handlers/addCollectible";
 import { getCollectibles } from "./handlers/getCollectibles";
 import { changeCollectibleVisibility } from "./handlers/changeCollectibleVisibility";
 import { getHiddenCollectibles } from "./handlers/getHiddenCollectibles";
+import { getRecentProtocols } from "./handlers/getRecentProtocols";
+import { addRecentProtocol } from "./handlers/addRecentProtocol";
+import { clearRecentProtocols } from "./handlers/clearRecentProtocols";
+import { getDiscoverWelcomeSeen } from "./handlers/getDiscoverWelcomeSeen";
+import { dismissDiscoverWelcome } from "./handlers/dismissDiscoverWelcome";
 
 const numOfPublicKeysToCheck = 5;
 
@@ -574,6 +579,21 @@ export const popupMessageListener = (
       return getHiddenCollectibles({
         localStore,
       });
+    }
+    case SERVICE_TYPES.GET_RECENT_PROTOCOLS: {
+      return getRecentProtocols({ localStore });
+    }
+    case SERVICE_TYPES.ADD_RECENT_PROTOCOL: {
+      return addRecentProtocol({ request, localStore });
+    }
+    case SERVICE_TYPES.CLEAR_RECENT_PROTOCOLS: {
+      return clearRecentProtocols({ localStore });
+    }
+    case SERVICE_TYPES.GET_DISCOVER_WELCOME_SEEN: {
+      return getDiscoverWelcomeSeen({ localStore });
+    }
+    case SERVICE_TYPES.DISMISS_DISCOVER_WELCOME: {
+      return dismissDiscoverWelcome({ localStore });
     }
     case SERVICE_TYPES.MARK_QUEUE_ACTIVE: {
       const { uuid, isActive } = request as MarkQueueActiveMessage;
