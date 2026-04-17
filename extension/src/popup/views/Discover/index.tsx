@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { captureException } from "@sentry/browser";
 
 import { ProtocolEntry } from "@shared/api/types";
 import {
@@ -61,8 +62,12 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
   const handleOpenProtocol = useCallback(
     async (protocol: ProtocolEntry, source: DiscoverSource) => {
       trackDiscoverProtocolOpened(protocol.name, protocol.websiteUrl, source);
-      await addRecentProtocol(protocol.websiteUrl);
-      await refreshRecent();
+      try {
+        await addRecentProtocol(protocol.websiteUrl);
+        await refreshRecent();
+      } catch (error) {
+        captureException(`Error adding Discover recent protocol - ${error}`);
+      }
       openTab(protocol.websiteUrl);
     },
     [refreshRecent],
@@ -94,8 +99,12 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
   );
 
   const handleClearRecent = useCallback(async () => {
-    await clearRecentProtocols();
-    await refreshRecent();
+    try {
+      await clearRecentProtocols();
+      await refreshRecent();
+    } catch (error) {
+      captureException(`Error clearing Discover recent protocols - ${error}`);
+    }
     setActiveView("main");
   }, [refreshRecent]);
 

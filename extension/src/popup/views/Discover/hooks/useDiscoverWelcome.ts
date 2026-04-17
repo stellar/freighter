@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { captureException } from "@sentry/browser";
 
 import {
   getHasSeenDiscoverWelcome,
@@ -20,7 +21,11 @@ export const useDiscoverWelcome = () => {
 
   const dismissWelcome = useCallback(async () => {
     setShowWelcome(false);
-    await dismissDiscoverWelcomeApi();
+    try {
+      await dismissDiscoverWelcomeApi();
+    } catch (error) {
+      captureException(`Error dismissing Discover welcome modal - ${error}`);
+    }
   }, []);
 
   return { showWelcome, dismissWelcome };
