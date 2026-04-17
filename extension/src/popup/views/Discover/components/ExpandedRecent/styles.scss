@@ -25,7 +25,8 @@
     background: var(--sds-clr-gray-01);
     border: 1px solid var(--sds-clr-gray-06);
     border-radius: pxToRem(6);
-    box-shadow: 0 pxToRem(10) pxToRem(20) pxToRem(-10) rgba(0, 0, 0, 0.1);
+    box-shadow: 0 pxToRem(10) pxToRem(20) pxToRem(-10)
+      rgba(var(--color-shadow-rgb), 0.1);
     padding: pxToRem(4);
     z-index: 100;
   }
