@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { ProtocolEntry } from "@shared/api/types";
 
+import { activateOnEnterOrSpace } from "../../helpers/a11y";
 import "./styles.scss";
 
 interface ProtocolRowProps {
@@ -23,7 +24,10 @@ export const ProtocolRow = ({
     <div
       className="ProtocolRow"
       data-testid="protocol-row"
+      role="button"
+      tabIndex={0}
       onClick={() => onRowClick(protocol)}
+      onKeyDown={activateOnEnterOrSpace(() => onRowClick(protocol))}
     >
       <img
         src={protocol.iconUrl}

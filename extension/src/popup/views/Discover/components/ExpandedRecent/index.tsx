@@ -10,6 +10,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "popup/basics/shadcn/Popover";
+import { activateOnEnterOrSpace } from "../../helpers/a11y";
 import { ProtocolRow } from "../ProtocolRow";
 import "./styles.scss";
 
@@ -53,10 +54,16 @@ export const ExpandedRecent = ({
             >
               <div
                 className="ExpandedRecent__dropdown-item"
+                role="menuitem"
+                tabIndex={0}
                 onClick={() => {
                   setIsPopoverOpen(false);
                   onClearRecent();
                 }}
+                onKeyDown={activateOnEnterOrSpace(() => {
+                  setIsPopoverOpen(false);
+                  onClearRecent();
+                })}
                 data-testid="clear-recents-button"
               >
                 <Icon.Trash01 />
