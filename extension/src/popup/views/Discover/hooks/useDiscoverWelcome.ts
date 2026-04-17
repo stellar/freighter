@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
-import browser from "webextension-polyfill";
 
-const STORAGE_KEY = "hasSeenDiscoverWelcome";
+import {
+  getHasSeenDiscoverWelcome,
+  dismissDiscoverWelcome as dismissDiscoverWelcomeApi,
+} from "@shared/api/internal";
 
 export const useDiscoverWelcome = () => {
   const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
     const checkWelcome = async () => {
-      const result = await browser.storage.local.get(STORAGE_KEY);
-      if (!result[STORAGE_KEY]) {
+      const seen = await getHasSeenDiscoverWelcome();
+      if (!seen) {
         setShowWelcome(true);
       }
     };
@@ -18,7 +20,7 @@ export const useDiscoverWelcome = () => {
 
   const dismissWelcome = useCallback(async () => {
     setShowWelcome(false);
-    await browser.storage.local.set({ [STORAGE_KEY]: true });
+    await dismissDiscoverWelcomeApi();
   }, []);
 
   return { showWelcome, dismissWelcome };
