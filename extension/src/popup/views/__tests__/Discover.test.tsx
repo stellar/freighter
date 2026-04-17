@@ -217,6 +217,34 @@ describe("Discover", () => {
       const openCall = openTabSpy.mock.invocationCallOrder[0];
       expect(addCall).toBeLessThan(openCall);
     });
+
+    it("blocks protocols with non-https URLs", async () => {
+      jest.spyOn(ApiInternal, "getDiscoverData").mockResolvedValue([
+        {
+          description: "Malicious protocol",
+          name: "Evil",
+          iconUrl: "https://example.com/evil.png",
+          websiteUrl: "javascript:alert(1)",
+          tags: ["Scam"],
+          isBlacklisted: false,
+          isTrending: false,
+        },
+      ]);
+
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("discover-section-dapps"),
+        ).toBeInTheDocument();
+      });
+
+      const openButtons = screen.getAllByTestId("protocol-row-open");
+      await userEvent.click(openButtons[0]);
+
+      expect(ApiInternal.addRecentProtocol).not.toHaveBeenCalled();
+      expect(openTabSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe("protocol details panel", () => {

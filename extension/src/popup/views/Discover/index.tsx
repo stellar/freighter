@@ -30,6 +30,14 @@ import "./styles.scss";
 
 type DiscoverView = "main" | "recent" | "dapps";
 
+const isSafeHttpsUrl = (url: string): boolean => {
+  try {
+    return new URL(url).protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
 interface DiscoverProps {
   onClose?: () => void;
 }
@@ -61,6 +69,15 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
 
   const handleOpenProtocol = useCallback(
     async (protocol: ProtocolEntry, source: DiscoverSource) => {
+      // Defense-in-depth: the indexer is trusted, but openTab consumes this
+      // URL directly so reject anything that isn't https:// (e.g. javascript:,
+      // data:) before navigating.
+      if (!isSafeHttpsUrl(protocol.websiteUrl)) {
+        captureException(
+          `Discover: blocked non-https protocol URL - ${protocol.websiteUrl}`,
+        );
+        return;
+      }
       trackDiscoverProtocolOpened(protocol.name, protocol.websiteUrl, source);
       try {
         await addRecentProtocol(protocol.websiteUrl);
