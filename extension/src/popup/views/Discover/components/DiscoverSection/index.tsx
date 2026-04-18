@@ -2,7 +2,6 @@ import React from "react";
 import { Icon, Text } from "@stellar/design-system";
 
 import { DiscoverData, ProtocolEntry } from "@shared/api/types";
-import { activateOnEnterOrSpace } from "../../helpers/a11y";
 import { ProtocolRow } from "../ProtocolRow";
 import "./styles.scss";
 
@@ -37,9 +36,7 @@ export const DiscoverSection = ({
       <div
         className="DiscoverSection__header"
         onClick={onExpand}
-        onKeyDown={activateOnEnterOrSpace(onExpand)}
         role="button"
-        tabIndex={0}
         data-testid={`discover-section-expand-${title.toLowerCase()}`}
       >
         <Text as="div" size="sm" weight="semi-bold">

@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 
 import { DiscoverData, ProtocolEntry } from "@shared/api/types";
 
-import { activateOnEnterOrSpace } from "../../helpers/a11y";
 import "./styles.scss";
 
 const TrendingCard = ({
@@ -22,9 +21,7 @@ const TrendingCard = ({
       className="TrendingCarousel__card"
       data-testid="trending-card"
       role="button"
-      tabIndex={0}
       onClick={() => onCardClick(protocol)}
-      onKeyDown={activateOnEnterOrSpace(() => onCardClick(protocol))}
     >
       {showPlaceholder ? (
         <div className="TrendingCarousel__card__placeholder">
