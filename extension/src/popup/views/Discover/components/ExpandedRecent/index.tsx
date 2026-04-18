@@ -40,6 +40,7 @@ export const ExpandedRecent = ({
           <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
             <PopoverTrigger asChild>
               <button
+                type="button"
                 className="ExpandedRecent__menu-trigger"
                 data-testid="expanded-recent-menu"
               >
