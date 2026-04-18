@@ -46,6 +46,7 @@ export const ProtocolDetailsPanel = ({
           </Text>
         </div>
         <button
+          type="button"
           className="ProtocolDetailsPanel__open-button"
           data-testid="protocol-details-open"
           onClick={() => onOpen(protocol)}
