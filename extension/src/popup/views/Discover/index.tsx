@@ -85,7 +85,11 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
       } catch (error) {
         captureException(`Error adding Discover recent protocol - ${error}`);
       }
-      openTab(protocol.websiteUrl);
+      try {
+        await openTab(protocol.websiteUrl);
+      } catch (error) {
+        captureException(`Error opening Discover tab - ${error}`);
+      }
     },
     [refreshRecent],
   );
