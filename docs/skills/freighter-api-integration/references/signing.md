@@ -26,9 +26,13 @@ const signedTx = TransactionBuilder.fromXDR(signedTxXdr, networkPassphrase);
 | `networkPassphrase` | `string` | Bind the signature to a specific network (prevents replay) |
 | `address`           | `string` | Require the user to sign with this specific account        |
 
-There is no `network` option — only `networkPassphrase`. If you pass a `network`
-key it is ignored. Older docs occasionally show a `network` field; trust the
-source.
+Prefer `networkPassphrase`. Older user-facing docs also describe a `network`
+enum option (`"PUBLIC"`, `"TESTNET"`, ...) that Freighter maps to a passphrase
+via `js-stellar-sdk`, and — per those docs — it takes precedence over
+`networkPassphrase` when both are passed. The current TypeScript typings in
+`@stellar/freighter-api` only declare `networkPassphrase` and `address`, so
+`network` is not a first-class API anymore. Pass `networkPassphrase` and you
+avoid the ambiguity entirely.
 
 **Passing a stale `networkPassphrase`** is one of the most common bugs. If the
 user's wallet is on testnet and you pass `Networks.PUBLIC`, Freighter rejects

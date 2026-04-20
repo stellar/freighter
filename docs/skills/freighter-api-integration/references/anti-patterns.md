@@ -37,7 +37,7 @@ await signTransaction(xdr, { networkPassphrase });
 ## Using `window.freighter` directly
 
 ```ts
-// Don't — undocumented, not part of the public API, prone to breakage
+// Don't — `window.freighter` is only a detection flag, not an API surface
 if (window.freighter) await window.freighter.signTransaction(...);
 ```
 
@@ -47,8 +47,14 @@ import { signTransaction } from "@stellar/freighter-api";
 await signTransaction(...);
 ```
 
-The SDK wraps the extension bridge; bypassing it skips version shims and message
-validation.
+The extension sets `window.freighter` as a truthy marker so the SDK's
+`isConnected()` can short-circuit. It is not the API — calling methods on it is
+unsupported.
+
+Note the different global `window.freighterApi` **is** supported when you load
+the SDK via `<script>` tag from CDN (`usingFreighterBrowser.mdx`). That one
+carries the real API. If you are bundling with npm, import from
+`@stellar/freighter-api` instead.
 
 ## Calling `setAllowed()` / `requestAccess()` on page load
 
