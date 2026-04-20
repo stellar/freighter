@@ -1,4 +1,4 @@
-import { test, expect } from "./test-fixtures";
+import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
 import { patchChromeTabsCreate, getCapturedTabUrl } from "./helpers/discover";
 import {
@@ -75,6 +75,12 @@ test.describe("Discover critical flows (stubbed)", () => {
     // Error state is rendered instead of the welcome modal + main view
     await expect(page.getByTestId("discover-error")).toBeVisible();
     await expect(page.getByTestId("trending-carousel")).not.toBeVisible();
+
+    // Visual regression: error state is stable (no remote images, no animations)
+    await expectPageToHaveScreenshot({
+      page,
+      screenshot: "discover-error.png",
+    });
 
     // Restore the default 200 stub before retrying
     await page.unroute("**/protocols");
