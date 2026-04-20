@@ -91,7 +91,7 @@ Use the `ROUTES` enum and `navigateTo()` helper:
 
 ```typescript
 // CORRECT
-navigateTo(ROUTES.sendPayment);
+navigateTo(ROUTES.sendPayment, navigate);
 ```
 
 ## 7. Inline Object/Function Creation in JSX Props
