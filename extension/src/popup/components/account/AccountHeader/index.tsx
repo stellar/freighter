@@ -327,6 +327,7 @@ export const AccountHeader = ({
         }
         rightContent={
           <div
+            data-testid="account-header-discover-button"
             className="AccountHeader__right-button AccountHeader__right-button--with-label"
             onClick={onDiscoverClick}
           >
