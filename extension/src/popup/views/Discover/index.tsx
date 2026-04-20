@@ -105,6 +105,16 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
 
   const handleDetailsOpen = useCallback(
     async (protocol: ProtocolEntry) => {
+      // Mirror the guard in handleOpenProtocol so we don't emit the
+      // "from details" metric for a URL we're about to reject.
+      if (!isSafeHttpsUrl(protocol.websiteUrl)) {
+        captureException(
+          `Discover: blocked non-https protocol URL (details) - ${protocol.websiteUrl}`,
+        );
+        setIsDetailsOpen(false);
+        setSelectedProtocol(null);
+        return;
+      }
       trackDiscoverProtocolOpenedFromDetails(
         protocol.name,
         protocol.websiteUrl,

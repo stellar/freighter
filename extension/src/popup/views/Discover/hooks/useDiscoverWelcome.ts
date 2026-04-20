@@ -11,9 +11,15 @@ export const useDiscoverWelcome = () => {
 
   useEffect(() => {
     const checkWelcome = async () => {
-      const seen = await getHasSeenDiscoverWelcome();
-      if (!seen) {
-        setShowWelcome(true);
+      try {
+        const seen = await getHasSeenDiscoverWelcome();
+        if (!seen) {
+          setShowWelcome(true);
+        }
+      } catch (error) {
+        // Default to hiding the modal on messaging failure so we never
+        // show it to a user who has already dismissed it.
+        captureException(`Error checking Discover welcome flag - ${error}`);
       }
     };
     checkWelcome();
