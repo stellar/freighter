@@ -1370,6 +1370,23 @@ export const stubDiscoverProtocols = async (
 };
 
 /**
+ * Overrides the Discover protocols stub to return an error status.
+ * Call this AFTER loginToTestAccount (which runs stubAllExternalApis and
+ * registers the default 200 stub) so this route handler takes precedence.
+ */
+export const stubDiscoverProtocolsError = async (
+  page: Page,
+  status: number = 500,
+) => {
+  await page.route("**/protocols", async (route) => {
+    await route.fulfill({
+      status,
+      json: { error: "Simulated protocols fetch error" },
+    });
+  });
+};
+
+/**
  * Stubs contract spec API to simulate Soroban mux support (SEP-23) or lack thereof
  * @param page - Playwright page or browser context
  * @param contractId - Contract ID to stub
