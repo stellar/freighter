@@ -2481,7 +2481,7 @@ export const getHasSeenDiscoverWelcome = async (): Promise<boolean> => {
   });
 
   if (error) {
-    return false;
+    throw new Error(error);
   }
 
   return !!hasSeenDiscoverWelcome;

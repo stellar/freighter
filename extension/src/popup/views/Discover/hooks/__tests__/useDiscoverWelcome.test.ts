@@ -31,6 +31,19 @@ describe("useDiscoverWelcome", () => {
     expect(result.current.showWelcome).toBe(false);
   });
 
+  it("keeps the modal hidden when the flag lookup rejects", async () => {
+    jest
+      .spyOn(ApiInternal, "getHasSeenDiscoverWelcome")
+      .mockRejectedValue(new Error("messaging failure"));
+
+    const { result } = renderHook(() => useDiscoverWelcome());
+
+    await waitFor(() =>
+      expect(ApiInternal.getHasSeenDiscoverWelcome).toHaveBeenCalled(),
+    );
+    expect(result.current.showWelcome).toBe(false);
+  });
+
   it("dismisses optimistically and persists the flag", async () => {
     jest
       .spyOn(ApiInternal, "getHasSeenDiscoverWelcome")
