@@ -177,6 +177,24 @@ test.describe("Discover critical flows (stubbed)", () => {
     await expect(page.getByTestId("protocol-details-panel")).toBeVisible();
   });
 
+  test("escape key dismisses the Discover sheet", async ({
+    page,
+    extensionId,
+    context,
+  }) => {
+    await loginToTestAccount({ page, extensionId, context });
+
+    await page.getByTestId("account-header-discover-button").click();
+    await page.getByTestId("discover-welcome-dismiss").click();
+    await expect(page.getByTestId("trending-carousel")).toBeVisible();
+
+    // Radix Dialog wires Escape to onOpenChange(false); the parent flips
+    // isDiscoverOpen to false via the handler we added, closing the sheet.
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("trending-carousel")).not.toBeVisible();
+    await expect(page.getByTestId("account-view")).toBeVisible();
+  });
+
   test("row-level Open button bypasses the details panel and captures the URL", async ({
     page,
     extensionId,
