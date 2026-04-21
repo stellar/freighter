@@ -7,6 +7,5 @@ export const dismissDiscoverWelcome = async ({
   localStore: DataStorageAccess;
 }): Promise<{ hasSeenDiscoverWelcome: boolean }> => {
   await localStore.setItem(HAS_SEEN_DISCOVER_WELCOME, true);
-  const seen = await localStore.getItem(HAS_SEEN_DISCOVER_WELCOME);
-  return { hasSeenDiscoverWelcome: !!seen };
+  return { hasSeenDiscoverWelcome: true };
 };
