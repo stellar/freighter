@@ -33,11 +33,15 @@ describe("rejectTransaction handler", () => {
     const mockTransaction3 = { sign: jest.fn(), toXDR: jest.fn() } as any;
 
     transactionQueue.push(
-      { transaction: mockTransaction1, uuid: "uuid-1" },
-      { transaction: mockTransaction2, uuid: "uuid-2" },
-      { transaction: mockTransaction3, uuid: "uuid-3" },
+      { transaction: mockTransaction1, uuid: "uuid-1", createdAt: Date.now() },
+      { transaction: mockTransaction2, uuid: "uuid-2", createdAt: Date.now() },
+      { transaction: mockTransaction3, uuid: "uuid-3", createdAt: Date.now() },
     );
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-2" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-2",
+      createdAt: Date.now(),
+    });
 
     const request: RejectTransactionMessage = {
       type: SERVICE_TYPES.REJECT_TRANSACTION,
@@ -60,7 +64,11 @@ describe("rejectTransaction handler", () => {
   it("removes transaction from queue when uuid is found but no response queue item", () => {
     const mockTransaction = { sign: jest.fn(), toXDR: jest.fn() } as any;
 
-    transactionQueue.push({ transaction: mockTransaction, uuid: "uuid-1" });
+    transactionQueue.push({
+      transaction: mockTransaction,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request: RejectTransactionMessage = {
       type: SERVICE_TYPES.REJECT_TRANSACTION,
@@ -84,8 +92,16 @@ describe("rejectTransaction handler", () => {
   it("does not remove items when uuid is not found in queue", () => {
     const mockTransaction = { sign: jest.fn(), toXDR: jest.fn() } as any;
 
-    transactionQueue.push({ transaction: mockTransaction, uuid: "uuid-1" });
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    transactionQueue.push({
+      transaction: mockTransaction,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request: RejectTransactionMessage = {
       type: SERVICE_TYPES.REJECT_TRANSACTION,
@@ -107,8 +123,16 @@ describe("rejectTransaction handler", () => {
   it("returns early and logs error when uuid is undefined", () => {
     const mockTransaction = { sign: jest.fn(), toXDR: jest.fn() } as any;
 
-    transactionQueue.push({ transaction: mockTransaction, uuid: "uuid-1" });
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    transactionQueue.push({
+      transaction: mockTransaction,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request = {
       type: SERVICE_TYPES.REJECT_TRANSACTION,
@@ -134,11 +158,15 @@ describe("rejectTransaction handler", () => {
     const tx3 = { sign: jest.fn(), toXDR: jest.fn() } as any;
 
     transactionQueue.push(
-      { transaction: tx1, uuid: "aaa" },
-      { transaction: tx2, uuid: "bbb" },
-      { transaction: tx3, uuid: "ccc" },
+      { transaction: tx1, uuid: "aaa", createdAt: Date.now() },
+      { transaction: tx2, uuid: "bbb", createdAt: Date.now() },
+      { transaction: tx3, uuid: "ccc", createdAt: Date.now() },
     );
-    responseQueue.push({ response: mockResponseFn, uuid: "bbb" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "bbb",
+      createdAt: Date.now(),
+    });
 
     const request: RejectTransactionMessage = {
       type: SERVICE_TYPES.REJECT_TRANSACTION,
@@ -163,10 +191,14 @@ describe("rejectTransaction handler", () => {
     const mockTransaction = { sign: jest.fn(), toXDR: jest.fn() } as any;
     const mockResponseFn2 = jest.fn();
 
-    transactionQueue.push({ transaction: mockTransaction, uuid: "uuid-1" });
+    transactionQueue.push({
+      transaction: mockTransaction,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
     responseQueue.push(
-      { response: mockResponseFn, uuid: "uuid-2" },
-      { response: mockResponseFn2, uuid: "uuid-1" },
+      { response: mockResponseFn, uuid: "uuid-2", createdAt: Date.now() },
+      { response: mockResponseFn2, uuid: "uuid-1", createdAt: Date.now() },
     );
 
     const request: RejectTransactionMessage = {
@@ -193,8 +225,8 @@ describe("rejectTransaction handler", () => {
     const mockTransaction2 = { sign: jest.fn(), toXDR: jest.fn() } as any;
 
     transactionQueue.push(
-      { transaction: mockTransaction1, uuid: "uuid-1" },
-      { transaction: mockTransaction2, uuid: "uuid-2" },
+      { transaction: mockTransaction1, uuid: "uuid-1", createdAt: Date.now() },
+      { transaction: mockTransaction2, uuid: "uuid-2", createdAt: Date.now() },
     );
 
     const request: RejectTransactionMessage = {

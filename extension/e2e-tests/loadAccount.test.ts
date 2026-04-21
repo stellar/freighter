@@ -15,14 +15,7 @@ test("Load accounts on standalone network", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Settings").click();
   await page.getByText("Network").click();
@@ -56,13 +49,15 @@ test.skip("Switches account and fetches correct balances while clearing cache", 
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
+  const stubOverrides = async () => {
+    await stubTokenDetails(page);
+    await stubAccountHistory(page);
+    await stubTokenPrices(page);
+    await stubScanDapp(context);
+  };
 
   test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await expect(page.getByTestId("account-assets")).toContainText("XLM");
   const account1XlmBalance = await page
     .getByTestId("asset-amount")
@@ -132,93 +127,89 @@ test("Switches network and fetches correct balances while clearing cache", async
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
+  const stubOverrides = async () => {
+    await page.route("**/account-balances/**", async (route) => {
+      let json = {};
 
-  await page.route("**/account-balances/**", async (route) => {
-    let json = {};
-
-    if (route.request().url().includes("TESTNET")) {
-      json = {
-        balances: {
-          native: {
-            token: {
-              type: "native",
-              code: "XLM",
-            },
-            total: "2",
-            available: "2",
-            sellingLiabilities: "0",
-            buyingLiabilities: "0",
-            minimumBalance: "1",
-            blockaidData: {
-              result_type: "Benign",
-              malicious_score: "0.0",
-              attack_types: {},
-              chain: "stellar",
-              address: "",
-              metadata: {
-                type: "",
+      if (route.request().url().includes("TESTNET")) {
+        json = {
+          balances: {
+            native: {
+              token: {
+                type: "native",
+                code: "XLM",
               },
-              fees: {},
-              features: [],
-              trading_limits: {},
-              financial_stats: {},
+              total: "2",
+              available: "2",
+              sellingLiabilities: "0",
+              buyingLiabilities: "0",
+              minimumBalance: "1",
+              blockaidData: {
+                result_type: "Benign",
+                malicious_score: "0.0",
+                attack_types: {},
+                chain: "stellar",
+                address: "",
+                metadata: {
+                  type: "",
+                },
+                fees: {},
+                features: [],
+                trading_limits: {},
+                financial_stats: {},
+              },
             },
           },
-        },
-        isFunded: true,
-        subentryCount: 0,
-        error: {
-          horizon: null,
-          soroban: null,
-        },
-      };
-    } else {
-      json = {
-        balances: {
-          native: {
-            token: {
-              type: "native",
-              code: "XLM",
-            },
-            total: "1",
-            available: "1",
-            sellingLiabilities: "0",
-            buyingLiabilities: "0",
-            minimumBalance: "1",
-            blockaidData: {
-              result_type: "Benign",
-              malicious_score: "0.0",
-              attack_types: {},
-              chain: "stellar",
-              address: "",
-              metadata: {
-                type: "",
+          isFunded: true,
+          subentryCount: 0,
+          error: {
+            horizon: null,
+            soroban: null,
+          },
+        };
+      } else {
+        json = {
+          balances: {
+            native: {
+              token: {
+                type: "native",
+                code: "XLM",
               },
-              fees: {},
-              features: [],
-              trading_limits: {},
-              financial_stats: {},
+              total: "1",
+              available: "1",
+              sellingLiabilities: "0",
+              buyingLiabilities: "0",
+              minimumBalance: "1",
+              blockaidData: {
+                result_type: "Benign",
+                malicious_score: "0.0",
+                attack_types: {},
+                chain: "stellar",
+                address: "",
+                metadata: {
+                  type: "",
+                },
+                fees: {},
+                features: [],
+                trading_limits: {},
+                financial_stats: {},
+              },
             },
           },
-        },
-        isFunded: true,
-        subentryCount: 0,
-        error: {
-          horizon: null,
-          soroban: null,
-        },
-      };
-    }
+          isFunded: true,
+          subentryCount: 0,
+          error: {
+            horizon: null,
+            soroban: null,
+          },
+        };
+      }
 
-    await route.fulfill({ json });
-  });
+      await route.fulfill({ json });
+    });
+  };
 
-  test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await expect(page.getByTestId("account-assets")).toContainText("XLM");
   await expect(page.getByTestId("asset-amount")).toHaveText("2");
 
@@ -277,14 +268,7 @@ test("Account Balances should be loaded once and cached", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   let accountBalancesRequestWasMade = false;
   page.on("request", (request) => {
@@ -304,14 +288,7 @@ test("Switches account without password prompt", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  test.slow();
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await expect(page.getByTestId("account-assets")).toContainText("XLM");
   await page.getByTestId("account-view-account-name").click();
   await page.getByText("Account 2").click();
@@ -327,16 +304,8 @@ test("Can't change settings on a stale window", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(context);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  test.slow();
-
   const pageOne = await page.context().newPage();
-  await loginToTestAccount({ page: pageOne, extensionId });
+  await loginToTestAccount({ page: pageOne, extensionId, context });
 
   // open a second tab and change the account
   const pageTwo = await page.context().newPage();
@@ -387,7 +356,7 @@ test.skip("Clears cache and fetches balances if it's been 2 minutes since the la
 
   test.slow();
   await page.clock.install({ time: new Date("2024-01-01T12:00:00") });
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await expect(page.getByTestId("account-assets")).toContainText("XLM");
   const account1XlmBalance = await page
     .getByTestId("asset-amount")
@@ -465,11 +434,6 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
   let tokenPricesCallCount = 0;
 
   page.on("request", (request) => {
@@ -478,42 +442,86 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
     }
   });
 
-  await page.route("**/account-balances/**", async (route) => {
-    const json = {
-      balances: {
-        native: {
-          token: {
-            type: "native",
-            code: "XLM",
-          },
-          total: "5",
-          available: "4",
-          sellingLiabilities: "0",
-          buyingLiabilities: "0",
-          minimumBalance: "1",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address: "",
-            metadata: {
-              type: "",
+  const stubOverrides = async () => {
+    await page.route("**/account-balances/**", async (route) => {
+      const json = {
+        balances: {
+          native: {
+            token: {
+              type: "native",
+              code: "XLM",
             },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {},
+            total: "5",
+            available: "4",
+            sellingLiabilities: "0",
+            buyingLiabilities: "0",
+            minimumBalance: "1",
+            blockaidData: {
+              result_type: "Benign",
+              malicious_score: "0.0",
+              attack_types: {},
+              chain: "stellar",
+              address: "",
+              metadata: {
+                type: "",
+              },
+              fees: {},
+              features: [],
+              trading_limits: {},
+              financial_stats: {},
+            },
+          },
+          "BTC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM": {
+            token: {
+              code: "BTC",
+              issuer: {
+                key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+              },
+            },
+            symbol: "BTC",
+            total: "3",
+            available: "100000099976",
+            blockaidData: {
+              result_type: "Benign",
+              malicious_score: "0.0",
+              attack_types: {},
+              chain: "stellar",
+              address: "",
+              metadata: {
+                type: "",
+              },
+              fees: {},
+              features: [],
+              trading_limits: {},
+              financial_stats: {},
+            },
           },
         },
-        "BTC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM": {
+        isFunded: true,
+        subentryCount: 0,
+        error: {
+          horizon: null,
+          soroban: null,
+        },
+      } as any;
+      if (
+        route
+          .request()
+          .url()
+          .includes("GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY")
+      ) {
+        json.balances.native.total = "10";
+        json.balances.native.available = "9";
+        json.balances[
+          "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"
+        ] = {
           token: {
-            code: "BTC",
+            code: "USDC",
             issuer: {
               key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
             },
           },
-          symbol: "BTC",
+          symbol: "USDC",
           total: "3",
           available: "100000099976",
           blockaidData: {
@@ -530,110 +538,66 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
             trading_limits: {},
             financial_stats: {},
           },
-        },
-      },
-      isFunded: true,
-      subentryCount: 0,
-      error: {
-        horizon: null,
-        soroban: null,
-      },
-    } as any;
-    if (
-      route
-        .request()
-        .url()
-        .includes("GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY")
-    ) {
-      json.balances.native.total = "10";
-      json.balances.native.available = "9";
-      json.balances[
-        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"
-      ] = {
-        token: {
-          code: "USDC",
-          issuer: {
-            key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
-          },
-        },
-        symbol: "USDC",
-        total: "3",
-        available: "100000099976",
-        blockaidData: {
-          result_type: "Benign",
-          malicious_score: "0.0",
-          attack_types: {},
-          chain: "stellar",
-          address: "",
-          metadata: {
-            type: "",
-          },
-          fees: {},
-          features: [],
-          trading_limits: {},
-          financial_stats: {},
-        },
-      };
-    }
-    if (
-      route
-        .request()
-        .url()
-        .includes("GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2")
-    ) {
-      json.balances.native.total = "11";
-      json.balances.native.available = "10";
-    }
-    if (
-      route
-        .request()
-        .url()
-        .includes("GDPXC35MQCSFJCEDNWUJZYDJWKNGNL2YMFZZS47LT46CFVGAJ6GWYGJC")
-    ) {
-      json.balances.native.total = "12";
-      json.balances.native.available = "11";
-    }
-    if (
-      route
-        .request()
-        .url()
-        .includes("GC32JSRAZA6BJYIKEI2X5LAVJKFVDVVIYWRVCAI7Q7N36WKXVDHTGTQA")
-    ) {
-      json.balances.native.total = "13";
-      json.balances.native.available = "9";
-    }
-    if (
-      route
-        .request()
-        .url()
-        .includes("GDY4ZZLCUEBZPHTKSAESUHV37JA5MZ7BGP2KS32DSBSHS7ONSBFZBQ7C")
-    ) {
-      json.balances.native.total = "14";
-      json.balances.native.available = "9";
-    }
-    if (
-      route
-        .request()
-        .url()
-        .includes("GBW2O3KT5E6W6XN2T66X5TM6EXVTTKVHQJE426PUX5ANMGQVLS2KOU3T")
-    ) {
-      json.balances.native.total = "15";
-      json.balances.native.available = "9";
-    }
-    if (
-      route
-        .request()
-        .url()
-        .includes("GARHHLBEZLF3WWIENRZLHKOB62IIDZX2DHNWXAR2E7KVQTDQGDI4H6NU")
-    ) {
-      json.balances.native.total = "16";
-      json.balances.native.available = "9";
-    }
-    await route.fulfill({ json });
-  });
-
-  test.slow();
-  await loginToTestAccount({ page, extensionId });
+        };
+      }
+      if (
+        route
+          .request()
+          .url()
+          .includes("GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2")
+      ) {
+        json.balances.native.total = "11";
+        json.balances.native.available = "10";
+      }
+      if (
+        route
+          .request()
+          .url()
+          .includes("GDPXC35MQCSFJCEDNWUJZYDJWKNGNL2YMFZZS47LT46CFVGAJ6GWYGJC")
+      ) {
+        json.balances.native.total = "12";
+        json.balances.native.available = "11";
+      }
+      if (
+        route
+          .request()
+          .url()
+          .includes("GC32JSRAZA6BJYIKEI2X5LAVJKFVDVVIYWRVCAI7Q7N36WKXVDHTGTQA")
+      ) {
+        json.balances.native.total = "13";
+        json.balances.native.available = "9";
+      }
+      if (
+        route
+          .request()
+          .url()
+          .includes("GDY4ZZLCUEBZPHTKSAESUHV37JA5MZ7BGP2KS32DSBSHS7ONSBFZBQ7C")
+      ) {
+        json.balances.native.total = "14";
+        json.balances.native.available = "9";
+      }
+      if (
+        route
+          .request()
+          .url()
+          .includes("GBW2O3KT5E6W6XN2T66X5TM6EXVTTKVHQJE426PUX5ANMGQVLS2KOU3T")
+      ) {
+        json.balances.native.total = "15";
+        json.balances.native.available = "9";
+      }
+      if (
+        route
+          .request()
+          .url()
+          .includes("GARHHLBEZLF3WWIENRZLHKOB62IIDZX2DHNWXAR2E7KVQTDQGDI4H6NU")
+      ) {
+        json.balances.native.total = "16";
+        json.balances.native.available = "9";
+      }
+      await route.fulfill({ json });
+    });
+  };
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("network-selector-open").click();
   await page.getByText("Main Net").click();
   await expect(page.getByTestId("account-assets")).toContainText("XLM");
@@ -661,12 +625,7 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
 });
 
 test("Renames wallets", async ({ page, extensionId, context }) => {
-  await stubTokenDetails(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("account-view-account-name").click();
   await expect(page.getByText("Wallets")).toBeVisible();
 
@@ -683,15 +642,10 @@ test("Loads collectibles data with successful metadata", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-  await stubCollectibles(page, true);
-
-  test.slow();
-  await loginToTestAccount({ page, extensionId });
+  const stubOverrides = async () => {
+    await stubCollectibles(page, true);
+  };
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("account-tab-collectibles").click();
   await expect(page.getByText("Stellar Frogs")).toBeVisible();
   await expect(page.getByText("Soroban Domains")).toBeVisible();
@@ -831,15 +785,10 @@ test("Loads collectibles data with unsuccessful metadata", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-  await stubCollectiblesUnsuccessfulMetadata(page);
-
-  test.slow();
-  await loginToTestAccount({ page, extensionId });
+  const stubOverrides = async () => {
+    await stubCollectiblesUnsuccessfulMetadata(page);
+  };
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("account-tab-collectibles").click();
   await expect(page.getByText("Stellar Frogs")).toBeVisible();
   const counts = await page

@@ -71,6 +71,7 @@ import {
   NETWORKS,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
+import { isDev } from "../helpers/dev";
 import { SorobanRpcNotSupportedError } from "../constants/errors";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
@@ -1610,11 +1611,13 @@ export const saveSettings = async ({
   isDataSharingAllowed,
   isMemoValidationEnabled,
   isHideDustEnabled,
+  isOpenSidebarByDefault,
 }: {
   activePublicKey: string;
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isHideDustEnabled: boolean;
+  isOpenSidebarByDefault: boolean;
 }): Promise<Settings & IndexerSettings> => {
   let response = {
     allowList: DEFAULT_ALLOW_LIST,
@@ -1628,6 +1631,7 @@ export const saveSettings = async ({
     isSorobanPublicEnabled: false,
     isNonSSLEnabled: false,
     isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
     error: "",
     hiddenAssets: {},
   };
@@ -1638,6 +1642,7 @@ export const saveSettings = async ({
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isHideDustEnabled,
+      isOpenSidebarByDefault,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
   } catch (e) {
@@ -1685,6 +1690,44 @@ export const saveExperimentalFeatures = async ({
   }
 
   return response;
+};
+
+export const getBlockaidOverrideState = async (): Promise<string | null> => {
+  // Only allow override state in dev mode
+  if (!isDev) {
+    return null;
+  }
+
+  const response = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE,
+  });
+
+  if (response.error) {
+    return null;
+  }
+
+  return response.overriddenBlockaidResponse ?? null;
+};
+
+export const saveBlockaidOverrideState = async ({
+  overriddenBlockaidResponse,
+}: {
+  overriddenBlockaidResponse: string | null;
+}): Promise<{ overriddenBlockaidResponse: string | null }> => {
+  const response = await sendMessageToBackground({
+    activePublicKey: null,
+    overriddenBlockaidResponse,
+    type: SERVICE_TYPES.SAVE_BLOCKAID_DEBUG_OVERRIDE,
+  });
+
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
+  return {
+    overriddenBlockaidResponse: response.overriddenBlockaidResponse ?? null,
+  };
 };
 
 export const changeNetwork = async ({
@@ -2132,14 +2175,12 @@ export const simulateTokenTransfer = async (args: {
       destination: string;
       amount: number;
     };
-    network_url: string;
     network_passphrase: string;
   } = {
     address,
     pub_key: publicKey,
     memo: memo || "", // Backend requires memo as string, use empty string if undefined
     params,
-    network_url: networkDetails.sorobanRpcUrl!,
     network_passphrase: networkDetails.networkPassphrase,
   };
 
@@ -2170,9 +2211,6 @@ export const simulateTransaction = async (args: {
     },
     body: JSON.stringify({
       xdr,
-
-      network_url: networkDetails.sorobanRpcUrl,
-
       network_passphrase: networkDetails.networkPassphrase,
     }),
   };
@@ -2309,4 +2347,79 @@ export const getCollectibles = async ({
   }
 
   return response;
+};
+
+export const changeCollectibleVisibility = async ({
+  collectibleKey,
+  collectibleVisibility,
+  activePublicKey,
+}: {
+  collectibleKey: string;
+  collectibleVisibility: AssetVisibility;
+  activePublicKey: string;
+}) => {
+  const response = await sendMessageToBackground({
+    type: SERVICE_TYPES.CHANGE_COLLECTIBLE_VISIBILITY,
+    collectibleVisibility: {
+      collectible: collectibleKey,
+      visibility: collectibleVisibility,
+    },
+    activePublicKey,
+  });
+
+  return {
+    hiddenCollectibles: response?.hiddenCollectibles || {},
+    error: response?.error || "",
+  };
+};
+
+export const getHiddenCollectibles = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}) => {
+  const response = await sendMessageToBackground({
+    type: SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES,
+    activePublicKey,
+  });
+
+  return {
+    hiddenCollectibles: response?.hiddenCollectibles || {},
+    error: response?.error || "",
+  };
+};
+
+export const markQueueActive = async ({
+  uuid,
+  isActive,
+}: {
+  uuid: string;
+  isActive: boolean;
+}): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      activePublicKey: null,
+      uuid,
+      isActive,
+      type: SERVICE_TYPES.MARK_QUEUE_ACTIVE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+export const rejectSigningRequest = async ({
+  uuid,
+}: {
+  uuid: string;
+}): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      activePublicKey: null,
+      uuid,
+      type: SERVICE_TYPES.REJECT_SIGNING_REQUEST,
+    });
+  } catch (e) {
+    console.error(e);
+  }
 };

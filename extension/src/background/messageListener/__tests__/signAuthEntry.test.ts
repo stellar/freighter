@@ -58,6 +58,7 @@ const makeAuthEntryData = (uuid: string) => ({
     uuid,
   } as any,
   uuid,
+  createdAt: Date.now(),
 });
 
 describe("signAuthEntry handler", () => {
@@ -81,7 +82,11 @@ describe("signAuthEntry handler", () => {
       makeAuthEntryData("uuid-2"),
       makeAuthEntryData("uuid-3"),
     );
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-2" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-2",
+      createdAt: Date.now(),
+    });
 
     const request: SignAuthEntryMessage = {
       type: SERVICE_TYPES.SIGN_AUTH_ENTRY,
@@ -104,7 +109,11 @@ describe("signAuthEntry handler", () => {
 
   it("does not sign when uuid is not found in queue", async () => {
     authEntryQueue.push(makeAuthEntryData("uuid-1"));
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request: SignAuthEntryMessage = {
       type: SERVICE_TYPES.SIGN_AUTH_ENTRY,
@@ -127,7 +136,11 @@ describe("signAuthEntry handler", () => {
 
   it("returns error when uuid is undefined", async () => {
     authEntryQueue.push(makeAuthEntryData("uuid-1"));
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request = {
       type: SERVICE_TYPES.SIGN_AUTH_ENTRY,
@@ -152,7 +165,11 @@ describe("signAuthEntry handler", () => {
       makeAuthEntryData("bbb"),
       makeAuthEntryData("ccc"),
     );
-    responseQueue.push({ response: mockResponseFn, uuid: "ccc" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "ccc",
+      createdAt: Date.now(),
+    });
 
     const request: SignAuthEntryMessage = {
       type: SERVICE_TYPES.SIGN_AUTH_ENTRY,

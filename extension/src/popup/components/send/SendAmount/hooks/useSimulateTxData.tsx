@@ -1,4 +1,5 @@
 import { useReducer } from "react";
+import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import BigNumber from "bignumber.js";
 import { captureException } from "@sentry/browser";
@@ -72,6 +73,84 @@ export interface SimulateTxData {
   transactionXdr: string;
   scanResult?: BlockAidScanTxResult | null;
 }
+
+const CREATE_ACCOUNT_MIN_XLM = new BigNumber(1);
+
+/**
+ * Returns the translated user-facing reason why a transaction is expected to fail,
+ * or null if no expected failure.
+ */
+const getExpectedToFailReason = ({
+  isDestinationFunded,
+  assetCanonical,
+  amount,
+  t,
+}: {
+  isDestinationFunded?: boolean;
+  assetCanonical: string;
+  amount: string;
+  t: (key: string) => string;
+}) => {
+  if (isDestinationFunded !== false) {
+    return null;
+  }
+
+  if (assetCanonical !== "native") {
+    return t("Blockaid unfunded destination");
+  }
+
+  const parsedAmount = new BigNumber(cleanAmount(amount || "0"));
+  if (parsedAmount.lt(CREATE_ACCOUNT_MIN_XLM)) {
+    return t("Blockaid unfunded destination native");
+  }
+
+  return null;
+};
+
+const applyExpectedToFailReason = ({
+  scanResult,
+  expectedToFailReason,
+}: {
+  scanResult?: BlockAidScanTxResult | null;
+  expectedToFailReason: string | null;
+}) => {
+  if (!expectedToFailReason) {
+    return scanResult;
+  }
+
+  const hasNonBenignValidation = !!(
+    scanResult?.validation &&
+    "result_type" in scanResult.validation &&
+    (scanResult.validation.result_type === "Malicious" ||
+      scanResult.validation.result_type === "Warning")
+  );
+
+  if (hasNonBenignValidation) {
+    return scanResult;
+  }
+
+  if (!scanResult) {
+    // Create a minimal valid BlockAidScanTxResult object
+    return {
+      request_id: "local-validation",
+      simulation: { error: expectedToFailReason },
+      validation: {
+        status: "Success" as const,
+        result_type: "Benign" as const,
+      },
+    } as BlockAidScanTxResult;
+  }
+
+  const simulation =
+    scanResult.simulation && typeof scanResult.simulation === "object"
+      ? { ...scanResult.simulation, error: expectedToFailReason }
+      : { error: expectedToFailReason };
+
+  return {
+    ...scanResult,
+    simulation,
+  } as BlockAidScanTxResult;
+};
 
 const getOperation = (
   sourceAsset: Asset | { code: string; issuer: string },
@@ -301,25 +380,21 @@ function useSimulateTxData({
   publicKey,
   destination,
   networkDetails,
-  destAsset,
-  sourceAsset,
   simParams,
   isMainnet,
 }: {
   publicKey: string;
   destination: string;
   networkDetails: NetworkDetails;
-  destAsset: ReturnType<typeof getAssetFromCanonical>;
-  sourceAsset: ReturnType<typeof getAssetFromCanonical>;
   simParams: SimClassic | SimSoroban;
   isMainnet: boolean;
 }) {
+  const { t } = useTranslation();
   const reduxDispatch = useDispatch<AppDispatch>();
   const store = useStore();
   const { asset, amount, transactionFee, memo } = useSelector(
     transactionDataSelector,
   );
-  const assetAddress = getAssetAddress(asset, destination, networkDetails);
 
   const { scanTx } = useScanTx();
   const [state, dispatch] = useReducer(
@@ -344,8 +419,23 @@ function useSimulateTxData({
         store.getState() as AppState,
       );
       const currentMemo = currentTransactionData.memo || memo;
+      const currentAmount = currentTransactionData.amount || amount;
+      const currentAsset = currentTransactionData.asset || asset;
       const currentTransactionFee =
         currentTransactionData.transactionFee || transactionFee;
+      // Derive asset objects directly from fresh Redux state so the XDR and
+      // expectedToFailReason logic always use the same asset values.
+      const freshSourceAsset = getAssetFromCanonical(currentAsset);
+      const freshDestAsset = getAssetFromCanonical(
+        currentTransactionData.destinationAsset || "native",
+      );
+
+      // Compute asset address using current asset to ensure consistency
+      const currentAssetAddress = getAssetAddress(
+        currentAsset,
+        destination,
+        networkDetails,
+      );
 
       const payload = { transactionXdr: "" } as SimulateTxData;
       let destinationAccount = await getBaseAccount(destination);
@@ -364,6 +454,13 @@ function useSimulateTxData({
         destBalancesResult = balances;
       }
 
+      const expectedToFailReason = getExpectedToFailReason({
+        isDestinationFunded: destBalancesResult.isFunded ?? undefined,
+        assetCanonical: currentAsset,
+        amount: currentAmount,
+        t,
+      });
+
       const balancesResult = await fetchBalances(
         publicKey,
         isMainnet,
@@ -377,24 +474,24 @@ function useSimulateTxData({
 
       const assetBalance = findAddressBalance(
         balancesResult.balances,
-        assetAddress,
+        currentAssetAddress,
         networkDetails.networkPassphrase as Networks,
       );
       if (!assetBalance) {
         throw new Error("asset balance not found");
       }
       const tokenAddress =
-        assetAddress === "native"
+        currentAssetAddress === "native"
           ? Asset.native().contractId(networkDetails.networkPassphrase)
-          : assetAddress;
+          : currentAssetAddress;
       const parsedAmount = parseTokenAmount(
-        cleanAmount(amount),
+        cleanAmount(currentAmount),
         Number("decimals" in assetBalance ? assetBalance.decimals : 7),
       );
 
       // For Soroban transfers, check if contract supports muxed and determine final destination
       let finalDestination = destination;
-      let sorobanMemo = memo;
+      let sorobanMemo = currentMemo;
       if (simParams.type === "soroban") {
         try {
           const contractSupportsMuxed = await checkIsMuxedSupported({
@@ -403,7 +500,7 @@ function useSimulateTxData({
           });
           finalDestination = determineMuxedDestination({
             recipientAddress: destination,
-            transactionMemo: memo,
+            transactionMemo: currentMemo,
             contractSupportsMuxed,
           });
           // For Soroban transfers with muxed support, don't pass memo separately
@@ -451,7 +548,6 @@ function useSimulateTxData({
       const scanUrlstub = "internal";
       if (simParams.type === "classic") {
         const {
-          amount,
           destinationAmount,
           allowedSlippage,
           path,
@@ -468,9 +564,9 @@ function useSimulateTxData({
         const transaction = await getBuiltTx(
           publicKey,
           {
-            sourceAsset,
-            destAsset,
-            amount: cleanAmount(amount),
+            sourceAsset: freshSourceAsset,
+            destAsset: freshDestAsset,
+            amount: cleanAmount(currentAmount),
             destinationAmount,
             destination,
             allowedSlippage,
@@ -486,16 +582,22 @@ function useSimulateTxData({
         );
         const xdr = transaction.build().toXDR();
         payload.transactionXdr = xdr;
-        payload.scanResult = await scanTx(xdr, scanUrlstub, networkDetails);
+        payload.scanResult = applyExpectedToFailReason({
+          scanResult: await scanTx(xdr, scanUrlstub, networkDetails),
+          expectedToFailReason,
+        });
       }
 
       if (simParams.type === "soroban") {
         payload.transactionXdr = simResponse.payload?.preparedTransaction!;
-        payload.scanResult = await scanTx(
-          payload.transactionXdr,
-          scanUrlstub,
-          networkDetails,
-        );
+        payload.scanResult = applyExpectedToFailReason({
+          scanResult: await scanTx(
+            payload.transactionXdr,
+            scanUrlstub,
+            networkDetails,
+          ),
+          expectedToFailReason,
+        });
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

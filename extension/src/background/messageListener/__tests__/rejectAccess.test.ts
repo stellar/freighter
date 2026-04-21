@@ -30,9 +30,9 @@ describe("rejectAccess handler", () => {
     const mockResponseFn3 = jest.fn();
 
     responseQueue.push(
-      { response: mockResponseFn1, uuid: "uuid-1" },
-      { response: mockResponseFn2, uuid: "uuid-2" },
-      { response: mockResponseFn3, uuid: "uuid-3" },
+      { response: mockResponseFn1, uuid: "uuid-1", createdAt: Date.now() },
+      { response: mockResponseFn2, uuid: "uuid-2", createdAt: Date.now() },
+      { response: mockResponseFn3, uuid: "uuid-3", createdAt: Date.now() },
     );
 
     const request: RejectAccessMessage = {
@@ -54,7 +54,11 @@ describe("rejectAccess handler", () => {
   });
 
   it("does not remove items when uuid is not found in queue", () => {
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request: RejectAccessMessage = {
       type: SERVICE_TYPES.REJECT_ACCESS,
@@ -75,7 +79,11 @@ describe("rejectAccess handler", () => {
   });
 
   it("returns early and logs error when uuid is undefined", () => {
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request = {
       type: SERVICE_TYPES.REJECT_ACCESS,
@@ -99,9 +107,9 @@ describe("rejectAccess handler", () => {
     const mockResponseFn3 = jest.fn();
 
     responseQueue.push(
-      { response: mockResponseFn1, uuid: "aaa" },
-      { response: mockResponseFn2, uuid: "bbb" },
-      { response: mockResponseFn3, uuid: "ccc" },
+      { response: mockResponseFn1, uuid: "aaa", createdAt: Date.now() },
+      { response: mockResponseFn2, uuid: "bbb", createdAt: Date.now() },
+      { response: mockResponseFn3, uuid: "ccc", createdAt: Date.now() },
     );
 
     const request: RejectAccessMessage = {
@@ -146,8 +154,8 @@ describe("rejectAccess handler", () => {
     const mockResponseFn2 = jest.fn();
 
     responseQueue.push(
-      { response: mockResponseFn1, uuid: "uuid-1" },
-      { response: mockResponseFn2, uuid: "uuid-1" },
+      { response: mockResponseFn1, uuid: "uuid-1", createdAt: Date.now() },
+      { response: mockResponseFn2, uuid: "uuid-1", createdAt: Date.now() },
     );
 
     const request: RejectAccessMessage = {
