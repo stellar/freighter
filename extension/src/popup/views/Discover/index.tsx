@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Icon } from "@stellar/design-system";
+import { Icon, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { captureException } from "@sentry/browser";
+import { toast } from "sonner";
 
 import { ProtocolEntry } from "@shared/api/types";
 import {
@@ -55,6 +56,14 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
   );
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
+  const notifyError = useCallback((title: string, description: string) => {
+    toast.custom(() => (
+      <Notification variant="error" title={title}>
+        {description}
+      </Notification>
+    ));
+  }, []);
+
   const {
     isLoading,
     error,
@@ -91,10 +100,11 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
       try {
         await openTab(protocol.websiteUrl);
       } catch (error) {
+        notifyError(t("Couldn’t open this dApp"), t("Please try again later."));
         captureException(`Error opening Discover tab - ${error}`);
       }
     },
-    [refreshRecent],
+    [refreshRecent, notifyError, t],
   );
 
   const handleRowClick = useCallback(
@@ -136,11 +146,15 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
     try {
       await clearRecentProtocols();
       await refreshRecent();
+      setActiveView("main");
     } catch (error) {
+      notifyError(
+        t("Couldn’t clear recent dApps"),
+        t("Please try again later."),
+      );
       captureException(`Error clearing Discover recent protocols - ${error}`);
     }
-    setActiveView("main");
-  }, [refreshRecent]);
+  }, [refreshRecent, notifyError, t]);
 
   if (isLoading) {
     return (
