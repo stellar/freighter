@@ -15,7 +15,10 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { openTab } from "popup/helpers/navigate";
 import { addRecentProtocol, clearRecentProtocols } from "@shared/api/internal";
-import { SlideupModal } from "popup/components/SlideupModal";
+import {
+  SlideupModal,
+  SLIDEUP_MODAL_TRANSITION_MS,
+} from "popup/components/SlideupModal";
 import { Loading } from "popup/components/Loading";
 
 import { useDiscoverData } from "./hooks/useDiscoverData";
@@ -124,7 +127,7 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
       setTimeout(async () => {
         setSelectedProtocol(null);
         await handleOpenProtocol(protocol, selectedSource);
-      }, 200);
+      }, SLIDEUP_MODAL_TRANSITION_MS);
     },
     [handleOpenProtocol, selectedSource],
   );
