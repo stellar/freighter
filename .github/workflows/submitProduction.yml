@@ -7,13 +7,17 @@ on:
   workflow_dispatch:
     inputs:
       ref_name:
-        description: A git commit/hash/tag (optional, defaults to the selected branch or tag)
+        description:
+          A git commit/hash/tag (optional, defaults to the selected branch or
+          tag)
         type: string
         default: ""
 jobs:
   bump-version:
     name: Bump Package Version and Submit Extension
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - if: ${{ env.INDEXER_URL == '' }}
         run: |
@@ -28,7 +32,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.inputs.ref_name != '' && github.event.inputs.ref_name || github.ref_name }}
+          ref:
+            ${{ github.event.inputs.ref_name != '' &&
+            github.event.inputs.ref_name || github.ref_name }}
       - name: Get checkout SHA
         id: checkout_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
@@ -50,8 +56,21 @@ jobs:
           secrets.SENTRY_KEY }}" BUILD_TYPE="production"
       - name: Install zip
         uses: montudor/action-zip@0852c26906e00f8a315c704958823928d8018b28 #v1.0.0
-      - name: Create git tag
-        run: git tag ${{ steps.package_version.outputs.version }}
+      - name: Create and push git tag
+        run: |
+          TAG="${{ steps.package_version.outputs.version }}"
+          SHA="${{ steps.checkout_sha.outputs.sha }}"
+          EXISTING=$(git ls-remote origin "refs/tags/$TAG" | awk '{print $1}')
+          if [ -n "$EXISTING" ]; then
+            if [ "$EXISTING" != "$SHA" ]; then
+              echo "ERROR: Tag $TAG already exists pointing to $EXISTING, expected $SHA"
+              exit 1
+            fi
+            echo "Tag $TAG already exists and points to the correct SHA, skipping"
+          else
+            git tag "$TAG" "$SHA"
+            git push origin "$TAG"
+          fi
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
