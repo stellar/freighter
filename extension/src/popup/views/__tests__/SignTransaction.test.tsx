@@ -82,6 +82,7 @@ jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
     isDataSharingAllowed: false,
     isMemoValidationEnabled: false,
     isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
     settingsState: SettingsState.SUCCESS,
     isSorobanPublicEnabled: false,
     isRpcHealthy: true,
@@ -108,6 +109,7 @@ jest.mock("helpers/metrics", () => ({
   registerHandler: jest.fn(),
   storeBalanceMetricData: jest.fn(),
   emitMetric: jest.fn(),
+  initAmplitude: jest.fn(),
   metricsMiddleware: jest.fn(),
 }));
 
@@ -145,6 +147,7 @@ const mockTransactionInfo = {
   operationTypes: [],
   isDomainListedAllowed: true,
   flaggedKeys: { test: { tags: [""] } },
+  uuid: "mock-uuid",
 };
 
 const transactions = {
@@ -198,8 +201,10 @@ describe("SignTransactions", () => {
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         networkDetails: {
           ...defaultSettingsState.networkDetails,
-          networkPassphrase: "Test SDF Future Network ; October 2022",
+          networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
         },
+        siteScanData: null,
+        blockaidOverrideState: null,
       },
       error: null,
     },
@@ -261,7 +266,7 @@ describe("SignTransactions", () => {
             isExperimentalModeEnabled: true,
             networkDetails: {
               ...defaultSettingsState.networkDetails,
-              networkPassphrase: "Test SDF Future Network ; October 2022",
+              networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
             },
             hiddenAssets: {},
           },
@@ -303,6 +308,8 @@ describe("SignTransactions", () => {
             ...defaultSettingsState.networkDetails,
             networkPassphrase: "Public Global Stellar Network ; September 2015",
           },
+          siteScanData: null,
+          blockaidOverrideState: null,
         },
         error: null,
       },
@@ -324,6 +331,7 @@ describe("SignTransactions", () => {
         isDataSharingAllowed: false,
         isMemoValidationEnabled: false,
         isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
         settingsState: SettingsState.SUCCESS,
         isSorobanPublicEnabled: false,
         isRpcHealthy: true,
@@ -411,6 +419,8 @@ describe("SignTransactions", () => {
             ...defaultSettingsState.networkDetails,
             networkPassphrase: "Test SDF Network ; September 2015",
           },
+          siteScanData: null,
+          blockaidOverrideState: null,
         },
         error: null,
       },
@@ -437,6 +447,7 @@ describe("SignTransactions", () => {
         isDataSharingAllowed: false,
         isMemoValidationEnabled: false,
         isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
         settingsState: SettingsState.SUCCESS,
         isSorobanPublicEnabled: false,
         isRpcHealthy: true,
@@ -535,8 +546,10 @@ describe("SignTransactions", () => {
           applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
           networkDetails: {
             ...defaultSettingsState.networkDetails,
-            networkPassphrase: "Test SDF Future Network ; October 2022",
+            networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
           },
+          siteScanData: null,
+          blockaidOverrideState: null,
         },
         error: null,
       },
@@ -564,7 +577,7 @@ describe("SignTransactions", () => {
       Promise.resolve({
         networkDetails: {
           ...defaultSettingsState.networkDetails,
-          networkPassphrase: "Test SDF Future Network ; October 2022",
+          networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
         },
         networksList: DEFAULT_NETWORKS,
         hiddenAssets: {},
@@ -573,6 +586,7 @@ describe("SignTransactions", () => {
         isDataSharingAllowed: false,
         isMemoValidationEnabled: false,
         isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
         settingsState: SettingsState.SUCCESS,
         isSorobanPublicEnabled: false,
         isRpcHealthy: true,
@@ -617,7 +631,7 @@ describe("SignTransactions", () => {
             isExperimentalModeEnabled: true,
             networkDetails: {
               ...defaultSettingsState.networkDetails,
-              networkPassphrase: "Test SDF Future Network ; October 2022",
+              networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
             },
           },
         }}
@@ -658,6 +672,8 @@ describe("SignTransactions", () => {
             ...defaultSettingsState.networkDetails,
             networkPassphrase: "Test SDF Network ; September 2015",
           },
+          siteScanData: null,
+          blockaidOverrideState: null,
         },
         error: null,
       },
@@ -684,6 +700,7 @@ describe("SignTransactions", () => {
         isDataSharingAllowed: false,
         isMemoValidationEnabled: false,
         isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
         settingsState: SettingsState.SUCCESS,
         isSorobanPublicEnabled: false,
         isRpcHealthy: true,
@@ -777,6 +794,8 @@ describe("SignTransactions", () => {
             ...defaultSettingsState.networkDetails,
             networkPassphrase: "Test SDF Network ; September 2015",
           },
+          siteScanData: null,
+          blockaidOverrideState: null,
         },
         error: null,
       },
@@ -803,6 +822,7 @@ describe("SignTransactions", () => {
         isDataSharingAllowed: false,
         isMemoValidationEnabled: false,
         isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
         settingsState: SettingsState.SUCCESS,
         isSorobanPublicEnabled: false,
         isRpcHealthy: true,
@@ -896,6 +916,8 @@ describe("SignTransactions", () => {
             ...defaultSettingsState.networkDetails,
             networkPassphrase: "Test SDF Network ; September 2015",
           },
+          siteScanData: null,
+          blockaidOverrideState: null,
         },
         error: null,
       },
@@ -922,6 +944,7 @@ describe("SignTransactions", () => {
         isDataSharingAllowed: false,
         isMemoValidationEnabled: false,
         isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
         settingsState: SettingsState.SUCCESS,
         isSorobanPublicEnabled: false,
         isRpcHealthy: true,
@@ -1009,6 +1032,8 @@ describe("SignTransactions", () => {
             ...defaultSettingsState.networkDetails,
             networkPassphrase: "Test SDF Network ; September 2015",
           },
+          siteScanData: null,
+          blockaidOverrideState: null,
         },
         error: null,
       },
@@ -1035,6 +1060,7 @@ describe("SignTransactions", () => {
         isDataSharingAllowed: false,
         isMemoValidationEnabled: false,
         isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
         settingsState: SettingsState.SUCCESS,
         isSorobanPublicEnabled: false,
         isRpcHealthy: true,
@@ -1095,5 +1121,610 @@ describe("SignTransactions", () => {
     await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.queryByTestId("blockaid-miss-label")).toBeNull();
     expect(screen.queryByTestId("blockaid-malicious-label")).toBeNull();
+  });
+
+  it("renders sign transaction view without insufficient balance warning when balances are unavailable", async () => {
+    let currentSignTxDataMock = {
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          type: AppDataType.RESOLVED,
+          scanResult: {
+            simulation: null,
+            validation: null,
+            request_id: "1",
+          },
+          siteScanData: null,
+          blockaidOverrideState: null,
+          icons: {},
+          balances: null, // Balances unavailable due to fetch failure
+          publicKey: mockAccounts[1].publicKey,
+          signFlowState: {
+            allAccounts: mockAccounts,
+            accountNotFound: false,
+            currentAccount: mockAccounts[0],
+          },
+          applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+          networkDetails: {
+            ...defaultSettingsState.networkDetails,
+            networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
+          },
+        },
+        error: null,
+      },
+      fetchData: jest.fn(),
+    } as ReturnType<typeof SignTxDataHooks.useGetSignTxData>;
+    jest.spyOn(SigningFlowHooks, "useSetupSigningFlow").mockReturnValue({
+      isConfirming: false,
+      isHardwareWallet: false,
+      isPasswordRequired: false,
+      handleApprove: jest.fn(),
+      hwStatus: ShowOverlayStatus.IDLE,
+      rejectAndClose: jest.fn(),
+      setIsPasswordRequired: jest.fn(),
+      verifyPasswordThenSign: jest.fn(),
+      hardwareWalletType: WalletType.LEDGER,
+    });
+    jest
+      .spyOn(SignTxDataHooks, "useGetSignTxData")
+      .mockReturnValue(currentSignTxDataMock);
+
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: {
+          ...defaultSettingsState.networkDetails,
+          networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
+        },
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+      }),
+    );
+
+    const transaction = TransactionBuilder.fromXDR(
+      transactions.classic,
+      Networks.PUBLIC,
+    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      transactionXdr: transactions.classic,
+      transaction: {
+        ...mockTransactionInfo.transaction,
+        _networkPassphrase: Networks.FUTURENET,
+        _operations: [op],
+      },
+      isHttpsDomain: false,
+      uuid: "123-123-123-123-123",
+    }));
+
+    render(
+      <Wrapper
+        routes={[ROUTES.signTransaction]}
+        state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
+          settings: {
+            isExperimentalModeEnabled: true,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
+            },
+          },
+        }}
+      >
+        <SignTransaction />
+      </Wrapper>,
+    );
+
+    // Should render the sign transaction view without crashing
+    await waitFor(() => screen.getByTestId("SignTransaction"));
+    // Should NOT show the insufficient balance warning when balances are unavailable
+    expect(screen.queryByTestId("InsufficientBalanceWarning")).toBeNull();
+  });
+
+  it("renders SEP-41 asset diffs with correct decimals", async () => {
+    let currentSignTxDataMock = {
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          type: AppDataType.RESOLVED,
+          scanResult: {
+            simulation: {
+              status: "Success",
+              assets_diffs: {
+                [mockAccounts[0].publicKey]: [
+                  {
+                    asset_type: "SEP41",
+                    asset: {
+                      symbol: "E2E",
+                      address:
+                        "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+                      decimals: 3,
+                      name: "E2E Token",
+                      type: "CONTRACT",
+                    },
+                    in: null,
+                    out: {
+                      raw_value: 500,
+                      value: "0.5",
+                      usd_price: "0",
+                    },
+                  },
+                ],
+              },
+            } as any,
+            validation: null,
+            request_id: "1",
+          },
+          icons: {},
+          balances: {
+            balances: sortBalances(mockBalances.balances),
+            isFunded: true,
+            subentryCount: 0,
+          },
+          publicKey: mockAccounts[1].publicKey,
+          signFlowState: {
+            allAccounts: mockAccounts,
+            accountNotFound: false,
+            currentAccount: mockAccounts[0],
+          },
+          applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+          networkDetails: {
+            ...defaultSettingsState.networkDetails,
+            networkPassphrase: "Test SDF Network ; September 2015",
+          },
+          siteScanData: null,
+          blockaidOverrideState: null,
+        },
+        error: null,
+      },
+      fetchData: jest.fn(),
+    } as ReturnType<typeof SignTxDataHooks.useGetSignTxData>;
+    jest
+      .spyOn(SignTxDataHooks, "useGetSignTxData")
+      .mockReturnValue(currentSignTxDataMock);
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: {
+          ...defaultSettingsState.networkDetails,
+          networkPassphrase: "Test SDF Network ; September 2015",
+          networkName: "Test Net",
+        },
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: {
+          "Test Net": {
+            [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+          },
+        },
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+      }),
+    );
+    const transaction = TransactionBuilder.fromXDR(
+      transactions.classic,
+      Networks.TESTNET,
+    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      transactionXdr: transactions.classic,
+      transaction: {
+        ...mockTransactionInfo.transaction,
+        _networkPassphrase: Networks.TESTNET,
+        _operations: [op],
+      },
+      isHttpsDomain: false,
+      domain: "laboratory.stellar.org",
+      uuid: "123-123-123-123-123",
+    }));
+    render(
+      <Wrapper
+        routes={[ROUTES.signTransaction]}
+        state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
+          settings: {
+            allowList: {
+              "Test Net": {
+                [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+              },
+            },
+            isExperimentalModeEnabled: false,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Network ; September 2015",
+              networkName: "Test Net",
+            },
+          },
+        }}
+      >
+        <SignTransaction />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("SignTransaction"));
+    // With decimals=3, raw_value=500 should display as 0.5, not 0.00005
+    expect(screen.getByText("-0.5")).toBeInTheDocument();
+    expect(screen.getByText("E2E")).toBeInTheDocument();
+  });
+
+  it("skips asset diffs when blockaid payload fields are not the expected type", async () => {
+    let currentSignTxDataMock = {
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          type: AppDataType.RESOLVED,
+          scanResult: {
+            simulation: {
+              status: "Success",
+              assets_diffs: {
+                [mockAccounts[0].publicKey]: [
+                  {
+                    // invalid: symbol and code are not strings — should be skipped
+                    asset_type: "ASSET",
+                    asset: {
+                      symbol: 42,
+                      code: null,
+                      issuer: "GBXYZ",
+                    },
+                    in: null,
+                    out: {
+                      raw_value: 1000000,
+                      value: "1",
+                      usd_price: "0",
+                    },
+                  },
+                  {
+                    // invalid: issuer and address are not strings — should be skipped
+                    asset_type: "ASSET",
+                    asset: {
+                      code: "USDC",
+                      issuer: 99,
+                      address: null,
+                    },
+                    in: {
+                      raw_value: 5000000,
+                      value: "5",
+                      usd_price: "0",
+                    },
+                    out: null,
+                  },
+                  {
+                    // valid SEP-41 entry — should render
+                    asset_type: "SEP41",
+                    asset: {
+                      symbol: "E2E",
+                      address:
+                        "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+                      decimals: 3,
+                      name: "E2E Token",
+                      type: "CONTRACT",
+                    },
+                    in: null,
+                    out: {
+                      raw_value: 500,
+                      value: "0.5",
+                      usd_price: "0",
+                    },
+                  },
+                ],
+              },
+            } as any,
+            validation: null,
+            request_id: "1",
+          },
+          icons: {},
+          balances: {
+            balances: sortBalances(mockBalances.balances),
+            isFunded: true,
+            subentryCount: 0,
+          },
+          publicKey: mockAccounts[1].publicKey,
+          signFlowState: {
+            allAccounts: mockAccounts,
+            accountNotFound: false,
+            currentAccount: mockAccounts[0],
+          },
+          applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+          networkDetails: {
+            ...defaultSettingsState.networkDetails,
+            networkPassphrase: "Test SDF Network ; September 2015",
+          },
+          siteScanData: null,
+          blockaidOverrideState: null,
+        },
+        error: null,
+      },
+      fetchData: jest.fn(),
+    } as ReturnType<typeof SignTxDataHooks.useGetSignTxData>;
+    jest
+      .spyOn(SignTxDataHooks, "useGetSignTxData")
+      .mockReturnValue(currentSignTxDataMock);
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: {
+          ...defaultSettingsState.networkDetails,
+          networkPassphrase: "Test SDF Network ; September 2015",
+          networkName: "Test Net",
+        },
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: {
+          "Test Net": {
+            [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+          },
+        },
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+      }),
+    );
+    const transaction = TransactionBuilder.fromXDR(
+      transactions.classic,
+      Networks.TESTNET,
+    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      transactionXdr: transactions.classic,
+      transaction: {
+        ...mockTransactionInfo.transaction,
+        _networkPassphrase: Networks.TESTNET,
+        _operations: [op],
+      },
+      isHttpsDomain: false,
+      domain: "laboratory.stellar.org",
+      uuid: "123-123-123-123-123",
+    }));
+    render(
+      <Wrapper
+        routes={[ROUTES.signTransaction]}
+        state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
+          settings: {
+            allowList: {
+              "Test Net": {
+                [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+              },
+            },
+            isExperimentalModeEnabled: false,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Network ; September 2015",
+              networkName: "Test Net",
+            },
+          },
+        }}
+      >
+        <SignTransaction />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("SignTransaction"));
+    // Invalid entries (non-string code or non-string issuer/address) should be skipped
+    expect(screen.queryByText("+1")).not.toBeInTheDocument();
+    expect(screen.queryByText("+5")).not.toBeInTheDocument();
+    expect(screen.queryByText("USDC")).not.toBeInTheDocument();
+    // Valid SEP-41 entry should still render
+    expect(screen.getByText("E2E")).toBeInTheDocument();
+    expect(screen.getByText("-0.5")).toBeInTheDocument();
+  });
+
+  it("skips asset diffs when decimals is not a valid number", async () => {
+    let currentSignTxDataMock = {
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          type: AppDataType.RESOLVED,
+          scanResult: {
+            simulation: {
+              status: "Success",
+              assets_diffs: {
+                [mockAccounts[0].publicKey]: [
+                  {
+                    // invalid: decimals is a string — should be skipped
+                    asset_type: "SEP41",
+                    asset: {
+                      symbol: "BAD",
+                      address:
+                        "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+                      decimals: "not-a-number",
+                      name: "Bad Token",
+                      type: "CONTRACT",
+                    },
+                    in: {
+                      raw_value: 1000,
+                      value: "1",
+                      usd_price: "0",
+                    },
+                    out: null,
+                  },
+                  {
+                    // valid SEP-41 entry — should render
+                    asset_type: "SEP41",
+                    asset: {
+                      symbol: "GOOD",
+                      address:
+                        "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+                      decimals: 3,
+                      name: "Good Token",
+                      type: "CONTRACT",
+                    },
+                    in: null,
+                    out: {
+                      raw_value: 500,
+                      value: "0.5",
+                      usd_price: "0",
+                    },
+                  },
+                ],
+              },
+            },
+            validation: null,
+            request_id: "1",
+          } as any,
+          icons: {},
+          balances: {
+            balances: sortBalances(mockBalances.balances),
+            isFunded: true,
+            subentryCount: 0,
+          },
+          publicKey: mockAccounts[1].publicKey,
+          signFlowState: {
+            allAccounts: mockAccounts,
+            accountNotFound: false,
+            currentAccount: mockAccounts[0],
+          },
+          applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+          networkDetails: {
+            ...defaultSettingsState.networkDetails,
+            networkPassphrase: "Test SDF Network ; September 2015",
+          },
+          siteScanData: null,
+          blockaidOverrideState: null,
+        },
+        error: null,
+      },
+      fetchData: jest.fn(),
+    } as ReturnType<typeof SignTxDataHooks.useGetSignTxData>;
+    jest
+      .spyOn(SignTxDataHooks, "useGetSignTxData")
+      .mockReturnValue(currentSignTxDataMock);
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: {
+          ...defaultSettingsState.networkDetails,
+          networkPassphrase: "Test SDF Network ; September 2015",
+          networkName: "Test Net",
+        },
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: {
+          "Test Net": {
+            [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+          },
+        },
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+      }),
+    );
+    const transaction = TransactionBuilder.fromXDR(
+      transactions.classic,
+      Networks.TESTNET,
+    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      transactionXdr: transactions.classic,
+      transaction: {
+        ...mockTransactionInfo.transaction,
+        _networkPassphrase: Networks.TESTNET,
+        _operations: [op],
+      },
+      isHttpsDomain: false,
+      domain: "laboratory.stellar.org",
+      uuid: "123-123-123-123-123",
+    }));
+    render(
+      <Wrapper
+        routes={[ROUTES.signTransaction]}
+        state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
+          settings: {
+            allowList: {
+              "Test Net": {
+                [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+              },
+            },
+            isExperimentalModeEnabled: false,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Network ; September 2015",
+              networkName: "Test Net",
+            },
+          },
+        }}
+      >
+        <SignTransaction />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("SignTransaction"));
+    // Invalid entry (non-numeric decimals) should be skipped
+    expect(screen.queryByText("BAD")).not.toBeInTheDocument();
+    expect(screen.queryByText("+1")).not.toBeInTheDocument();
+    // Valid entry should still render
+    expect(screen.getByText("GOOD")).toBeInTheDocument();
+    expect(screen.getByText("-0.5")).toBeInTheDocument();
   });
 });

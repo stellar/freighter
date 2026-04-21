@@ -28,6 +28,7 @@ import { AssetIcons } from "@shared/api/types";
 import { removeTokenId, startHwSign } from "popup/ducks/transactionSubmission";
 import { NETWORKS } from "@shared/constants/stellar";
 import { useGetChangeTrust } from "../hooks/useChangeTrust";
+import { isAssetSac } from "popup/helpers/soroban";
 
 import "./styles.scss";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
@@ -74,7 +75,18 @@ export const SubmitTransaction = ({
 
   useEffect(() => {
     const getData = async () => {
-      if (asset.contract) {
+      const isSac = isAssetSac({
+        asset: {
+          code: asset.code,
+          issuer: asset.issuer,
+          contract: asset.contract,
+        },
+        networkDetails,
+      });
+
+      // For SEP-41 tokens, just add/remove the token ID
+      // For SACs and classic assets, we need to submit a trustline transaction
+      if (asset.contract && !isSac) {
         if (addTrustline) {
           await dispatch(
             addTokenId({
@@ -92,6 +104,7 @@ export const SubmitTransaction = ({
           );
         }
       } else {
+        // Classic asset or SAC - submit trustline transaction
         const server = stellarSdkServer(
           networkDetails.networkUrl,
           networkDetails.networkPassphrase,

@@ -3,7 +3,7 @@ import BigNumber from "bignumber.js";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
-import { getBalanceByKey } from "../balance";
+import { getBalanceByKey, findAssetBalance } from "../balance";
 
 const CONTRACT_ID = "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC";
 const TOKEN_BALANCE_KEY = `DT:${CONTRACT_ID}`;
@@ -54,5 +54,49 @@ describe("getBalanceByKey", () => {
       TESTNET_NETWORK_DETAILS,
     );
     expect(balance).toEqual(TOKEN_BALANCE);
+  });
+});
+
+describe("findAssetBalance", () => {
+  it("should match a classic asset by code and issuer", () => {
+    const result = findAssetBalance(BALANCES, {
+      code: "USDC",
+      issuer: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+    });
+    expect(result).toBeDefined();
+    expect(result.token.code).toBe("USDC");
+  });
+
+  it("should match a Soroban token when issuer is a contract ID", () => {
+    const result = findAssetBalance(BALANCES, {
+      code: "DT",
+      issuer: CONTRACT_ID,
+    });
+    expect(result).toBeDefined();
+    expect(result.contractId).toBe(CONTRACT_ID);
+  });
+
+  it("should return undefined when contract ID is not in balances", () => {
+    const result = findAssetBalance(BALANCES, {
+      code: "NOPE",
+      issuer: "CAZXEHTSQATVQVWDPWWDTFSY6CM764JD4MZ6HUVPO3QKS64QEEP4KJH7",
+    });
+    expect(result).toBeUndefined();
+  });
+
+  it("should return undefined for an empty balances array", () => {
+    const result = findAssetBalance([], {
+      code: "DT",
+      issuer: CONTRACT_ID,
+    });
+    expect(result).toBeUndefined();
+  });
+
+  it("should not match a classic asset when issuer does not match", () => {
+    const result = findAssetBalance(BALANCES, {
+      code: "USDC",
+      issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+    });
+    expect(result).toBeUndefined();
   });
 });
