@@ -310,7 +310,10 @@ export const Account = () => {
             />
           </View.Footer>
         )}
-      <Sheet open={isDiscoverOpen}>
+      <Sheet
+        open={isDiscoverOpen}
+        onOpenChange={(open) => !open && setIsDiscoverOpen(false)}
+      >
         <SheetContent
           onOpenAutoFocus={(e) => e.preventDefault()}
           aria-describedby={undefined}
